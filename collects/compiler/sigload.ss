@@ -166,7 +166,9 @@
    zodiac:binding->lexical-varref
 
    main-source-file
-   zodiac:print-start!))
+   zodiac:print-start!
+
+   zodiac->sexp/annotate))
 
 
 (define-signature compiler:prephase^
@@ -411,7 +413,8 @@
    vm->c-expression))
 
 (define-signature compiler:mrspidey^
-  (analyze-program-sexps
+  (copy-annotations!
+   analyze-program-sexps
    binding-mutated
    SDL-type))
 

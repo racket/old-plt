@@ -395,6 +395,30 @@
 		
 		(compiler:report-messages! #t))
 	
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
+	      ;;-----------------------------------------------------------------------
+	      ;; MrSpidey analyze
+	      
+	      (when (compiler:option:use-mrspidey)
+		(when (compiler:option:verbose) (printf " MrSpidey: analyzing~n"))
+
+		(set-block-source! 
+		 s:file-block
+		 (with-handlers ([void (lambda (x)
+					 (compiler:fatal-error
+					  #f
+					  (format "analysis died: ~a"
+						  (if (exn? x)
+						      (exn-message x)
+						      x))))])
+		   (mrspidey:analyze-program-sexps (block-source s:file-block)
+						   input-directory)))
+	      
+		(compiler:report-messages! #t))
+
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+	      
 	      ;;-----------------------------------------------------------------------
 	      ;; Run a preprocessing phase on the input
 	      ;;
@@ -424,6 +448,8 @@
 	       'prephase
 	       (lambda () (pretty-print (block-source s:file-block))))
 	      
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
 	      ;;-----------------------------------------------------------------------
 	      ;; A-normalize input
 	      ;;
@@ -442,26 +468,8 @@
 	       'a-norm
 	       (lambda () (pretty-print (block-source s:file-block))))
 	      
-	      ;;-----------------------------------------------------------------------
-	      ;; MrSpidey analyze
-	      
-	      (when (compiler:option:use-mrspidey)
-		(when (compiler:option:verbose) (printf " MrSpidey: analyzing~n"))
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
-		(set-block-source! 
-		 s:file-block
-		 (with-handlers ([void (lambda (x)
-					 (compiler:fatal-error
-					  #f
-					  (format "analysis died: ~a"
-						  (if (exn? x)
-						      (exn-message x)
-						      x))))])
-		   (mrspidey:analyze-program-sexps (block-source s:file-block)
-						   input-directory)))
-	      
-		(compiler:report-messages! #t))
-	      
 	      ;;-----------------------------------------------------------------------
 	      ;; B-form transformation and analysis
 	      ;;

@@ -1,13 +1,13 @@
 ;; Zodiac interface and library routines
 ;; (c)1996-7 Sebastian Good
 
-(unit/sig
- compiler:zlayer^
- (import (compiler:option : compiler:option^)
-	 (zodiac : zodiac:system^)
-	 compiler:cstructs^
-	 compiler:driver^
-	 mzlib:function^)
+(unit/sig compiler:zlayer^
+  (import (compiler:option : compiler:option^)
+	  (zodiac : zodiac:system^)
+	  compiler:cstructs^
+	  compiler:driver^
+	  mzlib:function^
+	  (mrspidey : compiler:mrspidey^))
 
 ;;----------------------------------------------------------------------------
 ;; ANNOTATIONS
@@ -29,12 +29,12 @@
 	      (zodiac:register-client 'compiler 
 				      (lambda ()
 					compiler:empty-annotation))])
-    (set! get-annotation
-	  (lambda (ast)
-	    (getter (zodiac:parsed-back ast))))
-    (set! set-annotation!
-	  (lambda (ast obj)
-	    (setter (zodiac:parsed-back ast) obj))))
+  (set! get-annotation
+	(lambda (ast)
+	  (getter (zodiac:parsed-back ast))))
+  (set! set-annotation!
+	(lambda (ast obj)
+	  (setter (zodiac:parsed-back ast) obj))))
 
 (define compiler:escape-on-error (make-parameter #f))
 
@@ -188,154 +188,150 @@
 			(fprintf port "{~a had ~a for location info}" ast start))
 		  (bad))))
 	  (bad)))))
-)
 
-#|
+(define zodiac->sexp/annotate
+  (lambda (ast)
+    (let ([v (mrspidey:SDL-type ast)])
+      (if v
+	  `(: ,(zodiac->sexp ast) ,v)
+	  (zodiac->sexp ast)))))
 
-;;----------------------------------------------------------------------------
-;; SOME RANDOM DEBUGGING STUFF USED IN THE PAST
-;;
-;;
-(define zodiac->sexp:annotate #f)
 (define zodiac->sexp
   (lambda (ast)
     (cond 
-
-      ; literal values
-      [(zodiac:quote-form? ast) 
-       (list 'quote
-	     (let xlate ([ast (zodiac:quote-form-expr ast)])
-	       (cond
-		 [(zodiac:scalar? ast) (zodiac:read-object ast)]
-		 [(zodiac:list? ast) (map xlate (zodiac:read-object ast))]
-		 [(zodiac:improper-list? ast)
-		  (improper-map xlate (zodiac:read-object ast))]
-		 [(zodiac:vector? ast)
-		  (list->vector (map xlate (zodiac:read-object ast)))]
-		 [else 
-		  (error 'quote-form "~a not list,vector,or scalar" ast)])))]
-    
-     ; variable references
-     [(zodiac:top-level-varref? ast)
-      (if zodiac->sexp:annotate
-	  (list '%global (zodiac:id-var ast))
-	  (zodiac:id-var ast))]
-     
-     [(compiler:env-varref? ast)
-      (if zodiac->sexp:annotate
-	  (list '%env (zodiac:id-var ast))
-	  (zodiac:id-var ast))]
-     
-     [(zodiac:lexical-varref? ast)
-      (if zodiac->sexp:annotate
-	  (list '%lexical (zodiac:id-var ast) )
-	  (zodiac:id-var ast))]
-     
-     [(compiler:static-varref? ast)
-      (list '%static (zodiac:id-var ast))]
-
-     [(compiler:bound? ast)
-      (if zodiac->sexp:annotate
-	  (let ([binding (compiler:bound-binding ast)])
-	    `( %compiler-bound
-	       ,(zodiac:bound-var ast)
-	       (rec? ,(binding-rec? binding))
-	       (mutable? ,(binding-mutable? binding))
-	       ,@(if (binding-known? binding) '(known) '())
-	       ;,@(if (binding-known? binding)
-	       ;	     (list '= (zodiac->sexp (binding-val binding)))
-	       ;	     '(%unknown))
-	       (rep ,(binding-rep binding))))
-	  (zodiac:bound-var ast))]
-	         
-     [(zodiac:bound? ast)
-      (list '%bound
-	    (zodiac:bound-var ast))]
+     [(or (zodiac:quote-form? ast) 
+	  (zodiac:binding? ast)
+	  (zodiac:varref? ast))
+      (zodiac:parsed->raw ast)]
 
      ; compound sexps
-     [(zodiac:define-form? ast)
-      `(define ,(zodiac->sexp (zodiac:define-form-var ast))
-	       ,(zodiac->sexp (zodiac:define-form-val ast)))]
-     
-     [(compiler:app? ast)
-      (if zodiac->sexp:annotate
-	  `(,(if (app-tail? (compiler:app-app ast)) '%tail-apply '%apply)
-	    ,(zodiac->sexp (zodiac:app-fun ast))
-	    ,@(map zodiac->sexp (zodiac:app-args ast)))
-	  `(,(zodiac->sexp (zodiac:app-fun ast))
-	    ,@(map zodiac->sexp (zodiac:app-args ast))))]
-     
+     [(zodiac:define-values-form? ast)
+      `(define-values ,(map zodiac->sexp (zodiac:define-values-form-vars ast))
+	 ,(zodiac->sexp/annotate (zodiac:define-values-form-val ast)))]
+
      [(zodiac:app? ast)
-      `(,(zodiac->sexp (zodiac:app-fun ast))
-	,@(map zodiac->sexp (zodiac:app-args ast)))]
+      `(,(zodiac->sexp/annotate (zodiac:app-fun ast))
+	,@(map zodiac->sexp/annotate (zodiac:app-args ast)))]
      
      [(zodiac:set!-form? ast)
       `(set! ,(zodiac->sexp (zodiac:set!-form-var ast))
-	     ,(zodiac->sexp (zodiac:set!-form-val ast)))]
-
-     [(compiler:lambda-form? ast)
-      (if zodiac->sexp:annotate
-	  (let ([code (compiler:lambda-form-code ast)])
-	    `(lambda
-		 (args ,@(improper-map 
-			  zodiac->sexp 
-			  (zodiac:lambda-form-args ast)))
-	       (free-vars ,@(map zodiac->sexp
-				 (set->list (code-free-vars code))))
-	       (local-vars ,@(map zodiac->sexp
-				  (set->list (code-local-vars code))))
-	       (captured-vars ,@(map zodiac->sexp
-				     (set->list (code-captured-vars code))))
-	       ,(zodiac->sexp (zodiac:lambda-form-body ast))))
-	  `(lambda
-	       ,(improper-map zodiac->sexp (zodiac:lambda-form-args ast))
-	     ,(zodiac->sexp (zodiac:lambda-form-body ast))))]
+	     ,(zodiac->sexp/annotate (zodiac:set!-form-val ast)))]
      
-     [(zodiac:lambda-form? ast)
-      `(lambda
-	   ,(improper-map zodiac->sexp (zodiac:lambda-form-args ast))
-	 ,(zodiac->sexp (zodiac:lambda-form-body ast)))]
+     [(zodiac:case-lambda-form? ast)
+      `(case-lambda
+	,@(map
+	   (lambda (args body)
+	     `(,(let ([vars (zodiac:arglist-vars args)])
+		  (cond
+		   [(zodiac:sym-arglist? args) (zodiac->sexp (car vars))]
+		   [(zodiac:list-arglist? args) (map zodiac->sexp vars)]
+		   [(zodiac:ilist-arglist? args) (let loop ([args vars])
+						   (if (null? (cdr args))
+						       (zodiac->sexp (car args))
+						       (cons (zodiac->sexp (car args))
+							     (loop (cdr args)))))]))
+	       ,(zodiac->sexp/annotate body)))
+	   (zodiac:case-lambda-form-args ast)
+	   (zodiac:case-lambda-form-bodies ast)))]
 
-     [(compiler:make-closure? ast)
-      (if zodiac->sexp:annotate
-	  `(make-closure ,(zodiac->sexp (compiler:make-closure-lambda ast)))
-	  (zodiac->sexp (compiler:make-closure-lambda ast)))]
-     
      [(zodiac:begin-form? ast)
-      `(begin ,(zodiac->sexp (zodiac:begin-form-first ast))
-	      ,(zodiac->sexp (zodiac:begin-form-rest ast)))]
+      `(begin ,@(map zodiac->sexp/annotate (zodiac:begin-form-bodies ast)))]
 
-     [(zodiac:let-form? ast)
-      `(let 
+     [(zodiac:let-values-form? ast)
+      `(let-values
 	 ,(map list
-		  (map zodiac->sexp (zodiac:let-form-vars ast))
-		  (map zodiac->sexp (zodiac:let-form-vals ast)))
-	 ,(zodiac->sexp (zodiac:let-form-body ast)))]
+	       (map (lambda (l) (map zodiac->sexp l)) (zodiac:let-values-form-vars ast))
+	       (map zodiac->sexp/annotate (zodiac:let-values-form-vals ast)))
+	 ,(zodiac->sexp/annotate (zodiac:let-values-form-body ast)))]
      
-     [(zodiac:letrec-form? ast)
-      `(letrec ,(map list
-		  (map zodiac->sexp (zodiac:letrec-form-vars ast))
-		  (map zodiac->sexp (zodiac:letrec-form-vals ast)))
-	 ,(zodiac->sexp (zodiac:letrec-form-body ast)))]
+     [(zodiac:letrec*-values-form? ast)
+      `(letrec*-values
+	 ,(map list
+	       (map (lambda (l) (map zodiac->sexp l)) (zodiac:letrec*-values-form-vars ast))
+	       (map zodiac->sexp/annotate (zodiac:letrec*-values-form-vals ast)))
+	 ,(zodiac->sexp/annotate (zodiac:letrec*-values-form-body ast)))]
 
      [(zodiac:if-form? ast)
-      `(if ,(zodiac->sexp (zodiac:if-form-test ast))
-	   ,(zodiac->sexp (zodiac:if-form-then ast))
-	   ,(zodiac->sexp (zodiac:if-form-else ast)))]
+      `(if ,(zodiac->sexp/annotate (zodiac:if-form-test ast))
+	   ,(zodiac->sexp/annotate (zodiac:if-form-then ast))
+	   ,(zodiac->sexp/annotate (zodiac:if-form-else ast)))]
  
-     [(zodiac:delay-form? ast)
-      `(delay ,(zodiac->sexp (zodiac:delay-form-expr ast)))]
+     [(zodiac:struct-form? ast)
+      (let ([type (zodiac:struct-form-type ast)]
+	    [super (zodiac:struct-form-super ast)]
+	    [fields (zodiac:struct-form-fields ast)])
+	(if super
+	    `(struct (,type ,(zodiac->sexp/annotate super)) ,fields)
+	    (zodiac:parsed->raw ast)))]
 
-     [(zodiac:define-struct-form? ast)
-      (let ([type (zodiac:define-struct-form-type ast)]
-	    [super (zodiac:define-struct-form-super ast)]
-	    [fields (zodiac:define-struct-form-fields ast)])
-      `(define-struct ,(if super
-			   (list (zodiac:read-object type) (zodiac->sexp super))
-			   (map zodiac:read-object type))
-	 ,(map zodiac:read-object fields)))]
+     [(zodiac:unit-form? ast)
+      `(unit (import ,@(map zodiac->sexp (zodiac:unit-form-imports ast)))
+	     (export ,@(map zodiac->sexp (zodiac:unit-form-exports ast)))
+	 ,@(map zodiac->sexp/annotate (zodiac:unit-form-clauses ast)))]
+
+     [(zodiac:invoke-unit-form? ast)
+      `(invoke-unit ,(zodiac->sexp/annotate (zodiac:invoke-unit-form-unit ast))
+		    ,@(map zodiac->sexp (zodiac:invoke-unit-form-variables ast)))]
+
+     [(zodiac:class*/names-form? ast)
+      `(class*/names
+	(,(zodiac->sexp (zodiac:class*/names-form-this ast))
+	 ,(zodiac->sexp (zodiac:class*/names-form-super-init ast)))
+	,(zodiac->sexp/annotate (zodiac:class*/names-form-super-expr ast))
+	,(map zodiac->sexp/annotate (zodiac:class*/names-form-interfaces ast))
+	,(let* ([args (zodiac:class*/names-form-init-vars ast)]
+		[vars (zodiac:paroptarglist-vars args)]
+		[zodiac->sexp (lambda (var)
+				(if (pair? var)
+				    `(,(zodiac->sexp (car var)) (zodiac->sexp/annotate (cdr var)))
+				    (zodiac->sexp var)))])
+	   (cond
+	    [(zodiac:sym-paroptarglist? args) (zodiac->sexp (car vars))]
+	    [(zodiac:list-paroptarglist? args) (map zodiac->sexp (car vars))]
+	    [(zodiac:ilist-paroptarglist? args) (let loop ([args vars])
+						  (if (null? (cdr args))
+						      (zodiac->sexp (car args))
+						      (cons (zodiac->sexp (car args))
+							    (loop (cdr args)))))]))
+	,@(map (lambda (clause)
+		 (cond
+		  ((zodiac:public-clause? clause)
+		   `(public
+		      ,@(map (lambda (internal export expr)
+			       `((,(zodiac->sexp internal) ,(zodiac->sexp export))
+				 ,(zodiac->sexp/annotate expr)))
+			     (zodiac:public-clause-internals clause)
+			     (zodiac:public-clause-exports clause)
+			     (zodiac:public-clause-exprs clause))))
+		  ((zodiac:private-clause? clause)
+		   `(private
+		      ,@(map (lambda (internal expr)
+			       `(,(zodiac->sexp internal) ,(zodiac->sexp/annotate expr)))
+			     (zodiac:private-clause-internals clause)
+			     (zodiac:private-clause-exprs clause))))
+		  ((zodiac:inherit-clause? clause)
+		   `(inherit
+		     ,@(map (lambda (internal inherited)
+			      `(,(zodiac->sexp internal) ,(zodiac->sexp inherited)))
+			    (zodiac:inherit-clause-internals clause)
+			    (zodiac:inherit-clause-imports clause))))
+		  ((zodiac:rename-clause? clause)
+		   `(rename
+		     ,@(map (lambda (internal inherited)
+			      `(,(zodiac->sexp internal) ,(zodiac->sexp inherited)))
+			    (zodiac:rename-clause-internals clause)
+			    (zodiac:rename-clause-imports clause))))
+		  ((zodiac:sequence-clause? clause)
+		   `(sequence
+		      ,@(map zodiac->sexp/annotate (zodiac:sequence-clause-exprs clause))))))
+	       (zodiac:class*/names-form-inst-clauses ast)))]
+
+     [(zodiac::-form? ast)
+      (zodiac->sexp (zodiac::-form-exp ast))]
      
      [else
-      (error 'zodiac->sexp "unsupported ~s" ast)])))
-|#
+      (error 'zodiac->sexp/annotate "unsupported ~s" ast)])))
+
+)
+
 

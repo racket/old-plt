@@ -21,7 +21,8 @@
 			      ZODIAC
 			      CSTRUCTS
 			      DRIVER
-			      FUNCTION)]
+			      FUNCTION
+			      SPIDEY)]
   [LIBRARY : compiler:library^ ((require-relative-library-unit/sig "library.ss")
 				ZODIAC
 				FUNCTION)]
@@ -36,7 +37,8 @@
 				  CSTRUCTS
 				  ZODIAC
 				  ZLAYER
-				  DRIVER)]
+				  DRIVER
+				  SPIDEY)]
   [ANORM : compiler:anorm^ ((require-relative-library-unit/sig "anorm.ss")
 			    OPTIONS
 			    LIBRARY
@@ -44,7 +46,8 @@
 			    ZODIAC
 			    ZLAYER
 			    DRIVER
-			    FUNCTION)]
+			    FUNCTION
+			    SPIDEY)]
   [CONST : compiler:const^ ((require-relative-library-unit/sig "const.ss")
 			    OPTIONS
 			    LIBRARY

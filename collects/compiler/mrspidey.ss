@@ -4,6 +4,16 @@
 
 (unit/sig compiler:mrspidey^
   (import (mrspidey : mrspidey:sba^))
+  
+  (define copy-annotations!
+    (lambda (new old)
+      (mrspidey:set-parsed-ftype! new (mrspidey:parsed-ftype old))
+      (mrspidey:set-parsed-check! new (mrspidey:parsed-check old))
+      (mrspidey:set-parsed-atprim! new (mrspidey:parsed-atprim old))
+      (mrspidey:set-app-tvar-args! new (mrspidey:app-tvar-args old))
+      (mrspidey:set-binding-refs! new (mrspidey:binding-refs old))
+      (mrspidey:set-binding-mutated! new (mrspidey:binding-mutated old))
+      new))
 
   (define binding-mutated mrspidey:binding-mutated)
 

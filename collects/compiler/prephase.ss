@@ -8,7 +8,8 @@
 	 compiler:cstructs^
 	 (zodiac : zodiac:system^)
 	 compiler:zlayer^
-	 compiler:driver^)
+	 compiler:driver^
+	 (mrspidey : compiler:mrspidey^))
 
 ;; notes mutability of lexical variables
 ;; flags forms that are not supported by the compiler
@@ -78,14 +79,16 @@
     (cond
       [(null? vars)
        ; zero value set!  -- weirdos
-       (zodiac:make-let-values-form
-	(zodiac:zodiac-origin ast)
-	(zodiac:zodiac-start ast)
-	(zodiac:zodiac-finish ast)
-	(make-empty-box)
-	(list null)
-	(list val)
-	(zodiac:make-special-constant 'void))]
+       (mrspidey:copy-annotations!
+	(zodiac:make-let-values-form
+	 (zodiac:zodiac-origin ast)
+	 (zodiac:zodiac-start ast)
+	 (zodiac:zodiac-finish ast)
+	 (make-empty-box)
+	 (list null)
+	 (list val)
+	 (zodiac:make-special-constant 'void))
+	ast)]
       
       [(null? (cdr vars))
        ; single value set! anyway -- common case, make it simple
@@ -110,94 +113,33 @@
 				 (prephase:init-binding-properties! b #f #f #f)
 				 b))
 			     names)])
-	 (zodiac:make-let-values-form
-	  (zodiac:zodiac-origin ast)
-	  (zodiac:zodiac-start ast)
-	  (zodiac:zodiac-finish ast)
-	  (make-empty-box)
-	  (list bindings)
-	  (list val)
-	  (let loop ([bindings bindings] [vars vars])
-	    (if (null? bindings)
-		(zodiac:make-special-constant 'void)
-		(zodiac:make-begin-form
-		 (zodiac:zodiac-origin ast)
-		 (zodiac:zodiac-start ast)
-		 (zodiac:zodiac-finish ast)
-		 (zodiac:parsed-back ast)
-		 (list
-		  (make-set!
-		   (zodiac:zodiac-origin ast)
-		   (zodiac:zodiac-start ast)
-		   (zodiac:zodiac-finish ast)
-		   (make-empty-box)
-		   (if list? (list (car vars)) (car vars))
-		   (zodiac:binding->lexical-varref
-		    (car bindings)))
-		  (loop (cdr bindings) (cdr vars))))))))])))
-
-#| No longer used
-(define (prephase:convert-begin0 ast)
-  (let* ([make-top 
-	  (lambda (name)
-	    (let ([var
-		   (zodiac:make-top-level-varref/bind 
+	 (mrspidey:copy-annotations!
+	  (zodiac:make-let-values-form
+	   (zodiac:zodiac-origin ast)
+	   (zodiac:zodiac-start ast)
+	   (zodiac:zodiac-finish ast)
+	   (make-empty-box)
+	   (list bindings)
+	   (list val)
+	   (let loop ([bindings bindings] [vars vars])
+	     (if (null? bindings)
+		 (zodiac:make-special-constant 'void)
+		 (zodiac:make-begin-form
+		  (zodiac:zodiac-origin ast)
+		  (zodiac:zodiac-start ast)
+		  (zodiac:zodiac-finish ast)
+		  (zodiac:parsed-back ast)
+		  (list
+		   (make-set!
 		    (zodiac:zodiac-origin ast)
 		    (zodiac:zodiac-start ast)
 		    (zodiac:zodiac-finish ast)
-		    (make-empty-box) 
-		    name
-		    (box '()))])
-	      (set-annotation! var (varref:empty-attributes))
-	      (varref:add-attribute! var varref:primitive)
-	      var))]
-	 [first (car (zodiac:begin0-form-bodies ast))]
-	 [rest (cdr (zodiac:begin0-form-bodies ast))]
-	 [tname 'args]
-	 [tbound (zodiac:make-lexical-binding
-		  (zodiac:zodiac-origin first)
-		  (zodiac:zodiac-start first)
-		  (zodiac:zodiac-finish first)
-		  (make-empty-box)
-		  tname
-		  tname)]
-	 [_ (prephase:set-mutable! tbound #f)])
-    (zodiac:make-app
-     (zodiac:zodiac-origin ast)
-     (zodiac:zodiac-start ast)
-     (zodiac:zodiac-finish ast)
-     (make-empty-box)
-     (make-top '#%call-with-values)
-     (list (zodiac:make-case-lambda-form (zodiac:zodiac-origin first)
-					 (zodiac:zodiac-start first)
-					 (zodiac:zodiac-finish first)
-					 (make-empty-box)
-					 (list (zodiac:make-list-arglist null))
-					 (list first))
-	   (zodiac:make-case-lambda-form
-	    (zodiac:zodiac-origin first)
-	    (zodiac:zodiac-start first)
-	    (zodiac:zodiac-finish first)
-	    (make-empty-box)
-	    (list (zodiac:make-sym-arglist (list tbound)))
-	    (list
-	     (zodiac:make-begin-form
-	      (zodiac:zodiac-origin ast)
-	      (zodiac:zodiac-start ast)
-	      (zodiac:zodiac-finish ast)
-	      (make-empty-box)
-	      (append
-	       rest
-	       (list (zodiac:make-app
-		      (zodiac:zodiac-origin first)
-		      (zodiac:zodiac-start first)
-		      (zodiac:zodiac-finish first)
-		      (make-empty-box)
-		      (make-top '#%apply)
-		      (list
-		       (make-top '#%values)
-		       (zodiac:binding->lexical-varref tbound))))))))))))
-|#
+		    (make-empty-box)
+		    (if list? (list (car vars)) (car vars))
+		    (zodiac:binding->lexical-varref
+		     (car bindings)))
+		   (loop (cdr bindings) (cdr vars)))))))
+	  ast))])))
 
 (define (new-binding gensym set-box!)
   (lambda (tlv)
@@ -209,15 +151,18 @@
 		 (gensym (zodiac:varref-var tlv))
 		 (zodiac:varref-var tlv))])
       (set-box! (zodiac:top-level-varref/bind-slot tlv) bind)
+      (mrspidey:copy-annotations! bind tlv)
       bind)))
 
 (define (new-varref binding)
-  (zodiac:make-lexical-varref
-   (zodiac:zodiac-origin binding)
-   (zodiac:zodiac-start binding)
-   (zodiac:zodiac-finish binding)
-   (make-empty-box)
-   (zodiac:binding-var binding)
+  (mrspidey:copy-annotations!
+   (zodiac:make-lexical-varref
+    (zodiac:zodiac-origin binding)
+    (zodiac:zodiac-start binding)
+    (zodiac:zodiac-finish binding)
+    (make-empty-box)
+    (zodiac:binding-var binding)
+    binding)
    binding))
 
 (define (make-unitdef-set!-form . args)
@@ -1001,6 +946,14 @@
 			 (zodiac:interface-form-super-exprs ast)))
 
 		   ast]
+
+		  ;;-----------------------------------------------------------
+		  ;; MrSpidey forms
+		  ;;  MrSpidye is done, so we can just get rid of them
+		  [(zodiac::-form? ast)
+		   (zodiac::-form-expr ast)]
+		  [(zodiac:poly-form? ast)
+		   (zodiac:poly-form-expr ast)]
 
 		  ;;-----------------------------------------------------------
 		  ;; Unsupported forms

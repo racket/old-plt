@@ -14,7 +14,8 @@
 	 (zodiac : zodiac:system^)
 	 compiler:zlayer^
 	 compiler:driver^
-	 mzlib:function^)
+	 mzlib:function^
+	 (mrspidey : compiler:mrspidey^))
 
 ;; a-normalize is a pure function from a zodiac AST to another
 ;; zodiac AST.  It can be applied at any stage in a program transformation.
@@ -61,16 +62,22 @@
 				       (zodiac:zodiac-finish exp)
 				       (make-empty-box)
 				       tname
-				       tname)])
+				       tname)]
+			      [varref (zodiac:binding->lexical-varref tbound)])
+			 (mrspidey:copy-annotations! tbound exp)
+			 (mrspidey:copy-annotations! varref exp)
 			 (set-annotation! tbound #f) ; not mutable
-			 (zodiac:make-let-values-form
-			  (zodiac:zodiac-origin exp)
-			  (zodiac:zodiac-start exp)
-			  (zodiac:zodiac-finish exp)
-			  (make-empty-box)
-			  (list (list tbound))
-			  (list exp)
-			  (k (zodiac:binding->lexical-varref tbound))))))))]	     
+			 (let ([body (k varref)])
+			   (mrspidey:copy-annotations!
+			    (zodiac:make-let-values-form
+			     (zodiac:zodiac-origin exp)
+			     (zodiac:zodiac-start exp)
+			     (zodiac:zodiac-finish exp)
+			     (make-empty-box)
+			     (list (list tbound))
+			     (list exp)
+			     body)
+			    body)))))))]
 	     ; This names a list of expressions (eg argument list)
 	     [normalize-name*
 	      (lambda (ast* k)

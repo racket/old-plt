@@ -4,6 +4,8 @@
 (unit/sig compiler:mrspidey^
   (import)
 
+  (define (copy-annotations! new old) new)
+
   (define (binding-mutated ast) #f)
 
   (define (SDL-type ast) #f)

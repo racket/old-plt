@@ -455,21 +455,9 @@
   ;;
   ;; the argument to the result function is the value to test.
   ;; (the result function is the projection)
-
-  (define-values (struct:contract make-contract contract?)
-    (let-values ([(struct:contract make-contract contract? contract-ref contract-set!)
-                  (make-struct-type 'contract 
-                                    #f   ;; super
-                                    1    ;; init-field-k
-                                    0    ;; auto-field-k
-                                    #f   ;; auto-v
-                                    null ;; prop-value-list
-                                    #f   ;; inspector
-                                    0)]) ;; proc-spec
-      (values struct:contract
-              make-contract
-              contract?)))
-   
+  
+  (define-struct contract (proc))
+  
   ;; flat-contract = (make-flat-contract contract (any -> boolean))
   ;; this holds flat contracts that have names for error reporting
   (define-values (struct:flat-contract
@@ -603,7 +591,9 @@
                         pos-blame
                         a-contract-raw
                         name))
-               ((a-contract pos-blame neg-blame src-info) name))))])))
+               ;((a-contract pos-blame neg-blame src-info) name)
+               (((contract-proc a-contract) pos-blame neg-blame src-info) name)
+               )))])))
   
   ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
   ;; doesn't return
@@ -1147,8 +1137,10 @@
                       (lambda (body)
                         (with-syntax ([body body])
                           (syntax/loc stx
-                            (let ([dom-x (coerce-contract -> dom)] ...
-                                  [rng-x (coerce-contract -> rng)] ...)
+                            (let ([dom-x dom] ...
+                                  [rng-x rng] ...)
+                              (coerce/select-contract -> dom) ... ;; just get error checking right
+                              (coerce/select-contract -> rng) ... ;; don't use the results at all
                               body))))]
                      [->body (if ignore-range-checking?
                                  (syntax (->* (dom-x ...) any))
@@ -1183,8 +1175,8 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->* dom)] ...
-                       [rng-x (coerce-contract ->* rng)] ...)
+                 (let ([dom-x (coerce/select-contract ->* dom)] ...
+                       [rng-x (coerce/select-contract ->* rng)] ...)
                    body))))
 
             (lambda (outer-args inner-lambda)
@@ -1226,7 +1218,7 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->* dom)] ...)
+                 (let ([dom-x (coerce/select-contract ->* dom)] ...)
                    body))))
             
             (lambda (outer-args inner-lambda)
@@ -1274,9 +1266,9 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->* dom)] ...
-                       [dom-rest-x (coerce-contract ->* rest)]
-                       [rng-x (coerce-contract ->* rng)] ...)
+                 (let ([dom-x (coerce/select-contract ->* dom)] ...
+                       [dom-rest-x (coerce/select-contract ->* rest)]
+                       [rng-x (coerce/select-contract ->* rng)] ...)
                    body))))
             (lambda (outer-args inner-lambda)
               (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
@@ -1323,8 +1315,8 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->* dom)] ...
-                       [dom-rest-x (coerce-contract ->* rest)])
+                 (let ([dom-x (coerce/select-contract ->* dom)] ...
+                       [dom-rest-x (coerce/select-contract ->* rest)])
                    body))))
             (lambda (outer-args inner-lambda)
               (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
@@ -1369,7 +1361,7 @@
               (lambda (body)
                 (with-syntax ([body body])
                   (syntax
-                   (let ([dom-x (coerce-contract ->d dom)] ...
+                   (let ([dom-x (coerce/select-contract ->d dom)] ...
                          [rng-x rng])
                      (unless (and (procedure? rng-x)
                                   (procedure-arity-includes? rng-x arity))
@@ -1400,7 +1392,7 @@
                   (syntax
                    ((arg-x ...)
                     (let ([rng-contract (rng-x arg-x ...)])
-                      (((coerce-contract ->d rng-contract)
+                      (((coerce/select-contract ->d rng-contract)
                         pos-blame
                         neg-blame
                         src-info)
@@ -1419,7 +1411,7 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->d* dom)] ...
+                 (let ([dom-x (coerce/select-contract ->d* dom)] ...
                        [rng-mk-x rng-mk])
                    (unless (and (procedure? rng-mk-x)
                                 (procedure-arity-includes? rng-mk-x dom-length))
@@ -1462,7 +1454,7 @@
                         (apply 
                          values
                          (map (lambda (rng-contract result)
-                                (((coerce-contract ->d* rng-contract)
+                                (((coerce/select-contract ->d* rng-contract)
                                   pos-blame
                                   neg-blame
                                   src-info)
@@ -1480,8 +1472,8 @@
             (lambda (body)
               (with-syntax ([body body])
                 (syntax
-                 (let ([dom-x (coerce-contract ->d* dom)] ...
-                       [dom-rest-x (coerce-contract ->d* rest)]
+                 (let ([dom-x (coerce/select-contract ->d* dom)] ...
+                       [dom-rest-x (coerce/select-contract ->d* rest)]
                        [rng-mk-x rng-mk])
                    (unless (procedure? rng-mk-x)
                      (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
@@ -1528,7 +1520,7 @@
                         (apply 
                          values
                          (map (lambda (rng-contract result)
-                                (((coerce-contract ->d* rng-contract)
+                                (((coerce/select-contract ->d* rng-contract)
                                   pos-blame
                                   neg-blame
                                   src-info)
@@ -1578,16 +1570,20 @@
                   [else (cons (- n i)
                               (loop (- i 1)))]))))))
 
-  (define-syntax (coerce-contract stx)
+  ;; coerce/select-contract : (union contract? procedure-arity-1) -> contract-proc
+  ;; contract-proc = sym sym stx -> alpha -> alpha
+  ;; returns the procedure for the contract after extracting it from the
+  ;; struct. Coerces the argument to a flat contract if it is procedure, but first.
+  (define-syntax (coerce/select-contract stx)
     (syntax-case stx ()
       [(_ name val)
        (syntax
         (let ([x val])
           (cond
             [(contract? x)
-             x]
+             (contract-proc x)]
             [(and (procedure? x) (procedure-arity-includes? x 1))
-             (flat-contract x)]
+             (contract-proc (flat-contract x))]
             [else
              (error 'name 
                     "expected contract or procedure of arity 1, got ~e"
@@ -1690,15 +1686,16 @@
                              fc/predicates)])
         (cond
           [contract
-           (make-contract
-            (lambda (pos neg src-info)
-              (let ([partial-contract (contract pos neg src-info)])
-                (lambda (val)
-                  (cond
-                    [(ormap (lambda (pred) (pred val)) predicates)
-                     val]
-                    [else
-                     (partial-contract val)])))))]
+           (let ([c-proc (contract-proc contract)])
+             (make-contract
+              (lambda (pos neg src-info)
+                (let ([partial-contract (c-proc pos neg src-info)])
+                  (lambda (val)
+                    (cond
+                      [(ormap (lambda (pred) (pred val)) predicates)
+                       val]
+                      [else
+                       (partial-contract val)]))))))]
           [else
            (flat-named-contract
             (apply build-compound-type-name "union" fc/predicates)
@@ -1833,10 +1830,14 @@
 			    (cdr preds)))]))])
 	 (flat-contract pred))]
       [else
-       (let ([contracts (map (lambda (x) (if (contract? x) x (flat-contract x))) fs)])
+       (let ([contract/procs 
+              (map (lambda (x) (if (contract? x) 
+                                   (contract-proc x)
+                                   (contract-proc (flat-contract x)))) 
+                   fs)])
 	 (make-contract
            (lambda (pos neg src-info)
-             (let ([partial-contracts (map (lambda (contract) (contract pos neg src-info)) contracts)])
+             (let ([partial-contracts (map (lambda (contract/proc) (contract/proc pos neg src-info)) contract/procs)])
                (let loop ([ctct (car partial-contracts)]
                           [rest (cdr partial-contracts)])
                  (cond

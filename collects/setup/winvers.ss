@@ -26,7 +26,7 @@
     (cond
       [(equal? argv #())
        (let ([exe (make-copy)])
-         (putenv "PLTHOME" plthome)
+         (putenv "PLTHOME" (path->string plthome))
          (printf "re-launching first time...~n")
          (subprocess
           (current-output-port) (current-input-port) (current-error-port)

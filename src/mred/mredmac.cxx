@@ -739,6 +739,38 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
 extern void wxCheckFinishedSounds(void);
 
+void ShowNonEmptyRegionInNewWindow(RgnHandle rgn)
+{
+	Rect theBoundsRect;
+	CWindowPtr newWindow;
+	Str255 windowTitle = "\pDebugging Window";
+	CGrafPtr oldPort;
+	GDHandle oldDevice;
+	
+	fprintf(stderr,"displaying region in new window.\n");
+
+	GetRegionBounds(rgn,&theBoundsRect);
+	theBoundsRect.top = theBoundsRect.left = 0;
+	theBoundsRect.right += 15;
+	theBoundsRect.bottom += 15; // room for grow box.
+	OffsetRect(&theBoundsRect,300,300);
+	
+	CreateNewWindow(kDocumentWindowClass,kWindowStandardDocumentAttributes,&theBoundsRect, &newWindow);
+
+	ShowWindow(newWindow);
+	
+	GetGWorld(&oldPort,&oldDevice);
+	
+	SetGWorld(GetWindowPort(newWindow),oldDevice);
+	
+	InvertRgn(rgn);
+	
+	SetGWorld(oldPort,oldDevice);
+	
+	
+}
+	
+	
 void MrEdDispatchEvent(EventRecord *e)
 {
   dispatched = 1;
@@ -790,6 +822,7 @@ void MrEdDispatchEvent(EventRecord *e)
     	} else {
     		fprintf(stderr,"(10,50) is not in the region.\n");
     	}
+    	ShowNonEmptyRegionInNewWindow(temp);
     }
     
 

@@ -14,6 +14,7 @@
     (define show-sharing (make-parameter #t))
     (define constructor-style-printing (make-parameter #f))
     (define quasi-read-style-printing (make-parameter #t))
+    (define abbreviate-cons-as-list (make-parameter #t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; share-hash is the hash-table containing info on what cons cells
@@ -197,6 +198,7 @@
 			      [(hooks@:before-test? expr) (hooks@:before-convert expr recur)]
 			      [(null? expr) (guard (lambda () 'null))]
 			      [(and (list? expr)
+				    (abbreviate-cons-as-list)
 				    (or (and first-time
 					     (doesnt-contain-shared-conses (cdr expr)))
 					(doesnt-contain-shared-conses expr)))

@@ -3,6 +3,7 @@
   (show-sharing
    constructor-style-printing
    quasi-read-style-printing
+   abbreviate-cons-as-list
 
    print-convert
    print-convert-expr

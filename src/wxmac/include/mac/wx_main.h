@@ -56,6 +56,8 @@ public:
 	void doMacPreEvent();
 	void doMacDispatch(EventRecord*);
 	void doMacPostEvent();
+	
+	Bool MacOS85WindowManagerPresent;
 
  protected:
   	virtual void DoIdle(void);
@@ -84,7 +86,7 @@ public:
 	void doMacInGrow(WindowPtr window);
 	void doMacInGoAway(WindowPtr window);
 	void doMacInZoom(WindowPtr window, short windowPart);
-
+	
 	wxFrame* findMacWxFrame(WindowPtr theMacWindow);
 };
 

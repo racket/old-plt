@@ -37,6 +37,7 @@ protected:
   	wxArea* 	cContentArea; // mac platform only
   	wxArea* 	cControlArea; // mac platform only
 	wxWindow*	cFocusWindow; // mac platform only
+	Bool		cIsResizableDialog; // mac platform only
 	MenuHandle	cAppleMenuHandle;
 	Bool		cIsModal;
 

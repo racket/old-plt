@@ -293,8 +293,8 @@ class wxPenList: public wxObject
   wxPenList(void);
   ~wxPenList(void);
   void AddPen(wxPen *pen);
-  wxPen *FindOrCreatePen(wxColour *colour, int width, int style);
-  wxPen *FindOrCreatePen(char *colour, int width, int style);
+  wxPen *FindOrCreatePen(wxColour *colour, float width, int style);
+  wxPen *FindOrCreatePen(char *colour, float width, int style);
 };
 
 class wxBrushList: public wxObject

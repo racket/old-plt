@@ -96,7 +96,7 @@
 				    (begin0 (car from-snip)
 					    (set! from-snip (cdr from-snip)))))))]
 	   [port (make-input-port port-thunk (lambda () #t) void)])
-      (basis:process/no-zodiac (lambda () (read port)) f)))
+      (basis:process/no-zodiac setting (lambda () (read port)) f)))
 
   (mred:set-preference-default 'drscheme:repl-always-active #f boolean?)
 

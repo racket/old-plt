@@ -1,5 +1,5 @@
 ;; uncomment for more soure location feedback
-(current-load
+'(current-load
  (let ([ol (current-load)]
        [depth 0])
    (lambda (fn)

@@ -65,8 +65,13 @@
 			    (zodiac:location-column loc)))]
 		 [build
 		  (lambda (left right)
-		    (format "~a:~a-~a ~a" (zodiac:location-file left)
-			    (trans-loc left) (trans-loc right) msg))]
+		    (format "~a[~a-~a]:~a-~a ~a"
+			    (zodiac:location-file left)
+			    (zodiac:location-offset left)
+			    (zodiac:location-offset right)
+			    (trans-loc left)
+			    (trans-loc right)
+			    msg))]
 		 [escape (error-escape-handler)]
 		 [pos-msg
 		  (cond
@@ -107,9 +112,11 @@
     (lambda ()
       (display prompt)
       (flush-output)
-      (let ([v ((zodiac:read
-		 (current-input-port)
-		 (zodiac:make-location 1 1 0 "stdin")))])
+      (let* ([ip (current-input-port)]
+	     [pos (file-position (current-output-port))]
+	     [v ((zodiac:read
+		  ip
+		  (zodiac:make-location 1 1 pos "stdin")))])
 	'(printf "read: ~a~n" v)
 	(if (zodiac:eof? v)
 	    eof

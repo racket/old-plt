@@ -953,6 +953,41 @@
 (test (string #\- #\nul #\+ #\- #\nul #\+ #\- #\nul #\+)
       regexp-replace* "a" "aaa" (string #\- #\nul #\+))
 
+;; Check extremely many subexpressions:
+(for-each
+ (lambda (mx)
+   (let* ([v (make-vector mx null)]
+	  [open (make-vector mx #t)])
+     (let loop ([n 0][m 0][s null])
+       (cond
+	[(and (= n mx) (zero? m))
+	 (let* ([s (list->string (reverse! s))]
+		[plain (regexp-replace* "[()]" s "")])
+	   (test (cons plain (map list->string (map reverse! (vector->list v)))) regexp-match s plain))]
+	[(or (= n mx) (< (random 10) 3))
+	 (if (and (positive? m)
+		  (< (random 10) 7))
+	     (begin
+	       (let loop ([p 0][m (sub1 m)])
+		 (if (vector-ref open p)
+		     (if (zero? m)
+			 (vector-set! open p #f)
+			 (loop (add1 p) (sub1 m)))
+		     (loop (add1 p) m)))
+	       (loop n (sub1 m) (cons #\) s)))
+
+	     (let ([c (integer->char (+ (char->integer #\a) (random 26)))])
+	       (let loop ([p 0])
+		 (unless (= p n)
+		   (when (vector-ref open p)
+		     (vector-set! v p (cons c (vector-ref v p))))
+		   (loop (add1 p))))
+	       (loop n m (cons c s))))]
+	[else
+	 (loop (add1 n) (add1 m) (cons #\( s))]))))
+ '(1 10 100 500))
+
+
 (define (test-bad-re-args who)
   (error-test `(,who 'e "hello"))
   (error-test `(,who "e" 'hello))

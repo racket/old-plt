@@ -136,6 +136,8 @@
 		   [j (interface () x)])
 	       (interface (i j) x))
 	    exn:object?)
+(error-test `(interface ((class->interface (class object% () (public w)))) w)
+	    exn:object?)
 
 (test #t interface? (interface ()))
 (test #t interface? (interface () x))
@@ -331,6 +333,29 @@
 (error-test '(ivar-in-interface? 'a o1))
 (error-test '(ivar-in-interface? 'a c1))
 (error-test '(ivar-in-interface? 'a o1))
+
+(define (test/list l1 l2)
+  (test #t 'ivar-list (and (= (length l1)
+			      (length l2))
+			   (andmap (lambda (i) (member i l2))
+				   l1)
+			   #t)))
+
+(test/list '(hi there)
+	   (interface->ivar-names 
+	    (interface () hi there)))
+(test/list '(hi too mee there)
+	   (interface->ivar-names 
+	    (interface ((interface () hi there)) mee too)))
+(test/list '(hi too mee z y there) 
+	   (interface->ivar-names 
+	    (interface ((interface ((class->interface 
+				     (class object% () 
+				       (public y z)
+				       (private nono)))) 
+			  hi there)) 
+	      mee too)))
+
 
 (test 0 class-initialization-arity object%)
 (test #t arity-at-least? (class-initialization-arity c1))

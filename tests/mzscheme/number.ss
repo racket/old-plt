@@ -905,6 +905,7 @@
 (test 0 arithmetic-shift 1024 -20000000000000000000)
 (test 0 arithmetic-shift 0 100)
 (test 0 arithmetic-shift 0 -100)
+(test 0 arithmetic-shift 17 -32)
 
 (test (expt 2 40) arithmetic-shift (expt 2 40) 0)
 (test (expt 2 50) arithmetic-shift (expt 2 40) 10)
@@ -931,6 +932,11 @@
 (test -1 arithmetic-shift (- (expt 2 40)) -40)
 (test -1 arithmetic-shift (- (expt 2 40)) -41)
 (test -1 arithmetic-shift (- (expt 2 40)) -100)
+
+(test 0 arithmetic-shift (sub1 (expt 2 30)) -32)
+(test 0 arithmetic-shift (sub1 (expt 2 31)) -32)
+(test 0 arithmetic-shift (sub1 (expt 2 32)) -32)
+(test 1 arithmetic-shift (expt 2 32) -32)
 
 (arity-test arithmetic-shift 2 2)
 (error-test '(arithmetic-shift "a" 1))

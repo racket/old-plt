@@ -961,7 +961,16 @@
 				  (lambda (n)
 				    (unless (memq n names)
 				      (printf "Undocumented method: ~a in ~a~n" n key)))
-				  ((if (interface? key) interface->names class->names) key))))))))
+				  (let ([l ((if (interface? key) interface->names class->names) key)]
+					[l2 (interface->ivar-names (if (interface? key) 
+								       key
+								       (class->interface key)))])
+				    (unless (and (= (length l)
+						    (length l2))
+						 (andmap (lambda (i) (member i l2))
+							 l))
+				      (printf "Ivar list doesn't match expected for ~a~n" key))
+				    l))))))))
 (printf " Method-checking done~n")
 
 (let* ([get-all (lambda (n)

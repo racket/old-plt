@@ -35,12 +35,18 @@
 
 #add_one(2)
 
-class C(A, B):
-    some_static_field = 7
-    another_static_field = 3
+#class C(A, B):
+#    some_static_field = 7
+#    another_static_field = 3
 
-    def m(this, x):
-        return C.some_static_field + x
+#    def m(this, x):
+#        return C.some_static_field + x
+
+def f(x):
+    return x
+
+f.__call__
+
 
 
 #x = 3

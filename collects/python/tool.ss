@@ -1,6 +1,8 @@
 (module tool mzscheme
   (require  (lib "tool.ss" "drscheme")
-          ; (lib "mred.ss" "mred")
+           (lib "mred.ss" "mred")
+           (lib "framework.ss" "framework")
+           (lib "stacktrace.ss" "errortrace")
            (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "embed.ss" "compiler")
@@ -108,7 +110,7 @@
                (error-display-handler 
                 (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                (current-eval 
-                (drscheme:debug:make-debug-eval-handler (current-eval)))
+                (add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
                ;(drscheme:debug:test-coverage-enabled #t)
                (init-python-namespace (current-namespace)))))
 ;            (dynamic-require '(lib "base.ss" "python") #f)
@@ -156,5 +158,136 @@
 						 ,code))
 					     (list "-mvqe" "(require m)"))))))
 	  (define/public (get-one-line-summary) "The Python language (www.python.org)")
+
           
-          (super-instantiate ()))))))
+          
+          
+          (super-instantiate ())))
+
+
+      
+      
+      
+      ;; cm-key : symbol
+      ;; the key used to put information on the continuation
+      (define cm-key (gensym 'teaching-languages-continuation-mark-key))
+      
+      ;; add-error-display : (string (union TST exn) -> void) -> string exn -> void
+      ;; adds in the bug icon, if there are contexts to display
+      (define (teaching-languages-error-display-handler msg exn)
+        (let ([rep (drscheme:rep:current-rep)])
+          (if (exn? exn)
+              (display (exn-message exn) (current-error-port))
+              (fprintf (current-error-port) "uncaught exception: ~e" exn))
+          (fprintf (current-error-port) "\n")
+          (send rep wait-for-io-to-complete/user)
+          (cond
+            [(exn:syntax? exn) 
+             (let ([obj (exn:syntax-expr exn)])
+               (when (syntax? obj)
+                 (let ([src (syntax-source obj)]
+                       [pos (syntax-position obj)]
+                       [span (syntax-span obj)])
+                   (when (and (is-a? src text:basic<%>)
+                              (number? pos)
+                              (number? span))
+                     (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
+            [(exn:read? exn) 
+             (let ([src (exn:read-source exn)]
+                   [pos (exn:read-position exn)]
+                   [span (exn:read-span exn)])
+               (when (and (is-a? src text:basic<%>)
+                          (number? pos)
+                          (number? span))
+                 (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
+            [(drscheme:rep:exn:locs? exn)
+             (let ([locs (drscheme:rep:exn:locs-locs exn)])
+               (send rep highlight-errors locs))]
+            [(exn? exn) 
+             (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
+               (when (and cms (not (null? cms)))
+                 (let* ([first-cms (st-mark-source (car cms))]
+                        [src (car first-cms)]
+                        [start-position (cadr first-cms)]
+                        [end-position (+ start-position (cddr first-cms))])
+                   (send rep highlight-error src start-position end-position))))]
+            [else (void)])))
+      
+      ;; with-mark : syntax (any -> syntax) syntax -> syntax
+      ;; a member of stacktrace-imports^
+      ;; guarantees that the continuation marks associated with cm-key are
+      ;; members of the debug-source type
+      (define (with-mark source-stx make-st-mark expr)
+        (let ([source (syntax-source source-stx)]
+              [start-position (syntax-position source-stx)]
+              [span (syntax-span source-stx)])
+          (if (and (is-a? source text:basic<%>)
+                   (number? start-position)
+                   (number? span))
+              (with-syntax ([expr expr]
+                            [mark (make-st-mark `(,source ,(- start-position 1) . ,span))]
+                            [cm-key cm-key])
+                #`(with-continuation-mark
+                   'cm-key
+                   mark
+                  expr))
+              expr)))
+
+      
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;;  profiling infrastructure. Not used.
+      ;;
+      
+      (define profile-key (gensym))
+      (define (profiling-enabled) #f)
+      (define (initialize-profile-point . x) (void))
+      (define (register-profile-start . x) #f)
+      (define (register-profile-done . x) (void))
+      
+      
+      
+      ;;
+      ;;  test coverage
+      ;;
+      
+      (define test-coverage-enabled (make-parameter #t))
+      (define current-test-coverage-info (make-parameter #f))
+      
+      (define (initialize-test-coverage-point key expr)
+        (unless (current-test-coverage-info)
+	  (let ([ht (make-hash-table)])
+	    (current-test-coverage-info ht)
+	    (send (drscheme:rep:current-rep) set-test-coverage-info
+                  ht
+                  (let ([s (make-object style-delta%)])
+                    (send s set-delta-foreground "black")
+                    s)
+                  (let ([s (make-object style-delta%)])
+                    (send s set-delta-foreground "firebrick")
+                    s)
+                  #f)))
+        (hash-table-put! (current-test-coverage-info) key (list #f expr)))
+      
+      (define (test-covered key)
+        (let ([v (hash-table-get (current-test-coverage-info) key)])
+          (set-car! v #t)))
+      
+      (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
+      
+      ;; add-annotation : (sexp -> value) -> sexp -> value
+      ;; adds debugging and test coverage information to `sexp' and calls `oe'
+      (define (add-annotation oe)
+        (let ([teaching-language-eval-handler
+               (lambda (exp)
+                 (let ([annotated
+                        (if (compiled-expression? 
+                             (if (syntax? exp) (syntax-e exp) exp))
+                            exp
+                            (annotate-top (expand exp) #f))])
+                   (oe annotated)))])
+          teaching-language-eval-handler))
+      
+
+      )))

@@ -504,7 +504,7 @@
                       (py-string%->string (python-get-name x))
                       (if bound?
                           (string-append " of "
-                                         (py-object%->string (python-get-member x 'im_self)))
+                                         (py-object%->string (python-get-member x 'im_self #f)))
                           "")
                       ">"))]
       [(py-is-a? x py-module%) (format "<module '~a' from '~a'>"

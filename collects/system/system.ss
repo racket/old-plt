@@ -320,7 +320,8 @@
 	(let ([orig-escape (error-escape-handler)])
 	  (catch-errors (lambda (s) (wx:message-box s "Error"))
 			(lambda () (orig-escape))
-			(load/cd file)))))))
+			(mred:eval-string 
+			 (string-append "(load/cd \"" file "\")"))))))))
 
 (when (eq? wx:platform 'unix)
   (let* ([default-path "/usr/local/transcript-4.0/lib/"]
@@ -332,7 +333,7 @@
 	 (unbox path-box)
 	 default-path))))
 
-(when (and (eq? wx:platform 'windows))
+'(when (and (eq? wx:platform 'windows))
   (let ([hd (getenv "HOMEDRIVE")]
 	[hp (getenv "HOMEPATH")])
     (when (and hd hp)

@@ -3293,9 +3293,10 @@ typedef struct {
 #endif
   int need_wait;                 /* 1 => use ready_sema */
   OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
-  int trying;          /* indicates that it's already trying to read */
-  int ready;           /* indicates that a character is ready */
-  int err_no;          /* indicates an error */
+  volatile int trying; /* indicates that it's already trying to read */
+  volatile int ready;  /* indicates that a character is ready */
+  volatile int err_no;  /* indicates an error */
+  int marked_tested;   /* did broken_tested_io increment */
   int c[TIF_BUFFER];   /* ready character */
 } Tested_Input_File;
 
@@ -3327,7 +3328,7 @@ static status_t mz_thread_status;
 static sem_id got_started;
 #endif
 
-static int used_tested_io; /* triggers agressive exit strategy */
+static int broken_tested_io; /* triggers agressive exit strategy */
 
 static int tested_file_char_ready(Scheme_Input_Port *p)
 {
@@ -3341,7 +3342,10 @@ static int tested_file_char_ready(Scheme_Input_Port *p)
   if (!tip->trying) {
     tip->trying = TIF_BUFFER;
     RELEASE_SEMAPHORE(tip->try_sema);
-    used_tested_io = 1;
+    if (!tip->marked_tested) {
+      tip->marked_tested = 1;
+      broken_tested_io++;
+    }
   }
 
   return 0;
@@ -3421,6 +3425,7 @@ static void tested_file_close_input(Scheme_Input_Port *p)
        likely to hang. */
     printf("have to kill reader thread\n");
     TerminateThread(tip->th, -1);
+    broken_tested_io++;
   }
   scheme_forget_thread(tip->thread_memory);
   CloseHandle(tip->th);
@@ -3433,6 +3438,9 @@ static void tested_file_close_input(Scheme_Input_Port *p)
   FREE_SEMAPHORE(tip->ready_sema);
   FREE_SEMAPHORE(tip->try_sema);
   FREE_MUTEX(tip->lock_mutex);
+  
+  if (tip->marked_tested)
+    --broken_tested_io;
 }
 
 static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
@@ -3759,6 +3767,7 @@ typedef struct {
   volatile int working;          /* set when flush in progress */
   volatile int ccount;           /* number of bytes to write; 0 means just flush */
   volatile int done;             /* indicates thread should stop */
+  int marked_tested;             /* did broken_tested_io increment */
   int err_no;                    /* indicates an error */
   char c[TIF_BUFFER];            /* ready string */
 #ifdef WIN32_FD_HANDLES
@@ -3823,7 +3832,8 @@ static void tested_file_close_output(Scheme_Output_Port *p)
   top->done = 1;
 
 #ifdef WIN32_FD_HANDLES
-  /*  The other thread may have an operation in progress. */
+  /*  The other thread may have an operation in progress.
+      Try to close below. */
 #else
   fclose(top->fp);
 #endif
@@ -3849,6 +3859,7 @@ static void tested_file_close_output(Scheme_Output_Port *p)
   else {
     top->working = 0;
     /* BUG: fclose() would probably hang. We give up. */
+    broken_tested_io++;
   }
 #else
   WAIT_THREAD(top->th);
@@ -3856,6 +3867,9 @@ static void tested_file_close_output(Scheme_Output_Port *p)
 
   FREE_SEMAPHORE(top->sema);
   FREE_SEMAPHORE(top->done_sema);
+
+  if (top->marked_tested)
+    --broken_tested_io;
 
   top->inuse = 0;
 }
@@ -3904,7 +3918,10 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 
       top->working = 1;
       RELEASE_SEMAPHORE(top->sema);
-      used_tested_io = 1;
+      if (!top->marked_tested) {
+	top->marked_tested = 1;
+	broken_tested_io++;
+      }
     }
 
     /* Need to block; remember that we're holding a lock. */
@@ -4078,7 +4095,7 @@ static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Clie
 
 void force_exit(void)
 {
-  if (used_tested_io)
+  if (broken_tested_io)
     _exit(scheme_exiting_result);
 }
 

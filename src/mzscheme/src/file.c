@@ -3230,6 +3230,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
 #   define DRIVE_BUF_SIZE 1024
     char drives[DRIVE_BUF_SIZE], *s;
     long len, ds;
+    UINT oldmode;
 
     len = GetLogicalDriveStrings(DRIVE_BUF_SIZE, drives);
     if (len <= DRIVE_BUF_SIZE)
@@ -3240,6 +3241,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
     }
 
     ds = 0;
+    oldmode = SetErrorMode(SEM_FAILCRITICALERRORS);      
     while (s[ds]) {
       DWORD a, b, c, d;
       /* GetDiskFreeSpace effectively checks whether we can read the disk: */
@@ -3253,6 +3255,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
       }
       ds += strlen(s + ds) + 1;
     }
+    SetErrorMode(oldmode);
   }
 #endif
 #ifdef USE_MAC_FILE_TOOLBOX

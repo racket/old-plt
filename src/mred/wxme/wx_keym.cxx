@@ -74,6 +74,7 @@ class wxKeycode
 static int doubleClickThreshold = -1;
 
 extern int MrEdGetDoubleTime(void);
+extern int wxGetPreference(const char *, int *);
 
 int wxmeGetDoubleClickThreshold()
 {

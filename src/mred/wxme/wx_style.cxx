@@ -47,6 +47,7 @@ static int defaultSize = 12;
 # define FONT_DIRECTORY wxTheFontNameDirectory
 
 extern void wxmeError(const char *e);
+extern int wxGetPreference(const char *, int *);
 
 wxStyleList *wxTheStyleList;
 

@@ -2284,7 +2284,7 @@
 "(mk-r5rs #t))"
 "(define(mk-r5rs stx-only?)"
 "(let((n(make-namespace 'empty))"
-"(orig(current-namespace)))"
+"(orig(make-namespace)))"
 "(parameterize((current-namespace n))"
 "(namespace-attach-module orig '#%r5rs)"
 "(namespace-require '#%r5rs)"

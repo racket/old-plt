@@ -622,6 +622,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 }
 
 Scheme_Object *scheme_stx_content(Scheme_Object *o)
+/* Propagates wraps while getting a syntax's content. */
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
 
@@ -681,6 +682,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 }
 
 static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
+/* Compares the marks in two wraps lists */
 {
   while (1) {
     /* Skip over renames and cancelled marks: */
@@ -723,6 +725,7 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
 }
 
 static Scheme_Object *get_marks(Scheme_Object *awl)
+/* Extracts marks from a wraps list. */
 {
   Scheme_Object *stack = scheme_null;
 
@@ -886,6 +889,9 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 }
 
 static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
+/* Gets a module export name under the assumption that the identifier
+   is not lexically renamed. This is used as a quick pre-test for
+   module-identifer=?. */
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;

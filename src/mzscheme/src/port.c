@@ -4980,20 +4980,21 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     if (!inport) {
       MSC_IZE(close)(to_subprocess[0]);
       out = NULL;
+      scheme_file_open_count += 1;
     } else
       out = scheme_false;
     if (!outport) {
       MSC_IZE(close)(from_subprocess[1]);
       in = NULL;
+      scheme_file_open_count += 1;
     } else
       in = scheme_false;
     if (!errport) {
       MSC_IZE(close)(err_subprocess[1]);
       err = NULL;
+      scheme_file_open_count += 1;
     } else
       err = scheme_false;
-    
-    scheme_file_open_count += 3; /* FIXME */
 
 #ifdef USE_FD_PORTS
     in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));

@@ -1124,9 +1124,13 @@ read_vector (Scheme_Object *port,
   if (i < requestLength) {
     if (len) {
       obj = els[len - 1];
-      /* FIXME, stxsrc case: 
-	 if obj is a pair, preserve sharing through
-	 graph annotations. */
+      if (stxsrc) {
+	/* Set the graph flag if obj sharing is visible: */
+	Scheme_Object *v;
+	v = SCHEME_STX_VAL(obj);
+	if (SCHEME_PAIRP(v) || SCHEME_VECTORP(v) || SCHEME_BOXP(v))
+	  obj = scheme_make_graph_stx(obj, -1, -1);
+      }
     } else
       obj = scheme_make_integer(0);
     for (; i < requestLength; i++) {

@@ -93,13 +93,25 @@ WARNING: printf is rebound in the mosdule to always print
           ;; decimal expansions. Those numbers are not printed
           ;; as snips.
           (define (htdp-lang-use-number-snip x)
-            (if (and (number? x)
-                     (exact? x)
-                     (real? x)
-                     (not (integer? x)))
-                (not (or (zero? (modulo (denominator x) 2))
-                         (zero? (modulo (denominator x) 5))))
-                #f))
+            (let* ([remove-all-factors
+                    (lambda (to-remove n)
+                      (let loop ([n n])
+                        (if (zero? (modulo n to-remove))
+                            (loop (quotient n to-remove))
+                            n)))]
+                   [has-decimal-expansion?
+                    (lambda (x)
+                      (= 1 (remove-all-factors 
+                            2 
+                            (remove-all-factors 
+                             5 
+                             (denominator x)))))])
+              (if (and (number? x)
+                       (exact? x)
+                       (real? x)
+                       (not (integer? x)))
+                  (not (has-decimal-expansion? x))
+                  #f)))
           
           (define (render-value/format value settings port put-snip)
             (set-printing-parameters

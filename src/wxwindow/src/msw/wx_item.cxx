@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.12 1998/12/07 02:52:30 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.13 1998/12/22 23:51:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -53,7 +53,8 @@ long NewId(wxItem *item)
 
 void DoneIds(wxItem *item)
 {
-  wxItemIdList->DeleteObject(item);
+  if (wxItemIdList)
+    wxItemIdList->DeleteObject(item);
 }
 
 IMPLEMENT_ABSTRACT_CLASS(wxItem, wxWindow)

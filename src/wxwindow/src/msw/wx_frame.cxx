@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.11 1999/03/09 19:53:23 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.12 1999/03/23 14:58:56 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -70,7 +70,7 @@ wxFrame::wxFrame(void)
   int i;
   for (i = 0; i < wxMAX_STATUS; i++)
     status_window[i] = NULL;
-  wx_iconized = FALSE;
+  hiddenmax = 0;
   wxWinType = 0;
   handle = NULL;
 }
@@ -110,7 +110,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   for (i = 0; i < wxMAX_STATUS; i++)
     status_window[i] = NULL;
 
-  wx_iconized = FALSE;
+  hiddenmax = 0;
   wxWnd *cparent = NULL;
   if (Parent)
     cparent = (wxWnd *)Parent->handle;
@@ -341,13 +341,22 @@ void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlag
 
 Bool wxFrame::Show(Bool show)
 {
+  int skipShow = (!show == !IsShown());
+
   SetShown(show);
 
   int cshow;
-  if (show)
-    cshow = SW_RESTORE; /* Show + uniconize */
-  else
+  if (show) {
+    if (hiddenmax) {
+      hiddenmax = 0;
+      cshow = SW_SHOWMAXIMIZED;
+    } else
+      cshow = SW_RESTORE; /* Show */
+  } else {
+    if (!skipShow)
+      hiddenmax = ::IsZoomed(GetHWND());
     cshow = SW_HIDE;
+  }
   
   if (show)  {
     if (!wxModelessWindows.Member(this))
@@ -370,7 +379,8 @@ Bool wxFrame::Show(Bool show)
     }
   }
   
-  ShowWindow(GetHWND(), cshow);
+  if (!skipShow)
+    ShowWindow(GetHWND(), cshow);
   if (show) {
     wxwmBringWindowToTop(GetHWND());
     OnActivate(TRUE);
@@ -381,35 +391,43 @@ Bool wxFrame::Show(Bool show)
 
 void wxFrame::Iconize(Bool iconize)
 {
-  if (!iconize)
-    Show(TRUE);
+  if (!IsShown())
+    return;
+
+  if (!iconize && !Iconized())
+    return; /* Otherwise we'd mess up maximizations */
 
   int cshow;
-  if (iconize)
+  HWND hwnd = GetHWND();
+  if (iconize) {
     cshow = SW_MINIMIZE;
-  else
+  } else {
     cshow = SW_RESTORE;
-  ShowWindow(GetHWND(), (BOOL)cshow);
-  wx_iconized = iconize;
+  }
+
+  ShowWindow(GetHWND(), cshow);
 }
 
 // Equivalent to maximize/restore in Windows
 void wxFrame::Maximize(Bool maximize)
 {
-  Show(TRUE);
-  int cshow;
-  if (maximize)
-    cshow = SW_MAXIMIZE;
-  else
-    cshow = SW_RESTORE;
-  ShowWindow(GetHWND(), cshow);
-  wx_iconized = FALSE;
+  if (Iconized())
+    return;
+
+  if (IsShown()) {
+    int cshow;
+    if (maximize)
+      cshow = SW_MAXIMIZE;
+    else
+      cshow = SW_RESTORE;
+    ShowWindow(GetHWND(), cshow);
+  } else
+    hiddenmax = maximize;
 }
 
 Bool wxFrame::Iconized(void)
 {
-  wx_iconized = (Bool)::IsIconic(GetHWND());
-  return wx_iconized;
+  return (Bool)::IsIconic(GetHWND());
 }
 
 void wxFrame::SetTitle(char *title)
@@ -734,12 +752,11 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 //    msflags = WS_DLGFRAME;
   
   DWORD extendedStyle = 0;
-  if (!(style & wxNO_RESIZE_BORDER)) {
+  if (!(style & wxNO_THICK_FRAME) && !(style & wxNO_RESIZE_BORDER)) {
+    msflags |= WS_THICKFRAME | WS_BORDER;
     msflags |= WS_MINIMIZEBOX;
     msflags |= WS_MAXIMIZEBOX;
   }
-  if (!(style & wxNO_THICK_FRAME))
-    msflags |= WS_THICKFRAME | WS_BORDER;
   if (!(style & wxNO_SYSTEM_MENU))
     msflags |= WS_SYSMENU;
   if (style & wxICONIZE)

@@ -83,7 +83,7 @@
 (for-each (lambda (x)
 	    (mred:debug:printf "Loading ~a..." x)
 	    (load/cd (string-append x ".ss")))
-	  (list "sig"
+	  (list "sig" "prefs" "exn"
 		"autoload" "autosave" "canvas" "console" "edit" "exit" 
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
@@ -93,7 +93,8 @@
 (mred:debug:printf "Loaded.")
 
 (define-signature mred^
-  ((open mred:autoload^) (open mred:autosave^)
+  ((open mred:exn-external^)
+   (open mred:preferences^) (open mred:autoload^) (open mred:autosave^)
    (open mred:exit^) (open mred:gui-utils^) (open mred:console^)
    (open mred:path-utils^) (open mred:finder^) (open mred:find-string^)
    (open mred:edit^) (open mred:canvas^) (open mred:frame^)
@@ -113,6 +114,8 @@
 		    (trigger mzlib:trigger^)
 		    (application mred:application^))
 	    (link [debug mred:debug^ (mred:debug@)]
+		  [exn mred:exn^ (mred:exn@)]
+		  [preferences mred:preferences^ (mred:preferences@ debug exn)]
 		  [autoload mred:autoload^ (mred:autoload@ debug ((core file@)))]
 		  [autosave mred:autosave^ (mred:autosave@ debug)]
 		  [exit mred:exit^ (mred:exit@ debug)]
@@ -154,9 +157,13 @@
 					((core pretty-print@)) 
 					trigger)]
 		  [scheme-mode mred:scheme-mode^
-			       (mred:scheme-mode@ debug mode match-cache
-						paren scheme-paren icon handler
-						keymap ((core string@)))]
+			       (mred:scheme-mode@ debug
+						  application
+						  mode
+						  match-cache paren
+						  scheme-paren icon
+						  handler keymap
+						  ((core string@)))]
 		  [hyper-dialog mred:hyper-dialog^
 				(mred:hyper-dialog@ debug hyper-edit ((core file@)))]
 		  [hyper-edit mred:hyper-edit^
@@ -165,7 +172,8 @@
 		  [hyper-frame mred:hyper-frame^
 			       (mred:hyper-frame@ debug hyper-edit hyper-dialog
 						frame canvas group handler)])
-	    (export (open autoload) (open autosave) (open exit)
+	    (export (open exn mred:exn-external^)
+		    (open preferences) (open autoload) (open autosave) (open exit)
 		    (open gui-utils) (open console) (open path-utils) (open finder)
 		    (open find-string) (open edit) (open canvas) (open frame)
 		    (open group) (open handler) (open icon) (open keymap)
@@ -185,11 +193,11 @@
 	    (define console-frame (make-object mred@:console-frame%))
 	    (define eval-string (ivar (ivar console-frame edit) do-eval)))))
 
-(define mred:load-user-setup? #t)
 (define mred:non-unit-startup? #f)
+(define mred:load-user-setup? #t)
 
-;; link mred together
-(define mred:invoke-open-mred
+;; link application together
+(define mred:invoke-application
   (lambda ()
     (let ([application (mred:make-application@)])
       (invoke-open-unit (compound-unit/s ((open mred^)
@@ -201,7 +209,9 @@
 				  [application mred:application^
 					       (application mred core)])
 			    (export (open mred) (open application)))
-			  mred))))
+			  mred)
+      (when mred:load-user-setup?
+	(mred:user-setup)))))
 
 (define mred:non-unit-startup
   (lambda ()
@@ -213,7 +223,7 @@
 			   (core mzlib:core^))
 		   (define console-frame (make-object wx:frame% '() "hidden"))
 		   (define eval-string (lambda (string) (void))))))
-    (mred:invoke-open-mred)))
+    (mred:invoke-application)))
 
 ;; called with the initialization arguments
 (define mred:initialize
@@ -222,9 +232,7 @@
       (cond
 	[(null? args) 
 	 (unless mred:non-unit-startup?
-	   (mred:invoke-open-mred))
-	 (when mred:load-user-setup?
-	   (mred:user-setup))
+	   (mred:invoke-application))
 	 (for-each mred:edit-file files-to-open)
 	 (when mred:non-unit-startup?
 	   (set! mred:console-frame (mred:startup)))
@@ -239,16 +247,16 @@
  		  (begin (mred:debug:printf (format "Loading: ~a" (car rest)))
 			 (load-with-cd (car rest))
 			 (apply mred:initialize (cdr rest))))]
-	     [(or (string-ci=? "-q" arg) 
-		  (string-ci=? "--no-init-file" arg))
-	      (set! mred:load-user-setup? #f)
-	      (apply mred:initialize rest)]
 	     [(string-ci=? "-e" arg)
 	      (if (null? rest)
 		  (error "expected a string to evaluate after -e flag")
 		  (begin (eval-string (car rest))
 			 (apply mred:initialize (cdr rest))))]
 	     [(string-ci=? "--" arg) (for-each mred:edit-file rest)]
+	     [(or (string-ci=? "-q" arg) 
+		  (string-ci=? "--no-init-file" arg))
+	      (set! mred:load-user-setup? #f)
+	      (apply mred:initialize rest)]
 	     [(string-ci=? "-nu" arg)
 	      (mred:non-unit-startup)
 	      (mred:debug:printf "Non-unit startup")

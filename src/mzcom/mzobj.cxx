@@ -372,7 +372,23 @@ CMzObj::~CMzObj(void) {
 
 void CMzObj::RaiseError(const OLECHAR *msg) {
   BSTR bstr;
+  ICreateErrorInfo *pICreateErrorInfo;
+  IErrorInfo *pIErrorInfo;
+
   bstr = SysAllocString(msg);
+
+  if (CreateErrorInfo(&pICreateErrorInfo) == S_OK && 
+      pICreateErrorInfo != NULL) {
+    pICreateErrorInfo->SetGUID(IID_IMzObj);
+    pICreateErrorInfo->SetDescription((LPOLESTR)msg);
+    pICreateErrorInfo->SetSource((LPOLESTR)L"MzCOM.MzObj");
+    if (pICreateErrorInfo->QueryInterface(IID_IErrorInfo,
+					  (void **)&pIErrorInfo) == S_OK &&
+	pIErrorInfo != NULL) {
+      SetErrorInfo(0,pIErrorInfo);
+    }
+  }
+
   Fire_SchemeError(bstr);
   SysFreeString(bstr);
 }

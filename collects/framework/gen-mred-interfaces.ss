@@ -2,8 +2,6 @@
 
 string=? ; exec mred -magqvf $0
 
-(fprintf (current-error-port) "hello.2~n")
-
 (require-library "function.ss")
 (require-library "pretty.ss")
 (require-library "macro.ss")

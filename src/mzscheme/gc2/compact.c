@@ -43,6 +43,10 @@
 # define ALIGN_DOUBLES 0
 #endif
 
+#define LOG_WORD_SIZE 2
+#define WORD_SIZE (1 << LOG_WORD_SIZE)
+#define WORD_BIT_COUNT (WORD_SIZE << 3)
+
 #if USE_MMAP
 /* For mmap: */
 # include <unistd.h>
@@ -179,7 +183,7 @@ MPage **mpage_maps;
 /* MPage size: */
 #define LOG_MPAGE_SIZE 14
 #define MPAGE_SIZE (1 << LOG_MPAGE_SIZE)
-#define MPAGE_WORDS (1 << (LOG_MPAGE_SIZE - 2))
+#define MPAGE_WORDS (1 << (LOG_MPAGE_SIZE - LOG_WORD_SIZE))
 #define MPAGE_MASK ((1 << LOG_MPAGE_SIZE) - 1)
 #define MPAGE_START ~MPAGE_MASK
 
@@ -187,19 +191,19 @@ MPage **mpage_maps;
 #define FREE_LIST_ARRAY_SIZE (BIGBLOCK_MIN_SIZE >> 2)
 
 /* Offset-page size: */
-#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2 - SQUASH_OFFSETS)
+#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - LOG_WORD_SIZE - SQUASH_OFFSETS)
 #define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
 
 /* We use a two-level table to map the universe. The MAP_SIZE is the
    size of the outer table, so LOG_MAP_SIZE is the number of high-order
    bits used to index the table. */
 #define LOG_MAP_SIZE 9
-#define LOG_MAPS_SIZE (32 - LOG_MAP_SIZE - LOG_MPAGE_SIZE)
+#define LOG_MAPS_SIZE (WORD_BIT_COUNT - LOG_MAP_SIZE - LOG_MPAGE_SIZE)
 #define MAP_SIZE (1 << LOG_MAP_SIZE)
 #define MAPS_SIZE (1 << LOG_MAPS_SIZE)
 
 /* MASK_MASK followed by MAP_SHIFT gives the 2nd-page index. */
-#define MAPS_SHIFT (32 - LOG_MAPS_SIZE)
+#define MAPS_SHIFT (WORD_BIT_COUNT - LOG_MAPS_SIZE)
 #define MAP_MASK ((1 << (LOG_MAP_SIZE + LOG_MPAGE_SIZE)) - 1)
 #define MAP_SHIFT LOG_MPAGE_SIZE
 
@@ -276,7 +280,7 @@ static long page_allocations = 0;
 static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
 #if USE_FREELIST
 static long on_free_list;
-# define FREE_LIST_DELTA (on_free_list << 2)
+# define FREE_LIST_DELTA (on_free_list << LOG_WORD_SIZE)
 #else
 # define FREE_LIST_DELTA 0
 #endif
@@ -749,7 +753,7 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
 
   w->type = gc_weak_array_tag;
   w->replace_val = replace_val;
-  w->count = (size_in_bytes >> 2);
+  w->count = (size_in_bytes >> LOG_WORD_SIZE);
   
   return w;
 }
@@ -998,11 +1002,8 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
 static void scan_tagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0;
-  OffsetArrTy *offsets;
   void **top;
 
-  offsets = page->u.offsets;
   top = p + MPAGE_WORDS;
   
   while (p < top) {
@@ -1026,7 +1027,6 @@ static void scan_tagged_mpage(void **p, MPage *page)
       dump_info_array[tag]++;
       dump_info_array[tag + _num_tags_] += size;
 
-      offset += size;      
       p += size;
 #if ALIGN_DOUBLES
     }
@@ -1036,11 +1036,8 @@ static void scan_tagged_mpage(void **p, MPage *page)
 
 static void scan_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0;
-  OffsetArrTy *offsets;
   void **top;
 
-  offsets = page->u.offsets;
   top = p + MPAGE_WORDS;
 
   while (p < top) {
@@ -1054,7 +1051,6 @@ static void scan_untagged_mpage(void **p, MPage *page)
 
     dump_info_array[size - 1] += 1;
 
-    offset += size;
     p += size;
   } 
 }
@@ -1181,7 +1177,7 @@ void GC_dump(void)
       default: kind = MTYPE_TAGGED; name = "tagged"; break;
       }
 
-      for (i = 0; i < (BIGBLOCK_MIN_SIZE >> 2); i++)
+      for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++)
 	dump_info_array[i] = 0;
 
       for (page = first; page; page = page->next) {
@@ -1196,14 +1192,14 @@ void GC_dump(void)
       if (j >= NUM_TAGGED_SETS) {
 	int k = 0;
 	fprintf(stderr, "%s counts: ", name);
-	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> 2); i++) {
+	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++) {
 	  if (dump_info_array[i]) {
 	    k++;
 	    if (k == 10) {
 	      fprintf(stderr, "\n    ");
 	      k = 0;
 	    }
-	    fprintf(stderr, " [%d:%ld]", i << 2, dump_info_array[i]);
+	    fprintf(stderr, " [%d:%ld]", i << LOG_WORD_SIZE, dump_info_array[i]);
 	  }
 	}
 	fprintf(stderr, "\n");
@@ -1222,7 +1218,7 @@ void GC_dump(void)
 	      if (!tn) tn = "unknown";
 	      break;
 	    }
-	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << 2);
+	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
 	  }
 	}
       }
@@ -1311,10 +1307,7 @@ static int is_marked(void *p)
       if (page->flags & MFLAG_OLD)
 	return 1;
       else if (page->flags & COLOR_MASK) {
-	long offset = ((long)p & MPAGE_MASK) >> 2;
-
-	if (page->type > MTYPE_TAGGED)
-	  offset -= 1;
+	long offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
 
 	return OFFSET_COLOR(page->u.offsets, offset);
       } else
@@ -1398,11 +1391,13 @@ static void init_tagged_mpage(void **p, MPage *page)
   inited_pages++;
 }
 
+#ifdef SAFETY
 static long the_size;
+#endif
 
 static void init_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0;
+  OffsetTy offset = 1;
   OffsetArrTy *offsets;
   void **top;
 
@@ -1424,7 +1419,9 @@ static void init_untagged_mpage(void **p, MPage *page)
       break;
     }
 
+#ifdef SAFETY
     the_size = size;
+#endif
 
     OFFSET_SET_SIZE_UNMASKED(offsets, offset, 0);
     offset += size;
@@ -1598,17 +1595,16 @@ void GC_mark(const void *p)
 	  page->flags = flags;
 	}
 
-	if (type > MTYPE_TAGGED) {
 #if SAFETY
+	if (type > MTYPE_TAGGED) {
 	  if (!((long)p & MPAGE_MASK)) {
 	    /* Can't point to beginning of non-tagged block! */
 	    CRASH();
 	  }
-#endif
-	  p = BYTEPTR(p) - sizeof(void *);
 	}
+#endif
 
-	offset = ((long)p & MPAGE_MASK) >> 2;
+	offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
 
 #if SAFETY
 	if (offset >= page->alloc_boundary) {
@@ -1772,13 +1768,13 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 
 static void propagate_array_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0;
+  OffsetTy offset = 1;
   OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + offset;
-  top = bottom + page->gray_end;
+  p = bottom + (offset - 1);
+  top = bottom + (page->gray_end - 1);
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1830,13 +1826,13 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
 
 static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0;
+  OffsetTy offset;
   OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + offset;
-  top = bottom + page->gray_end;
+  p = bottom + (offset - 1);
+  top = bottom + (page->gray_end - 1);
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1913,8 +1909,8 @@ static void propagate_xtagged_mpage(void **bottom, MPage *page)
   void **p, **top;
 
   offset = page->gray_start;
-  p = bottom + offset;
-  top = bottom + page->gray_end;
+  p = bottom + (offset - 1);
+  top = bottom + (page->gray_end - 1);
   offsets = page->u.offsets;
 
   while (p <= top) {
@@ -1998,7 +1994,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
       Type_Tag tag;
       Mark_Proc mark;
 
-      size = page->u.size >> 2;
+      size = page->u.size >> LOG_WORD_SIZE;
       tag = *(Type_Tag *)mp;
 
       if (fixup)
@@ -2016,7 +2012,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
   case MTYPE_ARRAY:
     {
       int i;
-      long size = page->u.size >> 2;
+      long size = page->u.size >> LOG_WORD_SIZE;
     
       if (fixup) {
 	for (i = 0; i < size; i++, p++) {
@@ -2082,16 +2078,16 @@ static void propagate_all_mpages()
 	break;
 
       case MTYPE_XTAGGED:
-	GC_mark_xtagged((void **)p + 1);
+	GC_mark_xtagged((void **)p);
 	break;
 
       default: /* MTYPE_ARRAY */
 	{
 	  long size, i;
 	  
-	  size = *(long *)p;
+	  size = ((long *)p)[-1];
 	  
-	  for (i = 1; i <= size; i++) {
+	  for (i = 0; i < size; i++) {
 	    gcMARK(((void **)p)[i]);
 	  }
 	}
@@ -2228,9 +2224,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
       
       if (!to_near || (dest_offset != offset)) {
 	if (to_near)
-	  memmove(dest + dest_offset, p, size << 2);
+	  memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
 	else
-	  memcpy(dest + dest_offset, p, size << 2);
+	  memcpy(dest + dest_offset, p, size << LOG_WORD_SIZE);
       }
       
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset);
@@ -2308,7 +2304,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
     }
 #endif
 
-    if (OFFSET_COLOR(offsets, offset)) {
+    if (OFFSET_COLOR(offsets, offset+1)) {
 #if ALIGN_DOUBLES
       long alignment;
       if ((size & 0x1) && !(dest_offset & 0x1))
@@ -2355,12 +2351,12 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
       if (!to_near || (dest_offset != offset)) {
 	if (to_near)
-	  memmove(dest + dest_offset, p, size << 2);
+	  memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
 	else
-	  memcpy(dest + dest_offset, p, size << 2);
+	  memcpy(dest + dest_offset, p, size << LOG_WORD_SIZE);
       }
       
-      OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset + 1);
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset+1, dest_offset+1);
       offset += size;
       dest_offset += size;
  
@@ -2489,7 +2485,7 @@ static void freelist_tagged_mpage(void **p, MPage *page)
 
 static void freelist_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0;
+  OffsetTy offset = 1;
   OffsetArrTy *offsets;
   void **free_lists, **top;
   long on_at_start = on_free_list;
@@ -2605,26 +2601,24 @@ void GC_fixup(void *pp)
 	min_referenced_page_age = page->compact_to_age;
 
       if (!(page->flags & (MFLAG_OLD | MFLAG_BIGBLOCK))) {
-	long offset = ((long)p & MPAGE_MASK) >> 2;
+	long offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
 	OffsetTy v;
 	void *r;
 
-	if (page->type > MTYPE_TAGGED) {
 #if SAFETY
+	if (page->type > MTYPE_TAGGED) {
 	  if (!offset) {
 	    /* Can't point to beginning of non-tagged block! */
 	    CRASH();
 	  }
-#endif
-	  offset--;
 	}
-
+#endif
 
 	v = OFFSET_SIZE(page->u.offsets, offset);
 	if (offset < page->compact_boundary)
 	  r = (void *)(page->o.compact_to + v);
 	else
-	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2));
+	  r = (void *)(((long)p & MPAGE_START) + ((long)v << LOG_WORD_SIZE));
 
 #if SEARCH
 	if (r == search_for)
@@ -3377,7 +3371,7 @@ static void gcollect(int full)
     compact = 1;
   else {
     /* Remaining free list items few enough? */
-    if (((float)(on_free_list << 2) / memory_in_use) < COMPACT_THRESHOLD)
+    if (((float)(on_free_list << LOG_WORD_SIZE) / memory_in_use) < COMPACT_THRESHOLD)
       compact = 0;
     else
       compact = 1;
@@ -3397,7 +3391,7 @@ static void gcollect(int full)
   init_all_mpages(young);
 
   PRINTTIME((STDERR, "gc: init %s [freelist=%f] (young:%d skip:%d scan:%d init:%d): %ld\n", 
-	     compact ? "cmpct" : "frlst", (double)(FREE_LIST_DELTA << 2) / memory_in_use,
+	     compact ? "cmpct" : "frlst", (double)(FREE_LIST_DELTA << LOG_WORD_SIZE) / memory_in_use,
 	     young_pages, skipped_pages, scanned_pages, inited_pages,
 	     GETTIMEREL()));
 
@@ -3737,7 +3731,7 @@ static void gcollect(int full)
   protect_old_mpages();
 
 #if (COMPACTING == NEVER_COMPACT)
-# define THRESH_FREE_LIST_DELTA (FREE_LIST_DELTA >> 2)
+# define THRESH_FREE_LIST_DELTA (FREE_LIST_DELTA >> LOG_WORD_SIZE)
 #else
 # define THRESH_FREE_LIST_DELTA FREE_LIST_DELTA
 #endif
@@ -3748,7 +3742,7 @@ static void gcollect(int full)
   if (compact) {
     for (i = 0; i < NUM_NONATOMIC_SETS; i++) {
       if (sets[i]->compact_to_offset < MPAGE_WORDS)
-	memset(sets[i]->low, 0, (sets[i]->high - sets[i]->low) << 2);
+	memset(sets[i]->low, 0, (sets[i]->high - sets[i]->low) << LOG_WORD_SIZE);
     }
   }
 
@@ -3982,15 +3976,15 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   check_variable_stack();
 #endif
 
-  size_in_words = ((size_in_bytes + 3) >> 2);
+  size_in_words = ((size_in_bytes + 3) >> LOG_WORD_SIZE);
 
 #if SAFETY
   if (size_in_words < 2)
     CRASH();
 #endif
 
-  if (size_in_words >= (BIGBLOCK_MIN_SIZE >> 2)) {
-    return malloc_bigblock(size_in_words << 2, MTYPE_TAGGED);
+  if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
+    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, MTYPE_TAGGED);
   }
 
 #if USE_FREELIST
@@ -4015,7 +4009,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
     if (((long)tagged.low & 0x4)) {
       if (tagged.low == tagged.high) {
 	new_page(MTYPE_TAGGED, 0, &tagged);
-	return GC_malloc_one_tagged(size_in_words << 2);
+	return GC_malloc_one_tagged(size_in_words << LOG_WORD_SIZE);
       }
       ((Type_Tag *)tagged.low)[0] = SKIP;
       tagged.low += 1;
@@ -4034,7 +4028,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
     if (tagged.low < tagged.high)
       *(Type_Tag *)tagged.low = TAGGED_EOM;
     new_page(MTYPE_TAGGED, 0, &tagged);
-    return GC_malloc_one_tagged(size_in_words << 2);
+    return GC_malloc_one_tagged(size_in_words << LOG_WORD_SIZE);
   }
   tagged.low = naya;
 
@@ -4059,10 +4053,10 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
   if (!size_in_bytes)
     return zero_sized;
 
-  size_in_words = ((size_in_bytes + 3) >> 2);
+  size_in_words = ((size_in_bytes + 3) >> LOG_WORD_SIZE);
 
-  if (size_in_words >= (BIGBLOCK_MIN_SIZE >> 2)) {
-    return malloc_bigblock(size_in_words << 2, mtype);
+  if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
+    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, mtype);
   }
 
 #if USE_FREELIST
@@ -4088,7 +4082,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
     if (!((long)set->low & 0x4)) {
       if (set->low == set->high) {
 	new_page(mtype, 0, set);
-	return malloc_untagged(size_in_words << 2, mtype, set);
+	return malloc_untagged(size_in_words << LOG_WORD_SIZE, mtype, set);
       }
       (set->low)[0] = 0;
       set->low += 1;
@@ -4107,7 +4101,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
     if (set->low < set->high)
       *(long *)set->low = UNTAGGED_EOM - 1;
     new_page(mtype, 0, set);
-    return malloc_untagged(size_in_words << 2, mtype, set);
+    return malloc_untagged(size_in_words << LOG_WORD_SIZE, mtype, set);
   }
   set->low = naya;
 

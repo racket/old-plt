@@ -285,3 +285,11 @@ gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/gc2.h
 
 clean:
 	/bin/rm -f lex.yy.c ../mzscheme2k *.o $(XSRCDIR)/*
+
+#--------------------------------------------------
+
+test.o: $(srcdir)/test.c
+	$(CC) $(CFLAGS) -c $(srcdir)/test.c -o test.o
+
+gct: test.o gc2.o
+	$(CC) -o gct test.o gc2.o

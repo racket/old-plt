@@ -75,6 +75,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Setjmpup.obj"
 	-@erase "$(INTDIR)\String.obj"
 	-@erase "$(INTDIR)\Struct.obj"
+	-@erase "$(INTDIR)\stxobj.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\Type.obj"
@@ -169,7 +170,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\stxobj.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -223,6 +225,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Setjmpup.obj"
 	-@erase "$(INTDIR)\String.obj"
 	-@erase "$(INTDIR)\Struct.obj"
+	-@erase "$(INTDIR)\stxobj.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\Type.obj"
@@ -317,7 +320,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\stxobj.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -371,6 +375,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Setjmpup.obj"
 	-@erase "$(INTDIR)\String.obj"
 	-@erase "$(INTDIR)\Struct.obj"
+	-@erase "$(INTDIR)\stxobj.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\Type.obj"
@@ -465,7 +470,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\stxobj.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -519,6 +525,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Setjmpup.obj"
 	-@erase "$(INTDIR)\String.obj"
 	-@erase "$(INTDIR)\Struct.obj"
+	-@erase "$(INTDIR)\stxobj.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\Type.obj"
@@ -613,7 +620,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\stxobj.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -667,6 +675,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Setjmpup.obj"
 	-@erase "$(INTDIR)\String.obj"
 	-@erase "$(INTDIR)\Struct.obj"
+	-@erase "$(INTDIR)\stxobj.obj"
 	-@erase "$(INTDIR)\Symbol.obj"
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\Type.obj"
@@ -761,7 +770,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
 	"$(INTDIR)\unitsig.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\stxobj.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -2334,6 +2344,12 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\stxobj.c
+
+"$(INTDIR)\stxobj.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Symbol.c
 

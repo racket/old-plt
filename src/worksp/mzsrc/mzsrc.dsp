@@ -804,6 +804,10 @@ SOURCE=..\..\Mzscheme\Src\Struct.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\stxobj.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\Symbol.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"

@@ -140,6 +140,249 @@ wxWindowDC::~wxWindowDC(void)
 // drawing methods
 //-----------------------------------------------------------------------------
 
+static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_reg, wxBitmap *bmask, 
+				       Region *_free_rgn,
+				       int *_tx, int *_ty,
+				       int *_scaled_width, int *_scaled_height,
+				       float *_xsrc, float *_ysrc,
+				       Display *dpy)
+{
+  int overlap;
+  Region free_rgn = *_free_rgn, rgn = NULL;
+  int tx = *_tx, ty = *_ty;
+  int scaled_width = *_scaled_width, scaled_height = *_scaled_height;
+  float xsrc = *_xsrc, ysrc = *_ysrc;
+
+  if (user_reg || expose_reg) {
+    if (user_reg && expose_reg) {
+      rgn = XCreateRegion();
+      free_rgn = rgn;
+      XIntersectRegion(expose_reg, user_reg, rgn);
+    } else if (user_reg)
+      rgn = user_reg;
+    else
+      rgn = expose_reg;
+
+    if (bmask) {
+      overlap = XRectInRegion(rgn, tx, ty, scaled_width, scaled_height);
+
+      if (overlap == RectangleIn) {
+	/* Overwriting the region later will be fine. */
+	rgn = NULL;
+      } else if (overlap == RectangleOut) {
+	/* Mask will have no effect - all drawing is masked anyway */
+	bmask = NULL;
+      } else {
+	/* This is the difficult case: mask bitmap and region combine. */
+	XRectangle encl;
+	long tx2, ty2, sw2, sh2;
+
+	/* Common case: rgn is a sub-rectangle of the target: */
+	XClipBox(rgn, &encl);
+	tx2 = max(encl.x, tx);
+	ty2 = max(encl.y, ty);
+	sw2 = min(encl.x + encl.width, tx + scaled_width) - tx2;
+	sh2 = min(encl.y + encl.height, ty + scaled_height) - ty2;
+	
+	if (XRectInRegion(rgn, tx2, ty2, sw2, sh2) == RectangleIn) {
+	  xsrc += (tx2 - tx);
+	  ysrc += (ty2 - ty);
+	  tx = tx2;
+	  ty = ty2;
+	  scaled_width = sw2;
+	  scaled_height = sh2;
+	  /* clipping is essentially manual, now: */
+	  rgn = NULL;
+	} else {
+	  /* This is as complex as it gets. */
+	  /* We create a new region with the pixels of the bitmap. */
+	  Pixmap bpm;
+	  XImage *simg;
+	  Region bmrgn;
+	  int mi, mj;
+	  
+	  bpm = GETPIXMAP(bmask);
+	  simg = XGetImage(dpy, bpm, (long)xsrc, (long)ysrc, scaled_width, scaled_height, AllPlanes, ZPixmap);
+	  
+	  bmrgn = XCreateRegion();
+	  
+	  for (mj = 0; mj < scaled_height; mj++) {
+	    encl.y = mj + ty;
+	    encl.height = 1;
+	    encl.width = 0;
+	    for (mi = 0; mi < scaled_width; mi++) {
+	      if (!XGetPixel(simg, mi + (long)xsrc, mj + (long)ysrc)) {
+		if (encl.width) {
+		  XUnionRectWithRegion(&encl, bmrgn, bmrgn);
+		  encl.width = 0;
+		}
+	      } else {
+		if (!encl.width)
+		  encl.x = mi + tx;
+		encl.width++;
+	      }
+	    }
+
+	    if (encl.width)
+	      XUnionRectWithRegion(&encl, bmrgn, bmrgn);
+	  }
+	  
+	  if (!free_rgn) {
+	    free_rgn = XCreateRegion();
+	    XUnionRegion(free_rgn, rgn, free_rgn);
+	    rgn = free_rgn;
+	  }
+
+	  /* Insert the bitmap-based region with the old one: */
+	  XIntersectRegion(bmrgn, rgn, rgn);
+	  XDestroyRegion(bmrgn);
+
+	  /* Resultof XGetImage isn't supposed to be destroyed? */
+	  /* XDestroyImage(simg); */
+
+	  bmask = NULL; /* done via rgn */
+	}
+      }
+    }
+  }
+
+  if (rgn)
+    XSetRegion(dpy, agc, rgn);
+
+  if (bmask) {
+    Pixmap mpm;
+    mpm = GETPIXMAP(bmask);
+    XSetClipMask(dpy, agc, mpm);
+    XSetClipOrigin(dpy, agc, tx - (long)xsrc, ty - (long)ysrc);
+  }
+  
+  *_free_rgn = free_rgn;
+  *_tx = tx;
+  *_ty = ty;
+  *_scaled_width = scaled_width;
+  *_scaled_height = scaled_height,
+  *_xsrc = xsrc;
+  *_ysrc = ysrc;
+
+  return bmask;
+}
+
+
+static wxBitmap *ScaleBitmap(wxBitmap *src, 
+			     float scale_x, float scale_y,
+			     float xsrc, float ysrc, float w, float h, 
+			     Display *dpy, 
+			     wxBitmap **_tmp, int *retval)
+{
+  int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
+  unsigned long pixel;
+  wxBitmap *tmp;
+
+  *retval = TRUE;
+
+  xs = (int)xsrc;
+  ys = (int)ysrc;
+  
+  sw = src->GetWidth();
+  sh = src->GetHeight();
+
+  if (xs > sw)
+    return NULL;
+  if (ys > sh)
+    return NULL;
+
+  if (sw > w)
+    sw = (int)w;
+  if (sh > h)
+    sh = (int)h;
+  sw -= xs;
+  sh -= ys;
+
+  tw = (int)(sw * scale_x);
+  th = (int)(sh * scale_y);
+  mono = (src->GetDepth() == 1);
+  tmp = new wxBitmap(tw, th, mono);
+  *_tmp = tmp;
+      
+  if (tmp->Ok()) {
+    XImage *simg, *timg;
+    XGCValues values;
+    GC agc;
+    Pixmap spm, tpm;
+    
+    if (src->selectedTo)
+      src->selectedTo->EndSetPixel();
+    
+    spm = GETPIXMAP(src);
+    simg = XGetImage(dpy, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
+    tpm = GETPIXMAP(tmp);
+    timg = XGetImage(dpy, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
+    
+    if (tw > sw) {
+      for (ti = 0; ti < tw; ti++) {
+	i = (int)(ti / scale_x);
+	if (th > h) {
+	  for (tj = 0; tj < th; tj++) {
+	    j = (int)(tj / scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	} else {
+	  for (j = 0; j < sh; j++) {
+	    tj = (int)(j * scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	}
+      }
+    } else {
+      for (i = 0; i < sw; i++) {
+	ti = (int)(i * scale_x);
+	if (th > h) {
+	  for (tj = 0; tj < th; tj++) {
+	    j = (int)(tj / scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	} else {
+	  for (j = 0; j < sh; j++) {
+	    tj = (int)(j * scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	}
+      }
+    }
+
+    agc = XCreateGC(dpy, tpm, 0, &values);
+    if (agc) {
+      XPutImage(dpy, tpm, agc, timg, 0, 0, 0, 0, tw, th);
+      XFreeGC(dpy, agc);
+      *retval = 1;
+    } else
+      *retval = 0;
+
+    /* Resultof XGetImage isn't supposed to be destroyed? */
+    /* XDestroyImage(simg); */
+    /* XDestroyImage(timg); */
+
+    xsrc = ysrc = 0;
+    src = tmp;
+
+    if (!*retval) {
+      DELETE_OBJ tmp;
+      *retval = FALSE;
+      return NULL;
+    }
+  } else {
+    DELETE_OBJ tmp;
+    *retval = FALSE;
+    return NULL;
+  }
+
+  return src;
+}
+
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 		      float xsrc, float ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
 {
@@ -148,7 +391,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     wxColor *saveBack;
     int scaled_width;
     int scaled_height;
-    wxBitmap *tmp = NULL;
+    wxBitmap *tmp = NULL, *tmp_mask = NULL;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
@@ -158,107 +401,16 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     /* Handle scaling by creating a new, tmeporary bitmap: */
     if ((scale_x != 1) || (scale_y != 1)) {
-      int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
-      unsigned long pixel;
-
-      if (mask)
-	return FALSE; /* no scale+mask, for now */
-
-      xs = (int)xsrc;
-      ys = (int)ysrc;
-
-      sw = src->GetWidth();
-      sh = src->GetHeight();
-
-      if (xs > sw)
-	return TRUE;
-      if (ys > sh)
-	return TRUE;
-
-      if (sw > w)
-	sw = (int)w;
-      if (sh > h)
-	sh = (int)h;
-      sw -= xs;
-      sh -= ys;
-
-      tw = (int)(sw * scale_x);
-      th = (int)(sh * scale_y);
-      mono = (src->GetDepth() == 1);
-      tmp = new wxBitmap(tw, th, mono);
-      
-      if (tmp->Ok()) {
-	XImage *simg, *timg;
-	XGCValues values;
-	GC agc;
-	Pixmap spm, tpm;
-	
-	if (src->selectedTo)
-	  src->selectedTo->EndSetPixel();
-	
-	spm = GETPIXMAP(src);
-	simg = XGetImage(DPY, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
-	tpm = GETPIXMAP(tmp);
-	timg = XGetImage(DPY, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
-	
-	if (tw > sw) {
-	  for (ti = 0; ti < tw; ti++) {
-	    i = (int)(ti / scale_x);
-	    if (th > h) {
-	      for (tj = 0; tj < th; tj++) {
-		j = (int)(tj / scale_y);
-		pixel = XGetPixel(simg, i + xs, j + ys);
-		XPutPixel(timg, ti, tj, pixel);
-	      }
-	    } else {
-	      for (j = 0; j < sh; j++) {
-		tj = (int)(j * scale_y);
-		pixel = XGetPixel(simg, i + xs, j + ys);
-		XPutPixel(timg, ti, tj, pixel);
-	      }
-	    }
-	  }
-	} else {
-	  for (i = 0; i < sw; i++) {
-	    ti = (int)(i * scale_x);
-	    if (th > h) {
-	      for (tj = 0; tj < th; tj++) {
-		j = (int)(tj / scale_y);
-		pixel = XGetPixel(simg, i + xs, j + ys);
-		XPutPixel(timg, ti, tj, pixel);
-	      }
-	    } else {
-	      for (j = 0; j < sh; j++) {
-		tj = (int)(j * scale_y);
-		pixel = XGetPixel(simg, i + xs, j + ys);
-		XPutPixel(timg, ti, tj, pixel);
-	      }
-	    }
-	  }
-	}
-
-	agc = XCreateGC(DPY, tpm, 0, &values);
-	if (agc) {
-	  XPutImage(DPY, tpm, agc, timg, 0, 0, 0, 0, tw, th);
-	  XFreeGC(DPY, agc);
-	  retval = 1;
-	} else
-	  retval = 0;
-
-	/* Resultof XGetImage isn't supposed to be destroyed? */
-	/* XDestroyImage(simg); */
-	/* XDestroyImage(timg); */
-
-	xsrc = ysrc = 0;
-	src = tmp;
-
-	if (!retval) {
+      int retval;
+      src = ScaleBitmap(src, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp, &retval);
+      if (!src)
+	return retval;
+      if (mask) {
+	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval);
+	if (!mask) {
 	  DELETE_OBJ tmp;
 	  return retval;
 	}
-      } else {
-	DELETE_OBJ tmp;
-	return FALSE;
       }
     }
 
@@ -273,6 +425,8 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
       if (tmp)
 	DELETE_OBJ tmp;
+      if (tmp_mask)
+	DELETE_OBJ tmp_mask;
 
       return retval;
     }
@@ -293,36 +447,61 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
     scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
-    if (DRAWABLE && src->Ok()) {
-      // Check if we're copying from a mono bitmap
-      retval = TRUE;
-      if ((rop == wxSOLID) || (rop == wxXOR)) {
-	/* Seems like the easiest way to implement transparent backgrounds is to
-	   use a stipple. */
-	XGCValues values;
-	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
-	values.stipple = GETPIXMAP(src);
-	values.fill_style = FillStippled;
-	values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % src->GetWidth());
-	values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % src->GetHeight());
-	XChangeGC(DPY, PEN_GC, mask, &values);
-	XFillRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
-      } else {
-	Pixmap pm;
-	pm = GETPIXMAP(src);
-	if (mask) {
-	  XSetClipMask(DPY, PEN_GC, GETPIXMAP(mask));
+    {
+      int tx, ty;
+      Region free_rgn = NULL;
+
+      tx = XLOG2DEV(xdest);
+      ty = YLOG2DEV(ydest);
+
+      if (mask)
+	IntersectBitmapRegion(PEN_GC, EXPOSE_REG, USER_REG, mask,
+			      &free_rgn,
+			      &tx, &ty,
+			      &scaled_width, &scaled_height,
+			      &xsrc, &ysrc,
+			      DPY);
+
+      if (DRAWABLE && src->Ok()) {
+	// Check if we're copying from a mono bitmap
+	retval = TRUE;
+	if ((rop == wxSOLID) || (rop == wxXOR)) {
+	  /* Seems like the easiest way to implement transparent backgrounds is to
+	     use a stipple. */
+	  XGCValues values;
+	  unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	  values.stipple = GETPIXMAP(src);
+	  values.fill_style = FillStippled;
+	  values.ts_x_origin = ((tx - (long)xsrc) % src->GetWidth());
+	  values.ts_y_origin = ((ty - (long)ysrc) % src->GetHeight());
+	  XChangeGC(DPY, PEN_GC, mask, &values);
+	  XFillRectangle(DPY, DRAWABLE, PEN_GC, tx, ty, scaled_width, scaled_height);
+	} else {
+	  Pixmap pm;
+	  pm = GETPIXMAP(src);
+	  XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
+		     (long)xsrc, (long)ysrc,
+		     scaled_width, scaled_height,
+		     tx, ty, 1);
 	}
-	XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
-		   (long)xsrc, (long)ysrc,
-		   scaled_width, scaled_height,
-		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
-	if (mask) {
-	  XSetClipMask(DPY, PEN_GC, None);
-	}
+	CalcBoundingBox(xdest, ydest);
+	CalcBoundingBox(xdest + w, ydest + h);
       }
-      CalcBoundingBox(xdest, ydest);
-      CalcBoundingBox(xdest + w, ydest + h);
+
+      {
+	/* The pen will reset its own GC later, but clear out things
+	   that might disappear meanwhile, or might use space: */
+#if 0
+	XGCValues values;
+	unsigned long mask = GCStipple;
+	values.stipple = None;
+	XChangeGC(DPY, PEN_GC, mask, &values);
+#endif
+	XSetClipMask(DPY, PEN_GC, None);
+      }
+
+      if (free_rgn)
+	XDestroyRegion(free_rgn);
     }
 
     SetPen(savePen);
@@ -330,6 +509,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     if (tmp) {
       DELETE_OBJ tmp;
+    }
+    if (tmp_mask) {
+      DELETE_OBJ tmp_mask;
     }
       
     return retval; // someting wrong with the drawables
@@ -365,7 +547,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       XGCValues values;
       int mask = 0;
       Region free_rgn = (Region)NULL;
-      long tx, ty;
+      int tx, ty;
 
       tx = XLOG2DEV(xdest);
       ty = YLOG2DEV(ydest);
@@ -379,107 +561,12 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       }
 
       agc = XCreateGC(DPY, DRAWABLE, mask, &values);
-      if (USER_REG || EXPOSE_REG) {
-	Region rgn;
-	if (USER_REG && EXPOSE_REG) {
-	  rgn = XCreateRegion();
-	  free_rgn = rgn;
-	  XIntersectRegion(EXPOSE_REG, USER_REG, rgn);
-	} else if (USER_REG)
-	  rgn = USER_REG;
-	else
-	  rgn = EXPOSE_REG;
-
-	if (bmask) {
-	  int overlap = XRectInRegion(rgn, tx, ty, scaled_width, scaled_height);
-
-	  if (overlap == RectangleIn) {
-	    /* Overwriting the region later will be fine. */
-	    rgn = NULL;
-	  } else if (overlap == RectangleOut) {
-	    /* Mask will have no effect - all drawing is masked anyway */
-	    bmask = NULL;
-	  } else {
-	    /* This is the difficult case: mask bitmap and region combine. */
-	    XRectangle encl;
-	    long tx2, ty2, sw2, sh2;
-
-	    /* Common case: rgn is a sub-rectangle of the target: */
-	    XClipBox(rgn, &encl);
-	    tx2 = max(encl.x, tx);
-	    ty2 = max(encl.y, ty);
-	    sw2 = min(encl.x + encl.width, tx + scaled_width) - tx2;
-	    sh2 = min(encl.y + encl.height, ty + scaled_height) - ty2;
-	    
-	    if (XRectInRegion(rgn, tx2, ty2, sw2, sh2) == RectangleIn) {
-	      xsrc += (tx2 - tx);
-	      ysrc += (ty2 - ty);
-	      tx = tx2;
-	      ty = ty2;
-	      scaled_width = sw2;
-	      scaled_height = sh2;
-	      /* clipping is essentially manual, now: */
-	      rgn = NULL;
-	    } else {
-	      /* This is as complex as it gets. */
-	      /* We create a new region with the pixels of the bitmap. */
-	      XImage *simg;
-	      Region bmrgn;
-	      int mi, mj;
-
-	      simg = XGetImage(DPY, GETPIXMAP(bmask), (long)xsrc, (long)ysrc, scaled_width, scaled_height, AllPlanes, ZPixmap);
-	      
-	      bmrgn = XCreateRegion();
-	      
-	      for (mj = 0; mj < scaled_height; mj++) {
-		encl.y = mj + ty;
-		encl.height = 1;
-		encl.width = 0;
-		for (mi = 0; mi < scaled_width; mi++) {
-		  if (!XGetPixel(simg, mi + (long)xsrc, mj + (long)ysrc)) {
-		    if (encl.width) {
-		      XUnionRectWithRegion(&encl, bmrgn, bmrgn);
-		      encl.width = 0;
-		    }
-		  } else {
-		    if (!encl.width)
-		      encl.x = mi + tx;
-		    encl.width++;
-		  }
-		}
-
-		if (encl.width)
-		  XUnionRectWithRegion(&encl, bmrgn, bmrgn);
-	      }
-	      
-	      if (!free_rgn) {
-		free_rgn = XCreateRegion();
-		XUnionRegion(free_rgn, rgn, free_rgn);
-		rgn = free_rgn;
-	      }
-
-	      
-
-	      /* Insert the bitmap-based region with the old one: */
-	      XIntersectRegion(bmrgn, rgn, rgn);
-	      XDestroyRegion(bmrgn);
-
-	      /* Resultof XGetImage isn't supposed to be destroyed? */
-	      /* XDestroyImage(simg); */
-
-	      bmask = NULL; /* done via rgn */
-	    }
-	  }
-	}
-
-	if (rgn)
-	  XSetRegion(DPY, agc, rgn);
-      }
-
-      if (bmask) {
-	XSetClipMask(DPY, agc, GETPIXMAP(bmask));
-	XSetClipOrigin(DPY, agc, tx - (long)xsrc, ty - (long)ysrc);
-      }
+      IntersectBitmapRegion(agc, EXPOSE_REG, USER_REG, bmask, 
+			    &free_rgn,
+			    &tx, &ty,
+			    &scaled_width, &scaled_height,
+			    &xsrc, &ysrc,
+			    DPY);
 	  
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {

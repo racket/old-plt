@@ -234,12 +234,12 @@ _URL viewing_
 ==========================================================================
 
 To load a module for accessing a Web _browser_ either
-  (require (lib "browser.ss" "net"))
+  (require (lib "external.ss" "browser"))
 or
   (require (lib "send-url.ss" "net"))
 
-The version in browser.ss will prompt the user for a browser preference
-if not already set.  The version in send-url.ss lacks this capability,
+The version in "browser" will prompt the user for a browser preference
+if not already set.  The version in "send-url.ss" lacks this capability,
 but does not depend on MrEd's graphical toolbox.
 
 These modules define one main function:
@@ -268,8 +268,8 @@ These modules define one main function:
   preferred or default browser can't be launched, `send-url'
   fails. See the file.ss library for details on setting preferences.
 
-> (browser-preference? any) -> bool
-  is a predicate that tests for a valid browser preference
+> (browser-preference? v) -> bool
+  return #t if v is a valid browser preference
 
 ==========================================================================
 _CGI_ backends, _WWW_

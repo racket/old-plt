@@ -9,7 +9,7 @@
            "internal-structs.ss"
            (lib "xml.ss" "xml")
            (lib "url.ss" "net")
-           (lib "browser.ss" "net")
+           (lib "external.ss" "browser")
            ; more here - use contracts when they support suitable error messages
            ;(lib "contracts.ss" "framework")
            (lib "error.ss" "htdp")

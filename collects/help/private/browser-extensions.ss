@@ -6,7 +6,7 @@
            (lib "etc.ss")
            (lib "string-constant.ss" "string-constants")
            (lib "url.ss" "net")
-           (lib "browser.ss" "net")
+           (lib "external.ss" "browser")
            "standard-urls.ss"
            "cookie.ss"
            "docpos.ss")
@@ -25,15 +25,23 @@
   (preferences:set-default 'drscheme:help-desk:separate-browser #t boolean?)
   (preferences:set-default 'drscheme:help-desk:ask-about-external-urls #t boolean?)
   
-  (preferences:add-to-warnings-checkbox-panel
+  (add-to-browser-prefs-panel
    (lambda (panel)
-     (let ([cb (instantiate check-box% ()
-                 (label (string-constant plt:hd:use-homebrew-browser))
-                 (parent panel)
-                 (callback
-                  (lambda (cb evt)
-                    (preferences:set 'drscheme:help-desk:separate-browser
-                                     (not (send cb get-value))))))])
+     (let* ([cbp (instantiate group-box-panel% ()
+			      (parent panel)
+			      (label (string-constant plt:hd:external-link-in-help))
+			      (alignment '(left center))
+			      (stretchable-height #f)
+			      (style '(deleted)))]
+	    [cb (instantiate check-box% ()
+			     (label (string-constant plt:hd:use-homebrew-browser))
+			     (parent cbp)
+			     (callback
+			      (lambda (cb evt)
+				(preferences:set 'drscheme:help-desk:separate-browser
+						 (not (send cb get-value))))))])
+       ;; Put checkbox panel at the top:
+       (send panel change-children (lambda (l) (cons cbp l)))
        (preferences:add-callback 
         'drscheme:help-desk:separate-browser
         (lambda (p v) (send cb set-value (not v))))

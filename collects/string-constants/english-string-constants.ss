@@ -309,10 +309,11 @@ please adhere to these guidelines:
  (plt:hd:help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
   (reload "Reload") ;; refresh the page in a web browser
   (plt:hd:ask-about-separate-browser
-   "You have selected a link to content from the world-wide web. Would you like to view it in the Help Desk homebrew browser, or would you like to use a separate browser program to view it?")
-  (plt:hd:homebrew-browser "Homebrew Browser") ;; choice for the above string (in a button)
+   "You have selected a link to content from the world-wide web. Would you like to view it in the Help Desk browser, or would you like to use a separate browser program to view it?")
+  (plt:hd:homebrew-browser "Help Desk Browser") ;; choice for the above string (in a button)
   (plt:hd:separate-browser "Separate Browser") ;; other choice for the above string (also in a button)
-  (plt:hd:use-homebrew-browser "Use homebew browser for external URLs")
+  (plt:hd:external-link-in-help "External URLs in Help")
+  (plt:hd:use-homebrew-browser "Use Help Desk browser for external URLs")
   (plt:hd:new-help-desk "New Help Desk")
 
  ;; Help desk htty proxy

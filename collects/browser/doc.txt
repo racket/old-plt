@@ -1,8 +1,11 @@
 
-The _browser.ss_ library in the "browser" collection provides the
+The _browser.ss__ library in the "browser" collection provides the
 following procedures and classes for parsing and viewing _HTML_ files.
-The _htmltext.ss_ library provides a simplified interface for
-rendering to a subclass of the MrEd text% class.
+The "htmltext.ss" library (described further below) provides a
+simplified interface for rendering to a subclass of the MrEd text%
+class. The "external.ss" library (described even further below)
+provides utilities for launching an external browser (such as
+Mozilla).
 
 The browser (and htmltext) supports basic HTML commands, plus special
 Scheme hyperlinks of the form <A MZSCHEME=sexpr>...</A>. When the user
@@ -330,7 +333,7 @@ the browser^ signature with all of the names listed above.
 
 
 ========================================
-htmltext.ss
+_htmltext.ss_
 ========================================
 
 > html-text<%>
@@ -377,3 +380,35 @@ Reads HTML from `input-port' and renders it to `html-text<%>-obj'.  If
 `eval-mz?' is false, then MZSCHEME hyperlink expressions and comments
 are not evaluated.
 
+========================================
+_external.ss_
+========================================
+
+> (send-url str [separate-window? #t])
+  Like 'send-url' in (lib "sendurl.ss" "net"), but under Unix,
+  the user is prompted for a browser to use if none is recorded
+  in the preferences file.
+
+> (browser-preference? v)
+  Returns #t if v is a valid browser preference
+
+> (update-browser-preference url-or-#f)
+  Under Unix, prompts the user for a browser preference and records
+  the user choice as a framework preference (even if one is already
+  recorded). If `url-or-#f' is not #f, it is used in the dialog to
+  explain which URL is to be opened; if it is #f, the 'internal will
+  be one of the options for the user.
+
+> (install-help-browser-preference-panel)
+  Installs a framework preference panel for "Browser" options.
+
+> (add-to-browser-prefs-panel proc)
+  The `proc' must be a procedure that takes a panel% argument.  It
+  will be called when the "Browser" panel is constructed for
+  preferences. The supplied argument is the panel, so `proc' can add
+  additional option controls. If the panel is already created, `proc'
+  is called immediately.
+
+> tool@
+  A unit that implements a DrScheme tool to add the "Browser"
+  preference panel.

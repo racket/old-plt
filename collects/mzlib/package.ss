@@ -47,7 +47,8 @@
 	   dot 
 	   define*-syntax define*
 	   define*-syntaxes define*-values
-	   open/derived open*/derived package/derived)
+	   open/derived open*/derived package/derived
+	   rename-potential-package)
 
   ;; Used with `fluid-let-syntax' to communicate to `open'
   ;; when an expression is within the body of a `package' declaration.

@@ -16,11 +16,14 @@ mred3m-stub: @MAKE_MRED3M@
 
 
 install:
+	$(MAKE) install-normal
+	$(MAKE) finish-stub
+
+install-normal:
 	$(MAKE) copytree-stub
 	$(MAKE) mzinstall
 	$(MAKE) mredinstall-stub
 	$(MAKE) lib-finish
-	$(MAKE) finish-stub
 
 copytree-stub: @MAKE_COPYTREE@
 
@@ -30,9 +33,10 @@ finish-stub: @MAKE_FINISH@
 
 
 install-3m:
-	$(MAKE) install
+	$(MAKE) install-normal
 	$(MAKE) mzinstall3m
 	$(MAKE) mredinstall3m-stub
+	$(MAKE) finish-stub
 
 mredinstall3m-stub: @MAKE_MREDINSTALL3M@ 
 

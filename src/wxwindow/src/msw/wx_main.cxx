@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.4 1998/08/13 02:13:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.5 1998/08/16 19:23:13 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -64,11 +64,8 @@ wxWindow *wxDefaultParent = NULL;
 
 HINSTANCE wxhInstance = 0;
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-extern wxList *wxWinHandleList;
-#else
 extern wxNonlockingHashTable *wxWinHandleList;
-#endif
+extern wxNonlockingHashTable *wxSliderList;
 extern FARPROC wxGenericControlSubClassProc;
 
 #ifdef _____USE_KEYBOARD_HOOK
@@ -393,11 +390,8 @@ void wxInitialize(HINSTANCE hInstance)
 #endif
 #endif
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxWinHandleList = new wxList(wxKEY_INTEGER);
-#else
   wxWinHandleList = new wxNonlockingHashTable();
-#endif
+  wxSliderList = new wxNonlockingHashTable();
 
 #ifdef ____USE_KEYBOARD_HOOK
   wxSetKeyboardHook(TRUE);

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.13 1998/08/15 02:15:33 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.14 1998/08/16 19:23:14 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -73,10 +73,6 @@ typedef signed short int SHORT ;
  
 #if !defined(WIN32)	// 3.x uses FARPROC for dialogs
 #define DLGPROC FARPROC
-#endif
-
-#if USE_SCROLLBAR
-extern void wxScrollBarEvent(HWND hbar, WORD wParam, WORD pos);
 #endif
 
 #define WINDOW_MARGIN 3	// This defines sensitivity of Leave events
@@ -1599,6 +1595,7 @@ LONG APIENTRY _EXPORT
 }
 
 wxNonlockingHashTable *wxWinHandleList = NULL;
+extern wxNonlockingHashTable *wxSliderList;
 
 wxWnd *wxFindWinFromHandle(HWND hWnd)
 {
@@ -2888,24 +2885,10 @@ void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 
 void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
 {
-  if (control)
-  {
-    wxNode *node = (wxNode *)wxScrollBarList.Find((long)control);
-    if (!node)
-      return;
-    wxWindow * win = (wxWindow *)node->Data();
-    if (wxSubType(win->__type, wxTYPE_SLIDER))
-    {
-    	wxSliderEvent(control, wParam, pos);
-	return;
-    }
-#if USE_SCROLLBAR
-    else if (wxSubType(win->__type, wxTYPE_SCROLL_BAR))
-    {
-    	wxScrollBarEvent(control, wParam, pos);
-	return;
-    }
-#endif
+  if (control) {
+    wxSlider *slider = (wxSlider *)wxSliderList->Find((long)control);
+    if (slider)
+      wxSliderEvent(control, wParam, pos);
     return;
   }
 
@@ -2954,66 +2937,52 @@ void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
 void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
 {
   if (control) {
-    wxNode *node = (wxNode *)wxScrollBarList.Find((long)control);
-    if (!node)
-      return;
-    wxWindow * win = (wxWindow *)node->Data();
-    if (wxSubType(win->__type, wxTYPE_SLIDER))
-    {
+    wxSlider *slider = (wxSlider *)wxSliderList->Find((long)control);
+    if (slider)
       wxSliderEvent(control, wParam, pos);
-      return;
-    }
-#if USE_SCROLLBAR
-    else if (wxSubType(win->__type, wxTYPE_SCROLL_BAR))
-    {
-      wxScrollBarEvent(control, wParam, pos);
-      return;
-    }
-#endif
     return;
-  } else {
-    wxScrollEvent *_event = new wxScrollEvent;
-    wxScrollEvent &event = *_event;
-
-    
-    event.pos = pos;
-    event.direction = wxHORIZONTAL;
-    switch (wParam) {
-    case SB_TOP:
-      event.moveType = wxEVENT_TYPE_SCROLL_TOP;
-      break;
-      
-    case SB_BOTTOM:
-      event.moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
-      break;
-      
-    case SB_LINEUP:
-      event.moveType = wxEVENT_TYPE_SCROLL_LINEUP;
-      break;
-      
-    case SB_LINEDOWN:
-      event.moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
-      break;
-      
-    case SB_PAGEUP:
-      event.moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
-      break;
-      
-    case SB_PAGEDOWN:
-      event.moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
-      break;
-      
-    case SB_THUMBTRACK:
-      event.moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
-      break;
-      
-    default:
-      return;
-      break;
-    }
-    if (wx_window)
-      wx_window->DoScroll(event);
   }
+
+  wxScrollEvent *_event = new wxScrollEvent;
+  wxScrollEvent &event = *_event;
+  
+  event.pos = pos;
+  event.direction = wxHORIZONTAL;
+  switch (wParam) {
+  case SB_TOP:
+    event.moveType = wxEVENT_TYPE_SCROLL_TOP;
+    break;
+    
+  case SB_BOTTOM:
+    event.moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
+    break;
+    
+  case SB_LINEUP:
+    event.moveType = wxEVENT_TYPE_SCROLL_LINEUP;
+    break;
+    
+  case SB_LINEDOWN:
+    event.moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
+    break;
+    
+  case SB_PAGEUP:
+    event.moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
+    break;
+    
+  case SB_PAGEDOWN:
+    event.moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+    break;
+    
+  case SB_THUMBTRACK:
+    event.moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+    break;
+    
+  default:
+    return;
+    break;
+  }
+  if (wx_window)
+    wx_window->DoScroll(event);
 }
 
 void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font)

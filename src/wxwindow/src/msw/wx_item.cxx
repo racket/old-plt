@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.5 1998/08/09 20:55:22 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.6 1998/08/11 14:25:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -24,11 +24,7 @@
 // The MakeProcInstance version of the function
 FARPROC wxGenericControlSubClassProc = 0;
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-wxList *wxControlHandleList = NULL;
-#else
 wxNonlockingHashTable *wxControlHandleList = NULL;
-#endif
 
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 

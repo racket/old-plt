@@ -1312,9 +1312,15 @@ public:
       OnSize(600, 400);
 #endif
 
+#ifdef wx_mac
+# define CLOSE_MENU_ITEM "Close\tCmd+W"
+#else
+# define CLOSE_MENU_ITEM "Close"
+#endif
+
       wxMenuBar *mb = new wxMenuBar();
       fileMenu = new wxMenu();
-      fileMenu->Append(77, "Close\tCmd+W");
+      fileMenu->Append(77, CLOSE_MENU_ITEM);
       wxMenu *m = new wxMenu();
       m->Append(79, "&Copy\tCmd+C");
       mb->Append(fileMenu, "File");
@@ -1358,12 +1364,15 @@ public:
 #ifdef wx_mac
        if (e->metaDown && e->KeyCode() == 'q') {
           OnMenuCommand(77);
+	  return TRUE;
        }
 else
        if (e->controlDown && e->KeyCode() == 'x') {
           OnMenuCommand(77);
+	  return TRUE;
        }
 #endif
+       return FALSE;
     }
     
   void CloseIsQuit(void)
@@ -1373,7 +1382,8 @@ else
 #else
 # define QUIT_MENU_ITEM "E&xit"
 #endif
-      fileMenu->SetLabel(77, QUIT_MENU_ITEM);
+      fileMenu->Delete(77);
+      fileMenu->Append(77, QUIT_MENU_ITEM);
     }
 };
 

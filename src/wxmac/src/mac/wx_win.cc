@@ -764,13 +764,11 @@ RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 //-----------------------------------------------------------------------------
 void wxWindow::MacSetBackground(void) // mac platform only
 {
-  if (!cEraser) {
-    BackColor(whiteColor);
-    BackPat(GetWhitePattern());
-    return;
-  }
+  wxBrush *bg;
 
-  int theBrushStyle = cEraser->GetStyle();
+  bg = cEraser ? cEraser : wxCONTROL_BACKGROUND_BRUSH;
+
+  int theBrushStyle = bg->GetStyle();
   if (theBrushStyle == wxSOLID)
     BackPat(GetWhitePattern());
   else if (theBrushStyle == wxTRANSPARENT)
@@ -782,7 +780,7 @@ void wxWindow::MacSetBackground(void) // mac platform only
     BackPat(GetWhitePattern()); // WCH: must use BackPixPat for stipple
   }
 
-  RGBColor pixel = cEraser->GetColour()->pixel;
+  RGBColor pixel = bg->GetColour()->pixel;
   RGBBackColor(&pixel);
 }
 

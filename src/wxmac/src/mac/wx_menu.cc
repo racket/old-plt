@@ -324,6 +324,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     ::AppendMenu(nmh, (ConstStr255Param)tmp);
     ::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
+    ::SetMenuItemTextEncoding(nmh, i + offset, kCFStringEncodingISOLatin1);
     if (menuItem->IsChecked())
       ::CheckMenuItem(nmh, i + offset, TRUE);
     if (!menuItem->IsEnabled() || (toHandle && !cEnable))
@@ -730,7 +731,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
   ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
-
+  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
   CheckHelpHack();
 }
 
@@ -771,6 +772,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   pullrightSetup[0] = theEnd;
   ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)pullrightLabel);
+  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
 
   wxMenu *ancestor = this;
   while (ancestor) {

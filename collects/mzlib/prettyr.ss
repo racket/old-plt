@@ -126,9 +126,9 @@
 
    (define pretty-print-print-line
      (make-parameter (lambda (line port offset width)
-		       (if (or (and (not line) (number? width)) 
-			       (positive? line))
-			   (write-char #\newline port)))
+		       (if (and (number? width)
+				(not (zero? line)))
+			   (newline port)))
 		     (lambda (x)
 		       (unless (can-accept-n? 4 x)
 			       (raise-type-error 

@@ -782,9 +782,11 @@
        (regexp              (str -> regexp))
        (regexp?             (_ -> bool) (predicate regexp))
        (regexp-match        ((union str regexp) str 
-						-> (union false (listof str))))
+						-> (union false 
+					              (cons str (listof (union str false))))))
        (regexp-match-positions 
-	((union str regexp) str -> (union false (listof (cons num num)))))
+	((union str regexp) str -> (union false (cons (cons num num) 
+						      (listof (union false (cons num num)))))))
        (regexp-replace      ((union str regexp) str str -> str))
        (regexp-replace*     ((union str regexp) str str -> str))
 

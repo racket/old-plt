@@ -3,11 +3,11 @@ MzScheme version 300 is different from previous versions of MzScheme
 in several significant ways:
 
  * MzScheme now directly supports Unicode. The "char" datatype
-   corresponds to a Unicode code point, so that strings correspond to
-   a sequence of code points. Meanwhile, a new "byte string" datatype
-   supports a sequence of bytes (exact integers between 0 and 255),
-   and it takes over the old role of strings with respect to low-level
-   port operations.
+   corresponds to a Unicode code point, and strings correspond to a
+   sequence of code points. Meanwhile, a new "byte string" datatype
+   implements a sequence of bytes (exact integers between 0 and 255),
+   and byte strings take over the old role of strings with respect to
+   low-level port operations.
 
    Regexp matching works on both char strings and byte strings, and
    MzScheme provides various operations for encoding chars as byte
@@ -19,14 +19,29 @@ in several significant ways:
    string (and implicitly convert it); procedures that produce a path
    never produce a string.
 
+ * A continuation is no longer tied to its creating thread.
+
+   Various continuation barriers remain in place, such as around the
+   call to an exception handler or syntax expander, and also around
+   the start of MzScheme's main thread. The main thread's barrier
+   prevents continuations captured in the main thread from being used
+   in other threads (which should make sense, intuitively, because
+   then other threads could become "main"). A newly created thread,
+   however, has no such barrier, so that created threads can trade
+   continuations.
+
  * The "parameter" construct has been redefined. The new definition is
-   indistinguishable from the old for old programs, except that (1)
-   the body of a `parameterize' form is in tail position with respect
-   to the entire `parameterize' form, (2) a `parameterize' form tends
-   to execute much more quickly, while parameter lookup tends to be
-   slightly more expensive, (3) a `parameterize' form has the expected
-   effect if a continuation is captured in dynamic extent of the
-   `parameterize' body and invoked in a different thread.
+   indistinguishable from the old one, except that (1) the body of a
+   `parameterize' is in tail position with respect to the entire
+   `parameterize' expression, (2) a `parameterize' expression tends to
+   execute much more quickly, while parameter lookup tends to be
+   slightly slower, (3) a `parameterize' has the expected effect if a
+   continuation is captured during the `parameterize' body and invoked
+   in a different thread.
+
+   Preserved thread cells now provide precisely the senatics of old
+   "parameters". A new "parameter" maps a continuation to a preserved
+   thread cell, which in turn provides a thread-specific value.
 
 ======================================================================
  Unicode
@@ -148,3 +163,21 @@ Under Windows, where a pathname is a UTF-16 string, MzScheme
 internally converts to and from byte strings via UTF-8<->UTF-16. A
 byte string that is not a UTF-8 encoding will never correspond to a
 pathname under Windows.
+
+======================================================================
+ Inside MzScheme (extend MzScheme via C)
+======================================================================
+
+SCHEME_STRINGP(), etc. have been replaced by SCHEME_CHAR_STRINGP(),
+etc. and SCHEME_BYTE_STRINGP(), etc.  A character is reprsented by the
+`mzchar' type, which corresponds to an unsigned integer (4 bytes).
+
+In addition to functions scheme_char_string...() which operate on
+`mzchar' arrays, some functions scheme_utf8_string...() are provided,
+which accept a `char' array and interpret it as a UTF-8 encoding.
+Several UTF-8 <-> mzchar conversion functions are also provided.
+
+SCHEME_PATHP() recognizes the new path type. Use SCHEME_STRING_PATHP()
+to recognize either a string or path, and use scheme_string_to_path()
+to convert a string to a path.
+

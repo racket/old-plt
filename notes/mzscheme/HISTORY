@@ -1,27 +1,36 @@
 
+>> See MzScheme_300.txt for information on major changes in
+   MzScheme 299.X. Minor changes are listed below.
+
 Version 299.2
+Changed continuations to allow a thread to invoke a continuation
+ captured in a different thread, and changed parameters; see 
+ MzScheme_300.txt
 Added thread cells
 0.0 and -0.0 are now considered the same by eqv?
 Changed \u and #\u to allow only up to 4 digits
 Added \U and #\U to allow up to 8 digits
+Added continuation-mark-set-first
+Added call-with-continuation-barrier
+Renamed "continuation boundary" to "continuation barrier"
+Removed exists check for current-directory
 
 Version 299.1
-Unicode
+Added Unicode support; see MzScheme_300.txt
 Removed the char-locale... operations
 Removed char->latin-1-integer and latin-1-integer->char
 Added string-copy!, read-string!, peek-string!, and write-string
 Added convert-stream to thread.ss
 Added \u syntax in strings and chars
 Fixed log for large exact integers
-Added convert-stream
 Added make-alarm
-Removed exists check for current-directory
 Added terminal-port?
 Addede path-string?, path-replace-suffix
-Renamed all the number "byte-string" functions to "bytes"
-Regexp grammar changed to match docs with respect to -
+Renamed all of the number "byte-string" functions to "bytes"
+Regexp grammar changed to match docs with respect to "-"
 Changed pref dir (all platforms) and pref file name
  (except Windows)
+
 
 Version 206, January 2004
 A shut-down custodian is no longer allowed to manage new

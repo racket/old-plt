@@ -478,5 +478,13 @@
 		     (import (define-values))
 		     (let () (define define-values 10) define-values)))
 
+;; Invoke-unit linking in let-baound variables
+(test '(the-x 10) 'invoke/sig 
+      (let ([x 'the-x])
+	(invoke-unit/sig
+	 (unit/sig () (import (x))
+		   (list x 10))
+	 (x))))
+
 (report-errs)
 

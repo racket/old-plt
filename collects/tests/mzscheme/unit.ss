@@ -443,4 +443,13 @@
 		(export)
 		(let () (define define-values 10) define-values)))
 
+;; Invoke-unit linking in let-baound variables
+(test '(the-x 10) 'invoke 
+      (let ([x 'the-x])
+	(invoke-unit
+	 (unit (import w) (export)
+	       (list w 10))
+	 x)))
+
+
 (report-errs)

@@ -9,7 +9,7 @@
   
   (define server-port 4004)
 
-  (define num-players 2)
+  (define num-players 1)
   (define board-file "~/tmp/map2")  ; maps available at the contest web site
   (define pack-file "~/tmp/packs2") ; pkg configuartions available there, too
   
@@ -145,7 +145,8 @@
     (server client-sema server-sema))
     
   (define (client-handler input output client-sema server-sema id)
-    (when (regexp-match "^Player\n" input)
+    (when (regexp-match "^Player" input)
+      (printf "player!~n")
       ;; Send board
       (fprintf output "~a ~a~n" board-width board-height)
       (let ([s (make-string board-width)])
@@ -169,14 +170,18 @@
                   (fprintf output "#~a X ~a Y ~a " (car r) (cadr r) (caddr r)))
                 robots)
       (newline output)
-      (let loop ()
+      (let loop ([orig-robots robots])
         ;; Print packages at my position:
         (let* ([r (assoc id robots)]
                [x (list-ref r 1)]
                [y (list-ref r 2)])
           (for-each (lambda (pack)
                       (when (and (= x (cadr pack))
-                                 (= y (caddr pack)))
+                                 (= y (caddr pack))
+                                 (not (ormap (lambda (r)
+                                               (member (car pack)
+                                                       (list-ref r 5)))
+                                             robots)))
                         (fprintf output "~a ~a ~a ~a "
                                 (car pack) ; id
                                 (list-ref pack 3)  ; dest-x
@@ -191,6 +196,9 @@
           ;; Tell the client what happened:
           (for-each (lambda (act)
                       (fprintf output "#~a " (car act))
+                      (when orig-robots
+                        (let* ([r (assoc (car act) orig-robots)])
+                          (fprintf output "#~a X ~a Y ~a " (car r) (cadr r) (caddr r))))
                       (for-each (lambda (i)
                                   (if (symbol? i)
                                       (fprintf output "~a " i)
@@ -199,6 +207,6 @@
                     activity)
           (newline output)
           ;; Continue
-          (loop)))))
+          (loop #f)))))
 
   (start-server))

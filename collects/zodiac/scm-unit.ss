@@ -75,7 +75,9 @@
 
     (define update-unresolved-attribute
       (lambda (attributes new-value)
-	(let ((current (get-attribute attributes 'unresolved-unit-vars)))
+	(let ((current (get-attribute attributes 'unresolved-unit-vars
+			 (lambda () '(()))))) ; List of lists to accomodate
+					; nested units
 	  (put-attribute attributes 'unresolved-unit-vars
 	    (cons
 	      (cons new-value (car current))

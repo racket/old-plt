@@ -17,7 +17,7 @@
     (cdr
      (tree->list
       (filter-tree-by-pattern
-       (directory->tree (cache-dir) (lambda (x) (not (regexp-match ".*/CVS$" x))))
+       (directory->tree (CACHE-DIR) (lambda (x) (not (regexp-match ".*/CVS$" x))))
        (list id id id string->number string->number)))))
   
   

@@ -48,7 +48,7 @@ THINGS TO DO FOR PLANET IN GENERAL
   
   (require (lib "list.ss")
            (lib "etc.ss")
-           (lib "thread.ss"))
+           (lib "port.ss"))
   
   (provide (all-defined))
   
@@ -63,7 +63,7 @@ THINGS TO DO FOR PLANET IN GENERAL
   
   
   ; exn:i/o:protocol: exception indicating that a protocol error occured
-  (define-struct (exn:i/o:protocol exn:i/o) ())
+  (define-struct (exn:i/o:protocol exn:fail:network) ())
   
   
   ; ==========================================================================================
@@ -129,7 +129,7 @@ THINGS TO DO FOR PLANET IN GENERAL
               (or (not hi) (<= n hi))))))
     
     (unless (directory-exists? path) 
-      (raise (make-exn:module 
+      (raise (make-exn:fail:filesystem 
               "Internal PLaneT error: inconsistent cache, directory does not exist" 
               (current-continuation-marks))))
     (max-string (filter valid-dir? (directory-list path))))
@@ -151,20 +151,22 @@ THINGS TO DO FOR PLANET IN GENERAL
   (define make-cutoff-port
     (opt-lambda (ip n [underflow-fn void])
       (let ((to-read n))
-        (make-custom-input-port 
-         (lambda (str)
+        (make-input-port 
+         'cutoff-port
+         
+         (lambda (bytestr)
            (cond
              [(= to-read 0) eof]
              [else
-              (let ((chars-read (read-string-avail! str ip 0 (min n (string-length str)))))
-                (if (eof-object? chars-read)
+              (let ((bytes-read (read-bytes-avail! bytestr ip 0 (min n (bytes-length bytestr)))))
+                (if (eof-object? bytes-read)
                     (begin
-                      (underflow-fn (- to-read chars-read))
+                      (underflow-fn (- to-read bytes-read))
                       (set! to-read 0)
                       eof)
                     (begin
-                      (set! to-read (- to-read chars-read))
-                      chars-read)))]))
+                      (set! to-read (- to-read bytes-read))
+                      bytes-read)))]))
        #f
        void))))
   
@@ -223,7 +225,7 @@ THINGS TO DO FOR PLANET IN GENERAL
                                    n
                                    (lambda ()
                                      (raise 
-                                      (make-exn:i/o:port:read 
+                                      (make-exn:fail:read:eof
                                        (format "Not enough chars on input (expected ~a, got ~a)" 
                                                n 
                                                (- n 0))

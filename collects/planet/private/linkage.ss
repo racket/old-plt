@@ -92,7 +92,7 @@
   ;; MAJOR MODIFICATION FOR v299
   
   ; path? : tst -> bool
-  (define path? string?)
+  ;(define path? string?)
   
   ; full-filename-identifier? : TST -> bool
   ; determines if the given value represents a fully-resolved module identifier
@@ -105,12 +105,13 @@
     (string->symbol (substring (symbol->string ms) 1)))
   
   ; path->key : string -> LINKAGE-MODULE-KEY
-  (define (path->key p) (string->symbol p))
+  (define (path->key p) (string->symbol (path->string p)))
   
-  ; desuffix : string -> string
+  ; desuffix : path -> path
   ; removes the suffix from the given file
   (define (desuffix file)
-    (let ((extension (filename-extension file)))
+    (let ((extension (filename-extension file))
+          (filename-str (path->string file)))
       (if extension
-          (substring file 0 (- (string-length file) (+ (string-length extension) 1)))
+          (string->path (substring filename-str 0 (- (string-length filename-str) (+ (string-length extension) 1))))
           file))))

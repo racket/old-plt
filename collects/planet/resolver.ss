@@ -143,6 +143,7 @@ an appropriate subdirectory.
   
   (require (lib "match.ss")
            (lib "file.ss")
+           (lib "port.ss")
            (lib "plt-single-installer.ss" "setup")
            "config.ss"
            "private/planet-shared.ss"
@@ -187,15 +188,15 @@ an appropriate subdirectory.
         [(and (eq? (pkg-maj pkg) (pkg-maj orig))
               (eq? (pkg-min pkg) (pkg-min orig)))
          (void)]
-        [else (raise (make-exn:module (format 
-                                       "Package ~a loaded twice with multiple versions: 
+        [else (raise (make-exn:fail (format 
+                                     "Package ~a loaded twice with multiple versions: 
 attempted to load version ~a.~a while version ~a.~a was already loaded" 
-                                       (pkg-name pkg) 
-                                       (pkg-maj pkg)
-                                       (pkg-min pkg)
-                                       (pkg-maj orig)
-                                       (pkg-min orig)) 
-                                      (current-continuation-marks)))])))
+                                     (pkg-name pkg) 
+                                     (pkg-maj pkg)
+                                     (pkg-min pkg)
+                                     (pkg-maj orig)
+                                     (pkg-min orig)) 
+                                    (current-continuation-marks)))])))
     
   ; ==========================================================================================
   ; MAIN LOGIC
@@ -213,7 +214,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                                         (or
                                          (get-package-from-cache pspec)
                                          (get-package-from-server pspec)
-                                         (raise (make-exn:module 
+                                         (raise (make-exn:fail
                                                  "Could not find matching package"
                                                  (current-continuation-marks))))))])
       (add-pkg-to-diamond-registry! pkg)
@@ -256,11 +257,11 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; then returns a path to it
   (define (get-package-from-server pkg)
     (with-handlers
-        ([exn:i/o? (lambda (e) (raise (make-exn:module 
-                                       (format 
-                                        "Error downloading module from PLaneT server: ~a"
-                                        (exn-message e))
-                                       (exn-continuation-marks e))))])
+        ([exn:fail? (lambda (e) (raise (make-exn:fail
+                                        (format 
+                                         "Error downloading module from PLaneT server: ~a"
+                                         (exn-message e))
+                                        (exn-continuation-marks e))))])
       (match (download-package pkg)
         [(#t str maj min) (install-pkg pkg str maj min)]
         [(#f str) #f])))
@@ -285,18 +286,15 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
             (append (pkg-spec-path pkg) 
                     (list (pkg-spec-name pkg) (number->string maj) (number->string min))))))
       (if (directory-exists? the-dir)
-          (raise (make-exn:module 
+          (raise (make-exn:fail 
                   "Internal PLaneT error: trying to install already-installed package" 
                   (current-continuation-marks)))
           (begin
             (make-directory* the-dir)
-            (let* ((null-out (make-custom-output-port 
-                              #f 
-                              (lambda (s start end buffer-ok?) (- end start))
-                              void void))
+            (let* ((null-out (open-output-nowhere))
                    (outport
                     (if (LOG-FILE)
-                        (with-handlers ((exn:i/o? (lambda (e) null-out)))
+                        (with-handlers ((exn:fail:filesystem? (lambda (e) null-out)))
                           (open-output-file (LOG-FILE) 'append))
                         null-out)))
               (parameterize ((current-output-port outport))

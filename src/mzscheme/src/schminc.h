@@ -13,7 +13,7 @@
    can be set to 1 again.
 */
 
-#define USE_COMPILED_MACROS 1
+#define USE_COMPILED_MACROS 0
 
 #define EXPECTED_PRIM_COUNT 579
 

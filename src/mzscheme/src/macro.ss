@@ -783,9 +783,12 @@
 	(#%raise-type-error 'load/use-compiled "pathname string" path))
       (#%let*-values ([(path) (resolve path)]
 		      [(base file dir?) (#%split-path path)]
-		      [(base) (#%if (#%eq? base 'relative) 'same base)])
+		      [(base) (#%if (#%eq? base 'relative) 'same base)]
+		      [(mode) (#%use-compiled-file-kinds)]
+		      [(comp?) (#%not (#%eq? mode 'none))])
         (#%let* ([get-so (#%lambda (file)
-			    (#%build-path base
+			    (#%if comp?
+				  (#%build-path base
 					  "compiled"
 					  "native"
 					  (#%system-library-subpath)
@@ -793,10 +796,22 @@
 					   re:suffix file
 					   (#%case (#%system-type)
 					      [(windows) ".dll"]
-					      [else ".so"]))))]
-		 [zo (#%build-path base
-				   "compiled"
-				   (#%regexp-replace re:suffix file ".zo"))]
+					      [else ".so"])))
+				  #f))]
+		 [ok-kind? (#%lambda (file)
+			     (#%or (#%eq? mode 'all)
+				   (#%with-handlers ([#%void #%void])
+				      (#%let-values ([(p) (#%open-input-file file)])
+                                       (#%dynamic-wind
+                                         #%void
+					 (#%lambda () (#%not (#%and (#%char=? #\' (#%read-char p))
+								    (#%char=? #\e (#%read-char p))
+								    (#%char=? #\space (#%read-char p)))))
+					 (#%lambda () (#%close-input-port p)))))))]
+		 [zo (#%and comp?
+			    (#%build-path base
+					  "compiled"
+					  (#%regexp-replace re:suffix file ".zo")))]
 		 [so (get-so file)]
 		 [_loader-so (get-so "_loader.ss")]
 		 [path-d (#%file-or-directory-modify-seconds path)]
@@ -809,7 +824,7 @@
 	      => (#%lambda (loader) (with-dir loader))]
 	     [(date>=? so path-d)
 	      (with-dir (#%lambda () ((#%current-load-extension) so)))]
-	     [(date>=? zo path-d)
+	     [(#%and (date>=? zo path-d) (ok-kind? zo))
 	      (with-dir (#%lambda () ((#%current-load) zo)))]
 	     [else (#%load path)]))))))
 
@@ -912,11 +927,7 @@
 								   (#%parameterize ([#%current-require-relative-collection
 										     (#%cons collection collection-path)])
 								     (#%call-with-values
-								      (#%lambda ()
-										((#%if (#%require-library-use-compiled)
-										       #%load/use-compiled 
-										       #%load)
-										 p))
+								      (#%lambda () (#%load/use-compiled p))
 								      #%list))
 								   (#%raise
 								    (make-exn

@@ -982,6 +982,20 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       }
       closed = 1;
     }
+  else if (SCHEME_INPORTP(obj))
+    {
+      Scheme_Input_Port *ip;
+      ip = (Scheme_Input_Port *)obj;
+      print_this_string(p, "#", 1);
+      print_this_string(p, SCHEME_SYM_VAL(ip->sub_type), SCHEME_SYM_LEN(ip->sub_type));
+    }
+  else if (SCHEME_OUTPORTP(obj))
+    {
+      Scheme_Output_Port *op;
+      op = (Scheme_Output_Port *)obj;
+      print_this_string(p, "#", 1);
+      print_this_string(p, SCHEME_SYM_VAL(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
+    }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), SCHEME_VARIABLE_TYPE)
 	   && (((Scheme_Bucket_With_Const_Flag *)obj)->flags & GLOB_HAS_REF_ID))
     {

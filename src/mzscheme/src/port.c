@@ -99,6 +99,10 @@ typedef struct Scheme_Indexed_String {
   char *string;
   int size;
   int index;
+  union { 
+    int hot; /* output port */
+    int pos; /* input port */
+  } u;
 } Scheme_Indexed_String;
 
 typedef struct {
@@ -274,6 +278,8 @@ static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol
 static Scheme_Object *any_symbol, *any_one_symbol;
 static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
 
+static Scheme_Object *all_symbol, *non_elaboration_symbol, *none_symbol;
+
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
@@ -317,7 +323,7 @@ static Scheme_Object *load (int, Scheme_Object *[]);
 static Scheme_Object *current_load (int, Scheme_Object *[]);
 static Scheme_Object *current_load_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *default_load (int, Scheme_Object *[]);
-static Scheme_Object *require_library_use_compiled(int, Scheme_Object *[]);
+static Scheme_Object *use_compiled_kind(int, Scheme_Object *[]);
 static Scheme_Object *current_require_relative_collection(int, Scheme_Object *[]);
 static Scheme_Object *transcript_on(int, Scheme_Object *[]);
 static Scheme_Object *transcript_off(int, Scheme_Object *[]);
@@ -581,6 +587,14 @@ scheme_init_port (Scheme_Env *env)
     lf_symbol = scheme_intern_symbol("linefeed");
     crlf_symbol = scheme_intern_symbol("return-linefeed");
 
+    REGISTER_SO(all_symbol);
+    REGISTER_SO(non_elaboration_symbol);
+    REGISTER_SO(none_symbol);
+
+    all_symbol = scheme_intern_symbol("all");
+    non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
+    none_symbol = scheme_intern_symbol("none");
+
     default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						    "default-port-read-handler", 
 						    1, 1);
@@ -796,10 +810,10 @@ scheme_init_port (Scheme_Env *env)
 						       MZCONFIG_LOAD_DIRECTORY), 
 			     env);
 
-  scheme_add_global_constant("require-library-use-compiled",
-			     scheme_register_parameter(require_library_use_compiled,
-						       "require-library-use-compiled",
-						       MZCONFIG_REQ_LIB_USE_COMPILED),
+  scheme_add_global_constant("use-compiled-file-kinds",
+			     scheme_register_parameter(use_compiled_kind,
+						       "use-compiled-file-kinds",
+						       MZCONFIG_USE_COMPILED_KIND),
 			     env);
   scheme_add_global_constant("current-require-relative-collection",
 			     scheme_register_parameter(current_require_relative_collection,
@@ -2413,6 +2427,7 @@ make_indexed_string (const char *str, long len)
   Scheme_Indexed_String *is;
 
   is = (Scheme_Indexed_String *)scheme_malloc(sizeof(Scheme_Indexed_String));
+
   if (str) {
     if (len < 0) {
       is->string = (char *)str;
@@ -2507,6 +2522,7 @@ scheme_get_sized_string_output(Scheme_Object *port, int *size)
   Scheme_Output_Port *op;
   Scheme_Indexed_String *is;
   char *v;
+  long len;
 
   if (!SCHEME_OUTPORTP(port))
     return NULL;
@@ -2517,12 +2533,16 @@ scheme_get_sized_string_output(Scheme_Object *port, int *size)
 
   is = (Scheme_Indexed_String *)op->port_data;
 
-  v = (char *)scheme_malloc_atomic(is->index + 1);
-  memcpy(v, is->string, is->index);
-  v[is->index] = 0;
+  len = is->index;
+  if (is->u.hot > len)
+    len = is->u.hot;
+
+  v = (char *)scheme_malloc_atomic(len + 1);
+  memcpy(v, is->string, len);
+  v[len] = 0;
   
   if (size)
-    *size = is->index;
+    *size = len;
 
   return v;
 }
@@ -3065,17 +3085,17 @@ static Scheme_Object *
 get_output_string (int argc, Scheme_Object *argv[])
 {
   Scheme_Output_Port *op;
-  Scheme_Indexed_String *is;
+  char *s;
+  int size;
 
   op = (Scheme_Output_Port *)argv[0];
   if (!SCHEME_OUTPORTP(argv[0]) 
       || (op->sub_type != string_output_port_type))
     scheme_wrong_type("get-output-string", "string output port", 0, argc, argv);
 
-  is = (Scheme_Indexed_String *)op->port_data;
-  is->string[is->index] = 0;
+  s = scheme_get_sized_string_output(argv[0], &size);
 
-  return scheme_make_sized_string(is->string, is->index, 1);
+  return scheme_make_sized_string(s, size, 1);
 }
 
 static Scheme_Object *
@@ -4018,12 +4038,26 @@ Scheme_Object *scheme_load(const char *file)
   return val;
 }
 
-static Scheme_Object *require_library_use_compiled(int argc, Scheme_Object *argv[])
+static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("require-library-use-compiled",
-			     MZCONFIG_REQ_LIB_USE_COMPILED,
+  Scheme_Object *o = argv[0];
+  
+  if (SAME_OBJ(o, all_symbol))
+    return o;
+  if (SAME_OBJ(o, non_elaboration_symbol))
+    return o;
+  if (SAME_OBJ(o, none_symbol))
+    return o;
+
+  return NULL;
+}
+
+static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("use-compiled-file-kinds",
+			     MZCONFIG_USE_COMPILED_KIND,
 			     argc, argv,
-			     -1, NULL, NULL, 1);
+			     -1, compiled_kind_p, "compiled file kind symbol", 1);
 }
 
 static Scheme_Object *collection_path_p(int argc, Scheme_Object **argv)
@@ -4111,20 +4145,40 @@ static Scheme_Object *
 file_position(int argc, Scheme_Object *argv[])
 {
   FILE *f;
+  Scheme_Indexed_String *is;
+  int wis;
 
   if (!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("file-position", "port", 0, argc, argv);
-  if (argc == 2 && !SCHEME_INTP(argv[1]))
-    scheme_wrong_type("file-position", "integer", 1, argc, argv);
+  if (argc == 2) {
+    int ok = 0;
+
+    if (SCHEME_INTP(argv[1])) {
+      ok = (SCHEME_INT_VAL(argv[1]) >= 0);
+    }
+
+    if (SCHEME_BIGNUMP(argv[1])) {
+      ok = SCHEME_BIGPOS(argv[1]);
+    }
+
+    if (!ok)
+      scheme_wrong_type("file-position", "non-negative exact integer", 1, argc, argv);
+  }
 
   f = NULL;
+  is = NULL;
+  wis = 0;
+
   if (SCHEME_OUTPORTP(argv[0])) {
     Scheme_Output_Port *op;
 
     op = (Scheme_Output_Port *)argv[0];
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       f = ((Scheme_Output_File *)op->port_data)->f;
-    else if (argc < 2)
+    else if (SAME_OBJ(op->sub_type, string_output_port_type)) {
+      is = (Scheme_Indexed_String *)op->port_data;
+      wis = 1;
+    } else if (argc < 2)
       return scheme_make_integer(scheme_output_tell(argv[0]));
   } else if (SCHEME_INPORTP(argv[0])) {
     Scheme_Input_Port *ip;
@@ -4132,22 +4186,70 @@ file_position(int argc, Scheme_Object *argv[])
     ip = (Scheme_Input_Port *)argv[0];
     if (SAME_OBJ(ip->sub_type, file_input_port_type))
       f = ((Scheme_Input_File *)ip->port_data)->f;
+    else if (SAME_OBJ(ip->sub_type, string_input_port_type))
+      is = (Scheme_Indexed_String *)ip->port_data;
     else if (argc < 2)
       return scheme_make_integer(scheme_tell(argv[0]));
   }
 
-  if (!f)
+  if (!f && !is)
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[0],
-		     "file-position: cannot move to position %d in a non-file port",
-		     SCHEME_INT_VAL(argv[1]));
+		     "file-position: setting position allowed for file and string ports only;"
+		     " given %s and position %s",
+		     scheme_make_provided_string(argv[0], 2, NULL),
+		     scheme_make_provided_string(argv[1], 2, NULL));
+
+  if (SCHEME_BIGNUMP(argv[1]))
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     argv[1],
+		     "file-position: new position is too large: %s for port: %s",
+		     scheme_make_provided_string(argv[1], 2, NULL),
+		     scheme_make_provided_string(argv[0], 2, NULL));
 
   if (argc > 1) {
-    fseek(f, SCHEME_INT_VAL(argv[1]), 0);
+    long n = SCHEME_INT_VAL(argv[1]);
+    if (f)
+      fseek(f, n, 0);
+    else {
+      if (wis) {
+	if (is->index > is->u.hot)
+	  is->u.hot = is->index;
+	if (is->size < is->index + n) {
+	  /* Expand string up to n: */
+	  char *old;
+	  
+	  old = is->string;
+	  is->size = is->index + n;
+	  is->string = (char *)scheme_malloc_atomic(is->size + 1);
+	  memcpy(is->string, old, is->index);
+	}
+	if (n > is->u.hot)
+	  memset(is->string + is->u.hot, 0, n - is->u.hot);
+      } else {
+	/* Can't really move past end of read string, but pretend we do: */
+	if (n > is->size) {
+	  is->u.pos = n;
+	  n = is->size;
+	} else
+	  is->u.pos = 0;
+      }
+      is->index = n;
+    }
     return scheme_void;
   } else {
-    int p;
-    p = ftell(f);
+    long p;
+    if (f)
+      p = ftell(f);
+    else if (wis)
+      p = is->index;
+    else {
+      /* u.pos > index implies we previously moved past the end with file-position */
+      if (is->u.pos > is->index)
+	p = is->u.pos;
+      else
+	p = is->index;
+    }
     return scheme_make_integer(p);
   }
 }

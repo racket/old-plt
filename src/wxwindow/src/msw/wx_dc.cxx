@@ -1086,73 +1086,15 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   return unicode;
 }
 
-static wchar_t gl_buf[QUICK_UBUF_SIZE];
-static char classes_buf[QUICK_UBUF_SIZE];
-static int dxes_buf[QUICK_UBUF_SIZE];
-
-static DWORD draw_meas(wchar_t *s, long len, HDC hdc, int combine,
-		       int draw, int x, int y, Bool bg)
-{
-  GCP_RESULTSW gcp;
-  wchar_t *gl;
-  char *classes;
-  DWORD sz, flags;
-  int *dxes;
-
- if (!len) return 0;
-
-  if (len < QUICK_UBUF_SIZE) {
-    gl = gl_buf;
-    classes = classes_buf;
-  } else {
-    gl = new WXGC_ATOMIC wchar_t[len];
-    classes = new WXGC_ATOMIC char[len];
-  }
-  gl[0] = 0;
-
-  if (draw) {
-    if (len < QUICK_UBUF_SIZE) 
-      dxes = dxes_buf;
-    else
-      dxes = new WXGC_ATOMIC int[len];
-  } else
-    dxes = NULL;
-    
-  gcp.lStructSize = sizeof(GCP_RESULTSW);
-  gcp.lpOutString = NULL;
-  gcp.lpDx = dxes;
-  gcp.lpCaretPos = NULL;
-  gcp.lpOrder = NULL;
-  gcp.lpClass = classes;
-  gcp.lpGlyphs = gl;
-  gcp.nGlyphs = len;
-
-  if (combine) {
-    flags = (GCP_DIACRITIC | GCP_USEKERNING | GCP_LIGATE | GCP_REORDER | GCP_GLYPHSHAPE);
-  } else {
-    flags = GCP_SYMSWAPOFF | GCP_DISPLAYZWG;
-  }
-
-  sz = GetCharacterPlacementW(hdc, s, len, 0, &gcp, flags);
-
-  if (draw && gcp.nGlyphs) {
-    ExtTextOutW(hdc, x, y, 
-		(bg ? ETO_OPAQUE : 0) | ETO_GLYPH_INDEX,
-		NULL, gl, gcp.nGlyphs, dxes);
-  }
-
-  return sz;
-}
-
-
 void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
 {
-  int xx1, yy1;
+  int xx1, yy1, xx, yy;
   HDC dc;
   DWORD old_background, sz;
   float w, h;
   wchar_t *ustring;
-  long len;
+  long len, alen;
+  SIZE sizeRect;
 
   dc = ThisDC();
 
@@ -1178,29 +1120,41 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
     old_background = SetBkColor(dc, current_text_background->pixel);
   }
   
-#if 0
   SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
 		  || (angle != 0.0))
 		 ? TRANSPARENT
 		 : OPAQUE));
-#endif
   
   SetRop(dc, wxSOLID);
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len);
 
-  sz = draw_meas(ustring, len, dc, combine,
-		 1, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1),
-		 ((current_bk_mode != wxTRANSPARENT) && (angle == 0.0)));
+  xx = XLOG2DEV(xx1);
+  yy = XLOG2DEV(yy1);
+  w = h = 0;
+  d = 0;
+
+  while (len) {
+    if (combine)
+      alen = len;
+    else
+      alen = 1;
+
+    (void)TextOutW(dc, xx + w, yy, ustring XFORM_OK_PLUS d, alen);
+
+    GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+
+    w += XDEV2LOGREL(sizeRect.cx);
+    h += XDEV2LOGREL(sizeRect.cy);
+
+    len -= alen;
+  }
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
 
-  w = HIWORD(sz);
-  h = LOWORD(sz);
-  
   CalcBoundingBox((float)x, (float)y);
   CalcBoundingBox((float)(x + w), (float)(y + h));
 }

@@ -714,7 +714,7 @@
 	    (with-parameterization user-parameterization
 	      (lambda ()
 		(parameterization-branch-handler 
-		 (make-parameterization (lambda () user-parameterization)))))))))
+		 (lambda () (make-parameterization user-parameterization)))))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 

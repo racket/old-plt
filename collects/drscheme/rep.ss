@@ -115,7 +115,7 @@
 	      (read-square-bracket-as-paren #t)
 	      (print-struct #t)
 	      (error-print-width 250)))
-	  (drscheme:basis:add-basis n bottom-eventspace)
+	  (drscheme:basis:add-basis n bottom-eventspace user-custodian)
 	  (with-parameterization p
 	    (lambda ()
 	      (eval

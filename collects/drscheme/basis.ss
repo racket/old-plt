@@ -41,7 +41,7 @@
     
     (define add-basis
       (let ([plt:userspace@ (reference-library-unit/sig "gusrspcr.ss" "userspce")])
-	(lambda (n eventspace)
+	(lambda (n eventspace custodian)
 	  (let* ([l@
 		  (unit/sig ()
 		    (import plt:userspace^)
@@ -67,5 +67,6 @@
 					   [library : () (l@ userspace)])
 				     (export (open userspace)))])
 	    (parameterize ([current-namespace n]
+			   [current-custodian custodian]
 			   [wx:current-eventspace eventspace])
 	      (invoke-open-unit/sig c@ #f (drscheme : drscheme:export^))))))))

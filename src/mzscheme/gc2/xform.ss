@@ -21,10 +21,10 @@
 ;;       MzScheme/MrEd (or, because of this bug, shouldn't!).
 
 ;; To call for Precise GC:
-;;   mzscheme -r xform.ss [--notes] <cpp> <src> <dest>
+;;   mzscheme -r xform.ss [--notes] <ctok> <cpp> <src> <dest>
 ;;
 ;; To call for Palm:
-;;   mzscheme -r xform.ss [--notes] --palm <cpp> <src> <dest> <mapdest>
+;;   mzscheme -r xform.ss [--notes] --palm <ctok> <cpp> <src> <dest> <mapdest>
 
 (define show-info? #f)
 (define check-arith? #t)
@@ -50,7 +50,7 @@
       #f
       s))
 
-(define ctok (car cmd-line))
+(define ctok (filter-false (car cmd-line)))
 (define cpp (filter-false (cadr cmd-line)))
 (define file-in (caddr cmd-line))
 (define file-out (filter-false (cadddr cmd-line)))
@@ -68,15 +68,27 @@
 ;; Pre-process and S-expr-ize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define process2
+  (if (eq? (system-type) 'windows)
+      (lambda (s)
+	(let ([split (let loop ([s s])
+		       (let ([m (regexp-match "([^ ]*) (.*)" s)])
+			 (if m
+			     (cons (cadr m) (loop (caddr m)))
+			     (list s))))])
+	  (apply process* (find-executable-path (car split) #f)
+		 (cdr split))))
+      process))
+
 (define cpp-process
-  (process (format "~a ~a ~a"
-		   cpp
-		   (if pgc? "-DMZ_PRECISE_GC" "")
-		   file-in)))
+  (process2 (format "~a ~a ~a"
+		    cpp
+		    (if pgc? "-DMZ_PRECISE_GC" "")
+		    file-in)))
 (close-output-port (cadr cpp-process))
 
 (define ctok-process
-  (process ctok))
+  (and ctok (process ctok)))
 
 (define (mk-error-thread proc)
   (thread (lambda ()
@@ -88,7 +100,15 @@
 	    (close-input-port (list-ref proc 3)))))
 
 (define cpp-error-thread (mk-error-thread cpp-process))
-(define ctok-error-thread (mk-error-thread ctok-process))
+(define ctok-error-thread (and ctok (mk-error-thread ctok-process)))
+
+(define-values (local-ctok-read local-ctok-write)
+  (make-pipe 100000))
+
+(define to-ctok
+  (if ctok
+      (cadr ctok-process)
+      local-ctok-write))
 
 ;; cpp output to ctok input:
 (thread (lambda ()
@@ -97,32 +117,39 @@
 	      (let ([l (read-string-avail! s (car cpp-process))])
 		(unless (eof-object? l)
 		  (display (if (< l 4096) (substring s 0 l) s)
-			   (cadr ctok-process))
+			   to-ctok)
 		  (loop))))
 	    (close-input-port (car cpp-process))
-	    (close-output-port (cadr ctok-process)))))
+	    (close-output-port to-ctok))))
 
 (define e-raw #f)
 
 (define read-thread
-  (thread
-   (lambda ()
-     (with-handlers ([void (lambda (x)
-			     (set! e-raw x))])
-       (parameterize ([read-case-sensitive #t])
-	 (set! e-raw (read (car ctok-process))))
-       (close-input-port (car ctok-process))))))
+  (if ctok
+      (thread
+       (lambda ()
+	 (with-handlers ([void (lambda (x)
+				 (set! e-raw x))])
+	   (parameterize ([read-case-sensitive #t])
+	     (set! e-raw (read (car ctok-process))))
+	   (close-input-port (car ctok-process)))))
+      (thread
+       (lambda ()
+	 (let ([u (load-relative "ctok.ss")])
+	   (parameterize ([current-input-port local-ctok-read])
+	     (set! e-raw (car (invoke-unit u)))))))))
 
 ((list-ref cpp-process 4) 'wait)
 (thread-wait cpp-error-thread)
 (when (eq? ((list-ref cpp-process 4) 'status) 'done-error)
   (error 'xform "cpp failed"))
 
-((list-ref ctok-process 4) 'wait)
-(thread-wait ctok-error-thread)
-(set! ctok-error-thread #f)
-(when (eq? ((list-ref ctok-process 4) 'status) 'done-error)
-  (error 'xform "ctok failed"))
+(when ctok
+  ((list-ref ctok-process 4) 'wait)
+  (thread-wait ctok-error-thread)
+  (set! ctok-error-thread #f)
+  (when (eq? ((list-ref ctok-process 4) 'status) 'done-error)
+    (error 'xform "ctok failed")))
 
 (thread-wait read-thread)
 (set! read-thread #f)

@@ -146,6 +146,8 @@
 # define USE_ON_EXIT_FOR_ATEXIT
 # endif
 
+# define FLUSH_SPARC_REGISTER_WINDOWS
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -196,6 +198,10 @@
 # endif
 # if defined(__hppa__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "hppa-linux"
+# endif
+# if defined(__sparc__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-linux"
+#  define FLUSH_SPARC_REGISTER_WINDOWS
 # endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
@@ -1007,6 +1013,9 @@
 
  /* USE_UNDERSCORE_SETJMP uses _setjmp() instead of setjmp() to avoid
     sigmal-mask work. */
+
+ /* FLUSH_SPARC_REGISTER_WINDOWS uses an assembly instruction for
+    flushing the Sparc register windows before copying the stack. */
 
   /**********************/
  /* Inexact Arithmetic */

@@ -4,7 +4,7 @@
 /* James Clark came up with this neat one instruction fix for
    continuations on the SPARC.  It flushes the register windows so
    that all the state of the process is contained in the stack. */
-#ifdef sparc
+#ifdef FLUSH_SPARC_REGISTER_WINDOWS
 #define FLUSH_REGISTER_WINDOWS asm("ta 3")
 #else
 #define FLUSH_REGISTER_WINDOWS /* empty */

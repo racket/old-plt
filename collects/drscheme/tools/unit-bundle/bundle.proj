@@ -1,7 +1,0 @@
-;; project file
-
-; save data
-(quote ((loaded-files-shown? #t) (to-load-files-shown? #f) (rep-shown? #t) (collection-paths ("(case (system-type)" "  [(unix)" "   (list \"/home/robby/plt/collects\")]" "  [(macos)" "   (list " "    (build-path \"Cupertino:\"" "                \"robby\"" "                \"cvs\"" "                \"plt\"" "                \"collects\"))]" "  [(windows)" "   (list \"d:\\\\plt\\\\collects\")]" "  [else null])" "" "")) (open-table ((|d:\plt\collects\mzlib\match.ss| #t) (|d:\plt\collects\drscheme\tools\unit-bundle\bundle-sig.ss| #f) (|d:\plt\collects\framework\compiled\frameworkc.zo| #t) (|d:\plt\collects\framework\frameworkr.ss| #f) (|d:\plt\collects\framework\frameworks.ss| #t) (|d:\plt\collects\drscheme\tools\unit-bundle\main.ss| #t) (|d:\plt\collects\mzlib\refer.ss| #t) (|d:\plt\collects\mzlib\files.ss| #t) (|d:\plt\collects\mzlib\compiled\corer.zo| #f) (|d:\plt\collects\mzlib\macro.ss| #t) (|d:\plt\collects\framework\compiled\frameworkp.zo| #t) (|d:\plt\collects\mzlib\cores.ss| #t) (|d:\plt\collects\framework\compiled\frameworkr.zo| #f) (|d:\plt\collects\mzlib\invoke.ss| #t) (|d:\plt\collects\mzlib\classd.ss| #t))) (files (("main.ss" "drscheme" "tools" "unit-bundle"))) (settings (full "Graphical Full Scheme (MrEd)" mred-debug () #f #f #f #t #t #f #t #f #f #f #f #f #f #f #f #f r4rs-style #f #f #t #t))))
-
-; load commands
-(require-library "main.ss" "drscheme" "tools" "unit-bundle")

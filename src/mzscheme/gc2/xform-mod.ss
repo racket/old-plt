@@ -865,11 +865,16 @@
   (define non-pointer-typedef-names
     ;; Under Windows, things like HANDLE and HWND, are not
     ;; malloced and could overlap with GCed areas.
-    '(|HANDLE|
-       |HWND| |HDC| |HMENU|
-	|HBITMAP| |HBRUSH| |HPEN| |HFONT| |HPALETTE| |HRGN|
-	 |HICON| |HINSTANCE|
-	  |GLOBALHANDLE| |LOCALHANDLE| |HGLOBAL| |HLOCAL|))
+    ;; Mac OS X has similar things.
+    #cs
+    '(HANDLE
+      HWND HDC HMENU
+      HBITMAP HBRUSH HPEN HFONT HPALETTE HRGN
+      HICON HINSTANCE
+      GLOBALHANDLE LOCALHANDLE HGLOBAL HLOCAL
+      GrafPtr RgnHandle PixMapHandle Handle MenuHandle GDHandle
+      WindowPtr DialogPtr ControlRef EventRef EventHandlerCallRef
+      CGContextRef))
 
   (define asm-commands
     ;; When outputting, add newline before these syms

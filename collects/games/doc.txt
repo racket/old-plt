@@ -105,3 +105,36 @@ used:
 To implement card games, see the documentation for the "cards"
 sub-collection of the "games" collection. Card games typically belong
 in the "Cards" game set.
+
+
+Showing Help
+------------
+
+The _show-help.ss_ library provides a `show-help' function for
+displaying a help window.
+
+> (show-help collections frame-title-str verbatim?)
+
+  Returns a thunk for showing a help window. Multiple invocations
+  of the thunk bring the same window to the foreground (until the
+  user closes the window).
+
+  The help window displays "doc.txt" from the given collection, where
+  `coll-path' is a list of strings to select the collection.
+
+  The `frame-title-str' string is used for the help window title.
+
+  If `verbatim?' is true, then "doc.txt" is displayed verbatim,
+  otherwise it is formatted as follows:
+
+   - Any line of the form "** ... **" is omitted.
+
+   - Any line that starts with "*" after whitespace is indented
+     as a bullet point.
+
+   - Any line that contains only "-"s and is as long as the previous
+     line causes the previous line to be formatted as a title.
+
+   - Other lines are pargraph-flowed to fit the window.
+
+  The `verbatim?' argument is optional, and it defaults to #f.

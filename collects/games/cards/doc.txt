@@ -231,8 +231,8 @@ Table methods: [in addition to standard frame% methods]
         collection (where `coll-path' is a list of strings to select
         the collection). The `str' is used for the help window title.
         If `tt?' is true, then "doc.txt" is displayed verbatim,
-        otherwise any line of the form "** ... **" is deleted, and
-        other lines are pargraph-flowed to fit the help window.
+        otherwise it is formatted as for `show-help' from
+        `(lib "show-help.ss" "games").
 
 
 Card methods:

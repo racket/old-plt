@@ -86,7 +86,7 @@
     (define credits
       (lambda ()
 	(let* ([f (make-object mred:container:frame% null "MrEd Credits"
-			       -1 -1 600 300)]
+			       -1 -1 600 350)]
 	       [p (make-object mred:container:horizontal-panel% f)]
 	       [c (make-object mred:canvas:wide-snip-canvas% p)]
 	       [is (make-object wx:image-snip% 
@@ -981,9 +981,6 @@
 		 (get-canvas)
 		 (lambda ()
 		   (let ([last (send edit last-position)]
-			 [delta (make-object wx:style-delta%
-					     wx:const-change-family
-					     wx:const-decorative)]
 			 [insert-delta
 			  (lambda (string delta)
 			    (let ([before (send edit get-start-position)])
@@ -991,7 +988,7 @@
 				(insert string)
 				(change-style delta before (send edit get-end-position)))))])
 		     (when insert-welcome?
-		       (insert-delta "Welcome to " delta)
+		       (insert-delta "Welcome to " message-delta)
 		       (let ([before (send edit get-start-position)])
 			 (insert-delta "MrEd" url-delta)
 			 (send edit set-clickback 

@@ -330,9 +330,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
       {
 #include "mzstkchk.h"
 	{
-#ifndef ERROR_ON_OVERFLOW
 	  scheme_current_process->ku.k.p1 = (void *)obj;
-#endif
 	  return SCHEME_TRUEP(scheme_handle_stack_overflow(check_cycle_k));
 	}
       }
@@ -700,12 +698,10 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       {
 #include "mzstkchk.h"
 	{
-#ifndef ERROR_ON_OVERFLOW
 	  p->ku.k.p1 = (void *)obj;
 	  p->ku.k.i1 = escaped;
 	  p->ku.k.i2 = compact;
 	  p->ku.k.p2 = (void *)ht;
-#endif
 	  return SCHEME_TRUEP(scheme_handle_stack_overflow(print_k));
 	}
       }

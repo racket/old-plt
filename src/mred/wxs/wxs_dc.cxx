@@ -295,8 +295,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #endif
 
 
-// @ "set-optimization" : void SetOptimization(bool); : : /IFNOTMAC/ENDIF/
-
 #ifndef wx_mac
 #define CHECKTHISONE(x) x
 #else

@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-98 Matthew Flatt
  
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -601,9 +601,6 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   scheme_init_jmpup_buf(&process->jmpup_buf);
 
   process->running = 1;
-#ifdef ERROR_ON_OVERFLOW
-  process->stack_overflow = 0;
-#endif
 
   process->dw = NULL;
 

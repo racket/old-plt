@@ -967,11 +967,11 @@ int scheme_pthread_semaphore_try_down(void *);
  /* INEXACT_PRINT_DIGITS "<X>" uses <X> as the number of digits to
      use for printing floating-points. Defaults to "14". */
 
- /* USE_INFINITY uses infinity() to get the infinity floating-point
-     constant instead of using HUGE_VAL. */
+ /* USE_INFINITY_FUNC uses infinity() to get the infinity
+     floating-point constant instead of using HUGE_VAL. */
 
- /* USE_DIVIDE_MAKE_INFINITY creates +inf.0 by dvividing by zero instead
-    of using HUGE_VAL. */
+ /* USE_DIVIDE_MAKE_INFINITY creates +inf.0 by dvividing by zero
+    instead of using HUGE_VAL. */
 
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
     infinity. */
@@ -1055,11 +1055,6 @@ int scheme_pthread_semaphore_try_down(void *);
  /* STACK_SAFETY_MARGIN <X> sets the number of bytes that should be
      available on the stack for "safety" to <X>. Used only if
      DO_STACK_CHECK is used. STACK_SAFETY_MARGIN defaults to 50000. */
-
- /* ERROR_ON_OVERFLOW causes MzScheme to produce an error if the
-     stack is overflowed. Normally, it would copy out the current
-     stack and try to continue the computation. Used only if
-     DO_STACK_CHECK is used. */
 
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory

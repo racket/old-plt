@@ -371,11 +371,7 @@ typedef struct Scheme_Cont {
   Scheme_Dynamic_Wind *dw, *common;
   Scheme_Process *home;
   Scheme_Continuation_Jump_State cjs;
-#ifdef ERROR_ON_OVERFLOW
-  int orig_overflow;
-#else
   mz_jmp_buf save_overflow_buf;
-#endif
   int suspend_break;
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;
@@ -390,9 +386,6 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Continuation_Jump_State cjs;
   Scheme_Process *home;
   long *ok;  
-#ifdef ERROR_ON_OVERFLOW
-  int orig_overflow;
-#endif
   Scheme_Object *f;
   int suspend_break;
 } Scheme_Escaping_Cont;
@@ -639,13 +632,11 @@ int scheme_find_type(Scheme_Object *ts);
 #define scheme_restore_env_stack(ss) \
     scheme_restore_env_stack_w_process(ss, scheme_current_process)
 
-#ifndef ERROR_ON_OVERFLOW
 typedef struct Scheme_Overflow {
   Scheme_Jumpup_Buf cont; /* continuation after value obtained in overflowed */
   struct Scheme_Overflow *prev; /* old overflow info */
   mz_jmp_buf savebuf; /* save old error buffer here */
 } Scheme_Overflow;
-#endif
 
 void scheme_jmpup_free(Scheme_Jumpup_Buf *);
 

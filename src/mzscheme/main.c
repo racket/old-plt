@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-97 Matthew Flatt
+  Copyright (c) 1995-98 Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -218,6 +218,10 @@ static char *get_init_filename(Scheme_Env *env)
 }
 #endif
 
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
+extern Scheme_Object *scheme_initialize(Scheme_Env *env);
+#endif
+
 #ifdef EXPAND_FILENAME_TILDE
 # define INIT_FILENAME "~/.mzschemerc"
 #else
@@ -235,10 +239,6 @@ static char *get_init_filename(Scheme_Env *env)
 #define MZSCHEME_CMD_LINE
 
 #include "cmdline.inc"
-
-#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
-extern Scheme_Object *scheme_initialize(Scheme_Env *env);
-#endif
 
 #ifdef NO_GCING
 extern int GC_free_space_divisor;

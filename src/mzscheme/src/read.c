@@ -305,15 +305,13 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 
 #ifdef DO_STACK_CHECK
   {
-#include "mzstkchk.h"
+# include "mzstkchk.h"
     {
-#ifndef ERROR_ON_OVERFLOW
-#ifndef MZ_REAL_THREADS
+# ifndef MZ_REAL_THREADS
       Scheme_Process *p = scheme_current_process;
-#endif
+# endif
       p->ku.k.p1 = (void *)port;
       p->ku.k.p2 = (void *)ht;
-#endif
       return scheme_handle_stack_overflow(read_k);
     }
   }

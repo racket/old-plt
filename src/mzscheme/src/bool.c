@@ -186,7 +186,6 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 
 static Scheme_Object *equal_k(void)
 {
-#ifndef ERROR_ON_OVERFLOW
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v1 = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *v2 = (Scheme_Object *)p->ku.k.p2;
@@ -194,9 +193,6 @@ static Scheme_Object *equal_k(void)
   p->ku.k.p1 = p->ku.k.p2 = NULL;
   
   return scheme_equal(v1, v2) ? scheme_true : scheme_false;
-#else
-  return scheme_void;
-#endif
 }
 
 /* Number of lists/vectors/structs/boxes to compare before

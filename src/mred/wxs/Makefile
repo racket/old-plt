@@ -14,7 +14,7 @@ LOCALFLAGS =
 
 WXSCFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) $(GUI) $(WARN) $(OPT) $(DEBUGFLAGS)
 
-WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h
+WXSCHEMEHEADERS = wxscheme.h ../../mzscheme/src/stypes.h ../../mzscheme/include/scheme.h
 MEDIAHEADERS = ../wxme/wx_media.h ../wxme/wx_medad.h ../wxme/wx_snip.h
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
@@ -160,7 +160,7 @@ wxs_win.cxx : wxs_win.xc wxs_win.xci $(XCDEPEND)
 
 WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
 
-$(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h wrap.inc
+$(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h wrap.inc cwrap.inc
 	$(WXSCC) wxscheme.cxx -o $(OBJDIR)/wxscheme.o 
 
 $(OBJDIR)/xcglue.o : ../../mzscheme/utils/xcglue.c ../../mzscheme/utils/xcglue.h ../../mzscheme/src/stypes.h

@@ -206,7 +206,7 @@ void wxSnip::SetCount(long new_count)
   }
 }
 
-void wxInternalSnip::SetCount(long new_count)
+void wxInternalSnip::SetCount(long WXUNUSED(new_count))
 {
   /* reject change */
 }

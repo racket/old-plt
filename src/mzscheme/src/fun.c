@@ -699,9 +699,6 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   long *old_ec_ok;
   void *old_cc_start;
   mz_jmp_buf save, oversave;
-#ifdef ERROR_ON_OVERFLOW
-  int orig_overflow;
-#endif
   Scheme_Stack_State envss;
   Scheme_Comp_Env *save_current_local_env;
   Scheme_Process *p = scheme_current_process;
@@ -732,14 +729,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     *p->ec_ok = 1;
   }
 
-#ifdef ERROR_ON_OVERFLOW
-  orig_overflow = p->stack_overflow;
-#endif
   scheme_save_env_stack_w_process(envss, p);
 
   save_current_local_env = p->current_local_env;
 
-#ifndef ERROR_ON_OVERFLOW
   memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(p->overflow_buf)) {
     while (1) {
@@ -806,11 +799,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     p->cc_ok = old_cc_ok;
     p->ec_ok = old_ec_ok;
     p->cc_start = old_cc_start;  
-#ifdef ERROR_ON_OVERFLOW
-    p->stack_overflow = orig_overflow;
-#else
     memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
-#endif
     scheme_longjmp(save, 1);
   }
 
@@ -820,11 +809,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 
-#ifdef ERROR_ON_OVERFLOW
-  p->stack_overflow = orig_overflow;
-#else
   memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
-#endif
 
   *cc_ok = 0;
   if (old_cc_ok)
@@ -1664,9 +1649,6 @@ static Scheme_Object *handle_call_ec(void *ec)
     Scheme_Object *v = p->cjs.u.val;
     Scheme_Object **vs = p->cjs.u.vals;
     copy_cjs(&p->cjs, &((Scheme_Escaping_Cont *)ec)->cjs);
-#ifdef ERROR_ON_OVERFLOW
-    p->stack_overflow = ((Scheme_Escaping_Cont *)ec)->orig_overflow;
-#endif
     p->suspend_break = ((Scheme_Escaping_Cont *)ec)->suspend_break;
     if (n == 1)
       return v;
@@ -1690,9 +1672,6 @@ call_ec (int argc, Scheme_Object *argv[])
   cont->home = p;
   cont->ok = p->ec_ok;
   cont->f = argv[0];
-#ifdef ERROR_ON_OVERFLOW
-  cont->orig_overflow = p->stack_overflow;
-#endif
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
 
@@ -1724,12 +1703,8 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->home = p;
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
-#ifdef ERROR_ON_OVERFLOW
-  cont->orig_overflow = p->stack_overflow;
-#else
   cont->save_overflow = p->overflow;
   memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
-#endif
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_process(cont->ss, p);
 
@@ -1809,12 +1784,8 @@ call_cc (int argc, Scheme_Object *argv[])
     p->suspend_break = cont->suspend_break;
 
     copy_cjs(&p->cjs, &cont->cjs);
-#ifdef ERROR_ON_OVERFLOW
-    p->stack_overflow = cont->orig_overflow;
-#else
     memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(mz_jmp_buf));
     p->overflow = cont->save_overflow;
-#endif
     scheme_restore_env_stack_w_process(cont->ss, p);
 
     /* Copy stack back in: (p->runstack and p->runstack_saved arrays

@@ -88,8 +88,6 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @MACRO IFNOTMAC = HIDETHISSTATEMENT(
 @MACRO ENDIF = )
 
-// @ "set-optimization" : void SetOptimization(bool); : : /IFNOTMAC/ENDIF/
-
 #ifndef wx_mac
 #define CHECKTHISONE(x) x
 #else

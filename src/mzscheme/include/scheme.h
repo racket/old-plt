@@ -479,9 +479,6 @@ typedef struct Scheme_Process {
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
-#ifdef ERROR_ON_OVERFLOW
-  int stack_overflow;
-#endif
 
   float sleep_time; /* blocker has starting sleep time */
   int block_descriptor;
@@ -490,10 +487,8 @@ typedef struct Scheme_Process {
   void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
   int ran_some;
 
-#ifndef ERROR_ON_OVERFLOW
   struct Scheme_Overflow *overflow;
   mz_jmp_buf overflow_buf;
-#endif
 
   struct Scheme_Comp_Env *current_local_env;
 
@@ -520,11 +515,9 @@ typedef struct Scheme_Process {
   char error_invoked;
   char err_val_str_invoked;
 
-#ifndef ERROR_ON_OVERFLOW
   Scheme_Object *(*overflow_k)(void);
   Scheme_Object *overflow_reply;
   Scheme_Jumpup_Buf overflow_cont;
-#endif
 
   Scheme_Object **tail_buffer;
   int tail_buffer_size;

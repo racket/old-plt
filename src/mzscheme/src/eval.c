@@ -266,7 +266,6 @@ scheme_init_eval (Scheme_Env *env)
 Scheme_Object *
 scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 {
-#ifndef ERROR_ON_OVERFLOW
   scheme_overflow_k = k;
   scheme_init_jmpup_buf(&scheme_overflow_cont);
   scheme_zero_unneeded_rands(scheme_current_process);
@@ -280,13 +279,6 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   } else
     scheme_longjmp(scheme_current_process->overflow_buf, 1);
   return NULL; /* never gets here */
-#else
-  if (!scheme_current_process->stack_overflow) {
-    scheme_current_process->stack_overflow = 1;
-    scheme_raise_exn(MZEXN_MISC_OUT_OF_MEMORY,
-		      "out of stack space (infinite loop?)");
-  }
-#endif
 }
 
 /* 4 cases => magic number for some compilers doing a switch */
@@ -1005,16 +997,14 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *name, *var, *rest;
 
 #ifdef DO_STACK_CHECK
-#include "mzstkchk.h"
+# include "mzstkchk.h"
   {
-#ifndef ERROR_ON_OVERFLOW
     Scheme_Process *p = scheme_current_process;
     p->ku.k.p1 = (void *)form;
     p->ku.k.p2 = (void *)env;
     p->ku.k.p3 = (void *)rec;
     p->ku.k.i1 = depth;
     p->ku.k.i2 = app_position;
-#endif
     return scheme_handle_stack_overflow(compile_expand_expr_k);
   }
 #endif
@@ -1867,7 +1857,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 # endif
 # include "mzstkchk.h"
   {
-# ifndef ERROR_ON_OVERFLOW
     Scheme_Process *p = scheme_current_process;
     p->ku.k.p1 = (void *)obj;
     p->ku.k.i1 = num_rands;
@@ -1882,7 +1871,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     } else
       p->ku.k.p2 = (void *)rands;
     p->ku.k.i2 = get_value;
-# endif
     return scheme_handle_stack_overflow(do_eval_k);
   }
 #endif

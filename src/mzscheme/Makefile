@@ -189,6 +189,15 @@ $(MZSCHEME): objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDI
 $(OBJDIR)/main.o: main.c include/scheme.h sconfig.h cmdline.inc
 	$(CC) $(MAIN_CFLAGS) -c main.c -o $(OBJDIR)/main.o
 
+$(OBJDIR)/main_ee.o: $(OBJDIR)/main.o
+	$(CC) $(MAIN_CFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c main.c -o $(OBJDIR)/main_ee.o
+
+ee-main:
+	$(MAKE) $(OBJDIR)/main_ee.o
+
+ee-app: $(MZSCHEME) $(OBJDIR)/main_ee.o
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(CC) $(MAIN_CFLAGS_NODBG) -o $(EEAPP) $(OBJDIR)/main_ee.o $(EEOBJECTS) $(SPECIALIZINGOBJECTS) -L$(LIBDIR)/ -lmzscheme -lgc $(LIBS) ; fi
+
 testext.o: testext.c
 	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.o
 

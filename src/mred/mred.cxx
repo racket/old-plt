@@ -6,6 +6,19 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
+/* #define STANDALONE_WITH_EMBEDDED_EXTENSION */
+/*    STANDALONE_WITH_EMBEDDED_EXTENSION builds an executable with
+      built-in extensions. The extension is initialized by calling
+      scheme_initialize(env), where `env' is the initial environment.
+      By default, command-line parsing, the REP, and initilization
+      file loading are turned off. */
+
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
+# define DONT_PARSE_COMMAND_LINE
+# define DONT_RUN_REP
+# define DONT_LOAD_INIT_FILE
+#endif
+
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -1915,6 +1928,7 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 # include "../mzscheme/src/schvers.h"
 #endif
 
+#ifndef DONT_LOAD_INIT_FILE
 static char *get_init_filename(Scheme_Env *env)
 {
   Scheme_Object *f = scheme_lookup_global(scheme_intern_symbol("find-graphical-system-path"), 
@@ -1926,6 +1940,11 @@ static char *get_init_filename(Scheme_Env *env)
 
   return SCHEME_STR_VAL(path);
 }
+#endif
+
+#ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
+extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
+#endif
 
 #ifdef wx_x
 # define INIT_FILENAME "~/.mredrc"

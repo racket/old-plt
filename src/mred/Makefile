@@ -78,6 +78,9 @@ $(MRED) : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) \
           $(MRSTATIC_STUB) $(MRCHECK)
 	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(MRED) $(LDSTARTERS) $(MREDOBJECTS) $(MRCHECK) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS)
 
+ee-app: $(MRED) $(OBJDIR)/mred_ee.o
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) $(LDSTARTERS) $(OBJDIR)/mred_ee.o $(OBJDIR)/mredx.o $(EEOBJECTS) $(MRCHECK) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS) ; fi
+
 sunos4-static: $(OBJDIR)/dl_stub.o
 	$(MAKE) $(MRED) MRSTATIC=-static  MRSTATIC_STUB='$(OBJDIR)/dl_stub.o' LDNONSTATICLIBS=''
 
@@ -96,6 +99,12 @@ wx:
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
                    ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
+
+$(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c mred.cxx -o $(OBJDIR)/mred_ee.o
+
+ee-main:
+	$(OBJDIR)/mred_ee.o
 
 $(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mredx.cxx -o $(OBJDIR)/mredx.o

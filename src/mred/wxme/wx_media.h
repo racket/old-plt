@@ -95,8 +95,7 @@ enum {
 #define wxTAB_WIDTH 20
 
 typedef void (*wxClickbackFunc)(wxMediaEdit *, long start, long end, void *);
-typedef void (*wxWordbreakFunc)(wxMediaEdit *, long *start, long *end, 
-				int reason, void *);
+typedef void (*wxWordbreakFunc)(wxMediaEdit *, long *start, long *end, int reason, void *);
 
 class wxMediaAdmin;
 

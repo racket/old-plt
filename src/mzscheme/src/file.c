@@ -2626,7 +2626,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 {
 #if !defined(NO_READDIR) || defined(USE_MAC_FILE_TOOLBOX) || defined(USE_FINDFIRST)
   char *filename;
-  Scheme_Object *first = scheme_null, *last = NULL, *n, *elem;
+  Scheme_Object * volatile first = scheme_null, * volatile last = NULL, *n, *elem;
 #endif
 #ifndef NO_READDIR
   DIR *dir;
@@ -2645,7 +2645,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   FSSpec dir;
   short find_position = 0;
 #else
-  int counter = 0;
+  volatile int counter = 0;
 #endif
 
   if (argc && !SCHEME_STRINGP(argv[0]))

@@ -6814,7 +6814,7 @@ make_tcp_output_port(void *data)
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
-  char *address = "", *errmsg = "";
+  char *address = "", * volatile errmsg = "";
   unsigned short origid, id;
   int errpart = 0, errid = 0;
 #ifdef USE_SOCKETS_TCP

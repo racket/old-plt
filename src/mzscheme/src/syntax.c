@@ -2005,8 +2005,10 @@ begin0_execute(Scheme_Object *obj)
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
     mv = p->ku.multiple.array;
     mc = p->ku.multiple.count;
-  } else
+  } else {
     mv = NULL;
+    mc = 0; /* makes compilers happy */
+  }
 
   while (i--) {
     (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);

@@ -433,7 +433,7 @@ print_to_string(Scheme_Object *obj, long *len, int write,
 		Scheme_Object *port, long maxl, Scheme_Process *p,
 		Scheme_Config *config)
 {
-  Scheme_Hash_Table *ht;
+  Scheme_Hash_Table * volatile ht;
   char *ca;
 
   p->print_allocated = 50;

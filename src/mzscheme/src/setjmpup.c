@@ -312,7 +312,7 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   scheme_longjmp(b->buf, 1);
 }
 
-int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *start, 
+int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void * volatile start, 
 			     Scheme_Jumpup_Buf *c)
 {
   int local;

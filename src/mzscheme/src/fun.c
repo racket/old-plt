@@ -2128,14 +2128,14 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
  
 Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 				   Scheme_Object *(*act)(void *),
-				   void (*post)(void *), 
+				   void (* volatile post)(void *), 
 				   Scheme_Object *(*jmp_handler)(void *),
 				   void *data)
 {
-  Scheme_Object *v, **save_values;
-  int err;
+  Scheme_Object * volatile v, ** volatile save_values;
+  volatile int err;
   Scheme_Dynamic_Wind *dw;
-  int save_count;
+  volatile int save_count;
   Scheme_Process *p = scheme_current_process;
 
   dw = MALLOC_ONE_RT(Scheme_Dynamic_Wind);

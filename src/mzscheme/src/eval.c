@@ -326,14 +326,15 @@ int scheme_get_eval_type(Scheme_Object *obj)
 }    
 
 static Scheme_Object *make_application(Scheme_Object *orig_app,
-				       Scheme_Object *v,
+				       Scheme_Object * volatile v,
 				       int can_opt_const,
 				       int final)
 {
-  Scheme_Object *o, *tmp[20], **linked;
+  Scheme_Object *o, *tmp[20], ** volatile linked;
   Scheme_App_Rec *app, *orig;
   char *evals;
-  int i, n, nv, size;
+  int i, nv, size;
+  volatile int n;
 
   orig = (Scheme_App_Rec *)orig_app;
 

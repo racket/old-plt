@@ -917,6 +917,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	pp->overflow = overflow->prev;
 	memcpy(&scheme_overflow_cont, &overflow->cont, 
 	       sizeof(Scheme_Jumpup_Buf));
+	memset(&overflow->cont, 0, sizeof(Scheme_Jumpup_Buf)); /* Maybe helps GC */
 	overflow = NULL; /* Maybe helps GC */
 	/* Reset overflow buffer and continue */
 	if (scheme_setjmp(pp->overflow_buf)) {

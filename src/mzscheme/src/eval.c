@@ -353,8 +353,11 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
     scheme_init_jmpup_buf(&scheme_overflow_cont);
     if (!scheme_overflow_reply) {
       scheme_longjmp(scheme_error_buf, 1);
-    } else
-      return scheme_overflow_reply;
+    } else {
+      Scheme_Object *reply = scheme_overflow_reply;
+      scheme_overflow_reply = NULL;
+      return reply;
+    }
   } else
     scheme_longjmp(scheme_current_thread->overflow_buf, 1);
   return NULL; /* never gets here */

@@ -3378,8 +3378,8 @@ Scheme_Object *scheme_load(const char *file)
   if (scheme_setjmp(scheme_error_buf)) {
     val = NULL;
   } else {
-    val = scheme_apply(scheme_make_prim((Scheme_Prim *)load),
-		       1, p);
+    val = scheme_apply_multi(scheme_make_prim((Scheme_Prim *)load),
+			     1, p);
   }
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 

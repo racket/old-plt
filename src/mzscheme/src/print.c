@@ -171,7 +171,7 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
   else
     a[1] = port;
   
-  scheme_apply(scheme_write_proc, 2, a);
+  scheme_apply_multi(scheme_write_proc, 2, a);
   
   if (maxl > 0) {
     char *s;

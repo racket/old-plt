@@ -2868,7 +2868,7 @@ static Scheme_Object *now_do_will(void *v)
   o[0] = a->o;
   a->o = NULL;
 
-  return scheme_apply(a->proc, 1, o);
+  return scheme_apply_multi(a->proc, 1, o);
 }
 
 static void post_will(void *v)

@@ -18,6 +18,11 @@
 
   (define temp-anchor `(A ((NAME "temp")) ""))
 
+  (define (spacify s)
+    (if (and (string? s) (string=? s "")) 
+	" " ; to appease IE
+	s))
+
   (define (template caption lines) 
     `(HTML 
       (HEAD ,hd-css)
@@ -154,7 +159,7 @@
 			    (close-input-port port)
 			    (reverse lines))
 			  (loop (cons 
-			        line 
+			        (spacify line) 
 				lines)))))])
       (if offset
 	  (let loop ([lines lines]

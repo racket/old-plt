@@ -1,13 +1,13 @@
 (module readerr mzscheme
   (provide raise-read-error)
 
-  (define (raise-read-error msg port source-name line col pos span)
+  (define (raise-read-error msg source-name line col pos span)
     (let ([bad-type
            (lambda (which what)
              (raise-type-error 'raise-read-error
                                what
                                which
-                               msg port source-name line col pos span))]
+                               msg source-name line col pos span))]
           [ordinal? (lambda (x)
                       (or (not x) 
                           (and (number? x) (exact? x) (positive? x) (integer? x))))]
@@ -15,17 +15,15 @@
     
       (unless (string? msg)
         (bad-type 0 "string"))
-      (unless (input-port? port)
-        (bad-type 1 "input port"))
       (unless (ordinal? line)
-        (bad-type 3 ordinal))
+        (bad-type 2 ordinal))
       (unless (ordinal? col)
-        (bad-type 4 ordinal))
+        (bad-type 3 ordinal))
       (unless (ordinal? pos)
-        (bad-type 5 ordinal))
+        (bad-type 4 ordinal))
       (unless (or (not span)
                   (and (number? span) (exact? span) (not (negative? span)) (integer? span)))
-        (bad-type 6 "non-negative exact integer"))
+        (bad-type 5 "non-negative exact integer"))
                   
       
       (raise
@@ -42,5 +40,5 @@
                     (format "~a: " source-name)])
                  msg))
         (current-continuation-marks)
-        port
+        (current-input-port) ;; BAD PORT: this field should go away...
         source-name line col pos span)))))

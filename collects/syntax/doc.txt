@@ -225,12 +225,11 @@ currently exist).
 _readerr.ss_: signalling parse errors
 ======================================================================
 
-> (raise-read-error string input-port source-v line-k col-k pos-k span-k)
+> (raise-read-error msg-string source-v line-k col-k pos-k span-k)
 
 Creates and raises an
 >  exn:read
-exception, using `string' as the base error message, `input-port' as
-the input port recorded in the exception, etc.
+exception, using `msg-string' as the base error message.
 
 Source-location information is added to the error message using the
 last five arguments (if the `error-print-source-location' parameter is

@@ -31,9 +31,10 @@ the server includes setting the list of currently active assignments
 The handin process uses SSL, so it is effectively as secure as the
 server and each user's password.
 
-  NOTE: The handin tool works only with DrScheme v205, and students
-  must install the "OpenSSL" extension before installing a handing
-  client. The OpenSSL extension is available at
+  NOTE: The handin tool works only with openssl, which is part of
+  DrScheme v206.  If you use v205 then students will have to install
+  the "OpenSSL" extension before installing a handing client. The
+  OpenSSL extension is available at
              http://www.plt-scheme.org/software/openssl/
 
 
@@ -66,7 +67,7 @@ Quick Start for a Test Drive:
  8. Start DrScheme, click "Handin" to run the client, submit with
     username "tester" and password "pw".
 
-    The submitted file will be .../active/test/tester/handin0.
+    The submitted file will be .../active/test/tester/handin.scm.
  
  9. Check the status of your submission by pointing a web browser at
         https://localhost:7980/servlets/status.ss
@@ -187,12 +188,16 @@ sub-directories:
          supported (i.e., when using MrEd3m and MzScheme3m with memory
          accounting); the default is 40000000
 
+      'default-file-name : the default filename that will be saved
+        with the submission contents.  The default is "handin.scm".
+
       'max-upload : maximum size in bytes of an acceptable submission;
          the default is 500000
 
       'max-upload-keep : maximum index of submissions to keep; the
-         most recent submission is "handin0", the next oldest is
-         "handin1", next oldest is "handin2", etc.; the default is 9
+         most recent submission is "handin.scm" (by default), the next
+         oldest is in "BACKUP-0/handin.scm", next oldest is
+         "BACKUP-1/handin.scm", etc.; the default is 9
 
       'id-regexp : a regular expression used to validate a "free form"
          user id (possibly a student id) for a created account; the
@@ -231,18 +236,20 @@ sub-directories:
     and the first assignment is the default selection.
 
     Within each directory, the student id is used for a sub-directory
-    name. Within each student sub-directory are "handin0", etc., for
-    each student who submits an assignment. (The most recent handin is
-    called "handin0", then "handin1" is an older submission for the
-    same assignment, etc.) A `checker' procedure can replace the name
-    "handin" with something else (possibly sensitive to the content of
-    the submission); see below for more details.
+    name. Within each student sub-directory are "handin.scm" (or some
+    other name if `default-file-name' is set), "BACKUP-0", "BACKUP-1",
+    etc., for each student who submits an assignment. (The most recent
+    handin is in this directory, and "BACKUP-N" directories hold older
+    submission for the same assignment.) A `checker' procedure can
+    replace the name "handin.scm" with something else (possibly
+    sensitive to the content of the submission); see below for more
+    details.
 
-    For submissions from a normal DrScheme frame, each "handin0",
-    etc. file contains a copy of the student's definitions and
-    interactions windows. The file is in a binary format (to support
-    non-text code), and opening the file directly in DrScheme shows
-    the definitions part. To get both the defintions and interactions
+    For submissions from a normal DrScheme frame, a "handin.scm" file
+    contains a copy of the student's definitions and interactions
+    windows. The file is in a binary format (to support non-text
+    code), and opening the file directly in DrScheme shows the
+    definitions part. To get both the defintions and interactions
     parts, the file can be parsed with `unpack-submission' from
     "utils.ss" (see below).
 
@@ -258,10 +265,12 @@ sub-directories:
     submission as a string. (See also `unpack-submission', etc. from
     "util.ss", below.) To reject the submission, the `checker'
     function can raise an exception; the exception message will be
-    relayed back to the student.  The `checker' function is called
-    when the current directory is active/<assignment>/<user>.
+    relayed back to the student. The `checker' function is called when
+    the current directory is active/<assignment>/<user>, and it can
+    create additional files in this directory -- such files will get
+    moved when a backup is done.
 
-    The checker should return a string, such as "handin", to use in
+    The checker should return a string, such as "handin.scm", to use in
     naming the submission. For submissions that require both programs
     and test suites, the checker might use `is-test-suite-submission?'
     and return "tests" if the string is a test-suite submission or
@@ -277,10 +286,10 @@ sub-directories:
   * web-status-log.ss (created if not present, appended otherwise)
     --- records accesses of the HTTPS status web server.
 
-  * [in]active/<assignment>/<user>/<filename>0 (if submitted) --- the
+  * [in]active/<assignment>/<user>/<filename> (if submitted) --- the
     most recent submission for <assignment> by <user> where <filename>
-    was returned by the checker (or is "handin" if there's no
-    checker).
+    was returned by the checker (or the value of the
+    `default-file-name' configuration option if there's no checker).
 
   * [in]active/<assignment>/<user>/grade (optional) --- <user>'s grade
     for <assignment>, to be reported by the HTTPS status web server.
@@ -304,7 +313,7 @@ button for any network transaction. For handins, "cancel" is
 guaranteed to work up to the point that the client sends a "commit"
 command; this command is sent only after the server is ready to record
 the submission (having run it through the checker, if any), but before
-the server writes the "handin0" file. Also, the server responds to a
+the server writes the "handin.scm" file. Also, the server responds to a
 commit with "ok" only after it has written the file. Thus, when the
 client-side tool reports that the handin was successful, the report is
 reliable. Meanwhile, the tool can also report successful cancels most

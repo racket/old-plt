@@ -315,9 +315,11 @@ void wxButton::Paint(void)
   {
     if (buttonBitmap) {
       Rect r;
+      Bool isgray;
       ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
       OffsetRect(&r,SetOriginX,SetOriginY);
-      PaintBitmapButton(&r, buttonBitmap, trackstate, IsGray() || !cActive);
+      isgray = IsGray();
+      PaintBitmapButton(&r, buttonBitmap, trackstate, isgray || !cActive);
     }
     wxWindow::Paint();
   }

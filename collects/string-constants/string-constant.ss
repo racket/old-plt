@@ -63,7 +63,7 @@
     
     (define specific
       (and env-var-set
-           (with-handlers ([exn:read? (lambda (x) #t)])
+           (with-handlers ([exn:fail:read? (lambda (x) #t)])
              (read (open-input-string env-var-set)))))
     
     (define the-warning-message #f)

@@ -9,7 +9,7 @@
     (define mach-id (string->symbol (path->string (system-library-subpath #f))))
 
     (with-handlers ([(lambda (x)
-		       (and (not-break-exn? x)
+		       (and (exn:fail? x)
 			    (memq (system-type) '(windows macos))))
 		     (lambda (x)
 		       (fprintf (current-error-port)

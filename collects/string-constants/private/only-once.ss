@@ -8,6 +8,6 @@
       (set! already-printed? #t)
       ;; the output port may no longer be there, in which case
       ;; we just give up on printing
-      (with-handlers ([not-break-exn? (lambda (x) (void))])
+      (with-handlers ([exn:fail? (lambda (x) (void))])
         (fprintf (current-error-port) "~a" msg)))))
 

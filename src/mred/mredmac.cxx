@@ -1602,14 +1602,14 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	    }
 	  }
 	}
-	scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+	scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 			 "%s: cannot interpret vector as a file specification: %V",
 			 name,
 			 v);
       }
       /* record case falls through to list */
     } else {
-      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+      scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		       "%s: cannot convert ill-tagged or untagged vector: %V",
 		       name,
 		       v);
@@ -1647,7 +1647,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 		|| !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
 		|| !SCHEME_BYTE_STRINGP(SCHEME_CAR(a))) {
 	      /* Bad record form. */
-	      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+	      scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 			       "%s: cannot interpret vector part as a record field: %s",
 			       name,
 			       scheme_make_provided_string(a, 1, NULL));
@@ -1695,7 +1695,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
     }
   default:
     /* Don't know how to marshall */
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+    scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		     "%s: cannot convert value for sending: %s",
 		     name,
 		     scheme_make_provided_string(v, 1, NULL));

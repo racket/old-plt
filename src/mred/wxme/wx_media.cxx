@@ -664,7 +664,7 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
   case WXK_TAB:
     ok = 1;
   default: /* ^^^ fallthrough ^^^ */
-    if (ok || (code >= 32 && code <= 255)) {
+    if (ok || (code >= 32)) {
       ins = code;
     }
   }

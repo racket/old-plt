@@ -40,7 +40,7 @@
 		(begin
 		  (save-history)
 		  s)
-		(with-handlers ([(if force? (lambda (x) #f) exn:read:eof?)
+		(with-handlers ([(if force? (lambda (x) #f) exn:fail:read:eof?)
 				 (lambda (exn)
 				   (let ([v (do-readline (get-prompt next-pos))])
 				     (loop (string-append 
@@ -54,7 +54,7 @@
 		  (let ([p (open-input-string (string-append s "\n"))])
 		    (port-count-lines! p)
 		    (let ([rs (let loop ()
-				(let ([r (read-syntax (format "repl-~a" counter) p)])
+				(let ([r (read-syntax (string->path (format "repl-~a" counter)) p)])
 				  (if (eof-object? r)
 				      null
 				      (cons r (loop)))))])

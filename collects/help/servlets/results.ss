@@ -3,10 +3,10 @@
            (lib "list.ss")
            (lib "servlet-sig.ss" "web-server")
            (lib "servlet-helpers.ss" "web-server")
-           (lib "path.ss" "help" "private")
-           (lib "docpos.ss" "help" "private")
-           (lib "string-constant.ss" "string-constants")
-           (lib "search.ss" "help" "private"))
+           "../private/path.ss"
+           "../private/docpos.ss"
+           "../private/search.ss"
+           (lib "string-constant.ss" "string-constants"))
   
   (require "private/util.ss")
   (require "private/search-util.ss")
@@ -229,18 +229,21 @@
           (set! search-responses
                 (cons entry search-responses))))
       
-      (define (make-results-page search-string items)
-        `(HTML
-          (HEAD ,hd-css
-                ,@hd-links
-                (TITLE "PLT Help Desk search results"))
-          (BODY
-           (FONT ((SIZE "+1"))
-                 ,(color-with 
-                   "blue" 
-                   `(B ,(string-constant plt:hd:search-results))))
-           (BR)
-           ,@items)))
+      (define (make-results-page search-string items regexp? exact?)
+        (let-values ([(string-finds finds) (build-string-finds/finds search-string regexp? exact?)])
+          `(HTML
+            (HEAD ,hd-css
+                  ,@hd-links
+                  (TITLE "PLT Help Desk search results"))
+            (BODY
+             (FONT ((SIZE "+2"))
+                   ,(color-with 
+                     "blue" 
+                     `(B "Search results for"
+                         ,@(map (lambda (sf) (format " \"~a\"" sf))
+                                string-finds))))
+             (BR)
+             ,@items))))
       
       (define (search-results lucky? search-string search-type match-type)
         (semaphore-wait search-sem)
@@ -264,7 +267,9 @@
                       search-string
                       (if (string? result) ; error message
                           `((H2 ((STYLE "color:red")) ,result))
-                          (reverse search-responses)))])
+                          (reverse search-responses))
+                      regexp? 
+                      exact-match?)])
           (semaphore-post search-sem)
           html))
       

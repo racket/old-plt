@@ -1,5 +1,6 @@
 (module refresh-manuals mzscheme
   (require "private/docpos.ss"
+           "private/search.ss"
            (lib "plt-installer.ss" "setup")
            (lib "url.ss" "net")
            (lib "mred.ss" "mred")
@@ -15,6 +16,7 @@
   (define sc-refresh-deleting... (string-constant plt:hd:refresh-deleting...))
   (define sc-refresh-installing... (string-constant plt:hd:refresh-installing...))
   (define sc-finished-installation (string-constant plt:hd:refreshing-manuals-finished))
+  (define sc-clearing-cached-indicies "Clearing cached indicies")
   
   (define refresh-manuals
     (case-lambda
@@ -32,6 +34,9 @@
             (delete-docs docs-to-install)
             (install-docs docs-to-install tmp-directory parent)
             (delete-local-plt-files tmp-directory)
+            (display sc-clearing-cached-indicies)
+            (newline)
+            (doc-collections-changed)
             (display sc-finished-installation)
             (newline)
             (set! success? #t))

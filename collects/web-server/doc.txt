@@ -10,19 +10,18 @@ To use the _Web_ _server_, require web-server.ss:
 
 This provides one main function:
 > serve : [nat] [(str -> host)] [nat] -> (-> void)
-  (define (serve port virtual-hosts max-wait) ...)
+  (define (serve port virtual-hosts max-waiting) ...)
   
   It starts the server, where port specifies an alternate port for the server
-  to listen on besides 80 and max-wait lets the caller specify a maximum number
-  of clients that can wait for a TCP connection other than the default of 40.
-  The virtual-hosts function maps host names, which may or may not include a
-  colon followed by a port number, to a directory name.  The result of invoking
-  serve is a thunk that shuts down the server.
+  to listen on besides 80 and max-waiting lets the caller specify a maximum
+  number of clients that can wait for a TCP connection other than the default
+  of 40.  The virtual-hosts function maps host names, which may or may not
+  include a colon followed by a port number, to a host structure.  (See
+  configuration.ss for examples of host structures, and see
+  configuration-structures.ss for the data definition.)
+  The result of invoking serve is a thunk that shuts down the server.
 
-[FIX: what is a host structure?]
-
-A later section decribes the remaining functions for the deveopment environment.
-
+A later section describes the remaining semi-internal functions.
 
 Serving Content
 ===============
@@ -32,86 +31,94 @@ By default, the Web server serves files out of the directory
 unless the function serve was called with a virtual-hosts argument or
 the configuration tool modified the location.
 
-Files in a subdirectory named "servlets" are (by default) executed instead of
-served out verbatim.  Each file in that directory must evaluate to a servlet.
-A servlet is a unit/sig that imports servlet^ and exports nothing.
-To construct a unit/sig with the appropraite imports, the servlet must require
-the two modules providing unit/sigs and the servlet^ signature:
+Instead of serving files from a special directory verbatim, the Web server
+executes the contained Scheme code and serves the output. By default, the
+special directory  is named "servlets" within the "default-web-root" of the
+"web-server" collection directory.  Each file in that directory must evaluate
+to a servlet.  A servlet is a unit/sig that imports the servlet^
+signature and exports nothing.  (Search in help-desk for more information on
+unit/sig and on signatures.)  To construct a unit/sig with the appropriate
+imports, the servlet must require the two modules providing unit/sigs and the
+servlet^ signature:
 
-  (require (lib "unitsig.ss")
-	   (lib "servlet-sig.ss" "web-server"))
+(require (lib "unitsig.ss")
+         (lib "servlet-sig.ss" "web-server"))
+(unit/sig ()
+  (import servlet^)
+  ...insert servlet code here...)
 
-The last value in the unit/sig must be a response.
+The last value in the unit/sig must be a response to an HTTP request.
+A Response is one of the following:
 
-A response is either
-  - an X-expression representing the response to the http request
-  - a (cons mime-type (listof content)) where
-    mime-type is a string and
-    content are strings.
-  - (make-response/full code message seconds mime extras body) where 
-    - code is a natural number indicating the http response code
-    - message is a string describing the code to a human
-    - seconds is a natural number indicating the time the resource was
-      created.  Use (current-seconds) for dynamically created responses.
-    - mime is a string indicating the response type, usually  "text/html".
-    - extras is a (listof (cons sym str)) containing extra headers
-      for redirects, authentication, or cookies.
-    - body is a (listof str)
-    
-The path part of URLs for servlets not in an association list is simply the
-path to the file.  The path part of URLs referring to servlets inside
-association lists is the path to the file followed by the symbol used as a key
-in the association list.
+ - an X-expression representing HTML
+   (Search for XML in help-desk.)
 
-Evaluating (require (lib "servlet-sig.ss" "web-server")) loads the servlet^
-signature consisting of the following imports:
+ - a (listof string) where
+   - The first string is the mime type
+     (often "text/html", but see RFC 2822 for other options).
+   - The rest of the strings provide the document's content.
 
- - initial-request : request
-   where a request is 
-     (make-request method uri headers bindings host-ip client-ip)
-     where
-       method is either 'get or 'post
-       uri is a URL---see the net collection for details
-       headers : (listof (cons sym str))
-	 optional http headers for this request
-       bindings : (listof (cons sym str))
-	 name value pairs from the form submitted or the query part of the URL.
-       host-ip is a string representing the Internet address of the server.
-               This may differ for different requests if the machine has
-	       multiple network interfaces including local loopbacks.
-       client-ip is the Internet address the request came from.  It could
-                 refer to a proxy instead of the end user's machine.
+ > (make-response/full code message seconds mime extras body) where
+   - code is a natural number indicating the HTTP response code
+   - message is a string describing the code to a human
+   - seconds is a natural number indicating the time the resource was created.
+                Use (current-seconds) for dynamically created responses.
+   - mime is a string indicating the response type.
+   - extras is a (listof (cons symbol string)) containing extra headers for
+               redirects, authentication, or cookies.
+   - body is a (listof string)
 
-The above import supports traditional servlet style request handling.  Usually,
-the only one of interest is bindings.  To ease the development of more
-interactive servlets, the servlet^ signature also contains the following
-functions:
+Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
+the servlet^ signature consisting of the following imports:
+  - initial-request : request, where a request is
+    (make-request method uri headers bindings host-ip client-ip), where
+    - method : (Union 'get 'post)
+    - uri : URL see the net collection in help-desk for details
+    - headers : (listof (cons symbol string))
+		optional HTTP headers for this request
+    - bindings : (listof (cons symbol string))
+		 name value pairs from the form submitted or the query part
+               of the URL.
 
-> send/suspend : (str -> response) -> request
+The path part of the URL supplies the file path to the servlet relative to the
+"servlets" directory.  However, paths may also contain extra path components
+that servlets may use as additional input.  For example all of the following
+URLs refer to the same servlet:
 
-  The argument, a function that consumes a string, is given a URL that
-  can be used in the document.  The argument function must produce a
-  response corresponding to the document's body.  Requests to the
-  given URL resume the computation at the point send/suspend was
-  invoked.  Thus, the argument function normally produces an HTML form
-  with the "action" attribute set to the provided URL.  The result of
-  send/suspend represents the next request.
+  http://www.plt-scheme.org/servlets/my-servlet
+  http://www.plt-scheme.org/servlets/my-servlet/extra
+  http://www.plt-scheme.org/servlets/my-servlet/extra/directories
 
-> send/finish : response -> doesn't
+The above imports support handling a single input from a Web form. To ease the
+development of more interactive servlets, the servlet^ signature also provides
+the following functions:
+
+> send/suspend : (str -> X-expression) -> request
+
+  The argument, a function that consumes a string, is given a URL that can be
+  used in the document.  The argument function must produce a response
+  corresponding to the document's body.  Requests to the given URL resume the
+  computation at the point send/suspend was invoked.  Thus, the argument
+  function normally produces an HTML form with the "action" attribute set to
+  the provided URL.  The result of send/suspend represents the next request.
+
+> send/finish : X-expression -> doesn't return
+
   This provides a convenient way to report an error or otherwise produce
   a final response.  Once called, all URLs generated by send/suspend
   become invalid.  Calling send/finish allows the system to reclaim resources
   consumed by the servlet.
 
-> adjust-timeout! : nat -> void
+> adjust-timeout! : Nat -> Void
+
   The server will shutdown each instance of a servlet after an unspecified
   default amount of time since the last time the servlet handled a request.
   Calling adjust-timeout! allows the programmer to choose this number of
   seconds.  Larger numbers consume more resources while smaller numbers force
   the user to restart computations more often.
 
-Another module available by requiring
-  (lib "servlet-helpers.ss" "web-server")
+The servlet-helpers module, required with
+  (require (lib "servlet-helpers.ss" "web-server"))
 provides a few additional functions helpful for constructing servlets:
 
 > extract-binding/single : sym (listof (cons sym str)) -> str
@@ -120,7 +127,7 @@ provides a few additional functions helpful for constructing servlets:
   exception.
 
 > extract-bindings : sym (listof (cons sym str)) -> (listof str)
-  returns a list of values assocaited with the name sym.
+  returns a list of values associated with the name sym.
 
 > extract-user-pass : (listof (cons sym str)) -> (U #f (cons str str))
   (define (extract-user-pass headers) ...)
@@ -143,15 +150,14 @@ Requesting the URL
 reloads the password file.  After updating a servlet, loading the URL
   http://my-host/conf/refresh-servlets
 causes the server to reload each servlet on the next invocation.
-A future extension mechanism should refresh only specified programs, since
-reloading servlets loses any per-program state computed before the unit
-invocation.    
+This loses any per-servlet state (not per servlet instance state) computed
+before the unit invocation.    
 
 Semi-Internal Functions
 =======================
 
 The following functions expose more of the Web server for use by the
-development enviornment.  They are not intended for general use.
+development environment.  They are not intended for general use.
 They may change at anytime or disappear entirely.
 
 > server-loop : custodian tcp-listener config -> void
@@ -173,7 +179,7 @@ They may change at anytime or disappear entirely.
     access-table = (hash-table-of sym (str sym str -> (U #f str)))
 		   maps host names to functions that accept a protection
 		   domain, a user name, and a password and either 
-		   return #f if access is not denied (i.e. is accessble)
+		   return #f if access is not denied (i.e. is accessible)
 		   or a string prompting for a particular password
 		   (i.e. "Course Grades").
     servlet-instance =

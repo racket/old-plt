@@ -1,6 +1,8 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- .htx files are no longer supported
+
 - the search paths for the mzlib collection have changed. The PLTHOME
   environment variable is now given preference.
 

@@ -2941,6 +2941,10 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *argv[])
   Dyn_Wind *dw;
   Scheme_Object *v;
 
+  scheme_check_proc_arity("dynamic-wind", 0, 0, c, argv);
+  scheme_check_proc_arity("dynamic-wind", 0, 1, c, argv);
+  scheme_check_proc_arity("dynamic-wind", 0, 2, c, argv);
+
   dw = MALLOC_ONE_RT(Dyn_Wind);
 #ifdef MZTAG_REQUIRED
   dw->type = scheme_rt_dyn_wind_info;

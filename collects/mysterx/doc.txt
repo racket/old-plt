@@ -4,8 +4,8 @@ _MysterX_
 
 MysterX is a toolkit for building Windows applications from
 ActiveX and COM components.  Dynamic HTML is used for
-component presentation and event-handling.  Currently, MysterX
-requires Internet Explorer 4 to be installed.
+component presentation and event-handling.  MysterX
+requires Internet Explorer 4 or 5 to be installed.
 
  Installation
  ------------

@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.2 1998/04/07 21:24:59 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.3 1998/04/16 15:22:00 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -107,6 +107,8 @@ static XtResource MenuResources[] =
     /* menu structure */
     {XtNmenu, XtCMenu, XtRPointer, sizeof(XtPointer),
         offset(menu.contents), XtRImmediate, (XtPointer)NULL},
+    {XtNrefresh, XtCRefresh, XtRBoolean, sizeof(Boolean),
+        offset(menu.refresh), XtRBoolean, (XtPointer)False},
 
     /* callbacks called on item change and item select */
     {XtNonNewItem, XtCCallback, XtRCallback, sizeof(XtPointer), 
@@ -305,12 +307,10 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
 {
     MenuWidget  old = (MenuWidget)gcurrent;
     MenuWidget  new = (MenuWidget)gnew;
-    Boolean     redisplay   = FALSE;
+    Boolean     redisplay;
 
-    (*SuperClass->core_class.set_values)
-	(gcurrent, grequest, gnew, NULL, 0);
+    redisplay = (*SuperClass->core_class.set_values)(gcurrent, grequest, gnew, NULL, 0);
 
-    /* To be sure */
     {
       int ow, oh;
       ow = new->menu.state->w;
@@ -322,6 +322,11 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
 	  || (oh != new->menu.state->h)) {
 	redisplay = TRUE;
       }
+    }
+
+    if (new->menu.refresh) {
+      new->menu.refresh = 0;
+      redisplay = TRUE;
     }
 
     if (CHANGED_bg_
@@ -340,7 +345,8 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
 	CreateGCs(new);
 	redisplay = TRUE;
     }
-    return (redisplay);
+
+    return redisplay;
 }
 
 #undef CHANGED_bg_

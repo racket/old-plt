@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.2 1998/04/11 13:57:31 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -168,20 +168,21 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
       prev->next = item;
       last = (wxMenuItem*)item;
     } else {
-	top = last = (wxMenuItem*)item;
+      top = last = (wxMenuItem*)item;
     }
-    if (X->handle) // redisplay if menu added
-	XtVaSetValues(X->handle, XtNmenu, top, NULL);
+    if (X->handle) { // redisplay if menu added
+      XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
+    }
 }
 
 /* MATTHEW: */
-void wxMenuBar::Delete(wxMenu *menu, int pos)
+Bool wxMenuBar::Delete(wxMenu *menu, int pos)
 {
   menu_item *i, *prev;
   int counter;
 
   if (!menu && (pos < 0))
-    return;
+    return FALSE;
 
   prev = NULL;
   for (i = (menu_item *)top, counter = 0; 
@@ -208,11 +209,25 @@ void wxMenuBar::Delete(wxMenu *menu, int pos)
 
     delete i;
 
-    if (X->handle) // redisplay
-      XtVaSetValues(X->handle, XtNmenu, top, NULL);
-  }
+    if (X->handle) { // redisplay
+      XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
+    }
+
+    return TRUE;
+  } else
+    return FALSE;
 }
 
+int wxMenuBar::Number()
+{
+  menu_item *i;
+  int counter = 0;
+
+  for (i = (menu_item *)top; i; i = i->next)
+    counter++;
+
+  return counter;
+}
 
 //-----------------------------------------------------------------------------
 // modify items
@@ -249,7 +264,7 @@ void wxMenuBar::EnableTop(int pos, Bool flag)
     if (item) {
       if (X->handle) {
 	item->enabled = flag;
-	XtVaSetValues(X->handle, XtNmenu, top, NULL);
+	XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
       }
     }
 }
@@ -306,8 +321,9 @@ void wxMenuBar::SetLabelTop(int pos, char *label)
     if (item) {
 	delete item->label;
 	wxGetLabelAndKey(label, &item->label, &item->key_binding);
-	if (X->handle) // redisplay if menu added
-	    XtVaSetValues(X->handle, XtNmenu, top, NULL);
+	if (X->handle) { // redisplay if menu added
+	  XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
+	}
     }
 }
 

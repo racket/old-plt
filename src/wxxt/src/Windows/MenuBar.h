@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.h,v 1.1 1996/01/10 14:57:18 markus Exp $
+ * $Id: MenuBar.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -45,10 +45,12 @@ public:
     Bool Create(wxPanel *panel);
     void Destroy(void);
 
+    int Number(void);
+
     // add menu to menubar
     void  Append(wxMenu *menu, char *title);
     /* MATTHEW: */
-    void  Delete(wxMenu *menu, int pos = 0);
+    Bool  Delete(wxMenu *menu, int pos = 0);
     // modify items
     void  Check(int id, Bool flag);
     Bool  Checked(int id);

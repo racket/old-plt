@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.2 1998/02/05 23:00:32 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.3 1998/04/10 15:07:22 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -288,7 +288,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
-    for (int i=0; i < num_toggles; ++i)
+    for (i = 0; i < num_toggles; i++)
       XtInsertEventHandler(((Widget*)toggles)[i],
 			   KeyPressMask |	// for PreOnChar
 			   ButtonPressMask |	// for PreOnEvent

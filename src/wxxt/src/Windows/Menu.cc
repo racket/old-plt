@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Menu.cc,v 1.2 1998/04/11 13:57:31 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -206,12 +206,12 @@ void wxMenu::AppendSeparator(void)
 }
 
 /* MATTHEW: */
-void wxMenu::DeleteItem(int id, int pos)
+Bool wxMenu::DeleteItem(int id, int pos)
 {
   menu_item *found, *prev;
 
   if (id == -1)
-    return;
+    return FALSE;
 
   prev = NULL;
   for (found = (menu_item*)top; found && pos--; found = found->next) {
@@ -226,6 +226,7 @@ void wxMenu::DeleteItem(int id, int pos)
       if (!top) {
 	last = 0;
 	Append(-1, NULL); /* Reinstate topdummy */
+	topdummy = top;
       }
       if (owner)
 	*owner = top;
@@ -240,20 +241,34 @@ void wxMenu::DeleteItem(int id, int pos)
     if (found->contents)
       ((wxMenu *)found->user_data)->owner = NULL;
     delete found;
-  }
+    return TRUE;
+  } else
+    return FALSE;
 }
 
-void wxMenu::Delete(int id)
+Bool wxMenu::Delete(int id)
 {
-  DeleteItem(id, -1);
+  return DeleteItem(id, -1);
 }
 
-void wxMenu::DeleteByPosition(int pos)
+Bool wxMenu::DeleteByPosition(int pos)
 {
   if (pos > -1)
-    DeleteItem(0, pos);
+    return DeleteItem(0, pos);
+  else
+    return FALSE;
 }
 
+int wxMenu::Number()
+{
+  menu_item *found;
+  int n = 0;
+
+  for (found = (menu_item*)top; found; found = found->next)
+    n++;
+
+  return n;
+}
 
 //-----------------------------------------------------------------------------
 // modify items

@@ -167,6 +167,22 @@
  may raise exceptions.  For example, passing a value of the
  wrong type to a SrPersist procedure will raise an exception.
 
+ Version information
+ -------------------
+
+ SrPersist offers version information to programs:
+
+> (srp-version)
+
+ Returns a string indicating the version of SrPersist.
+
+> (compiled-odbc-version)
+
+ Returns a string indicating the version of ODBC that was 
+ specified when SrPersist was compiled.  This version 
+ is not necessarily the same as odbc-version, the version
+ specified when loading SrPersist.
+
  Handles
  -------
 

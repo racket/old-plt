@@ -2,9 +2,14 @@
 
 (define-signature srpersist:odbc-1.0^
 
+  ; version info
+
+  (srp-version
+   compiled-odbc-version
+
   ; utility
 
-  (make-length
+   make-length
    read-length
    make-indicator
    read-indicator

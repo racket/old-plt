@@ -415,7 +415,7 @@ void *wxWithGLContext(wxGL *gl, void *thunk)
 			     NULL, a);
 }
 
-void *wxSetGLContext(wxGL *gl)
+void wxSetGLContext(wxGL *gl)
 {
   Scheme_Object *glo;
   glo = objscheme_bundle_wxGL(gl);

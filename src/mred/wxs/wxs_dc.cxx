@@ -2493,7 +2493,7 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 
 #ifdef USE_GL
 extern void *wxWithGLContext(wxGL *gl, void *thunk);
-extern void *wxSetGLContext(wxGL *gl);
+extern void wxSetGLContext(wxGL *gl);
 #endif
 
 static void *WithContext(wxGL *gl, void *thunk)
@@ -2503,7 +2503,7 @@ static void *WithContext(wxGL *gl, void *thunk)
 #endif
 }
 
-static void *_ThisContextCurrent(wxGL *gl)
+static void _ThisContextCurrent(wxGL *gl)
 {
 #ifdef USE_GL
   wxSetGLContext(gl);

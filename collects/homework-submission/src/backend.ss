@@ -32,7 +32,7 @@
     (can-submit? (number? number? . -> . boolean?))
     (id/username (string? . -> . number?))
     (partnership-full? (number? number? . -> . boolean?))
-    (assignments/due (number? symbol? . -> . (listof assignment?)))
+    (assignments/due (number? number? symbol? . -> . (listof assignment?)))
     )
 
   (provide *connection*)
@@ -238,16 +238,27 @@
                sid cid)))
 
   ;; Assignments for a course where the due date has or has not yet exipred.
-  (define (assignments/due cid cmp)
+  ;; NOTE: This took me way too long to write. OTOH, once I figured it out
+  ;;       it was easy.
+  (define (assignments/due sid cid cmp)
     (select-structure
       (format
         (string-append
-          "SELECT a.id, a.name, a.due, a.description, a.description_url, "
-          "       a.grade_type, a.grade_misc "
-          "FROM assignments a "
-          "WHERE a.due ~a now() "
-          "AND a.course_id = ~a")
-        cmp cid)
+          "SELECT DISTINCT "
+          "a.id, a.name, a.due, a.description, a.description_url, "
+          "a.grade_type, a.grade_misc, a_g.partner_id, a_g.submission_date, "
+          "a_g.submission, a_g.grade, a_g.comment "
+          "FROM courses c "
+          "JOIN partners pt ON pt.course_id = c.id "
+          "JOIN people p ON p.id = pt.student_id "
+          "JOIN assignments a ON a.course_id = c.id "
+          "LEFT JOIN assignment_grades a_g ON a_g.assignment_id = a.id "
+          "WHERE p.id = ~a "
+          "AND c.id = ~a"
+          "AND a.due ~a now() "
+          "ORDER BY a.due "
+          (if (equal? cmp '<) "ASC" "DESC"))
+        sid cid cmp)
       row->assignment))
 
   ;; ******************************************************************
@@ -282,12 +293,22 @@
     (make-assignment (vector-ref r 0)
                      (bytes->string/utf-8 (vector-ref r 1))
                      (bytes->string/utf-8 (vector-ref r 2))
-                     (let ((v (vector-ref r 3)))
-                           (if (sql-null? v) "" (bytes->string/utf-8 v)))
-                     (let ((v (vector-ref r 4)))
-                           (if (sql-null? v) "" (bytes->string/utf-8 v)))
+                     (value/null (vector-ref r 3) "")
+                     (value/null (vector-ref r 4) "")
                      (string->symbol (bytes->string/utf-8 (vector-ref r 5)))
-                     (bytes->string/utf-8 (vector-ref r 6))))
+                     (bytes->string/utf-8 (vector-ref r 6))
+                     (value/null (vector-ref r 7) #f)
+                     (value/null (vector-ref r 8) #f)
+                     (value/null (vector-ref r 9) #f)
+                     (value/null (vector-ref r 10) #f)
+                     (value/null (vector-ref r 11) #f)))
+
+  ;; The value if it is not sql-null, or some default value.
+  (define (value/null v d)
+    (cond
+      ( (sql-null? v) d )
+      ( (bytes? v) (bytes->string/utf-8 v) )
+      ( else v )))
 
   ;; exists? : String String -> Boolean
   ;; Is something known and existant in the database?

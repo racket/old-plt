@@ -278,7 +278,8 @@ exec mzscheme -r "$0" "$@"
     (make-test-case
       (string-append
         "A user logs in, selects a course in which he or she is a student, "
-        "forms a partnership, views assignments, logs out.")
+        "forms a partnership, views assignments, views 'The Test Assignment "
+        "One', goes back, views 'The Test Assignment Four', goes back, logs out.")
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
@@ -290,6 +291,10 @@ exec mzscheme -r "$0" "$@"
                     (list (cons 'username "person four")
                           (cons 'password "password")))
               (list (hyperlink->k-url "Assignments") '())
+              (list (hyperlink->k-url "The Test Assignment One") '())
+              'back
+              (list (hyperlink->k-url "The Test Assignment Four") '())
+              'back
               (list (hyperlink->k-url "Logout") '()))
         (login-page))
       (reset-partner)

@@ -30,6 +30,7 @@
      transition-courses
      transition-add-partner
      transition-view-description
+     transition-view-submission
      transition-student-assignments
      ))
 

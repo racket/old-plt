@@ -70,9 +70,11 @@
             session
             (schedule (lambda ()
                         (backend-assignments/due
+                          (session-id session)
                           (course-id (session-course session)) '>)))
             (schedule (lambda ()
                         (backend-assignments/due
+                          (session-id session)
                           (course-id (session-course session)) '<))))))
 
       ;; Direct transition to the partnership management page for students.
@@ -90,6 +92,10 @@
         (if (assignment-description-url a)
           (redirect-to (assignment-description-url a))
           (send/suspend/callback (assignment-description a))))
+
+      ;; Direct transition to the submitted assignment.
+      (define-transition (transition-view-submission a)
+        (send/back (list "text/plain" (read-file (assignment-submission a)))))
 
       ;; Action transition to the logged-in page.
       ;; ACTION: check that the username and password pair are correct.
@@ -283,6 +289,18 @@
       ))
 
   ;; **************************************************************
+
+  ;; read-file : String -> String
+  ;; Return the contents of a file.
+  (define (read-file filename)
+    (with-input-from-file
+      filename
+      (lambda ()
+        (let loop ((acc ""))
+          (let ((r (read-line)))
+            (if (eof-object? r)
+              acc
+              (loop (format "~a~n~a" acc r))))))))
 
   ;; schedule-transaction : ( -> X) -> X
   ;; Wrap a thunk in a database transaction.

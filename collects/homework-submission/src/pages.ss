@@ -120,23 +120,44 @@
           '(h2 "Upcoming")
           (html-table
             "Assignments which are not yet due"
-            (list "Name" "Due")
+            (list "Name" "Due" "Submitted?")
             (map
               (lambda (a)
-                `(tr (th (hyperlink (transition-view-description a)
+                `(tr (th ,(hyperlink (transition-view-description a)
                                     (assignment-name a)))
-                     (td (assignment-due a))))
-              (sort-due-date-assignments < assignment-due upcoming)))
+                     (td ,(assignment-due a))
+                     (td ,(if (assignment-submission-date a)
+                            (hyperlink
+                              (transition-view-submission a)
+                              (string-append "on "
+                                             (assignment-submission-date a)))
+                            "no"))))
+              upcoming))
           '(h2 "Past Due")
           (html-table
             "Assignments which are past their due date"
-            (list "Name" "Due")
+            (list "Name" "Due" "Grade" "Comments")
             (map
               (lambda (a)
-                `(tr (th (hyperlink (transition-view-description a)
-                                    (assignment-name a)))
-                     (td (assignment-due a))))
-              (sort-due-date-assignments > assignment-due past-due)))
+                `(tr (th ,(hyperlink (transition-view-description a)
+                                     (assignment-name a)))
+                     (td ,(assignment-due a))
+                     (td ,(cond
+                            ((assignment-grade a)
+                             (hyperlink
+                               (transition-view-submission a)
+                               (if (equal? (assignment-grade-type a) 'number)
+                                 (string-append (assignment-grade a)
+                                                "/"
+                                                (number->string
+                                                  (assignment-grade-misc a)))
+                                 (assignment-grade a))))
+                            ((assignment-submission-date a) "Not yet graded")
+                            (else "Not submitted")))
+                     (td ,(if (assignment-comment a)
+                            (assignment-comment a)
+                            ""))))
+              past-due))
           (p (hyperlink (transition-student-partners session) "Partners"))
           (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
@@ -146,11 +167,6 @@
 
 
       ;; ************************************************************
-
-      ;; Schwartzian-transform on a structure.
-      (define (sort-due-date-assignments op field as)
-        (map car (quicksort (map (lambda (a) (cons a (field a))) as)
-                            (lambda (a b) (if (op (cdr a) (cdr b)) a b)))))
 
       ;; page : (Symbol? ...) String? Xexpr ... ->
       ;;         ((Alpha ... [String]) -> Xexpr)

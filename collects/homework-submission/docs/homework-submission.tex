@@ -16,15 +16,15 @@ Revision 6.
 The homework submission servlet is a tool for students to electronically submit
 homework assignments. It supports username and password authentication,
 changing passwords, logging out, account creation, and courses, a separation of
-students from non-students, partnerships, and assignments. Future goals are
-file submission, task assignment, and online grading.
+students from non-students, partnerships, assignments, and file submission.
+Future goals are task assignment, and online grading.
 
 \section{Use Cases}\label{sec:usecases}
 
 The servlet currently supports users logging in with a valid username and
 password, changing their password, selecting a course, adding a partner if
-possible, viewing assignments, and logging out. They can also create an account
-if they have not already done so.
+possible, viewing assignments, submitting homework, and logging out. They can
+also create an account if they have not already done so.
 
 \subsection{Supported Use Cases}\label{subsec:detailed-usecases}
 
@@ -49,14 +49,14 @@ then logs out.}
 \item{A user logs in, selects a course in which he or she is a student, goes to
   the partnership page, sees existing partners, logs out.}
 \item{A user logs in, selects a course in which he or she is a student, has a
-  partner, views the assignments page, logs out.}
+  partner, views the assignments page, submits a homework, logs out.}
 \item{The Web server is restarted by the TA or instructor.}
 \end{itemize}
 
 \subsubsection{New Use Cases}\label{subsubsec:newusecases}
 \begin{itemize}
 \item{A user logs in, selects a course in which he or she is a student, has a
-  partner, views the assignments page, logs out.}
+  partner, views the assignments page, submits a homework, logs out.}
 \end{itemize}
 
 \section{Goals}\label{sec:goals}
@@ -64,7 +64,7 @@ then logs out.}
 The feature goals of this iteration are:
 
 \begin{itemize}
-\item{Assignment viewing for students.}
+\item{Homework submission.}
 \end{itemize}
 
 \section{Architecture}\label{sec:arch}
@@ -298,6 +298,14 @@ course, and that the selected partner entered the correct password. Add
 the selected partner to the partnership for this student. Send the partnership
 management page.
 
+\begin{verbatim}
+transition-submit-assignment : (number? session? . -> . transition?)
+\end{verbatim}
+Action transition to the assignments page.
+Action: upload the homework and store it in the database.
+If the student can submit an assignment, store the file on the filesystem and
+update the database. Send the assignments page.
+
 \subsubsection{Scheduler}\label{subsubsec:scheduler}
 
 The scheduler is used to solve synchonization problems between servlet threads.
@@ -425,6 +433,9 @@ student and non-student:
   to the partnership management page, adds a partner, logs out.}
 \item{A user logs in, selects a course in which he or she is a student, goes
   to the partnership management page, views the existing partners, logs out.}
+\item{A user logs in, selects a course in which he or she is a student, creates
+  a partnership, views assignments, submits an assignment, views its contents,
+  logs out.}
 \end{itemize}
 
 %%% Note yet done. Not sure how best to do this, either.
@@ -467,6 +478,8 @@ The concurrency tests are:
 
 \begin{itemize}
 \item{A user logs in, changes his or her password, then logs out.}
+\item{A user logs in, selects a course in which he or she is a student, views
+  the assignments page, submits an assignment, logs out.}
 %\item{Test the scheduler against timeouts.}
 \end{itemize}
 

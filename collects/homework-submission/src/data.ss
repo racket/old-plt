@@ -15,9 +15,11 @@
     (make-inspector))
 
   ;; An Assignment is a
-  ;; (make-assignment Number String String String String Symbol String)
+  ;; (make-assignment Number String String String String Symbol String
+  ;;                  Number String String String String)
   (define-struct assignment
-    (id name due description description-url grade-type grade-misc)
+    (id name due description description-url grade-type grade-misc
+     partner-id submission-date submission grade comment)
     (make-inspector))
 
   (provide/contract
@@ -27,7 +29,12 @@
                         (description string?)
                         (description-url string?)
                         (grade-type symbol?)
-                        (grade-misc string?)))
+                        (grade-misc string?)
+                        (partner-id (union number? not))
+                        (submission-date (union string? not))
+                        (submission (union string? not))
+                        (grade (union string? not))
+                        (comment (union string? not))))
     (struct course ((id number?)
                     (name string?)
                     (number string?)

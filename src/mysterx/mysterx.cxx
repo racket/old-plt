@@ -3445,6 +3445,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 // is created by passing as a C pointer, which is stored in a VARIANTARG
 Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
   switch(pVariantArg->vt) {
+  case VT_HRESULT :
   case VT_VOID :
     return scheme_void;
   case VT_BYREF|VT_UI1 :
@@ -4123,7 +4124,9 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
     retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->elemdescFunc);
   }
 
-  if (invKind != INVOKE_PROPERTYPUT && retvalVa.vt != VT_VOID) {
+  if (invKind != INVOKE_PROPERTYPUT && 
+      retvalVa.vt != VT_VOID && 
+      retvalVa.vt != VT_HRESULT) {
     retvalVa.vt |= VT_BYREF;
     allocateDirectRetval(&retvalVa);
     pushOneArg(retvalVa,buff);

@@ -1,47 +1,49 @@
 ;;
-;; $Id: strun.ss,v 1.5 1997/08/08 20:36:37 krentel Exp krentel $
+;; $Id: strun.ss,v 1.6 1997/08/11 21:01:43 krentel Exp krentel $
 ;;
-;; Run fake actions in the real handler thread.
+;; Run one fake action in the real handler thread.
+;; This should be the only file that needs to worry about thread
+;; issues, semaphores, etc.
 ;;
-;; (mred:test:run list) runs (initiates) the actions from list,
-;; where list is a list of mred:test:event structs (created by
-;; primitives like mred:test:button-push, etc).
+;; (mred:test:run-one thunk) is internal-only, not for export,
+;; called directly from mred:test:primitives.
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
-;; interval (in milliseconds) between starting actions in list.
+;; interval (in milliseconds) between starting actions.
 ;;
-;; run (currently) does not return a useful value, but does
+;; run-one (currently) does not return a useful value, but does
 ;; reraise errors from the actions.
 ;;
 
 (unit/sig mred:test:run^
   
-  (import 
-    [mred:test : mred:test:struct^])
+  (import)
   
   (define initial-run-interval 100)  ;; milliseconds
   
   (define run-error error)  ;; naive error handling (for now).
   
   ;;
-  ;; The time between initiating actions from the run queue.
-  ;; This is just the interval between their start times.
-  ;; You can't control how long the first action takes.
-  ;; make-parameter doesn't do what we need across threads.
+  ;; The minimum time an action is allowed to run before returning from
+  ;; mred:test:action.  Controls the rate at which actions are started, 
+  ;; and gives some slack time for real events to complete (eg, update).
+  ;; Make-parameter doesn't do what we need across threads.
+  ;; Probably don't need semaphores here (set! is atomic).
+  ;; Units are in milliseconds (as in wx:timer%).
   ;;
   
   (define run-interval
-    (let ([tag     'mred:test:run-interval]
-	  [current  initial-run-interval])
+    (let ([tag  'mred:test:run-interval]
+	  [msec  initial-run-interval])
       (case-lambda
-        [()   current]
-	[(x)  (if (and (integer? x) (<= 0 x))
-		  (set! current x)
-		  (error tag "expects non-negative integer, given: ~s" x))])))
+        [()   msec]
+	[(x)  (if (and (integer? x) (exact? x) (<= 0 x))
+		  (set! msec x)
+		  (run-error tag "expects exact, non-negative integer, given: ~s" x))])))
   
   ;;
-  ;; This is how we get into the handler thread,
-  ;; and put fake actions on the real event queue.
+  ;; How we get into the handler thread, and put fake actions 
+  ;; on the real event queue.
   ;;
   
   (define timer-callback%
@@ -55,81 +57,78 @@
 	(send timer start msec #t))))
   
   ;;
-  ;; Run list of fake actions.
-  ;; The actions run in a handler thread (from wx:timer%).
-  ;; Catch errors and reraise them in main thread.
+  ;; Simple error catching/reporting.
+  ;; Errors may occur long after mred:test:... has yielded and returned.
+  ;; Store the first error and reraise it in main thread at first opportunity.
+  ;; Getting/reraising error flushes the buffer (so can catch future errors).
+  ;; the-error = #f (no error), or box containing exn value.
+  ;; (Just so (raise #f) is correctly handled.)
+  ;; Put-exn is called from handler thread, get-exn-box from main thread.
+  ;; Do need semaphores because get-exn-box is not atomic.
+  ;; Put-exn takes exn struct (not box), get-exn-box returns the box (or #f).
   ;;
-  ;; Can only guarantee to start the actions, not finish them.
-  ;; But any action that never yields will run to completion.
+  
+  (define-values (put-exn get-exn-box is-exn?)
+    (let ([sem  (make-semaphore 1)]
+	  [the-error  #f])
+      (letrec
+	  ([put-exn
+	    (lambda (exn)
+	      (semaphore-wait sem)
+	      (unless the-error
+		(set! the-error (box exn)))
+	      (semaphore-post sem))]
+	   
+	   [get-exn-box
+	    (lambda ()
+	      (semaphore-wait sem)
+	      (let ([my-copy  the-error])
+		(set! the-error #f)
+		(semaphore-post sem)
+		my-copy))]
+	   
+	   [is-exn?
+	    (lambda ()
+	      (semaphore-wait sem)
+	      (let ([my-copy  the-error])
+		(semaphore-post sem)
+		(if my-copy #t #f)))])
+	
+	(values put-exn get-exn-box is-exn?))))
+  
   ;;
-  ;; Put queue, etc inside scope of run so that successive
-  ;; calls to run won't conflict.
+  ;; Start running thunk in handler thread.
+  ;; Don't return until run-interval expires, and thunk finishes, 
+  ;; raises error, or yields (ie, at event boundary).
+  ;; Reraise error, if exists, even from previous action.
+  ;; Note: never more than one timer (of ours) on real event queue.
   ;; 
   
-  (define run
-    (lambda (l)
-      (let 
-	  ([tag        'mred:test:run]
-	   [main-sem   (make-semaphore 0)]
-	   [queue      l]
-	   [is-error   #f]
-	   [the-error  #f])
-	
+  (define run-one
+    (lambda (thunk)
+      (let ([sem  (make-semaphore 0)])
 	(letrec
-	    ([get-head
-	      (lambda () 
-		(begin0 (car queue) (set! queue (cdr queue))))]
-	     
-	     ;; Catch errors in thunk and pass them to main thread.
-	     ;; This only catches the first error (then run returns).
-	     ;; This even handles (raise #f). 
+	    ([start
+	      (lambda ()
+		(wx:yield)  ;; flush out real events.
+		(install-timer (run-interval) return)
+		(unless (is-exn?)
+		  (pass-errors-out thunk)))]
 	     
 	     [pass-errors-out
 	      (lambda (thunk)
 		(parameterize
-		    ((current-exception-handler
+		    ([current-exception-handler
 		      (lambda (exn)
-			(unless is-error
-			  (set! queue null)
-			  (set! is-error #t)
-			  (set! the-error exn)
-			  (semaphore-post main-sem))
-			((error-escape-handler)))))
+			(put-exn exn)
+			((error-escape-handler)))])
 		  (thunk)))]
 	     
-	     ;; Start running the next event from the queue.
-	     ;; But first, install timer for the rest of queue.
-	     ;; There is never more than one un-notified timer,
-	     ;; so (wx:yield) can only yield to real events
-	     ;; (eg, update), and is usually a no-op.
-	     
-	     [process-queue
-	      (lambda ()
-		(wx:yield)  ;; flush out real events.
-		(cond
-		  [(null? queue)  (semaphore-post main-sem)]
-		  [(pair? queue)
-		   (let ([event  (get-head)])
-		     (cond
-		       [(mred:test:event? event)
-			(let ([thunk  (mred:test:event-thunk event)]
-			      [msec   (if (mred:test:sleep? event)
-					  (mred:test:sleep-msec event)
-					  (run-interval))])
-			  (install-timer msec process-queue)
-			  (pass-errors-out thunk))]
-		       [else 
-			(pass-errors-out
-			 (lambda ()
-			   (run-error tag "input contains non-event object")))]))]
-		  [else
-		   (pass-errors-out
-		    (lambda ()
-		      (run-error tag "input is not proper list")))]))]
-	     )
+	     [return (lambda () (semaphore-post sem))])
 	  
-	  (install-timer 0 process-queue)
-	  (semaphore-wait main-sem)
-	  (if is-error (raise the-error) (void))))))
-    
+	  (install-timer 0 start)
+	  (semaphore-wait sem)
+	  (let ([exn-box  (get-exn-box)])
+	    (if exn-box (raise (unbox exn-box)) (void)))))))
+  
   )

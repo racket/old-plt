@@ -158,13 +158,20 @@
               (let loop ([stx orig-stx]
                          [names null]
                          [depth 0])
-                (syntax-case stx (name in-hole* in-hole side-condition)
+                (syntax-case stx (name in-hole* in-hole in-named-hole side-condition)
                   [(name sym pat)
                    (identifier? (syntax sym))
                    (loop (syntax pat) 
                          (cons (make-id/depth (syntax sym) depth) names)
                          depth)]
                   [(in-hole* sym pat1 pat2)
+                   (identifier? (syntax sym))
+                   (loop (syntax pat1)
+                         (loop (syntax pat2)
+                               (cons (make-id/depth (syntax sym) depth) names)
+                               depth)
+                         depth)]
+                  [(in-named-hole hlnm sym pat1 pat2)
                    (identifier? (syntax sym))
                    (loop (syntax pat1)
                          (loop (syntax pat2)

@@ -1381,7 +1381,7 @@ inline static void clear_old_owner_data(void)
 
 inline static void memory_account_mark(struct mpage *page, void *ptr)
 {
-  GCDEBUG((DEBUGOUTF, "btc_account: %p/%p\n", page, ptr));
+  GCDEBUG((DEBUGOUTF, "memory_account_mark: %p/%p\n", page, ptr));
   if(page->big_page) {
     struct objhead *info = (struct objhead *)((char*)page + HEADER_SIZEB);
     
@@ -1404,6 +1404,9 @@ inline static void memory_account_mark(struct mpage *page, void *ptr)
 inline static void mark_normal_obj(struct mpage *page, void *ptr)
 {
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
+
+  if(page->generation == 0)
+    GCERR((GCOUTF, "Pointer after collection into gen0!\n"));
 
   switch(page->page_type) {
     case PAGE_TAGGED: 
@@ -1460,6 +1463,7 @@ static void propagate_accounting_marks(void)
   void *p;
 
   while(pop_2ptr((void**)&page, &p)) {
+    GCDEBUG((DEBUGOUTF, "btc_account: popped off page %p, ptr %p\n", page, p));
     if(page->big_page)
       mark_acc_big_page(page);
     else
@@ -1475,6 +1479,7 @@ static void do_btc_accounting(void)
   Scheme_Custodian_Reference *box = cur->global_next;
   int i;
 
+  GCDEBUG((DEBUGOUTF, "\nBEGINNING MEMORY ACCOUNTING\n"));
   doing_memory_accounting = 1;
   
   /* clear the memory use numbers out */
@@ -1494,7 +1499,9 @@ static void do_btc_accounting(void)
     int owner = custodian_to_owner_set(cur);
     
     current_mark_owner = owner;
+    GCDEBUG((DEBUGOUTF, "MARKING THREADS OF OWNER %i (CUST %p)\n", owner, cur));
     mark_threads(owner);
+    GCDEBUG((DEBUGOUTF, "Propagating accounting marks\n"));
     propagate_accounting_marks();
     
     box = cur->global_prev; cur = box ? box->u.two_ptr_val.ptr1 : NULL;
@@ -1766,6 +1773,10 @@ void GC_fixup(void *pp)
 {
   void *p = *(void**)pp;
   
+  if(doing_memory_accounting)
+    GCWARN((GCOUTF, "Hit GC_fixup with pp = %p and p = %p during accounting\n",
+	    pp, p));
+
   if(p && !(NUM(p) & 0x1)) {
     struct mpage *page = find_page(p);
 
@@ -1857,13 +1868,14 @@ void GC_fixup(void *pp)
 
 void GC_mark(const void *p)
 {
-  struct mpage *page = find_page(PTR(p));
-
   if(!doing_memory_accounting) 
     GCERR((GCOUTF, "ERROR: gcMARK used outside memory accounting!\n"));
 
-  if(page) 
-    memory_account_mark(page, PTR(p));
+  if(p && !(NUM(p) & 0x1)) {
+    struct mpage *page = find_page(PTR(p));
+
+    if(page) memory_account_mark(page, PTR(p));
+  }
 }
 
 inline static void mark_big_page(struct mpage *page)

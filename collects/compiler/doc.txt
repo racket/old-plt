@@ -104,6 +104,11 @@ are documented in the next section.
          collection being compiled. `compile-collection-extension' is 
          applied to each of the sub-collections.
 
+      Only the `name' field is required from info.ss, but the 
+      `compile-prefix' field should also be provided, because the
+      PLT global compiler uses this field as an indication that the
+      collection should be compiled.
+
       The compilation process is driven by the `make-collection'
       function in the "collection.ss" library of the "make"
       collection.
@@ -115,10 +120,25 @@ are documented in the next section.
       directory.
 
       The "info.ss" file is used as in `compile-collection-extension'.
+      In addition, the following two fields are used:
 
-      The compilation process is driven by the `make-collection'
+       `compile-elaboration-zos' - a list of filenames (without paths);
+         the Scheme files in this list are compiled with elaborations 
+         preserved (see MzLib's compile-file for information about 
+         preserving elaborations). The files are compiled from left to
+         right in the list, all in the same namespace. If a file does 
+         not need to be compiled, it is nevertheless loaded before 
+         subsequent files in the list are compiled.
+
+       `compile-elaboration-zos-prefix' - an S-expression to use
+         as an elaboration-time prefix expression for compiling
+         the files returned for `compile-elaboration-zos'.
+
+      The main compilation process is driven by the `make-collection'
       function in the "collection.ss" library of the "make"
-      collection.
+      collection. The elaboration-preserving compilation does not
+      use make, but it only recompiles a file when the source file
+      is newer.
 
 ---------------------------------------------------------------------------
 

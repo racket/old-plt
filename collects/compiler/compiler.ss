@@ -152,41 +152,83 @@
 		()
 		(import make:collection^)
 		make-collection)])
-     (let ([f (invoke-unit/sig
-	       (compound-unit/sig
-		(import (FUNCTION : mzlib:function^)
-			(DFILE : dynext:file^)
-			(OPTIONS : compiler:option^)
-			(COMPILER : compiler^))
-		(link [MAKE : make:make^ (make)]
-		      [COLL : make:collection^ (coll MAKE
-						     FUNCTION
-						     DFILE
-						     OPTIONS
-						     COMPILER)]
-		      [INIT : () (init COLL)])
-		(export))
-	       mzlib:function^
-	       dynext:file^
-	       compiler:option^
-	       compiler^)])
+     (let ([make-collection
+	    (invoke-unit/sig
+	     (compound-unit/sig
+	      (import (FUNCTION : mzlib:function^)
+		      (DFILE : dynext:file^)
+		      (OPTIONS : compiler:option^)
+		      (COMPILER : compiler^))
+	      (link [MAKE : make:make^ (make)]
+		    [COLL : make:collection^ (coll MAKE
+						   FUNCTION
+						   DFILE
+						   OPTIONS
+						   COMPILER)]
+		    [INIT : () (init COLL)])
+	      (export))
+	     mzlib:function^
+	     dynext:file^
+	     compiler:option^
+	     compiler^)])
        (let ([dir (apply collection-path cp)]
 	     [orig (current-directory)]
 	     [info (apply require-library "info.ss" cp)])
 	 (dynamic-wind
 	  (lambda () (current-directory dir))
 	  (lambda ()
-	    (parameterize ([current-load-relative-directory dir])
+	    (parameterize ([current-load-relative-directory dir]
+			   [current-require-relative-collection cp])
+	      ;; Compile the collection files via make-collection
 	      (let ([sses (filter
-			   (lambda (s)
-			     (regexp-match "\\.(ss|scm)$" s))
+			   extract-base-filename/ss
 			   (directory-list))])
-		(f (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
-		   (info 'compile-prefix (lambda () '(void)))
-		   (remove*
-		    (info 'compile-omit-files (lambda () null))
-		    sses)
-		   (if zos? #("zo") #())))))
+		(make-collection
+		 (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
+		 (info 'compile-prefix (lambda () '(void)))
+		 (remove*
+		  (info (if zos? 
+			    'compile-zo-omit-files 
+			    'compile-extension-omit-files)
+			(lambda () null))
+		  (remove*
+		   (info 'compile-omit-files (lambda () null))
+		   sses))
+		 (if zos? #("zo") #())))
+	      ;; compile-elaboration-zos
+	      (when zos?
+		(let ([n (make-namespace)]
+		      [need-prefix? #t]
+		      [need-load null])
+		  (parameterize ([current-namespace n])
+		   (for-each
+		     (lambda (ss)
+		       (let* ([base (extract-base-filename/ss ss 'compile-collection)]
+			      [zo (build-path "compiled" (append-zo-suffix base))]
+			      [ss-date (file-modify-seconds ss)]
+			      [zo-date (file-modify-seconds zo)])
+			 (if (or (not ss-date) (not zo-date) (> ss-date zo-date))
+			     (with-handlers ([void (lambda (exn)
+						     (delete-file zo)
+						     (raise exn))])
+			       (when need-prefix?
+				  (set! need-prefix? #f)
+				  (eval (info 'compile-elaboration-zos-prefix
+					      (lambda () '(void)))))
+			       (for-each
+				(lambda (f)
+				  (printf "loading ~a~n" f)
+				  (require-relative-library f))
+				(reverse need-load))
+			       (set! need-load null)
+			       (printf "compiling ~a~n" ss)
+			       (compile-file
+				ss
+				zo
+				'(preserve-elaborations use-current-namespace)))
+			     (set! need-load (cons ss need-load)))))
+		     (info 'compile-elaboration-zos
+			   (lambda () null))))))))
 	  (lambda () (current-directory orig)))
 	 (for-each
 	  (lambda (s)

@@ -57,6 +57,8 @@ void *GC_alloc_space, *GC_alloc_top;
 
 static long memory_in_use, gc_threshold = 32000;
 
+static long num_seg_faults;
+
 Type_Tag weak_box_tag;
 
 #define gc_finalization_tag 256
@@ -628,12 +630,6 @@ void GC_finalization_weak_ptr(void **p)
 {
   Fnl_Weak_Link *wl;
 
-#ifdef SAFETY
-  if (((void *)p < GC_alloc_space) || (p >= tagged_high)) {
-    CRASH();
-  }
-#endif
-
   /* Allcation might trigger GC, so we use park: */
   park[0] = p;
 
@@ -748,7 +744,7 @@ void stop()
 
 /******************************************************************************/
 
-/* These work only during GC */
+/* Works anytime: */
 
 MPage *find_page(void *p)
 {
@@ -766,6 +762,8 @@ MPage *find_page(void *p)
   
   return NULL;  
 }
+
+/* Works only during GC: */
 
 int is_marked(void *p)
 {
@@ -2018,6 +2016,7 @@ static void designate_modified(void *p)
     if (page->type) {
       if (page->type & MTYPE_CONTINUED) {
 	designate_modified(page->o.bigblock_start);
+	num_seg_faults++;
 	return;
       } else if (page->age) {
 	page->type |= MTYPE_MODIFIED;
@@ -2026,16 +2025,19 @@ static void designate_modified(void *p)
 	  protect_pages(p, page->u.size, 1);
 	else
 	  protect_pages(p, MPAGE_SIZE, 1);
+	num_seg_faults++;
 	return;
       }
 
-      fprintf(stderr, "Seg fault (internal error) at %lx\n", (long)p);
+      fprintf(stderr, "Seg fault (internal error) at %lx [%ld]\n", 
+	      (long)p, num_seg_faults);
       _exit(-1);
     }
   }
 
   
-  fprintf(stderr, "Access on unmapped page at %lx\n", (long)p);
+  fprintf(stderr, "Access on unmapped page at %lx [%ld]\n", 
+	  (long)p, num_seg_faults);
   _exit(-1);
 }
 
@@ -2332,7 +2334,7 @@ static void gcollect(int full)
 	for (wl = fnl_weaks; wl; wl = wl->next) {
 	  void *wp = (void *)wl->p;
 	  int markit;
-	  markit = !is_marked(wp);
+	  markit = is_marked(wp);
 	  if (markit)
 	    gcMARK(wl->saved);
 	  *(void **)wp = wl->saved;
@@ -2510,7 +2512,7 @@ static void gcollect(int full)
   }
   atomic_low = atomic_compact_to + atomic_compact_to_offset;
   atomic_high = atomic_compact_to + MPAGE_WORDS;
-  if (array_compact_to_offset < MPAGE_WORDS) {
+  if (atomic_compact_to_offset < MPAGE_WORDS) {
     atomic_compact_page->age = 0;
   }
   array_low = array_compact_to + array_compact_to_offset;

@@ -283,10 +283,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
 static Scheme_Hash_Table *disabled_widgets;
 
 #ifdef MZ_PRECISE_GC
-static void widget_hash_indices(void *_key, int *_h, int *_h2)
+static void widget_hash_indices(void *_key, long *_h, long *_h2)
 {
   long lkey;
-  int h, h2;
+  long h, h2;
   
   lkey = (long)_key;
 

@@ -894,7 +894,6 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     
     if (val) {
       if (val != 1) {
-	printf("%ld %lx\n", val, (long)obj);
 	if (compact) {
 	  print_escaped(p, notdisplay, obj, ht);
 	  return 1;

@@ -62,6 +62,7 @@
       
       ("mzlib" "PLT MzLib: Libraries Manual" 5)
       ("misclib" "PLT Miscellaneous Libraries: Reference Manual" 6)
+      ("mrlib" "PLT MrLib: Graphical Libraries Manual" 7)
       ("framework" "PLT Framework: GUI Application Framework" 8)
 
       ("mzc" "PLT mzc: MzScheme Compiler Manual" 10)

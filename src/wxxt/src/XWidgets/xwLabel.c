@@ -466,6 +466,16 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	    }
 	}
 	draw_line(XtDisplay(self), XtWindow(self), j, i, reg);
+
+	/* Gray out if not sensitive */
+	if (! ((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) {
+	  if (!wx_enough_colors(XtScreen(self))) {
+	    XSetRegion(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, reg);
+	    XFillRectangle(XtDisplay(self), XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, rect.x,
+			   rect.y, rect.width, rect.height);
+	    XSetClipMask(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, None);
+	  }
+	}
     } else if (((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) {
 	Dimension width = ((XfwfLabelWidget)self)->xfwfLabel.label_width - ((XfwfLabelWidget)self)->xfwfLabel.leftMargin - ((XfwfLabelWidget)self)->xfwfLabel.rightMargin;
 	Dimension height = ((XfwfLabelWidget)self)->xfwfLabel.label_height - ((XfwfLabelWidget)self)->xfwfLabel.topMargin - ((XfwfLabelWidget)self)->xfwfLabel.bottomMargin;
@@ -481,24 +491,17 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	    x = rect.x + rect.width - width;
 	else
 	    x = rect.x + (rect.width - width)/2;
+
 	wxDrawBitmapLabel(XtDisplay(self), 
 			  ((XfwfLabelWidget)self)->xfwfLabel.pixmap, ((XfwfLabelWidget)self)->xfwfLabel.maskmap, 
 			  XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.gc,
 			  x, y, width, height, 
 			  ((XfwfLabelWidget)self)->xfwfLabel.label_depth, ((XfwfLabelWidget)self)->xfwfLabel.mask_depth,
-			  reg);
+			  reg, 
+			  (! ((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) ? ((XfwfLabelWidget)self)->xfwfLabel.graygc : 0,
+			  ((XfwfLabelWidget)self)->core.background_pixel);
     }
 
-    /* Gray out if not sensitive */
-    if (! ((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) {
-      if ((((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) || !wx_enough_colors(XtScreen(self))) {
-	    if (!((XfwfLabelWidget)self)->xfwfLabel.graygc) make_graygc(self);
-	    XSetRegion(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, reg);
-	    XFillRectangle(XtDisplay(self), XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, rect.x,
-			   rect.y, rect.width, rect.height);
-	    XSetClipMask(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.graygc, None);
-	}
-    }
     if (((XfwfLabelWidget)self)->xfwfLabel.label != NULL || ((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) {
       XSetClipMask(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.gc, None);
     }

@@ -1766,9 +1766,12 @@
 			     (parse x env #f #t tables))
 			   (syntax->list (syntax body)))]
 		[et-body
-		 (filter (lambda (x) (x . is-a? . syntax-def%)) body)]
+		 (filter (lambda (x) (or (x . is-a? . syntax-def%)
+					 (x . is-a? . for-syntax-def%)))
+			 body)]
 		[rt-body
 		 (filter (lambda (x) (not (or (x . is-a? . syntax-def%)
+					      (x . is-a? . for-syntax-def%)
 					      (x . is-a? . require/provide%))))
 			 body)]
 		[req-prov

@@ -92,8 +92,18 @@ static wxClipboard* wxGetTheClipboard()
   return wxTheClipboard;
 }
 
+static wxClipboard* wxGetTheXSelection()
+{
+#ifdef wx_xt
+  return wxTheSelection;
+#else
+  return wxTheClipboard;
+#endif
+}
+
 @GLOBAL wxClipboardGlobal
 @ "get-the-clipboard" : wxClipboard^ wxGetTheClipboard()
+@ "get-the-x-selection" : wxClipboard^ wxGetTheXSelection()
 @END
 
 @MACRO setStringSize[cn] = if (SCHEME_BYTE_STRINGP(v)) (*x<cn>) = SCHEME_BYTE_STRTAG_VAL(v);

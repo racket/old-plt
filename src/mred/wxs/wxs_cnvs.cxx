@@ -1048,6 +1048,30 @@ static Scheme_Object *os_wxCanvasViewStart(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxCanvasEnableScrolling(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxCanvas_class, "show-scrollbars in canvas%", n, p);
+  Bool x0;
+  Bool x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "show-scrollbars in canvas%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "show-scrollbars in canvas%"));
+
+  
+  WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)->EnableScrolling(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxCanvasSetScrollbars(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1293,7 +1317,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", (Scheme_Method_Prim *)os_wxCanvas_ConstructScheme, 25));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", (Scheme_Method_Prim *)os_wxCanvas_ConstructScheme, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxCanvasPreOnEvent, 2, 2));
@@ -1314,6 +1338,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "scroll" " method", (Scheme_Method_Prim *)os_wxCanvasScrollPercent, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "warp-pointer" " method", (Scheme_Method_Prim *)os_wxCanvasWarpPointer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "view-start" " method", (Scheme_Method_Prim *)os_wxCanvasViewStart, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "show-scrollbars" " method", (Scheme_Method_Prim *)os_wxCanvasEnableScrolling, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollbars, 6, 9));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-virtual-size" " method", (Scheme_Method_Prim *)os_wxCanvasGetVirtualSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-dc" " method", (Scheme_Method_Prim *)os_wxCanvasGetDC, 0, 0));

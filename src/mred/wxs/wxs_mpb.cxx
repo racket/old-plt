@@ -416,6 +416,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void AfterInsert(class wxSnip* x0, class wxSnip* x1, double x2, double x3);
   void OnInsert(class wxSnip* x0, class wxSnip* x1, double x2, double x3);
   Bool CanInsert(class wxSnip* x0, class wxSnip* x1, double x2, double x3);
+  void DoPasteSelection(ExactLong x0);
   void DoPaste(ExactLong x0);
   void DoCopy(ExactLong x0, Bool x1);
   npathname PutFile(epathname x0, epathname x1);
@@ -1598,6 +1599,41 @@ Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, double 
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+static Scheme_Object *os_wxMediaPasteboardDoPasteSelection(int n, Scheme_Object *p[]);
+
+void os_wxMediaPasteboard::DoPasteSelection(ExactLong x0)
+{
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "do-paste-x-selection", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaPasteboardDoPasteSelection)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaPasteboard::DoPasteSelection(x0);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_integer_value(x0));
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -4999,6 +5035,31 @@ static Scheme_Object *os_wxMediaPasteboardErase(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaPasteboardDoPasteSelection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "do-paste-x-selection in pasteboard%", n, p);
+  ExactLong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "do-paste-x-selection in pasteboard%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::DoPasteSelection(x0));
+  else
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->DoPasteSelection(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaPasteboardDoPaste(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6642,6 +6703,31 @@ static Scheme_Object *os_wxMediaPasteboardKill(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaPasteboardPasteSelection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "paste-x-selection in pasteboard%", n, p);
+  ExactLong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "paste-x-selection in pasteboard%"));
+  } else
+    x0 = 0;
+
+  
+  WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->PasteSelection(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaPasteboardPaste(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6763,7 +6849,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 111));
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 113));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetScrollStep, 0, 0));
@@ -6817,6 +6903,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "move-to" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardMoveTo, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "remove" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardRemove, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "erase" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardErase, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "do-paste-x-selection" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDoPasteSelection, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "do-paste" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDoPaste, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "do-copy" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDoCopy, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "delete" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDelete, 0, 1));
@@ -6873,6 +6960,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy-self-to" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCopySelfTo, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy-self" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCopySelf, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "kill" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardKill, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "paste-x-selection" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardPasteSelection, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "paste" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardPaste, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCopy, 0, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "cut" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCut, 0, 2));

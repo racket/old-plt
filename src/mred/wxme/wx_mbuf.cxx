@@ -1677,6 +1677,11 @@ wxList *wxmb_commonCopyBuffer2 = NULL;
 wxStyleList *wxmb_copyStyleList = NULL;
 wxBufferData *wxmb_commonCopyRegionData = NULL;
 
+wxList *wxmb_selectionCopyBuffer = NULL;
+wxList *wxmb_selectionCopyBuffer2 = NULL;
+wxStyleList *wxmb_selectionCopyStyleList = NULL;
+wxBufferData *wxmb_selectionCopyRegionData = NULL;
+
 static int copyingSelf;
 
 static void InitCutNPaste()
@@ -1702,6 +1707,11 @@ static void InitCutNPaste()
 
     wxREGGLOB(wxmb_copyStyleList);
     wxREGGLOB(wxmb_commonCopyRegionData);
+
+    wxREGGLOB(wxmb_selectionCopyBuffer);
+    wxREGGLOB(wxmb_selectionCopyBuffer2);
+    wxREGGLOB(wxmb_selectionCopyStyleList);
+    wxREGGLOB(wxmb_selectionCopyRegionData);
   }
 
   if (!TheMediaClipboardClient) {
@@ -1822,7 +1832,7 @@ void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)
   }
 }
 
-void wxMediaBuffer::DoBufferPaste(long time, Bool local)
+void wxMediaBuffer::DoBufferPaste(wxClipboard *cb, long time, Bool local)
 {
   wxClipboardClient *owner;
   wxNode *node, *node2;
@@ -1830,7 +1840,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   wxBufferData *bd;
 
   /* Cut and paste to ourself? (Same eventspace?) */
-  owner = wxTheClipboard->GetClipboardClient();
+  owner = cb->GetClipboardClient();
   if (local || (!pasteTextOnly && PTREQ(owner, TheMediaClipboardClient)
 		&& PTREQ(wxGetContextForFrame(), owner->context))) {
     copyDepth++;
@@ -1852,7 +1862,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
     long len;
     int got_wxme;
 
-    if (!pasteTextOnly && (str = wxTheClipboard->GetClipboardData("WXME", &len, time))) {
+    if (!pasteTextOnly && (str = cb->GetClipboardData("WXME", &len, time))) {
       wxMediaStreamInStringBase *b;
       wxMediaStreamIn *mf;
 
@@ -1880,12 +1890,12 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
       wxBitmap *bm = NULL;
       
       if (!pasteTextOnly)
-	bm = wxTheClipboard->GetClipboardBitmap(time);
+	bm = cb->GetClipboardBitmap(time);
       if (bm) { 
 	snip = new wxImageSnip(bm);
 	InsertPasteSnip(snip, NULL);
       } else {
-	str = wxTheClipboard->GetClipboardString(time);
+	str = cb->GetClipboardString(time);
 	/* no data => empty string */
 	{
 	  wxchar *us;
@@ -2034,7 +2044,11 @@ char *wxMediaBuffer::GetFlattenedTextUTF8(long *_got)
   return r;
 }
 
-char *wxMediaClipboardClient::GetData(char *format, long *size)
+static char *GenericGetData(char *format, long *size,
+			    wxList *copyBuffer,
+			    wxList *copyBuffer2,
+			    wxStyleList *copyStyles,
+			    wxBufferData *copyRegionData)
 {
   wxNode *node;
   wxSnip *snip;
@@ -2043,7 +2057,7 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
   char *total = NULL, *old, *str;
 
   if (!strcmp(format, "TEXT")) {
-    for (node = wxmb_commonCopyBuffer->First(); node; node = node->Next()) {
+    for (node = copyBuffer->First(); node; node = node->Next()) {
       snip = (wxSnip *)node->Data();
 
       wxstr = snip->GetText(0, snip->count, TRUE);      
@@ -2122,11 +2136,11 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
     wxWriteMediaGlobalHeader(mf);
     if (mf->Ok()) {
       mf->PutFixed(0);
-      if (!wxmbWriteSnipsToFile(mf, wxmb_copyStyleList, wxmb_commonCopyBuffer, 
-				NULL, NULL, wxmb_commonCopyBuffer2, NULL))
+      if (!wxmbWriteSnipsToFile(mf, copyStyles, copyBuffer, 
+				NULL, NULL, copyBuffer2, NULL))
 	return FALSE;
       mf->PutFixed(0);
-      wxmbWriteBufferData(mf, wxmb_commonCopyRegionData);
+      wxmbWriteBufferData(mf, copyRegionData);
     }
     wxWriteMediaGlobalFooter(mf);
 
@@ -2136,6 +2150,15 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
     *size = 0;
     return "";
   }
+}
+
+char *wxMediaClipboardClient::GetData(char *format, long *size)
+{
+  return GenericGetData(format, size, 
+			wxmb_commonCopyBuffer,
+			wxmb_commonCopyBuffer2,
+			wxmb_copyStyleList,
+			wxmb_commonCopyRegionData);
 }  
 
 void wxMediaClipboardClient::BeingReplaced(void)
@@ -2150,6 +2173,58 @@ wxMediaXClipboardClient::wxMediaXClipboardClient()
   formats->Add("WXME");
 }
 
+static void CopyIntoSelection()
+{
+  /* Copy all the snips: */
+  wxList *saveBuffer, *copySnips;
+  wxList *saveBuffer2, *copySnips2;
+  wxStyleList *saveStyles;
+  wxBufferData *saveData;
+
+  xClipboardHack = TRUE;
+  
+  /* Save normal buffers: */
+  saveBuffer = wxmb_commonCopyBuffer;
+  saveBuffer2 = wxmb_commonCopyBuffer2;
+  saveStyles = wxmb_copyStyleList;
+  saveData = wxmb_commonCopyRegionData;
+ 
+  /* Set up new selection buffers, and redirect: */
+  copySnips = new wxList(wxKEY_NONE, FALSE);
+  wxmb_commonCopyBuffer = copySnips;
+  copySnips2 = new wxList(wxKEY_NONE, FALSE);
+  wxmb_commonCopyBuffer2 = copySnips2;
+  wxmb_copyStyleList = NULL;
+  wxmb_commonCopyRegionData = NULL;
+
+  wxMediaXSelectionOwner->Copy(FALSE, 0L);
+
+  if (wxmb_selectionCopyBuffer) {
+    /* Free old selection buffers: */
+    wxmb_selectionCopyBuffer->DeleteContents(DELETE_CLIP_LIST_CONTENT);
+    DELETE_OBJ wxmb_selectionCopyBuffer;
+    wxmb_selectionCopyBuffer2->DeleteContents(DELETE_CLIP_LIST_CONTENT);
+    DELETE_OBJ wxmb_selectionCopyBuffer2;
+#if DELETE_CLIP_LIST_CONTENT
+    if (wxmb_selectionCopyRegionData)
+      DELETE_OBJ wxmb_selectionCopyRegionData;
+#endif
+  }
+
+  /* Move "normal" buffers to selection: */
+  wxmb_selectionCopyBuffer = wxmb_commonCopyBuffer;
+  wxmb_selectionCopyBuffer2 = wxmb_commonCopyBuffer2;
+  wxmb_selectionCopyStyleList = wxmb_copyStyleList;
+  wxmb_selectionCopyRegionData = wxmb_commonCopyRegionData;
+
+  /* Restore normal buffers: */
+  wxmb_commonCopyBuffer = saveBuffer;
+  wxmb_commonCopyBuffer2 = saveBuffer2;
+  wxmb_copyStyleList = saveStyles;
+  wxmb_commonCopyRegionData = saveData;
+}
+
+
 char *wxMediaXClipboardClient::GetData(char *format, long *size)
 {
   if (!xSelectionCopied && !wxMediaXSelectionOwner) {
@@ -2158,28 +2233,30 @@ char *wxMediaXClipboardClient::GetData(char *format, long *size)
   }
 
   if (!xSelectionCopied || wxMediaXSelectionOwner) {
-    xClipboardHack = TRUE;
-    wxMediaXSelectionOwner->Copy(FALSE, 0L);
-    xClipboardHack = FALSE;
+    CopyIntoSelection();
   }
 
   /* If nothing is copied (e.g., DoCopy is overriden to not copy anything
      or copies directly to clipboard): */
-  if (!wxmb_copyStyleList) {
-    if (wxTheClipboard->GetClipboardClient() == this)
+  if (!wxmb_selectionCopyStyleList) {
+    if (wxTheSelection->GetClipboardClient() == this)
       return NULL;
     else
-      return wxTheClipboard->GetClipboardData(format, size, 0);
+      return wxTheSelection->GetClipboardData(format, size, 0);
   }
 
-  return TheMediaClipboardClient->GetData(format, size);
+  return GenericGetData(format, size, 
+			wxmb_selectionCopyBuffer,
+			wxmb_selectionCopyBuffer2,
+			wxmb_selectionCopyStyleList,
+			wxmb_selectionCopyRegionData);
 }
 
 void wxMediaXClipboardClient::BeingReplaced(void)
 {
   if (wxMediaXSelectionOwner) {
     /* In case this client replaced itself somewhere along the way: */
-    if (this != wxTheClipboard->GetClipboardClient()) {
+    if (this != wxTheSelection->GetClipboardClient()) {
       wxMediaBuffer *b = wxMediaXSelectionOwner;
       wxMediaXSelectionOwner= NULL;
       xSelectionCopied = FALSE;
@@ -2205,14 +2282,14 @@ Bool wxMediaBuffer::DoOwnXSelection(Bool on, Bool force)
       wxMediaXSelectionOwner = NULL; // should be redundant
     }
     xSelectionCopied = FALSE;
-    wxTheClipboard->SetClipboardClient(TheMediaXClipboardClient, 0L);
+    wxTheSelection->SetClipboardClient(TheMediaXClipboardClient, 0L);
     wxMediaXSelectionOwner = this;
   } else if (this == wxMediaXSelectionOwner) {
     wxMediaXSelectionOwner = NULL;
     if (!xSelectionCopied
-	&& PTREQ(wxTheClipboard->GetClipboardClient(), 
+	&& PTREQ(wxTheSelection->GetClipboardClient(), 
 		 TheMediaXClipboardClient)) {
-      wxTheClipboard->SetClipboardString("", 0L);
+      wxTheSelection->SetClipboardString("", 0L);
     }
   }
 
@@ -2222,9 +2299,7 @@ Bool wxMediaBuffer::DoOwnXSelection(Bool on, Bool force)
 void wxMediaBuffer::CopyOutXSelection(void)
 {
   if (this == wxMediaXSelectionOwner) {
-    xClipboardHack = TRUE;
-    wxMediaXSelectionOwner->Copy(FALSE, 0L);
-    xClipboardHack = FALSE;
+    CopyIntoSelection();
     xSelectionCopied = TRUE;
   }
 }
@@ -2235,9 +2310,9 @@ void wxMediaSetXSelectionMode(Bool on)
 {
 #if ALLOW_X_STYLE_SELECTION
   wxMediaXSelectionMode = on;
-  if (!on && PTREQ(wxTheClipboard->GetClipboardClient(), 
+  if (!on && PTREQ(wxTheSelection->GetClipboardClient(), 
 		   TheMediaXClipboardClient))
-    wxTheClipboard->SetClipboardString("", 0L);
+    wxTheSelection->SetClipboardString("", 0L);
 #endif
 }
 
@@ -2480,6 +2555,7 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 edf(copy, Copy(FALSE, event->timeStamp), event)
 edf(copyappend, Copy(TRUE, event->timeStamp), event)
 edf(paste, Paste(event->timeStamp), event)
+edf(paste_x_sel, PasteSelection(event->timeStamp), event)
 edf(cut, Cut(FALSE, event->timeStamp), event)
 edf(kill, Kill(event->timeStamp), event)
 edf(cutappend, Cut(TRUE, event->timeStamp), event)
@@ -2502,6 +2578,7 @@ void wxAddMediaBufferFunctions(wxKeymap *tab)
   setf("cut-clipboard", cut);
   setf("cut-append-clipboard", cutappend);
   setf("paste-clipboard", paste);
+  setf("paste-x-selection", paste_x_sel);
   setf("delete-selection", delete);
   setf("clear-selection", delete);
   setf("delete-to-end-of-line", kill);

@@ -113,6 +113,7 @@
 				   [(*) (and (argc=? 2) (compiler:option:fixnum-arithmetic) "MZC_TIMES2")]
 				   [(min) (and (argc=? 2) "MZC_MIN2")]
 				   [(max) (and (argc=? 2) "MZC_MAX2")]
+				   [(quotient) (and (argc=? 2) "MZC_QUOTIENT")]
 				   [(for-syntax-in-env) "MZC_FOR_SYNTAX_IN_ENV"]
 				   [else #f])])
 		    (if special

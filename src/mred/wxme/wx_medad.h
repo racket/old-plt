@@ -9,7 +9,9 @@ const long
 wxMCANVAS_NO_H_SCROLL = 0x10,
 wxMCANVAS_NO_V_SCROLL = 0x2,
 wxMCANVAS_HIDE_H_SCROLL = 0x4,
-wxMCANVAS_HIDE_V_SCROLL = 0x8;
+wxMCANVAS_HIDE_V_SCROLL = 0x8,
+wxMCANVAS_AUTO_H_SCROLL = 0x01000000,
+wxMCANVAS_AUTO_V_SCROLL = 0x02000000;
 
 enum {
   wxEDIT_BUFFER =1,
@@ -118,7 +120,7 @@ class wxMediaBuffer : public wxObject
   void EndCopyBuffer(void);
   void FreeOldCopies(void);
   void InstallCopyBuffer(long time, wxStyleList *sl);
-  void DoBufferPaste(long time, Bool local = FALSE);
+  void DoBufferPaste(wxClipboard *cb, long time, Bool local = FALSE);
   virtual void InsertPasteSnip(wxSnip *snip, wxBufferData *) = 0;
   virtual void InsertPasteString(wxchar *str) = 0;
 
@@ -198,6 +200,7 @@ class wxMediaBuffer : public wxObject
   virtual void Cut(Bool extend, long time) = 0;
   virtual void Copy(Bool extend, long time) = 0;
   virtual void Paste(long time) = 0;
+  virtual void PasteSelection(long time) = 0;
   virtual void Kill(long time) = 0;
   virtual void SelectAll(void) = 0;
 
@@ -380,6 +383,7 @@ class wxMediaCanvas : public wxCanvas
   int givenHScrollsPerPage;
   int hscrollsPerPage, vscrollsPerPage;
   int scrollHeight, scrollWidth;
+  char xscroll_on, yscroll_on, auto_x, auto_y;
   Bool focuson, focusforcedon;
   Bool lazy_refresh, need_refresh;
 
@@ -436,6 +440,7 @@ class wxMediaCanvas : public wxCanvas
   virtual void OnSetFocus();
   virtual void OnKillFocus();
   virtual void OnFocus(Bool focus);
+  virtual void OnScrollOnChange();
 
   virtual void Scroll(int x, int y, Bool refresh);
 

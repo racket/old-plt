@@ -100,13 +100,14 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     wgt = XtVaCreateManagedWidget
 	("choice", xfwfLabelWidgetClass, X->frame,
 	 XtNlabel,       n > 0 ? choices[0] : "",
-	 XtNbackground,  wxGREY_PIXEL,
+	 XtNbackground,  wxBUTTON_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
 	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNframeWidth,  2,
+	 XtNhighlightThickness, 0,
 	 XtNalignment,   XfwfLeft,
 	 XtNrightMargin,  16,
 	 XtNshrinkToFit, (width < 0 || height < 0),

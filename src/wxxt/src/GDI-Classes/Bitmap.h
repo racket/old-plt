@@ -81,7 +81,7 @@ public:
   wxBitmap *GetMaskBit();
   void FreeMaskBit();
 
-  void *GetLabelPixmap();
+  void *GetLabelPixmap(Bool for_button = FALSE);
   void ReleaseLabel();
 
 public:
@@ -89,7 +89,7 @@ public:
     wxColourMap      *cmap;
     wxBitmap         *loaded_mask;
     wxBitmap         *maskBit;
-    wxBitmap         *label_bm;
+    wxBitmap         *label_bm, *button_label_bm;
 
 public:
     int selectedIntoDC;

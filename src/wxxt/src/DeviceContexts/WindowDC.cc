@@ -969,12 +969,37 @@ Bool wxWindowDC::GCBlit(double xdest, double ydest, double w, double h, wxBitmap
     return retval; // !retval => something is wrong with the drawables
 }
 
+#ifdef WX_USE_XRENDER
+static void SetToGray(XRenderColor *col, Pixel bg_pixel)
+{
+  wxColour *c;
+  int a, v;
+
+  c = ((bg_pixel == wxGREY_PIXEL) ? wxGREY : wxBUTTON_COLOR);
+
+  a = 0xD0;
+  col->alpha = a << 8;
+
+  /* Pre-multiply alpha. In the end, we want to shift the
+     result by 8, so we skip the division by 255 that would
+     scale alpha (since 255 is close enough to 256). */
+  v = c->Red();
+  col->red = v * a;
+  v = c->Green();
+  col->green = v * a;
+  v = c->Blue();
+  col->blue = v * a;
+}
+#endif
+
 void doDrawBitmapLabel(Display *dpy, 
 		       Pixmap pixmap, Pixmap maskmap,
 		       Drawable drawable, GC agc,
 		       int x, int y, int width, int height, 
 		       int depth, int mask_depth,
-		       Region reg)
+		       Region reg,
+		       GC gray_gc,
+		       Pixel bg_pixel)
 {
 #ifdef WX_USE_XRENDER
   if (maskmap && (mask_depth > 1)) {
@@ -999,19 +1024,27 @@ void doDrawBitmapLabel(Display *dpy,
 		     0, 0,
 		     x, y, width, height);
 
+    if (gray_gc) {
+      XRenderColor col;
+
+      SetToGray(&col, bg_pixel);
+
+      XRenderFillRectangle(wxAPP_DISPLAY, PictOpOver, dest, &col,
+			   x, y, width, height);
+    }
+
     XRenderFreePicture(dpy, dest);
     XRenderFreePicture(wxAPP_DISPLAY, src);
     XRenderFreePicture(wxAPP_DISPLAY, mask);
-
     return;
   }
 #endif
-
+   
   if (maskmap && (mask_depth == 1)) {
     XSetClipMask(dpy, agc, maskmap);
     XSetClipOrigin(dpy, agc, x, y);
   }
-
+  
   if (depth == 1) {
     XCopyPlane(dpy, pixmap, drawable, agc,
 	       0, 0, width, height, x, y, 1);
@@ -1019,10 +1052,33 @@ void doDrawBitmapLabel(Display *dpy,
     XCopyArea(dpy, pixmap, drawable, agc,
 	      0, 0, width, height, x, y);
   }
-
+  
   if (maskmap && (mask_depth == 1)) {
     XSetClipMask(dpy, agc, None);
     XSetClipOrigin(dpy, agc, 0, 0);
+  }
+
+  if (gray_gc) {
+#ifdef WX_USE_XRENDER
+    if (wxXRenderHere()) {
+      Picture dest;
+      XRenderColor col;
+      
+      dest = (Picture)wxMakeXrenderPicture(drawable, 1);
+      XRenderSetPictureClipRegion(wxAPP_DISPLAY, dest, reg);
+
+      SetToGray(&col, bg_pixel);
+      
+      XRenderFillRectangle(wxAPP_DISPLAY, PictOpOver, dest, &col,
+			   x, y, width, height);
+      
+      XRenderFreePicture(dpy, dest);
+      return;
+    }
+#endif
+    XSetRegion(dpy, gray_gc, reg);
+    XFillRectangle(dpy, drawable, gray_gc, x, y, width, height);
+    XSetClipMask(dpy, gray_gc, None);
   }
 }
 
@@ -1032,12 +1088,12 @@ extern "C" {
 			 Drawable drawable, GC agc,
 			 int x, int y, int width, int height, 
 			 int depth, int mask_depth,
-			 Region reg) {
+			 Region reg, GC gray_gc, Pixel bg) {
     return doDrawBitmapLabel(dpy, pixmap, maskmap,
 			     drawable, agc,
 			     x, y, width, height, 
 			     depth, mask_depth,
-			     reg);
+			     reg, gray_gc, bg);
   }
 };
 

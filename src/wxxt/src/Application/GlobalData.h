@@ -143,6 +143,7 @@ extern wxBrush* wxRED_BRUSH;
 extern wxColour* wxBLACK;
 extern wxColour* wxWHITE;
 extern wxColour* wxGREY;
+extern wxColour* wxBUTTON_COLOR;
 extern wxColour* wxRED;
 extern wxColour* wxBLUE;
 extern wxColour* wxGREEN;
@@ -152,6 +153,7 @@ extern wxColour* wxLIGHT_GREY;
 extern unsigned long wxWHITE_PIXEL;
 extern unsigned long wxBLACK_PIXEL;
 extern unsigned long wxGREY_PIXEL;
+extern unsigned long wxBUTTON_PIXEL;
 extern unsigned long wxDARK_GREY_PIXEL;
 extern unsigned long wxCTL_HIGHLIGHT_PIXEL;
 

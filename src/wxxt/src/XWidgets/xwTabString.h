@@ -38,7 +38,9 @@ extern void wxDrawBitmapLabel(Display *display,
 			      Drawable drawable, GC gc,
 			      int x, int y, int width, int height, 
 			      int depth, int mask_depth,
-			      Region reg);
+			      Region reg,
+			      GC gray_gc,
+			      Pixel bg_pixel);
 
 #else
 

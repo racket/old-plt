@@ -2306,7 +2306,7 @@ void wxMediaEdit::Copy(Bool extend, long time)
   Copy(extend, time, -1);
 }
 
-void wxMediaEdit::DoPaste(long start, long time)
+void wxMediaEdit::DoGenericPaste(wxClipboard *cb, long start, long time)
 {
   long delta;
 
@@ -2314,7 +2314,7 @@ void wxMediaEdit::DoPaste(long start, long time)
 
   delta = len;
 
-  DoBufferPaste(time, FALSE);
+  DoBufferPaste(cb, time, FALSE);
 
   delta = len - delta;
 
@@ -2322,7 +2322,21 @@ void wxMediaEdit::DoPaste(long start, long time)
   prevPasteEnd = start + delta;
 }
 
-void wxMediaEdit::Paste(long time, long start, long end)
+void wxMediaEdit::DoPaste(long start, long time)
+{
+  DoGenericPaste(wxTheClipboard, start, time);
+}
+
+void wxMediaEdit::DoPasteSelection(long start, long time)
+{
+#ifdef wx_xt
+  DoGenericPaste(wxTheSelection, start, time);
+#else
+  DoGenericPaste(wxTheClipboard, start, time);
+#endif
+}
+
+void wxMediaEdit::GenericPaste(Bool x_sel, long time, long start, long end)
 {
   int savePrevPaste;
 
@@ -2340,13 +2354,26 @@ void wxMediaEdit::Paste(long time, long start, long end)
   if (start < end)
     Delete(start, end);
 
-  DoPaste(start, time);
+  if (x_sel)
+    DoPasteSelection(start, time);
+  else
+    DoPaste(start, time);
 
   savePrevPaste = prevPasteStart;
 
   EndEditSequence();
 
   prevPasteStart = savePrevPaste;
+}
+
+void wxMediaEdit::Paste(long time, long start, long end)
+{
+  GenericPaste(0, time, start, end);
+}
+
+void wxMediaEdit::PasteSelection(long time, long start, long end)
+{
+  GenericPaste(1, time, start, end);
 }
 
 void wxMediaEdit::InsertPasteSnip(wxSnip *snip, wxBufferData *data)
@@ -2399,6 +2426,11 @@ void wxMediaEdit::InsertPasteString(wxchar *str)
 void wxMediaEdit::Paste(long time)
 {
   Paste(time, startpos, endpos);
+}
+
+void wxMediaEdit::PasteSelection(long time)
+{
+  PasteSelection(time, startpos, endpos);
 }
 
 void wxMediaEdit::PasteNext(void)

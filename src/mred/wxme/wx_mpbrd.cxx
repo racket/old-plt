@@ -30,6 +30,7 @@
 #ifndef OLD_WXWINDOWS
 # include "wx_cmdlg.h"
 #endif
+#include "wx_clipb.h"
 #include "wx_utils.h"
 #include "wx_media.h"
 #include "wx_gcrct.h"
@@ -2358,7 +2359,7 @@ void wxMediaPasteboard::Copy(Bool extend, long time)
   EndCopyBuffer();
 }
 
-void wxMediaPasteboard::DoPaste(long time)
+void wxMediaPasteboard::DoGenericPaste(wxClipboard *cb, long time)
 {
   wxSnip *start, *snip;
   double cx, cy, left, right, top, bottom, dx, dy;
@@ -2371,7 +2372,7 @@ void wxMediaPasteboard::DoPaste(long time)
   start = snips;
   GetCenter(&cx, &cy);
 
-  DoBufferPaste(time);
+  DoBufferPaste(cb, time);
 
   // Quiet the compiler:
   left = right = top = bottom = 0;
@@ -2417,7 +2418,21 @@ void wxMediaPasteboard::DoPaste(long time)
   }
 }
 
-void wxMediaPasteboard::Paste(long time)
+void wxMediaPasteboard::DoPaste(long time)
+{
+  DoGenericPaste(wxTheClipboard, time);
+}
+
+void wxMediaPasteboard::DoPasteSelection(long time)
+{
+#ifdef wx_xt
+  DoGenericPaste(wxTheSelection, time);
+#else
+  DoGenericPaste(wxTheClipboard, time);
+#endif
+}
+
+void wxMediaPasteboard::GenericPaste(Bool x_sel, long time)
 {
   if (userLocked || writeLocked)
     return;
@@ -2426,9 +2441,24 @@ void wxMediaPasteboard::Paste(long time)
 
   NoSelected();
 
-  DoPaste(time);
+  if (x_sel)
+    DoPasteSelection(time);
+  else
+    DoPaste(time);
 
   EndEditSequence();
+}
+
+void wxMediaPasteboard::Paste(long time)
+{
+  GenericPaste(0, time);
+}
+
+void wxMediaPasteboard::PasteSelection(long time)
+{
+#ifdef wx_xt
+  GenericPaste(1, time);
+#endif
 }
 
 void wxMediaPasteboard::InsertPasteSnip(wxSnip *snip, wxBufferData *data)

@@ -255,6 +255,8 @@ scheme_utf8_encode_to_buffer
 scheme_utf8_encode_to_buffer_len
 scheme_ucs4_to_utf16
 scheme_utf16_to_ucs4
+scheme_open_converter
+scheme_close_converter
 scheme_make_bignum
 scheme_make_bignum_from_unsigned
 scheme_make_bignum_from_long_long
@@ -383,6 +385,7 @@ scheme_security_check_network
 scheme_get_host_address
 scheme_set_type_printer
 scheme_print_bytes
+scheme_print_utf8
 scheme_print_string
 scheme_make_namespace
 scheme_add_namespace_option

@@ -94,6 +94,7 @@ wxBrush* wxRED_BRUSH = 0;
 wxColour* wxBLACK = 0;
 wxColour* wxWHITE = 0;
 wxColour* wxGREY = 0;
+wxColour* wxBUTTON_COLOR = 0;
 wxColour* wxRED = 0;
 wxColour* wxBLUE = 0;
 wxColour* wxGREEN = 0;
@@ -126,6 +127,7 @@ wxPen* wxLIGHT_GREY_PEN = 0;
 unsigned long wxWHITE_PIXEL;
 unsigned long wxBLACK_PIXEL;
 unsigned long wxGREY_PIXEL;
+unsigned long wxBUTTON_PIXEL;
 unsigned long wxDARK_GREY_PIXEL;
 unsigned long wxCTL_HIGHLIGHT_PIXEL;
 

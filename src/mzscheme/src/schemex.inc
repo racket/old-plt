@@ -279,6 +279,8 @@
   scheme_extension_table->scheme_utf8_encode_to_buffer_len = scheme_utf8_encode_to_buffer_len;
   scheme_extension_table->scheme_ucs4_to_utf16 = scheme_ucs4_to_utf16;
   scheme_extension_table->scheme_utf16_to_ucs4 = scheme_utf16_to_ucs4;
+  scheme_extension_table->scheme_open_converter = scheme_open_converter;
+  scheme_extension_table->scheme_close_converter = scheme_close_converter;
   scheme_extension_table->scheme_make_bignum = scheme_make_bignum;
   scheme_extension_table->scheme_make_bignum_from_unsigned = scheme_make_bignum_from_unsigned;
   scheme_extension_table->scheme_make_bignum_from_long_long = scheme_make_bignum_from_long_long;
@@ -425,6 +427,7 @@
   scheme_extension_table->scheme_get_host_address = scheme_get_host_address;
   scheme_extension_table->scheme_set_type_printer = scheme_set_type_printer;
   scheme_extension_table->scheme_print_bytes = scheme_print_bytes;
+  scheme_extension_table->scheme_print_utf8 = scheme_print_utf8;
   scheme_extension_table->scheme_print_string = scheme_print_string;
   scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
   scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;

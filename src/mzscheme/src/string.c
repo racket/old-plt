@@ -2092,7 +2092,7 @@ static Scheme_Object *locale_string_encoding(int argc, Scheme_Object *argv[])
 #ifndef DONT_USE_LOCALE
 
 static char *do_convert(iconv_t cd,
-			/* if either from_e or to_e can be NULL, then
+			/* if cd == -1 and either from_e or to_e can be NULL, then
 			   reset_locale() must have been called */
 			const char *from_e, const char *to_e,
 			/* 1 => UCS-4 -> UTF-8; 2 => UTF-8 -> UCS-4; 0 => other */
@@ -2290,11 +2290,6 @@ static char *do_convert(iconv_t cd,
 }
 
 #define MZ_SC_BUF_SIZE 32
-#ifdef SCHEME_BIG_ENDIAN
-# define MZ_UCS4_NAME "UCS-4BE"
-#else
-# define MZ_UCS4_NAME "UCS-4LE"
-#endif
 
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len,
@@ -3136,36 +3131,16 @@ static void close_converter(Scheme_Object *o, void *data)
   }
 }
 
-static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_open_converter(const char *from_e, const char *to_e)
 {
   Scheme_Converter *c;
-  Scheme_Object *s1, *s2;
-  char *from_e, *to_e;
   iconv_t cd;
   int kind;
   int permissive;
   int need_regis = 1;
   Scheme_Custodian_Reference *mref;
 
-  if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("bytes-open-converter", "byte string", 0, argc, argv);
-  if (!SCHEME_CHAR_STRINGP(argv[1]))
-    scheme_wrong_type("bytes-open-converter", "byte string", 1, argc, argv);
-
-  scheme_custodian_check_available(NULL, "bytes-open-converter", "converter");
-
-  s1 = scheme_char_string_to_byte_string(argv[0]);
-  s2 = scheme_char_string_to_byte_string(argv[1]);
-
-  if (scheme_byte_string_has_null(s1))
-    return scheme_false;
-  if (scheme_byte_string_has_null(s2))
-    return scheme_false;
-
   if (!iconv_ready) init_iconv();
-
-  from_e = SCHEME_BYTE_STR_VAL(s1);
-  to_e = SCHEME_BYTE_STR_VAL(s2);
 
   if ((!strcmp(from_e, "UTF-8")
        || !strcmp(from_e, "UTF-8-permissive")
@@ -3218,6 +3193,32 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   c->mref = mref;
 
   return (Scheme_Object *)c;
+}
+
+static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *s1, *s2;
+  char *from_e, *to_e;
+  
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
+    scheme_wrong_type("bytes-open-converter", "byte string", 0, argc, argv);
+  if (!SCHEME_CHAR_STRINGP(argv[1]))
+    scheme_wrong_type("bytes-open-converter", "byte string", 1, argc, argv);
+
+  scheme_custodian_check_available(NULL, "bytes-open-converter", "converter");
+
+  s1 = scheme_char_string_to_byte_string(argv[0]);
+  s2 = scheme_char_string_to_byte_string(argv[1]);
+
+  if (scheme_byte_string_has_null(s1))
+    return scheme_false;
+  if (scheme_byte_string_has_null(s2))
+    return scheme_false;
+
+  from_e = SCHEME_BYTE_STR_VAL(s1);
+  to_e = SCHEME_BYTE_STR_VAL(s2);
+
+  return scheme_open_converter(from_e, to_e);
 }
 
 static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Object *argv[])
@@ -3383,12 +3384,17 @@ static Scheme_Object *byte_string_convert_end(int argc, Scheme_Object *argv[])
   return convert_one("bytes-convert-end", 1, argc, argv);
 }
 
+void scheme_close_converter(Scheme_Object *conv)
+{
+  close_converter(conv, NULL);
+}
+
 static Scheme_Object *byte_string_close_converter(int argc, Scheme_Object **argv)
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type))
     scheme_wrong_type("bytes-close-converter", "converter", 0, argc, argv);
 
-  close_converter(argv[0], NULL);
+  scheme_close_converter(argv[0]);
 
   return scheme_void;
 }

@@ -22,7 +22,9 @@
 #include <X11/Xatom.h>
 #define  Uses_ShellWidget
 #include "widgets.h"
+#include "scheme.h"
 
+wxClipboard *wxTheSelection;
 wxClipboard *wxTheClipboard;
 
 Widget wx_clipWindow;
@@ -42,7 +44,7 @@ Atom ATOM(char *atom)
 #endif
 #define VALUE_TYPE void*
 
-Atom xa_utf8, xa_text, xa_targets;
+Atom xa_utf8, xa_text, xa_targets, xa_clipboard;
 
 static wxFrame *clipboard_frame;
 static wxFrame *get_clipboard_frame;
@@ -73,12 +75,16 @@ void wxInitClipboard(void)
 
   if (!wxTheClipboard) {
     wxREGGLOB(wxTheClipboard);
+    wxREGGLOB(wxTheSelection);
     wxTheClipboard = new wxClipboard;
+    wxTheSelection = new wxClipboard;
+    wxTheSelection->is_sel = 1;
   }
 
   xa_utf8 = ATOM("UTF8_STRING");
   xa_text = ATOM("TEXT");
   xa_targets = ATOM("TARGETS");
+  xa_clipboard = ATOM("CLIPBOARD");
 }
 
 static void AddClipboardFrame(int on)
@@ -95,23 +101,28 @@ wxClipboard::wxClipboard()
 {
   clipOwner = NULL;
   cbString = NULL;
+
+  {
+    void *v;
+    v = MALLOC_SAFEREF();
+    saferef = v;
+    SET_SAFEREF(saferef, this);
+  }
 }
 
 wxClipboard::~wxClipboard()
 {
 }
 
-static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *target,
+static Boolean doConvertClipboard(wxClipboard *cb,
+				  Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *target,
 				  Atom *type_return, XtPointer *value_return,
 				  unsigned long *length_return,
 				  int *format_return)
 {
-  wxClipboard *cb;
   Atom xa;
   char **formats = NULL;
   int i = 0, count, extra;
-
-  cb = wxTheClipboard;
 
   if (*target == xa_targets) {
     if (cb->clipOwner) {
@@ -180,13 +191,43 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
   return TRUE;
 }
 
-static void wxSelectionDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
+static Boolean wxConvertClipboard(Widget w, Atom *selection, Atom *target,
+				  Atom *type_return, XtPointer *value_return,
+				  unsigned long *length_return,
+				  int *format_return)
 {
-  wxClipboard *cb;
+  return doConvertClipboard(wxTheClipboard, w, selection, target, type_return, value_return,
+			    length_return, format_return);
+}
 
-  cb = wxTheClipboard;
+static Boolean wxConvertSelection(Widget w, Atom *selection, Atom *target,
+				 Atom *type_return, XtPointer *value_return,
+				 unsigned long *length_return,
+				 int *format_return)
+{
+  return doConvertClipboard(wxTheSelection, w, selection, target, type_return, value_return,
+			    length_return, format_return);
+}
+
+static void doSelectionDone(wxClipboard *cb, Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
+{
   cb->sentString = NULL;
   cb->receivedTargets = NULL;
+}
+
+static void wxClipboardDone(Widget w, Atom *selection, Atom *target)
+{
+  doSelectionDone(wxTheClipboard, w, selection, target);
+}
+
+static void wxSelectionDone(Widget w, Atom *selection, Atom *target)
+{
+  doSelectionDone(wxTheSelection, w, selection, target);
+}
+
+static void wxStringClipboardDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
+{
+  /* do nothing */
 }
 
 static void wxStringSelectionDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection), Atom *WXUNUSED(target))
@@ -194,18 +235,24 @@ static void wxStringSelectionDone(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
   /* do nothing */
 }
 
-static void wxLoseClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection))
+static void doLoseClipboard(wxClipboard *cb, Widget WXUNUSED(w), Atom *WXUNUSED(selection))
 {
-  wxClipboard *cb;
-
-  cb = wxTheClipboard;
-  
   if (cb->clipOwner) {
     MrEdQueueBeingReplaced(cb->clipOwner);
     cb->clipOwner = NULL;
     AddClipboardFrame(0);
   }
   cb->cbString = NULL;
+}
+
+static void wxLoseClipboard(Widget w, Atom *selection)
+{
+  doLoseClipboard(wxTheClipboard, w, selection);
+}
+
+static void wxLoseSelection(Widget w, Atom *selection)
+{
+  doLoseClipboard(wxTheSelection, w, selection);
 }
 
 void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
@@ -224,9 +271,15 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   clipboard_frame->context = client->context;
   AddClipboardFrame(1);
 
-  got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
-				 wxConvertClipboard, wxLoseClipboard, 
-				 wxSelectionDone);
+  if (is_sel) {
+    got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
+				   wxConvertSelection, wxLoseSelection, 
+				   wxSelectionDone);
+  } else {
+    got_selection = XtOwnSelection(wx_clipWindow, xa_clipboard, time,
+				   wxConvertClipboard, wxLoseClipboard, 
+				   wxClipboardDone);
+  }
 
   if (!got_selection) {
     MrEdQueueBeingReplaced(clipOwner);
@@ -252,9 +305,15 @@ void wxClipboard::SetClipboardString(char *str, long time)
 
   cbString = str;
 
-  got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
-				 wxConvertClipboard, wxLoseClipboard, 
-				 wxStringSelectionDone);
+  if (is_sel) {
+    got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
+				   wxConvertSelection, wxLoseSelection, 
+				   wxStringSelectionDone);
+  } else {
+    got_selection = XtOwnSelection(wx_clipWindow, xa_clipboard, time,
+				   wxConvertClipboard, wxLoseClipboard, 
+				   wxStringClipboardDone);
+  }
   
   if (!got_selection) {
     cbString = NULL;
@@ -279,30 +338,38 @@ wxBitmap *wxClipboard::GetClipboardBitmap(long time)
   return NULL;
 }
 
-static void wxGetTargets(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+static void wxGetTargets(Widget WXUNUSED(w), XtPointer _cb, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
 			 XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
-  wxClipboard *cb = wxTheClipboard;
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
 
-  if (*len <= 0) {
-    cb->receivedTargets = (void *)1; /* To break the waiting loop */
-    cb->receivedLength = 0;
+  if (cb->in_progress < 0) {
+    cb->in_progress = 0;
   } else {
-    cb->receivedTargets = new Atom[*len];
-    memcpy(cb->receivedTargets, value, *len * sizeof(Atom));
-    cb->receivedLength = *len;
+    if (*len <= 0) {
+      cb->receivedTargets = (void *)1; /* To break the waiting loop */
+      cb->receivedLength = 0;
+    } else {
+      cb->receivedTargets = new Atom[*len];
+      memcpy(cb->receivedTargets, value, *len * sizeof(Atom));
+      cb->receivedLength = *len;
+    }
   }
 }
 
-static void wxGetSelection(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
+static void wxGetSelection(Widget WXUNUSED(w), XtPointer _cb, Atom *WXUNUSED(sel), Atom *WXUNUSED(type),
 			   XtPointer value, unsigned long *len, int *WXUNUSED(format))
 {
-  wxClipboard *cb = wxTheClipboard;
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
 
-  cb->receivedString = new char[(*len) + 1];
-  memcpy(cb->receivedString, value, *len);
-  cb->receivedString[*len] = 0;
-  cb->receivedLength = *len;
+  if (cb->in_progress < 0) {
+    cb->in_progress = 0;
+  } else {
+    cb->receivedString = new char[(*len) + 1];
+    memcpy(cb->receivedString, value, *len);
+    cb->receivedString[*len] = 0;
+    cb->receivedLength = *len;
+  }
 }
 
 char *wxClipboard::GetClipboardString(long time)
@@ -319,23 +386,29 @@ char *wxClipboard::GetClipboardString(long time)
 
 extern void wxBlockUntil(int (*)(void *), void *);
 
-static int clipget_in_progress;
-
-#if 0
-static int CheckNotInProgress(void *WXUNUSED(v))
+static int CheckNotInProgress(void *_cb)
 {
-  return !clipget_in_progress;
-}
-#endif
-
-static int CheckReadyTarget(void *WXUNUSED(v))
-{
-  return !!wxTheClipboard->receivedTargets;
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+  return !cb->in_progress;
 }
 
-static int CheckReadyString(void *WXUNUSED(v))
+static int CheckReadyTarget(void *_cb)
 {
-  return !!wxTheClipboard->receivedString;
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+  return !!cb->receivedTargets;
+}
+
+static int CheckReadyString(void *_cb)
+{
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+  return !!cb->receivedString;
+}
+
+static void abandoned_clip(void *_cb)
+{
+  wxClipboard *cb = (wxClipboard *)GET_SAFEREF(_cb);
+
+  cb->in_progress = -1;
 }
 
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
@@ -355,21 +428,19 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     long i;
 
     /* Need to make sure that only one thread is here at a time. */
-    /* Disabled for now because we haven't handled thread kills and 
-       escapes. */
-#if 0
-    wxBlockUntil(CheckNotInProgress, NULL);
-#endif
-
-    clipget_in_progress = 1;
+    wxBlockUntil(CheckNotInProgress, saferef);
+    
+    in_progress = 1;
 
     receivedString = NULL;
     receivedTargets = NULL;
 
-    XtGetSelectionValue(getClipWindow, XA_PRIMARY,
-			xa_targets, wxGetTargets, (XtPointer)NULL, time);
+    XtGetSelectionValue(getClipWindow, is_sel ? XA_PRIMARY : xa_clipboard,
+			xa_targets, wxGetTargets, (XtPointer)saferef, time);
 
-    wxBlockUntil(CheckReadyTarget, NULL);
+    BEGIN_ESCAPEABLE(abandoned_clip, saferef);
+    wxBlockUntil(CheckReadyTarget, saferef);
+    END_ESCAPEABLE();
 
     xa = ATOM(format);
 
@@ -388,21 +459,23 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
       receivedTargets = NULL;
 
     if (i >= receivedLength) {
-      clipget_in_progress = 0;
+      in_progress = 0;
       return NULL;
     }
 
-    XtGetSelectionValue(getClipWindow, XA_PRIMARY,
-			xa, wxGetSelection, (XtPointer)NULL, 0);
+    XtGetSelectionValue(getClipWindow, is_sel ? XA_PRIMARY : xa_clipboard,
+			xa, wxGetSelection, (XtPointer)saferef, 0);
     
-    wxBlockUntil(CheckReadyString, NULL);
+    BEGIN_ESCAPEABLE(abandoned_clip, saferef);
+    wxBlockUntil(CheckReadyString, saferef);
+    END_ESCAPEABLE();
 
     *length = receivedLength;
 
-    clipget_in_progress = 0;
+    in_progress = 0;
 
     if (xa == XA_STRING) {
-      /* Really should encode */
+      /* Really should encode... */
     }
 
     return receivedString;

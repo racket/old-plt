@@ -51,11 +51,16 @@ class wxMediaPasteboard : public wxMediaBuffer
   void Cut(Bool extend=FALSE, long time=0);
   void Copy(Bool extend=FALSE, long time=0);
   void Paste(long time=0);
+  void PasteSelection(long time=0);
   void Kill(long time=0);
   void SelectAll(void);
 
   virtual void DoCopy(long time, Bool extend);
   virtual void DoPaste(long time);
+  virtual void DoPasteSelection(long time);
+
+  void DoGenericPaste(wxClipboard *cb, long time);
+  void GenericPaste(Bool x_sel, long time);
 
   void SetSelected(wxSnip *);
   void AddSelected(wxSnip *);

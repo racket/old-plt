@@ -624,6 +624,35 @@ static wxClipboard* wxGetTheClipboard()
   return wxTheClipboard;
 }
 
+static wxClipboard* wxGetTheXSelection()
+{
+#ifdef wx_xt
+  return wxTheSelection;
+#else
+  return wxTheClipboard;
+#endif
+}
+
+static Scheme_Object *wxClipboardGlobalwxGetTheXSelection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxClipboard* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheXSelection());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxClipboard(r));
+}
+
 static Scheme_Object *wxClipboardGlobalwxGetTheClipboard(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -649,6 +678,8 @@ void objscheme_setup_wxClipboardGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxClipboardGlobalwxGetTheXSelection, "get-the-x-selection", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-x-selection", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxClipboardGlobalwxGetTheClipboard, "get-the-clipboard", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-clipboard", functmp, env));
   READY_TO_RETURN;

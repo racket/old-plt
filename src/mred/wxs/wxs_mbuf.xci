@@ -15,6 +15,7 @@
 @ X "cut" :  void Cut(bool=FALSE,ExactLong=0); <> without position
 @ X "copy" : void Copy(bool=FALSE,ExactLong=0); <> without position
 @ X "paste" : void Paste(ExactLong=0); <> without position
+@ X "paste-x-selection" : void PasteSelection(ExactLong=0); <> without position
 @ X "kill" : void Kill(ExactLong=0); <> without position
 
 @ Y "copy-self" : wxMediaBuffer! CopySelf(); : : : : XrZERO

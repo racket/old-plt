@@ -401,6 +401,8 @@ void wxCommonInit(void)
     wxWHITE = DEBUG_NEW wxColour ("WHITE");
     wxREGGLOB(wxGREY);
     wxGREY = DEBUG_NEW wxColour (214, 214, 214); /* aka "gray 84" */
+    wxREGGLOB(wxBUTTON_COLOR);
+    wxBUTTON_COLOR = DEBUG_NEW wxColour (224, 224, 224);
     wxREGGLOB(wxRED);
     wxRED = DEBUG_NEW wxColour ("RED");
     wxREGGLOB(wxBLUE);
@@ -415,6 +417,7 @@ void wxCommonInit(void)
     wxWHITE_PIXEL = wxWHITE->GetPixel(wxAPP_COLOURMAP);
     wxBLACK_PIXEL = wxBLACK->GetPixel(wxAPP_COLOURMAP);;
     wxGREY_PIXEL = wxGREY->GetPixel(wxAPP_COLOURMAP);;
+    wxBUTTON_PIXEL = wxBUTTON_COLOR->GetPixel(wxAPP_COLOURMAP);;
     {
       wxColour *c;
       int r, g, b;

@@ -346,6 +346,16 @@ responsible for drawing the frame.
 	    }
 	}
 	draw_line(XtDisplay($), XtWindow($), j, i, reg);
+
+	/* Gray out if not sensitive */
+	if (! $sensitive || $drawgray) {
+	  if (!wx_enough_colors(XtScreen($))) {
+	    XSetRegion(XtDisplay($), $graygc, reg);
+	    XFillRectangle(XtDisplay($), XtWindow($), $graygc, rect.x,
+			   rect.y, rect.width, rect.height);
+	    XSetClipMask(XtDisplay($), $graygc, None);
+	  }
+	}
     } else if ($pixmap != 0) {
 	Dimension width = $label_width - $leftMargin - $rightMargin;
 	Dimension height = $label_height - $topMargin - $bottomMargin;
@@ -361,24 +371,17 @@ responsible for drawing the frame.
 	    x = rect.x + rect.width - width;
 	else
 	    x = rect.x + (rect.width - width)/2;
+
 	wxDrawBitmapLabel(XtDisplay($), 
 			  $pixmap, $maskmap, 
 			  XtWindow($), $gc,
 			  x, y, width, height, 
 			  $label_depth, $mask_depth,
-			  reg);
+			  reg, 
+			  (! $sensitive || $drawgray) ? $graygc : 0,
+			  $background_pixel);
     }
 
-    /* Gray out if not sensitive */
-    if (! $sensitive || $drawgray) {
-      if (($pixmap != 0) || !wx_enough_colors(XtScreen($))) {
-	    if (!$graygc) make_graygc($);
-	    XSetRegion(XtDisplay($), $graygc, reg);
-	    XFillRectangle(XtDisplay($), XtWindow($), $graygc, rect.x,
-			   rect.y, rect.width, rect.height);
-	    XSetClipMask(XtDisplay($), $graygc, None);
-	}
-    }
     if ($label != NULL || $pixmap != 0) {
       XSetClipMask(XtDisplay($), $gc, None);
     }

@@ -560,8 +560,9 @@ void wxWindow::SetConstraints(wxLayoutConstraints *constr)
 
 void wxWindow::EnableScrolling(Bool x, Bool y)
 {
-  if (X->scroll)
+  if (X->scroll) {
     XtVaSetValues(X->scroll, XtNhideHScrollbar, !x, XtNhideVScrollbar, !y, NULL);
+  }
 }
 
 int wxWindow::GetScrollPos(int orient)

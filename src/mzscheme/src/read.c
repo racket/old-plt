@@ -130,6 +130,10 @@ static Scheme_Object *read_string(int is_byte,
 				  long line, long col, long pos,
 				  Scheme_Object *indentation,
 				  ReadParams *params);
+static Scheme_Object *read_here_string(Scheme_Object *port, Scheme_Object *stxsrc,
+				       long line, long col, long pos,
+				       Scheme_Object *indentation,
+				       ReadParams *params);
 static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len,
 				 Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
@@ -1103,6 +1107,16 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	case '"':
 	  return read_string(1, port, stxsrc, line, col, pos,indentation, params);
 	  break;
+	case '<':
+	  if (scheme_peekc_special_ok(port) == '<') {
+	    /* Here-string */
+	    ch = scheme_getc_special_ok(port);
+	    return read_here_string(port, stxsrc, line, col, pos,indentation, params);
+	  } else {
+	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#<'");
+	    return NULL;
+	  }
+	  break;
 	default:
 	  {
 	    int vector_length = -1;
@@ -2006,6 +2020,83 @@ read_string(int is_byte, Scheme_Object *port,
   if (stxsrc)
     result =  scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return result;
+}
+
+static Scheme_Object *
+read_here_string(Scheme_Object *port, Scheme_Object *stxsrc,
+		 long line, long col, long pos,
+		 Scheme_Object *indentation,
+		 ReadParams *params)
+     /* #<< has been read already */
+{
+  int tlen = 0, len = 0, size = 12;
+  mzchar *tag, *naya, *s, buf[12], c;
+  Scheme_Object *str;
+
+  tag = buf;
+  while (1) {
+    c = scheme_getc(port);
+    if (c == '\n') {
+      break;
+    } else if (c == EOF) {
+      scheme_read_err(port, stxsrc, line, col, pos, 3 + tlen, EOF, indentation,
+		      "read: found end-of-file after #<< and before first and-of-line");
+      return NULL;
+    } else {
+      if (tlen >= size) {
+	size *= 2;
+	naya = (mzchar *)scheme_malloc_atomic(size * sizeof(mzchar));
+	memcpy(naya, tag, tlen * sizeof(mzchar));
+	tag = naya;
+      }
+      tag[tlen++] = c;
+    }
+  }
+  if (!tlen) {
+    scheme_read_err(port, stxsrc, line, col, pos, 3, 0, indentation,
+		    "read: no characters after #<< before and-of-line");
+    return NULL;
+  }
+
+  size = 10 + tlen;
+  s = (mzchar *)scheme_malloc_atomic(size * sizeof(mzchar));
+  while (1) {
+    c = scheme_getc(port);
+    if (c == EOF) {
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
+		      "read: found end-of-file before terminating %u%s",
+		      tag, 
+		      (tlen > 50) ? 50 : tlen,
+		      (tlen > 50) ? "..." : "");
+      return NULL;
+    }
+    if (len >= size) {
+      size *= 2;
+      naya = (mzchar *)scheme_malloc_atomic(size * sizeof(mzchar));
+      memcpy(naya, s, len * sizeof(mzchar));
+      s = naya;
+    }
+    s[len++] = c;
+    if ((len >= tlen)
+	&& ((len == tlen)
+	    || (s[len - tlen - 1] == '\n'))
+	&& !memcmp(s XFORM_OK_PLUS (len - tlen), tag, sizeof(mzchar) * tlen)) {
+      c = scheme_peekc(port);
+      if ((c == '\r') || (c == '\n') || (c == EOF))
+	break;
+    }
+  }
+
+  len -= (tlen + 1);
+  if (len < 0)
+    len = 0;
+
+  str = scheme_make_sized_char_string(s, len, 1);
+
+  if (str)
+    str = scheme_make_stx_w_offset(str, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+  
+  return str;
 }
 
 char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)

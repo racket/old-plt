@@ -130,11 +130,13 @@
 @ "cut" :  void Cut(bool,ExactLong,nnls[start],nnls[end]=-1); <> position
 @ "copy" : void Copy(bool,ExactLong,nnls[start],nnls[end]=-1); <> position
 @ "paste" : void Paste(ExactLong,nnls[end],nnls[same]=-1); <> position
+@ "paste-x-selection" : void PasteSelection(ExactLong,nnls[end],nnls[same]=-1); <> position
 @ "paste-next" : void PasteNext();
 @ "kill" : void Kill(ExactLong,nnlong,nnlong); <> position
 
 @ v "do-copy" : void DoCopy(nnlong,nnlong,ExactLong,bool);
 @ v "do-paste" : void DoPaste(nnlong,ExactLong);
+@ v "do-paste-x-selection" : void DoPasteSelection(nnlong,ExactLong);
 
 @ "change-style" : void ChangeStyle(wxStyleDelta^,nnls[start],nnls[end]=-1,bool=TRUE); <> style-delta% and position
 @ "change-style" : void ChangeStyle(wxStyle^,nnls[start]=-1,nnls[end]=-1,bool=TRUE); <> style%

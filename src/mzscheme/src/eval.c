@@ -3250,11 +3250,17 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       } else {
 	if (num_rands) {
-	  UPDATE_THREAD_RSPTR_FOR_ERROR();
-	  /* note: scheme_wrong_count handles rands == p->tail_buffer */
-	  scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
-			     0, 0, num_rands, rands);
-	  return NULL; /* Doesn't get here */
+	  if (has_rest) {
+	    /* 0 params and hash_rest => (lambda args E) where args is not in E,
+	       so accept any number of arguments and ignore them. */
+	    
+	  } else {
+	    UPDATE_THREAD_RSPTR_FOR_ERROR();
+	    /* note: scheme_wrong_count handles rands == p->tail_buffer */
+	    scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
+			       0, 0, num_rands, rands);
+	    return NULL; /* Doesn't get here */
+	  }
 	}
 	RUNSTACK = old_runstack;
 	RUNSTACK_CHANGED();

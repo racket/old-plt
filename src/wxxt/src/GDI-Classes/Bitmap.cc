@@ -629,7 +629,7 @@ void wxBitmap::FreeMaskBit()
   }
 }
 
-void *wxBitmap::GetLabelPixmap()
+void *wxBitmap::GetLabelPixmap(Bool for_button)
 {
   int can_x_render;
 
@@ -640,18 +640,20 @@ void *wxBitmap::GetLabelPixmap()
 #endif
 
   if (!can_x_render
-      && !label_bm 
+      && ((for_button && !button_label_bm)
+	  || (!for_button && !label_bm))
       && loaded_mask
       && (loaded_mask->GetDepth() != 1)
       && (loaded_mask->GetWidth() == GetWidth())
       && (loaded_mask->GetHeight() == GetHeight())) {
     /* Manually construct the alpha-masked image */
     int w, h;
+    wxBitmap *bm;
 
     w = GetWidth();
     h = GetHeight();
-    label_bm = new wxBitmap(w, h, 0);
-    if (label_bm->Ok()) {
+    bm = new wxBitmap(w, h, 0);
+    if (bm->Ok()) {
       int r, g, b;
 
       if (selectedTo)
@@ -659,26 +661,48 @@ void *wxBitmap::GetLabelPixmap()
       if (loaded_mask->selectedTo)
 	loaded_mask->selectedTo->EndSetPixel();
 
-      r = wxGREY->Red();
-      g = wxGREY->Green();
-      b = wxGREY->Blue();
+      {
+	wxColor *co;
+	if (for_button)
+	  co = wxBUTTON_COLOR;
+	else
+	  co = wxGREY;
+	r = co->Red();
+	g = co->Green();
+	b = co->Blue();
+      }
 
-      wxAlphaBlit(label_bm, this, loaded_mask, r, g, b);
-    } else
-      label_bm = NULL;
+      wxAlphaBlit(bm, this, loaded_mask, r, g, b);
+
+      if (for_button)
+	button_label_bm = bm;
+      else
+	label_bm = bm;
+    }
   }
 
-  if (label_bm)
-    return (void *)GETPIXMAP(label_bm);
+  if (for_button) {
+    if (button_label_bm)
+      return (void *)GETPIXMAP(button_label_bm);
+  } else {
+    if (label_bm)
+      return (void *)GETPIXMAP(label_bm);
+  }
 
   return (void *)GETPIXMAP(this);
 }
 
 void wxBitmap::ReleaseLabel()
 {
-  if (!selectedIntoDC && label_bm) {
-    DELETE_OBJ label_bm;
-    label_bm = NULL;
+  if (!selectedIntoDC) {
+    if (label_bm) {
+      DELETE_OBJ label_bm;
+      label_bm = NULL;
+    }
+    if (button_label_bm) {
+      DELETE_OBJ button_label_bm;
+      button_label_bm = NULL;
+    }
   }
 }
 

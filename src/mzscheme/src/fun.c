@@ -598,7 +598,7 @@ scheme_make_closure(Scheme_Thread *p, Scheme_Object *code, int close)
 typedef struct {
   MZTAG_IF_REQUIRED
   int *local_flags;
-  mzshort base_closure_size;
+  mzshort base_closure_size; /* doesn't include top-level (if any) */
   mzshort *base_closure_map;
   short has_tl;
 } Closure_Info;
@@ -607,7 +607,7 @@ Scheme_Object *
 scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 {
   Scheme_Closure_Data *data;
-  int i, closure_size, offset;
+  int i, closure_size, offset, np, orig_first_flag;
   mzshort *oldpos, *closure_map;
   Closure_Info *cl;
   Resolve_Info *new_info;
@@ -617,6 +617,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   data->iso.so.type = scheme_unclosed_procedure_type;
 
   /* Set local_flags: */
+  orig_first_flag = (data->num_params ? cl->local_flags[0] : 0);
   for (i = 0; i < data->num_params; i++) {
     if (cl->local_flags[i] & SCHEME_WAS_SET_BANGED)
       cl->local_flags[i] = SCHEME_INFO_BOXED;
@@ -646,21 +647,30 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 
   /* Set up mappng from old locations on the stack (as if bodies were
      evaluated immediately) to new locations (where closures
-     effectively shift and compact valueson the stack): */
+     effectively shift and compact values on the stack): */
 
-  new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
-					cl->base_closure_size + data->num_params);
-  for (i = 0; i < data->num_params; i++) {
-    scheme_resolve_info_add_mapping(new_info, i, i + closure_size,
-				    cl->local_flags[i]);
+  np = data->num_params;
+  if ((data->num_params == 1)
+      && (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST)
+      && !(orig_first_flag & SCHEME_WAS_USED)) {
+    /* (lambda args E) where args is not in E => drop the argument */
+    new_info = scheme_resolve_info_extend(info, 0, 1, cl->base_closure_size);
+    data->num_params = 0;
+  } else {
+    new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
+					  cl->base_closure_size + data->num_params);
+    for (i = 0; i < data->num_params; i++) {
+      scheme_resolve_info_add_mapping(new_info, i, i + closure_size,
+				      cl->local_flags[i]);
+    }
   }
   for (i = 0; i < cl->base_closure_size; i++) {
     int p = oldpos[i];
 
     if (p < 0)
-      p -= data->num_params;
+      p -= np;
     else
-      p += data->num_params;
+      p += np;
 
     scheme_resolve_info_add_mapping(new_info, p, i,
 				    scheme_resolve_info_flags(info, oldpos[i]));
@@ -1446,8 +1456,9 @@ scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 
    if (!SCHEME_STXP(code)) {
      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-		      "%S: return value from syntax expander was not syntax",
-		      SCHEME_STX_SYM(name));
+		      "%S: return value from syntax expander was not syntax: %V",
+		      SCHEME_STX_SYM(name),
+		      code);
    }
 
    code = scheme_add_remove_mark(code, mark);

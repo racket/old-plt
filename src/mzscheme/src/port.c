@@ -2064,7 +2064,7 @@ long scheme_get_char_string(const char *who,
     /* Since we want "size" more chars and we don't have leftovers, we
        need at least "size" more bytes.
 
-       "leftover" is the number of bytes (< MAX_UTF8_CHAR_BYTES) that
+       "leftover" is the number of bytes (<< READ_STRING_BYTE_BUFFER_SIZE) that
        we already have toward the first character. If the next
        character doesn't continue a leftover sequence, the next
        character actually belongs to a (leftover+1)th character. Thus,
@@ -2120,7 +2120,7 @@ long scheme_get_char_string(const char *who,
 	      if (!peek) {
 		/* Read the lookahead bytes and discard them */
 		scheme_get_byte_string_unless(who, port,
-					      s, MAX_UTF8_CHAR_BYTES, ahead_skip,
+					      s, 0, ahead_skip,
 					      0, 0, scheme_make_integer(0),
 					      NULL);
 	      } else {
@@ -2358,9 +2358,7 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
       if (!delta)
 	return v;
       else {
-	/* This counts as a decoding error. The high bit
-	   on the first character must be set, 
-	   so return '?'. */
+	/* This counts as a decoding error, so return '?' */
 	return '?';
       }
     } else {
@@ -3040,7 +3038,7 @@ scheme_close_output_port(Scheme_Object *port)
       scheme_remove_managed(op->mref, (Scheme_Object *)op);
       op->mref = NULL;
     }
-
+    
     op->closed = 1;
   }
 }

@@ -91,7 +91,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
     wgt = XtVaCreateManagedWidget
 	("button", xfwfButtonWidgetClass, X->frame,
 	 XtNlabel,       label,
-	 XtNbackground,  wxGREY_PIXEL,
+	 XtNbackground,  wxBUTTON_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
@@ -153,7 +153,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
       XtManageChild(wgt);
     X->frame = wgt;
     // create widget
-    pm = (Pixmap)bitmap->GetLabelPixmap();
+    pm = (Pixmap)bitmap->GetLabelPixmap(TRUE);
     if (bm_label_mask)
       mpm = GETPIXMAP(bm_label_mask);
     else
@@ -162,7 +162,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 	("button", xfwfButtonWidgetClass, X->frame,
 	 XtNpixmap,      pm,
 	 XtNmaskmap,     mpm,
-	 XtNbackground,  wxGREY_PIXEL,
+	 XtNbackground,  wxBUTTON_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
@@ -243,7 +243,7 @@ void wxButton::SetLabel(wxBitmap *bitmap)
 
     bm_label_mask = CheckMask(bm_label);
 
-    pm = (Pixmap)bitmap->GetLabelPixmap();
+    pm = (Pixmap)bitmap->GetLabelPixmap(TRUE);
     if (bm_label_mask)
       mpm = GETPIXMAP(bm_label_mask);
     else

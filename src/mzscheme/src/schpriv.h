@@ -2208,6 +2208,12 @@ unsigned short * scheme_ucs4_to_utf16(const mzchar *text, int start, int end,
 				      unsigned short *buf, int bufsize,
 				      long *ulen, int term_size);
 
+#ifdef SCHEME_BIG_ENDIAN
+# define MZ_UCS4_NAME "UCS-4BE"
+#else
+# define MZ_UCS4_NAME "UCS-4LE"
+#endif
+
 #define SCHEME_SYM_UNINTERNEDP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x1)
 #define SCHEME_SYM_PARALLELP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x2)
 #define SCHEME_SYM_WEIRDP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x3)

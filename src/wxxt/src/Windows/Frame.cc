@@ -233,7 +233,6 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     X->handle = wgt;
     AddEventHandlers();
 
-    /* MATTHEW */
     XtRealizeWidget(X->frame);
     // make a WM_PROTOCOLS atom if necessary
     XInternAtom(XtDisplay(X->frame), "WM_PROTOCOLS", False);

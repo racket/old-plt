@@ -16,6 +16,7 @@
 
 class wxMediaEdit;
 class wxClickback;
+class wxClipboard;
 
 typedef unsigned int wxchar;
 extern int wxstrlen(wxchar *s);
@@ -227,6 +228,8 @@ class wxMediaEdit : public wxMediaBuffer
   void Copy(Bool extend = FALSE, long time = 0);
   void Paste(long time, long start, long end = -1);
   void Paste(long time = 0);
+  void PasteSelection(long time, long start, long end = -1);
+  void PasteSelection(long time = 0);
   void PasteNext(void);
   void Kill(long time = 0);
   void Kill(long time, long start, long end);
@@ -235,6 +238,10 @@ class wxMediaEdit : public wxMediaBuffer
 
   virtual void DoCopy(long start, long end, long time, Bool extend);
   virtual void DoPaste(long start, long time);
+  virtual void DoPasteSelection(long start, long time);
+  void DoGenericPaste(wxClipboard *cb, long start, long time);
+
+  void GenericPaste(Bool x_sel, long time, long start, long end);
 
   /* For making a lot of changes to be displayed at once: */
   void BeginEditSequence(Bool undoable = TRUE, Bool interruptSeqs = TRUE);

@@ -30,6 +30,7 @@
 
 @ v "do-copy" : void DoCopy(ExactLong,bool);
 @ v "do-paste" : void DoPaste(ExactLong);
+@ v "do-paste-x-selection" : void DoPasteSelection(ExactLong);
 
 @ "erase" : void Erase();
 

@@ -50,6 +50,8 @@ static Scheme_Object *style_wxMCANVAS_NO_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_NO_V_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_HIDE_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_HIDE_V_SCROLL_sym = NULL;
+static Scheme_Object *style_wxMCANVAS_AUTO_H_SCROLL_sym = NULL;
+static Scheme_Object *style_wxMCANVAS_AUTO_V_SCROLL_sym = NULL;
 static Scheme_Object *style_wxINVISIBLE_sym = NULL;
 static Scheme_Object *style_wxCONTROL_BORDER_sym = NULL;
 static Scheme_Object *style_wxTRANSPARENT_WIN_sym = NULL;
@@ -65,6 +67,10 @@ static void init_symset_style(void) {
   style_wxMCANVAS_HIDE_H_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-hscroll"));
   wxREGGLOB(style_wxMCANVAS_HIDE_V_SCROLL_sym);
   style_wxMCANVAS_HIDE_V_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-vscroll"));
+  wxREGGLOB(style_wxMCANVAS_AUTO_H_SCROLL_sym);
+  style_wxMCANVAS_AUTO_H_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("auto-hscroll"));
+  wxREGGLOB(style_wxMCANVAS_AUTO_V_SCROLL_sym);
+  style_wxMCANVAS_AUTO_V_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("auto-vscroll"));
   wxREGGLOB(style_wxINVISIBLE_sym);
   style_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
   wxREGGLOB(style_wxCONTROL_BORDER_sym);
@@ -88,6 +94,8 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   else if (i == style_wxMCANVAS_NO_V_SCROLL_sym) { result = result | wxMCANVAS_NO_V_SCROLL; }
   else if (i == style_wxMCANVAS_HIDE_H_SCROLL_sym) { result = result | wxMCANVAS_HIDE_H_SCROLL; }
   else if (i == style_wxMCANVAS_HIDE_V_SCROLL_sym) { result = result | wxMCANVAS_HIDE_V_SCROLL; }
+  else if (i == style_wxMCANVAS_AUTO_H_SCROLL_sym) { result = result | wxMCANVAS_AUTO_H_SCROLL; }
+  else if (i == style_wxMCANVAS_AUTO_V_SCROLL_sym) { result = result | wxMCANVAS_AUTO_V_SCROLL; }
   else if (i == style_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else if (i == style_wxCONTROL_BORDER_sym) { result = result | wxCONTROL_BORDER; }
   else if (i == style_wxTRANSPARENT_WIN_sym) { result = result | wxTRANSPARENT_WIN; }
@@ -215,6 +223,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
+
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
@@ -230,6 +239,7 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnSetFocus();
   void OnKillFocus();
   class wxMenu* PopupForMedia(class wxMediaBuffer* x0, void* x1);
+  void OnScrollOnChange();
 #ifdef MZ_PRECISE_GC
   void gcMark();
   void gcFixup();
@@ -629,6 +639,40 @@ class wxMenu* os_wxMediaCanvas::PopupForMedia(class wxMediaBuffer* x0, void* x1)
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+static Scheme_Object *os_wxMediaCanvasOnScrollOnChange(int n, Scheme_Object *p[]);
+
+void os_wxMediaCanvas::OnScrollOnChange()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaCanvas *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-scroll-on-change", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnScrollOnChange)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaCanvas::OnScrollOnChange();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -1218,6 +1262,29 @@ static Scheme_Object *os_wxMediaCanvasIsFocusOn(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxMediaCanvasOnScrollOnChange(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaCanvas_class, "on-scroll-on-change in editor-canvas%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaCanvas *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaCanvas::OnScrollOnChange());
+  else
+    WITH_VAR_STACK(((wxMediaCanvas *)((Scheme_Class_Object *)p[0])->primdata)->OnScrollOnChange());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaCanvasGetMedia(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1383,7 +1450,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", (Scheme_Method_Prim *)os_wxMediaCanvas_ConstructScheme, 28));
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", (Scheme_Method_Prim *)os_wxMediaCanvas_ConstructScheme, 29));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnEvent, 1, 1));
@@ -1409,6 +1476,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "allow-scroll-to-last" " method", (Scheme_Method_Prim *)os_wxMediaCanvasAllowScrollToLast, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "force-display-focus" " method", (Scheme_Method_Prim *)os_wxMediaCanvasForceDisplayFocus, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "is-focus-on?" " method", (Scheme_Method_Prim *)os_wxMediaCanvasIsFocusOn, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-scroll-on-change" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnScrollOnChange, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasGetMedia, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasSetMedia, 1, 2));
 

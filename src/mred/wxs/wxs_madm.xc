@@ -32,6 +32,8 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
 @SYM "hide-hscroll" : wxMCANVAS_HIDE_H_SCROLL
 @SYM "hide-vscroll" : wxMCANVAS_HIDE_V_SCROLL
+@SYM "auto-hscroll" : wxMCANVAS_AUTO_H_SCROLL
+@SYM "auto-vscroll" : wxMCANVAS_AUTO_V_SCROLL
 @SYM "deleted" : wxINVISIBLE
 @SYM "control-border" : wxCONTROL_BORDER
 @SYM "transparent" : wxTRANSPARENT_WIN
@@ -61,6 +63,8 @@ typedef void *(*CAPOFunc)(void*);
 
 @ v "on-set-focus" : void OnSetFocus();
 @ v "on-kill-focus" : void OnKillFocus();
+
+@ v "on-scroll-on-change" : void OnScrollOnChange();
 
 @ "is-focus-on?" : bool IsFocusOn();
 

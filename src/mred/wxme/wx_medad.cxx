@@ -232,7 +232,11 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   vscroll = new SimpleScroll(this, wxVERTICAL, 0, 1, 0);
   scrollWidth = scrollHeight = 0;
 #else
-  EnableScrolling(!fakeXScroll, !fakeYScroll);
+  auto_x = (!fakeXScroll && ((style & wxMCANVAS_AUTO_H_SCROLL) ? 1 : 0));
+  auto_y = (!fakeYScroll && ((style & wxMCANVAS_AUTO_V_SCROLL) ? 1 : 0));
+  xscroll_on = (!fakeXScroll && !auto_x);
+  yscroll_on = (!fakeYScroll && !auto_y);
+  EnableScrolling(xscroll_on, yscroll_on);
   noloop = TRUE;
   wxCanvas::SetScrollbars(fakeXScroll ? -1 : 1, fakeYScroll ? -1 : 1,
 #ifdef wx_msw
@@ -1165,6 +1169,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       Bool goAgain;
       int savenoloop;
       int saveHSPP;
+      int xon, yon;
       
       if (hscroll)
 	hscroll->SetScroll(hnumScrolls, hspp, x);
@@ -1179,6 +1184,17 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       
       noloop = TRUE;
       givenHScrollsPerPage = -1;
+
+      xon = !fakeXScroll && hnumScrolls;
+      yon = !fakeYScroll && vnumScrolls;
+      if ((auto_x && (xon != xscroll_on)) || (auto_y && (yon != yscroll_on))) {
+	if (auto_x)
+	  xscroll_on = xon;
+	if (auto_y)
+	  yscroll_on = yon;
+	EnableScrolling(xscroll_on, yscroll_on);
+	OnScrollOnChange();
+      }
       
       if (!fakeXScroll) {
 	if (x > hnumScrolls)
@@ -1345,6 +1361,10 @@ void wxMediaCanvas::OnScroll(wxScrollEvent *)
 #else
   Repaint();
 #endif
+}
+
+void wxMediaCanvas::OnScrollOnChange()
+{
 }
 
 wxMediaBuffer *wxMediaCanvas::GetMedia(void)

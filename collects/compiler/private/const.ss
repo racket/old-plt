@@ -331,13 +331,13 @@
 	 [(vector? datum)
 	  (let ([len (vector-length datum)])
 	    (and (hash-table-put! ht datum #t)
-		 (let loop ([i 0][so-far? #t])
+		 (let loop ([i 0][so-far? #f])
 		   (if (= i len)
 		       so-far?
 		       (let ([v (big-and-simple/cyclic? (vector-ref datum i) (- size i) ht)])
 			 (if (eq? v 'cyclic)
 			     'cyclic
-			     (loop (add1 i) (and so-far? v))))))))]
+			     (loop (add1 i) (or so-far? v))))))))]
 	 [(hash-table? datum) 'cyclic] ;; assume content is ok and cyclic
 	 [(and (negative? size)
 	       (or (number? datum)

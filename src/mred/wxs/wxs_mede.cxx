@@ -989,6 +989,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void AfterInsert(nnlong x0, nnlong x1);
   void OnInsert(nnlong x0, nnlong x1);
   Bool CanInsert(nnlong x0, nnlong x1);
+  void DoPasteSelection(nnlong x0, ExactLong x1);
   void DoPaste(nnlong x0, ExactLong x1);
   void DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3);
   void SetAnchor(Bool x0);
@@ -1702,6 +1703,42 @@ Bool os_wxMediaEdit::CanInsert(nnlong x0, nnlong x1)
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+static Scheme_Object *os_wxMediaEditDoPasteSelection(int n, Scheme_Object *p[]);
+
+void os_wxMediaEdit::DoPasteSelection(nnlong x0, ExactLong x1)
+{
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaEdit *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "do-paste-x-selection", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaEditDoPasteSelection)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaEdit::DoPasteSelection(x0, x1);
+  } else {
+  
+  p[POFFSET+0] = scheme_make_integer(x0);
+  p[POFFSET+1] = WITH_VAR_STACK(scheme_make_integer_value(x1));
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -5784,6 +5821,33 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaEditDoPasteSelection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaEdit_class, "do-paste-x-selection in text%", n, p);
+  nnlong x0;
+  ExactLong x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "do-paste-x-selection in text%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "do-paste-x-selection in text%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaEdit::DoPasteSelection(x0, x1));
+  else
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->DoPasteSelection(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaEditDoPaste(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5912,6 +5976,62 @@ static Scheme_Object *os_wxMediaEditPasteNext(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaEditPasteSelection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaEdit_class, "paste-x-selection in text%", n, p);
+  if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[POFFSET+1], "end", NULL))) {
+    ExactLong x0;
+    long x1;
+    long x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(1);
+    VAR_STACK_PUSH(0, p);
+
+    
+    if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("paste-x-selection in text% (position case)", POFFSET+2, POFFSET+3, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "paste-x-selection in text% (position case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "end", "paste-x-selection in text% (position case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "same", "paste-x-selection in text% (position case)"));
+    } else
+      x2 = -1;
+
+    
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->PasteSelection(x0, x1, x2));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  } else  {
+    ExactLong x0;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(1);
+    VAR_STACK_PUSH(0, p);
+
+    
+    if ((n > (POFFSET+1))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("paste-x-selection in text% (without position case)", POFFSET+POFFSET, POFFSET+1, n, p, 1));
+    if (n > (POFFSET+0)) {
+      x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "paste-x-selection in text% (without position case)"));
+    } else
+      x0 = 0;
+
+    
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->PasteSelection(x0));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  }
+
   return scheme_void;
 }
 
@@ -8240,7 +8360,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 144));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 146));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -8313,10 +8433,12 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position" " method", (Scheme_Method_Prim *)os_wxMediaEditFindPosition, 2, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "split-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditSplitSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style" " method", (Scheme_Method_Prim *)os_wxMediaEditChangeStyle, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste-x-selection" " method", (Scheme_Method_Prim *)os_wxMediaEditDoPasteSelection, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste" " method", (Scheme_Method_Prim *)os_wxMediaEditDoPaste, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-copy" " method", (Scheme_Method_Prim *)os_wxMediaEditDoCopy, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "kill" " method", (Scheme_Method_Prim *)os_wxMediaEditKill, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste-next" " method", (Scheme_Method_Prim *)os_wxMediaEditPasteNext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste-x-selection" " method", (Scheme_Method_Prim *)os_wxMediaEditPasteSelection, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste" " method", (Scheme_Method_Prim *)os_wxMediaEditPaste, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy" " method", (Scheme_Method_Prim *)os_wxMediaEditCopy, 0, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "cut" " method", (Scheme_Method_Prim *)os_wxMediaEditCut, 0, 4));

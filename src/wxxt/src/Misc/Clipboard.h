@@ -39,6 +39,8 @@ class wxClipboard : public wxObject
   char *cbString, *sentString, *receivedString;
   void *receivedTargets;
   long receivedLength;
+  Bool is_sel, in_progress;
+  void *saferef;
 
   wxClipboard();
   ~wxClipboard();
@@ -70,8 +72,9 @@ class wxClipboard : public wxObject
 /* Initialize wxTheClipboard. Can be called repeatedly */
 void wxInitClipboard(void);
 
-/* The clipboard */
+/* The clipboard and selection: */
 extern wxClipboard *wxTheClipboard;
+extern wxClipboard *wxTheSelection;
 
 char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *length);
 

@@ -237,6 +237,11 @@ typedef struct {
 #define MZC_MAX2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, >)
 #define MZC_MIN2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, <)
 
+#define MZC_QUOTIENT(cp, av, bv) \
+            ((SCHEME_INTP(av) && SCHEME_INTP(bv) && SCHEME_INT_VAL(bv)) \
+             ? scheme_make_integer(SCHEME_INT_VAL(av) / SCHEME_INT_VAL(bv)) \
+             : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(cp, 2, arg)))
+
 static MSC_IZE(inline) Scheme_Object *mzc_force_value(Scheme_Object *v)
 {
   return _scheme_force_value(v);

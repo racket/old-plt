@@ -297,7 +297,7 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
       } else
 	vs_width = 0;
        
-      /* MATTHEW: [5] size = 0 safety: */
+      /* size = 0 safety: */
       if (!h_size)
 	h_size = 1;
       if (!v_size)

@@ -15,6 +15,7 @@ int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullO
 Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj);
 class wxClipboard *objscheme_unbundle_wxClipboard(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *);
+extern Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *);
 #endif
 void objscheme_setup_wxClipboardGlobal(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

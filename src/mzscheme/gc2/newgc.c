@@ -378,12 +378,7 @@ unsigned long (*GC_get_thread_stack_base)(void);
 void (*GC_mark_xtagged)(void *obj);
 void (*GC_fixup_xtagged)(void *obj);
 
-/* Sun's qsort() is broken, so we may have to use our own */
-#if defined(sparc) || defined(__sparc) || defined(__sparc__)
-# include "my_qsort.c"
-#else
-# define my_qsort qsort
-#endif
+#include "my_qsort.c"
 
 /*****************************************************************************/
 /* Routines dealing with various runtime execution stacks                    */

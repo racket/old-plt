@@ -1,4 +1,7 @@
 
+#if defined(sparc) || defined(__sparc) || defined(__sparc__)
+/* Sun's qsort() is broken. */
+
 #define MAXSTACK 100
 
 static void exchange(void *a, void *b, size_t size) {
@@ -80,3 +83,6 @@ void my_qsort(void *base, size_t nmemb, size_t size,
     }
 }
 
+#else
+# define my_qsort qsort
+#endif

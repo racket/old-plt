@@ -1,3 +1,13 @@
+/* 
+   Provides:
+      Mach-based allocator (uses alloc_cache.c)
+      macosx_init_exception_handler() --- installs fault handler
+      determine_max_heap_size()
+   Requires:
+      designate_modified --- when GENERATIONS is non-zero
+      my_qsort (for alloc_cache.c)
+*/
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -41,7 +51,7 @@ static mach_port_t task_self = NULL;
 static mach_port_t exc_port = NULL;
 
 /* the VM subsystem as defined by the GC files */
-void *malloc_pages(size_t len, size_t alignment)
+static void *malloc_pages(size_t len, size_t alignment)
 {
   kern_return_t retval;
   size_t extra = 0;
@@ -89,12 +99,9 @@ void *malloc_pages(size_t len, size_t alignment)
   return r;
 }
 
-void free_pages(void *p, size_t len)
+static void system_free_pages(void *p, size_t len)
 {
   kern_return_t retval;
-
-  if(len & (page_size - 1))
-    len += page_size - (len & (page_size - 1));
 
   retval = vm_deallocate(task_self, (vm_address_t)p, len);
   if(retval != KERN_SUCCESS) {
@@ -103,11 +110,7 @@ void free_pages(void *p, size_t len)
   }
 }
 
-void flush_freed_pages(void)
-{
-}
-
-void protect_pages(void *p, size_t len, int writeable)
+static void protect_pages(void *p, size_t len, int writeable)
 {
   kern_return_t retval;
 
@@ -123,6 +126,8 @@ void protect_pages(void *p, size_t len, int writeable)
 	   len, p, mach_error_string(retval));
   }
 }
+
+#include "alloc_cache.c"
 
 static unsigned long determine_max_heap_size()
 {

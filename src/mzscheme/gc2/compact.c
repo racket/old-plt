@@ -391,12 +391,7 @@ static void CRASH(int where)
 static int just_checking, the_size;
 #endif
 
-#if defined(sparc) || defined(__sparc) || defined(__sparc__)
-/* Sun's qsort() is broken. */
-# include "my_qsort.c"
-#else
-# define my_qsort qsort
-#endif
+#include "my_qsort.c"
 
 /******************************************************************************/
 /*                     OS-specific low-level allocator                        */
@@ -406,23 +401,23 @@ static int just_checking, the_size;
 
 #if _WIN32
 
-void *malloc_pages(size_t len, size_t alignment)
+static void *malloc_pages(size_t len, size_t alignment)
 {
   return (void *)VirtualAlloc(NULL, len, 
 			      MEM_COMMIT | MEM_RESERVE, 
 			      PAGE_READWRITE);
 }
 
-void free_pages(void *p, size_t len)
+static void free_pages(void *p, size_t len)
 {
   VirtualFree(p, 0, MEM_RELEASE);
 }
 
-void flush_freed_pages(void)
+static void flush_freed_pages(void)
 {
 }
 
-void protect_pages(void *p, size_t len, int writeable)
+static void protect_pages(void *p, size_t len, int writeable)
 {
   DWORD old;
   VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
@@ -438,7 +433,7 @@ void protect_pages(void *p, size_t len, int writeable)
 #if OSKIT
 # include <oskit/c/malloc.h>
 
-void *malloc_pages(size_t len, size_t alignment)
+static void *malloc_pages(size_t len, size_t alignment)
 {
   void *p;
   p = smemalign(alignment, len);
@@ -446,12 +441,12 @@ void *malloc_pages(size_t len, size_t alignment)
   return p;
 }
 
-void free_pages(void *p, size_t len)
+static void free_pages(void *p, size_t len)
 {
   sfree(p, len);
 }
 
-void flush_freed_pages(void)
+static void flush_freed_pages(void)
 {
 }
 
@@ -463,7 +458,7 @@ void flush_freed_pages(void)
 /* OS X */
 
 #if defined(OS_X)
-# if  GENERATIONS
+# if GENERATIONS
 static void designate_modified(void *p);
 # endif
 
@@ -478,241 +473,7 @@ static void designate_modified(void *p);
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED
-
-# include <unistd.h>
-# include <fcntl.h>
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <errno.h>
-
-static int page_size; /* OS page size */
-
-#ifndef MAP_ANON
-int fd, fd_created;
-#endif
-
-/* Instead of immediaately freeing pages with munmap---only to mmap
-   them again---we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
-   cached unused for at most BLOCKFREE_UNMAP_AGE cycles of the
-   collector. (A max age of 1 seems useful, anything more seems
-   dangerous.) 
-
-   The cache is small enough that we don't need an elaborate search
-   mechanism, but we do a bit of work to collapse adjacent pages in
-   the cache. */
-
-typedef struct {
-  void *start;
-  long len;
-  int age;
-} Free_Block;
-
-#define BLOCKFREE_UNMAP_AGE 1
-#define BLOCKFREE_CACHE_SIZE 96
-static Free_Block blockfree[BLOCKFREE_CACHE_SIZE];
-
-static int compare_free_block(const void *a, const void *b)
-{
-  if ((unsigned long)((Free_Block *)a)->start < (unsigned long)((Free_Block *)b)->start)
-    return -1;
-  else
-    return 1;
-}
-
-void collapse_adjacent_pages(void)
-{
-  int i, j;
-
-  /* collapse adjacent: */
-  my_qsort(blockfree, BLOCKFREE_CACHE_SIZE, sizeof(Free_Block), compare_free_block);
-  j = 0;
-  for (i = 1; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if ((blockfree[j].start + blockfree[j].len) ==blockfree[i].start) {
-      blockfree[j].len += blockfree[i].len;
-      blockfree[i].start = NULL;
-      blockfree[i].len = 0;
-    } else
-      j = i;
-  }
-}
-
-
-void *malloc_pages(size_t len, size_t alignment)
-{
-  void *r;
-  size_t extra = 0;
-
-  if (!page_size)
-    page_size = getpagesize();
-
-#ifndef MAP_ANON
-  if (!fd_created) {
-    fd_created = 1;
-    fd = open("/dev/zero", O_RDWR);
-  }
-#endif
-
-  /* Round up to nearest page: */
-  if (len & (page_size - 1))
-    len += page_size - (len & (page_size - 1));
-
-  /* Something from the cache, perhaps? */
-  {
-    int i;
-
-    /* Try an exact fit: */
-    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-      if (blockfree[i].len == len) {
-	r = blockfree[i].start;
-	if (!alignment || !((unsigned long)r & (alignment - 1))) {
-	  blockfree[i].start = NULL;
-	  blockfree[i].len = 0;
-	  memset(r, 0, len);
-	  page_allocations += len;
-	  return r;
-	}
-      }
-    }
-
-    /* Try a first fit: */
-    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-      if (blockfree[i].len > len) {
-	/* Align at start? */
-	r = blockfree[i].start;
-	if (!alignment || !((unsigned long)r & (alignment - 1))) {
-	  blockfree[i].start += len;
-	  blockfree[i].len -= len;
-	  memset(r, 0, len);
-	  page_allocations += len;
-	  return r;
-	}
-
-	/* Align at end? */
-	r = blockfree[i].start + (blockfree[i].len - len);
-	if (!((unsigned long)r & (alignment - 1))) {
-	  blockfree[i].len -= len;
-	  memset(r, 0, len);
-	  page_allocations += len;
-	  return r;
-	}
-
-	/* We don't try a middle alignment, because that would
-	   split the block into three. */
-      }
-    }
-
-    /* Nothing useable in the cache... */
-  }
-
-  extra = alignment;
-
-#ifdef MAP_ANON
-  r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-#else
-  r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-#endif
-
-  if (r  == (void *)-1)
-    return NULL;
-
-  if (extra) {
-    /* We allocated too large so we can choose the alignment. */
-    void *real_r;
-    long pre_extra;
-
-    real_r = (void *)(((unsigned long)r + (alignment - 1)) & (~(alignment - 1)));
-    
-    pre_extra = real_r - r;
-    if (pre_extra)
-      if (munmap(r, pre_extra))
-	GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
-    if (pre_extra < extra)
-      if (munmap(real_r + len, extra - pre_extra))
-	GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
-    r = real_r;
-  }
-
-  page_allocations += len;
-  page_reservations += len;
-
-  return r;
-}
-
-void free_pages(void *p, size_t len)
-{
-  int i;
-
-  /* Round up to nearest page: */
-  if (len & (page_size - 1))
-    len += page_size - (len & (page_size - 1));
-
-  page_allocations -= len;
-
-  /* Try to free pages in larger blocks, since the OS may be slow. */
-
-  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (p == blockfree[i].start + blockfree[i].len) {
-      blockfree[i].len += len;
-      return;
-    }
-    if (p + len == blockfree[i].start) {
-      blockfree[i].start = p;
-      blockfree[i].len += len;
-      return;
-    }
-  }
-
-  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (!blockfree[i].start) {
-      blockfree[i].start = p;
-      blockfree[i].len = len;
-      blockfree[i].age = 0;
-      return;
-    }
-  }
-
-  /* Might help next time around: */
-  collapse_adjacent_pages();
-
-  if (munmap(p, len)) {
-    GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
-  }
-
-  page_reservations -= len;
-}
-
-void flush_freed_pages(void)
-{
-  int i;
-
-  collapse_adjacent_pages();
-
-  for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (blockfree[i].start) {
-      if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
-	if (munmap(blockfree[i].start, blockfree[i].len)) {
-	  GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", 
-		  (long)blockfree[i].start, blockfree[i].len,
-		  errno);
-	}
-	page_reservations -= blockfree[i].len;
-	blockfree[i].start = NULL;
-	blockfree[i].len = 0;
-      } else
-	blockfree[i].age++;
-    }
-  }
-}
-
-void protect_pages(void *p, size_t len, int writeable)
-{
-  if (len & (page_size - 1)) {
-    len += page_size - (len & (page_size - 1));
-  }
-
-  mprotect(p, len, (writeable ? (PROT_READ | PROT_WRITE) : PROT_READ));
-}
-
+# include "vm_mmap.c"
 #endif
 
 /******************************************************************************/
@@ -3245,36 +3006,36 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 #endif
 
 /* ========== Mac OS X Darwin signal handler ========== */
-/* Replaced by Mach-specific vm_osx.c */
-#if 1
-# define NEED_OSX_MACH_HANDLER
-#else
+/*           Replaced by Mach-direct vm_osx.c           */
 #if defined(OS_X)
+# if 1
+#  define NEED_OSX_MACH_HANDLER
+# else
 /* Note: sigaction with SA_SIGINFO doesn't work.  si->si_addr is
    normally the faulting referenced address (on other platforms), but
    it turns out to be the faulting instruction address in 10.2. So we
    have to parse machine-code instructions and look at the
    registers. */
-# include <signal.h>
-# include "osx_addr.inc"
+#  include <signal.h>
+#  include "osx_addr.inc"
 void fault_handler(int sn, siginfo_t *si, struct sigcontext *scp)
 {
-# if 0
+#  if 0
   /* Old approach from CGC, doesn't seem to work in 10.2 because scp
      is nonsense. */
   unsigned int   instr = *((unsigned int *) scp->sc_ir);
   unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
   designate_modified(get_fault_addr(instr, regs));
-# else
+#  else
   /* Hack: relevant context info seems to be 50 words deeper into the
      stack than &scp */
   unsigned int   instr = *(((unsigned int **)&scp)[50]);
   unsigned int * regs = ((unsigned int *)&scp) + 52;
   designate_modified(get_fault_addr(instr, regs));
-# endif
-# define NEED_OSX_SIGBUS
+#  endif
+#  define NEED_OSX_SIGBUS
 }
-#endif
+# endif
 #endif
 
 #endif /* GENERATIONS */

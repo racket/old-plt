@@ -149,8 +149,9 @@
         (lambda (in)
           (let loop ((headers "") (ln (read-line in 'any)))
             (cond ((eof-object? ln)
-                   (raise (make-unexpected-termination
-                           "eof reached! while parsing headers")))
+		   ;; (raise (make-unexpected-termination "eof reached! while parsing headers"))
+		   (warning "premature eof while parsing headers")
+		   headers)
                   ((string=? ln "") headers)
                   (else
                    ;; Quoting rfc822:

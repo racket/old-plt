@@ -16,6 +16,13 @@ Version 102/5:
    'generic-failure. This set may be expanded in the future, such that
    some generic failures turn into specific failures.
 
+ * Changed output to stdout, stderr, and process ports to use
+   non-blocking mode while actively writing only. This avoids clashes
+   among Unix programs that use the same output device, because
+   setting a descriptor to non-blocking sometimes means making the
+   entire asscoaited device non-blocking (for all programs, for both
+   input and output!).
+
  * Added `square' to functio.ss.
 
 Version 102/4:

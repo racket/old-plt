@@ -37,7 +37,7 @@ DEBUGFLAGS=
 WARN= -Wall
 OPT= -O
 
-CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DUSE_MMAP -DUSE_MUNMAP
+CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC
 # Setjmp_test may yield overly optimistic results when compiled
 #  without optimization.
 # For dynamic library builds, it may be necessary to add flags to generate

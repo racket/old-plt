@@ -52,11 +52,20 @@
 	    get-client-size)
 
 	  (rename
+	    [super-show show]
 	    [super-on-size on-size]
 	    [super-set-size set-size])
 	  
 	  (private
 	    
+	    ; track whether or not we should update the position of
+	    ; our children.
+	    [perform-updates #f]
+	    
+	    ; have we had any redraw requests while the window has been
+	    ; hidden?
+	    [pending-redraws #f]
+	      
 	    ; pointer to panel in the frame for use in on-size
 	    [panel null])
 
@@ -64,7 +73,7 @@
 	    
 	    ; a unique ID for the object for debugging purposes.
 	    object-ID
-	      
+	    
 	    ; insert-panel: update panel pointer.
 	    ; input: new-panel: panel in frame (descendant of
 	    ;   mred:panel%) 
@@ -120,18 +129,45 @@
 	    ; effects: redraws the frame at its current size (changing size
 	    ;            as necessary).
 	    [force-redraw
-	      (lambda ()
-		(mred:debug:printf 'container-frame-force-redraw
-		  (string-append
-		   "container-frame-force-redraw: "
-		   "Entering force-redraw; frame ~s")
-		  object-ID)
-		(mred:debug:printf 'container-frame-force-redraw
-		  (string-append
-		   "container-frame-force-redraw: "
-		   "calling on-size with ~s ~s and quitting")
-		  (get-width) (get-height))
-		(on-size (get-width) (get-height)))]
+	     (lambda ()
+	       (mred:debug:printf 'container-frame-force-redraw
+				  (string-append
+				   "container-frame-force-redraw: "
+				   "Entering force-redraw; frame ~s")
+				  object-ID)
+	       (if perform-updates
+		   (begin
+		     (mred:debug:printf
+		      'container-frame-force-redraw
+		      (string-append
+		       "container-frame-force-redraw: "
+		       "calling on-size with ~s ~s and quitting")
+		      (get-width) (get-height))
+		     (on-size (get-width) (get-height)))
+		   (begin
+		     (mred:debug:printf
+		      'container-frame-force-redraw
+		      (string-append
+		       "container-frame-force-redraw: "
+		       "updates are blocked, so exiting."))
+		      (set! pending-redraws #t))))]
+	    
+	    ; show: add capability to set perform-updates
+	    ; input: now : boolean
+	    ; returns: nothing
+	    ; effects: if we're showing for the first time, unblock updates
+	    ;            and force an update.  If we're hiding, block updates.
+	    ;          pass now to superclass's show.
+	    [show
+	     (lambda (now)
+	       (if now
+		   (unless perform-updates
+		     (set! perform-updates #t)
+		     (if pending-redraws
+			 (force-redraw)
+			 (set! pending-redraws #f)))
+		   (set! perform-updates #f))
+	       (super-show now))]
 	    
 	    [set-size
 	      (lambda (x y width height)
@@ -278,25 +314,25 @@
 
 	  ; show: shows/hides the dialog and optionally centers it
 	  ; on-screen
-	  ; input: now?: a boolean; #t to show window, #f to hide it
-	  ;        center?: an optional boolean; #t to center, #f not.
+	  ; input: now: a boolean; #t to show window, #f to hide it
+	  ;        center: an optional boolean; #t to center, #f not.
 	  ; returns: nothing
-	  ; effects: shows or hides window; if now? & center? are both #t,
+	  ; effects: shows or hides window; if now & center are both #t,
 	  ;   centers window on-screen as well.
 	  [show
-	    (opt-lambda (now? [center? #t])
-	      (when (and now? center?) (centre wx:const-both))
-	      (super-show now?))])
+	    (opt-lambda (now [center #t])
+	      (when (and now center) (centre wx:const-both))
+	      (super-show now))])
 	(sequence
 	  (apply (opt-lambda (parent title
-			       [modal? #f]
+			       [modal #f]
 			       [x default-dialog-posn]
 			       [y default-dialog-posn]
 			       [w default-dialog-size]
 			       [h default-dialog-size]
 			       [style wx:const-default-dialog-style]
 			       [name "dialogBox"])
-		   (super-init parent title modal? x y w h
+		   (super-init parent title modal x y w h
 		     (bitwise-ior style wx:const-allow-auto-resize)
 		     name))
 		 args))))))

@@ -16,6 +16,10 @@
    ssl-connect ssl-connect/enable-break
    ssl-listen ssl-listener? ssl-close
    ssl-accept ssl-accept/enable-break
-   ssl-load-certificate-chain
-   ssl-load-private-key))
+   ssl-make-client-context ssl-client-context?
+   ssl-load-certificate-chain!
+   ssl-set-verify!
+   ssl-load-verify-root-certificates!
+   ssl-load-private-key!
+   ssl-load-suggested-certificate-authorities!))
 

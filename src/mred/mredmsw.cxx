@@ -65,6 +65,10 @@ static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv);
 
 static int WM_MRED_LEAVE;
 
+#ifndef WM_MOUSEWHEEL
+# define WM_MOUSEWHEEL 0x020A
+#endif
+
 void MrEdInitFirstContext(MrEdContext *c)
 {
 }
@@ -352,10 +356,6 @@ void wxCopyData(LPARAM lParam)
     }
   }
 }
-
-#ifndef WM_MOUSEWHEEL
-# define WM_MOUSEWHEEL 0x020A
-#endif
 
 int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 		      LRESULT *res, WNDPROC proc)

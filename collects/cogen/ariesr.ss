@@ -135,7 +135,7 @@
 		    `(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
 				  ,(format "Undefined value in ~s" v)
-				  (#%debug-info-handler)
+				  (#%void)
 				  ,v))
 		       ,v))
 		  v))]

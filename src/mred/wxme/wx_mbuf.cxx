@@ -1309,7 +1309,7 @@ void wxMediaBuffer::Undo(void)
   if (!undomode && !redomode) {
     undomode = TRUE;
     
-    PerformUndos(changes, &changes_start, &changes_end);
+    PerformUndos(changes, FALSE);
     
     undomode = FALSE;
   }
@@ -1320,12 +1320,11 @@ void wxMediaBuffer::Redo(void)
   if (!undomode && !redomode) {
     redomode = TRUE;
     
-    PerformUndos(redochanges, &redochanges_start, &redochanges_end);
+    PerformUndos(redochanges, TRUE);
     
     redomode = FALSE;
   }
 }
-
 
 #ifdef CGREC_COLLECTED
 # define delete_cgrec(x)  /* empty */
@@ -1333,17 +1332,15 @@ void wxMediaBuffer::Redo(void)
 # define delete_cgrec(x)  delete x
 #endif
 
-static void wxmeClearUndos(wxChangeRecord **changes, int *start, int *end,
+static void wxmeClearUndos(wxChangeRecord **changes, int start, int end,
 			   int maxUndos)
 {
   int i;
 
-  for (i = *start; i != *end; i = (i + 1) % maxUndos) {
+  for (i = start; i != end; i = (i + 1) % maxUndos) {
     delete_cgrec(changes[i]);
     changes[i] = NULL;
   }
-
-  *start = *end = 0;  
 }
 
 void wxMediaBuffer::AddUndo(wxChangeRecord *rec)
@@ -1351,12 +1348,14 @@ void wxMediaBuffer::AddUndo(wxChangeRecord *rec)
   if (interceptmode)
     intercepted->Append((wxObject *)rec);
   else if (undomode)
-    AppendUndo(rec, redochanges, &redochanges_start, &redochanges_end);
+    AppendUndo(rec, redochanges, TRUE);
   else if (!noundomode) {
-    if (!redomode)
-      wxmeClearUndos(redochanges, &redochanges_start,
-		     &redochanges_end, maxUndos);
-    AppendUndo(rec, changes, &changes_start, &changes_end);
+    if (!redomode) {
+      wxmeClearUndos(redochanges, redochanges_start,
+		     redochanges_end, maxUndos);
+      redochanges_start = redochanges_end = 0;
+    }
+    AppendUndo(rec, changes, FALSE);
   } else
     delete_cgrec(rec);
 }
@@ -1369,36 +1368,73 @@ void wxMediaBuffer::AddSchemeUndo(void *proc)
 }
 
 void wxMediaBuffer::AppendUndo(wxChangeRecord *rec, wxChangeRecord **changes, 
-			       int *start, int *end)
+			       Bool redos)
 {
   if (maxUndos) {
-    changes[*end] = rec;
-    *end = (*end + 1) % maxUndos;
-    if (*end == *start) {
-      delete_cgrec(changes[*start]);
-      changes[*start] = NULL;
-      *start = (*start + 1) % maxUndos;
+    int start, end;
+
+    if (redos) {
+      start = redochanges_start;
+      end = redochanges_end;
+    } else {
+      start = changes_start;
+      end = changes_end;
+    }
+
+    changes[end] = rec;
+    end = (end + 1) % maxUndos;
+    if (end == start) {
+      delete_cgrec(changes[start]);
+      changes[start] = NULL;
+      start = (start + 1) % maxUndos;
+    }
+    
+    if (redos) {
+      redochanges_start = start;
+      redochanges_end = end;
+    } else {
+      changes_start = start;
+      changes_end = end;
     }
   } else
     delete_cgrec(rec);
 }
 
-void wxMediaBuffer::PerformUndos(wxChangeRecord **changes, 
-				 int *start, int *end)
+void wxMediaBuffer::PerformUndos(wxChangeRecord **changes, Bool redos)
 {
   wxChangeRecord *rec;
   Bool cont;
+  int start, end;
   
   BeginEditSequence();
-  while (*start != *end) {
-    *end = (*end - 1 + maxUndos) % maxUndos;
-    rec = changes[*end];
-    changes[*end] = NULL;
+
+  if (redos) {
+    start = redochanges_start;
+    end = redochanges_end;
+  } else {
+    start = changes_start;
+    end = changes_end;
+  }
+
+  while (start != end) {
+    end = (end - 1 + maxUndos) % maxUndos;
+    rec = changes[end];
+    changes[end] = NULL;
+
+    if (redos) {
+      redochanges_start = start;
+      redochanges_end = end;
+    } else {
+      changes_start = start;
+      changes_end = end;
+    }
+    
     cont = rec->Undo(this);
     delete_cgrec(rec);
     if (!cont)
       break;
   }
+
   EndEditSequence();
 }
 
@@ -1423,8 +1459,10 @@ void wxMediaBuffer::PerformUndoList(wxList *changes)
 
 void wxMediaBuffer::ClearUndos()
 {
-  wxmeClearUndos(changes, &changes_start, &changes_end, maxUndos);
-  wxmeClearUndos(redochanges, &redochanges_start, &redochanges_end, maxUndos);
+  wxmeClearUndos(changes, changes_start, changes_end, maxUndos);
+  changes_start = changes_end = 0;
+  wxmeClearUndos(redochanges, redochanges_start, redochanges_end, maxUndos);
+  redochanges_start = redochanges_end = 0;
 }
 
 void wxMediaBuffer::SetMaxUndoHistory(int v)

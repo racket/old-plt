@@ -611,7 +611,9 @@ void wxTextSnip::GetExtent(wxDC *dc,
       } else
 	w = 0;
     } else {
-      GetTextExtent(dc, count, &w);
+      float ww;
+      GetTextExtent(dc, count, &ww);
+      w = ww;
     }
   }
 

@@ -619,9 +619,16 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->main_config = config;
 
+#ifdef MZ_PRECISE_GC
+  GC_set_finalizer(gcOBJ_TO_PTR(c->finalized),
+		   1, 0,
+		   CollectingContext, NULL,
+		   NULL, NULL);
+#else
   scheme_register_finalizer(gcOBJ_TO_PTR(c->finalized),
 			    CollectingContext, NULL,
 			    NULL, NULL);
+#endif
   WXGC_IGNORE(c, c->finalized);
 
 #ifdef MZ_PRECISE_GC

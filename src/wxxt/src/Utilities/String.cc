@@ -51,7 +51,7 @@ char *copystring_to_aligned(const char *s, int d)
 
   len = strlen(s + d);
   news = new WXGC_ATOMIC char[len];
-  memcpy(news, s + d, len);
+  memcpy(news, s + d, len + 1);
   return news;
 }
 #endif

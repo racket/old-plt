@@ -3023,8 +3023,12 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
 
 void wxSnipLocation::Resize(wxDC *dc)
 {
-  w = h = 0.0;
-  snip->GetExtent(dc, x, y, &w, &h);
+  float ww, hh;
+
+  ww = hh = 0.0;
+  snip->GetExtent(dc, x, y, &ww, &hh);
+  w = ww;
+  h = hh;
   r = x + w;
   b = y + h;
   hm = x + w/2;

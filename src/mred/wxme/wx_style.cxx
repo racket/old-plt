@@ -811,11 +811,17 @@ void wxStyle::SwitchTo(wxDC *dc, wxStyle *oldStyle)
 
 void wxStyle::ResetTextMetrics(wxDC *dc)
 {
+  float w, h, d, s;
+
   textMetricDC = dc;
 #ifdef BROKEN_GET_TEXT_EXTENT 
   dc->SetFont(style->GetFont());
 #endif
-  dc->GetTextExtent(" ", &textWidth, &textHeight, &textDescent, &textSpace, font);
+  dc->GetTextExtent(" ", &w, &h, &d, &s, font);
+  textWidth = w;
+  textHeight = h;
+  textDescent = d;
+  textSpace = s;
 }
 
 float wxStyle::GetTextWidth(wxDC *dc)
@@ -1469,7 +1475,8 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   char name[MAX_STYLE_NAME];
   char face[MAX_STYLE_NAME];
   short r, g, b;
-  int i, isJoin, listId;
+  int i, isJoin, listId, nms, num;
+  float flt;
   wxStyleDelta *delta;
   wxStyle *bs;
   wxStyleListLink *ssl;
@@ -1490,7 +1497,8 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   ssl->next = f->ssl;
   f->ssl = ssl;
 
-  f->Get(&ssl->numMappedStyles);
+  f->Get(&nms);
+  ssl->numMappedStyles = nms;
   ssl->styleMap = new wxStyle*[ssl->numMappedStyles];
 
   bs = styleList->BasicStyle();
@@ -1517,10 +1525,12 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 					    ssl->styleMap[shiftIndex]);
       ssl->styleMap[i] = js;
     } else {
+      int fam;
+
       delta = new wxStyleDelta;
       
-      f->Get(&delta->family);
-      delta->family = FamilyStandardToThis(delta->family);
+      f->Get(&fam);
+      delta->family = FamilyStandardToThis(fam);
 
       nameSize = MAX_STYLE_NAME;
       f->Get((long *)&nameSize, (char *)face);
@@ -1534,32 +1544,32 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
       // printf("%d %s\n", delta->family, delta->face ? delta->face : "NULL");
       
-      f->Get(&delta->sizeMult);
-      f->Get(&delta->sizeAdd);
-      f->Get(&delta->weightOn);
-      delta->weightOn = WeightStandardToThis(delta->weightOn);
-      f->Get(&delta->weightOff);
-      delta->weightOff = WeightStandardToThis(delta->weightOff);
-      f->Get(&delta->styleOn);
-      delta->styleOn = StyleStandardToThis(delta->styleOn);
-      f->Get(&delta->styleOff);
-      delta->styleOff = StyleStandardToThis(delta->styleOff);
-      f->Get(&delta->underlinedOn);
-      f->Get(&delta->underlinedOff);
+      f->Get(&flt); delta->sizeMult = flt;
+      f->Get(&num); delta->sizeAdd = num;
+      f->Get(&num);
+      delta->weightOn = WeightStandardToThis(num);
+      f->Get(&num);
+      delta->weightOff = WeightStandardToThis(num);
+      f->Get(&num);
+      delta->styleOn = StyleStandardToThis(num);
+      f->Get(&num);
+      delta->styleOff = StyleStandardToThis(num);
+      f->Get(&num); delta->underlinedOn = num;
+      f->Get(&num); delta->underlinedOff = num;
       if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)) {
 	delta->transparentTextBackingOn = FALSE;
 	delta->transparentTextBackingOff = FALSE;
       } else {
-	f->Get(&delta->transparentTextBackingOn);
-	f->Get(&delta->transparentTextBackingOff);
+	f->Get(&num); delta->transparentTextBackingOn = num;
+	f->Get(&num); delta->transparentTextBackingOff = num;
       }
       
-      f->Get(&delta->foregroundMult->r);
-      f->Get(&delta->foregroundMult->g);
-      f->Get(&delta->foregroundMult->b);
-      f->Get(&delta->backgroundMult->r);
-      f->Get(&delta->backgroundMult->g);
-      f->Get(&delta->backgroundMult->b);
+      f->Get(&flt); delta->foregroundMult->r = flt;
+      f->Get(&flt); delta->foregroundMult->g = flt;
+      f->Get(&flt); delta->foregroundMult->b = flt;
+      f->Get(&flt); delta->backgroundMult->r = flt;
+      f->Get(&flt); delta->backgroundMult->g = flt;
+      f->Get(&flt); delta->backgroundMult->b = flt;
       f->Get(&r);
       f->Get(&g);
       f->Get(&b);
@@ -1573,10 +1583,10 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 	  delta->transparentTextBackingOff = TRUE;
       }
 
-      f->Get(&delta->alignmentOn);
-      delta->alignmentOn = AlignStandardToThis(delta->alignmentOn);
-      f->Get(&delta->alignmentOff);
-      delta->alignmentOff = AlignStandardToThis(delta->alignmentOff);
+      f->Get(&num);
+      delta->alignmentOn = AlignStandardToThis(num);
+      f->Get(&num);
+      delta->alignmentOff = AlignStandardToThis(num);
 
       {
 	wxStyle *cs;

@@ -447,8 +447,6 @@ static int fixup_weak_array(void *p)
     gcFIXUP(data[i]);
   }
 
-  a->to_data = a->data;
-
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
 			  + ((a->count - 1) * sizeof(void *)));
 }

@@ -1971,7 +1971,7 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 	if (!((Scheme_Bucket *)e)->val) {
 	  Scheme_Object *name = (Scheme_Object *)((Scheme_Bucket *)e)->key;
 	  scheme_raise_exn(MZEXN_UNIT,
-			   INVOKE_UNIT ": cannot link to undefined identifier: %s",
+			   INVOKE_UNIT ": cannot link to undefined identifier: %S",
 			   name);
 	  return NULL;
 	}

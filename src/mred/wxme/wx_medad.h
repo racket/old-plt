@@ -119,9 +119,9 @@ class wxMediaBuffer : public wxObject
   virtual void InsertPasteSnip(wxSnip *snip, wxBufferData *) = 0;
   virtual void InsertPasteString(char *str) = 0;
 
-  void PerformUndos(wxChangeRecord **, int *start, int *end);
+  void PerformUndos(wxChangeRecord **, Bool redos);
   void PerformUndoList(wxList *);
-  void AppendUndo(wxChangeRecord *, wxChangeRecord **, int *start, int *end);
+  void AppendUndo(wxChangeRecord *, wxChangeRecord **, Bool redo);
 
   Bool DoOwnCaret(Bool ownit);
   Bool DoSetCaretOwner(wxSnip *, int);

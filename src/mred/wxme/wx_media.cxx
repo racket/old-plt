@@ -1315,7 +1315,10 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	AppendSnip(isnip);
 	gsnip = lastLine->lastSnip;
 	if (gsnip && (gsnip->flags & wxSNIP_HARD_NEWLINE)) {
-	  isnip->line = lastLine->Insert(&lineRoot, FALSE);
+	  wxMediaLine *lr;
+	  lr = lineRoot;
+	  isnip->line = lastLine->Insert(&lr, FALSE);
+	  lineRoot = lr;
 	  isnip->line->snip = isnip->line->lastSnip = isnip;
 	  numValidLines++;
 	  insertedLine = TRUE;
@@ -1330,7 +1333,10 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       } else {
 	InsertSnip(gsnip, isnip);
 	if (isnip->flags & wxSNIP_HARD_NEWLINE) {
-	  isnip->line = gsnip->line->Insert(&lineRoot, TRUE);
+	  wxMediaLine *lr;
+	  lr = lineRoot;
+	  isnip->line = gsnip->line->Insert(&lr, TRUE);
+	  lineRoot = lr;
 	  insertedLine = TRUE;
 	  numValidLines++;
 	  if (PTREQ(gsnip->line->snip, gsnip))
@@ -1431,7 +1437,10 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	wxMediaLine *oldline = gsnip->line, *newline;
 	
 	if (!oldline->next) {
-	  oldline->Insert(&lineRoot, FALSE);
+	  wxMediaLine *lr;
+	  lr = lineRoot;
+	  oldline->Insert(&lr, FALSE);
+	  lineRoot = lr;
 	  insertedLine = TRUE;
 	  numValidLines++;
 	  
@@ -1490,8 +1499,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	  insertedLine = TRUE;
 
 	  if (PTRNE(snip, snip->line->lastSnip)) {
+	    wxMediaLine *lr;
 	    oldLine = snip->line;
-	    snip->line = oldLine->Insert(&lineRoot, TRUE);
+	    lr = lineRoot;
+	    snip->line = oldLine->Insert(&lr, TRUE);
+	    lineRoot = lr;
 	    numValidLines++;
 	    snip->line->lastSnip = snip;
 	    snip->line->snip = oldLine->snip;

@@ -888,7 +888,7 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
 
 Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 {
-  int x, y, sx, sy;
+  int x, y, sx, sy, lw, lh;
   float w, h;
   int hnumScrolls, vnumScrolls, hspp, vspp;
   long tw;
@@ -903,7 +903,9 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
   while (1) {
     GetScroll(&sx, &sy);
 
-    GetSize(&lastwidth, &lastheight);
+    GetSize(&lw, &lh);
+    lastwidth = lw;
+    lastheight = lh;
 
     if (media && (allowXScroll || allowYScroll)) {
       if (reset_scroll)

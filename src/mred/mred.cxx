@@ -1494,7 +1494,7 @@ void wxDoEvents()
   if (!TheMrEdApp->initialized) {
     MrEdContext *c;
 #if WINDOW_STDIO
-    Scheme_Custodian *m;
+    Scheme_Custodian *m, *oldm = NULL;
     if (!wx_in_terminal) {
       oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
       m = scheme_make_custodian(oldm);
@@ -3328,10 +3328,12 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
 # endif
   }
 
-  scheme_end_atomic_no_swap();
-
   if (het->in_progress) {
-    /* we have leftover work; jump and finish it (non-atomically) */
+    /* We have leftover work; jump and finish it (non-atomically).
+       But don't swap until we've juped back in, because the jump-in
+       point might be trying to suspend the thread (and that should
+       complete before any swap). */
+    scheme_end_atomic();
     het->in_progress = 0;
     het->progress_is_resumed = 1;
     if (!scheme_setjmp(het->progress_base)) {
@@ -3340,6 +3342,8 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
 #endif
       scheme_longjmpup(&het->progress_cont->buf);
     }
+  } else {
+    scheme_end_atomic();
   }
 
   het->old_param = NULL;

@@ -327,8 +327,20 @@ typedef struct Scheme_Saved_Stack {
 typedef struct Scheme_Cont_Mark {
   Scheme_Object *key;
   Scheme_Object *val;
+  struct Scheme_Cont_Mark_Chain *cached_chain;
   MZ_MARK_POS_TYPE pos;
 } Scheme_Cont_Mark;
+
+typedef struct Scheme_Cont_Mark_Chain {
+  Scheme_Object *key;
+  Scheme_Object *val;
+  struct Scheme_Cont_Mark_Chain *next;
+} Scheme_Cont_Mark_Chain;
+
+typedef struct Scheme_Cont_Mark_Set {
+  Scheme_Type type;
+  struct Scheme_Cont_Mark_Chain *chain;
+} Scheme_Cont_Mark_Set;
 
 #define SCHEME_LOG_MARK_SEGMENT_SIZE 8
 #define SCHEME_MARK_SEGMENT_SIZE (1 << SCHEME_LOG_MARK_SEGMENT_SIZE)
@@ -701,6 +713,8 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv);
 
 void scheme_raise_else(const char *where, Scheme_Object *v);
 void scheme_raise_out_of_memory(const char *where, const char *msg, ...);
+
+void scheme_raise(Scheme_Object *exn);
 
 extern long scheme_max_found_symbol_name;
 

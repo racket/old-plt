@@ -216,6 +216,8 @@ void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *);
 void scheme_temp_dec_mark_depth();
 void scheme_temp_inc_mark_depth();
 
+Scheme_Object *scheme_current_continuation_marks(void);
+
 /* Internal */
 #ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
@@ -245,6 +247,7 @@ void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t);
 
 void scheme_weak_reference(void **p);
 void scheme_weak_reference_indirect(void **p, void *v);
+void scheme_unweak_reference(void **p);
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);
@@ -253,6 +256,7 @@ void scheme_register_finalizer(void *p,
 			       void (*f)(void *p, void *data), void *data,
 			       void (**oldf)(void *p, void *data), 
 			       void **olddata);
+void scheme_remove_all_finalization(void *p);
 
 void scheme_dont_gc_ptr(void *p);
 void scheme_gc_ptr_ok(void *p);

@@ -113,6 +113,7 @@ typedef struct ActiveWill {
 typedef struct WillExecutor {
   Scheme_Type type;
   short running;
+  Scheme_Object *sema;
   ActiveWill *first, *last;
 } WillExecutor;
 
@@ -176,6 +177,8 @@ static Scheme_Object *keywords_symbol, *no_keywords_symbol;
 static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
 
+static Scheme_Object *nested_exn_handler;
+
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
 
@@ -184,7 +187,6 @@ static Scheme_Object *sch_thread(int argc, Scheme_Object *args[]);
 #endif
 static Scheme_Object *sch_sleep(int argc, Scheme_Object *args[]);
 #ifndef NO_SCHEME_THREADS
-static Scheme_Object *process_weight(int argc, Scheme_Object *args[]);
 static Scheme_Object *processp(int argc, Scheme_Object *args[]);
 static Scheme_Object *process_running_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *process_wait(int argc, Scheme_Object *args[]);
@@ -197,6 +199,7 @@ static Scheme_Object *make_manager(int argc, Scheme_Object *argv[]);
 static Scheme_Object *manager_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *manager_close_all(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_manager(int argc, Scheme_Object *argv[]);
+static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *current_namespace(int argc, Scheme_Object *args[]);
 static Scheme_Object *namespace_p(int argc, Scheme_Object *args[]);
@@ -205,19 +208,21 @@ static Scheme_Object *parameter_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
 
-static Scheme_Object *make_new_config(Scheme_Config *base);
-
 static void adjust_manager_family(void *pr, void *ignored);
 
-static Scheme_Object *current_will_executor(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_will_executor(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *register_will(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
+static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
 
-static Scheme_Object *do_next_will(WillExecutor *w, int tail);
+static Scheme_Object *do_next_will(WillExecutor *w);
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Process *p);
+
+#ifndef MZ_REAL_THREADS
+static int check_sleep(int need_activity, int sleep_now);
+#endif
 
 static void remove_process(Scheme_Process *r);
 
@@ -343,11 +348,6 @@ void scheme_init_process(Scheme_Env *env)
 			     env);
 
 #ifndef NO_SCHEME_THREADS
-  scheme_add_global_constant("thread-weight",
-			     scheme_make_prim_w_arity(process_weight,
-						      "thread-weight",
-						      1, 2),
-			     env);
   scheme_add_global_constant("thread?",
 			     scheme_make_folding_prim(processp,
 						      "thread?",
@@ -402,6 +402,11 @@ void scheme_init_process(Scheme_Env *env)
 						       "current-custodian",
 						       MZCONFIG_MANAGER),
 			     env);
+  scheme_add_global_constant("call-in-nested-thread",
+			     scheme_make_prim_w_arity(call_as_nested_process,
+						      "call-in-nested-thread",
+						      1, 2),
+			     env);
 
   scheme_add_global_constant("current-namespace", 
 			     scheme_register_parameter(current_namespace,
@@ -440,20 +445,20 @@ void scheme_init_process(Scheme_Env *env)
 						      "will-executor?", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("register-will", 
+  scheme_add_global_constant("will-register", 
 			     scheme_make_prim_w_arity(register_will,
-						      "register-will", 
-						      2, 3), 
+						      "will-register", 
+						      3, 3), 
 			     env);
-  scheme_add_global_constant("will-executor-try", 
+  scheme_add_global_constant("will-execute-try", 
 			     scheme_make_prim_w_arity(will_executor_try,
-						      "will-executor-try", 
+						      "will-execute-try", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("current-will-executor", 
-			     scheme_register_parameter(current_will_executor,
-						       "current-will-executor",
-						       MZCONFIG_WILL_EXECUTOR),
+  scheme_add_global_constant("will-execute", 
+			     scheme_make_prim_w_arity(will_executor_go,
+						      "will-execute", 
+						      1, 1), 
 			     env);
 
   scheme_add_global_constant("collect-garbage", 
@@ -655,6 +660,8 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   process->user_tls = NULL;
   process->user_tls_size = 0;
+  
+  process->nester = process->nestee = NULL;
 
   ATSTEP("initing manager");
 
@@ -994,13 +1001,13 @@ void scheme_close_managed(Scheme_Manager *m)
 #ifndef NO_SCHEME_THREADS
   if ((p = do_close_managed(m))) {
     /* Kill self */
-# ifdef MZ_REAL_THREADS
-    remove_process(scheme_current_process);
-    SCHEME_EXIT_THREAD();
-# else
-    scheme_kill_thread(p);
-# endif
+    scheme_process_block(0.0);
   }
+
+# ifndef MZ_REAL_THREADS
+  /* Give killed threads time to die: */
+  scheme_process_block(0);
+# endif
 #endif
 }
 
@@ -1067,6 +1074,32 @@ void scheme_swap_process(Scheme_Process *new_process)
     scheme_current_process = new_process;
     LONGJMP(scheme_current_process);
   }
+}
+
+void scheme_select_process(Scheme_Process *start_process)
+{
+  Scheme_Process *new_process = start_process;
+
+  do {
+    if (!new_process)
+      new_process = scheme_first_process;
+    
+    /* Can't swap in processes with a nestee: */
+    while (new_process && new_process->nestee)
+      new_process = new_process->next;
+
+    if (!new_process && !start_process) {
+      /* The main thread must blocked on a nestee, and
+	 everything else is suspended. */
+      do_atomic++;
+      check_sleep(1, 1);
+      --do_atomic;
+      return;
+    } 
+    start_process = NULL;
+  } while (!new_process);
+
+  scheme_swap_process(new_process);
 }
 
 #endif
@@ -1169,10 +1202,7 @@ static void start_child(Scheme_Process *child,
 #endif
     
 #ifndef MZ_REAL_THREADS
-    if (scheme_current_process->next)
-      scheme_swap_process(scheme_current_process->next);
-    else
-      scheme_swap_process(scheme_first_process);
+    scheme_select_process(NULL);
     
     /* Shouldn't get here! */
     scheme_signal_error("bad process switch");
@@ -1361,6 +1391,10 @@ void scheme_break_thread(Scheme_Process *p)
       return;
   }
 
+  /* Propagate breaks: */
+  while (p->nestee)
+    p = p->nestee;
+
   p->external_break = 1;
 
 #ifndef MZ_REAL_THREADS
@@ -1535,7 +1569,9 @@ static int check_sleep(int need_activity, int sleep_now)
     while (p) {
       int merge_time = 0;
 
-      if (p->block_descriptor == -1) {
+      if (p->nestee) {
+	/* nothing */
+      } else if (p->block_descriptor == -1) {
 	if (p->block_needs_wakeup)
 	  (p->block_needs_wakeup)(p->blocker, fds);
 	merge_time = (p->sleep_time > 0.0);
@@ -1629,37 +1665,39 @@ static void get_ready_for_GC()
 
     /* zero ununsed part of env stack in each thread */
     for (p = scheme_first_process; p; p = p->next) {
-      Scheme_Object **o, **e, **e2;
-      Scheme_Saved_Stack *saved;
-      RUNSTACK_TUNE( long size; );
+      if (!p->nestee) {
+	Scheme_Object **o, **e, **e2;
+	Scheme_Saved_Stack *saved;
+	RUNSTACK_TUNE( long size; );
 
-      o = p->runstack_start;
-      e = p->runstack;
-      e2 = p->runstack_tmp_keep;
+	o = p->runstack_start;
+	e = p->runstack;
+	e2 = p->runstack_tmp_keep;
 
-      while (o < e && (o != e2))
-	*(o++) = NULL;
-
-      RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
-
-      for (saved = p->runstack_saved; saved; saved = saved->prev) {
-	o = saved->runstack_start;
-	e = saved->runstack_start;
-	RUNSTACK_TUNE( size += saved->runstack_size; );
-	while (o < e)
+	while (o < e && (o != e2))
 	  *(o++) = NULL;
-      }
 
-      RUNSTACK_TUNE( printf("%ld\n", size); );
+	RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
+
+	for (saved = p->runstack_saved; saved; saved = saved->prev) {
+	  o = saved->runstack_start;
+	  e = saved->runstack_start;
+	  RUNSTACK_TUNE( size += saved->runstack_size; );
+	  while (o < e)
+	    *(o++) = NULL;
+	}
+
+	RUNSTACK_TUNE( printf("%ld\n", size); );
 
 # ifdef AGRESSIVE_ZERO_TB
-      {
-	int i;
-	for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++)
-	  p->tail_buffer[i] = NULL;
-      }
+	{
+	  int i;
+	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++)
+	    p->tail_buffer[i] = NULL;
+	}
 # endif
-
+      }
+      
       /* release unused cont mark stack segments */
       {
 	int segcount, i;
@@ -1702,9 +1740,9 @@ static void done_with_GC()
 
 int scheme_can_break(Scheme_Process *p, Scheme_Config *config)
 {
-  return (SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK))
-	  && (!p->exn_raised 
-	      || SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_EXCEPTION_BREAK))));
+  return (!p->suspend_break
+	  && SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK))
+	  && !p->exn_raised);
 }
 
 int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,void*), 
@@ -1738,6 +1776,36 @@ static void make_unblocked(Scheme_Process *p)
   p->ran_some = 1;
 }
 
+static void exit_or_escape(Scheme_Process *p)
+{
+  /* Maybe this killed thread is nested: */
+  if (p->nester) {
+    if (p->running & MZTHREAD_KILLED)
+      p->running -= MZTHREAD_KILLED;
+    p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)p;
+    p->cjs.is_kill = 1;
+    scheme_longjmp(p->error_buf, 1);
+  }
+
+  if (!p->next) {
+    /* Hard exit: */
+    if (scheme_exit)
+      scheme_exit(0);
+    
+    /* We really have to exit: */
+    exit(0);
+  }
+
+#ifndef MZ_REAL_THREADS
+  remove_process(p);
+  scheme_select_process(NULL);
+#else
+  remove_process(p);
+  SCHEME_EXIT_THREAD();
+#endif
+
+}
+
 #ifndef MZ_REAL_THREADS
 void scheme_process_block(float sleep_time)
 #else
@@ -1754,16 +1822,14 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #ifndef MZ_REAL_THREADS
   if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
-    remove_process(p);
-    scheme_swap_process(scheme_first_process);
+    exit_or_escape(p);
   }
 
   if (scheme_active_but_sleeping)
     scheme_wake_up();
 #else
   if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    remove_process(p);
-    SCHEME_EXIT_THREAD();
+    exit_or_escape(p);
   }
 #endif
 
@@ -1783,18 +1849,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   }
   
  swap_or_sleep:
-  
-  /* Check for active wills: */
-  {
-    WillExecutor *w;
-    
-    w = (WillExecutor *)scheme_get_param(config, MZCONFIG_WILL_EXECUTOR);
-    while (w->first && !w->running && MZTHREAD_STILL_RUNNING(p->running)) {
-      p->ran_some = 1;
-      do_next_will(w, 0);
-      p->ran_some = 1;
-    }
-  }
 
 #ifndef MZ_REAL_THREADS
   if (!do_atomic && (sleep_time >= 0.0)) {
@@ -1809,9 +1863,11 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	break;
       }
       
-      if (next->running & MZTHREAD_KILLED) {
+      if (next->nestee) {
+	/* Blocked on nestee */
+      } else if (next->running & MZTHREAD_KILLED) {
 	/* This one has been terminated. */
-	if (next->running & MZTHREAD_NEED_KILL_CLEANUP) {
+	if ((next->running & MZTHREAD_NEED_KILL_CLEANUP) || next->nester) {
 	  /* The thread needs to clean up. Swap it in so it can die. */
 	  break;
 	} else
@@ -1846,15 +1902,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	    break;
 	} else
 	  break;
-
-	/* If the will executor has something, the thread can work: */
-	{
-	  WillExecutor *w;
-
-	  w = (WillExecutor *)scheme_get_param(next->config, MZCONFIG_WILL_EXECUTOR);
-	  if (w->first && !w->running)
-	    break;
-	}
       }
     }
   } else
@@ -1922,14 +1969,12 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
       /* The thread needs to clean up. It will block immediately to die. */
       return;
     } else {
-      remove_process(p);
-      scheme_swap_process(scheme_first_process);
+      exit_or_escape(p);
     }
   }
 #else
   if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    remove_process(p);
-    SCHEME_EXIT_THREAD();
+    exit_or_escape(p);
   }
 #endif
 
@@ -2023,10 +2068,7 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
   r->running |= MZTHREAD_SUSPENDED;
 
   if (r == scheme_current_process) {
-    if (!swap_to)
-      swap_to = scheme_first_process;
-    
-    scheme_swap_process(swap_to);
+    scheme_select_process(swap_to);
 
     /* Killed while suspended? */
     if ((r->running & MZTHREAD_KILLED) && !(r->running & MZTHREAD_NEED_KILL_CLEANUP))
@@ -2105,16 +2147,6 @@ static int do_kill_thread(Scheme_Process *p)
 {
   int kill_self = 0;
 
-  scheme_weak_resume_thread(p);
-
-  if (!p->next) {
-    if (scheme_exit)
-      scheme_exit(0);
-
-    /* We really have to exit: */
-    exit(0);
-  }
-
 #ifdef MZ_REAL_THREADS
   SCHEME_GET_LOCK();
 #endif
@@ -2125,6 +2157,11 @@ static int do_kill_thread(Scheme_Process *p)
 #endif
     return 0;
   }
+
+  if (p->nestee)
+    scheme_break_thread(p->nestee);
+
+  scheme_weak_resume_thread(p);
 
   if (p->on_kill)
     p->on_kill(p);
@@ -2158,14 +2195,12 @@ static int do_kill_thread(Scheme_Process *p)
 void scheme_kill_thread(Scheme_Process *p)
 {
   if (do_kill_thread(p)) {
-#ifdef MZ_REAL_THREADS
     /* Kill self: */
-    remove_process(scheme_current_process);
-    SCHEME_EXIT_THREAD();
-#endif
+    scheme_process_block(0.0);
   }
 
 #ifndef MZ_REAL_THREADS
+  /* Give killed threads time to die: */
   scheme_process_block(0);
 #endif
 }
@@ -2184,6 +2219,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   /* Check management of the thread: */
   current = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
   m = *p->mref;
+
   while (NOT_SAME_OBJ(m, current)) {
     m = *m->parent;
     if (!m) {
@@ -2199,40 +2235,6 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 #endif
-
-static Scheme_Object *process_weight(int argc, Scheme_Object *args[])
-{
-  if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_process_type))
-    scheme_wrong_type("thread-weight", "thread", 0, argc, args);
-
-  if (argc > 1) {
-    long v;
-    Scheme_Process *p;
-
-    if (!SCHEME_INTP(args[1])) {
-      if (!SCHEME_BIGNUMP(args[1]) || !SCHEME_BIGPOS(args[1]))
-	scheme_wrong_type("thread-weight", "non-negative exact integer", 1, argc, args);
-    }
-
-    if (!scheme_get_int_val(args[1], &v)) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		       args[1],
-		       "thread-weight: %s is too large",
-		       scheme_make_provided_string(args[1], 0, NULL));
-    } else if (v < 0) {
-      scheme_wrong_type("thread-weight", "non-negative exact integer", 1, argc, args);
-    }
-
-    p = (Scheme_Process *)args[0];
-    
-    p->engine_weight = v;
-    if (p == scheme_current_process && scheme_fuel_counter > v)
-      scheme_fuel_counter = v;
-    
-    return scheme_void;
-  } else
-    return scheme_make_integer(((Scheme_Process *)args[0])->engine_weight);
-}
 
 static Scheme_Object *processp(int argc, Scheme_Object *args[])
 {
@@ -2346,6 +2348,147 @@ static Scheme_Object *current_manager(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-custodian", MZCONFIG_MANAGER,
 			     argc, argv,
 			     -1, manager_p, "custodian", 0);
+}
+
+static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
+{
+  if (scheme_current_process->nester) {
+    Scheme_Process *p = scheme_current_process;
+    p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)scheme_current_process;
+    p->cjs.u.val = argv[0];
+    p->cjs.is_kill = 0;
+    scheme_longjmp(p->error_buf, 1);
+  }
+
+  return scheme_void; /* misuse of exception handler */
+}
+
+static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
+{
+  Scheme_Process *p = scheme_current_process, *np;
+  Scheme_Manager *mgr;
+  Scheme_Object *v;
+  int failure;
+
+  scheme_check_proc_arity("call-in-nested-thread", 0, 0, argc, argv);
+  if (argc > 1) {
+    if (SCHEME_MANAGERP(argv[1]))
+      mgr = (Scheme_Manager *)argv[1];
+    else {
+      scheme_wrong_type("call-in-nested-thread", "custodian", 1, argc, argv);
+      return NULL;
+    }
+  } else
+    mgr = (Scheme_Manager *)scheme_get_param(p->config, MZCONFIG_MANAGER);
+
+  /* In case nested thread starts a child thread: */
+  scheme_ensure_stack_start(scheme_current_process, &failure);
+  
+  np = MALLOC_ONE(Scheme_Process);
+  np->type = scheme_process_type;
+  np->running = MZTHREAD_RUNNING;
+
+  np->runstack = p->runstack;
+  np->runstack_start = p->runstack_start;
+  np->runstack_size = p->runstack_size;
+  np->runstack_saved = p->runstack_saved;
+  np->stack_start = p->stack_start;
+  np->stack_end = p->stack_end;
+  np->current_local_env = p->current_local_env;
+  np->engine_weight = p->engine_weight;
+  np->tail_buffer = p->tail_buffer;
+  np->tail_buffer_size = p->tail_buffer_size;
+
+#ifdef MZ_REAL_THREADS
+  np->thread = p->thread;
+#endif
+
+  np->overflow_set = p->overflow_set;
+  memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
+
+  np->list_stack = p->list_stack;
+  np->list_stack_pos = p->list_stack_pos;
+
+  /* np->prev = NULL; - 0ed by allocation */
+  np->next = scheme_first_process;
+  scheme_first_process->prev = np;
+  scheme_first_process = np;
+
+  np->config = (Scheme_Config *)scheme_make_config(p->config);
+  np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
+  /* others 0ed already by allocation */
+
+  if (!nested_exn_handler) {
+    REGISTER_SO(nested_exn_handler);
+    nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
+						  "nested-thread-exception-handler",
+						  1, 1);
+  }
+
+  scheme_init_error_escape_proc(np);
+  scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
+
+  np->nester = p;
+  p->nestee = np;
+
+  np->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);
+  np->mr_hop->type = scheme_process_type;
+  np->mr_hop->p = np;
+  np->mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
+  scheme_weak_reference((void **)&np->mr_hop->p);
+
+  MZ_CONT_MARK_STACK = np->cont_mark_stack;
+  MZ_CONT_MARK_POS = np->cont_mark_pos;
+
+  scheme_current_process = np;
+
+  /* Call thunk, catch escape: */
+  if (scheme_setjmp(np->error_buf)) {
+    if (!np->cjs.is_kill)
+      v = np->cjs.u.val;
+    else
+      v = NULL;
+    failure = 1;
+  } else {
+    v = scheme_apply(argv[0], 0, NULL);
+    failure = 0;
+  }
+
+  scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
+  scheme_unweak_reference((void **)&np->mr_hop->p);
+
+  if (np->prev)
+    np->prev->next = np->next;
+  else
+    scheme_first_process = np->next;
+  np->next->prev = np->prev;
+
+  np->running = 0;
+
+  p->nestee = NULL;
+
+  np->nester = NULL;
+  np->runstack_start = NULL;
+  np->runstack_saved = NULL;
+  np->list_stack = NULL;
+  np->config = NULL;
+
+  scheme_current_process = p;
+
+  MZ_CONT_MARK_STACK = p->cont_mark_stack;
+  MZ_CONT_MARK_POS = p->cont_mark_pos;
+
+  if (p->running & MZTHREAD_KILLED)
+    scheme_process_block(0.0);
+
+  if (failure) {
+    if (!v)
+      scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
+    else
+      scheme_raise(v);
+  }
+
+  return v;
 }
 
 static Scheme_Object *parameter_p(int argc, Scheme_Object **argv)
@@ -2477,7 +2620,6 @@ static Scheme_Config *make_initial_config(void)
 						 (max_configs - 1) * sizeof(Scheme_Object*));
   
   scheme_set_param(config, MZCONFIG_ENABLE_BREAK, scheme_true);
-  scheme_set_param(config, MZCONFIG_ENABLE_EXCEPTION_BREAK, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_COMPILED, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_BOX, scheme_true);
@@ -2500,8 +2642,6 @@ static Scheme_Config *make_initial_config(void)
   main_manager = scheme_make_manager(NULL);
   scheme_set_param(config, MZCONFIG_MANAGER, (Scheme_Object *)main_manager);
 
-  scheme_set_param(config, MZCONFIG_WILL_EXECUTOR, make_will_executor(0, NULL));
-
   scheme_set_param(config, MZCONFIG_ALLOW_SET_UNDEFINED, (scheme_allow_set_undefined
 							  ? scheme_true
 							  : scheme_false));
@@ -2520,7 +2660,7 @@ static Scheme_Config *make_initial_config(void)
   return config;
 }
 
-static Scheme_Object *make_new_config(Scheme_Config *base)
+Scheme_Object *scheme_make_config(Scheme_Config *base)
 {
   Scheme_Config *config;
   int i;
@@ -2541,8 +2681,7 @@ static Scheme_Object *make_new_config(Scheme_Config *base)
     Scheme_Bucket **bs = base->extensions->buckets;
     int i = base->extensions->size;
     
-    if (!config->extensions)
-      config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+    config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
     
     while (i--) {
       Scheme_Bucket *b = bs[i];
@@ -2552,11 +2691,6 @@ static Scheme_Object *make_new_config(Scheme_Config *base)
   }
 
   return (Scheme_Object *)config;
-}
-
-Scheme_Object *scheme_make_config(Scheme_Config *base)
-{
-  return make_new_config(base);
 }
 
 Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which)
@@ -2684,6 +2818,8 @@ static void activate_will(void *o, void *data)
   else
     w->first = a;
   w->last = a;
+  if (!w->running)
+    scheme_post_sema(w->sema);
   RELEASE_WILL_LOCK();
 }
 
@@ -2701,11 +2837,15 @@ static Scheme_Object *now_do_will(void *v)
 static void post_will(void *v)
 {
   ActiveWill *a = (ActiveWill *)v;
-
+  
+  GET_WILL_LOCK();
   a->w->running = 0;
+  if (a->w->first)
+    scheme_post_sema(a->w->sema);
+  RELEASE_WILL_LOCK();
 }
 
-static Scheme_Object *do_next_will(WillExecutor *w, int tail)
+static Scheme_Object *do_next_will(WillExecutor *w)
 {
   ActiveWill *a;
 
@@ -2726,13 +2866,6 @@ static Scheme_Object *do_next_will(WillExecutor *w, int tail)
   return scheme_dynamic_wind(NULL, now_do_will, post_will, NULL, a);
 }
 
-static Scheme_Object *current_will_executor(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("current-will-executor", MZCONFIG_WILL_EXECUTOR,
-			     argc, argv,
-			     -1, will_executor_p, "will-executor", 0);
-}
-
 static Scheme_Object *make_will_executor(int argc, Scheme_Object **argv)
 {
   WillExecutor *w = MALLOC_ONE_TAGGED(WillExecutor);
@@ -2740,7 +2873,7 @@ static Scheme_Object *make_will_executor(int argc, Scheme_Object **argv)
   w->type = scheme_will_executor_type;
   w->first = NULL;
   w->last = NULL;
-  w->running = 0;
+  w->sema = scheme_make_sema(0);
 
   return (Scheme_Object *)w;
 }
@@ -2756,15 +2889,13 @@ static Scheme_Object *register_will(int argc, Scheme_Object **argv)
 {
   WillRegistration *r;
 
-  scheme_check_proc_arity("register-will", 1, 1, argc, argv);
-  if ((argc > 2) && NOT_SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_will_executor_type))
-    scheme_wrong_type("register-will", "will-executor", 2, argc, argv);
+  scheme_check_proc_arity("will-register", 1, 1, argc, argv);
+  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_will_executor_type))
+    scheme_wrong_type("will-register", "will-executor", 2, argc, argv);
 
   r = MALLOC_ONE(WillRegistration);
   r->proc = argv[1];
-  r->w = (WillExecutor *)((argc > 2)
-			  ? argv[2]
-			  : scheme_get_param(scheme_config, MZCONFIG_WILL_EXECUTOR));
+  r->w = (WillExecutor *)argv[2];
 
   scheme_add_scheme_finalizer(argv[0], activate_will, (void *)r);
 
@@ -2776,14 +2907,28 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object **argv)
   WillExecutor *w;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
-    scheme_wrong_type("will-executor-try", "will-executor", 0, argc, argv);
+    scheme_wrong_type("will-execute-try", "will-executor", 0, argc, argv);
   
   w = (WillExecutor *)argv[0];
 
-  if (w->first && !w->running)
-    return do_next_will(w, 1);
+  if (scheme_wait_sema(w->sema, 1))
+    return do_next_will(w);
   else
     return scheme_false;
+}
+
+static Scheme_Object *will_executor_go(int argc, Scheme_Object **argv)
+{
+  WillExecutor *w;
+
+  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
+    scheme_wrong_type("will-execute", "will-executor", 0, argc, argv);
+  
+  w = (WillExecutor *)argv[0];
+
+  scheme_wait_sema(w->sema, 0);
+
+  return do_next_will(w);
 }
 
 /****************************************/

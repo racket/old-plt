@@ -245,11 +245,6 @@ scheme_init_eval (Scheme_Env *env)
 						       "break-enabled",
 						       MZCONFIG_ENABLE_BREAK), 
 			     env);
-  scheme_add_global_constant("exception-break-enabled", 
-			     scheme_register_parameter(exn_enable_break, 
-						       "exception-break-enabled",
-						       MZCONFIG_ENABLE_EXCEPTION_BREAK), 
-			     env);
   scheme_add_global_constant("current-eval",
 			     scheme_register_parameter(current_eval, 
 						       "current-eval",
@@ -1760,6 +1755,11 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
       if (find->key == key) {
 	cm = find;
 	break;
+      } else {
+	/* Assume that we'll mutate rather than allocate a new mark record. */
+	/* This is a bad assumption for a nasty program that repeatedly
+	   creates a new key for the same frame, but it's good enough. */
+	find->cached_chain = NULL;
       }
     }
   }
@@ -1795,6 +1795,7 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
   cm->key = key;
   cm->val = val;
   cm->pos = MZ_CONT_MARK_POS;
+  cm->cached_chain = NULL;
 }
 
 void scheme_temp_dec_mark_depth()
@@ -3127,24 +3128,9 @@ enable_break(int argc, Scheme_Object *argv[])
 			  argc, argv,
 			  -1, NULL, NULL, 1);
 
-  if (p->external_break && scheme_can_break(p, p->config))
-    scheme_process_block_w_process(0.0, p);
-
-  return v;
-}
-
-static Scheme_Object *
-exn_enable_break(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *v;
-  Scheme_Process *p = scheme_current_process;
-
-  v = scheme_param_config("exception-break-enabled", MZCONFIG_ENABLE_EXCEPTION_BREAK,
-			  argc, argv,
-			  -1, NULL, NULL, 1);
-
-  if (p->external_break && scheme_can_break(p, p->config))
-    scheme_process_block_w_process(0.0, p);
+  if (argc == 1) /* might have turned on breaking... */
+    if (p->external_break && scheme_can_break(p, p->config))
+      scheme_process_block_w_process(0.0, p);
 
   return v;
 }

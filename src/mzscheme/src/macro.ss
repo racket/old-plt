@@ -699,7 +699,7 @@
 
 (#%define load/cd
   (#%let ([make-exn make-exn:i/o:filesystem]
-	  [debug debug-info-handler])
+	  [debug current-continuation-marks])
     (#%lambda (n)
       (#%unless (#%string? n)
 	(#%raise-type-error 'load/cd "string" n))
@@ -708,7 +708,7 @@
 	     (#%raise
 	      (make-exn
 	       (#%format "load/cd: cannot open a directory: ~s" n)
-	       ((debug))
+	       (debug)
 	       n))
 	     (#%if (#%not (#%string? base))
 		 (#%load n)
@@ -719,7 +719,7 @@
 			 (#%format 
 			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
 			  n (#%current-directory))
-			 ((debug))
+			 (debug)
 			 base)))
 		   (#%let ([orig (#%current-directory)])
 		     (#%dynamic-wind
@@ -848,7 +848,7 @@
   (#%let* ([get-table current-loaded-library-table]
 	   [not-found (box 0)]
 	   [null-str (#%string #\nul)]
-	   [debug debug-info-handler]
+	   [debug current-continuation-marks]
 	   [make-exn make-exn:i/o:filesystem]
 	   [check (#%lambda (who s)
 		    (#%unless (#%string? s)
@@ -856,7 +856,7 @@
 		    (#%unless (#%relative-path? s)
 		      (#%raise (make-exn
 			       (#%format "~a: invalid relative path: ~s" who s)
-			       ((debug)) s))))]
+			       (debug) s))))]
 	   [with-null (#%lambda (l) (#%let loop ([l l])
 					   (#%if (#%null? l)
 						 #%null
@@ -873,7 +873,7 @@
 				  (make-exn
 				   (#%format "~a: collection not found: ~s in any of: ~s" 
 					     who collection all-paths)
-				   ((debug))
+				   (debug)
 				   collection))
 				 (#%let ([dir (#%build-path (#%car paths) collection)])
 				    (#%if (#%directory-exists? dir)
@@ -889,7 +889,7 @@
 								(make-exn
 								 (#%format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
 									   c (#%car l) p)
-								 ((debug))
+								 (debug)
 								 nc)))))))
 				       (loop (#%cdr paths))))))))])
 	  (#%letrec ([collection-path (#%lambda (collection . collection-path) 
@@ -909,7 +909,7 @@
 					      (#%if (#%null? collection-path)
 						    ""
 						    (#%format " in sub-collection: ~s" collection-path)))
-				    ((debug))
+				    (debug)
 				    (#%apply #%build-path file collection-path))))))]
 		     [require-library/proc
 		      (#%case-lambda
@@ -933,7 +933,7 @@
 								    (make-exn
 								     (#%format "require-library: collection ~s does not have library: ~s in: ~s"
 									       (#%apply #%build-path collection collection-path) file c)
-								     ((debug))
+								     (debug)
 								     p)))])
 						    (#%hash-table-put! table sym result)
 						    (#%apply #%values result))
@@ -1058,7 +1058,7 @@
 	       (#%format
 		"~s: expression for \"~s\" is not a signed unit"
 		who tag)
-	       ((#%debug-info-handler))))))
+	       (#%current-continuation-marks)))))
        units tags)
       (#%for-each
        (#%lambda (u tag esig)
@@ -1079,7 +1079,7 @@
 		(#%format
 		 "~s: ~a unit imports ~a units, but ~a units were provided"
 		 who tag n c)
-		((#%debug-info-handler)))))))
+		(#%current-continuation-marks))))))
        units tags isigs)
       (#%for-each
        (#%lambda (u tag isig)
@@ -1166,7 +1166,7 @@
 > kstop begin-elaboration-time <
 
 (#%define-values (scheme-report-environment null-environment)
-  (#%let* ([debug debug-info-handler]
+  (#%let* ([debug current-continuation-marks]
 	  [r4-syntax '(quasiquote unquote unquote-splicing 
 				   if let and or
 				   cond case define delay do
@@ -1224,7 +1224,7 @@
 	      [(#%and (#%number? n) (#%integer? n) (#%positive? n))
 	       (#%raise (#%make-exn:misc:unsupported
 			 (#%format "~s: version ~a not supported" who n)
-			 ((debug))))]
+			 (debug)))]
 	      [else (#%raise-type-error who "positive integer" n)])))])
      (#%values
       (make-maker 'scheme-report-environment r5 (append r4-syntax r4) #%r4)

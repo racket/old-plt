@@ -164,8 +164,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_svector_type, "<short-vector>");
 
   set_name(scheme_manager_type, "<custodian>");
-
-  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_cont_mark_set_type, "<continuation-mark-set>");
+  
   set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 

@@ -71,6 +71,7 @@ static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_ec (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
+static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *is_void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_wind (int argc, Scheme_Object *argv[]);
@@ -209,7 +210,12 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("current-continuation-marks", 
 			     scheme_make_prim_w_arity(cc_marks,  
 						      "current-continuation-marks", 
-						      1, 1),
+						      0, 0),
+			     env);
+  scheme_add_global_constant("continuation-mark-set->list", 
+			     scheme_make_prim_w_arity(extract_cc_marks,  
+						      "continuation-mark-set->list", 
+						      2, 2),
 			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
@@ -747,6 +753,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     p->cc_start = &v;
     memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(p->overflow_buf)) {
+      /* We get `p' again because it would be a nestee: */
+      Scheme_Process *p = scheme_current_process;
       while (1) {
 	Scheme_Overflow *overflow;
 
@@ -1636,6 +1644,7 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
   a->jumping_to_continuation = b->jumping_to_continuation;
   a->u.val = b->u.val;
   a->num_vals = b->num_vals;
+  a->is_kill = b->is_kill;
 }
 
 static void pre_call_ec(void *ec)
@@ -1849,6 +1858,10 @@ call_cc (int argc, Scheme_Object *argv[])
       memcpy(cm, cont->cont_mark_stack_copied + cmcount, sizeof(Scheme_Cont_Mark));
     }
 
+    /* We may have just re-activated breaking: */
+    if (p->external_break && scheme_can_break(p, p->config))
+      scheme_process_block_w_process(0.0, p);
+
     return result;
   } else {
     Scheme_Object *argv2[1];
@@ -1864,14 +1877,12 @@ call_cc (int argc, Scheme_Object *argv[])
   }
 }
 
-static Scheme_Object *
-cc_marks(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_current_continuation_marks(void)
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Object *first = scheme_null, *last = NULL, *key;
+  Scheme_Cont_Mark_Chain *first = NULL, *last = NULL;
+  Scheme_Cont_Mark_Set *set;
   long findpos;
-
-  key = argv[0];
 
   findpos = (long)MZ_CONT_MARK_STACK;
 
@@ -1879,9 +1890,56 @@ cc_marks(int argc, Scheme_Object *argv[])
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
     long pos = findpos & SCHEME_MARK_SEGMENT_MASK;
     Scheme_Cont_Mark *find = seg + pos;
-    
-    if (find->key == key) {
-      Scheme_Object *pr = scheme_make_pair(find->val, scheme_null);
+
+    if (find->cached_chain) {
+      if (last)
+	last->next = find->cached_chain;
+      else
+	first = find->cached_chain;
+
+      break;
+    } else {
+      Scheme_Cont_Mark_Chain *pr = MALLOC_ONE(Scheme_Cont_Mark_Chain);
+      pr->key = find->key;
+      pr->val = find->val;
+      pr->next = NULL;
+      find->cached_chain = pr;
+      if (last)
+	last->next = pr;
+      else
+	first = pr;
+
+      last = pr;
+    }
+  }
+
+  set = MALLOC_ONE_TAGGED(Scheme_Cont_Mark_Set);
+  set->type = scheme_cont_mark_set_type;
+  set->chain = first;
+
+  return (Scheme_Object *)set;
+}
+
+static Scheme_Object *
+cc_marks(int argc, Scheme_Object *argv[])
+{
+  return scheme_current_continuation_marks();
+}
+
+static Scheme_Object *
+extract_cc_marks(int argc, Scheme_Object *argv[])
+{
+  Scheme_Cont_Mark_Chain *chain;
+  Scheme_Object *first = scheme_null, *last = NULL, *key;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
+    scheme_wrong_type("continuation-mark-set->list", "continuation-mark-set", 0, argc, argv);
+  chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
+  key = argv[1];
+
+  while (chain) {
+    if (chain->key == key) {
+      Scheme_Object *pr = scheme_make_pair(chain->val, scheme_null);
       
       if (last)
 	SCHEME_CDR(last) = pr;
@@ -1889,11 +1947,12 @@ cc_marks(int argc, Scheme_Object *argv[])
 	first = pr;
       last = pr;
     }
+
+    chain = chain->next;
   }
 
   return first;
 }
-
 
 typedef struct {
   Scheme_Object *pre, *act, *post;
@@ -2012,6 +2071,10 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   p->dw = dw->prev;
 
+  /* Don't run Scheme-based dyn-winds when we're killing a nested thread. */
+  if (err && p->cjs.is_kill && (post == post_dyn_wind))
+    post = NULL;
+
   if (post) {
     if (scheme_setjmp(p->error_buf)) {
       scheme_restore_env_stack_w_process(dw->envss, p);
@@ -2027,6 +2090,10 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   
   memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
 
+  /* We may have just re-activated breaking: */
+  if (p->external_break && scheme_can_break(p, p->config))
+    scheme_process_block_w_process(0.0, p);
+  
   if (save_values) {
     p->ku.multiple.count = save_count;
     p->ku.multiple.array = save_values;

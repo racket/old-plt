@@ -479,6 +479,11 @@ void scheme_weak_reference_indirect(void **p, void *v)
     GC_register_late_disappearing_link(p, v);
 }
 
+void scheme_unweak_reference(void **p)
+{
+  GC_unregister_disappearing_link(p);
+}
+
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
   add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 0);
@@ -504,6 +509,11 @@ void scheme_register_finalizer(void *p, void (*f)(void *p, void *data),
 			       void **olddata)
 {
   add_finalizer(p, f, data, 0, 1, oldf, olddata, NULL, NULL, 0);
+}
+
+void scheme_remove_all_finalization(void *p)
+{
+  GC_register_finalizer(p, NULL, NULL, NULL, NULL);
 }
 
 void scheme_collect_garbage(void)

@@ -354,7 +354,6 @@ enum {
   MZCONFIG_ERROR_PORT,
 
   MZCONFIG_ENABLE_BREAK,
-  MZCONFIG_ENABLE_EXCEPTION_BREAK,
 
   MZCONFIG_ERROR_DISPLAY_HANDLER,
   MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
@@ -362,7 +361,6 @@ enum {
   MZCONFIG_EXIT_HANDLER,
 
   MZCONFIG_EXN_HANDLER,
-  MZCONFIG_DEBUG_INFO_HANDLER,
 
   MZCONFIG_EVAL_HANDLER,
   MZCONFIG_LOAD_HANDLER,
@@ -387,8 +385,6 @@ enum {
   MZCONFIG_ERROR_PRINT_WIDTH,
 
   MZCONFIG_ERROR_ESCAPE_HANDLER,
-
-  MZCONFIG_WILL_EXECUTOR,
 
   MZCONFIG_ALLOW_SET_UNDEFINED,
   MZCONFIG_COND_AUTO_ELSE,
@@ -428,6 +424,7 @@ typedef struct Scheme_Continuation_Jump_State {
     Scheme_Object *val;
   } u;
   short num_vals;
+  short is_kill;
 } Scheme_Continuation_Jump_State;
 
 
@@ -479,6 +476,8 @@ typedef struct Scheme_Process {
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
+
+  struct Scheme_Process *nester, *nestee;
 
   float sleep_time; /* blocker has starting sleep time */
   int block_descriptor;

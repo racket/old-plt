@@ -1123,25 +1123,11 @@ def_exn_handler(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-def_debug_info_handler(int argc, Scheme_Object *argv[])
-{
-  return scheme_void;
-}
-
-static Scheme_Object *
 exn_handler(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("current-exception-handler", MZCONFIG_EXN_HANDLER,
 			     argc, argv,
 			     1, NULL, NULL, 0);
-}
-
-static Scheme_Object *
-debug_info_handler(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("debug-info-handler", MZCONFIG_DEBUG_INFO_HANDLER,
-			     argc, argv,
-			     0, NULL, NULL, 0);
 }
 
 static void pre_raise(void *v)
@@ -1164,19 +1150,6 @@ static void post_raise_or_debug(void *v)
   scheme_current_process->exn_raised = 0;
 }
 	
-static void pre_debug(void *v)
-{
-  scheme_current_process->exn_raised = 2;
-}
-	
-static Scheme_Object *now_do_debug(void *v)
-{
-  Scheme_Config *config = scheme_config;
-
-  return _scheme_apply(scheme_get_param(config, MZCONFIG_DEBUG_INFO_HANDLER), 
-		       0, NULL);
-}
-
 static Scheme_Object *
 do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 {
@@ -1232,10 +1205,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  }
 
  if (need_debug) {
-   ((Scheme_Structure *)arg)->slots[1] = 
-     scheme_dynamic_wind(pre_debug, now_do_debug,
-			 post_raise_or_debug, NULL,
-			 (void *)arg);
+   ((Scheme_Structure *)arg)->slots[1] = scheme_current_continuation_marks();
  }
 
  v = scheme_dynamic_wind(pre_raise, now_do_raise,
@@ -1256,6 +1226,11 @@ sch_raise(int argc, Scheme_Object *argv[])
   return do_raise(argv[0], 0, 0);
 }
 
+void scheme_raise(Scheme_Object *exn)
+{
+  do_raise(exn, 0, 0);
+}
+
 #define NEEDED_BY_SCHEME_BASED_PRIMS(x) \
         ((x == MZEXN_SYNTAX) || (x == MZEXN_APPLICATION_TYPE) \
          || (x == MZEXN_APPLICATION_FPRINTF_EXTRA_ARGUMENTS) \
@@ -1265,7 +1240,6 @@ sch_raise(int argc, Scheme_Object *argv[])
 void scheme_init_exn(Scheme_Env *env)
 {
   int i, j;
-  Scheme_Object *s; 
 
   if (scheme_starting_up) {
 #define _MZEXN_DECL_FIELDS
@@ -1317,12 +1291,6 @@ void scheme_init_exn(Scheme_Env *env)
 						       MZCONFIG_EXN_HANDLER), 
 			     env);
 
-  s = scheme_register_parameter(debug_info_handler, 
-				"debug-info-handler",
-				MZCONFIG_DEBUG_INFO_HANDLER);
-
-  scheme_add_global_constant("debug-info-handler", s, env);
-
   scheme_add_global_constant("raise", 
 			     scheme_make_prim_w_arity(sch_raise, 
 						      "raise", 
@@ -1332,11 +1300,6 @@ void scheme_init_exn(Scheme_Env *env)
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
     
-    scheme_set_param(config, MZCONFIG_DEBUG_INFO_HANDLER,
-		     scheme_make_prim_w_arity(def_debug_info_handler,
-					      "default-debug-info-handler",
-					      0, 0));
-
     scheme_set_param(config, MZCONFIG_EXN_HANDLER,
 		     scheme_make_prim_w_arity(def_exn_handler,
 					      "default-exception-handler",

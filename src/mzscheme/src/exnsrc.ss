@@ -9,7 +9,7 @@ strings are types/comments.
 |#
 
 (exn [message "string" "error message" 
-	      debug-info "value" "value returned by the current debug info handler (called immediately after the error is detected)"] 
+	      continuation-marks "continuation-mark-set" "value returned by \\scmfirst{current-continuation-marks} immediately after the error is detected"] 
      -
      (user [] "raised by calling \\scmfirst{error}")
      
@@ -48,7 +48,9 @@ strings are types/comments.
 		(*user [] "user-defined input port returned a non-character from the character-getting procedure"))
 	  (filesystem [pathname "path" "file or directory pathname"] "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
-
+     
+     (thread [] "raised by \\scmfirst{call-with-custodian}")
+     
      (misc [] "low-level or MzScheme-specific error"
 	   (unsupported [] "unsupported feature")
 	   (user-break [] "asynchronous thread break")

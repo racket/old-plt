@@ -47,6 +47,8 @@ the following imports:
   mzlib:string^
   mzlib:file^
   mzlib:url^ - not really in MzLib; it's in the "net" collection
+  setup:plt-installer^ - see the `plt-installer' docs
+  setup:info^          - see the `get-info' docs
   mred^
   framework^
   (frame-mixin) - a mixin to be applied to Help Desk's frame, which

@@ -4,8 +4,9 @@
   (define beginning (make-hash-table))
   (define intermediate (make-hash-table))
   (define advanced (make-hash-table))
-  (define (initialize-tables)
-    (set! initialize-tables void)
+  (define (initialize-tables) (initialize-tables-helper))
+  (define (initialize-tables-helper)
+    (set! initialize-tables-helper void)
     (hash-table-put!
       beginning
       'read
@@ -477,7 +478,8 @@
       beginning
       'assq
       '("assq: (x (listof (cons x y)) -> (union false (cons x y)))"
-        "      to determine whether some item is the first item of a pair <NL> in a list of pairs"))
+        "      to determine whether some item is the first item of a pair"
+        "      in a list of pairs"))
     (hash-table-put!
       beginning
       'equal?
@@ -503,37 +505,44 @@
       beginning
       'char<=?
       '("char<=?: (char char ... -> boolean)"
-        "         to determine whether a character precedes another <NL>(or is equal to it)"))
+        "         to determine whether a character precedes another"
+        "         (or is equal to it)"))
     (hash-table-put!
       beginning
       'char>=?
       '("char>=?: (char char ... -> boolean)"
-        "         to determine whether a character succeeds another <NL>(or is equal to it)"))
+        "         to determine whether a character succeeds another"
+        "         (or is equal to it)"))
     (hash-table-put!
       beginning
       'char-ci=?
       '("char-ci=?: (char char ... -> boolean)"
-        "           to determine whether two characters are equal <NL>in a case-insensitive manner"))
+        "           to determine whether two characters are equal"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'char-ci<?
       '("char-ci<?: (char char ... -> boolean)"
-        "           to determine whether a character precedes another <NL>in a case-insensitive manner"))
+        "           to determine whether a character precedes another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'char-ci>?
       '("char-ci>?: (char char ... -> boolean)"
-        "           to determine whether a character succeeds another <NL>in a case-insensitive manner"))
+        "           to determine whether a character succeeds another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'char-ci<=?
       '("char-ci<=?: (char char ... -> boolean)"
-        "            to determine whether a character precedes another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character precedes another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'char-ci>=?
       '("char-ci>=?: (char char ... -> boolean)"
-        "            to determine whether a character succeeds another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character succeeds another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'char-numeric?
@@ -543,7 +552,8 @@
       beginning
       'char-alphabetic?
       '("char-alphabetic?: (char -> boolean)"
-        "                  to determine whether a character represents <NL> an alphabetic character"))
+        "                  to determine whether a character represents"
+        "                   an alphabetic character"))
     (hash-table-put!
       beginning
       'char-whitespace?
@@ -553,12 +563,14 @@
       beginning
       'char-upper-case?
       '("char-upper-case?: (char -> boolean)"
-        "                  to determine whether a character is an <NL>upper-case character"))
+        "                  to determine whether a character is an"
+        "                  upper-case character"))
     (hash-table-put!
       beginning
       'char-lower-case?
       '("char-lower-case?: (char -> boolean)"
-        "                  to determine whether a character is a <NL>lower-case character"))
+        "                  to determine whether a character is a"
+        "                  lower-case character"))
     (hash-table-put!
       beginning
       'char-upcase
@@ -573,7 +585,8 @@
       beginning
       'char->integer
       '("char->integer: (char -> integer)"
-        "               to lookup the number that corresponds to the<NL>given character in the ASCII table (if any)"))
+        "               to lookup the number that corresponds to the"
+        "               given character in the ASCII table (if any)"))
     (hash-table-put!
       beginning
       'string?
@@ -588,7 +601,8 @@
       beginning
       'make-string
       '("make-string: (nat char -> string)"
-        "             to produce a string of given length<NL>from a single given character"))
+        "             to produce a string of given length"
+        "             from a single given character"))
     (hash-table-put!
       beginning
       'string-ref
@@ -598,7 +612,8 @@
       beginning
       'substring
       '("substring: (string nat nat -> string)"
-        "           to extract the substring starting at a 0-based index,<NL> consisting of a given number of characters"))
+        "           to extract the substring starting at a 0-based index,"
+        "            consisting of a given number of characters"))
     (hash-table-put!
       beginning
       'string-copy
@@ -617,52 +632,64 @@
       beginning
       'string<?
       '("string<?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>precedes another"))
+        "          to determine whether one string alphabetically"
+        "          precedes another"))
     (hash-table-put!
       beginning
       'string>?
       '("string>?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>succeeds another"))
+        "          to determine whether one string alphabetically"
+        "          succeeds another"))
     (hash-table-put!
       beginning
       'string<=?
       '("string<=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>precedes another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           precedes another (or is equal to it)"))
     (hash-table-put!
       beginning
       'string>=?
       '("string>=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>succeeds another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           succeeds another (or is equal to it)"))
     (hash-table-put!
       beginning
       'string-ci=?
       '("string-ci=?: (string string ... -> boolean)"
-        "             to compare two strings character-wise <NL>in a case-insensitive manner"))
+        "             to compare two strings character-wise"
+        "             in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'string-ci<?
       '("string-ci<?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>precedes another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             precedes another in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'string-ci>?
       '("string-ci>?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>succeeds another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             succeeds another in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'string-ci<=?
       '("string-ci<=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>precedes another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              precedes another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'string-ci>=?
       '("string-ci>=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>succeeds another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              succeeds another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       beginning
       'string->number
       '("string->number: (string -> (union number false))"
-        "                to convert a string into a number,<NL>produce false if impossible"))
+        "                to convert a string into a number,"
+        "                produce false if impossible"))
     (hash-table-put!
       beginning
       'string->list
@@ -1241,7 +1268,8 @@
       intermediate
       'assq
       '("assq: (x (listof (cons x y)) -> (union false (cons x y)))"
-        "      to determine whether some item is the first item of a pair <NL> in a list of pairs"))
+        "      to determine whether some item is the first item of a pair"
+        "      in a list of pairs"))
     (hash-table-put!
       intermediate
       'equal?
@@ -1270,37 +1298,44 @@
       intermediate
       'char<=?
       '("char<=?: (char char ... -> boolean)"
-        "         to determine whether a character precedes another <NL>(or is equal to it)"))
+        "         to determine whether a character precedes another"
+        "         (or is equal to it)"))
     (hash-table-put!
       intermediate
       'char>=?
       '("char>=?: (char char ... -> boolean)"
-        "         to determine whether a character succeeds another <NL>(or is equal to it)"))
+        "         to determine whether a character succeeds another"
+        "         (or is equal to it)"))
     (hash-table-put!
       intermediate
       'char-ci=?
       '("char-ci=?: (char char ... -> boolean)"
-        "           to determine whether two characters are equal <NL>in a case-insensitive manner"))
+        "           to determine whether two characters are equal"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'char-ci<?
       '("char-ci<?: (char char ... -> boolean)"
-        "           to determine whether a character precedes another <NL>in a case-insensitive manner"))
+        "           to determine whether a character precedes another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'char-ci>?
       '("char-ci>?: (char char ... -> boolean)"
-        "           to determine whether a character succeeds another <NL>in a case-insensitive manner"))
+        "           to determine whether a character succeeds another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'char-ci<=?
       '("char-ci<=?: (char char ... -> boolean)"
-        "            to determine whether a character precedes another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character precedes another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'char-ci>=?
       '("char-ci>=?: (char char ... -> boolean)"
-        "            to determine whether a character succeeds another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character succeeds another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'char-numeric?
@@ -1310,7 +1345,8 @@
       intermediate
       'char-alphabetic?
       '("char-alphabetic?: (char -> boolean)"
-        "                  to determine whether a character represents <NL> an alphabetic character"))
+        "                  to determine whether a character represents"
+        "                   an alphabetic character"))
     (hash-table-put!
       intermediate
       'char-whitespace?
@@ -1320,12 +1356,14 @@
       intermediate
       'char-upper-case?
       '("char-upper-case?: (char -> boolean)"
-        "                  to determine whether a character is an <NL>upper-case character"))
+        "                  to determine whether a character is an"
+        "                  upper-case character"))
     (hash-table-put!
       intermediate
       'char-lower-case?
       '("char-lower-case?: (char -> boolean)"
-        "                  to determine whether a character is a <NL>lower-case character"))
+        "                  to determine whether a character is a"
+        "                  lower-case character"))
     (hash-table-put!
       intermediate
       'char-upcase
@@ -1340,7 +1378,8 @@
       intermediate
       'char->integer
       '("char->integer: (char -> integer)"
-        "               to lookup the number that corresponds to the<NL>given character in the ASCII table (if any)"))
+        "               to lookup the number that corresponds to the"
+        "               given character in the ASCII table (if any)"))
     (hash-table-put!
       intermediate
       'string?
@@ -1355,7 +1394,8 @@
       intermediate
       'make-string
       '("make-string: (nat char -> string)"
-        "             to produce a string of given length<NL>from a single given character"))
+        "             to produce a string of given length"
+        "             from a single given character"))
     (hash-table-put!
       intermediate
       'string-ref
@@ -1365,7 +1405,8 @@
       intermediate
       'substring
       '("substring: (string nat nat -> string)"
-        "           to extract the substring starting at a 0-based index,<NL> consisting of a given number of characters"))
+        "           to extract the substring starting at a 0-based index,"
+        "            consisting of a given number of characters"))
     (hash-table-put!
       intermediate
       'string-copy
@@ -1384,52 +1425,64 @@
       intermediate
       'string<?
       '("string<?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>precedes another"))
+        "          to determine whether one string alphabetically"
+        "          precedes another"))
     (hash-table-put!
       intermediate
       'string>?
       '("string>?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>succeeds another"))
+        "          to determine whether one string alphabetically"
+        "          succeeds another"))
     (hash-table-put!
       intermediate
       'string<=?
       '("string<=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>precedes another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           precedes another (or is equal to it)"))
     (hash-table-put!
       intermediate
       'string>=?
       '("string>=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>succeeds another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           succeeds another (or is equal to it)"))
     (hash-table-put!
       intermediate
       'string-ci=?
       '("string-ci=?: (string string ... -> boolean)"
-        "             to compare two strings character-wise <NL>in a case-insensitive manner"))
+        "             to compare two strings character-wise"
+        "             in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'string-ci<?
       '("string-ci<?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>precedes another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             precedes another in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'string-ci>?
       '("string-ci>?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>succeeds another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             succeeds another in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'string-ci<=?
       '("string-ci<=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>precedes another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              precedes another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'string-ci>=?
       '("string-ci>=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>succeeds another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              succeeds another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       intermediate
       'string->number
       '("string->number: (string -> (union number false))"
-        "                to convert a string into a number,<NL>produce false if impossible"))
+        "                to convert a string into a number,"
+        "                produce false if impossible"))
     (hash-table-put!
       intermediate
       'string->list
@@ -2021,7 +2074,8 @@
       advanced
       'assq
       '("assq: (x (listof (cons x y)) -> (union false (cons x y)))"
-        "      to determine whether some item is the first item of a pair <NL> in a list of pairs"))
+        "      to determine whether some item is the first item of a pair"
+        "      in a list of pairs"))
     (hash-table-put!
       advanced
       'equal?
@@ -2067,37 +2121,44 @@
       advanced
       'char<=?
       '("char<=?: (char char ... -> boolean)"
-        "         to determine whether a character precedes another <NL>(or is equal to it)"))
+        "         to determine whether a character precedes another"
+        "         (or is equal to it)"))
     (hash-table-put!
       advanced
       'char>=?
       '("char>=?: (char char ... -> boolean)"
-        "         to determine whether a character succeeds another <NL>(or is equal to it)"))
+        "         to determine whether a character succeeds another"
+        "         (or is equal to it)"))
     (hash-table-put!
       advanced
       'char-ci=?
       '("char-ci=?: (char char ... -> boolean)"
-        "           to determine whether two characters are equal <NL>in a case-insensitive manner"))
+        "           to determine whether two characters are equal"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'char-ci<?
       '("char-ci<?: (char char ... -> boolean)"
-        "           to determine whether a character precedes another <NL>in a case-insensitive manner"))
+        "           to determine whether a character precedes another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'char-ci>?
       '("char-ci>?: (char char ... -> boolean)"
-        "           to determine whether a character succeeds another <NL>in a case-insensitive manner"))
+        "           to determine whether a character succeeds another"
+        "           in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'char-ci<=?
       '("char-ci<=?: (char char ... -> boolean)"
-        "            to determine whether a character precedes another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character precedes another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'char-ci>=?
       '("char-ci>=?: (char char ... -> boolean)"
-        "            to determine whether a character succeeds another <NL>(or is equal to it) in a case-insensitive manner"))
+        "            to determine whether a character succeeds another"
+        "            (or is equal to it) in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'char-numeric?
@@ -2107,7 +2168,8 @@
       advanced
       'char-alphabetic?
       '("char-alphabetic?: (char -> boolean)"
-        "                  to determine whether a character represents <NL> an alphabetic character"))
+        "                  to determine whether a character represents"
+        "                   an alphabetic character"))
     (hash-table-put!
       advanced
       'char-whitespace?
@@ -2117,12 +2179,14 @@
       advanced
       'char-upper-case?
       '("char-upper-case?: (char -> boolean)"
-        "                  to determine whether a character is an <NL>upper-case character"))
+        "                  to determine whether a character is an"
+        "                  upper-case character"))
     (hash-table-put!
       advanced
       'char-lower-case?
       '("char-lower-case?: (char -> boolean)"
-        "                  to determine whether a character is a <NL>lower-case character"))
+        "                  to determine whether a character is a"
+        "                  lower-case character"))
     (hash-table-put!
       advanced
       'char-upcase
@@ -2137,7 +2201,8 @@
       advanced
       'char->integer
       '("char->integer: (char -> integer)"
-        "               to lookup the number that corresponds to the<NL>given character in the ASCII table (if any)"))
+        "               to lookup the number that corresponds to the"
+        "               given character in the ASCII table (if any)"))
     (hash-table-put!
       advanced
       'string?
@@ -2152,7 +2217,8 @@
       advanced
       'make-string
       '("make-string: (nat char -> string)"
-        "             to produce a string of given length<NL>from a single given character"))
+        "             to produce a string of given length"
+        "             from a single given character"))
     (hash-table-put!
       advanced
       'string-ref
@@ -2162,7 +2228,8 @@
       advanced
       'substring
       '("substring: (string nat nat -> string)"
-        "           to extract the substring starting at a 0-based index,<NL> consisting of a given number of characters"))
+        "           to extract the substring starting at a 0-based index,"
+        "            consisting of a given number of characters"))
     (hash-table-put!
       advanced
       'string-copy
@@ -2181,52 +2248,64 @@
       advanced
       'string<?
       '("string<?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>precedes another"))
+        "          to determine whether one string alphabetically"
+        "          precedes another"))
     (hash-table-put!
       advanced
       'string>?
       '("string>?: (string string ... -> boolean)"
-        "          to determine whether one string alphabetically<NL>succeeds another"))
+        "          to determine whether one string alphabetically"
+        "          succeeds another"))
     (hash-table-put!
       advanced
       'string<=?
       '("string<=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>precedes another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           precedes another (or is equal to it)"))
     (hash-table-put!
       advanced
       'string>=?
       '("string>=?: (string string ... -> boolean)"
-        "           to determine whether one string alphabetically<NL>succeeds another (or is equal to it)"))
+        "           to determine whether one string alphabetically"
+        "           succeeds another (or is equal to it)"))
     (hash-table-put!
       advanced
       'string-ci=?
       '("string-ci=?: (string string ... -> boolean)"
-        "             to compare two strings character-wise <NL>in a case-insensitive manner"))
+        "             to compare two strings character-wise"
+        "             in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'string-ci<?
       '("string-ci<?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>precedes another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             precedes another in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'string-ci>?
       '("string-ci>?: (string string ... -> boolean)"
-        "             to determine whether one string alphabetically<NL>succeeds another in a case-insensitive manner"))
+        "             to determine whether one string alphabetically"
+        "             succeeds another in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'string-ci<=?
       '("string-ci<=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>precedes another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              precedes another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'string-ci>=?
       '("string-ci>=?: (string string ... -> boolean)"
-        "              to determine whether one string alphabetically<NL>succeeds another (or is equal to it)<NL>in a case-insensitive manner"))
+        "              to determine whether one string alphabetically"
+        "              succeeds another (or is equal to it)"
+        "              in a case-insensitive manner"))
     (hash-table-put!
       advanced
       'string->number
       '("string->number: (string -> (union number false))"
-        "                to convert a string into a number,<NL>produce false if impossible"))
+        "                to convert a string into a number,"
+        "                produce false if impossible"))
     (hash-table-put!
       advanced
       'string->list

@@ -330,7 +330,7 @@ compilation.
  _Getting fields from info-table.ss files_
  -----------------------------------------
 
- The file get-info.ss defines 
+ The file _get-info.ss_ defines 
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 
@@ -343,3 +343,8 @@ compilation.
 
    get-info will print an error message if the info-table.ss has an error
    during loading.
+
+ The file _get-infos.ss_ defines the setup:plt-info^
+ signature, which contains only `get-info', and the
+ _get-infor.ss_ defines a unit that imports nothing
+ and exports setup:plt-info^.

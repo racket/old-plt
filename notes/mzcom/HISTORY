@@ -1,3 +1,10 @@
+Version 104
+-----------
+
+COM error object is created when
+an error occurs (in addition to
+SchemeError event)
+
 Version 103
 -----------
 

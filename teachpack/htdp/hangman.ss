@@ -1,7 +1,7 @@
 (require-library "error.ss" "htdp")
 (require-library "draw.ss" "htdp")
 
-(define-signature hangmanS (hangman hangman-list-repl))
+(define-signature hangmanS (hangman hangman-list))
 
 (define hangmanU 
   (unit/sig hangmanS (import errorS plt:userspace^)
@@ -60,7 +60,7 @@
 			    (send choice get-selection)))))))
 
     (make-object message% " Status: " panel)
-    (define status-message (make-object message% "___" panel))
+    (define status-message #f)
 
     (define message-panel (make-object horizontal-panel% verti))
     (send message-panel set-alignment 'center 'center)
@@ -119,7 +119,7 @@
     ;; effect: to decrease pieces-left and to pick the next thing to be drawn 
     (define (select-piece!)
       (when (= pieces-left 0)
-        (error 'hangman-repl "can't happen")
+        (error 'hangman "can't happen")
         (send frame show #f))
       (set! pieces-left (sub1 pieces-left))
       (vector-ref PARTS pieces-left))
@@ -135,15 +135,18 @@
     (define status 10)
     ;; reveal :  (word word letter -> word)
     (define (reveal chosen status guess)
-      (error 'hangman-repl "appply hangman-repl first!"))
+      (error 'hangman "appply hangman first!"))
     ;; draw-next-part :  (symbol -> #t)
     (define (draw-next-part s)
-      (error 'hangman-repl "appply hangman-repl first!"))
+      (error 'hangman "appply hangman first!"))
+
+    ;; word->list : symbol -> (listof letter)
+    (define (word->list sym)
+      (map char->symbol (string->list (symbol->string sym))))
 
     ;; WORDS : (listof (list letter letter letter))
     (define WORDS
-      (map (lambda (sym)
-	     (map char->symbol (string->list (symbol->string sym))))
+      (map word->list
 	'(and
 	   are
 	   but
@@ -155,6 +158,7 @@
 	   gal
 	   hat
 	   inn
+	   jam
 	   kit
 	   lit
 	   met
@@ -169,7 +173,37 @@
 	   was
 	   zoo)))
 
-    ;; hangman-repl :
+    ;; WORDS2 : (listof (listof letter))
+    (define WORDS2
+      (append (map word->list
+	  '(apple
+	    bottle
+	    cattle
+	    drscheme
+	    elephant
+	    folder
+	    gift
+	    hangman
+	    idle
+	    jet
+	    knowledge
+	    length
+	    macintosh
+	    north
+	    ottoman
+	    public
+	    queue
+	    rattlesnake
+	    snow
+	    toddler
+	    under
+	    virus
+	    xylaphon
+	    yellow
+	    zombie))
+	WORDS))	    
+
+    ;; hangman :
     ;;   (letter letter letter -> word)
     ;;   (word word letter -> word)
     ;;   (symbol -> #t)
@@ -193,31 +227,32 @@
 	    (struct-ref a-word 0)
 	    (struct-ref a-word 1)
 	    (struct-ref a-word 2))))
+      (set! status-message (make-object message% (uncover status) panel))
       (draw-next-part (select-piece!))
       (send frame show #t))
 
     ;; THE FOLLOWING REQUIRES CHANGE!
 
     ;; word2 = (listof letter)
-    ;; hangman-list :
-    ;;   word2 word2 (word2 word2 letter -> word2) (symbol -> #t) -> void
+    ;; hangman-list : (word2 word2 letter -> word2) (symbol -> #t) -> void
     ;; effects: set up game status, draw noose, show frame
-    (define (hangman-list-repl ch st rv dr)
-      (check-arg 'hangman-list-repl (list? ch) "proper list" '1st ch)
-      (check-arg 'hangman-list-repl (list? st) "proper list" '2nd st)
-      (unless (= (length ch) (length st))
-	(error 'hangman-list-repl
-	  "chosen word and status word must be of same length"))
-      (check-proc 'hangman-list-repl rv 3 '3rd "3 arguments")
-      (check-proc 'hangman-list-repl dr 1 '4th "1 argument")
-      (set! chosen ch)
-      (set! status st)
+    (define (hangman-list rv dr)
+;      (check-arg 'hangman-list (list? ch) "proper list" '1st ch)
+;      (check-arg 'hangman-list (list? st) "proper list" '2nd st)
+;      (unless (= (length ch) (length st))
+;	(error 'hangman-list
+;	  "chosen word and status word must be of same length"))
+      (check-proc 'hangman-list rv 3 '1st "3 arguments")
+      (check-proc 'hangman-list dr 1 '2nd "1 argument")
+      (set! chosen (list-ref WORDS2 (random (length WORDS2))))
+      (set! status (build-list (length chosen) (lambda (x) '_)))
       (set! reveal rv)
       (set! draw-next-part dr)
       ;; make uncover work for lists
       (set! uncover
 	(lambda (word)
 	  (apply string-append (map (lambda (x) (format "~a" x)) word))))
+      (set! status-message (make-object message% (uncover status) panel))
       (draw-next-part (select-piece!))
       (send frame show #t))
     ))

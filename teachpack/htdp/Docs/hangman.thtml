@@ -15,14 +15,9 @@
   <br>
   <br>
 
-  <li><code> hangman-list-repl : word word reveal draw-next-part -> true</code>
+  <li><code> hangman-list : reveal-for-list draw-next-part -> true</code>
   <br> that is, it consumes 
-  two words, 
-  the program <code>reveal,</code>, and 
-  the program <code>draw-next-part</code>. 
-  <br>where word is a list of letters
-  and letters are <tt>'a</tt> through <tt>'z</tt> plus <tt>'_</tt>
-  <br><b>Warning:</b> This second part is due to change soon. 
+  the programs <code>reveal-for-list</code> and <code>draw-next-part</code>. 
 
 </menu>
 The use of the operations is explained in more detail in the corresponding

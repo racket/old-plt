@@ -17,8 +17,8 @@
 ;; to pick ch if ch = st, gu if ch = gu, and st otherwise 
 (define (reveal1 ch st gu)
   (cond
-    ((eq? ch st) ch)
     ((eq? ch gu) gu)
+    ((eq? ch st) st)
     (else st)))
 
 
@@ -60,15 +60,21 @@
     (else (cons (reveal1 (first word1) (first word2) letter)
                 (reveal-list (rest word1) (rest word2) letter)))))
 
+(define (reveal-list l1 l2 gu)
+  (map (lambda (x1 x2)
+         (cond
+           [(eq? x1 gu) gu]
+           [else x2]))
+       l1 l2))
+
 ;; TESTS: 
 
 ; (equal? (reveal-list (list 'd 'e 'r) (list '_ '_ '_) 'd) (list 'd'_ '_))
 ; (equal? (reveal-list (list 'd 'e 'r) (list '_ '_ '_) 'f) (list '_ '_ '_))
+
 ;; test error checking
 ;(hangman-repl (list 'd 'e 'r) (make-word '_ '_ '_) reveal-list draw-next-part)
-;(hangman-list-repl (make-word 'd 'e 'r) (list '_ '_ '_) reveal-list draw-next-part)
-;(hangman-list-repl (list 'd 'e 'r) (list '_ '_) reveal-list draw-next-part)
 
 (start 200 200)
 (hangman make-word reveal draw-next-part)
-; (hangman-list-repl (list 'd 'e 'r) (list '_ '_ '_) reveal-list draw-next-part)
+; (hangman-list reveal-list draw-next-part)

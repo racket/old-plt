@@ -1,4 +1,3 @@
-
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,17 +10,20 @@
 # define GOEXE "mred.exe"
 # define WAITTILLDONE 0
 #endif
+
 #ifdef MZSTART
 # define GOSUBDIR "\\"
 # define GOEXE "mzscheme.exe"
 # define WAITTILDONE 1
 #endif
 
+
+
 #define MAX_ARGS 100
 
 static char *input = "<Command Line: Replace This ************"
                      "******************************************"
-					 "*****************************************>";
+  		     "*****************************************>";
 
 static char *protect(char *s)
 {
@@ -51,7 +53,7 @@ static char *protect(char *s)
 		if (*s == '"') {
 			while (wrote_slash--)
 			  *(p++) = '\\';
-			*(p++) = '"'; /* end quote */
+			*(p++) = '"'; /* endquote */
 			*(p++) = '\\';
 			*(p++) = '"'; /* protected */
             *(p++) = '"'; /* start quote again */
@@ -74,7 +76,8 @@ static char *protect(char *s)
 }
 
 static int parse_command_line(int count, char **command, 
-							  char *buf, int maxargs)
+			      char *buf, int maxargs)
+
 {
     char *parse, *created, *write;
 	int findquote = 0;
@@ -82,7 +85,6 @@ static int parse_command_line(int count, char **command,
     parse = created = write = buf;
 	while (*parse) {
       while (*parse && isspace(*parse)) parse++;
-
 	  while (*parse && (!isspace(*parse) || findquote))	{
         if (*parse== '"') {
 		  findquote = !findquote;
@@ -147,6 +149,7 @@ void WriteStr(HANDLE h, const char *s) {
 }
 #endif
 
+
 #ifdef MRSTART
 int APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, 
 					 LPSTR m_lpCmdLine, int nCmdShow)
@@ -166,7 +169,7 @@ int main(int argc_in, char **argv_in)
 
   out = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
-  
+ 
   GetModuleFileName(NULL, name, 1024);
 
   p = name;

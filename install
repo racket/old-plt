@@ -181,6 +181,7 @@ exit 1
               (error 'install "Errors in compilation process! (~a)" n)))]
          ;; also, protect `current-directory' since it will change
          [current-directory (current-directory)])
+      (printf "Running setup...\n")
       (dynamic-require '(lib "setup.ss" "setup") #f))))
 
 (define (main args)
@@ -205,6 +206,9 @@ exit 1
          (when (file-exists? this-script) (delete-file this-script))
          ;; Also remove Win/OSX stuff that just use this script.
          (when (file-exists? "install.bat") (delete-file "install.bat"))
+         (when (file-exists? "Finish Install.exe")
+           ;; this will fail if called from `Finish Install.exe' itself
+           (with-handlers ([void void]) (delete-file "Finish Install.exe")))
          (when (directory-exists? "Finish Install.app")
            ((dynamic-require '(lib "file.ss") 'delete-directory/files)
             "Finish Install.app"))

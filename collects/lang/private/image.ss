@@ -14,10 +14,10 @@
 	   offset-image+
 	   offset-masked-image+
 
-	   solid-box
-	   outline-box
-	   solid-dot
-	   outline-dot
+	   filled-rect
+	   outline-rect
+	   filled-circle
+	   outline-circle
 
 	   image-inside?
 	   find-image
@@ -171,27 +171,27 @@
 			   (error (format "unknown color: ~a" color))))
       dc))
 
-  (define (a-box who w h color brush pen)
+  (define (a-rect who w h color brush pen)
     (let ([dc (new-dc+bm who w h color brush pen)])
       (send dc draw-rectangle 0 0 w h)
       (dc->snip dc)))
 
-  (define (solid-box w h color)
-    (a-box 'solid-box w h color 'solid 'transparent))
+  (define (filled-rect w h color)
+    (a-rect 'filled-rect w h color 'solid 'transparent))
 
-  (define (outline-box w h color)
-    (a-box 'outline-box w h color 'transparent 'solid))
+  (define (outline-rect w h color)
+    (a-rect 'outline-rect w h color 'transparent 'solid))
 
-  (define (a-dot who w h color brush pen)
+  (define (a-circle who w h color brush pen)
     (let ([dc (new-dc+bm who w h color brush pen)])
       (send dc draw-ellipse 0 0 w h)
       (dc->snip dc)))
 
-  (define (solid-dot w h color)
-    (a-dot 'solid-dot w h color 'solid 'transparent))
+  (define (filled-circle w h color)
+    (a-circle 'filled-circle w h color 'solid 'transparent))
 
-  (define (outline-dot w h color)
-    (a-dot 'solid-dot w h color 'transparent 'solid))
+  (define (outline-circle w h color)
+    (a-circle 'outline-circle w h color 'transparent 'solid))
 
   ;; ------------------------------------------------------------
 

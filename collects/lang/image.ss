@@ -53,10 +53,10 @@
 	     (offset-image+ (a b c d))
 	     (offset-masked-image+ (a b c d e))
 	     
-	     (solid-box (w h c) (fake-p 'solid-box))
-	     (outline-box (w h c) (fake-p 'outline-box))
-	     (solid-dot (w h c) (fake-p 'solid-dot))
-	     (outline-dot (w h c) (fake-p 'outline-dot))
+	     (filled-rect (w h c) (fake-p 'filled-rect))
+	     (outline-rect (w h c) (fake-p 'outline-rect))
+	     (filled-circle (w h c) (fake-p 'filled-circle))
+	     (outline-circle (w h c) (fake-p 'outline-circle))
 	     
 	     (image-inside? (a b))
 	     (find-image (a b))

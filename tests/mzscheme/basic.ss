@@ -1611,6 +1611,47 @@
 	
 	v))
 
+;; Check interaction of map and call/cc
+(let ()
+  (define (try n m)
+    (let ([retries (make-vector n)]
+	  [copy #f]
+	  [special -1]
+	  [in (let loop ([i n])
+		(if (= i 0)
+		    null
+		    (cons (- n i) (loop (sub1 i)))))])
+      (let ([v (apply
+		map 
+		(lambda (a . rest)
+		  (+ (let/cc k (vector-set! retries a k) 1)
+		     a))
+		(let loop ([m m])
+		  (if (zero? m)
+		      null
+		      (cons in (loop (sub1 m))))))])
+	(test (map (lambda (i)
+		     (if (= i special)
+			 (+ i 2)
+			 (add1 i)))
+		   in)
+	      `(map/cc ,n ,m)
+	      v))
+      (if copy
+	  (when (pair? copy)
+	    (set! special (add1 special))
+	    ((begin0 (car copy) (set! copy (cdr copy)))
+	     2))
+	  (begin
+	    (set! copy (vector->list retries))
+	    ((vector-ref retries (random n)) 1)))))
+  (try 3 1)
+  (try 10 1)
+  (try 3 2)
+  (try 10 2)
+  (try 5 3)
+  (try 3 5)
+  (try 10 5))
 
 (arity-test call/cc 1 1)
 (arity-test call/ec 1 1)

@@ -1016,6 +1016,71 @@
   (thread-resume t2)
   (test #f thread-running? t3))
 
+;; Transitive custodian addition:
+(let ([c1 (make-custodian)]
+      [c2 (make-custodian)]
+      [c3 (make-custodian)])
+  (let ([t1 (parameterize ([current-custodian c1])
+	      (thread/suspend-to-kill (lambda () (sleep 10000))))]
+	[t2 (parameterize ([current-custodian c2])
+	      (thread/suspend-to-kill (lambda () (sleep 10000))))])
+    (let ([t2-2 (let loop ([n 5][t t2])
+		  (if (zero? n)
+		      t
+		      (loop (sub1 n)
+			    (parameterize ([current-custodian c2])
+			      (let ([t2 (thread/suspend-to-kill (lambda () (sleep 10000)))])
+				(thread-resume t2 t)
+				t2)))))])
+      (custodian-shutdown-all c2)
+      (test #f thread-running? t2)
+      (test #f thread-running? t2-2)
+      (thread-resume t2)
+      (test #f thread-running? t2)
+      (test #f thread-running? t2-2)
+      (thread-resume t2 t1)
+      (test #t thread-running? t2)
+      (test #t thread-running? t2-2)
+      (thread-resume t1 c3)
+      (custodian-shutdown-all c1)
+      (test #t thread-running? t1)
+      (test #t thread-running? t2)
+      (test #t thread-running? t2-2)
+      (custodian-shutdown-all c3)
+      (test #f thread-running? t1)
+      (test #f thread-running? t2)
+      (test #f thread-running? t2-2))))
+
+;; Cyclic thread yokes should be ok:
+(let* ([c1 (make-custodian)]
+       [c2 (make-custodian)]
+       [t1 (parameterize ([current-custodian c1])
+	     (thread (lambda () (sleep 10000))))]
+       [t2 (parameterize ([current-custodian c2])
+	     (thread (lambda () (sleep 10000))))])
+  (thread-resume t1 t2)
+  (thread-resume t2 t1)
+  (thread-suspend t1)
+  (thread-suspend t2)
+  (test #f thread-running? t1)
+  (test #f thread-running? t2)
+  (thread-resume t1)
+  (test #t thread-running? t1)
+  (test #t thread-running? t2)
+  (thread-suspend t1)
+  (thread-suspend t2)
+  (test #f thread-running? t1)
+  (test #f thread-running? t2)
+  (thread-resume t2)
+  (test #t thread-running? t1)
+  (test #t thread-running? t2)
+  (custodian-shutdown-all c1)
+  (test #t thread-running? t1)
+  (test #t thread-running? t2)
+  (custodian-shutdown-all c2)
+  (test #f thread-running? t1)
+  (test #f thread-running? t2))
+
 ;; ----------------------------------------
 
 (report-errs)

@@ -553,10 +553,6 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
   return old_cursor;
 }
 
-void wxWindow::SetColourMap(wxColourMap *WXUNUSED(cmap))
-{
-}
-
 // Get size *available for subwindows* i.e. excluding menu bar etc.
 // For XView, this is the same as GetSize
 void wxWindow::GetClientSize(int *x, int *y)
@@ -623,7 +619,7 @@ void wxWindow::SetClientSize(int width, int height)
   }
 
   MoveWindow(hWnd, point.x, point.y, actual_width, actual_height, (BOOL)TRUE);
-  GetEventHandler()->OnSize(actual_width, actual_height);
+  OnSize(actual_width, actual_height);
 }
 
 Bool wxWindow::Show(Bool show)
@@ -849,63 +845,63 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonDown(x, y, wParam);
+            wnd->OnRButtonDown(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
             break;
         }
         case WM_RBUTTONUP:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonUp(x, y, wParam);
+            wnd->OnRButtonUp(x, y, wParam, wxEVENT_TYPE_RIGHT_UP);
             break;
         }
         case WM_RBUTTONDBLCLK:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnRButtonDClick(x, y, wParam);
+            wnd->OnRButtonDClick(x, y, wParam, wxEVENT_TYPE_RIGHT_DOWN);
             break;
         }
         case WM_MBUTTONDOWN:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonDown(x, y, wParam);
+            wnd->OnMButtonDown(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
             break;
         }
         case WM_MBUTTONUP:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonUp(x, y, wParam);
+            wnd->OnMButtonUp(x, y, wParam, wxEVENT_TYPE_MIDDLE_UP);
             break;
         }
         case WM_MBUTTONDBLCLK:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnMButtonDClick(x, y, wParam);
+            wnd->OnMButtonDClick(x, y, wParam, wxEVENT_TYPE_MIDDLE_DOWN);
             break;
         }
         case WM_LBUTTONDOWN:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnLButtonDown(x, y, wParam);
+            wnd->OnButton(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
             break;
         }
         case WM_LBUTTONUP:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnLButtonUp(x, y, wParam);
+            wnd->OnLButtonUp(x, y, wParam, wxEVENT_TYPE_LEFT_UP);
             break;
         }
         case WM_LBUTTONDBLCLK:
         {
             int x = (SIGNED_WORD)LOWORD(lParam);
             int y = (SIGNED_WORD)HIWORD(lParam);
-            wnd->OnLButtonDClick(x, y, wParam);
+            wnd->OnLButtonDClick(x, y, wParam, wxEVENT_TYPE_LEFT_DOWN);
             break;
         }
         case WM_MOUSEMOVE:
@@ -1687,7 +1683,7 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL minimized, HWND WXUNUSED(activate))
       }
     }
 
-    wx_window->GetEventHandler()->OnActivate(((state == WA_ACTIVE) 
+    wx_window->OnActivate(((state == WA_ACTIVE) 
 					      || (state == WA_CLICKACTIVE)));
 
     // If this window is an MDI parent, we must also send an OnActivate message
@@ -1713,7 +1709,7 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
       wxWindow *p = wx_window->GetTopLevel();
       p->focusWindow = wx_window;
       
-      wx_window->GetEventHandler()->OnSetFocus();
+      wx_window->OnSetFocus();
     }
     
     return TRUE;
@@ -1724,7 +1720,7 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 BOOL wxWnd::OnKillFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
-    wx_window->GetEventHandler()->OnKillFocus();
+    wx_window->OnKillFocus();
     return TRUE;
   } else 
     return FALSE;
@@ -1753,7 +1749,7 @@ void wxWnd::OnDropFiles(WPARAM wParam)
 
   if (wx_window)
     for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) 
-      wx_window->GetEventHandler()->OnDropFile(files[wIndex]);
+      wx_window->OnDropFile(files[wIndex]);
 }
 
 void wxWnd::OnVScroll(WORD WXUNUSED(code), WORD WXUNUSED(pos), HWND WXUNUSED(control))
@@ -1914,7 +1910,7 @@ BOOL wxSubWnd::OnPaint(void)
       
       if (isPanel)
         ((wxPanel *)wx_window)->tempPS = &ps;
-      wx_window->GetEventHandler()->OnPaint();
+      wx_window->OnPaint();
       if (isPanel)
         ((wxPanel *)wx_window)->tempPS = 0;
     }
@@ -1951,7 +1947,7 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
   }
 
   if (wx_window)
-    wx_window->GetEventHandler()->OnSize(bad_w, bad_h);
+    wx_window->OnSize(bad_w, bad_h);
 }
 
 // Deal with child commands from buttons etc.
@@ -1975,174 +1971,10 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
     return FALSE;
 }
 
-void wxWnd::OnLButtonDown(int x, int y, UINT flags)
+void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
 {
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEFT_DOWN);
+  wxMouseEvent *event = new wxMouseEvent(evttype);
 
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  if (wx_window && is_canvas)
-    wx_window->CaptureMouse();
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DOWN;
-  if (wx_window)
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnLButtonUp(int x, int y, UINT flags)
-{
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  if (wx_window && is_canvas)
-    wx_window->ReleaseMouse();
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_UP;
-
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
-{
-  /* If dclick not allowed, generate another single-click */
-  wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
-					 wxEVENT_TYPE_LEFT_DCLICK : wxEVENT_TYPE_LEFT_DOWN);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
-
-  if (wx_window /* && wx_window->doubleClickAllowed */)
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnMButtonDown(int x, int y, UINT flags)
-{
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_DOWN);
-
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  if (wx_window && is_canvas)
-    wx_window->CaptureMouse();
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DOWN;
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnMButtonUp(int x, int y, UINT flags)
-{
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_UP);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  if (wx_window && is_canvas)
-    wx_window->ReleaseMouse();
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_UP;
-  if (wx_window)
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
-{
-  /* If dclick not allowed, generate another single-click */
-  wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
-					 wxEVENT_TYPE_MIDDLE_DCLICK : wxEVENT_TYPE_MIDDLE_DOWN);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
-  
-  if (wx_window /* && wx_window->doubleClickAllowed */)
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnRButtonDown(int x, int y, UINT flags)
-{
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DOWN);
   float px = (float)x;
   float py = (float)y;
 
@@ -2160,65 +1992,11 @@ void wxWnd::OnRButtonDown(int x, int y, UINT flags)
   if (wx_window && is_canvas)
     wx_window->CaptureMouse();
 
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_RIGHT_DOWN;
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnRButtonUp(int x, int y, UINT flags)
-{
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_UP);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  if (wx_window && is_canvas)
-    wx_window->ReleaseMouse();
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_RIGHT_UP;
-  if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
-}
-
-void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
-{
-  /* If dclick not allowed, generate another single-click */
-  wxMouseEvent *event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
-					 wxEVENT_TYPE_RIGHT_DCLICK : wxEVENT_TYPE_RIGHT_DOWN);
-  float px = (float)x;
-  float py = (float)y;
-
-  DeviceToLogical(&px, &py);
-
-  CalcUnscrolledPosition((int)px, (int)py, &event->x, &event->y);
-
-  event->shiftDown = (flags & MK_SHIFT);
-  event->controlDown = (flags & MK_CONTROL);
-  event->leftDown = (flags & MK_LBUTTON);
-  event->middleDown = (flags & MK_MBUTTON);
-  event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
-  last_x_pos = event->x; last_y_pos = event->y; last_event = wxEVENT_TYPE_RIGHT_DCLICK;
-
+  last_x_pos = event->x; last_y_pos = event->y; last_event = evttype;
   if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, event))
       if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
+	wx_window->OnEvent(event);
 }
 
 static wxWindow *el_PARENT(wxWindow *w)
@@ -2336,7 +2114,7 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
   event->leftDown = (flags & MK_LBUTTON);
   event->middleDown = (flags & MK_MBUTTON);
   event->rightDown = (flags & MK_RBUTTON);
-  event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event->SetTimestamp(last_msg_time);
 
   // Window gets a click down message followed by a mouse move
   // message even if position isn't changed!  We want to discard
@@ -2354,7 +2132,7 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
   if (wx_window) 
     if (!wx_window->CallPreOnEvent(wx_window, event))
       if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnEvent(event);
+	wx_window->OnEvent(event);
 }
 
 void wxWnd::OnMouseEnter(int x, int y, UINT flags)
@@ -2384,7 +2162,7 @@ static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
 
   if (!wx_window->CallPreOnEvent(wx_window, event))
     if (!wx_window->IsGray())
-      wx_window->GetEventHandler()->OnEvent(event);
+      wx_window->OnEvent(event);
 }
 
 void wxWnd::OnMouseLeave(int x, int y, UINT flags)
@@ -2414,7 +2192,7 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
 
   if (!wx_window->CallPreOnEvent(wx_window, event))
     if (!wx_window->IsGray())
-      wx_window->GetEventHandler()->OnEvent(event);
+      wx_window->OnEvent(event);
 }
 
 static int numpad_scan_codes[10];
@@ -2508,7 +2286,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 
     if (!wx_window->CallPreOnChar(wx_window, event))
       if (!wx_window->IsGray())
-	wx_window->GetEventHandler()->OnChar(event);
+	wx_window->OnChar(event);
   }
 }
 

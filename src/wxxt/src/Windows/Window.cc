@@ -81,10 +81,10 @@ wxWindow::wxWindow(void)
     children = DEBUG_NEW wxChildList;
     // layout information
     constraints = DEBUG_NEW wxLayoutConstraints;
-    constraints->left.Absolute(0);
-    constraints->top.Absolute(0);
-    constraints->width.AsIs();
-    constraints->height.AsIs();
+    wxLC_MEM(constraints->left, Absolute(0));
+    wxLC_MEM(constraints->top, Absolute(0));
+    wxLC_MEM(constraints->width, AsIs());
+    wxLC_MEM(constraints->height, AsIs());
     xoff = yoff = 0;
     // GDI objects
     fg     = wxBLACK;
@@ -103,6 +103,9 @@ wxWindow::wxWindow(void)
     {
       wxWindow **wa;
       wa = (wxWindow **)MALLOC_SAFEREF(sizeof(wxWindow *));
+#ifdef MZ_PRECISE_GC
+      GC_add_roots(wa, ((char *)wa) + 5);
+#endif
       saferef = wa;
     }
     *saferef = this;
@@ -438,12 +441,12 @@ void wxWindow::ScreenToClient(int *x, int *y)
 
 void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(flags))
 {
-    if (x > -1)		constraints->left.Absolute(x);
-    if (y > -1)		constraints->top.Absolute(y);
-    if (width > -1)	constraints->width.Absolute(width);
-    else		constraints->width.AsIs();
-    if (height > -1)	constraints->height.Absolute(height);
-    else		constraints->height.AsIs();
+    if (x > -1)		wxLC_MEM(constraints->left, Absolute(x));
+    if (y > -1)		wxLC_MEM(constraints->top, Absolute(y));
+    if (width > -1)	wxLC_MEM(constraints->width, Absolute(width));
+    else		wxLC_MEM(constraints->width, AsIs());
+    if (height > -1)	wxLC_MEM(constraints->height, Absolute(height));
+    else		wxLC_MEM(constraints->height, AsIs());
 
     Configure(x, y, width, height);
 }
@@ -1075,6 +1078,9 @@ void wxWindow::OnScroll(wxScrollEvent*)
 static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
 			XtPointer WXUNUSED(null))
 {
+#ifdef MZ_PRECISE_GC
+  GC_delete_roots(winp, ((char *)winp) + 5);
+#endif
   FREE_SAFEREF((char *)winp);
 }
 
@@ -1246,7 +1252,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 	    if (!(win->dc->ok)) { // setup drawable of dc on first expose
 	      win->dc->X->drawable = XtWindow(win->X->handle);
 	      win->dc->X->draw_window = win->dc->X->drawable;
-	      win->dc->SetBackground(&win->dc->current_background_color);
+	      win->dc->SetBackground(win->dc->current_background_color);
 	      win->dc->Clear();
 	      win->dc->ok = TRUE;
 	    }
@@ -1698,7 +1704,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	    if (!(win->dc->ok)) { // first expose call
 	      win->dc->X->drawable = XtWindow(win->X->handle);
 	      win->dc->X->draw_window = win->dc->X->drawable;
-	      win->dc->SetBackground(&win->dc->current_background_color);
+	      win->dc->SetBackground(win->dc->current_background_color);
 	      win->dc->Clear();
 	      win->dc->ok = TRUE;
 	    }
@@ -1715,19 +1721,20 @@ void wxWindow::WindowEventHandler(Widget w,
 
 void wxWindow::CreateDC(void)
 {
-    wxWindowDC_Xinit init;
+    wxWindowDC_Xinit *init;
 
     if (dc) return; // only create once!
 
     dc = DEBUG_NEW wxWindowDC;
     // Initialize wxWindowDC
-    init.dpy      = wxAPP_DISPLAY; // display is global to application
-    init.scn      = wxAPP_SCREEN;  //  screen is global to application
-    init.owner    = this;
-    init.drawable = XtWindow(X->handle);
+    init = new wxWindowDC_Xinit;
+    init->dpy      = wxAPP_DISPLAY; // display is global to application
+    init->scn      = wxAPP_SCREEN;  //  screen is global to application
+    init->owner    = this;
+    init->drawable = XtWindow(X->handle);
     dc->ok = TRUE;
     
-    dc->Initialize(&init);
+    dc->Initialize(init);
 
     dc->X->is_window = TRUE;
 }

@@ -81,6 +81,10 @@ typedef wxChangeRecord *wxChangeRecordPtr;
 # define MALLOC_CRP(n) new wxChangeRecordPtr[n]
 #endif
 
+// xformer doesn't handle static member variable declarations
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 wxBitmap *wxMediaBuffer::bitmap;
 wxMemoryDC *wxMediaBuffer::offscreen = NULL;
@@ -92,6 +96,10 @@ long wxMediaBuffer::bmHeight, wxMediaBuffer::bmWidth;
 #endif
 Bool wxMediaBuffer::offscreenInUse = OFFSCREEN_IN_USE_INIT;
 wxMediaBuffer *wxMediaBuffer::lastUsedOffscreen = NULL;
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 typedef struct { short type; } Scheme_Object;
 extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
@@ -148,6 +156,9 @@ wxMediaBuffer::wxMediaBuffer()
 #endif
 
   if (!offscreen) {
+    wxREGGLOB(offscreen);
+    wxREGGLOB(bitmap);
+    wxREGGLOB(lastUsedOffscreen);
     bitmap = NULL;
     offscreen = new wxMemoryDC();
     bmHeight = bmWidth = 0;
@@ -1522,14 +1533,24 @@ static int copyingSelf;
 static void InitCutNPaste()
 {
   if (!copyRing) {
+    wxREGGLOB(copyRing);
     copyRing = new CopyRingElem[copyRingSize];
 
+    wxREGGLOB(wxmb_commonCopyBuffer);
+    wxREGGLOB(wxmb_commonCopyBuffer2);
     wxmb_commonCopyBuffer = new wxList();
     wxmb_commonCopyBuffer2 = new wxList();
+
+    wxREGGLOB(wxmb_copyStyleList);
+    wxREGGLOB(wxmb_commonCopyRegionData);
   }
 
+  wxREGGLOB(TheMediaClipboardClient);
   TheMediaClipboardClient = new wxMediaClipboardClient;
 #if ALLOW_X_STYLE_SELECTION
+  wxREGGLOB(TheMediaXClipboardClient);
+  wxREGGLOB(wxMediaXSelectionOwner);
+  wxREGGLOB(wxMediaXSelectionAllowed);
   TheMediaXClipboardClient = new wxMediaXClipboardClient;
 #endif
 }

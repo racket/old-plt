@@ -233,9 +233,9 @@ Bool wxPostScriptDC::Create(Bool interactive)
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_color.CopyFrom(wxWHITE);
+  current_background_color = new wxColour(wxWHITE);
 
-  current_text_foreground.CopyFrom(wxBLACK);
+  current_text_foreground = new wxColour(wxBLACK);
 
   mapping_mode = MM_TEXT;
 #else
@@ -243,7 +243,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
   current_pen->Lock(1);
   current_brush = wxWHITE_BRUSH;
   current_brush->Lock(1);
-  current_background_color.CopyFrom(wxWHITE);
+  current_background_color->CopyFrom(wxWHITE);
 #endif
 
   title = NULL;
@@ -430,9 +430,9 @@ void wxPostScriptDC::Clear(void)
 {
   unsigned char red, blue, green;
 
-  red = current_background_color.Red();
-  blue = current_background_color.Blue();
-  green = current_background_color.Green();
+  red = current_background_color->Red();
+  blue = current_background_color->Blue();
+  green = current_background_color->Green();
 
   {
     float redPS = (float) (((int) red) / 255.0);
@@ -1155,9 +1155,9 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   if (current_bk_mode == wxSOLID) {
     unsigned char red, blue, green;
     
-    red = current_text_background.Red();
-    blue = current_text_background.Blue();
-    green = current_text_background.Green();
+    red = current_text_background->Red();
+    blue = current_text_background->Blue();
+    green = current_text_background->Green();
     
     {
       float redPS = (float) (((int) red) / 255.0);
@@ -1176,12 +1176,12 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
     }
   }
 
-  if (current_text_foreground.Ok ()) {
+  if (current_text_foreground->Ok()) {
     unsigned char red, blue, green;
 
-    red = current_text_foreground.Red ();
-    blue = current_text_foreground.Blue ();
-    green = current_text_foreground.Green ();
+    red = current_text_foreground->Red();
+    blue = current_text_foreground->Blue();
+    green = current_text_foreground->Green();
     
     if (!Colour) {
       // Anything not white is black
@@ -1233,7 +1233,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
 
 void wxPostScriptDC::SetBackground (wxColour * c)
 {
-  current_background_color.CopyFrom(c);
+  current_background_color->CopyFrom(c);
 }
 
 void wxPostScriptDC::SetBackgroundMode(int mode)
@@ -1243,12 +1243,12 @@ void wxPostScriptDC::SetBackgroundMode(int mode)
 
 void wxPostScriptDC::SetTextBackground(wxColour *col)
 {
-  current_text_background.CopyFrom(col);  
+  current_text_background->CopyFrom(col);  
 }
 
 void wxPostScriptDC::SetTextForeground(wxColour *col)
 {
-  current_text_foreground.CopyFrom(col);
+  current_text_foreground->CopyFrom(col);
 }
 
 void wxPostScriptDC::TryColour(wxColour *src, wxColour *dest)
@@ -1487,7 +1487,7 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 {
   int mono;
   long j, i;
-  wxColour c;
+  wxColour *c;
   int pixel;
   int pr, pg, pb;
 
@@ -1553,15 +1553,16 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   } else
     pr = pg = pb = 0;
 
+  c = new wxColour;
   for (j = 0; j < height; j++) {
     for (i = 0; i < width; i++) {
       int red, green, blue;
 
-      source->GetPixel(i, j, &c);
+      source->GetPixel(i, j, c);
 
-      red = c.Red();
-      green = c.Green();
-      blue = c.Blue();
+      red = c->Red();
+      green = c->Green();
+      blue = c->Blue();
 
       if (mono && !red && !green && !blue) {
 	red = pr;
@@ -1569,9 +1570,9 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 	blue = pb;
       } else if (mono) {
 	if ((rop != wxSOLID) && (rop != (-wxSOLID - 1))) {
-	  red = current_background_color.Red();
-	  green = current_background_color.Green();
-	  blue = current_background_color.Blue();
+	  red = current_background_color->Red();
+	  green = current_background_color->Green();
+	  blue = current_background_color->Blue();
 	}
       }
 

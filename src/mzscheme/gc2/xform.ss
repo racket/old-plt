@@ -737,6 +737,9 @@
 					     pointers)
 				       non-pointers))
 			       (begin
+				 (when (and base (find-c++-class base #f))
+				   (log-error "[INST] ~a in ~a: Static instance of class ~a."
+					      (tok-line (car e)) (tok-file (car e)) base))
 				 (when show-info?
 				   (printf "/* NP ~a: ~a */~n" 
 					   comment name))

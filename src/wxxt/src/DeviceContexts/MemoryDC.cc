@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MemoryDC.cc,v 1.4 1999/11/04 17:25:33 mflatt Exp $
+ * $Id: MemoryDC.cc,v 1.5 1999/11/24 21:20:19 mflatt Exp $
  *
  * Purpose: device context to draw into wxBitmaps
  *
@@ -82,11 +82,12 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	// The bitmap must use the display and screen of the application.
 	// The drawable is the associated pixmap, width, height and depth
 	// will be queried with XGetGeometry.
-	wxWindowDC_Xinit init;
-	init.dpy      = wxAPP_DISPLAY;
-	init.scn      = wxAPP_SCREEN;
-	init.drawable = GETPIXMAP(bitmap);
-	Initialize(&init);
+	wxWindowDC_Xinit *init;
+	init = new wxWindowDC_Xinit;
+	init->dpy      = wxAPP_DISPLAY;
+	init->scn      = wxAPP_SCREEN;
+	init->drawable = GETPIXMAP(bitmap);
+	Initialize(init);
 	// If another colourmap is associated with the bitmap,
 	//  use it instead of the current colourmap.
 	if (bitmap->GetColourMap() != current_cmap) {

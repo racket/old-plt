@@ -151,15 +151,16 @@ wxMediaBuffer *wxMediaSnip::GetThisMedia(void)
 wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y, 
 				    float, float, wxMouseEvent *event)
 {
-  wxMSMA_SnipDrawState save;
+  wxMSMA_SnipDrawState *save;
   wxCursor *c;
 
   if (!me) 
     return NULL;
 
-  myAdmin->SaveState(&save, dc, x, y);
+  save = new wxMSMA_SnipDrawState;
+  myAdmin->SaveState(save, dc, x, y);
   c = me->AdjustCursor(event);
-  myAdmin->RestoreState(&save);
+  myAdmin->RestoreState(save);
 
   return c;
 }
@@ -167,25 +168,27 @@ wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y,
 void wxMediaSnip::OnEvent(wxDC *dc, float x, float y, 
 			  float, float, wxMouseEvent *event)
 {
-  wxMSMA_SnipDrawState save;
+  wxMSMA_SnipDrawState *save;
 
   if (!me) return;
 
-  myAdmin->SaveState(&save, dc, x, y);
+  save = new wxMSMA_SnipDrawState;
+  myAdmin->SaveState(save, dc, x, y);
   me->OnEvent(event);
-  myAdmin->RestoreState(&save);
+  myAdmin->RestoreState(save);
 }
 
 void wxMediaSnip::OnChar(wxDC *dc, float x, float y, 
 			  float, float, wxKeyEvent *event)
 {
-  wxMSMA_SnipDrawState save;
+  wxMSMA_SnipDrawState *save;
 
   if (!me) return;
 
-  myAdmin->SaveState(&save, dc, x, y);
+  save = new wxMSMA_SnipDrawState;
+  myAdmin->SaveState(save, dc, x, y);
   me->OnChar(event);
-  myAdmin->RestoreState(&save);
+  myAdmin->RestoreState(save);
 }
 
 void wxMediaSnip::OwnCaret(Bool ownit)
@@ -197,11 +200,12 @@ void wxMediaSnip::OwnCaret(Bool ownit)
 void wxMediaSnip::BlinkCaret(wxDC *dc, float x, float y)
 {
   if (me) {
-    wxMSMA_SnipDrawState save;
+    wxMSMA_SnipDrawState *save;
 
-    myAdmin->SaveState(&save, dc, x, y);
+    save = new wxMSMA_SnipDrawState;
+    myAdmin->SaveState(save, dc, x, y);
     me->BlinkCaret();
-    myAdmin->RestoreState(&save);
+    myAdmin->RestoreState(save);
   }
 }
 
@@ -255,9 +259,10 @@ void wxMediaSnip::GetExtent(wxDC *dc,
 			    float *descent, float *space,
 			    float *lspace, float *rspace)
 {
-  wxMSMA_SnipDrawState save;
+  wxMSMA_SnipDrawState *save;
 
-  myAdmin->SaveState(&save, dc, x, y);
+  save = new wxMSMA_SnipDrawState;
+  myAdmin->SaveState(save, dc, x, y);
   
   if (me)
     me->GetExtent(w, h);
@@ -322,7 +327,7 @@ void wxMediaSnip::GetExtent(wxDC *dc,
   if (rspace)
     *rspace = rightMargin;
 
-  myAdmin->RestoreState(&save);
+  myAdmin->RestoreState(save);
 }
 	       
 void wxMediaSnip::Draw(wxDC *dc, float x, float y, 
@@ -333,9 +338,10 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
   float w, h, r, b, orig_x, orig_y;
   float t, l;
 
-  wxMSMA_SnipDrawState save;
+  wxMSMA_SnipDrawState *save;
 
-  myAdmin->SaveState(&save, dc, x, y);
+  save = new wxMSMA_SnipDrawState;
+  myAdmin->SaveState(save, dc, x, y);
   
   if (me) {
     w = h = 0.0;
@@ -408,7 +414,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
       dc->DrawLine(ml, b, mr + GC_LINE_EXTEND, b);
   }
 
-  myAdmin->RestoreState(&save);
+  myAdmin->RestoreState(save);
 }
 
 wxSnip *wxMediaSnip::Copy(void)

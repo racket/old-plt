@@ -3871,11 +3871,13 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
   wxStyle *style, *baseStyle, *newStyle = NULL;
   int count, index, baseIndex;
   wxStyle **smap;
-  wxStyleDelta delta;
+  wxStyleDelta *delta;
   char *name;
 
   if (writeLocked)
     return;
+
+  delta = new wxStyleDelta;
 
   count = styleList->Number();
   if (count) {
@@ -3903,9 +3905,9 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 	  
 	  newStyle = newList->FindOrCreateJoinStyle(smap[baseIndex], smap[shiftIndex]);
 	} else {
-	  style->GetDelta(&delta);
+	  style->GetDelta(delta);
 	  
-	  newStyle = newList->FindOrCreateStyle(smap[baseIndex], &delta);
+	  newStyle = newList->FindOrCreateStyle(smap[baseIndex], delta);
 	}
 	if (name)
 	  newStyle = newList->NewNamedStyle(name, newStyle);

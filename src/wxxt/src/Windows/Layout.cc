@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Layout.cc,v 1.5 1999/11/25 20:47:00 mflatt Exp $
  *
  * Purpose: layout classes
  *
@@ -42,51 +41,60 @@ wxLayoutConstraints::wxLayoutConstraints(void)
 : wxObject(FALSE)
 {
     __type = wxTYPE_CONSTRAINTS;
+
+    left = new wxIndividualLayoutConstraint;
+    top = new wxIndividualLayoutConstraint;
+    right = new wxIndividualLayoutConstraint;
+    bottom = new wxIndividualLayoutConstraint;
+    centreX = new wxIndividualLayoutConstraint;
+    centreY = new wxIndividualLayoutConstraint;
+    width = new wxIndividualLayoutConstraint;
+    height = new wxIndividualLayoutConstraint;
   
-    left.myEdge    = wxLeft;
-    top.myEdge     = wxTop;
-    right.myEdge   = wxRight;
-    bottom.myEdge  = wxBottom;
-    centreX.myEdge = wxCentreX;
-    centreY.myEdge = wxCentreY;
-    width.myEdge   = wxWidth;
-    height.myEdge  = wxHeight;
+    wxLC_MEM(left, myEdge)    = wxLeft;
+    wxLC_MEM(top, myEdge)     = wxTop;
+    wxLC_MEM(right, myEdge)   = wxRight;
+    wxLC_MEM(bottom, myEdge)  = wxBottom;
+    wxLC_MEM(centreX, myEdge) = wxCentreX;
+    wxLC_MEM(centreY, myEdge) = wxCentreY;
+    wxLC_MEM(width, myEdge)   = wxWidth;
+    wxLC_MEM(height, myEdge)  = wxHeight;
 }
 
 Bool wxLayoutConstraints::SatisfyConstraints(wxWindow *child)
 {
     Bool changes = FALSE;
 
-    if (!width.done)
-	changes |= width.SatisfyConstraint(this, child);
-    if (!height.done)
-	changes |= height.SatisfyConstraint(this, child);
-    if (!left.done)
-	changes |= left.SatisfyConstraint(this, child);
-    if (!top.done)
-	changes |= top.SatisfyConstraint(this, child);
-    if (!right.done)
-	changes |= right.SatisfyConstraint(this, child);
-    if (!bottom.done)
-	changes |= bottom.SatisfyConstraint(this, child);
-    if (!centreX.done)
-	changes |= centreX.SatisfyConstraint(this, child);
-    if (!centreY.done)
-	changes |= centreY.SatisfyConstraint(this, child);
+    if (!wxLC_MEM(width, done))
+	changes |= wxLC_MEM(width, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(height, done))
+	changes |= wxLC_MEM(height, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(left, done))
+	changes |= wxLC_MEM(left, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(top, done))
+	changes |= wxLC_MEM(top, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(right, done))
+	changes |= wxLC_MEM(right, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(bottom, done))
+	changes |= wxLC_MEM(bottom, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(centreX, done))
+	changes |= wxLC_MEM(centreX, SatisfyConstraint(this, child));
+    if (!wxLC_MEM(centreY, done))
+	changes |= wxLC_MEM(centreY, SatisfyConstraint(this, child));
 
     return changes;
 }
 
 void wxLayoutConstraints::UnDone(void)
 {
-    left.done    = FALSE;
-    top.done     = FALSE;
-    right.done   = FALSE;
-    bottom.done  = FALSE;
-    centreX.done = FALSE;
-    centreY.done = FALSE;
-    width.done   = FALSE;
-    height.done  = FALSE;
+    wxLC_MEM(left, done)    = FALSE;
+    wxLC_MEM(top, done)     = FALSE;
+    wxLC_MEM(right, done)   = FALSE;
+    wxLC_MEM(bottom, done)  = FALSE;
+    wxLC_MEM(centreX, done) = FALSE;
+    wxLC_MEM(centreY, done) = FALSE;
+    wxLC_MEM(width, done)   = FALSE;
+    wxLC_MEM(height, done)  = FALSE;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,13 +182,13 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->right.done && constraints->width.done) {
+	    if (wxLC_MEM(constraints->right, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using right edge and width
-		value = constraints->right.value - constraints->width.value + margin;
+		value = wxLC_MEM(constraints->right, value) - wxLC_MEM(constraints->width, value) + margin;
 		done = TRUE;
-	    } else if (constraints->centreX.done && constraints->width.done) {
+	    } else if (wxLC_MEM(constraints->centreX, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using centreX and width
-		value = int(constraints->centreX.value - (constraints->width.value/2)
+		value = int(wxLC_MEM(constraints->centreX, value) - (wxLC_MEM(constraints->width, value)/2)
 			    + margin);
 		done = TRUE;
 	    }
@@ -210,13 +218,13 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->left.done && constraints->width.done) {
+	    if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using left edge and width
-		value = constraints->left.value + constraints->width.value - margin;
+		value = wxLC_MEM(constraints->left, value) + wxLC_MEM(constraints->width, value) - margin;
 		done = TRUE;
-	    } else if (constraints->centreX.done && constraints->width.done) {
+	    } else if (wxLC_MEM(constraints->centreX, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using centreX and width
-		value = int(constraints->centreX.value + (constraints->width.value/2)
+		value = int(wxLC_MEM(constraints->centreX, value) + (wxLC_MEM(constraints->width, value)/2)
 			    - margin);
 		done = TRUE;
 	    }
@@ -246,13 +254,13 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->bottom.done && constraints->height.done) {
+	    if (wxLC_MEM(constraints->bottom, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using bottom edge and height
-		value = constraints->bottom.value - constraints->height.value + margin;
+		value = wxLC_MEM(constraints->bottom, value) - wxLC_MEM(constraints->height, value) + margin;
 		done = TRUE;
-	    } else if (constraints->centreY.done && constraints->height.done) {
+	    } else if (wxLC_MEM(constraints->centreY, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using centreY and height
-		value = int(constraints->centreY.value - (constraints->height.value/2)
+		value = int(wxLC_MEM(constraints->centreY, value) - (wxLC_MEM(constraints->height, value)/2)
 			    + margin);
 		done = TRUE;
 	    }
@@ -282,13 +290,13 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->top.done && constraints->height.done) {
+	    if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using top edge and height
-		value = constraints->top.value + constraints->height.value - margin;
+		value = wxLC_MEM(constraints->top, value) + wxLC_MEM(constraints->height, value) - margin;
 		done = TRUE;
-	    } else if (constraints->centreY.done && constraints->height.done) {
+	    } else if (wxLC_MEM(constraints->centreY, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using centreY and height
-		value = int(constraints->centreY.value + (constraints->height.value/2)
+		value = int(wxLC_MEM(constraints->centreY, value) + (wxLC_MEM(constraints->height, value)/2)
 			    - margin);
 		done = TRUE;
 	    }
@@ -318,20 +326,20 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->left.done && constraints->width.done) {
+	    if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using left edge and width
-		value = int(constraints->left.value + (constraints->width.value/2)
+		value = int(wxLC_MEM(constraints->left, value) + (wxLC_MEM(constraints->width, value)/2)
 			    + margin);
 		done = TRUE;
-	    } else if (constraints->right.done && constraints->width.done) {
+	    } else if (wxLC_MEM(constraints->right, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using right edge and width
-		value = int(constraints->right.value - (constraints->width.value/2)
+		value = int(wxLC_MEM(constraints->right, value) - (wxLC_MEM(constraints->width, value)/2)
 			    + margin);
 		done = TRUE;
-	    } else if (constraints->left.done && constraints->right.done) {
+	    } else if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->right, done)) {
 		// compute using left and right edge
-		value = int(constraints->left.value 
-			    + (constraints->right.value-constraints->left.value)/2
+		value = int(wxLC_MEM(constraints->left, value) 
+			    + (wxLC_MEM(constraints->right, value)-wxLC_MEM(constraints->left, value))/2
 			    + margin);
 		done = TRUE;
 	    }
@@ -361,20 +369,20 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->top.done && constraints->height.done) {
+	    if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using top edge and height
-		value = int(constraints->top.value + (constraints->height.value/2)
+		value = int(wxLC_MEM(constraints->top, value) + (wxLC_MEM(constraints->height, value)/2)
 			    + margin);
 		done = TRUE;
-	    } else if (constraints->bottom.done && constraints->height.done) {
+	    } else if (wxLC_MEM(constraints->bottom, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using bottom edge and height
-		value = int(constraints->bottom.value - (constraints->height.value/2)
+		value = int(wxLC_MEM(constraints->bottom, value) - (wxLC_MEM(constraints->height, value)/2)
 			    + margin);
 		done = TRUE;
-	    } else if (constraints->top.done && constraints->bottom.done) {
+	    } else if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->bottom, done)) {
 		// compute using top and bottom edge
-		value = int(constraints->top.value 
-			    + (constraints->bottom.value-constraints->top.value)/2
+		value = int(wxLC_MEM(constraints->top, value) 
+			    + (wxLC_MEM(constraints->bottom, value)-wxLC_MEM(constraints->top, value))/2
 			    + margin);
 		done = TRUE;
 	    }
@@ -399,17 +407,17 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	    }
 	    break;
 	case wxUnconstrained:
-	    if (constraints->left.done && constraints->right.done) {
+	    if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->right, done)) {
 		// compute using left and right edge
-		value = constraints->right.value - constraints->left.value;
+		value = wxLC_MEM(constraints->right, value) - wxLC_MEM(constraints->left, value);
 		done = TRUE;
-	    } else if (constraints->left.done && constraints->centreX.done) {
+	    } else if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->centreX, done)) {
 		// compute using left edge and centreX
-		value = (constraints->centreX.value - constraints->left.value) * 2;
+		value = (wxLC_MEM(constraints->centreX, value) - wxLC_MEM(constraints->left, value)) * 2;
 		done = TRUE;
-	    } else if (constraints->right.done && constraints->centreX.done) {
+	    } else if (wxLC_MEM(constraints->right, done) && wxLC_MEM(constraints->centreX, done)) {
 		// compute using right edge and centreX
-		value = (constraints->right.value - constraints->centreX.value) * 2;
+		value = (wxLC_MEM(constraints->right, value) - wxLC_MEM(constraints->centreX, value)) * 2;
 		done = TRUE;
 	    }
 	    break;
@@ -432,17 +440,17 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	case wxUnconstrained:
-	    if (constraints->top.done && constraints->bottom.done) {
+	    if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->bottom, done)) {
 		// compute using top and bottom edge
-		value = constraints->bottom.value - constraints->top.value;
+		value = wxLC_MEM(constraints->bottom, value) - wxLC_MEM(constraints->top, value);
 		done = TRUE;
-	    } else if (constraints->top.done && constraints->centreY.done) {
+	    } else if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->centreY, done)) {
 		// compute using top edge and centreY
-		value = (constraints->centreY.value - constraints->top.value) * 2;
+		value = (wxLC_MEM(constraints->centreY, value) - wxLC_MEM(constraints->top, value)) * 2;
 		done = TRUE;
-	    } else if (constraints->bottom.done && constraints->centreY.done) {
+	    } else if (wxLC_MEM(constraints->bottom, done) && wxLC_MEM(constraints->centreY, done)) {
 		// compute using right edge and centreX
-		value = (constraints->bottom.value - constraints->centreY.value) * 2;
+		value = (wxLC_MEM(constraints->bottom, value) - wxLC_MEM(constraints->centreY, value)) * 2;
 		done = TRUE;
 	    }
 	    break;
@@ -478,14 +486,14 @@ int wxIndividualLayoutConstraint::GetEdge(wxEdge which, wxWindow *thisWin,
 	wxIndividualLayoutConstraint *iconstr = NULL;
 	constr = other->GetConstraints();
 	switch (which) {
-	case wxLeft:	    iconstr = &(constr->left); break;
-	case wxTop:	    iconstr = &(constr->top); break;
-	case wxRight:	    iconstr = &(constr->right); break;
-	case wxBottom:	    iconstr = &(constr->bottom); break;
-	case wxWidth:	    iconstr = &(constr->width); break;
-	case wxHeight:	    iconstr = &(constr->height); break;
-	case wxCentreX:	    iconstr = &(constr->centreX); break;
-	case wxCentreY:	    iconstr = &(constr->centreY); break;
+	case wxLeft:	    iconstr = wxLC_ADDR(constr->left); break;
+	case wxTop:	    iconstr = wxLC_ADDR(constr->top); break;
+	case wxRight:	    iconstr = wxLC_ADDR(constr->right); break;
+	case wxBottom:	    iconstr = wxLC_ADDR(constr->bottom); break;
+	case wxWidth:	    iconstr = wxLC_ADDR(constr->width); break;
+	case wxHeight:	    iconstr = wxLC_ADDR(constr->height); break;
+	case wxCentreX:	    iconstr = wxLC_ADDR(constr->centreX); break;
+	case wxCentreY:	    iconstr = wxLC_ADDR(constr->centreY); break;
 	}
 	if (iconstr->done)
 	    return (iconstr->value);
@@ -572,11 +580,11 @@ void wxWindow::Layout(void)
 	if (wxSubType(child->__type, wxTYPE_FRAME))
 	    continue;
 	constr = child->GetConstraints();
-	if (constr->left.done && constr->right.done
-	&& constr->width.done && constr->height.done) {
+	if (wxLC_MEM(constr->left, done) && wxLC_MEM(constr->right, done)
+	    && wxLC_MEM(constr->width, done) && wxLC_MEM(constr->height, done)) {
 	    // Configure calls OnSize()
-	    child->Configure(constr->left.value,  constr->top.value,
-			     constr->width.value, constr->height.value);
+	    child->Configure(wxLC_MEM(constr->left, value),  wxLC_MEM(constr->top, value),
+			     wxLC_MEM(constr->width, value), wxLC_MEM(constr->height, value));
 	    // layout child
 	    child->Layout();
 	}

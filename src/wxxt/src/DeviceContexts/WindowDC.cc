@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.35 1999/11/25 20:46:59 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.36 1999/11/28 05:21:34 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -121,7 +121,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
 						 verti_width, verti_height);
     }
 
-    current_background_color.CopyFrom(wxWHITE);
+    current_background_color->CopyFrom(wxWHITE);
     current_brush = wxTRANSPARENT_BRUSH;
     current_brush->Lock(1);
     current_pen = wxBLACK_PEN;
@@ -146,7 +146,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 {
     Bool retval = FALSE;
     wxPen *savePen, *apen;
-    wxColor saveBack;
+    wxColor *saveBack;
     int scaled_width;
     int scaled_height;
 
@@ -172,7 +172,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     ysrc = floor(ysrc);
 
     savePen = current_pen;
-    saveBack.CopyFrom(&current_background_color);
+    saveBack = new wxColour(current_background_color);
     /* Pen GC used for blit: */
     apen = wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop);
     SetPen(apen);
@@ -207,7 +207,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     }
 
     SetPen(savePen);
-    SetBackground(&saveBack);
+    SetBackground(saveBack);
 
     return retval; // someting wrong with the drawables
 }
@@ -700,9 +700,10 @@ void wxWindowDC::SetBackground(wxColour *c)
   if (!DRAWABLE) /* MATTHEW: [5] */
     return;
   
-  current_background_color.CopyFrom(c);
+  if (c != current_background_color)
+    current_background_color->CopyFrom(c);
   
-  pixel = current_background_color.GetPixel(current_cmap, IS_COLOR, 0);
+  pixel = current_background_color->GetPixel(current_cmap, IS_COLOR, 0);
   
   if (DRAW_WINDOW)
     XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
@@ -1166,9 +1167,10 @@ void wxWindowDC::SetTextForeground(wxColour *col)
 	return;
 
     if (!col)
-	return;
-    current_text_fg.CopyFrom(col);
-    pixel = current_text_fg.GetPixel(current_cmap, IS_COLOR, 1);
+      return;
+    if (col != current_text_fg)
+      current_text_fg->CopyFrom(col);
+    pixel = current_text_fg->GetPixel(current_cmap, IS_COLOR, 1);
     XSetForeground(DPY, TEXT_GC, pixel);
 }
 
@@ -1180,9 +1182,10 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 	return;
 
     if (!col)
-	return;
-    current_text_bg.CopyFrom(col);
-    pixel = current_text_bg.GetPixel(current_cmap, IS_COLOR, 0);
+      return;
+    if (col != current_text_bg);
+    current_text_bg->CopyFrom(col);
+    pixel = current_text_bg->GetPixel(current_cmap, IS_COLOR, 0);
     XSetBackground(DPY, TEXT_GC, pixel);
 }
 
@@ -1239,7 +1242,6 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     wxFont *font;
     XGCValues values;
     unsigned long mask;
-    wxColour c;
     int width, height;
 
     DPY = init->dpy; SCN = init->scn;
@@ -1273,11 +1275,9 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     BRUSH_GC = XCreateGC(DPY, GC_drawable, mask, &values);
 
     // set drawing tools
-    c.CopyFrom(&current_text_fg); /* Don't pass &current_text_fg to SetTextForeground */
-    SetTextForeground(&c);
-    c.CopyFrom(&current_text_bg);
-    SetTextBackground(&c);
-    SetBackground(&current_background_color); 
+    SetTextForeground(current_text_fg);
+    SetTextBackground(current_text_bg);
+    SetBackground(current_background_color); 
     SetBrush(current_brush);
     SetPen(current_pen);
 

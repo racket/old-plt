@@ -2474,7 +2474,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
-    wxColour fg, bg, *col;
+    wxColour *fg, *bg, *col;
 
     if (ps)
       skipBox = this;
@@ -2483,9 +2483,9 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     brush = dc->GetBrush();
     font = dc->GetFont();
     col = dc->GetTextForeground();
-    fg.CopyFrom(col);
+    fg = new wxColour(col);
     col = dc->GetTextBackground();
-    bg.CopyFrom(col);
+    bg = new wxColour(col);
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;
@@ -2502,8 +2502,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);
-    dc->SetTextForeground(&fg);
-    dc->SetTextBackground(&bg);
+    dc->SetTextForeground(fg);
+    dc->SetTextBackground(bg);
 
     if (ps)
       skipBox = savesb;

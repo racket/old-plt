@@ -207,7 +207,7 @@ void GC_add_roots(void *start, void *end)
   roots[roots_count++] = PTR_TO_INT(end) - PTR_ALIGNMENT;
 }
 
-void GC_remove_roots(void *start, void *end)
+void GC_delete_roots(void *start, void *end)
 {
   int i;
   unsigned long s, e;
@@ -780,6 +780,7 @@ void gcollect(int needsize)
 
 #if SAFETY
       if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+	fflush(NULL);
 	*(int *)0x0 = 1;
       }
       prev_ptr = p;

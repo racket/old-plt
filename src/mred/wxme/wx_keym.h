@@ -40,8 +40,6 @@ class wxKeymap : public wxObject
   wxHashTable *functions;
   wxHashTable *keys;
 
-  int usage;
-
   int chainCount;
   wxKeymap **chainTo;
 

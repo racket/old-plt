@@ -355,8 +355,10 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   static double pi;
   int saw_start = 0, saw_end = 0, closed = 0;
   float cx, cy;
-  wxPoint a[20];
+  wxPoint *a;
   int n;
+
+  a = new wxPoint[20];
 
   SetEllipse(x, y, w, h);
 

@@ -113,8 +113,6 @@ wxKeymap::wxKeymap()
   chainCount = 0;
   chainTo = NULL;
 
-  usage = 0;
-
   lastButton = 0;
 
   doubleInterval = wxmeGetDoubleClickThreshold();

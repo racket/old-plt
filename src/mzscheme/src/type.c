@@ -639,7 +639,7 @@ static int bignum_obj(void *p, Mark_Proc mark)
     return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum));
   else {
     if (SCHEME_BIGLEN(b) > 1)
-      return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum) + sizeof(bigdig));
+      return gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig));
     else
       return gcBYTES_TO_WORDS(sizeof(Small_Bignum));
   }

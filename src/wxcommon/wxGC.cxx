@@ -237,19 +237,25 @@ static int mark_cpp_object(void *p, Mark_Proc mark)
 
 static int mark_cpp_array_object(void *p, Mark_Proc mark)
 {
-  short size = ((short *)p)[1];
+  short size, orig_size = ((short *)p)[1];
   void **pp = (void **)gcPTR_TO_OBJ(p);
+  gc *obj;
+
+  // skip count
+  pp++;
+  size = orig_size - 1;
+
   while (size > 0) {
-    gc *obj = (gc *)p;
     size_t s;
 
+    obj = (gc *)pp;
     s = obj->gcMark(mark);
 
-    p += s;
+    pp += s;
     size -= s;
   }
 
-  return size + 1;
+  return orig_size + 1;
 }
 
 static int mark_stack_object(void *p, Mark_Proc mark)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.9 1999/11/21 00:08:47 mflatt Exp $
+ * $Id: DC.h,v 1.10 1999/11/27 00:59:28 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -161,9 +161,9 @@ public:
     int GetTextAlignment(void)
 	{ return current_text_alignment; }
     wxColour* GetTextBackground(void)
-	{ return &current_text_bg; }
+	{ return current_text_bg; }
     wxColour* GetTextForeground(void)
-	{ return &current_text_fg; }
+	{ return current_text_fg; }
     virtual int LogicalToDeviceX(float x)
 	{ return XLOG2DEV(x); }
     virtual int LogicalToDeviceXRel(float x)
@@ -217,16 +217,16 @@ protected:
     float logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
     float max_x, max_y, min_x, min_y;
     // Tools for drawing
-    wxColour     current_background_color;
+    wxColour*    current_background_color;
     wxBrush*     current_brush;
     wxColourMap* current_cmap;
     wxFont*      current_font;
     int          current_map_mode;
     wxPen*       current_pen;
     int		 current_text_alignment;
-    wxColour     current_text_bg;
+    wxColour*    current_text_bg;
     int		 current_text_bgmode;
-    wxColour     current_text_fg;
+    wxColour*    current_text_fg;
     wxRegion     *clipping;
     // utilities for internal use
     void  CalcBoundingBox(float x, float y);

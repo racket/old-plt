@@ -123,10 +123,10 @@ Bool wxMenuBar::Create(wxPanel *panel)
     XtVaGetValues(X->handle, XtNheight, &hh, XtNwidth, &ww, NULL);
     ww = pw;
     XtVaSetValues(X->frame,  XtNheight,  hh, XtNwidth,  ww, NULL);
-    constraints->top.Absolute(-hh);
-    constraints->left.Absolute(0);
-    constraints->width.SameAs(panel, wxWidth, 0);
-    constraints->height.Absolute(hh);
+    wxLC_MEM(constraints->top, Absolute(-hh));
+    wxLC_MEM(constraints->left, Absolute(0));
+    wxLC_MEM(constraints->width, SameAs(panel, wxWidth, 0));
+    wxLC_MEM(constraints->height, Absolute(hh));
 
     // menubar may now be managed
     XtManageChild(X->handle);

@@ -482,15 +482,22 @@ static unsigned char ColourNum(float v)
 }
 
 wxStyle::wxStyle()
-: wxObject(WXGC_NO_CLEANUP), children(wxKEY_NONE, FALSE)
+: wxObject(WXGC_NO_CLEANUP)
 {
-#if USE_OLD_TYPE_SYSTEM
+  wxList *cl;
+
   __type = wxTYPE_STYLE;
-#endif
 
   textMetricDC = NULL;
 
+  foreground = new wxColour;
+  background = new wxColour;
+
+  cl = new wxList(wxKEY_NONE, FALSE);
+  children = cl;
+
   WXGC_IGNORE(styleList);
+
 #if 0
   /* (styles are not finalized any more) */
   WXGC_IGNORE(baseStyle);
@@ -500,6 +507,7 @@ wxStyle::wxStyle()
 
 wxStyle::~wxStyle()
 {
+  DELETE_OBJ children;
   styleList = NULL;
   nonjoin_delta = NULL;
   join_shiftStyle = NULL;
@@ -599,27 +607,27 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   else
     transText = base->transText;
   
-  base->foreground.Get(&r, &g, &b);
+  base->foreground->Get(&r, &g, &b);
   nonjoin_delta->foregroundMult->Get(&rm, &gm, &bm);
   nonjoin_delta->foregroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
-  target->foreground.Set(r, g, b);
+  target->foreground->Set(r, g, b);
 
-  base->background.Get(&r, &g, &b);
+  base->background->Get(&r, &g, &b);
   nonjoin_delta->backgroundMult->Get(&rm, &gm, &bm);
   nonjoin_delta->backgroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
-  target->background.Set(r, g, b);
+  target->background->Set(r, g, b);
 
-  target->pen = wxThePenList->FindOrCreatePen(&foreground, 0, wxSOLID);
-  target->brush = wxTheBrushList->FindOrCreateBrush(&background, wxSOLID);
+  target->pen = wxThePenList->FindOrCreatePen(foreground, 0, wxSOLID);
+  target->brush = wxTheBrushList->FindOrCreateBrush(background, wxSOLID);
 
   if (propogate)
-    for (node = children.First(); node; node = node->Next()) {
+    for (node = children->First(); node; node = node->Next()) {
       wxStyle *stl;
       stl = (wxStyle *)node->Data(); 
       stl->Update(NULL, NULL, TRUE, FALSE);
@@ -679,12 +687,12 @@ Bool wxStyle::GetTransparentTextBacking()
 
 wxColour *wxStyle::GetForeground()
 {
-  return &foreground;
+  return foreground;
 }
 
 wxColour *wxStyle::GetBackground()
 {
-  return &background;
+  return background;
 }
 
 int wxStyle::GetAlignment()
@@ -733,8 +741,8 @@ void wxStyle::SetShiftStyle(wxStyle *style)
     return;
 
   if (join_shiftStyle)
-    join_shiftStyle->children.DeleteObject(this);
-  style->children.Append(this);
+    join_shiftStyle->children->DeleteObject(this);
+  style->children->Append(this);
 
   join_shiftStyle = style;
   styleList->StyleHasNewChild(style, this);
@@ -765,10 +773,10 @@ void wxStyle::SetBaseStyle(wxStyle *style)
     return;
 
   if (baseStyle)
-    baseStyle->children.DeleteObject(this);
+    baseStyle->children->DeleteObject(this);
 
   baseStyle = style;
-  style->children.Append(this);
+  style->children->Append(this);
 
   styleList->StyleHasNewChild(style, this);
 
@@ -781,18 +789,18 @@ void wxStyle::SwitchTo(wxDC *dc, wxStyle *oldStyle)
   unsigned char abr, abg, abb, bbr, bbg, bbb;
 
   if (oldStyle) {
-    oldStyle->foreground.Get(&afr, &afg, &afb);
-    foreground.Get(&bfr, &bfg, &bfb);
-    oldStyle->background.Get(&abr, &abg, &abb);
-    background.Get(&bbr, &bbg, &bbb);
+    oldStyle->foreground->Get(&afr, &afg, &afb);
+    foreground->Get(&bfr, &bfg, &bfb);
+    oldStyle->background->Get(&abr, &abg, &abb);
+    background->Get(&bbr, &bbg, &bbb);
   }
 
   if (!oldStyle || oldStyle->font != font)
     dc->SetFont(font);
   if (!oldStyle || afr != bfr || afb != bfb || afg != bfg)
-    dc->SetTextForeground(&foreground);
+    dc->SetTextForeground(foreground);
   if (!oldStyle || abr != bbr || abb != bbb || abg != bbg)
-    dc->SetTextBackground(&background);
+    dc->SetTextBackground(background);
   if (!oldStyle || oldStyle->pen != pen)
     dc->SetPen(pen);
   if (!oldStyle || oldStyle->transText != transText)
@@ -864,7 +872,6 @@ wxStyleList::wxStyleList() : wxList()
   __type = wxTYPE_STYLE_LIST;
 #endif
 
-  usage = 0;
   Clear();
 }
 
@@ -891,10 +898,10 @@ void wxStyleList::Clear(void)
 
   basic->font = wxTheFontList->FindOrCreateFont(defaultSize, wxDEFAULT,
 						wxNORMAL, wxNORMAL);
-  basic->foreground.CopyFrom(wxBLACK);
-  basic->background.CopyFrom(wxWHITE);
-  basic->pen = wxThePenList->FindOrCreatePen(&basic->foreground, 0, wxSOLID);
-  basic->brush = wxTheBrushList->FindOrCreateBrush(&basic->background, wxSOLID);
+  basic->foreground->CopyFrom(wxBLACK);
+  basic->background->CopyFrom(wxWHITE);
+  basic->pen = wxThePenList->FindOrCreatePen(basic->foreground, 0, wxSOLID);
+  basic->brush = wxTheBrushList->FindOrCreateBrush(basic->background, wxSOLID);
   basic->alignment = wxALIGN_BOTTOM;
   basic->transText = TRUE;
 
@@ -934,15 +941,16 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
 {
   wxNode *node;
   wxStyle *style;
-  wxStyleDelta delta;
+  wxStyleDelta *delta;
 
   if (!baseStyle || (StyleToIndex(baseStyle) < 0))
     baseStyle = basic;
 
   /* Collapse the delta: */
-  delta.Copy(deltain);
+  delta = new wxStyleDelta;
+  delta->Copy(deltain);
   while (!baseStyle->name && !baseStyle->join_shiftStyle) {
-    if (!delta.Collapse(baseStyle->nonjoin_delta))
+    if (!delta->Collapse(baseStyle->nonjoin_delta))
       break;
     baseStyle = baseStyle->baseStyle;
   }
@@ -952,7 +960,7 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
     if (!style->name
 	&& !style->join_shiftStyle
 	&& PTREQ(style->baseStyle, baseStyle)
-	&& delta.Equal(style->nonjoin_delta))
+	&& delta->Equal(style->nonjoin_delta))
       return style;
   }
 
@@ -963,10 +971,10 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
   style->name = NULL;
 
   style->nonjoin_delta = new wxStyleDelta;
-  style->nonjoin_delta->Copy(&delta);
+  style->nonjoin_delta->Copy(delta);
 
   style->baseStyle = baseStyle;
-  baseStyle->children.Append(style);
+  baseStyle->children->Append(style);
 
   style->Update();
 
@@ -1003,10 +1011,10 @@ wxStyle *wxStyleList::FindOrCreateJoinStyle(wxStyle *baseStyle,
 
   // WXGC_IGNORE(style->join_shiftStyle);
   style->join_shiftStyle = shiftStyle;
-  shiftStyle->children.Append(style);
+  shiftStyle->children->Append(style);
 
   style->baseStyle = baseStyle;
-  baseStyle->children.Append(style);
+  baseStyle->children->Append(style);
 
   style->Update();
 
@@ -1056,14 +1064,14 @@ wxStyle *wxStyleList::DoNamedStyle(char *name, wxStyle *plainStyle, Bool replac)
     if (style == basic)
       return basic;
 
-    style->baseStyle->children.DeleteObject(style);
+    style->baseStyle->children->DeleteObject(style);
     if (style->join_shiftStyle)
-      style->join_shiftStyle->children.DeleteObject(style);
+      style->join_shiftStyle->children->DeleteObject(style);
   }
 
   if (plainStyle->join_shiftStyle) {
     style->join_shiftStyle = plainStyle->join_shiftStyle;
-    style->join_shiftStyle->children.Append(style);
+    style->join_shiftStyle->children->Append(style);
   } else {
     style->nonjoin_delta = new wxStyleDelta;
     if (PTRNE(plainStyle, basic))
@@ -1074,7 +1082,7 @@ wxStyle *wxStyleList::DoNamedStyle(char *name, wxStyle *plainStyle, Bool replac)
     style->baseStyle = basic;
   else
     style->baseStyle = plainStyle->baseStyle;
-  style->baseStyle->children.Append(style);
+  style->baseStyle->children->Append(style);
 
   style->Update();
 
@@ -1454,7 +1462,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   char face[MAX_STYLE_NAME];
   short r, g, b;
   int i, isJoin, listId;
-  wxStyleDelta delta;
+  wxStyleDelta *delta;
   wxStyle *bs;
   wxNode *node;
 
@@ -1491,8 +1499,10 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 					    styleList->styleMap[shiftIndex]);
       styleList->styleMap[i] = js;
     } else {
-      f->Get(&delta.family);
-      delta.family = FamilyStandardToThis(delta.family);
+      delta = new wxStyleDelta;
+      
+      f->Get(&delta->family);
+      delta->family = FamilyStandardToThis(delta->family);
 
       nameSize = MAX_STYLE_NAME;
       f->Get((long *)&nameSize, (char *)face);
@@ -1500,59 +1510,59 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       if (*face) {
 	char *str;
 	str = copystring(face);
-	delta.face = str;
+	delta->face = str;
       } else
-	delta.face = NULL;
+	delta->face = NULL;
 
-      // printf("%d %s\n", delta.family, delta.face ? delta.face : "NULL");
+      // printf("%d %s\n", delta->family, delta->face ? delta->face : "NULL");
       
-      f->Get(&delta.sizeMult);
-      f->Get(&delta.sizeAdd);
-      f->Get(&delta.weightOn);
-      delta.weightOn = WeightStandardToThis(delta.weightOn);
-      f->Get(&delta.weightOff);
-      delta.weightOff = WeightStandardToThis(delta.weightOff);
-      f->Get(&delta.styleOn);
-      delta.styleOn = StyleStandardToThis(delta.styleOn);
-      f->Get(&delta.styleOff);
-      delta.styleOff = StyleStandardToThis(delta.styleOff);
-      f->Get(&delta.underlinedOn);
-      f->Get(&delta.underlinedOff);
+      f->Get(&delta->sizeMult);
+      f->Get(&delta->sizeAdd);
+      f->Get(&delta->weightOn);
+      delta->weightOn = WeightStandardToThis(delta->weightOn);
+      f->Get(&delta->weightOff);
+      delta->weightOff = WeightStandardToThis(delta->weightOff);
+      f->Get(&delta->styleOn);
+      delta->styleOn = StyleStandardToThis(delta->styleOn);
+      f->Get(&delta->styleOff);
+      delta->styleOff = StyleStandardToThis(delta->styleOff);
+      f->Get(&delta->underlinedOn);
+      f->Get(&delta->underlinedOff);
       if (WXME_VERSION_ONE() || WXME_VERSION_TWO()) {
-	delta.transparentTextBackingOn = FALSE;
-	delta.transparentTextBackingOff = FALSE;
+	delta->transparentTextBackingOn = FALSE;
+	delta->transparentTextBackingOff = FALSE;
       } else {
-	f->Get(&delta.transparentTextBackingOn);
-	f->Get(&delta.transparentTextBackingOff);
+	f->Get(&delta->transparentTextBackingOn);
+	f->Get(&delta->transparentTextBackingOff);
       }
       
-      f->Get(&delta.foregroundMult->r);
-      f->Get(&delta.foregroundMult->g);
-      f->Get(&delta.foregroundMult->b);
-      f->Get(&delta.backgroundMult->r);
-      f->Get(&delta.backgroundMult->g);
-      f->Get(&delta.backgroundMult->b);
+      f->Get(&delta->foregroundMult->r);
+      f->Get(&delta->foregroundMult->g);
+      f->Get(&delta->foregroundMult->b);
+      f->Get(&delta->backgroundMult->r);
+      f->Get(&delta->backgroundMult->g);
+      f->Get(&delta->backgroundMult->b);
       f->Get(&r);
       f->Get(&g);
       f->Get(&b);
-      delta.foregroundAdd->Set(r, g, b);
+      delta->foregroundAdd->Set(r, g, b);
       f->Get(&r);
       f->Get(&g);
       f->Get(&b);
-      delta.backgroundAdd->Set(r, g, b);
+      delta->backgroundAdd->Set(r, g, b);
       if (WXME_VERSION_ONE() || WXME_VERSION_TWO()) {
 	if (r || g || b)
-	  delta.transparentTextBackingOff = TRUE;
+	  delta->transparentTextBackingOff = TRUE;
       }
 
-      f->Get(&delta.alignmentOn);
-      delta.alignmentOn = AlignStandardToThis(delta.alignmentOn);
-      f->Get(&delta.alignmentOff);
-      delta.alignmentOff = AlignStandardToThis(delta.alignmentOff);
+      f->Get(&delta->alignmentOn);
+      delta->alignmentOn = AlignStandardToThis(delta->alignmentOn);
+      f->Get(&delta->alignmentOff);
+      delta->alignmentOff = AlignStandardToThis(delta->alignmentOff);
 
       {
 	wxStyle *cs;
-	cs = styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], &delta);
+	cs = styleList->FindOrCreateStyle(styleList->styleMap[baseIndex], delta);
 	styleList->styleMap[i] = cs;
       }
     }
@@ -1578,7 +1588,7 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
   wxStyle *style;
   short r, g, b;
   char *name;
-  wxStyleDelta delta;
+  wxStyleDelta *delta;
 
   if (styleList->listId) {
     f->Put(styleList->listId);
@@ -1621,44 +1631,46 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
       idx = styleList->StyleToIndex(ss);
       f->Put(idx);
     } else {
-      style->GetDelta(&delta);
+      delta = new wxStyleDelta;
+
+      style->GetDelta(delta);
       
       f->Put(0);
 
-      f->Put(FamilyThisToStandard(delta.family));
-      if (delta.face)
-	f->Put(delta.face);
+      f->Put(FamilyThisToStandard(delta->family));
+      if (delta->face)
+	f->Put(delta->face);
       else
 	f->Put("");
 
-      f->Put(delta.sizeMult);
-      f->Put(delta.sizeAdd);
-      f->Put(WeightThisToStandard(delta.weightOn)); 
-      f->Put(WeightThisToStandard(delta.weightOff));
-      f->Put(StyleThisToStandard(delta.styleOn));
-      f->Put(StyleThisToStandard(delta.styleOff));
-      f->Put(delta.underlinedOn);
-      f->Put(delta.underlinedOff);
-      f->Put(delta.transparentTextBackingOn);
-      f->Put(delta.transparentTextBackingOff);
+      f->Put(delta->sizeMult);
+      f->Put(delta->sizeAdd);
+      f->Put(WeightThisToStandard(delta->weightOn)); 
+      f->Put(WeightThisToStandard(delta->weightOff));
+      f->Put(StyleThisToStandard(delta->styleOn));
+      f->Put(StyleThisToStandard(delta->styleOff));
+      f->Put(delta->underlinedOn);
+      f->Put(delta->underlinedOff);
+      f->Put(delta->transparentTextBackingOn);
+      f->Put(delta->transparentTextBackingOff);
 
-      f->Put(delta.foregroundMult->r);
-      f->Put(delta.foregroundMult->g);
-      f->Put(delta.foregroundMult->b);
-      f->Put(delta.backgroundMult->r);
-      f->Put(delta.backgroundMult->g);
-      f->Put(delta.backgroundMult->b);
-      delta.foregroundAdd->Get(&r, &g, &b);
+      f->Put(delta->foregroundMult->r);
+      f->Put(delta->foregroundMult->g);
+      f->Put(delta->foregroundMult->b);
+      f->Put(delta->backgroundMult->r);
+      f->Put(delta->backgroundMult->g);
+      f->Put(delta->backgroundMult->b);
+      delta->foregroundAdd->Get(&r, &g, &b);
       f->Put(r);
       f->Put(g);
       f->Put(b);
-      delta.backgroundAdd->Get(&r, &g, &b);
+      delta->backgroundAdd->Get(&r, &g, &b);
       f->Put(r);
       f->Put(g);
       f->Put(b);
 
-      f->Put(AlignThisToStandard(delta.alignmentOn));
-      f->Put(AlignThisToStandard(delta.alignmentOff));
+      f->Put(AlignThisToStandard(delta->alignmentOn));
+      f->Put(AlignThisToStandard(delta->alignmentOff));
     }
   }
 

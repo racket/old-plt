@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.25 1999/11/26 20:18:50 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -382,14 +381,14 @@ void wxFrame::CreateStatusLine(int number, char *)
 	sm->SetAlignment(wxALIGN_LEFT);
 	sm->GetSize(&ww, &hh);
 	constr = DEBUG_NEW wxLayoutConstraints;
-	constr->left.PercentOf(this, wxWidth, i*(100/num_status));
-	constr->top.Below(this, 0); // wxBottom of client area
-	constr->height.Absolute(hh);
+	wxLC_MEM(constr->left, PercentOf(this, wxWidth, i*(100/num_status)));
+	wxLC_MEM(constr->top, Below(this, 0)); // wxBottom of client area
+	wxLC_MEM(constr->height, Absolute(hh));
 	if (i != num_status-1) {
-	    constr->width.PercentOf(this, wxWidth, 100 / num_status);
+	  wxLC_MEM(constr->width, PercentOf(this, wxWidth, 100 / num_status));
 	} else {
-	    constr->right.SameAs(this, wxRight, 0);
-	    constr->width.Unconstrained();
+	  wxLC_MEM(constr->right, SameAs(this, wxRight, 0));
+	  wxLC_MEM(constr->width, Unconstrained());
 	}
 	status[i]->SetConstraints(constr);
 

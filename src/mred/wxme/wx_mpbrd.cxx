@@ -1686,7 +1686,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
-    wxColour fg, bg;
+    wxColour *fg, *bg;
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
@@ -1694,9 +1694,9 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     {
       wxColour *clr;
       clr = dc->GetTextForeground();
-      fg.CopyFrom(clr);
+      fg = new wxColour(clr);
       clr = dc->GetTextBackground();
-      bg.CopyFrom(clr);
+      bg = new wxColour(clr);
     }
 
 #ifndef NO_GET_CLIPPING_REGION
@@ -1714,8 +1714,8 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);
-    dc->SetTextForeground(&fg);
-    dc->SetTextBackground(&bg);
+    dc->SetTextForeground(fg);
+    dc->SetTextBackground(bg);
   }
 }
 

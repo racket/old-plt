@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Layout.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: Layout.h,v 1.2 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: layout classes
  *
@@ -84,6 +84,16 @@ private:
     Bool	   done;	// used for wxDoLayout
 };
 
+#ifdef MZ_PRECISE_GC
+# define wxLC_DECL(x) *x
+# define wxLC_MEM(x, m) x->m
+# define wxLC_ADDR(x) x
+#else
+# define wxLC_DECL(x) x
+# define wxLC_MEM(x, m) x.m
+# define wxLC_ADDR(x) &x
+#endif
+
 class wxLayoutConstraints : public wxObject {
 public:
     wxLayoutConstraints(void);
@@ -93,16 +103,16 @@ public:
     void UnDone(void);
 
     // Edge constraints
-    wxIndividualLayoutConstraint left;
-    wxIndividualLayoutConstraint top;
-    wxIndividualLayoutConstraint right;
-    wxIndividualLayoutConstraint bottom;
+    wxIndividualLayoutConstraint wxLC_DECL(left);
+    wxIndividualLayoutConstraint wxLC_DECL(top);
+    wxIndividualLayoutConstraint wxLC_DECL(right);
+    wxIndividualLayoutConstraint wxLC_DECL(bottom);
     // Size constraints
-    wxIndividualLayoutConstraint width;
-    wxIndividualLayoutConstraint height;
+    wxIndividualLayoutConstraint wxLC_DECL(width);
+    wxIndividualLayoutConstraint wxLC_DECL(height);
     // Centre constraints
-    wxIndividualLayoutConstraint centreX;
-    wxIndividualLayoutConstraint centreY;
+    wxIndividualLayoutConstraint wxLC_DECL(centreX);
+    wxIndividualLayoutConstraint wxLC_DECL(centreY);
 };
 
 #endif // Layout_h

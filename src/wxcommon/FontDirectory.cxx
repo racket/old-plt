@@ -222,9 +222,17 @@ class wxFontNameItem : public wxObject
   int id;
   int family;
   char *name;
-  wxSuffixMap screen, printing, afm;
+  wxSuffixMap *screen, *printing, *afm;
   Bool isfamily;
+  wxFontNameItem();
 };
+
+wxFontNameItem::wxFontNameItem()
+{
+  screen = new wxSuffixMap;
+  printing = new wxSuffixMap;
+  afm = new wxSuffixMap;
+}
 
 static int WCoordinate(int w)
 {
@@ -254,7 +262,9 @@ static int SCoordinate(int s)
 
 wxFontNameDirectory::wxFontNameDirectory(void)
 {
-  table = new wxHashTable(wxKEY_INTEGER, 20);
+  wxHashTable *ht;
+  ht = new wxHashTable(wxKEY_INTEGER, 20);
+  table = ht;
   nextFontId = 100; /* Larger than all family ids */
 }
 
@@ -601,10 +611,10 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
   st = SCoordinate(style);
 
   /* Check for init */
-  if (!item->screen.map[wt][st])
-    item->screen.Initialize(item->name, "Screen", wt, st);
+  if (!item->screen->map[wt][st])
+    item->screen->Initialize(item->name, "Screen", wt, st);
 
-  return item->screen.map[wt][st];
+  return item->screen->map[wt][st];
 }
 
 void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
@@ -644,7 +654,7 @@ void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char 
     return;
 #endif
 
-  item->screen.map[wt][st] = s;
+  item->screen->map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
@@ -661,10 +671,10 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
   st = SCoordinate(style);
 
   /* Check for init */
-  if (!item->printing.map[wt][st])
-    item->printing.Initialize(item->name, "PostScript", wt, st);
+  if (!item->printing->map[wt][st])
+    item->printing->Initialize(item->name, "PostScript", wt, st);
 
-  return item->printing.map[wt][st];
+  return item->printing->map[wt][st];
 }
 
 void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
@@ -680,7 +690,7 @@ void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, c
   wt = WCoordinate(weight);
   st = SCoordinate(style);
 
-  item->printing.map[wt][st] = s;
+  item->printing->map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
@@ -697,10 +707,10 @@ char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
   st = SCoordinate(style);
 
   /* Check for init */
-  if (!item->afm.map[wt][st])
-    item->afm.Initialize(item->name, "Afm", wt, st);
+  if (!item->afm->map[wt][st])
+    item->afm->Initialize(item->name, "Afm", wt, st);
 
-  return item->afm.map[wt][st];
+  return item->afm->map[wt][st];
 }
 
 void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
@@ -716,7 +726,7 @@ void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
   wt = WCoordinate(weight);
   st = SCoordinate(style);
 
-  item->afm.map[wt][st] = s;
+  item->afm->map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetFontName(int fontid)

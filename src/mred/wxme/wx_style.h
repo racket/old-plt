@@ -122,7 +122,7 @@ class wxStyle : public wxObject
 
   /* cache computation: */
   Bool transText;
-  wxColour foreground, background;
+  wxColour *foreground, *background;
   wxFont *font;
   wxPen *pen;
   wxBrush *brush;
@@ -131,7 +131,7 @@ class wxStyle : public wxObject
   wxDC *textMetricDC;
   float textWidth, textHeight, textDescent, textSpace;
 
-  wxList children;
+  wxList *children;
 
   void Update(wxStyle *basic = NULL, wxStyle *target = NULL, 
 	      Bool propogate = TRUE, Bool topLevel = TRUE);
@@ -180,8 +180,6 @@ class wxStyleList : public wxList /* should be private */
 {
   wxStyle *basic;
   wxList *notifications;
-
-  int usage;
 
   wxStyle *DoNamedStyle(char *name, wxStyle *plainStyle, Bool replace);
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.13 1999/11/24 21:20:19 mflatt Exp $
+ * $Id: AppMain.cc,v 1.14 1999/11/27 17:58:46 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -45,6 +45,7 @@ wxApp::wxApp()
   
   // no application and/or application not initialized
   initialized = FALSE;
+  wxREGGLOB(wxTheApp);
   wxTheApp = this;
 }
 

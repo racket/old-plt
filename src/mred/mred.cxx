@@ -2195,7 +2195,12 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 #endif
 #define PROGRAM "MrEd"
 #define PROGRAM_LC "mred"
-#define BANNER "MrEd version " VERSION ", Copyright (c) 1995-99 PLT (Matthew Flatt and Robby Findler)\n"
+#ifdef MZ_PRECISE_GC
+# define MRED2K "2k"
+#else
+# define MRED2K ""
+#endif
+#define BANNER "MrEd" MRED2K " version " VERSION ", Copyright (c) 1995-99 PLT (Matthew Flatt and Robby Findler)\n"
 
 #ifdef wx_mac
 #define GET_PLTCOLLECTS_VIA_RESOURCES

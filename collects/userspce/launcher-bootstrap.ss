@@ -3,7 +3,7 @@
 ;; files still load properly.
 
 (require-library "errortrace.ss" "errortrace")
-
+(require-library "teachpacks.ss" "drscheme")
 (require-library "core.ss" "drscheme-jr")
 
 (define main-unit
@@ -15,15 +15,22 @@
       (import [prims : prims^]
 	      [basis : userspace:basis^]
 	      [mzlib : mzlib:core^]
+              [drscheme:teachpack : drscheme:teachpack^]
 	      mred^)
       
-      (message-box "starting launcher" "starting launcher")
-
+      ;; teachpacks
+      (define thnks (mzlib:function:filter 
+                     (lambda (x) x)
+                     (map drscheme:teachpack:build-teachpack-thunk teachpacks)))
+      
       (define show-banner? #f)
       (define repl? #f)
       (define (initialize-userspace)
-	(message-box "initialize-userspace" "initialize-userspace")
-	;; need to invoke teachpacks here.
+
+        ;; invoke the teachpacks
+	(for-each (lambda (thnk) (thnk)) thnks)
+
+        ;; add mred to the namespace
 	(global-define-values/invoke-unit/sig mred^ mred@))
 
       (define setting (apply basis:make-setting (cdr (vector->list settings))))
@@ -36,7 +43,8 @@
 	     [basis : userspace:basis^]
 	     [mzlib : mzlib:core^])
      (link [mred : mred^ (mred@)]
-	   [main : () (main prims basis mzlib mred)])
-     (export))))
+           [teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred)]
+	   [main : drscheme-jr:settings^ (main-unit prims basis mzlib teachpack mred)])
+     (export (open main)))))
 
 (go)

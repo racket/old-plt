@@ -739,7 +739,12 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
 	    name);
     codedComError(errBuff,hr);
   }
-  
+
+  // should not be necessary ?
+  // but Excel crashes without it when it's ultimately released
+
+  pIDispatch->AddRef();
+
   com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
   
   com_object->type = mx_com_object_type; 

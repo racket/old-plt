@@ -1,7 +1,6 @@
-#define LIBNAME Convert
-#include head.tinc
-
-<<LIBDESC>>{convert.ss}
+<< (define LIBNAME "Convert")
+   (define FILENAME "convert.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>convert.ss</code> provides three functions: 
 <menu>
@@ -39,4 +38,4 @@ Set teachpack to <code>convert.ss</code> and execute. Then evaluate
 This will create a graphical user interface with two rulers. Slide the top
 one and click on convert to see the lower one move.</p>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

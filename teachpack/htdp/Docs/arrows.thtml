@@ -1,7 +1,6 @@
-#define LIBNAME Arrows
-#include head.tinc
-
-<<LIBDESC>>{arrow.ss}
+<< (define LIBNAME "Arrows")
+   (define FILENAME "arrow.ss")
+   (include "head.tinc") >>
 
 <p>A shape is a class of data for which <code>move</code> and
 <code>draw</code> operations can be drawn. </p>
@@ -70,4 +69,4 @@ shapes across a canvass. It provides three operations:
 (control-left-right (make-posn 10 20) 10 move draw-it)
 </pre>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,7 +1,6 @@
-#define LIBNAME GUI
-#include head.tinc
-
-<<LIBDESC>>{gui.ss}
+<< (define LIBNAME "GUI")
+   (define FILENAME "gui.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>gui.ss</code> provides the following operations: 
 <menu>
@@ -77,4 +76,4 @@ The frame reappears.
 
 
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,8 +1,6 @@
-
-#define LIBNAME Hangman
-#include head.tinc
-
-<<LIBDESC>>{hangman.ss}
+<< (define LIBNAME "Hangman")
+   (define FILENAME "hangman.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>hangman.ss</code> provides all the operations that
 <code>draw.ss</code> provides and the following two: 
@@ -24,4 +22,4 @@
 
 <br>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,8 +1,6 @@
-
-#define LIBNAME Elevator
-#include head.tinc
-
-<<LIBDESC>>{elevator.ss}
+<< (define LIBNAME "Elevator")
+   (define FILENAME "elevator.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>elevator.ss</code> implements an elevator simulator. 
 It displays an eight-floor elevator and accepts mouse clicks from the user,
@@ -32,4 +30,4 @@ run:
 </pre>
 <br>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

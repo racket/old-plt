@@ -1,7 +1,6 @@
-#define LIBNAME Arrows GUI
-#include head.tinc
-
-<<LIBDESC>>{arrow-gui.ss}
+<< (define LIBNAME "Arrows GUI")
+   (define FILENAME "arrow-gui.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>arrow-gui.ss</code> implements three functions: 
 <menu>
@@ -35,4 +34,4 @@
 Now click on the four arrows. The message field will contain the current
 direction, the print-out the prior contents of the message field. 
 
-#include foot.tinc
+<<(include "foot.tinc")>>

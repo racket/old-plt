@@ -1,12 +1,12 @@
-<HTML>
-<HEAD>
-<TITLE>Teachpack : <<LIBNAME>></TITLE>
-</HEAD>
-<BODY bgcolor="#ffffff" text="#000000"
+<html>
+<head>
+<title>Teachpack : <<LIBNAME>></title>
+</head>
+<body bgcolor="#ffffff" text="#000000"
       link="#009900" vlink="#007700" alink="#cc0000">
-
-#define LIBDESC <hr> <A NAME="~1"> <h3>~1</h3> <!-- DOCNOTE="teach=~1" -->
 
 <a href="index.html">Teachpacks for How to Design Programs</a>
 
-<H1><<LIBNAME>></H1>
+<h1><<LIBNAME>></h1>
+
+<hr> <a name="<<FILENAME>>"> <h3><<FILENAME>></h3> <!-- DOCNOTE="teach=<<FILENAME>>" -->

@@ -1,8 +1,6 @@
-
-#define LIBNAME Graphing Functions
-#include head.tinc
-
-<<LIBDESC>>{graphing.ss}
+<< (define LIBNAME "Graphing Functions")
+   (define FILENAME "graphing.ss")
+   (include "head.tinc") >>
 
 The teachpack <code>graphing.ss</code> provides two operations for 
 graphing functions in the regular (north-east) quadrant of the Cartesian
@@ -17,4 +15,4 @@ draws a straight-line function with a given color
 For legal color symbols, see the documentation for the <a href=draw.html>draw.ss</a> teachpack. 
 <br>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

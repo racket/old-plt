@@ -1,12 +1,16 @@
 #!/bin/sh
 string=? ; exec mzscheme -qr $0 "$@"
 
-; for john? 
+(current-directory
+ (build-path (dynamic-require '(lib "plthome.ss" "setup") 'plthome)
+             "teachpack" "htdp" "Docs"))
+
+; for john?
 
 ; This list determines the order of libraries in the index file:
 (define libraries
   '("Convert"
-    "Guess"    
+    "Guess"
     "Mastermind"
     "Simple Drawing Exercises"
     "Hangman"
@@ -23,155 +27,79 @@ string=? ; exec mzscheme -qr $0 "$@"
     "Scheme Web Servlets"
     "Show Queen"))
 
-; Defines go to be the go from thtml2html
-(define go
-  (let* ([testpath (lambda (x) (and (directory-exists? x) x))]
-         [trashy-path
-          (or (testpath (format "~a/Packages/TrashyTeXTools/"
-                                (or (getenv "HOMESCHEME")
-                                    "/Users/matthias/")))
-              (testpath (build-path (collection-path "mzlib") 'up 'up  'up "TrashyTeXTools")))])
-    (unless trashy-path
-      (error 'mkdocs "Couldn't find TrashyTeXTools"))
-    
-    ;; this dynamic-require should work, but require doesn't seem to
-    ;; like absolute paths, so do a load manually.
-    (dynamic-require `(file ,(build-path trashy-path "bin" "thtml2html.scm")) 'go)))
-
-(require (lib "cmdline.ss"))
-
-(parse-command-line
- "mkdocs"
- argv
- `()
- (lambda (-) (void))
- null)
+(define dest-dir (build-path (collection-path "doc") "teachpack"))
 
 (require (lib "list.ss"))
 
-(define dest-dir (build-path (collection-path "doc") "teachpack"))
+(define src-files
+  (filter (lambda (x) (regexp-match #rx"[.]thtml$" x)) (directory-list)))
 
 (unless (directory-exists? dest-dir)
   (make-directory dest-dir))
 
-(define src-files
-  (filter (lambda (x) (and (regexp-match "[.]thtml$" x)
-			   (not (regexp-match "^index[.]thtml$" x))))
-	  (directory-list)))
-
-;; Get library names:
-
-(define lib-names  
-  ; Get list of (cons name file)
- (map (lambda (s)
-	(with-input-from-file s
-	  (lambda ()
-	    (let loop ()
-	      (let ([l (read-line)])
-		(cond
-		 [(eof-object? l)
-		  (error 'mkdocs "EOF before library name found in ~s" s)]
-		 [(regexp-match "#define LIBNAME (.*)" l)
-		  => (lambda (m)
-		       (cons (cadr m) s))]
-		 [else (loop)]))))
-          'text))
-      src-files))
-
+;; Get list of (cons name file) for library names
+(define lib-names
+  (map (lambda (s)
+         (cons (cadr (or (regexp-match "\\(define *LIBNAME *\"(.*?)\"\\)"
+                                       (open-input-file s))
+                         (error 'mkdocs "LIBNAME not found in ~s" s)))
+               s))
+       (filter (lambda (f) (not (equal? f "index.thtml"))) src-files)))
 ;; Check library list:
-
-(for-each (lambda (s) (unless (member (car s) libraries)
-                        (printf "libraries: ~s~n" libraries)
-                        (error 'mkdocs "library not listed in mkdocs: ~s = ~s" 
-			       (cdr s) (car s))))
-	  lib-names)
-(let ([found-libraries (map car lib-names)])
-  (for-each (lambda (s) (unless (member s found-libraries)
-			  (error 'mkdocs "non-existent library listed in mkdocs: ~a" 
-				 s)))
-	    libraries))
-(let loop ([libs lib-names][saw null])
+(let ([file-libs (map car lib-names)])
+  (define (test x) (and (pair? x) x))
   (cond
-   [(null? libs) (void)]
-   [(assoc (caar libs) saw)
-    => (lambda (m)
-	 (error 'mkdocs "library ~a has two .thtml files: ~a and ~a" 
-		(caar libs) (cdar libs) (cdr m)))]
-   [else (loop (cdr libs) (cons (car libs) saw))]))
-
-;; Make index.thtml:
+   [(test (remove* libraries lib-names (lambda (x y) (equal? x (car y))))) =>
+    (lambda (libs)
+      (error 'mkdocs "found libraries unlisted in mkdocs: ~s" libs))]
+   [(test (remove* file-libs libraries)) =>
+    (lambda (libs)
+      (error 'mkdocs "non-existent libraries listed in mkdocs: ~s" libs))])
+  (let loop ([libs lib-names])
+    (cond [(null? libs) 'ok]
+          [(assoc (caar libs) (cdr libs)) =>
+           (lambda (m)
+             (error 'mkdocs "library ~s has two .thtml files: ~s and ~s"
+                    (caar libs) (cdar libs) (cdr m)))]
+          [else (loop (cdr libs))])))
 
 (define (thtml-name->html s)
-  (regexp-replace "thtml$" s "html"))
+  (regexp-replace "[.]thtml$" s ".html"))
 
-(with-output-to-file "index.thtml"
-  (lambda ()
-    (printf "<HTML>~n")
-    (printf "<HEAD>~n")
-    (printf "<TITLE>Teachpacks for How to Design Programs</TITLE>~n")
-    (printf "</HEAD>~n")
-    (printf "<BODY bgcolor=\"#ffffff\" text=\"#000000\" link=\"#009900\" vlink=\"#007700\" alink=\"#cc0000\">~n")
-    (printf "<h1>Teachpacks for How to Design Programs</h1>~n")
-    (printf "~n")
-    (printf "<UL>~n")
-    (for-each
-     (lambda (libname)
-       (let ([file (thtml-name->html (cdr (assoc libname lib-names)))])
-	 (printf "<LI> <A HREF=~s>~a</A>~n" file libname)))
-     libraries)
-    (printf "</UL>~n~n")
-    (printf "#include foot.tinc~n"))
-  'replace)
+(define |LIBLINKS|
+  (map (lambda (lib)
+         (let ([file (thtml-name->html (cdr (assoc lib lib-names)))])
+           (format "<li> <a href=~s>~a</a>\n" file lib)))
+       libraries))
 
-(set! src-files (cons "index.thtml" src-files))
-
-;; Make .html files:
-
-(define dest-files
-  (map (lambda (s)
-	 (let ([html (thtml-name->html s)])
-	   (build-path dest-dir html)))
-       src-files))
-		       
-(for-each
- (lambda (src dest)
-   (go (vector "html"
-	       "-o"
-	       dest
-	       "-f"
-	       src)))
- src-files dest-files)
+;; Make html files
+(require (lib "mzpp.ss" "preprocessor"))
+(for-each (lambda (thtml)
+            (define html (build-path dest-dir (thtml-name->html thtml)))
+            (printf "Processing ~a...\n" thtml)
+            (with-output-to-file html (lambda () (preprocess thtml)) 'replace))
+          src-files)
 
 ;; Make hdindex file:
-
 (let ([ifile (build-path dest-dir "hdindex")])
-  (printf "Writing ~s~n" ifile)
+  (printf "Writing hdindex...\n")
   (with-output-to-file ifile
     (lambda ()
-      (printf "(~n")
-      (printf "~s~n"
+      (printf "(\n")
+      (printf "~s\n"
               '("Teachpacks for \"How to Design Programs\""
-                "index.html"
-                "HtDP"
-                "Arrows GUI teachpack"))
+                "index.html" "HtDP" "Arrows GUI teachpack"))
       (for-each
        (lambda (lib-name)
-	 (let ([src (cdr lib-name)]
-	       [title (car lib-name)])
-	   (with-input-from-file src
-	     (lambda ()
-	       (let loop ()
-		 (let ([l (read-line)])
-		   (unless (eof-object? l)
-		     (let ([m (regexp-match "<<LIBDESC>>{([^}]*)}" l)])
-		       (when m
-			 (printf "(~s ~s ~s ~s)~n" 
-				 (cadr m) 
-				 (thtml-name->html src) 
-				 (cadr m)
-				 (format "~a teachpack" title))))
-		     (loop)))))
-             'text)))
+         (let* ([src (cdr lib-name)]
+                [title (car lib-name)]
+                [filename
+                 (cadr (or (regexp-match "\\(define *FILENAME *\"(.*?)\"\\)"
+                                         (open-input-file src))
+                           (error 'mkdocs "Didn't find FILENAME in ~s" src)))])
+           (printf "(~s ~s ~s ~s)~n"
+                   filename (thtml-name->html src) filename
+                   (format "~a teachpack" title))))
        lib-names)
       (printf ")~n"))
     'truncate))

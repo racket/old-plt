@@ -1,8 +1,6 @@
-
-#define LIBNAME Directories
-#include head.tinc
-
-<<LIBDESC>>{dir.ss}
+<< (define LIBNAME "Directories")
+   (define FILENAME "dir.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>dir.ss</code> provides two-structures and one
 operation: 
@@ -41,4 +39,4 @@ Sample: Set teachpack to <code>dir.ss</code> and execute. Then evaluate
 
 <p>Note: Softlinks are always treated as if they were empty files. 
 
-#include foot.tinc
+<<(include "foot.tinc")>>

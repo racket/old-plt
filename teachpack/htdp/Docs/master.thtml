@@ -1,7 +1,6 @@
-#define LIBNAME Mastermind
-#include head.tinc
-
-<<LIBDESC>>{master.ss}
+<< (define LIBNAME "Mastermind")
+   (define FILENAME "master.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>master.ss</code> provides the operation
 <code>master</code>. It implements a GUI for playing a simple 
@@ -27,4 +26,4 @@ produces an appropriate symbol. </p>
 
 </menu>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,8 +1,6 @@
-
-#define LIBNAME Simple Drawing Exercises
-#include head.tinc
-
-<<LIBDESC>>{draw.ss}
+<< (define LIBNAME "Simple Drawing Exercises")
+   (define FILENAME "draw.ss")
+   (include "head.tinc") >>
 
 The teachpack <code>draw.ss</code> provides a miniscule collection of 
 graphics functions:
@@ -81,4 +79,4 @@ See <tt>http://www.ccs.neu.edu/home/matthias/HtDP/Extended/</tt>
 for an example on how to use <code>get-key-event</code>. The program is 
 the basis for an extended exercise under development.
 
-#include foot.tinc
+<<(include "foot.tinc")>>

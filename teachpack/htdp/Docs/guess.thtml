@@ -1,7 +1,6 @@
-#define LIBNAME Guess
-#include head.tinc
-
-<<LIBDESC>>{guess.ss}
+<< (define LIBNAME "Guess")
+   (define FILENAME "guess.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>guess.ss</code> provides operations to play a 
 guess-the-number game. Each operation display a GUI in which a player
@@ -48,4 +47,4 @@ game. </p>
 
 </menu>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,7 +1,6 @@
-#define LIBNAME Show Queen
-#include head.tinc
-
-<<LIBDESC>>{show-queen.ss}
+<< (define LIBNAME "Show Queen")
+   (define FILENAME "show-queen.ss")
+   (include "head.tinc") >>
 
 <p>The teachpack <code>show-queen.ss</code> provides the
 operation <code>show-queen</code>. It implements a GUI for
@@ -20,4 +19,4 @@ shows where the mouse cursor is. Each queen that threatens
 the green spot is shown in red, and the queens that do not
 threaten the green spot are shown in orange.
 
-#include foot.tinc
+<<(include "foot.tinc")>>

@@ -1,28 +1,11 @@
-<HTML>
-<HEAD>
-<TITLE>Teachpacks for How to Design Programs</TITLE>
-</HEAD>
-<BODY bgcolor="#ffffff" text="#000000" link="#009900" vlink="#007700" alink="#cc0000">
+<html>
+<head>
+<title>Teachpacks for How to Design Programs</title>
+</head>
+<body bgcolor="#ffffff" text="#000000" link="#009900" vlink="#007700" alink="#cc0000">
 <h1>Teachpacks for How to Design Programs</h1>
 
-<UL>
-<LI> <A HREF="convert.html">Convert</A>
-<LI> <A HREF="guess.html">Guess</A>
-<LI> <A HREF="master.html">Mastermind</A>
-<LI> <A HREF="draw.html">Simple Drawing Exercises</A>
-<LI> <A HREF="hangman.html">Hangman</A>
-<LI> <A HREF="arrows.html">Arrows</A>
-<LI> <A HREF="docs.html">Documents</A>
-<LI> <A HREF="dir.html">Directories</A>
-<LI> <A HREF="graphing.html">Graphing Functions</A>
-<LI> <A HREF="gui.html">GUI</A>
-<LI> <A HREF="lkup-gui.html">Lkup GUI</A>
-<LI> <A HREF="arrows-gui.html">Arrows GUI</A>
-<LI> <A HREF="guess-gui.html">Guess GUI</A>
-<LI> <A HREF="elevator.html">Elevator</A>
-<LI> <A HREF="servlet2.html">Simplified Scheme Web Servlets</A>
-<LI> <A HREF="servlet.html">Scheme Web Servlets</A>
-<LI> <A HREF="show-queen.html">N Queens Visualization</A>
-</UL>
+<ul>
+<< LIBLINKS ; libraries should be set before processing this file >></ul>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

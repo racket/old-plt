@@ -1,8 +1,6 @@
-
-#define LIBNAME Documents
-#include head.tinc
-
-<<LIBDESC>>{docs.ss}
+<< (define LIBNAME "Documents")
+   (define FILENAME "docs.ss")
+   (include "head.tinc") >>
 
 The teachpack <code>docs.ss</code> provides three operations: 
 <menu>
@@ -38,4 +36,4 @@ end-annotation: not an annotation: 0
 a b 
 </pre>
 
-#include foot.tinc
+<<(include "foot.tinc")>>

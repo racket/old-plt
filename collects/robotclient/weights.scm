@@ -135,15 +135,20 @@
                                  1
                                  (round bid)) ptod null))]
 	   [(eq? mtype 'p)
-	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1) (pack-val p2)))))]
+	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1 x y) (pack-val p2 x y)))))]
 		   [weight (* (pickup-value)
 			      (if (null? ptop)
 				  0
-				  (eval `(* ,@(map pack-val ptop)))))])
+				  (eval `(* ,@(map pack-val ptop (repeat x (length ptop)) (repeat y (length ptop)) )))))])
 		   (values weight 1 null ptop))]
 	   [else
 	    (error "not a recognized symbol")])))
 
+(define (repeat elem num)
+  (if (<= num 0)
+      null
+      (cons elem (repeat elem (- num 1)))))
+		
 	(define (wleft p)
           (- (search-player-capacity (player-cur)) (eval `(+ ,@(map package-weight (search-player-packages (player-cur)))))))
 	;; 

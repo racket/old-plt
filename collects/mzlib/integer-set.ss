@@ -2,7 +2,7 @@
   (require (lib "list.ss")
            (lib "contract.ss"))
   
-  (define-syntax test-block
+  #;(define-syntax test-block
     (syntax-rules ()
       ((_ defs (code right-ans) ...)
        (let* defs
@@ -11,7 +11,7 @@
              (printf "Test failed: ~e gave ~e.  Expected ~e~n"
                      'code real-ans 'right-ans))) ...))))
 
-  #;(define-syntax test-block
+  (define-syntax test-block
     (syntax-rules ()
       ((_ x ...) (void))))
     

@@ -61,23 +61,33 @@
        s))
 
   (define web-root
-    (let ([s (simplify-path (build-path (collection-path "mzlib") 'up))])
+    (let ([s (normalize-path (build-path (collection-path "mzlib") 'up))])
       (string-lowercase! s)
       s))
 
   (define web-root-len (string-length web-root))
 
   (define servlet-path
-    (build-path (collection-path "doc") "help" "servlets"))	
+    (normalize-path (build-path (collection-path "doc") "help" "servlets")))
 
   (define (tidy-html-url url)
     (let* ([url-tail (substring url web-root-len (string-length url))]
-	   [tidy-tail (string-append "/" (windowize url-tail))])
+	   [tidy-tail (maybe-add-slash (windowize url-tail))])
       (or (pregexp-replace ; server uses directory to load as a servlet
 	   "^/doc/help/servlets/"
 	   tidy-tail
 	   "/servlets/")
 	  tidy-tail)))
+
+  ;; maybe-add-slash : string -> string
+  ;; returns string with a slash in front of it,
+  ;; adding one if necessary. (this function should not
+  ;; be used, in principle)
+  (define (maybe-add-slash str)
+    (if (and ((string-length str) . >= . 1)
+	     (char=? #\/ (string-ref str 0)))
+	str
+	(string-append "/" str)))
 
   (define (pretty-label label) ; TO DO, maybe
 	label)
@@ -117,8 +127,8 @@
     (if (and page-label
 	     (string? page-label)
 	     (not (string=? page-label "?")))
-	(string-append path "#" page-label)
-	path))
+	(string-append (normalize-path path) "#" page-label)
+	(normalize-path path)))
 
   (define (doc-txt? url)
     (let ([len (string-length url)])
@@ -146,7 +156,7 @@
 	   maybe-coll))]
        [else ; manual
 	(let* ([tidy-url (tidy-html-url url)]
-	       [exploded-url (simplify-strs (explode-url tidy-url))]
+	       [exploded-url (explode-path tidy-url)]
 	       [doc-dir (caddr exploded-url)]
 	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
 	       [installed? (hash-table-get installed-table
@@ -167,38 +177,6 @@
 		(format "/servlets/missing-manual.ss?manual=~a&name=~a"
 			(hexify-string manual-label) doc-dir))))])))
                             
-
-  ;; expode-url : string -> (listof string)
-  ;; splits the string argument at each slash.
-  (define (explode-url str)
-    (cond
-      [(regexp-match re:slash str)
-       =>
-       (lambda (m)
-	 (cons (cadr m) (explode-url (caddr m))))]
-      [else 
-       (if (string=? str "")
-	   empty
-	   (list str))]))
-  (define re:slash (regexp "^([^/]*)/(.*)$"))
-
-  ;; simplify-strs : (listof string) -> (listof string)
-  ;; syntactially simplifies paths. removes .. and . from the input
-  (define (simplify-strs orig-strs)
-    (let loop ([backside null]
-               [strs orig-strs])
-      (cond
-        [(null? strs) (reverse backside)]
-        [else
-         (let ([fst (car strs)])
-           (cond
-             [(equal? "." fst) (loop backside (cdr strs))]
-             [(equal? ".." fst) 
-              (when (null? backside) (error 'simplify-strs "cannot simplify: ~e" orig-strs))
-              (loop (cdr backside) (cdr strs))]
-             [else
-              (loop (cons fst backside) (cdr strs))]))])))
-  
   (define (make-text-href url page-label)
     (let ([maybe-coll (maybe-extract-coll last-header)])
       (format 

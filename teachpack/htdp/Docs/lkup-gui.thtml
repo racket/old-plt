@@ -3,7 +3,7 @@
 
 <<LIBDESC>>{lkup-gui.ss}
 
-<p>The library <code>lkup-gui.ss</code> implements three functions: 
+<p>The teachpack <code>lkup-gui.ss</code> implements three functions: 
 <menu>
 <li> <code>control : -> symbol</code> 
      <br> to read out the name that a user typed into the query field 

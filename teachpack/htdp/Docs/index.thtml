@@ -1,4 +1,4 @@
-#define LIBNAME Teaching Libraries
+#define LIBNAME Teachpacks
 #include head.tinc
 <UL>
 <LI> <A HREF="master.html">Mastermind</A>

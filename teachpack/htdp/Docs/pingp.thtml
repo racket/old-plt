@@ -4,7 +4,7 @@
 
 <<LIBDESC>>{pingp-play.ss}
 
-The library <code>pingp-play.ss</code> implements a demonic ping-pong
+The teachpack <code>pingp-play.ss</code> implements a demonic ping-pong
 game. The goal is to keep the ball in play as long as possible. The ball
 bounces on the northern and southern walls but must be kept in play with
 the paddles at the eastern and western walls. The paddles can be moved
@@ -13,7 +13,7 @@ direction so that the game becomes more interesting. Enjoy!
 
 <br>
 
-The library provides one major operation: 
+The teachpack provides one major operation: 
 <menu>
   <li><code>go</code> : symbol -> void <br>
   opens a window with a "ping pong" playing field -- plays demonic game
@@ -33,7 +33,7 @@ It also provides four operations that change properties of the game:
 
 <br>
 
-Sample session: Set library to <code> pingp-play.ss </code> execute and
+Sample session: Set teachpack to <code> pingp-play.ss </code> execute and
 play: 
 <br> <code> > (go 'MyName) </code>
 <br> <code> > (change-speed 120)
@@ -43,7 +43,7 @@ play:
 
 <<LIBDESC>>{pingp.ss}
 
-The library <code>pingp.ss</code> provides the graphical help
+The teachpack <code>pingp.ss</code> provides the graphical help
 functions for a student implementation of the demonic ping-pong game: 
 <menu>
 

@@ -3,7 +3,7 @@
 
 <<LIBDESC>>{arrow.ss}
 
-<p>The library <code>arrow.ss</code> implements controller for moving
+<p>The teachpack <code>arrow.ss</code> implements controller for moving
 pictures across a canvass. It provides three operations: 
 <menu>
   <li> <code>control-left-right : shape number move -> true <code>:

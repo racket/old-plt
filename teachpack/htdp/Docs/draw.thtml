@@ -4,7 +4,7 @@
 
 <<LIBDESC>>{draw.ss}
 
-The library <code>draw.ss</code> provides a miniscule collection of 
+The teachpack <code>draw.ss</code> provides a miniscule collection of 
 graphics functions:
 <menu>
 <li><code> start</code> : number number -> void; <br>
@@ -34,13 +34,13 @@ suspends evaluation for the given number of seconds
 <br>
 <br>
 <br>
-The library also provides <code>clear-</code> operations for each
+The teachpack also provides <code>clear-</code> operations for each
 <code>draw-</code> operation. The arguments are the same. 
 <br>
 <br>
 <br>
 
-Sample session: Set library to <code> draw.ss </code> and execute:
+Sample session: Set teachpack to <code> draw.ss </code> and execute:
 <br> <code> > (start 500 500) </code>
 <br> <code> > (draw-solid-disk (make-posn 100 100) 3 RED) </code>
 <br> <code> true </code>

@@ -4,7 +4,7 @@
 
 <<LIBDESC>>{graphing.ss}
 
-The library <code>graphing.ss</code> provides two operations for 
+The teachpack <code>graphing.ss</code> provides two operations for 
 graphing functions in the regular (north-east) quadrant of the Cartesian
 plane (between 0 and 10 in both directions):
 graphics functions:
@@ -15,7 +15,7 @@ draws a function in bulletized form
 draws a straight-line function
 </menu>
 For <code>color</code>, see <a href = draw.html>the documentation for
-the draw library.</a>
+the draw teachpack.</a>
 <br>
 
 #include foot.tinc

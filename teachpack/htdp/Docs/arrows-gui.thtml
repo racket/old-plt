@@ -3,7 +3,7 @@
 
 <<LIBDESC>>{arrow-gui.ss}
 
-<p>The library <code>arrow-gui.ss</code> implements three functions: 
+<p>The teachpack <code>arrow-gui.ss</code> implements three functions: 
 <menu>
 <li> <code>control : -> symbol</code> 
      <br> to read out the current state of the msg field 

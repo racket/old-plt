@@ -4,7 +4,7 @@
 
 <<LIBDESC>>{dir.ss}
 
-<p>The library <code>dir.ss</code> provides two-structures and one
+<p>The teachpack <code>dir.ss</code> provides two-structures and one
 operation: 
 <menu>
   <li> <code> (define-struct dir (names dirs files)) </code>
@@ -16,7 +16,7 @@ operation:
 </menu>
 For data definitions, see section 15. 
 
-<p>The library relies on two data definitions: 
+<p>The teachpack relies on two data definitions: 
 <menu> 
 <li> 
    A directory is 
@@ -25,7 +25,7 @@ For data definitions, see section 15.
    A file is <code> (make-fil string[file name]) </code>
 </menu>
 
-Sample: Set library to <code>dir.ss</code> and execute. Then evaluate 
+Sample: Set teachpack to <code>dir.ss</code> and execute. Then evaluate 
 <pre>
 > (create-dir ".")
 (make-dir

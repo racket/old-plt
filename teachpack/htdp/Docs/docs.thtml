@@ -4,13 +4,12 @@
 
 <<LIBDESC>>{docs.ss}
 
-The library <code>docs.ss</code> provides three operations: 
+The teachpack <code>docs.ss</code> provides three operations: 
 <menu>
   <li> <code> atom? : SchemeValue -> bool </code> 
   <br> which determines whether or not a 
   Scheme value is a number, a symbol, or a string; <br>
-  Note: This notion of atom is different from that in the compat 
-  library. 
+  Note: This notion of atom is different from that in the compat.ss library. 
 
   <li> <code> annotation? : SchemeValue -> bool </code> 
   <br> which determines whether or not a 
@@ -27,7 +26,7 @@ The library <code>docs.ss</code> provides three operations:
   the words are written to this file; if the file exists, it is deleted
 </menu>
 
-<p>Sample session: set library to <code>docs.ss </code> and execute:
+<p>Sample session: set teachpack to <code>docs.ss </code> and execute:
 <pre>
 > (annotation? 0)
 #f

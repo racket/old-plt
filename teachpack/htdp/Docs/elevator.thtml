@@ -4,9 +4,9 @@
 
 <<LIBDESC>>{elevator.ss}
 
-<p>The library <code>elevator.ss</code> implements an elevator simulator. 
+<p>The teachpack <code>elevator.ss</code> implements an elevator simulator. 
 It displays an eight-floor elevator and accepts mouse clicks from the user,
-which are translated into service demands for the elevator. The library 
+which are translated into service demands for the elevator. The teachpack 
 provides a single operation: 
 <br>
 <menu>
@@ -23,7 +23,7 @@ is a non-sensical definition:
 
 <br>
 
-<br>Second, set the library to <code>elevator.ss</code> execute and
+<br>Second, set the teachpack to <code>elevator.ss</code> execute and
 run: 
 
 <pre>

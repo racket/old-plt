@@ -3,13 +3,13 @@
 
 <<LIBDESC>>{guess.ss}
 
-<p>The library <code>guess.ss</code> provides operations to play a 
+<p>The teachpack <code>guess.ss</code> provides operations to play a 
 guess-the-number game. Each operation display a GUI in which a player
 can choose specific values for some number of digits and then check the
 guess. The more advanced operations ask students to implement more of the
 game. </p>
 
-<p> The library provides three operations: 
+<p> The teachpack provides three operations: 
 <menu>
   <li><code>repl : check-guess -> true; </code> <br>
   The check-guess program consumes two numbers: <code>guess</code>, which

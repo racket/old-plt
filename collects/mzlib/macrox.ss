@@ -6,10 +6,28 @@
 	 ,@(map (lambda (x) `(send ,g ,@x))
 		rest)))))
 
-; Another let-like form. We perform no checking.
+; Another let-like form.
 (define-macro local 
-  (lambda (defines . body)
-    `(let () ,@defines ,@body)))
+  (lambda (defines expr1 . body)
+    (unless (list? defines)
+	    (raise-syntax-error
+		       'local
+		       "bad definition sequence"
+		       (list* 'local defines expr1 body)
+		       defines))
+    `(let () 
+       ,@(map
+	  (lambda (def)
+	    (let ([d (local-expand-defmacro def)])
+	      (unless (and (pair? d) (eq? (car d) '#%define-values))
+		      (raise-syntax-error
+		       'local
+		       "bad definition"
+		       (list* 'local defines expr1 body)
+		       def))
+	      d))
+	  defines)
+       0 (let () ,expr1 ,@body))))
 
 ; recur is another name for 'let' in a named let
 (define-macro recur 

@@ -602,8 +602,16 @@
 	  ; effects: sets the list of children to the value of applying f.
 	  [change-children
 	   (lambda (f)
-	     (set! children (f children))
-	     (force-redraw))]
+	     (let ([new-children (f children)])
+	       (unless (andmap (lambda (child)
+				 (eq? this (send child get-parent)))
+			 new-children)
+		 (error 'change-children
+		   (string-append "Not all members of the new list are "
+		     "children of this panel ~s~nlist: ~s")
+		   this new-children))
+	       (set! children new-children)
+	       (force-redraw)))]
 	  
 	  ; delete-child: removes a child from the panel.
 	  ; input: child: child to delete.
@@ -1175,6 +1183,22 @@
 				    (car rest-of-list)))))
 	      (super-delete child))]
 		  
+	  ; if the active child is removed, make nothing active.
+	  [change-children
+	    (lambda (f)
+	      (let ([new-children (f children)])
+		(unless (andmap (lambda (child)
+				  (eq? this (send child get-parent)))
+			  new-children)
+		  (error 'change-children
+		    (string-append "not all children in the new list "
+		      "have this panel ~s as their parent~nnew list: ~s")
+		    this new-children))
+		(unless (memq (active-child) new-children)
+		  (active-child null))
+		(set! children new-children)
+		(force-redraw)))]
+
 	  [active-child
 	   (case-lambda
 	    [() active]

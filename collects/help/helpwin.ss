@@ -185,17 +185,24 @@
 				      [help-menu:about-string (lambda () "Help Desk")]
 				      [help-menu:about (lambda (i e)
 							 (message-box "About Help Desk"
-								      (format "Help Desk is a complete source of ~
+								      (format 
+								       "Help Desk is a complete source of ~
                                                                        information about PLT software, including DrScheme, ~
                                                                        MzScheme, and MrEd.~n~n~
-                                                                       Copyright (c) 1995-99 PLT")))]
+                                                                       Version ~a~n~
+                                                                       Copyright (c) 1995-99 PLT"
+								       (version))))]
 				      [help-menu:after-about
 				       (lambda (menu)
 					 (make-object menu-item% "Help" menu
 						      (lambda (i e)
 							(message-box
 							 "Help on Help"
-							 "Click the `Home' button, then follow the `How to use Help Desk' link."))))])
+							 (format
+							  "For help on using Help Desk, follow the `How to use Help Desk' link ~
+                                                           on Help Desk's home page.~n~n~
+                                                           (To get to the home page if you're not already there, click the `Home' ~
+                                                           button at the top of the Help Desk window.)")))))])
 				    
 				    (override 
 				      [on-subwindow-char 

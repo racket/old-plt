@@ -2289,7 +2289,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 	tzoffset = loc.gmtFlags.gmtDelta; /* 3-byte value in a long!! */
 	/* Copied from Inside mac: */
 	tzoffset = tzoffset & 0xFFFFFF;
-	if (tzoffset && (0x1 << 23))
+	if (tzoffset & (0x1 << 23))
 	  tzoffset |= 0xFF000000;
       }
 #else
@@ -2311,7 +2311,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       tzoffset = -MSC_IZE(timezone);
 # endif
 # ifdef USE_TIMEZONE_VAR_W_DLS
-      tzoffset = -(timezone + (dst ? 3600 : 0));
+      tzoffset = -(MSC_IZE(timezone) - (dst ? 3600 : 0));
 # endif
 # ifdef USE_TIMEZONE_AND_ALTZONE_VAR
       if (dst)

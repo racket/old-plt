@@ -620,7 +620,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define GETENV_FUNCTION
 # define DIR_FUNCTION
 
-# define USE_TIMEZONE_VAR
+# define USE_TIMEZONE_VAR_W_DLS
 
 # define STACK_GROWS_DOWN
 # define DO_STACK_CHECK

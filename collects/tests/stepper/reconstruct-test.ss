@@ -202,6 +202,10 @@
 
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 
+(test-beginner-sequence "(+ 4 129)"
+                        `(((,highlight-placeholder) ((+ 4 129)))
+                          ((,highlight-placeholder) (133))))
+                        
 (test-beginner-sequence "(if true 3 4)"
                         `(((,highlight-placeholder) ((if true 3 4)))
                           ((,highlight-placeholder) (3))))
@@ -234,10 +238,16 @@
                         `(((,highlight-placeholder) (a))
                           ((,highlight-placeholder) (+))))
 
+(define result (cadr (map eval (annotate-exprs "(define (b x) (+ x 13)) b" (lambda (x y) 3)))))
+
 (test-beginner-sequence "(define (b x) (+ x 13)) b (b 9)"
                         `(((,highlight-placeholder) ((b 9)))
                           ((,highlight-placeholder) ((+ 9 13)))
                           ((,highlight-placeholder) ((+ 9 13)))
                           ((,highlight-placeholder) (22))))
+
+(test-beginner-sequence "(define-struct mamba (rhythm tempo)) (mamba-rhythm (make-mamba 24 2))"
+                        `(((,highlight-placeholder) ((mamba-rhythm (make-mamba 24 2))))
+                          ((,highlight-placeholder) (24))))
 
 (report-errs)

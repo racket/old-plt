@@ -1502,7 +1502,8 @@
                            (ae (get-end afterD)))
                       (cond
                         ;Intermediate changed next state
-                        ((id-token? afterD-tok) (parse-statement afterD (getter) 'assign-or-call getter id-ok? ctor? super-seen?))
+                        ((id-token? afterD-tok) 
+                         (parse-statement afterD (getter) 'assign-or-call getter id-ok? ctor? super-seen?))
                         ((keyword? afterD-tok)
                          (parse-error (format "Expected identifier after '.', found reserved word ~a" (get-token-name afterD-tok))
                                       ns ae))
@@ -1616,6 +1617,15 @@
                   (parse-error "Expected an expression after '=' for assignment" start end)
                   (parse-statement cur-tok 
                                    (parse-expression null next 'start getter #f #f) 'assign-end getter id-ok? ctor? super-seen?))))
+           ((PERIOD) 
+            (let ((next (getter)))
+              (cond
+                ((eof? (get-tok next)) (parse-error "Expected a name after '.'" start end))
+                ((id-token? (get-tok next)) 
+                 (parse-statement next (getter) 'assign-or-call getter id-ok? ctor? super-seen?))
+                (else
+                 (parse-error (format "Expected a name after '.', ~a is not a valid name" (format-out (get-tok next)))
+                              start (get-end next))))))
            ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter #f #t)
                                        'end-exp getter id-ok? ctor? super-seen?))
            (else 
@@ -1957,7 +1967,8 @@
                  
   ;parse-expression: token token state (->token) bool bool -> token
   (define (parse-expression pre cur-tok state getter statement-ok? stmt-exp?)
-;    (printf "parse-expression state ~a pre ~a cur-tok ~a statement-ok? ~a ~n" state pre cur-tok statement-ok?)
+;    (printf "parse-expression state ~a pre ~a cur-tok ~a statement-ok? ~a stmt-exp? ~a ~n" 
+;            state pre cur-tok statement-ok? stmt-exp?)
     (let* ((tok (get-tok cur-tok))
            (kind (get-token-name tok))
            (out (format-out tok))
@@ -2024,29 +2035,29 @@
                 (parse-expression cur-tok (getter) 'instanceof getter #f stmt-exp?))
                (else cur-tok))))
         ((dot-op-or-end)
-           (cond
-             ((dot? tok) 
-              (let* ((next (getter))
-                    (next-tok (get-tok next))
-                    (name (get-token-name next-tok))
-                    (ns (get-start next))
-                    (ne (get-end next)))
-                (cond 
-                  ((id-token? next-tok)
-                   (let ((afterID (getter)))
-                     (cond
-                       ((o-paren? (get-tok afterID))
-                        (parse-expression next afterID 'method-call-args getter statement-ok? stmt-exp?))
-                       ((teaching-assignment-operator? (get-tok afterID))
-                        (parse-expression next (parse-expression afterID (getter) 'start getter #f #f)
-                                          'assign-end getter statement-ok? stmt-exp?))
-                       (else (parse-expression next afterID 'dot-op-or-end getter statement-ok? stmt-exp?)))))
-                  ((keyword? next-tok) 
-                   (parse-error (format "Expected a method name, reserved name ~a may not be a method name" name) ns ne))
-                  (else (parse-error (format "Expected a method name, found ~a" (format-out next-tok)) ns ne)))))
-             (stmt-exp? (parse-expression pre cur-tok 'op-or-end getter #f stmt-exp?))
-             ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f stmt-exp?))
-             ;Advanced
+         (cond
+           ((dot? tok) 
+            (let* ((next (getter))
+                   (next-tok (get-tok next))
+                   (name (get-token-name next-tok))
+                   (ns (get-start next))
+                   (ne (get-end next)))
+              (cond 
+                ((id-token? next-tok)
+                 (let ((afterID (getter)))
+                   (cond
+                     ((o-paren? (get-tok afterID))
+                      (parse-expression next afterID 'method-call-args getter statement-ok? stmt-exp?))
+                     ((teaching-assignment-operator? (get-tok afterID))
+                      (parse-expression next (parse-expression afterID (getter) 'start getter #f #f)
+                                        'assign-end getter statement-ok? stmt-exp?))
+                     (else (parse-expression next afterID 'dot-op-or-end getter statement-ok? stmt-exp?)))))
+                ((keyword? next-tok) 
+                 (parse-error (format "Expected a method name, reserved name ~a may not be a method name" name) ns ne))
+                (else (parse-error (format "Expected a method name, found ~a" (format-out next-tok)) ns ne)))))
+           (stmt-exp? (parse-expression pre cur-tok 'op-or-end getter #f stmt-exp?))
+           ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f stmt-exp?))
+           ;Advanced
              ((and (advanced?) (unary-end? tok)) (parse-expression cur-tok (getter) 'op-or-end getter statement-ok? stmt-exp?))
              ((and (advanced?) (if-exp? tok))
               (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f #f) 'if-exp-colon getter #f stmt-exp?))

@@ -865,9 +865,15 @@
   
   ;check-cond: symbol -> (type src -> void)
   (define (check-cond kind)
-    (lambda (cond cond-src)
-      (unless (eq? 'boolean cond)
-        (kind-condition-error kind cond cond-src))))
+    (lambda (cond? cond-src)
+      (let ((check 
+             (lambda (t) 
+               (unless (eq? 'boolean t)
+                 (kind-condition-error kind t cond-src)))))
+        (cond
+          ((and (scheme-val? cond?) (scheme-val-type cond?)) => check)
+          ((scheme-val? cond?) (set-scheme-val-type! 'boolean))
+          (else (check cond?))))))
         
   ;check-ifS: type src -> void
   (define check-ifS (check-cond 'if))
@@ -875,6 +881,9 @@
   ;check-throw: type src env bool type-records -> void
   (define (check-throw exp-type src env interact? type-recs)
     (cond
+      ((and (scheme-val? exp-type) (scheme-val-type exp-type)) =>
+       (lambda (t) (check-throw t src env interact? type-recs)))
+      ((scheme-val? exp-type) (set-scheme-val-type! throw-type))
       ((or (not (ref-type? exp-type))
            (not (is-eq-subclass? exp-type throw-type type-recs)))
        (throw-error 'not-throwable exp-type src))
@@ -1307,14 +1316,35 @@
       (else (bin-op-prim-error 'both op expt l r src))))
 
   ;; 5.6.1
-  ;;unary-promotion: symbol -> symbol
+  ;;unary-promotion: type -> symbol
   (define (unary-promotion t)
-    (case t ((byte short char) 'int) (else t)))
+    (cond
+      ((and (scheme-val? t) (scheme-val-type t))
+       (unary-promotion (scheme-val-type t)))
+      ((scheme-val? t) 
+       (set-scheme-val-type! t 'int) 'int)
+      (else 
+       (case t ((byte short char) 'int) (else t)))))
   
   ;; 5.6.2
-  ;; binary-promotion: symbol symbol -> symbol
+  ;; binary-promotion: type type -> type
   (define (binary-promotion t1 t2)
     (cond
+      ((and (scheme-val? t1) (scheme-val? t2))
+       (cond
+         ((and (scheme-val-type t1) (scheme-val-type t2))
+          (binary-promotion (scheme-val-type t1) (scheme-val-type t2)))
+         ((or (scheme-val-type t1) (scheme-val-type t2))
+          (error 'internal-error "Binary promotion does not know how to handle this situation yet"))
+         (else (make-scheme-val (gensym 'unnamed) #f #f))))
+      ((scheme-val? t1)
+       (cond
+         ((scheme-val-type t1) (binary-promotion (scheme-val-type t1) t2))
+         (else (set-scheme-val-type! t1 t2) t2)))
+      ((scheme-val? t2)
+       (cond
+         ((scheme-val-type t2) (binary-promotion t1 (scheme-val-type t2)))
+         (else (set-scheme-val-type! t2 t1) t1)))
       ((or (eq? 'double t1) (eq? 'double t2)) 'double)
       ((or (eq? 'float t1) (eq? 'float t2)) 'float)
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
@@ -1357,7 +1387,6 @@
                                                                         (make-ref-type (if (pair? name) (car name) name) 
                                                                                        (list "scheme"))
                                                                         src))))))))
-           (printf "class-rec ~a record ~a ~n" class-rec record)
            (cond 
              ((field-record? record)
               (let* ((field-class (if (null? (cdr (field-record-class record))) 
@@ -1906,6 +1935,8 @@
       (set-type-spec-dim! elt-type (+ (length exps) dim))
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
+                    (when (and (scheme-val? t) (not (scheme-val-type t)))
+                      (set-scheme-val-type! t 'int))
                     (unless (prim-integral-type? t)
                       (array-size-error type t (expr-src e)))))
                 exps)
@@ -1927,9 +1958,25 @@
   ;; 15.25
   ;check-cond-expr: type type type src src symbol type-records -> type
   (define (check-cond-expr test then else-t src test-src level type-recs)
-    (unless (eq? 'boolean test)
-      (condition-error test test-src))
+    (if (scheme-val? test)
+        (if (scheme-val-test test)
+            (unless (eq? 'boolean (scheme-val-test test))
+              (condition-error (scheme-val-test test) test-src))
+            (set-scheme-val-test! 'boolean))
+        (unless (eq? 'boolean test)
+          (condition-error test test-src)))
     (cond
+      ((and (or (scheme-val? then) (scheme-val? else-t))
+            (or (eq? 'boolean then) (eq? 'boolean else-t)))
+       (cond
+         ((scheme-val? then)
+          (cond
+            ((and (scheme-val-test then) (eq? 'boolean (scheme-val-test then))) 'boolean)
+            (else (set-scheme-val-test! then 'boolean) 'boolean)))
+         ((scheme-val? else-t)
+          (cond
+            ((and (scheme-val-test else-t) (eq? 'boolean (scheme-val-test else-t))) 'boolean)
+            (else (set-scheme-val-test! else-t 'boolean) 'boolean)))))
       ((and (eq? 'boolean then) (eq? 'boolean else-t)) 'boolean)
       ((and (prim-numeric-type? then) (prim-numeric-type? else-t))
        ;; This is not entirely correct, but close enough due to using scheme ints

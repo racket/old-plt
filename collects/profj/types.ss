@@ -51,20 +51,32 @@
   
   ;; reference-type: 'a -> boolean
   (define (reference-type? x)
-    (or (ref-type? x) (memq x `(null string))))
+    (if (and (scheme-val? x) (scheme-val-type x))
+        (reference-type? (scheme-val-type x))
+        (or (scheme-val? x) (ref-type? x) (memq x `(null string)))))
 
   ;;is-string?: 'a -> boolean
   (define (is-string-type? s)
-    (and (reference-type? s)
-         (or (eq? 'string s) (type=? s string-type))))
+    (if (scheme-val? s)
+        (is-string-type? (scheme-val-type s))
+        (and (reference-type? s)
+             (or (eq? 'string s) (type=? s string-type)))))
   
   ;; 4.2
   ;; prim-integral-type?: 'a -> boolean
   (define (prim-integral-type? t)
-    (memq t `(byte short int long char)))
+    (cond
+      ((and (scheme-val? t) (scheme-val-type t)) 
+       (prim-integral-type? (scheme-val-type t)))
+      ((scheme-val? t) #t)
+      (else (memq t `(byte short int long char)))))
   ;; prim-numeric-type?: 'a -> boolean
   (define (prim-numeric-type? t)
-    (or (prim-integral-type? t) (memq t `(float double))))
+    (cond 
+      ((and (scheme-val? t) (scheme-val-type t))
+       (prim-numeroc-type? (scheme-val-type t)))
+      ((scheme-val? t) #t)
+      (else (or (prim-integral-type? t) (memq t `(float double))))))
   
   ;; type=?: type type -> boolean
   (define (type=? t1 t2)

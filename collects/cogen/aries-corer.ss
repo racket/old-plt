@@ -416,7 +416,7 @@
   (define annotate/top-level (annotate/both #t))
   (define annotate/inner (annotate/both #f))
   
-  (define annotate annotate/top-level)
+  (define annotate (lambda (expr _) (annotate/top-level expr)))
   
   
   (define transform

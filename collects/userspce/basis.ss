@@ -372,7 +372,7 @@
 		       (lambda () (cleanup #f))
 		       (let* ([evaluator
 			       (lambda (exp _ macro)
-				 (primitive-eval (annotate exp)))]
+				 (primitive-eval (annotate exp #f)))]
 			      [user-macro-body-evaluator
 			       (lambda (x . args)
 				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]

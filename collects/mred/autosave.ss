@@ -1,6 +1,7 @@
 (define mred:autosave@
   (unit/sig mred:autosave^
     (import [mred:debug : mred:debug^]
+	    [mred:exit : mred:exit^]
 	    [mred:preferences : mred:preferences^])
 	    
     (mred:debug:printf 'invoke "mred:autosave@")
@@ -35,6 +36,9 @@
 				     (mred:preferences:get-preference
 				      'mred:autosave-delay))
 				  #t))))])
+	(mred:exit:insert-exit-callback
+	 (lambda ()
+	   (send timer stop)))
 	(lambda (b)
 	  (set! objects
 		(cons (make-weak-box b) objects)))))))

@@ -16,7 +16,52 @@
 	   (rename [super-make-root-panel make-root-panel]
 		   [super-make-menu-bar make-menu-bar])
 	   (inherit panel get-edit save-as info-panel)
-	   (public
+	   (override
+
+	     [help-menu:after-about
+	      (let ([help-menu:insert-items
+		     (lambda (items)
+		       (for-each (lambda (x) (apply (ivar (ivar this help-menu) append-item) x))
+				 items))]
+		    [reg (regexp "<TITLE>(.*)</TITLE>")])
+		(lambda (help-menu)
+		  (let* ([dir (with-handlers ([void (lambda (x) #f)]) (collection-path "doc"))])
+		    (if (and dir (directory-exists? dir))
+			(let* ([dirs (directory-list dir)]
+			       [find-title
+				(lambda (name)
+				  (lambda (port)
+				    (let loop ([l (read-line port)])
+				      (if (eof-object? l)
+					  name
+					  (let ([match (regexp-match reg l)])
+					    (if match
+						(cadr match)
+						(loop (read-line port))))))))]
+			       [build-item
+				(lambda (local-dir output)
+				  (let* ([f (build-path dir local-dir "index.htm")])
+				    (if (file-exists? f)
+					(let ([title (call-with-input-file f (find-title local-dir))])
+					  (cons 
+					   (list title
+						 (lambda ()
+						   (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
+							       (string-append "file:" f))])
+						     (send f set-title-prefix title)
+						     f)))
+					   output))
+					(begin (mred:debug:printf 'help-menu "couldn't find ~a" f)
+					       output))))]
+			       [item-pairs 
+				(mzlib:function:quicksort
+				 (mzlib:function:foldl build-item null dirs)
+				 (lambda (x y) (string-ci<? (car x) (car y))))])
+			  (unless (null? item-pairs)
+			    (send help-menu append-separator))
+			  (help-menu:insert-items item-pairs))
+			(mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory")))))]
+
 	     [root-panel #f]
 	     [make-root-panel
 	      (lambda (% parent)

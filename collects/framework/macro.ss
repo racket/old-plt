@@ -1,3 +1,5 @@
+(require-library "match.ss")
+
 (define-macro trace-methods 
   (lambda methods
     (let ([super 
@@ -31,7 +33,7 @@
 	  [super-g (gensym "mixin:super%")]
 	  [to-gs (map (lambda (x) (gensym "mixin:tos")) to)])
 
-      `(let (,(map (lambda (to-g to-exp) `[,to-g ,to-exp]) to-gs to))
+      `(let ,(map (lambda (to-g to-exp) `[,to-g ,to-exp]) to-gs to)
 
 	 (let ([,from-g (list ,@from)]
 	       [,to-g (list ,@to-gs)])
@@ -41,41 +43,23 @@
 
 	 'SUPER-IVAR-CHECKS-BEGIN-HERE
 
-	 (let ([interface-has?
+	 (let ([ensure-interface-has?
 		(lambda (x)
 		  (printf "checking ~a in ~a~n" x ,from-g)
-		  (ormap (lambda (i) (ivar-in-interface? x i)) ,from-g))])
+		  (unless (ormap (lambda (i) (ivar-in-interface? x i)) ,from-g)
+		    (error 'mixin
+			   "ivar ~a not in any of ~a interfaces but was referenced in definition"
+			   x ,from-g)))])
 	   ,@(map (lambda (clause)
-		    (let ([names 
-			   (cond
-			     [(and (pair? clause)
-				   (eq? (car clause) 'inherit))
-			      (cdr clause)]
-			     [(and (pair? clause)
-				   (eq? (car clause) 'rename))
-			      (let loop ([output null]
-					 [input (cdr clause)])
-				(cond
-				  [(null? input) output]
-				  [(pair? input)
-				   (let ([fail (lambda () (loop output (cdr input)))]
-					 [pair (car input)])
-				     (if (pair? pair)
-					 (let ([sym (car pair)])
-					   (if (symbol? pair)
-					       (loop (cons (cadr pair) output)
-						     (cdr input))
-					       (fail)))
-					 (fail)))]
-				  [else output]))]
+		    (let ([names
+			   (match clause
+			     [`(inherit ,(and (? symbol?) name) ...) name]
+			     [`(rename [,(? symbol?) ,(and (? symbol?) name)] ...) name]
+			     [`(override [,(and name (? symbol?)) ,body] ...) name]
 			     [else null])])
 		      `(begin
-			 ,@(map (lambda (id)
-				  `(unless (interface-has? ',id)
-				     (error
-				      'mixin
-				      "ivar ~a not in any of ~a interfaces but was referenced in definition~n")
-				     ,id ,from-g))
+			 (void)
+			 ,@(map (lambda (id) `(ensure-interface-has? ',id))
 				names))))
 		  clauses))
 
@@ -83,8 +67,7 @@
 
 	 (lambda (,super-g)
 	   (unless (andmap (lambda (x) (implementation? ,super-g x)) ,from-g)
-	     (error 'mixin "argument ~a does not match ~a~n" ,super-g ,from-g))
+	     (error 'mixin "argument ~a does not match ~a" ,super-g ,from-g))
 
 	   (class* ,super-g ,to-gs ,args
 	     ,@clauses)))))))
-	     

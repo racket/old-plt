@@ -103,20 +103,32 @@
   ;((z:parsed (union (list-of z:varref) 'all) (list-of z:varref) (list-of z:varref) symbol) ->
   ; debug-info)
   
+  ;(define (make-debug-info source tail-bound free-vars label)
+  ;  (let* ([kept-vars (if (eq? tail-bound 'all)
+  ;                        free-vars
+  ;                        (var-set-intersect tail-bound    ; the order of these arguments is important if
+  ;                                                         ; the tail-bound varrefs don't have bindings
+  ;                                           free-vars))]
+  ;         [var-clauses (map (lambda (x) 
+  ;                             (let ([var (translate-varref x)])
+  ;                               `(#%cons (#%lambda () ,var)
+  ;                                 (#%cons ,x
+  ;                                  null))))
+  ;                           kept-vars)])
+  ;    `(#%lambda () (#%list #f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
+  
   (define (make-debug-info source tail-bound free-vars label)
     (let* ([kept-vars (if (eq? tail-bound 'all)
                           free-vars
                           (var-set-intersect tail-bound    ; the order of these arguments is important if
-                                                           ; the tail-bound varrefs don't have bindings
+                                             ; the tail-bound varrefs don't have bindings
                                              free-vars))]
-            [var-clauses (map (lambda (x) 
+           [real-kept-vars (filter z:bound-varref? kept-vars)]
+           [var-clauses (map (lambda (x) 
                                (let ([var (translate-varref x)])
-                                 `(#%cons (#%lambda () ,var)
-                                   (#%cons ,x
-                                    null))))
-                             kept-vars)])
-      `(#%lambda () (#%list #f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
-  
+                                 (list var x)))
+                             real-kept-vars)])
+      `(#%lambda () (#%list ,source (#%quote ,label) ,@(apply append var-clauses)))))
   
   ; wrap-struct-form 
   
@@ -277,8 +289,8 @@
 	     
              ; find the source expression and associate it with the parsed expression
              
-             ;(when red-exprs
-             ;  (set-expr-read! expr (find-read-expr expr)))
+             (when red-exprs
+               (set-expr-read! expr (find-read-expr expr)))
 	     
 	     (cond
 	       

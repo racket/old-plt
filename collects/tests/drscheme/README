@@ -6,11 +6,11 @@ tests. Those names must be listed here. If no arguments are passed to
 the function, all tests will be run.
 
 
-|# mem.ss #|
+  mem.ss
 
   runs some memory tests
 
-|# sample-solutions.ss #|
+   sample-solutions.ss
 
    This tests the sample solutions in HtDP
    
@@ -29,7 +29,7 @@ the function, all tests will be run.
    take effect in the repl.
 
 
-|# graphics.ss #|
+   graphics.ss
 
    This tests the various graphic elements that can appear
    in programs.

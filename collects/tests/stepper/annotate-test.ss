@@ -6,25 +6,6 @@
 
 (SECTION 'stepper-annotater)
 
-(define-syntax (tand stx)
-  (syntax-case stx ()
-    [(_) (syntax #t)]
-    [(_ first . rest)
-     (with-syntax ([error-exp (syntax/loc (syntax first) (error 'tand "test failed"))])
-       (syntax/loc stx
-                   (let ([temp first])
-                     (when (not temp)
-                       error-exp)
-                     (tand . rest))))]))
-
-; test cases:
-;(tand 1 2 3)
-;(tand)
-;(tand 3 4 #f 5)
-;(tand #t
-;      #t
-;      (tand 5 #f 9)
-;      #f)
 
 ; check-mark : test the validity of a mark.  the symbols in 'binding-ids' must be included. the symbols
 ; in excluded-ids must not appear in the list.  If binding-ids is 'all, then no symbols other than those
@@ -111,7 +92,9 @@
 (define (break) 3)
 
 (define (annotate-expr stx lang)
-  (let loop ([env annotate:initial-env-package] [exprs (wrap-expand-unwrap (list stx) lang)])
+  (let loop ([env annotate:initial-env-package] [exprs (if lang 
+                                                           (wrap-expand-unwrap (list stx) lang)
+                                                           (list (expand stx)))])
     (if (null? exprs)
         null
         (let*-values ([(annotated new-env)
@@ -158,7 +141,7 @@
 
 (define test-cases
   ; begin
-  (list (list #'(lambda (a b c) (begin (begin a b) (begin a c))) 'mzscheme
+  (list (list #'(lambda (a b c) (begin a b (begin a c))) 'mzscheme cadr
               (lambda (stx)
                 (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin)
                   [(with-continuation-mark
@@ -174,14 +157,19 @@
                         (with-continuation-mark
                          debug-key-3
                          debug-mark-3
-                         begin-body-3))))
+                         begin-body-3)
+                        (with-continuation-mark
+                         debug-key-4
+                         debug-mark-4
+                         begin-body-4))))
                    (begin
                      (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
                      (test (void) check-mark (syntax debug-mark-2) '() 'all)
-                     (test (void) check-mark (syntax debug-mark-3) '(a c) 'all))])))
+                     (test (void) check-mark (syntax debug-mark-3) '() 'all)
+                     (test (void) check-mark (syntax debug-mark-4) '(a c) 'all))])))
          
-  ; lambda : general test
-        (list #'(lambda (a b) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
+        ; lambda : general test
+        (list #'(lambda (a b) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme cadr
               (lambda (stx)
                 (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin lambda)
                   [(with-continuation-mark
@@ -190,18 +178,19 @@
                     (begin
                       pre-break-1
                       (closure-capturing-proc
-                       (lambda (b c) (let-values arg-temp-bindings
-                                       (with-continuation-mark
-                                        debug-key-2
-                                        debug-mark_2
-                                        (begin
-                                          pre-break-2
-                                          _h))) _i)
+                       (lambda (b c) 
+                         (with-continuation-mark
+                          debug-key-2
+                          debug-mark-lambda-body
+                          (begin
+                            pre-break-2
+                            (begin
+                              . begin-bodies))))
                        debug-mark-3)))
                     (begin (test (void) check-mark (syntax debug-mark-1) '(+ a) 'all)
                            (test (void) check-mark (syntax debug-mark-3) '(+ a) 'all))])))
         ; test of lambda's one-label inferred-names :
-        (list #'(define (a x) (+ x 1)) 'mzscheme
+        (list #'(define (a x) (+ x 1)) 'mzscheme cadr
               (lambda (stx)
                 (kernel:kernel-syntax-case stx #f
                    [(define-values (a)
@@ -213,7 +202,7 @@
                         closure-info)))
                     (test 'a syntax-property (syntax lambda-exp) 'inferred-name)])))
         ; test of lambda's cons-pair inferred-names (that is, with lifting):
-        (list #'(let ([a (lambda (x) (+ x 1))]) 3) 'mzscheme
+        (list #'(let ([a (lambda (x) (+ x 1))]) 3) 'mzscheme cadr
               (lambda (stx)
                 (syntax-case stx (let*-values with-continuation-mark begin set!-values)
                    [(let*-values _c
@@ -232,40 +221,44 @@
                                                    body))))
                     (test 'a syntax-property (syntax lambda-exp) 'inferred-name)])))
         ; case-lambda
-        (list #'(let ([d 1][e 2]) (case-lambda ((b) b d) ((c) c e))) 'mzscheme
+        (list #'(lambda (d e) (case-lambda ((b) b d) ((c) c e))) 'mzscheme cadr
               (lambda (stx)
                 (syntax-case (strip-outer-lambda stx) (with-continuation-mark lambda quote-syntax)
                   [(with-continuation-mark
                     debug-key
                     debug-mark-1
-                    (closure-storing-proc
-                     (case-lambda ((b) . bodies_1)
-                                  ((c) . bodies_2))
-                     closure-info))
-                   (check-mark (syntax debug-mark-1) '(d e) '(b c))])))
+                    (begin
+                      pre-break-1
+                      (closure-storing-proc
+                       (case-lambda ((b) . bodies_1)
+                                    ((c) . bodies_2))
+                       closure-info)))
+                   (test (void) check-mark (syntax debug-mark-1) '(d e) '(b c))])))
         
         ; if
-        (list #'(let ([a 1] [b 2] [c 3] [d 4]) (if (a b) (a c) (a d))) 'mzscheme
+        (list #'(lambda (a b c d) (if (a b) (a c) (a d))) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin)
                   [(with-continuation-mark
                     debug-key_1
                     debug-mark-1
-                    (if (let-values temp-bindings
-                          (with-continuation-mark
-                           debug-key_2
-                           debug-mark-test
-                           . test-clauses))
-                        (let-values temp-bindings_2
-                          (with-continuation-mark
-                           debug-key_3
-                           debug-mark-then
-                           . then-clauses))
-                        (let-values temp-bindings-3
-                          (with-continuation-mark
-                           debug-key-4
-                           debug-mark-else
-                           . else-clauses))))
+                    (begin
+                      pre-break-1
+                      (if (let-values temp-bindings
+                            (with-continuation-mark
+                             debug-key_2
+                             debug-mark-test
+                             . test-clauses))
+                          (let-values temp-bindings_2
+                            (with-continuation-mark
+                             debug-key_3
+                             debug-mark-then
+                             . then-clauses))
+                          (let-values temp-bindings-3
+                            (with-continuation-mark
+                             debug-key-4
+                             debug-mark-else
+                             . else-clauses)))))
                    (begin
                      (test (void) check-mark (syntax debug-mark-1) '(a b c d) '())
                      (test (void) check-mark (syntax debug-mark-test) '() '(a b c d))
@@ -273,34 +266,86 @@
                      (test (void) check-mark (syntax debug-mark-else) '(a d) '(b c)))])))
         
         ; one-armed if
-        (list #'(let ([a 1] [b 2] [c 3]) (if (a b) (a c))) 'mzscheme
+        (list #'(lambda (a b c) (if (begin a b) (begin a c))) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin)
                   [(with-continuation-mark
                     debug-key-1
                     debug-mark-1
-                    (if (let-values temp-bindings
+                    (begin
+                      pre-break-1
+                      (if (with-continuation-mark
+                             debug-key_2
+                             debug-mark-test
+                             . test-clauses)
                           (with-continuation-mark
-                           debug-key_2
-                           debug-mark-test
-                           . test-clauses))
-                        (let-values temp-bindings_2
-                          (with-continuation-mark
-                           debug-key_3
-                           debug-mark-then
-                           . then-clauses))))
+                             debug-key_3
+                             debug-mark-then
+                             . then-clauses))))
                    (begin
                      (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
                      (test (void) check-mark (syntax debug-mark-test) '() 'all)
                      (test (void) check-mark (syntax debug-mark-then) '(a c ) 'all))])))
-                    
+        
+        ; top-level begin
+        (list #'(begin (define a 3) a (begin a a)) #f car
+              (lambda (stx)
+                (syntax-case stx (begin with-continuation-mark define-values)
+                  [(begin
+                     (define-values . rest)
+                     (with-continuation-mark key-2 mark-2 a-exp-2)
+                     (begin
+                       (with-continuation-mark key-3 mark-3 a-exp-3)
+                       (with-continuation-mark key-4 mark-4 a-exp-4)))
+                   #t])))
+        
+        ; begin0
+        (list #'(lambda (a b) (begin0 a b)) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (begin begin0 with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (begin
+                      pre-break-0
+                      (begin0
+                        (with-continuation-mark
+                         key-result
+                         mark-result
+                         result-expr)
+                        (with-continuation-mark
+                         key-other
+                         mark-other
+                         other-expr))))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a b) 'all)
+                     (test (void) check-mark (syntax mark-result) '() 'all)
+                     (test (void) check-mark (syntax mark-other) '() 'all))])))
+        
+        ; begin0 : inferred-name transfer
+        (list #'(define-values (a) (begin0 (lambda () 3) 4)) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (begin0 define-values with-continuation-mark)
+                  [(define-values names
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin0
+                        (with-continuation-mark
+                         key-1
+                         mark-1
+                         (procedure-capturing-proc
+                          procedure
+                          mark-2))
+                        . rest)))
+                   (test 'a syntax-property (syntax procedure) 'inferred-name)])))
         ; let 
 ;        (list #'( (let ([c 1] [d 2]) 
         
                     ))
 
 (andmap (lambda (test-case)
-            ((caddr test-case) (car (reverse (annotate-expr (car test-case) (cadr test-case))))))
+            ((cadddr test-case) ((caddr test-case) (annotate-expr (car test-case) (cadr test-case)))))
         test-cases)
 
 (report-errs)

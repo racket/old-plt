@@ -12,7 +12,8 @@
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "match.ss")
    "interfaces.ss"
-   "signatures.ss")
+   "signatures.ss"
+   "../extension.ss")
   
   (provide window-layout@)
   
@@ -76,8 +77,27 @@
                 (get-area-container)))
               (parent button-panel)
               (callback (lambda (b e) (save))))]
-           [spacer
-            (instantiate horizontal-panel% ()
+           [spacer1
+            (instantiate horizontal-pane% ()
+              (stretchable-width true)
+              (parent button-panel))]
+	   [extra-buttons
+	    (let ([p (instantiate horizontal-panel% ()
+				  (stretchable-width true)
+				  (parent button-panel))])
+	      (for-each (lambda (v)
+			  (let-values ([(name icon hook) (apply values v)])
+			    (instantiate button% ()
+					 (label
+					  ((drscheme:unit:make-bitmap
+					    name icon)
+					   (get-area-container)))
+					 (parent button-panel)
+					 (callback (lambda (b e)
+						     (hook this model))))))
+			(test-suite-extensions)))]
+           [spacer2
+            (instantiate horizontal-pane% ()
               (stretchable-width true)
               (parent button-panel))]
            [new-button

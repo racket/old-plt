@@ -6,7 +6,9 @@
 	   (lib "etc.ss")
 	   (lib "framework.ss" "framework")
 	   "client.ss"
-	   "info.ss")
+	   "info.ss"
+	   ;; Temporary hack for test suite in separate window:
+	   (lib "extension.ss" "test-suite"))
 
   (provide tool@)
 
@@ -347,6 +349,29 @@
       (send mdc set-bitmap #f)
       bm2))
 
+  (define handin-icon
+    (scale-by-half
+     (build-path (collection-path this-collection) "icon.png")))
+
+  (define (editors->string editors)
+    (let* ([base (make-object editor-stream-out-string-base%)]
+	   [stream (make-object editor-stream-out% base)])
+      (write-editor-version stream base)
+      (write-editor-global-header stream)
+      (for-each (lambda (ed)
+		  (send ed write-to-file stream)
+		  (send ed write-to-file stream))
+		editors)
+      (write-editor-global-footer stream)
+      (send base get-string)))
+  
+  (add-test-suite-extension
+   "Handin"
+   handin-icon
+   (lambda (parent editor)
+     (let ([content (editors->string (list editor))])
+       (new handin-frame% [parent parent] [content content]))))
+
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -357,8 +382,7 @@
       (define tool-button-label
 	(drscheme:unit:make-bitmap
 	 "Handin"
-	 (scale-by-half
-	  (build-path (collection-path this-collection) "icon.png"))))
+	 handin-icon))
 
       (define (make-new-unit-frame% super%)
 	(class super%
@@ -380,14 +404,9 @@
 		 [label (tool-button-label this)]
 		 [parent (get-button-panel)]
 		 [callback (lambda (button evt)
-			     (let ([content (let* ([base (make-object editor-stream-out-string-base%)]
-						   [stream (make-object editor-stream-out% base)])
-					      (write-editor-version stream base)
-					      (write-editor-global-header stream)
-					      (send (get-definitions-text) write-to-file stream)
-					      (send (get-interactions-text) write-to-file stream)
-					      (write-editor-global-footer stream)
-					      (send base get-string))])
+			     (let ([content (editors->string
+					     (list (get-definitions-text)
+						   (get-interactions-text)))])
 			       (new handin-frame% [parent this] [content content])))]
 		 [style '(deleted)]))
 	  (send (get-button-panel) change-children

@@ -1,7 +1,7 @@
 (load-recent
  (build-path mred:plt-home-directory
 	     "mrspidey"
-	     "drspidey.ss"))
+	     "drspidey"))
 
 '(define tool@
   (unit/sig ()

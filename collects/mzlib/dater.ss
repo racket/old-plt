@@ -1,6 +1,9 @@
   (unit/sig mzlib:date^ 
     (import mzlib:function^)
 
+    ;; Support for Julian calendar added by Shriram;
+    ;; current version only works until 2099 CE Gregorian
+
 #|
 
     (define-primitive seconds->date (num -> structure:date))
@@ -31,7 +34,7 @@
 |#
 
     (define legal-formats
-      (list 'american 'chinese 'german 'indian 'irish))
+      (list 'american 'chinese 'german 'indian 'irish 'julian))
 
     (define date-display-format 
       (make-parameter 'american
@@ -119,6 +122,10 @@
 		  [(irish) 
 		   (values (list week-day ", " day day-th " " month " " year)
 			   (list ", " hour12 ":" minute am-pm))]
+		  [(julian)
+		   (values (list (julian/scalinger-printer
+				   (julian-day-number/scalinger date)))
+		           (list ", " hour24 ":" minute ":" second))]
 		  [else (error 'date->string "unknown date-display-format: ~s"
 			       (date-display-format))])])
 	    (apply string-append (if time?
@@ -286,4 +293,67 @@
 		[(eq? compare 'input-smaller) 
 		 (loop below-secs (floor (/ (+ secs below-secs) 2)) secs)]
 		[(eq? compare 'test-smaller) 
-		 (loop secs (floor (/ (+ above-secs secs) 2)) above-secs)])))))))
+		 (loop secs (floor (/ (+ above-secs secs) 2)) above-secs)]))))))
+
+    ;; julian-day-number/scalinger :
+    ;; date -> number [julian-day]
+
+    ;; Note: This code is correct until 2099 CE Gregorian
+
+    (define (julian-day-number/scalinger date)
+      (let ((day (date-day date))
+	     (month (date-month date))
+	     (year (date-year date)))
+	(let ((year (+ 4712 year)))
+	  (let ((year (if (< month 3) (sub1 year) year)))
+	    (let ((cycle-number (quotient year 4))
+		   (cycle-position (remainder year 4)))
+	      (let ((base-day (+ (* 1461 cycle-number) (* 365 cycle-position))))
+		(let ((month-day-number (case month
+					  ((3) 0)
+					  ((4) 31)
+					  ((5) 61)
+					  ((6) 92)
+					  ((7) 122)
+					  ((8) 153)
+					  ((9) 184)
+					  ((10) 214)
+					  ((11) 245)
+					  ((12) 275)
+					  ((1) 306)
+					  ((2) 337))))
+		  (let ((total-days (+ base-day month-day-number day)))
+		    (let ((total-days/march-adjustment (+ total-days 59)))
+		      (let ((gregorian-adjustment (cond
+						    ((< year 1700) 11)
+						    ((< year 1800) 12)
+						    (else 13))))
+			(let ((final-date (- total-days/march-adjustment
+					    gregorian-adjustment)))
+			  final-date)))))))))))
+
+    ;; julian/scalinger-printer :
+    ;; number [julian-day] -> string [julian-day-format]
+
+    (define (julian/scalinger-printer julian-day)
+      (apply string-append
+	(cons "JD "
+	  (reverse
+	    (let loop ((reversed-digits (map number->string
+					  (let loop ((jd julian-day))
+					    (if (zero? jd) null
+					      (cons (remainder jd 10)
+						(loop (quotient jd 10))))))))
+	      (cond
+		((or (null? reversed-digits)
+		   (null? (cdr reversed-digits))
+		   (null? (cdr (cdr reversed-digits))))
+		  (list (apply string-append reversed-digits)))
+		(else (cons (apply string-append
+			      (list " "
+				(caddr reversed-digits)
+				(cadr reversed-digits)
+				(car reversed-digits)))
+			(loop (cdr (cdr (cdr reversed-digits))))))))))))
+
+)

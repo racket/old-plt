@@ -3047,8 +3047,10 @@ static void designate_modified(void *p)
 void fault_handler(int sn, struct sigcontext sc)
 {
 # if (defined(powerpc) || defined(__powerpc__))
+  /* PowerPC */
   designate_modified((void *)sc.regs->dar);
 # else
+  /* x86 */
   designate_modified((void *)sc.cr2);
 # endif
   signal(SIGSEGV, (void (*)(int))fault_handler);

@@ -135,6 +135,19 @@ typedef jmpbuf jmp_buf[1];
 
 #define MZ_EXTERN extern MZ_DLLSPEC
 
+/* PPC Linux plays a slimy trick: it defines strcpy() as a macro that
+   uses __extension__. This breaks the 3m xform. */
+#if defined(MZ_PRECISE_GC) && defined(strcpy)
+START_XFORM_SKIP;
+static inline void _mzstrcpy(char *a, const char *b)
+{
+  strcpy(a, b);
+}
+END_XFORM_SKIP;
+# undef strcpy
+# define strcpy _mzstrcpy
+#endif
+
 #ifdef __cplusplus
 extern "C" 
 {

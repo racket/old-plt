@@ -753,6 +753,12 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
     }
   }
 
+  if (menv->exp_env) {
+    /* Share for-syntax bindings, too: */
+    scheme_prepare_exp_env(menv2);
+    menv2->exp_env->toplevel = menv->exp_env->toplevel;
+  }
+
   return menv2;
 }
 

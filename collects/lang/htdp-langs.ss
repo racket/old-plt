@@ -33,10 +33,11 @@
         booleans-as-true/false
         use-pretty-printer))
 
-      (define htdp-language->module-based-language
+      (define htdp-language->module-based-language%
         (class* object% (drscheme:language-tower:module-based-language<%>)
           (init-field htdp-language)
-          (public marshall-settings unmarshall-settings default-settings
+          (public marshall-settings unmarshall-settings
+                  default-settings default-settings?
                   get-module config-panel on-execute
                   get-teachpack-names
                   render-value/format render-value
@@ -55,6 +56,9 @@
                                           (symbol? (car x))))
                          printable)
                  (make-setting/parse printable)))
+          
+          (define (default-settings? s) (equal? (default-settings) s))
+
           (define (default-settings)
             (make-setting/parse
              `((case-sensitive #t)
@@ -77,7 +81,9 @@
           (define (render-value/format val settings port dump-snip)
             (display "value" port))
           (define (render-value val settings port dump-snip)
-            (display "value" port))))
+            (display "value" port))
+          
+          (super-initialize ())))
 
       ;; htdp-language-config-panel : ((instanceof panel<%>) -> (-> setting))
       ;; constrcts the standard settings panel
@@ -157,8 +163,8 @@
       ;; add-htdp-language : (implements htdp-language<%>) -> void
       (define (add-htdp-language class%)
         (drscheme:language:add-language
-         (make-object drscheme:language-tower:module-based-language->language
-           (make-object htdp-language->module-based-language
+         (make-object drscheme:language-tower:module-based-language->language%
+           (make-object htdp-language->module-based-language%
              (make-object class%)))))
 
       (add-htdp-language

@@ -530,9 +530,11 @@ static Scheme_Object *expand_lam(int argc, Scheme_Object **argv)
 
   lambda_check_args(args, form, env);
 
-  fn = scheme_datum_to_syntax(lambda_symbol, SCHEME_STX_CAR(form), scheme_sys_wraps(env), 0, 0);
-
-  return scheme_datum_to_syntax(icons(fn, SCHEME_STX_CDR(form)), form, fn, 0, 0);
+  fn = SCHEME_STX_CAR(form);
+  fn = scheme_datum_to_syntax(lambda_symbol, fn, scheme_sys_wraps(env), 0, 0);
+  
+  args = SCHEME_STX_CDR(form);
+  return scheme_datum_to_syntax(icons(fn, args), form, fn, 0, 0);
 }
 
 /**********************************************************************/

@@ -43,6 +43,15 @@ plus a structure:
      called with no arguments when the user clicks the region (instead
      of dragging cards to the region).
 
+  In addition, the region-interactive-callback and
+  set-region-callback! procedures get and set a callback procedure
+  that is invoked when a region is [un]hilited as the user drags a set
+  of cards to the region. The callback is provided two arguments: a
+  boolean indicating whether the region is hilited, and the list of
+  cards being dragged. Like region-callback, the default is #f, which
+  indicates that the region has no interactive callback (but does not
+  affect whether the region is hilited as cards are dragged).
+
 Table methods:
    
    (send t add-card card x y) - adds card to the table with its top-left
@@ -96,6 +105,8 @@ Table methods:
         a region added later is hilighted, it can obscure regions added
         earlier.
    (send t remove-region r) - removes the region r from the table.
+   (send t hilite-region r) - manual hilite for anaimation
+   (send t unhilite-region r) - manual unhilite for anaimation
 
    (send t set-button-action which action) - sets the way that a mouse
         click is handled. The which argument must be 'left, 'middle,
@@ -160,6 +171,16 @@ Card methods:
        Assuming user can move the card interactively, determines whether the
        card stays where the user dragged it or snaps back to its original
        place.  Initially #f.
+   (send c stay-in-region r)
+   (send c stay-in-region)
+       If r is a region, the user cannot move the card out of r.
+       Initially #f
+   (send c home-region r)
+   (send c home-region)
+       If r is a region, the user can move the card freely within the
+       region, but it snaps back if moved completely out of the region.
+       If moved partly out of the region, the card is moved enough to get
+       completely back in.
 
    (send c copy) - makes a new card with the same suit and value.
 

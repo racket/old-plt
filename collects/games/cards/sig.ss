@@ -30,12 +30,13 @@
   (sc))
 
 (define-signature cards:region^
-  ((struct region (x y w h label callback) -setters)
+  ((struct region (x y w h label callback interactive-callback) -setters)
    set-region-callback!
+   set-region-interactive-callback!
    make-button-region))
 
 (define-signature cards:region-local^
-  ((struct region (x y w h label callback button? hilite? decided-start? can-select?))
+  ((struct region (x y w h label callback interactive-callback button? hilite? decided-start? can-select?))
    make-button-region))
 
 (define-signature cards^

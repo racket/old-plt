@@ -179,7 +179,8 @@
   ;ok-to-add? compilation-unit (list compilation-unit) type-records -> bool
   (define (ok-to-add? cu cus cus-full type-recs)
     (andmap (lambda (depends-on)
-              (dependency-satisfied? depends-on cus type-recs))
+              (or (is-in? depends-on cu type-recs)
+                  (dependency-satisfied? depends-on cus type-recs)))
             (get-local-depends (compilation-unit-depends cu) cus-full type-recs)))
   
   ;dependency-satisfied? req (list compilation-unit) type-records -> bool
@@ -221,7 +222,7 @@
           (let loop ()
             (unless (empty-queue? queue)
               (let ((cu (send queue pop)))
-                (if (ok-to-add? cu cus ordered type-recs)
+                (if (ok-to-add? cu ordered cus type-recs)
                     (set! ordered (cons cu ordered))
                     (send queue push cu)))
               (loop)))))

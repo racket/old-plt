@@ -480,9 +480,8 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'python-method-call) ,(send expression to-scheme)
-                                                  '__getitem__
-                                                  (list ,(send sub to-scheme)))))
+        (->orig-so `(,(py-so 'python-index) ,(send expression to-scheme)
+                                            ,(send sub to-scheme))))
       
       (super-instantiate ())))
   

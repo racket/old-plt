@@ -187,6 +187,7 @@
     (cond
       [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
       [(py-is? x py-none) #f]
+      [(py-type? x) #t]
       [else (with-handlers ([exn:not-found? (lambda (exn) #t)])
               (py-object%->bool (python-method-call x '__len__)))]))
 
@@ -516,15 +517,16 @@
 
   (define (python-get-attribute obj attr-sym)
    ; (printf "python-get-attribute is looking for ~a~n" attr-sym)
-    (python-method-call obj
-                        (python-get-member (python-node-type obj) '__getattribute__)
-                        (list (symbol->py-string% attr-sym))))
+    (py-call (python-get-member (python-node-type obj) '__getattribute__)
+             (cons obj (list (symbol->py-string% attr-sym)))))
+;    (python-method-call obj
+;                        (python-get-member (python-node-type obj) '__getattribute__)
+;                        (list (symbol->py-string% attr-sym))))
 
   (define (python-set-attribute! obj attr-sym value)
-    (python-method-call obj
-                        (python-get-member (python-node-type obj) '__setattr__)
-                        (list (symbol->py-string% attr-sym)
-                              value)))
+    (py-call (python-get-member (python-node-type obj) '__setattr__)
+             (cons obj (list (symbol->py-string% attr-sym)
+                             value))))
 
   ;; python-get-type-name: py-type% -> py-string%
   (define (python-get-type-name type)
@@ -547,6 +549,7 @@
       [(py-is-a? indexable py-list%) (list-ref (py-list%->list indexable) index)]
       [(py-is-a? indexable py-tuple%) (list-ref (py-tuple%->list indexable) index)]
       [(py-is-a? indexable py-dict%) (error "python-index: dictionaries not yet supported")]
+      [(py-type? indexable) (error (format "Unsubscriptable object: ~a" (py-object%->string indexable)))]
       [else (python-method-call indexable '__getitem__
                                 (list (if (number? index)
                                           (number->py-number% index)
@@ -618,10 +621,14 @@
       (let ([fn (if (symbol? method)
                     (python-get-attribute obj method)
                     method)])
+;        (if (py-type? obj) ;; Class.method(obj, arg...)
+;            (
         (py-call fn
                  (if (and (python-node? fn)
                           (or (py-is-a? fn py-function%) ; static method
-                              (python-method-bound? fn))) ; bound method
+                              (python-method-bound? fn) ; bound method
+                              (py-type? obj) ;  Class.method(obj, arg...)
+                              ))
                      pos-args
                      (cons obj pos-args)) ; add the object to the arg-list for unbound methods or scheme procs
                  key-args))))
@@ -798,15 +805,15 @@
                                                      (if (and (not (null? args))
                                                               (py-is-a? (car args) class))
                                                          args
-                                                         (error (py-object%->string this-method)
-                                                                "must be called with"
-                                                                (py-string%->string
-                                                                 (python-get-type-name class))
-                                                                "instance as first argument."
-                                                                "Got"
-                                                                (if (null? args)
-                                                                    "no arguments!"
-                                                                    (py-object%->string (car args)))))))))
+                                                         (error (format "~a must be called with ~a instance as first argument (got ~a instead)"
+                                                                        (py-object%->string this-method)
+                                                                        (py-string%->string
+                                                                         (python-get-type-name class))
+                                                                        (if (null? args)
+                                                                            "nothing"
+                                                                            (string-append (py-string%->string
+                                                                                            (python-get-type-name (python-node-type (car args))))
+                                                                                           " instance")))))))))
                                     'wrapped-method))
                         (im_func ,py-none) ; py-procedure%
                         (im_self ,py-none))) ; py-object%

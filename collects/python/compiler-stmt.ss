@@ -184,11 +184,13 @@
                [body (map (lambda (t)
                             (assignment-so t rhs))
                           targets)])
-          (->orig-so (if (top?)
-                         `(begin (namespace-set-variable-value! ',rhs ,(send expression to-scheme))
-                                 ,@body)
+          (->orig-so ;(if (top?)
+                     ;    `(begin (namespace-set-variable-value! ',rhs ,(send expression to-scheme))
+                     ;            ,@body)
                          `(begin (let ([,rhs ,(send expression to-scheme)])
-                                   ,@body))))))
+                                   ,@body))
+                     ;    )
+                     )))
       
       (super-instantiate ())))
   
@@ -1022,7 +1024,7 @@
          (let ([class-name (send name to-scheme)]
                [inherit-list (map (lambda (i) (send i to-scheme)) inherit-expr)])
          (->orig-so `(namespace-set-variable-value! #cs(quote ,class-name)
-                       (,(py-so 'python-method-call) ,(py-so 'py-type%) '__call__
+                       (,(py-so 'py-call) ,(py-so 'py-type%)
                         (list (,(py-so 'symbol->py-string%) #cs',class-name)
                               (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
                                                                      `(,(->lex-so 'object (current-runtime-support-context)))

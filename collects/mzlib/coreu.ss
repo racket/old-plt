@@ -14,6 +14,7 @@
 (reference-library "compatu.ss")
 (reference-library "stringu.ss")
 (reference-library "compileu.ss")
+(reference-library "threadu.ss")
 (reference-library "shared.ss")
 
 (reference-library "cores.ss")

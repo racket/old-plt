@@ -77,7 +77,6 @@
 	       [ok? #f]
 	       [set-l (make-semaphore 1)]
 	       [one-done (make-semaphore)]
-	       [all-done (make-semaphore)]
 	       [branch-handler (lambda ()
 				 (let ([p (make-parameterization)])
 				   (with-parameterization 
@@ -99,8 +98,7 @@
 								set-l
 								(lambda () (set! result-l 
 										 (cons s result-l))))
-							       (semaphore-post one-done))
-							      (semaphore-post all-done))))
+							       (semaphore-post one-done)))))
 						  (loop (cdr l))))))]
 	       [timer-thread (if timeout
 				 (parameterize ([parameterization-branch-handler
@@ -118,7 +116,7 @@
 	     (for-each (lambda (th) (break-thread th)) threads)
 	     (when timer-thread (break-thread timer-thread))
 	     ; wait until everyone's done
-	     (for-each (lambda (th-ignored) (semaphore-wait all-done)) threads)
+	     (for-each thread-wait threads)
 	     ; If more that too manay suceeded, repost to the extras
 	     (let ([extras (if ok? 
 			       (if (null? result-l) 

@@ -17,6 +17,7 @@
 (require-library "compatc.ss")
 (require-library "stringc.ss")
 (require-library "sharedc.ss")
+(require-library "threadc.ss")
 
 (constant mzlib:core^)
 (constant mzlib:core@)

@@ -10,4 +10,5 @@
 (require-library "compat.ss")
 (require-library "string.ss")
 (require-library "compile.ss")
+(require-library "thread.ss")
 

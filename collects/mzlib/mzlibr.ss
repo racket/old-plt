@@ -10,12 +10,14 @@
 		    hooks@)]
 	 [hooks@ : mzlib:print-convert-hooks^ ((require-reference-unit/sig pchookr.ss"))]
 	 [date@ : mzlib:date^ ((require-reference-unit/sig "dater.ss")
-			       (core@ function@))])
+			       (core@ function@))]
+	 [inflate@ : mzlib:inflate^ ((require-reference-unit/sig "inflater.ss"))])
    (export (open core@)
 	   (unit trigger@)
 	   (unit zmath@)
 	   (unit convert@)
 	   (unit hooks@)
-	   (unit date@)))
+	   (unit date@)
+	   (unit inflate@)))
 
 	 

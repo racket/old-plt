@@ -13,7 +13,6 @@
 (reference-library "pconveru.ss")
 (reference-library "dateu.ss")
 (reference-library "inflateu.ss")
-(reference-library "threadu.ss")
 
 (reference-library "mzlibs.ss")
 

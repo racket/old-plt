@@ -23,6 +23,7 @@
 
 #if USE_MMAP
 /* For mmap: */
+# include <unistd.h>
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/mman.h>
@@ -67,6 +68,8 @@ void (*GC_fixup_xtagged)(void *obj);
 
 void **GC_variable_stack;
 
+static long page_allocations = 0;
+
 static long memory_in_use, gc_threshold = 32000;
 
 static long num_seg_faults;
@@ -85,7 +88,22 @@ Fixup_Proc fixup_table[_num_tags_];
 
 #define STARTING_PLACE ((void **)0)
 
+/* Unless ALIGN_DOUBLES, offsets must fit into 14 bits, saving 2 bits
+   for tags.  But since the minimum size of an allocation is two
+   words, we only need half as much memory. So we store the offset as
+   a pair of bytes. */
+#if ALIGN_DOUBLES
+# define SQUASH_OFFSETS 0
+#else
+# define SQUASH_OFFSETS 1
+#endif
+
 typedef unsigned short OffsetTy;
+#if SQUASH_OFFSETS
+typedef unsigned char OffsetArrTy;
+#else
+typedef unsigned short OffsetArrTy;
+#endif
 
 typedef struct MPage {
   unsigned short type;
@@ -93,7 +111,7 @@ typedef struct MPage {
   short compact_boundary;
   short age, refs_age, compact_to_age;
   union {
-    OffsetTy *offsets;
+    OffsetArrTy *offsets;
     long size;
   } u;
   union {
@@ -137,30 +155,44 @@ void **xtagged_low = STARTING_PLACE, **xtagged_high = STARTING_PLACE;
 #define MAP_MASK ((1 << (LOG_MAP_SIZE + LOG_MPAGE_SIZE)) - 1)
 #define MAP_SHIFT LOG_MPAGE_SIZE
 
-#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2)
+#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2 - SQUASH_OFFSETS)
 #define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
 
 #define BIGBLOCK_MIN_SIZE (1 << 12)
 
+# define COLOR_MASK 0x3
+# define GRAY_BIT 0x1
+# define BLACK_BIT 0x2
 
-#define COLOR_MASK 0xC000
-#define GRAY_BIT 0x8000
-#define BLACK_BIT 0x4000
+#define TYPE_MASK 0xFFFC
 
-#define OFFSET_MASK 0x3FFF
-#define TYPE_MASK 0x3FFF
+#define MTYPE_TAGGED       0x4
+#define MTYPE_ATOMIC       0x8
+#define MTYPE_TAGGED_ARRAY 0x10
+#define MTYPE_ARRAY        0x20
+#define MTYPE_XTAGGED      0x40
+#define MTYPE_BIGBLOCK     0x80
+#define MTYPE_CONTINUED    0x100
 
-#define MTYPE_TAGGED       0x1
-#define MTYPE_ATOMIC       0x2
-#define MTYPE_TAGGED_ARRAY 0x4
-#define MTYPE_ARRAY        0x8
-#define MTYPE_XTAGGED      0x10
-#define MTYPE_BIGBLOCK     0x20
-#define MTYPE_CONTINUED    0x40
+#define MTYPE_OLD          0x200
+#define MTYPE_MODIFIED     0x400
+#define MTYPE_INITED       0x800
 
-#define MTYPE_OLD          0x80
-#define MTYPE_MODIFIED     0x100
-#define MTYPE_INITED       0x200
+#define OFFSET_COLOR_UNMASKED(offsets, pos) (offsets[pos])
+#define OFFSET_COLOR(offsets, pos) (offsets[pos] & COLOR_MASK)
+#define OFFSET_SET_COLOR_UNMASKED(offsets, pos, c) (offsets[pos] = c)
+
+#if SQUASH_OFFSETS
+# define OFFSET_HI_MASK 0xFC
+# define OFFSET_LO_MASK 0xFF
+# define OFFSET_HI_SHIFT 6
+# define OFFSET_SIZE(offsets, pos) (((OffsetTy)(offsets[pos] & OFFSET_HI_MASK) << OFFSET_HI_SHIFT) | (offsets[(pos)+1]))
+# define OFFSET_SET_SIZE_UNMASKED(offsets, pos, s) (offsets[pos] = (((s) >> OFFSET_HI_SHIFT) & OFFSET_HI_MASK), offsets[(pos)+1] = ((s) & OFFSET_LO_MASK))
+#else
+# define OFFSET_SHIFT 2
+# define OFFSET_SIZE(offsets, pos) ((offsets[pos]) >> OFFSET_SHIFT)
+# define OFFSET_SET_SIZE_UNMASKED(offsets, pos, s) (offsets[pos] = ((s) << OFFSET_SHIFT))
+#endif
 
 typedef unsigned short mtype_t;
 
@@ -196,21 +228,24 @@ static void CRASH()
 
 int fd, fd_created;
 
-#define PAGE_SIZE 4096
+static int page_size;
 
 void *malloc_pages(size_t len, size_t alignment)
 {
   void *r;
   size_t extra = 0;
 
+  if (!page_size)
+    page_size = getpagesize();
+
   if (!fd_created) {
     fd_created = 1;
     fd = open("/dev/zero", O_RDWR);
   }
 
-  if (len & (PAGE_SIZE - 1)) {
-    len += PAGE_SIZE - (len & (PAGE_SIZE - 1));
-  }
+  /* Round up to nearest page: */
+  if (len & (page_size - 1))
+    len += page_size - (len & (page_size - 1));
 
  try_again:
 
@@ -243,18 +278,25 @@ void *malloc_pages(size_t len, size_t alignment)
     goto try_again;
   }
 
+  page_allocations += len;
+
   return r;
 }
 
 void free_pages(void *p, size_t len)
 {
+  /* Round up to nearest page: */
+  if (len & (page_size - 1))
+    len += page_size - (len & (page_size - 1));
+
   munmap(p, len);
+  page_allocations -= len;
 }
 
 void protect_pages(void *p, size_t len, int writeable)
 {
-  if (len & (PAGE_SIZE - 1)) {
-    len += PAGE_SIZE - (len & (PAGE_SIZE - 1));
+  if (len & (page_size - 1)) {
+    len += page_size - (len & (page_size - 1));
   }
 
   mprotect(p, len, (writeable ? (PROT_READ | PROT_WRITE) : PROT_READ));
@@ -429,6 +471,21 @@ static int mark_weak_array(void *p)
 
   a->next = weak_arrays;
   weak_arrays = a;
+
+#if SAFETY
+  /* For now, weak arrays only used for symbols and falses: */
+  {
+    void **data;
+    int i;
+    data = a->data;
+    for (i = a->count; i--; ) {
+      if (data[i] 
+	  && (*(short *)(data[i]) != 35)
+	  && (*(short *)(data[i]) != 44))
+	CRASH();
+    }
+  }
+#endif
 
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
 			  + ((a->count - 1) * sizeof(void *)));
@@ -722,6 +779,8 @@ void GC_dump(void)
 {
   int i;
 
+  fprintf(stderr, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
+  fprintf(stderr, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
   fprintf(stderr, "[");
   for (i = 0; i < MAPS_SIZE; i++) {
     if (i && !(i & 63))
@@ -817,7 +876,10 @@ void GC_dump(void)
   }
   
 
-  fprintf(stderr, "Memory use: %ld\n", GC_get_memory_use());
+  fprintf(stderr, "Memory use: %ld\n", memory_in_use);
+  fprintf(stderr, "Memory overhead: %ld (%f%%)\n", 
+	  page_allocations - memory_in_use,
+	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use);
 }
 
 long GC_get_memory_use()
@@ -889,20 +951,15 @@ static int is_marked(void *p)
     } else {
       if (page->type & MTYPE_OLD)
 	return 1;
-      else {
+      else if (page->type & COLOR_MASK) {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
 
 	if (!(page->type & MTYPE_TAGGED))
 	  offset -= 1;
 
-#if 0
-	OffsetTy v;
-	
-	v = page->u.offsets[offset];
-	offset -= (v & OFFSET_MASK);
-#endif
-	return page->u.offsets[offset] & COLOR_MASK;
-      }
+	return OFFSET_COLOR(page->u.offsets, offset);
+      } else
+	return 0;
     }
   }
   
@@ -921,7 +978,8 @@ static void **prev_var_stack;
 
 static void init_tagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0, *offsets;
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
   void **top;
 
   page->type = (page->type & TYPE_MASK);
@@ -944,7 +1002,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if ALIGN_DOUBLES
     if (tag == SKIP) {
-      offsets[offset] = 1;
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset, 1);
       offset++;
       p++;
     } else {
@@ -961,13 +1019,8 @@ static void init_tagged_mpage(void **p, MPage *page)
 
       size = size_table[tag](p);
 
-#if 1
-      offsets[offset] = size;
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset, size);
       offset += size;
-#else
-      for (i = 0; i < size; i++, offset++)
-	offsets[offset] = i;
-#endif
 
 #if SAFETY
       if (prev_var_stack != GC_variable_stack) {
@@ -988,7 +1041,8 @@ static long the_size;
 
 static void init_untagged_mpage(void **p, MPage *page)
 {
-  OffsetTy offset = 0, *offsets;
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
   void **top;
 
   page->type = (page->type & TYPE_MASK);
@@ -1011,13 +1065,8 @@ static void init_untagged_mpage(void **p, MPage *page)
 
     the_size = size;
 
-#if 1
-    offsets[offset] = 0;
+    OFFSET_SET_SIZE_UNMASKED(offsets, offset, 0);
     offset += size;
-#else
-    for (i = 0; i < size; i++, offset++)
-      offsets[offset] = i;
-#endif
 
     p += size;
   } 
@@ -1163,7 +1212,7 @@ void GC_mark(const void *p)
 	}
       } else {
 	long offset;
-	OffsetTy v;
+	OffsetArrTy v;
 	
 	/* Check for lazy initialization: */
 	if (!(type & MTYPE_INITED)) {
@@ -1194,12 +1243,7 @@ void GC_mark(const void *p)
 	}
 #endif
 
-#if 0
-	v = page->u.offsets[offset];
-	offset -= (v & OFFSET_MASK);
-#endif
-
-	v = page->u.offsets[offset];
+	v = OFFSET_COLOR_UNMASKED(page->u.offsets, offset);
 	if (!(v & COLOR_MASK)) {
 #if MARK_STATS
 	  mark_colors++;
@@ -1208,11 +1252,11 @@ void GC_mark(const void *p)
 	  if (!(type & (MTYPE_ATOMIC | MTYPE_TAGGED_ARRAY))
 	      && (mark_stack_pos < MARK_STACK_MAX)) {
 	    page->type |= BLACK_BIT;
-	    page->u.offsets[offset] = (v | BLACK_BIT); /* black can mean on stack */
+	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | BLACK_BIT); /* black can mean on stack */
 	    mark_stack[mark_stack_pos] = (void *)p;
 	    mark_stack_type[mark_stack_pos++] = type;
 	  } else {
-	    page->u.offsets[offset] = (v | GRAY_BIT);
+	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | GRAY_BIT);
 
 	    if (!(type & GRAY_BIT)) {
 	      page->type |= GRAY_BIT;
@@ -1252,7 +1296,8 @@ void GC_mark(const void *p)
 
 static void propagate_tagged_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset, *offsets;
+  OffsetTy offset;
+  OffsetArrTy *offsets;
   void **p, **graytop;
 
   offsets = page->u.offsets;
@@ -1262,7 +1307,7 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
   graytop = bottom + page->gray_end;
   
   while (p <= graytop) {
-    OffsetTy v;
+    OffsetArrTy v;
     Type_Tag tag;
     long size;
     
@@ -1272,10 +1317,12 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
     if (tag != SKIP) {
 #endif
       
-      v = offsets[offset];
-      size = (v & OFFSET_MASK);
+      v = OFFSET_COLOR_UNMASKED(offsets, offset);
+      size = OFFSET_SIZE(offsets, offset);
       if (v & GRAY_BIT) {
-	offsets[offset] = BLACK_BIT | size;
+	v -= GRAY_BIT;
+	v |= BLACK_BIT;
+	OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
 	mark_table[tag](p);
       }
 	
@@ -1333,7 +1380,8 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 
 static void propagate_array_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0, *offsets;
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
@@ -1342,16 +1390,18 @@ static void propagate_array_mpage(void **bottom, MPage *page)
   offsets = page->u.offsets;
 
   while (p <= top) {
-    OffsetTy v;
+    OffsetArrTy v;
     long size;
 
     size = *(long *)p + 1;
 	
-    v = offsets[offset];
+    v = OFFSET_COLOR_UNMASKED(offsets, offset);
     if (v & GRAY_BIT) {
       int i;
 
-      offsets[offset] = BLACK_BIT | (v & OFFSET_MASK);
+      v -= GRAY_BIT;
+      v |= BLACK_BIT;
+      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
       for (i = 1; i <= size; i++) {
 	gcMARK(p[i]);
@@ -1388,7 +1438,8 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
 
 static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0, *offsets;
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
@@ -1397,14 +1448,16 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
   offsets = page->u.offsets;
 
   while (p <= top) {
-    OffsetTy v;
+    OffsetArrTy v;
     int size;
     
     size = *(long *)p + 1;
 
-    v = offsets[offset];
+    v = OFFSET_COLOR_UNMASKED(offsets, offset);
     if (v & GRAY_BIT) {
-      offsets[offset] = BLACK_BIT | (v & OFFSET_MASK);
+      v -= GRAY_BIT;
+      v |= BLACK_BIT;
+      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
 
       {
 	int i, elem_size;
@@ -1463,7 +1516,8 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
 
 static void propagate_xtagged_mpage(void **bottom, MPage *page)
 {
-  OffsetTy offset = 0, *offsets;
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
   void **p, **top;
 
   offset = page->gray_start;
@@ -1472,14 +1526,16 @@ static void propagate_xtagged_mpage(void **bottom, MPage *page)
   offsets = page->u.offsets;
 
   while (p <= top) {
-    OffsetTy v;
+    OffsetArrTy v;
     long size;
 
     size = *(long *)p + 1;
 	
-    v = offsets[offset];
+    v = OFFSET_COLOR_UNMASKED(offsets, offset);
     if (v & GRAY_BIT) {
-      offsets[offset] = BLACK_BIT | (v & OFFSET_MASK);
+      v -= GRAY_BIT;
+      v |= BLACK_BIT;
+      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
       GC_mark_xtagged(p + 1);
     }
@@ -1691,7 +1747,8 @@ static MPage *xtagged_compact_page;
 static void compact_tagged_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
-  OffsetTy offset, *offsets, dest_offset, dest_start_offset;
+  OffsetTy offset, dest_offset, dest_start_offset;
+  OffsetArrTy *offsets;
   void **dest, **startp;
   void **top;
 
@@ -1710,11 +1767,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
   while (p < top) {
     long size;
 
-    size = offsets[offset] & OFFSET_MASK;
+    size = OFFSET_SIZE(offsets, offset);
 
-    if (offsets[offset] & COLOR_MASK) {
-      long i;
-
+    if (OFFSET_COLOR(offsets, offset)) {
 #if ALIGN_DOUBLES
 #define PLUS_ALIGNMENT + alignment
       long alignment;
@@ -1764,14 +1819,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	  memcpy(dest + dest_offset, p, size << 2);
       }
       
-#if 1
-      offsets[offset] = dest_offset;
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset);
       offset += size;
       dest_offset += size;
-#else
-      for (i = 0; i < size; i++, offset++, dest_offset++)
-	offsets[offset] = dest_offset;
-#endif
  
       p += size;
     } else {
@@ -1799,7 +1849,8 @@ static void compact_tagged_mpage(void **p, MPage *page)
 static void compact_untagged_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
-  OffsetTy offset = 0, *offsets, dest_offset;
+  OffsetTy offset = 0, dest_offset;
+  OffsetArrTy *offsets;
   void **dest, **startp, **top;
 
   offsets = page->u.offsets;
@@ -1838,9 +1889,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
     }
 #endif
 
-    if (offsets[offset] & COLOR_MASK) {
-      long i;
-
+    if (OFFSET_COLOR(offsets, offset)) {
 #if ALIGN_DOUBLES
       long alignment;
       if ((size & 0x1) && !(dest_offset & 0x1))
@@ -1903,14 +1952,9 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	  memcpy(dest + dest_offset, p, size << 2);
       }
       
-#if 1
-      offsets[offset + 1] = dest_offset + 1;
+      OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset + 1);
       offset += size;
       dest_offset += size;
-#else
-      for (i = 0; i < size; i++, offset++, dest_offset++)
-	offsets[offset] = dest_offset;
-#endif
  
       p += size;
     } else {
@@ -2025,18 +2069,22 @@ void GC_fixup(void *pp)
 	OffsetTy v;
 	void *r;
 
-#if 0
-	if (offset >= page->alloc_boundary) {
-	  /* Past allocation region. */
-	  return;
-	}
+	if (!(page->type & MTYPE_TAGGED)) {
+#if SAFETY
+	  if (!offset) {
+	    /* Can't point to beginning of non-tagged block! */
+	    CRASH();
+	  }
 #endif
+	  offset--;
+	}
 
-	v = page->u.offsets[offset] & OFFSET_MASK;
+
+	v = OFFSET_SIZE(page->u.offsets, offset);
 	if (offset < page->compact_boundary)
-	  r = (void *)(page->o.compact_to + v) /* + ((long)p & 0x3) */;
+	  r = (void *)(page->o.compact_to + v);
 	else
-	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2)) /* + ((long)p & 0x3) */;
+	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2));
 
 #if SEARCH
 	if (r == search_for)
@@ -3148,7 +3196,7 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
 {
   void *p;
   MPage *map;
-  OffsetTy *offsets;
+  OffsetArrTy *offsets;
 
   if (memory_in_use > gc_threshold) {
     gcollect(0);
@@ -3156,7 +3204,7 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
   }
   
   p = (void *)malloc_pages(MPAGE_SIZE, MPAGE_SIZE);
-  offsets = (OffsetTy *)malloc_pages(OPAGE_SIZE, 0);
+  offsets = (OffsetArrTy *)malloc_pages(OPAGE_SIZE, 0);
 
   memory_in_use += MPAGE_SIZE;
 
@@ -3223,6 +3271,12 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
     map->o.bigblock_start = p;
   }
 
+#if SEARCH
+  if (p == search_for) {
+    stop();
+  }
+#endif
+
   return p;
 }
 
@@ -3236,6 +3290,11 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
 #endif
 
   size_in_words = ((size_in_bytes + 3) >> 2);
+
+#if SAFETY
+  if (size_in_words < 2)
+    CRASH();
+#endif
 
   if (size_in_words >= (BIGBLOCK_MIN_SIZE >> 2)) {
     return malloc_bigblock(size_in_words << 2, MTYPE_TAGGED);
@@ -3327,7 +3386,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
   *low = naya;
 
 #if SEARCH
-  if (m == search_for) {
+  if ((m + 1) == search_for) {
     stop();
   }
 #endif

@@ -122,7 +122,9 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 {
     Widget wgt;
     Position x, y, new_root_x, new_root_y;
+    int rx, ry;
     XEvent xevent;
+    String a[1];
 
     if (X)
       return FALSE;
@@ -145,6 +147,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);
+
     XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, saferef);
     XtAddCallback(X->menu, XtNonNoSelect, wxMenu::EventCallback, saferef);
     Xaw3dPopupMenuAtPos((MenuWidget)(X->menu), root_x, root_y);
@@ -153,14 +156,31 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     XtVaGetValues(X->menu, XtNx, &x, XtNy, &y, NULL);
     XtTranslateCoords(X->menu, x, y, &new_root_x, &new_root_y);
 
-    xevent.xmotion.x_root = new_root_x + 5;
-    xevent.xmotion.x = 5;
-    xevent.xmotion.y_root = new_root_y + 5;
-    xevent.xmotion.y = 5;
-
     XtAddGrab(X->shell, TRUE, FALSE);
     wxAddGrab(X->shell);
-    XtCallActionProc(X->menu, "start", &xevent, NULL, 0);
+
+
+    {
+      Window root, child;
+      int cx, cy;
+      unsigned int mask;
+
+      if (!XQueryPointer(wxAPP_DISPLAY, XtWindow(X->shell), 
+			 &root, &child,
+			 &rx, &ry, &cx, &cy, &mask)) {
+	rx = new_root_x + 5;
+	ry = new_root_y + 5;
+      }
+    }
+
+    xevent.xmotion.x_root = rx;
+    xevent.xmotion.x = rx - new_root_x;
+    xevent.xmotion.y_root = ry;
+    xevent.xmotion.y = ry - new_root_y;
+
+    a[0] = "Stay";
+
+    XtCallActionProc(X->menu, "start", &xevent, a, 1);
 
     popped_up_menu = this;
 

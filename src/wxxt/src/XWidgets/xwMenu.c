@@ -416,7 +416,7 @@ static void Start(w, ev, params, num_params)
       mw->menu.grabbed = TRUE;
     }
 
-    if (!HandleMotionEvent(mw, &ev->xmotion))
+    if (!HandleMotionEvent(mw, &ev->xmotion) && !num_params)
       DoSelect(w, CurrentTime, 1);
 }
 

@@ -591,7 +591,7 @@ static void kill_eventspace(Scheme_Object *ec, void *)
   c = WEAKIFIED(((Context_Custodian_Hop *)ec)->context);
 
   if (!c)
-    return; /* must not have had any frames or timers */
+    return; /* must not have had any frames, timers, etc. */
 
   {
     wxClipboardClient *clipOwner;
@@ -1005,7 +1005,8 @@ static void DoTimer(wxTimer *timer)
   scheme_clear_escape();
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
-  if (!once && (timer->one_shot == -1) && (timer->interval != -1))
+  if (!once && (timer->one_shot == -1) && (timer->interval != -1)
+      && !((MrEdContext *)timer->context)->killed)
     timer->Start(timer->interval, FALSE);
 }
 
@@ -1365,6 +1366,9 @@ static int MrEdContextReady(MrEdContext *, MrEdContext *c)
 
 static void event_found(MrEdContext *c)
 {
+  if (c->killed)
+    return;
+
   c->ready = 0;
 
   if (c->waiting_for_nested) {
@@ -1685,6 +1689,9 @@ Bool wxTimer::Start(int millisec, Bool _one_shot)
   if (prev || next || (mred_timers == this))
     return FALSE;
 
+  if (((MrEdContext *)context)->killed)
+    scheme_signal_error("start in timer%: the current eventspace has been shutdown");
+  
   interval = millisec;
   if (interval <= 0)
     interval = 1;

@@ -140,6 +140,7 @@ typedef struct named_bits_dict_ {
 
 char *intToHexString(int);
 char *odbc_version(void);
+Scheme_Object *raise_not_implemented(char *);
 
 /* type-and-value predicates */
 

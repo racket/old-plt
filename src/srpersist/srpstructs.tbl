@@ -138,10 +138,10 @@ SRPSTRUCT srpStructs[] = {
   { "sql-date", &dateStructFuns, dateFields, sizeray(dateFields) },
   { "sql-time", &timeStructFuns, timeFields, sizeray(timeFields) },
   { "sql-timestamp", &timeStampStructFuns, timeStampFields, sizeray(timeStampFields) },
-#if ODBCVER >= 0x0350
+// #if ODBCVER >= 0x0350
   { "sql-guid", &guidStructFuns, guidFields, sizeray(guidFields) },
-#endif /* 0x0350 */
-#if ODBCVER >= 0x0300
+// #endif /* 0x0350 */
+// #if ODBCVER >= 0x0300
   { "sql-year-interval", &yearIntervalStructFuns, yearIntervalFields, sizeray(yearIntervalFields) },
   { "sql-month-interval", &monthIntervalStructFuns, monthIntervalFields, sizeray(monthIntervalFields) },
   { "sql-day-interval", &dayIntervalStructFuns, dayIntervalFields, sizeray(dayIntervalFields) },
@@ -155,5 +155,5 @@ SRPSTRUCT srpStructs[] = {
   { "sql-hour-to-minute-interval", &hourToMinuteIntervalStructFuns, hourToMinuteIntervalFields, sizeray(hourToMinuteIntervalFields) },
   { "sql-hour-to-second-interval", &hourToSecondIntervalStructFuns, hourToSecondIntervalFields, sizeray(hourToSecondIntervalFields) },
   { "sql-minute-to-second-interval", &minuteToSecondIntervalStructFuns, minuteToSecondIntervalFields, sizeray(minuteToSecondIntervalFields) },
-#endif /* 0x0300 */
+// #endif /* 0x0300 */
 };

@@ -277,10 +277,12 @@ int sizeofCDataType(SQLSMALLINT type) {
     return sizeof(TIMESTAMP_STRUCT);
 
 #ifdef WIN32
+#if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
     return sizeof(_int64);
   case SQL_C_UBIGINT :
     return sizeof(unsigned _int64);
+#endif
 #endif
 
   case SQL_C_BINARY :
@@ -482,8 +484,10 @@ Scheme_Object *srp_free_indicator(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("read-op-parms");
+#else
   SQLUINTEGER i;
   SQLUSMALLINT *values;
   Scheme_Object *retval,*symbol;
@@ -516,9 +520,8 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
   }
 
   return retval;
-
-}
 #endif
+}
 
 Scheme_Object *srp_read_boxed_uint(int argc,Scheme_Object **argv) {
   if (SQL_BOXED_UINTP(argv[0]) == FALSE) {
@@ -1025,10 +1028,12 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
     return readBitBuffer((unsigned char *)buffer,numElts);
 
 #ifdef WIN32
+#if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
     return readBigIntBuffer((_int64 *)buffer,numElts);
   case SQL_C_UBIGINT :
     return readUBigIntBuffer((unsigned _int64 *)buffer,numElts);
+#endif
 #endif
 
   case SQL_C_STINYINT :
@@ -1280,6 +1285,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     writeUTinyBuffer((unsigned char *)buffer,argv[1]); 
 
 #ifdef WIN32
+#if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
@@ -1289,6 +1295,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
     writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1]); 
+#endif
 #endif
 
   case SQL_C_FLOAT :
@@ -6153,7 +6160,9 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   SQLINTEGER rowNumber;
   SRP_SQL_ROW_STATUS *rowStatus;
   SRP_NAMED_SMALL_CONSTANT *p;      
+#if (ODBCVER >= 0x0300)
   SQLINTEGER actualLen;
+#endif
   SQLINTEGER maxRows;
   RETURN_CODE retcode;
 
@@ -6971,6 +6980,7 @@ void initExns(void) {
   scheme_register_extension_global(&errorFuns,sizeof(errorFuns));
   scheme_register_extension_global(&needDataFuns,sizeof(needDataFuns));
   scheme_register_extension_global(&stillExecutingFuns,sizeof(stillExecutingFuns));
+  scheme_register_extension_global(&notImplementedFuns,sizeof(notImplementedFuns));
 }
 
 void initStructs(void) {

@@ -9,9 +9,9 @@ static SRP_PRIM srpPrims[] = {
 
   // utility procedures
 
-#if ODBCVER >= 0x0300
+// ODBC 3.0 and above
   { srp_read_op_parms,"read-op-parms",1,1 },    
-#endif
+// end ODBC 3.0 and above
   { srp_make_length,"make-length",0,1 },  
   { srp_free_length,"free-length",1,1 },  
   { srp_read_length,"read-length",1,1 },  

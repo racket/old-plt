@@ -71,7 +71,12 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   if (panel)
     cparent = (wxWnd *)(panel->handle);
 
-  labelPosition = panel->label_position;
+  if (style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else if (style & wxHORIZONTAL_LABEL)
+    labelPosition = wxHORIZONTAL;
+  else
+    labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
   if (Title) {

@@ -41,7 +41,12 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   cparent = (wxWnd *)(panel->handle);
 
-  labelPosition = panel->label_position;
+  if (style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else if (style & wxHORIZONTAL_LABEL)
+    labelPosition = wxHORIZONTAL;
+  else
+    labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
   // If label exists, create a static control for it.

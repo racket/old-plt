@@ -62,7 +62,12 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   cparent = (wxWnd *)(panel->handle);
 
-  labelPosition = panel->label_position;
+  if (style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else if (style & wxHORIZONTAL_LABEL)
+    labelPosition = wxHORIZONTAL;
+  else
+    labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
   the_label = NULL;

@@ -5,11 +5,12 @@
 
 (define (make-collection-extension
 	 collection-name
-	 header-files
+	 header-expr
 	 collection-files
 	 argv)
   (printf "building collection ~a: ~a~n" collection-name collection-files)
   (let* ([prefixed? #f]
+	 [namespace #f]
 	 [dest-dir (build-path "compiled" "native" (system-library-subpath))]
 	 [src-dir (current-directory)]
 	 [sses (quicksort collection-files string<?)]
@@ -23,6 +24,12 @@
 		 "native"
 		 (append-c-suffix base)))
 	      bases)]
+	 [zos (map 
+	       (lambda (base)
+		 (build-path
+		  "compiled"
+		  (append-zo-suffix base)))
+	       bases)]
 	 [kps (map 
 	       (lambda (base)
 		 (build-path
@@ -36,13 +43,23 @@
 		   dest-dir
 		   (append-object-suffix base)))
 		bases)]
+	 [ss->zo-list
+	  (map (lambda (ss zo)
+		 `(,zo (,ss)
+		       ,(lambda ()
+			  (require-library "zo.ss" "compiler")
+			  (unless namespace
+			      (set! namespace (make-namespace))
+			      (eval header-expr namespace))
+			  (compile-to-zo ss zo namespace))))
+	       sses zos)]
 	 [ss->c-list
 	  (map (lambda (ss c)
 		 `(,c (,ss)
 		      ,(lambda ()
 			 (require-library "load.ss" "compiler")
 			 (unless prefixed?
-			   (compiler:load-prefixes header-files)
+			   (compiler:load-prefixes (list header-expr))
 			   (set! prefixed? #t))
 			 (parameterize ([compiler:option:c-only #t]
 					[compiler:option:multi-o #t]
@@ -65,15 +82,17 @@
 	    ,objs
 	    ,(lambda ()
 	       (require-library "ld.ss" "compiler")
-	       (link-multi-file-extension
-		(string-append "_" collection-name)
-		(append objs kps)
-		dest-dir)))])
+	       (parameterize ([compiler:option:setup-prefix (string-append "_" collection-name)])
+		 (link-multi-file-extension
+		  (append objs kps)
+		  dest-dir))))])
     (unless (directory-exists? dest-dir)
        (make-directory* dest-dir))
     (make*
      (append
       (list o->so)
+      `(("zo" ,zos ,void))
+      ss->zo-list
       ss->c-list
       c->o-list)
      argv)))

@@ -15,6 +15,7 @@
            (struct robot (id x y))
 	   num-robots
            read-board! read-response!
+           robot-table robot-indexes
            fix-home!)
            
   ;; empty = 0

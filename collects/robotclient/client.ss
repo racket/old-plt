@@ -78,7 +78,8 @@
   
   (define (do-turn update-score in out)
     (let loop ((packages (read-packages in))
-               (robots null))
+               (robots (map (lambda (i) (hash-table-get (robot-table) i))
+                            (robot-indexes))))
       (cond
        ((gui)
 	(for-each

@@ -606,10 +606,10 @@
 ;; `ptr-type' can be given to be used as the base pointer type, instead of
 ;; _pointer, `scheme->c' and `c->scheme' can be used for adding conversion
 ;; hooks.
-(define* make-cpointer-type
+(define* _cpointer
   (case-lambda
-   [(tag) (make-cpointer-type tag #f #f #f)]
-   [(tag ptr-type) (make-cpointer-type tag ptr-type #f #f)]
+   [(tag) (_cpointer tag #f #f #f)]
+   [(tag ptr-type) (_cpointer tag ptr-type #f #f)]
    [(tag ptr-type scheme->c c->scheme)
     (let ([tagged->C (string->symbol (format "~a->C" tag))]
           [error-string (format "expecting a \"~a\" pointer, got ~~e" tag)])
@@ -629,7 +629,7 @@
 ;; defining a predicate too.  The name should look like `_foo', the predicate
 ;; will be `foo?', and the tag will be "foo".  In addition, `foo-tag' is bound
 ;; to the tag.  The optional `ptr-type', `scheme->c', and `c->scheme' arguments
-;; are the same as those of `make-cpointer-type'.
+;; are the same as those of `_cpointer'.
 (provide define-cpointer-type)
 (define-syntax (define-cpointer-type stx)
   (syntax-case stx ()
@@ -648,11 +648,10 @@
                      [TYPE-tag    (id name "-tag")])
          #'(define-values (_TYPE TYPE? TYPE-tag)
              (let ([TYPE-tag name-string])
-               (values
-                (make-cpointer-type TYPE-tag ptr-type scheme->c c->scheme)
-                (lambda (x)
-                  (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
-                TYPE-tag)))))]))
+               (values (_cpointer TYPE-tag ptr-type scheme->c c->scheme)
+                       (lambda (x)
+                         (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
+                       TYPE-tag)))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Struct wrappers
@@ -731,8 +730,7 @@
                            [(types) (list stype ...)]
                            [(offset ...) (apply values
                                                 (compute-offsets types))])
-               (define _TYPE*
-                 (make-cpointer-type TYPE-tag (make-cstruct-type types)))
+               (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
                (define-cpointer-type _TYPE)
                (values _TYPE* _TYPE TYPE? TYPE-tag
                        (lambda (slot ...)

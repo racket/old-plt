@@ -5,7 +5,7 @@
 (define libxosd (ffi-lib "libxosd"))
 
 ;; Use this type to properly destroy an xosd object
-(define _xosd (make-ctype (make-cpointer-type "xosd") #f
+(define _xosd (make-ctype (_cpointer "xosd") #f
                 (lambda (p)
                   (if p
                     (register-finalizer p xosd-destroy)

@@ -120,26 +120,30 @@
 			      flat-end))))
 		e)))))
 
+  ;; used in pattern-matching with an escape proc
   (define-values (stx-check/esc)
     (lambda (v esc)
       (if v
 	  v
 	  (esc #f))))
 
+  ;; used in pattern-matching where #f on the cdr
+  ;; is a failure
   (define-values (cons/#f)
     (lambda (i l)
       (if l
 	  (cons i l)
 	  #f)))
 
+  ;; used in pattern-matching where the second
+  ;;  list can be a failure; if it's null, the first
+  ;;  part might be an improper list
   (define-values (append/#f)
     (lambda (l1 l2)
-      (if l1
-	  (if l2
-	      (if (null? l2)
-		  l1
-		  (append l1 l2))
-	      #f)
+      (if l2
+	  (if (null? l2)
+	      l1
+	      (append l1 l2))
 	  #f)))
 
   ;; The rotate procedures are used to
@@ -725,6 +729,8 @@
   ;; In the pattern-variable environment produced by a matcher,
   ;; a variable under a single ellipsis has a list of matches,
   ;; a variable under two ellipses has a list of list of matches, etc.
+  ;; The top-level environment is a list* --- i.e., a list, except that the last
+  ;; element is in the cdr of the cons cell for the next-to-last element.
   ;;
   ;; An environment does not contain any indicication of how far a
   ;; variable is nested. Uses of the variable should be checked separately
@@ -930,7 +936,10 @@
 	     (pair? (cdr e1))
 	     (null? (cddr e1)))
 	`(cons/#f ,(cadr e1) ,e2)
-	`(append/#f ,e1 ,e2)))
+	`(let ([v ,e1])
+	   (if v
+	       (append/#f v ,e2)
+	       #f))))
 
   ;; ----------------------------------------------------------------------
   ;; Output generator
@@ -943,6 +952,9 @@
   ;; variables used in the pattern, instead. This is useful for
   ;; determining what kind of environment (and prototype) to construct
   ;; for the pattern.
+  ;;
+  ;; An environment for an expander is a list*; see the note above,
+  ;; under "Input Matcher", for details.
   ;;
   (define (make-pexpand p proto-r k dest)
     (define top p)
@@ -1154,6 +1166,11 @@
      [else
       `(cons ,h ,t)]))
 
+  ;; Generates a list-ref expression; if use-tail-pos
+  ;;  is not #f, then the argument list is really a list*
+  ;;  (see the note under "Input Matcher") and in that case
+  ;;  use-tail-pos is a number indicating the list-tail
+  ;;  position of the last element
   (define (apply-list-ref e p use-tail-pos)
     (cond
      [(and use-tail-pos (= p use-tail-pos))

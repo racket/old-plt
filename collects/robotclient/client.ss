@@ -85,8 +85,8 @@
       (cond
        ((null? packages) (fix-home!)))
       (cond
-;        ((or baseline? (= 1 (num-robots)))
-; 	(send-command (compute-baseline-move packages robots) out))
+       ((or baseline? ); (= 1 (num-robots)))
+	(send-command (compute-baseline-move packages robots) out))
        (else
         (let ((command (compute-move packages robots)))
 	  (printf "Sending command: ~a (bid ~a)~n" (command-command command)

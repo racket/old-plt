@@ -4,8 +4,7 @@
            (lib "list.ss"))
   (provide compute-baseline-move)
   
-  (define MAX_BFS 10000)
-  (define GUESS_TRIES 80)
+  (define MAX_BFS 20000)
 
   (define (compute-drops)
     (filter (lambda (x) x)
@@ -87,37 +86,34 @@
 	    
 
   (define (guess-path paths goal?)
-    (let* ((path-vec (list->vector (map reverse! paths)))
-	   (num-paths (vector-length path-vec)))
-      (let loop ((tries GUESS_TRIES)
-                 (best (vector-ref path-vec 0))
-                 (score (goal-score (car (vector-ref path-vec 0)))))
-	(cond
-	 ((> tries 0)
-	  (let* ((p (vector-ref path-vec (random num-paths)))
-		 (s (goal-score (car p))))
-	    (cond
-	     ((> s score)
-	      (loop (sub1 tries) p s))
-	     (else
-	      (loop (sub1 tries) best score)))))
-	 (else best)))))
-
+    (let loop ((p (cdr paths))
+	       (best (car paths))
+	       (score (goal-score (caar paths))))
+      (cond
+       ((null? p) best)
+       (else
+	(let ((s (goal-score (caar p))))
+	  (cond
+	   ((> s score)
+	    (loop (cdr p) (car p) s))
+	   (else
+	    (loop (cdr p) best score))))))))
 
   (define (compute-path px py goal?)
     (let ((visited (make-hash-table 'equal))
           (q (create-queue))
 	  (count 0))
       (enqueue! q (list (cons px py)))
+      (time
       (let loop ()
 	(set! count (add1 count))
 	(cond
 	 ((> count MAX_BFS)
-	  (guess-path (queue-head q) goal?))
+	  (guess-path (map reverse! (queue-head q)) goal?))
 	 (else
 	  (let ((path (dequeue! q)))
 	    (cond
-	     ((goal? (car path)) (reverse! path))
+	     ((goal? (car path)) (printf "~a~n" count) (reverse! path))
 	     (else
 	      (for-each (lambda (spot)
 			  (cond
@@ -134,9 +130,9 @@
 				  (list (cons (add1 x) y)
 					(cons (sub1 x) y)
 					(cons x (add1 y))
-					(cons x (sub1 y)))))))))
-	  (loop))))))
-  
+					(cons x (sub1 y))))))
+              (loop)))))))))
+    )
   (define path (make-parameter null))
   
   (define (compute-baseline-move packages robots)

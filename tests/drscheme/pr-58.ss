@@ -18,41 +18,19 @@
 	  (push-button-and-wait execute-button)
 	  (let ([answer-begin (+ (get-int-pos) 3)])
 	    (mred:test:button-push (ivar drs-frame check-syntax-button))
-	    (let ([answer-end (- (get-int-pos) 1)])
-	      (let ([actual (send interactions-edit get-text
-				  answer-begin answer-end)])
-		(unless (string=? actual expected)
-			(printf "Expected: ~a~n Actual: ~a~n~n"
-				expected actual)))
+	    (let* ([answer-end (- (get-int-pos) 1)]
+		   [actual (send interactions-edit get-text
+				 answer-begin answer-end)])
+	      (unless (string=? actual expected)
+		      (printf "Expected: ~a~n Actual: ~a~n~n"
+			      expected actual))
 	      (let ([frame (mred:test:get-active-frame)])
 		(unless (eq? frame drs-frame)
-			(error 'check-syntax "Unexpected window ~a" frame))))))]
-       [set-language-level!
-	(lambda (level)
-	  (mred:test:menu-select "Language" "Configure Language...")
-	  (mred:test:new-window (wx:find-window-by-name "Language" null))
-	  (let* ([frame 
-		  (letrec ([loop 
-			    (lambda () 
-			      (let ([active (mred:test:get-active-frame)])
-				(if (or (eq? active #f)
-					(eq? active drs-frame))
-				    (begin
-				      (sleep 1/2)
-				      (loop))
-				    active)))])
-		     (loop))]
-		 [o-panel (send frame get-top-panel)]
-		 [o-children (ivar o-panel children)]
-		 [i-panel (car o-children)]
-		 [i-children (ivar i-panel children)]
-		 [choice (cadr i-children)])
-	    (mred:test:set-choice! choice level)
-	    (mred:test:button-push "OK")))])
+			(error 'check-syntax "Unexpected window ~a" frame))))))])
 
   (printf "Starting tests~n") 
 
-  (set-language-level! "Beginner")
+  (set-language-level! "Beginner" drs-frame)
 
   (check-check-syntax "'(a . b)" "improper lists are not allowed")
 
@@ -63,13 +41,13 @@
 
   ; end pr-246
 
-  (set-language-level! "Intermediate")
+  (set-language-level! "Intermediate" drs-frame)
   (check-check-syntax "'(a . b)" "improper lists are not allowed")
 
-  (set-language-level! "Advanced")
+  (set-language-level! "Advanced" drs-frame)
   (check-check-syntax "'(a . b)" "improper lists are not allowed")
 
-  (set-language-level! "Quasi-R4RS")
+  (set-language-level! "Quasi-R4RS" drs-frame)
   (check-check-syntax "'(a . b)" "")
 
   (printf "Finished tests~n"))

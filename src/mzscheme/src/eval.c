@@ -3751,9 +3751,9 @@ local_expand(int argc, Scheme_Object **argv)
   if (SAME_OBJ(argv[1], internal_define_symbol))
     kind = SCHEME_INTDEF_FRAME;
   else if (SAME_OBJ(argv[1], module_symbol))
-    kind = SCHEME_MODULE_FRAME;
+    kind = SCHEME_MODULE_BEGIN_FRAME;
   else if (SAME_OBJ(argv[1], top_level_symbol))
-    kind = SCHEME_MODULE_FRAME;
+    kind = SCHEME_TOPLEVEL_FRAME;
   else if (SAME_OBJ(argv[1], expression_symbol))
     kind = 0;
   else {

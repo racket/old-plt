@@ -2025,7 +2025,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *redef_modname;
   Scheme_Object *simplify_cache;
 
-  if (!scheme_is_module_env(env))
+  if (!(env->flags & SCHEME_MODULE_FRAME))
     scheme_wrong_syntax("#%module-begin", NULL, form, "illegal use (not a module body)");
 
   if (scheme_stx_proper_list_length(form) < 0)
@@ -2038,7 +2038,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
      `require', `provide', `#%app', etc. */
-  xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | SCHEME_MODULE_FRAME, env);
+  xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | SCHEME_MODULE_BEGIN_FRAME, env);
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();
@@ -2408,7 +2408,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		if (!SCHEME_STX_PAIRP(rest))
 		  scheme_wrong_syntax("provide", a, form, "bad syntax");
 		if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(rest)))
-		  scheme_wrong_syntax("provide", a, form, "bad syntax (data following all keyword)");
+		  scheme_wrong_syntax("provide", a, form, "bad syntax (data following `all-from')");
 		
 		midx = SCHEME_STX_CAR(rest);
 		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
@@ -2420,9 +2420,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	      } else if (SAME_OBJ(all_from_except_symbol, SCHEME_STX_VAL(fst))) {
 		/* (all-from-except <modname> <id> ...) */
 		Scheme_Object *exns, *el;
+		int len;
 		
-		if (scheme_stx_proper_list_length(a) < 0)
+		len = scheme_stx_proper_list_length(a);
+
+		if (len < 0)
 		  scheme_wrong_syntax("provide", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+		else if (len == 1)
+		  scheme_wrong_syntax("provide", e, form, "bad syntax (missing module name)");
 		
 		midx = SCHEME_STX_CAR(rest);
 		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
@@ -2460,7 +2465,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		fields = SCHEME_STX_CDR(rest);
 		fields = SCHEME_STX_CAR(fields);
 		
-		if (!SCHEME_STX_SYM(base))
+		if (!SCHEME_STX_SYMBOLP(base))
 		  scheme_wrong_syntax("provide", base, a,
 				      "bad syntax (struct name is not an identifier)");
 
@@ -2597,7 +2602,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (!scheme_hash_get(required, a)) {
 	  /* FIXME: check source of require */
 	  a = SCHEME_STX_CAR(l);
-	  scheme_wrong_syntax("provide", a, SCHEME_CAR(SCHEME_CAR(rx)),
+	  scheme_wrong_syntax("provide", a, SCHEME_CADR(SCHEME_CAR(rx)),
 			      "excluded name was not required");
 	}
       }

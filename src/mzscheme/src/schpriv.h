@@ -1421,10 +1421,11 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 /* flags used with scheme_new_frame */
 #define SCHEME_TOPLEVEL_FRAME 1
 #define SCHEME_MODULE_FRAME 2
-#define SCHEME_LAMBDA_FRAME 4
-#define SCHEME_INTDEF_FRAME 8
-#define SCHEME_NO_RENAME 16
-#define SCHEME_CAPTURE_WITHOUT_RENAME 32
+#define SCHEME_MODULE_BEGIN_FRAME 4
+#define SCHEME_LAMBDA_FRAME 8
+#define SCHEME_INTDEF_FRAME 16
+#define SCHEME_NO_RENAME 32
+#define SCHEME_CAPTURE_WITHOUT_RENAME 64
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

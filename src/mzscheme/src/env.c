@@ -975,7 +975,7 @@ int scheme_is_toplevel(Scheme_Comp_Env *env)
 
 int scheme_is_module_env(Scheme_Comp_Env *env)
 {
-  return !!(env->flags & SCHEME_MODULE_FRAME);
+  return !!(env->flags & (SCHEME_MODULE_FRAME | SCHEME_MODULE_BEGIN_FRAME));
 }
 
 Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)

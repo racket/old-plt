@@ -267,6 +267,7 @@ install:
 	cd ..; echo 'MROPTIONS=@MROPTIONS@' >> $(BUILDINFO)
 	cd ..; echo 'X_CFLAGS=@X_CFLAGS@' >> $(BUILDINFO)
 	cd ..; echo 'X_LIB=@X_LIBS@' >> $(BUILDINFO)
+	cd ..; echo "MRLIBS=$(GUILIBS_@WXVARIANT@)" >> $(BUILDINFO)
 	cd ..; echo "MRLDFLAGS=$(MREDLDFLAGS)" >> $(BUILDINFO)
 
 3m:

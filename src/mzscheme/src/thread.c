@@ -1865,7 +1865,7 @@ static void start_child(Scheme_Thread * volatile child,
     }
 
     select_thread(NULL);
-    
+
     /* Shouldn't get here! */
     scheme_signal_error("bad process switch");
   }
@@ -2386,7 +2386,7 @@ static int check_sleep(int need_activity, int sleep_now)
       (do_atomic 
        || (!p && ((!sleep_now && scheme_wakeup_on_input)
 		  || (sleep_now && scheme_sleep))))) {
-    float max_sleep_time = 0;
+    double max_sleep_time = 0;
 
     /* Poll from top-level process, and all subprocesses are blocked. */
     /* So, everything is blocked pending external input. */
@@ -2429,17 +2429,16 @@ static int check_sleep(int need_activity, int sleep_now)
       }
 
       if (merge_time) {
-	long d = (long)p->block_start_sleep;
-	float t;
+	double d = p->block_start_sleep;
+	double t;
 
-	d = (scheme_get_milliseconds() - d);
+	d = (scheme_get_inexact_milliseconds() - d);
 
-	if (d < 0)
-	  d = -d;
-	
 	t = p->sleep_time - (((float)d) / 1000);
-	if (t <= 0)
+	if (t <= 0) {
 	  t = (float)0.00001;
+	  needs_sleep_cancelled = 1;
+	}
 	if (!max_sleep_time || (t < max_sleep_time))
 	  max_sleep_time = t;
       } 
@@ -2449,9 +2448,16 @@ static int check_sleep(int need_activity, int sleep_now)
     if (needs_sleep_cancelled)
       return 0;
   
-    if (sleep_now)
-      scheme_sleep(max_sleep_time, fds);
-    else
+    if (sleep_now) {
+      float mst = (float)max_sleep_time;
+
+      /* Make sure that mst didn't go to infinity: */
+      if ((double)mst > max_sleep_time) {
+	mst = 100000000.0;
+      }
+
+      scheme_sleep(mst, fds);
+    } else
       scheme_wakeup_on_input(fds);
 
     return 1;
@@ -2661,7 +2667,7 @@ void scheme_thread_block(float sleep_time)
 	not a min sleep time. Otherwise, it's a min & max sleep time.
 	This proc auto-resets p's blocking info if an escape occurs. */
 {
-  long start, d;
+  double start, d;
   Scheme_Thread *next, *p = scheme_current_thread;
   Scheme_Config *config = p->config;
 
@@ -2688,7 +2694,7 @@ void scheme_thread_block(float sleep_time)
     scheme_wake_up();
 
   if (sleep_time > 0)
-    start = scheme_get_milliseconds();
+    start = scheme_get_inexact_milliseconds();
   else
     start = 0; /* compiler-friendly */
 
@@ -2754,10 +2760,8 @@ void scheme_thread_block(float sleep_time)
 	      break;
 	  }
 	} else if (next->block_descriptor == SLEEP_BLOCKED) {
-	  d = (scheme_get_milliseconds() - (long)next->block_start_sleep);
-	  if (d < 0)
-	    d = -d;
-	  if (d >= (next->sleep_time * 1000))
+	  d = (scheme_get_inexact_milliseconds() - next->block_start_sleep);
+	  if (d >= (next->sleep_time * 1000.0))
 	    break;
 	} else
 	  break;
@@ -2845,10 +2849,8 @@ void scheme_thread_block(float sleep_time)
   }
   
   if (sleep_time > 0) {
-    d = (scheme_get_milliseconds() - start);
-    if (d < 0)
-      d = -d;
-    if (d < (sleep_time * 1000)) {
+    d = (scheme_get_inexact_milliseconds() - start);
+    if (d < (sleep_time * 1000.0)) {
       /* Still have time to sleep if necessary, but make sure we're
 	 not ready (because maybe that's why we were swapped back in!) */
       if (p->block_descriptor == GENERIC_BLOCKED) {
@@ -3611,7 +3613,7 @@ int scheme_is_waitable(Scheme_Object *o)
   return !!find_waitable(o);
 }
 
-static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, long start_time) 
+static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double start_time) 
 {
   Waiting *waiting;
   int pos;
@@ -3863,10 +3865,8 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
   if (waiting->timeout >= 0.0) {
     long d;
-    d = (scheme_get_milliseconds() - waiting->start_time);
-    if (d < 0)
-      d = -d;
-    if (d >= (waiting->timeout * 1000))
+    d = (scheme_get_inexact_milliseconds() - waiting->start_time);
+    if (d >= (waiting->timeout * 1000.0))
       return 1;
   } else if (all_semas) {
     /* Try to block in a GCable way: */
@@ -4005,7 +4005,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   Waitable_Set *waitable_set;
   Waiting *waiting;
   float timeout = -1.0;
-  long start_time;
+  double start_time;
 
   if (!SCHEME_FALSEP(argv[0])) {
     if (SCHEME_REALP(argv[0]))
@@ -4016,7 +4016,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
       return NULL;
     }
 
-    start_time = scheme_get_milliseconds();
+    start_time = scheme_get_inexact_milliseconds();
   } else
     start_time = 0;
 

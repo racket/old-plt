@@ -92,6 +92,7 @@ static Scheme_Object *dynamic_wind (int argc, Scheme_Object *argv[]);
 #ifdef TIME_SYNTAX
 static Scheme_Object *time_apply(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_milliseconds(int argc, Scheme_Object **argv);
+static Scheme_Object *current_inexact_milliseconds(int argc, Scheme_Object **argv);
 static Scheme_Object *current_process_milliseconds(int argc, Scheme_Object **argv);
 static Scheme_Object *current_gc_milliseconds(int argc, Scheme_Object **argv);
 static Scheme_Object *current_seconds(int argc, Scheme_Object **argv);
@@ -261,6 +262,11 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("current-milliseconds",
 			     scheme_make_prim_w_arity(current_milliseconds,
 						      "current-milliseconds",
+						      0, 0),
+			     env);
+  scheme_add_global_constant("current-inexact-milliseconds",
+			     scheme_make_prim_w_arity(current_inexact_milliseconds,
+						      "current-inexact-milliseconds",
 						      0, 0),
 			     env);
   scheme_add_global_constant("current-process-milliseconds",
@@ -2667,7 +2673,7 @@ START_XFORM_SKIP;
 
 long scheme_get_milliseconds(void)
 {
-#ifdef CLOCK_IS_USER_TIME
+#ifdef USE_MACTIME
   return scheme_get_process_milliseconds();
 #else
 # ifdef USE_FTIME
@@ -2682,6 +2688,34 @@ long scheme_get_milliseconds(void)
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec * 1000 + now.tv_usec / 1000;
+#  endif
+# endif
+#endif
+}
+
+double scheme_get_inexact_milliseconds(void)
+{
+#ifdef USE_MACTIME
+  {
+    UnsignedWide time;
+    Microseconds(&time);
+    return (((double)(time.lo >> 10)
+	    + ((double)(time.hi >> 10) * 4294967296.0))
+	    * 1.024);
+  }
+#else
+# ifdef USE_FTIME
+  struct MSC_IZE(timeb) now;
+  MSC_IZE(ftime)(&now);
+  return (double)now.time * 1000.0 + (double)now.millitm;
+# else
+#  ifdef PALMOS_STUFF
+  /* FIXME */
+  return 0;
+#  else
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  return (double)now.tv_sec * 1000.0 + (double)now.tv_usec / 1000;
 #  endif
 # endif
 #endif
@@ -3013,6 +3047,11 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 static Scheme_Object *current_milliseconds(int argc, Scheme_Object **argv)
 {
   return scheme_make_integer(scheme_get_milliseconds());
+}
+
+static Scheme_Object *current_inexact_milliseconds(int argc, Scheme_Object **argv)
+{
+  return scheme_make_double(scheme_get_inexact_milliseconds());
 }
 
 static Scheme_Object *current_process_milliseconds(int argc, Scheme_Object **argv)

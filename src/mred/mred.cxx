@@ -969,10 +969,10 @@ static wxTimer *TimerReady(MrEdContext *c)
   }
 
   if (timer) {
-    unsigned long now;
-    unsigned long goal = timer->expiration;
+    double now;
+    double goal = timer->expiration;
 
-    now = (unsigned long)scheme_get_milliseconds();
+    now = scheme_get_inexact_milliseconds();
 
     return ((now >= goal)
 	    ? timer
@@ -1586,7 +1586,7 @@ static SLEEP_PROC_PTR mzsleep;
 
 static void MrEdSleep(float secs, void *fds)
 {
-  long now;
+  double now;
 
 #ifdef NEVER_EVER_SLEEP
   return;
@@ -1595,7 +1595,7 @@ static void MrEdSleep(float secs, void *fds)
   if (!(KEEP_GOING))
     return;
     
-  now = (long)scheme_get_milliseconds();
+  now = scheme_get_inexact_milliseconds();
   {
     wxTimer *timer = mred_timers;
     
@@ -1604,8 +1604,8 @@ static void MrEdSleep(float secs, void *fds)
     }
     
     if (timer) {
-      long done = (long)timer->expiration;
-      float diff = done - now;
+      double done = (long)timer->expiration;
+      double diff = done - now;
 
       diff /= 1000;
       if (diff <= 0)
@@ -1669,7 +1669,7 @@ wxTimer::~wxTimer(void)
 
 Bool wxTimer::Start(int millisec, Bool _one_shot)
 {
-  unsigned long now;
+  double now;
 
   if (prev || next || (mred_timers == this))
     return FALSE;
@@ -1679,7 +1679,7 @@ Bool wxTimer::Start(int millisec, Bool _one_shot)
     interval = 1;
   one_shot = !!_one_shot;
 
-  now = (unsigned long)scheme_get_milliseconds();
+  now = scheme_get_inexact_milliseconds();
   expiration = now + interval;
 
   if (mred_timers) {

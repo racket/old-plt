@@ -918,7 +918,7 @@ typedef struct Waiting {
   MZTAG_IF_REQUIRED
   Waitable_Set *set;
   int result, start_pos;
-  long start_time;
+  double start_time;
   float timeout;
 
   Scheme_Object **wrapss;

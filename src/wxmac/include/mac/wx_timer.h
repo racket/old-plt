@@ -25,7 +25,7 @@ class wxTimer: public wxbTimer
  UInt32		fireTime;		// the future Tick when the timer fires
 #else
  void *context;
- unsigned long expiration;
+ double expiration;
  int one_shot;
  int interval;
  wxTimer *prev, *next;

@@ -22,7 +22,7 @@ class wxbTimer: public wxObject
  public:
   Bool one_shot;
   int interval;
-  unsigned long expiration;
+  double expiration;
   void *context;
   wxTimer *next, *prev;
 

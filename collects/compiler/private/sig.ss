@@ -312,7 +312,7 @@
      (struct vm:args (type vals))
      (struct vm:begin0-mark! (var val))
      (struct vm:begin0-setup! (var))
-     (struct vm:syntax! (vars val))
+     (struct vm:syntax! (vars val in-mod?))
      
      (struct vm:alloc (type))
      (struct vm:build-constant (text))

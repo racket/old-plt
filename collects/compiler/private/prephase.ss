@@ -33,6 +33,7 @@
 ;;    quote - 'immutable for known immutable quoted vars
 ;;    lambda - an inferred name (temporary)
 ;;    module - a module-info record
+;;    define-syntax - in-mod?
 ;;; ------------------------------------------------------------
 
 (module prephase mzscheme
@@ -466,14 +467,17 @@
 		     ;; DEFINE-SYNTAX
 		     ;;
 		     [(zodiac:define-syntaxes-form? ast)
-		      (zodiac:make-define-syntaxes-form 
-		       (zodiac:zodiac-stx ast)
-		       (zodiac:parsed-back ast)
-		       (map (lambda (e) (prephase! e in-mod? #t #f))
-			    (zodiac:define-syntaxes-form-names ast))
-		       (prephase! (zodiac:define-syntaxes-form-expr ast)
-				  in-mod?
-				  #t (zodiac:define-syntaxes-form-names ast)))]
+		      (let ([ast
+			     (zodiac:make-define-syntaxes-form 
+			      (zodiac:zodiac-stx ast)
+			      (zodiac:parsed-back ast)
+			      (map (lambda (e) (prephase! e in-mod? #t #f))
+				   (zodiac:define-syntaxes-form-names ast))
+			      (prephase! (zodiac:define-syntaxes-form-expr ast)
+					 in-mod?
+					 #t (zodiac:define-syntaxes-form-names ast)))])
+			(set-annotation! ast in-mod?)
+			ast)]
 		     
 		     ;;-----------------------------------------------------------
 		     ;; APPLICATIONS

@@ -1227,20 +1227,34 @@
 	       ;; (define-syntax! x R)
 	       [(vm:syntax!? ast)
 		(let* ([process-set!
-			(lambda (target val process-val?)
+			(lambda (target val process-val? return-arity-ok?)
 			  (let ([sym
 				 (vm->c:make-symbol-const-string 
 				  (compiler:get-symbol-const! #f (zodiac:varref-var target)))]
 				[in-module? (varref:has-attribute? target varref:in-module)])
+			    (when process-val? 
+			      (emit "{ Scheme_Object *mcv = ")
+			      (process val indent-level #f #t)
+			      (emit "; "))
+			    (unless return-arity-ok?
+			      (emit " if (mcv != SCHEME_MULTIPLE_VALUES || scheme_multiple_count) {")
+			      (emit " NO_MULTIPLE_VALUES(mcv); "))
 			    (emit "scheme_install_macro(scheme_global_keyword_bucket(~a, ~a), "
 				  sym
 				  (if in-module? "env" "SCHEME_CURRENT_ENV(pr)"))
 			    (if process-val? 
-				(process val indent-level #f #t)
+				(emit "mcv")
 				(emit val))
-			    (emit ")")))]
+			    (emit ")")
+			    (when (or (not return-arity-ok?) process-val?)
+			      (emit ";"))
+			    (unless return-arity-ok?
+			      (emit " }"))
+			    (when process-val?
+			      (emit " }"))))]
 		       [vars (vm:syntax!-vars ast)]
 		       [val (vm:syntax!-val ast)]
+		       [in-mod? (vm:syntax!-in-mod? ast)]
 		       [num-to-set (length vars)]
 		       [return-arity (if (single-arity? val) 
 					 1
@@ -1252,23 +1266,31 @@
 			      (= return-arity num-to-set))])
 		    (if (= num-to-set 1)		      
 			
-			(process-set! (car vars) val #t)
+			(process-set! (car vars) val #t return-arity-ok?)
 			
 			(begin
 			  (emit "{ Scheme_Object * res = ")
 			  (process val indent-level #f #t)
 			  (emit "; ")
 			  (unless return-arity-ok?
+			    (unless in-mod?
+			      (emit "if (res != SCHEME_MULTIPLE_VALUES || scheme_multiple_count) "))
 			    (emit "CHECK_MULTIPLE_VALUES(res, ~a);" num-to-set))
 			  (emit "}")
 			  (if (not (null? vars))
 			      (emit "~n"))
+			  (unless in-mod?
+			    (emit-indentation)
+			    (emit "if (scheme_multiple_count) {~n"))
 			  (let aloop ([vars vars] [n 0])
 			    (unless (null? vars)
 			      (emit-indentation)
-			      (process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f)
+			      (process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f #t)
 			      (emit ";~n")
 			      (aloop (cdr vars) (+ n 1))))
+			  (unless in-mod?
+			    (emit-indentation)
+			    (emit "}~n"))
 			  ))))]
 
 	       ;; (%args A ...) -> arg[0] = A; ...

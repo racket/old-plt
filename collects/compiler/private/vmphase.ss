@@ -716,14 +716,19 @@
 		 [(zodiac:define-syntaxes-form? ast)	    
 		  (let* ([vars (zodiac:define-syntaxes-form-names ast)]
 			 [val (zodiac:define-syntaxes-form-expr ast)]
+			 [in-mod? (get-annotation ast)]
 			 [body
 			  (convert val
-				   (not (= (length vars) 1))
+				   ;; At top level, always multi, because 
+				   ;;  zero results => just decl
+				   (and in-mod?
+					(not (= (length vars) 1)))
 				   (lambda (val)
 				     (list
 				      (make-vm:syntax! #f
 						       vars
-						       val)))
+						       val
+						       in-mod?)))
 				   #f
 				   #f
 				   #t)])

@@ -30,6 +30,7 @@
 	   ;; "keywords":
 	   private public override augment
 	   pubment overment augride
+           public-final override-final augment-final
 	   field init init-field
 	   rename-super rename-inner inherit
 	   super inner))

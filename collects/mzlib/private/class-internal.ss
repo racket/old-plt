@@ -29,6 +29,7 @@
   
   (provide-class-keyword private public override augride
 			 pubment overment augment
+			 public-final override-final augment-final
 			 field init init-field
 			 rename-super rename-inner inherit
 			 super inner)
@@ -113,6 +114,9 @@
 		(quote-syntax public)
 		(quote-syntax override)
 		(quote-syntax augride)
+		(quote-syntax public-final)
+		(quote-syntax override-final)
+		(quote-syntax augride-final)
 		(quote-syntax pubment)
 		(quote-syntax overment)
 		(quote-syntax augment)
@@ -358,6 +362,7 @@
            (for-each (lambda (stx)
                        (syntax-case stx (init init-rest field init-field inherit-field
                                               private public override augride
+					      public-final override-final augment-final
                                               pubment overment augment
                                               rename-super inherit rename-inner)
                          [(form idp ...)
@@ -421,6 +426,9 @@
                                       (syntax-e (quote-syntax (public
                                                                 override
 								augride
+								public-final
+								override-final
+								augment-final
                                                                 pubment
                                                                 overment
                                                                 augment
@@ -445,6 +453,12 @@
                           (bad "ill-formed override clause" stx)]
                          [(augride . rest)
                           (bad "ill-formed augride clause" stx)]
+                         [(public-final . rest)
+                          (bad "ill-formed public-final clause" stx)]
+                         [(override-final . rest)
+                          (bad "ill-formed override-final clause" stx)]
+                         [(augment-final . rest)
+                          (bad "ill-formed augment-final clause" stx)]
                          [(pubment . rest)
                           (bad "ill-formed pubment clause" stx)]
                          [(overment . rest)
@@ -482,6 +496,9 @@
 							    public
 							    override
 							    augride
+							    public-final
+							    override-final
+							    augment-final
 							    pubment
 							    overment
 							    augment
@@ -524,12 +541,18 @@
 			  (flatten pair (extract* (list (quote-syntax override)) decls))]
 			 [(augrides)
 			  (flatten pair (extract* (list (quote-syntax augride)) decls))]
+			 [(public-finals)
+			  (flatten pair (extract* (list (quote-syntax public-final)) decls))]
+			 [(override-finals)
+			  (flatten pair (extract* (list (quote-syntax override-final)) decls))]
 			 [(pubments)
 			  (flatten pair (extract* (list (quote-syntax pubment)) decls))]
 			 [(overments)
 			  (flatten pair (extract* (list (quote-syntax overment)) decls))]
 			 [(augments)
 			  (flatten pair (extract* (list (quote-syntax augment)) decls))]
+			 [(augment-finals)
+			  (flatten pair (extract* (list (quote-syntax augment-final)) decls))]
 			 [(rename-supers)
 			  (flatten pair (extract* (list (quote-syntax rename-super)) decls))]
 			 [(inherits)
@@ -582,9 +605,10 @@
 		    [inherit-names (map car inherits)]
 		    [rename-super-names (map car rename-supers)]
 		    [rename-inner-names (map car rename-inners)]
-		    [local-public-normal-names (map car (append publics overrides augrides))]
-		    [local-public-names (append (map car (append pubments overments augments))
-						local-public-normal-names)]
+		    [local-public-dynamic-names (map car (append publics overrides augrides))]
+		    [local-public-names (append (map car (append pubments overments augments 
+								 public-finals override-finals augment-finals))
+						local-public-dynamic-names)]
 		    [local-method-names (append (map car privates) local-public-names)]
 		    [expand-stop-names (append
 					local-method-names
@@ -705,7 +729,8 @@
 					l)))])
 		     ;; method names
 		     (check-dup "method" (map cdr (append publics overrides augrides
-							  pubments overments augments)))
+							  pubments overments augments
+							  public-finals override-finals augment-finals)))
 		     ;; inits
 		     (check-dup "init" (map norm-init/field-eid (append normal-inits)))
 		     ;; fields
@@ -744,11 +769,11 @@
 		     (let ([ht (make-hash-table)])
 		       (for-each (lambda (pub)
 				   (hash-table-put! ht (syntax-e (cdr pub)) #t))
-				 (append publics overrides augrides))
+				 (append publics public-finals overrides override-finals augrides))
 		       (for-each (lambda (inn)
 				   (when (hash-table-get ht (syntax-e (cdr inn)) (lambda () #f))
 				     (bad
-				      "inner method is locally declared as public, override, or augride"
+				      "inner method is locally declared as public, override, public-final, override-final, or augride"
 				      (cdr inn))))
 				 rename-inners)))
 		   
@@ -837,7 +862,7 @@
 				   [(augment-temp ...) (map
 							mk-method-temp
 							(map car augments))]
-				   [(method-name ...) (append local-public-normal-names
+				   [(method-name ...) (append local-public-dynamic-names
 							      (map car inherits))]
 				   [(method-accessor ...) (generate-temporaries
 							   (map car
@@ -971,11 +996,14 @@
 			   
 			   ;; ---- build final result ----
 			   (with-syntax ([public-names (map localize-cdr publics)]
+					 [public-final-names (map localize-cdr public-finals)]
 					 [override-names (map localize-cdr overrides)]
+					 [override-final-names (map localize-cdr override-finals)]
 					 [augride-names (map localize-cdr augrides)]
 					 [pubment-names (map localize-cdr pubments)]
 					 [overment-names (map localize-cdr overments)]
 					 [augment-names (map localize-cdr augments)]
+					 [augment-final-names (map localize-cdr augment-finals)]
 					 [(rename-super-name ...) (map localize-cdr rename-supers)]
 					 [(rename-super-extra-name ...) (map localize-cdr rename-super-extras)]
 					 [(rename-inner-name ...) (map localize-cdr rename-inners)]
@@ -998,9 +1026,12 @@
 							  normal-inits)]
 					 [init-mode init-mode]
 					 [(private-method ...) (map (find-method private-methods) (map car privates))]
-					 [public-methods (map (find-method methods) (map car publics))]
-					 [override-methods (map (find-method methods) (map car overrides))]
-					 [augride-methods (map (find-method methods) (map car augrides))]
+					 [public-methods (map (find-method methods) (map car (append public-finals
+												     publics)))]
+					 [override-methods (map (find-method methods) (map car (append override-finals
+												       overrides)))]
+					 [augride-methods (map (find-method methods) (map car (append augment-finals
+												      augrides)))]
 					 [(pubment-method ...) (map (find-method methods) (map car pubments))]
 					 [(overment-method ...) (map (find-method methods) (map car overments))]
 					 [(augment-method ...) (map (find-method methods) (map car augments))]
@@ -1030,10 +1061,13 @@
 				  `(rename-super-name ... rename-super-extra-name ...)
 				  `(rename-inner-name ... rename-inner-extra-name ...)
 				  `pubment-names
+				  `public-final-names
 				  `public-names
 				  `overment-names
+				  `override-final-names
 				  `override-names
 				  `augment-names
+				  `augment-final-names
 				  `augride-names
 				  `inherit-names
 				  ;; Init arg names (in order)
@@ -1359,13 +1393,16 @@
 			 public-field-names  ; list of symbols (shorter than num-fields)
 			 inherit-field-names ; list of symbols (not included in num-fields)
 			 
-			 rename-super-names        ; list of symbols
+			 rename-super-names  ; list of symbols
 			 rename-inner-names
 			 pubment-names
+			 public-final-names
 			 public-normal-names
 			 overment-names
+			 override-final-names
 			 override-normal-names
 			 augment-names
+			 augment-final-names
 			 augride-normal-names
 			 inherit-names
 
@@ -1389,10 +1426,11 @@
 				(format "derived-from-~a" s)
 				s))))]
 	   ;; Combine method lists
-	   [public-names (append pubment-names public-normal-names)]
-	   [override-names (append overment-names override-normal-names)]
-	   [augride-names (append augment-names augride-normal-names)]
-	   [final-names (append pubment-names overment-names augment-names)]
+	   [public-names (append pubment-names public-final-names public-normal-names)]
+	   [override-names (append overment-names override-final-names override-normal-names)]
+	   [augride-names (append augment-names augment-final-names augride-normal-names)]
+	   [final-names (append public-final-names override-final-names augment-final-names)]
+	   [augonly-names (append pubment-names overment-names augment-names)]
 	   ;; Mis utilities
 	   [no-new-methods? (null? public-names)]
 	   [no-method-changes? (and (null? public-names)
@@ -1482,11 +1520,14 @@
 	  (let ([rename-super-indices (get-indices super-method-ht "rename-super" rename-super-names)]
 		[rename-inner-indices (get-indices method-ht "rename-inner" rename-inner-names)]
 		[inherit-indices (get-indices super-method-ht "inherit" inherit-names)]
-		[replace-final-indices (get-indices super-method-ht "overment" overment-names)]
+		[replace-augonly-indices (get-indices super-method-ht "overment" overment-names)]
+		[replace-final-indices (get-indices super-method-ht "override-final" override-final-names)]
 		[replace-normal-indices (get-indices super-method-ht "override" override-normal-names)]
-		[refine-final-indices (get-indices super-method-ht "augment" augment-names)]
+		[refine-augonly-indices (get-indices super-method-ht "augment" augment-names)]
+		[refine-final-indices (get-indices super-method-ht "augment-final" augment-final-names)]
 		[refine-normal-indices (get-indices super-method-ht "augride" augride-normal-names)]
-		[new-final-indices (get-indices method-ht "pubment" pubment-names)]
+		[new-augonly-indices (get-indices method-ht "pubment" pubment-names)]
+		[new-final-indices (get-indices method-ht "public-final" public-final-names)]
 		[new-normal-indices (get-indices method-ht "public" public-normal-names)])
 
 	    ;; -- Check that all interfaces are satisfied --
@@ -1635,19 +1676,18 @@
 					      (vector-ref (class-methods super) index))))
 				      rename-super-indices
 				      rename-super-names)]
-			[rename-inners (let ([new-finals (make-vector method-width #f)])
+			[rename-inners (let ([new-augonly (make-vector method-width #f)])
 					 ;; To compute `rename-inner' indices, we need to know which methods
-					 ;;  are final in this new class. We'll compute this again below,
-					 ;;  but we need it now
+					 ;;  are augonly in this new class.
 					 (for-each (lambda (id)
-						     (vector-set! new-finals (hash-table-get method-ht id) #t))
-						   final-names)				  
+						     (vector-set! new-augonly (hash-table-get method-ht id) #t))
+						   augonly-names)
 					 (map (lambda (mname index)
 						(let ([depth (+ (if (index . < . (class-method-width super))
 								    (vector-length (vector-ref (class-beta-methods super) 
 											       index))
 								    0)
-								(if (vector-ref new-finals index) 0 -1))])
+								(if (vector-ref new-augonly index) 0 -1))])
 						  (when (negative? depth)
 						    (obj-error 'class*/names 
 							       (string-append
@@ -1695,10 +1735,15 @@
 			(for-each (lambda (index method)
 				    (vector-set! methods index method)
 				    (vector-set! beta-methods index (vector)))
-				  (append new-final-indices new-normal-indices)
+				  (append new-augonly-indices new-final-indices new-normal-indices)
 				  new-methods)
 			;; Override old methods:
 			(for-each (lambda (index method id)
+				    (when (eq? 'final (vector-ref meth-flags index))
+				      (obj-error 'class*/names 
+						 "cannot override or augment final method: ~a~a"
+						 id
+						 (for-class name)))
 				    (let ([v (vector-ref beta-methods index)])
 				      (if (zero? (vector-length v))
 					  ;; Normal mode - set vtable entry
@@ -1708,21 +1753,24 @@
 					    (vector-set! v (sub1 (vector-length v)) method)
 					    (vector-set! beta-methods index v))))
 				    (vector-set! meth-flags index (not make-struct:prim)))
-				  (append replace-final-indices replace-normal-indices
-					  refine-final-indices refine-normal-indices)
+				  (append replace-augonly-indices replace-final-indices replace-normal-indices
+					  refine-augonly-indices refine-final-indices refine-normal-indices)
 				  (append override-methods augride-methods)
 				  (append override-names augride-names))
-			;; Mark final methods:
+			;; Expand `rename-inner' vector, adding a #f to indicate that
+			;;  no rename-inner function is available, so far
 			(for-each (lambda (id)
 				    (let ([index (hash-table-get method-ht id)])
-				      (vector-set! meth-flags index 'final)
-				      ;; Expand `rename-inner' vector, adding a #f to indicate that
-				      ;;  no rename-inner function is available, so far
 				      (let ([v (list->vector (append (vector->list (vector-ref beta-methods index))
 								     (list #f)))])
 					(vector-set! beta-methods index v))))
+				  augonly-names)
+			;; Mark final methods:
+			(for-each (lambda (id)
+				    (let ([index (hash-table-get method-ht id)])
+				      (vector-set! meth-flags index 'final)))
 				  final-names)
-
+			
 			;; --- Install initializer into class ---
 			(set-class-init! c init)
 				    
@@ -2615,9 +2663,9 @@
 
 		   null ; no rename-supers
 		   null ; no rename-inners
-		   null new-names
-		   null override-names
-		   null null ; no augrides
+		   null null new-names
+		   null null override-names
+		   null null null ; no augrides
 		   null ; no inherits
 		   
 		   ; #f => init args by position only

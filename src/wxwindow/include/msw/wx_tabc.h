@@ -35,6 +35,8 @@ class wxTabChoice : public wxItem
 
   Bool Show(Bool show);
 
+  void Set(int N, char **Choices);
+
   HWND bgStatic;
   int orig_height;
 };

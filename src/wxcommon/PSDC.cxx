@@ -262,10 +262,10 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
 
   pstream = NULL;
 
-  clipx = 0;
-  clipy = 0;
-  clipw = -1;
-  cliph = -1;
+  clipx = -100000.0;
+  clipy = -100000.0;
+  clipw = 200000.0;
+  cliph = 200000.0;
 
   as_eps = asEPS;
   ok = PrinterDialog(interactive, parent, usePaperBBox);
@@ -429,6 +429,20 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
   if (r && (r->GetDC() != this))
     return;
 
+  if (r) {
+    double x, y, w, h;
+    r->BoundingBox(&x, &y, &w, &h);
+    clipx = XSCALEBND(x);
+    clipy = YSCALEBND(y);
+    clipw = XSCALEREL(w);
+    cliph = YSCALEREL(h);
+  } else {
+    clipx = -100000.0;
+    clipy = -100000.0;
+    clipw = 200000.0;
+    cliph = 200000.0;
+  }
+
   if (clipping) {
     clipping = NULL;
     pstream->Out("initclip\n");
@@ -447,6 +461,21 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
     clipping = r;
   }
+}
+
+void wxPostScriptDC::CalcBoundingBoxClip(double x, double y)
+{
+  if (x < clipx)
+    x = clipx;
+  else if (x >= (clipx + clipw))
+    x = clipx + clipw;
+  
+  if (y < clipy)
+    y = clipy;
+  else if (y >= (cliph + cliph))
+    y = clipy + cliph;
+
+  CalcBoundingBox(x, y);
 }
 
 void wxPostScriptDC::Clear(void)
@@ -507,8 +536,8 @@ void wxPostScriptDC::DrawLine (double x1, double y1, double x2, double y2)
   pstream->Out(XSCALE(x1)); pstream->Out(" "); pstream->Out(YSCALE (y1)); pstream->Out(" moveto\n");
   pstream->Out(XSCALE(x2)); pstream->Out(" "); pstream->Out(YSCALE (y2)); pstream->Out(" lineto\n");
   pstream->Out("stroke\n");
-  CalcBoundingBox(XSCALEBND(x1), YSCALEBND(y1));
-  CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
+  CalcBoundingBoxClip(XSCALEBND(x1), YSCALEBND(y1));
+  CalcBoundingBoxClip(XSCALEBND(x2), YSCALEBND(y2));
 }
 
 void wxPostScriptDC::DrawArc (double x, double y, double w, double h, double start, double end)
@@ -520,8 +549,8 @@ void wxPostScriptDC::DrawArc (double x, double y, double w, double h, double sta
     double a1, a2, radius, xscale;
 
     /* Before we scale: */
-    CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-    CalcBoundingBox(XSCALEBND(x + w), YSCALEBND(y + h));
+    CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+    CalcBoundingBoxClip(XSCALEBND(x + w), YSCALEBND(y + h));
 
     x = XSCALE(x);
     y = YSCALE(y);
@@ -579,7 +608,7 @@ void wxPostScriptDC::DrawPoint (double x, double y)
   pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
   pstream->Out(XSCALE(x+1)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
   pstream->Out("stroke\n");
-  CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
+  CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
 }
 
 void wxPostScriptDC::DrawSpline(double x1, double y1, double x2, double y2, double x3, double y3)
@@ -618,9 +647,9 @@ void wxPostScriptDC::DrawSpline(double x1, double y1, double x2, double y2, doub
 
   pstream->Out("stroke\n");
 
-  CalcBoundingBox(XSCALEBND(x1), YSCALEBND(y1));
-  CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
-  CalcBoundingBox(XSCALEBND(x3), YSCALEBND(y3));
+  CalcBoundingBoxClip(XSCALEBND(x1), YSCALEBND(y1));
+  CalcBoundingBoxClip(XSCALEBND(x2), YSCALEBND(y2));
+  CalcBoundingBoxClip(XSCALEBND(x3), YSCALEBND(y3));
 }
 
 void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, double yoffset, int fillStyle)
@@ -640,14 +669,14 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
 	  xx = points[0].x + xoffset;
 	  yy = (points[0].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 
 	  for (i = 1; i < n; i++)
 	    {
 	      xx = points[i].x + xoffset;
 	      yy = (points[i].y + yoffset);
 	      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 	    }
 	  pstream->Out(((fillStyle == wxODDEVEN_RULE) ? "eofill\n" : "fill\n"));
 	}
@@ -663,14 +692,14 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
 	  xx = points[0].x + xoffset;
 	  yy = (points[0].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 
 	  for (i = 1; i < n; i++)
 	    {
 	      xx = points[i].x + xoffset;
 	      yy = (points[i].y + yoffset);
 	      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 	    }
 
 	  // Close the polygon
@@ -700,14 +729,14 @@ void wxPostScriptDC::DrawLines (int n, wxIntPoint points[], int xoffset, int yof
       xx = (double) (points[0].x + xoffset);
       yy = (double) (points[0].y + yoffset);
       pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 
       for (i = 1; i < n; i++)
 	{
 	  xx = (double) (points[i].x + xoffset);
 	  yy = (double) (points[i].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 	}
       pstream->Out("stroke\n");
     }
@@ -729,14 +758,14 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], double xoffset, double 
       xx = points[0].x + xoffset;
       yy = (points[0].y + yoffset);
       pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 
       for (i = 1; i < n; i++)
 	{
 	  xx = points[i].x + xoffset;
 	  yy = (points[i].y + yoffset);
 	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
+	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
 	}
       pstream->Out("stroke\n");
     }
@@ -808,8 +837,8 @@ void wxPostScriptDC::DrawRectangle (double x, double y, double width, double hei
       pstream->Out("closepath\n");
       pstream->Out("fill\n");
 
-      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
+      CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip(XSCALEBND(x + width), YSCALEBND(y + height));
     }
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
     {
@@ -823,8 +852,8 @@ void wxPostScriptDC::DrawRectangle (double x, double y, double width, double hei
       pstream->Out("closepath\n");
       pstream->Out("stroke\n");
 
-      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox(XSCALEBND(x + width),  YSCALEBND(y + height));
+      CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip(XSCALEBND(x + width),  YSCALEBND(y + height));
     }
 }
 
@@ -878,8 +907,8 @@ void wxPostScriptDC::DrawRoundedRectangle (double x, double y, double width, dou
 
       pstream->Out("fill\n");
 
-      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
+      CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip(XSCALEBND(x + width), YSCALEBND(y + height));
     }
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
     {
@@ -910,8 +939,8 @@ void wxPostScriptDC::DrawRoundedRectangle (double x, double y, double width, dou
 
       pstream->Out("stroke\n");
 
-      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
+      CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip(XSCALEBND(x + width), YSCALEBND(y + height));
     }
 }
 
@@ -928,8 +957,8 @@ void wxPostScriptDC::DrawEllipse (double x, double y, double width, double heigh
       pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
       pstream->Out("fill\n");
 
-      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
+      CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip(XSCALEBND(x + width), YSCALEBND(y + height));
     }
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
     {
@@ -940,8 +969,8 @@ void wxPostScriptDC::DrawEllipse (double x, double y, double width, double heigh
       pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
       pstream->Out("stroke\n");
 
-      CalcBoundingBox (XSCALEBND(x), YSCALEBND(y));
-      CalcBoundingBox (XSCALEBND(x + width), YSCALEBND(y + height));
+      CalcBoundingBoxClip (XSCALEBND(x), YSCALEBND(y));
+      CalcBoundingBoxClip (XSCALEBND(x + width), YSCALEBND(y + height));
     }
 }
 
@@ -1341,14 +1370,14 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, double x, double y,
     pstream->Out("grestore\n"); 
   }
 
-  CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
+  CalcBoundingBoxClip(XSCALEBND(x), YSCALEBND(y));
   if (angle != 0.0) {
     double xe, ye;
     xe = x + (tw * cos(angle)) + (th * sin(angle));
     ye = y - (th * cos(angle)) - (tw * sin(angle));
-    CalcBoundingBox(XSCALEBND(xe), YSCALEBND(ye));
+    CalcBoundingBoxClip(XSCALEBND(xe), YSCALEBND(ye));
   } else {
-    CalcBoundingBox(XSCALEBND(x + tw), YSCALEBND(y + th));
+    CalcBoundingBoxClip(XSCALEBND(x + tw), YSCALEBND(y + th));
   }
 }
 
@@ -1833,9 +1862,9 @@ Blit (double xdest, double ydest, double fwidth, double fheight,
   }
 
   if (rop >= 0) {
-    CalcBoundingBox(XSCALEBND(xdest), YSCALEBND(ydest));
+    CalcBoundingBoxClip(XSCALEBND(xdest), YSCALEBND(ydest));
     /* Bitmap isn't scaled: */
-    CalcBoundingBox(XSCALEBND(xdest) + fwidth, YSCALEBND(ydest) + fheight);
+    CalcBoundingBoxClip(XSCALEBND(xdest) + fwidth, YSCALEBND(ydest) + fheight);
   }
 
   return TRUE;

@@ -915,6 +915,7 @@ wxSnip *wxMediaEdit::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
       /* Snip didn't accept membership into this buffer. Give up on it. */
       wxSnip *naya;
       naya = new wxSnip();
+
       naya->count = orig_count;
       SpliceSnip(naya, snip->prev, snip->next);
       naya->line = line;

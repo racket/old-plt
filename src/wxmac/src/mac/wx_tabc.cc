@@ -378,3 +378,13 @@ char *wxTabChoice::GetLabel()
   return "tab choice";
 }
 
+void wxTabChoice::Set(int N, char **Choices)
+{
+  int sel;
+  sel = GetSelection();
+  tab_count = N;
+  tab_labels = Choices;
+  if (sel >= N)
+    sel = N - 1;
+  Append(NULL); /* refreshes the control */
+}

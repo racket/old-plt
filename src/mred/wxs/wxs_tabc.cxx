@@ -45,6 +45,7 @@ public:
     void  Append(char *);
     void  Delete(int);
     void  SetLabel(int, char *);
+    void  Set(int n, char **choices);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -59,6 +60,7 @@ void wxTabChoice::Enable(Bool enable) { }
 void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
 void wxTabChoice::SetLabel(int which, char *lbl) { }
+void wxTabChoice::Set(int n, char **choices) { }
 
 class wxGroupBox : public wxItem {
 public:
@@ -253,6 +255,7 @@ static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {
 #define RANGECLASS wxTabChoice
 
 #define THISOBJECT ((RANGECLASS *)((Scheme_Class_Object *)THEOBJ)->primdata)
+
 
 
 
@@ -531,6 +534,33 @@ void os_wxTabChoice::OnKillFocus()
   
      READY_TO_RETURN;
   }
+}
+
+static Scheme_Object *os_wxTabChoiceSet(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxTabChoice_class, "set in tab-group%", n, p);
+  int x0;
+  string* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x1);
+
+  x1 = WITH_VAR_STACK(__MakestringArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("tab-group","set")));
+  if (n > (POFFSET+0)) {
+    x1 = NULL;
+  } else
+    x1 = NULL;
+
+  delete[] x1;
+  WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->Set(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxTabChoiceSetLabel(int n,  Scheme_Object *p[])
@@ -905,8 +935,9 @@ void objscheme_setup_wxTabChoice(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabChoice_class);
 
-  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 13));
+  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 14));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "set" " method", (Scheme_Method_Prim *)os_wxTabChoiceSet, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "set-label" " method", (Scheme_Method_Prim *)os_wxTabChoiceSetLabel, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "delete" " method", (Scheme_Method_Prim *)os_wxTabChoiceDelete, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "append" " method", (Scheme_Method_Prim *)os_wxTabChoiceAppend, 1, 1));

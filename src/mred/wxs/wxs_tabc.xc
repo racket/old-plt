@@ -24,6 +24,7 @@ public:
     void  Append(char *);
     void  Delete(int);
     void  SetLabel(int, char *);
+    void  Set(int n, char **choices);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -38,6 +39,7 @@ void wxTabChoice::Enable(Bool enable) { }
 void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
 void wxTabChoice::SetLabel(int which, char *lbl) { }
+void wxTabChoice::Set(int n, char **choices) { }
 
 class wxGroupBox : public wxItem {
 public:
@@ -86,6 +88,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 @ "delete" : void Delete(int);
 
 @ "set-label" : void SetLabel(int,string); : : /RANGE[0]
+
+@ "set" : void Set(-int=0,string[]=NULL/bList/ubList/cStringList///push) : : glueListSet[string.0.1.0.METHODNAME("tab-group","set")]/glueCleanup[1]
 
 @END
 

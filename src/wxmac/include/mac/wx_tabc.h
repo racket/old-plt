@@ -45,6 +45,8 @@ class wxTabChoice : public wxItem
 
   virtual void SetPhantomSize(int w, int h);
 
+  void Set(int N, char **Choices);
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);

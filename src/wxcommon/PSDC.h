@@ -176,6 +176,8 @@ class wxPostScriptDC: public wxDC
 
   Bool GlyphAvailable(int c, wxFont *f = NULL);
 
+  void CalcBoundingBoxClip(double x, double y);
+
   virtual Bool Ok() { return ok; }
 };
 

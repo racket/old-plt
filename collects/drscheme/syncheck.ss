@@ -3,7 +3,7 @@
   TODO:
        
      - write test suite for arrows and menus
-
+     
 |#
 
 (module syncheck mzscheme
@@ -30,8 +30,9 @@
   (define mouse-over-variable-import (string-constant cs-mouse-over-variable-import))
   (define mouse-over-syntax-import (string-constant cs-mouse-over-syntax-import))
   
-  (define jump-to-next-occurrence  (string-constant cs-jump-to-next-occurrence))
+  (define jump-to-next-bound-occurrence (string-constant cs-jump-to-next-bound-occurrence))
   (define jump-to-binding (string-constant cs-jump-to-binding))
+  (define jump-to-definition "Jump to Definition")
   
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -305,6 +306,8 @@
                       end-text end-pos-left end-pos-right))
       (define-struct (tail-arrow arrow) (from-text from-pos to-text to-pos))
       
+      (define-struct def-link (syntax filename) (make-inspector))
+      
       (define tacked-var-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
       (define var-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid))
       (define tail-pen (send the-pen-list find-or-create-pen "orchid" 1 'solid))
@@ -319,7 +322,11 @@
           syncheck:add-arrow
           syncheck:add-tail-arrow
           syncheck:add-mouse-over-status
-          syncheck:sort-bindings-table))
+          syncheck:add-jump-to-definition
+          syncheck:sort-bindings-table
+          syncheck:jump-to-next-bound-occurrence
+          syncheck:jump-to-binding-occurrence
+          syncheck:jump-to-definition))
 
       ;; clearing-text-mixin : (mixin text%)
       ;; overrides methods that make sure the arrows go away appropriately.
@@ -355,6 +362,7 @@
 
 	  (super-instantiate ())))
       
+      
       (define make-graphics-text%
         (lambda (super%)
           (let* ([cursor-arrow (make-object cursor% 'arrow)])
@@ -374,6 +382,7 @@
               ;;    (text%
               ;;     . -o> .
               ;;    (vector (listof (union (cons (union #f sym) (menu -> void))
+              ;;                           def-link
               ;;                           tail-link
               ;;                           arrow
               ;;                           string))))))
@@ -396,27 +405,25 @@
                       (hash-table-get bindings-table key (lambda () '())))))))
               
               (define/public (syncheck:sort-bindings-table)
+                
+                ;; compare-bindings : (list text number number) (list text number number) -> boolean
                 (define (compare-bindings l1 l2)
                   (let ([start-text (first l1)]
                         [start-left (second l1)]
                         [end-text (first l2)]
                         [end-left (second l2)])
-                    (cond
-                      [(eq? start-text end-text)
-                       (< start-left end-left)]
-                      [else
-                       (let ([start-parents (find-text-parents start-text)]
-                             [end-parents (find-text-parents end-text)])
-                         (cond
-                           [(memq start-text end-parents) 
-                            '...
-                            #f]
-                           [(memq end-text start-parents)
-                            '...
-                            #t]
-                           [else 
-                            ;;... find common parent and see relative places of item before ...
-                            #f]))])))
+                    (let-values ([(sx sy) (find-dc-location start-text start-left)]
+                                 [(ex ey) (find-dc-location end-text end-left)])
+                      (cond
+                        [(= sy ey) (< sx ex)]
+                        [else (< sy ey)]))))
+                
+                ;; find-dc-location : text number -> (values number number)
+                (define (find-dc-location text pos)
+                  (let ([bx (box 0)]
+                        [by (box 0)])
+                    (send text position-location pos bx by)
+                    (send text editor-location-to-dc-location (unbox bx) (unbox by))))
                 
                 (hash-table-for-each
                  bindings-table
@@ -496,6 +503,7 @@
               (define/public (syncheck:init-arrows)
                 (set! tacked-hash-table (make-hash-table))
                 (set! arrow-vectors (make-hash-table))
+                (set! bindings-table (make-hash-table 'equal))
                 (let ([f (get-top-level-window)])
                   (when f
                     (send f open-status-line 'drscheme:check-syntax:mouse-over))))
@@ -540,6 +548,10 @@
                 (let ([tail-arrow (make-tail-arrow #f #f #f #f to-text to-pos from-text from-pos)])
                   (add-to-range/key from-text from-pos (+ from-pos 1) tail-arrow #f #f)
                   (add-to-range/key from-text to-pos (+ to-pos 1) tail-arrow #f #f)))
+              
+              ;; syncheck:add-jump-to-definition : text start end syntax filename -> void
+              (define/public (syncheck:add-jump-to-definition text start end stx filename)
+                (add-to-range/key text start end (make-def-link stx filename) #f #f))
               
               ;; syncheck:add-mouse-over-status : text pos-left pos-right string -> void
               (define/public (syncheck:add-mouse-over-status text pos-left pos-right str)
@@ -756,17 +768,19 @@
                               (when eles
                                 (let ([has-txt? #f])
                                   (for-each (lambda (ele)
-                                              (when (string? ele)
-                                                (set! has-txt? #t)
-                                                (let ([f (get-top-level-window)])
-                                                  (when f
-                                                    (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
+                                              (cond
+                                                [(string? ele)
+                                                 (set! has-txt? #t)
+                                                 (let ([f (get-top-level-window)])
+                                                   (when f
+                                                     (send f update-status-line 
+                                                           'drscheme:check-syntax:mouse-over 
+                                                           ele)))]))
                                             eles)
                                   (unless has-txt?
                                     (let ([f (get-top-level-window)])
                                       (when f
                                         (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
-                              
                               
                               (when eles
                                 (for-each (lambda (ele)
@@ -796,6 +810,7 @@
                                    [else
                                     (let* ([menu (make-object popup-menu% #f)]
                                            [arrows (filter arrow? vec-ents)]
+                                           [def-links (filter def-link? vec-ents)]
                                            [var-arrows (filter var-arrow? arrows)]
                                            [add-menus (map cdr (filter cons? vec-ents))])
                                       (unless (null? arrows)
@@ -803,15 +818,22 @@
                                           (string-constant cs-tack/untack-arrow)
                                           menu
                                           (lambda (item evt) (tack/untack-callback arrows))))
+                                      (unless (null? def-links)
+                                        (let ([def-link (car def-links)])
+                                          (make-object menu-item%
+                                            jump-to-definition
+                                            menu
+                                            (lambda (item evt)
+                                              (jump-to-definition-callback def-link)))))
                                       (unless (null? var-arrows)
                                         (make-object menu-item%
-                                          jump-to-next-occurrence
+                                          jump-to-next-bound-occurrence
                                           menu
                                           (lambda (item evt) (jump-to-next-callback pos text arrows)))
                                         (make-object menu-item%
                                           jump-to-binding
                                           menu
-                                          (lambda (item evt) (jump-to-binding-callback pos arrows))))
+                                          (lambda (item evt) (jump-to-binding-callback arrows))))
                                       (for-each (lambda (f) (f menu)) add-menus)
                                       (send (get-canvas) popup-menu menu
                                             (+ 1 (inexact->exact (floor (send event get-x))))
@@ -853,6 +875,30 @@
                    arrows))
                 (invalidate-bitmap-cache))
               
+              ;; syncheck:jump-to-binding-occurrence : text -> void
+              ;; jumps to the next occurrence, based on the insertion point
+              (define/public (syncheck:jump-to-next-bound-occurrence text)
+                (jump-to-binding/bound-helper 
+                 text 
+                 (lambda (pos text vec-ents)
+                   (jump-to-next-callback pos text vec-ents))))
+              
+              ;; syncheck:jump-to-binding-occurrence : text -> void
+              (define/public (syncheck:jump-to-binding-occurrence text)
+                (jump-to-binding/bound-helper 
+                 text 
+                 (lambda (pos text vec-ents)
+                   (jump-to-binding-callback vec-ents))))
+              
+              (define (jump-to-binding/bound-helper text do-jump)
+                (let ([pos (send text get-start-position)])
+                  (when arrow-vectors
+                    (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
+                      (when arrow-vector
+                        (let ([vec-ents (filter var-arrow? (vector-ref arrow-vector pos))])
+                          (unless (null? vec-ents)
+                            (do-jump pos text vec-ents))))))))
+              
               ;; jump-to-next-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
               (define (jump-to-next-callback pos txt input-arrows)
@@ -878,7 +924,7 @@
                                                   (cadr arrows)))]
                                     [else (loop (cdr arrows))]))]))))))
               
-              ;; jump-to-end : (list text number number) -> void
+              ;; jump-to : (list text number number) -> void
               (define (jump-to to-arrow)
                 (let ([end-text (first to-arrow)]
                       [end-pos-left (second to-arrow)]
@@ -888,7 +934,7 @@
               
               ;; jump-to-binding-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
-              (define (jump-to-binding-callback pos arrows)
+              (define (jump-to-binding-callback arrows)
                 (unless (null? arrows)
                   (let* ([arrow (car arrows)]
                          [start-text (var-arrow-start-text arrow)]
@@ -896,6 +942,26 @@
                          [start-pos-right (var-arrow-start-pos-right arrow)])
                     (send start-text set-position start-pos-left start-pos-right)
                     (send start-text set-caret-owner #f 'global))))
+
+              ;; syncheck:jump-to-definition : text -> void
+              (define/public (syncheck:jump-to-definition text)
+                (let ([pos (send text get-start-position)])
+                  (when arrow-vectors
+                    (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
+                      (when arrow-vector
+                        (let ([vec-ents (filter def-link? (vector-ref arrow-vector pos))])
+                          (unless (null? vec-ents)
+                            (jump-to-definition-callback (car vec-ents)))))))))
+              
+              (define (jump-to-definition-callback def-link)
+                (let* ([filename (def-link-filename def-link)]
+                       [stx (def-link-syntax def-link)]
+                       [frame (fw:handler:edit-file filename)])
+                  (when (is-a? frame syncheck-frame<%>)
+                    (let ([mod-stx (with-syntax ([in-id stx]) 
+                                     (expand #'(module m mzscheme (define in-id 1))))])
+                      (with-syntax ([(module m mzscheme (a b (define-values (id) x))) mod-stx])
+                        (send frame syncheck:button-callback (syntax id)))))))
               
               (super-instantiate ())))))
       
@@ -1100,112 +1166,115 @@
           
           (inherit set-breakables get-breakables reset-offer-kill
                    open-status-line close-status-line update-status-line)
-          ;; syncheck:button-callback : -> void
+          ;; syncheck:button-callback : (case-> (-> void) ((union #f syntax) -> void)
           ;; this is the only function that has any code running on the user's thread
-          (define/public (syncheck:button-callback)
-            (open-status-line 'drscheme:check-syntax)
-            (update-status-line 'drscheme:check-syntax status-init)
-            (let-values ([(expanded-expression expansion-completed) (make-traversal)]
-                         [(old-break-thread old-custodian) (get-breakables)])
-              (let* ([definitions-text (get-definitions-text)]
-                     [drs-eventspace (current-eventspace)]
-                     [user-namespace #f]
-                     [user-directory #f]
-                     [user-custodian #f]
-                     [normal-termination? #f]
-                     [cleanup
-                      (lambda () ; =drs=
-                        (set-breakables old-break-thread old-custodian)
-                        (enable-evaluation)
-                        (send definitions-text end-edit-sequence)
-                        (close-status-line 'drscheme:check-syntax))]
-                     [kill-termination
-                      (lambda ()
-                        (unless normal-termination?
-                          (parameterize ([current-eventspace drs-eventspace])
-                            (queue-callback
-                             (lambda ()
-                               (syncheck:clear-highlighting)
-                               (cleanup)
-                               (custodian-shutdown-all user-custodian))))))]
-                     [error-display-semaphore (make-semaphore 0)]
-                     [uncaught-exception-raised
-                      (lambda () ;; =user=
-                        (set! normal-termination? #t)
-                        (parameterize ([current-eventspace drs-eventspace])
-                          (queue-callback
-                           (lambda () ;;  =drs=
-                             (yield error-display-semaphore) ;; let error display go first
-                             (syncheck:clear-highlighting)
-                             (cleanup)
-                             (custodian-shutdown-all user-custodian)))))]
-                     [init-proc
-                      (lambda () ; =user=
-                        (set-breakables (current-thread) (current-custodian))
-                        (set-directory definitions-text)
-                        (error-display-handler (lambda (msg exn) ;; =user=
-                                                 (parameterize ([current-eventspace drs-eventspace])
-                                                   (queue-callback
-                                                    (lambda () ;; =drs=
-                                                      (report-error msg exn)
-                                                      ;; tell uncaught-expception-raised to cleanup
-                                                      (semaphore-post error-display-semaphore))))))
-                        (error-print-source-location #f) ; need to build code to render error first
-                        (current-exception-handler
-                         (let ([oh (current-exception-handler)])
-                           (lambda (exn)
-                             (uncaught-exception-raised)
-                             (oh exn))))
-                        (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                        (set! user-custodian (current-custodian))
-			(set! user-directory (current-directory)) ;; set by set-directory above
-                        (set! user-namespace (current-namespace)))])
-                (disable-evaluation) ;; this locks the editor, so must be outside.
-                (send definitions-text begin-edit-sequence #f)
-                (with-lock/edit-sequence
-                 (lambda ()
-                   (clear-annotations)
-                   (reset-offer-kill)
-                   (send definitions-text syncheck:init-arrows)
-                   (color-range definitions-text
-                                0
-                                (send definitions-text last-position)
-                                base-style-str)
-                   (drscheme:eval:expand-program
-                    (drscheme:language:make-text/pos definitions-text
-                                                     0
-                                                     (send definitions-text last-position))
-                    (send definitions-text get-next-settings)
-                    #t
-                    init-proc
-                    kill-termination
-                    (lambda (sexp loop) ; =user=
-                      (cond
-                        [(eof-object? sexp)
-                         (set! normal-termination? #t)
-                         (parameterize ([current-eventspace drs-eventspace])
-                           (queue-callback
-                            (lambda () ; =drs=
-                              (with-lock/edit-sequence
-                               (lambda ()
-                                 (expansion-completed user-namespace)
-                                 (send definitions-text syncheck:sort-bindings-table)))
-                              (cleanup)
-                              (custodian-shutdown-all user-custodian))))]
-                        [else
-                         (update-status-line 'drscheme:check-syntax status-eval-compile-time)
-                         (eval-compile-time-part-of-top-level sexp)
-                         (parameterize ([current-eventspace drs-eventspace])
-                           (queue-callback
-                            (lambda () ; =drs=
-                              (with-lock/edit-sequence
-                               (lambda ()
-                                 (open-status-line 'drscheme:check-syntax)
-                                 (update-status-line 'drscheme:check-syntax status-coloring-program)
-                                 (expanded-expression user-directory user-namespace sexp)
-                                 (close-status-line 'drscheme:check-syntax))))))
-                         (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                         (loop)]))))))))
+          (define/public syncheck:button-callback
+            (case-lambda
+              [() (syncheck:button-callback #f)]
+              [(jump-to-id)
+               (open-status-line 'drscheme:check-syntax)
+               (update-status-line 'drscheme:check-syntax status-init)
+               (let-values ([(expanded-expression expansion-completed) (make-traversal)]
+                            [(old-break-thread old-custodian) (get-breakables)])
+                 (let* ([definitions-text (get-definitions-text)]
+                        [drs-eventspace (current-eventspace)]
+                        [user-namespace #f]
+                        [user-directory #f]
+                        [user-custodian #f]
+                        [normal-termination? #f]
+                        [cleanup
+                         (lambda () ; =drs=
+                           (set-breakables old-break-thread old-custodian)
+                           (enable-evaluation)
+                           (send definitions-text end-edit-sequence)
+                           (close-status-line 'drscheme:check-syntax))]
+                        [kill-termination
+                         (lambda ()
+                           (unless normal-termination?
+                             (parameterize ([current-eventspace drs-eventspace])
+                               (queue-callback
+                                (lambda ()
+                                  (syncheck:clear-highlighting)
+                                  (cleanup)
+                                  (custodian-shutdown-all user-custodian))))))]
+                        [error-display-semaphore (make-semaphore 0)]
+                        [uncaught-exception-raised
+                         (lambda () ;; =user=
+                           (set! normal-termination? #t)
+                           (parameterize ([current-eventspace drs-eventspace])
+                             (queue-callback
+                              (lambda () ;;  =drs=
+                                (yield error-display-semaphore) ;; let error display go first
+                                (syncheck:clear-highlighting)
+                                (cleanup)
+                                (custodian-shutdown-all user-custodian)))))]
+                        [init-proc
+                         (lambda () ; =user=
+                           (set-breakables (current-thread) (current-custodian))
+                           (set-directory definitions-text)
+                           (error-display-handler (lambda (msg exn) ;; =user=
+                                                    (parameterize ([current-eventspace drs-eventspace])
+                                                      (queue-callback
+                                                       (lambda () ;; =drs=
+                                                         (report-error msg exn)
+                                                         ;; tell uncaught-expception-raised to cleanup
+                                                         (semaphore-post error-display-semaphore))))))
+                           (error-print-source-location #f) ; need to build code to render error first
+                           (current-exception-handler
+                            (let ([oh (current-exception-handler)])
+                              (lambda (exn)
+                                (uncaught-exception-raised)
+                                (oh exn))))
+                           (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                           (set! user-custodian (current-custodian))
+                           (set! user-directory (current-directory)) ;; set by set-directory above
+                           (set! user-namespace (current-namespace)))])
+                   (disable-evaluation) ;; this locks the editor, so must be outside.
+                   (send definitions-text begin-edit-sequence #f)
+                   (with-lock/edit-sequence
+                    (lambda ()
+                      (clear-annotations)
+                      (reset-offer-kill)
+                      (send definitions-text syncheck:init-arrows)
+                      (color-range definitions-text
+                                   0
+                                   (send definitions-text last-position)
+                                   base-style-str)
+                      (drscheme:eval:expand-program
+                       (drscheme:language:make-text/pos definitions-text
+                                                        0
+                                                        (send definitions-text last-position))
+                       (send definitions-text get-next-settings)
+                       #t
+                       init-proc
+                       kill-termination
+                       (lambda (sexp loop) ; =user=
+                         (cond
+                           [(eof-object? sexp)
+                            (set! normal-termination? #t)
+                            (parameterize ([current-eventspace drs-eventspace])
+                              (queue-callback
+                               (lambda () ; =drs=
+                                 (with-lock/edit-sequence
+                                  (lambda ()
+                                    (expansion-completed user-namespace user-directory)
+                                    (send definitions-text syncheck:sort-bindings-table)))
+                                 (cleanup)
+                                 (custodian-shutdown-all user-custodian))))]
+                           [else
+                            (update-status-line 'drscheme:check-syntax status-eval-compile-time)
+                            (eval-compile-time-part-of-top-level sexp)
+                            (parameterize ([current-eventspace drs-eventspace])
+                              (queue-callback
+                               (lambda () ; =drs=
+                                 (with-lock/edit-sequence
+                                  (lambda ()
+                                    (open-status-line 'drscheme:check-syntax)
+                                    (update-status-line 'drscheme:check-syntax status-coloring-program)
+                                    (expanded-expression user-namespace user-directory sexp jump-to-id)
+                                    (close-status-line 'drscheme:check-syntax))))))
+                            (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                            (loop)])))))))]))
 
           ;; set-directory : text -> void
           ;; sets the current-directory and current-load-relative-directory
@@ -1262,8 +1331,32 @@
                         (when (is-a? frame syncheck-frame<%>)
                           (send frame syncheck:button-callback))))))))
         
+        (let ([jump-callback
+               (lambda (send-msg)
+                 (lambda (obj evt)
+                   (when (is-a? obj text%)
+                     (let ([canvas (send obj get-canvas)])
+                       (when canvas
+                         (let ([frame (send canvas get-top-level-window)])
+                           (when (is-a? frame syncheck-frame<%>)
+                             (let ([defs (send frame get-definitions-text)])
+                               (when (is-a? defs syncheck-text<%>)
+                                 (send-msg defs obj))))))))))])
+          (send keymap add-function
+                "jump to binding occurrence"
+                (jump-callback (lambda (defs obj) (send defs syncheck:jump-to-binding-occurrence obj))))
+          (send keymap add-function
+                "jump to next bound occurrence"
+                (jump-callback (lambda (defs obj) (send defs syncheck:jump-to-next-bound-occurrence obj))))
+          (send keymap add-function
+                "jump to definition (in other file)"
+                (jump-callback (lambda (defs obj) (send defs syncheck:jump-to-definition obj)))))
+        
         (send keymap map-function "f6" "check syntax")
-        (send keymap map-function "c:c;c:c" "check syntax"))
+        (send keymap map-function "c:c;c:c" "check syntax")
+        (send keymap map-function "c:x;b" "jump to binding occurrence")
+        (send keymap map-function "c:x;n" "jump to next bound occurrence")
+        (send keymap map-function "c:x;d" "jump to definition (in other file)"))
         
       
                                           
@@ -1295,7 +1388,8 @@
                                                                       
                                                                       
 
-      ;; make-traversal : -> (values (namespace syntax -> void) (namespace -> void))
+      ;; make-traversal : -> (values (namespace syntax (union #f syntax) -> void)
+      ;;                             (namespace string[directory] -> void))
       ;; returns a pair of functions that close over some state that
       ;; represents the top-level of a single program. The first value
       ;; is called once for each top-level expression and the second
@@ -1309,7 +1403,7 @@
                [tl-referenced-macros null]
                [tl-bound-in-sources null]
                [expanded-expression
-                (lambda (user-namespace user-directory sexp)
+                (lambda (user-namespace user-directory sexp jump-to-id)
                   (let-values ([(new-binders
                                  new-varrefs
                                  new-tops
@@ -1318,9 +1412,10 @@
                                  new-referenced-macros
                                  new-bound-in-sources
                                  has-module?)
-                                (annotate-basic sexp user-namespace user-directory)])
+                                (annotate-basic sexp user-namespace user-directory jump-to-id)])
                     (if has-module?
                         (annotate-complete user-namespace
+                                           user-directory
                                            new-binders
                                            new-varrefs
                                            new-tops
@@ -1337,8 +1432,9 @@
                           (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
                           (set! tl-tops (append new-tops tl-tops))))))]
                [expansion-completed
-                (lambda (user-namespace)
+                (lambda (user-namespace user-directory)
                   (annotate-complete user-namespace
+                                     user-directory
                                      tl-binders
                                      tl-varrefs
                                      tl-tops
@@ -1353,6 +1449,7 @@
       (define-struct req/tag (req-stx req-sexp used?))
       
       ;; annotate-complete :    namespace
+      ;;                        string[directory]
       ;;                        (listof syntax)
       ;;                        (listof (cons boolean syntax))
       ;;                        (listof syntax)
@@ -1369,6 +1466,7 @@
       ;; accepts the user's namespace in addition and doesn't accept
       ;; the boolean from annotate-basic.
       (define (annotate-complete user-namespace
+                                 user-directory
                                  binders
                                  varrefs
                                  tops
@@ -1381,7 +1479,9 @@
                        varrefs
                        requires
                        require-for-syntaxes
-                       referenced-macros)])
+                       referenced-macros
+                       user-namespace
+                       user-directory)])
           (annotate-variables user-namespace
                               binders
                               non-require-varrefs
@@ -1393,11 +1493,14 @@
       ;;                            (listof syntax)
       ;;                            (listof syntax)
       ;;                            (listof (cons boolean syntax[original]))
+      ;;                            namespace
+      ;;                            string[directory]
       ;;                         -> (listof syntax) (listof syntax)
       ;; returns the sublist of `varrefs' that did not come from module imports and
       ;;     and the sublist of `referenced-macros' that didn't come from module imports
       ;; effect: colors all require-bound ids from `varrefs' and draws arrow for them. 
-      (define (annotate-require-vars varrefs/levels requires require-for-syntaxes referenced-macros)
+      (define (annotate-require-vars varrefs/levels requires require-for-syntaxes referenced-macros
+                                      user-namespace user-directory)
         (let* ([maker (lambda (x) (make-req/tag x (syntax-object->datum x) #f))]
                [req/tags (map maker requires)]
                [req-syn/tags (map maker require-for-syntaxes)]
@@ -1410,8 +1513,8 @@
                                  [varref (cdr varref/level)]
                                  [from-module?
                                   (if high-level?
-                                      (annotate-require-var req-syn/tags varref #t)
-                                      (annotate-require-var req/tags varref #f))])
+                                      (annotate-require-var req-syn/tags varref #t user-namespace user-directory)
+                                      (annotate-require-var req/tags varref #f  user-namespace user-directory))])
                             (if from-module?
                                 (loop (cdr varrefs/levels))
                                 (cons varref (loop (cdr varrefs/levels)))))]))]
@@ -1463,7 +1566,7 @@
       ;; returns #t if `varref' comes from a module import
       ;; effect: colors `varref' and adds binding structure arrows,
       ;;         if it is a require-bound ids,
-      (define (annotate-require-var req/tags varref high-level?)
+      (define (annotate-require-var req/tags varref high-level? user-namespace user-directory)
         (let ([id-mod-path (get-module-req-path ((if high-level? 
                                                      identifier-transformer-binding
                                                      identifier-binding)
@@ -1478,6 +1581,12 @@
                           (color varref bound-variable-style-str)
                           (when (syntax-original? (req/tag-req-stx req/tag))
                             (connect-syntaxes (req/tag-req-stx req/tag) varref)
+                            (add-jump-to-definition 
+                             varref 
+                             (get-require-filename
+                              (req/tag-req-stx req/tag)
+                              user-namespace
+                              user-directory))
                             (add-mouse-over 
                              varref
                              (format mouse-over-variable-import
@@ -1568,10 +1677,8 @@
       (define (handle-no-binders/top user-namespace)
         (lambda (varref)
           (let ([defined-in-user-namespace?
-                 (with-handlers ([exn:variable? (lambda (x) #f)])
-                   (parameterize ([current-namespace user-namespace])
-                     (eval (syntax-e varref))
-                     #t))])
+                 (parameterize ([current-namespace user-namespace])
+                   (namespace-variable-value (syntax-e varref) #t (lambda () #f)))])
             (if defined-in-user-namespace?
                 (color varref bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
@@ -1627,6 +1734,25 @@
                   (send syncheck-text syncheck:add-mouse-over-status
                         source pos-left pos-right str)))))))
       
+      ;; add-jump-to-definition : syntax[original] string[filename] -> void
+      ;; registers the range in the editor so that a mouse over
+      ;; this area shows up in the status line.
+      (define (add-jump-to-definition stx filename)
+        (let* ([source (syntax-source stx)])
+	  (when (is-a? source text%)
+            (let ([syncheck-text (find-syncheck-text source)])
+              (when (and syncheck-text
+                         (syntax-position stx)
+                         (syntax-span stx))
+                (let* ([pos-left (- (syntax-position stx) 1)]
+                       [pos-right (+ pos-left (syntax-span stx))])
+                  (send syncheck-text syncheck:add-jump-to-definition
+                        source
+                        pos-left
+                        pos-right
+                        stx
+                        filename)))))))
+      
       ;; find-syncheck-text : text% -> (union #f (is-a?/c syncheck-text<%>))
       (define (find-syncheck-text text)
         (let loop ([text text])
@@ -1641,8 +1767,9 @@
                       (loop enclosing-editor))))])))
       
       ;; annotate-basic : syntax 
-      ;;                  string
       ;;                  namespace
+      ;;                  string
+      ;;                  syntax[id]
       ;;                  -> (values (listof syntax)
       ;;                             (listof (cons boolean syntax))
       ;;                             (listof syntax)
@@ -1663,7 +1790,7 @@
       
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
-      (define (annotate-basic sexp user-directory user-namespace)
+      (define (annotate-basic sexp user-namespace user-directory jump-to-id)
         (let ([binders null]
               [varrefs null]
               [tops null]
@@ -1781,6 +1908,11 @@
                  (begin
                    (annotate-raw-keyword sexp)
                    (set! binders (combine/color-binders (syntax vars) binders bound-variable-style-str))
+                   (when jump-to-id
+                     (for-each (lambda (id)
+                                 (when (module-identifier=? id jump-to-id)
+                                   (jump-to id)))
+                               (syntax->list (syntax vars))))
                    (loop (syntax b)))]
                 [(define-syntaxes names exp)
                  (begin
@@ -1810,14 +1942,11 @@
                 
                 ; module top level only:
                 [(provide provide-specs ...)
-                 (begin
-                   (set! varrefs
-                         (append
-                          (map
-                           (lambda (x) (cons #f x))
-                           (apply append (map extract-provided-vars 
-                                              (syntax->list (syntax (provide-specs ...))))))
-                          varrefs))
+                 (let ([provided-vars (apply 
+                                       append
+                                       (map extract-provided-vars
+                                            (syntax->list (syntax (provide-specs ...)))))])
+                   (set! varrefs (append (map (lambda (x) (cons #f x)) provided-vars) varrefs))
                    (annotate-raw-keyword sexp))]
                 
                 [id
@@ -1908,24 +2037,26 @@
                   (when syncheck-text
                     (let* ([start (- (syntax-position require-spec) 1)]
                            [end (+ start (syntax-span require-spec))]
-                           [datum (syntax-object->datum require-spec)]
-                           [sym 
-                            (and (not (symbol? datum))
-                                 (parameterize ([current-namespace user-namespace]
-                                                [current-directory user-directory]
-                                                [current-load-relative-directory user-directory])
-                                   ((current-module-name-resolver)
-                                    (syntax-object->datum require-spec)
-                                    #f 
-                                    #f)))]
-                           [file (and (symbol? sym)
-                                      (module-name-sym->filename sym))])
+                           [file (get-require-filename require-spec user-namespace user-directory)])
                       (when file
                         (send syncheck-text syncheck:add-menu
                               source
                               start end 
                               #f
                               (make-require-open-menu file)))))))))))
+      
+      ;; get-require-filename : syntax namespace string[directory] -> filename
+      ;; finds the filename corresponding to the require in stx
+      (define (get-require-filename stx user-namespace user-directory)
+        (let* ([datum (syntax-object->datum stx)]
+               [sym 
+                (and (not (symbol? datum))
+                     (parameterize ([current-namespace user-namespace]
+                                    [current-directory user-directory]
+                                    [current-load-relative-directory user-directory])
+                       ((current-module-name-resolver) datum #f #f)))])
+          (and (symbol? sym)
+               (module-name-sym->filename sym))))
       
       ;; make-require-open-menu : string[filename] -> menu -> void
       (define (make-require-open-menu file)
@@ -2143,6 +2274,15 @@
 		    (loop (unbox stx-e) (unbox datum))]
 		   [else (void)]))])))))
 
+      ;; jump-to : syntax -> void
+      (define (jump-to stx)
+        (let ([src (syntax-source stx)]
+              [pos (syntax-position stx)]
+              [span (syntax-span stx)])
+          (when (and (is-a? src text%)
+                     pos
+                     span)
+            (send src set-position (- pos 1) (+ pos span -1)))))
       
       ;; color : syntax[original] str -> void
       ;; colors the syntax with style-name's style
@@ -2186,7 +2326,7 @@
                 (send to-outermost-src syncheck:add-tail-arrow
                       from-src (- from-pos 1)
                       to-src (- to-pos 1)))))))
-                    
+      
       ;; add-to-cleanup-texts : (is-a?/c editor<%>) -> void
       (define (add-to-cleanup-texts ed)
         (let ([canvas (send (find-outermost-editor ed) get-canvas)])

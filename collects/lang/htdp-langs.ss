@@ -1,7 +1,5 @@
 #|
 
-not to forget: teachpakcs
-
 ;; we don't use the built in debugging, use our own
 ;; version here that has no bug icon and only
 ;; annotates code that comes from editors.
@@ -248,7 +246,9 @@ not to forget: teachpakcs
           (define/override (front-end/complete-program input settings teachpacks)
             (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
               (let ([state 'init]
+                    ;; state : init -> require -> done
                     [reader (get-reader)])
+                
                 (lambda ()
                   (case state
                     [(init)
@@ -268,7 +268,15 @@ not to forget: teachpakcs
                          (rewrite-module mod)))]
                     [(require) 
                      (set! state 'done)
-                     (syntax (require #%htdp))]
+                     (syntax
+                      (let ([done-already? #f])
+                        (dynamic-wind
+                         void
+                         (lambda () (dynamic-require '#%htdp #f))
+                         (lambda () 
+                           (unless done-already?
+                             (set! done-already? #t)
+                             (current-namespace (module->namespace '#%htdp)))))))]
                     [(done) eof])))))
 
           (super-instantiate ())))
@@ -298,7 +306,7 @@ not to forget: teachpakcs
                 (syntax (provide ids ...))))]
             [else
              (let ([body (car bodies)])
-               (syntax-case body (define-values define-syntaxes require require-for-syntax provide)
+               (syntax-case body (require define-values define-syntaxes require-for-syntax provide)
                  [(define-values (new-vars ...) e)
                   (cons body (loop (cdr bodies)
                                    (append

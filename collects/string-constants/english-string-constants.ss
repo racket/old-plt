@@ -174,7 +174,7 @@ please adhere to these guidelines:
  (cs-underline "Underline")
  (cs-change-color "Change Color")
  (cs-tack/untack-arrow "Tack/Untack Arrow(s)")
- (cs-jump-to-next-occurrence "Jump to Next Occurrence")
+ (cs-jump-to-next-bound-occurrence "Jump to Next Bound Occurrence")
  (cs-jump-to-binding "Jump to Binding Occurrence")
  (cs-error-message "Error Message")
  (cs-open-file "Open ~a")

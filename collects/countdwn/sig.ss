@@ -5,4 +5,4 @@
   (edit frame))
 
 (define-signature during^
-  (remember))
+  (remember remember-around))

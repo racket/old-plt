@@ -19,6 +19,16 @@ line in your .countdownrc and you will never miss it again:
 
   (remember "Matthew's Birthday November 1st" 59 59 23 1 11)
 
+If you want to remember an event that has starting and ending dates,
+use remember-around:
+
+  (remember-around "Christmas Break 1997" 
+                   (list 0 0 12 20 12 1997)
+                   (list 0 0 12 4 1 1998))
+
+remember-around's second and third arguments are lists whose entries
+are the same as the last arguments to remember.
+
 After creating that file, run Countdown like this:
 
   mred -x -A countdwn

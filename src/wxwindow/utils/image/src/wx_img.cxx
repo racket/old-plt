@@ -760,6 +760,7 @@ void wxImage::FSDither(byte *inpic, int w, int h, byte *outpic)
   free(dithpic);
 }
 
+
 /***********************************/
 void wxImage::CreateXImage()
 {
@@ -779,7 +780,11 @@ void wxImage::CreateXImage()
    *
    *   if dispDEEP is 6, format'll be a ZPixmap, 8 bits per pixel
    *
-   *   if dispDEEP is 24 or 32, format'll be a ZPixmap.  32 bits per pixel
+   *   if dispDEEP is 16, format'll be a ZPixmap.  16 bits per pixel
+   *
+   *   if dispDEEP is 24, format'll be a ZPixmap.  24 bits per pixel
+   *
+   *   if dispDEEP is 32, format'll be a ZPixmap.  32 bits per pixel
    *
    *   any other value of dispDEEP will use a XYPixmap of the appropriate
    *   depth, and some slug-like general-case code  DOESN'T YET!!
@@ -943,6 +948,36 @@ void wxImage::CreateXImage()
     /*********************************/
 
     case 24:
+      {
+      byte  *imagedata, *ip, *pp;
+      imagedata = (byte *) malloc(3 * eWIDE * eHIGH);
+      if (!imagedata) FatalError("couldn't malloc imagedata");
+      
+      theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
+			      (char *) imagedata, eWIDE, eHIGH, 8,
+			      3 * eWIDE);
+      if (!theImage) {
+	return;
+	// FatalError("couldn't create theImage!");
+      }
+      
+      if (theImage->byte_order == MSBFirst) 
+	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
+	  *ip++ = (cols[*pp]>>16) & 0xff;
+	  *ip++ = (cols[*pp]>>8) & 0xff;
+	  *ip++ =  cols[*pp] & 0xff;
+	}
+      else 
+	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
+	  *ip++ =  cols[*pp] & 0xff;
+	  *ip++ = (cols[*pp]>>8) & 0xff;
+	  *ip++ = (cols[*pp]>>16) & 0xff;
+	}
+      }      
+      break;
+
+    /*********************************/
+
     case 32:
       {
       byte  *imagedata, *ip, *pp;

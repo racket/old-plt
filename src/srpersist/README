@@ -85,26 +85,28 @@ On the Macintosh, we supply a Metrowerks Codewarrior project file, called
 srpersist.mac-make.  The following directions assume the use of this compiler.
 
 1) The first step is to unpack the project file itself; the package includes
-srpersist.mac-make.hqx, a binhexed version of the project file.  Nearly every
-expansion utility for the Macintosh will unpack these files, including the 
-ubiquitous Stuffit Expander.
+srpersist.mac-make.hqx, a binhexed version of the project file.  Most 
+expansion utilities for the Macintosh will unpack these files, including 
+Stuffit Expander.
 
 Like the other platforms, the principal concern in compiling srpersist is
-adding the driver manager to the project before compiling.  The remaining
-compilation is relatively painless.
+adding the driver manager to the project before compiling.
 
 2) Open the srpersist.mac-make file
 
 3) Add your ODBC driver manager to the project.  The desired file is generally 
 in the extensions folder of the system folder; the one supplied with Microsoft
-Office is named "ODBC Driver Manager PPC".  Add this file to the project by 
-dropping it on the project window or by choosing the "Add Files..." option in 
-the "Project" menu.
+Office 98, for example, is named "ODBC Driver Manager PPC".  Add this file 
+to the project by dropping it on the project window or by choosing the 
+"Add Files..." option in the "Project" menu.
+
+4) Modify the file srpersist.pch to define the ODBC version used by 
+your driver manager.  Version 2.0 is specified as 0x0200, version
+3.5 as 0x0350, and so forth.
 
 4) Compile by choosing the "Make" option from the "Project" menu.  The project
 will by default place the resulting "srpmain.so" library in the proper 
 subdirectory of plt/collects/srpersist (not to be confused with 
-plt/src/srpersist).  If your plt tree is in a funny state, or if you want to 
-copy this file to a different plt tree, you may change the target location 
-in the "Target Settings" panel of the Project preferences.
+plt/src/srpersist).  You may change the target location in the 
+"Target Settings" panel of the Project preferences.
 

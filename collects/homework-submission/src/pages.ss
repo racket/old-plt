@@ -7,7 +7,8 @@
   (require (lib "unitsig.ss")
            (lib "etc.ss")
            "widgets.ss"
-           "sigs.ss")
+           "sigs.ss"
+           "data.ss")
 
   (provide pages@)
 
@@ -17,20 +18,44 @@
 
       ;; Prompt the user for his or her username and password.
       (define page-login
-        (opt-lambda ((message #f))
-          (build-page
-            "Please Log In"
-            (if message (p message) "")
-            (form transition-log-in '()
-                  (text-input "User name" "username")
-                  (password-input "password")
-                  (submit-button "Log in")))))
+        (page ()
+          "Please Log In"
+          (form transition-log-in '()
+                (text-input "User name" "username")
+                (password-input "password")
+                (submit-button "Log in"))))
 
       ;; Confirm the user has logged in.
       (define page-logged-in
-        (build-page
+        (page (session)
           "You Are Logged In"
-          (p "Congrats, you are logged in.")
+          (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Prompt the user for a new password
+      (define page-change-password
+        (page (session)
+              "Change Password"
+              (form (transition-update-password session) '()
+                    (input "Old password" "old-password" "password")
+                    (input "New password" "new-password1" "password")
+                    (input "New password (again)" "new-password2" "password")
+                    (submit-button "Change"))
+              (p (hyperlink transition-log-out "Logout"))))
+
+
+      ;; ************************************************************
+
+      ;; page : (Symbol? ...) String? Xexpr ... ->
+      ;;         ((Alpha ... [String]) -> Xexpr
+      ;; Produce a function that produces a page with an optional message.
+      (define-syntax page
+        (syntax-rules ()
+          ((_ (args ...) title body ...)
+           (opt-lambda (args ... (message #f))
+             (build-page
+               title
+               (if message (p message) "")
+               body ...)))))
 
       )))

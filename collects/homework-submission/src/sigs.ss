@@ -6,11 +6,14 @@
 
   (define-signature pages^
     (page-login
-     page-logged-in))
+     page-logged-in
+     page-change-password))
 
   (define-signature transitions^
     (transition-login
      transition-log-in
-     transition-log-out))
+     transition-log-out
+     transition-change-password
+     transition-update-password))
 
   )

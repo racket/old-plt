@@ -8,6 +8,7 @@
 
   (provide/contract
     (valid-username-password? (string? string? . -> . boolean?))
+    (update-password! (string? string? . -> . any))
     )
 
   ;; Does the username and password exist in the database? The password passed
@@ -23,5 +24,26 @@
             (if (string=? username (car user-pass))
               (string=? encrypted (cadr user-pass))
               (loop (cdr l))))))))
+
+  ;; Update the password database with the new password, encrypted.
+  (define (update-password! username password)
+    (let ((new-passwds (update-passwords username (md5 password))))
+      (when (file-exists? "../etc/passwd")
+        (delete-file "../etc/passwd"))
+      (call-with-output-file
+        "../etc/passwd"
+        (lambda (op)
+          (fprintf op "'~s~n" new-passwds)))))
+
+  ;; Produce a new list of username/password pairs with the new password
+  ;; in place of the old password.
+  (define (update-passwords username password)
+    (let loop ((passwords (load "../etc/passwd")))
+      (if (null? passwords)
+        '()
+        (let ((user-pass (car passwords)))
+          (if (string=? username (car user-pass))
+            (cons (list username password) (cdr passwords))
+            (cons user-pass (loop (cdr passwords))))))))
 
   )

@@ -12,7 +12,9 @@
   (require (lib "unitsig.ss")
            (lib "servlet.ss" "web-server")
            (prefix backend- "backend.ss")
-           "sigs.ss")
+           "scheduler.ss"
+           "sigs.ss"
+           "data.ss")
 
   (provide transitions@)
 
@@ -34,9 +36,14 @@
           (let* ((rb (request-bindings req))
                  (username (extract-binding/single 'username rb))
                  (password (extract-binding/single 'password rb))
-                 (valid? (backend-valid-username-password? username password)))
+                 (valid? (schedule
+                           (lambda ()
+                             (backend-valid-username-password?
+                               username password)))))
             (if valid?
-              (send/suspend/callback page-logged-in)
+              (send/suspend/callback
+                (page-logged-in (make-session username)
+                                "Congrats, you've logged in."))
               (send/suspend/callback
                 (page-login "Invalid username or password."))))))
 
@@ -45,5 +52,43 @@
       (define transition-log-out
         (lambda (req)
           (send/forward/callback (page-login))))
+
+      ;; Direct transition to the change password page.
+      (define (transition-change-password session)
+        (lambda (req)
+          (send/suspend/callback (page-change-password session))))
+
+      ;; Action transition to the change password page.
+      ;; Action: Change the password.
+      ;; Send the change password page with a message explaining whether it
+      ;; worked and, if it failed, why.
+      (define (transition-update-password session)
+        (lambda (req)
+          (let* ((rb (request-bindings req))
+                 (username (session-username session))
+                 (old-password (extract-binding/single 'old-password rb))
+                 (valid? (schedule
+                           (lambda ()
+                             (backend-valid-username-password?
+                               username old-password))))
+                 (new-password1 (extract-binding/single 'new-password1 rb))
+                 (new-password2 (extract-binding/single 'new-password2 rb)))
+            (if valid?
+              (if (string=? new-password1 new-password2)
+                (begin
+                  (schedule
+                    (lambda ()
+                      (backend-update-password! username new-password1)))
+                  (send/suspend/callback (page-logged-in
+                                           session
+                                           "Your password has been changed.")))
+                (send/suspend/callback (page-change-password
+                                         session
+                                         "New passwords do not match.")))
+              (send/suspend/callback (page-change-password
+                                       session
+                                       "Incorrect old password."))))))
+
+
 
       )))

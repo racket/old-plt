@@ -8,6 +8,7 @@
            (lib "send-assertions.ss" "web-server" "tools")
            
            "../src/pages-transitions.ss"
+           (prefix backend: "../src/backend.ss")
            )
 
   (provide test-servlet)
@@ -48,8 +49,9 @@
           logged-in-page))
 
       (make-test-case
-        "A user logs in, logs out, goes back to the logged-in page, and
-        logs out again"
+        (string-append
+          "A user logs in, logs out, goes back to the logged-in page, and "
+          "logs out again")
         (assert-output-response/suspended
           the-servlet
           (list (list form->k-url
@@ -59,6 +61,53 @@
                 'back
                 'forward)
           restart-session-page))
+
+      (make-test-case
+        (string-append
+          "A user logs in, sucessfully changes his or her password, then logs "
+          "out")
+        (assert-output-response/suspended
+          the-servlet
+          (list (list form->k-url
+                      (list (cons 'username "The Test Username")
+                            (cons 'password "The Test Password")))
+                (list (hyperlink->k-url "Change Password") '())
+                (list form->k-url
+                      (list (cons 'old-password "The Test Password")
+                            (cons 'new-password1 "The New Password")
+                            (cons 'new-password2 "The New Password")))
+                (list (hyperlink->k-url "Logout") '()))
+          (login-page))
+        (void)
+        (backend:update-password! "The Test Username" "The Test Password"))
+
+      (make-test-case
+        (string-append
+          "A user logs in, attempts to change his or her password, enters an "
+          "invalid old password, then enters mismatched new passwords, then "
+          "sucessfully changes his or her password, then logs out")
+        (assert-output-response/suspended
+          the-servlet
+          (list (list form->k-url
+                      (list (cons 'username "The Test Username")
+                            (cons 'password "The Test Password")))
+                (list (hyperlink->k-url "Change Password") '())
+                (list form->k-url
+                      (list (cons 'old-password "The Wrong Password")
+                            (cons 'new-password1 "The New Password")
+                            (cons 'new-password2 "The New Password")))
+                (list form->k-url
+                      (list (cons 'old-password "The Test Password")
+                            (cons 'new-password1 "The New Password1")
+                            (cons 'new-password2 "The New Password2")))
+                (list form->k-url
+                      (list (cons 'old-password "The Test Password")
+                            (cons 'new-password1 "The New Password")
+                            (cons 'new-password2 "The New Password")))                
+                (list (hyperlink->k-url "Logout") '()))
+          (login-page))
+        (void)
+        (backend:update-password! "The Test Username" "The Test Password"))
 
       ))
 
@@ -84,7 +133,7 @@
   (define logged-in-page
     `(html () (head () (title () "You Are Logged In"))
            (body () (h1 () "You Are Logged In")
-                 (p "Congrats, you are logged in.")
+                 (p "Congrats, you've logged in.")
                  (p (a ((href ,(make-unknown))) "Logout")))))
 
   ;; restart-session-page : xexpr/callback

@@ -177,14 +177,27 @@
           [errortrace-eval-handler
            (lambda (e)
 	     (if (eq? ns (current-namespace))
-		 (let* ([ex (expand e)]
-			[a (if (or (compiled-expression? (if (syntax? e) 
-							     (syntax-e e) 
-							     e))
-				   (not (instrumenting-enabled)))
-			       e
-			       (annotate-top ex #f))])
-		   (orig a))
+		 ;; Loop to flatten top-level `begin's:
+		 (let loop ([e e])
+		   (let ([top-e (expand-to-top-form e)])
+		     (syntax-case top-e (begin)
+		       [(begin expr ...)
+			;; Found a `begin', so expand/eval each contained
+			;; expression one at a time
+			(foldl (lambda (e old-val)
+				 (loop e))
+			       (void)
+			       (syntax->list #'(expr ...)))]
+		       [_else
+			;; Not `begin', so proceed with normal expand and eval
+			(let* ([ex (expand top-e)]
+			       [a (if (or (compiled-expression? (if (syntax? e) 
+								    (syntax-e e) 
+								    e))
+					  (not (instrumenting-enabled)))
+				      e
+				      (annotate-top ex #f))])
+			  (orig a))])))
 		 (orig e)))])
      errortrace-eval-handler))
   

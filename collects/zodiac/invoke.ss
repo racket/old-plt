@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.34 1998/06/08 23:07:19 shriram Exp $
+; $Id: invoke.ss,v 1.35 1998/07/14 20:25:00 shriram Exp $
 
 (require-library "coreu.ss")
 (require-library "match.ss")
@@ -50,8 +50,8 @@
 	    (zodiac:mzscheme-parameters@ ACTUAL-PARAMETERS))
 	  (SYSTEM : zodiac:system^
 	    (zodiac:system@ INTERFACE LOCAL-PARAMETERS
-	      (MZLIB-CORE pretty-print@)
-	      (MZLIB-CORE file@)))
+	      (MZLIB-CORE pretty-print)
+	      (MZLIB-CORE file)))
 	  (MZLIB-CORE : mzlib:core^
 	    (mzlib:core@)))
 	(export (open SYSTEM) (open INTERFACE)))

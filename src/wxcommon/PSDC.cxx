@@ -55,8 +55,6 @@
 # include "wx_choic.h"
 # include "wx_check.h"
 # include "wx_messg.h"
-# include "wx_txt.h"
-# include "wx_mtxt.h"
 
 #endif
 #endif
@@ -97,8 +95,8 @@ static int complained_afm = 0;
 
 class wxCanvas;
 
-#ifndef wx_xt
-#include "wx_privt.h"
+#ifdef wx_msw
+# include "wx_privt.h"
 #endif
 
 #include <math.h>

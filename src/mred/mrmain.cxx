@@ -117,7 +117,9 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 #define PROGRAM_LC "mred"
 
 #ifdef wx_mac
-#define GET_PLTCOLLECTS_VIA_RESOURCES
+# ifndef OS_X
+#  define GET_PLTCOLLECTS_VIA_RESOURCES
+# endif
 #endif
 
 #ifdef GET_PLTCOLLECTS_VIA_RESOURCES

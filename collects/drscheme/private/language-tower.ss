@@ -1,7 +1,8 @@
 (module language-tower mzscheme
   (require "drsig.ss"
 	   (lib "unitsig.ss")
-	   (lib "class.ss"))
+	   (lib "class.ss")
+	   (lib "mred.ss" "mred"))
 
   (provide language-tower@)
 
@@ -73,7 +74,7 @@
       ;; build-simple-module-based-language-settings : ((instanceof panel<%>) -> (-> setting))
       ;; constrcts the standard settings panel
       (define (build-simple-module-based-language-settings parent)
-        ;; construct dialog
+        (make-object check-box% "checkbox" parent void)
         (lambda ()
           'dummy-settings))
       

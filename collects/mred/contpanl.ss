@@ -440,7 +440,7 @@
     (define vertical-panel%
       (class-asi panel%
 	(inherit
-	  new-line
+	  set-cursor
 	  force-redraw)
 	(rename
 	  [super-add add-child])
@@ -452,7 +452,7 @@
 	  [add-child
 	   (lambda (new-child)
 	     (super-add new-child)
-	     (new-line))]
+	     (set-cursor 0 0))]
 	  
 	  [get-min-size
 	    (make-get-size this

@@ -1,15 +1,15 @@
-
+(load "pingp.ss")
 ;; ---------------------------------------------------------------------------
 ;; TeachPack: pingp.ss
 ;; Language: Advanced
 
 ;; To test: uncomment the block at the bottom.
-;; The file tests the function protect from pingp-lib.ss.
-;; The file is used to build protect-play-lib.ss.
+;; The file tests the function protect from pingp.ss.
+;; The file is used to build protect-play.ss.
 
 (define (test-go x) (void))
 
-(load "pingp-test-play.ss")
+
 (define (test-go x)
   (protect (mk-balls 10)
 	   ; (list (make-ball (make-posn 100 100) (make-speed 8 -16)))

@@ -1,3 +1,6 @@
+;; TeachPack: rectangle.ss
+;; LanguageLevel: beginner 
+
 (start 100 100)
 
 (show (list

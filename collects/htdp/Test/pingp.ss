@@ -1,7 +1,10 @@
-;; TeachPack: master.ss
+;; TeachPack: pingp.ss
 ;; Language: Advanced
 
-;; This file tests the trace functions. It is not used anywhere else. 
+;; ---------------------------------------------------------------------------
+;; To test: uncomment the last line.
+;; The file tests the function play from pingp-lib.ss. 
+;; The file is used to build protect-text.ss. 
 
 ;; Speed and its relationship to positions
 ;; ---------------------------------------
@@ -73,8 +76,12 @@
 ;; bounces-from : ball number -> {'NORTH, 'SOUTH, 'EAST, 'WEST, 'none}
 (define (bounces-from ball t)
   (cond
-    ((<= (ns-time-to-wall ball) (min (ew-time-to-wall ball) t)) (ns-direction ball))
-    ((<= (ew-time-to-wall ball) (min t (ns-time-to-wall ball))) (ew-direction ball))
+    ((<= (ns-time-to-wall ball) (min t (ew-time-to-wall ball))) (ns-direction ball))
+    ((<= (ew-time-to-wall ball) (min t (ns-time-to-wall ball)))
+     (cond 
+       ((landed-on-paddle? (ball-posn (move-ball ball (ew-time-to-wall ball))))
+	(ew-direction ball))
+       (else 'none)))
     (else 'none)))
 
 ;; move : ball number -> ball
@@ -92,10 +99,4 @@
 ;; ew-bounce-west : ball -> ball
 (define ew-bounce (make-bounce (make-speed -1 1)))
 
-;; mover : posn speed number -> posn
-(define (mover p s t) 
-  (posn+ p (posn*s t s)))
-
-(trace-ball (make-ball (make-posn 100 100) (make-speed 8 -2)) ball-posn move-in-box 222)
-
-(tracer (make-posn 100 100) (make-speed 8 -2) mover 222)
+; (play make-ball make-speed ball-posn move-in-box)

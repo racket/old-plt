@@ -48,9 +48,6 @@
       (define in #f)
       (define input-port-start-pos start-pos)
 
-      ;; The continuation for the background colorer
-      (define background-cont #f)
-      
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
@@ -166,8 +163,7 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-          (parameterize ((initial-exception-handler background-exn-handler))
-            (set! background-thread (thread (lambda () (background-colorer))))))
+          (set! background-thread (thread (lambda () (background-colorer)))))
         (do-insert/delete start-pos 0))
         
         
@@ -189,18 +185,15 @@
         (color)
         (end-edit-sequence)
         (queue-callback colorer-callback))
-      
-      (define (background-exn-handler exn)
-        (set! background-cont (exn:break-continuation exn))
-        (set! background-thread (thread background-colorer))
-        ((error-escape-handler)))
-          
+                
       (define (background-colorer)
         (channel-get sync)
-        (if background-cont
-            (background-cont #f)
-            (with-handlers ((not-break-exn? void))
-              (re-tokenize)))
+        (parameterize ((current-exception-handler
+                        (lambda (exn)
+                          (channel-get sync)
+                          ((exn:break-continuation exn)))))
+          (with-handlers ((not-break-exn? void))
+            (re-tokenize)))
         (background-colorer))
       
       

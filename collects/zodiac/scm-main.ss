@@ -1390,6 +1390,8 @@
 
     (include "qq.ss")
 
+    (include "shared.ss")
+
     (set! local-parse-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)
 	local-parse-vocab-delta))

@@ -71,7 +71,7 @@
 	    [icon : framework:icon^ (icon@ mred)]
 	    [editor : framework:editor^
 		    (editor@ mred autosave finder path-utils keymap icon
-			     preferences text pasteboard frame gui-utils)]
+			     preferences text pasteboard frame gui-utils handler)]
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap gui-utils color-model frame scheme)]

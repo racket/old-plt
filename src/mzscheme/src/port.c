@@ -2146,7 +2146,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 }
 
 Scheme_Object *
-scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
+scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[])
 {
 #ifdef USE_FD_PORTS
   int fd;

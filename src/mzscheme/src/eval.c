@@ -385,7 +385,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   scheme_zero_unneeded_rands(scheme_current_thread);
   if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_thread,
 		      scheme_current_thread->cc_start)) {
-    scheme_init_jmpup_buf(&scheme_overflow_cont);
+    scheme_reset_jmpup_buf(&scheme_overflow_cont);
     if (!scheme_overflow_reply) {
       scheme_longjmp(scheme_error_buf, 1);
     } else {

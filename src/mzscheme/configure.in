@@ -35,10 +35,6 @@ if test "${enable_oskit}" = "yes" ; then
   enable_mred=no
 fi
 
-if test "${enable_osthreads}" = "yes" ; then
-  enable_mred=no
-fi
-
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
 fi
@@ -60,10 +56,6 @@ fi
 
 ###### Some defaults #######
 
-# Other options; mainly used to import other options
-#  Add -DUSE_SENORA_GC for SenoraGC
-#  Add -DSOLARIS_THREADS for Solaris threads
-#  Add -DIRIX_SPROCS for Irix sprocs
 OPTIONS=
 
 # GC Directory
@@ -205,10 +197,6 @@ case $OS in
   SunOS)
     case `$UNAME -r` in
       5.*)
-       if test "${enable_osthreads}" = "yes" ; then
-	 OPTIONS="${OPTIONS} -DSOLARIS_THREADS -D_REENTRANT"
-	 LIBS="$LIBS -lthread"
-       fi
        STATICLINK="-Wl,-Bstatic" # after -ldl
        LIBS="$LIBS -lsocket -lnsl -lintl"
        ;;
@@ -225,10 +213,6 @@ case $OS in
   OpenBSD)
     ;;
   IRIX)
-    if test "${enable_osthreads}" = "yes" ; then
-      OPTIONS="$OPTIONS -DIRIX_SPROCS"
-      EXTRALIBS="sproc.o"
-    fi
     STATICLINK="/usr/lib/libC.a /usr/lib/libmalloc.a"
     if test "$X_PRE_LIBS" = " -lSM -lICE" ; then
       # For some reason, works best to drop these
@@ -236,10 +220,6 @@ case $OS in
     fi
     ;;
   Linux)
-    if test "${enable_osthreads}" = "yes" ; then
-      OPTIONS="$OPTIONS -DLINUX_THREADS -D_REENTRANT"
-      LIBS="$LIBS -lpthread"
-    fi
     LIBS="$LIBS -rdynamic"
     # PPC: X11 librares are not found
     case `$UNAME -m` in

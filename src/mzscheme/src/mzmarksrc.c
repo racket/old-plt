@@ -436,9 +436,7 @@ input_port {
   gcMARK(ip->ungotten);
   gcMARK(ip->read_handler);
   gcMARK(ip->mref);
-#ifdef MZ_REAL_THREADS
-  gcMARK(ip->sema);
-#endif
+  gcMARK(ip->output_half);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -454,9 +452,7 @@ output_port {
   gcMARK(op->write_handler);
   gcMARK(op->print_handler);
   gcMARK(op->mref);
-#ifdef MZ_REAL_THREADS
-  gcMARK(op->sema);
-#endif
+  gcMARK(op->input_half);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));

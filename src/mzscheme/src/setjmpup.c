@@ -219,6 +219,8 @@ static void set_copy(void *s_c, void *c)
 
 #endif
 
+/**********************************************************************/
+
 #define memcpy(dd, ss, ll) \
 {  stack_val *d, *s; long l; \
    l = ll / sizeof(stack_val); d = (stack_val *)dd; s = (stack_val *)ss; \

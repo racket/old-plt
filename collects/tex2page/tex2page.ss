@@ -12,7 +12,7 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a4,
+;Configured for Scheme dialect plt by scmxlate, v 1a5,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p12")
+(define *tex2page-version* "4p13")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -251,8 +251,6 @@
 (define *in-para?* #f)
 
 (define *in-small-caps?* #f)
-
-(define *included-label-table* #f)
 
 (define *includeonly-list* #f)
 
@@ -2225,6 +2223,8 @@
            (begin (get-actual-char) *html-rdquo*)
            *html-rsquo*))))))
 
+(defstruct label (src #f) page name value)
+
 (define htmlize-label
   (lambda (lbl)
     (let* ((lbl (string-trim-blanks lbl)) (n (string-length lbl)))
@@ -2271,11 +2271,10 @@
 
 (define do-label-aux
   (lambda (label)
-    (let ((label-name (get-toks "\\TIIPrecentlabelname"))
-          (label-value (get-toks "\\TIIPrecentlabelvalue")))
-      (!label label *html-page-count* label-name label-value)
-      (write-label
-        `(!label ,label ,*html-page-count* ,label-name ,label-value)))))
+    (let ((name (get-toks "\\TIIPrecentlabelname"))
+          (value (get-toks "\\TIIPrecentlabelvalue")))
+      (!label label *html-page-count* name value)
+      (write-label `(!label ,label ,*html-page-count* ,name ,value)))))
 
 (define do-input-external-labels
   (lambda ()
@@ -2343,30 +2342,32 @@
              (if ext-file
                (table-get *external-label-tables* ext-file)
                *label-table*))
-           (label-vec (label-bound? label label-table))
+           (label-ref (label-bound? label label-table))
            (label-text
              (cond
               (link-text (tex-string->html-string link-text))
-              (label-vec (tex-string->html-string (vector-ref label-vec 3)))
+              (label-ref (tex-string->html-string (label.value label-ref)))
               (else label))))
-      (if label-vec
+      (if label-ref
         (emit-ext-page-node-link-start
-          (or ext-file (vector-ref label-vec 0))
-          (vector-ref label-vec 1)
-          (vector-ref label-vec 2))
+          (or ext-file (label.src label-ref))
+          (label.page label-ref)
+          (label.name label-ref))
         (emit-link-start (string-append *jobname* ".hlog")))
       (emit label-text)
       (emit-link-stop))))
 
 (define maybe-label-page
-  (lambda (label-src label-pageno)
-    (if (and (not label-src) (= *html-page-count* label-pageno))
+  (lambda (this-label-src this-label-pageno)
+    (if (and (not this-label-src) (= *html-page-count* this-label-pageno))
       "#"
       (string-append
-        (or label-src *jobname*)
-        (if (= label-pageno 0)
+        (or this-label-src *jobname*)
+        (if (= this-label-pageno 0)
           ""
-          (string-append *html-page-suffix* (number->string label-pageno)))
+          (string-append
+            *html-page-suffix*
+            (number->string this-label-pageno)))
         *output-extn*))))
 
 (define do-htmlref
@@ -2465,8 +2466,8 @@
   (lambda ()
     (let ((label-ref (label-bound? (get-label) *label-table*)))
       (if label-ref
-        (let ((pageno (vector-ref label-ref 1)))
-          (emit-ext-page-node-link-start (vector-ref label-ref 0) pageno #f)
+        (let ((pageno (label.page label-ref)))
+          (emit-ext-page-node-link-start (label.src label-ref) pageno #f)
           (emit pageno)
           (emit-link-stop))
         (non-fatal-error "***")))))
@@ -2478,9 +2479,7 @@
         (emit "\"")
         (if label-ref
           (emit
-           (maybe-label-page
-             (vector-ref label-ref 0)
-             (vector-ref label-ref 1)))
+           (maybe-label-page (label.src label-ref) (label.page label-ref)))
           (emit *log-file*))
         (emit "\"")))))
 
@@ -2490,14 +2489,12 @@
       (cond
        ((and (> n 0) (char=? (string-ref url 0) #\#))
         (let* ((label (substring url 1 n))
-               (label-vec (label-bound? label *label-table*)))
-          (if label-vec
+               (label-ref (label-bound? label *label-table*)))
+          (if label-ref
             (string-append
-              (maybe-label-page
-                (vector-ref label-vec 0)
-                (vector-ref label-vec 1))
+              (maybe-label-page (label.src label-ref) (label.page label-ref))
               "#"
-              (vector-ref label-vec 2))
+              (label.name label-ref))
             url)))
        ((fully-qualified-url? url) url)
        (else (ensure-url-reachable url) url)))))
@@ -2628,18 +2625,18 @@
 
 (define do-bibitem
   (lambda ()
-    (let ((label-value (get-bracketed-text-if-any)))
+    (let ((bibmark (get-bracketed-text-if-any)))
       (do-end-para)
       (unless (= *bibitem-num* 0) (emit "</td></tr>") (emit-newline))
       (set! *bibitem-num* (+ *bibitem-num* 1))
-      (unless label-value (set! label-value (number->string *bibitem-num*)))
-      (tex-def-toks "\\TIIPrecentlabelvalue" label-value #f)
+      (unless bibmark (set! bibmark (number->string *bibitem-num*)))
+      (tex-def-toks "\\TIIPrecentlabelvalue" bibmark #f)
       (emit "<tr><td align=right valign=top>")
       (let ((key (string-append "cite{" (get-label) "}")))
         (tex-def-toks "\\TIIPrecentlabelname" key #f)
         (emit-anchor key)
         (emit "[")
-        (tex2page-string label-value)
+        (tex2page-string bibmark)
         (emit "]")
         (emit-nbsp 2)
         (do-label-aux key)
@@ -5172,8 +5169,8 @@
           (let ((c (snoop-actual-char)))
             (unless (eof-object? c)
               (let ((s (scm-get-token)))
-                (set! *scm-constants* (cons s *scm-constants*))
-                (loop)))))))))
+                (set! *scm-constants* (cons s *scm-constants*)))
+              (loop))))))))
 
 (define do-scm-set-keywords
   (lambda ()
@@ -5185,8 +5182,22 @@
           (let ((c (snoop-actual-char)))
             (unless (eof-object? c)
               (let ((s (scm-get-token)))
-                (set! *scm-keywords* (cons s *scm-keywords*))
-                (loop)))))))))
+                (set! *scm-keywords* (cons s *scm-keywords*)))
+              (loop))))))))
+
+(define do-scm-set-variables
+  (lambda ()
+    (call-with-input-string/buffered
+      (ungroup (get-group))
+      (lambda ()
+        (let loop ()
+          (ignore-all-whitespace)
+          (let ((c (snoop-actual-char)))
+            (unless (eof-object? c)
+              (let ((s (scm-get-token)))
+                (set! *scm-keywords* (ldelete s *scm-keywords* string=?))
+                (set! *scm-constants* (ldelete s *scm-constants* string=?)))
+              (loop))))))))
 
 (define scm-emit-html-char
   (lambda (c)
@@ -6204,11 +6215,19 @@
        *toc-list*))))
 
 (define !label
-  (lambda (label html-page label-name label-value)
+  (lambda (label html-page name value)
     (hash-table-put!
       *label-table*
       label
-      (vector *label-source* html-page label-name label-value))))
+      (make-label
+        'src
+        *label-source*
+        'page
+        html-page
+        'name
+        name
+        'value
+        value))))
 
 (define !last-modification-time (lambda (s) (set! *last-modification-time* s)))
 
@@ -7240,11 +7259,19 @@
 
 (tex-def-prim "\\scm" (lambda () (do-scm #f)))
 
+(tex-def-prim "\\scmconstant" do-scm-set-constants)
+
 (tex-def-prim "\\scmdribble" do-scm-dribble)
 
 (tex-def-prim "\\scmfilename" do-scm-set-filename)
 
 (tex-def-prim "\\scminput" do-scm-input)
+
+(tex-def-prim "\\scmkeyword" do-scm-set-keywords)
+
+(tex-def-prim "\\scmspecialsymbol" do-scm-set-special-symbol)
+
+(tex-def-prim "\\scmvariable" do-scm-set-variables)
 
 (tex-def-prim "\\scmwrite" do-scm-write-to-file)
 
@@ -7252,13 +7279,7 @@
 
 (tex-def-prim "\\seealso" do-see-also)
 
-(tex-def-prim "\\setconstant" do-scm-set-constants)
-
 (tex-def-prim "\\setcounter" (lambda () (set-latex-counter #f)))
-
-(tex-def-prim "\\setkeyword" do-scm-set-keywords)
-
-(tex-def-prim "\\setspecialsymbol" do-scm-set-special-symbol)
 
 (tex-def-prim "\\sevenrm" (lambda () (do-switch "\\sevenrm")))
 
@@ -7365,7 +7386,7 @@
 
 (tex-def-prim "\\underline" (lambda () (do-function "\\underline")))
 
-(tex-def-prim "\\unsetspecialsymbol" do-scm-unset-special-symbol)
+(tex-def-prim "\\unscmspecialsymbol" do-scm-unset-special-symbol)
 
 (tex-def-prim "\\url" do-url)
 
@@ -7684,13 +7705,15 @@
 
 (tex-let-prim "\\href" "\\urlhd")
 
-(tex-let-prim "\\scmconstant" "\\setconstant")
+(tex-let-prim "\\setconstant" "\\scmconstant")
 
-(tex-let-prim "\\scmkeyword" "\\setkeyword")
+(tex-let-prim "\\setkeyword" "\\scmkeyword")
 
-(tex-let-prim "\\unscmspecialsymbol" "\\unsetspecialsymbol")
+(tex-let-prim "\\setvariable" "\\scmvariable")
 
-(tex-let-prim "\\scmspecialsymbol" "\\setspecialsymbol")
+(tex-let-prim "\\unssetspecialsymbol" "\\unscmspecialsymbol")
+
+(tex-let-prim "\\setspecialsymbol" "\\scmspecialsymbol")
 
 (tex-let-prim "\\scmfileonly" "\\scmwrite")
 
@@ -7802,7 +7825,6 @@
        (*in-display-math?* #f)
        (*in-para?* #f)
        (*in-small-caps?* #f)
-       (*included-label-table* #f)
        (*includeonly-list* #t)
        (*index-alist* '())
        (*index-count* 0)

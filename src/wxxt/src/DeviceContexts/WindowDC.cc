@@ -2602,6 +2602,7 @@ void wxGL::Reset(long d, int offscreen)
   if (GLctx) {
     glXDestroyContext(wxAPP_DISPLAY, (GLXContext)GLctx);
     GLctx = 0;
+    __type = wxTYPE_OBJECT; /* indicates "never selected" */
   }
 
   if (glx_pm) {
@@ -2639,8 +2640,12 @@ void wxGL::Reset(long d, int offscreen)
 void wxGL::SwapBuffers(void)
 {
   if (GLctx) {
-    if (!glx_pm)
-      glXSwapBuffers(wxAPP_DISPLAY, (Drawable)draw_to);
+    if (!glx_pm) {
+      /* Only if it's been selected before. Some X servers
+	 seem to get annoyed, otherwise. */
+      if (__type == wxTYPE_DC_OBJECT)
+	glXSwapBuffers(wxAPP_DISPLAY, (Drawable)draw_to);
+    }
   }
 }
 
@@ -2650,6 +2655,7 @@ void wxGL::ThisContextCurrent(void)
     current_gl_context = this;
     if (GLctx) {
       glXMakeCurrent(wxAPP_DISPLAY, (Drawable)draw_to, (GLXContext)GLctx);
+      __type = wxTYPE_DC_OBJECT; /* indicates "selected" */
     } else {
       glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
     }

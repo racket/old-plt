@@ -1208,10 +1208,10 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
 
     /* position window on screen */
     if (mw->menu.horizontal && !prev->prev) { /* item in menubar? */
-	new->x = prev->x + x - 1;
+	new->x = prev->x + x;
 	if (new->x + new->w > scr_width)
 	    new->x = scr_width -  new->w;
-	new->y = prev->y + prev->h - mw->menu.shadow_width - 1;
+	new->y = prev->y + prev->h - mw->menu.shadow_width;
 	if (new->y + new->h > scr_height) /* menu doesn't below menubar -> */
 	    if (new->y > scr_height/2) /* is more place above the menubar ?*/
 		new->y = prev->y - new->h +mw->menu.shadow_width;

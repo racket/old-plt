@@ -1086,6 +1086,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		     (on ? -1 : (item->enabled || item->type==MENU_TEXT)), 
 		     1, NULL);
     }
+#if 0
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
@@ -1103,6 +1104,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    height,
 	    mw->menu.shadow_width,
 	    (ms->selected==item) ? XAW3D_OUT_HARD : XAW3D_BACKGROUND);
+#endif
 }
 
 static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,

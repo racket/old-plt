@@ -401,9 +401,9 @@ void wxCommonInit(void)
     wxWHITE = DEBUG_NEW wxColour ("WHITE");
     wxREGGLOB(wxGREY);
     // wxGREY = DEBUG_NEW wxColour (214, 214, 214); /* aka "gray 84" */
-    wxGREY = DEBUG_NEW wxColour (220, 218, 213);
+    wxGREY = DEBUG_NEW wxColour (220, 218, 213); /* GTK2 background */
     wxREGGLOB(wxBUTTON_COLOR);
-    wxBUTTON_COLOR = DEBUG_NEW wxColour (224, 224, 224);
+    wxBUTTON_COLOR = wxGREY /* DEBUG_NEW wxColour (224, 224, 224) */;
     wxREGGLOB(wxRED);
     wxRED = DEBUG_NEW wxColour ("RED");
     wxREGGLOB(wxBLUE);

@@ -20,15 +20,15 @@ string                             match its sequence of characters
 (the null concatenation `(@) means epsilon)
 Support for more usual re's should come soon.
 
-To use the lexer generator you must (require "lex.ss" "parser-tools").
+To use the lexer generator you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntatic forms:
 
 > (define-lex-abbrev name re) which associates a regular expression with name
 to be used in other regular expressions with the (name) form.  The definition 
-of name hash the same scoping properties as a normal mzscheme macro definition.
+of name has the same scoping properties as a normal mzscheme macro definition.
 In particular a (define-syntax name ...) could interfere.
 
-> (define-lex-abbrevs [name re]. ..) defines several lex-abbrevs
+> (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
 
 > (lex (re action) ...) expands into a function that takes a lex-buf, matches
  the re's against the buffer and returns the result of executing the 
@@ -60,46 +60,121 @@ overhead place the lexer generator into a module and compile the module to a
 subdirectory named 'compiled'
 
 
-An example this read works for a subset of the R5RS scheme syntax:
-(the parser and define-tokens forms will be provided by the yacc module, when
-it is ready)
+_yacc.ss_ _yacc_
 
-(module read mzscheme
+To use the parser generator (require (lib "yacc.ss" "parser-tools")).
+This module provides the following syntactic forms:
+
+> (define-tokens group-name (token-name ...)) which binds group-name
+to the group of tokens being defined.  For each token-name a function
+(token-token-name expr) is created, which makes a token with name
+token-name and stores the value of expr in it.  The definition of
+group-name has the same scoping properties as a normal mzscheme macro
+definition.  In particular a (define-syntax group-name ...) could
+interfere.  error cannot be defined as a token since it has special
+use in the parser.
+
+> (define-empty-tokens group-name (token-name ...)) like
+  define-tokens, except the token constructor takes no arguments and
+  stores the value #f into the token.
+
+
+> (parser args ...) where the possible args may come in any order (as
+  long as there are no duplicates and all non-optional arguments are
+  present) and are:
+
+> (debug filename) OPTIONAL causes the parser to write the LALR table
+    to the file named filename (unless the file exists).  filename
+    must be a string.
+
+> (error expression) expression should evaluate to a thunk which will
+  be executed for its side-effect whenever the parser encounters an
+  error.
+
+> (tokens group-name ...) declares that all of the tokens defined in
+  the groups can be handled by this parser.
+
+> (start non-terminal-name) declares the starting non-terminal of the
+  grammar.  If it is not present the non-terminal of the first
+  production in the grammar is used.
+
+> (end token-name ...) specifies a set of tokens from which some
+  member must follow any valid parse.  For example an EOF token would
+  be specified for a parser that parses entire files and a NEWLINE
+  token for a parser that parses entire lines individually.
+
+> (precs ((assoc token-name ...) ...)) OPTIONAL precedence
+  declarations to resolve shift/reduce and reduce/reduce conflicts as
+  in YACC/BISON.  assoc must be one of left, right or nonassoc.
+  States with multiple shift/reduce or reduce/reduce conflicts or some
+  combination thereof are not resolved with precedence.
+
+> (grammar (non-terminal ((grammar-symbol ...) (prec token-name) expression)
+                          ...) 
+            ...)
+  declares the grammar to be parsed.  Each grammar-symbol must be a
+  token-name or non-terminal.  The prec declaration is optional.
+  expression is an expression which will be evaluated when the input
+  is found to match its corresponding production.  The identifiers $1,
+  ..., $n are bound in the expression and may hide outside bindings of
+  $1, ... $n.  Here n is the number of grammar-symbols on the right of
+  the production.  All of the productions for a given non-terminal
+  must be grouped with it, i.e. No non-terminal may appear twice on
+  the left hand side in a parser.
+
+The result of a parser expression is a function, f, that takes one
+argument.  This argument must be a thunk (zero argument function), t,
+that produces successive tokens of the input each time it is called.
+If desired, the t may return symbols instead of tokens.  The parser
+will treat symbols as tokens of the corresponding name (with #f as a
+value, so it is usual to return symbols only in the case of empty
+tokens).  f returns the value associated with the parse tree by the
+semantic actions.
+
+
+As example of both lex and yacc here is a read function that works for
+a subset of the R5RS scheme syntax: (and must read an entire file)
+
+
+#cs
+(module simple-read mzscheme
 
   (require (lib "lex.ss" "parser-tools")
-	   "yacc/yacc.ss")
+	   (lib "yacc.ss" "parser-tools"))
 
-  (provide (rename my-read read))
+  (provide simple-read)
 
-  (define-tokens read-tokens (BOOL CHARACTER SYM STRNG OPEN CLOSE HASHOPEN IMPROPER EOF))
+  (define-tokens value-tokens (BOOL CHARACTER SYM STRNG))
+  (define-empty-tokens grouping-tokens (OPEN CLOSE HASHOPEN IMPROPER EOF))
 
-  (define get-token
+  (define read-lexer
     (lex
      [(: #\newline #\space #\tab (comment)) 
-      (get-token lex-buf)]
+      (read-lexer lex-buf)]
      ["#t" 
-      (make-BOOL #t)]
+      (token-BOOL #t)]
      ["#f" 
-      (make-BOOL #f)]
+      (token-BOOL #f)]
      [(@ "#\\" _) 
-      (make-CHARACTER (caddr (string->list (get-lexeme))))]
+      (token-CHARACTER (caddr (string->list (get-lexeme))))]
      ["#\\space" 
-      (make-CHARACTER #\space)]
+      (token-CHARACTER #\space)]
      ["#\\newline" 
-      (make-CHARACTER #\newline)]
+      (token-CHARACTER #\newline)]
      [(: (@ (initial) (* (subsequent))) + - "...")
-      (make-SYM (string->symbol (get-lexeme)))]
+      (token-SYM (string->symbol (get-lexeme)))]
      [#\" 
-      (make-STRNG (list->string (get-string-token lex-buf)))]
+      (token-STRNG (list->string (get-string-token lex-buf)))]
      [#\(
-      (make-OPEN #f)]
+      'OPEN]
      [#\)
-      (make-CLOSE #f)]
+      'CLOSE]
      ["#("
-      (make-HASHOPEN #f)]
+      'HASHOPEN]
      ["."
-      (make-IMPROPER #f)]
-     [eof (make-EOF #f)]))
+      'IMPROPER]
+     [eof 
+      'EOF]))
 
   (define get-string-token
     (lex
@@ -117,12 +192,33 @@ it is ready)
     [comment (@ #\; (^ #\newline) #\newline)])
 
 
-  (define my-read
-    (parser Sexp (read-tokens)
-      (sexp [(SYM) 3]
-	    [(OPEN sexp-list CLOSE) 5])
-      (sexp-list [() 6]
-		 [(sexp sexp-list) 7])))
+  (define read-parser
+    (parser 
+      (start sexp-list)
+      (error (lambda () (error 'read-error)))
+      (tokens value-tokens grouping-tokens)
+      (end EOF)
+      (grammar
+        (sexp [(SYM) 3]
+	      [(OPEN sexp-list CLOSE) 5])
+        (sexp-list [() 6]
+	[(sexp sexp-list) 7]))))
+
+  (define (simple-read input-port)
+    (let ((ip (make-lex-buf input-port)))
+      (read-parser (lambda () (read-lexer ip)))))
+
 )
 
 
+
+Future additions:
+lexer:
+POSIX style regular expressions
+
+parser:
+Fisher-Burke error recovery
+Possibly change the $1 style to something like SML/NJ YACC uses
+
+both:
+More automatic line number handling

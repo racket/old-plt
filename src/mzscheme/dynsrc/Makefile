@@ -3,7 +3,7 @@
 #
 
 # dynlink is a script that uses the right set of link commands
-DYNLINK = ./dynlink
+DYNLINK = ../../../bin/dynlink
 
 CFLAGS_NODBG = $(OPT) $(WARN) $(OPTIONS) $(DYNOPTIONS) -I../include
 CFLAGS = $(CFLAGS_NODBG) $(DEBUGFLAGS)

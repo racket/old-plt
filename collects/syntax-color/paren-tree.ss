@@ -78,7 +78,17 @@
         (let-values (((l r) (split tree pos)))
           (set! tree l)))
         
-      
+      ;; match-forward: natural-number? -> (union #f natural-number)^3
+      ;; The first return is the starting position of the open-paren
+      ;; The second return is the position of the closing paren.
+      ;; If the third return is #f, then the first two returns
+      ;; represent a real match.
+      ;; If the third return is a number, it is the maximum position
+      ;; in the tree that was searched.
+      ;; If it indicates an error, the first two results give the
+      ;; starting and stoping positions for error highlighting.
+      ;; If all three return #f, then there was no tree to search, or 
+      ;; the position did not immediately preceed an open.
       (define/public (match-forward pos)
         (send tree search! pos)
         (cond
@@ -103,6 +113,15 @@
           (else
            (values #f #f #f))))
       
+      ;; match-backward: natural-number? -> (union #f natural-number)^3
+      ;; The first return is the starting position of the open-paren
+      ;; The second return is the position of the closing paren.
+      ;; If the third return is #f, then the first two returns
+      ;; represent a real match, otherwise it represents an error
+      ;; If it indicates an error, the first two results give the
+      ;; starting and stoping positions for error highlighting.
+      ;; If all three return #f, then there was no tree to search, or 
+      ;; the position did not immediately preceed an open.
       (define/public (match-backward pos)
         (send tree search! (if (> pos 0) (sub1 pos) pos))
         (cond

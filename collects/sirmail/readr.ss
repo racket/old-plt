@@ -345,8 +345,8 @@
 				       (enumerate (- count p))))
 				(enumerate count))]
 		 [data (with-handlers ([void (lambda (exn)
-						     (force-disconnect/status)
-						     (raise exn))])
+					       (force-disconnect/status)
+					       (raise exn))])
 			 (break-ok)
 			 (begin0
 			  (imap-get-messages imap 
@@ -484,7 +484,7 @@
 		  (status "")
 		  (error "download aborted"))))
 	    (let*-values ([(imap count new?) (connect 'reuse break-bad break-ok)])
-	      (let ([body (with-handlers ([exn:break?
+	      (let ([body (with-handlers ([void
 					   (lambda (exn)
 					     (force-disconnect/status)
 					     (raise exn))])
@@ -529,7 +529,7 @@
       (define (purge-messages marked bad-break break-ok)
         (unless (null? marked)
           (let-values ([(imap count new?) (connect)])
-	    (with-handlers ([exn:break?
+	    (with-handlers ([void
 			     (lambda (exn)
 			       (force-disconnect/status)
 			       (raise exn))])

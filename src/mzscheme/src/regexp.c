@@ -2075,8 +2075,8 @@ static unsigned char *add_range(unsigned char *r, int *_j, RoomState *rs,
      This same idea works with UTF-8 "digits", so first encode
      our code-point numbers in UTF-8: */
 
-  scheme_utf8_encode(&start, lo, 0, 1, 0, 0);
-  scheme_utf8_encode(&end, hi, 0, 1, 0, 0);
+  scheme_utf8_encode_all(&start, 1, lo);
+  scheme_utf8_encode_all(&end, 1, hi);
 
   return add_byte_range(lo, hi, count, r, _j, rs, did_alt, 0);
 }
@@ -2130,9 +2130,9 @@ int translate(unsigned char *s, int len, char **result)
 	unsigned int *us, *range_array;
 	int ulen, on_count, range_len, rp, p;
 
-	ulen = scheme_utf8_decode(s, NULL, rs.i + 1, k, 0, 0, 0);
+	ulen = scheme_utf8_decode(s, rs.i + 1, k, NULL, 0, -1, NULL, 0, 0);
 	us = (unsigned int *)scheme_malloc_atomic(ulen * sizeof(unsigned int));
-	scheme_utf8_decode(s, us, rs.i + 1, k, 0, 0, 0);
+	scheme_utf8_decode(s, rs.i + 1, k, us, 0, -1, NULL, 0, 0);
 
 	/* The simple_on array lists ASCII chars to (not) find
 	   for the match */
@@ -2379,7 +2379,7 @@ static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Sch
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(who, "string", 0, argc, argv);
   if (!is_byte)
-    if (scheme_utf8_decode(SCHEME_STR_VAL(argv[0]), NULL, 0, SCHEME_STRTAG_VAL(argv[0]), 0, 0, 0) < 0)
+    if (scheme_utf8_decode_all(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]), NULL, 0) < 0)
       scheme_arg_mismatch(who, "string is not a well-formed UTF-8 encoding: ", argv[0]);
 
   s = SCHEME_STR_VAL(argv[0]);

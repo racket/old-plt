@@ -1371,7 +1371,7 @@ long scheme_get_string(const char *who,
 
 	if (i >= 0) {
 	  int n = 0;
-	  ip->charsSinceNewline = c + 1;
+	  ip->charsSinceNewline = (c - degot) + 1;
 	  i++;
 	  /* Continue walking, back over the previous lines, to find
 	     out how many there were, and to adjust the position for

@@ -42,521 +42,571 @@
      (#\364 #\217 #\277 #\277))
     (#(#x00110000)
      (#\364 #\220 #\200 #\200))
-    (#f
+    (#()
      (#\200))
-    (#f
+    (#()
      (#\277))
-    (#f
+    (#()
      (#\200 #\277))
-    (#f
+    (#()
      (#\200 #\277 #\200))
-    (#f
+    (#()
      (#\200 #\277 #\200 #\277))
-    (#f
+    (#()
      (#\200 #\277 #\200 #\277 #\200))
-    (#f
+    (#()
      (#\200 #\277 #\200 #\277 #\200 #\277))
-    (#f
+    (#()
      (#\200 #\277 #\200 #\277 #\200 #\277 #\200))
-    (#f
+    (#()
      (#\200))
-    (#f
+    (#()
      (#\201))
-    (#f
+    (#()
      (#\202))
-    (#f
+    (#()
      (#\203))
-    (#f
+    (#()
      (#\204))
-    (#f
+    (#()
      (#\205))
-    (#f
+    (#()
      (#\206))
-    (#f
+    (#()
      (#\207))
-    (#f
+    (#()
      (#\210))
-    (#f
+    (#()
      (#\211))
-    (#f
+    (#()
      (#\212))
-    (#f
+    (#()
      (#\213))
-    (#f
+    (#()
      (#\214))
-    (#f
+    (#()
      (#\215))
-    (#f
+    (#()
      (#\216))
-    (#f
+    (#()
      (#\217))
-    (#f
+    (#()
      (#\220))
-    (#f
+    (#()
      (#\221))
-    (#f
+    (#()
      (#\222))
-    (#f
+    (#()
      (#\223))
-    (#f
+    (#()
      (#\224))
-    (#f
+    (#()
      (#\225))
-    (#f
+    (#()
      (#\226))
-    (#f
+    (#()
      (#\227))
-    (#f
+    (#()
      (#\230))
-    (#f
+    (#()
      (#\231))
-    (#f
+    (#()
      (#\232))
-    (#f
+    (#()
      (#\233))
-    (#f
+    (#()
      (#\234))
-    (#f
+    (#()
      (#\235))
-    (#f
+    (#()
      (#\236))
-    (#f
+    (#()
      (#\237))
-    (#f
+    (#()
      (#\240))
-    (#f
+    (#()
      (#\241))
-    (#f
+    (#()
      (#\242))
-    (#f
+    (#()
      (#\243))
-    (#f
+    (#()
      (#\244))
-    (#f
+    (#()
      (#\245))
-    (#f
+    (#()
      (#\246))
-    (#f
+    (#()
      (#\247))
-    (#f
+    (#()
      (#\250))
-    (#f
+    (#()
      (#\251))
-    (#f
+    (#()
      (#\252))
-    (#f
+    (#()
      (#\253))
-    (#f
+    (#()
      (#\254))
-    (#f
+    (#()
      (#\255))
-    (#f
+    (#()
      (#\256))
-    (#f
+    (#()
      (#\257))
-    (#f
+    (#()
      (#\260))
-    (#f
+    (#()
      (#\261))
-    (#f
+    (#()
      (#\262))
-    (#f
+    (#()
      (#\263))
-    (#f
+    (#()
      (#\264))
-    (#f
+    (#()
      (#\265))
-    (#f
+    (#()
      (#\266))
-    (#f
+    (#()
      (#\267))
-    (#f
+    (#()
      (#\270))
-    (#f
+    (#()
      (#\271))
-    (#f
+    (#()
      (#\272))
-    (#f
+    (#()
      (#\273))
-    (#f
+    (#()
      (#\274))
-    (#f
+    (#()
      (#\275))
-    (#f
+    (#()
      (#\276))
-    (#f
+    (#()
      (#\277))
     ;; 2-byte seqs with no continuation
-    (#f
+    (#(#f 32)
      (#\300 #\space))
-    (#f
+    (#(#f 32)
      (#\301 #\space))
-    (#f
+    (#(#f 32)
      (#\302 #\space))
-    (#f
+    (#(#f 32)
      (#\303 #\space))
-    (#f
+    (#(#f 32)
      (#\304 #\space))
-    (#f
+    (#(#f 32)
      (#\305 #\space))
-    (#f
+    (#(#f 32)
      (#\306 #\space))
-    (#f
+    (#(#f 32)
      (#\307 #\space))
-    (#f
+    (#(#f 32)
      (#\310 #\space))
-    (#f
+    (#(#f 32)
      (#\311 #\space))
-    (#f
+    (#(#f 32)
      (#\312 #\space))
-    (#f
+    (#(#f 32)
      (#\313 #\space))
-    (#f
+    (#(#f 32)
      (#\314 #\space))
-    (#f
+    (#(#f 32)
      (#\315 #\space))
-    (#f
+    (#(#f 32)
      (#\316 #\space))
-    (#f
+    (#(#f 32)
      (#\317 #\space))
-    (#f
+    (#(#f 32)
      (#\320 #\space))
-    (#f
+    (#(#f 32)
      (#\321 #\space))
-    (#f
+    (#(#f 32)
      (#\322 #\space))
-    (#f
+    (#(#f 32)
      (#\323 #\space))
-    (#f
+    (#(#f 32)
      (#\324 #\space))
-    (#f
+    (#(#f 32)
      (#\325 #\space))
-    (#f
+    (#(#f 32)
      (#\326 #\space))
-    (#f
+    (#(#f 32)
      (#\327 #\space))
-    (#f
+    (#(#f 32)
      (#\330 #\space))
-    (#f
+    (#(#f 32)
      (#\331 #\space))
-    (#f
+    (#(#f 32)
      (#\332 #\space))
-    (#f
+    (#(#f 32)
      (#\333 #\space))
-    (#f
+    (#(#f 32)
      (#\334 #\space))
-    (#f
+    (#(#f 32)
      (#\335 #\space))
-    (#f
+    (#(#f 32)
      (#\336 #\space))
-    (#f
+    (#(#f 32)
      (#\337 #\space))
     ;; 3-byte seqs with no continuation
-    (#f
+    (#(#f 32)
      (#\340 #\space))
-    (#f
+    (#(#f 32)
      (#\341 #\space))
-    (#f
+    (#(#f 32)
      (#\342 #\space))
-    (#f
+    (#(#f 32)
      (#\343 #\space))
-    (#f
+    (#(#f 32)
      (#\344 #\space))
-    (#f
+    (#(#f 32)
      (#\345 #\space))
-    (#f
+    (#(#f 32)
      (#\346 #\space))
-    (#f
+    (#(#f 32)
      (#\347 #\space))
-    (#f
+    (#(#f 32)
      (#\350 #\space))
-    (#f
+    (#(#f 32)
      (#\351 #\space))
-    (#f
+    (#(#f 32)
      (#\352 #\space))
-    (#f
+    (#(#f 32)
      (#\353 #\space))
-    (#f
+    (#(#f 32)
      (#\354 #\space))
-    (#f
+    (#(#f 32)
      (#\355 #\space))
-    (#f
+    (#(#f 32)
      (#\356 #\space))
-    (#f
+    (#(#f 32)
      (#\357 #\space))
     ;; 3-byte seqs with partial continuation
-    (#f
+    (#(#f 32)
      (#\340 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\341 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\342 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\343 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\344 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\345 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\346 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\347 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\350 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\351 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\352 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\353 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\354 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\355 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\356 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\357 #\203 #\space))
     ;; 4-byte seq with no continuations
-    (#f
+    (#(#f 32)
      (#\360 #\space))
-    (#f
-     (#\361))
-    (#f
+    (#(#f 32)
+     (#\361 #\space))
+    (#(#f 32)
      (#\362 #\space))
-    (#f
+    (#(#f 32)
      (#\363 #\space))
-    (#f
+    (#(#f 32)
      (#\364 #\space))
-    (#f
+    (#(#f 32)
      (#\365 #\space))
-    (#f
+    (#(#f 32)
      (#\366 #\space))
-    (#f
+    (#(#f 32)
      (#\367 #\space))
     ;; 4-byte seq with only 1 continuation
-    (#f
+    (#(#f 32)
      (#\360 #\203 #\space))
-    (#f
-     (#\361 #\203))
-    (#f
+    (#(#f 32)
+     (#\361 #\203 #\space))
+    (#(#f 32)
      (#\362 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\363 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\364 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\365 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\366 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\367 #\203 #\space))
     ;; 4-byte seq with only 2 continuation
-    (#f
+    (#(#f 32)
      (#\360 #\203 #\203 #\space))
-    (#f
-     (#\361 #\203 #\203))
-    (#f
+    (#(#f 32)
+     (#\361 #\203 #\203 #\space))
+    (#(#f 32)
      (#\362 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\363 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\364 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\365 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\366 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\367 #\203 #\203 #\space))
     ;; 5-byte seqs with no continuation
-    (#f
+    (#(#f 32)
      (#\370 #\space))
-    (#f
+    (#(#f 32)
      (#\371 #\space))
-    (#f
+    (#(#f 32)
      (#\372 #\space))
-    (#f
+    (#(#f 32)
      (#\373 #\space))
     ;; 5-byte seqs with only 1 continuation
-    (#f
+    (#(#f 32)
      (#\370 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\371 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\372 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\373 #\203 #\space))
     ;; 5-byte seqs with only 2 continuations
-    (#f
+    (#(#f 32)
      (#\370 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\371 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\372 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\373 #\203 #\203 #\space))
     ;; 5-byte seqs with only 3 continuations
-    (#f
+    (#(#f 32)
      (#\370 #\203 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\371 #\203 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\372 #\203 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\373 #\203 #\203 #\203 #\space))
     ;; 6-byte seqs with no continuation
-    (#f
+    (#(#f 32)
      (#\374 #\space))
-    (#f
+    (#(#f 32)
      (#\375 #\space))
     ;; 6-byte seqs with only 1 continuation
-    (#f
+    (#(#f 32)
      (#\374 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\375 #\203 #\space))
     ;; 6-byte seqs with only 2 continuation
-    (#f
+    (#(#f 32)
      (#\374 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\375 #\203 #\203 #\space))
     ;; 6-byte seqs with only 3 continuation
-    (#f
+    (#(#f 32)
      (#\374 #\203 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\375 #\203 #\203 #\203 #\space))
     ;; 6-byte seqs with only 4 continuation
-    (#f
+    (#(#f 32)
      (#\374 #\203 #\203 #\203 #\203 #\space))
-    (#f
+    (#(#f 32)
      (#\375 #\203 #\203 #\203 #\203 #\space))
     ;; Sequences with last continuation byte missing, eol instead of space
-    (#f
+    (#(#f)
      (#\300))
-    (#f
+    (#(#f)
      (#\340 #\200))
-    (#f
+    (#(#f)
      (#\340))
-    (#f
+    (#(#f)
      (#\360 #\200 #\200))
-    (#f
+    (#(#f)
      (#\360 #\200))
-    (#f
+    (#(#f)
      (#\360 #\200))
-    (#f
+    (#(#f)
      (#\370 #\200 #\200 #\200))
-    (#f
+    (#(#f)
      (#\370))
-    (#f
+    (#(#f)
      (#\370 #\200))
-    (#f
+    (#(#f)
      (#\370 #\200 #\200))
-    (#f
+    (#(#f)
      (#\374 #\200 #\200 #\200 #\200))
-    (#f
+    (#(#f)
      (#\374))
-    (#f
+    (#(#f)
      (#\374 #\200))
-    (#f
+    (#(#f)
      (#\374 #\200 #\200))
-    (#f
+    (#(#f)
      (#\374 #\200 #\200 #\200))
-    (#f
+    (#(#f)
      (#\337))
-    (#f
+    (#(#f)
      (#\357 #\277))
-    (#f
+    (#(#f)
      (#\367 #\277 #\277))
-    (#f
+    (#(#f)
      (#\373 #\277 #\277 #\277))
-    (#f
+    (#(#f)
      (#\375 #\277 #\277 #\277 #\277))
     ;; Concatenation of incomplete sequences
-    (#f
+    (#(#f #f #f #f #f #f #f #f #f #f)
      (#\300 #\340 #\200 #\360 #\200 #\200 #\370 #\200 #\200 #\200 #\374 #\200 #\200 #\200 #\200 #\337 #\357 #\277 #\367 #\277 #\277 #\373 #\277 #\277 #\277 #\375 #\277 #\277 #\277 #\277))
     ;; Impossible bytes
-    (#f
+    (#(#f)
      (#\376))
-    (#f
+    (#(#f)
      (#\377))
-    (#f
+    (#(#f #f #f #f)
      (#\376 #\376 #\377 #\377))
     ;; Overlong
-    (#f
+    (#(#f)
      (#\300 #\257))
-    (#f
+    (#(#f)
      (#\340 #\200 #\257))
-    (#f
+    (#(#f)
      (#\360 #\200 #\200 #\257))
-    (#f
+    (#(#f)
      (#\370 #\200 #\200 #\200 #\257))
-    (#f
+    (#(#f)
      (#\374 #\200 #\200 #\200 #\200 #\257))
-    (#f
+    (#(#f)
      (#\301 #\277))
-    (#f
+    (#(#f)
      (#\340 #\237 #\277))
-    (#f
+    (#(#f)
      (#\360 #\217 #\277 #\277))
-    (#f
+    (#(#f)
      (#\370 #\207 #\277 #\277 #\277))
-    (#f
+    (#(#f)
      (#\374 #\203 #\277 #\277 #\277 #\277))
-    (#f
+    (#(#f)
      (#\300 #\200))
-    (#f
+    (#(#f)
      (#\340 #\200 #\200))
-    (#f
+    (#(#f)
      (#\360 #\200 #\200 #\200))
-    (#f
+    (#(#f)
      (#\370 #\200 #\200 #\200 #\200))
-    (#f
+    (#(#f)
      (#\374 #\200 #\200 #\200 #\200 #\200))
     ;; illedgal surrogates
-    (#f
+    (#(#f)
      (#\355 #\240 #\200))
-    (#f
+    (#(#f)
      (#\355 #\255 #\277))
-    (#f
+    (#(#f)
      (#\355 #\256 #\200))
-    (#f
+    (#(#f)
      (#\355 #\257 #\277))
-    (#f
+    (#(#f)
      (#\355 #\260 #\200))
-    (#f
+    (#(#f)
      (#\355 #\276 #\200))
-    (#f
+    (#(#f)
      (#\355 #\277 #\277))
-    (#f
+    (#(#f #f)
      (#\355 #\240 #\200 #\355 #\260 #\200))
-    (#f
+    (#(#f #f)
      (#\355 #\240 #\200 #\355 #\277 #\277))
-    (#f
+    (#(#f #f)
      (#\355 #\255 #\277 #\355 #\260 #\200))
-    (#f
+    (#(#f #f)
      (#\355 #\255 #\277 #\355 #\277 #\277))
-    (#f
+    (#(#f #f)
      (#\355 #\256 #\200 #\355 #\260 #\200))
-    (#f
+    (#(#f #f)
      (#\355 #\256 #\200 #\355 #\277 #\277))
-    (#f
+    (#(#f #f)
      (#\355 #\257 #\277 #\355 #\260 #\200))
-    (#f
+    (#(#f #f)
      (#\355 #\257 #\277 #\355 #\277 #\277))
     ;; Other illegal code positions
-    (#f
+    (#(#f)
      (#\357 #\277 #\276))
-    (#f
+    (#(#f)
      (#\357 #\277 #\277))))
 
 (for-each (lambda (p)
 	    (let ([code-points (car p)]
 		  [s (apply string (cadr p))])
-	      (when code-points
-		(test (vector-length code-points) string-unicode-length s)
-		(test code-points string->unicode-vector s)
-		(test s unicode-vector->string code-points))
-	      (when (not code-points)
-		(test #f string-unicode-length s))))
+	      (if (and (positive? (vector-length code-points))
+		       (vector-ref code-points 0))
+		  (begin
+		    (test (vector-length code-points) string-unicode-length s)
+		    (test code-points string->unicode-vector s)
+		    (test code-points string-any->unicode-vector s #f)
+		    (test s unicode-vector->string code-points)
+		    (test 0 string-unicode-index s 0)
+		    (test (string-length s) string-unicode-index 
+			  (string-append s "x")
+			  (vector-length code-points))
+		    (if ((vector-length code-points) . > . 1)
+			(begin
+			  (let ([post-1 (string-unicode-index s 1)])
+			    (test #t positive? post-1)
+			    (test (list->vector (cdr (vector->list code-points)))
+				  string->unicode-vector s post-1))
+			  (let ([last-1 (string-unicode-index s (sub1 (vector-length code-points)))])
+			    (test #t positive? last-1)
+			    (test code-points
+				  list->vector (append
+						(vector->list (string->unicode-vector s 0 last-1))
+						(vector->list (string->unicode-vector s last-1))))))
+			(test #f string-unicode-index s 1)))
+		  (begin
+		    (test code-points string-any->unicode-vector s #f)
+		    (test (list->vector (append '(97) (vector->list code-points) '(98)))
+			  string-any->unicode-vector (format "a~ab" s) #f)
+		    (test (list->vector (append (vector->list code-points) (vector->list code-points)))
+			  string-any->unicode-vector (format "~a~a" s s) #f)
+		    (test #f string-unicode-length s)
+		    (test 0 string-unicode-index s 0)))
+	      (let ([v (string-any->unicode-vector s #f)])
+		(let ([p (open-input-string s)])
+		  (port-count-lines! p)
+		  (read-string 500 p)
+		  (let-values ([(l c p) (port-next-location p)])
+		    (test (vector-length v) 'c c)
+		    (test (add1 (vector-length v)) 'p p)))
+		(let ([p (open-input-string (format "\t~a\t" s))])
+		  (port-count-lines! p)
+		  (read-string 500 p)
+		  (let-values ([(l c p) (port-next-location p)])
+		    (test p 'p (add1 (+ 2 (vector-length v))))
+		    (test c 'tab (+ 16
+				    (- (vector-length v)
+				       (bitwise-and (vector-length v) 7))))))
+		(let ([p (open-input-string (format "~a\t~a" s s))])
+		  (port-count-lines! p)
+		  (read-string 500 p)
+		  (let-values ([(l c p) (port-next-location p)])
+		    (test p 'p (add1 (+ 1 (* 2 (vector-length v)))))
+		    (test c 'tab (+ 8
+				    (- (vector-length v)
+				       (bitwise-and (vector-length v) 7))
+				    (vector-length v))))))))
 	  basic-utf8-tests)
 
 (test '(#\302 #\251) string->list (unicode-vector->string (vector 169)))
@@ -640,7 +690,11 @@
     (stest #t string<? "b" "\303\242")
     (stest (if c? #t #f) string-unicode<? "b" "\303\242")
     (stest #f string>? "b" "\303\242")
-    (stest (if c? #f #t) string-unicode>? "b" "\303\242"))
+    (stest (if c? #f #t) string-unicode>? "b" "\303\242")
+    (test "ABC" string-unicode-upcase "aBc")
+    (test (if c? "\303\242" "\303\202") string-unicode-upcase "\303\242")
+    (test (if c? "A\303\242\0B" "A\303\202\0B") string-unicode-upcase "a\303\242\0b")
+    (test (if c? "A\303\242\0\303\242\0B" "A\303\202\0\303\202\0B") string-unicode-upcase "a\303\242\0\303\242\0b"))
   (go #f)
   (parameterize ([current-locale "C"])
     (go #t)))

@@ -1822,8 +1822,12 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 		 && ((ch != '{') || !braces)
 		 && ((ch != ']') || !brackets)
 		 && ((ch != '}') || !braces)))) {
-    if (!ungetc_ok)
-      scheme_getc(port); /* must be a character */
+    if (!ungetc_ok) {
+      if (init_ch < 0)
+	scheme_getc(port); /* must be a character */
+      else
+	init_ch = -1;
+    }
     if (ch == '\\' && !running_quote) {
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {

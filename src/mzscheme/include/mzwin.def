@@ -178,7 +178,9 @@ EXPORTS
  scheme_make_cptr
  scheme_get_proc_name
  scheme_utf8_decode
+ scheme_utf8_decode_all
  scheme_utf8_encode
+ scheme_utf8_encode_all
  scheme_make_bignum
  scheme_make_bignum_from_unsigned
  scheme_bignum_to_double

@@ -75,8 +75,13 @@ static Scheme_Object *string_append (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_list (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_to_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_vector (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_any_to_vector (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_to_string (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_unicode_index (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_unicode_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_length (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_unicode_upcase (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_unicode_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_copy (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_fill (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[]);
@@ -253,29 +258,6 @@ scheme_init_string (Scheme_Env *env)
 						      2, -1),
 			     env);
 
-#if 0
-  scheme_add_global_constant("string-unicode-all-upper-case?", 
-			     scheme_make_prim_w_arity(string_unicode_upper_case_p,
-						      "string-unicode-upper-case?",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("string-unicode-upcase!", 
-			     scheme_make_prim_w_arity(string_unicode_upcase,
-						      "string-unicode-upcase",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("string-unicode-all-lower-case?", 
-			     scheme_make_prim_w_arity(string_unicode_lower_case_p,
-						      "string-unicode-lower-case?",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("string-unicode-downcase!", 
-			     scheme_make_prim_w_arity(string_unicode_downcase,
-						      "string-unicode-downcase",
-						      1, 1),
-			     env);
-#endif
-
   scheme_add_global_constant("substring", 
 			     scheme_make_prim_w_arity(substring,
 						      "substring", 
@@ -315,7 +297,17 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("string->unicode-vector", 
 			     scheme_make_prim_w_arity(string_to_vector,
 						      "string->unicode-vector",
-						      1, 1),
+						      1, 3),
+			     env);
+  scheme_add_global_constant("string-any->unicode-vector", 
+			     scheme_make_prim_w_arity(string_any_to_vector,
+						      "string-any->unicode-vector",
+						      2, 4),
+			     env);
+  scheme_add_global_constant("string-unicode-index", 
+			     scheme_make_prim_w_arity(string_unicode_index,
+						      "string-unicode-index",
+						      2, 3),
 			     env);
   scheme_add_global_constant("unicode-vector->string", 
 			     scheme_make_prim_w_arity(vector_to_string,
@@ -327,18 +319,21 @@ scheme_init_string (Scheme_Env *env)
 						      "string-unicode-length",
 						      1, 1),
 			     env);
-#if 0
   scheme_add_global_constant("string-unicode-ref",
 			     scheme_make_prim_w_arity(string_unicode_ref,
 						      "string-unicode-ref",
-						      2, 2),
-			     env);
-  scheme_add_global_constant("substring-unicode",
-			     scheme_make_prim_w_arity(substring_unicode,
-						      "substring-unicode",
 						      2, 3),
 			     env);
-#endif
+  scheme_add_global_constant("string-unicode-upcase", 
+			     scheme_make_prim_w_arity(string_unicode_upcase,
+						      "string-unicode-upcase",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("string-unicode-downcase", 
+			     scheme_make_prim_w_arity(string_unicode_downcase,
+						      "string-unicode-downcase",
+						      1, 1),
+			     env);
 
   scheme_add_global_constant("current-locale", 
 			     scheme_register_parameter(current_locale, 
@@ -835,6 +830,20 @@ string_append (int argc, Scheme_Object *argv[])
   return naya;
 }
 
+static Scheme_Object *append_all_strings_backwards(Scheme_Object *l)
+{
+  int i, len;
+  Scheme_Object **a;
+
+  len = scheme_list_length(l);
+  a = MALLOC_N(Scheme_Object *, len);
+  for (i = len; i--; l = SCHEME_CDR(l)) {
+    a[i] = SCHEME_CAR(l);
+  }
+  
+  return string_append(len, a);
+}
+
 Scheme_Object *
 scheme_append_string(Scheme_Object *str1, Scheme_Object *str2)
 {
@@ -926,36 +935,59 @@ list_to_string (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-string_to_vector (int argc, Scheme_Object *argv[])
+do_string_to_vector (const char *who, int offset_start, Scheme_Object *perm, int argc, Scheme_Object *argv[])
 {
-  int len, i, ulen;
+  int i, ulen;
+  long istart, ifinish;
   char *chars;
   unsigned int *v;
   Scheme_Object *vec, *val;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->unicode-vector", "string", 0, argc, argv);
+    scheme_wrong_type(who, "string", 0, argc, argv);
   
-  chars = SCHEME_STR_VAL(argv[0]);
-  len = SCHEME_STRTAG_VAL(argv[0]);
+  scheme_get_substring_indices(who, argv[0], argc, argv, 
+			       offset_start, offset_start + 1,
+			       &istart, &ifinish);
 
-  ulen = scheme_utf8_decode((unsigned char *)chars, NULL, 0, len, 0, 0, 0);
+  chars = SCHEME_STR_VAL(argv[0]);
+
+  ulen = scheme_utf8_decode((unsigned char *)chars, istart, ifinish, 
+			    NULL, 0, -1,
+			    NULL, 0, perm ? 0xFFFF : 0);
   if (ulen < 0) {
-    scheme_arg_mismatch("string->unicode-vector",
+    scheme_arg_mismatch(who,
 			STRING_IS_NOT_UTF_8,
 			argv[0]);
   }
 
   v = (unsigned int *)scheme_malloc_atomic(ulen * sizeof(unsigned int));
-  scheme_utf8_decode((unsigned char *)chars, v, 0, len, 0, 0, 0);
+  scheme_utf8_decode((unsigned char *)chars, istart, ifinish, 
+		     v, 0, -1,
+		     NULL, 0, perm ? 0xFFFF : 0);
 
   vec = scheme_make_vector(ulen, NULL);
   for (i = 0; i < ulen; i++) {
-    val = scheme_make_integer_value_from_unsigned(v[i]);
+    if (v[i] == 0xFFFF)
+      val = perm;
+    else
+      val = scheme_make_integer_value_from_unsigned(v[i]);
     SCHEME_VEC_ELS(vec)[i] = val;
   }
 
   return vec;
+}
+
+static Scheme_Object *
+string_to_vector (int argc, Scheme_Object *argv[])
+{
+  return do_string_to_vector("string->unicode-vector", 1, NULL, argc, argv);
+}
+
+static Scheme_Object *
+string_any_to_vector (int argc, Scheme_Object *argv[])
+{
+  return do_string_to_vector("string-any->unicode-vector", 2, argv[1], argc, argv);
 }
 
 static Scheme_Object *
@@ -989,9 +1021,9 @@ vector_to_string(int argc, Scheme_Object *argv[])
       char *s;
       int slen;
 
-      slen = scheme_utf8_encode(v, NULL, 0, len, 0, 0);
+      slen = scheme_utf8_encode_all(v, len, NULL);
       s = (char *)scheme_malloc_atomic(sizeof(char));
-      scheme_utf8_encode(v, (unsigned char *)s, 0, len, 0, 0);
+      scheme_utf8_encode_all(v, len, (unsigned char *)s);
 
       return scheme_make_sized_string(s, slen, 0);
     }
@@ -1006,20 +1038,108 @@ static Scheme_Object *
 string_unicode_length (int argc, Scheme_Object *argv[])
 {
   int len;
+  long istart, ifinish;
   char *chars;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("string-unicode-length", "string", 0, argc, argv);
   
   chars = SCHEME_STR_VAL(argv[0]);
-  len = SCHEME_STRTAG_VAL(argv[0]);
+
+  scheme_get_substring_indices("string-unicode-length", argv[0], argc, argv, 
+			       1, 2,
+			       &istart, &ifinish);
   
-  len = scheme_utf8_decode((unsigned char *)chars, NULL, 0, len, 0, 0, 0);
+  len = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
+			   NULL, 0, -1,
+			   NULL, 0, 0);
 
   if (len < 0)
     return scheme_false;
   else
     return scheme_make_integer(len);
+}
+
+static Scheme_Object *
+string_unicode_index(int argc, Scheme_Object *argv[])
+{
+  long istart, ifinish, pos, opos, ipos;
+  char *chars;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-unicode-index", "string", 0, argc, argv);
+  
+  chars = SCHEME_STR_VAL(argv[0]);
+
+  if (SCHEME_INTP(argv[1])) {
+    pos = SCHEME_INT_VAL(argv[1]);
+  } else if (SCHEME_BIGNUMP(argv[1])) {
+    if (SCHEME_BIGPOS(argv[1]))
+      pos = 0x7FFFFFFF;
+  }
+
+  if (pos < 0) {
+    scheme_wrong_type("string-unicode-index", "non-negative exact integer", 1, argc, argv);
+  }
+
+  scheme_get_substring_indices("string-unicode-index", argv[0], argc, argv, 
+			       2, 3,
+			       &istart, &ifinish);
+  
+  opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
+			   NULL, 0, pos,
+			   &ipos, 0, 0);
+
+  if ((opos < 0) || (ipos == ifinish))
+    return scheme_false;
+  else
+    return scheme_make_integer(ipos);
+}
+
+static Scheme_Object *
+string_unicode_ref(int argc, Scheme_Object *argv[])
+{
+  long istart, ifinish, pos, opos, ipos;
+  char *chars;
+  unsigned int us[1];
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-unicode-ref", "string", 0, argc, argv);
+  
+  chars = SCHEME_STR_VAL(argv[0]);
+
+  if (SCHEME_INTP(argv[1])) {
+    pos = SCHEME_INT_VAL(argv[1]);
+  } else if (SCHEME_BIGNUMP(argv[1])) {
+    if (SCHEME_BIGPOS(argv[1]))
+      pos = 0x7FFFFFFF;
+  }
+
+  if (pos < 0) {
+    scheme_wrong_type("string-unicode-ref", "non-negative exact integer", 1, argc, argv);
+  }
+
+  scheme_get_substring_indices("string-unicode-ref", argv[0], argc, argv, 
+			       2, 3,
+			       &istart, &ifinish);
+  
+  if (pos > 0) {
+    opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
+			      NULL, 0, pos,
+			      &ipos, 0, 0);
+    if (opos < pos)
+      return scheme_false;
+    istart = ipos;
+  }
+
+  opos = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
+			    us, 0, 1,
+			    &ipos, 0, 0);
+
+  if (opos < 1)
+    return scheme_false;
+  else
+    return scheme_make_integer_value_from_unsigned(us[0]);
 }
 
 static Scheme_Object *
@@ -1074,7 +1194,7 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
 
 #ifndef DONT_USE_LOCALE
 
-char *scheme_locale_convert(const char *from_e, const char *to_e, 
+static char *locale_convert(const char *from_e, const char *to_e, 
 			    char *in, int id, int iilen, 
 			    char *out, int od, int iolen, 
 			    /* if grow, then reallocate when out isn't big enough */
@@ -1186,12 +1306,12 @@ char *scheme_locale_convert(const char *from_e, const char *to_e,
   }
 }
 
-char *scheme_recase_locale_string(int to_up,
-				  /* in must be null-terminated, iilen doesn't include it */ 
-				  char *in, int id, int iilen,
-				  /* iolen, in contrast, includes the terminator */
-				  char *out, int od, int iolen,
-				  long *oolen)
+static char *locale_recase(int to_up,
+			   /* in must be null-terminated, iilen doesn't include it */ 
+			   char *in, int id, int iilen,
+			   /* iolen, in contrast, includes the terminator */
+			   char *out, int od, int iolen,
+			   long *oolen)
 {
   /* To change the case, convert the string to multibyte, re-case the
      multibyte, then convert back. */
@@ -1307,18 +1427,18 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
     l1 = origl1;
     l2 = origl2;
     while (1) {
-      c1 = scheme_locale_convert(MZ_UCS4_NAME, NULL, 
-				 s1, d1 * 4, 4 * l1,
-				 buf1, 0, MZ_SC_BUF_SIZE - 1,
-				 1 /* grow */, 1 /* terminator size */,
-				 &used1, &clen1,
-				 &status);
-      c2 = scheme_locale_convert(MZ_UCS4_NAME, NULL, 
-				 s2, d2 * 4, 4 * l2,
-				 buf2, 0, MZ_SC_BUF_SIZE - 1,
-				 1 /* grow */, 1 /* terminator size */,
-				 &used2, &clen2,
-				 &status);
+      c1 = locale_convert(MZ_UCS4_NAME, NULL, 
+			  s1, d1 * 4, 4 * l1,
+			  buf1, 0, MZ_SC_BUF_SIZE - 1,
+			  1 /* grow */, 1 /* terminator size */,
+			  &used1, &clen1,
+			  &status);
+      c2 = locale_convert(MZ_UCS4_NAME, NULL, 
+			  s2, d2 * 4, 4 * l2,
+			  buf2, 0, MZ_SC_BUF_SIZE - 1,
+			  1 /* grow */, 1 /* terminator size */,
+			  &used2, &clen2,
+			  &status);
 
       if ((used1 < 4 * l1) || (used2 < 4 * l2)) {
 	if (got_more) {
@@ -1355,15 +1475,15 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
     
     if (cvt_case) {
       if (clen1)
-	c1 = scheme_recase_locale_string(0, c1, 0, clen1,
-					 case_buf1, 0, MZ_SC_BUF_SIZE - 1,
-					 &clen1);
+	c1 = locale_recase(0, c1, 0, clen1,
+			   case_buf1, 0, MZ_SC_BUF_SIZE - 1,
+			   &clen1);
       else
 	c1 = NULL;
       if (clen2)
-	c2 = scheme_recase_locale_string(0, c2, 0, clen2,
-					 case_buf2, 0, MZ_SC_BUF_SIZE - 1,
-					 &clen2);
+	c2 = locale_recase(0, c2, 0, clen2,
+			   case_buf2, 0, MZ_SC_BUF_SIZE - 1,
+			   &clen2);
       else
 	c2 = NULL;
       /* There shouldn't have been conversion errors, but just in
@@ -1453,18 +1573,18 @@ int do_locale_comp(const char *who, unsigned char *str1, int l1, unsigned char *
   }
 #endif
 
-  ul1 = scheme_utf8_decode(str1, NULL, 0, l1, 0, utf16, 0);
+  ul1 = scheme_utf8_decode(str1, 0, l1, NULL, 0, -1, NULL, utf16, 0);
   if (ul1 < 0)
     scheme_arg_mismatch(who, STRING_IS_NOT_UTF_8, scheme_make_sized_string(str1, l1, 1));
-  ul2 = scheme_utf8_decode(str2, NULL, 0, l2, 0, 0, utf16);
+  ul2 = scheme_utf8_decode(str2, 0, l2, NULL, 0, -1, NULL, utf16, 0);
   if (ul2 < 0)
     scheme_arg_mismatch(who, STRING_IS_NOT_UTF_8, scheme_make_sized_string(str2, l2, 1));
   
   us1 = (unsigned int *)scheme_malloc_atomic(csize * (ul1 + 1));
   us2 = (unsigned int *)scheme_malloc_atomic(csize * (ul2 + 1));
   
-  ul1 = scheme_utf8_decode(str1, (unsigned int *)us1, 0, l1, 0, utf16, 0);
-  ul2 = scheme_utf8_decode(str2, (unsigned int *)us2, 0, l2, 0, utf16, 0);
+  ul1 = scheme_utf8_decode(str1, 0, l1, (unsigned int *)us1, 0, -1, NULL, utf16, 0);
+  ul2 = scheme_utf8_decode(str2, 0, l2, (unsigned int *)us2, 0, -1, NULL, utf16, 0);
 
   if (utf16) {
     ((short *)us1)[ul1] = 0;
@@ -1524,6 +1644,132 @@ int do_locale_comp(const char *who, unsigned char *str1, int l1, unsigned char *
     endres = v;
   
   return endres;
+}
+
+
+char *do_locale_recase(int to_up, char *in, int delta, int len, long *olen)
+{
+  Scheme_Object *parts = scheme_null;
+  char *c, buf[MZ_SC_BUF_SIZE], case_buf[MZ_SC_BUF_SIZE];
+  long clen, used;
+  int status;
+
+  while (len) {
+    /* We might have conversion errors... */
+    c = locale_convert(MZ_UCS4_NAME, NULL, 
+		       in, 4 * delta, 4 * len,
+		       buf, 0, MZ_SC_BUF_SIZE - 1,
+		       1 /* grow */, 1 /* terminator size */,
+		       &used, &clen,
+		       &status);
+
+    used >>= 2;
+    delta += used;
+    len -= used;
+    
+    c = locale_recase(to_up, c, 0, clen,
+		      case_buf, 0, MZ_SC_BUF_SIZE - 1,
+		      &clen);
+    if (!c)
+      clen = 0;
+    
+    c = locale_convert(NULL, MZ_UCS4_NAME,
+		       c, 0, clen,
+		       NULL, 0, 0,
+		       1 /* grow */, 0 /* terminator size */,
+		       &used, &clen,
+		       &status);
+
+    if (!len && SCHEME_NULLP(parts)) {
+      *olen = (clen >> 2);
+      return c;
+    }
+
+    /* We can get here if there was some conversion error at some
+       point. We're building up a list of parts. */
+
+    parts = scheme_make_pair(scheme_make_sized_string(c, clen, 0),
+			     parts);
+    
+    if (len) {
+      /* Conversion error, so skip one char. */
+      parts = scheme_make_pair(scheme_make_sized_offset_string(in, (delta * 4), 4, 1),
+			       parts);
+      delta += 1;
+      len -= 1;
+    }
+  }
+  
+  parts = append_all_strings_backwards(parts);
+  *olen = (SCHEME_STRTAG_VAL(parts) >> 2);
+
+  return SCHEME_STR_VAL(parts);
+}
+
+typedef char *(*recase_proc)(int to_up, char *in, int delta, int len, long *olen);
+
+Scheme_Object *mz_recase(const char *who, int to_up, unsigned char *str1, int l1)
+{
+  long ulen, ulen1, rl;
+  int csize = 4, utf16 = 0, i, delta = 0;
+  char *rs;
+  unsigned int *us, *us1;
+  recase_proc mz_do_recase = do_locale_recase;
+  Scheme_Object *s, *parts = scheme_null;
+
+#if defined(MACOS_UNICODE_SUPPORT) || defined(WINDOWS_UNICODE_SUPPORT)
+  if (current_locale_name && !*current_locale_name) {
+    utf16 = 1;
+    csize = 2;
+    mz_recase = do_native_recase;
+  }
+#endif
+
+  ulen = scheme_utf8_decode(str1, 0, l1, NULL, 0, -1, NULL, utf16, 0);
+  us = (unsigned int *)scheme_malloc_atomic(csize * (ulen + 1));  
+  ulen = scheme_utf8_decode(str1, 0, l1, (unsigned int *)us, 0, -1, NULL, utf16, 0);
+  us[ulen] = 0;
+
+  /* If there are nulls in the string, then we have to make multiple
+     calls to mz_do_recase */
+  i = 0;
+  while (1) {
+    for (; i < ulen; i++) {
+      if (utf16) {
+	if (!((short *)us1)[i])
+	  break;
+      } else if (!us[i])
+	break;
+    }
+
+    us1 = (unsigned int *)mz_do_recase(to_up, (char *)us, delta, i - delta, &ulen1);
+
+    rl = scheme_utf8_encode(us1, 0, ulen1, NULL, 0, utf16);
+    rs = (char *)scheme_malloc_atomic(rl + 1);
+    rl = scheme_utf8_encode(us1, 0, ulen1, rs, 0, utf16);
+    rs[rl] = 0;
+    
+    s = scheme_make_sized_string(rs, rl, 0);
+
+    if (SCHEME_NULLP(parts) && (i == ulen))
+      return s;
+
+    parts = scheme_make_pair(s, parts);
+    
+    if (i == ulen) 
+      break;
+    
+    /* upcasing and encoding a nul char is easy: */
+    s = scheme_make_sized_string("\0", 1, 0);
+    parts = scheme_make_pair(s, parts);
+    i++;
+    delta = i;
+
+    if (i == ulen) 
+      break;
+  }
+
+  return append_all_strings_backwards(parts);
 }
 
 #endif
@@ -2158,13 +2404,13 @@ static Scheme_Object *convert_unicode_locale(const char *who, int argc, Scheme_O
     ofinish = 0;
   }
 
-  r = scheme_locale_convert(from_e, to_e,
-			    SCHEME_STR_VAL(argv[0]), istart, ifinish-istart,
-			    r, ostart, ofinish-ostart,
-			    !r, 
-			    0,
-			    &amt_read, &amt_wrote,
-			    &status);
+  r = locale_convert(from_e, to_e,
+		     SCHEME_STR_VAL(argv[0]), istart, ifinish-istart,
+		     r, ostart, ofinish-ostart,
+		     !r, 
+		     0,
+		     &amt_read, &amt_wrote,
+		     &status);
   
   if (argc < 4) {
     a[0] = scheme_make_sized_string(r, amt_wrote, 0);
@@ -2187,6 +2433,32 @@ static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[])
   return convert_unicode_locale("string-unicode->locale", argc, argv, "UTF-8", NULL);
 }
 
+static Scheme_Object *
+unicode_recase(const char *who, int to_up, int argc, Scheme_Object *argv[])
+{
+  long len;
+  char *chars;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-unicode-ref", "string", 0, argc, argv);
+  
+  chars = SCHEME_STR_VAL(argv[0]);
+  len = SCHEME_STRTAG_VAL(argv[0]);
+  
+  return mz_recase(who, to_up, chars, len);
+}
+
+static Scheme_Object *
+string_unicode_upcase(int argc, Scheme_Object *argv[])
+{
+  return unicode_recase("string-unicode-upcase", 1, argc, argv);
+}
+
+static Scheme_Object *
+string_unicode_downcase(int argc, Scheme_Object *argv[])
+{
+  return unicode_recase("string-unicode-downcase", 0, argc, argv);
+}
 
 void scheme_reset_locale(void)
 {
@@ -2217,34 +2489,37 @@ void scheme_reset_locale(void)
 /*                               unicode                              */
 /**********************************************************************/
 
-int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int end, int dstart, char utf16, char permissive)
+int scheme_utf8_decode(const unsigned char *s, int start, int end, 
+		       unsigned int *us, int dstart, int dend,
+		       long *ipos, char utf16, int permissive)
 {
   int i, j;
   unsigned int sc;
 
   /* In non-permissive mode, a negative result means ill-formed input.
      Permissive mode accepts anything and tries to convert it.  In
-     that case, the general strategy for illegal sequenccs is to
-     convert anything with both high two bits set as a code point in
-     the 192-255 range, and to ignore anything with the high bit set
-     but not the second. That way, computing the length by ignoring
-     middle-of-point characters produces the same length as this
+     that case, the strategy for illegal sequences is to convert
+     anything bad with two bits set to the given "permissive"
+     value. That way, computing the length by ignoring
+     middle-of-sequence characters produces the same length as this
      permissive conversion (so position counting in ports matches a
      permissive conversion). */
 
   if (end < 0)
     end = strlen(s);
+  if (dend < 0)
+    dend = 0x7FFFFFFF;
 
-  if (!us && permissive && !utf16) {
+  if (!us && permissive) {
     /* Fast path */
-    for (i = start, j = 0; i < end; i++) {
-      if (!((s[i + 1] & 0xC0) == 0x80))
+    for (i = start, j = dstart; ((i < end) && (j < dend)); i++) {
+      if (!((s[i] & 0xC0) == 0x80))
 	j++;
     }
-    return j;
+    return j - dstart;
   }
 
-  for (i = start, j = dstart; i < end; i++, j++) {
+  for (i = start, j = dstart; (i < end) && (j < dend); i++, j++) {
     sc = s[i];
     if (sc < 0x80) {
       if (us) {
@@ -2263,7 +2538,7 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
 	  checkmin = 0x80;
 	  i++;
 	} else if (permissive) {
-	  v = sc;
+	  v = permissive;
 	  checkmin = 0;
 	} else
 	  break;
@@ -2275,16 +2550,19 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
 	       | ((s[i+1] & 0x3F) << 6) 
 	       | (s[i+2] & 0x3F));
 	  checkmin = 0x800;
-	  if (!permissive
-	      && (((v >= 0xD800) && (v <= 0xDFFF))
-		  || (v == 0xFFFE)
-		  || (v == 0xFFFF))) {
+	  if (((v >= 0xD800) && (v <= 0xDFFF))
+	      || (v == 0xFFFE)
+	      || (v == 0xFFFF)) {
 	    /* UTF-16 surrogates or other illegal code units */
-	    break;
-	  }
-	  i += 2;
+	    if (permissive) {
+	      v = permissive;
+	      checkmin = 0;
+	    } else
+	      break;
+	  } else
+	    i += 2;
 	} else if (permissive) {
-	  v = sc;
+	  v = permissive;
 	  checkmin = 0;
 	} else
 	  break;
@@ -2300,7 +2578,7 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
 	  checkmin = 0x10000;
 	  i += 3;
 	} else if (permissive) {
-	  v = sc;
+	  v = permissive;
 	  checkmin = 0;
 	} else
 	  break;
@@ -2318,7 +2596,7 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
 	  checkmin = 0x200000;
 	  i += 4;
 	} else if (permissive) {
-	  v = sc;
+	  v = permissive;
 	  checkmin = 0;
 	} else
 	  break;
@@ -2338,26 +2616,32 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
 	  checkmin = 0x4000000;
 	  i += 5;
 	} else if (permissive) {
-	  v = sc;
+	  v = permissive;
 	  checkmin = 0;
 	} else
 	  break;
       } else {
 	if (permissive) {
-	  if ((sc & 0xC0) == 0x80) {
-	    /* This is supposed to be in the middle of a code point.
-	       Skip it. */
-	    continue;
-	  } else {
-	    v = sc;
+	  if (sc >= 254) {
+	    v = permissive;
 	    checkmin = 0;
+	  } else {
+	    /* Corresponds to the middle of a char. We simply drop
+	       it. */
+	    j--;
+	    continue;
 	  }
 	} else
 	  break;
       }
 
-      if (!permissive && (v < checkmin))
-	break;
+      if (v < checkmin) {
+	if (permissive) {
+	  v = permissive;
+	} else
+	  break;
+      }
+
       if (utf16) {
 	if (v > 0xFFFF) {
 	  if (us) {
@@ -2380,13 +2664,23 @@ int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int 
     }
   }
 
-  if (i < end)
+  if ((i < end) && (j < dend))
     return -1;
+
+  if (ipos)
+    *ipos = i;
 
   return j;
 }
 
-int scheme_utf8_encode(const unsigned int *us, unsigned char *s, int start, int end, int dstart, char utf16)
+int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)
+{
+  return scheme_utf8_decode(s, 0, len, us, 0, -1, NULL, 0 /* utf16 */, permissive);
+}
+
+int scheme_utf8_encode(const unsigned int *us, int start, int end, 
+		       unsigned char *s, int dstart,
+		       char utf16)
 {
   int i, j;
 
@@ -2475,6 +2769,11 @@ int scheme_utf8_encode(const unsigned int *us, unsigned char *s, int start, int 
     }
     return j;
   }
+}
+
+int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s)
+{
+  return scheme_utf8_encode(us, 0, len, s, 0, 0 /* utf16 */);
 }
 
 /**********************************************************************/

@@ -409,8 +409,16 @@ MZ_EXTERN const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_e
 /*                               strings                                  */
 /*========================================================================*/
 
-MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int end, int dstart, char utf16, char permissive);
-MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, unsigned char *s, int start, int end, int dstart, char utf16);
+MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+				 unsigned int *us, int dstart, int dlen,
+				 long *ipos, char utf16, int permissive);
+MZ_EXTERN int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
+				     int permissive);
+
+MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, int start, int len, 
+				 unsigned char *s, int dstart,
+				 char utf16);
+MZ_EXTERN int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
 
 /*========================================================================*/
 /*                               bignums                                  */

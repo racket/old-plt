@@ -35,6 +35,8 @@
 ;;    class - `class-code' structure: UPDATED with var set info
 ;;    compound - `compound-info' structure
 ;;    invoke - `invoke-info' structure
+;;    with-continuation-mark - might set annotation to #f, which
+;;         indicates that begin0-like handling is not needed
 ;;; ------------------------------------------------------------
 
 (unit/sig compiler:analyze^
@@ -798,15 +800,15 @@
 	     
 	     [analyze!-ast
 	      ;; Like analyze, but drop the multi-return info in the result
-	      (lambda (ast env inlined tail?)
-		(let-values ([(ast multi) (analyze! ast env inlined tail?)])
+	      (lambda (ast env inlined)
+		(let-values ([(ast multi) (analyze! ast env inlined #f #f)])
 		  ast))]
 	     
 	     [analyze!-sv
 	      ;; Like analyze, but make sure the expression is not definitely
 	      ;;  multi-valued
-	      (lambda (ast env inlined tail?)
-		(let-values ([(ast multi) (analyze! ast env inlined tail?)])
+	      (lambda (ast env inlined)
+		(let-values ([(ast multi) (analyze! ast env inlined #f #f)])
 		  (when (eq? multi #t)
 		    ((if (compiler:option:stupid) compiler:warning compiler:error)
 		     ast
@@ -816,7 +818,7 @@
 	     [analyze!
 	      ;; Returns (values ast multi)
 	      ;;    where multi = #f, #t, 'possible
-	      (lambda (ast env inlined tail?)
+	      (lambda (ast env inlined tail? wcm-tail?)
 		(when (compiler:option:debug)
 		  (zodiac:print-start! debug:port ast)
 		  (newline debug:port))
@@ -976,7 +978,7 @@
 		 ;;
 		 [(zodiac:let-values-form? ast)
 		  (let*-values ([(val val-multi) 
-				 (analyze! (car (zodiac:let-values-form-vals ast)) env inlined #f)]
+				 (analyze! (car (zodiac:let-values-form-vals ast)) env inlined #f #f)]
 				[(vars) (car (zodiac:let-values-form-vars ast))]
 				[(convert-set!-val)
 				 (lambda ()   
@@ -1006,7 +1008,7 @@
 			  (let-values ([(body body-multi)
 					(analyze! (zodiac:let-values-form-body ast) 
 						  (cons var env)
-						  inlined tail?)]
+						  inlined tail? wcm-tail?)]
 				       [(known-val) (extract-varref-known-val var)])
 			    
 			    (if (and (compiler:option:propagate-constants)
@@ -1059,7 +1061,7 @@
 					(analyze! (zodiac:let-values-form-body ast)
 						  (append vars env)
 						  inlined
-						  tail?)])
+						  tail? wcm-tail?)])
 			    (zodiac:set-let-values-form-body! ast body)
 			    
 			    (if (zodiac:set!-form? val)
@@ -1107,13 +1109,13 @@
 			(set! local-vars (set-union (list->set vars) local-vars))
 			(let ([new-env (append vars env)])
 			  (let-values ([(vals) (map (lambda (val)
-						      (analyze!-sv val new-env inlined #f))
+						      (analyze!-sv val new-env inlined))
 						    (zodiac:letrec*-values-form-vals ast))]
 				       [(body body-multi) (analyze! 
 							   (zodiac:letrec*-values-form-body ast) 
 							   new-env
 							   inlined
-							   tail?)]
+							   tail? wcm-tail?)]
 				       [(vars) (map car (zodiac:letrec*-values-form-vars ast))])
 			    
 			    (for-each (lambda (var) (set-binding-rec?! (get-annotation var) #t))
@@ -1132,16 +1134,16 @@
 			(debug "rewriting letrec~n")
 			(let ([new-ast (letrec->let+set! ast)])
 			  (debug "reanalyzing...~n")
-			  (analyze! new-ast env inlined tail?))))]
+			  (analyze! new-ast env inlined tail? wcm-tail?))))]
 
 		 ;;-----------------------------------------------------
 		 ;; IF EXPRESSIONS
 		 ;;
 		 ;; just analyze the 3 branches.  Very easy
 		 [(zodiac:if-form? ast)
-		  (zodiac:set-if-form-test! ast (analyze!-sv (zodiac:if-form-test ast) env inlined #f))
-		  (let-values ([(then then-multi) (analyze! (zodiac:if-form-then ast) env inlined tail?)]
-			       [(else else-multi) (analyze! (zodiac:if-form-else ast) env inlined tail?)])
+		  (zodiac:set-if-form-test! ast (analyze!-sv (zodiac:if-form-test ast) env inlined))
+		  (let-values ([(then then-multi) (analyze! (zodiac:if-form-then ast) env inlined tail? wcm-tail?)]
+			       [(else else-multi) (analyze! (zodiac:if-form-else ast) env inlined tail? wcm-tail?)])
 		    (zodiac:set-if-form-then! ast then)
 		    (zodiac:set-if-form-else! ast else)
 		    
@@ -1156,11 +1158,11 @@
 		  (let ([last-multi
 			 (let loop ([bodies (zodiac:begin-form-bodies ast)])
 			   (if (null? (cdr bodies))
-			       (let-values ([(e last-multi) (analyze! (car bodies) env inlined tail?)])
+			       (let-values ([(e last-multi) (analyze! (car bodies) env inlined tail? wcm-tail?)])
 				 (set-car! bodies e)
 				 last-multi)
 			       (begin
-				 (set-car! bodies (analyze!-ast (car bodies) env inlined #f))
+				 (set-car! bodies (analyze!-ast (car bodies) env inlined))
 				 (loop (cdr bodies)))))])
 
 		    (values ast last-multi))]
@@ -1171,9 +1173,9 @@
 		 ;;
 		 ;; analyze the branches
 		 [(zodiac:begin0-form? ast)
-		  (let-values ([(0expr 0expr-multi) (analyze! (zodiac:begin0-form-first ast) env inlined #f)])
+		  (let-values ([(0expr 0expr-multi) (analyze! (zodiac:begin0-form-first ast) env inlined #f #f)])
 		    (zodiac:set-begin0-form-first! ast 0expr)
-		    (zodiac:set-begin0-form-rest! ast (analyze!-ast (zodiac:begin0-form-rest ast) env inlined #f))
+		    (zodiac:set-begin0-form-rest! ast (analyze!-ast (zodiac:begin0-form-rest ast) env inlined))
 		    (let ([var (get-annotation ast)])
 		      (add-local-var! var))
 		    (values ast 0expr-multi))]
@@ -1190,7 +1192,7 @@
 		    (zodiac:set-set!-form-var! ast target)
 		    (zodiac:set-set!-form-val! 
 		     ast 
-		     (analyze!-sv (zodiac:set!-form-val ast) env inlined #f)))
+		     (analyze!-sv (zodiac:set!-form-val ast) env inlined)))
 		  
 		  (values ast #f)]
 		 
@@ -1206,7 +1208,7 @@
 			(zodiac:define-values-form-vars ast)))
 		  (zodiac:set-define-values-form-val! 
 		   ast
-		   (analyze!-ast (zodiac:define-values-form-val ast) env inlined #f))
+		   (analyze!-ast (zodiac:define-values-form-val ast) env inlined))
 		  (values ast #f)]
 		 
 		 ;;-------------------------------------------------------------------
@@ -1225,12 +1227,12 @@
 		     (when (compiler:option:verbose)
 		       (compiler:warning ast "inlining procedure call"))
 		     ; We inlined - analyze the new form
-		     (analyze! new-ast env new-inlined tail?))
+		     (analyze! new-ast env new-inlined tail? wcm-tail?))
 		   (lambda (why)
 		     '(begin
 			(zodiac:print-start! (current-output-port) ast) 
 			(printf "no inlining: ~a~n" (eval why)))
-		     (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) env inlined #f)])
+		     (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) env inlined)])
 				   (if (zodiac:varref? v)
 				       v
 				       ; known non-procedure!
@@ -1254,7 +1256,7 @@
 					  [else 'possible]))
 				       'possible)]
 			    [args (map (lambda (arg)
-					 (analyze!-sv arg env inlined #f))
+					 (analyze!-sv arg env inlined))
 				       (zodiac:app-args ast))])
 		       
 		       ; for all functions, do this stuff
@@ -1274,7 +1276,7 @@
 		 [(zodiac:struct-form? ast)
 		  (let ([super (zodiac:struct-form-super ast)])
 		    (when super
-		      (zodiac:set-struct-form-super! ast (analyze!-sv super env inlined #f)))
+		      (zodiac:set-struct-form-super! ast (analyze!-sv super env inlined)))
 		    (values ast #t))]
 
 		 ;;--------------------------------------------------------------------
@@ -1322,7 +1324,7 @@
 		 [(zodiac:compound-unit-form? ast)
 		  (for-each (lambda (link)
 			      (set-car! (cdr link)
-					(analyze!-sv (cadr link) env inlined #f)))
+					(analyze!-sv (cadr link) env inlined)))
 			    (zodiac:compound-unit-form-links ast))
 		  
 		  (register-arity! (length (zodiac:compound-unit-form-links ast)))
@@ -1402,7 +1404,7 @@
 		 [(zodiac:invoke-form? ast)
 		  (zodiac:set-invoke-form-unit!
 		   ast 
-		   (analyze!-sv (zodiac:invoke-form-unit ast) env inlined #f))
+		   (analyze!-sv (zodiac:invoke-form-unit ast) env inlined))
 
 		  (set-annotation!
 		   ast
@@ -1459,10 +1461,10 @@
 		    ; Analyze super-expr & interfaces
 		    (zodiac:set-class*/names-form-super-expr! 
 		     ast 
-		     (analyze!-sv (zodiac:class*/names-form-super-expr ast) env inlined #f))
+		     (analyze!-sv (zodiac:class*/names-form-super-expr ast) env inlined))
 		    (zodiac:set-class*/names-form-interfaces! 
 		     ast
-		     (map (lambda (i) (analyze!-sv i env inlined #f))
+		     (map (lambda (i) (analyze!-sv i env inlined))
 			  (zodiac:class*/names-form-interfaces ast)))
 		    
 		    ; To create the class assembly, super + interfaces are collected as args
@@ -1500,7 +1502,7 @@
 		 [(zodiac:interface-form? ast)
 		  (zodiac:set-interface-form-super-exprs!
 		   ast
-		   (map (lambda (expr) (analyze!-sv expr env inlined #f))
+		   (map (lambda (expr) (analyze!-sv expr env inlined))
 			(zodiac:interface-form-super-exprs ast)))
 
 		  (register-arity! (length (zodiac:interface-form-super-exprs ast)))
@@ -1519,17 +1521,23 @@
 		  
 		  (zodiac:set-with-continuation-mark-form-key!
 		   ast
-		   (analyze!-sv (zodiac:with-continuation-mark-form-key ast) env inlined #f))
+		   (analyze!-sv (zodiac:with-continuation-mark-form-key ast) env inlined))
 		 
 		  (zodiac:set-with-continuation-mark-form-val!
 		   ast
-		   (analyze!-sv (zodiac:with-continuation-mark-form-val ast) env inlined #f))
+		   (analyze!-sv (zodiac:with-continuation-mark-form-val ast) env inlined))
 		 
-		  (zodiac:set-with-continuation-mark-form-body!
-		   ast
-		   (analyze!-sv (zodiac:with-continuation-mark-form-body ast) env inlined #f))
-
-		  (values ast 'possible)]
+		  (let-values ([(body body-multi) 
+				(analyze! (zodiac:with-continuation-mark-form-body ast) env inlined tail? #t)])
+		    
+		    (if (or tail? wcm-tail?)
+			; No frame push, so no need for begin0-like handling
+			(set-annotation! ast #f)
+			
+			(let ([var (get-annotation ast)])
+			  (add-local-var! var)))
+		    
+		    (values ast body-multi))]
 		 
 		 [else (compiler:internal-error
 			ast
@@ -1540,7 +1548,7 @@
 	  
 	  ;; analyze the expression and return it with the local variables
 	  ;; it creates.  
-	  (let-values ([(ast multi) (analyze! ast env 0 tail?)])
+	  (let-values ([(ast multi) (analyze! ast env 0 tail? #f)])
 	    (values ast
 		    free-vars
 		    local-vars

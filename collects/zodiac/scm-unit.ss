@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.68 1998/11/04 19:52:55 mflatt Exp $
+; $Id: scm-unit.ss,v 1.69 1998/11/06 01:35:12 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -451,61 +451,63 @@
 	      =>
 	      (lambda (p-env)
 		(let ((top-level? (get-top-level-status attributes))
-		       (old-top-level
-			 (get-attribute attributes 'top-levels))
-		       (unit-clauses-vocab
-			 (append-vocabulary unit-clauses-vocab-delta
-			   vocab 'unit-clauses-vocab)))
+		      (internal? (get-internal-define-status attributes))
+		      (old-top-level
+		       (get-attribute attributes 'top-levels))
+		      (unit-clauses-vocab
+		       (append-vocabulary unit-clauses-vocab-delta
+					  vocab 'unit-clauses-vocab)))
 		  (set-top-level-status attributes #t)
+		  (set-internal-define-status attributes #f)
 		  (when old-top-level
 		    (put-attribute attributes 'top-levels (make-hash-table)))
 		  (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
-			 (in:exports (pat:pexpand '(exports ...) p-env kwd))
-			 (in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
+			(in:exports (pat:pexpand '(exports ...) p-env kwd))
+			(in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
 		    (make-vars-attribute attributes)
 		    (make-unresolved-attribute attributes)
-		    (let*
-		      ((proc:imports (map (lambda (e)
-					    (expand-expr e env
-					      attributes c/imports-vocab))
-				       in:imports))
-			(_ (extend-env proc:imports env))
-			(_ (put-attribute attributes 'exports-expand-vocab
-			     unit-clauses-vocab))
-			(_ (for-each (lambda (e)
-				       (expand-expr e env attributes
-					 unit-register-exports-vocab))
-			     in:exports))
-			(proc:clauses (map (lambda (e)
-					     (expand-expr e env
-					       attributes
-					       unit-clauses-vocab))
-					in:clauses))
-			(_ (retract-env (map car proc:imports) env))
-			(proc:exports (map (lambda (e)
-					     (expand-expr e env
-					       attributes
-					       unit-verify-exports-vocab))
+		    (let* ((proc:imports (map (lambda (e)
+						(expand-expr e env
+							     attributes c/imports-vocab))
+					      in:imports))
+			   (_ (extend-env proc:imports env))
+			   (_ (put-attribute attributes 'exports-expand-vocab
+					     unit-clauses-vocab))
+			   (_ (for-each (lambda (e)
+					  (expand-expr e env attributes
+						       unit-register-exports-vocab))
 					in:exports))
-			(proc:exports-externals
-			  (map (lambda (e)
-				 (expand-expr e env attributes
-				   unit-generate-external-names-vocab))
-			    in:exports))
-			(unresolveds (get-unresolved-vars attributes)))
+			   (proc:clauses (map (lambda (e)
+						(expand-expr e env
+							     attributes
+							     unit-clauses-vocab))
+					      in:clauses))
+			   (_ (retract-env (map car proc:imports) env))
+			   (proc:exports (map (lambda (e)
+						(expand-expr e env
+							     attributes
+							     unit-verify-exports-vocab))
+					      in:exports))
+			   (proc:exports-externals
+			    (map (lambda (e)
+				   (expand-expr e env attributes
+						unit-generate-external-names-vocab))
+				 in:exports))
+			   (unresolveds (get-unresolved-vars attributes)))
 		      (distinct-valid-syntactic-id/s? proc:exports-externals)
 		      (remove-vars-attribute attributes)
 		      (remove/update-unresolved-attribute attributes
-			unresolveds)
+							  unresolveds)
 		      (when old-top-level
 			(put-attribute attributes 'top-levels old-top-level))
 		      (set-top-level-status attributes top-level?)
+		      (set-internal-define-status attributes internal?)
 		      (create-unit-form
-			(map car proc:imports)
-			proc:exports
-			proc:clauses expr))))))
+		       (map car proc:imports)
+		       proc:exports
+		       proc:clauses expr))))))
 	    (else
-	      (static-error expr "Malformed unit"))))))
+	     (static-error expr "Malformed unit"))))))
 
   (add-primitivized-micro-form 'unit full-vocabulary unit-micro)
   (add-primitivized-micro-form 'unit scheme-vocabulary unit-micro)

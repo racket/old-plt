@@ -24,7 +24,9 @@
 ;  not apply to letrec expressions.
 
 ;;; Annotatitons: ----------------------------------------------
-;;    begin0 - lexical-binding for storing 0th expression
+;;    begin0 - lexical-binding for storing 0th expression result
+;;    with-continuation-mark - lexical-binding for storing body
+;;                             result
 ;;; ------------------------------------------------------------
 
 (unit/sig
@@ -273,7 +275,7 @@
 		  ;;    The first is named in a special way, and the rest passes through
 		  ;;
 		  ;; (norm (begin0 A B) k) ->
-		  ;;    (norm A (lambda first (begin0 first (norm B k))))
+		  ;;    (k (begin0 (norm A identity) (norm B identity)))
 		  ;;
 		  [(zodiac:begin0-form? ast)
 		   (let* ([tname (gensym)]
@@ -492,16 +494,25 @@
 		      (normalize-name
 		       (zodiac:with-continuation-mark-form-val ast)
 		       (lambda (val)
-			 (normalize-name
-			  (zodiac:with-continuation-mark-form-body ast)
-			  (lambda (body)
-			    (k (zodiac:make-with-continuation-mark-form
-				(zodiac:zodiac-origin ast)
-				(zodiac:zodiac-start ast)
-				(zodiac:zodiac-finish ast)
-				(zodiac:parsed-back ast)
-				key val body))))))))]
-		
+			 (let* ([tname (gensym)]
+				[tbound (zodiac:make-lexical-binding
+					 (zodiac:zodiac-origin ast)
+					 (zodiac:zodiac-start ast)
+					 (zodiac:zodiac-finish ast)
+					 (make-empty-box)
+					 tname
+					 tname)]
+				[wcm (zodiac:make-with-continuation-mark-form
+				      (zodiac:zodiac-origin ast)
+				      (zodiac:zodiac-start ast)
+				      (zodiac:zodiac-finish ast)
+				      (zodiac:parsed-back ast)
+				      key val
+				      (a-normalize
+				       (zodiac:with-continuation-mark-form-body ast)
+				       identity))])
+			   (set-annotation! wcm tbound)
+			   (k wcm))))))]
 
 		  [else (error 'a-normalize "unsupported ~a" ast)]))])
       a-normalize))

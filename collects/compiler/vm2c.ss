@@ -528,6 +528,7 @@
 			  [(prim-case) "Scheme_Closed_Case_Primitive_Proc"]
 			  [(unit) "Scheme_Unit"]
 			  [(begin0-saver) "_Scheme_Begin0_Rec"]
+			  [(wcm-saver) "_Scheme_WCM_Rec"]
 			  [else (compiler:internal-error 
 				 #f
 				 (format
@@ -1496,15 +1497,38 @@
 			     (vm:interface-assembly ast)))]
 	 
 	 ;; with-continuation-mark
-	 [(vm:wcm? ast)
-	  (emit-expr "scheme_wcm_apply(")
-	  (process (vm:wcm-key ast) indent-level #f #f)
+	 [(vm:wcm-mark!? ast)
+	  (emit-expr "scheme_set_cont_mark(")
+	  (process (vm:wcm-mark!-key ast) indent-level #f #f)
 	  (emit ", ")
-	  (process (vm:wcm-val ast) indent-level #f #f)
-	  (emit ", ")
-	  (process (vm:wcm-lam ast) indent-level #f #f)
-	  (emit ", ~a)" (if (vm:wcm-tail? ast) "1" "0"))]
-
+	  (process (vm:wcm-mark!-val ast) indent-level #f #f)
+	  (emit ")")]
+	 [(vm:wcm-push!? ast)
+	  (let ([var (vm->c:convert-symbol
+		      (vm:local-varref-var (vm:wcm-push!-var ast)))])
+	    (emit-indentation)
+	    (emit "scheme_push_continuation_frame(&~a.cf)" var))]
+	 [(vm:wcm-pop!? ast)
+	  (let ([var (vm->c:convert-symbol
+		      (vm:local-varref-var (vm:wcm-pop!-var ast)))])
+	    (emit-indentation)
+	    (emit "scheme_pop_continuation_frame(&~a.cf)" var))]
+	 [(vm:wcm-remember!? ast)
+	  (let ([var (vm->c:convert-symbol
+		      (vm:local-varref-var (vm:wcm-remember!-var ast)))])
+	    (emit-indentation)
+	    (emit "scheme_temp_dec_mark_depth();~n")
+	    (emit-indentation)
+	    (emit "~a.val = " var)
+	    (process (vm:wcm-remember!-val ast) indent-level #f #t)
+	    (emit ";~n")
+	    (emit-indentation)
+	    (emit "scheme_temp_inc_mark_depth()"))]
+	 [(vm:wcm-extract? ast)
+	  (let ([var (vm->c:convert-symbol
+		      (vm:local-varref-var (vm:wcm-extract-var ast)))])
+	    (emit "~a.val" var))]
+	 
 	 ;; (continue) -> continue;
 	 [(vm:continue? ast)
 	  (unless (compiler:option:disable-interrupts)

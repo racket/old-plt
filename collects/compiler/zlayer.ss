@@ -252,7 +252,7 @@
 	`(begin ,@(map zodiac->sexp/annotate (zodiac:begin-form-bodies ast)))]
 
        [(zodiac:begin0-form? ast)
-	`(begin ,@(map zodiac->sexp/annotate (zodiac:begin0-form-bodies ast)))]
+	`(begin0 ,@(map zodiac->sexp/annotate (zodiac:begin0-form-bodies ast)))]
 
        [(zodiac:let-values-form? ast)
 	`(let-values
@@ -372,6 +372,12 @@
 		     `(sequence
 			,@(map zodiac->sexp/annotate (zodiac:sequence-clause-exprs clause))))))
 		 (zodiac:class*/names-form-inst-clauses ast)))]
+
+       [(zodiac:with-continuation-mark-form? ast)
+	`(with-continuation-mark 
+	     ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-key ast))
+	     ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-val ast))
+	   ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-body ast)))]
 
        [(zodiac::-form? ast)
 	(zodiac->sexp (zodiac::-form-exp ast))]

@@ -249,6 +249,12 @@
 		   (relate! current-lambda (car l))
 		   (loop (cdr l))))]
 	    
+	    ;;------------------------------------------------------------------
+	    ;; WITH-CONTINUATION-MARK EXPRESSIONS
+	    ;;
+	    [(zodiac:with-continuation-mark-form? ast)
+	     (relate! current-lambda (zodiac:with-continuation-mark-form-body ast))]
+	    
 	    ;;-----------------------------------------------------------------
 	    ;; APPLICATIONS
 	    ;;

@@ -53,7 +53,11 @@
   (define-struct (vm:interface zodiac:struct:zodiac) (assembly))
   (define-struct (vm:call zodiac:struct:zodiac) (label closure))
   (define-struct (vm:begin0-extract zodiac:struct:zodiac) (var))
-  (define-struct (vm:wcm zodiac:struct:zodiac) (key val lam tail?))
+  (define-struct (vm:wcm-mark! zodiac:struct:zodiac) (key val))
+  (define-struct (vm:wcm-push! zodiac:struct:zodiac) (var))
+  (define-struct (vm:wcm-pop! zodiac:struct:zodiac) (var))
+  (define-struct (vm:wcm-remember! zodiac:struct:zodiac) (var val))
+  (define-struct (vm:wcm-extract zodiac:struct:zodiac) (var))
 
   ;; a-values
   (define-struct (vm:global-varref zodiac:struct:zodiac) (var))
@@ -66,6 +70,7 @@
   (define-struct (vm:static-varref zodiac:struct:zodiac) (var))
   (define-struct (vm:static-varref-from-lift struct:vm:static-varref) (lambda))
   (define-struct (vm:per-load-static-varref struct:vm:static-varref) ())
+  (define-struct (vm:per-load-static-varref-from-lift struct:vm:per-load-static-varref) (lambda))
   (define-struct (vm:primitive-varref zodiac:struct:zodiac) (var))
   (define-struct (vm:symbol-varref zodiac:struct:zodiac) (var))
   (define-struct (vm:inexact-varref zodiac:struct:zodiac) (var))

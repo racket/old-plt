@@ -40,6 +40,7 @@
 ;  'prim-case
 ;  'unit
 ;  'begin0-saver
+;  'wcm-saver
 (define-struct rep:pointer (to))
 (define-struct rep:struct (name orig-name fields))
 (define-struct rep:struct-field (name orig-name rep))

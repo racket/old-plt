@@ -63,12 +63,16 @@
 			(let loop ([closure closure])
 			  (cond
 			   [(or (vm:local-varref? closure)
-				(vm:static-varref-from-lift? closure))
+				(vm:static-varref-from-lift? closure)
+				(vm:per-load-static-varref-from-lift? closure))
 			    (let ([known 
-				    (if (vm:local-varref? closure)
-					(extract-varref-known-val 
-					 (vm:local-varref-binding closure))
-					(vm:static-varref-from-lift-lambda closure))])
+				   (cond
+				    [(vm:local-varref? closure) (extract-varref-known-val 
+								 (vm:local-varref-binding closure))]
+				    [(vm:static-varref-from-lift? closure)
+				     (vm:static-varref-from-lift-lambda closure)]
+				    [else
+				     (vm:per-load-static-varref-from-lift-lambda closure)])])
 			      (and known
 				   (zodiac:case-lambda-form? known)
 				   (begin (set! L known) #t)
@@ -79,11 +83,8 @@
 		  (values L closure-label)))]
 	     
 	     ; This takes action based on the label associated with the closure 
-	     ; passed in there is a HACK here.  The 'known' value of this lexical
-	     ; varref is a lambda, even though we have eliminated lambda
-	     ; if current-lambda is #f, all knowledge is off  
-	     ; In future, optimizations will update 'known' information, or have 
-	     ; it rescanned...
+	     ; passed in. There is a HACK here.  The 'known' value of this lexical
+	     ; varref is a lambda, even though we have eliminated lambda.
 	     [with-closure
 	      (lambda (closure closure-case unknown call recur)
 		(let-values ([(L closure-label) (closure-info closure)])
@@ -93,7 +94,7 @@
 			      (= current-vehicle 
 				 (closure-code-vehicle (get-annotation L))))])
 		    ((cond
-		       [(not current-lambda) unknown]
+		       [(not current-lambda) call]
 		       [(not closure-label) unknown]
 		       [(not current-label) call]
 		       [(not current-vehicle) call]
@@ -214,8 +215,7 @@
 		  [(vm:tail-apply? ast)
 		   (list
 		    (let*-values ([(closure) (vm:tail-apply-closure ast)]
-				  [(L closure-label) 
-				   (closure-info closure)]
+				  [(L closure-label) (closure-info closure)]
 				  [(cl-case arglist) (select-case L (vm:tail-apply-argc ast))])
 		      (if (and L (not (and cl-case
 					   (zodiac:list-arglist?  arglist)
@@ -489,8 +489,7 @@
 		  [(vm:apply? ast)
 		   (if (not (vm:apply-prim ast))
 		       (let*-values ([(closure) (vm:apply-closure ast)]
-				     [(L closure-label) 
-				      (closure-info closure)]
+				     [(L closure-label) (closure-info closure)]
 				     [(cl-case arglist) (select-case L (vm:apply-argc ast))]
 				     [(check-known-sv)
 				      (lambda ()
@@ -503,6 +502,7 @@
 				 (and cl-case (not (zodiac:list-arglist? arglist)))
 				 (and cl-case (not (satisfies-arity? (vm:apply-argc ast) L arglist))))
 			     (list ast)
+			     
 			     (with-closure closure
 					   cl-case
 					   
@@ -548,7 +548,27 @@
 		  ;;--------------------------------------------------------------------
 		  ;; WITH-CONTINUATION-MARK
 		  ;;
-		  [(vm:wcm? ast) (list ast)]
+		  [(vm:wcm-mark!? ast)
+		   (set-vm:wcm-mark!-key! ast (car (process! (vm:wcm-mark!-key ast))))
+		   (set-vm:wcm-mark!-val! ast (car (process! (vm:wcm-mark!-val ast))))
+		   (list ast)]
+
+		  [(vm:wcm-push!? ast)
+		   (set-vm:wcm-push!-var! ast (car (process! (vm:wcm-push!-var ast))))
+		   (list ast)]
+
+		  [(vm:wcm-pop!? ast)
+		   (set-vm:wcm-pop!-var! ast (car (process! (vm:wcm-pop!-var ast))))
+		   (list ast)]
+		  
+		  [(vm:wcm-remember!? ast)
+		   (set-vm:wcm-remember!-var! ast (car (process! (vm:wcm-remember!-var ast))))
+		   (set-vm:wcm-remember!-val! ast (car (process! (vm:wcm-remember!-val ast))))
+		   (list ast)]
+		  
+		  [(vm:wcm-extract? ast)
+		   (set-vm:wcm-extract-var! ast (car (process! (vm:wcm-extract-var ast))))
+		   (list ast)]
 		  
 		  ;;====================================================================
 		  ;; A-VALUES, L-VALUES, IMMEDIATES

@@ -854,18 +854,61 @@
 	   ;;
 	   ;;
 	   [(zodiac:with-continuation-mark-form? ast)
-	    (let ([key (convert (zodiac:with-continuation-mark-form-key ast) #f identity #f #f)]
-		  [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f)]
-		  [lam (convert (zodiac:with-continuation-mark-form-body ast) #f identity #f #f)])
-	      (let ([exp (make-vm:wcm
+	    (let* ([wcm-var (get-annotation ast)]
+		   [var (and wcm-var
+			     (convert (zodiac:binding->lexical-varref wcm-var)
+				      #f
+				      identity
+				      #f
+				      #f))]
+		   [key (convert (zodiac:with-continuation-mark-form-key ast) #f identity #f #f)]
+		   [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f)]
+		   [body (convert (zodiac:with-continuation-mark-form-body ast)
+				  multi?
+				  (lambda (val) (if var
+						    (list (make-vm:wcm-remember!
+							   (zodiac:zodiac-origin ast)
+							   (zodiac:zodiac-start ast)
+							   (zodiac:zodiac-finish ast)
+							   var val))
+						    (leaf val)))
+				  (and (not wcm-var) tail-pos)
+				  (and (not wcm-var) tail?))]
+		   [extract
+		    (and wcm-var
+			 (make-vm:wcm-extract
 			  (zodiac:zodiac-origin ast)
 			  (zodiac:zodiac-start ast)
 			  (zodiac:zodiac-finish ast)
-			  key val lam tail?)])
-		(if tail-pos
-		    (leaf (tail-pos exp))
-		    (leaf exp))))]
-
+			  var))]
+		   [mark (make-vm:wcm-mark!
+			  (zodiac:zodiac-origin ast)
+			  (zodiac:zodiac-start ast)
+			  (zodiac:zodiac-finish ast)
+			  key val)]
+		   [push (and wcm-var
+			      (make-vm:wcm-push!
+			       (zodiac:zodiac-origin ast)
+			       (zodiac:zodiac-start ast)
+			       (zodiac:zodiac-finish ast)
+			       var))]
+		   [pop (and wcm-var
+			     (make-vm:wcm-pop!
+			      (zodiac:zodiac-origin ast)
+			      (zodiac:zodiac-start ast)
+			      (zodiac:zodiac-finish ast)
+			      var))])
+	      (if wcm-var
+		  
+		  (append (list push mark)
+			  body 
+			  (list pop)
+			  (if tail-pos
+			      (leaf (tail-pos extract))
+			      (leaf extract)))
+		  
+		  (cons mark body)))]
+	   
 	   ;;-----------------------------------------------------------------
 	   ;; APPLICATIONS
 	   ;;
@@ -988,6 +1031,12 @@
 				   (maker a b c d)))]
 		   [maker 
 		    (cond
+		     [(top-level-varref/bind-from-lift? ast)
+		      (lambda (a b c d ast)
+			((if (top-level-varref/bind-from-lift-pls? ast)
+			     make-vm:per-load-static-varref-from-lift
+			     make-vm:static-varref-from-lift)
+			 a b c d (top-level-varref/bind-from-lift-lambda ast)))]
 		     [(varref:has-attribute? ast varref:per-load-static)
 		      (ignore-ast make-vm:per-load-static-varref)]
 		     [(varref:has-attribute? ast varref:primitive)
@@ -996,10 +1045,6 @@
 		      (ignore-ast make-vm:symbol-varref)]
 		     [(varref:has-attribute? ast varref:inexact)
 		      (ignore-ast make-vm:inexact-varref)]
-		     [(top-level-varref/bind-from-lift? ast)
-		      (lambda (a b c d ast)
-			(make-vm:static-varref-from-lift
-			 a b c d (top-level-varref/bind-from-lift-lambda ast)))]
 		     [(varref:has-attribute? ast varref:static)
 		      (ignore-ast make-vm:static-varref)]
 		     [else

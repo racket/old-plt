@@ -58,6 +58,10 @@
     (lambda (bound)
       (make-binding #f #f #f #f #f #f
 		    #f #f #f (make-rep:atomic 'begin0-saver))))
+  (define make-wcm-binding
+    (lambda (bound)
+      (make-binding #f #f #f #f #f #f
+		    #f #f #f (make-rep:atomic 'wcm-saver))))
 
   ;; Determine whether a varref is a known primitive
   (define (analyze:prim-fun fun)
@@ -123,7 +127,11 @@
        [(zodiac:begin-form? v)
 	(andmap (lambda (v) (loop v extra-known-bindings)) (zodiac:begin-form-bodies v))]
        [(zodiac:begin0-form? v)
-	(andmap (lambda (v) (loop v extra-known-bindings)) (zodiac:begin0-form-bodies))]
+	(andmap (lambda (v) (loop v extra-known-bindings)) (zodiac:begin0-form-bodies v))]
+       [(zodiac:with-continuation-mark-form? v)
+	(and (loop (zodiac:with-continuation-mark-form-key v) extra-known-bindings)
+	     (loop (zodiac:with-continuation-mark-form-val v) extra-known-bindings)
+	     (loop (zodiac:with-continuation-mark-form-body v) extra-known-bindings))]
        [(zodiac:set!-form? v) #f] ; because it changes a variable
        [(zodiac:struct-form? v)
 	(loop (zodiac:struct-form-super v) extra-known-bindings)]
@@ -208,6 +216,7 @@
        [(zodiac:set!-form? v) (zodiac:make-special-constant 'void)]
        [(zodiac:begin-form? v) (extract-value (car (last-pair (zodiac:begin-form-bodies v))))]
        [(zodiac:begin0-form? v) (extract-value (car (zodiac:begin0-form-bodies v)))]
+       [(zodiac:with-continuation-mark-form? v) (extract-value (zodiac:with-continuation-mark-form-body v))]
        [(zodiac:let-values-form? v) (extract-value (zodiac:let-values-form-body v))]
        [(zodiac:letrec*-values-form? v) (extract-value (zodiac:letrec*-values-form-body v))]
        [(zodiac:app? v)
@@ -651,7 +660,7 @@
 		 ;;-------------------------------------------------------------------
 		 ;; WITH-CONTINUATION-MARK
 		 ;;
-		 ;; analyze the key, val, and body
+		 ;; analyze the key, val, and body, and the binding in the annotation
 		 ;;
 		 [(zodiac:with-continuation-mark-form? ast)
 		  
@@ -667,6 +676,9 @@
 		   ast
 		   (analyze! (zodiac:with-continuation-mark-form-body ast)))
 
+		  (let ([var (get-annotation ast)])
+		    (set-annotation! var (make-wcm-binding var)))
+		  
 		  ast]
 		
 		 [else (compiler:internal-error

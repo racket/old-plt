@@ -94,6 +94,11 @@ typedef struct {
   int count;
 } _Scheme_Begin0_Rec;
 
+typedef struct {
+  Scheme_Cont_Frame_Data cf;
+  Scheme_Object *val;
+} _Scheme_WCM_Rec;
+
 /* this function is called with the super object and a (null-terminated) list  */
 /* of the field names and returns multiple values -- it is "struct"            */
 /* (struct (a b) (c d)) --> c_struct_imp(stuff(b), 2, "a", "c", "d", NULL);    */

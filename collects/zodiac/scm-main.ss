@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.162 1998/11/06 01:35:11 mflatt Exp $
+; $Id: scm-main.ss,v 1.163 1998/11/20 21:20:11 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -181,21 +181,14 @@
 
   (define parse-expr
     (lambda (expr env attributes vocab source)
-      (let ([top? (get-top-level-status attributes)]
-	    [internal? (get-internal-define-status attributes)])
-	(set-top-level-status attributes #f)
-	(set-internal-define-status attributes #t)
-	(begin0
-	 (if (or (null? expr) (not (null? (cdr expr))))
-	     (expand-expr (structurize-syntax
-			   `(begin ,@expr) source '(-1))
-			  env attributes vocab)
-	     (let ((v (expand-expr (car expr) env attributes vocab)))
-	       (if (internal-definition? v)
-		   (static-error (car expr) "Internal definition not followed by expression")
-		   v)))
-	 (set-top-level-status attributes top?)
-	 (set-internal-define-status attributes internal?)))))
+      (if (or (null? expr) (not (null? (cdr expr))))
+	  (expand-expr (structurize-syntax
+			`(begin ,@expr) source '(-1))
+		       env attributes vocab)
+	  (let ((v (expand-expr (car expr) env attributes vocab)))
+	    (if (internal-definition? v)
+		(static-error (car expr) "Internal definition not followed by expression")
+		v)))))
 
   ; ----------------------------------------------------------------------
 
@@ -226,7 +219,10 @@
 			    (begin0
 			     (cons
 			      (make-argument-list arglist)
-			      (parse-expr body env attributes vocab expr))
+			      (as-nested
+			       attributes
+			       (lambda ()
+				 (parse-expr body env attributes vocab expr))))
 			     (retract-env (map car arg-vars+marks) env))))
 			args bodies)))
 		  (create-case-lambda-form
@@ -1199,8 +1195,10 @@
 				(cons head
 				  (loop (cdr var-lists) tail)))))
 			  expanded-vals
-			  (parse-expr body env
-			    attributes vocab expr)
+			  (as-nested
+			   attributes
+			   (lambda ()
+			     (parse-expr body env attributes vocab expr)))
 			  expr))
 		      (_ (retract-env new-vars env)))
 		    result))))

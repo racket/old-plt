@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.46 1998/11/03 23:55:47 mflatt Exp $
+; $Id: scm-core.ss,v 1.47 1998/11/04 19:52:54 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -258,12 +258,15 @@
   (define (as-nested attributes f)
     (let ([top? (get-top-level-status attributes)]
 	  [internal? (get-internal-define-status attributes)])
-      (set-top-level-status attributes #f)
-      (set-internal-define-status attributes #f)
-      (begin0
-       (f)
-       (set-top-level-status attributes top?)
-       (set-internal-define-status attributes internal?))))
+      (if (or top? internal?)
+	  (begin
+	    (set-top-level-status attributes #f)
+	    (set-internal-define-status attributes #f)
+	    (begin0
+	     (f)
+	     (set-top-level-status attributes top?)
+	     (set-internal-define-status attributes internal?)))
+	  (f))))
 
   ; --------------------------------------------------------------------
 

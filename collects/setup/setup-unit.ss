@@ -13,7 +13,8 @@
 	   (lib "launcher-sig.ss" "launcher")
 
 	   "unpack.ss"
-	   "getinfo.ss")
+	   "getinfo.ss"
+	   "plthome.ss")
 
   (provide setup@)
 
@@ -23,17 +24,6 @@
 	      compiler^
 	      (compiler:option : compiler:option^)
 	      launcher^)
-      
-      (define plthome
-	(or (getenv "PLTHOME")
-	    (let ([dir (collection-path "mzlib")])
-	      (and dir
-		   (let-values ([(base name dir?) (split-path dir)])
-		     (and (string? base)
-			  (let-values ([(base name dir?) (split-path base)])
-			    (and (string? base)
-				 (complete-path? base)
-				 base))))))))
 
       (define setup-fprintf
 	(lambda (p s . args)

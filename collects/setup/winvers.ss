@@ -1,20 +1,8 @@
 ;; This is a wrapper around `winvers-change.ss' to patch binary files with the
 ;; current version number.
 (module winvers mzscheme
-  (require (lib "file.ss"))
-
-  (define plthome
-    (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
-      (or (let ([p (getenv "PLTHOME")])
-            (and p (normal-case-path (expand-path p))))
-          (let ([dir (collection-path "mzlib")])
-            (and dir
-                 (let-values ([(base name dir?) (split-path dir)])
-                   (and (string? base)
-                        (let-values ([(base name dir?) (split-path base)])
-                          (and (string? base)
-                               (complete-path? base)
-                               (normal-case-path (expand-path base)))))))))))
+  (require (lib "file.ss")
+           "plthome.ss")
 
   (define (make-copy)
     (let ([tmpdir (find-system-path 'temp-dir)])

@@ -8,6 +8,7 @@
 	   (lib "compile-sig.ss" "dynext")
 	   (lib "link-sig.ss" "dynext")
 	   (lib "embed.ss" "compiler")
+	   (lib "plthome.ss" "setup")
 
 	   "launcher-sig.ss")
 
@@ -18,19 +19,6 @@
       (import [c : dynext:compile^]
 	      [l : dynext:link^])
 
-      (define plthome
-	(with-handlers ([(lambda (x) #t) (lambda (x) #f)])
-	  (or (let ([p (getenv "PLTHOME")])
-		(and p (expand-path p)))
-	      (let ([dir (collection-path "mzlib")])
-		(and dir
-		     (let-values ([(base name dir?) (split-path dir)])
-		       (and (string? base)
-			    (let-values ([(base name dir?) (split-path base)])
-			      (and (string? base)
-				   (complete-path? base)
-				   (expand-path base))))))))))
-      
       (define current-launcher-variant
 	(make-parameter 'normal
 			(lambda (v)

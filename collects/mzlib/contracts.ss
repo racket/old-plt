@@ -67,7 +67,7 @@
                        [else "<<unknown>>"])))
                  
                  (with-syntax ([neg-blame-str (build-src-loc-string/unk stx)])
-                   (syntax-case stx ()
+                   (syntax-case stx (set!)
                      [(set! _ arg) 
                       (raise-syntax-error 'define/contract
                                           "cannot set! a define/contract variable" 

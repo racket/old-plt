@@ -114,6 +114,8 @@ exit 1
 
 (require (lib "check-text.ss" "version"))
 
+(define re:plthome #rx"^(.*)PLTHOME=(.*)$")
+
 (for-each
  (lambda (f)
     (let ([p (build-path "bin" f)])
@@ -124,7 +126,7 @@ exit 1
        [else
 	(when (file-exists? p)
 	  (set! didnothing "")
-	  (printf " updating ~a~n" p)
+	  (printf " checking ~a~n" p)
 	  (let ([lines (with-input-from-file p
 			 (lambda ()
 			   (let loop ()
@@ -132,17 +134,19 @@ exit 1
 			       (if (eof-object? l)
 				   null
 				   (cons l (loop)))))))])
-	    (with-output-to-file p
-	      (lambda ()
-		(for-each
-		 (lambda (l)
-		   (let ([m (regexp-match "^(.*)PLTHOME=(.*)$" l)])
-		     (if m
-			 (printf "~aPLTHOME=\"~a\"~n"
-				 (cadr m) plthome)
-			 (printf "~a~n" l))))
-		 lines))
-	      'truncate)))])))
+	    (when (ormap (lambda (i) (regexp-match re:plthome i)) lines)
+	      (printf " updating ~a~n" p)
+	      (with-output-to-file p
+		(lambda ()
+		  (for-each
+		   (lambda (l)
+		     (let ([m (regexp-match re:plthome l)])
+		       (if m
+			   (printf "~aPLTHOME=\"~a\"~n"
+				   (cadr m) plthome)
+			   (printf "~a~n" l))))
+		   lines))
+		'truncate))))])))
  (directory-list "bin"))
 
 (define (get-y-n)

@@ -27,7 +27,8 @@
 
     (define empty-frame%
       (class mred:container:frame% args
-	(rename [super-pre-on-char pre-on-char])
+	(rename [super-pre-on-char pre-on-char]
+		[super-pre-on-event pre-on-event])
 	(inherit show)
 	(public
 	  [panel% (class-asi mred:container:vertical-panel%
@@ -39,13 +40,15 @@
 	(public
 	  [keymap (make-object wx:keymap%)]
 	  [panel (make-object panel% this)])
-	(private
-	  [pre-on
+	(public
+	  [pre-on-char
 	   (lambda (receiver event)
 	     (or (send keymap handle-key-event this event)
-		 (super-pre-on-char receiver event)))])
-	(public
-	  [pre-on-char pre-on])))
+		 (super-pre-on-char receiver event)))]
+	  [pre-on-eventt
+	   (lambda (receiver event)
+	     (or (and #f (send keymap handle-key-event this event))
+		 (super-pre-on-event receiver event)))])))
 
     (define frame-width 600)
     (define frame-height 600)

@@ -17,7 +17,7 @@
 				 ("#|" . "|#")
 				 ("|" . "|")))
     
-    (define scheme-comments '(";"))
+    (define scheme-comments '(";" "#!"))
     
     (define scheme-forward-match
       (opt-lambda (edit start end [cache #f])

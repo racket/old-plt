@@ -51,6 +51,12 @@
       (lambda (b)
 	(mred:debug:printf 'autosave "registering ~a" b)
 	(set! objects
-	      (cons (make-weak-box b) objects))))))
+	      (let loop ([objects objects])
+		(cond
+		  [(null? objects) (list (make-weak-box b))]
+		  [else (let ([weak-box (car objects)])
+			  (if (weak-box-value weak-box)
+			      (cons weak-box (loop (cdr objects)))
+			      (loop (cdr objects))))])))))))
 
 

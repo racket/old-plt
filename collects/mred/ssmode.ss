@@ -366,49 +366,52 @@
 	    [balance-parens
 	     (let-struct string/pos (string pos)
 	       (lambda (edit key)
-		 (let* ([get-text (ivar edit get-text)]
-			[code (send key get-key-code)]
-			[char (integer->char code)]
-			[here (send edit get-start-position)]
-			[limit (get-limit edit here)]
-			[check-one
-			 (lambda (p)
-			   (lambda (s)
-			     (let ([left (car s)]
-				   [right (cdr s)])
-			       (if (string=? left (get-text (- p (string-length left)) p))
-				   right
-				   #f))))]
-			[paren-match? (mred:preferences:get-preference 'mred:paren-match)]
-			[fixup-parens? (mred:preferences:get-preference 'mred:fixup-parens)]
-			[get-right-paren (lambda (p) 
-					   (ormap (check-one p)
-						  mred:scheme-paren:scheme-paren-pairs))])
+		 (letrec* ([get-text (ivar edit get-text)]
+			   [code (send key get-key-code)]
+			   [char (integer->char code)]
+			   [here (send edit get-start-position)]
+			   [limit (get-limit edit here)]
+			   [check-one
+			    (lambda (p)
+			      (lambda (s)
+				(let ([left (car s)]
+				      [right (cdr s)])
+				  (if (string=? left (get-text (- p (string-length left)) p))
+				      right
+				      #f))))]
+			   [paren-match? (mred:preferences:get-preference 'mred:paren-match)]
+			   [fixup-parens? (mred:preferences:get-preference 'mred:fixup-parens)]
+			   [find-right-paren (lambda (p) 
+					       (cond
+						 [(zero? p) #t]
+						 [(ormap (check-one p)
+							 mred:scheme-paren:scheme-paren-pairs)
+						  =>
+						  (lambda (x) x)]
+						 [else (find-right-paren (- p 1))]))])
 		   (cond
 		    [(and (not (= 0 here))
 			  (char=? (string-ref (get-text (- here 1) here) 0) #\\))
 		     (send edit insert char)]
 		    [(or paren-match? fixup-parens?)
-		     (let* ([end-pos (mred:paren:backward-match
+		     (let* ([end-pos (mred:scheme-paren:scheme-backward-containing-sexp 
 				      edit here limit
-				      mred:scheme-paren:scheme-paren-pairs
-				      mred:scheme-paren:scheme-quote-pairs
-				      mred:scheme-paren:scheme-comments
-				      #t
 				      backward-cache)])
 		       (cond
 			[end-pos
-			 (let ([right-paren-string (get-right-paren end-pos)])
-			   (if right-paren-string
-			       (begin
-				 (send edit insert (if fixup-parens?
-						       right-paren-string
-						       (integer->char code)))
-				 (when paren-match?
-				   (send edit flash-on
-					 (- end-pos (string-length right-paren-string))
-					 end-pos)))
-			       (send edit insert char)))]
+			 (let ([right-paren-string (find-right-paren end-pos)])
+			   (cond
+			     [(equal? right-paren-string #t)
+			      (send edit insert char)]
+			     [right-paren-string
+			      (send edit insert (if fixup-parens?
+						    right-paren-string
+						    char))
+			      (when paren-match?
+				(send edit flash-on
+				      (- end-pos (string-length right-paren-string))
+				      end-pos))]
+			     [else (send edit insert char)]))]
 			[else (send edit insert char)]))]
 		    [else (send edit insert char)])
 		   #t)))]
@@ -532,6 +535,15 @@
 		      [(= para 0) (do-indent 0)]
 		      [(or (not contains) (= contains -1))
 		       (do-indent 0)]
+		      [(not last)
+		       (let loop ([pos contains])
+			 (let ([char (string (send edit get-character pos))])
+			   (cond
+			     [(< pos limit) (do-indent 0)]
+			     [(ormap (lambda (x) (string=? (car x) char))
+				     mred:scheme-paren:scheme-paren-pairs)
+			      (do-indent (+ (visual-offset edit pos) 1))]
+			     [else (loop (- pos 1))])))]
 		      [(= contains last)
 		       (do-indent (+ (visual-offset edit contains)
 				     (procedure-indent)))]
@@ -705,13 +717,25 @@
 		 #t))]
 	    [find-up-sexp
 	     (lambda (edit start-pos)
-	       (let ([exp-pos
-		      (mred:scheme-paren:scheme-backward-containing-sexp 
-		       edit start-pos
-		       (get-limit edit start-pos) 
-		       backward-cache)])
+	       (let* ([exp-pos
+		       (mred:scheme-paren:scheme-backward-containing-sexp 
+			edit start-pos
+			(get-limit edit start-pos) 
+			backward-cache)]
+		      [paren-pos ;; find the closest open paren from this pair, behind exp-pos
+		       (lambda (paren-pair)
+			 (send edit find-string
+			       (car paren-pair)
+			       -1
+			       exp-pos))])
+
 		 (if (and exp-pos (> exp-pos 0))
-		     (sub1 exp-pos)
+		     (let ([pos (apply max
+				       (map paren-pos
+					    mred:scheme-paren:scheme-paren-pairs))])
+		       (if (= pos -1)  ;; all finds failed
+			   #f
+			   (- pos 1))) ;; subtract one to move outside the paren
 		     #f)))]
 	    [up-sexp
 	     (lambda (edit start-pos)

@@ -22,10 +22,10 @@
 	  [mzlib:string : mzlib:string^]
 	  [mzlib:pretty-print : mzlib:pretty-print^])
   
-  (mred:debug:printf 'invoke "mred:console@")
-  
   (define (printf string . args)
     (apply fprintf mred:constants:original-output-port string args))
+  
+  (mred:debug:printf 'invoke "mred:console@")
 
   (define-struct sexp (left right prompt))
   
@@ -322,6 +322,7 @@
 		 clear-undos insert delete
 		 begin-edit-sequence
 		 end-edit-sequence
+		 run-after-edit-sequence
 		 ;styles-fixed?
 		 set-styles-fixed
 		 change-style split-snip
@@ -645,6 +646,7 @@
 	  [enable-autoprompt
 	   (opt-lambda ([v #t])
 	     (set! autoprompting? v))]
+	  [saved-newline? #f]
 	  [this-out-write
 	   (lambda (s)
 	     (mzlib:function:dynamic-disable-break
@@ -652,12 +654,27 @@
 		(parameterize ([current-output-port orig-stdout]
 			       [current-error-port orig-stderr])
 		  (init-transparent-io #f)
-		  (generic-write
-		   transparent-edit
-		   s 
-		   (lambda (start end)
-		     (send transparent-edit
-			   change-style output-delta start end)))))))]
+		  (let* ([old-saved-newline? saved-newline?]
+			 [len (string-length s)]
+			 [s1 (if (and (> len 0)
+				      (char=? (string-ref s (- len 1)) #\newline))
+				 (begin 
+				   (set! saved-newline? #t)
+				   (substring s 0 (- len 1)))
+				 (begin
+				   (set! saved-newline? #f)
+				   s))]
+			 [gw
+			  (lambda (s)
+			    (generic-write
+			     transparent-edit
+			     s
+			     (lambda (start end)
+			       (send transparent-edit
+				     change-style output-delta start end))))])
+		    (gw s1)
+		    (when old-saved-newline?
+		      (gw (string #\newline))))))))]
 	  [this-err-write
 	   (lambda (s)
 	     (mzlib:function:dynamic-disable-break
@@ -679,6 +696,7 @@
 	  [cleanup-transparent-io
 	   (lambda ()
 	     (when transparent-edit
+	       (set! saved-newline? #f) 
 	       (send transparent-edit shutdown)
 	       (set-position (last-position))
 	       (set-caret-owner null)
@@ -702,15 +720,22 @@
 	       (send transparent-edit enable-autoprompt #f)
 	       (dynamic-wind
 		(lambda () (begin-edit-sequence #f))
-		(lambda ()		  
+		(lambda ()
+
+		  ;; ensure that there is a newline before the snip is inserted
+		  (when (zero? (bitwise-and wx:const-snip-hard-newline
+					      (send (find-snip (last-position) wx:const-snip-before)
+						    get-flags)))
+		    (insert #\newline (last-position) (last-position)))
+		      
 		  (when starting-at-prompt-mode?
-		    (set! prompt-mode? #f)
-		    (insert (string #\newline) (last-position) (last-position) #f))
+		    (set! prompt-mode? #f))
+
 		  (send transparent-edit set-auto-set-wrap #t)
 		  (let ([snip (make-object wx:media-snip% transparent-edit)])
 		    (set! transparent-snip snip)
-		    (insert snip (last-position) (last-position) #f)
-		    (insert (string #\newline) (last-position) (last-position) #f)
+		    (insert snip (last-position) (last-position))
+		    (insert (string #\newline) (last-position) (last-position))
 		    (for-each (lambda (c) (send c add-wide-snip snip))
 			      canvases))
 		  (when grab-focus?
@@ -988,7 +1013,7 @@
 	       (flush-console-output)
 	       (unless (= start-selection end-selection)
 		 (set-position start-selection end-selection) 
-		 (scroll-to-position start-selection (last-position) 1))
+		 (scroll-to-position start-selection (last-position) 1 1))
 	       (end-edit-sequence)))])
 	
 	(public
@@ -1017,7 +1042,10 @@
 	  [after-set-size-constraint
 	   (lambda ()
 	     (super-after-set-size-constraint)
-	     (reset-console-locations))]
+	     (run-after-edit-sequence
+	      (lambda ()
+		(reset-console-locations))
+	      'reset-console-locations))]
 	  [reset-console
 	   (let* ([delta (make-object wx:style-delta%)]
 		  [color-add (send delta get-foreground-add)]
@@ -1032,7 +1060,8 @@
 	       (if (< (wx:display-depth) 8)
 		   (begin (reset-console-locations)
 			  (send (get-canvas) force-redraw))
-		   (when reset-console-end-position
+		   (when (and reset-console-end-position
+			      reset-console-start-position)
 		     (change-style delta reset-console-start-position 
 				   reset-console-end-position)))
 	       (set-resetting #f)))]
@@ -1173,6 +1202,11 @@
 	    (send mult set 0 0 0)
 	    (send add set 0 150 0)))
 	(private [shutdown? #f])
+
+	(public [reset-console-end-position #f]
+		[reset-console-start-position #f])
+
+
 	(public
 	  [potential-sexps-protect (make-semaphore 1)]
 	  [potential-sexps null]

@@ -245,7 +245,7 @@
 				   ;; Start comment to EOL
 				   (let ([start-pos pos])
 				     (let mloop ([pos (offset pos (string-length match))])
-				       (let ([c (get-char pos)])
+				       (let ([c (send edit get-character pos)])
 					 (if (or (char=? c #\newline)
 						 (and (past-end? pos)))
 					     ;; Skipped comment, now try again
@@ -286,21 +286,36 @@
     (define prev-quote-pairs null)
     (define prev-rev-quote-pairs null)
 
+    (define (backwards pairs) (map (lambda (p) (cons (cdr p) (car p))) pairs))
     (define backward-match
       (opt-lambda (edit pos end-pos 
 			paren-pairs quote-pairs eol-comment-list
 			[contains? #f]
 			[paren-cache #f])
-	 (let loop ([old #f][pos pos])
-	   (let ([p (do-match #f (if contains? 'bad-match #f)
-			      edit pos end-pos 
-			      (map (lambda (p) (cons (cdr p) (car p))) paren-pairs)
-			      (map (lambda (p) (cons (cdr p) (car p))) quote-pairs)
-			      eol-comment-list quote-pairs paren-cache)])
-	     (if contains?
-		 (cond
-		  [(eq? p 'bad-match) #f]
-		  [(not p) old]
-		  [(and old (= p old)) p] ; what!?
-		  [else (loop p p)])
-		 p))))))
+	(let* ([backward-paren-pairs (backwards paren-pairs)]
+	       [backward-quote-pairs (backwards quote-pairs)]
+	       [match (lambda (pos ret-val)
+			(do-match #f ret-val
+				  edit pos end-pos
+				  backward-paren-pairs backward-quote-pairs
+				  eol-comment-list quote-pairs
+				  paren-cache))])
+	  (if contains?
+	      (let loop ([last-last-match #f]
+			 [last-match pos])
+		(let ([next-match (match last-match 'bad-match)])
+		  (cond
+
+		    ;; this case happens when a match is near end-pos. 
+		    ;; In that case, we would get an infinite loop, all
+		    ;; of matches at the same place, without this condition.
+		    ;; (unfortunately, I don't know why do-match is returning 
+		    ;;  its input when it hits end-pos....)
+		    [(and last-last-match 
+			  (= last-match last-last-match))
+		     last-match]
+
+		    [(eq? next-match 'bad-match) #f]
+		    [(not next-match) last-match]
+		    [else (loop last-match next-match)])))
+	      (match pos #f))))))

@@ -171,50 +171,68 @@
 	    [update-snip-size
 	     (lambda (width?)
 	       (lambda (s)
-	       (let* ([width (box 0)]
-		      [height (box 0)]
-		      [leftm (box 0)]
-		      [rightm (box 0)]
-		      [topm (box 0)]
-		      [bottomm (box 0)]
-		      [left-edge-box (box 0)]
-		      [top-edge-box (box 0)]
-		      [snip-media (send s get-this-media)]
-		      [edit (get-media)])
-		 (unless (null? edit)
-		   (send edit
-			 run-after-edit-sequence
-			 (lambda ()
-			   (let ([admin (send edit get-admin)])
-			     (send admin get-view null null width height)
-			     (send s get-margin leftm topm rightm bottomm)
-			     (send edit get-snip-position-and-location
-				   s null left-edge-box top-edge-box)
-			     (if width?
-				 (let ([snip-width (- (unbox width)
-						      (unbox left-edge-box)
-						      (unbox leftm)
-						      (unbox rightm)
-						      
-						      ;; this two is the space that 
-						      ;; the caret needs at the right of
-						      ;; a buffer.
-						      2)])
-				   (send* s 
-				     (set-min-width snip-width)
-				     (set-max-width snip-width))
-				   (unless (null? snip-media)
-				     (send snip-media set-max-width
-					   (if autowrap-snips?
-					       snip-width
-					       0))))
-				 (let ([snip-height (- (unbox height)
-						       (unbox top-edge-box)
-						       (unbox topm)
-						       (unbox bottomm))])
-				   (send* s 
-				     (set-min-height snip-height)
-				     (set-max-height snip-height)))))))))))])
+		 (let* ([width (box 0)]
+			[height (box 0)]
+			[leftm (box 0)]
+			[rightm (box 0)]
+			[topm (box 0)]
+			[bottomm (box 0)]
+			[left-edge-box (box 0)]
+			[top-edge-box (box 0)]
+			[snip-media (send s get-this-media)]
+			[edit (get-media)])
+		   (unless (null? edit)
+		     (send edit
+			   run-after-edit-sequence
+			   (lambda ()
+			     (let ([admin (send edit get-admin)])
+			       (send admin get-view null null width height)
+			       (send s get-margin leftm topm rightm bottomm)
+
+
+			       ;; when the width is to be maximized and there is a
+			       ;; newline just behind the snip, we know that the left
+			       ;; edge is zero. Special case for efficiency in the 
+			       ;; console printer
+			       (let ([fallback
+				      (lambda ()
+					(send edit get-snip-position-and-location
+					      s null left-edge-box top-edge-box))])
+				 (cond
+				   [(not width?) (fallback)]
+				   [(let ([prev (send s previous)])
+				      (and (not (null? prev))
+					   (not (zero? (bitwise-and wx:const-snip-hard-newline
+								    (send prev get-flags))))))
+				    (set-box! left-edge-box 0)]
+				   [else (fallback)]))
+
+
+			       (if width?
+				   (let ([snip-width (- (unbox width)
+							(unbox left-edge-box)
+							(unbox leftm)
+							(unbox rightm)
+							
+							;; this two is the space that 
+							;; the caret needs at the right of
+							;; a buffer.
+							2)])
+				     (send* s 
+				       (set-min-width snip-width)
+				       (set-max-width snip-width))
+				     (unless (null? snip-media)
+				       (send snip-media set-max-width
+					     (if autowrap-snips?
+						 snip-width
+						 0))))
+				   (let ([snip-height (- (unbox height)
+							 (unbox top-edge-box)
+							 (unbox topm)
+							 (unbox bottomm))])
+				     (send* s 
+				       (set-min-height snip-height)
+				       (set-max-height snip-height)))))))))))])
 	  (public
 	    [widen-snips
 	     (lambda (x)

@@ -61,10 +61,10 @@
 ;;       | (vector lvp_1 ... lvp_n)        vector of n elements
 ;;       | (box pat)                       box
 ;;       | (struct struct-name (pat_1 ... pat_n)) a structure
-;;       | (regex exp)                     if regular expression exp matches
-;;       | (regex exp pat)                 if result of regexp-match matches pat
-;;       | (pregex exp)                    if pregexp.ss regular expression exp matches
-;;       | (pregex exp pat)                if result of pregexp-match matches pat
+;;       | (regexp exp)                     if regular expression exp matches
+;;       | (regexp exp pat)                 if result of regexp-match matches pat
+;;       | (pregexp exp)                    if pregexp.ss regular expression exp matches
+;;       | (pregexp exp pat)                if result of pregexp-match matches pat
 ;;       | (list-no-order pat ...)         matches a list with no regard for 
 ;;                                         the order of the
 ;;                                         items in the list
@@ -219,34 +219,41 @@
                 #`(list #,(add1 node-count)
                         #,rt)))))))
 
-    (define match/proc 
-      (lambda (stx)
-        (syntax-case stx (=>)
-          ((_ exp clause ...)
+
+
+    (define (match-func stx stx-orig)
+      (syntax-case stx (=>)
+        ((_ exp clause ...)
+         (quasisyntax/loc 
+          stx 
+          (let ((x exp))
+            #,(gen-match (syntax x)
+                         '()
+                         (syntax (clause ...))
+                         stx-orig))))))
+    
+    (define match-lambda-func
+      (lambda (stx stx-orig)
+        (syntax-case stx ()
+          [(k clause ...)
+           (quasisyntax/loc 
+             stx 
+             (lambda (exp) #,(match-func
+                         (syntax/loc stx (match exp clause ...))
+                         stx-orig)))])))
+    
+    (define match-lambda*-func
+      (lambda (stx stx-orig)
+        (syntax-case stx ()
+          [(k clause ...)
            (quasisyntax/loc 
             stx 
-            (let ((x exp))
-              #,(gen-match (syntax x)
-                           '()
-                           (syntax (clause ...))
-                           stx)))))))
-
-    (define match-lambda/proc 
-      (lambda (stx)
-        (syntax-case stx ()
-          [(k clause ...)
-           (syntax/loc 
-             stx 
-             (lambda (exp) (match exp clause ...)))])))
+            (lambda exp #,(match-func
+                      (syntax/loc stx (match exp clause ...))
+                      stx-orig)))])))
     
-    (define match-lambda*/proc 
-      (lambda (stx)
-        (syntax-case stx ()
-          [(k clause ...)
-           (syntax/loc stx (lambda exp (match exp clause ...)))])))
-
-    (define match-let/proc
-      (lambda (stx)
+    (define match-let-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(_ name () body1 body ...)
            (syntax/loc stx (let name () body1 body ...))]
@@ -258,36 +265,45 @@
                  (syntax/loc 
                    stx 
                    (let name ([pat1 exp1] [pat exp] ...) body1 body ...))
-                 (syntax/loc 
+                 (quasisyntax/loc 
                    stx
                    (letrec ([name
-                             (match-lambda* ((list pat1 pat ...) 
-                                             body1 body ...))])
+                             #,(match-lambda*-func (syntax/loc stx (match-lambda* ((list pat1 pat ...) body1 body ...)))
+                                              stx-orig)
+                             ])
                      (name exp1 exp ...)))))]
           [(_ () body1 body ...)
            (syntax/loc stx (begin body1 body...))]
           [(_ ([pat1 exp1] [pat exp]...) body1 body ...)
-           (syntax/loc 
+           (quasisyntax/loc 
              stx 
-             ((match-lambda* ((list pat1 pat ...) body1 body ...)) 
+             ( #,(match-lambda*-func (syntax/loc stx (match-lambda* ((list pat1 pat ...) body1 body ...)))
+                                stx-orig)
               exp1 exp ...))])))
-    
-    (define match-let*/proc
-      (lambda (stx)
+
+    (define match-let*-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           ((_ () body body1 ...)
            (syntax/loc stx (let* () body body1 ...)))
           ((_ ([pat exp] rest ...) body body1 ...)
            (if (pattern-var? (syntax-object->datum (syntax pat)))
-               (syntax/loc 
+               (quasisyntax/loc 
                  stx 
-                 (let ([pat exp]) (match-let* (rest ...) body body1 ...)))
-               (syntax/loc 
-                 stx 
-                 (match exp [pat (match-let* (rest ...) body body1 ...)])))))))
-    
-    (define match-letrec/proc
-      (lambda (stx)
+                 (let ([pat exp])
+                   #,(match-let*-func (syntax (match-let* (rest ...) body body1 ...)) stx-orig)
+                   )
+                 )
+               (match-func
+                (quasisyntax/loc
+                 stx
+                 (match exp [pat #,(match-let*-func
+                                    (syntax (match-let* (rest ...) body body1 ...))
+                                    stx-orig)]))
+                stx-orig))))))
+
+    (define match-letrec-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           ((_ () body body1 ...)
            (syntax/loc stx (let () body body1 ...)))
@@ -301,7 +317,7 @@
                    (gen-match (syntax the-exp);(syntax (list exp ...))
                               '()
                               (syntax (((list pat ...) never-used)))
-                              stx
+                              stx-orig
                               (lambda (sf bv)
                                 (set! **match-bound-vars** bv)
                                 (quasisyntax/loc 
@@ -320,9 +336,9 @@
                            (reverse **match-bound-vars**))
                        (the-exp (list exp ...)))
                 #,compiled-match)))))))
-    
-    (define match-define/proc
-      (lambda (stx)
+
+    (define match-define-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(_ pat exp)
            (identifier? (syntax pat))
@@ -333,7 +349,7 @@
                    (gen-match (syntax the-exp)
                               '()
                               (syntax/loc (syntax pat) ((pat never-used)))
-                              stx
+                              stx-orig
                               (lambda (sf bv)
                                 (set! **match-bound-vars** bv)
                                 (quasisyntax/loc 
@@ -352,6 +368,33 @@
                                          (reverse **match-bound-vars**))
                                      (let ((the-exp exp))
                                        #,compiled-match))))])))
+    (define match/proc 
+      (lambda (stx)
+        (match-func stx stx)))
+    
+    (define match-lambda/proc
+      (lambda (stx)
+        (match-lambda-func stx stx)))
+
+    (define match-lambda*/proc
+      (lambda (stx)
+        (match-lambda*-func stx stx))) 
+    
+    (define match-let/proc
+      (lambda (stx)
+        (match-let-func stx stx)))
+    
+    (define match-let*/proc
+      (lambda (stx)
+        (match-let*-func stx stx)))
+
+    (define match-letrec/proc
+      (lambda (stx)
+        (match-letrec-func stx stx)))
+
+    (define match-define/proc
+      (lambda (stx)
+        (match-define-func stx stx)))
 
     )
   

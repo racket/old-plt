@@ -37,7 +37,7 @@
    p
    (_ list quote quasiquote vector box ? app and or not struct set! var
       list-rest get! ... ___ unquote unquote-splicing
-      list-no-order hash-table regex pregex) stx-equal?
+      list-no-order hash-table regexp pregexp) stx-equal?
       (_ '()) ;(ks sf bv let-bound))
       (pt
        (and (identifier? (syntax pt))
@@ -168,14 +168,14 @@
             "a predicate pattern must have a predicate following the ?"
             "syntax error in predicate pattern")))
 
-      ((regex reg-exp)
+      ((regexp reg-exp)
        (render-test-list (quasisyntax/loc 
                           p
                           (and (? string?)
                                (? (lambda (x) (regexp-match reg-exp x)))))
                          ae 
                          stx))
-      ((pregex reg-exp)
+      ((pregexp reg-exp)
        (render-test-list (quasisyntax/loc
                           p
                           (and (? string?)
@@ -184,7 +184,7 @@
                          ae 
                          stx))
 
-      ((regex reg-exp pat)
+      ((regexp reg-exp pat)
        (render-test-list (quasisyntax/loc
                           p
                           (and (? string?)
@@ -192,7 +192,7 @@
                          ae 
                          stx))
 
-      ((pregex reg-exp pat)
+      ((pregexp reg-exp pat)
        (render-test-list (quasisyntax/loc
                           p
                           (and (? string?)

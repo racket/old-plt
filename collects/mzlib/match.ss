@@ -163,161 +163,162 @@
                       match-letrec
                       match-define
                       match-test
-                      m:match-test
-                      m:match
-                      m:match-letrec
-                      m:match-define
-                      )
+                      m:match-test)
 
     (include (build-path "private" "plt-match" "match-inc.scm"))
 
     (define node-count 0)
 
-    (define m:match/proc
-      (lambda (stx)
-        (syntax-case stx (=>)
-          ((_ exp clause ...)
-           (quasisyntax/loc
-            stx
-            (let ((x exp)) #,(gen-match (syntax x)
-                                        '()
-                                        (syntax (clause ...))
-                                        stx)))))))
-
-    (define match-lambda/proc
-      (lambda (stx)
+    (define (match-func-plt stx stx-orig)
+      (syntax-case stx (=>)
+        ((_ exp clause ...)
+         (quasisyntax/loc 
+          stx-orig 
+          (let ((x exp))
+            #,(gen-match (syntax x)
+                         '()
+                         (syntax (clause ...))
+                         stx-orig))))))
+    
+    (define match-lambda-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(k clause ...)
-           (syntax/loc
-             stx
-             (lambda (exp) (match exp clause ...)))])))
-
-    (define match-lambda*/proc
-      (lambda (stx)
+           (quasisyntax/loc 
+             stx-orig 
+             (lambda (exp) #,(match-func
+                         (syntax/loc stx (match exp clause ...))
+                         stx-orig)))])))
+    
+    (define match-lambda*-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(k clause ...)
-           (syntax/loc stx (lambda exp (match exp clause ...)))])))
-
-    (define match-let/proc
-      (lambda (stx)
+           (quasisyntax/loc 
+            stx-orig 
+            (lambda exp #,(match-func
+                      (syntax/loc stx (match exp clause ...))
+                      stx-orig)))])))
+    
+    (define match-let-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(_ name () body1 body ...)
-           (syntax/loc stx (let name () body1 body ...))]
+           (syntax/loc stx-orig (let name () body1 body ...))]
           [(_ name ([pat1 exp1] [pat exp]...) body1 body ...)
            (identifier? (syntax name))
            (let ((pat-list (syntax-object->datum (syntax (pat1 pat ...))))
                  (real-name (syntax-object->datum (syntax name))))
              (if (andmap pattern-var? pat-list)
-                 (syntax/loc
-                   stx
+                 (syntax/loc 
+                   stx-orig 
                    (let name ([pat1 exp1] [pat exp] ...) body1 body ...))
-                 (syntax/loc
-                   stx
+                 (quasisyntax/loc 
+                   stx-orig
                    (letrec ([name
-                             (match-lambda* ((pat1 pat ...)
-                                             body1 body ...))])
+                             #,(match-lambda*-func (syntax/loc stx-orig (match-lambda* ((pat1 pat ...) body1 body ...)))
+                                              stx-orig)
+                             ])
                      (name exp1 exp ...)))))]
           [(_ () body1 body ...)
-           (syntax/loc stx (begin body1 body...))]
+           (syntax/loc stx-orig (begin body1 body...))]
           [(_ ([pat1 exp1] [pat exp]...) body1 body ...)
-           (syntax/loc
-             stx
-             ((match-lambda* ((pat1 pat ...) body1 body ...))
+           (quasisyntax/loc 
+             stx-orig 
+             ( #,(match-lambda*-func (syntax/loc stx-orig (match-lambda* ((pat1 pat ...) body1 body ...)))
+                                stx-orig)
               exp1 exp ...))])))
 
-    (define match-let*/proc
-      (lambda (stx)
+    (define match-let*-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           ((_ () body body1 ...)
-           (syntax/loc stx (let* () body body1 ...)))
+           (syntax/loc stx-orig (let* () body body1 ...)))
           ((_ ([pat exp] rest ...) body body1 ...)
            (if (pattern-var? (syntax-object->datum (syntax pat)))
-               (syntax/loc
-                 stx
-                 (let ([pat exp]) (match-let* (rest ...) body body1 ...)))
-               (syntax/loc
-                 stx
-                 (match exp [pat (match-let* (rest ...) body body1 ...)])))))))
+               (quasisyntax/loc 
+                 stx-orig
+                 (let ([pat exp])
+                   #,(match-let*-func (syntax/loc stx-orig (match-let* (rest ...) body body1 ...)) stx-orig)
+                   )
+                 )
+               (match-func
+                (quasisyntax/loc
+                 stx-orig
+                 (match exp [pat #,(match-let*-func
+                                    (syntax/loc stx-orig (match-let* (rest ...) body body1 ...))
+                                    stx-orig)]))
+                stx-orig))))))
 
-    (define m:match-letrec/proc
-      (lambda (stx)
+    (define match-letrec-func-plt
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           ((_ () body body1 ...)
            (syntax/loc stx (let () body body1 ...)))
           ((_ ([pat exp] ...) body body1 ...)
            (andmap pattern-var?
-                   (syntax-object->datum (syntax (pat ...))))
+                   (syntax-object->datum (syntax (pat ...)))) 
            (syntax/loc stx (letrec ([pat exp] ...) body body1 ...)))
           ((_ ([pat exp] ...) body body1 ...)
            (let* ((**match-bound-vars** '())
-                  (compiled-match
+                  (compiled-match 
                    (gen-match (syntax the-exp);(syntax (list exp ...))
                               '()
                               (syntax (((list pat ...) never-used)))
-                              stx
+                              stx-orig
                               (lambda (sf bv)
                                 (set! **match-bound-vars** bv)
-                                (quasisyntax/loc
-                                 stx
+                                (quasisyntax/loc 
+                                 stx 
                                  (begin
                                    #,@(map (lambda (x)
-                                             (quasisyntax/loc
-                                              stx
+                                             (quasisyntax/loc 
+                                              stx 
                                               (set! #,(car x) #,(cdr x))))
                                            (reverse bv))
                                    body body1 ...))))))
-             (quasisyntax/loc
-              stx
+             (quasisyntax/loc 
+              stx-orig 
               (letrec (#,@(map
                            (lambda (x) (quasisyntax/loc stx (#,(car x) #f)))
                            (reverse **match-bound-vars**))
                        (the-exp (list exp ...)))
                 #,compiled-match)))))))
 
-    (define m:match-define/proc
-      (lambda (stx)
+    (define match-define-func-plt
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(_ pat exp)
            (identifier? (syntax pat))
-           (syntax/loc stx (begin (define pat exp)))]
+           (syntax/loc stx-orig (begin (define pat exp)))]
           [(_ pat exp)
            (let* ((**match-bound-vars** '())
                   (compiled-match
                    (gen-match (syntax the-exp)
                               '()
                               (syntax/loc (syntax pat) ((pat never-used)))
-                              stx
+                              stx-orig
                               (lambda (sf bv)
                                 (set! **match-bound-vars** bv)
-                                (quasisyntax/loc
-                                 stx
+                                (quasisyntax/loc 
+                                 stx-orig 
                                  (begin
                                    #,@(map (lambda (x)
-                                             (quasisyntax/loc
-                                              stx
+                                             (quasisyntax/loc 
+                                              stx-orig
                                               (set! #,(car x) #,(cdr x))))
                                            (reverse bv))))))))
-             (quasisyntax/loc stx
+             (quasisyntax/loc stx-orig
                               (begin #,@(map
-                                         (lambda (x) (quasisyntax/loc
-                                                      stx
+                                         (lambda (x) (quasisyntax/loc 
+                                                      stx 
                                                       (define #,(car x) #f)))
                                          (reverse **match-bound-vars**))
                                      (let ((the-exp exp))
                                        #,compiled-match))))])))
-
+    
     ;; these are the translators
-    (define match/proc
-      (lambda (stx)
-        (syntax-case stx ()
-          ((_ exp clause ...)
-           (quasisyntax/loc 
-            stx 
-            (m:match exp 
-                     #,@(map handle-clause 
-                             (syntax-e (syntax (clause ...))))))))))
-
-(define m:match-test/proc 
+    (define m:match-test/proc 
       (lambda (stx)
         (syntax-case stx (=>)
           ((_ clause ...)
@@ -336,18 +337,58 @@
                         #,node-count
                         #,rt)))))))
 
- (define match-test/proc
+    (define match-test/proc
       (lambda (stx)
         (syntax-case stx ()
           ((_ clause ...)
            (quasisyntax/loc 
             stx 
             (m:match-test  
-                     #,@(map handle-clause 
-                             (syntax-e (syntax (clause ...))))))))))
+             #,@(map handle-clause 
+                     (syntax-e (syntax (clause ...))))))))))
+
+    (define match/proc 
+      (lambda (stx)
+        (match-func stx stx)))
+    
+    (define match-lambda/proc
+      (lambda (stx)
+        (match-lambda-func stx stx)))
+
+    (define match-lambda*/proc
+      (lambda (stx)
+        (match-lambda*-func stx stx))) 
+    
+    (define match-let/proc
+      (lambda (stx)
+        (match-let-func stx stx)))
+    
+    (define match-let*/proc
+      (lambda (stx)
+        (match-let*-func stx stx)))
 
     (define match-letrec/proc
       (lambda (stx)
+        (match-letrec-func stx stx)))
+
+    (define match-define/proc
+      (lambda (stx)
+        (match-define-func stx stx)))
+
+   (define match-func
+      (lambda (stx stx-orig)
+        (syntax-case stx ()
+          ((_ exp clause ...)
+            (match-func-plt
+             (quasisyntax/loc
+              stx-orig
+              (match exp 
+                     #,@(map handle-clause 
+                             (syntax-e (syntax (clause ...))))))
+             stx-orig)))))
+
+    (define match-letrec-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           ((_ () body body1 ...)
            (syntax/loc stx (let () body body1 ...)))
@@ -356,23 +397,29 @@
                    (syntax-object->datum (syntax (pat ...))))
            (syntax/loc stx (letrec ([pat exp] ...) body body1 ...)))
           ((_ ([pat exp] ...) body body1 ...)
-           (quasisyntax/loc
-            stx
-            (m:match-letrec #,(map 
-                               handle-let-clause 
-                               (syntax->list (syntax ([pat exp] ...))))
-                            body body1 ...))))))
+           (match-letrec-func-plt
+            (quasisyntax/loc
+             stx
+             (match-letrec #,(map 
+                              handle-let-clause 
+                              (syntax->list (syntax ([pat exp] ...))))
+                           body body1 ...))
+            stx-orig)))))
+           
 
-    (define match-define/proc
-      (lambda (stx)
+    (define match-define-func
+      (lambda (stx stx-orig)
         (syntax-case stx ()
           [(_ pat exp)
            (identifier? (syntax pat))
            (syntax/loc stx (begin (define pat exp)))]
           [(_ pat exp)
-           (quasisyntax/loc
-            stx
-            (m:match-define #,(convert-pat (syntax pat)) exp))])))
+           (match-define-func-plt
+            (quasisyntax/loc
+             stx-orig
+             (match-define #,(convert-pat (syntax pat)) exp))
+            stx-orig)])))
+            
 
 
     ;; these functions convert the patterns from the old syntax 

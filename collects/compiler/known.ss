@@ -29,6 +29,7 @@
 	  compiler:prephase^
 	  compiler:anorm^
 	  compiler:const^
+	  compiler:closure^
 	  compiler:rep^
 	  compiler:driver^
 	  mzlib:function^
@@ -65,9 +66,30 @@
 	 (primitive? (global-defined-value (zodiac:varref-var fun)))
 	 (zodiac:varref-var fun)))
 
+  ;; Some prims call given procedures directly, some install procedures
+  ;;  to be called later, and some call previously installed procedures.
+  ;;  We care abot the installers and callers.
+  (define prims-that-induce-procedure-calls
+    '(#%apply #%map #%for-each #%andmap #%ormap #%make-promise
+	      #%dynamic-wind
+	      #%make-object #%make-parameterization-with-sharing
+	      #%call-with-values #%time-apply
+	      #%call-with-output-file #%call-with-input-file
+	      #%with-output-to-file #%with-input-from-file
+	      #%exit-handler #%current-eval #%current-exception-handler
+	      #%debug-info-handler #%current-prompt-read #%current-load
+	      #%call-with-escape-continuation #%call-with-current-continuation
+	      #%current-print #%port-display-handler #%port-write-handler
+	      #%port-print-handler #%global-port-print-handler
+	      #%error-display-handler #%error-escape-handler
+	      #%port-read-handler #%error-value->string-handler
+	      #%parameterization-branch-handler #%call/ec #%call/cc
+	      #%with-parameterization #%with-new-parameterization #%hash-table-get
+	      #%hash-table-map #%hash-table-for-each #%make-input-port #%make-output-port))
+
   ;; The valueable? predicate is used to determine how many variables
-  ;; are reliably set in a mutatlly-recusrive binding context.
-  (define (analyze:valueable? v extra-known-bindings extra-unknown-bindings)
+  ;;  are reliably set in a mutatlly-recusrive binding context.
+  (define (analyze:valueable? v extra-known-bindings extra-unknown-bindings known-lambdas)
     (let loop ([v v][extra-known-bindings extra-known-bindings])
       (cond
        [(and (zodiac:set!-form? v)
@@ -110,21 +132,73 @@
 	     (loop (zodiac:if-form-then v) extra-known-bindings)
 	     (loop (zodiac:if-form-else v) extra-known-bindings))]
        [(zodiac:let-values-form? v)
-	(and (andmap (lambda (v) (loop v extra-known-bindings)) (zodiac:let-values-form-vals v))
+	(and (andmap (lambda (vars v) (if (loop v extra-known-bindings)
+					  (begin
+					    (when (= 1 (length vars))
+					      (prephase:set-known-val! (car vars) v))
+					    #t)
+					  #f))
+		     (zodiac:let-values-form-vars v)
+		     (zodiac:let-values-form-vals v))
 	     (loop (zodiac:let-values-form-body v)
 		   (append (apply append (zodiac:let-values-form-vars v))
 			   extra-known-bindings)))]
        [(zodiac:letrec*-values-form? v)
-	(and (andmap (lambda (v) (loop v extra-known-bindings)) 
+	(and (andmap (lambda (vars v) (if (loop v extra-known-bindings)
+					  (begin
+					    (when (= 1 (length vars))
+					      (prephase:set-known-val! (car vars) v))
+					    #t)
+					  #f))
+		     (zodiac:letrec*-values-form-vars v)
 		     (zodiac:letrec*-values-form-vals v))
 	     (loop (zodiac:letrec*-values-form-body v)
 		   (append (apply append (zodiac:letrec*-values-form-vars v))
 			   extra-known-bindings)))]
        [(zodiac:app? v)
-	(let ([fun (analyze:prim-fun (zodiac:app-fun v))]
-	      [args (zodiac:app-args v)])
-	  (and (memq fun '(#%void #%list #%cons #%vector #%char->integer))
-	       (andmap (lambda (v) (loop v extra-known-bindings)) args)))]
+	(let* ([fun (zodiac:app-fun v)]
+	       [primfun (analyze:prim-fun fun)]
+	       [args (zodiac:app-args v)]
+	       [args-ok? (lambda ()
+			   (andmap (lambda (v) (loop v extra-known-bindings)) args))])
+	  (if primfun
+
+	      ;; Check whether the primitive can call any procedures:
+	      (and (not (memq primfun prims-that-induce-procedure-calls))
+		   (args-ok?))
+	      
+	      ;; Interesting special case: call a known function
+	      (and (loop fun extra-known-bindings)
+		   (args-ok?)
+		   (let ([simple-case-lambda?
+			  ;; We know nothing about the args; still valueable?
+			  ;; What if we're trying to check a recursive function?
+			  ;;  If we encounter a cycle, the body is valueable.
+			  (lambda (v)
+			    (or (memq v known-lambdas)
+				(andmap
+				 (lambda (body) (analyze:valueable? 
+						 body 
+						 extra-known-bindings
+						 extra-unknown-bindings
+						 (cons v known-lambdas)))
+				 (zodiac:case-lambda-form-bodies v))))])
+		     (cond
+		      [(zodiac:bound-varref? fun)
+		       (let ([v (extract-varref-known-val fun)])
+			 (and v 
+			      (cond
+			       [(zodiac:case-lambda-form? v)
+				(simple-case-lambda? v)]
+			       [(zodiac:top-level-varref? v)
+				;; Could be a friendly primitive...
+				(let ([primfun (analyze:prim-fun v)])
+				  (and primfun
+				       (not (memq primfun prims-that-induce-procedure-calls))))]
+			       [else #f])))]
+		      [(zodiac:case-lambda-form? fun) (simple-case-lambda? fun)]
+		      [else #f])))))]
+
        [else #f])))
 
   ;; extract-value tries to extract a useful value from a known-value AST
@@ -155,6 +229,26 @@
 		  [else v]))
 	      v))]
        [else v])))
+
+  (define (extract-varref-known-val v)
+    (if (top-level-varref/bind-from-lift? v)
+	(top-level-varref/bind-from-lift-lambda v)
+	(let loop ([v v])
+	  (let* ([zbinding (if (zodiac:binding? v)
+			       v
+			       (zodiac:bound-varref-binding v))]
+		 [binding (get-annotation zbinding)]
+		 [result (lambda (v)
+			   (if (zodiac:bound-varref? v)
+			       (loop v)
+			       v))])
+	    (and binding
+		 (cond
+		  [(binding? binding)
+		   (and (binding-known? binding)
+			(result (binding-val binding)))]
+		  [else
+		   (result (prephase:known-val zbinding))]))))))
 
   ;; analyze-knowns! sets the annotation for binding occurrences, setting information
   ;; about known variables. Also sets the annotation for applications.
@@ -200,12 +294,12 @@
 		
 		 ;;--------------------------------------------------------------
 		 ;; LET EXPRESSIONS
-		 ;;    Several values may be bound at once.  In this case, 'known'
-		 ;;    analysis is not done here.
+		 ;;    Several values may be bound at once, in which case 'known'
+		 ;;    analysis is not performed.
 		 ;;
-		 ;;    in let, variables are assumed to be
-		 ;;    immutable and known; we store this information
-		 ;;    in the binding structure in the compiler:bound structure..
+		 ;;   Variables are assumed to be immutable and known, unless
+		 ;;    proven otherwise; we store this information
+		 ;;    in the binding structure in the compiler:bound structure.
 		 ;;
 		 [(zodiac:let-values-form? ast)
 		  (let* ([val (analyze! (car (zodiac:let-values-form-vals ast)))]
@@ -259,7 +353,7 @@
 		    ; Mark known letrec-bound vars
 		    (let loop ([varses varses][vals vals][done-vars null])
 		      (unless (null? vals)
-			(when (analyze:valueable? (car vals) done-vars (apply append varses))
+			(when (analyze:valueable? (car vals) done-vars (apply append varses) null)
 			  
 			  ; Continue known marking
 			  (let ([vars (car varses)])
@@ -450,7 +544,7 @@
 			    (cond
 			     ; analyze:valueable? also annotates unit-definition-set!ed 
 			     ;  bindings as known
-			     [(analyze:valueable? v extra-known-bindings null) 
+			     [(analyze:valueable? v extra-known-bindings null null)
 			      (loop (cdr l))]
 			     [else (not-valueable v)])))))
 

@@ -48,7 +48,6 @@
 	  compiler:known^
 	  compiler:const^
 	  compiler:rep^
-	  compiler:closure^
 	  compiler:driver^
 	  mzlib:function^
 	  (mrspidey : compiler:mrspidey^))
@@ -251,21 +250,6 @@
 	(zodiac:bound-varref? ast)
 	(and (zodiac:top-level-varref? ast)
 	     (varref:has-attribute? ast varref:static))))
-
-  (define (extract-varref-known-val v)
-    (if (top-level-varref/bind-from-lift? v)
-	(top-level-varref/bind-from-lift-lambda v)
-	(let loop ([v v])
-	  (let ([binding (if (zodiac:binding? v)
-			     (get-annotation v)
-			     (get-annotation (zodiac:bound-varref-binding v)))])
-	    (and binding
-		 (binding-known? binding)
-		 (let ([v (binding-val binding)])
-		   (if v
-		       (if (zodiac:bound-varref? v)
-			   (loop v)
-			   v))))))))
 
   (define (or-multi a-multi b-multi)
     (case a-multi

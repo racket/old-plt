@@ -27,7 +27,7 @@
 	 (zodiac : zodiac:system^)
 	 compiler:zlayer^
 	 compiler:const^
-	 compiler:analyze^
+	 compiler:known^
 	 compiler:closure^
 	 compiler:driver^)
 

@@ -51,10 +51,10 @@
 	 compiler:driver^
 	 (mrspidey : compiler:mrspidey^))
 
- (define-struct binding-properties (mutable? unit-i/e? ivar? anchor))
+ (define-struct binding-properties (mutable? unit-i/e? ivar? anchor known-val))
 
  (define (prephase:init-binding-properties! binding mutable? unit-i/e? ivar?)
-   (set-annotation! binding (make-binding-properties mutable? unit-i/e? ivar? #f)))
+   (set-annotation! binding (make-binding-properties mutable? unit-i/e? ivar? #f #f)))
 
  (define (prephase:set-mutable! binding mutable?)
    (set-binding-properties-mutable?! (get-annotation binding) mutable?))
@@ -75,6 +75,19 @@
  (define (prephase:binding-anchor binding)
    (let ([p (get-annotation binding)])
      (and p (binding-properties-anchor p))))
+
+ ;; Used in analyze to temporarily store known-value information for
+ ;;  let[rec] bindings
+ (define (prephase:known-val binding)
+   (let ([p (get-annotation binding)])
+     (and p (binding-properties-known-val p))))
+ (define (prephase:set-known-val! binding v)
+   (let ([p (get-annotation binding)])
+     (if p
+	 (set-binding-properties-known-val! p v)
+	 (begin
+	   (prephase:init-binding-properties! binding #f #f #f)
+	   (prephase:set-known-val! binding v)))))
 
  ;; what can be thrown away in a begin?
  (define prephase:dead-expression?

@@ -14,7 +14,7 @@
 	 (zodiac : zodiac:system^)
 	 compiler:zlayer^
 	 compiler:vmstructs^
-	 compiler:analyze^
+	 compiler:known^
 	 compiler:rep^
 	 compiler:vmphase^
 	 compiler:driver^

@@ -499,7 +499,7 @@
 	(set! total-cpu-time (+ total-cpu-time cpu))
 	(set! total-real-time (+ total-real-time real))
 	(when (compiler:option:verbose)
-	  (printf "      [cpu: ~ams, real: ~ams gc: ~ams]~n" cpu real (- gc-end gc-start)))
+	  (printf "      [cpu: ~ams, real: ~ams, gc: ~ams]~n" cpu real (- gc-end gc-start)))
 	(apply values vals))))
 
   ;;-----------------------------------------------------------------------------

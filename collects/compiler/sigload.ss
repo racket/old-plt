@@ -190,6 +190,8 @@
    prephase:is-unit-i/e?
    prephase:is-ivar?
    prephase:binding-anchor
+   prephase:known-val
+   prephase:set-known-val!
 
    (struct binding-properties (unit-i/e?))
 
@@ -239,6 +241,7 @@
 
 (define-signature compiler:known^
   (make-unknown-letbound-binding
+   extract-varref-known-val
    analyze-knowns!))
 
 (define-signature compiler:analyze^
@@ -261,8 +264,6 @@
    compiler:add-local-per-load-define-list!
    
    (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
-
-   extract-varref-known-val
 
    analyze-expression!))
 

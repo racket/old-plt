@@ -26,7 +26,7 @@
 	  compiler:cstructs^
 	  (zodiac : zodiac:system^)
 	  compiler:zlayer^
-	  compiler:analyze^
+	  compiler:known^
 	  compiler:top-level^
 	  compiler:const^
 	  compiler:closure^

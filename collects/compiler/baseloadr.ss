@@ -70,6 +70,7 @@
 			    PREPHASE
 			    ANORM
 			    CONST
+			    CLOSURE
 			    REP
 			    DRIVER
 			    FUNCTION
@@ -95,7 +96,6 @@
 				KNOWN
 				CONST
 				REP
-				CLOSURE
 				DRIVER
 				FUNCTION
 				SPIDEY)]
@@ -105,7 +105,7 @@
 			  CSTRUCTS
 			  ZODIAC
 			  ZLAYER
-			  ANALYZE
+			  KNOWN
 			  TOP-LEVEL
 			  CONST
 			  CLOSURE
@@ -126,7 +126,7 @@
 				ZODIAC
 				ZLAYER
 				CONST
-				ANALYZE
+				KNOWN
 				CLOSURE
 				DRIVER)]
   [REP : compiler:rep^ ((require-relative-library-unit/sig "rep.ss")
@@ -164,7 +164,7 @@
 			    ZODIAC
 			    ZLAYER
 			    VMSTRUCTS
-			    ANALYZE
+			    KNOWN
 			    REP
 			    VMPHASE
 			    DRIVER

@@ -91,7 +91,10 @@
 	      'read-one
 	      "file has more than one expression; expected a module declaration only in: ~a"
 	      path))
-	   v))
+	   (if (and (syntax? v)
+		    (compiled-expression? (syntax-e v)))
+	       (syntax-e v)
+	       v)))
        (lambda () (close-input-port p)))))
   
   (define-struct (exn:get-module-code exn) ())

@@ -504,6 +504,11 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     if (item && (item->ID == -1))
       item = NULL;
 
+    if (!item && menu->client_data) {
+      /* Choice item. Throw away event. */
+      return;
+    }
+
     {
       wxPopupEvent *event;
 

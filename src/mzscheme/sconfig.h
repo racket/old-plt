@@ -365,6 +365,7 @@ int scheme_solaris_semaphore_try_down(void *);
 # undef FILES_HAVE_FDS
 # undef USE_FD_PORTS
 # define USE_BEOS_PORT_THREADS
+# define USE_BEOS_SOCKET_INCLUDE
 
 # undef UNIX_PROCESSES
 # define BEOS_PROCESSES

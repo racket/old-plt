@@ -43,9 +43,9 @@
 # ifdef SELECT_INCLUDE
 #  include <sys/select.h>
 # endif
-# ifdef USE_BEOS_SOCKET_INCLUDE
-#  include <be/net/socket.h>
-# endif
+#endif
+#ifdef USE_BEOS_SOCKET_INCLUDE
+# include <be/net/socket.h>
 #endif
 #if defined(UNIX_PROCESSES)
 # include <signal.h>

@@ -3322,7 +3322,7 @@ static void check_ptr(void **a)
 
   if (!mpage_maps) return;
 
-  if ((long)a & 0x1) return;
+  if ((long)p & 0x1) return;
 
   page = find_page(p);
   if (page) {

@@ -11,7 +11,7 @@
          make-sized-byte-string)
 (provide _void _int8 _uint8 _byte _int16 _uint16 _word _int32 _uint32 _int
          _uint _fixint _ufixint _long _ulong _fixnum _ufixnum _float _double
-         _bool _string _pointer _scheme)
+         _bool _pointer _scheme)
 
 (provide define*)
 (define-syntax define*
@@ -20,6 +20,8 @@
      (begin (provide name) (define (name . args) body ...))]
     [(_ name expr)
      (begin (provide name) (define name expr))]))
+
+;; Function type
 
 ;; internal, used by _fun
 (define (ffi-fun itypes otype . wrapper)
@@ -206,10 +208,37 @@
                      #,output-expr)))))
            #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output))))]))
 
-;; `symbol' type: using strings.
-(define* _symbol (make-ffi-type _string symbol->string string->symbol))
+;; String types
 
-;; `file' type: path-expands a string.
+;; The internal _string type uses the native ucs-4 encoding, also providing a
+;; utf-16 type (note: these do not use #f as NULL).
+(provide _string/ucs-4 _string/utf-16)
+
+;; 8-bit string encodings
+(define* _string/utf-8
+  (make-ffi-type _bytes string->bytes/utf-8 bytes->string/utf-8))
+(define* _string/locale
+  (make-ffi-type _bytes string->bytes/locale bytes->string/locale))
+(define* _string/latin-1
+  (make-ffi-type _bytes string->bytes/latin-1 bytes->string/latin-1))
+
+;; A generic _string type that usually does the right thing via a parameter
+(define* default-_string-type
+  (make-parameter _string/utf-8
+    (lambda (x)
+      (if (ffi-type? x)
+        x (error 'default-_string-type "expecting a C type, got ~e" x)))))
+;; The type looks like an identifier, but it's actually using the parameter
+(provide _string)
+(define-syntax _string
+  (syntax-id-rules (_string)
+    [_string (default-_string-type)]))
+
+;; _symbol is defined in C, since it uses simple C strings
+(provide _symbol)
+
+;; `file' type: path-expands a path string, provide _path too.
+(provide _path)
 (define* _file (make-ffi-type _path expand-path #f))
 
 ;; `string/eof' type: converts an output #f (NULL) to an eof-object.
@@ -430,15 +459,17 @@
                      "expecting a non-void pointer, got ~s" cblock)]))
 
 ;; Useful for automatic definitions
+;; Outputs a bytes in any case
 ;; If a provided regexp begins with a "^" or ends with a "$", then
 ;; `regexp-replace' is used, otherwise use `regexp-replace*'.
-(define* (regexp-replaces x rs)
-  (let loop ([str (if (string? x) x (format "~a" x))] [rs rs])
+(define* (bytes-regexp-replaces x rs)
+  (let loop ([str (if (bytes? x) x (string->bytes/utf-8 (format "~a" x)))]
+             [rs rs])
     (if (null? rs)
       str
-      (loop ((if (regexp-match
-                  #rx"^\\^|\\$$"
-                  (if (regexp? (caar rs)) (object-name (caar rs)) (caar rs)))
+      (loop ((if (regexp-match #rx#"^\\^|\\$$"
+                               (if (byte-regexp? (caar rs))
+                                 (object-name (caar rs)) (caar rs)))
                regexp-replace regexp-replace*)
              (caar rs) str (cadar rs)) (cdr rs)))))
 

@@ -238,7 +238,9 @@
 		     (eq? 'object% (zodiac:varref-var super))
 		     (eq? 'empty sdl))
 		(and (FlowType? ftype)
-		     (eq? 'class sdl)))
+		     (or (eq? 'class sdl)
+			 (and (cons? sdl)
+			      (eq? (car sdl) 'class)))))
 	    (mrspidey:add-summary "Class check" open 0)
 	    (add-check! open "class") ; this turns "class" red
 	    (zodiac:set-parsed-check! M #t)))]

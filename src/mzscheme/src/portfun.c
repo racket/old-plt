@@ -105,6 +105,7 @@ static Scheme_Object *open_output_string (int, Scheme_Object *[]);
 static Scheme_Object *get_output_char_string (int, Scheme_Object *[]);
 static Scheme_Object *get_output_byte_string (int, Scheme_Object *[]);
 static Scheme_Object *sch_pipe(int, Scheme_Object **args);
+static Scheme_Object *pipe_length(int, Scheme_Object **args);
 static Scheme_Object *port_read_handler(int, Scheme_Object **args);
 static Scheme_Object *port_display_handler(int, Scheme_Object **args);
 static Scheme_Object *port_write_handler(int, Scheme_Object **args);
@@ -666,6 +667,12 @@ scheme_init_port_fun(Scheme_Env *env)
 						       0, 3,
 						       2, 2),
 			     env);
+  scheme_add_global_constant("pipe-content-length", 
+			     scheme_make_prim_w_arity(pipe_length, 
+						      "pipe-content-length", 
+						      1, 1), 
+			     env);
+  
 
   scheme_add_global_constant("port-count-lines!",
 			     scheme_make_prim_w_arity(port_count_lines,
@@ -1368,7 +1375,11 @@ user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
 			    val);
       else if (rarely_block == 2)
 	return -1;
-      else
+      else if (!evt_ok)
+	scheme_arg_mismatch(who,
+			    "bad result for write event: ",
+			    val);
+      else 
 	return 0;
     } else if (SCHEME_INTP(val)
 	       && (SCHEME_INT_VAL(val) >= 0)
@@ -1377,10 +1388,11 @@ user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
 
       n = SCHEME_INT_VAL(val);
 
-      if (!rarely_block && (n != len)) {
+      if (!n && len) {
 	scheme_arg_mismatch(who,
-			    "result integer for blocking mode is not the "
-			    "length of the supplied string: ",
+			    (evt_ok
+			     ? "bad result for write: "
+			     : "bad result for non-flushing write event: "),
 			    val);
       }
 
@@ -1578,7 +1590,7 @@ user_write_special_evt (Scheme_Output_Port *port, Scheme_Object *v)
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
   a[0] = v;
-  v = scheme_apply(uop->write_special_evt_proc, 2, a);
+  v = scheme_apply(uop->write_special_evt_proc, 1, a);
 
   if (!scheme_is_evt(v)) {
     a[0] = v;
@@ -2086,6 +2098,41 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
     ((Scheme_Output_Port *)(v[1]))->name = args[2];
 
   return scheme_values(2, v);
+}
+
+static Scheme_Object *pipe_length(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *o;
+  Scheme_Pipe *pipe = NULL;
+  int avail;
+
+  o = argv[0];
+  if (SCHEME_OUTPORTP(o)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)o;
+    if (op->sub_type == scheme_pipe_write_port_type) {
+      pipe = (Scheme_Pipe *)op->port_data;
+    }
+  } else if (SCHEME_INPORTP(o)) {
+    Scheme_Input_Port *ip = (Scheme_Input_Port *)o;
+    if (ip->sub_type == scheme_pipe_read_port_type) {
+      pipe = (Scheme_Pipe *)ip->port_data;
+    }
+  }
+
+  if (!pipe) {
+    scheme_wrong_type("pipe-content-length",
+		      "pipe input port or output port",
+		      0, argc, argv);
+    return NULL;
+  }
+    
+  if (pipe->bufend >= pipe->bufstart) {
+    avail = pipe->bufend - pipe->bufstart;
+  } else {
+    avail = pipe->bufend + (pipe->buflen - pipe->bufstart);
+  }
+
+  return scheme_make_integer(avail);
 }
 
 /*========================================================================*/
@@ -3038,7 +3085,11 @@ do_general_read_bytes(int as_bytes,
 						   peek, peek_skip,
 						   unless_evt);
     if (got == SCHEME_SPECIAL) {
-      return scheme_get_special_proc(port);
+      Scheme_Object *res;
+      res = scheme_get_special_proc(port);
+      if (!only_avail)
+	scheme_bad_time_for_special(who, port);
+      return res;
     }
   } else {
     got = scheme_get_char_string(who, port,

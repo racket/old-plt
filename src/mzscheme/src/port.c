@@ -1174,14 +1174,13 @@ static void post_progress(Scheme_Input_Port *ip)
 
 static void inc_pos(Scheme_Input_Port *ip, int a)
 {
-  if (ip->count_lines) {
-    int inc = (ip->utf8state >> 4) + a;
-    ip->column += inc;
-    ip->readpos += inc;
-    ip->charsSinceNewline += inc;
-    ip->utf8state = 0;
-  }
+  ip->column += a;
+  ip->readpos += a;
+  ip->charsSinceNewline += a;
+  ip->utf8state = 0;
 }
+ 
+#define state_len(state) ((state >> 3) & 0x7)
 
 long scheme_get_byte_string_unless(const char *who,
 				   Scheme_Object *port,
@@ -1307,7 +1306,8 @@ long scheme_get_byte_string_unless(const char *who,
       if (!peek) {
 	if (ip->position >= 0)
 	  ip->position++;
-	inc_pos(ip, 1);
+	if (ip->count_lines)
+	  inc_pos(ip, 1);
       }
 
       if (!peek && ip->progress_evt)
@@ -1359,7 +1359,7 @@ long scheme_get_byte_string_unless(const char *who,
       }
 
       if (v == EOF) {
-	inc_pos(ip, 0);
+	ip->utf8state = 0;
 	return EOF;
       } else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
@@ -1392,7 +1392,7 @@ long scheme_get_byte_string_unless(const char *who,
 	gc = EOF;
       } else {
 	/* Call port's get or peek function. But first, set up
-	   an "unless" to detect other acesses of the port
+	   an "unless" to detect other accesses of the port
 	   if we block. */
 	Scheme_Object *unless;
 	  
@@ -1460,7 +1460,8 @@ long scheme_get_byte_string_unless(const char *who,
 	  if (!peek) {
 	    if (ip->position >= 0)
 	      ip->position++;
-	    inc_pos(ip, 1);
+	    if (ip->count_lines)
+	      inc_pos(ip, 1);
 	  }
 	  
 	  return SCHEME_SPECIAL;
@@ -1476,10 +1477,10 @@ long scheme_get_byte_string_unless(const char *who,
 	  return 0;
 	}
       } else if (gc == EOF) {
+	ip->utf8state = 0;
 	if (!got && !total_got) {
 	  if (peek && ip->pending_eof)
 	    ip->pending_eof = 2;
-	  inc_pos(ip, 0);
 	  return EOF;
 	}
 	/* remember the EOF for next time */
@@ -1533,12 +1534,13 @@ long scheme_get_byte_string_unless(const char *who,
 	}
 
 	/* Count UTF-8-decoded chars, up to last line: */
-	if (i > 0) {
-	  char state = ip->utf8state;
+	if (i >= 0) {
+	  int state = ip->utf8state;
 	  int n;
-	  n = scheme_utf8_decode_count(buffer, offset, offset + got, &state, 0, '?');
-	  degot += (got - n);
-	  ip->utf8state = 0;
+	  degot += state_len(state);
+	  n = scheme_utf8_decode_count(buffer, offset, offset + i + 1, &state, 0, '?');
+	  degot += (i + 1 - n);
+	  ip->utf8state = 0; /* assert: state == 0, because we ended with a newline */
 	}
 	
 	if (i >= 0) {
@@ -1573,7 +1575,10 @@ long scheme_get_byte_string_unless(const char *who,
 	{
 	  int col = ip->column, n;
 	  int prev_i = got - c;
-	  char state = ip->utf8state;
+	  int state = ip->utf8state;
+	  n = state_len(state);
+	  degot += n;
+	  col -= n;
 	  for (i = prev_i; i < got; i++) {
 	    if (buffer[offset + i] == '\t') {
 	      n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
@@ -1585,6 +1590,7 @@ long scheme_get_byte_string_unless(const char *who,
 	  }
 	  if (prev_i < i) {
 	    n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
+	    n += state_len(state);
 	    col += n;
 	    degot += ((i - prev_i) - n);
 	  }
@@ -1594,10 +1600,6 @@ long scheme_get_byte_string_unless(const char *who,
 
 	ip->readpos -= degot;
 
-	if (!size)
-	  /* Like an EOF: count incomplete encoding as complete */
-	  inc_pos(ip, 0);
-	
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
 	mzAssert(ip->position >= 0);

@@ -224,6 +224,7 @@ static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
+static Scheme_Object *locale_string_encoding(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_close_converter(int argc, Scheme_Object *argv[]);
@@ -244,7 +245,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 			 unsigned int *us, int dstart, int dend,
 			 long *ipos, long *jpos,
 			 char compact, char utf16,
-			 char *state, int might_continue, int permissive);
+			 int *state, int might_continue, int permissive);
 
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len,
@@ -478,7 +479,11 @@ scheme_init_string (Scheme_Env *env)
 						       "current-locale",
 						       MZCONFIG_LOCALE),
 			     env);
-
+  scheme_add_global_constant("locale-string-encoding",
+			     scheme_make_prim_w_arity(locale_string_encoding,
+						      "locale-string-encoding",
+						      0, 0),
+			     env);
 
   scheme_add_global_constant("bytes-converter?",
 			     scheme_make_prim_w_arity(byte_converter_p,
@@ -2075,6 +2080,15 @@ static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
   return v;
 }
 
+static Scheme_Object *locale_string_encoding(int argc, Scheme_Object *argv[])
+{
+  reset_locale();
+  if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
+    return scheme_make_utf8_string("UTF-8");
+  
+  return scheme_make_utf8_string(nl_langinfo(CODESET));
+}
+
 #ifndef DONT_USE_LOCALE
 
 static char *do_convert(iconv_t cd,
@@ -3394,7 +3408,7 @@ byte_converter_p(int argc, Scheme_Object *argv[])
 static int utf8_decode_x(const unsigned char *s, int start, int end,
 			 unsigned int *us, int dstart, int dend,
 			 long *ipos, long *jpos,
-			 char compact, char utf16, char *_state,
+			 char compact, char utf16, int *_state,
 			 int might_continue, int permissive)
      /* Results:
 	non-negative => translation complete, = number of produced chars
@@ -3416,10 +3430,27 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	sequences*/
 
 {
-  int i, j, oki, failmode = -3, state = (_state ? ((*_state) & 0xF) : 0);
-  int init_doki = (_state ? ((*_state) >> 4) : 0);
-  int inc, checkmin = 0, v = 0;
+  int i, j, oki, failmode = -3, state;
+  int init_doki;
+  int nextbits, v;
   unsigned int sc;
+
+  if (_state) {
+    state = (*_state) & 0x7;
+    init_doki = (((*_state) >> 3) & 0x7);
+    nextbits = ((((*_state) >> 6) & 0xF) << 2);
+    if ((state + init_doki) == 3)
+      /* Need v to detect 0xD800, 0xFFFF, etc. */
+      v = ((*_state) >> 10);
+    else
+      /* Make sure we don't hit 0xD800, etc. */
+      v = -1;
+  } else {
+    state = 0;
+    init_doki = 0;
+    nextbits = 0;
+    v = 0;
+  }
 
   /* In non-permissive mode, a negative result means ill-formed input.
      Permissive mode accepts anything and tries to convert it.  In
@@ -3431,6 +3462,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (dend < 0)
     dend = 0x7FFFFFFF;
 
+# define ENCFAIL i = oki; failmode = -2; break
+
   oki = start;
   j = dstart;
   i = start;
@@ -3438,128 +3471,123 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
     while (i < end) {
       sc = s[i];
       if (sc < 0x80) {
-	checkmin = 0;
 	if (state) {
 	  /* In a sequence, but didn't continue */
 	  state = 0;
+	  nextbits = 0;
 	  if (permissive) {
 	    v = permissive;
-	    checkmin = 0;
 	    i = oki;
 	    j += init_doki;
-	    init_doki = 0;
-	    inc = 1;
 	  } else {
-	    v = 0;
-	    checkmin = 1;
-	    inc = 0;
+	    ENCFAIL;
 	  }
 	} else {
 	  v = sc;
-	  inc = 1;
 	}
       } else if ((sc & 0xC0) == 0x80) {
 	/* Continues a sequence ... */
 	if (state) {
-	  /* ... and we're in one */
-	  v = (v << 6) + (sc & 0x3F);
-	  --state;
-	  if (state) {
-	    i++;
-	    continue;
-	  } else
-	    inc = 1;
+	  /* ... and we're in one ... */
+	  if (!nextbits | (sc & nextbits)) {
+	    /* and we have required bits. */
+	    v = (v << 6) + (sc & 0x3F);
+	    nextbits = 0;
+	    --state;
+	    if (state) {
+	      i++;
+	      continue;
+	    }
+	    /* We finished. One last check: */
+	    if (((v >= 0xD800) && (v <= 0xDFFF))
+		|| (v == 0xFFFE)
+		|| (v == 0xFFFF)) {
+	      /* UTF-16 surrogates or other illegal code units */
+	      if (permissive) {
+		v = permissive;
+		j += init_doki;
+		i = oki;
+	      } else {
+		ENCFAIL;
+	      }
+	    }
+	  } else {
+	    /* ... but we're missing required bits. */
+	    state = 0;
+	    nextbits = 0;
+	    if (permissive) {
+	      v = permissive;
+	      j += init_doki;
+	      i = oki;
+	    } else {
+	      ENCFAIL;
+	    }
+	  }
 	} else {
 	  /* ... but we're not in one */
 	  if (permissive) {
 	    v = permissive;
-	    checkmin = 0;
 	  } else {
-	    v = 0;
-	    checkmin = 1;
+	    ENCFAIL;
 	  }
-	  inc = 1;
 	}
       } else if (state) {
 	/* bad: already in a sequence */
+	state = 0;
 	if (permissive) {
 	  v = permissive;
 	  i = oki;
 	  j += init_doki;
-	  init_doki = 0;
-	  checkmin = 0;
 	} else {
-	  v = 0;
-	  checkmin = 1;
+	  ENCFAIL;
 	}
-	inc = 1;
-	state = 0;
       } else {
 	if ((sc & 0xE0) == 0xC0) {
-	  state = 1;
-	  v = (sc & 0x1F);
-	  checkmin = 0x80;
-	  i++;
-	  continue;
+	  if (sc & 0x1E) {
+	    state = 1;
+	    v = (sc & 0x1F);
+	    i++;
+	    continue;
+	  }
+	  /* else too small */
 	} else if ((sc & 0xF0) == 0xE0) {
 	  state = 2;
 	  v = (sc & 0xF);
-	  checkmin = 0x800;
+	  if (!v)
+	    nextbits = 0x20;
 	  i++;
 	  continue;
 	} else if ((sc & 0xF8) == 0xF0) {
 	  state = 3;
 	  v = (sc & 0x7);
-	  checkmin = 0x10000;
+	  if (!v)
+	    nextbits = 0x30;
 	  i++;
 	  continue;
 	} else if ((sc & 0xFC) == 0xF8) {
 	  state = 4;
 	  v = (sc & 0x3);
-	  checkmin = 0x200000;
+	  if (!v)
+	    nextbits = 0x38;
 	  i++;
 	  continue;
 	} else if ((sc & 0xFE) == 0xFC) {
 	  state = 5;
 	  v = (sc & 0x1);
-	  checkmin = 0x4000000;
+	  if (!v)
+	    nextbits = 0x3C;
 	  i++;
 	  continue;
+	}
+	/* Too small or 0xFF or 0xFe */
+	if (permissive) {
+	  v = permissive;
 	} else {
-	  if (permissive) {
-	    v = permissive;
-	    checkmin = 0;
-	  } else {
-	    v = 0;
-	    checkmin = 1;
-	  }
-	  inc = 1;
+	  ENCFAIL;
 	}
       }
 
       /* If we get here, we're supposed to output v */
-
-      if (((v >= 0xD800) && (v <= 0xDFFF))
-	  || (v == 0xFFFE)
-	  || (v == 0xFFFF)) {
-	/* UTF-16 surrogates or other illegal code units;
-	   set checkmind too high so that it will report
-	   an error */
-	checkmin = 0x10000;
-      }
-
-      if (v < checkmin) {
-	i = oki;
-	j += init_doki;
-	init_doki = 0;
-	inc = 1;
-	if (permissive)
-	  v = permissive;
-	else {
-	  failmode = -2;
-	  break;
-	}
-      }
 
       if (compact) {
 	if (utf16) {
@@ -3593,15 +3621,22 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	us[j] = v;
       }
       j++;
-      i += inc;
+      i++;
       oki = i;
+      init_doki = 0;
       if (j >= dend)
 	break;
     }
   }
 
   if (_state) {
-    *_state = state | (((end - oki) + init_doki) << 4);
+    if (!state)
+      *_state = 0;
+    else
+      *_state = (state 
+		 | (((end - oki) + init_doki) << 3)
+		 | ((nextbits >> 2) << 6)
+		 | (v << 10));
   } else if (state) {
     if (might_continue || !permissive) {
       failmode = -1;
@@ -3708,8 +3743,10 @@ mzchar *scheme_utf8_decode_to_buffer(const unsigned char *s, int len,
 }
 
 int scheme_utf8_decode_count(const unsigned char *s, int start, int end,
-			     char *_state, int might_continue, int permissive)
+			     int *_state, int might_continue, int permissive)
 {
+  long pos = 0;
+
   if (!_state || !*_state) {
     /* Try fast path (all ASCII): */
     int i;
@@ -3721,11 +3758,13 @@ int scheme_utf8_decode_count(const unsigned char *s, int start, int end,
       return end - start;
   }
 
-  return utf8_decode_x(s, start, end,
-		       NULL, 0, -1,
-		       NULL, NULL,
-		       0, 0, _state,
-		       might_continue, permissive);
+  utf8_decode_x(s, start, end,
+		NULL, 0, -1,
+		NULL, &pos,
+		0, 0, _state,
+		might_continue, permissive);
+
+  return pos;
 }
 
 int scheme_utf8_encode(const unsigned int *us, int start, int end,

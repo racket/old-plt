@@ -39,23 +39,26 @@
 	(with-handlers ([void (lambda (x) #f)])
 	  (get-pref key)))
 
-      (define pref-prefs (preferences:get sirmail-login-pref))
-      (define MAIL-FROM (lookup-pref/prefs 'mail-from pref-prefs))
-      (define USERNAME (lookup-pref/prefs 'username pref-prefs))
-      (define DEFAULT-DOMAIN (lookup-pref/prefs 'default-to-domain pref-prefs))
-      (define IMAP-SERVER (lookup-pref/prefs 'imap-server pref-prefs))
+      (define (pref-prefs) (preferences:get sirmail-login-pref))
+      (define (MAIL-FROM) (lookup-pref/prefs 'mail-from (pref-prefs)))
+      (define (USERNAME) (lookup-pref/prefs 'username (pref-prefs)))
+      (define (DEFAULT-DOMAIN) (lookup-pref/prefs 'default-to-domain (pref-prefs)))
+      (define (IMAP-SERVER) (lookup-pref/prefs 'imap-server (pref-prefs)))
+      (define (LOCAL-DIR) (lookup-pref/prefs 'local-dir (pref-prefs)))
+      (define (SAVE-SENT)
+	(if (lookup-pref/prefs 'save-sent? (pref-prefs))
+	    (lookup-pref/prefs 'save-sent-dir (pref-prefs))
+	    #f))
 
       (define PASSWORD (get-optional-pref 'password))
       (define (get-PASSWORD) PASSWORD)
       (define (set-PASSWORD p) (set! PASSWORD p))
 
-      (define LOCAL* (get-pref 'local))
       (define SMTP-SERVERS (let ([many (get-optional-pref 'smtp-servers)])
 			     (if (and (list? many)
 				      (pair? many))
 				 many
 				 (list (get-pref 'smtp-server)))))
-      (define SAVE-SENT (get-optional-pref 'save-sent))
       (define ALIASES (let ([f (get-optional-pref 'aliases-file)]
 			    [aliases (or (get-optional-pref 'aliases) null)])
 			(if f

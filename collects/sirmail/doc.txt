@@ -14,8 +14,40 @@ SirMail (on the local machine).
 
 ------------------------------------------------------------
 
-To configure sirmail, create a .sirmail file in (find-system-path 'pref-dir).
-It should be, when read (not evaluated):
+You can configure most SirMail options by visiting Edit | Preferences
+| Mailbox in the Inbox window.  A few remaining options still require
+manual editing.  The following options are specified through the menu:
+
+  - Mail From: The user's email address.
+
+  - Username: The username to use when logging into the server.
+
+  - IMAP Server: The IMAP server's host name.
+
+  - Local Directory: The pathname of an existing directory where
+    SirMail should store downloaded messages.  Defaults to
+     (build-path (find-system-path 'home-dir) "SirMail")
+
+  - Save Sent Files?: Check this if you want a copy of messages you
+    sent to be saved in an archive.
+
+  - Save Sent Directory: The pathname of an existing directory where
+    SirMail should save outgoing messages.  This button is only active
+    if you turn Save Sent Files? (see above) on.
+
+  - Default To Domain: If a destination address that isn't declared as
+    an alias doesn't include a domain name, SirMail automatically
+    appends this as the domain.  (For instance, say you tend to work
+    at cs.brown.edu and tend to send most of your mail to cs.brown.edu
+    users.  However, your SMTP server is an ISP you use from home.  By
+    default, the server will attempt to deliver the (un-aliased)
+    address `foo' to foo@your-isp.com.  Setting the Default To
+    Domain to `cs.brown.edu' will deliver this to foo@cs.brown.edu
+    instead, irrespective of what SMTP server you use.
+
+A few options still need to be configured manually.  To do this,
+create a .sirmail file in (find-system-path 'pref-dir).  It should be,
+when read (not evaluated):
 
   (list-of (list symbol TST))
 
@@ -24,43 +56,25 @@ corresponding TST specifies the value that parameter maps to.
 
 Here's an example content for .sirmail:
 
- ((username "mflatt")
-  (password "notreal")
-  (imap-server "mailhub.cs.utah.edu")
-  (local "~/SirMail")
-  (mail-from "Matthew Flatt <mflatt@cs.utah.edu>")
-  (smtp-server "mail")
-  (default-to-domain "cs.utah.edu")
-  (save-sent "~/SentMail")
-  (biff-delay-seconds 60)
-  (self-addresses ("mflatt@cs.utah.edu" "mflatt@cs.rice.edu" "mflatt@rice.edu"))
-  (aliases (("robby" "robby@rice.edu")
+ ((password "not-really")
+  (smtp-server "smtp.cs.brown.edu")
+  (biff-delay-seconds #f)
+  (self-addresses ("sk@cs.brown.edu" "shriram@cs.rice.edu"))
+  (aliases (("mflatt" "mflatt@cs.utah.edu")
+	    ("robby" "robby@cs.rice.edu")
+	    ("me" "sk@cs.brown.edu")
+	    ("plt-design" "plt-design@ccs.neu.edu")
             ("plt-scheme" "plt-scheme@list.cs.brown.edu")))
-  (aliases-file "~/.sirmail.aliases"))
+  (aliases-file "~/.sirmail.aliases")
+  (use-external-composer? #t))
 
-The required configuration parameters are:
-
-  - imap-server: a string naming the imap server host
-
-  - username: a string naming the user
-
-  - local: pathname of an existing directory where sirmail stores the
-    downloaded messages.
-
-  - mail-from: the user's e-mail address
+The one required entry is:
 
   - smtp-servers or smtp-server: former is a list of strings naming
     smtp server hosts, latter is a string naming a single smtp server
     host.
 
 The optional preferences are:
-
-  - default-to-domain: appended to non-aliased destination addresses
-    that don't include a domain.
-
-  - save-sent: (union #f string) specifing which directory outgoing
-    messages should be saved in (if not present or #f, messages will not
-    be saved).
 
   - aliases: should be of the form:
 
@@ -82,6 +96,8 @@ The optional preferences are:
     so followups do not go to yourself.
 
   - password: which should map to a string containing the imap password
+    If you don't specify one, SirMail will interactively query you for
+    it when you connect to get email from the IMAP server.
 
   - auto-file: 
 

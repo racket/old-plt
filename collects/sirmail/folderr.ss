@@ -25,11 +25,11 @@
               net:imap^
               hierlist^)
       
-      (define mailbox-cache-file (build-path LOCAL* "folder-window-mailboxes"))
+      (define mailbox-cache-file (build-path (LOCAL-DIR) "folder-window-mailboxes"))
       
       (define (imap-open-connection)
-	(imap-connect IMAP-SERVER
-		      USERNAME
+	(imap-connect (IMAP-SERVER)
+		      (USERNAME)
 		      (or (get-PASSWORD) (get-text-from-user "Enter Password" "Enter Password"))
 		      mailbox-name))
 
@@ -261,7 +261,7 @@
       
       (define re:setup-mailboxes "^([^/]*)/(.*)$")
       (define (setup-mailboxes-file mailbox-name)
-        (define mailboxes-file (build-path LOCAL* "mailboxes"))
+        (define mailboxes-file (build-path (LOCAL-DIR) "mailboxes"))
         (define mailboxes
           (with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
             (with-input-from-file mailboxes-file
@@ -289,7 +289,7 @@
                                          (cdr fns)
                                          fns)]
                                 [local-dir 'same]
-                                [fs-dir LOCAL*])
+                                [fs-dir (LOCAL-DIR)])
                        (cond
                          [(null? fns) local-dir]
                          [else (let ([new-fs-dir (build-path fs-dir (car fns))])
@@ -299,7 +299,7 @@
                                        (build-path local-dir (car fns))
                                        new-fs-dir))]))])
                 
-                (with-output-to-file (build-path LOCAL* "mailboxes")
+                (with-output-to-file (build-path (LOCAL-DIR) "mailboxes")
                   (lambda () (write
                               (append mailboxes
                                       (list (list mailbox-name mailbox-dir)))))

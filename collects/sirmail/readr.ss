@@ -77,18 +77,18 @@
       ;;  Mailbox List                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (unless (directory-exists? LOCAL*)
-	(make-directory LOCAL*))
+      (unless (directory-exists? (LOCAL-DIR))
+	(make-directory (LOCAL-DIR)))
 
       (define mailboxes
 	(with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
-	  (with-input-from-file (build-path LOCAL* "mailboxes")
+	  (with-input-from-file (build-path (LOCAL-DIR) "mailboxes")
 	    read)))
 
       (unless (assoc mailbox-name mailboxes)
 	(error 'sirmail "No local mapping for mailbox: ~a" mailbox-name))
       
-      (define mailbox-dir (build-path LOCAL* (cadr (assoc mailbox-name mailboxes))))
+      (define mailbox-dir (build-path (LOCAL-DIR) (cadr (assoc mailbox-name mailboxes))))
       
       (unless (directory-exists? mailbox-dir)
 	(make-directory mailbox-dir))
@@ -165,10 +165,10 @@
                             (begin
                               (unless (get-PASSWORD)
                                 (let ([p (get-text-from-user "Password" 
-                                                             (format "Password for ~a:" USERNAME))])
+                                                             (format "Password for ~a:" (USERNAME)))])
                                   (unless p (error 'connect "connection cancelled"))
                                   (set-PASSWORD p)))
-                              (let*-values ([(imap count new) (imap-connect IMAP-SERVER USERNAME (get-PASSWORD) mailbox-name)]
+                              (let*-values ([(imap count new) (imap-connect (IMAP-SERVER) (USERNAME) (get-PASSWORD) mailbox-name)]
                                             [(uid-l) (imap-status imap mailbox-name '(uidnext))])
                                 (status "(Connected, ~a messages)" count)
                                 (set! connection imap)
@@ -227,7 +227,7 @@
 	(send new-mail-msg show #f))
       
       (define (update-local)
-	(status "Updating ~a from ~a..." mailbox-name IMAP-SERVER)
+	(status "Updating ~a from ~a..." mailbox-name (IMAP-SERVER))
 	(let-values ([(imap count new next-uid) (connect 'reselect)])
 	  (start-biff)
 	  (status "Getting message ids...")
@@ -313,7 +313,7 @@
 		    #t))))))
       
       (define (check-for-new)
-	(status "Checking ~a at ~a..." mailbox-name IMAP-SERVER)
+	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
 	(unless new-messages?
 	  (let-values ([(imap count new next-uid) (connect 'next-uid)])
 	    (unless (= next-uid current-next-uid)
@@ -1420,11 +1420,11 @@
 			      void))))
 	      
 	      (let ([dir (regexp-replace* "/" t ".")])
-		(with-handlers ([void void]) (make-directory (build-path LOCAL* dir)))
+		(with-handlers ([void void]) (make-directory (build-path (LOCAL-DIR) dir)))
 		(set! mailboxes
 		      (append mailboxes
 			      (list (list t dir)))))
-	      (with-output-to-file (build-path LOCAL* "mailboxes")
+	      (with-output-to-file (build-path (LOCAL-DIR) "mailboxes")
 		(lambda () (write mailboxes))
 		'truncate)
 	      (reset-mailboxes-menus)
@@ -1869,7 +1869,7 @@
       
       (define my-address 
 	(with-handlers ([void (lambda (x) "<bad address>")])
-	  (car (extract-addresses MAIL-FROM 'address))))
+	  (car (extract-addresses (MAIL-FROM) 'address))))
       
       (define my-username-@
 	(let ([m (regexp-match "^([^@]*)@" my-address)])

@@ -84,8 +84,8 @@
 		 (if (list? (cadr m))
 		     (apply append (map resolve (cadr m)))
 		     (resolve (cadr m)))))]
-	 [DEFAULT-DOMAIN (let ([addr (format "~a@~a" addr DEFAULT-DOMAIN)])
-			   (list (cons addr addr)))]
+	 [(DEFAULT-DOMAIN) (let ([addr (format "~a@~a" addr (DEFAULT-DOMAIN))])
+			     (list (cons addr addr)))]
 	 [else (list (cons addr addr))]))
 
       ;; Returns a list of <full>-<address> pairs
@@ -533,13 +533,13 @@
                          [cc (map car cc*)]
                          [bcc* (sm-extract-addresses (extract-field "BCC" header))]
                          [bcc (map car bcc*)]
-                         [from (let ([l (extract-addresses MAIL-FROM 'full)])
+                         [from (let ([l (extract-addresses (MAIL-FROM) 'full)])
                                  (unless (= 1 (length l))
-                                   (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
+                                   (error 'send "bad mail-from configuration: ~a" (MAIL-FROM)))
                                  (car l))]
-                         [simple-from (let ([l (extract-addresses MAIL-FROM 'address)])
+                         [simple-from (let ([l (extract-addresses (MAIL-FROM) 'address)])
                                         (unless (= 1 (length l))
-                                          (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
+                                          (error 'send "bad mail-from configuration: ~a" (MAIL-FROM)))
                                         (car l))]
                          [subject (extract-field "Subject" header)]
                          [prop-header (remove-fields '("To" "CC" "BCC" "Subject") header)]
@@ -548,14 +548,14 @@
                          [tos (map cdr (append to* cc* bcc*))])
                     
                     (let-values ([(new-header body) (enclose new-header body enclosures)])
-                      (when SAVE-SENT
+                      (when (SAVE-SENT)
                         (let* ([chop (lambda (s)
                                        (let ([l (string-length s)])
                                          (clean-filename (substring s 0 (min l 10)))))]
                                [to (if (null? tos) "noone" (chop (car tos)))]
                                [subj (if subject (chop subject) "nosubj")])
                           (let loop ([n 1])
-                            (let ([fn (build-path SAVE-SENT (format "~a_~a_~a" to subj n))])
+                            (let ([fn (build-path (SAVE-SENT) (format "~a_~a_~a" to subj n))])
                               (if (file-exists? fn)
                                   (loop (add1 n))
                                   (with-output-to-file fn

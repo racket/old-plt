@@ -42,7 +42,7 @@
      get-PASSWORD
      set-PASSWORD
 
-     LOCAL*
+     LOCAL-DIR
 
      MAIL-FROM
      ALIASES

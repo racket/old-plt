@@ -522,6 +522,11 @@
 	       (send check-syntax-button show on?)))])
 	
 	(public
+	  [source-object?
+	   (lambda (zodiac-ast)
+	     (let ([who (zodiac:origin-who
+			 (zodiac:zodiac-origin zodiac-ast))])
+	       (or (eq? who 'source) (eq? who 'reader))))]
 	  [button-callback
 	   (lambda ()
 	     (if (ivar interactions-edit user-thread)
@@ -587,12 +592,7 @@
 				(send definitions-edit end-edit-sequence))))]
 			  [color-loop
 			   (lambda (zodiac-ast)
-			     (let* ([source-object?
-				     (lambda (zodiac-ast)
-				       (let ([who (zodiac:origin-who
-						   (zodiac:zodiac-origin zodiac-ast))])
-					 (or (eq? who 'source) (eq? who 'reader))))]
-				    [z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
+			     (let* ([z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
 				    [z:finish (+ 1
 						 (zodiac:location-offset
 						  (zodiac:zodiac-finish zodiac-ast)))]
@@ -612,7 +612,10 @@
 					    [else (void)]))))]
 				    [color-syntax
 				     (lambda ()
-				       (if (source-object? zodiac-ast)
+				       (if (or (source-object? zodiac-ast)
+					       ; If it's a macro/micro expansion, first
+					       ;  item must be a syntax keyword
+					       (source-object? zodiac-ast))
 					   (let* ([start (find-next-non-whitespace (add1 z:start))]
 						  [finish (find-next-whitespace start)])
 					     (when (and finish start)
@@ -682,13 +685,12 @@
 				 (color-syntax)
 				 (for-each 
 				  (lambda (var) 
-				    (when (source-object? var)
-				      (hash-table-put! 
-				       defineds (zodiac:varref-var var)
-				       (cons var
-					     (hash-table-get defineds 
-							     (zodiac:varref-var var)
-							     (lambda () null))))))
+				    (hash-table-put! 
+				     defineds (zodiac:varref-var var)
+				     (cons var
+					   (hash-table-get defineds 
+							   (zodiac:varref-var var)
+							   (lambda () null)))))
 				  (zodiac:define-values-form-vars zodiac-ast))
 				 (for-each (lambda (var)
 					     (when (source-object? var)
@@ -733,9 +735,53 @@
 				 (for-each color-loop
 					   (zodiac:app-args zodiac-ast))]
 				
-				;; little grossness hear to make life easier.
+				;; little grossness here to make life easier.
 				[(zodiac:symbol? zodiac-ast) (color bound-style)]
 				
+				[(zodiac:unit-form? zodiac-ast)
+				 (color-syntax)
+				 (for-each color-loop (zodiac:unit-form-imports zodiac-ast))
+				 (for-each color-loop (map car (zodiac:unit-form-exports zodiac-ast)))
+				 (for-each color-loop (zodiac:unit-form-clauses zodiac-ast))]
+				[(zodiac:compound-unit-form? zodiac-ast)
+				 (color-syntax)
+				 (for-each color-loop (map cadr (zodiac:compound-unit-form-links zodiac-ast)))]
+				[(zodiac:invoke-unit-form? zodiac-ast)
+				 (color-syntax)
+				 (color-loop (zodiac:invoke-unit-form-unit zodiac-ast))
+				 (for-each color-loop (zodiac:invoke-unit-form-variables zodiac-ast))]
+				
+				[(zodiac:interface-form? zodiac-ast)
+				 (color-syntax)
+				 (for-each color-loop (zodiac:interface-form-super-exprs zodiac-ast))]
+				[(zodiac:class*/names-form? zodiac-ast)
+				 (color-syntax)
+				 (color-loop (zodiac:class*/names-form-this zodiac-ast))
+				 (color-loop (zodiac:class*/names-form-super-init zodiac-ast))
+				 (color-loop (zodiac:class*/names-form-super-expr zodiac-ast))
+				 (for-each color-loop (zodiac:class*/names-form-interfaces zodiac-ast))
+				 (for-each color-loop
+					   (zodiac:paroptarglist-vars (zodiac:class*/names-form-init-vars zodiac-ast)))
+				 (for-each
+				  (lambda (clause)
+				    (cond
+				     ((zodiac:public-clause? clause)
+				      (for-each color-loop (zodiac:public-clause-internals clause))
+				      (for-each color-loop (zodiac:public-clause-exprs clause)))
+				     ((zodiac:override-clause? clause)
+				      (for-each color-loop (zodiac:override-clause-internals clause))
+				      (for-each color-loop (zodiac:override-clause-exprs clause)))
+				     ((zodiac:private-clause? clause)
+				      (for-each color-loop (zodiac:private-clause-internals clause))
+				      (for-each color-loop (zodiac:private-clause-exprs clause)))
+				     ((zodiac:inherit-clause? clause)
+				      (for-each color-loop (zodiac:inherit-clause-internals clause)))
+				     ((zodiac:rename-clause? clause)
+				      (for-each color-loop (zodiac:rename-clause-internals clause)))
+				     ((zodiac:sequence-clause? clause)
+				      (for-each color-loop (zodiac:sequence-clause-exprs clause)))))
+				  (zodiac:class*/names-form-inst-clauses zodiac-ast))]
+
 				[(zodiac:struct-form? zodiac-ast)
 				 (color-syntax)
 				 (color-loop (zodiac:struct-form-type zodiac-ast))
@@ -818,26 +864,27 @@
 					  [(hash-table-get defineds id (lambda () #f))
 					   => 
 					   (lambda (defn-vars)
-					     (let* ([defn-var (car defn-vars)]
-						    [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
-						    [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
-						    [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
-						    [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
-						    [rename (lambda (new-name)
-							      (when new-name
-								(rename-bindings
-								 (mzlib:function:foldl
-								  (lambda (test-var l)
-								    (if (eq? (zodiac:varref-var test-var)
-									     (zodiac:varref-var defn-var))
-									(cons test-var l)
-									l))
-								  defn-vars
-								  top-level-varrefs)
-								 new-name)))])
-					       (add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
-							  (zodiac:varref-var defn-var) rename)
-					       bound-style))]
+					     (when (source-object? (car defn-vars))
+					       (let* ([defn-var (car defn-vars)]
+						      [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
+						      [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
+						      [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
+						      [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
+						      [rename (lambda (new-name)
+								(when new-name
+								  (rename-bindings
+								   (mzlib:function:foldl
+								    (lambda (test-var l)
+								      (if (eq? (zodiac:varref-var test-var)
+									       (zodiac:varref-var defn-var))
+									  (cons test-var l)
+									  l))
+								    defn-vars
+								    top-level-varrefs)
+								   new-name)))])
+						 (add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
+							    (zodiac:varref-var defn-var) rename)))
+					     bound-style)]
 					  [(built-in? id) primitive-style]
 					  [else unbound-style])
 					 (zodiac:location-offset (zodiac:zodiac-start var))

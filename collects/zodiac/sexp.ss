@@ -1,4 +1,4 @@
-; $Id: sexp.ss,v 1.21 1998/07/14 20:25:03 shriram Exp $
+; $Id: sexp.ss,v 1.22 1998/08/26 19:47:09 mflatt Exp $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
@@ -83,31 +83,35 @@
       (cond
 	((z:scalar? expr)
 	  (if (z:box? expr)
-	    (box (sexp->raw (z:read-object expr) table))
-	    (z:read-object expr)))
+	      (let ([b (box (sexp->raw (z:read-object expr) table))])
+		(when table
+		  (hash-table-put! table b expr))
+		b)
+	      (z:read-object expr)))
+	
 	((z:sequence? expr)
-	  (let ((output
-		  (let ((objects (map (lambda (s)
-					(sexp->raw s table))
-				   (z:read-object expr))))
-		    (cond
-		      ((z:list? expr) objects)
-		      ((z:improper-list? expr)
-			(let loop ((objects objects))
-			  (if (or (null? objects) (null? (cdr objects)))
-			    (internal-error expr
-			      "Invalid ilist in sexp->raw")
-			    (if (null? (cddr objects))
+	 (let ((output
+		(let ((objects (map (lambda (s)
+				      (sexp->raw s table))
+				    (z:read-object expr))))
+		  (cond
+		   ((z:list? expr) objects)
+		   ((z:improper-list? expr)
+		    (let loop ((objects objects))
+		      (if (or (null? objects) (null? (cdr objects)))
+			  (internal-error expr
+					  "Invalid ilist in sexp->raw")
+			  (if (null? (cddr objects))
 			      (cons (car objects) (cadr objects))
 			      (cons (car objects) (loop (cdr objects)))))))
-		      ((z:vector? expr)
-			(apply vector objects))))))
-	    (when table
-	      (hash-table-put! table output expr))
-	    output))
+		   ((z:vector? expr)
+		    (apply vector objects))))))
+	   (when table
+	     (hash-table-put! table output expr))
+	   output))
 	(else
-	  expr))))
-
+	 expr))))
+  
   (define sanitized-sexp->raw
     (let ((sa string-append))
       (lambda (expr)

@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.47 1998/11/04 19:52:55 mflatt Exp $
+; $Id: x.ss,v 1.48 1999/02/02 21:03:25 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -275,10 +275,10 @@
 
   (define introduce-fresh-identifier
     (lambda (new-name source)
-      (z:make-symbol (zodiac-origin source)
+      (z:make-symbol (make-origin 'micro 'never-mind)
 	(zodiac-start source) (zodiac-finish source)
 	new-name new-name '())))
-
+  
   (define introduce-bound-id
     (lambda (binding-gen name-gen old-id old-id-marks)
       (let* ((base-name (binding-var old-id))

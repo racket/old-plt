@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.41 1999/02/25 22:21:29 mflatt Exp $
+; $Id: scm-obj.ss,v 1.42 1999/04/07 22:38:04 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -460,9 +460,9 @@
 	      (lambda (p-env)
 		(let* ((kwd-pos (pat:pexpand 'kwd  p-env kwd))
 			(captured-this
-			  (introduce-identifier 'this kwd-pos))
+			  (introduce-fresh-identifier 'this kwd-pos))
 			(captured-super-init
-			  (introduce-identifier 'super-init kwd-pos))
+			  (introduce-fresh-identifier 'super-init kwd-pos))
 			(new-p-env (pat:extend-penv
 				     'this captured-this
 				     (pat:extend-penv
@@ -493,9 +493,9 @@
 	      (lambda (p-env)
 		(let* ((kwd-pos (pat:pexpand 'kwd p-env kwd))
 			(captured-this
-			  (introduce-identifier 'this kwd-pos))
+			  (introduce-fresh-identifier 'this kwd-pos))
 			(captured-super-init
-			  (introduce-identifier 'super-init kwd-pos))
+			  (introduce-fresh-identifier 'super-init kwd-pos))
 			(new-p-env (pat:extend-penv
 				     'this captured-this
 				     (pat:extend-penv

@@ -244,7 +244,13 @@
 		     "calling parent's force-redraw and quitting"))
 		   (send parent force-redraw))))]
 	    
-	    ; set-size
+	    ; set-size: caches calls to set-size to avoid unnecessary work.
+	    ; input: x/y: new position for object
+	    ;        width/height: new size for object
+	    ; returns: nothing
+	    ; effect: if arguments mark a different geometry than the object's
+	    ;   current geometry, passes args to super-class's set-size.
+	    ;   Otherwise, does nothing.
 	    [set-size
 	     (lambda (x y width height)
 	       (unless (and (same-dimension? x (get-x))
@@ -293,7 +299,14 @@
 	      (cond
 		[(or (is-a? parent frame%)
 		     (is-a? parent dialog-box%))
-		 (send parent insert-panel this)]
+		 (if (is-a? this panel%)
+		     (send parent insert-panel this)
+		     (error 'init
+			    (string-append
+			     "Only descendants of mred:panel% can be "
+			     "direct children of mred:frame% or "
+			     "mred:dialog-box% instances; received ~s")
+			    this))]
 		[(is-a? parent panel%)
 		 (send parent add-child this)]
 		[else (error 'init

@@ -40,6 +40,8 @@
 #define MAXREAD  32768				 /* Number of bytes to be read during */
 						 /* each read operation.			 */
 
+#pragma optimize ("", off)
+
 /* Header signatutes for various resources */
 #define BFT_ICON	 0x4349	 /* 'IC' */
 #define BFT_BITMAP 0x4d42	 /* 'BM' */
@@ -61,8 +63,8 @@ DWORD PASCAL lread(int fh, VOID FAR *pv, DWORD ul);
 DWORD PASCAL lwrite(int fh, VOID FAR *pv, DWORD ul);
 
 BOOL		 WriteDIB (LPSTR szFile,HANDLE hdib);
-WORD		 PaletteSize (VOID FAR * pv);
-WORD		 DibNumColors (VOID FAR * pv);
+DWORD		 PaletteSize (VOID FAR * pv);
+DWORD		 DibNumColors (VOID FAR * pv);
 // HANDLE		 DibFromBitmap (HBITMAP hbm, DWORD biStyle, WORD biBits, HPALETTE hpal);
 BOOL             NEAR PASCAL MakeBitmapAndPalette(HDC,HANDLE,HPALETTE *,HBITMAP *);
 HPALETTE PASCAL  NEAR MakeDIBPalette(LPBITMAPINFOHEADER);
@@ -127,10 +129,10 @@ BOOL WriteDIB(LPSTR szFile, HANDLE hdib)
  *									    *
  ****************************************************************************/
 
-WORD PaletteSize(VOID FAR * pv)
+DWORD PaletteSize(VOID FAR * pv)
 {
 	LPBITMAPINFOHEADER lpbi;
-	WORD	       NumColors;
+	DWORD	       NumColors;
 
 	lpbi = (LPBITMAPINFOHEADER) pv;
 	NumColors = DibNumColors(lpbi);
@@ -152,7 +154,7 @@ WORD PaletteSize(VOID FAR * pv)
  *									    *
  ****************************************************************************/
 
-WORD DibNumColors(VOID FAR *pv)
+DWORD DibNumColors(VOID FAR *pv)
 {
 	int 		bits;
 	LPBITMAPINFOHEADER	lpbi;
@@ -168,7 +170,7 @@ WORD DibNumColors(VOID FAR *pv)
      */
 	if (lpbi->biSize != sizeof(BITMAPCOREHEADER)) {
 		if (lpbi->biClrUsed != 0)
-			return (WORD) lpbi->biClrUsed;
+			return  lpbi->biClrUsed;
 		bits = lpbi->biBitCount;
 		}
 	else 
@@ -254,7 +256,7 @@ HANDLE DibFromBitmap(HBITMAP hbm, DWORD biStyle, WORD biBits, HPALETTE hpal)
     /*	call GetDIBits with a NULL lpBits param, so it will calculate the
      *  biSizeImage field for us
      */
-	GetDIBits(hdc, hbm, 0, (WORD) bi.biHeight,
+	GetDIBits(hdc, hbm, 0,  bi.biHeight,
 		 NULL, (LPBITMAPINFO) lpbi, DIB_RGB_COLORS);
 
 	bi = *lpbi;
@@ -290,8 +292,8 @@ HANDLE DibFromBitmap(HBITMAP hbm, DWORD biStyle, WORD biBits, HPALETTE hpal)
 	if (GetDIBits(hdc,
 		 hbm,
 		 0,
-		 (WORD) bi.biHeight,
-		 (LPSTR) lpbi + (WORD) lpbi->biSize + PaletteSize(lpbi),
+		  bi.biHeight,
+		 (LPSTR) lpbi + lpbi->biSize + PaletteSize(lpbi),
 		 (LPBITMAPINFO) lpbi, DIB_RGB_COLORS) == 0) {
 		GlobalUnlock(hdib);
 		hdib = NULL;
@@ -326,12 +328,12 @@ DWORD PASCAL lread(int fh, VOID far *pv, DWORD ul)
 	DWORD     ulT = ul;
 	BYTE *hp = (BYTE *) pv;
 	while (ul > (DWORD) MAXREAD) {
-		if (_lread(fh, (LPSTR) hp, (WORD) MAXREAD) != MAXREAD)
+		if (_lread(fh, (LPSTR) hp, MAXREAD) != MAXREAD)
 			return 0;
 		ul -= MAXREAD;
 		hp += MAXREAD;
 		}
-	if (_lread(fh, (LPSTR) hp, (WORD) ul) != (WORD) ul)
+	if (_lread(fh, (LPSTR) hp, ul) != ul)
 		return 0;
 	return ulT;
 }
@@ -352,12 +354,12 @@ DWORD PASCAL lwrite(int fh, VOID FAR *pv, DWORD ul)
 	DWORD     ulT = ul;
 	BYTE *hp = (BYTE *) pv;
 	while (ul > MAXREAD) {
-		if (_lwrite(fh, (LPSTR) hp, (WORD) MAXREAD) != MAXREAD)
+		if (_lwrite(fh, (LPSTR) hp, MAXREAD) != MAXREAD)
 			return 0;
 		ul -= MAXREAD;
 		hp += MAXREAD;
 		}
-	if (_lwrite(fh, (LPSTR) hp, (WORD) ul) != (WORD) ul)
+	if (_lwrite(fh, (LPSTR) hp, ul) != ul)
 		return 0;
 	return ulT;
 }
@@ -383,10 +385,10 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
     LPBITMAPINFOHEADER lpbi;
     OFSTRUCT	       of;
     BITMAPFILEHEADER   bf;
-    WORD		nNumColors;
+    DWORD		nNumColors;
     BOOL result = FALSE;
     char str[128];
-    WORD offBits;
+    DWORD offBits, extra_space, got;
     HDC hDC;
     BOOL bCoreHead = FALSE;
     HANDLE hDIB = 0;
@@ -436,7 +438,7 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
 	    goto ErrExit;
     }
 
-    if (!(nNumColors = (WORD)lpbi->biClrUsed))
+    if (!(nNumColors = lpbi->biClrUsed))
     {
 	/* no color table for 24-bit, default size otherwise */
 	if (lpbi->biBitCount != 24)
@@ -453,11 +455,16 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
 			 * lpbi->biHeight;
     }
 
+    if ((3 * lpbi->biWidth) & 0x3) {
+      extra_space = lpbi->biHeight * (4 - ((3 * lpbi->biWidth) & 0x3));
+    } else
+      extra_space = 0;
+
     /* get a proper-sized buffer for header, color table and bits */ 
     GlobalUnlock(hDIB);
-    hDIB = GlobalReAlloc(hDIB, lpbi->biSize +
-    					nNumColors * sizeof(RGBQUAD) +
-					lpbi->biSizeImage, 0);
+    hDIB = GlobalReAlloc(hDIB, (lpbi->biSize
+				+ nNumColors * sizeof(RGBQUAD)
+				+ lpbi->biSizeImage + extra_space), 0);
     if (!hDIB)	/* can't resize buffer for loading */
 	goto ErrExit2;
 
@@ -486,14 +493,16 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
     }
 
     /* offset to the bits from start of DIB header */
-    offBits = (WORD)lpbi->biSize + nNumColors * sizeof(RGBQUAD);
+    offBits = lpbi->biSize + nNumColors * sizeof(RGBQUAD);
 
     if (bf.bfOffBits != 0L)
     {
         _llseek(fh,bf.bfOffBits,SEEK_SET);
     }
 
-    if (lpbi->biSizeImage == lread(fh, (LPSTR)lpbi + offBits, lpbi->biSizeImage))
+	got = lread(fh, (LPSTR)lpbi + offBits, lpbi->biSizeImage + extra_space);
+
+    if (lpbi->biSizeImage == (got - extra_space))
     {
 	GlobalUnlock(hDIB);
 
@@ -538,10 +547,10 @@ HANDLE ReadDIB2(LPSTR lpFileName)
     LPBITMAPINFOHEADER lpbi;
     OFSTRUCT	       of;
     BITMAPFILEHEADER   bf;
-    WORD		nNumColors;
+    DWORD		nNumColors;
     BOOL result = FALSE;
     char str[128];
-    WORD offBits;
+    DWORD offBits;
     HDC hDC;
     BOOL bCoreHead = FALSE;
     HANDLE hDIB = 0;
@@ -589,7 +598,7 @@ HANDLE ReadDIB2(LPSTR lpFileName)
 	    goto ErrExit;
     }
 
-    if (!(nNumColors = (WORD)lpbi->biClrUsed))
+    if (!(nNumColors = lpbi->biClrUsed))
     {
 	/* no color table for 24-bit, default size otherwise */
 	if (lpbi->biBitCount != 24)
@@ -639,7 +648,7 @@ HANDLE ReadDIB2(LPSTR lpFileName)
     }
 
     /* offset to the bits from start of DIB header */
-    offBits = (WORD)lpbi->biSize + nNumColors * sizeof(RGBQUAD);
+    offBits = lpbi->biSize + nNumColors * sizeof(RGBQUAD);
 
     if (bf.bfOffBits != 0L)
     {
@@ -698,10 +707,10 @@ BOOL NEAR PASCAL MakeBitmapAndPalette(HDC hDC, HANDLE hDIB,
 #endif
 
 
-	lpBits = (LPSTR)lpInfo + (WORD)lpInfo->biSize + 
-		(WORD)lpInfo->biClrUsed * sizeof(RGBQUAD);
+	lpBits = (LPSTR)lpInfo + lpInfo->biSize + 
+		lpInfo->biClrUsed * sizeof(RGBQUAD);
 	hBitmap = CreateDIBitmap(hDC, lpInfo, CBM_INIT, lpBits, 
-				(LPBITMAPINFO)lpInfo, DIB_RGB_COLORS);
+				 (LPBITMAPINFO)lpInfo, DIB_RGB_COLORS);
 
 #if USE_THE_PALETTE
 
@@ -710,9 +719,11 @@ BOOL NEAR PASCAL MakeBitmapAndPalette(HDC hDC, HANDLE hDIB,
 #endif
 
 
-	if (!hBitmap)
+	if (!hBitmap) {
+	  int err;
+	  err = GetLastError();
 	    DeleteObject(hPalette);
-	else
+	} else
 	{
 	    *phBitmap = hBitmap;
 	    *phPal = hPalette;
@@ -739,7 +750,7 @@ HPALETTE PASCAL NEAR MakeDIBPalette(LPBITMAPINFOHEADER lpInfo)
     NPLOGPALETTE npPal;
     RGBQUAD far *lpRGB;
     HPALETTE hLogPal; 
-    WORD i;
+    DWORD i;
 
     /* since biClrUsed field was filled during the loading of the DIB,
     ** we know it contains the number of colors in the color table.
@@ -747,12 +758,12 @@ HPALETTE PASCAL NEAR MakeDIBPalette(LPBITMAPINFOHEADER lpInfo)
     if (lpInfo->biClrUsed)
     {
 	npPal = (NPLOGPALETTE)LocalAlloc(LMEM_FIXED, sizeof(LOGPALETTE) + 
-				(WORD)lpInfo->biClrUsed * sizeof(PALETTEENTRY));
+				lpInfo->biClrUsed * sizeof(PALETTEENTRY));
 	if (!npPal)
 	    return(FALSE);
 
 	npPal->palVersion = 0x300;
-	npPal->palNumEntries = (WORD)lpInfo->biClrUsed;
+	npPal->palNumEntries = lpInfo->biClrUsed;
 
 	/* get pointer to the color table */
 	lpRGB = (RGBQUAD FAR *)((LPSTR)lpInfo + lpInfo->biSize);

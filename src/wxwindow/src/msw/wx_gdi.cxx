@@ -1211,41 +1211,41 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
   }
 #if USE_XPM_IN_MSW
   else if (flags & wxBITMAP_TYPE_XPM)
-  {
-    XImage *ximage;
-    XpmAttributes xpmAttr;
-    HDC     dc;
+    {
+      XImage *ximage;
+      XpmAttributes xpmAttr;
+      HDC     dc;
 
-    ok = False;
-	 dc = ::CreateCompatibleDC(NULL);
-	 if (dc)
-	 {
-		xpmAttr.valuemask = XpmReturnPixels;
-		int errorStatus = XpmReadFileToImage(&dc, bitmap_file, &ximage, (XImage **) NULL, &xpmAttr);
-		DeleteDC(dc);
-		if (errorStatus == XpmSuccess)
-		{
-	ms_bitmap = ximage->bitmap;
-	RegisterGDIObject(ms_bitmap);
+      ok = False;
+      dc = ::CreateCompatibleDC(NULL);
+      if (dc)
+	{
+	  xpmAttr.valuemask = XpmReturnPixels;
+	  int errorStatus = XpmReadFileToImage(&dc, bitmap_file, &ximage, (XImage **) NULL, &xpmAttr);
+	  DeleteDC(dc);
+	  if (errorStatus == XpmSuccess)
+	    {
+	      ms_bitmap = ximage->bitmap;
+	      RegisterGDIObject(ms_bitmap);
 
-	BITMAP  bm;
-	GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
+	      BITMAP  bm;
+	      GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
 
-	width = (bm.bmWidth);
-	height = (bm.bmHeight);
-	depth = (bm.bmPlanes * bm.bmBitsPixel);
-	numColors = xpmAttr.npixels;
-		  XpmFreeAttributes(&xpmAttr);
-	XImageFree(ximage);
+	      width = (bm.bmWidth);
+	      height = (bm.bmHeight);
+	      depth = (bm.bmPlanes * bm.bmBitsPixel);
+	      numColors = xpmAttr.npixels;
+	      XpmFreeAttributes(&xpmAttr);
+	      XImageFree(ximage);
 	
-	ok = TRUE;
+	      ok = TRUE;
+	    }
+	  else
+	    {
+	      ok = FALSE;
+	    }
 	}
-      else
-      {
-		  ok = FALSE;
-      }
     }
-  }
 #endif
 #if USE_IMAGE_LOADING_IN_MSW
   else if ((flags & wxBITMAP_TYPE_BMP) 
@@ -1257,10 +1257,9 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
       success = wxLoadIntoBitmap(bitmap_file, this);
     else
       success = wxLoadIntoBitmap(bitmap_file, this, &cmap);
-    if (!success && cmap)
-    {
+    if (!success && cmap) {
       delete cmap;
-		cmap = NULL;
+      cmap = NULL;
     }
     if (cmap)
       bitmapColourMap = cmap;
@@ -1288,7 +1287,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
   }
   
   if (oldSel && ok)
-	oldSel->SelectObject(this);
+    oldSel->SelectObject(this);
 
   return ok;
 }

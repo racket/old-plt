@@ -704,6 +704,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Tagged pointers
 
+;; Make these operations available
+(provide cpointer-type set-cpointer-type!)
+
 ;; This is a kind of a pointer that gets a specific tag when converted to
 ;; Scheme, and accepts only such tagged pointers when going to C.  An optional
 ;; `ptr-type' can be given to be used as the base pointer type, instead of

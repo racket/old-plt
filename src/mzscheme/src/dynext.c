@@ -314,7 +314,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     }
     
     init_f = (Init_Procedure)GetProcAddress(dl,"scheme_initialize");
-    reload_f = (Releoad_Procedure)GetProcAddress(dl,"scheme_reload");
+    reload_f = (Reload_Procedure)GetProcAddress(dl,"scheme_reload");
     
     if (!init_f || !reload_f) {
       FreeLibrary(dl);

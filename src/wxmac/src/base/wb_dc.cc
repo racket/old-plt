@@ -38,6 +38,7 @@ wxbDC::wxbDC(void)
 {
   __type = wxTYPE_DC;
   min_x = 0; min_y = 0; max_x = 0; max_y = 0;
+  auto_device_origin_x = auto_device_origin_y = 0;
   title = NULL;
   clipping = FALSE;
   autoSetting = TRUE ;
@@ -154,8 +155,8 @@ void wxbDC::SetLogicalOrigin(double x, double y)
 
 void wxbDC::SetDeviceOrigin(double x, double y)
 {
-  device_origin_x = x;
-  device_origin_y = y;
+  device_origin_x = x + auto_device_origin_x;
+  device_origin_y = y + auto_device_origin_y;
 }
 
 // For use by wxWindows only, unless custom units are required.

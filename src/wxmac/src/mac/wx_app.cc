@@ -23,6 +23,7 @@
 #include "wx_dccan.h"
 #include "wxTimeScale.h"
 #include "wx_print.h"
+#include "wx_macevents.h"
 #if (defined(powerc) || defined(__powerc)) && defined(MPW)
 QDGlobals 	qd;
 #endif
@@ -1319,4 +1320,26 @@ void wxApp::DoDefaultAboutItem(void)
 	       "Copyright 1993-94, AIAI, University of Edinburgh.\n"
 	       "All Rights Reserved.",
 	       "wxWindows");
+}
+
+//-----------------------------------------------------------------------------
+
+void wxPrimDialogSetUp()
+{
+  wxSetCursor(wxSTANDARD_CURSOR);
+}
+
+void wxPrimDialogCleanUp()
+{
+  WindowPtr w;
+  EventRecord event;
+
+  wxTheApp->AdjustCursor();
+
+  /* In case the front window wasn't active when we started: */
+  w = FrontNonFloatingWindow();
+  event.what = activateEvt;
+  event.modifiers = activeFlag;
+  event.message = (long)w;
+  QueueMrEdEvent(&event);
 }

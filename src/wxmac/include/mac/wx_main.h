@@ -94,5 +94,8 @@ public:
 	wxFrame* findMacWxFrame(WindowPtr theMacWindow);
 };
 
+extern void wxPrimDialogSetUp();
+extern void wxPrimDialogCleanUp();
+
 #endif // IN_CPROTO
 #endif // wx_mainh

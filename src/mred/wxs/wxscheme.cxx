@@ -688,6 +688,8 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 # ifdef WX_CARBON
   {
     GC_CAN_IGNORE struct ColorPickerInfo cpInfo;
+
+    wxPrimDialogSetUp();
     
     cpInfo.theColor.profile = NULL; // use the default ColorSync profile
     if (c) {
@@ -723,6 +725,8 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
     }
     
     c = new wxColour(cpInfo.theColor.color.rgb.red >> 8, cpInfo.theColor.color.rgb.green >> 8, cpInfo.theColor.color.rgb.blue >> 8);
+
+    wxPrimDialogCleanUp();
 
     return objscheme_bundle_wxColour(c);
   }    

@@ -517,7 +517,7 @@ char *wxFileSelector(char *message, char *default_path,
       return NULL;
     }
 
-    wxSetCursor(wxSTANDARD_CURSOR);
+    wxPrimDialogSetUp();
 
     // run the dialog (AppModal doesn't return until user closes dialog):
     if (NavDialogRun(outDialog) != noErr) {
@@ -534,7 +534,7 @@ char *wxFileSelector(char *message, char *default_path,
       RunAppModalLoopForWindow(NavDialogGetWindow(outDialog));
     }
 
-    wxTheApp->AdjustCursor();
+    wxPrimDialogCleanUp();
     
     // dump those strings:
     if (default_filename)

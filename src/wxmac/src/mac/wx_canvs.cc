@@ -448,8 +448,10 @@ void wxCanvas::SetScrollData
 
   if (!scrollAutomanaged) {
     if (theDC) {
-      theDC->device_origin_x = 0;
-      theDC->device_origin_y = 0;
+      theDC->device_origin_x -= theDC->auto_device_origin_x;
+      theDC->device_origin_y -= theDC->auto_device_origin_y;
+      theDC->auto_device_origin_x = 0;
+      theDC->auto_device_origin_y = 0;
     }
     if (evnt) {
       /* OnScroll must queue the callback: */
@@ -466,14 +468,14 @@ void wxCanvas::SetScrollData
       int newH;
       newH = (scrollData->GetValue(wxWhatScrollData::wxPositionH)
 	      * scrollData->GetValue(wxWhatScrollData::wxUnitW));
-      dH = (int)(newH - (-theDC->device_origin_x));
+      dH = (int)(newH - (-theDC->auto_device_origin_x));
     }
     
     {
       int newV;
       newV = (scrollData->GetValue(wxWhatScrollData::wxPositionV)
 	      * scrollData->GetValue(wxWhatScrollData::wxUnitH));
-      dV = (int)(newV - (-theDC->device_origin_y));
+      dV = (int)(newV - (-theDC->auto_device_origin_y));
     }
     
     if (dH != 0 || dV != 0) {
@@ -497,6 +499,8 @@ void wxCanvas::SetScrollData
 	  need_repaint = 1;
 	::DisposeRgn(theUpdateRgn);
       }
+      theDC->auto_device_origin_x += -dH;
+      theDC->auto_device_origin_y += -dV;
       theDC->device_origin_x += -dH;
       theDC->device_origin_y += -dV;
 

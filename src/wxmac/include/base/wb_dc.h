@@ -58,6 +58,8 @@ class wxbDC: public wxObject
 
   double device_origin_x;
   double device_origin_y;
+  double auto_device_origin_x;
+  double auto_device_origin_y;
 
   double logical_scale_x;
   double logical_scale_y;

@@ -1444,8 +1444,8 @@
 		   [(void? (zodiac:read-object ast))
 		    (emit "scheme_void")]
 
-		   ;; HACK! - we have abused constants to pass through 
-		   ;;  a call to scheme_read_nice_compiled_string():
+		   ;; HACK! - we have abused constants to communicate
+		   ;;  a direct call to scheme_read_compiled_stx_string():
 		   [(zodiac:varref? (zodiac:read-object ast))
 		    (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr))"
 			       (vm->c:convert-symbol (zodiac:varref-var (zodiac:read-object ast))))]

@@ -42,6 +42,7 @@
       (define-struct (vm:args zodiac:struct:zodiac) (type vals))
       (define-struct (vm:begin0-mark! zodiac:struct:zodiac) (var val))
       (define-struct (vm:begin0-setup! zodiac:struct:zodiac) (var))
+      (define-struct (vm:syntax! zodiac:struct:zodiac) (vars val))
 
       ;; r-values (1 step computations)
       (define-struct (vm:alloc zodiac:struct:zodiac) (type))

@@ -702,6 +702,31 @@
 			(leaf body)))]
 
 		 
+		 ;;-----------------------------------------------------------------
+		 ;; DEFINE-SYNTAXES
+		 ;;
+		 [(zodiac:define-syntaxes-form? ast)	    
+		  (let* ([vars (zodiac:define-syntaxes-form-names ast)]
+			 [val (zodiac:define-syntaxes-form-expr ast)]
+			 [body
+			  (convert val
+				   (not (= (length vars) 1))
+				   (lambda (val)
+				     (list
+				      (make-vm:syntax! #f
+						       vars
+						       val)))
+				   #f
+				   #f
+				   #t)])
+
+		    (if tail-pos
+			(append! body
+				 (leaf (tail-pos 
+					(make-vm:immediate 
+					 #f
+					 (zodiac:make-special-constant 'void)))))
+			(leaf body)))]
 		 
 		 ;;-------------------------------------------------------------------
 		 ;; WITH-CONTINUATION-MARK
@@ -875,7 +900,7 @@
 				   make-vm:static-varref-from-lift)
 			       a d (top-level-varref/bind-from-lift-lambda ast)))]
 			   [(varref:has-attribute? ast varref:per-load-static)
-			    (convert-global make-vm:per-load-static-varref)]
+			    (ignore-ast make-vm:per-load-static-varref)]
 			   [(varref:has-attribute? ast varref:primitive)
 			    (convert-global make-vm:primitive-varref)]
 			   [(varref:has-attribute? ast varref:symbol)
@@ -914,8 +939,8 @@
 	  
 	  (lambda (ast multi? leaf tail-pos tail?)
 	    (set! new-locals empty-set)
-					; l->r evaluation necessary for convert to get called before new-locals
-					; is evaluated
+	    ;; l->r evaluation necessary for convert to get called before new-locals
+	    ;; is evaluated
 	    (values (make-vm:sequence
 		     (zodiac:zodiac-stx ast)
 		     (convert ast multi? (or leaf list) tail-pos tail? (not tail?)))

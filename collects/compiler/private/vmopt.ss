@@ -450,6 +450,12 @@
 		       ;;
 		       [(vm:register-args? ast) (list ast)]
 
+		       ;;--------------------------------------------------------------------
+		       ;; SYNTAX! DEFINITIONS
+		       [(vm:syntax!? ast) 
+			(set-vm:syntax!-val! ast (car (process! (vm:syntax!-val ast))))
+			(list ast)]
+		       
 		       ;;====================================================================
 		       ;; R-VALUES (ONE STEP COMPUTATIONS)
 		       

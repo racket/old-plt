@@ -367,7 +367,8 @@ void wxMediaEdit::SettingAdmin(wxMediaAdmin * /* newadmin */)
 
 void wxMediaEdit::InitNewAdmin(void)
 {
-  Redraw();
+  if (!delayRefresh)
+    Redraw();
 }
 
 void wxMediaEdit::EndStreaks(int exception)

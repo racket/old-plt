@@ -486,6 +486,11 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
     dragging = FALSE;
     if (tracking) {
       tracking = FALSE;
+      if (trackClickback->hilited) {
+	SetClickbackHilited(trackClickback, FALSE);
+	trackClickback->f(this, trackClickback->start, 
+			  trackClickback->end, trackClickback->data);
+      }
       if (admin)
 	admin->UpdateCursor();
     }

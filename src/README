@@ -32,9 +32,6 @@ plt\src\worksp\README.
 To compile MzScheme with Cygwin tools, follow the Unix instructions
 below. MrEd does not compile with Cygwin.
 
-To compile MzScheme with Borland C, read the instructions in
-plt\src\borland\README. MrEd does not compile with Borland.
-
 Regardless of the compiler used to build MzScheme, compatible
 extensions can be built with any of the other compilers. For example,
 to support Borland-built extensions after compiling MzScheme with MSVC
@@ -78,6 +75,12 @@ the Unix instructions below, but note the following:
  0. If you have an old PLT installation in the target directory,
     remove it (unless you are using CVS with an "in-place" build as
     described below).
+
+    Also, make sure that you have libraries and header files for Xft
+    and Cairo if you would like support for font smoothing (Xft) and
+    graphics smoothing (Cairo). These libraries are not distributed
+    with PLT Scheme. The configure process checks automatically
+    whether these libraries are available.
 
  1. Run the script `configure' (which is in the same directory as this
     README), usually with a --prefix=TARGETDIR command-line argument
@@ -280,27 +283,27 @@ for "moving memory manager".
 
 * Building for Unix and Mac OS X
 
- Run `make 3m'. Building MzScheme3m and MrEd3m first builds the normal
- MzScheme and MrEd executables, then uses them to build the 3m
- versions. Run `make install-3m' to install the 3m binaries.
+  Run `make 3m'. Building MzScheme3m and MrEd3m first builds the
+  normal MzScheme and MrEd executables, then uses them to build the 3m
+  versions. Run `make install-3m' to install the 3m binaries.
 
- Note on OS X (actually, PowerPC and gcc): gcc version 2.x has an
- optimizer bug tha prevents 3m from building. Either use gcc 3.x or
- supply --disable-opt to `configure'.
+  Note on OS X (actually, PowerPC and gcc): gcc version 2.x has an
+  optimizer bug that prevents 3m from building. Either use gcc 3.x or
+  supply --disable-opt to `configure'.
 
 * Windows
 
- Build and install the normal MzScheme and MrEd executables using
- Micsrosoft Visual C, and make sure that cl.exe is in your shell
- path. Then, in a shell, change directories to plt\src\worksp\gc2 and
- run
+  Build and install the normal MzScheme and MrEd executables using
+  Micsrosoft Visual C, and make sure that cl.exe is in your shell
+  path. Then, in a shell, change directories to plt\src\worksp\gc2 and
+  run
 
    ../../../mzscheme.exe -r make.ss
 
- The resulting MzScheme3m.exe and MrEd3m.exe will appear in the "plt"
- directory, along with DLLs libmzsch3mxxxxxxx.dll and
- libmred3mxxxxxxx.dll. (There is no correspingd libmzgc3mxxxxxxx.dll.
- Instead, it is merged with libmzsch3mxxxxxxx.dll.)
+  The resulting MzScheme3m.exe and MrEd3m.exe will appear in the "plt"
+  directory, along with DLLs libmzsch3mxxxxxxx.dll and
+  libmred3mxxxxxxx.dll. (There is no correspingd libmzgc3mxxxxxxx.dll.
+  Instead, it is merged with libmzsch3mxxxxxxx.dll.)
 
 Configuration Options
 ---------------------

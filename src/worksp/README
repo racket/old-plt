@@ -1,22 +1,18 @@
 This directory contains 
 
- - makefiles and project files for building MzScheme and MrEd
-    with Microsoft Visual C++ (MSVC) version 6,
  - solution files and project files for building MzScheme and
-    MrEd with Microsoft Visual Studio .NET (VS.NET),
+    MrEd with Microsoft Visual Studio .NET (VS.NET) or
+    Visual Studio Express;
  - mzconfig.h which is a manual version of information that is
     gathered automatically when using the "configure" script.
 
-If you have downloaded MzCOM, the directory also contains
-MSVC and VS.NET files for MzCOM.
+If you have downloaded MzCOM, the directory also contains VS.NET
+files for MzCOM.
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,
 follow the instructions in plt\src\README (there is a short
 Windows-specific section in that file).
-
-Finally, MzScheme compiles with Borland's compiler. See
-plt\src\borland\README for information.
 
 
 As always, please report bugs via one of the following:
@@ -33,17 +29,8 @@ Building MzScheme, MzCOM, and MrEd
 ----------------------------------------------------------------------
 
 The source code for MzScheme, MzCOM, and MrEd is split into several
-projects. To make the project named `X' with MSVC, either open the file
-plt\src\worksp\X\X.dsw with MSVC, or go into plt\src\worksp\X\ and
-execute `nmake -f X.mak' (assuming the MSVC programs are in your
-path). To make the `X' project with VS.NET, open the file 
+projects. To make the `X' project with VS.NET, open the file 
 plt\src\worksp\X\X.sln.
-
- NOTE: The makefiles as distributed do not contain dependencies (which
- are kept in .dep files). Thus, if you modify a header file and
- recompile using `nmake', some files may not be recompiled as they
- should be. To get makefiles with dependencies, open the X.dsw files
- in MSVC and export new makefiles.
 
 To build MzScheme, make the MzScheme project in
    plt\src\worksp\mzscheme - makes plt\mzscheme.exe
@@ -65,6 +52,7 @@ The make process for MrEd automatically builds
    libmzsch - as above
    libmred - makes plt\libmredxxxxxxx.dll and
                    plt\src\worksp\libmred\Release\libmredxxxxxxx.lib
+   pltdgi - makes plt\pltgdi_xxxxxxx.dll
    wxutils - makes plt\src\worksp\wxutils\Release\wxutils.lib
    wxwin - makes plt\src\worksp\wxwin\Release\wxwin.lib
    wxs  - makes plt\src\worksp\wxs\Release\wxs.lib
@@ -79,6 +67,11 @@ which copies .exp, .obj, and .lib files into plt\lib\, and also copies
 uniplt_xxxxxxx.dll to plt\.  The DLL is used only under Windows
 95/98/Me for Unicode.
 
+The pltgdi_xxxxxxx.dll is used for smoothed (i.e., anti-aliased)
+drawing, but only when gdiplus.dll is available. If pltgdi_xxxxxxx.dll
+or gdiplus.dll is not found by MrEd at run-time, smooth drawing is
+disabled.
+
 To complete a build, run the versioning script described in the next
 section.
 
@@ -87,9 +80,8 @@ Versioning
 ----------------------------------------------------------------------
 
 The obnoxious "xxxxxxx" in the DLL names is a placeholder for a
-version number. (Embedding a version number in a DLL name appears to
-be the simplest and surest way to avoid confusing versioning
-problems.)
+version number. Embedding a version number in a DLL name appears to
+be the simplest and surest way to avoid version confusion.
 
 For local testing, you can use the "xxxxxxx" libraries directly. For
 any binaries that will be distributed, however, the placeholder should
@@ -113,6 +105,7 @@ times. The resulting conversions are
                           -> plt\lib\win32\msvc\libmzsch<version>.lib
   plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
                           -> plt\lib\win32\msvc\libmzgc<version>.lib
+  plt\pltgdi_.dll -> plt\pltgdi_<version>.dll
   plt\uniplt_xxxxxxx.dll -> plt\uniplt_<version>.dll
 
 ----------------------------------------------------------------------

@@ -21,7 +21,6 @@
 		 (send view get-snip-location contents-snip xr yb #t)
 		 (let ([w (- (unbox xr) (unbox xl))]
 		       [h (- (unbox yb) (unbox yt))])
-		   (printf "w: ~s h: ~s~n" w h)
 		   (send contents set-tree-width w)
 		   (send contents set-tree-height h)
 		   (values w h)))]
@@ -72,7 +71,7 @@
 			(o-loop bundle-content-snip x (+ y interior-height-addition))
 			(i-loop (cdr bundle-contents-snips)
 				(+ x tree-width)))]))]
-	    [else (error 'create-view "fell off cond: ~e~n" contents-snip)])))]
+	    [else (error 'position-snips "fell off cond: ~e~n" contents-snip)])))]
       [build-view-contents
        (lambda (view)
 	 (let loop ([contents contents])
@@ -90,13 +89,15 @@
 	    [else (error 'create-view "fell off cond: ~e~n" contents)])))])
     (public
       [create-view
-       (lambda ()
-	 (let ([view (make-object bundle-pasteboard%)])
+       (lambda (insert-into-editor)
+	 (let* ([view (make-object bundle-pasteboard%)]
+		[snip (make-object editor-snip% view)])
+	   (insert-into-editor snip)
 	   (send view set-contents-snip (build-view-contents view))
 	   (calculate-tree-size view)
 	   (position-snips view)
 	   (set! views (cons view views))
-	   view))]
+	   snip))]
       [contents-changed
        (lambda ()
 	 (unless (null? views)
@@ -279,7 +280,7 @@
 			  (send dc draw-line (+ x dx) (+ y dy) (+ bx dx) (+ by dy))
 			  (o-loop bundle-content-snip)
 			  (i-loop (cdr bundle-contents-snips))))])))]
-	       [else (error 'create-view "fell off cond: ~e~n" contents-snip)]))
+	       [else (error 'on-paint "fell off cond: ~e~n" contents-snip)]))
 	    (send dc set-pen pen))))])
     (sequence
       (super-init))))
@@ -314,6 +315,8 @@
   (send dc set-pen (send the-pen-list find-or-create-pen color width style)))
 (define (set-dc-brush dc color style)
   (send dc set-brush (send the-brush-list find-or-create-brush color style)))
+(define white (make-object color% "WHITE"))
+(define black (make-object color% "BLACK"))
 
 (define node-bundle-snip%
   (class snip% (node-bundle bundle-contents-snips)
@@ -333,6 +336,13 @@
     (override
      [get-extent
       (lambda (dc x y w h descent space lspace rspace)
+
+	(let-values ([(tw th _1 _2)
+		      (send dc get-text-extent
+			    (symbol->string (send node-bundle get-label)))])
+	  (set! width tw)
+	  (set! height th))
+
 	(set-box/f! w width)
 	(set-box/f! h height)
 	(set-box/f! descent 0)
@@ -341,13 +351,16 @@
 	(set-box/f! rspace 0))]
      [draw
       (lambda (dc x y left top right bottom dx dy draw-caret)
-	(let ([pen (send dc get-pen)]
-	      [brush (send dc get-brush)])
-	  (set-dc-pen dc "BLACK" 1 'solid)
-	  (set-dc-brush dc "BLACK" 'solid)
-	  (send dc draw-ellipse x y width height)
-	  (send dc set-pen pen)
-	  (send dc set-brush brush)))])
+	(let ([foreground (send dc get-text-foreground)]
+	      [background (send dc get-text-background)]
+	      [mode (send dc get-text-mode)])
+	  (send dc set-text-foreground black)
+	  (send dc set-text-background white)
+	  (send dc set-text-mode 'solid)
+	  (send dc draw-text (symbol->string (send node-bundle get-label)) x y)
+	  (send dc set-text-mode mode)
+	  (send dc set-text-foreground foreground)
+	  (send dc set-text-background background)))])
     (sequence
       (super-init))))
 
@@ -369,13 +382,37 @@
  		 [else (error)]))
  	      null))
 (define bundle (make-object bundle% int3))
-(define frame (make-object frame% "test" #f 400 400))
+
+(define frame (make-object frame% "Bundles" #f 400 400))
+(define button-panel (make-object horizontal-panel% frame))
+(send button-panel stretchable-height #f)
+(define text (make-object text%))
+(define new-bundle (make-object button%
+		     "New Bundle"
+		     button-panel
+		     (lambda x
+		       (new-bundle))))
+(define new-leaf (make-object button%
+		   "New Leaf"
+		   button-panel
+		   (lambda x
+		     (new-leaf))))
+(define new-node (make-object button%
+		   "New Node"
+		   button-panel
+		   (lambda x
+		     (new-leaf))))
 (define canvas (make-object editor-canvas%
 		 frame
-		 (send bundle create-view)))
+		 text))
+
+(define (new-bundle)
+  (let ([name (get-text-from-user "New bundle" "Name of new bundle")])
+    (send text insert name)
+    (send bundle create-view (lambda (snip) (send text insert snip)))
+    (send text insert #\newline)))
+
 (send frame show #t)
-(yield)
-(send bundle contents-changed)
 #|
 
 (define arrow-snip-class (make-object snip-class%))

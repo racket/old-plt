@@ -33,6 +33,7 @@ static Scheme_Object *car_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cdr_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_car_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_cdr_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *pair_to_immutable (int argc, Scheme_Object *argv[]);
 static Scheme_Object *null_p_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_p_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_prim (int argc, Scheme_Object *argv[]);
@@ -142,6 +143,11 @@ scheme_init_list (Scheme_Env *env)
 			      scheme_make_prim_w_arity(set_cdr_prim, 
 						       "set-cdr!", 
 						       2, 2), 
+			      env);
+  scheme_add_global_constant ("pair->immutable-pair", 
+			      scheme_make_prim_w_arity(pair_to_immutable, 
+						       "pair->immutable-pair", 
+						       1, 1), 
 			      env);
   scheme_add_global_constant ("null?", 
 			      scheme_make_folding_prim(null_p_prim, 
@@ -632,8 +638,8 @@ cdr_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 set_car_prim (int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_PAIRP(argv[0]))
-    scheme_wrong_type("set-car!", "pair", 0, argc, argv);
+  if (!SCHEME_MUTABLE_PAIRP(argv[0]))
+    scheme_wrong_type("set-car!", "mutable-pair", 0, argc, argv);
 
   SCHEME_CAR (argv[0]) = argv[1];
   return scheme_void;
@@ -642,11 +648,30 @@ set_car_prim (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 set_cdr_prim (int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_PAIRP(argv[0]))
-    scheme_wrong_type("set-cdr!", "pair", 0, argc, argv);
+  if (!SCHEME_MUTABLE_PAIRP(argv[0]))
+    scheme_wrong_type("set-cdr!", "mutable-pair", 0, argc, argv);
 
   SCHEME_CDR (argv[0]) = argv[1];
   return scheme_void;
+}
+
+static Scheme_Object *
+pair_to_immutable (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *p;
+
+  p = argv[0];
+
+  if (!SCHEME_PAIRP(p))
+    scheme_wrong_type("pair->immutable-pair", "pair", 0, argc, argv);
+
+  if (SCHEME_MUTABLE_PAIRP(p)) {
+    Scheme_Object *p2;
+    p2 = scheme_make_pair(SCHEME_CAR(p), SCHEME_CDR(p));
+    SCHEME_SET_PAIR_IMMUTABLE(p2);
+    return p2;
+  } else 
+    return argv[0];
 }
 
 static Scheme_Object *
@@ -790,6 +815,8 @@ scheme_append_bang (Scheme_Object *lst1, Scheme_Object *lst2)
       SCHEME_USE_FUEL(1);
     } while (!SCHEME_NULLP(lst1));
 
+    if (!SCHEME_MUTABLE_PAIRP(prev))
+      scheme_wrong_type("append!", "mutable proper list", -1, 0, &lst1);
     SCHEME_CDR(prev) = lst2;
 
     return orig;
@@ -856,8 +883,8 @@ reverse_bang_prim (int argc, Scheme_Object *argv[])
   prev = NULL;
   lst = argv[0];
   while (!SCHEME_NULLP(lst)) {
-    if (!SCHEME_PAIRP(lst))
-      scheme_wrong_type("reverse!", "proper list", 0, argc, argv);
+    if (!SCHEME_MUTABLE_PAIRP(lst))
+      scheme_wrong_type("reverse!", "mutable proper list", 0, argc, argv);
     next = SCHEME_CDR(lst);
     if (prev)
       SCHEME_CDR(lst) = prev;

@@ -421,7 +421,7 @@ static int run_from_cmd_line(int argc, char *argv[],
   scheme_add_global("argv", sch_argv, global_env);
   {	
     Scheme_Object *ps;
-    ps = scheme_make_string(prog);
+    ps = scheme_set_exec_cmd(prog);
     scheme_add_global("program", ps, global_env);
   }
 

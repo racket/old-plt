@@ -142,7 +142,14 @@ typedef struct Scheme_Object
 {
   Scheme_Type type; /* Anything that starts with a type field
 		       can be a Scheme_Object */
-  MZ_HASH_KEY_EX
+
+  /* For precise GC, the keyex field is used for all object types to
+     store a hash key extension. The low bit is not used for this
+     purpose, though. For string and pair values in all variants of
+     MzScheme, the low bit is set to 1 to indicate that the string is
+     immutable. */
+  short keyex;
+
   union
     {
       struct { char *string_val; int tag_val; } str_val;
@@ -999,6 +1006,7 @@ extern Scheme_Object *(*scheme_make_stdout)(void);
 extern Scheme_Object *(*scheme_make_stderr)(void);
 
 void scheme_set_banner(char *s);
+Scheme_Object *scheme_set_exec_cmd(char *s);
 
 /* Initialization */
 Scheme_Env *scheme_basic_env(void);
@@ -1118,6 +1126,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
 #define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
 #define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
+#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && !((obj)->keyex & 0x1))
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
 #define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
@@ -1129,6 +1138,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
 #define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
 #define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
+#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
 #define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
 #define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)
 #define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
@@ -1163,6 +1173,9 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
 #define SCHEME_CDDR(obj)     (SCHEME_CDR (SCHEME_CDR (obj)))
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+
+#define SCHEME_SET_STRING_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_PAIR_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
 
 #ifdef __cplusplus
 };

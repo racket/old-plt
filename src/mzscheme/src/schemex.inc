@@ -163,6 +163,7 @@
   scheme_extension_table->scheme_make_pair = scheme_make_pair;
   scheme_extension_table->scheme_make_string = scheme_make_string;
   scheme_extension_table->scheme_make_sized_string = scheme_make_sized_string;
+  scheme_extension_table->scheme_make_immutable_sized_string = scheme_make_immutable_sized_string;
   scheme_extension_table->scheme_make_string_without_copying = scheme_make_string_without_copying;
   scheme_extension_table->scheme_alloc_string = scheme_alloc_string;
   scheme_extension_table->scheme_append_string = scheme_append_string;

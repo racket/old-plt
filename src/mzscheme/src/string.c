@@ -56,6 +56,7 @@ static Scheme_Object *string_to_list (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_to_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_copy (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_fill (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[]);
 static Scheme_Object *version(int argc, Scheme_Object *argv[]);
 static Scheme_Object *format(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_printf(int argc, Scheme_Object *argv[]);
@@ -76,6 +77,7 @@ static Scheme_Object *zero_length_string;
 static Scheme_Hash_Table *putenv_str_table;
 
 static char *embedding_banner;
+static Scheme_Object *vers_str, *banner_str;
 
 void
 scheme_init_string (Scheme_Env *env)
@@ -218,6 +220,11 @@ scheme_init_string (Scheme_Env *env)
 						      "string-fill!", 
 						      2, 2),
 			     env);
+  scheme_add_global_constant("string->immutable-string", 
+			     scheme_make_prim_w_arity(string_to_immutable,
+						      "string->immutable-string",
+						      1, 1),
+			     env);
   
 
   scheme_add_global_constant("format", 
@@ -342,6 +349,17 @@ scheme_make_sized_string(char *chars, long len, int copy)
   SCHEME_STRTAG_VAL(str) = len;
   scheme_end_stubborn_change((void *)str);
   return (str);
+}
+
+Scheme_Object *
+scheme_make_immutable_sized_string(char *chars, long len, int copy)
+{
+  Scheme_Object *s;
+  
+  s = scheme_make_sized_string(chars, len, copy);
+  SCHEME_SET_STRING_IMMUTABLE(s);
+
+  return s;
 }
 
 Scheme_Object *
@@ -514,8 +532,8 @@ string_set (int argc, Scheme_Object *argv[])
   long i, len;
   char *str;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-set!", "string", 0, argc, argv);
+  if (!SCHEME_MUTABLE_STRINGP(argv[0]))
+    scheme_wrong_type("string-set!", "mutable-string", 0, argc, argv);
 
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -768,8 +786,8 @@ string_fill (int argc, Scheme_Object *argv[])
   int len, i;
   char *chars, ch;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-fill!", "string", 0, argc, argv);
+  if (!SCHEME_MUTABLE_STRINGP(argv[0]))
+    scheme_wrong_type("string-fill!", "mutable-string", 0, argc, argv);
   if (!SCHEME_CHARP(argv[1]))
     scheme_wrong_type("string-fill!", "character", 1, argc, argv);
   
@@ -781,6 +799,22 @@ string_fill (int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s = argv[0];
+
+  if (!SCHEME_STRINGP(s))
+    scheme_wrong_type("string->immutable-string", "string", 0, argc, argv);
+
+  if (SCHEME_MUTABLE_STRINGP(s)) {
+    Scheme_Object *s2;
+    s2 = scheme_make_sized_string(SCHEME_STR_VAL(s), SCHEME_STRLEN_VAL(s), 1);
+    SCHEME_SET_STRING_IMMUTABLE(s2);
+    return s2;
+  } else
+    return s;
 }
 
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
@@ -1172,13 +1206,25 @@ sch_fprintf(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 version(int argc, Scheme_Object *argv[])
 {
-  return scheme_make_string(scheme_version());
+  if (!vers_str) {
+    REGISTER_SO(vers_str);
+    vers_str = scheme_make_string(scheme_version());
+    SCHEME_SET_STRING_IMMUTABLE(vers_str);
+  }
+
+  return vers_str;
 }
 
 static Scheme_Object *
 banner(int argc, Scheme_Object *argv[])
 {
-  return scheme_make_string(scheme_banner());
+  if (!banner_str) {
+    REGISTER_SO(banner_str);
+    banner_str = scheme_make_string(scheme_banner());
+    SCHEME_SET_STRING_IMMUTABLE(banner_str);
+  }
+
+  return banner_str;
 }
 
 char *scheme_version(void)

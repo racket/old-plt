@@ -888,7 +888,7 @@ read_string(Scheme_Object *port CURRENTPROCPRM)
   }
   buf[i] = '\0';
 
-  return scheme_make_sized_string(buf, i, i <= 31);
+  return scheme_make_immutable_sized_string(buf, i, i <= 31);
 }
 
 /* "'" has been read */
@@ -1472,7 +1472,7 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_STRING:
       l = read_compact_number(port);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
-      v = scheme_make_sized_string(s, l, l < BLK_BUF_SIZE);
+      v = scheme_make_immutable_sized_string(s, l, l < BLK_BUF_SIZE);
       break;
     case CPT_CHAR:
       v = scheme_make_character(CP_GETC(port));

@@ -726,7 +726,8 @@
 	 (#%if dir?
 	     (#%raise
 	      (make-exn
-	       (#%format "load/cd: cannot open a directory: ~s" n)
+	       (#%string->immutable-string
+		(#%format "load/cd: cannot open a directory: ~s" n))
 	       (debug)
 	       n
 	       #f))
@@ -736,9 +737,10 @@
 		   (#%if (#%not (#%directory-exists? base))
 		       (#%raise
 			(make-exn
-			 (#%format 
-			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
-			  n (#%current-directory))
+			 (#%string->immutable-string
+			  (#%format 
+			   "load/cd: directory of ~s does not exist (current directory is ~s)" 
+			   n (#%current-directory)))
 			 (debug)
 			 base
 			 #f)))
@@ -813,8 +815,9 @@
 		      (#%raise-type-error who "string" s))
 		    (#%unless (#%relative-path? s)
 		      (#%raise (make-exn
-			       (#%format "~a: invalid relative path: ~s" who s)
-			       (debug) s 'ill-formed-path))))]
+				(#%string->immutable-string
+				 (#%format "~a: invalid relative path: ~s" who s))
+				(debug) s 'ill-formed-path))))]
 	   [with-null (#%lambda (l) (#%let loop ([l l])
 					   (#%if (#%null? l)
 						 #%null
@@ -829,8 +832,9 @@
 			    (#%if (#%null? paths)
 				 (#%raise
 				  (make-exn
-				   (#%format "~a: collection not found: ~s in any of: ~s" 
-					     who collection all-paths)
+				   (#%string->immutable-string
+				    (#%format "~a: collection not found: ~s in any of: ~s" 
+					      who collection all-paths))
 				   (debug)
 				   collection
 				   #f))
@@ -846,8 +850,9 @@
 							       (loop np (#%cdr l) nc)
 							       (#%raise
 								(make-exn
-								 (#%format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
-									   c (#%car l) p)
+								 (#%string->immutable-string
+								  (#%format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
+									    c (#%car l) p))
 								 (debug)
 								 nc
 								 #f)))))))
@@ -934,11 +939,12 @@
 				  (#%apply require-library/proc file (#%append cp collection-path))
 				  (#%raise
 				   (make-exn
-				    (#%format "require-relative-library: there is no current collection for library: ~s~a"
-					      file
-					      (#%if (#%null? collection-path)
-						    ""
-						    (#%format " in sub-collection: ~s" collection-path)))
+				    (#%string->immutable-string
+				     (#%format "require-relative-library: there is no current collection for library: ~s~a"
+					       file
+					       (#%if (#%null? collection-path)
+						     ""
+						     (#%format " in sub-collection: ~s" collection-path))))
 				    (debug)
 				    (#%apply #%build-path file collection-path)
 				    #f)))))]
@@ -963,8 +969,9 @@
 									 (#%lambda ()
 									    (#%raise
 									     (make-exn
-									      (#%format "require-library: collection ~s does not have library: ~s in: ~s"
-											(#%apply #%build-path collection collection-path) file c)
+									      (#%string->immutable-string
+									       (#%format "require-library: collection ~s does not have library: ~s in: ~s"
+											 (#%apply #%build-path collection collection-path) file c))
 									      (debug)
 									      p
 									      #f)))))
@@ -989,7 +996,8 @@
 					      (#%let ([rlname (#%if rel? 'require-relative-library 'require-library)])
 						(#%raise-syntax-error 
 						 rlname
-						 (#%format "~a name is not a string" kind)
+						 (#%string->immutable-string
+						  (#%format "~a name is not a string" kind))
 						 (#%list* rlname name collection-path)))))])
 				  (check name "library")
 				  (#%if (#%or rel? (#%null? collection-path))
@@ -1069,10 +1077,8 @@
 
 (#%define-macro #%time
   (#%lambda (expr1 . body)
-    `(#%let-values ([(s) (#%current-gc-milliseconds)]
-                    [(v cpu user) (#%time-apply (#%lambda () ,expr1 ,@body))])
-	(#%printf "cpu time: ~s real time: ~s gc time: ~s~n"
-		  cpu user (#%- (#%current-gc-milliseconds) s))
+    `(#%let-values ([(v cpu user gc) (#%time-apply (#%lambda () ,expr1 ,@body) #%null)])
+	(#%printf "cpu time: ~s real time: ~s gc time: ~s~n" cpu user gc)
 	(#%apply #%values v))))
 
 > kstop time <
@@ -1090,9 +1096,10 @@
 	  (#%unless (#%unit-with-signature? u)
 	     (#%raise
 	      (make-exn
-	       (#%format
-		"~s: expression for \"~s\" is not a signed unit"
-		who tag)
+	       (#%string->immutable-string
+		(#%format
+		 "~s: expression for \"~s\" is not a signed unit"
+		 who tag))
 	       (#%current-continuation-marks)))))
        units tags)
       (#%for-each
@@ -1111,9 +1118,10 @@
 	   (#%unless (#%= c n)
 	      (#%raise
 	       (make-exn
-		(#%format
-		 "~s: ~a unit imports ~a units, but ~a units were provided"
-		 who tag n c)
+		(#%string->immutable-string
+		 (#%format
+		  "~s: ~a unit imports ~a units, but ~a units were provided"
+		  who tag n c))
 		(#%current-continuation-marks))))))
        units tags isigs)
       (#%for-each
@@ -1258,7 +1266,8 @@
 	      [(#%eq? n 4) (copy-env r4 #%r4)]
 	      [(#%and (#%number? n) (#%integer? n) (#%positive? n))
 	       (#%raise (#%make-exn:misc:unsupported
-			 (#%format "~s: version ~a not supported" who n)
+			 (#%string->immutable-string
+			  (#%format "~s: version ~a not supported" who n))
 			 (debug)))]
 	      [else (#%raise-type-error who "positive integer" n)])))])
      (#%values

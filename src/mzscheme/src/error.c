@@ -215,7 +215,7 @@ call_error(char *buffer, int len)
     scheme_longjmp(scheme_error_buf, 1);
   } else {
     scheme_current_process->error_invoked = 1;
-    p[0] = scheme_make_sized_string(buffer, len, 1);
+    p[0] = scheme_make_immutable_sized_string(buffer, len, 1);
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
       scheme_current_process->error_invoked = 0;
@@ -857,6 +857,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       newargs[0] = 
 	scheme_append_string(scheme_make_string("error: "),
 			     scheme_make_sized_string((char *)s, l, 1));
+      SCHEME_SET_STRING_IMMUTABLE(newargs[0]);
     } else {
       char *s, *r;
       int l, l2;
@@ -877,7 +878,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       memcpy(r + l2, ": ", 2);
       memcpy(r + l2 + 2, s, l + 1);
 
-      newargs[0] = scheme_make_sized_string(r, l + l2 + 2, 0);
+      newargs[0] = scheme_make_immutable_sized_string(r, l + l2 + 2, 0);
     }
   } else {
     Scheme_Config *config = scheme_config;
@@ -898,7 +899,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
     }
 
     str = scheme_get_sized_string_output(strout, &len);
-    newargs[0] = scheme_make_sized_string(str, len, 0);
+    newargs[0] = scheme_make_immutable_sized_string(str, len, 0);
   }
 
 #ifndef NO_SCHEME_EXNS
@@ -1139,7 +1140,7 @@ scheme_raise_exn(int id, ...)
   prepared_buf = init_buf(NULL);
 
 #ifndef NO_SCHEME_EXNS
-  eargs[0] = scheme_make_string(buffer);
+  eargs[0] = scheme_make_immutable_sized_string(buffer, strlen(buffer), 1);
   eargs[1] = scheme_void;
 
   do_raise(scheme_make_struct_instance(exn_table[id].type, 

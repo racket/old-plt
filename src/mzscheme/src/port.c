@@ -350,7 +350,6 @@ static Scheme_Object *current_load (int, Scheme_Object *[]);
 static Scheme_Object *current_load_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *default_load (int, Scheme_Object *[]);
 static Scheme_Object *use_compiled_kind(int, Scheme_Object *[]);
-static Scheme_Object *current_require_relative_collection(int, Scheme_Object *[]);
 static Scheme_Object *transcript_on(int, Scheme_Object *[]);
 static Scheme_Object *transcript_off(int, Scheme_Object *[]);
 /* non-standard */
@@ -882,11 +881,6 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_register_parameter(use_compiled_kind,
 						       "use-compiled-file-kinds",
 						       MZCONFIG_USE_COMPILED_KIND),
-			     env);
-  scheme_add_global_constant("current-require-relative-collection",
-			     scheme_register_parameter(current_require_relative_collection,
-						       "current-require-relative-collection",
-						       MZCONFIG_REQUIRE_COLLECTION),
 			     env);
 
   scheme_add_global_constant ("transcript-on", 
@@ -4102,8 +4096,8 @@ read_string_bang(int argc, Scheme_Object *argv[])
   Scheme_Object *port, *str;
   long size, start, finish, got;
 
-  if (!SCHEME_STRINGP(argv[0])) {
-    scheme_wrong_type("read-string!", "string", 0, argc, argv);
+  if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
+    scheme_wrong_type("read-string!", "mutable-string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
@@ -4661,7 +4655,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
 		       s);
 
     expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
-    ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
+    ed = scheme_make_immutable_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
@@ -4724,37 +4718,6 @@ static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_USE_COMPILED_KIND),
 			     argc, argv,
 			     -1, compiled_kind_p, "compiled file kind symbol", 1);
-}
-
-static Scheme_Object *collection_path_p(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *o;
-
-  if (SCHEME_FALSEP(argv[0]))
-    return scheme_false;
-
-  if (scheme_proper_list_length(argv[0]) < 1)
-    return NULL;
-
-  o = argv[0];
-  while (!SCHEME_NULLP(o)) {
-    Scheme_Object *p = SCHEME_CAR(o);
-    if (!SCHEME_STRINGP(p) || 
-	!scheme_is_relative_path(SCHEME_STR_VAL(p),
-				 SCHEME_STRTAG_VAL(p)))
-      return NULL;
-    o = SCHEME_CDR(o);
-  }
-
-  return argv[0];
-}
-
-static Scheme_Object *current_require_relative_collection(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("current-require-relative-collection",
-			     scheme_make_integer(MZCONFIG_REQUIRE_COLLECTION),
-			     argc, argv,
-			     -1, collection_path_p, "non-empty list of relative path strings or #f", 1);
 }
 
 static Scheme_Object *

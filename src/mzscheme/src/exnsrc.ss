@@ -8,7 +8,7 @@ strings are types/comments.
 
 |#
 
-(exn [message "string" "error message" 
+(exn [message "immutable-string" "error message" 
 	      continuation-marks "mark-set" "value returned by \\scmfirst{current-continuation-marks} immediately after the error is detected"] 
      -
      (user [] "raised by calling \\scmfirst{error}")

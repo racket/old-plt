@@ -134,6 +134,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_size(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_require_relative_collection(int, Scheme_Object *[]);
 static Scheme_Object *find_system_path(int argc, Scheme_Object **argv);
 #endif
 
@@ -151,8 +152,11 @@ static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
 static Scheme_Object *init_dir_symbol, *init_file_symbol, *sys_dir_symbol;
+static Scheme_Object *exec_file_symbol;
 
 static Scheme_Object *fail_err_symbol, *path_err_symbol, *exists_err_symbol;
+
+static Scheme_Object *exec_cmd;
 
 # ifdef MACINTOSH_EVENTS
 static Scheme_Object *record_symbol, *file_symbol;
@@ -180,6 +184,7 @@ void scheme_init_file(Scheme_Env *env)
     REGISTER_SO(init_dir_symbol);
     REGISTER_SO(init_file_symbol);
     REGISTER_SO(sys_dir_symbol);
+    REGISTER_SO(exec_file_symbol);
 
     REGISTER_SO(fail_err_symbol);
     REGISTER_SO(path_err_symbol);
@@ -202,6 +207,7 @@ void scheme_init_file(Scheme_Env *env)
     init_dir_symbol = scheme_intern_symbol("init-dir");
     init_file_symbol = scheme_intern_symbol("init-file");
     sys_dir_symbol = scheme_intern_symbol("sys-dir");
+    exec_file_symbol = scheme_intern_symbol("exec-file");
 
     fail_err_symbol = scheme_false;
     path_err_symbol = scheme_intern_symbol("ill-formed-path");
@@ -361,6 +367,11 @@ void scheme_init_file(Scheme_Env *env)
 			     scheme_register_parameter(current_library_collection_paths,
 						       "current-library-collection-paths",
 						       MZCONFIG_COLLECTION_PATHS),
+			     env);
+  scheme_add_global_constant("current-require-relative-collection",
+			     scheme_register_parameter(current_require_relative_collection,
+						       "current-require-relative-collection",
+						       MZCONFIG_REQUIRE_COLLECTION),
 			     env);
 #endif
 }
@@ -3266,10 +3277,11 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
     }
 
 # ifndef NO_FILE_SYSTEM_UTILS
-    return do_simplify_path(ed, scheme_null);
-# else
-    return ed;
+    ed = do_simplify_path(ed, scheme_null);
 # endif
+
+    SCHEME_SET_STRING_IMMUTABLE(ed);
+    return ed;
   }
 }
 
@@ -3286,20 +3298,57 @@ static Scheme_Object *current_directory(int argc, Scheme_Object **argv)
 
 #ifndef NO_FILE_SYSTEM_UTILS
 
-static Scheme_Object *collpaths_p(int argc, Scheme_Object **argv)
+static Scheme_Object *collpaths_gen_p(int argc, Scheme_Object **argv, int rel)
 {
   Scheme_Object *v = argv[0];
 
-  if (scheme_proper_list_length(v) < 0)
-    return scheme_false;
+  if (scheme_proper_list_length(v) < (rel ? 1 : 0))
+    return NULL;
 
   while (SCHEME_PAIRP(v)) {
-    if (!SCHEME_STRINGP(SCHEME_CAR(v)))
-      return scheme_false;
+    Scheme_Object *s;
+    s = SCHEME_CAR(v);
+    if (!SCHEME_STRINGP(s))
+      return NULL;
+    if (rel && !scheme_is_relative_path(SCHEME_STR_VAL(s),
+					SCHEME_STRTAG_VAL(s)))
+      return NULL;
     v = SCHEME_CDR(v);
   }
 
-  return SCHEME_NULLP(v) ? scheme_true : scheme_false;
+  if (!SCHEME_NULLP(v))
+    return NULL;
+
+  /* Convert to immutable list of immutable strings: */
+  {
+    Scheme_Object *last = NULL, *first = NULL, *p, *s;
+    v = argv[0];
+    while (SCHEME_PAIRP(v)) {
+      s = SCHEME_CAR(v);
+      
+      if (SCHEME_MUTABLE_STRINGP(s))
+	s = scheme_make_immutable_sized_string(SCHEME_STR_VAL(s), 
+					       SCHEME_STRLEN_VAL(s), 
+					       1);
+      
+      p = scheme_make_pair(s, scheme_null);
+      SCHEME_SET_PAIR_IMMUTABLE(p);
+      if (!first)
+	first = p;
+      else
+	SCHEME_CDR(last) = p;
+      last = p;
+
+      v = SCHEME_CDR(v);
+    }
+
+    return first;
+  }
+}
+
+static Scheme_Object *collpaths_p(int argc, Scheme_Object **argv)
+{
+  return collpaths_gen_p(argc, argv, 0);
 }
 
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[])
@@ -3307,11 +3356,26 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
   return scheme_param_config("current-library-collection-paths", 
 			     scheme_make_integer(MZCONFIG_COLLECTION_PATHS),
 			     argc, argv,
-			     -1, collpaths_p, "list of strings", 0);
+			     -1, collpaths_p, "list of strings", 1);
+}
+
+static Scheme_Object *collpaths_rel_p(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_FALSEP(argv[0]))
+    return argv[0];
+
+  return collpaths_gen_p(argc, argv, 1);
+}
+
+static Scheme_Object *current_require_relative_collection(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-require-relative-collection",
+			     scheme_make_integer(MZCONFIG_REQUIRE_COLLECTION),
+			     argc, argv,
+			     -1, collpaths_rel_p, "non-empty list of relative path strings or #f", 1);
 }
 
 #endif
-
 
 /********************************************************************************/
 
@@ -3343,7 +3407,13 @@ find_system_path(int argc, Scheme_Object **argv)
     which = id_init_file;
   else if (argv[0] == sys_dir_symbol)
     which = id_sys_dir;
-  else {
+  else if (argv[0] == exec_file_symbol) {
+    if (!exec_cmd) {
+      REGISTER_SO(exec_cmd);
+      exec_cmd = scheme_make_string("mzscheme");
+    }
+    return exec_cmd;
+  } else {
     scheme_wrong_type("find-system-path", "system-path-symbol",
 		      0, argc, argv);
     return NULL;
@@ -3523,6 +3593,17 @@ find_system_path(int argc, Scheme_Object **argv)
 }
 
 #endif
+
+Scheme_Object *scheme_set_exec_cmd(char *s)
+{
+  if (!exec_cmd) {
+    REGISTER_SO(exec_cmd);
+    exec_cmd = scheme_make_string(s);
+    SCHEME_SET_STRING_IMMUTABLE(exec_cmd);
+  }
+
+  return exec_cmd;
+}
 
 /********************************************************************************/
 

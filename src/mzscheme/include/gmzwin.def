@@ -129,6 +129,7 @@ EXPORTS
  scheme_make_pair
  scheme_make_string
  scheme_make_sized_string
+ scheme_make_immutable_sized_string
  scheme_make_string_without_copying
  scheme_alloc_string
  scheme_append_string

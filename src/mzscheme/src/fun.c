@@ -242,8 +242,8 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("time-apply", 
 			     scheme_make_prim_w_arity2(time_apply,  
 						       "time-apply", 
-						       1, 1,
-						       3, 3), 
+						       2, 2,
+						       4, 4), 
 			     env);
   scheme_add_global_constant("current-milliseconds",
 			     scheme_make_prim_w_arity(current_milliseconds,
@@ -2531,19 +2531,51 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 {
   long start, end;
   long cpustart, cpuend;
-  long dur, cpudur;
-  Scheme_Object *v, *p[3];
+  long gcstart, gcend;
+  long dur, cpudur, gcdur;
+  int i, num_rands;
+  Scheme_Object *v, *p[4], **rand_vec, *rands, *r;
 
-  scheme_check_proc_arity("time-apply", 0, 0, argc, argv);
+  if (!SCHEME_PROCP(argv[0]))
+    scheme_wrong_type("time-apply", "procedure", 0, argc, argv);
 
+  rands = argv[1];
+
+  num_rands = 0;
+  r = rands;
+  while (!SCHEME_NULLP(r)) {
+    if (!SCHEME_PAIRP(r))
+      scheme_wrong_type("time-apply", "proper list", 1, argc, argv);
+    r = SCHEME_CDR(r);
+    num_rands++;
+  }
+
+  if (SCHEME_FALSEP(get_or_check_arity(argv[0], num_rands))) {
+    char *s;
+
+    s = scheme_make_arity_expect_string(argv[0], num_rands, NULL);
+
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
+		     "time-apply: arity mismatch for %s", s);
+    return NULL;
+  }
+
+  rand_vec = MALLOC_N(Scheme_Object *, num_rands);
+  for (i = 0; SCHEME_PAIRP(rands); i++, rands = SCHEME_CDR(rands)) {
+    rand_vec[i] = SCHEME_CAR(rands);
+  }
+
+  gcstart = scheme_total_gc_time;
   start = scheme_get_milliseconds();
   cpustart = scheme_get_process_milliseconds();
-  v = _scheme_apply_multi(argv[0], 0, NULL);
+  v = _scheme_apply_multi(argv[0], num_rands, rand_vec);
   cpuend = scheme_get_process_milliseconds();
   end = scheme_get_milliseconds();
+  gcend = scheme_total_gc_time;
   
   dur = end - start;
   cpudur = cpuend - cpustart;
+  gcdur = gcend - gcstart;
 
   if (v == SCHEME_MULTIPLE_VALUES) {
     Scheme_Process *cp = scheme_current_process;
@@ -2555,8 +2587,9 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
   p[0] = v;
   p[1] = scheme_make_integer(cpudur);
   p[2] = scheme_make_integer(dur);
+  p[3] = scheme_make_integer(gcdur);
 
-  return scheme_values(3, p);
+  return scheme_values(4, p);
 }
 
 static Scheme_Object *current_milliseconds(int argc, Scheme_Object **argv)

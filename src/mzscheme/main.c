@@ -322,6 +322,7 @@ int actual_main(int argc, char *argv[])
   exit_val = run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
 
   scheme_immediate_exit(exit_val);
+  return exit_val; /* shouldn't happen! */
 }
 
 /*************************       cont_run     *****************************/

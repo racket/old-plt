@@ -225,6 +225,10 @@
  `descriptor handle' with attribute EXPLICIT is returned.  
  Any other value of `htype' causes an error.
 
+ Before using `alloc-handle' to create a connection handle, you may 
+ need to call `set-env-attr' with 'sql-attr-odbc-version and 
+'sql-ov-odbc3 as arguments.
+
 > (free-connect hdbc)
 
  ODBC 1.0, deprecated in favor of free-handle.

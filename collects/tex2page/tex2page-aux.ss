@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-07")
+(define *tex2page-version* "2005-03-08")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -5250,10 +5250,9 @@
     (let loop ((s '()))
       (let ((c (snoop-actual-char)))
         (cond
-         ((eof-object? c)
-          (write-aux `(!html-head ,(list->string (reverse! s)))))
+         ((eof-object? c) (write-aux `(!header ,(list->string (reverse! s)))))
          ((char=? c *esc-char*)
-          (write-aux `(!html-head ,(list->string (reverse! s))))
+          (write-aux `(!header ,(list->string (reverse! s))))
           (let ((x (get-ctl-seq)))
             (cond
              ((string=? x "\\endhtmlheadonly") 'done)
@@ -5261,7 +5260,7 @@
               (let ((f (get-filename-possibly-braced)))
                 (call-with-input-file/buffered f do-htmlheadonly)
                 (loop '())))
-             (else (write-aux `(!html-head ,x)) (loop '())))))
+             (else (write-aux `(!header ,x)) (loop '())))))
          (else (get-actual-char) (loop (cons c s))))))))
 
 (define resolve-chardefs
@@ -6087,7 +6086,8 @@
 (define dump-groupoid
   (lambda (p)
     (ignorespaces)
-    (let ((d (get-actual-char)))
+    (let ((write-char write-char) (d (get-actual-char)))
+      (unless p (set! write-char (lambda (x y) #f)))
       (case d
         ((#\{)
          (let loop ((nesting 0))
@@ -7419,7 +7419,7 @@
         (write-log css)
         (write-log 'separation-newline)))))
 
-(define !html-head (lambda (s) (set! *html-head* (cons s *html-head*))))
+(define !header (lambda (s) (set! *html-head* (cons s *html-head*))))
 
 (define !default-title (lambda (title) (unless *title* (set! *title* title))))
 
@@ -7448,7 +7448,8 @@
                        ((!definitely-latex) !definitely-latex)
                        ((!doctype) !doctype)
                        ((!external-labels) !external-labels)
-                       ((!html-head) !html-head)
+                       ((!header) !header)
+                       ((!html-head) !header)
                        ((!index) !index)
                        ((!index-page) !index-page)
                        ((!infructuous-calls-to-tex2page)

@@ -149,7 +149,10 @@
     (vector->list argv)))
 
 (define current-time
-  (if (memq (system-type) '(unix beos))
+  ;; Gives time since 1/1/1970 ...
+  ;;   ... GMT for Unix, Windows, and BeOS.
+  ;;   ... local time for MacOS.
+  (if (memq (system-type) '(unix beos windows))
       current-seconds
       (let ([zero (find-seconds 0 0 0 1 1 1970)])
 	(lambda ()

@@ -113,7 +113,7 @@ wxIndividualLayoutConstraint::wxIndividualLayoutConstraint(void)
     margin = value = percent = 0;
     done	 = FALSE;
 
-    WXGC_IGNORE(otherWin);
+    WXGC_IGNORE(this, otherWin);
 }
 
 void wxIndividualLayoutConstraint::Set(wxRelationship rel, wxWindow *otherW,

@@ -230,15 +230,16 @@ typedef void (*GC_finalization_proc)(void *p, void *data);
 /*
    Type of a finalization procedure. */
 
-void GC_register_eager_finalizer(void *p, int level, 
-				 GC_finalization_proc f, void *data, 
-				 GC_finalization_proc *oldf, void **olddata);
+void GC_set_finalizer(void *p, int tagged, int level, 
+		      GC_finalization_proc f, void *data, 
+		      GC_finalization_proc *oldf, void **olddata);
 /*
    Installs a finalizer to be queued for invocation when `p' would
    otherwise be collected. `p' isn't actually collected when a
    finalizer is queued, since the finalizer will receive `p' as an
    argument. (Hence, weak references aren't zeroed, either.) `p' must
-   point to the beginning of a tagged, allocated object.
+   point to the beginning of a tagged (if `tagged' is 1) or xtagged
+   (if `tagged' is 0) allocated object.
 
    `level' refers to an ordering of finalizers. It can be 1, 2, or
    3. During a collection, level 1 finalizers are queued first, then
@@ -262,24 +263,18 @@ void GC_register_eager_finalizer(void *p, int level,
    closure. If `f' is NULL, any existing finalizer is removed and no
    new one is installed. */
 
-void GC_register_finalizer(void *p, 
-			   GC_finalization_proc f, void *data, 
-			   GC_finalization_proc *oldf, void **olddata);
-/* 
-   Installs a level-3 finalizer. */
-
-void GC_finalization_weak_ptr(void **p);
+void GC_finalization_weak_ptr(void **p, int offset);
 /*
    Registers a "weak" pointer for level-3 finalization. `p' must be a
-   portion of a finalized object. When checking for references among
-   level-3 finalized objects, *p is set to NULL. The mark procedure
-   for the object containing `p' will see the NULL value, preventing
-   it from markign whatever `p' normally references. After level-3
-   finalizers are enqueued, `p' is reset to its original value (and
-   marked if the object containing `p' is already marked).
+   finalized object. When checking for references among level-3
+   finalized objects, `*(p + offset)' is set to NULL. The mark
+   procedure for the object `p' will see the NULL value, preventing it
+   from marking whatever `p + object' normally references. After
+   level-3 finalizers are enqueued, `*(p + offset)' is reset to its
+   original value (and marked if the object `p' is already marked).
 
-   When the object containing `p' is collected, the weak pointer
-   registration is removed automatically. */
+   When the object `p' is collected, the weak pointer registration is
+   removed automatically. */
 
 /***************************************************************************/
 /* Cooperative GC                                                          */

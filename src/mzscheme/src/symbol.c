@@ -29,11 +29,10 @@
 #include <ctype.h>
 #include "schgc.h"
 
+# define HASH_TABLE_SIZE 1
 #ifdef SMALL_HASH_TABLES
-# define HASH_TABLE_SIZE 2500
 # define FILL_FACTOR 1.30
 #else
-# define HASH_TABLE_SIZE 10313
 # define FILL_FACTOR 2
 #endif
 

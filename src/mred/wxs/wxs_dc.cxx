@@ -1565,7 +1565,7 @@ Scheme_Object *objscheme_bundle_wxDC(class wxDC *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxDC_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -1750,7 +1750,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1810,7 +1810,7 @@ Scheme_Object *objscheme_bundle_wxMemoryDC(class wxMemoryDC *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMemoryDC_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -1901,7 +1901,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1957,7 +1957,7 @@ Scheme_Object *objscheme_bundle_wxPostScriptDC(class wxPostScriptDC *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPostScriptDC_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -2079,7 +2079,7 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2135,7 +2135,7 @@ Scheme_Object *objscheme_bundle_basePrinterDC(class basePrinterDC *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_basePrinterDC_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;

@@ -562,7 +562,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -624,7 +624,7 @@ Scheme_Object *objscheme_bundle_wxFont(class wxFont *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFont_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -786,7 +786,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -847,7 +847,7 @@ Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFontList_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -1141,7 +1141,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1202,7 +1202,7 @@ Scheme_Object *objscheme_bundle_wxColour(class wxColour *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxColour_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -1353,7 +1353,7 @@ Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *realobj
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxColourDatabase_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -1542,7 +1542,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -1601,7 +1601,7 @@ Scheme_Object *objscheme_bundle_wxPoint(class wxPoint *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPoint_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -2011,7 +2011,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2072,7 +2072,7 @@ Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBrush_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -2211,7 +2211,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2270,7 +2270,7 @@ Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxBrushList_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -2894,7 +2894,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -2961,7 +2961,7 @@ Scheme_Object *objscheme_bundle_wxPen(class wxPen *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPen_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -3105,7 +3105,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -3164,7 +3164,7 @@ Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPenList_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -3395,7 +3395,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
   }
 
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -3451,7 +3451,7 @@ Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxCursor_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -3971,7 +3971,7 @@ static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Sc
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -4037,7 +4037,7 @@ Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxRegion_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;
@@ -4400,7 +4400,7 @@ Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *r
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxFontNameDirectory_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;

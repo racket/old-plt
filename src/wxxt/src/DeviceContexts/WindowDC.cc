@@ -1261,7 +1261,7 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
 
     X->owner = init->owner;
 
-    WXGC_IGNORE(X->owner);
+    WXGC_IGNORE(X, X->owner);
 
     values.foreground = BlackPixelOfScreen(SCN);
     values.background = WhitePixelOfScreen(SCN);

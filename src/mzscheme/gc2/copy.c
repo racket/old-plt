@@ -433,16 +433,9 @@ static int fixup_finalizer(void *p)
   return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
-void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
-			   void *data, void (**oldf)(void *p, void *data), 
-			   void **olddata)
-{
-  GC_register_eager_finalizer(p, 3, f, data, oldf, olddata);
-}
-
-void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
-				 void *data, void (**oldf)(void *p, void *data), 
-				 void **olddata)
+void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *data), 
+		      void *data, void (**oldf)(void *p, void *data), 
+		      void **olddata)
 {
   Fnl *fnl, *prev;
 
@@ -506,7 +499,6 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
 
 typedef struct Fnl_Weak_Link {
   Type_Tag type;
-  short need_offset;
   void *p;
   long offset; /* offset from beginning of block */
   void *saved;
@@ -535,12 +527,12 @@ static int fixup_finalizer_weak_link(void *p)
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-void GC_finalization_weak_ptr(void **p)
+void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
 
 #ifdef SAFETY
-  if (((void *)p < GC_alloc_space) || (p >= tagged_high)) {
+  if (((void *)p < GC_alloc_space) || (p >= GC_alloc_top)) {
     *(int *)0x0 = 1;
   }
 #endif
@@ -554,8 +546,8 @@ void GC_finalization_weak_ptr(void **p)
   park[0] = NULL;
 
   wl->type = gc_finalization_weak_link_tag;
-  wl->need_offset = 1;
   wl->p = p;
+  wl->offset = offset * sizeof(void*);
   wl->next = fnl_weaks;
 
   fnl_weaks = wl;
@@ -1005,27 +997,6 @@ void gcollect(int needsize)
     }
   }
 
-  /******************** Update Weak Offsets ****************************/
-
-  {
-    Fnl_Weak_Link *wl;
-
-    for (wl = fnl_weaks; wl; wl = wl->next) {
-      if (wl->need_offset) {
-	void *wp;
-#ifdef SAFETY
-	if ((wl->p < GC_alloc_space) || (wl->p > GC_alloc_top)) {
-	  *(int *)0x0 = 1;
-	}
-#endif
-	wp = find_start(wl->p);
-	wl->offset = wl->p - wp;
-	wl->p = wp;
-	wl->need_offset = 0;
-      }
-    }
-  }
-
   /******************** Mark/Copy ****************************/
 
   tagged_mark = new_tagged_high = (void **)new_space;
@@ -1450,12 +1421,6 @@ void gcollect(int needsize)
 #endif
 
     size = (*p & 0x0FFFFFFF) + 1;
-
-    if (*p & 0x10000000) {
-      diff++;
-      p++;
-      size--;
-    }
 
     bitmap[diff >> 3] |= (1 << (diff & 0x7));
 

@@ -107,7 +107,7 @@ wxWindow::wxWindow(void)
       misc_flags |= SHOWN_FLAG;
     internal_disabled = 0;
 
-    WXGC_IGNORE(parent);
+    WXGC_IGNORE(this, parent);
 }
 
 wxWindow::~wxWindow(void)

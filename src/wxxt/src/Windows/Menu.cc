@@ -71,7 +71,7 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
     children = DEBUG_NEW wxChildList;
 #endif
 
-    WXGC_IGNORE(owner);
+    WXGC_IGNORE(this, owner);
 }
 
 wxMenu::~wxMenu(void)

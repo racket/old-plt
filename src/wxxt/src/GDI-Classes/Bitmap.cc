@@ -101,7 +101,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
       Xbitmap = NULL;
     }
 
-    WXGC_IGNORE(selectedTo);
+    WXGC_IGNORE(this, selectedTo);
 }
 
 // create bitmap from file
@@ -115,7 +115,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
     // use load method
     (void)LoadFile(bitmap_file, flags);
 
-    WXGC_IGNORE(selectedTo);
+    WXGC_IGNORE(this, selectedTo);
 }
 
 #if USE_XPM
@@ -164,7 +164,7 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 	Xbitmap = NULL;
     }
 
-    WXGC_IGNORE(selectedTo);
+    WXGC_IGNORE(this, selectedTo);
 }
 
 #endif
@@ -180,7 +180,7 @@ wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
     // use create method
     (void)Create(w, h, b_and_w ? 1 : -1);
 
-    WXGC_IGNORE(selectedTo);
+    WXGC_IGNORE(this, selectedTo);
 }
 
 // destroy bitmap

@@ -1233,7 +1233,7 @@ Scheme_Object *objscheme_bundle_wxWindow(class wxWindow *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxWindow_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(&obj->primdata));
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;

@@ -1225,7 +1225,7 @@ wxCanvasMediaAdmin::wxCanvasMediaAdmin(wxMediaCanvas *c)
   canvas = c;
   resetFlag = FALSE;
   nextadmin = prevadmin = NULL;
-  WXGC_IGNORE(canvas);
+  WXGC_IGNORE(this, canvas);
   // WXGC_IGNORE(nextadmin);
   // WXGC_IGNORE(prevadmin);
 

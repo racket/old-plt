@@ -663,7 +663,7 @@ wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin(wxMediaSnip *s)
   state->drawing = 0;
 
   // WXGC_IGNORE(snip);
-  WXGC_IGNORE(state->dc);
+  WXGC_IGNORE(state, state->dc);
 }
 
 wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)

@@ -622,7 +622,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   scheme_register_finalizer(gcOBJ_TO_PTR(c->finalized),
 			    CollectingContext, NULL,
 			    NULL, NULL);
-  WXGC_IGNORE(c->finalized);
+  WXGC_IGNORE(c, c->finalized);
 
 #ifdef MZ_PRECISE_GC
   mr_hop = (Context_Manager_Hop *)GC_malloc_one_tagged(sizeof(Context_Manager_Hop));
@@ -1376,7 +1376,7 @@ wxTimer::wxTimer(void)
   ctx = (void *)MrEdGetContext();
   context = ctx;
 
-  WXGC_IGNORE(context);
+  WXGC_IGNORE(this, context);
 }
 
 wxTimer::~wxTimer(void)

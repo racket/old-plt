@@ -2398,7 +2398,7 @@ void wxMediaEdit::SetClickback(long start, long end,
   click->f = f;
   click->data = d;
   click->callOnDown = callOnDown;
-  WXGC_IGNORE(click->data);
+  WXGC_IGNORE(click, click->data);
 
   click->delta = new wxStyleDelta;
   if (delta)
@@ -2606,7 +2606,7 @@ void wxMediaEdit::SetWordbreakFunc(wxWordbreakFunc f, void *data)
 {
   wordBreak = f;
   wordBreakData = data;
-  WXGC_IGNORE(wordBreakData);
+  WXGC_IGNORE(this, wordBreakData);
 }
 
 void wxMediaEdit::FindWordbreak(long *start, long *end, int reason)

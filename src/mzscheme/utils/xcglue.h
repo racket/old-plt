@@ -37,7 +37,7 @@ Scheme_Class_Object *objscheme_find_object(void *);
 void objscheme_check_valid(Scheme_Object *);
 int objscheme_is_shutdown(Scheme_Object *o);
 
-void objscheme_register_primpointer(void *prim_ptr_address);
+void objscheme_register_primpointer(void *obj_addr, void *prim_ptr_address);
 
 void objscheme_destroy(void *, Scheme_Object *obj);
 

@@ -492,12 +492,12 @@ wxStyle::wxStyle()
   cl = new wxList(wxKEY_NONE, FALSE);
   children = cl;
 
-  WXGC_IGNORE(styleList);
+  WXGC_IGNORE(this, styleList);
 
 #if 0
   /* (styles are not finalized any more) */
-  WXGC_IGNORE(baseStyle);
-  WXGC_IGNORE(textMetricDC);
+  WXGC_IGNORE(this, baseStyle);
+  WXGC_IGNORE(this, textMetricDC);
 #endif
 }
 
@@ -1163,7 +1163,7 @@ void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
     void *weak_data;
     weak_data = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
     *(void **)((char *)weak_data + 2 * sizeof(short)) = data;
-    GC_finalization_weak_ptr((void **)weak_data);
+    GC_finalization_weak_ptr((void **)weak_data, 0);
     rec->data = weak_data;
   }
 #else
@@ -1175,7 +1175,7 @@ void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
   if (weak)
     scheme_weak_reference((void **)&rec->data);
   else
-    WXGC_IGNORE(rec->data);
+    WXGC_IGNORE(rec, rec->data);
 #endif
   
   rec->f = f;

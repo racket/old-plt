@@ -63,7 +63,7 @@ class wxNode
   inline wxObject *Data(void) { return data; }
   inline void SetData(wxObject *the_data) { data = the_data; }
 
-  inline void     DataGCIgnored(void)         { WXGC_IGNORE(data); }
+  inline void     DataGCIgnored(void)         { WXGC_IGNORE(this, data); }
 };
 
 class wxList: public wxObject

@@ -551,7 +551,8 @@ void GC_set_weak_box_val(void *wb, void *v)
 
 typedef struct Fnl {
   Type_Tag type;
-  short eager_level;
+  char eager_level;
+  char tagged;
   void *p;
   void (*f)(void *p, void *data);
   void *data;
@@ -590,16 +591,9 @@ static int fixup_finalizer(void *p)
   return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
-void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
-			   void *data, void (**oldf)(void *p, void *data), 
-			   void **olddata)
-{
-  GC_register_eager_finalizer(p, 3, f, data, oldf, olddata);
-}
-
-void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
-				 void *data, void (**oldf)(void *p, void *data), 
-				 void **olddata)
+void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *data), 
+		      void *data, void (**oldf)(void *p, void *data), 
+		      void **olddata)
 {
   Fnl *fnl, *prev;
 
@@ -661,6 +655,7 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
   fnl->f = f;
   fnl->data = data;
   fnl->eager_level = level;
+  fnl->tagged = tagged;
 
   fnls = fnl;
 }
@@ -668,6 +663,7 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
 typedef struct Fnl_Weak_Link {
   Type_Tag type;
   void *p;
+  int offset;
   void *saved;
   struct Fnl_Weak_Link *next;
 } Fnl_Weak_Link;
@@ -698,7 +694,7 @@ static int fixup_finalizer_weak_link(void *p)
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-void GC_finalization_weak_ptr(void **p)
+void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
 
@@ -713,6 +709,7 @@ void GC_finalization_weak_ptr(void **p)
   wl->type = gc_finalization_weak_link_tag;
   wl->p = p;
   wl->next = fnl_weaks;
+  wl->offset = offset * sizeof(void*);
 
   fnl_weaks = wl;
 }
@@ -2780,7 +2777,7 @@ static void gcollect(int full)
 	  if (markit) {
 	    gcMARK(wl->saved);
 	  }
-	  *(void **)wp = wl->saved;
+	  *(void **)(wp + wl->offset) = wl->saved;
 	}
 	
 	/* We have to mark one more time, because restoring a weak
@@ -2800,8 +2797,8 @@ static void gcollect(int full)
 	/* Zero out weak links for ordered finalization */
 	for (wl = fnl_weaks; wl; wl = wl->next) {
 	  void *wp = (void *)wl->p;
-	  wl->saved = *(void **)wp;
-	  *(void **)(wp) = NULL;
+	  wl->saved = *(void **)(wp + wl->offset);
+	  *(void **)(wp + wl->offset) = NULL;
 	}
 
 	/* Mark content of not-yet-marked finalized objects,
@@ -2810,13 +2807,17 @@ static void gcollect(int full)
 	  if (f->eager_level == 3) {
 	    if (!is_marked(f->p)) {
 	      /* Not yet marked. Mark content. */
-	      Type_Tag tag = *(Type_Tag *)f->p;
+	      if (f->tagged) {
+		Type_Tag tag = *(Type_Tag *)f->p;
 #if SAFETY
-	      if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
-		CRASH();
-	      }
+		if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
+		  CRASH();
+		}
 #endif
-	      mark_table[tag](f->p);
+		mark_table[tag](f->p);
+	      } else {
+		GC_mark_xtagged(f->p);
+	      }
 	    }
 	  }
 	}

@@ -71,7 +71,7 @@ extern "C" {
 #ifdef MZ_PRECISE_GC
 extern void *GC_cpp_malloc(size_t);
 extern void GC_cpp_delete(class gc *);
-# define GC_register_finalizer_ignore_self GC_register_finalizer
+# define GC_register_finalizer_ignore_self(self, a, b, c, d) GC_set_finalizer(self, 3, 0, a, b, c, d)
 #endif
 
 

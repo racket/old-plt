@@ -721,10 +721,10 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
   }
 }
 
-void objscheme_register_primpointer(void *prim_ptr_address)
+void objscheme_register_primpointer(void *prim_obj, void *prim_ptr_address)
 {
 #ifdef MZ_PRECISE_GC
-  GC_finalization_weak_ptr((void **)prim_ptr_address);
+  GC_finalization_weak_ptr((void **)prim_obj, (void **)prim_ptr_address - (void **)prim_obj);
 #else
   GC_general_register_disappearing_link((void **)prim_ptr_address, NULL);
 #endif

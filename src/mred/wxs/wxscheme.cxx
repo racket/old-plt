@@ -161,7 +161,6 @@ void wxsScheme_setup(Scheme_Env *env)
   }
   u->init_func = wxsUnit_Init;
 
-
 #define EVAL_ONE_STR(x) link = scheme_eval_string(x, env)
 #define EVAL_ONE_SIZED_STR(x, s) link = scheme_eval_compiled_sized_string(x, s, env)
 #define JUST_DEFINED_FUNC(x) /**/

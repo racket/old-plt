@@ -45,7 +45,7 @@
   (define current-ps-cmap-file-paths
     (make-parameter (path-list-string->path-list 
 		     (or (getenv "PLTCMAPPATHS") "")
-		     (list (collection-path "afm" "CMap")))
+		     (list (build-path (collection-path "afm") "CMap")))
 		    (check-paths 'current-post-script-cmap-file-paths)))
 
   (define (find-path l f)

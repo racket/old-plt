@@ -765,3 +765,10 @@ void MrEdMacSleep(float secs)
   if (WaitNextEvent(0, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
 }
+
+/**********************************************************************/
+
+wxWindow *wxLocationToWindow(int x, int y)
+{
+  return NULL;
+}

@@ -92,3 +92,5 @@ void MrEdMSWSleep(float secs, void *fds);
 void MrEdMacSleep(float secs);
 #endif
 
+typedef void *(*ForEachFrameProc)(wxObject *, void *);
+void *MrEdForEachFrame(ForEachFrameProc fp, void *data);

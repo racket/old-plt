@@ -66,4 +66,5 @@
  current-text-keymap-initializer
  sleep/yield
  get-window-text-extent
- get-family-builtin-face)
+ get-family-builtin-face
+ send-message-to-window)

@@ -1228,6 +1228,13 @@ static Scheme_Object *wxSchemeCheckForBreak(int, Scheme_Object **)
 	  : scheme_false);
 }
 
+Scheme_Object *wxsLocationToWindow(int, Scheme_Object **a)
+{
+  wxWindow *w;
+  w = wxLocationToWindow(SCHEME_INT_VAL(a[0]), SCHEME_INT_VAL(a[1]));
+  return objscheme_bundle_wxWindow(w);
+}
+
 static Scheme_Object *wxSchemeGetFrameList(int, Scheme_Object **)
 {
   return MrEdGetFrameList();
@@ -1737,6 +1744,12 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						    1, 1),
 			   global_env);
   
+  scheme_install_xc_global("location->window",
+			   scheme_make_prim_w_arity(wxsLocationToWindow,
+						    "location->window",
+						    2, 2),
+			   global_env);
+
   /* Order is important! Base class must be initialized before derived. */
   objscheme_setup_wxObject(global_env);
   objscheme_setup_wxWindow(global_env);

@@ -733,6 +733,28 @@ Scheme_Object *MrEdGetFrameList(void)
   return l;
 }
 
+void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
+{
+  MrEdContextFrames *f = mred_frames;
+  wxChildNode *node;
+
+  mred_contexts = NULL;
+
+  while (f) {
+    node = f->list->First();
+
+    while (node) {
+      if (node->IsShown())
+	data = fp(node->Data(), data);
+      node = node->Next();
+    }
+
+    f = f->next;
+  }
+
+  return data;
+}
+
 /****************************************************************************/
 /*                               Events                                     */
 /****************************************************************************/

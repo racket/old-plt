@@ -483,3 +483,88 @@ extern "C" {
       return (long)t;
     }
 }
+
+/***********************************************************************/
+
+typedef struct {
+  Widget w;
+  wxWindow *wx;
+} FindRec;
+
+void *IsWidgetFrame(wxObject *f, void *d)
+{
+  FindRec *fr = (FindRec *)d;
+  wxWindow_Xintern *i;
+  
+  i = ((wxWindow *)f)->GetHandle();
+  if (i->frame == fr->w) {
+    fr->wx = (wxWindow *)f;
+  }
+
+  return d;
+}
+
+static wxWindow *FindMrEdWindow(Display *d, Window xw)
+{
+  Widget w;
+  w = XtWindowToWidget(d, xw);
+  if (w) {
+    FindRec fr;
+    fr.w = w;
+    fr.wx = NULL;
+    MrEdForEachFrame(IsWidgetFrame, &fr);
+    return fr.wx;
+  } else {
+    wxWindow *m;
+    Window root, parent, *children;
+    unsigned int n, i;
+    if (XQueryTree(d, xw, &root, &parent, &children, &n)) {
+      if (children) {
+	m = NULL;
+	for (i = 0; i < n; i++) {
+	  m = FindMrEdWindow(d, children[i]);
+	  if (m)
+	    break;
+	}
+	XFree(children);
+	return m;
+      }
+    }
+     
+    return NULL;
+  }
+}
+
+wxWindow *wxLocationToWindow(int x, int y)
+{
+  Display *d;
+  Window root, parent, *children;
+  unsigned int n, i;
+  XWindowAttributes a;
+  wxWindow *result = NULL;
+
+  if (!orig_top_level)
+    d = XtDisplay(save_top_level);
+  else
+    d = XtDisplay(orig_top_level);
+
+  if (XQueryTree(d, DefaultRootWindow(d),
+		 &root, &parent, &children, &n)) {
+    for (i = n; i--; ) {
+      XGetWindowAttributes(d, children[i], &a);
+
+      if (a.map_state == IsViewable
+	  && (a.x <= x) && (a.x + a.width >= x)
+	  && (a.y <= y) && (a.y + a.height >= y)) {
+	/* Found the X window, now see if it's a MrEd window: */
+	result = FindMrEdWindow(d, children[i]);
+	break;
+      }
+    }
+    
+    if (children)
+      XFree(children);
+  }
+ 
+ return result;
+}

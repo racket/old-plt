@@ -40,4 +40,5 @@
  set-editor-snip-maker
  set-text-editor-maker
  set-pasteboard-editor-maker
- fill-private-color)
+ fill-private-color
+ location->window)

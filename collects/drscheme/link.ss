@@ -39,11 +39,14 @@
     (define-struct tool (name file))
 
     (define tools 
-      (list (make-tool "Toy" (build-path "drscheme" "toy.ss"))
-	    (make-tool "Donkey" (build-path "donkey" "donkey.ss"))
-	    (make-tool "The Debugger" (build-path "drscheme" "debugger" "debugger.ss"))
-	    (make-tool "Syntax Checker" (build-path "zodiac" "scheck.ss"))
-	    (make-tool "MrSpidey" (build-path "mrspidey" "mrspidey.ss"))))
+      (list (make-tool "Stepper" (build-path "donkey" "donkey.ss"))
+	    (make-tool "Syntax Checker" (build-path "drscheme" "mrslatex.ss"))
+	    (make-tool "Analyzer" (build-path "mrspidey" "mrspidey.ss"))
+
+;;          this is the example tool.
+;	    (make-tool "Toy" (build-path "drscheme" "toy.ss"))
+
+	    ))
 
 
     (define unit-with-signature->unit (global-defined-value 'unit-with-signature->unit))

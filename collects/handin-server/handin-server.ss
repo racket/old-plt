@@ -4,6 +4,7 @@
 	   (lib "mzssl.ss" "openssl")
 	   (lib "file.ss")
 	   (lib "date.ss")
+	   (lib "list.ss")
 	   "md5.ss")
 
   (define log-port (open-output-file "log.ss" 'append))
@@ -131,6 +132,9 @@
 		   (string? id)
 		   (string? passwd))
 	(error 'handin "bad user-addition request"))
+      ;; Since we're going to use the username in paths:
+      (when (regexp-match #rx"[/\\:]" username)
+	(error 'handin "username must not contain a slash, backslash, or colon"))
       (unless (check-id id)
 	(error 'handin "id has wrong format: ~a; need ~a for id" id ID-DESC))
       (put-user (string->symbol username)
@@ -183,7 +187,7 @@
 	  (error 'handin "bad username or password for ~a" username)]))))
   
   (define assignment-list
-    (directory-list "active"))
+    (quicksort (directory-list "active") string<?))
 
   (LOG "server started ------------------------------")
   

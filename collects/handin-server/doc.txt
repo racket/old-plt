@@ -27,10 +27,16 @@ the student's submission before accepting it. Other configuration of
 the server includes setting the list of currently active assignments
 (i.e., those for which handins are accepted).
 
-The handin process uses SSL, so it is as secure as the server and each
-user's password.
+The handin process uses SSL, so it is effectively as secure as the
+server and each user's password.
 
-Quick Start for Testing:
+  NOTE: The handin tool works only with DrScheme v205, and students
+  must install the "OpenSSL" extension before installing a handing
+  client. The OpenSSL extension is available at
+             http://www.plt-scheme.org/software/openssl/
+
+
+Quick Start for a Test Drive:
 ============================================
 
  1. Create a new directory.
@@ -38,6 +44,7 @@ Quick Start for Testing:
  2. Copy "server-cert.pem" from the "handin-client" collection
     to the new directory.
        NOTE: for real use, you need a new certificate.
+       NOTE: see also "Where is the collection?", below
 
  3. Copy "private-key.pem" from the "handin-server" collection
     to the new directory.
@@ -59,6 +66,21 @@ Quick Start for Testing:
     username "tester" and password "pw".
 
     The submitted file will be .../active/test/tester/handin0.
+ 
+  -------------------------------------------------------------------
+ | "Where is the collection?"                                        |
+ |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|
+ | If you obtained the server and client by installing a .plt file,  |
+ | then the "handin-server" and "handin-client" directories          |
+ | are likely in your PLT addon space:                               |
+ |  Windows:                                                         |
+ |   %USERPROFILE%\Application Data\PLT Scheme\<version>\collects    |
+ |  Unix:                                                            |
+ |   ~/.plt-scheme/<version>/collects                                |
+ |  Mac OS X:                                                        |
+ |   ~/Library/PLT Scheme/<version>/collects                         |
+  -------------------------------------------------------------------
+
 
 Client Customization
 ============================================
@@ -183,6 +205,8 @@ sub-directories:
     assignments is sent to a client tool when a student clicks
     "Handin". The student then selects from the list. The list of
     active assignments is built once by the server when it starts.
+    The assignments are ordered in the student's menu using `string<?',
+    and the first assignment is the default selection.
 
     Within each directory, the student id is used for a sub-directory
     name. Within each student sub-directory are "handin0", etc., for

@@ -15,4 +15,5 @@
 
   (define tool-icons (list (list "icon.png" collection)))
   (define tools '(("tool.ss")))
-  (define tool-names (list name)))
+  (define tool-names (list name))
+  (define requires '(("mred") ("openssl"))))

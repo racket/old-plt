@@ -196,6 +196,11 @@
 			  (set! ok-can-enable? #t)
 			  (activate-ok)
 			  (send status set-label (format "Connected securely for ~a." handin-name)))))))))
+
+      (rename [super-on-close on-close])
+      (define/override (on-close)
+	(custodian-shutdown-all comm-cust)
+	(super-on-close))
       
       (send ok enable #f)
       (send assignment enable #f)
@@ -337,7 +342,11 @@
 	      (set! comm-cust (make-custodian))))))
 
        (define comm-cust (make-custodian))
-
+       (rename [super-on-close on-close])
+       (define/override (on-close)
+	 (custodian-shutdown-all comm-cust)
+	 (super-on-close))
+      
        (define button-panel (new horizontal-pane%
 				 [parent this]
 				 [stretchable-height #f]))

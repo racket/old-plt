@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.2 1998/02/03 18:49:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.3 1998/02/08 15:05:30 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -854,7 +854,7 @@ void wxBrushList::AddBrush(wxBrush *Brush)
 wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 {
   wxBrush *brush; /* MATTTHEW: [8] */
-  int i;
+  int i = 0;
   wxChildNode *node;
 
   if (!colour)

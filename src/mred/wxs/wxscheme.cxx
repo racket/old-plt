@@ -93,6 +93,14 @@ static Scheme_Object *wxs_siglist, *wxs_signed_unit, *wxs_signature;
 
 #define CONS scheme_make_pair
 
+typedef struct {
+  int count;
+  struct {
+    char *name;
+    Scheme_Object *val;
+  } v[INSTALL_COUNT];
+} InstallRec;
+
 static void wxScheme_Invoke(Scheme_Env * env)
 {
   if (!wxs_signature) {
@@ -112,20 +120,24 @@ static void wxScheme_Invoke(Scheme_Env * env)
 						 CONS(scheme_intern_symbol("wx^"),
 						      scheme_null)))),
 				  env);
-  }
-  
-  scheme_add_global_constant("wx@", wxs_signed_unit, env);
 
+    /* Now set "wx@" in "wx@": */
+    InstallRec *rec = (InstallRec *)wxs_unit->data;
+    int i;
+    
+    for (i = rec->count; i--; ) {
+      char *name = rec->v[i].name;
+      if (name[3] == 'w' && name[4] == 'x' && name[5] == '@' && name[6] == 0) {
+	rec->v[i].val = wxs_signed_unit;
+	break;
+      }
+    }
+  }
+
+  scheme_add_global("wx@", wxs_signed_unit, env); /* same as wx:wx@ */
+  
   scheme_invoke_unit((Scheme_Object *)wxs_unit, 0, NULL, NULL, 1, "wx", 0, 0);
 }
-
-typedef struct {
-  int count;
-  struct {
-    char *name;
-    Scheme_Object *val;
-  } v[INSTALL_COUNT];
-} InstallRec;
 
 static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* anchors */,
 				   Scheme_Unit *u, void * /* debug_request */)
@@ -159,8 +171,10 @@ void wxsScheme_setup(Scheme_Env *env)
 
   wxScheme_Install(env, rec);
 
-  qsort(rec->v, rec->count, sizeof(char*) + sizeof(Scheme_Object *), 
-	(int (*)(const void *, const void *))strcmp);
+  /* temporary wx@ binding */
+  scheme_install_xc_global("wx:wx@", scheme_void, (Scheme_Env *)rec);
+
+  /* Note: the order of exports doesn't matter for matching the (sorted) sig */
   u = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
   u->type = scheme_unit_type;
   u->num_imports = 0;

@@ -688,6 +688,8 @@
 	    (else
 	      (internal-error expr "Invalid resolution in unit delta: ~s" r))))))
 
+    (include "scm-sign.ss")
+
     (set! unit-clauses-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)
 	unit-clauses-vocab-delta))

@@ -92,6 +92,7 @@
     (struct define-values-form (vars val))          create-define-values-form
     (struct set!-form (var val))                    create-set!-form
     (struct case-lambda-form (args bodies))         create-case-lambda-form
+    generate-struct-names
     ))
 
 (define-signature zodiac:scheme-objects^

@@ -33,9 +33,12 @@
     (let ([peval (current-eval)])
       (parameterize ([current-prompt-read
 		       (lambda ()
+			 (newline)
 			 (display "e> ")
 			 (flush-output)
 			 (let ([read ((zodiac:read))])
+			   (newline)
+			   (flush-output)
 			   (if (zodiac:eof? read)
 			     eof
 			     read)))]
@@ -45,7 +48,8 @@
 			    (zodiac:parsed->raw
 			      (car
 				(zodiac:scheme-expand-program
-				  (list in))))
+				  (list in)))))
+			  (lambda (in)
 			    (zodiac:scheme-expand-program
 			      (list in))))])
 	(read-eval-print-loop)))))

@@ -1449,11 +1449,13 @@
 	    (test v string->number s))
 	  (loop (cdr l))))
 
+
 (test #f string->number "88" 7)
 (test #f string->number "")
 (test #f string->number " 1")
 (test #f string->number ".")
 (test #f string->number "#4@#i5")
+(test #f string->number "190888 qwerqwerq")
 (test #t symbol? '1/x)
 (test #t symbol? '1+ei)
 (test #t symbol? '|1/0|)

@@ -5,6 +5,8 @@
 
 (SECTION 'threads)
 
+(define SLEEP-TIME 0.6)
+
 (define t (thread (lambda () 8)))
 (test #t thread? t)
 
@@ -21,7 +23,6 @@
 	    c
 	    (loop (sub1 n) (make-custodian c)))))
 
-(define SLEEP-TIME 0.1)
 (define result 0)
 (define th1 0)
 (define set-ready
@@ -112,10 +113,9 @@
 (define test-block
   (lambda (block? thunk)
     (let* ([hit? #f]
-	   [t (parameterize
-	       ([current-custodian (make-custodian)])
-	       (thread (lambda () (thunk) (set! hit? #t))))])
-      (sleep 0.1)
+	   [t (parameterize ([current-custodian (make-custodian)])
+		(thread (lambda () (thunk) (set! hit? #t))))])
+      (sleep SLEEP-TIME)
       (begin0 (test block? 'nondeterministic-block-test (not hit?))
 	      (kill-thread t)))))
 
@@ -159,7 +159,7 @@
 			  (with-handlers ([exn:misc:user-break? (lambda (x) (semaphore-post s2))])
 			    (semaphore-wait (make-semaphore 0)))))])
 	(semaphore-wait s1)
-	(sleep 0.1)
+	(sleep SLEEP-TIME)
 	(break-thread t)
 	(semaphore-wait s2)
 	'ok))
@@ -299,12 +299,14 @@
 
 (define v1 #f)
 (define v2 #f)
-(thread (lambda () (set! v1 (channel-get c))))
-(thread (lambda () (set! v2 (channel-get c))))
-(sleep 0.1)
+(define (mark v) (printf "got ~a~n" v) v)
+(thread (lambda () (set! v1 (mark (channel-get c)))))
+(thread (lambda () (set! v2 (mark (channel-get c)))))
+(sleep SLEEP-TIME)
 (test (void) channel-put c 'first)
 (test (void) channel-put c 'second)
-(sleep 0.1)
+(sleep SLEEP-TIME)
+(printf "results: ~a ~a~n" v1 v2)
 (test #t 'two-thread-channel (or (equal? (list v1 v2) '(first second))
 				 (equal? (list v1 v2) '(second first))))
 

@@ -161,30 +161,32 @@
         (let
             ((obj-files
               (find-grep-filter tmp-dir (string-append "\\." o-ext "$"))))      
-          (system (format "~a -d ~a ++ccf ~a ~a plplot-low-level.ss" 
+          (system (format "~a -d ~a ++ccf ~a ~a  ~a" 
                           mzc
                           ext-dir 
-                          (string-append flag "I" (build-path "src" "tmp"))
-                          (ldf-flags obj-files)))        
+                          (string-append flag "I" (build-path here "src" "tmp"))
+                          (ldf-flags obj-files)
+                          (build-path here "plplot-low-level.ss")))        
           (delete-directory/files tmp-dir)))))
   
   
   ; build the FIT module
   (define (build-fit)      
-    (let* ((fit-dir (build-path "src" "fit"))
+    (let* ((fit-dir (build-path here "src" "fit"))
            (fit-files (find-grep-filter fit-dir "\\.c$")))      
       (system (format "~a -d ~a --cc ~a"
                       mzc
                       fit-dir
                       (foldl (lambda (s c) (string-append s " " c)) "" fit-files) ))
       (let ((fit-objs (find-grep-filter fit-dir (string-append "\\." o-ext "$"))))
-        (system (format "~a -d ~a ~a ++ccf ~a~a~a fit-low-level.ss"
+        (system (format "~a -d ~a ~a ++ccf ~a~a~a ~a"
                         mzc
                         ext-dir
                         (ldf-flags fit-objs)
                         flag
                         "I"
                         fit-dir
+                        (build-path here "fit-low-level.ss")
                         ))
         (for-each delete-file fit-objs))))
                  

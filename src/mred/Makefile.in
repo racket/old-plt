@@ -21,7 +21,6 @@ RANLIB = @RANLIB@
 AR = @AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
-COMPFLAGS = @CFLAGS@ @PROFFLAGS@
 XINCLUDE = @X_CFLAGS@
 XLIB = @X_LIBS@
 LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
@@ -35,9 +34,8 @@ WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/ma
 WXINC = $(WXINC_@WXVARIANT@)
 NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
-CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
-CPPFLAGS = $(CXXFLAGS)
-CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CXXFLAGS@ @PREFLAGS@
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CFLAGS@ @PREFLAGS@
 LDFLAGS = $(XLIB)
 ###########################
 
@@ -146,15 +144,15 @@ mred.o :  $(srcdir)/mred.cxx $(srcdir)/wxme/wx_media.h $(srcdir)/wxme/wx_medad.h
           $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/../mzscheme/src/schvers.h \
           $(srcdir)/wxs/wxsmred.h $(WXINCDEP) $(srcdir)/../wxcommon/wxGC.h \
           $(srcdir)/../wxcommon/wx_list.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mred.cxx -o mred.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/mred.cxx -o mred.o
 
 mrmain.o :  $(srcdir)/mrmain.cxx $(srcdir)/mred.h $(srcdir)/wxs/wxsmred.h \
             $(srcdir)/../mzscheme/cmdline.inc $(srcdir)/../mzscheme/src/stypes.h \
             $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/../mzscheme/src/schvers.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mrmain.cxx -o mrmain.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/mrmain.cxx -o mrmain.o
 
 mrmain_ee.o : mred.o
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/mrmain.cxx -o mrmain_ee.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/mrmain.cxx -o mrmain_ee.o
 
 ee-main:
 	$(MAKE) mrmain_ee.o
@@ -163,28 +161,28 @@ mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/m
           $(WXINCDEP) \
           $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
           $(srcdir)/../mzscheme/src/stypes.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredx.cxx -o mredx.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredx.cxx -o mredx.o
 
 mredmac.o : $(srcdir)/mredmac.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
           $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
           $(srcdir)/../mzscheme/src/stypes.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredmac.cxx -o mredmac.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredmac.cxx -o mredmac.o
 
 wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
          $(srcdir)/../mzscheme/src/stypes.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
 wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) @JPEG_INC@ -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) @JPEG_INC@ -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
 
 dl_stub.o: $(srcdir)/misc/dl_stub.c
-	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o
+	$(CC) $(CFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o
 
 simpledrop.o : $(srcdir)/../mac/mzscheme/simpledrop.cpp
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -o simpledrop.o -c $(srcdir)/../mac/mzscheme/simpledrop.cpp
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -o simpledrop.o -c $(srcdir)/../mac/mzscheme/simpledrop.cpp
 
 sgilinkhack.o:
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/sgilinkhack.cxx -o sgilinkhack.o
+	$(CXX) $(CXXFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/sgilinkhack.cxx -o sgilinkhack.o
 
 $(WXDIR)/libwx_xt.a:
 	$(MAKE) wx
@@ -259,8 +257,17 @@ install_wx_mac:
 	cp $(srcdir)/../mac/mred.sh .mred.sh
 	cd ..; if [ ! -e $(prefix)/bin/mred ] ; then cp mred/.mred.sh $(prefix)/bin/mred ; chmod a+x $(prefix)/bin/mred ; fi
 
+LIBIDIR=$(prefix)/lib
+BUILDINFO=$(LIBIDIR)/buildinfo
+
 install:
 	$(MAKE) install_@WXVARIANT@
+	cd ..; echo 'CXX=@CXX@' >> $(BUILDINFO)
+	cd ..; echo 'CXXFLAGS=@CXXFLAGS@ @PREFLAGS@ @COMPFLAGS@' >> $(BUILDINFO)
+	cd ..; echo 'MROPTIONS=@OPTIONS@' >> $(BUILDINFO)
+	cd ..; echo 'X_CFLAGS=@X_CFLAGS@' >> $(BUILDINFO)
+	cd ..; echo 'X_LIB=@X_LIBS@' >> $(BUILDINFO)
+	cd ..; echo "MRLDFLAGS=$(MREDLDFLAGS)" >> $(BUILDINFO)
 
 3m:
 	$(MAKE) all

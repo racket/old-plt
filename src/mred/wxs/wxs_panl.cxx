@@ -1014,7 +1014,7 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 #ifdef wx_msw
-# define XTMAC_UNUSED(x) /x
+# define XTMAC_UNUSED(x) x
 #else
 # define XTMAC_UNUSED(x) /**/
 #endif

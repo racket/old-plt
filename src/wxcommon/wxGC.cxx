@@ -40,7 +40,11 @@ void gc::install_cleanup(void)
   GC_finalization_proc old_fn;
   void *old_data;
 
-# define CHECK_BASE 1
+# ifdef wx_xt
+#  define CHECK_BASE 1
+# else
+#  define CHECK_BASE 0
+# endif
 
 # if CHECK_BASE 
   if (GC_base(this) != (void *)this) {

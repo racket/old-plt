@@ -29,7 +29,7 @@
 
 
 #ifdef wx_msw
-# define XTMAC_UNUSED(x) /x
+# define XTMAC_UNUSED(x) x
 #else
 # define XTMAC_UNUSED(x) /**/
 #endif

@@ -1456,7 +1456,7 @@ public:
 
       /* Fixed-width font: */
       wxStyle *style = media->GetStyleList()->FindNamedStyle("Standard");
-      style->SetDelta(*(new wxStyleDelta(wxCHANGE_FAMILY, wxMODERN)));
+      style->SetDelta(new wxStyleDelta(wxCHANGE_FAMILY, wxMODERN));
 
 #ifdef wx_mac
       OnSize(600, 400);

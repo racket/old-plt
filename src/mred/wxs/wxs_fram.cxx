@@ -118,7 +118,7 @@ static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
 
 
 #ifdef wx_msw
-# define XTMAC_UNUSED(x) /x
+# define XTMAC_UNUSED(x) x
 #else
 # define XTMAC_UNUSED(x) /**/
 #endif

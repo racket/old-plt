@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.9 1998/12/22 23:51:12 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.10 1999/02/23 18:27:46 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -821,11 +821,8 @@ HICON wxFrameWnd::OnQueryDragIcon(void)
     return defaultIcon;
 }
 
-void wxFrameWnd::OnSize(int x, int y, UINT id)
+void wxFrameWnd::OnSize(int bad_x, int bad_y, UINT id)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxFrameWnd::OnSize %d\n", handle);
-#endif
   switch (id)
   {
     case SIZEFULLSCREEN:
@@ -844,7 +841,7 @@ void wxFrameWnd::OnSize(int x, int y, UINT id)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(x, y);
+    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
  }
 }
 
@@ -982,11 +979,8 @@ void wxMDIFrame::OnCreate(LPCREATESTRUCT WXUNUSED(cs))
 					 wxhInstance, (LPSTR)(LPCLIENTCREATESTRUCT)&ccs);
 }
 
-void wxMDIFrame::OnSize(int x, int y, UINT id)
+void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::OnSize %d\n", handle);
-#endif
   switch (id)
   {
     case SIZEFULLSCREEN:
@@ -1031,7 +1025,7 @@ void wxMDIFrame::OnSize(int x, int y, UINT id)
   else (void)DefWindowProc(last_msg, last_wparam, last_lparam);
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(x, y);
+    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
   }
 }
 
@@ -1211,28 +1205,14 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
 }
 
 static HWND invalidHandle = 0;
-void wxMDIChild::OnSize(int x, int y, UINT id)
+void wxMDIChild::OnSize(int bad_x, int bad_y, UINT id)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnSize %d\n", handle);
-#endif
   if (!handle) return;
 
   if (invalidHandle == handle)
-  {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnSize %d: invalid, so returning.\n", handle);
-#endif
     return;
-  }
   
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnSize %d: calling DefWindowProc\n", handle);
-#endif
   (void)DefWindowProc(last_msg, last_wparam, last_lparam);
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnSize %d: called DefWindowProc\n", handle);
-#endif
   
   switch (id)
   {
@@ -1252,7 +1232,7 @@ void wxMDIChild::OnSize(int x, int y, UINT id)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)
-    wx_window->GetEventHandler()->OnSize(x, y);
+    wx_window->GetEventHandler()->OnSize(bad_x, bad_y);
  }
 }
 

@@ -21,14 +21,6 @@
 #include "wx_frame.h"
 #include "wx_canvs.h"
 
-#define wxDRAG_MODE_NONE            0
-#define wxDRAG_MODE_START_LEFT      1
-#define wxDRAG_MODE_CONTINUE_LEFT   2
-#define wxDRAG_MODE_START_RIGHT     3
-#define wxDRAG_MODE_CONTINUE_RIGHT  4
-#define wxDRAG_TYPE_NONE            0
-#define wxDRAG_TYPE_ITEM            100
-
 #define wxKEY_SHIFT     1
 #define wxKEY_CTRL      2
 
@@ -50,23 +42,6 @@ class wxResourceTable;
 
 class wxbPanel: public wxCanvas
 {
- protected:
-  Bool editMode;
-  wxItem *dragItem;
-  int dragMode;
-  int dragType;
-  int dragTolerance;
-  Bool checkTolerance;
-  int firstDragX;
-  int firstDragY;
-  int oldDragX;
-  int oldDragY;
-  int dragSlow; // Use bounding box because real drags
-                // and sizes take too long
-#if USE_EXTENDED_STATICS
-  wxList staticItems;
-#endif
-
  public:
   Bool new_line;
   int label_position;
@@ -163,9 +138,6 @@ class wxbPanel: public wxCanvas
   // Calls DrawSelectionHandles for all items if
   // edit mode is on.
   virtual void PaintSelectionHandles(void);
-
-  inline virtual void SetSlowDrag(Bool sl) { dragSlow = sl; }
-  inline virtual Bool GetSlowDrag(void) { return dragSlow ; }
 };
 
 #endif // IN_CPROTO

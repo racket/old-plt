@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_panel.cxx,v 1.2 1998/02/10 02:50:09 mflatt Exp $
+ * RCS_ID:      $Id: wb_panel.cxx,v 1.3 1998/08/09 20:55:19 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -45,21 +45,10 @@ wxbPanel::wxbPanel(void)
   new_line = FALSE;
   label_position = wxHORIZONTAL;
   window_parent = NULL;
-
-  dragSlow = TRUE;
-  dragMode = wxDRAG_MODE_NONE;
-  dragType = wxDRAG_TYPE_NONE;
-  dragItem = NULL;
-  firstDragX = 0;
-  firstDragY = 0;
-  oldDragX = 0;
-  oldDragY = 0;
-  dragTolerance = 3;
-  checkTolerance = TRUE;
 }
 
-wxbPanel::wxbPanel(wxWindow *parent, int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height),
-   long style, char *WXUNUSED(name))
+wxbPanel::wxbPanel(wxWindow *parent, int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), 
+		   int WXUNUSED(height), long style, char *WXUNUSED(name))
 {
   __type = wxTYPE_PANEL;
   windowStyle = style;
@@ -68,17 +57,6 @@ wxbPanel::wxbPanel(wxWindow *parent, int WXUNUSED(x), int WXUNUSED(y), int WXUNU
   label_position = wxHORIZONTAL;
 
   window_parent = parent;
-
-  dragSlow = TRUE;
-  dragMode = wxDRAG_MODE_NONE;
-  dragType = wxDRAG_TYPE_NONE;
-  dragItem = NULL;
-  firstDragX = 0;
-  firstDragY = 0;
-  oldDragX = 0;
-  oldDragY = 0;
-  dragTolerance = 3;
-  checkTolerance = TRUE;
 }
 
 wxbPanel::~wxbPanel(void)
@@ -186,7 +164,7 @@ void wxbPanel::OnItemEvent(wxItem *item, wxMouseEvent& event)
 
   event.x = (float)(event.x + x);
   event.y = (float)(event.y + y);
-  ProcessItemEvent(item, event, dragType);
+  ProcessItemEvent(item, event, 0);
 }
 
 void wxbPanel::ProcessItemEvent(wxItem * /* item */, wxMouseEvent& /* event */, int /* selectionHandle */)

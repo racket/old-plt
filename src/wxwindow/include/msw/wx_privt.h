@@ -161,8 +161,9 @@ class wxSubWnd : public wxWnd
 {
 public:
     wxSubWnd(wxWnd *parent, char *wclass, wxWindow *wx_win,
-                int x, int y, int width, int height,
-                DWORD style, char *dialog_template = NULL);
+             int x, int y, int width, int height,
+             DWORD style, char *dialog_template = NULL,
+             DWORD exendedStyle = 0);
     ~wxSubWnd(void);
 
     // Handlers

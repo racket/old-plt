@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.23 1999/01/29 02:48:28 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.24 1999/02/21 00:29:53 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -853,33 +853,14 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         }
 
         case WM_SIZE:
+        case WM_MOVE:
         {
-            if (wnd)
-            {
-              int width = LOWORD(lParam);
-              int height = HIWORD(lParam);
-
-			  
-
-              // Find the difference between the entire window (title bar and all)
-
-              // and the client area; add this to the new client size
-
-  			  RECT rect, rect2;
-
-			  GetClientRect(hWnd, &rect);
-
-              GetWindowRect(hWnd, &rect2);
-
-
-
-			  int actual_width = rect2.right - rect2.left - rect.right + width;
-
-              int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
-              wnd->OnSize(actual_width, actual_height, wParam);
-            }
-            else retval = DefWindowProc( hWnd, message, wParam, lParam );
-            break;
+	  if (wnd) {
+	    /* w & h ignored... */
+	    wnd->OnSize(0, 0, wParam);
+	  } else
+	    retval = DefWindowProc(hWnd, message, wParam, lParam);
+	  break;
         }
 
         case WM_RBUTTONDOWN:
@@ -1284,23 +1265,15 @@ LONG APIENTRY _EXPORT
               wnd->OnCreate((LPCREATESTRUCT)lParam);
             return 0;
 	    break;
+
         case WM_SIZE:
+        case WM_MOVE:
         {
 	  if (wnd) {
-	    int width = LOWORD(lParam);
-	    int height = HIWORD(lParam);
-
-	    // Find the difference between the entire window (title bar and all)
-	    // and the client area; add this to the new client size
-	    RECT rect, rect2;
-	    GetClientRect(hWnd, &rect);
-	    GetWindowRect(hWnd, &rect2);
-
-	    int actual_width = rect2.right - rect2.left - rect.right + width;
-	    int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
-	    wnd->OnSize(actual_width, actual_height, wParam);
-	  }
-	  else return FALSE;
+	    /* w & h ignored ... */
+	    wnd->OnSize(0, 0, wParam);
+	  } else
+	    return FALSE;
 	  break;
         }
 /*
@@ -2115,11 +2088,12 @@ void wxWnd::DetachWindowMenu(void)
  */
 
 wxSubWnd::wxSubWnd(wxWnd *parent, char *wclass, wxWindow *wx_win,
-                           int x, int y, int width, int height,
-                           DWORD style, char *dialog_template)
-
+		   int x, int y, int width, int height,
+		   DWORD style, char *dialog_template,
+		   DWORD extendedStyle)
 {
-  Create(parent, wclass, wx_win, NULL, x, y, width, height, style, dialog_template);
+  Create(parent, wclass, wx_win, NULL, x, y, width, height, style, 
+	 dialog_template, extendedStyle);
 }
 
 wxSubWnd::~wxSubWnd(void)
@@ -2173,11 +2147,8 @@ BOOL wxSubWnd::OnPaint(void)
   return FALSE;
 }
 
-void wxSubWnd::OnSize(int w, int h, UINT WXUNUSED(flag))
+void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxSubWnd::OnSize %d\n", handle);
-#endif
   if (!handle)
     return;
 
@@ -2194,7 +2165,7 @@ void wxSubWnd::OnSize(int w, int h, UINT WXUNUSED(flag))
   }
 
   if (wx_window)
-    wx_window->GetEventHandler()->OnSize(w, h);
+    wx_window->GetEventHandler()->OnSize(bad_w, bad_h);
 }
 
 // Deal with child commands from buttons etc.
@@ -3341,13 +3312,12 @@ int wxWindow::GetScrollPage(int orient)
 }
 
 // Default OnSize resets scrollbars, if any
-void wxWindow::OnSize(int w, int h)
+void wxWindow::OnSize(int bad_w, int bad_h)
 {
 #if USE_CONSTRAINTS
   if (GetAutoLayout())
     Layout();
 #endif
-
 
   if (wxWinType != wxTYPE_XWND)
     return;

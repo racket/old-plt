@@ -122,7 +122,8 @@
 			   [else ss-file])])
 	      (mred:debug:printf 'startup "Loading ~a..." file)
 	      (load/cd file)))
-	  (list "sig" "prefs" "exn" "containr"
+	  (list "sig" "macros" "prefs" 
+		"exn" "containr"
 		"autoload" "autosave" "canvas" "console" "edit" "exit" 
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
@@ -157,8 +158,8 @@
 				       [application : mred:application^])
 	    (link [debug : mred:debug^ (debug/s@)]
 		  [exn : mred:exn^ (mred:exn@ debug)]
-		  [preferences : mred:preferences^ (mred:preferences@ debug exn (core function@))]
 		  [container : mred:container^ (mred:container@ debug (core function@))]
+		  [preferences : mred:preferences^ (mred:preferences@ debug exn container edit (core function@))]
 		  [autoload : mred:autoload^ (mred:autoload@ debug preferences (core file@))]
 		  [autosave : mred:autosave^ (mred:autosave@ debug preferences)]
 		  [exit : mred:exit^ (mred:exit@ debug)]
@@ -176,9 +177,9 @@
 		  [menu : mred:menu^ (mred:menu@ debug (core function@))]
 		  [edit : mred:edit^ (mred:edit@ debug finder path-utils mode
 					     scheme-paren keymap (core function@))]
-		  [group : mred:group^ (mred:group@ debug gui-utils exit autosave
-						handler (core function@))]
-		  [frame : mred:frame^ (mred:frame@ debug edit canvas icon menu
+		  [group : mred:group^ (mred:group@ debug preferences frame gui-utils exit
+						    autosave handler (core function@))]
+		  [frame : mred:frame^ (mred:frame@ debug preferences edit canvas icon menu
 						group finder handler exit
 						autosave gui-utils
 						(core function@) (core file@))]

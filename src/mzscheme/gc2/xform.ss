@@ -801,9 +801,10 @@
      [(parens? (cadr e))
       (let ([name (tok-n (car e))]
 	    [type (let loop ([t (reverse type)])
-		    (if (and (pair? t)
-			     (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl)))
-			(loop (cdr t))
+		    (if (pair? t)
+			(if (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl))
+			    (loop (cdr t))
+			    (cons (car t) (loop (cdr t))))
 			t))]
 	    [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
 	(prototyped (cons (cons name (make-prototype 
@@ -2638,7 +2639,7 @@
        where))
    #f))
 
+(close-output-port (current-output-port))
+
 (when exit-with-error?
   (error 'xform "Errors converting"))
-
-(close-output-port (current-output-port))

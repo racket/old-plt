@@ -26,7 +26,14 @@
 # define NEVER_COMPACT       0
 #define COMPACT_THRESHOLD 0.2
 
-#define USE_MMAP 1
+#ifdef _WIN32
+# define USE_MMAP 0
+# define USE_WINMAP 1
+# include <windows.h>
+#else
+# define USE_MMAP 1
+# define USE_WINMAP 0
+#endif
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
 # define ALIGN_DOUBLES 1
@@ -57,6 +64,8 @@ typedef short Type_Tag;
 #define SKIP_FORCED_GC 0
 
 #define MARK_STACK_MAX 4096
+
+#define BYTEPTR(x) ((char *)x)
 
 void *mark_stack[MARK_STACK_MAX];
 unsigned short mark_stack_type[MARK_STACK_MAX];
@@ -260,13 +269,13 @@ static void CRASH()
 }
 #endif
 
+static int page_size;
+
 /******************************************************************************/
 
 #if USE_MMAP
 
 int fd, fd_created;
-
-static int page_size;
 
 void *malloc_pages(size_t len, size_t alignment)
 {
@@ -384,7 +393,35 @@ void protect_pages(void *p, size_t len, int writeable)
 
 /******************************************************************************/
 
-#if !USE_MMAP
+#if USE_WINMAP
+
+void *malloc_pages(size_t len, size_t alignment)
+{
+  return (void *)VirtualAlloc(NULL, len, 
+			      MEM_COMMIT | MEM_RESERVE, 
+			      PAGE_READWRITE);
+}
+
+void free_pages(void *p, size_t len)
+{
+  VirtualFree(p, 0, MEM_RELEASE);
+}
+
+void flush_freed_pages(void)
+{
+}
+
+void protect_pages(void *p, size_t len, int writeable)
+{
+  DWORD old;
+  VrtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
+}
+
+#endif
+
+/******************************************************************************/
+
+#if !USE_MMAP && !USE_WINMAP
 
 void *malloc_pages(size_t len, size_t alignment)
 {
@@ -1094,7 +1131,7 @@ void GC_dump(void)
 	    case gc_weak_array_tag: tn = "weak-array"; break;
 	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
 	    default:
-	      tn = scheme_get_type_name(i);
+	      tn = scheme_get_type_name((Scheme_Type)i);
 	      if (!tn) tn = "unknown";
 	      break;
 	    }
@@ -1473,7 +1510,7 @@ void GC_mark(const void *p)
 	    CRASH();
 	  }
 #endif
-	  p -= sizeof(void *);
+	  p = BYTEPTR(p) - sizeof(void *);
 	}
 
 	offset = ((long)p & MPAGE_MASK) >> 2;
@@ -2808,6 +2845,21 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 # define NEED_SIGACTION
 #endif
 
+/* Windows signal handler: */
+#if defined(_WIN32)
+LONG fault_handler(LPEXCEPTION_POINTERS e) 
+{
+  if ((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+      && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
+    designate_modified((void *)e->ExceptionRecord->ExceptionInformation[1]);
+    
+    return EXCEPTION_CONTINUE_EXECUTION;
+  } else
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+# define NEED_SIGWIN
+#endif
+
 /**********************************************************************/
 
 #if SAFETY
@@ -2987,6 +3039,9 @@ static void init(void)
       act.sa_flags = SA_SIGINFO;
       sigaction(SIGSEGV, &act, &oact);
     }
+# endif
+# ifdef NEED_SIGWIN
+    SetUnhandledExceptionHandler(fault_handler);
 # endif
 #endif
   }
@@ -3230,7 +3285,7 @@ static void gcollect(int full)
 	  if (markit) {
 	    gcMARK(wl->saved);
 	  }
-	  *(void **)(wp + wl->offset) = wl->saved;
+	  *(void **)(BYTEPTR(wp) + wl->offset) = wl->saved;
 	}
 	
 	/* We have to mark one more time, because restoring a weak
@@ -3250,8 +3305,8 @@ static void gcollect(int full)
 	/* Zero out weak links for ordered finalization */
 	for (wl = fnl_weaks; wl; wl = wl->next) {
 	  void *wp = (void *)wl->p;
-	  wl->saved = *(void **)(wp + wl->offset);
-	  *(void **)(wp + wl->offset) = NULL;
+	  wl->saved = *(void **)(BYTEPTR(wp) + wl->offset);
+	  *(void **)(BYTEPTR(wp) + wl->offset) = NULL;
 	}
 
 	/* Mark content of not-yet-marked finalized objects,
@@ -3657,7 +3712,7 @@ static void new_page(mtype_t mtype, MSet *set)
   set->malloc_page = map;
 
   set->low = (void **)p;
-  set->high = (void **)(p + MPAGE_SIZE);
+  set->high = (void **)(BYTEPTR(p) + MPAGE_SIZE);
 }
 
 static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
@@ -3696,7 +3751,7 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
   s = size_in_bytes;
   mp = p;
   while (s > MPAGE_SIZE) {
-    mp = mp + MPAGE_SIZE;
+    mp = BYTEPTR(mp) + MPAGE_SIZE;
     s -= MPAGE_SIZE;
     map = get_page_rec(mp, 0);
     map->type = MTYPE_CONTINUED | MTYPE_BIGBLOCK;

@@ -401,9 +401,62 @@ void flush_freed_pages(void)
 # include <sys/mman.h>
 # include <errno.h>
 
+#if defined(sparc) || defined(__sparc) || defined(__sparc__)
+/* Sun's qsort() is broken. */
+# include "my_qsort.c"
+#else
+# define my_qsort qsort
+#endif
+
 #ifndef MAP_ANON
 int fd, fd_created;
 #endif
+
+/* Instead of immeidtately freeing pages with munmap, only to mmap
+   them again, we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
+   cached unused for at most BLOCKFREE_UNMAP_AGE cycles of the
+   collector. (A max age of 1 seems useful, anything more seems
+   dangerous.) 
+
+   The cache is small enough that we don't need an elaborate search
+   mechanism, but we do a bit of work to collapse adjacent pages in
+   the cache. */
+
+typedef struct {
+  void *start;
+  long len;
+  int age;
+} Free_Block;
+
+#define BLOCKFREE_UNMAP_AGE 1
+#define BLOCKFREE_CACHE_SIZE 96
+static Free_Block blockfree[BLOCKFREE_CACHE_SIZE];
+
+static int compare_free_block(const void *a, const void *b)
+{
+  if ((unsigned long)((Free_Block *)a)->start < (unsigned long)((Free_Block *)b)->start)
+    return -1;
+  else
+    return 1;
+}
+
+void collapse_adjacent_pages(void)
+{
+  int i, j;
+
+  /* collapse adjacent: */
+  my_qsort(blockfree, BLOCKFREE_CACHE_SIZE, sizeof(Free_Block), compare_free_block);
+  j = 0;
+  for (i = 1; i < BLOCKFREE_CACHE_SIZE; i++) {
+    if ((blockfree[j].start + blockfree[j].len) ==blockfree[i].start) {
+      blockfree[j].len += blockfree[i].len;
+      blockfree[i].start = NULL;
+      blockfree[i].len = 0;
+    } else
+      j = i;
+  }
+}
+
 
 void *malloc_pages(size_t len, size_t alignment)
 {
@@ -424,8 +477,52 @@ void *malloc_pages(size_t len, size_t alignment)
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
-  /* May need to try twice to get a desired alignment: */
- try_again:
+  /* Something from the cache, perhaps? */
+  {
+    int i;
+
+    /* Try an exact fit: */
+    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+      if (blockfree[i].len == len) {
+	r = blockfree[i].start;
+	if (!alignment || !((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].start = NULL;
+	  blockfree[i].len = 0;
+	  memset(r, 0, len);
+	  return r;
+	}
+      }
+    }
+
+    /* Try a first fit: */
+    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+      if (blockfree[i].len > len) {
+	/* Align at start? */
+	r = blockfree[i].start;
+	if (!alignment || !((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].start += len;
+	  blockfree[i].len -= len;
+	  memset(r, 0, len);
+	  return r;
+	}
+
+	/* Align at end? */
+	r = blockfree[i].start + (blockfree[i].len - len);
+	if (!((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].len -= len;
+	  memset(r, 0, len);
+	  return r;
+	}
+
+	/* We don't try a middle alignment, because that would
+	   split the block into three. */
+      }
+    }
+
+    /* Nothing useable in the cache... */
+  }
+
+  extra = alignment;
 
 #ifdef MAP_ANON
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -453,21 +550,10 @@ void *malloc_pages(size_t len, size_t alignment)
     r = real_r;
   }
 
-  if (alignment && ((unsigned long)r & (alignment - 1))) {
-    /* Need better alignment. Try harder. */
-    munmap(r, len);
-    extra = alignment;
-    goto try_again;
-  }
-
   page_allocations += len;
 
   return r;
 }
-
-#define BLOCKFREE_CACHE_SIZE 10
-static void *blockfree_ptrs[BLOCKFREE_CACHE_SIZE];
-static long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
 
 void free_pages(void *p, size_t len)
 {
@@ -482,24 +568,28 @@ void free_pages(void *p, size_t len)
   /* Try to free pages in larger blocks, since the OS may be slow. */
 
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (p == blockfree_ptrs[i] + blockfree_sizes[i]) {
-      blockfree_sizes[i] += len;
+    if (p == blockfree[i].start + blockfree[i].len) {
+      blockfree[i].len += len;
       return;
     }
-    if (p + len == blockfree_ptrs[i]) {
-      blockfree_ptrs[i] = p;
-      blockfree_sizes[i] += len;
+    if (p + len == blockfree[i].start) {
+      blockfree[i].start = p;
+      blockfree[i].len += len;
       return;
     }
   }
 
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (!blockfree_ptrs[i]) {
-      blockfree_ptrs[i] = p;
-      blockfree_sizes[i] = len;
+    if (!blockfree[i].start) {
+      blockfree[i].start = p;
+      blockfree[i].len = len;
+      blockfree[i].age = 0;
       return;
     }
   }
+
+  /* Might help next time around: */
+  collapse_adjacent_pages();
 
   if (munmap(p, len)) {
     fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
@@ -510,15 +600,20 @@ void flush_freed_pages(void)
 {
   int i;
 
+  collapse_adjacent_pages();
+
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (blockfree_ptrs[i]) {
-      if (munmap(blockfree_ptrs[i], blockfree_sizes[i])) {
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
-		(long)blockfree_ptrs[i], blockfree_sizes[i],
-		errno);
-      }
-      blockfree_ptrs[i] = NULL;
-      blockfree_sizes[i] = 0;
+    if (blockfree[i].start) {
+      if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
+	if (munmap(blockfree[i].start, blockfree[i].len)) {
+	  fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
+		  (long)blockfree[i].start, blockfree[i].len,
+		  errno);
+	}
+	blockfree[i].start = NULL;
+	blockfree[i].len = 0;
+      } else
+	blockfree[i].age++;
     }
   }
 }
@@ -588,7 +683,7 @@ static void sort_and_merge_roots()
   if (roots_count < 4)
     return;
 
-  qsort(roots, roots_count >> 1, 2 * sizeof(unsigned long), compare_roots);
+  my_qsort(roots, roots_count >> 1, 2 * sizeof(unsigned long), compare_roots);
   offset = 0;
   top = roots_count;
   for (i = 2; i < top; i += 2) {

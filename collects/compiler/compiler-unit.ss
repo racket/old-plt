@@ -249,10 +249,12 @@
                (lambda () (current-directory orig)))
 	      (when (compile-subcollections)
 		(for-each
+                 ;; bug! planet files will do the wrong thing here
 		 (lambda (s)
 		   (unless (and (pair? s) (list? s) (andmap string? s))
 		     (error 'compile-collection "bad sub-collection path: ~a" s))
-		   (compile-collection s zos?))
+		   (let ((p (apply build-path dir s)))
+                     (compile-directory p (get-info/full p) zos?)))
 		 (info 'compile-subcollections (lambda () null))))))))
       
       (define (compile-collection cp zos?)

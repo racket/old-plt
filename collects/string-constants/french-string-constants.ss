@@ -185,7 +185,6 @@
   (cs-status-coloring-program "Vérificateur de syntaxe : coloriage d'une expression")
   (cs-status-eval-compile-time "Vérificateur de syntaxe : évaluation pour l'expansion") ; peut mieux faire?
   (cs-status-expanding-expression "Vérificateur de syntaxe : expansion d'une expression")
-  (cs-status-teachpacks "Vérificateur de syntaxe : installation des teachpacks")
   (cs-mouse-over-variable-import "la variable ~s est importée de ~s")
   (cs-mouse-over-syntax-import "la macro ~s est importée de ~s")
   
@@ -966,6 +965,8 @@
   
   ;; test coverage
   (test-coverage-clear? "Modifier le contenu de la fenêtre de définition invalide l'information de couverture de vos tests. Voulez-vous continuer ?")
+  (test-coverage-clear-and-do-not-ask-again "Oui, et ne me demandez pas à nouveau")
+  (test-coverage-ask? "Demander à propos de l'invalidation de l'information de couverture des tests ?")
   
   ;;; repl stuff
   (evaluation-terminated "Evaluation terminée.")

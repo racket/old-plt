@@ -2494,7 +2494,15 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
     }
     errno = -1;
   }
+# define MOVE_ERRNO_FORMAT "%e"
 #else
+# ifdef DOS_FILE_SYSTEM
+  if (MoveFileEx(src, dest, (exists_ok ? MOVEFILE_REPLACE_EXISTING : 0)))
+    return scheme_void;
+
+  errno = GetLastError();
+# define MOVE_ERRNO_FORMAT "%E"
+# else
   if (!exists_ok && (scheme_file_exists(dest) || scheme_directory_exists(dest))) {
     exists_ok = -1;
     errno = EEXIST;
@@ -2507,13 +2515,15 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
     else if (errno != EINTR)
       break;
   }
+# define MOVE_ERRNO_FORMAT "%e"
+# endif
 #endif
 
 failed:
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
 		   argv[0],
 		   (exists_ok < 0) ? exists_err_symbol : fail_err_symbol,
-		   "rename-file-or-directory: cannot rename file or directory: %q to: %q (%e)",
+		   "rename-file-or-directory: cannot rename file or directory: %q to: %q (" MOVE_ERRNO_FORMAT ")",
 		   filename_for_error(argv[0]),
 		   filename_for_error(argv[1]),
 		   errno);

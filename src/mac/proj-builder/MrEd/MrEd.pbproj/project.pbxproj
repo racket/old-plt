@@ -2598,7 +2598,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements /Users/clements/plt/src/mac/proj-builder/MrEd/build";
 				OPTIMIZATION_CFLAGS = "";
-				OTHER_CFLAGS = "-include /Users/clements/plt/src/mac/mred/MrEdSetupOSX.h";
+				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/MrEdSetup.h";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = MrEd;

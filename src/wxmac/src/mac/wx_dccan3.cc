@@ -696,7 +696,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     if (val) {
       style = *(ATSUStyle *)val;
       /* set style color */
-      if (!just_meas){
+      if (!just_meas) {
 	GC_CAN_IGNORE ATSUAttributeTag theTags[] = { kATSUColorTag };
 	GC_CAN_IGNORE ByteCount theSizes[] = { sizeof(RGBColor) };
 	ATSUAttributeValuePtr theValues[1];
@@ -706,13 +706,15 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	ATSUSetAttributes(style, 1, theTags, theSizes, theValues);
       }
     } else {
+      Scheme_Object *new_key;
       ATSUCreateAndCopyStyle((qd_spacing ? theATSUqdstyle : theATSUstyle), &style);
       atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
-				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y,
+				    angle, use_cgctx ? 1.0 : scale_y,
 				    qd_spacing);
       val = (Scheme_Object *)(new WXGC_ATOMIC char[sizeof(ATSUStyle)]);
       *(ATSUStyle *)val = style;
-      scheme_hash_set(style_table, table_key, val);
+      new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+      scheme_hash_set(style_table, new_key, val);
     }
 
     post_scheme(old);

@@ -126,18 +126,29 @@ Constructing configurations requires another library.
 Serving Content
 ===============
 
-By default, the Web server serves files out of the directory
+The Web Server serves content statically or dynamically, depending
+on the request URL.
+
+On static requests (those that do not match the Web Server's servlet
+filter), the Web Server serves files out of the content directory
 (build-path (collection-path "web-server") "default-web-root"
 "htdocs"), unless the function serve was called with a virtual-hosts
 argument or the configuration tool modified the location.
 
-The Web server also generates HTTP responses dynamically, based on
-files in a special directory.  By default, the special directory is
-named "servlets" within the "default-web-root" of the "web-server"
-collection directory.  Instead of serving the files in this directory
-verbatim, the server evaluates the contained Scheme _servlet_ and
-serves the output.  Servlets are (by default) loaded in a
-case-sensitive manner. (Seach in help-desk for read-case-sensitive.)
+The Web server guarantees that for such static responses, it 
+will serve only those files accessible in subdirectories of the
+content directory.  In the absence of filesystem links, this means
+that only files which live in the content directory will be made
+available to the outside world.
+
+When a request URL begins with a specified directory (typically
+"/servlets/"), the Web Server generates its response dynamically,
+based on files in a special directory.  By default, the special
+directory is named "servlets" within the "default-web-root" of the
+"web-server" collection directory.  Instead of serving the files in
+this directory verbatim, the server evaluates the contained Scheme
+_servlet_ and serves the output.  Servlets are (by default) loaded in
+a case-sensitive manner. (Seach in help-desk for read-case-sensitive.)
 
 The server supports two forms of servlets.  More may appear.
 

@@ -14,7 +14,8 @@
            (lib "unitsig.ss")
 	   (lib "thread.ss")
            "url-sig.ss"
-           "tcp-sig.ss")
+           "tcp-sig.ss"
+           "uri-codec.ss")
   (provide url@)
   
   (define url@
@@ -446,7 +447,8 @@
 			   "[ \t\f\r\n]*"
 			   "$"))))
 	  (lambda (str)
-	    (let ([m (regexp-match #rx"^[ \t\f\r\n]*file:(.*)$" str)])
+	    (let* ([decoded (uri-decode str)]
+                   [m (regexp-match #rx"^[ \t\f\r\n]*file:(.*)$" decoded)])
 	      ;; File scheme:
 	      (if m
 		  (let ([path+fragment (regexp-match #rx"^([^#]*)(#(.*))?$" (cadr m))])
@@ -463,12 +465,12 @@
 				    fragment)
 			  (url-error "scheme 'file' path ~s neither relative nor absolute" path))))
 		  ;; Other scheme:
-		  (let ((match (regexp-match-positions rx str)))
+		  (let ((match (regexp-match-positions rx decoded)))
 		    (if match
 			(let* ((get-str (lambda (pos skip-left skip-right)
 					  (let ((pair (list-ref match pos)))
 					    (if pair
-						(substring str
+						(substring decoded
 							   (+ (car pair) skip-left)
 							   (- (cdr pair) skip-right))
 						#f))))
@@ -496,146 +498,8 @@
 #|
       Old version. See PR 6152 for information on its replacement.
 
-      (define string->url
-        (lambda (string)
-	  (define marker-list
-	    '(#\: #\; #\? #\#))
+      <old version elided.  That's what CVS is for.>
       
-	  (define ascii-marker-list
-	    (map char->integer marker-list))
-	  
-	  (define marker-locations
-	    (make-vector character-set-size))
-	  
-	  (define first-position-of-marker
-	    (lambda (c)
-	      (vector-ref marker-locations (char->integer c))))
-	  
-          (with-handlers [(exn? (lambda (exn)
-                                  (url-error "Invalid URL string: ~s" string)))]
-	    (let loop ((markers ascii-marker-list))
-	      (unless (null? markers)
-		(vector-set! marker-locations (car markers) #f)
-		(loop (cdr markers))))
-	    (let loop ((chars (string->list string)) (index 0))
-	      (unless (null? chars)
-		(let ((first (car chars)))
-		  (when (memq first marker-list)
-		    (let ((posn (char->integer first)))
-		      (unless (vector-ref marker-locations posn)
-			(vector-set! marker-locations posn index)))))
-		(loop (cdr chars) (add1 index))))
-	    (let
-              ((first-colon (first-position-of-marker #\:))
-		(first-semicolon (first-position-of-marker #\;))
-		(first-question (first-position-of-marker #\?))
-		(first-hash (first-position-of-marker #\#)))
-	      (let
-                ((scheme-start (and first-colon 0))
-		  (path-start (if first-colon (add1 first-colon) 0))
-		  (params-start (and first-semicolon (add1 first-semicolon)))
-		  (query-start (and first-question (add1 first-question)))
-		  (fragment-start (and first-hash (add1 first-hash))))
-		(let ((total-length (string-length string)))
-		  (let*
-                    ((scheme-finish (and scheme-start first-colon))
-		      (path-finish (if first-semicolon first-semicolon
-				     (if first-question first-question
-				       (if first-hash first-hash
-					 total-length))))
-		      (fragment-finish (and fragment-start total-length))
-		      (query-finish (and query-start
-				      (if first-hash first-hash
-					total-length)))
-		      (params-finish (and params-start
-				       (if first-question first-question
-					 (if first-hash first-hash
-					   total-length)))))
-		    (let ((scheme (and scheme-start
-				    (substring string
-				      scheme-start scheme-finish))))
-		      (if (and scheme
-			    (string=? scheme "file"))
-                        (let ((path (substring string path-start path-finish)))
-                          (if (or (relative-path? path)
-				(absolute-path? path))
-			    (make-url
-			      scheme
-			      #f	; host
-			      #f	; port
-			      path
-			      #f	; params
-			      #f	; query
-                              (and fragment-start
-                                   (substring string 
-                                              fragment-start
-                                              fragment-finish)))	; fragment
-			    (url-error "scheme 'file' path ~s neither relative nor absolute" path)))
-                        (let-values (((host port path)
-				       (parse-host/port/path
-					 string path-start path-finish)))
-                          (make-url
-			    scheme
-			    host
-			    port
-			    path
-			    (and params-start
-			      (substring string params-start params-finish))
-			    (and query-start
-			      (substring string query-start query-finish))
-			    (and fragment-start
-			      (substring string fragment-start
-				fragment-finish)))))))))))))
-      
-      ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
-      (define parse-host/port/path
-        (lambda (path begin-point end-point)
-          (when (> begin-point end-point)
-            (url-error "Path ~s contains illegal characters" path))
-          (let ((has-host? (and (>= (- end-point begin-point) 2)
-                                (char=? (string-ref path begin-point) #\/)
-                                (char=? (string-ref path (add1 begin-point))
-                                        #\/))))
-            (let ((begin-point (if has-host?
-                                   (+ begin-point 2)
-                                   begin-point)))
-              (let loop ((index begin-point)
-                         (first-colon #f)
-                         (first-slash #f))
-                (cond
-		 ((>= index end-point)
-		  ;; We come here only if the string has not had a /
-		  ;; yet.  This can happen in two cases:
-		  ;; 1. The input is a relative URL, and the hostname
-		  ;;    will not be specified.  In such cases, has-host?
-		  ;;    will be false.
-		  ;; 2. The input is an absolute URL with a hostname,
-		  ;;    and the intended path is "/", but the URL is missing
-		  ;;    a "/" at the end.  has-host? must be true.
-		  (let ((host/path (substring path begin-point end-point)))
-		    (if has-host?
-			(values host/path #f "/")
-			(values #f #f host/path))))
-		 ((char=? #\: (string-ref path index))
-		  (loop (add1 index) (or first-colon index) first-slash))
-		 ((char=? #\/ (string-ref path index))
-		  (if first-colon
-		      (values
-		       (substring path begin-point first-colon)
-		       (string->number (substring path (add1 first-colon)
-						  index))
-		       (substring path index end-point))
-		      (if has-host?
-			  (values
-			   (substring path begin-point index)
-			   #f
-			   (substring path index end-point))
-			  (values
-			   #f
-			   #f
-			   (substring path begin-point end-point)))))
-		 (else
-		  (loop (add1 index) first-colon first-slash))))))))
-|#
+      |#
 
 )))

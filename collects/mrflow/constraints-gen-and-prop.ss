@@ -20,7 +20,7 @@
    check-primitive-types
    reset-all
    get-regions-to-color
-   get-loc
+   get-mzscheme-position
    get-label
    get-type
    pp-type
@@ -29,6 +29,8 @@
    has-member?
    get-errors
    ast-nodes
+   get-span
+   is-atom?
    ;graph-nodes graph-edges ; XXX perf
    ;show-expanded ; XXX debug
    )
@@ -4385,7 +4387,7 @@
                              (cons (sba-gui:make-region-to-color term-pos
                                                                  (+ term-pos (syntax-span term)
                                                                     
-                                                                    -1 ; XXX not for new gui
+                                                                    ;-1 ; XXX not for new gui
                                                                     
                                                                     )
                                                                  (syntax-source term)
@@ -4425,12 +4427,25 @@
   
   ; label -> positive-int
   ; returns start location of term associated with label
-  (define (get-loc label)
+  (define (get-mzscheme-position label)
     (syntax-position (label-term label)))
   
   ; number -> (union label #f)
   ; given a DrScheme offset, returns the label associated with the terms that start at that offset.
   (define get-label lookup-label-from-position)
+  
+  ; label -> (union number #f)
+  (define (get-span label)
+    (syntax-span (label-term label)))
+
+  ; label -> boolean
+  (define (is-atom? label)
+    (let ([stx-l (syntax-e (label-term label))])
+      (or (not (pair? stx-l)) ; identifier
+          (let ([term-type (syntax-e (car stx-l))])
+            (or (eq? term-type '#%datum)
+                (eq? term-type '#%top)
+                (eq? term-type 'quote))))))
   
   ; (make-hash-tableof label (cons type-var type))
   (define *rec-types* 'uninitialized)
@@ -4792,45 +4807,45 @@
     (reset-perf)
     )
   
-    ; port value -> void
-    (define (sba-driver port source)
-      (let ([start (current-milliseconds)])
-        (reset-all)
-        (read-and-analyze port source)
-        (check-primitive-types)
-        (printf "time: ~a ms~n" (- (current-milliseconds) start)))
-      
-      ; XXX perf analysis
-      ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
-      )
-  
-    ; port value -> void
-    ; read and analyze, one syntax object at a time
-    (define (read-and-analyze port source)
-      (let ([stx-obj (read-syntax source port)])
-        ;(unless (eof-object? stx-obj)
-        ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
-        ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
-        ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f)))
-        ;  (read-and-analyze port source))))
-        (if (eof-object? stx-obj)
-          '()
-          (cons (create-label-from-term (expand stx-obj) '() #f)
-                (read-and-analyze port source)))))
-    
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
-    
-    ; (: test-i (nothing -> void))
-    ; parse expression interactively
-    (define (test-i)
-      (sba-driver (current-input-port) 'interactive))
-    
-    ; (: test-f (string -> (listof Ast)))
-    (define (test-f filename)
-      (let ([port (open-input-file filename)])
-        (sba-driver port filename)
-        (close-input-port port)))
-    
+;    ; port value -> void
+;    (define (sba-driver port source)
+;      (let ([start (current-milliseconds)])
+;        (reset-all)
+;        (read-and-analyze port source)
+;        (check-primitive-types)
+;        (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+;      
+;      ; XXX perf analysis
+;      ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
+;      )
+;  
+;    ; port value -> void
+;    ; read and analyze, one syntax object at a time
+;    (define (read-and-analyze port source)
+;      (let ([stx-obj (read-syntax source port)])
+;        ;(unless (eof-object? stx-obj)
+;        ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
+;        ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
+;        ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f)))
+;        ;  (read-and-analyze port source))))
+;        (if (eof-object? stx-obj)
+;          '()
+;          (cons (create-label-from-term (expand stx-obj) '() #f)
+;                (read-and-analyze port source)))))
+;    
+;    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
+;    
+;    ; (: test-i (nothing -> void))
+;    ; parse expression interactively
+;    (define (test-i)
+;      (sba-driver (current-input-port) 'interactive))
+;    
+;    ; (: test-f (string -> (listof Ast)))
+;    (define (test-f filename)
+;      (let ([port (open-input-file filename)])
+;        (sba-driver port filename)
+;        (close-input-port port)))
+;    
   ;  (let* ([path (build-path (collection-path "mrflow") "tests")]
   ;         [files (list:filter (lambda (file)
   ;                               (and (> (string-length file) 3)

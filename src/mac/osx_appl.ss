@@ -27,7 +27,7 @@ exit 1
 
 (let ([p (getenv "PLTHOMEBASE")])
   (let ([plthome (path->complete-path p)])
-    (putenv "PLTHOME" plthome)
+    (putenv "PLTHOME" (path->string plthome))
     (current-library-collection-paths (list (build-path plthome "collects")))))
 
 (module osx_appl mzscheme
@@ -50,8 +50,10 @@ exit 1
 	 [rez-it (lambda (app)
 		   (printf "Writing ~a~n" (string-append app ".rsrc.OSX"))
 		   (system* rez-path 
-			    (build-path cw-path (string-append app ".r")) "-UseDF" "-o" 
-			    (string-append app ".rsrc.OSX")))])
+			    (path->string (build-path cw-path (string-append app ".r")))
+			    "-UseDF" "-o" 
+			    (path->string
+			     (path-replace-suffix app #".rsrc.OSX"))))])
     ; (rez-it "MzScheme") ; useless under OS X...
     (rez-it "MrEd"))
 
@@ -96,8 +98,8 @@ exit 1
 	  'truncate))
       (let* ([contents-path (build-path app-path "Contents")])
 	(write-info contents-path info-plist)
-	(let* ([icns-src (build-path plthome "src" "mac" "icon" (string-append icon-src-name ".icns"))]
-	       [icns-dest (build-path contents-path "Resources" (string-append (file-name-from-path app-name) ".icns"))])
+	(let* ([icns-src (build-path plthome "src" "mac" "icon" (path-replace-suffix icon-src-name #".icns"))]
+	       [icns-dest (build-path contents-path "Resources" (path-replace-suffix (file-name-from-path app-name) #".icns"))])
 	  (unless (file-exists? icns-dest)
 	    (copy-file icns-src icns-dest))))))
   

@@ -54,13 +54,17 @@ typedef long iconv_t;
 static char *nl_langinfo(int which) {
   return "UTF-8";
 }
+static int get_iconv_errno(void)
+{
+  return 0
+}
 static size_t (*iconv)(iconv_t cd,
 		       char **inbuf, size_t *inbytesleft,
 		       char **outbuf, size_t *outbytesleft);
 static iconv_t (*iconv_open)(const char *tocode, const char *fromcode);
 static void (*iconv_close)(iconv_t cd);
 # define CODESET 0
-# define ICONV_errno 0
+# define ICONV_errno get_iconv_errno()
 #else
 # define ICONV_errno errno
 #endif
@@ -1978,6 +1982,8 @@ static char *do_convert(iconv_t cd,
 			/* if either from_e or to_e can be NULL, then
 			   reset_locale() must have been called */
 			const char *from_e, const char *to_e, 
+			/* 1 => UCS-4 -> UTF-8; 2 => UTF-8 -> UCS-4; 0 => other */
+			int to_from_utf8,
 			/* in can be NULL to output just a shift; in that case,
 			   id should be 0, too */
 			char *in, int id, int iilen, 
@@ -1999,7 +2005,7 @@ static char *do_convert(iconv_t cd,
 			   1 for more avail */
 			int *status)     
 {
-  int dip, dop, close_it = 0;
+  int dip, dop, close_it = 0, mz_utf8 = 0;
   size_t il, ol, r;
   GC_CAN_IGNORE char *ip, *op;
 
@@ -2017,10 +2023,13 @@ static char *do_convert(iconv_t cd,
 	to_e = nl_langinfo(CODESET);
       cd = iconv_open(to_e, from_e);
       close_it = 1;
+    } else if (to_from_utf8) {
+      /* Assume UTF-8 */
+      mz_utf8 = 1;
     }
   }
 
-  if (cd == (iconv_t)-1) {
+  if ((cd == (iconv_t)-1) && !mz_utf8) {
     if (out) {
       while (extra--) {
 	out[extra] = 0;
@@ -2050,12 +2059,61 @@ static char *do_convert(iconv_t cd,
     add_end_shift = 0;
 
   while (1) {
-    ip = in XFORM_OK_PLUS id + dip;
-    op = out XFORM_OK_PLUS od + dop;
-    r = iconv(cd, &ip, &il, &op, &ol);
-    dip = ip - (in XFORM_OK_PLUS id);
-    dop = op - (out XFORM_OK_PLUS od);
-    ip = op = NULL;
+    int icerr;
+
+    if (mz_utf8) {
+      /* Use our UTF-8 routines as if they were iconv */
+      if (to_from_utf8 == 1) {
+	/* UCS-4 -> UTF-8 */
+	/* We assume that in + id and iilen are mzchar-aligned */
+	int opos, uid, uilen;
+	uid = (id + dip) >> 2;
+	uilen = (iilen - dip) >> 2;
+	opos = scheme_utf8_encode((const unsigned int *)in, uid, uilen, 
+				  NULL, 0,
+				  0);
+	if (opos <= iolen) {
+	  opos = scheme_utf8_encode((const unsigned int *)in, uid, uilen, 
+				    out, od + dop,
+				    0);
+	  dop += opos;
+	  icerr = 0;
+	  r = (size_t)opos;
+	} else {
+	  icerr = E2BIG;
+	  r = (size_t)-1;
+	}	
+      } else {
+	/* UTF-8 -> UCS-4 */
+	/* We assume that out + od is mzchar-aligned */
+	long ipos, opos;
+	
+	r = utf8_decode_x(in, id + dip, iilen - dip,
+			  (unsigned int *)out, (od + dop) >> 2, iolen >> 2,
+			  &ipos, &opos, 
+			  0, 0, 0, 0);
+	opos <<= 2;
+	dop += opos;
+	dip = (ipos - id);
+	
+	if ((r == -1) || (r == -2)) {
+	  r = (size_t)-1;
+	  icerr = EILSEQ;
+	} else if (r == -3) {
+	  icerr = E2BIG;
+	  r = (size_t)-1;
+	} else
+	  icerr = 0;
+      }
+    } else  {
+      ip = in XFORM_OK_PLUS id + dip;
+      op = out XFORM_OK_PLUS od + dop;
+      r = iconv(cd, &ip, &il, &op, &ol);
+      dip = ip - (in XFORM_OK_PLUS id);
+      dop = op - (out XFORM_OK_PLUS od);
+      ip = op = NULL;
+      icerr = ICONV_errno;
+    }
 
     /* Record how many chars processed, now */
     if (oilen)
@@ -2064,7 +2122,7 @@ static char *do_convert(iconv_t cd,
 
     /* Got all the chars? */
     if (r == (size_t)-1) {
-      if (ICONV_errno == E2BIG) {
+      if (icerr == E2BIG) {
 	if (grow) {
 	  /* Double the string size and try again */
 	  char *naya;
@@ -2085,7 +2143,7 @@ static char *do_convert(iconv_t cd,
 	}
       } else {
 	/* Either EINVAL (premature end) or EILSEQ (bad sequence) */
-	if (ICONV_errno == EILSEQ)
+	if (icerr == EILSEQ)
 	  *status = -2;
 	if (close_it)
 	  iconv_close(cd);
@@ -2127,7 +2185,7 @@ static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len, 
 				   long *olen, int perm)
      /* Call this function only when iconv is available, and only when
-	reset_locale() cah been called */
+	reset_locale() has been called */
 {
   Scheme_Object *parts = scheme_null, *one;
   char *c;
@@ -2144,7 +2202,7 @@ static char *string_to_from_locale(int to_bytes,
 
   while (len) {
     /* We might have conversion errors... */
-    c = do_convert(cd, NULL, NULL, 
+    c = do_convert(cd, NULL, NULL, 0,
 		   (char *)in, (to_bytes ? 4 : 1) * delta, (to_bytes ? 4 : 1) * len,
 		   NULL, 0, (to_bytes ? 1 : 4) * (len + 1),
 		   1 /* grow */, 1, (to_bytes ? 1 : 4) /* terminator size */,
@@ -2364,13 +2422,13 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
     l1 = origl1;
     l2 = origl2;
     while (1) {
-      c1 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+      c1 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 1,
 		      s1, d1 * 4, 4 * l1,
 		      buf1, 0, MZ_SC_BUF_SIZE - 1,
 		      1 /* grow */, 0, 1 /* terminator size */,
 		      &used1, &clen1,
 		      &status);
-      c2 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+      c2 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 1,
 		      s2, d2 * 4, 4 * l2,
 		      buf2, 0, MZ_SC_BUF_SIZE - 1,
 		      1 /* grow */, 0, 1 /* terminator size */,
@@ -2589,7 +2647,7 @@ mzchar *do_locale_recase(int to_up, mzchar *in, int delta, int len, long *olen)
 
   while (len) {
     /* We might have conversion errors... */
-    c = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+    c = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 1,
 		   (char *)in, 4 * delta, 4 * len,
 		   buf, 0, MZ_SC_BUF_SIZE - 1,
 		   1 /* grow */, 0, 1 /* terminator size */,
@@ -2606,7 +2664,7 @@ mzchar *do_locale_recase(int to_up, mzchar *in, int delta, int len, long *olen)
     if (!c)
       clen = 0;
     
-    c = do_convert((iconv_t)-1, NULL, MZ_UCS4_NAME,
+    c = do_convert((iconv_t)-1, NULL, MZ_UCS4_NAME, 2,
 		   c, 0, clen,
 		   NULL, 0, 0,
 		   1 /* grow */, 0, sizeof(mzchar) /* terminator size */,
@@ -3143,7 +3201,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
       amt_wrote = 0;
     }
   } else {
-    r = do_convert(c->cd, NULL, NULL,
+    r = do_convert(c->cd, NULL, NULL, 0,
 		   instr, istart, ifinish-istart,
 		   r, ostart, ofinish-ostart,
 		   !r, /* grow? */

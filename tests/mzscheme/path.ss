@@ -331,7 +331,7 @@
  (lambda (root)
    (let-values ([(base name dir?) (split-path root)])
      (when (eq? (system-type) 'macos)
-       (test base 'split-path root))
+       (test root 'split-path name))
      (test #f 'split-path base)
      (test #t 'split-path dir?)))
  roots)

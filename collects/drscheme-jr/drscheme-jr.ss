@@ -1,5 +1,5 @@
-(begin-elaboration-time
-  (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
+(begin-expansion-time
+  (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
 
 (define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
 

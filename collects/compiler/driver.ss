@@ -630,7 +630,6 @@
 		  (verbose-time spidey-thunk)	
 		  (compiler:report-messages! #t)))
 		  
-
 	      ; -- per-unit analysis? ----------------------------------------
 	      (when (compiler:option:use-mrspidey-for-units)
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing units~n"))
@@ -755,7 +754,7 @@
 	      ;;
 
 	      (when (compiler:option:verbose) 
-		(printf " finding static procedures~n"))
+		(printf " finding static procedures (1st)~n"))
 	      (when (compiler:option:debug)
 		(debug " = LIFT =~n"))
 
@@ -779,7 +778,16 @@
 			 (lightweight-analyze-and-transform 
 			  (block-source s:file-block)))])
 		  (verbose-time lightweight-thunk)
-		  (compiler:report-messages! #t)))
+		  (compiler:report-messages! #t))
+
+		(when (compiler:option:verbose) 
+		      (printf " finding static procedures (2nd)~n"))
+		(when (compiler:option:debug)
+		      (debug " = LIFT =~n"))
+
+		(let ([lift-thunk s:lift])
+		  (verbose-time lift-thunk))
+		(compiler:report-messages! #t))
 
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 

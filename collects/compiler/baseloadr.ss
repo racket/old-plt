@@ -83,8 +83,7 @@
 			    TOP-LEVEL
 			    DRIVER
 			    FUNCTION
-			    ZODIAC
-			    SPIDEY)]
+			    ZODIAC)]
   [ANALYZE : compiler:analyze^ ((require-relative-library-unit/sig "analyze.ss")
 				OPTIONS
 				LIBRARY

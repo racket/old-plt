@@ -71,10 +71,11 @@
 	  (values #f #f))))
 |#
 
-  (mrspidey:st:constants #t)
-  (mrspidey:st:const-merge-size 2)
+  (mrspidey:st:constants #f)
   (mrspidey:st:unit-read-za #f)
   (mrspidey:st:unit-write-za #f)
+  (mrspidey:st:if-split #f)
+  (mrspidey:st:flow-sensitive #f)
 
   (define (SDL-type ast)
     (let* ([ftype (mrspidey:parsed-ftype ast)])

@@ -119,6 +119,8 @@
       (define the-undefined-value
 	(letrec ((x x)) x))
 
+      (define-struct (undefined struct:exn) (id))
+
       (define annotate
 	(lambda (expr)
 	  (cond
@@ -126,7 +128,7 @@
 	      (let ((v (z:varref-var expr)))
 		(wrap expr
 		  `(if (eq? ,v ,the-undefined-value)
-		     (raise (make-exn:variable
+		     (raise (make-exn:undefined
 			      ,(format "Undefined value in ~s" v)
 			      (debug-info-handler)
 			      ,v))

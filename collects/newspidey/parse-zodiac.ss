@@ -548,7 +548,6 @@
       (hash-table-get top-level-vars var
                       (lambda ()
                         (let ([set-var (gen-set-var)])
-                          (printf "adding new: ~s~n" var)
                           (hash-table-put! top-level-vars var set-var)
                           set-var))))))
 

@@ -84,7 +84,9 @@
  (cs-underline "Subrayado")
  (cs-change-color "Cambiar color")
  (cs-tack/untack-arrow "Anclar/Liberar flecha")
- (cs-jump "Brincar")
+ (cs-jump-to-next-bound-occurrence "Saltar a la Siguiente Ocurrencia Ligada")
+ (cs-jump-to-binding "Saltar a Ocurrencia Ligada")
+ (cs-jump-to-definition "Saltar a la Definición")
  (cs-error-message "Mensaje de error")
  (cs-open-file "Abrir ~a")
  (cs-rename-var "Renombrar ~a")
@@ -95,9 +97,13 @@
  (cs-status-coloring-program "Checar sintaxis: coloreando la expresión")
  (cs-status-eval-compile-time "Checar sintaxis: tiempo de evaluación y compilación")
  (cs-status-expanding-expression "Checar sintaxis: expandiendo la expresión")
- (cs-status-teachpacks "Checar sintaxis: instalando paquetes de enseñanza")
  (cs-mouse-over-variable-import "variable ~s importada de ~s")
  (cs-mouse-over-syntax-import "syntaxis ~s importada de ~s")
+
+ (cs-lexical-variable "variable léxica")
+ (cs-lexical-syntax "sintaxis léxica")
+ (cs-imported-variable "variable importada")
+ (cs-imported-syntax "sintaxis importada")
  
  
  ;;; info bar at botttom of drscheme frame
@@ -147,6 +153,15 @@
  (scheme-mode "Modo Scheme")
  (text-mode "Modo Texto")
 
+ (scheme-mode-color-symbol "Símbolo")
+ (scheme-mode-color-keyword "Llave")
+ (scheme-mode-color-comment "Comentario")
+ (scheme-mode-color-string "Cadena")
+ (scheme-mode-color-constant "Constante")
+ (scheme-mode-color-parenthesis "Paréntesis")
+ (scheme-mode-color-error "Error")
+ (scheme-mode-color-other "Otro")
+ 
  (url "URL")
  (url: "URL:")
  (open-url... "Abre URL...")
@@ -213,9 +228,11 @@
  (plt:hd:refresh-done "Refresco de los manuales via CVS terminado")
  (plt:hd:refresh-installation-log "Bitácora de instalación")
  (plt:hd:refresh-stopped "Refresco de manuales del PLT detenido")
- (plt:hd:refresh-deleting... "Borrando la versi<F3>n vieja de ~a...")
+ (plt:hd:refresh-clearing-indicies "Eliminando índices guardados")
+ (plt:hd:refresh-deleting... "Borrando la versión vieja de ~a...")
  (plt:hd:refresh-downloading... "Bajando ~a...")
- (plt:hd:refresh-installing... "Instalando nueva versi<F3>n de ~a...")
+ (plt:hd:refresh-installing... "Instalando nueva versión de ~a...")
+ (plt:hd:refresh-clearing-indicies "Eliminando indices almacenados")
  (plt:hd:refreshing-manuals "Bajando (nuevamente) los Manuales")
  (plt:hd:refreshing-manuals-finished "Terminado.")
  (plt:hd:about-help-desk "Acerca del Módulo de Ayuda")
@@ -230,6 +247,12 @@
  (plt:hd:external-link-in-help "URLs externos en Ayuda")
  (plt:hd:use-homebrew-browser "Usar el Navegador del Módulo de Ayuda para URL externos")
  (plt:hd:new-help-desk "Nuevo Módulo de Ayuda")
+ (plt:hd:teaching-manuals "Manuales para estudiantes")
+ (plt:hd:professional-manuals "Manuales para profesionales")
+ (plt:hd:all-manuals "Todos los manuales")
+
+ ;; in the Help Desk language dialog, title on the right.
+ (plt:hd:manual-search-ordering "Orden de búsqueda en manuales")
  
  (reload "Volver a cargar") ;; Reload
 
@@ -331,7 +354,8 @@
  (default-fonts "Fuentes por omisión")
  (paren-match-color "Color de resaltado de paréntesis") ; in prefs dialog
  (choose-color "Selección de Color") ; in prefs dialog
-
+ (online-coloring-active "Colorea sintaxis interactivamente")
+ 
   ; title of the color choosing dialog
  (choose-paren-highlight-color "Selecciona un color para resaltar paréntesis")
 
@@ -355,6 +379,7 @@
  (font-smoothing-none "Nada")
  (font-smoothing-some "Algo")
  (font-smoothing-all "Todo")
+ (font-smoothing-default "Utiliza el valor por omisión del sistema")
  (select-font-name "Selecciona un nombre de Fuente")
  (example-text "Texto de ejemplo:")
  (only-warn-once "Sólo advierte una vez cuando las ejecución e interacciones no están sincronizadas")
@@ -657,6 +682,8 @@
  (show-interactions-menu-item-label "Mostrar &Interacciones")
  (hide-interactions-menu-item-label "Esconder &Interacciones")
  (interactions-menu-item-help-string "Mostrar/Esconder la ventana de Interacciones")
+ (show-toolbar "Mostrar &Barra de herramientas")
+ (hide-toolbar "Esconder &Barra de Herramientas")
 
  ;;; file menu
  (save-definitions-as "Salvar Definiciones como...")
@@ -869,6 +896,8 @@
  
  ;; test coverage
  (test-coverage-clear? "El cambiar la ventana de definiciones invalida la información de pruebas de cobertura. ¿Continuar?")
+ (test-coverage-clear-and-do-not-ask-again "Sí y no me preguntes más")
+ (test-coverage-ask? "¿Preguntar acerca de las pruebas de  cobertura?")
 
  ;;; repl stuff
  (evaluation-terminated "Evaluación Terminada")
@@ -896,7 +925,8 @@
  ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
- ;; (vc-check-prompt "¿Buscar actualizaciones de software del PLT en Internet?")
+ (vc-wizard-check-prompt "¿Buscar una versión reciente~nde DrScheme en línea?")
+ (vc-wizard-check-button "¡Buscar ahora!") 
  (vc-update-check "Revisar Actualización")
  (vc-please-wait "Por favor espere")
  (vc-connecting-version-server "Conectando al servidor de versión PLT")
@@ -1000,6 +1030,10 @@
  (program-is-still-running "El programa en la ventana de definiciones sigue corriendo.  ¿Cerrar de cualquier forma?")
  (program-has-open-windows "El programa en la ventana de definiciones abrió otras ventanas.  ¿Cerrar esta ventana de cualquier forma?")
 
+ ;; ml-command-line-arguments is for the command line arguments
+ ;; label in the module language details in the language dialog.
+ (ml-command-line-arguments "Argumentos en la línea de comandos como un vector de cadenas, en leer sintaxis")
+ 
  ;; ml-cp names are all for the module language collection path
  ;; configuration. See the details portion of the language dialog
  ;; for the module language (at the bottom).
@@ -1021,5 +1055,36 @@
  (ml-cp-remove "Eliminar")
  (ml-cp-raise "Elevar")
  (ml-cp-lower "Bajar")
+
+ ;; Profj
+ (profj-java "Java")
+ (profj-java-mode "Modo Java")
+ (profj-java-mode-color-keyword "llave")
+ (profj-java-mode-color-string "cadena")
+ (profj-java-mode-color-literal "literal")
+ (profj-java-mode-color-comment "comentario")
+ (profj-java-mode-color-error "error")
+ (profj-java-mode-color-identifier "identificador")
+ (profj-java-mode-color-default "por omisión")
+ 
+ ;; The Test Suite Tool
+ ;; Errors
+ (test-case-empty-error "Caso de prueba vacío")
+ (test-case-too-many-expressions-error "Demasiadas expresiones en el caso de prueba.")
+ (test-case-not-at-top-level "Caja para caso de prueba no en nivel superior")
+ ;; Dr. Scheme window menu items
+ (test-case-insert "Insertar Caso de Prueba")
+ (test-case-disable-all "Deshabilitar todos los Casos de Prueba")
+ (test-case-enable-all "Habilitar todos los Casos de Prueba")
+ ;; NOTE: The following three string constants are labels of the test-case fields. The width
+ ;;       of the field is determined by the length of the longest of the following three words.
+ ;;       if the words are too long the test case will take up too much horizontal room and
+ ;;       not look very good.
+ ;; This string is the label of the expression that is being tested in a test case.
+ (test-case-to-test "Por probar")
+ ;; This string is the label of the expression that is the expected value of the to-test expression.
+ (test-case-expected "Esperado")
+ ;; This string is the label of the actual result of the to test expression.
+ (test-case-actual "Obtenido")
 
  )

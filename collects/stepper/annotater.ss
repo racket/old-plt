@@ -111,11 +111,11 @@
                                              free-vars))]
             [var-clauses (map (lambda (x) 
                                (let ([var (translate-varref x)])
-                                 `(cons (#%lambda () ,var)
-                                        (cons ,x
-                                              null))))
+                                 `(#%cons (#%lambda () ,var)
+                                   (#%cons ,x
+                                    null))))
                              kept-vars)])
-      `(#%lambda () (list ,source (#%quote ,label) ,@var-clauses))))
+      `(#%lambda () (#%list ,source (#%quote ,label) ,@var-clauses))))
   
   
   ; wrap-struct-form 
@@ -506,32 +506,36 @@
                             (z:letrec-values-form-vars expr)))
                 (let+ ([val var-sets (z:letrec-values-form-vars expr)]
                        [val var-set-list (apply append var-sets)]
+                       [val var-set-list-varrefs (bindings->varrefs var-set-list)]
+                       [val var-set-list-binding-names (map utils:get-binding-name var-set-list)]
                        [val vals (z:letrec-values-form-vals expr)]
                        [_ (when (andmap z:case-lambda-form? vals)
                             (for-each mark-never-undefined var-set-list))]
                        [_ (for-each utils:check-for-keyword var-set-list)]
                        [val outer-initialization
-                            `((,var-set-list (values ,@var-set-list)))]
+                            `((,var-set-list-binding-names 
+                               (values ,@var-set-list-binding-names)))]
                        [val (values annotated-bodies free-vars-vals)
                             (dual-map non-tail-recur vals)]
                        [val set!-clauses
                             (map (lambda (var-set val)
-                                   `(#%set!-values ,var-set ,val))
+                                   `(#%set!-values ,(map utils:get-binding-name var-set) ,val))
                                  var-sets
                                  annotated-bodies)]
                        [val (values annotated-body free-vars-body)
                             (let-body-recur (z:letrec-values-form-body expr) 
-                                            (bindings->varrefs var-set-list))]
+                                            var-set-list-varrefs)]
                        [val middle-begin
                             `(#%begin ,@set!-clauses ,annotated-body)]
                        [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
                        [val wrapped-begin
-                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound var-set-list)
-                                                           (var-set-union free-vars var-set-list))
+                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound var-set-list-varrefs)
+                                                           (var-set-union free-vars var-set-list-varrefs)
+                                                           'none)
                                       middle-begin)]
                        [val whole-thing
-                            `(#%let-values ,outer-initialization ,wrapped-begin)])
-                   (values whole-thing (varref-remove* var-set-list free-vars)))]
+                            `(#%letrec-values ,outer-initialization ,wrapped-begin)])
+                   (values whole-thing (varref-remove* var-set-list-varrefs free-vars)))]
                
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]

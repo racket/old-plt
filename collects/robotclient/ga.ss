@@ -7,16 +7,16 @@
   (define GREATEST-POSSIBLE-INTEGER 10000)
   (define LOWEST-POSSIBLE-INTEGER -10000)
 
-  (define fuel-amount 100)
   (define capacity-amount 10000)
   (define print-every-n-generations 2)
   (define run-n-generations 10)
   (define output-port (current-output-port))
-  (define boards '((3 "board1" "packages1")
-                   (3 "board2" "packages1")
+  (define boards '((3 "board1" "packages1" 100)
+                   (3 "board2" "packages1" 100)
                    ;(5 "board3" "packages2")
-                   (4 "board4" "packages3")
-                   (4 "board5" "packages4")))
+                   (4 "board4" "packages3" 1000)
+                   (4 "board5" "packages4" 300)
+		   (6 "board6" "packages5" 4000)))
   (define initial-set
     `((-10 -100 -20 -200 -1000 -500 100 2000 200 10 500 10 1 -10000 -10000 
 	   100 -10 75 50 25 1000 750 500 250 5 200 2000 0.6 1 0.7 0.1 0.75 0.2 
@@ -116,24 +116,27 @@
 
   ;; startup-player : gene-seq -> number
   (define (startup-player gene-seq)
-    (printf "(startup-player ~a)~n" gene-seq)
     (flush-output (current-output-port))
     (set-parameter-values! gene-seq)
     (start-client #t #f "localhost" 4000))
   
-  ;; play-board : vector(num) string string vector(gene-seq) num -> void
-  (define (play-board scoreboard board packages player-vec players)
+  ;; play-board : vector(num) string string num vector(gene-seq) num -> void
+  (define (play-board scoreboard board packages fuel player-vec players)
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
       (apply (lambda (stdout stdin procid stderr utility)
+	       (sleep 1)
 	       (printf (string-append "Starting game with players ~s on"
 				      "board ~s with package file ~s~n")
 		       players board-file packages-file)
 	       (flush-output (current-output-port))
 	       (let loop ((ls players) (threads '()))
-		 (printf "Status: ~a~n" (utility 'status))
 		 (cond
-		  [(null? ls) (for-each thread-wait threads)
+		  [(null? ls) (for-each (lambda (x)
+					  (thread-wait x)
+					  (printf "Returned from thread~n")
+					  (flush-output (current-output-port)))
+					threads)
 		              (utility 'kill)
 			      (close-input-port stderr)
 		              (close-input-port stdout)
@@ -143,15 +146,15 @@
 				(cons (thread
 				       (lambda ()
 					 (let ([score (startup-player genes)])
+					   (printf "Adding score of ~a to ~a~n"
+						   score (car ls))
 					   (vector-set! scoreboard (car ls)
 					     (+ (vector-ref scoreboard (car ls))
 						score)))))
 				      threads)))])))
-	     (begin
-	       (printf "/home/cs/grad/wick/plt/collects/robotclient/Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n" (length players) board-file packages-file fuel-amount capacity-amount)
-	       (process (format "/home/cs/grad/wick/plt/collects/robotclient/Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n"
-				(length players) board-file packages-file
-				fuel-amount capacity-amount))))))
+	     (process (format "/home/cs/grad/wick/plt/collects/robotclient/Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n"
+			      (length players) board-file packages-file
+			      fuel capacity-amount)))))
 
   ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
   (define (generate-results ls)
@@ -167,12 +170,13 @@
                     [(= i num-players) (board-loop (cdr board-ls))]
                     [else (let ([need-players (caar board-ls)]
                                 [board-file (cadar board-ls)]
-                                [packages-file (caddar board-ls)])
+                                [packages-file (caddar board-ls)]
+				[fuel (car (cdddar board-ls))])
                             (let other-players ([player i] [acc '()])
                               (cond
                                 [(= (length acc) need-players)
                                  (play-board scoreboard board-file
-                                             packages-file players acc)
+                                             packages-file fuel players acc)
                                  (tourny-loop (add1 i))]
                                 [else (other-players
                                        (modulo (add1 player) num-players)

@@ -66,10 +66,13 @@
 				 this))]
 	       [on-close
 		(lambda ()
-		  (if (and (super-on-close) 
-			   (can-close?))
-		      (begin (do-close) #t)
-		      #f))])
+		  (let ([frames (send mred:group:the-frame-group get-frames)])
+		    (if (eq? (length frames) 1)
+			(mred:exit:exit)
+			(if (and (super-on-close) 
+				 (can-close?))
+			    (begin (do-close) #t)
+			    #f))))])
 	     (sequence 
 	       (mred:debug:printf 'super-init "before empty-frame%")
 	       (apply super-init args)

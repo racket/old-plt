@@ -46,9 +46,7 @@
         (dynext:link-extension #f 
                                (list file.o)
                                file.so)
-        (delete/continue file.o)))
-    (make-print-reasons #f)
-    (make-print-checking #f))
+        (delete/continue file.o))))
     
   (define (build-names str)
     (list str
@@ -121,7 +119,9 @@
   
            
   (define (pre-installer home)
-    (parameterize ((current-directory (collection-path "sgl")))
+    (parameterize ((current-directory (collection-path "sgl"))
+		   (make-print-reasons #f)
+		   (make-print-checking #f))
       (make/proc
        `((,dir () ,(lambda () (make-directory* dir)))
          (,(build-path "gl-vectors" dir) ()

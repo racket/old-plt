@@ -20,6 +20,8 @@
    "print-to-text.ss"
    "test-case.ss")
   
+  (define (wrap x) (write x) (newline) x)
+  
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
     (unit/sig test-case-box^
@@ -99,8 +101,8 @@
           
           #;(-> void?)
           ;; resets the state of the test case
-          ;; STATUS: Should I use an edit sequence of pb right here?
           (define/public (reset)
+            (send pb lock-alignment true)
             ;; Hiding the actual on reset might be annoying
             #;(show-actual false)
             (send* actual
@@ -108,7 +110,8 @@
               (erase)
               (lock true))
             (when enabled?
-              (send result update 'unknown)))
+              (send result update 'unknown))
+            (send pb lock-alignment false))
           
           #;(boolean? . -> . void?)
           ;; enables or disables the test case
@@ -167,7 +170,7 @@
           
           #;((is-a?/c editor-stream-in%) . -> . void?)
           ;; Reads the state of the box in from the given stream
-          (define/override (read-from-file f)
+          (define/public (read-from-file f)
             (let ([enabled?-box (box 0)]
                   [collapsed?-box (box 0)]
                   ;; Don't make actual persistant
@@ -177,41 +180,54 @@
               (send f get enabled?-box)
               (send f get collapsed?-box)
               #;(send f get actual-show?)
-              (set! enabled? (unbox enabled?-box))
-              (set! collapsed?-box (unbox collapsed?-box))
+              (set! enabled? (= (unbox enabled?-box) 1))
+              (set! collapsed?-box (= (unbox collapsed?-box) 1))
               #;(set! actual-show?-box (unbox actual-show?-box))))
           
           ;;;;;;;;;;
           ;; Layout
           
           ;STATUS: BEFORE USING THIS CODE REWRITE IT TO USE STRING CONSTANTS
-          ;(define/override (get-corner-bitmap)
-          ;  (make-object bitmap% (icon "scheme-box.jpg")))
+          (define/override (get-corner-bitmap)
+            (make-object bitmap% (icon "scheme-box.jpg")))
           ;(define/override (get-color) "purple")
-          ;(define/override (get-menu)
-          ;  (let ([the-menu (new popup-menu% (title "Test Box"))])
-          ;    (new menu-item%
-          ;         (label "Switch to Error Test Box")
-          ;         (parent the-menu)
-          ;         (callback (lambda (m e) (void))))
-          ;    (new menu-item%
-          ;         (label "Roll up Test Box")
-          ;         (parent the-menu)
-          ;         (callback (lambda (m e) (void))))
-          ;    (new checkable-menu-item%
-          ;         (label "Enable")
-          ;         (parent the-menu)
-          ;         (callback (lambda (m e) (void))))
-          ;    the-menu))
-          ;(define/override (get-position) 'top-right)
+          (define/override (get-menu)
+            (let ([the-menu (new popup-menu% (title "Test Box"))])
+              #;(new menu-item%
+                     (label "Switch to Error Test Box")
+                     (parent the-menu)
+                     (callback (lambda (m e) (void))))
+              (new menu-item%
+                   (parent the-menu)
+                   (label (if collapsed?
+                              "Expand Test Case"
+                              "Collapse Test Case"))
+                   (callback (lambda (m e) (collapse (not collapsed?)))))
+              (new menu-item%
+                   (parent the-menu)
+                   (label (if actual-show?
+                              "Hide Actual Value"
+                              "Show Actual Value"))
+                   (callback (lambda (m e) (show-actual (not actual-show?)))))
+              (new checkable-menu-item%
+                   (label (if enabled?
+                              "Disable Test Case"
+                              "Enable Test Case"))
+                   (parent the-menu)
+                   (callback (lambda (m e) (enable (not enabled?)))))
+              the-menu))
+          (define/override (get-position) 'top-right)
 
           #;(boolean? . -> . void)
           ;; Shows or hides the actual box
           (define (show-actual show?)
             (set! actual-show? show?)
+            (send pb lock-alignment true)
             (send show-actual-button set-state
                   (boolean->show-actual-btn-state show?))
-            (send actual-pane show show?))
+            (send to-test-snip stretchable-height show?)
+            (send actual-pane show show?)
+            (send pb lock-alignment false))
           
           #;(boolean? . -> . void)
           ;; Toggles the test-case between a collapsed minimal state and one with entry boxes.
@@ -240,13 +256,13 @@
           (field
            [pb (new aligned-pasteboard%)]
            [main (new horizontal-alignment% (parent pb))]
+           [button-pane (new vertical-alignment% (parent main))]
            [left (new vertical-alignment%
                       (parent main)
                       (show? (not collapsed?)))]
            [right (new vertical-alignment%
                        (parent main)
                        (show? (not collapsed?)))]
-           [button-pane (new vertical-alignment% (parent main))]
            [to-test-pane (new vertical-alignment% (parent left))]
            [expected-pane (new vertical-alignment% (parent right))]
            [actual-pane (new vertical-alignment%
@@ -265,21 +281,23 @@
           
           (super-new (editor pb))
           
-          #;((is-a?/c alignment<%>) string? (is-a?/c text%) . -> . (is-a?/c alignment<%>))
+          #;((is-a?/c alignment<%>) string? (is-a?/c text%) . -> . (is-a?/c editor-snip%))
           ;; Inserts a label and a text field into the given alignment
           (define (labeled-field alignment label text)
-            ;; I string-append here to give space after the label
-            ;; They look a lot better without something right after them.
-            (new snip-wrapper%
-                 (snip (make-object string-snip% (string-append label "     ")))
-                 (parent alignment))
-            (new snip-wrapper%
-                 (snip (new stretchable-editor-snip%
-                            (editor text)
-                            (stretchable-height false)))
-                 (parent alignment)))
+            (let ([the-snip (new stretchable-editor-snip%
+                                 (editor text)
+                                 (stretchable-height false)
+                                 (min-width 80))])
+              (new snip-wrapper%
+                   (snip (make-object string-snip% label))
+                   (parent alignment))
+              (new snip-wrapper%
+                   (snip the-snip)
+                   (parent alignment))
+              the-snip))
           
-          (labeled-field to-test-pane (string-constant test-case-to-test) to-test)
+          (field
+           [to-test-snip (labeled-field to-test-pane (string-constant test-case-to-test) to-test)])
           (labeled-field expected-pane (string-constant test-case-expected) expected)
           
           (new snip-wrapper%

@@ -31,27 +31,26 @@ extern wxApp* wxTheApp;
 
 static int IsUnshown(void *data)
 {
-  return !((wxDialogBox *)data)->IsShown() || ((wxDialogBox *)data)->cCloseRequested;
+  return !((wxDialogBox *)data)->IsShown();
 }
 
 //-----------------------------------------------------------------------------
 void wxDialogBox::Show(Bool show)
 {
-  if (show) {
-    cCloseRequested = FALSE;
-    cFrame->Show(TRUE);
-    if (cFrame->IsModal()) {
-      wxPushModalWindow(ContextWindow(), cFrame);
-      
-      wxDispatchEventsUntil(IsUnshown, (void *)this);
-      
-      wxPopModalWindow(ContextWindow(), cFrame);
+  cFrame->Show(show);
 
-      cCloseRequested = FALSE;
-      cFrame->Show(FALSE);
+  if (show) {
+    if (!cCloseRequested) {
+      wxPushModalWindow(ContextWindow(), cFrame);
+      cCloseRequested = TRUE;
     }
+    
+    wxDispatchEventsUntil(IsUnshown, (void *)this);
   } else {
-    cCloseRequested = TRUE;
+    if (cCloseRequested) {
+      cCloseRequested = FALSE;
+      wxPopModalWindow(ContextWindow(), cFrame);
+    }
   }
 }
 

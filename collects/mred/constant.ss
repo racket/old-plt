@@ -13,14 +13,18 @@
       (global-defined-value 'mred:original-input-port-backup)))
 
   (define debug-on
-    (with-handlers ([void (lambda (x) (box null))])
+    (with-handlers ([(lambda (x) #t)
+		     (lambda (x) (box null))])
       (global-defined-value 'mred:constants:debug-on-backup)))
   (define debug-param
-    (with-handlers ([void (lambda (x) (box null))])
+    (with-handlers ([(lambda (x) #t)
+		     (lambda (x) (current-parameterization))])
       (global-defined-value 'mred:constants:debug-param-backup)))
   
   (define plt-home-directory
-    (let ([x (global-defined-value 'plt:home-directory)])
+    (let ([x (with-handlers ([(lambda (x) #t)
+			      (lambda (x) "/usr/local/lib/plt")])
+	       (global-defined-value 'plt:home-directory))])
       (if (string? x)
 	  x
 	  "/usr/local/lib/plt"))))

@@ -301,39 +301,14 @@ wxInitializeStockObjects (void)
   wxREGGLOB(wxTheFontList);
 
   wxREGGLOB(wxNORMAL_FONT);
-  wxREGGLOB(wxSMALL_FONT);
-  wxREGGLOB(wxITALIC_FONT);
-  wxREGGLOB(wxSWISS_FONT);
 
-  wxREGGLOB(wxRED_PEN);
-  wxREGGLOB(wxCYAN_PEN);
-  wxREGGLOB(wxGREEN_PEN);
   wxREGGLOB(wxBLACK_PEN);
-  wxREGGLOB(wxWHITE_PEN);
-  wxREGGLOB(wxTRANSPARENT_PEN);
-  wxREGGLOB(wxBLACK_DASHED_PEN);
-  wxREGGLOB(wxGREY_PEN);
-  wxREGGLOB(wxMEDIUM_GREY_PEN);
-  wxREGGLOB(wxLIGHT_GREY_PEN);
 
-  wxREGGLOB(wxBLUE_BRUSH);
-  wxREGGLOB(wxGREEN_BRUSH);
   wxREGGLOB(wxWHITE_BRUSH);
   wxREGGLOB(wxBLACK_BRUSH);
-  wxREGGLOB(wxTRANSPARENT_BRUSH);
-  wxREGGLOB(wxCYAN_BRUSH);
-  wxREGGLOB(wxRED_BRUSH);
-  wxREGGLOB(wxGREY_BRUSH);
-  wxREGGLOB(wxMEDIUM_GREY_BRUSH);
-  wxREGGLOB(wxLIGHT_GREY_BRUSH);
 
   wxREGGLOB(wxBLACK);
   wxREGGLOB(wxWHITE);
-  wxREGGLOB(wxRED);
-  wxREGGLOB(wxBLUE);
-  wxREGGLOB(wxGREEN);
-  wxREGGLOB(wxCYAN);
-  wxREGGLOB(wxLIGHT_GREY);
 
   wxREGGLOB(wxSTANDARD_CURSOR);
   wxREGGLOB(wxHOURGLASS_CURSOR);
@@ -345,45 +320,19 @@ wxInitializeStockObjects (void)
   wxTheFontList = new wxFontList;
 
   wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
-  wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
-  wxITALIC_FONT = new wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
-  wxSWISS_FONT = new wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
 
-  wxRED_PEN = new wxPen ("RED", 0, wxSOLID);
-  wxCYAN_PEN = new wxPen ("CYAN", 0, wxSOLID);
-  wxGREEN_PEN = new wxPen ("GREEN", 0, wxSOLID);
   wxBLACK_PEN = new wxPen ("BLACK", 0, wxSOLID);
-  wxWHITE_PEN = new wxPen ("WHITE", 0, wxSOLID);
-  wxTRANSPARENT_PEN = new wxPen ("BLACK", 0, wxTRANSPARENT);
-  wxBLACK_DASHED_PEN = new wxPen ("BLACK", 0, wxSHORT_DASH);
-  wxGREY_PEN = new wxPen ("GRAY", 0, wxSOLID);
-  wxMEDIUM_GREY_PEN = new wxPen ("MEDIUM GRAY", 0, wxSOLID);
-  wxLIGHT_GREY_PEN = new wxPen ("LIGHT GRAY", 0, wxSOLID);
 
-  wxWHITE_PEN->Lock(1);
   wxBLACK_PEN->Lock(1);
 
-  wxBLUE_BRUSH = new wxBrush ("BLUE", wxSOLID);
-  wxGREEN_BRUSH = new wxBrush ("GREEN", wxSOLID);
   wxWHITE_BRUSH = new wxBrush ("WHITE", wxSOLID);
   wxBLACK_BRUSH = new wxBrush ("BLACK", wxSOLID);
-  wxTRANSPARENT_BRUSH = new wxBrush ("BLACK", wxTRANSPARENT);
-  wxCYAN_BRUSH = new wxBrush ("CYAN", wxSOLID);
-  wxRED_BRUSH = new wxBrush ("RED", wxSOLID);
-  wxGREY_BRUSH = new wxBrush ("GRAY", wxSOLID);
-  wxMEDIUM_GREY_BRUSH = new wxBrush ("MEDIUM GRAY", wxSOLID);
-  wxLIGHT_GREY_BRUSH = new wxBrush ("LIGHT GRAY", wxSOLID);
 
   wxWHITE_BRUSH->Lock(1);
   wxBLACK_BRUSH->Lock(1);
 
   wxBLACK = new wxColour ("BLACK");
   wxWHITE = new wxColour ("WHITE");
-  wxRED = new wxColour ("RED");
-  wxBLUE = new wxColour ("BLUE");
-  wxGREEN = new wxColour ("GREEN");
-  wxCYAN = new wxColour ("CYAN");
-  wxLIGHT_GREY = new wxColour ("LIGHT GRAY");
 
   wxSTANDARD_CURSOR = new wxCursor (wxCURSOR_ARROW);
   wxHOURGLASS_CURSOR = new wxCursor (wxCURSOR_WAIT);

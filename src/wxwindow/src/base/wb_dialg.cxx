@@ -50,29 +50,25 @@ wxbDialogBox::~wxbDialogBox()
 
 void wxbDialogBox::Centre(int direction)
 {
-  int x_offset,y_offset ;
+  int x_offset,y_offset;
   int display_width, display_height;
   int  width, height, x, y;
-  wxFrame *frame ;
-  if (direction & wxCENTER_FRAME)
-  {
-    frame = (wxFrame*)GetParent() ;
-    if (frame)
-    {
-      frame->GetPosition(&x_offset,&y_offset) ;
-      frame->GetSize(&display_width,&display_height) ;
+  wxFrame *frame;
+
+  if (direction & wxCENTER_FRAME) {
+    frame = (wxFrame*)GetParent();
+    if (frame) {
+      frame->GetPosition(&x_offset, &y_offset);
+      frame->GetSize(&display_width, &display_height);
     }
-  }
-  else
-    frame = NULL ;
+  } else
+    frame = NULL;
 
-  if (frame==NULL)
-  {
+  if (!frame) {
     wxDisplaySize(&display_width, &display_height);
-    x_offset = 0 ;
-    y_offset = 0 ;
+    x_offset = 0;
+    y_offset = 0;
   }
-
 
   GetSize(&width, &height);
   GetPosition(&x, &y);

@@ -1,5 +1,5 @@
 
-;; This module creates openssl.<platform>.plt.
+;; This module creates openssl-<version>.<platform>.plt.
 ;;
 ;; For Windows and Mac OS X, it creates an archive
 ;; with a "precompiled" subdirectory containing
@@ -126,14 +126,17 @@
 	  #t
 	  'file
 	  #f
-	  #t
+	  #t ;; plt-relative
 	  null ;; FIXME - we need better version tracking!
-	  '(("openssl"))))
+	  '(("openssl"))
+	  #t)) ;; rel to PLTHOME
 
-  (define dest  (format "openssl.~a.plt" (case target-sys-type
-					   [(windows) "i386-win32"]
-					   [(macosx) "ppc-macosx"]
-					   [else "src"])))
+  (define dest  (format "openssl-~a.~a.plt" 
+			(version)
+			(case target-sys-type
+			  [(windows) "i386-win32"]
+			  [(macosx) "ppc-macosx"]
+			  [else "src"])))
   
   (when (file-exists? dest)
     (delete-file dest))

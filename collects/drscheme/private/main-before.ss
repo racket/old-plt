@@ -21,7 +21,8 @@
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
               (drscheme:language : drscheme:language^)
-	      (drscheme:language-tower : drscheme:language-tower^))
+	      (drscheme:language-tower : drscheme:language-tower^)
+              (drscheme:teachpack : drscheme:teachpack^))
       
       (finder:default-extension "scm")
       (application:current-app-name "DrScheme")
@@ -50,35 +51,6 @@
                         (number? (car x))
                         (number? (cdr x)))))
       
-  ;; if the unmarshaller returns #f, that will fail the
-  ;; test for this preference, reverting back to the default.
-  ;; In that case, the default is specified in the pref.ss file
-  ;; of the default collection and may not be the default
-  ;; specified below.
-      (preferences:set-un/marshall
-       drscheme:language:settings-preferences-symbol
-       (lambda (x)
-	 (let ([lang (drscheme:language:language-settings-language x)]
-	       [settings (drscheme:language:language-settings-settings x)])
-	   (list (send lang get-language-position)
-		 (send lang marshall-settings settings))))
-       (lambda (x)
-	 (and (list? x)
-	      (= 2 (length x))
-	      (let* ([lang-position (first x)]
-		     [marshalled-settings (second x)]
-		     [lang (ormap
-			    (lambda (x)
-			      (and (equal? lang-position
-					   (send x get-language-position))
-				   x))
-			    (drscheme:language:get-languages))])
-		(and lang
-		     (let ([settings (send lang unmarshall-settings marshalled-settings)])
-		       (drscheme:language:make-language-settings
-			lang
-			(or settings (send lang default-settings)))))))))
-      
       (preferences:set-default
        'drscheme:enable-backtrace-in-teaching-levels
        #f
@@ -90,6 +62,17 @@
        (lambda (x)
          (or (eq? x #t)
              (not x))))
+      
+      (preferences:set-default
+       'drscheme:teachpacks
+       (drscheme:teachpack:new-teachpack-cache) 
+       drscheme:teachpack:teachpack-cache?)
+      (preferences:set-un/marshall
+       'drscheme:teachpacks
+       drscheme:teachpack:marshall-teachpack-cache
+       drscheme:teachpack:unmarshall-teachpack-cache)
+      
+      
       
       (include "various-programs.ss")
       
@@ -274,7 +257,7 @@
 	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical (MrEd)")))
 	(drscheme:language:add-language
 	 (make-simple 'mzscheme '("Full" "Textual (MzScheme)"))))
-
+      
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 
        "Projects"

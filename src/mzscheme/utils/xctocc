@@ -789,8 +789,8 @@ sub PrintMethod
     } else {
 	print "  Scheme_Object **p = NULL;\n";
     }
-    print "  Scheme_Object *v;\n  mz_jmp_buf savebuf;\n";
-    print "  Scheme_Object *method;\n  int sj;\n";
+    print "  Scheme_Object *v;\n"; #  mz_jmp_buf savebuf;\n
+    print "  Scheme_Object *method;\n"; #  int sj;\n
     print "  static void *mcache = 0;\n\n";
 
     print "  method = objscheme_find_method((Scheme_Object *)__gc_external, ";
@@ -805,15 +805,16 @@ sub PrintMethod
 	print $fname;
     }
     print ", &mcache);\n";
-    print "  if (method && !OBJSCHEME_PRIM_METHOD(method)) {\n";
-    print "    COPY_JMPBUF(savebuf, scheme_error_buf);\n";
-    print "    sj = scheme_setjmp(scheme_error_buf);\n";
-    print "    if (sj) {\n";
-    print "      COPY_JMPBUF(scheme_error_buf, savebuf);\n";
-    print "      scheme_clear_escape();\n";
-    print "    }\n";
-    print "  } else sj = 1;\n";
-    print "  if (sj) {\n";
+    # print "  if (method && !OBJSCHEME_PRIM_METHOD(method)) {\n";
+    # print "    COPY_JMPBUF(savebuf, scheme_error_buf);\n";
+    # print "    sj = scheme_setjmp(scheme_error_buf);\n";
+    # print "    if (sj) {\n";
+    # print "      COPY_JMPBUF(scheme_error_buf, savebuf);\n";
+    # print "      scheme_clear_escape();\n";
+    # print "    }\n"; else if (sj)
+    # print "  } else {\n";
+
+    print "  if (!method || OBJSCHEME_PRIM_METHOD(method)) {\n    ";
 
     &PrintFailureHandling();
 
@@ -856,7 +857,7 @@ sub PrintMethod
 
     print "  " . &ApplyMacros($methpost) . "\n";
 
-    print "  COPY_JMPBUF(scheme_error_buf, savebuf);\n\n";
+    # print "  COPY_JMPBUF(scheme_error_buf, savebuf);\n\n";
     
     if ($returntype ne 'void') {
 	print "  return ";

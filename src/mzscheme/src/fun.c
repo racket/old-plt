@@ -729,12 +729,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     *old_cc_ok = 0;
   *cc_ok = 1;
 
-  if (eb) {
-#if 0
-    /* Maybe we'll turn this on one day... */
+  if (eb > 1) {
     if (old_ec_ok)
       *old_ec_ok = 0;
-#endif
     p->ec_ok = (long *)scheme_malloc_atomic(sizeof(long));
     *p->ec_ok = 1;
   }

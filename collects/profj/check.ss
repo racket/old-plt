@@ -289,7 +289,7 @@
           (old-update (update-class-with-inner))
           (name (id-string (def-name class))))
       (update-class-with-inner (lambda (inner)
-                                 (set-def-members! (cons inner (def-members class)))))
+                                 (set-def-members! class (cons inner (def-members class)))))
       (send type-recs set-class-reqs (def-uses class))
       (let ((this-ref (make-ref-type name package-name)))
         (check-members (def-members class)
@@ -312,7 +312,7 @@
     (let ((old-reqs (send type-recs get-class-reqs))
           (old-update (update-class-with-inner)))
       (update-class-with-inner (lambda (inner)
-                                 (set-def-members! (cons inner (def-members class)))))
+                                 (set-def-members! iface (cons inner (def-members iface)))))
       (send type-recs set-class-reqs (def-uses iface))
       (check-members (def-members iface) empty-env level type-recs 
                      (cons (id-string (def-name iface)) p-name) #t #f (def-kind iface) #f)
@@ -320,20 +320,29 @@
       (update-class-with-inner old-update)
       (send type-recs set-class-reqs old-reqs)))
   
-  ;check-inner def symbol type-records (list string) env -> class-record
+  ;check-inner def symbol type-records (list string) env -> (U class-record void)
   (define (check-inner-def def level type-recs c-class env)
-    (let ((p-name (cdr c-class))
-          (inner-env (update-env-for-inner env))
-          (this-type (var-type-type (lookup-var-in-env "this" env))))
-      (when (or (eq? (def-kind def) 'anon) (eq? (def-kind def) 'statement))
-        (build-inner-info def p-name level type-recs (def-file def) #t))
-      (if (interface-def? def)
-          (check-interface def p-name level type-recs)
-          (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
-      ;; Propagate uses in internal defn to enclosing defn:
-      (for-each (lambda (use)
-                  (add-required c-class (req-class use) (req-path use) type-recs))
-                (def-uses def))))
+    (let ((local-inner? (or (eq? (def-kind def) 'anon) (eq? (def-kind def) 'statement))))
+      (when (eq? (def-kind def) 'statement)
+        (mangle-inner-name (car c-class) (current-method) def))
+      (let* ((p-name (if local-inner? null (cdr c-class)))
+             (inner-env (update-env-for-inner env))
+             (this-type (var-type-type (lookup-var-in-env "this" env)))
+             (inner-rec
+              (when local-inner?
+                (build-inner-info def p-name level type-recs (def-file def) #t))))
+        (when local-inner? (add-init-args def env))
+        (if (interface-def? def)
+            (check-interface def p-name level type-recs)
+            (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
+        ;; Propagate uses in internal defn to enclosing defn:
+        (for-each (lambda (use)
+                    (add-required c-class (req-class use) (req-path use) type-recs))
+                  (def-uses def))
+        inner-rec)))
+  
+  (define (mangle-inner-name container method def) void)
+  (define (add-init-args def env) void)
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods

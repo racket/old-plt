@@ -491,13 +491,14 @@
                                   (old-current-eval (syntax-as-top (car extras)))
                                   (loop mods (cdr extras) require?))
                                  (require? 
-                                  (old-current-eval (with-syntax ([name name-to-require])
-                                                      (syntax (require name))))
+                                  (old-current-eval 
+                                   (syntax-as-top (with-syntax ([name name-to-require])
+                                                    (syntax (require name)))))
                                   (loop mods extras #f))
                                  (else 
                                   (let-values (((name syn) (get-module-name (expand (car mods)))))
                                     (set! name-to-require name)
-                                    (old-current-eval syn)
+                                    (syntax-as-top (old-current-eval syn))
                                     (loop (cdr mods) extras #t))))))))
                         ((parse-java-interactions ex loc)
                          (let ((exp (old-current-eval (syntax-as-top (syntax ex)))))

@@ -204,7 +204,7 @@
            (type-path (build-path dir "compiled" (string-append class ".jinfo")))
            (new-level (box level))
            (class-exists? (check-file-exists? class dir new-level))
-           (suffix (case (unbox new-level) 
+           (suffix (case (unbox new-level)
                      ((beginner) ".bjava")
                      ((intermediate) ".ijava")
                      ((advanced) ".ajava")
@@ -213,7 +213,7 @@
       (cond
         ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
         ((send type-recs get-class-record class-name #f (lambda () #f)) void)
-        ((and (file-exists? type-path) 
+        ((and (file-exists? type-path)
               (or (core? class-name) (older-than? file-path type-path)) (read-record type-path))
          =>
          (lambda (record)
@@ -221,8 +221,9 @@
            (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f #f))
            (map (lambda (ancestor)
                   (import-class (car ancestor) (cdr ancestor)
-                                (find-directory (cdr ancestor)
-                                                (lambda () (error 'internal-error "Compiled parent's directory is not found")))
+                                (find-directory 
+                                 (cdr ancestor)
+                                 (lambda () (error 'internal-error "Compiled parent's directory is not found")))
                                 loc type-recs level caller-src add-to-env))
                 (append (class-record-parents record) (class-record-ifaces record)))
            ))
@@ -307,6 +308,8 @@
     (lambda ()
       (let ((original-loc (send type-recs get-location))
             (dir (find-directory (cdr name) (lambda () (file-error 'dir name call-src level)))))
+        (when (memq level '(beginner intermediate))
+          (file-error 'file name call-src level))
         (import-class (car name) (cdr name) dir original-loc type-recs level call-src #f)
         (begin0 (get-record (send type-recs get-class-record name) type-recs)
                 (send type-recs set-location! original-loc)))))

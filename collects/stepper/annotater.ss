@@ -865,9 +865,6 @@
       (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-        (call-with-output-file "Barbican:output.ss"
-          (lambda (port)
-            (write annotated-exprs port)))
         (values annotated-exprs
                 struct-proc-names)))))
 	 

@@ -6,24 +6,37 @@
 
 (require-library "core.ss" "drscheme-jr")
 
+(define main-unit
+  (let ([settings settings]
+	[teachpacks teachpacks]
+	[filename filename]
+	[mred@ mred@])
+    (unit/sig drscheme-jr:settings^
+      (import [prims : prims^]
+	      [basis : userspace:basis^]
+	      [mzlib : mzlib:core^]
+	      mred^)
+      
+      (message-box "starting launcher" "starting launcher")
+
+      (define show-banner? #f)
+      (define repl? #f)
+      (define (initialize-userspace)
+	(message-box "initialize-userspace" "initialize-userspace")
+	;; need to invoke teachpacks here.
+	(global-define-values/invoke-unit/sig mred^ mred@))
+
+      (define setting (apply basis:make-setting (cdr (vector->list settings))))
+      (define startup-file filename))))
+
 (define go 
   (make-go
-   (let ([settings settings]
-         [teachpacks teachpacks]
-         [filename filename]
-         [mred@ mred@])
-   (unit/sig drscheme-jr:settings^
+   (compound-unit/sig
      (import [prims : prims^]
-             [basis : userspace:basis^]
-             [mzlib : mzlib:core^])
-     
-     (define show-banner? #f)
-     (define repl? #f)
-     (define (initialize-userspace)
-       ;; need to invoke teachpacks here.
-       (global-define-values/invoke-unit/sig mred^ mred@))
-
-     (define setting (apply basis:make-setting (cdr (vector->list settings))))
-     (define startup-file filename)))))
+	     [basis : userspace:basis^]
+	     [mzlib : mzlib:core^])
+     (link [mred : mred^ (mred@)]
+	   [main : () (main prims basis mzlib mred)])
+     (export))))
 
 (go)

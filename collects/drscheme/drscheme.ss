@@ -1,8 +1,8 @@
-(require-library "errortrace.ss" "errortrace") (error-print-width 100)
+;(require-library "errortrace.ss" "errortrace") (error-print-width 100)
 
 ;(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
 
-(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
+;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
 
 (define-values (shutdown-splash close-splash)
   ((require-library "splash.ss" "framework")

@@ -4,7 +4,11 @@
 ; Generously plagiarized from sml-proc.el and its support files, for
 ; SML, written by Lars Bo Nielsen and Matthew J. Morley.
 
-; The domicile of this file will probably be PLTHOME/mzrice/mzrice.el.
+; The domicile of this file will probably be
+; PLTHOME/mzrice/mzrice.el.  To load it, use this in your .emacs:
+; (load (concat (or (getenv "PLTHOME") "/usr/local/lib/plt")
+; 	        "/"
+; 	        "mzrice/mzrice"))
 
 ; These are routines that provide a rudimentary Emacs interface to
 ; MzRice.  Note that they don't work in the REP, due to the way MzRice

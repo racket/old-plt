@@ -2540,6 +2540,7 @@
 				0CBB185200FBA5A97F000001,
 				0CBB185300FBA5A97F000001,
 				0CBB185400FBA5A97F000001,
+				2A904A23014FE0D8810A736F,
 			);
 			isa = PBXGroup;
 			name = MrEd;
@@ -2640,7 +2641,7 @@
 	<key>CFBundleExecutable</key>
 	<string>MrEd</string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>mred</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
@@ -2651,6 +2652,12 @@
 	<string>199.21</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
+	<key>NSHelpFile</key>
+	<string></string>
+	<key>NSMainNibFile</key>
+	<string></string>
+	<key>NSPrincipalClass</key>
+	<string></string>
 </dict>
 </plist>
 ";
@@ -2667,6 +2674,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0867D6ACFE840B52C02AAC07,
+				2A904A24014FE0D8810A736F,
 			);
 			isa = PBXResourcesBuildPhase;
 			name = "Bundle Resources";
@@ -2723,6 +2731,18 @@
 		};
 		20286C3CFDCF999611CA2CEA = {
 			fileRef = 20286C33FDCF999611CA2CEA;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		2A904A23014FE0D8810A736F = {
+			isa = PBXFileReference;
+			name = mred.icns;
+			path = /Users/clements/plt/src/mac/icon/mred.icns;
+			refType = 0;
+		};
+		2A904A24014FE0D8810A736F = {
+			fileRef = 2A904A23014FE0D8810A736F;
 			isa = PBXBuildFile;
 			settings = {
 			};

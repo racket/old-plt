@@ -2914,7 +2914,7 @@ string_to_number (int argc, Scheme_Object *argv[])
 double STRTOD(const char *orig_c, char **f)
 {
   int neg = 0;
-  int found_dot = 0, is_infinity = 0;
+  int found_dot = 0, is_infinity = 0, is_zero = 0;
   const char *c = orig_c;
 
   *f = (char *)c;
@@ -2940,11 +2940,12 @@ double STRTOD(const char *orig_c, char **f)
     if (isdigit(ch)) {
       /* ok */
     } else if ((ch == 'e') || (ch == 'E')) {
-      int e = 0;
+      int e = 0, neg_exp = 0;
 
       c++;
       if (*c == '-') {
 	c++;
+	neg_exp = 1;
       } else if (*c == '+') {
 	c++;
       }
@@ -2957,8 +2958,12 @@ double STRTOD(const char *orig_c, char **f)
 	  return 0; /* not a digit - bad! */
 	else {
 	  e = (e * 10) + (ch - '0');
-	  if (e > CHECK_INF_EXP_THRESHOLD)
-	    is_infinity = 1;
+	  if (e > CHECK_INF_EXP_THRESHOLD) {
+	    if (neg_exp)
+	      is_zero  = 1;
+	    else
+	      is_infinity  = 1;
+	  }
 	}
       }
 
@@ -2978,6 +2983,13 @@ double STRTOD(const char *orig_c, char **f)
       return scheme_minus_infinity_val;
     else
       return scheme_infinity_val;
+  }
+
+  if (is_zero) {
+    if (neg)
+      return scheme_floating_point_nzero;
+    else
+      return scheme_floating_point_zero;
   }
 
   /* It's OK if c is ok: */

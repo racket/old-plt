@@ -13,8 +13,12 @@
 
 	    (define show-banner? #f)
 	    (define repl? #f)
+
+	    (define user-eventspace #f)
+
 	    (define (run-in-new-user-thread thunk)
-	      (parameterize ([current-eventspace (make-eventspace)])
+	      (set! user-eventspace (make-eventspace))
+	      (parameterize ([current-eventspace user-eventspace])
 		(let ([thread #f]
 		      [sema (make-semaphore 0)])
 		  (queue-callback (lambda ()
@@ -26,10 +30,20 @@
 		     (thunk)))
 		  thread)))
 	    
-	    (define quit-when-windows-closed? #f)
+	    (define (number-open-windows)
+	      (parameterize ([current-eventspace user-eventspace])
+		(length (get-top-level-windows))))
 
 	    (define (load-and-repl-done)
-	      (set! quit-when-windows-closed? #t))
+	      (if (= 0 (number-open-windows))
+		  (exit)
+		  (thread
+		   (rec f
+			(lambda ()
+			  (sleep 1/2)
+			  (if (= 0 (number-open-windows))
+			      (exit)
+			      (f)))))))
 
 	    (define (initialize-userspace)
 	      ;; add mred to the namespace

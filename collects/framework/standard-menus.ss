@@ -187,7 +187,9 @@
     (file-menu:close-help-string (lambda () "Close this file")))
    (public (file-menu:between-close-and-quit (lambda (menu) (void))))
    (public
-    (file-menu:quit (lambda (item control) (exit:exit)))
+    (file-menu:quit
+     (lambda (item control)
+       (parameterize ((exit:frame-exiting this)) (exit:exit))))
     (file-menu:get-quit-item (lambda () file-menu:quit-item))
     (file-menu:quit-string (lambda () ""))
     (file-menu:quit-help-string (lambda () "Quit")))
@@ -566,9 +568,9 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix)))
-             "Find..."
+             "Find"
              (edit-menu:find-string)
-             "")
+             "...")
             (get-edit-menu)
             edit-menu:find
             (if (preferences:get 'framework:menu-bindings) #\f #f)

@@ -168,7 +168,7 @@
 			      [edit-menu:paste (edit-menu:do 'paste)]
 			      [edit-menu:select-all (edit-menu:do 'select-all)]
 
-			      [edit-menu:find-string (lambda () "in Page...")]
+			      [edit-menu:find-string (lambda () "in Page")]
 			      [edit-menu:find (lambda (i e)
 						(send results force-display-focus #t)
 						(letrec ([d (make-object dialog% "Find" f 300)]
@@ -208,11 +208,12 @@
 						 (message-box "About Help Desk"
 							      (format 
 							       "Help Desk is a complete source of ~
-                                                                       information about PLT software, including DrScheme, ~
-                                                                       MzScheme, and MrEd.~n~n~
-                                                                       Version ~a~n~
-                                                                       Copyright (c) 1995-99 PLT"
-							       (version))))]
+                                                                information about PLT software, including DrScheme, ~
+                                                                MzScheme, and MrEd.~n~n~
+                                                                Version ~a~n~
+                                                                Copyright (c) 1995-2000 PLT"
+							       (framework:version:version))
+							      this))]
 			      [help-menu:after-about
 			       (lambda (menu)
 				 (make-object menu-item% "Help" menu
@@ -221,9 +222,10 @@
 						 "Help on Help"
 						 (format
 						  "For help on using Help Desk, follow the `How to use Help Desk' link ~
-                                                           on Help Desk's home page.~n~n~
-                                                           (To get to the home page if you're not already there, click the `Home' ~
-                                                           button at the top of the Help Desk window.)")))))])
+                                                   on Help Desk's home page.~n~n~
+                                                   (To get to the home page if you're not already there, click the `Home' ~
+                                                   button at the top of the Help Desk window.)")
+						 this))))])
 			    
 			    (override 
 			      [on-subwindow-char 

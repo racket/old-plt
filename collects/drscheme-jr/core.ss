@@ -10,7 +10,7 @@
 (define-signature prims^ (program argv))
 (define-signature drscheme-jr:settings^
   (repl? show-banner? initialize-userspace setting startup-file
-	 run-in-new-user-thread))
+	 run-in-new-user-thread load-and-repl-done))
 
 (define dr-jrU
   (unit/sig ()
@@ -130,7 +130,8 @@
 			 (when (string? file)
 			   (load/prompt file))
 			 (when settings:repl?
-			   (repl))))])
+			   (repl))
+			 (settings:load-and-repl-done)))])
 		 (mzlib:thread:dynamic-enable-break
 		  (lambda ()
 		    (let loop ()

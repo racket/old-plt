@@ -25,7 +25,7 @@
 		  (escape)
 		  ((error-escape-handler))))]
 	   [else
-	    (wx:message-box
+	    (mred:message-box
 	     (format "~a: ~a.~a-~a.~a: ~a" file
 			   (zodiac:location-line start-location)
 			   (zodiac:location-column start-location)
@@ -46,7 +46,7 @@
 	     [(zodiac:zodiac? z) (dispatch-report type string (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
 	     [(zodiac:eof? z) (dispatch-report type string (zodiac:eof-location z) (zodiac:eof-location z))]
 	     [(zodiac:period? z) (dispatch-report type string (zodiac:period-location z) (zodiac:period-location z))]
-	     [else (wx:message-box string "Error")])
+	     [else (mred:message-box string "Error")])
 	    (printf "report-error: cannot escape: ~a~n" string)))))
 
     (define static-error (report-error "static error: "))

@@ -12,7 +12,6 @@
          editor-data%
          editor-data-class%
          editor-data-class-list%
-         pixel-dc<%>
          check-for-break
          clipboard<%>
          clipboard-client%
@@ -155,4 +154,5 @@
          get-top-level-focus-window
          get-top-level-edit-target-window
          register-collecting-blit
-         unregister-collecting-blit))
+         unregister-collecting-blit
+         install-standard-text-bindings))

@@ -11,7 +11,7 @@
     (import)
     (link
      [DEFS : defs^ (gui-defs@)]
-     [ARGS : args^ (cmdline@)]
-     [RUNCHECK : empty^ (runcheck@ (ARGS) (DEFS))])
+     [PROGNAME : progname^ (gui-defs@)]
+     [ARGS : args^ (cmdline@ (PROGNAME))]
+     [RUNCHECK : empty^ (runcheck@ (DEFS) (ARGS))])
     (export))))
-

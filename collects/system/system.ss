@@ -1,6 +1,5 @@
 ; Always load the standard system with load/cd
 
-; Print a little more than MzScheme automatically does:
 (error-print-width 250)
 
 (define mred:debug:turned-on (box (list 'load 'startup 'invoke)))
@@ -215,7 +214,11 @@
       (import [mred@ : mred^]
 	      [core@ : mzlib:core^])
       (define console (make-object mred@:console-frame%))
-      (define eval-string (ivar (ivar console edit) eval-str)))))
+      (define eval-string (lambda (s)
+			    (let ([ce (ivar console edit)])
+			      (send ce eval-and-display s)
+			      (send ce insert-prompt)
+			      #t))))))
 
 (define mred:non-unit-make-application@
   (lambda ()

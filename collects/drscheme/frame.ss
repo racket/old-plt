@@ -143,8 +143,9 @@
 	  [change-to-file
 	   (lambda (name)
 	     (let ([buffer (send program-canvas get-media)])
-	       (if (open-file name program-canvas #f)
-		   (release-buffer buffer))))]
+	       (when (open-file name program-canvas #f)
+		 (release-buffer buffer))
+	       (send program-canvas set-focus)))]
 	  
 	  [release-buffer
 	   (lambda (buffer)
@@ -209,8 +210,8 @@
 	       (send file-menu enable file-menu:print-transcript-id 
 		     (not (eq? which 'program)))
 	       (case which
-		 [(scheme) (send console-canvas set-focus)]
 		 [(program) (send program-canvas set-focus)]
+		 [(scheme) (send console-canvas set-focus)]
 		 [else (void)])))])
 	
 	(public	  
@@ -397,13 +398,9 @@
 	  
 	  [on-close
 	   (lambda ()
-	     (and (super-on-close)
-		  (begin
-		    (send (ivar project group) remove-frame this)
-		    (when (and (null? (send (ivar project group) get-frames))
-			       (not (mred:get-preference 'drscheme:project-visible?)))
-		      (mred:exit))
-		    #f)))]
+	     (if (mred:get-preference 'drscheme:project-visible?)
+		 (super-on-close)
+		 (mred:exit)))]
 	  
 	  [running? #t] ; For project to know the console is OK
 	  
@@ -475,7 +472,6 @@
 	(public
 	  [stop-execute-button (void)]
 	  [execute-button (void)]
-	  [debug-button (void)]
 	  [button-panel (make-object mred:horizontal-panel% top-panel)]
 	  [scheme-only-panel (make-object mred:horizontal-panel% panel)])
 	
@@ -499,10 +495,6 @@
 	  (send save-button show save-init-shown?))
 	
 	 (sequence
-	  (make-object mred:button% button-panel
-		       (lambda x (wx:message-box
-				  "The debugger is not available in DrScheme version 44."))
-		       "Debug")
 	  (set! execute-button
 	    (make-object mred:button% button-panel
 			 execute-callback
@@ -527,7 +519,6 @@
 	  (mred:add-preference-callback
 	   'drscheme:library-file
 	   (lambda (p v)
-	     (printf "frame callback; v:~a~n"v)
 	     (set! scheme-only-library-msg
 		   (make-library-name-msg scheme-only-panel v))
 	     (set! library-msg (make-library-name-msg top-panel v))
@@ -564,6 +555,7 @@
 	  ;; show both windows initially
 	  (set-show-mode 'both)
 
-	  (send program-canvas set-focus)
+	  (send console-canvas set-focus)
+
 	  (when show?
 	    (show #t)))))))

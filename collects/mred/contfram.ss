@@ -331,6 +331,10 @@
 	  [super-show show])
 	(public
 	  
+	 [on-default-action
+	  (lambda (item)
+	    (send item on-default-action))]
+
 	  ; show: shows/hides the dialog and optionally centers it
 	  ; on-screen
 	  ; input: now: a boolean; #t to show window, #f to hide it

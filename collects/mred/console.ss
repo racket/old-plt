@@ -89,7 +89,7 @@
 			clear-undos
 			insert
 			delete
-			change-style
+			change-style styles-fixed?
 			scroll-to-position
 			last-position
 			get-start-position
@@ -144,16 +144,17 @@
 	       (private
 		[resetting? #f]
 		[on-something
-		 (lambda (super)
+		 (opt-lambda (super [attend-to-styles-fixed? #f])
 		   (lambda (start len)
 		     (and (or (not (number? prompt-position))
 			      (>= start prompt-position)
+			      (and attend-to-styles-fixed? styles-fixed?)
 			      resetting?)
 			  ((super) start len))))])
 	       (public
 		[on-insert (on-something (lambda () super-on-insert))]
 		[on-delete (on-something (lambda () super-on-delete))]
-		[on-change-style (on-something (lambda () super-on-change-style))])
+		[on-change-style (on-something (lambda () super-on-change-style) #t)])
 	       
 	       (private
 		[last-str (lambda (l)
@@ -394,50 +395,56 @@
 		 (lambda (key)
 		   (let ([cr-code 13]
 			 [lf-code 10]
-			 [code (send key get-key-code)])
-		     (if (or (= code cr-code) (= code lf-code))
-			 (let ((start (get-start-position))
-			       (end (get-end-position))
-			       (last (last-position)))
-			   (if (and (< start end) (< end prompt-position)
-				    (or read-waiting? (not (eval-busy?))))
-			       (let ((str (get-text start end)))
-				 (begin-edit-sequence)
-				 (if (not prompt-mode?)
-				     (insert-prompt))
-				 (insert str prompt-position (last-position))
-				 (set-position (last-position))
-				 (end-edit-sequence))
-			       (if (and (= start last) (not prompt-mode?)
-					autoprompting? (not (eval-busy?)))
-				   (insert-prompt)
-				   (if (and (< prompt-position start)
-					    (only-spaces-after start)
-					    (or read-waiting?
-						(not (eval-busy?))))
-				       (let ([balanced? (mred:scheme-paren:scheme-balanced?
-							 this
-							 prompt-position
-							 last)])
-					 (if balanced?
-					     (begin
-					       (delete start last)
-					       (do-save-and-eval-or-read-avail 
-						prompt-position start))
-					     (super-on-local-char key)))
-				       (if (< start prompt-position)
-					   (let ([match
-						  (mred:scheme-paren:scheme-backward-match
-						   this start 0)])
-					     (if match
-						 (begin
-						   (insert (get-text match start)
-							   prompt-position
-							   (last-position))
-						   (set-position (last-position)))
-						 (super-on-local-char key)))
-					   (super-on-local-char key))))))
-			 (super-on-local-char key))))]
+			 [start (get-start-position)]
+			 [end (get-end-position)]
+			 [last (last-position)]
+			 [code (send key get-key-code)]
+			 [copy-to-end/set-position
+			  (lambda (start end)
+			    (change-style (make-object wx:style-delta%) start end)
+			    (let loop ([snip (find-snip start wx:const-snip-after)])
+			      (cond
+			       [(null? snip) (void)]
+			       [(< (get-snip-position snip) end)
+				(insert (send snip copy) (last-position))
+				(loop (send snip next))]
+			       [else (void)]))
+			    (set-position (last-position)))])
+		     (cond
+		      [(not (or (= code cr-code) (= code lf-code)))
+		       (super-on-local-char key)]
+		      [(and (< start end) (< end prompt-position)
+			    (or read-waiting? (not (eval-busy?))))
+		       (begin-edit-sequence)
+		       (if (not prompt-mode?)
+			   (insert-prompt))
+		       (copy-to-end/set-position start end)
+		       (end-edit-sequence)]
+		      [(and (= start last) (not prompt-mode?)
+			    autoprompting? (not (eval-busy?)))
+		       (insert-prompt)]
+		      [(and (< prompt-position start)
+			    (only-spaces-after start)
+			    (or read-waiting?
+				(not (eval-busy?))))
+		       (let ([balanced? (mred:scheme-paren:scheme-balanced?
+					 this
+					 prompt-position
+					 last)])
+			 (if balanced?
+			     (begin
+			       (delete start last)
+			       (do-save-and-eval-or-read-avail 
+				prompt-position start))
+			     (super-on-local-char key)))]
+		      [(< start prompt-position)
+		       (let ([match
+			      (mred:scheme-paren:scheme-backward-match
+			       this start 0)])
+			 (if match
+			     (copy-to-end/set-position match start)
+			     (super-on-local-char key)))]
+		      [else (super-on-local-char key)])))]
 		
 		[takeover-output
 		 (lambda ()
@@ -680,14 +687,16 @@
 	       (send file-menu append-separator))]
 	    [file-menu:save (lambda ()
 			      (send (active-edit) save-file
-				    (send (active-edit) get-filename)))]
-	    [file-menu:save-as (lambda () (send (active-edit) save-file ""))]
-	    [file-menu:print (lambda () (send (active-edit) print '()))])
+				    (send (active-edit) get-filename))
+			      #t)]
+	    [file-menu:save-as (lambda () (send (active-edit) save-file "") #t)]
+	    [file-menu:print (lambda () (send (active-edit) print '()) #t)])
 
 	  (private
 	    [edit-menu:do  (lambda (const) 
-				    (lambda () 
-				      (send (active-edit) do-edit const)))])
+			     (lambda () 
+			       (send (active-edit) do-edit const)
+			       #t))])
 	  (public
 	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
 	    [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
@@ -700,7 +709,8 @@
 	    [edit-menu:replace (lambda ()
 				 (mred:find-string:find-string
 				  canvas edit -1 -1
-				  (list 'replace 'ignore-case)))]
+				  (list 'replace 'ignore-case))
+				 #t)]
 	    [edit-menu:between-replace-and-preferences
 	     (let ()
 	       (lambda (edit-menu)

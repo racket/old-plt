@@ -134,7 +134,11 @@
 	                   ; middle of processing a force-redraw request.
 	  
 	  (public
-	    
+	   
+	   [on-default-action
+	    (lambda ()
+	      (void))]
+
 	    ; a unique numeric ID for the object (for debugging).
 	    object-ID
 	    

@@ -37,7 +37,7 @@
 		  (- v wx:const-break-for-line))))))
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
-    (mred:preferences:set-preference-default 'mred:highlight-parens #f)
+    (mred:preferences:set-preference-default 'mred:highlight-parens #t)
     (mred:preferences:set-preference-default 'mred:paren-match/fixup-parens #t)
     (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
@@ -54,7 +54,7 @@
 			'(lambda let let* letrec letrec* recur let-values
 			   let/cc let/ec letcc catch
 			   let-syntax letrec-syntax syntax-case
-			   let-struct let-macro
+			   let-struct let-macro let-values
 			   case when unless match
 			   let-enumerate
 			   class class* class-asi class-asi*
@@ -151,10 +151,11 @@
 	      (lambda (p value)
 		(set! indents value)))])
 	  (public
-	    [deinstall (lambda args
+	    [deinstall (lambda (edit)
+			 (highlight-parens edit #t)
 			 (remove-indents-callback)
 			 (remove-paren-callback)
-			 (apply super-deinstall args))]
+			 (super-deinstall edit))]
 	    [indents (mred:preferences:get-preference 'mred:tabify)])
 	  (public
 	    [name "Scheme"]
@@ -669,6 +670,7 @@
 	    [file-format wx:const-media-ff-text]
 	    [install
 	     (lambda (edit)
+	       '(highlight-parens edit #t)
 	       (send edit set-wordbreak-map scheme-media-wordbreak-map)
 	       (send edit set-tabs '() 8 #f)
 	       (set! tab-size 8)

@@ -59,6 +59,10 @@
 	
 	(public
 	  
+	  [on-default-action
+	   (lambda (item)
+	     (send item on-default-action))]
+
 	  ; list-diff: computes the difference between two lists
 	  ; input: l1, l2: two lists
 	  ; returns:  a list of all elements in l1 which are not in l2.

@@ -99,8 +99,8 @@ mzheaders: $(srcdir)/schemex.h $(srcdir)/schemexm.h $(srcdir)/schemex.inc $(srcd
 
 mzobjects: $(OBJS)
 
-$(srcdir)/macro.inc : $(srcdir)/macro.ss $(srcdir)/sstoinc
-	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/macro.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/macro.ss > $(srcdir)/macro.inc ; fi
+$(srcdir)/startup.inc : $(srcdir)/startup.ss $(srcdir)/sstoinc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/startup.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/startup.ss > $(srcdir)/startup.inc ; fi
 
 $(srcdir)/unitsig.inc : $(srcdir)/unitsig.ss $(srcdir)/sstoinc
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/unitsig.inc ; else $(PERL) $(srcdir)/sstoinc < $(srcdir)/unitsig.ss > $(srcdir)/unitsig.inc ; fi
@@ -219,7 +219,7 @@ bignum.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include
 bool.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
           $(srcdir)/../src/stypes.h $(srcdir)/mzeqchk.inc
 builtin.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h  \
-        $(srcdir)/../src/stypes.h  $(srcdir)/schminc.h $(srcdir)/macro.inc $(srcdir)/cmacro.inc
+        $(srcdir)/../src/stypes.h  $(srcdir)/schminc.h $(srcdir)/startup.inc $(srcdir)/cstartup.inc
 char.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h  
 complex.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h  \

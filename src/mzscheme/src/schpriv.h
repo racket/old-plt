@@ -154,9 +154,6 @@ void scheme_init_dynamic_extension(Scheme_Env *env);
 #ifndef NO_REGEXP_UTILS
 extern void scheme_regexp_initialize(Scheme_Env *env);
 #endif
-void scheme_init_empty_cond(Scheme_Env *env);
-void scheme_init_format_procedure(Scheme_Env *env);
-void scheme_init_rep(Scheme_Env *env);
 void scheme_init_getenv(void);
 
 extern Scheme_Type_Reader *scheme_type_readers;
@@ -1372,8 +1369,6 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_PRIM_GLOBALS_ONLY 128
 #define SCHEME_CAPTURE_WITHOUT_RENAME 256
 #define SCHEME_MODULE_FRAME 512
-
-#define ENV_PRIM_GLOBALS_ONLY(env) ((env)->flags & SCHEME_PRIM_GLOBALS_ONLY)
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

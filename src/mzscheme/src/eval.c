@@ -1585,7 +1585,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       var = scheme_static_distance(form, env, 
 				   SCHEME_NULL_FOR_UNBOUND
 				   + SCHEME_ENV_CONSTANTS_OK
-				   + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
+				   + (rec
 				      ? SCHEME_ELIM_CONST 
 				      : 0)
 				   + (app_position 
@@ -1630,7 +1630,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				   SCHEME_APP_POS
 				   + SCHEME_NULL_FOR_UNBOUND
 				   + SCHEME_ENV_CONSTANTS_OK
-				   + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
+				   + (rec
 				      ? SCHEME_ELIM_CONST
 				      : 0)
 				   + ((rec && rec[drec].dont_mark_local_use)

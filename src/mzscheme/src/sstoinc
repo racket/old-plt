@@ -1,55 +1,13 @@
 #!/usr/local/bin/perl
 
 $ready = 0;
-$n = 1;
+$parens = 0;
 
 while (<>)
 {
     chop;
 
-    if ((substr($_, 0, 6) eq '> stop')
-	|| (substr($_, 0, 7) eq '> kstop')
-	|| (substr($_, 0, 7) eq '> fstop')
-	|| (substr($_, 0, 7) eq '> qstop')
-	|| (substr($_, 0, 7) eq '> cstop')) {
-
-	# strip " <" at end:
-	$_ = substr($_, 0, length($_) - 2); 
-
-	$is_key = (substr($_, 0, 7) eq '> kstop');
-	$is_cond = (substr($_, 0, 7) eq '> cstop');
-	$is_func = (substr($_, 0, 7) eq '> fstop');
-	$is_qq = (substr($_, 0, 7) eq '> qstop');
-	
-	print ");\n";
-
-	if ($is_key || $is_cond || $is_func || $is_qq) { 
-	    $pos = 8; 
-	} else { 
-	    $pos = 7; 
-	}
-
-	@defined = split(/ /, substr($_, $pos));
-	foreach $def (@defined) {
-	    if ($is_key) {
-		print "  JUST_DEFINED_KEY($def);\n";
-	    } elsif ($is_cond) {
-		print "  JUST_DEFINED_COND($def);\n";
-	    } elsif ($is_func) {
-		print "  JUST_DEFINED_FUNC($def);\n";
-	    } elsif ($is_qq) {
-		print "  JUST_DEFINED_QQ($def);\n";
-	    } else {
-		print "  JUST_DEFINED($def);\n";
-	    }
-	}
-
-	$ready = 0;
-	
-    } elsif (substr($_, 0, 9) eq '> literal') {
-	print substr(substr($_, 0, length($_) - 1), 11);
-	print "\n";
-    } elsif ($_ =~ /^ *$/) {
+    if ($_ =~ /^ *$/) {
 	# Just spaces; do nothing
     } elsif ($_ =~ /^\s*;/) {
 	# comment; do nothing
@@ -79,8 +37,48 @@ while (<>)
 	    $_ =~ s/ \(/\(/g;
 	}
 
+	# Check for comments:
+	if ($_ =~ /[\"\\]/) {
+	    # If there's a comment char, add a newline,
+	    # just in case:
+	    if ($_ =~ /;/) {
+		$_ = $_ . "\\n";
+	    }
+	} else {
+	    if ($_ =~ /^([^;]*);/) {
+		$_ = $1;
+	    }
+	}
+	
+
 	print '"' . $_ . '"';
 	print "\n";
+
+	# Remove strings before counting parens:
+	$_ =~ s/\\\"//g; # first remove escaped quotes
+	$_ =~ s/\"[^\"]*\"//g; # then remove matching quotes
+
+	# Convert sq brackets to parens and remove escaped
+	$_ =~ s/\[/\(/g;
+	$_ =~ s/\]/\)/g;
+	$_ =~ s/\\[()]//g; # remove escaped parens
+
+	# Now count parens:
+	$save = $_;
+	while ($_ =~ /\((.*)/) {
+	    $parens = $parens + 1;
+	    $_ = $1;
+	}
+	$_ = $save;
+	while ($_ =~ /\)(.*)/) {
+	    $parens = $parens - 1;
+	    $_ = $1;
+	}
+
+	if ($parens == 0) {
+	    $ready = 0;
+	    print ");\n";	    
+	}
     }
 }
 

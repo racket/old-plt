@@ -101,11 +101,6 @@ void scheme_init_error_escape_proc(Scheme_Process *p)
   scheme_set_param(p->config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
 }
 
-void scheme_init_format_procedure(Scheme_Env *env)
-{
-  /* No longer needed... */
-}
-
 /*
   Recognized by scheme_[v]sprintf:
 

@@ -32,61 +32,13 @@
 
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {
-#if 0
-
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
-#define JUST_DEFINED(name)
-#define JUST_DEFINED_FUNC(name) JUST_DEFINED(name)
-#define JUST_DEFINED_KEY(name) JUST_DEFINED(name)
-#define JUST_DEFINED_COND(name) JUST_DEFINED(name)
-#define JUST_DEFINED_QQ(name) JUST_DEFINED(name)
 
 #if USE_COMPILED_MACROS
-# include "cmacro.inc"
+# include "cstartup.inc"
 #else
-# include "macro.inc"
-#endif
-
-#else
-
-  scheme_eval_string("
-(define-values (read-eval-print-loop)
- (lambda ()
-  (let* ([eeh #f]
-         [jump #f]
-         [be? #f]
-         [rep-error-escape-handler (lambda () (jump))])
-    (dynamic-wind
-      (lambda () (set! eeh (error-escape-handler))
-                 (set! be? (break-enabled))
-                 (error-escape-handler rep-error-escape-handler)
-                 (break-enabled #f))
-      (lambda ()
-        (call/ec (lambda (done)
-          (let loop ()
-            (call/ec (lambda (k)
-              (dynamic-wind
-                 (lambda ()
-                   (break-enabled be?)
-                   (set! jump k))
-                 (lambda ()
-                   (let ([v ((current-prompt-read))])
-                     (if (eof-object? v) (done (void)))
-                     (call-with-values
-                      (lambda () ((current-eval) v))
-                      (lambda results (for-each (current-print) results)))))
-                 (lambda () 
-                   (set! be? (break-enabled))
-                   (break-enabled #f)
-                   (set! jump #f)))))
-            (loop)))))
-      (lambda () (error-escape-handler eeh)
-                   (break-enabled be?)
-                   (set! jump #f)
-                   (set! eeh #f))))))
-", env);
-
+# include "startup.inc"
 #endif
 }
 

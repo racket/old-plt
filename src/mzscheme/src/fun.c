@@ -100,8 +100,6 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a);
 static Scheme_Object *write_compiled_closure(Scheme_Object *obj);
 static Scheme_Object *read_compiled_closure(Scheme_Object *obj);
 
-static Scheme_Object *rep;
-
 static int top_next_registered;
 static Scheme_Comp_Env *top_next_env;
 static Scheme_Object *top_next_mark;
@@ -332,12 +330,6 @@ scheme_init_fun (Scheme_Env *env)
 			     write_compiled_closure);
   scheme_install_type_reader(scheme_unclosed_procedure_type,
 			     read_compiled_closure);
-}
-
-void scheme_init_rep(Scheme_Env *env)
-{
-  REGISTER_SO(rep);
-  rep = scheme_lookup_global(scheme_intern_symbol("read-eval-print-loop"), env);
 }
 
 Scheme_Object *
@@ -2707,8 +2699,41 @@ void scheme_rep()
   memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(p->error_buf)) {
     /* done */
-  } else
-    scheme_apply_multi(rep, 0, NULL);
+  } else {
+    scheme_eval_string_multi("
+  (let* ([eeh #f]
+         [jump #f]
+         [be? #f]
+         [rep-error-escape-handler (lambda () (jump))])
+    (dynamic-wind
+      (lambda () (set! eeh (error-escape-handler))
+                 (set! be? (break-enabled))
+                 (error-escape-handler rep-error-escape-handler)
+                 (break-enabled #f))
+      (lambda ()
+        (call/ec (lambda (done)
+          (let loop ()
+            (call/ec (lambda (k)
+              (dynamic-wind
+                 (lambda ()
+                   (break-enabled be?)
+                   (set! jump k))
+                 (lambda ()
+                   (let ([v ((current-prompt-read))])
+                     (if (eof-object? v) (done (void)))
+                     (call-with-values
+                      (lambda () ((current-eval) v))
+                      (lambda results (for-each (current-print) results)))))
+                 (lambda () 
+                   (set! be? (break-enabled))
+                   (break-enabled #f)
+                   (set! jump #f)))))
+            (loop)))))
+      (lambda () (error-escape-handler eeh)
+                   (break-enabled be?)
+                   (set! jump #f)
+                   (set! eeh #f))))", scheme_get_env(scheme_config));
+  }
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 }
 

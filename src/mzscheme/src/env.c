@@ -256,9 +256,6 @@ Scheme_Env *scheme_basic_env()
 
   scheme_add_embedded_builtins(env);
 
-  scheme_init_format_procedure(env);
-  scheme_init_rep(env);
-
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
 

@@ -7,11 +7,14 @@
            (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
+           (lib "colorer-prefs.ss" "syntax-color")
+           (lib "colorer.ss" "syntax-color")
            (lib "Object.ss" "profj" "libs" "java" "lang")
            (lib "array.ss" "profj" "libs" "java" "lang")
            (lib "String.ss" "profj" "libs" "java" "lang")
            "compile.ss"
-           "parameters.ss")
+           "parameters.ss"
+           "parsers/lexer.ss")
 
   (provide tool@)
 
@@ -21,8 +24,29 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
+      (define (make-style-delta color bold?)
+        (let ((sd (make-object style-delta%)))
+          (send sd set-delta-foreground color)
+          (when bold?
+              (send sd set-weight-on 'bold))
+          sd))
+  
+      (define styles
+        `((keyword ,(make-style-delta "black" #t))
+          (string ,(make-style-delta "green" #f))
+          (literal ,(make-style-delta "green" #f))
+          (comment ,(make-style-delta "lightgray" #f))
+          (error ,(make-style-delta "red" #t))
+          (identifier ,(make-style-delta "blue" #f))
+          (default ,(make-style-delta "black" #f))))
+      
+      (add-to-colorer-prefs "Java" styles)
+      
       (drscheme:modes:add-mode "Java mode"
-                               #f
+                               (new (colorer mode:surrogate-text%)
+                                    (get-token get-syntax-token)
+                                    (prefix "Java"))
+                               ;#f
                                (lambda (text prompt-position) 
                                  (let ((is-if? #f)
                                        (is-string? #f)

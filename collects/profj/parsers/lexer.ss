@@ -8,7 +8,7 @@
   
   (require (lib "lex.ss" "parser-tools"))
 
-  (provide Operators Separators EmptyLiterals Keywords java-vals get-token)
+  (provide Operators Separators EmptyLiterals Keywords java-vals get-token get-syntax-token)
   
   (define-empty-tokens Operators
     (PIPE OR OREQUAL
@@ -275,4 +275,66 @@
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))
 
      ;; 3.5
-     ((: (eof) #\032) 'EOF))))
+     ((: (eof) #\032) 'EOF)))
+  
+  (define (syn-val a b c d)
+    (values a b (position-offset c) (position-offset d)))
+  
+  (define get-syn-string
+    (lexer
+     ((: (eof) CR LF #\") (position-offset end-pos))
+     (EscapeSequence (get-syn-string input-port))
+     ((^ CR LF) (get-syn-string input-port))))
+    
+  (define get-syntax-token
+    (lexer
+  ;; 3.12
+     (Operator
+      (syn-val 'keyword lexeme start-pos end-pos))
+     
+     ;; 3.11
+     ((: "(" ")" "{" "}" "[" "]")
+      (syn-val 'keyword lexeme start-pos end-pos))
+     ;; 3.11
+     ((: ";" "," ".")
+      (syn-val 'default lexeme start-pos end-pos))
+
+     ;; 3.10.7, 3.10.4, 3.10.3, 3.10.1
+     ((: "null" "true" "false"
+         ;char-lit
+         (@ #\' (^ CR LF #\' #\\) #\')
+         (@ #\' EscapeSequence #\') 
+         ;Doubles and Floats
+         FloatA FloatB FloatC
+         (@ (: FloatA FloatB FloatC FloatD) FloatTypeSuffix)
+         (@ (: FloatA FloatB FloatC FloatD) FloatTypeSuffix)
+         ;Decimal numbers
+         DecimalNumeral
+         HexNumeral
+         OctalNumeral
+         (@ DecimalNumeral IntegerTypeSuffix)
+         (@ HexNumeral IntegerTypeSuffix)
+         (@ OctalNumeral IntegerTypeSuffix))
+      (syn-val 'literal lexeme start-pos end-pos))
+      
+     ;; 3.10.5
+     (#\" (values 'string lexeme (position-offset start-pos) (get-syn-string input-port)))
+
+     ;; 3.9
+     (Keyword (syn-val 'keyword lexeme start-pos end-pos))
+
+     ;; 3.8
+     (Identifier (syn-val 'identifier lexeme start-pos end-pos))
+
+     ;; 3.7
+     (Comment (syn-val 'comment lexeme start-pos end-pos))
+
+     ;; 3.6
+     ((+ WhiteSpace) (syn-val 'default lexeme start-pos end-pos))
+
+     ;; 3.5
+     ((: (eof) #\032) (values 'eof "eof" start-pos end-pos))
+     
+     ((- #\000 #\377) (syn-val 'error lexeme start-pos end-pos))
+     ))
+  )

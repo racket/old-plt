@@ -65,6 +65,7 @@
 # include <fcntl.h>
 # include <grp.h>
 # include <pwd.h>
+# include <sys/time.h>
 #endif
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>

@@ -14,6 +14,19 @@
 	 cmds)
 	color))))
 
+  (define (round-frame p radius)
+    (cc-superimpose
+     p
+     (let ([w (pict-width p)]
+	   [h (pict-height p)])
+       (dc (lambda (dc x y)
+	     (let ([b (send dc get-brush)])
+	       (send dc set-brush (send the-brush-list find-or-create-brush
+					"white" 'transparent))
+	       (send dc draw-rounded-rectangle x y w h radius)
+	       (send dc set-brush b)))
+	   (pict-width p) (pict-height p) 0 0))))
+
   (define color-frame
     (case-lambda
      [(p color w)
@@ -23,7 +36,18 @@
 	 (if w
 	     (linewidth w p2)
 	     p2)))]
-     [(p color) (color-frame p color)]))
+     [(p color) (color-frame p color)]))  
+  
+  (define color-round-frame
+    (case-lambda
+     [(p radius color w)
+      (cc-superimpose
+       p
+       (let ([p2 (colorize (round-frame (ghost (launder p)) radius) color)])
+	 (if w
+	     (linewidth w p2)
+	     p2)))]
+     [(p radius color) (color-frame p radius color)]))  
 
   ;; Returns three values: pict dx dy
   (define (generic-arrow stem? solid? size angle)

@@ -2,6 +2,9 @@
 (define-signature mrpict:utils^
   (cons-colorized-picture
    color-frame
+   round-frame
+   color-round-frame
+
    arrow
    arrowhead
    arrow-line

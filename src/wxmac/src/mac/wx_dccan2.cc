@@ -132,6 +132,10 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
   if ((x >= 0) && (y >= 0)
       && ((x + w) <= pixmapWidth)
       && ((y + h) <= pixmapHeight)) {
+    PixMapHandle ph;
+    ph = GetGWorldPixMap(cMacDC->macGrafPort());
+    fast_ph = ph;
+    fast_rb = GetPixRowBytes(fast_ph);
     return TRUE;
   } else
     return FALSE;
@@ -139,13 +143,30 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
 
 void wxCanvasDC::EndSetPixelFast()
 {
+  fast_ph = NULL;
 }
 
 void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 {
-  SetCurrentDC();  
-  SetPixelCore(i, j, r, g, b);
-  ReleaseCurrentDC();
+  if (Colour) {
+    UInt32 *p;
+    
+    p = (UInt32 *)GetPixBaseAddr(fast_ph);
+    p[(j * (fast_rb >> 2)) + i] = ((r << 16) | (g << 8) | (b << 0));
+  } else {
+    unsigned char *p, v, bit;
+    int pos;
+
+    p = (unsigned char *)GetPixBaseAddr(fast_ph);
+    bit = 1 << (7 - (i & 0x7));
+    pos = (j * fast_rb) + (i >> 3);
+    v = p[pos];
+    if (r || g || b)
+      v -= (v & bit);
+    else
+      v |= bit;
+    p[pos] = v;
+  }
 }
 
 void wxCanvasDC::SetPixelCore(int i, int j, int r, int g, int b)
@@ -159,7 +180,6 @@ void wxCanvasDC::SetPixelCore(int i, int j, int r, int g, int b)
     rgb.green = (rgb.green << 8) | rgb.green;
     rgb.blue = b;
     rgb.blue = (rgb.blue << 8) | rgb.blue;
-
     SetCPixel(i, j, &rgb);
   } else {
     int qcol;
@@ -195,14 +215,25 @@ void wxCanvasDC::EndGetPixelFast()
 
 void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
 {
-  RGBColor rgb;
+  if (Colour) {
+    UInt32 *p, v;
 
-  SetCurrentDC();  
-  GetCPixel(x, y, &rgb);
-  *r = (rgb.red >> 8);
-  *g = (rgb.green >> 8);
-  *b = (rgb.blue >> 8);
-  ReleaseCurrentDC();  
+    p = (UInt32 *)GetPixBaseAddr(fast_ph);
+    v = p[(y * (fast_rb >> 2)) + x];
+    *r = (v >> 16) & 0xFF;
+    *g = (v >> 8) & 0xFF;
+    *b = v & 0xFF;
+  } else {
+    unsigned char *p, v, bit;
+
+    p = (unsigned char *)GetPixBaseAddr(fast_ph);
+    bit = 1 << (7 - (x & 0x7));
+    v = p[(y * fast_rb) + (x >> 3)];
+    if (v & bit)
+      *r = *b = *g = 0;
+    else
+      *r = *b = *g = 255;
+  }
 }
 
 //-----------------------------------------------------------------------------

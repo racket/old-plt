@@ -47,6 +47,9 @@ class wxCanvasDC: public wxbCanvasDC
 
   wxBitmap* selected_pixmap;
 
+  PixMapHandle fast_ph;
+  long fast_rb;
+
   int gdx, gdy;
   wxCanvasDC *chain_next, *chain_prev;
 
@@ -59,13 +62,18 @@ class wxCanvasDC: public wxbCanvasDC
 
   void SetCanvasClipping() ;
   void GetClippingBox(double* x,double* y,double* w,double* h) ;
-  void ReleaseCurrentDC();
 
   virtual void BeginDrawing(void);
   virtual void EndDrawing(void);
-  virtual void SetCurrentDC(void); // mac platform only
-  int DCOffsetX; // mac platform only 
-  int DCOffsetY; // mac platform only
+  
+  void SetCurrentDC(void);
+  void ReleaseCurrentDC(void);
+
+  void SetCurrentDCFast(void);
+  void ReleaseCurrentDCFast(void);
+
+  void BeginCurrentDCFast(void);
+  void EndCurrentDCFast(void);
 
   void FloodFill(double x1, double y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
   Bool GetPixel(double x1, double y1, wxColour* col) ;

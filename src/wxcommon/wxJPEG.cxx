@@ -549,25 +549,16 @@ static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, w
   }
 }
 
-static wxColour *the_white, *the_black;
-
 static void png_draw_line1(png_bytep row, int cols, int rownum, wxMemoryDC *dc)
 {
   int colnum, delta = 0, bit;
 
-  if (!the_white) {
-    wxREGGLOB(the_white);
-    wxREGGLOB(the_black);
-    the_white = new wxColour(255, 255, 255);
-    the_black = new wxColour(0, 0, 0);
-  }
-
   for (colnum = 0; colnum < cols; delta++) {
     for (bit = 128; (colnum < cols) && bit; colnum++, bit = bit >> 1) {
       if (row[delta] & bit)
-	dc->SetPixel(colnum, rownum, the_white);
+	dc->SetPixelFast(colnum, rownum, 255, 255, 255);
       else
-	dc->SetPixel(colnum, rownum, the_black);
+	dc->SetPixelFast(colnum, rownum, 0, 0, 0);
     }
   }
 }

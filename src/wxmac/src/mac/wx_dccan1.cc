@@ -162,10 +162,12 @@ void wxCanvasDC::EndDrawing(void)
 
 static GDHandle def_dev_handle = 0;
 static CGrafPtr def_grafptr = NULL;
+static int fast_mode;
+static wxCanvasDC *fast_dc;
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 {
   CGrafPtr theMacGrafPort;
 
@@ -182,7 +184,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   if (!canvas)
     GetGWorld(&def_grafptr, &def_dev_handle);
 
-  if (IsPortOffscreen(theMacGrafPort)) {
+  if (!canvas /* IsPortOffscreen(theMacGrafPort) */) {
     ::SetGWorld(theMacGrafPort, NULL);
   } else {
     ::SetPort(theMacGrafPort);
@@ -206,6 +208,24 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   }
 }
 
+void wxCanvasDC::BeginCurrentDCFast()
+{
+  if (!fast_mode) {
+    GetGWorld(&def_grafptr, &def_dev_handle);
+    fast_mode++;
+  }
+}
+
+void wxCanvasDC::SetCurrentDCFast()
+{
+  if (fast_dc != this) {
+    CGrafPtr theMacGrafPort;
+    theMacGrafPort = cMacDC->macGrafPort();
+    ::SetGWorld(theMacGrafPort, NULL);
+    fast_dc = this;
+  }
+}
+
 void wxCanvasDC::ReleaseCurrentDC(void)
 {
   if (!--dc_set_depth) {
@@ -223,6 +243,20 @@ void wxCanvasDC::ReleaseCurrentDC(void)
       ::SetGWorld(def_grafptr, def_dev_handle);
       def_grafptr = NULL;
     }
+  }
+}
+
+void wxCanvasDC::ReleaseCurrentDCFast(void)
+{
+}
+
+void wxCanvasDC::EndCurrentDCFast()
+{
+  --fast_mode;
+  if (!fast_mode) {
+    SetGWorld(def_grafptr, def_dev_handle);
+    def_grafptr = NULL;
+    fast_dc = NULL;
   }
 }
 

@@ -176,7 +176,10 @@
           (ormap (lambda (name) (string=? file (file:normalize-path name)))
                  (append (map (lambda (file)
                                 (case (car file)
-				  [(build-path) (apply build-path (cdr file))]
+				  [(build-path) (let ([p (apply build-path (cdr file))])
+                                                  (if (relative-path? p)
+                                                      (build-path project-dir p)
+                                                      p))]
 				  [(require-library)
 				   (build-path (apply collection-path (cddr file)) (cadr file))]))
                               files)
@@ -595,7 +598,10 @@
 	(let* ([file (list-ref files (car (send files-list-box get-selections)))]
 	       [filename (case (car file)
 			  [(build-path)
-			   (apply build-path (cdr file))]
+			   (let ([p (apply build-path (cdr file))])
+                             (if (relative-path? p)
+                                 (file:normalize-path (build-path project-dir p))
+                                 p))]
 			  [(require-library)
 			   (build-path (apply collection-path (cddr file))
 				       (cadr file))])]

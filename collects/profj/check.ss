@@ -1473,14 +1473,21 @@
                   (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
                     (car methods))))
              (mods (method-record-modifiers method-record)))
-        ;I think this is actually allowed. PROBLEM
-        ;        (when (memq 'abstract mods) (call-access-error 'abs name exp-type src))
+        
+        (when (and static? 
+                   (not (memq 'static mods))
+                   (not expr))
+          (non-static-called-error name c-class src level))
+        
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (not (is-eq-subclass? this exp-type)))
           (call-access-error 'pro name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
-                   (not (eq? this (send type-recs get-class-record exp-type))))
+                   (if static?
+                       (not (and (equal? (ref-type-class/iface exp-type) (car c-class))
+                                 (equal? (ref-type-path exp-type) (cdr c-class))))
+                       (not (eq? this (send type-recs get-class-record exp-type)))))
           (call-access-error 'pri name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
@@ -1886,6 +1893,17 @@
       (raise-error n
                    (format "Constructor ~a from ~a cannot be used as a method" n t)
                    n src)))
+  
+  ;non-static-called-error: id (list string) src bool -> void
+  (define (non-static-called-error name class src level)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (if (memq level '(advanced full))
+                       (format "Non-static method ~a from ~a cannot be called directly from a static context"
+                               n (car class))
+                       (format "Method ~a from ~a cannot be called here" n (car class)))
+                   n src)))
+
   
   (define (illegal-ctor-call name src level)
     (let ((n (string->symbol name)))

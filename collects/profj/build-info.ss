@@ -330,7 +330,7 @@
                      (extension-error 'final (header-id info) super (id-src super))))
                    
                  (unless (class-record-class? super-record)
-                   (extension-error 'class-iface (header-id info) super (id-src super)))
+                   (extension-error 'class-iface (header-id info) super (name-src super)))
                  
                  (when (ormap class-record-class? iface-records)
                    (letrec ((find-class
@@ -339,7 +339,7 @@
                                    (car names)
                                    (find-class (cdr recs) (cdr names)))))
                             (name (find-class iface-records (header-implements info))))
-                     (extension-error 'implement-class (header-id info) name (id-src name))))
+                     (extension-error 'implement-class (header-id info) name (name-src name))))
                  
                  (valid-iface-implement? iface-records (header-implements info))
                                   
@@ -468,7 +468,7 @@
                                    (car names)
                                    (find-class (cdr recs) (cdr names)))))
                             (name (find-class super-records (header-extends info))))
-                     (extension-error 'iface-class (header-id info) name (id-src name))))
+                     (extension-error 'iface-class (header-id info) name (name-src name))))
                  
                  (valid-iface-extend? super-records (header-extends info))
                  
@@ -501,13 +501,13 @@
   (define (valid-iface-extend? records extends)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (extension-error 'ifaces #f (car extends) (id-src (car extends))))
+             (extension-error 'ifaces #f (car extends) (name-src (car extends))))
         (valid-iface-extend? (cdr records) (cdr extends))))
   
   (define (valid-iface-implement? records implements)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (extension-error 'implement #f (car implements) (id-src (car implements))))
+             (extension-error 'implement #f (car implements) (name-src (car implements))))
         (valid-iface-implement? (cdr records) (cdr implements))))
   
   ;valid-field-names? (list field-record) (list member) (list method-record) symbol type-records -> bool
@@ -1025,10 +1025,10 @@
                       (format "~a is illegally dependent on itself, potentially through other definitions" n)))
                    n src)))
 
-  ;extension-error: symbol id id src -> void
+  ;extension-error: symbol id name src -> void
   (define (extension-error kind name super src) 
     (let ((n (if name (id->ext-name name) name))
-          (s (id->ext-name super)))
+          (s (id->ext-name (name-id super))))
       (raise-error 
        s
        (case kind

@@ -674,7 +674,7 @@
         (class-name (id-string (header-id header)))
         (send type-recs set-location! (loc))
         
-        (let* ((static-field-names (make-static-field-names (members-field members)))
+        (let* ((static-field-names (map build-identifier (make-static-field-names (members-field members))))
                (provides `(provide ,name ,@static-field-names)))
           
           (list `(begin ,provides

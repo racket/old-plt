@@ -679,18 +679,19 @@ void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD,
 
         GrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	::SetGWorld(theMacGrafPort, wxGetGDHandle());
+        fprintf(stderr,"setting in wxFrame::wxMacStartDrawing\n");
 
-        Rect portBounds;
-	savePortH = GetPortBounds(theMacGrafPort,&portBounds)->left;
-	savePortV = portBounds.top;
-	::SetOrigin(0, 0);
+        //Rect portBounds;
+	//savePortH = GetPortBounds(theMacGrafPort,&portBounds)->left;
+	//savePortV = portBounds.top;
+	//::SetOrigin(0, 0);
 }
 
 //-----------------------------------------------------------------------------
 void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD,
                                int savePortH, int savePortV)
 {
-	::SetOrigin(savePortH, savePortV);
+	//::SetOrigin(savePortH, savePortV);
 	::SetGWorld(oldPort, oldGD);
 }
 

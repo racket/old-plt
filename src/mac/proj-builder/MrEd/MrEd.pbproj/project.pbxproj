@@ -5,23 +5,11 @@
 	};
 	objectVersion = 32;
 	objects = {
-		00E9FFD000B278517F000001 = {
-			isa = PBXFileReference;
-			name = libgc.a;
-			path = /Users/clements/plt/src/mzscheme/libgc.a;
-			refType = 0;
-		};
 		00E9FFD100B278517F000001 = {
 			isa = PBXFileReference;
 			name = libmzscheme.a;
 			path = /Users/clements/plt/src/mzscheme/libmzscheme.a;
 			refType = 0;
-		};
-		00E9FFD200B278517F000001 = {
-			fileRef = 00E9FFD000B278517F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		00E9FFD300B278517F000001 = {
 			fileRef = 00E9FFD100B278517F000001;
@@ -1739,6 +1727,18 @@
 			settings = {
 			};
 		};
+		0DBDC8E70145316D810A736F = {
+			isa = PBXFileReference;
+			name = libmzgc.a;
+			path = /Users/clements/plt/src/mzscheme/libmzgc.a;
+			refType = 0;
+		};
+		0DBDC8E80145316D810A736F = {
+			fileRef = 0DBDC8E70145316D810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		0E7DA83F00ECA4DD7F000001 = {
 			children = (
 				00F4511600EC76317F000001,
@@ -2448,7 +2448,6 @@
 		0E7DA8C000ED23787F000001 = {
 			children = (
 				0E7DA8C100ED23FA7F000001,
-				00E9FFD000B278517F000001,
 			);
 			isa = PBXGroup;
 			name = gc;
@@ -2540,6 +2539,7 @@
 				0CBB185200FBA5A97F000001,
 				0CBB185300FBA5A97F000001,
 				0CBB185400FBA5A97F000001,
+				0DBDC8E70145316D810A736F,
 			);
 			isa = PBXGroup;
 			name = MrEd;
@@ -2710,13 +2710,13 @@
 			files = (
 				20286C3CFDCF999611CA2CEA,
 				0249A66AFF388E3911CA2CEA,
-				00E9FFD200B278517F000001,
 				00E9FFD300B278517F000001,
 				00F450F300EC676F7F000001,
 				1D95026E00F6259E7F000001,
 				0CBB185500FBA5A97F000001,
 				0CBB185600FBA5A97F000001,
 				0CBB185700FBA5A97F000001,
+				0DBDC8E80145316D810A736F,
 			);
 			isa = PBXFrameworksBuildPhase;
 			name = "Frameworks & Libraries";

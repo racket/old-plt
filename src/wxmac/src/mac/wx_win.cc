@@ -666,8 +666,9 @@ wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if (theMacGrafPort != GetQDGlobalsThePort())
+	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+        }
 
 	cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
 	if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
@@ -683,13 +684,15 @@ void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 void wxWindow::SetCurrentMacDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if (theMacGrafPort != GetQDGlobalsThePort())
+	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+        }
+        
+        cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
-		cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 	}
 }
 
@@ -697,13 +700,15 @@ void wxWindow::SetCurrentMacDC(void) // mac platform only
 void wxWindow::SetCurrentDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if (theMacGrafPort != GetQDGlobalsThePort())
+	if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+        }
+        
+        cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(this);
-		cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 		Rect theClipRect;
 		RgnHandle rgn = NULL;
 		if (cHidden) {

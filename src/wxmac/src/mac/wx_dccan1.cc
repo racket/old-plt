@@ -179,15 +179,17 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	if (!Ok()) return;
 	 
         CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-        if (theMacGrafPort != GetQDGlobalsThePort())
+        if (theMacGrafPort != GetQDGlobalsThePort()) {
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+        }
+    
+        SetOriginX = SetOriginY = 0;
+        if (canvas)
+            canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(this);
-                SetOriginX = SetOriginY = 0;
-		if (canvas)
-			canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 		wxMacSetClip();
 		cMacCurrentTool = kPenTool; /* to force setting bg, etc. */
 		wxMacSetCurrentTool(kNoTool);

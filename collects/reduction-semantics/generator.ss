@@ -44,15 +44,15 @@
             [atomic-alts (lambda (l size)
                            (values
                             (lambda (min-size max-size result-k fail-k)
-                              (if (<= min-size size max-size)
-                                  (let loop ([l l][result-k result-k])
+			      (let loop ([l l][result-k result-k][max-size max-size][fail-k fail-k])
+				(if (<= min-size size max-size)
                                     (if (null? l)
                                         (fail-k)
                                         (result-k (car l)
 						  size
-						  (lambda (s xs result-k again-fail-k)
-						    (loop (cdr l) result-k)))))
-                                  (fail-k)))
+						  (lambda (s xs result-k fail-k)
+						    (loop (cdr l) result-k xs fail-k))))
+				    (fail-k))))
                             (lambda () size)
                             (lambda () size)))]
             [to-do nts])
@@ -93,12 +93,12 @@
 				     (make-pair-gen/get-size (cons (kleene+ (car p)) (cddr p)) append)])
 			 (values
 			  (lambda (min-size max-size result-k fail-k)
-			    (let loop ([both both][result-k result-k])
+			    (let loop ([both both][result-k result-k][max-size max-size][fail-k fail-k])
 			      (both min-size max-size
 				    (lambda (v size next-both)
 				      (result-k v size
-						(lambda (ns xs result-k again-fail-k)
-						  (loop next-both result-k))))
+						(lambda (ns xs result-k fail-k)
+						  (loop next-both result-k xs fail-k))))
 				    (lambda ()
 				      (just-rest min-size max-size result-k fail-k)))))
 			  just-rest-min-size
@@ -126,26 +126,35 @@
                       (values
                        (cache-small
                         (lambda (min-size max-size result-k fail-k)
-                          (if (or (max-size . < . (this-min-size))
-                                  (min-size . > . (this-max-size)))
-                              (fail-k)
-                              (let rloop ([rest rest][result-k result-k])
-                                (rest
-				 (max 0 (- min-size (first-max-size)))
-				 (- max-size (first-min-size))
-                                 (lambda (rest rest-size next-rest)
-                                   (let floop ([first first][result-k result-k])
-                                    (first (max 0 (- min-size rest-size))
-					   (- max-size rest-size)
-					   (lambda (first first-size next-first)
-                                            (result-k 
-                                             (combiner first rest)
-                                             (+ first-size rest-size)
-                                             (lambda (ns xs result-k again-fail-k)
-                                               (floop next-first result-k))))
-                                          (lambda ()
-                                            (rloop next-rest result-k)))))
-                                 fail-k)))))
+			  (if (min-size . > . (this-max-size))
+			      (fail-k)
+			      (let rloop ([rest rest][result-k result-k][max-size max-size][fail-k fail-k][failed-size +inf.0])
+				(if (max-size . < . (this-min-size))
+				    (fail-k)
+				    (rest
+				     (max 0 (- min-size (first-max-size)))
+				     (min (sub1 failed-size) (- max-size (first-min-size)))
+				     (lambda (rest rest-size next-rest)
+				       (if (rest-size . >= . failed-size)
+					   (rloop next-rest result-k max-size fail-k failed-size)
+					   (let floop ([first first]
+						       [result-k result-k]
+						       [max-size max-size]
+						       [fail-k fail-k] 
+						       [first-fail-k (lambda ()
+								       (rloop next-rest result-k max-size fail-k rest-size))])
+					     (first (max 0 (- min-size rest-size))
+						    (- max-size rest-size)
+						    (lambda (first first-size next-first)
+						      (result-k 
+						       (combiner first rest)
+						       (+ first-size rest-size)
+						       (lambda (ns xs result-k fail-k)
+							 (floop next-first result-k xs fail-k
+								(lambda ()
+								  (rloop next-rest result-k xs fail-k failed-size))))))
+						    first-fail-k))))
+				     fail-k))))))
                        this-min-size
                        this-max-size)))]
                  [kleene+ (lambda (p)
@@ -193,25 +202,28 @@
                                             (cons get-min-size get-max-size))
                            (cache-small
                             (lambda (min-size max-size result-k fail-k)
-			      (if (or (max-size . < . (get-min-size))
-                                      (min-size . > . (get-max-size)))
+			      (if (min-size . > . (get-max-size))
                                   (fail-k)
-                                  (let loop ([l (map car gens+sizes)][result-k result-k])
-                                    (if (null? l)
-                                        (fail-k)
-                                        (let iloop ([alt-next (car l)]
-                                                    [result-k result-k])
-                                          (alt-next
-                                           (max 0 (sub1 min-size))
-                                           (sub1 max-size)
-                                           (lambda (alt a-size alt-next)
-                                             (result-k
-                                              alt
-                                              (add1 a-size)
-                                              (lambda (ns xs result-k again-fail-k)
-                                                (iloop alt-next result-k))))
-                                           (lambda ()
-                                             (loop (cdr l) result-k))))))))))))
+                                  (let loop ([l (map car gens+sizes)][result-k result-k][max-size max-size][fail-k fail-k])
+				    (if (max-size . < . (get-min-size))
+					(fail-k)
+					(if (null? l)
+					    (fail-k)
+					    (let iloop ([alt-next (car l)]
+							[result-k result-k]
+							[max-size max-size]
+							[fail-k fail-k])
+					      (alt-next
+					       (max 0 (sub1 min-size))
+					       (sub1 max-size)
+					       (lambda (alt a-size alt-next)
+						 (result-k
+						  alt
+						  (add1 a-size)
+						  (lambda (ns xs result-k fail-k)
+						    (iloop alt-next result-k xs fail-k))))
+					       (lambda ()
+						 (loop (cdr l) result-k max-size fail-k)))))))))))))
                       nts)
             (unless (null? to-do)
               (to-do-loop to-do))))

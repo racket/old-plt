@@ -1,4 +1,7 @@
 
+Version 202, August 2002
+Added workaround for Windows 9x resolution of "127.0.0.1"
+
 Version 201, July 2002
 Fixed bug in port reading (especially variants of read-string)
  and file-position that follow peeks on the port

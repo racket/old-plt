@@ -649,7 +649,7 @@
                        (crlf->lf (as-background 
                                   enable-main-frame
                                   (lambda (break-bad break-ok) 
-                                    (with-handlers ([exn:break?
+                                    (with-handlers ([void
                                                      (lambda (x) "<interrupted>")])
                                       (get-body uid)))
                                   void))

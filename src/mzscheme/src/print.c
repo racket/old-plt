@@ -1151,6 +1151,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_this_string(p, "#", 1);
       print_this_string(p, scheme_symbol_val(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
     }
+  else if (compact && SCHEME_STXP(obj))
+    {
+      print_compact(p, CPT_STX);
+      closed = print(SCHEME_STX_VAL(obj), notdisplay, 1, ht, vht, p);
+      
+    }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)
 	   && (((Scheme_Bucket_With_Flags *)obj)->flags & GLOB_HAS_REF_ID))
     {

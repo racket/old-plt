@@ -21,6 +21,7 @@
 
 /* globals */
 Scheme_Object *scheme_sys_wraps0;
+Scheme_Object *scheme_sys_wraps1;
 
 /* locals */
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -178,8 +179,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   env->num_var_exports = syntax_start;
   env->running = 1;
 
-  REGISTER_SO(scheme_sys_wraps0);
-  scheme_sys_wraps0 = scheme_sys_wraps(NULL);
+  scheme_sys_wraps(NULL);
 
   REGISTER_SO(begin_stx);
   REGISTER_SO(define_values_stx);
@@ -238,13 +238,15 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   int i;
   long phase;
 
-  if (!env || !env->genv->phase) {
-    if (scheme_sys_wraps0)
-      return scheme_sys_wraps0;
-    else
-      phase = 0;
-  } else
+  if (!env)
+    phase = 0;
+  else
     phase = env->genv->phase;
+
+  if ((phase == 0) && scheme_sys_wraps0)
+    return scheme_sys_wraps0;
+  if ((phase == 1) && scheme_sys_wraps1)
+    return scheme_sys_wraps1;
 
   rn = scheme_make_module_rename(phase);
 
@@ -255,7 +257,15 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   
   w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false);
   w = scheme_add_rename(w, rn);
-  
+  if (phase == 0) {
+    REGISTER_SO(scheme_sys_wraps0);
+    scheme_sys_wraps0 = w;
+  }
+  if (phase == 1) {
+    REGISTER_SO(scheme_sys_wraps1);
+    scheme_sys_wraps1 = w;
+  }
+
   return w;
 }
 

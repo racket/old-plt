@@ -181,8 +181,6 @@ unsigned long scheme_stack_boundary;
 # endif
 #endif
 
-#define REGISTYPE(f) f ## _type
-
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -244,16 +242,16 @@ scheme_init_eval (Scheme_Env *env)
   letmacro_symbol = scheme_intern_symbol("let-one-syntax");
   begin_symbol = scheme_intern_symbol("begin");
   
-  scheme_install_type_writer(REGISTYPE(scheme_application), write_application);
-  scheme_install_type_reader(REGISTYPE(scheme_application), read_application);
-  scheme_install_type_writer(REGISTYPE(scheme_sequence), write_sequence);
-  scheme_install_type_reader(REGISTYPE(scheme_sequence), read_sequence);
-  scheme_install_type_writer(REGISTYPE(scheme_branch), write_branch);
-  scheme_install_type_reader(REGISTYPE(scheme_branch), read_branch);
-  scheme_install_type_writer(REGISTYPE(scheme_with_cont_mark), write_with_cont_mark);
-  scheme_install_type_reader(REGISTYPE(scheme_with_cont_mark), read_with_cont_mark);
-  scheme_install_type_writer(REGISTYPE(scheme_syntax), write_syntax);
-  scheme_install_type_reader(REGISTYPE(scheme_syntax), read_syntax);
+  scheme_install_type_writer(scheme_application_type, write_application);
+  scheme_install_type_reader(scheme_application_type, read_application);
+  scheme_install_type_writer(scheme_sequence_type, write_sequence);
+  scheme_install_type_reader(scheme_sequence_type, read_sequence);
+  scheme_install_type_writer(scheme_branch_type, write_branch);
+  scheme_install_type_reader(scheme_branch_type, read_branch);
+  scheme_install_type_writer(scheme_with_cont_mark_type, write_with_cont_mark);
+  scheme_install_type_reader(scheme_with_cont_mark_type, read_with_cont_mark);
+  scheme_install_type_writer(scheme_syntax_type, write_syntax);
+  scheme_install_type_reader(scheme_syntax_type, read_syntax);
   
   scheme_install_type_writer(scheme_begin0_sequence_type, write_sequence);
   scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);

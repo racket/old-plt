@@ -437,6 +437,33 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
   }
 }
 
+static Scheme_Object *get_marks(Scheme_Object *awl)
+{
+  Scheme_Object *stack = scheme_null;
+
+  while (1) {
+    /* Skip over renames: */
+    while (!SCHEME_NULLP(awl) && !SCHEME_NUMBERP(SCHEME_CAR(awl)))
+      awl = SCHEME_CDR(awl);
+
+    if (SCHEME_NULLP(awl))
+      break;
+
+    stack = scheme_make_pair(SCHEME_CAR(awl), stack);
+
+    awl = SCHEME_CDR(awl);
+  }
+
+  /* Reverse: */
+  awl = scheme_null;
+  while (!SCHEME_NULLP(stack)) {
+    awl = scheme_make_pair(SCHEME_CAR(stack), awl);
+    stack = SCHEME_CDR(stack);
+  }
+
+  return awl;
+}
+
 static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **home)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
@@ -814,6 +841,102 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
 }
 
 /*========================================================================*/
+/*                           wraps->datum                                */
+/*========================================================================*/
+
+static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs)
+{
+  Scheme_Object *stack, *a, *grenames, *erenames, *sys0, *ksym;
+
+  if (subs) {
+    if (SCHEME_FALSEP(w))
+      return w;
+    return scheme_make_pair(wraps_to_datum(SCHEME_CAR(w), 0),
+			    wraps_to_datum(SCHEME_CDR(w), 0));
+  }
+
+  stack = scheme_null;
+  
+  grenames = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV))->rename;
+  erenames = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV))->exp_env->rename;
+  sys0 = scheme_sys_wraps(NULL);
+  sys0 = SCHEME_CAR(((Scheme_Stx *)sys0)->wraps);
+  ksym = scheme_intern_symbol(".kernel");
+
+  while (!SCHEME_NULLP(w)) {
+    a = SCHEME_CAR(w);
+    if (SCHEME_NUMBERP(a)) {
+      stack = scheme_make_pair(a, stack);
+    } else if (SCHEME_VECTORP(a)) {
+      Scheme_Object *other_env, *envname, *vec, *m;
+      int i, c;
+      
+      envname = SCHEME_VEC_ELS(a)[0];
+
+      c = SCHEME_VEC_SIZE(a);
+      c = (c - 1) >> 1;
+
+      for (i = 0; i < c; i++) {
+	other_env = SCHEME_VEC_ELS(a)[1+c+i];
+	if (SCHEME_FALSEP(other_env)) {
+	  other_env = resolve_env(SCHEME_VEC_ELS(a)[1+i], 0, NULL);
+	  SCHEME_VEC_ELS(a)[1+c+i] = other_env;
+	}
+      }
+      
+      /* We only need the names and marks of the stxes. */
+      vec = scheme_make_vector(1 + (3 * c), NULL);
+      SCHEME_VEC_ELS(vec)[0] = envname;
+      for (i = 0; i < c; i++) {
+	SCHEME_VEC_ELS(vec)[1+i] = SCHEME_STX_VAL(SCHEME_VEC_ELS(a)[1+i]);
+	m = get_marks(((Scheme_Stx *)(SCHEME_VEC_ELS(a)[1+i]))->wraps);
+	SCHEME_VEC_ELS(vec)[1+c+i] = m;
+	SCHEME_VEC_ELS(vec)[1+(2 * c)+i] = SCHEME_VEC_ELS(a)[1+c+i];
+      }
+
+      stack = scheme_make_pair(vec, stack);
+    } else if (SCHEME_HASHTP(a)) {
+      if (SAME_OBJ(a, grenames)) {
+	stack = scheme_make_pair(scheme_true, stack);
+      } else if (SAME_OBJ(a, erenames)) {
+	stack = scheme_make_pair(scheme_false, stack);
+      } else if (SAME_OBJ(a, sys0)) {
+	stack = scheme_make_pair(scheme_void, stack);
+      } else {
+	/* Convert hash table to list: */
+	int i;
+	Scheme_Bucket **bs, *b;
+	Scheme_Object *l = scheme_null, *v;
+	
+	bs = ((Scheme_Hash_Table *)a)->buckets;
+	for (i = ((Scheme_Hash_Table *)a)->size; i--; ) {
+	  b = bs[i];
+	  if (b && b->val) {
+	    v = (Scheme_Object *)b->val;
+	    if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CAR(v), ksym))
+	      l = scheme_make_pair((Scheme_Object *)b->key, l);
+	    else
+	      l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, v), 
+				   l);
+	  }
+	}
+	
+	stack = scheme_make_pair(l, stack);
+      }
+    } else {
+      /* Extract module name (needed?) for shift: */
+      a = scheme_box(scheme_make_pair(SCHEME_CAR(a),
+				      ((Scheme_Env *)SCHEME_CDR(a))->modname));
+      stack = scheme_make_pair(a, stack);
+    }
+
+    w = SCHEME_CDR(w);
+  }
+
+  return stack;
+}
+
+/*========================================================================*/
 /*                           syntax->datum                                */
 /*========================================================================*/
 
@@ -875,7 +998,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   } else 
     ph = NULL;
 
-  if (with_marks) {
+  if (with_marks == 1) {
     /* Propagate marks: */
     scheme_stx_content((Scheme_Object *)stx);
   }
@@ -920,10 +1043,13 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     }
     
     result = r;
-  } else if (with_marks && SCHEME_SYMBOLP(v)) {
+  } else if ((with_marks == 1) && SCHEME_SYMBOLP(v)) {
     result = scheme_make_pair(v, stx->wraps);
   } else
     result = v;
+
+  if (with_marks > 1)
+    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, HAS_SUBSTX(stx->val)));
 
   if (ph)
     SCHEME_PTR_VAL(ph) = result;
@@ -1162,7 +1288,7 @@ static Scheme_Object *syntax_to_datum_wraps(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax->datum/wraps", "syntax", 0, argc, argv);
     
-  return scheme_syntax_to_datum(argv[0], 1);
+  return scheme_syntax_to_datum(argv[0], 2);
 }
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)

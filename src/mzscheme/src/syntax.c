@@ -2591,28 +2591,24 @@ void scheme_defmacro_parse(Scheme_Object *form,
 
 static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)
 {
-  Scheme_Object *name = SCHEME_CAR(SCHEME_CAR(data));
-  Scheme_Object *val, *orig_val = SCHEME_CDR(data);
+  Scheme_Object *name = SCHEME_CAR(data);
+  Scheme_Object *val = SCHEME_CDR(data);
 
   scheme_prepare_exp_env(info);
-  val = scheme_link_expr(orig_val, info->exp_env);
+  val = scheme_link_expr(val, info->exp_env);
   
-  if (SAME_OBJ(val, orig_val))
-    return data;
-  else
-    return scheme_make_syntax_linked(DEFINE_SYNTAX_EXPD, 
-				     cons(cons(name, (Scheme_Object *)info), val));
+  return scheme_make_syntax_linked(DEFINE_SYNTAX_EXPD, 
+				   cons(cons(name, (Scheme_Object *)info), val));
 }
 
 static Scheme_Object *defmacro_resolve(Scheme_Object *data, Resolve_Info *info)
 {
-  Scheme_Object *name = SCHEME_CAR(SCHEME_CAR(data));
-  Scheme_Object *env = SCHEME_CDR(SCHEME_CAR(data));
+  Scheme_Object *name = SCHEME_CAR(data);
   Scheme_Object *val = SCHEME_CDR(data);
 
   val = scheme_resolve_expr(val, info);
 
-  return scheme_make_syntax_resolved(DEFINE_SYNTAX_EXPD, cons(cons(name, env), val));
+  return scheme_make_syntax_resolved(DEFINE_SYNTAX_EXPD, cons(name, val));
 }
 
 static Scheme_Object *
@@ -2632,11 +2628,9 @@ defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
   scheme_prepare_exp_env(env->genv);
 
   val = scheme_compile_expr(code, env->genv->exp_env->init, rec, drec);
-  name = (Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_SYM(name),
-						       env->genv);
+  name = SCHEME_STX_SYM(name);
 
-  return scheme_make_syntax_compiled(DEFINE_SYNTAX_EXPD, 
-				     cons(cons(name, (Scheme_Object *)env->genv), val));
+  return scheme_make_syntax_compiled(DEFINE_SYNTAX_EXPD, cons(name, val));
 }
 
 static Scheme_Object *

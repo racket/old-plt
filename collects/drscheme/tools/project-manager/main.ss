@@ -2,6 +2,7 @@
 ;; - track files in project.
 ;;   - when project is opened check already open files.
 ;;   - after execute, grab files that were loaded (?)
+;; - 
 
 (unit/sig ()
   (import mred^
@@ -110,9 +111,11 @@
       (frame:reorder-menus this)))
 
   (define project-frames null)
-  
+
+
+  ; ??? infoness goes away?
   (define project-frame%
-    (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
+    (class/d (drscheme:frame:basics-mixin frame:text-info%) (filename)
       ((inherit get-area-container get-menu-bar)
        (override file-menu:save file-menu:save-as
 		 can-close?
@@ -385,7 +388,7 @@
 		   (loop (cdr frames))]
 		  [(cancel) #f]))]))))
 
-      '(define (execute-project)
+      (define (execute-project)
 	(when (offer-to-save-files)
           (send rep reset-console)
           (parameterize ([current-eventspace (ivar rep user-eventspace)])
@@ -418,7 +421,7 @@
                     [else (apply require-library/proc file)]))
                 files))))))
       
-      (define (execute-project)
+      '(define (execute-project)
 	(when (offer-to-save-files)
 	  (shutdown-project)
 	  (set! project-custodian (make-custodian))
@@ -887,6 +890,23 @@
                     loaded-files-shown?)
           (show/hide-loaded-files)))
 
+      (define rep-shown? #t)
+      (define (update-rep-shown)
+        (send rep-menu-item set-label
+	      (if rep-shown?
+		  "Hide Interactions"
+		  "Show Interactions"))
+	(send rep-outer-panel change-children
+	      (lambda (l)
+		(if rep-shown?
+		    (list rep-panel)
+		    null)))
+	(send rep-outer-panel stretchable-height rep-shown?))
+      (define (show/hide-rep)
+	(set! rep-shown? (not rep-shown?))
+        (is-changed)
+        (update-rep-shown))
+      
       (define (hierlist-item-mixin class%)
 	(class/d class% args
 	  ((public set-dir get-dir set-file get-file))
@@ -1024,7 +1044,9 @@
         (make-object menu-item% "Hide Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
       (define loaded-files-menu-item
         (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
-
+      (define rep-menu-item
+        (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
+      
       (define project-menu (make-object menu% "Project" mb))
       (add-common-project-menu-items project-menu)
       (make-object separator-menu-item% project-menu)
@@ -1034,9 +1056,10 @@
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))
-      (define top-panel (make-object vertical-panel% (get-area-container)))
-      ;(define bottom-panel (make-object vertical-panel% (get-area-container)))
-        
+      (define top-panel (make-object horizontal-panel% (get-area-container)))
+      (define rep-outer-panel (make-object vertical-panel% (get-area-container)))
+      (define rep-panel (make-object horizontal-panel% rep-outer-panel))
+      
       (define to-load-files-outer-panel (make-object vertical-panel% top-panel))
       (define to-load-files-panel (make-object horizontal-panel% to-load-files-outer-panel '(border)))
       (define files-list-box (make-object list-box% #f null to-load-files-panel
@@ -1090,8 +1113,8 @@
           (define (not-running) (void))
           (define (get-directory) (current-directory))
           (super-init)))
-      ;(define rep (make-object drscheme:rep:text% (make-object context%)))
-      ;(define rep-canvas (make-object canvas:wide-snip% bottom-panel rep))
+      (define rep (make-object drscheme:rep:text% (make-object context%)))
+      (define rep-canvas (make-object canvas:wide-snip% rep-panel rep))
 
       (frame:reorder-menus this)
 

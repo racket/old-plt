@@ -22,7 +22,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "wx.h"
+#include "gc.h"
+#include "Net.h"
 
 #include <pwd.h>
 #include <string.h>
@@ -34,7 +35,7 @@
 # include <netdb.h>
 #endif
 
-Bool wxGetHostName(char *buf, int sz)
+int wxGetHostName(char *buf, int sz)
 {
 #ifndef WX_USE_GETHOSTBYNAME
   return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
@@ -42,52 +43,52 @@ Bool wxGetHostName(char *buf, int sz)
   char name[255];
   // Get hostname
   if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
-    return FALSE;
+    return 0;
   strncpy(buf, name, sz-1);
   buf[sz-1] = 0;
-  return TRUE;
+  return 1;
 #endif
 }
 
-Bool wxGetEmailAddress(char *address, int maxSize)
+int wxGetEmailAddress(char *address, int maxSize)
 {
   char host[65];
   char user[65];
   char tmp[130];
 
-  if (wxGetHostName(host, 64) == FALSE)
-    return FALSE;
-  if (wxGetUserId(user, 64) == FALSE)
-    return FALSE;
+  if (wxGetHostName(host, 64) == 0)
+    return 0;
+  if (wxGetUserId(user, 64) == 0)
+    return 0;
 
   strcpy(tmp, user);
   strcat(tmp, "@");
   strcat(tmp, host);
   strncpy(address, tmp, maxSize - 1);
   address[maxSize-1] = '\0';
-  return TRUE;
+  return 1;
 }
 
-Bool wxGetUserId(char *buf, int sz)
+int wxGetUserId(char *buf, int sz)
 {
   struct passwd *who;
   
   if ((who = getpwuid(getuid ())) != NULL) {
     strncpy (buf, who->pw_name, sz-1);
     buf[sz - 1]= 0;
-    return TRUE;
+    return 1;
   }
-  return FALSE;
+  return 0;
 }
 
-Bool wxGetUserName(char *buf, int sz)
+int wxGetUserName(char *buf, int sz)
 {
   struct passwd *who;
   
   if ((who = getpwuid (getuid ())) != NULL) {
     strncpy (buf, who->pw_gecos, sz - 1);
     buf[sz - 1]= 0;
-    return TRUE;
+    return 1;
   }
-  return FALSE;
+  return 0;
 }

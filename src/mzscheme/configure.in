@@ -195,6 +195,10 @@ else
   WBUILD="sh \$(PLTSRCDIR)/wxxt/src/XWidgets/dummy.wbuild"
 fi
 
+if test "$CC_FOR_BUILD" = "" ; then 
+  CC_FOR_BUILD="$CC"
+fi
+
 ############## platform tests ################
 
 if test -x "/bin/uname" ; then
@@ -438,7 +442,20 @@ if test "${enable_mred}" = "yes" ; then
   AC_MSG_RESULT($xkbavail)
 fi
 
+case $OS in
+  Darwin)
+    if test `basename "$CC"` = "mwccppc"; then
+      MROPTIONS="$MROPTIONS -include carbon-precomp"
+    fi
+    ;;
+  *)
+    ;;
+esac
+
+<<<<<<< configure.in
+=======
 fi
+>>>>>>> 1.57
 ############## drop optimization flags ################
 
 if test "${enable_noopt}" = "yes" ; then
@@ -514,6 +531,7 @@ AC_SUBST(RANLIB)
 AC_SUBST(AR)
 AC_SUBST(ARFLAGS)
 AC_SUBST(WBUILD)
+AC_SUBST(CC_FOR_BUILD)
 
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)

@@ -243,68 +243,68 @@ Misc/Timer.o: $(srcdir)/Misc/Timer.cc
 	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Misc/Timer.o $(srcdir)/Misc/Timer.cc
 
 Utilities/Application.o: $(srcdir)/Utilities/Application.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Application.o $(srcdir)/Utilities/Application.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_C_FLAGS) -o Utilities/Application.o $(srcdir)/Utilities/Application.cc
 Utilities/Assert.o: $(srcdir)/Utilities/Assert.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Assert.o $(srcdir)/Utilities/Assert.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_C_FLAGS) -o Utilities/Assert.o $(srcdir)/Utilities/Assert.cc
 Utilities/BusyCursor.o: $(srcdir)/Utilities/BusyCursor.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/BusyCursor.o $(srcdir)/Utilities/BusyCursor.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/BusyCursor.o $(srcdir)/Utilities/BusyCursor.cc
 Utilities/Date+Time.o: $(srcdir)/Utilities/Date+Time.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Date+Time.o $(srcdir)/Utilities/Date+Time.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Date+Time.o $(srcdir)/Utilities/Date+Time.cc
 Utilities/Directory.o: $(srcdir)/Utilities/Directory.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Directory.o $(srcdir)/Utilities/Directory.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Directory.o $(srcdir)/Utilities/Directory.cc
 Utilities/Error.o: $(srcdir)/Utilities/Error.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Error.o $(srcdir)/Utilities/Error.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Error.o $(srcdir)/Utilities/Error.cc
 Utilities/GDI.o: $(srcdir)/Utilities/GDI.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/GDI.o $(srcdir)/Utilities/GDI.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/GDI.o $(srcdir)/Utilities/GDI.cc
 Utilities/Home.o: $(srcdir)/Utilities/Home.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Home.o $(srcdir)/Utilities/Home.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Home.o $(srcdir)/Utilities/Home.cc
 Utilities/Misc.o: $(srcdir)/Utilities/Misc.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Misc.o $(srcdir)/Utilities/Misc.cc
-Utilities/Net.o: $(srcdir)/Utilities/Net.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Net.o $(srcdir)/Utilities/Net.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Misc.o $(srcdir)/Utilities/Misc.cc
+Utilities/Net.o: $(srcdir)/Utilities/Net.c
+	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Net.o $(srcdir)/Utilities/Net.c
 Utilities/Path.o: $(srcdir)/Utilities/Path.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Path.o $(srcdir)/Utilities/Path.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Path.o $(srcdir)/Utilities/Path.cc
 Utilities/Resources.o: $(srcdir)/Utilities/Resources.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/Resources.o $(srcdir)/Utilities/Resources.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/Resources.o $(srcdir)/Utilities/Resources.cc
 Utilities/String.o: $(srcdir)/Utilities/String.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/String.o $(srcdir)/Utilities/String.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/String.o $(srcdir)/Utilities/String.cc
 Utilities/TempFile.o: $(srcdir)/Utilities/TempFile.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Utilities/TempFile.o $(srcdir)/Utilities/TempFile.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Utilities/TempFile.o $(srcdir)/Utilities/TempFile.cc
 
 Windows/Button.o: $(srcdir)/Windows/Button.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Button.o $(srcdir)/Windows/Button.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Button.o $(srcdir)/Windows/Button.cc
 Windows/Canvas.o: $(srcdir)/Windows/Canvas.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Canvas.o $(srcdir)/Windows/Canvas.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Canvas.o $(srcdir)/Windows/Canvas.cc
 Windows/CheckBox.o: $(srcdir)/Windows/CheckBox.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/CheckBox.o $(srcdir)/Windows/CheckBox.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/CheckBox.o $(srcdir)/Windows/CheckBox.cc
 Windows/Choice.o: $(srcdir)/Windows/Choice.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Choice.o $(srcdir)/Windows/Choice.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Choice.o $(srcdir)/Windows/Choice.cc
 Windows/DialogBox.o: $(srcdir)/Windows/DialogBox.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/DialogBox.o $(srcdir)/Windows/DialogBox.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/DialogBox.o $(srcdir)/Windows/DialogBox.cc
 Windows/Frame.o: $(srcdir)/Windows/Frame.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Frame.o $(srcdir)/Windows/Frame.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Frame.o $(srcdir)/Windows/Frame.cc
 Windows/Gauge.o: $(srcdir)/Windows/Gauge.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Gauge.o $(srcdir)/Windows/Gauge.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Gauge.o $(srcdir)/Windows/Gauge.cc
 Windows/Item.o: $(srcdir)/Windows/Item.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Item.o $(srcdir)/Windows/Item.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Item.o $(srcdir)/Windows/Item.cc
 Windows/Layout.o: $(srcdir)/Windows/Layout.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Layout.o $(srcdir)/Windows/Layout.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Layout.o $(srcdir)/Windows/Layout.cc
 Windows/ListBox.o: $(srcdir)/Windows/ListBox.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/ListBox.o $(srcdir)/Windows/ListBox.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/ListBox.o $(srcdir)/Windows/ListBox.cc
 Windows/Menu.o: $(srcdir)/Windows/Menu.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Menu.o $(srcdir)/Windows/Menu.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Menu.o $(srcdir)/Windows/Menu.cc
 Windows/MenuBar.o: $(srcdir)/Windows/MenuBar.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/MenuBar.o $(srcdir)/Windows/MenuBar.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/MenuBar.o $(srcdir)/Windows/MenuBar.cc
 Windows/Message.o: $(srcdir)/Windows/Message.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Message.o $(srcdir)/Windows/Message.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Message.o $(srcdir)/Windows/Message.cc
 Windows/Panel.o: $(srcdir)/Windows/Panel.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Panel.o $(srcdir)/Windows/Panel.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Panel.o $(srcdir)/Windows/Panel.cc
 Windows/RadioBox.o: $(srcdir)/Windows/RadioBox.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/RadioBox.o $(srcdir)/Windows/RadioBox.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/RadioBox.o $(srcdir)/Windows/RadioBox.cc
 Windows/Slider.o: $(srcdir)/Windows/Slider.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Slider.o $(srcdir)/Windows/Slider.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Slider.o $(srcdir)/Windows/Slider.cc
 Windows/Window.o: $(srcdir)/Windows/Window.cc
-	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o Windows/Window.o $(srcdir)/Windows/Window.cc
+	$(CXX) -c $(CXXFLAGS) $(_WX_CXX_FLAGS) -o Windows/Window.o $(srcdir)/Windows/Window.cc
 
 XWidgets/wxAllocColor.o: $(srcdir)/XWidgets/wxAllocColor.c
 	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/wxAllocColor.o $(srcdir)/XWidgets/wxAllocColor.c
@@ -569,7 +569,7 @@ Utilities/Misc.o:\
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
 
 Utilities/Net.o:\
-	$(srcdir)/Utilities/Net.cc \
+	$(srcdir)/Utilities/Net.c \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h 
 
 Utilities/Path.o:\

@@ -1,4 +1,3 @@
-
 Check Syntax alpha-renaming does not work with `define-struct'.
 
 The alpha-renaming feature of Check Syntax may miss some
@@ -14,3 +13,7 @@ The yellow execute warning in the interactions window does not go away
   if the user undoes all changes to the defintions window.
 
 Backup files don't preserve file permissions.
+
+For a more complete listing of known bugs, see our
+<a href="http://www.cs.rice.edu/CS/PLT/Bugs/query-pr.shtml">
+online bug report database</a>

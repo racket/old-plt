@@ -137,14 +137,14 @@
     (struct :-form (exp type))
     (struct type:-form (type attrs))
     (struct st:control-form (para val))
-    (struct include-unit-form (file cd kind))
+    (struct reference-unit-form (file cd kind signed?))
     (struct define-type-form (sym type))
     (struct define-constructor-form (sym modes))
     create-poly-form
     create-:-form
     create-type:-form
     create-st:control-form
-    create-include-unit-form
+    create-reference-unit-form
     create-define-type-form
     create-define-constructor-form))
 

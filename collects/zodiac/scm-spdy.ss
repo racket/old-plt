@@ -8,7 +8,7 @@
   (define-struct (:-form struct:parsed) (exp type))
   (define-struct (type:-form struct:parsed) (type attrs))
   (define-struct (st:control-form struct:parsed) (para val))
-  (define-struct (include-unit-form struct:parsed) (file cd kind))
+  (define-struct (reference-unit-form struct:parsed) (file cd kind signed?))
   (define-struct (define-type-form struct:parsed) (sym type))
   (define-struct (define-constructor-form struct:parsed) (sym modes))
 
@@ -40,12 +40,12 @@
 	(make-empty-back-box)
 	para val)))
 
-  (define create-include-unit-form
-    (lambda (file cd kind source)
-      (make-include-unit-form (z:zodiac-origin source)
+  (define create-reference-unit-form
+    (lambda (file cd kind signed? source)
+      (make-reference-unit-form (z:zodiac-origin source)
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
-	file cd kind)))
+	file cd kind signed?)))
 
   (define create-define-type-form
     (lambda (sym type source)
@@ -183,9 +183,9 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (add-micro-form 'include-unit mrspidey-vocabulary
-    (let* ((kwd '(include-unit))
-	    (in-pattern '(include-unit file))
+  (add-micro-form 'reference-unit mrspidey-vocabulary
+    (let* ((kwd '(reference-unit))
+	    (in-pattern '(reference-unit file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -193,15 +193,35 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((file (pat:pexpand 'file p-env kwd)))
-		(create-include-unit-form
+		(create-reference-unit-form
 		  file
 		  (current-directory)
 		  'exp
+		  #f
 		  expr))))
 	  (else
-	    (static-error expr "Malformed include-unit"))))))
+	    (static-error expr "Malformed reference-unit"))))))
 
-  (add-micro-form 'include-unit-imports mrspidey-vocabulary
+  (add-micro-form 'reference-unit/sig mrspidey-vocabulary
+    (let* ((kwd '(reference-unit/sig))
+	    (in-pattern '(reference-unit/sig file))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((file (pat:pexpand 'file p-env kwd)))
+		(create-reference-unit-form
+		  file
+		  (current-directory)
+		  'exp
+		  #t
+		  expr))))
+	  (else
+	    (static-error expr "Malformed reference-unit"))))))
+
+'  (add-micro-form 'include-unit-imports mrspidey-vocabulary
     (let* ((kwd '(include-unit-imports))
 	    (in-pattern '(include-unit-imports file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -238,13 +258,16 @@
       `(st:control ,(st:control-form-para expr)
 	 ,(st:control-form-val expr))))
 
-  (extend-parsed->raw include-unit-form?
+  (extend-parsed->raw reference-unit-form?
     (lambda (expr p->r)
-      (case (include-unit-form-kind expr)
-	((exp) `(include-unit ,(sexp->raw (include-unit-form-file expr))))
-	((imp) `(include-unit-imports
-		  ,(sexp->raw (include-unit-form-file expr))))
-	(else (error 'include-unit-form "Invalid kind")))))
+      (case (reference-unit-form-kind expr)
+	((exp) `((if (reference-unit-form-signed? expr)
+		   'reference-unit/sig
+		   'reference-unit)
+		  ,(sexp->raw (reference-unit-form-file expr))))
+	((imp) `(reference-unit-imports
+		  ,(sexp->raw (reference-unit-form-file expr))))
+	(else (internal-error 'reference-unit-form "Invalid kind")))))
 
   (extend-parsed->raw define-type-form?
     (lambda (expr p->r)

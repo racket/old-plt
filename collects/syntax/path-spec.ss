@@ -16,7 +16,7 @@
 		   "bad pathname string"
 		   stx
 		   fn))
-		s)]
+		(string->path s))]
 	     [(-build-path elem ...)
 	      (module-or-top-identifier=? #'-build-path build-path-stx)
 	      (let ([l (syntax-object->datum (syntax (elem ...)))])

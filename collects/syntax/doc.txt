@@ -268,7 +268,7 @@ currently exist).
   available.
 
 > (resolve-module-path module-path-v rel-to-path-string/thunk/#f) -
-  resolves a module path to filename string. The module path is
+  resolves a module path to filename path. The module path is
   resolved relative to `rel-to-path-string/thunk/#f' if it is a string
   (a filename path), to the directory result of calling the thunk if
   it is a thunk, or to the current directory otherwise.
@@ -416,8 +416,7 @@ _path-spec.ss_: resolves `include'-like static path specification
 > (resolve-path-spec path-spec-stx source-stx expr-stx build-path-stx)
 
 Resolves the syntactic path specification `path-spec-stx' as for
-MzLib's `include'. The result is a string that represents a complete
-path.
+MzLib's `include'. The result is a complete path.
 
 The `source-stx' specifies a syntax object whose source-location
 information determines relative-path resolution.  The `expr-stx' is

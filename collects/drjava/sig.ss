@@ -9,10 +9,11 @@
 (define-signature gjc^ ((open gjc-core^) (open tokens^)))
 
 (define-signature queue^
-  (enq! deq! dupq quick-dupq mtq mtq? last-q first-q q-length))
+  (enq! deq! dupq quick-dupq mtq mtq? last-q first-q q-length q-ref))
 
 (define-signature split^
-  (compile scan-classes compile-classes compile-class (struct tokens (name q))))
+  (compile scan-classes compile-classes compile-class (struct tokens (name q))
+           (struct split-error (message pos))))
 
 (define-signature scanner^
   (new-scanner enq-token! next-token current-token string->scanner (struct scanned (token pos lastpos name radix str))))

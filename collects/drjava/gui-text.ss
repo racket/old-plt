@@ -2,7 +2,6 @@
 (unit/sig gui-text^
   (import mred^ repl^ jvm^ scanner^ split^ gjc^ goober^ mzlib:file^)
   
-  (define fixed (make-object style-delta% 'change-family 'modern))
   ;; This doesn't work for argument lists that span lines,
   ;; nor does it work when } are not at the front of the line.
   
@@ -116,8 +115,9 @@
                (unless (<= n 0)
                  (insert #\space start)
                  (loop (sub1 n))))))))
-      (sequence (super-init)
-                (send this change-style fixed 'start 'end))))
+      (sequence
+        (super-init)
+        (fix-style this))))
   
   (define banner "Welcome to DrJava")
   (define prompt (format "~n> "))
@@ -292,7 +292,7 @@
                    (super-on-default-char event)))))))
       (sequence
         (super-init)
-        (send this change-style fixed 'start 'end)
+        (fix-style this)
         (let ([keymap (make-object keymap%)]
               [prev-name "hist-prev"]
               [next-name "hist-next"])
@@ -332,7 +332,10 @@
             (lambda (thunk)
               (send goobers reset)
               (fluid-let ([current-goobers goobers])
-                (thunk))
+                (with-handlers ([split-error?
+                                 (lambda (err)
+                                   (send current-goobers error (split-error-pos err) (split-error-message err)))])
+                  (thunk)))
               (send goobers appear))]
            [execute-button
             (make-button "execute.bmp" "Compile"
@@ -395,6 +398,15 @@
       (if current-goobers
 	  (send current-goobers warning pos str)
 	  (printf "Warning: ~a : ~a ~n" pos str))))
+
+  ;; fix-style : text% -> Void
+  (define fix-style
+    (let ([fixed (make-object style-delta% 'change-family 'modern)])
+      (lambda (this)
+        (let ([style-list (send this get-style-list)])
+          (send style-list replace-named-style "Standard"
+                (send style-list find-or-create-style
+                      (send style-list basic-style) fixed))))))
   
   (define directories-to-delete null)
   

@@ -61,4 +61,8 @@
   (define (q-length q)
     (if (mtq? q)
 	0
-	(length (car q)))))
+	(length (car q))))
+  
+  ;; q-ref : Queue(el) Nat -> el
+  (define (q-ref q index)
+    (list-ref (car q) index)))

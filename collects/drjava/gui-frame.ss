@@ -15,7 +15,7 @@
         (file-menu:new
          (lambda (item evt) (handler:edit-file #f (lambda _ (new-document #f)))))
         (file-menu:between-print-and-close void))
-      (sequence (super-init (or filename "Untitled")))
+      (sequence (super-init filename))
       (private
         (can% (get-canvas%))
         (repl% (repl-text-mixin base-editor%))

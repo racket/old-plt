@@ -2,6 +2,9 @@
 (unit/sig split^
   (import jvm^ queue^ gjc^ scanner^ mzlib:function^ mzlib:file^)
   
+  ;; split-error : String x Fixnum
+  (define-struct split-error (message pos))
+  
   (define fin-class (jfind-class "java/io/FileInputStream"))
   (define glist-class (gjc-class "util/List"))
   (define hscan-class (jfind-class "gjc/vhack/parser/Scanner"))
@@ -79,6 +82,9 @@
       (let loop ()
 	(let ([tok (enq-token! scan q)])
 	  (next-token scan)
+          (when (= jEOF tok)
+            (raise (make-split-error "extra stuff outside of class"
+                                     (scanned-pos (q-ref q (q-length imports))))))
 	  (if (= tok jIDENTIFIER)
 	      (make-tokens (build-path package-name (string-append (scanned->string (last-q q)) ".java"))
 			   (match-brackets scan
@@ -93,7 +99,8 @@
     (let loop ()
       (let ([tok (current-token scan)])
 	(when (= jEOF tok)
-	  (error 'match-brackets "EOF reached before any brackets."))
+	  (raise (make-split-error "missing {...}'s"
+                                   (scanned-pos (last-q q)))))
 	(unless (open? (enq-token! scan q))
 	  (next-token scan)
 	  (loop))))
@@ -106,8 +113,10 @@
 	    [(close? tok)
 	     (if (match? tok (car stack))
 		 (loop (cdr stack))
-		 (error 'match-brackets "brackets don't match: ~a ~a" (car stack) tok))]
-	    [(= jEOF tok) (error 'match-brakcets "EOF reached, but brackets don't match")]
+		 (raise (make-split-error "closing bracket doesn't match"
+                                          (scanned-pos (last-q q)))))]
+	    [(= jEOF tok) (raise (make-split-error "missing close bracket"
+                                                   (scanned-pos (last-q q))))]
 	    [else (loop stack)]))))
     (next-token scan)
     q)
@@ -116,9 +125,12 @@
   (define (skip-semi scan q)
     (next-token scan)
     (let loop ()
-      (unless (= (enq-token! scan q) jSEMI)
-	(next-token scan)
-	(loop)))
+      (let ([token (enq-token! scan q)])
+        (when (= token jEOF)
+          (raise (make-split-error "missing semicolon" (scanned-pos (last-q q)))))
+        (unless (= token jSEMI)
+          (next-token scan)
+          (loop))))
     (next-token scan))
   
   ;; scanned->string : Scanned -> String

@@ -746,6 +746,7 @@
                     [tl-require-for-syntaxes null]
                     [tl-tops null]
                     [tl-referenced-macros null]
+                    [tl-bound-in-sources null]
                     [users-namespace #f]
                     [err-termination? #f])
                 (send (get-interactions-text)
@@ -774,10 +775,10 @@
                                           new-requires
                                           new-require-for-syntaxes
                                           new-referenced-macros
-                                          bound-in-sources
+                                          new-bound-in-sources
                                           has-module?)
                                          (annotate-basic sexp run-in-expansion-thread)])
-                             (annotate-bound-in-sources bound-in-sources)
+
                              (if has-module?
                                  (annotate-complete users-namespace
                                                     new-binders
@@ -785,13 +786,15 @@
                                                     new-tops
                                                     new-requires
                                                     new-require-for-syntaxes
-                                                    new-referenced-macros)
+                                                    new-referenced-macros
+                                                    new-bound-in-sources)
                                  (begin
                                    (set! tl-binders (append new-binders tl-binders))
                                    (set! tl-varrefs (append new-varrefs tl-varrefs))
                                    (set! tl-requires (append new-requires tl-requires))
                                    (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
                                    (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+                                   (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
                                    (set! tl-tops (append new-tops tl-tops)))))
                            (loop)])))
                 (unless err-termination? 
@@ -801,7 +804,8 @@
                                      tl-tops
                                      tl-requires
                                      tl-require-for-syntaxes
-                                     tl-referenced-macros)))
+                                     tl-referenced-macros
+                                     tl-bound-in-sources)))
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
 
@@ -865,6 +869,7 @@
       ;;                        (listof syntax)
       ;;                        (listof syntax)
       ;;                        (listof (cons boolean syntax[original]))
+      ;;                        (listof (cons syntax[original] syntax[original]))
       ;;                     -> void
       ;;
       ;; annotates the non-local portions of a complete program.
@@ -880,14 +885,16 @@
                                  tops
                                  requires
                                  require-for-syntaxes
-                                 referenced-macros)
+                                 referenced-macros
+                                 bound-in-sources)
         (let-values ([(non-require-varrefs non-require-referenced-macros)
                       (annotate-require-vars 
                        varrefs
                        requires
                        require-for-syntaxes
                        referenced-macros)])
-          (annotate-variables users-namespace binders non-require-varrefs non-require-referenced-macros tops)))
+          (annotate-variables users-namespace binders non-require-varrefs non-require-referenced-macros tops))
+        (annotate-bound-in-sources bound-in-sources))
 
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
       ;;                            (listof syntax)

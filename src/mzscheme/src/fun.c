@@ -2412,13 +2412,14 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       
       wday = mzDOW(localTime);
       
-      yday = month_offsets[localTime.month - 1] + localTime.day;
+      yday = month_offsets[localTime.month - 1] + localTime.day - 1; 
       /* If month > 2, is it a leap-year? */
       if (localTime.month > 2) {
 #ifdef USE_MACTIME
         unsigned long ttime;
         DateTimeRec tester;
 
+		tester.year = localTime.year;
         tester.hour = tester.minute = 0;
         tester.second = 1;
         tester.month = 1;

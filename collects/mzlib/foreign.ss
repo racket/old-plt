@@ -163,7 +163,7 @@
         (reverse! r)
         (let ([x (f (car l))]) (loop (cdr l) (if x (cons x r) r))))))
   (define id=? module-or-top-identifier=?)
-  (syntax-case* stx (->) id=?
+  (syntax-case stx ()
     [(_ x ...)
      (let ([xs (map (lambda (x)
                       (syntax-case* x (-> ::) id=? [:: '::] [-> '->] [_  x]))

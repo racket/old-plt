@@ -394,7 +394,7 @@
 		    (when (and (null? (send (ivar project group) get-frames))
 			       (not (mred:get-preference 'drscheme:project-visible?)))
 		      (mred:exit))
-		    #t)))]
+		    #f)))]
 	  
 	  [running? #t] ; For project to know the console is OK
 	  
@@ -518,6 +518,7 @@
 	  (mred:add-preference-callback
 	   'drscheme:library-file
 	   (lambda (p v)
+	     (printf "frame callback; v:~a~n"v)
 	     (set! scheme-only-library-msg
 		   (make-library-name-msg scheme-only-panel v))
 	     (set! library-msg (make-library-name-msg top-panel v))

@@ -1,4 +1,4 @@
-(define drscheme:tools
+(define drscheme:toplevel-tools
   (list (list "Stepper" (build-path "donkey" "donkey"))
 	(list "Syntax Checker" (build-path "drscheme" "mrslatex"))
 	(list "Analyzer" (build-path "drscheme" "spidstub"))
@@ -16,7 +16,7 @@
     (define-struct tool (name file))
 
     (define tools (map (lambda (x) (apply make-tool x))
-		       (global-defined-value 'drscheme:tools)))
+		       (global-defined-value 'drscheme:toplevel-tools)))
 
     (define load/invoke-tool
       (lambda (tool)
@@ -59,19 +59,19 @@
     (mred:add-preference-callback 
      'drscheme:library-file
      (lambda (p v)
-       (if v
-	   (let ([new-unit (and (file-exists? v)
-				(with-handlers
-				 ((void (lambda (x)
-					  (wx:message-box (exn-message x) "Invalid Library")
-					  (raise x))))
-				 (load/cd v)))])
-	     (if ((global-defined-value 'unit/sig?) new-unit)
-		 (set! library-unit new-unit)
-		 (begin
-		   (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
-		   #f)))
-	   (set! library-unit #f))))
+       (with-handlers
+	((void (lambda (x)
+		 (wx:message-box (exn-message x) "Invalid Library")
+		 #f)))
+	(if v
+	    (let ([new-unit (and (file-exists? v)
+				 (load/cd v))])
+	      (if ((global-defined-value 'unit/sig?) new-unit)
+		  (set! library-unit new-unit)
+		  (begin
+		    (wx:message-box (format "Invalid Library: ~a" v) "ERROR")
+		    #f)))
+	    (set! library-unit #f)))))
 
     (define user-defined? 'user-defined?)
     (define user-macro? 'user-macro?)
@@ -156,7 +156,7 @@
 	     [frame : drscheme:frame^
 		    (drscheme:frame@ mred mzlib basis setup project tool)]
 	     [project : drscheme:project^ (drscheme:project@ mred mzlib frame edit spawn)])
-       (export (open mred)
+       (export (unit mred)
 	       (open mzlib)
 	       (open print-convert)
 	       (open setup)
@@ -164,5 +164,5 @@
 	       (open spawn)
 	       (open frame)
 	       (open aries)
-	       (open project)
+	       (unit project mred)
 	       (open zodiac))))))

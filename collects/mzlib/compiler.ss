@@ -128,6 +128,16 @@
 				[(in) (if (input-port? src)
 					  src
 					  (open-input-file src))])
+		   (parameterize ([current-load-relative-directory
+				   (let ([clrp (current-load-relative-directory)])
+				     (if (string? src)
+					 (let-values ([(base name dir?)
+						       (split-path (path->complete-path 
+								    src
+								    (or clrp
+									(current-directory))))])
+					   base)
+					 clrp))])
 		    (dynamic-wind
 		     void
 		     (lambda ()
@@ -278,7 +288,7 @@
 		     (lambda ()
 		       (if (input-port? src)
 			   (void)
-			   (close-input-port in))))
+			   (close-input-port in)))))
 		    (src-loop next-srcs)))))
 	    (lambda ()
 	      (if (output-port? dest)

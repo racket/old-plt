@@ -4425,6 +4425,21 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   Scheme_Object *mx_fun;
   int i;
 
+
+  HWND hwnd;
+  hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
+		      WS_VISIBLE,
+		      0,0,
+	       0,0,
+		      NULL,NULL,hInstance,NULL);
+  
+  
+  ShowWindow(hwnd,SW_SHOW);
+
+  char buff[256];
+
+  sprintf (buff,"%X",hwnd);
+
   // should not be necessary, but sometimes
   // this variable is not 0'd out - bug in VC++ or MzScheme?
 
@@ -4520,7 +4535,7 @@ void browserHwndMsgLoop(LPVOID p) {
     hasScrollBars = 0L;
   }
 
-  hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
+  hwnd = CreateWindow("AtlAxWin7","myspage.DHTMLPage.1",
 		      WS_VISIBLE | hasScrollBars | 
 		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
 		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,

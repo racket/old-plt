@@ -1017,17 +1017,27 @@ void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float 
 
 void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
 {
+  int x1, y1, w1, h1;
+  float xw, yh;
+
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
   
   FreeGetPixelCache();
+
+  xw = x + w, yh = y + h;
+  
+  x1 = XLOG2DEV(x);
+  y1 = YLOG2DEV(y);
+  w1 = XLOG2DEV(xw) - x1;
+  h1 = YLOG2DEV(yh) - y1;
   
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-    XFillArc(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
-	     XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
+    XFillArc(DPY, DRAWABLE, BRUSH_GC, x1, y1,
+	     w1 - WX_GC_CF, h1 - WX_GC_CF, 0, 64*360);
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    XDrawArc(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y),
-	     XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
+    XDrawArc(DPY, DRAWABLE, PEN_GC, x1, y1,
+	     w1 - WX_GC_CF, h1 - WX_GC_CF, 0, 64*360);
   CalcBoundingBox(x, y);
   CalcBoundingBox(x+w, y+h);
 }
@@ -1240,7 +1250,10 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     
     xx = XLOG2DEV(x);       yy = YLOG2DEV(y);
     ww = XLOG2DEV(xw) - xx; hh = YLOG2DEV(yh) - yy;
-    rr = XLOG2DEVREL(radius);
+    if (scale_x < scale_y)
+      rr = XLOG2DEVREL(radius);
+    else
+      rr = YLOG2DEVREL(radius);
     dd = 2 * rr;
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
@@ -1719,6 +1732,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   int         dev_x;
   int         dev_y;
   int         textlen;
+  float       e_scale_x, e_scale_y;
+  float       ca, sa;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
@@ -1726,14 +1741,41 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   if (!current_font) // a font must be associated for drawing
     return;
 
+  /* e_scale_x and e_scale_y are the effective font scales
+     considering that the font is rotated before scaled,
+     and the horizontal and vertical scales can be different.
+     The angle of the text is also affected if the scales
+     are different; sa and ca are the effective sin and cos
+     of the angle of the stretched/squashed baseline */
+  if (angle == 0.0) {
+    e_scale_x = scale_x;
+    e_scale_y = scale_y;
+    sa = 0.0;
+    ca = 1.0;
+  } else {
+    ca = cos(angle);
+    sa = sin(angle);
+    if (scale_x == scale_y) {
+      e_scale_x = scale_x;
+      e_scale_y = scale_y;
+    } else {
+      float a2;
+      e_scale_x = sqrt(((scale_x * ca) * (scale_x * ca)) + ((scale_y * sa) * (scale_y * sa)));
+      e_scale_y = sqrt(((scale_y * ca) * (scale_y * ca)) + ((scale_x * sa) * (scale_x * sa)));
+      a2 = atan2(sa * scale_y, ca * scale_x);
+      ca = cos(a2);
+      sa = sin(a2);
+    }
+  }
+  
 #ifdef WX_USE_XFT
   InitPicture();
-  xfontinfo = (wxFontStruct*)current_font->GetInternalAAFont(scale_x, angle);
+  xfontinfo = (wxFontStruct*)current_font->GetInternalAAFont(scale_x, scale_y, angle);
   if (xfontinfo)
     fontinfo = NULL;
   else
 #endif
-    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, 0.0);
+    fontinfo = (XFontStruct *)current_font->GetInternalFont(e_scale_x, e_scale_y, 0.0);
 
   dev_x = XLOG2DEV(x);
   dev_y = YLOG2DEV(y);
@@ -1742,9 +1784,9 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   {
     float tw, th, td, ts;
     GetTextExtent(text, &tw, &th, &td, &ts, current_font, use16bit, dt);
-    cx = (int)XLOG2DEVREL(tw);
-    cy = (int)XLOG2DEVREL(th);
-    ascent = (int)XLOG2DEVREL((th - td));
+    cx = (int)(tw * e_scale_x);
+    cy = (int)(th * e_scale_y);
+    ascent = (int)((th - td) * e_scale_y);
   }
 
 # ifdef WX_USE_XFT
@@ -1797,8 +1839,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
     }
 
     if (angle != 0.0) {
-      xasc = (int)((double)ascent * sin(angle));
-      ascent = (int)((double)ascent * cos(angle));
+      xasc = (int)((double)ascent * sa);
+      ascent = (int)((double)ascent * ca);
     } else
       xasc = 0;
 
@@ -1810,7 +1852,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 
       while(textlen) {
 	if (angle != 0.0)
-	  no_rotate = (wxFontStruct*)current_font->GetInternalAAFont(scale_x, 0.0);
+	  no_rotate = (wxFontStruct*)current_font->GetInternalAAFont(e_scale_x, e_scale_y, 0.0);
 	else
 	  no_rotate = xfontinfo;
 
@@ -1825,14 +1867,14 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	    else
 	      cval = text[dt];
 	    if (!wxXftCharExists(DPY, this_time, cval)) {
-	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, angle);
+	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, scale_y, angle);
 	      if (!this_time) {
 		this_time = xfontinfo;
 		this_time_no_rotate = no_rotate;
 		break;
 	      }
 	      if (angle != 0.0)
-		this_time_no_rotate = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, 0.0);
+		this_time_no_rotate = (wxFontStruct*)current_font->GetNextAASubstitution(index++, e_scale_x, e_scale_y, 0.0);
 	      else
 		this_time_no_rotate = this_time;
 	    } else
@@ -1858,8 +1900,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	    XftTextExtents8(DPY, this_time_no_rotate, (XftChar8 *)(text + dt), partlen, &overall);
 	  w = overall.xOff;
 	  if (angle != 0.0) {
-	    xasc += (int)((double)w * cos(angle));
-	    ascent -= (int)((double)w * sin(angle));
+	    xasc += (int)((double)w * ca);
+	    ascent -= (int)((double)w * sa);
 	  } else
 	    xasc += (int)w;
 	}
@@ -1881,24 +1923,21 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	  XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
       } else {
 	if (angle != 0.0) {
-	  double offset, mx, my;
+	  double offset;
 	  double quadrant, pie = 3.14159;
 	  int the_x, the_y, i;
 	  XFontStruct *zfontinfo;
 	  
 	  zfontinfo = fontinfo;
-	  fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, angle);
+	  fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, scale_y, angle);
 	  XSetFont(DPY, TEXT_GC, fontinfo->fid);
 
 	  quadrant = fmod(angle, 2 * pie);
 	  if (quadrant < 0)
 	    quadrant += (2 * pie);
 	  
-	  mx = (float)cos(angle);
-	  my = (float)sin(angle);
-
-	  dev_y += (int)((double)ascent * mx);
-	  dev_x += (int)((double)ascent * my);
+	  dev_y += (int)((double)ascent * ca);
+	  dev_x += (int)((double)ascent * sa);
 
 	  /* FIXME: this isn't right for wide characters. */
 	  offset = 0.0;
@@ -1906,8 +1945,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	    int charno = (unsigned char)text[dt];
 	    int char_metric_offset = charno - fontinfo->min_char_or_byte2;
 	  
-	    the_x = (int)((double)dev_x + offset * mx);
-	    the_y = (int)((double)dev_y - offset * my);
+	    the_x = (int)((double)dev_x + offset * ca);
+	    the_y = (int)((double)dev_y - offset * sa);
 	    
 	    if (use16bit)
 	      XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, (XChar2b *)text + dt, 1);
@@ -1982,12 +2021,12 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
     textlen = strlen(s + dt);
 
 #ifdef WX_USE_XFT
-  xfontinfo = (wxFontStruct*)font_to_use->GetInternalAAFont(scale_x);
+  xfontinfo = (wxFontStruct*)font_to_use->GetInternalAAFont(scale_x, scale_y);
   if (xfontinfo)
     fontinfo = NULL;
   else
 #endif
-    fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
+    fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x, scale_y);
 
 # ifdef WX_USE_XFT
   if (xfontinfo) {
@@ -2015,7 +2054,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 	  else
 	    cval = s[dt];
 	  if (!wxXftCharExists(DPY, this_time, cval)) {
-	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, 0.0);
+	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, scale_y, 0.0);
 	    if (!this_time) {
 	      this_time = xfontinfo;
 	      break;
@@ -2077,7 +2116,7 @@ void wxWindowDC::SetFont(wxFont *font)
     if (!(current_font = font)) // nothing to do without a font
 	return;
 
-    xfs  =(XFontStruct*)font->GetInternalFont(scale_x);
+    xfs  =(XFontStruct*)font->GetInternalFont(scale_x, scale_y);
     XSetFont(DPY, TEXT_GC, xfs->fid);
 }
 

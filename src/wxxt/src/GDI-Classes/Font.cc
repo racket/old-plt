@@ -36,7 +36,6 @@
 # include <X11/Xft/Xft.h>
 #endif
 
-
 char *wx_font_spec [] = {
     "wxDEFAULT",
     // families
@@ -50,12 +49,14 @@ char *wx_font_spec [] = {
 };
 
 // local function prototypes
-static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
+static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float scale_y,
+					   int fontid, int family,
 					   int style, int weight, 
 					   Bool underlined, Bool size_in_pixels,
 					   float angle);
 #ifdef WX_USE_XFT
-static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int family,
+static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, float scale_y,
+					      int fontid, int family,
 					      int style, int weight, 
 					      Bool underlined, int smoothing, 
 					      Bool size_in_pixels,
@@ -117,11 +118,11 @@ void wxFont::InitFont(void)
   
   __type = wxTYPE_FONT;
   
-  sl = new wxList(wxKEY_INTEGER);
+  sl = new wxList(wxKEY_STRING, FALSE);
   scaled_xfonts = sl;
 
 #ifdef WX_USE_XFT
-  sl = new wxList(wxKEY_INTEGER);
+  sl = new wxList(wxKEY_STRING, FALSE);
   scaled_xft_fonts = sl;
 #endif
 }
@@ -229,28 +230,36 @@ wxFont *wxFont::GetRotated(float angle)
 // get internal representation of font
 //-----------------------------------------------------------------------------
 
-void *wxFont::GetInternalFont(float scale, float angle)
+static void limit_point_scale(int size, float *scale_x, float *scale_y)
 {
-  long        int_scale = (long)(scale * 100.0 + 0.5); // key for fontlist
-  int         point_scale = (point_size * 10 * int_scale) / 100;
+  if ((size * (*scale_x)) > 256)
+    *scale_x = 1;
+  if ((size * (*scale_y)) > 256)
+    *scale_y = 1;
+}
+
+void *wxFont::GetInternalFont(float scale_x, float scale_y, float angle)
+{
+  char        sbuf[128];
   wxNode      *node=NULL;
   XFontStruct *xfont;
-
-  if (point_scale > 256)
-    point_scale = 256;
 
   if (angle != rotation) {
     wxFont *rot;
     rot = GetRotated(angle);
-    return rot->GetInternalFont(scale, angle);
+    return rot->GetInternalFont(scale_x, scale_y, angle);
   }
 
-  if ((node = scaled_xfonts->Find(int_scale))) {
+  limit_point_scale(point_size, &scale_x, &scale_y);
+  sprintf(sbuf, "%g %g", scale_x, scale_y);
+
+  if ((node = scaled_xfonts->Find(sbuf))) {
     xfont = (XFontStruct*)node->Data();
   } else {
-    xfont = wxLoadQueryNearestFont(point_scale, font_id, family, style, weight,
+    xfont = wxLoadQueryNearestFont(point_size, scale_x, scale_y, 
+				   font_id, family, style, weight,
 				   underlined, size_in_pixels, angle);
-    scaled_xfonts->Append(int_scale, (wxObject*)xfont);
+    scaled_xfonts->Append(sbuf, (wxObject*)xfont);
   }
   return (void*)xfont;
 }
@@ -259,35 +268,36 @@ void *wxFont::GetInternalFont(float scale, float angle)
 // get internal representation of font
 //-----------------------------------------------------------------------------
 
-void *wxFont::GetInternalAAFont(float scale, float angle)
+void *wxFont::GetInternalAAFont(float scale_x, float scale_y, float angle)
 {
 #ifdef WX_USE_XFT
   if (wxXRenderHere()) {
-    long        int_scale = (long)(scale * 100.0 + 0.5); // key for fontlist
-    int         point_scale = (point_size * int_scale) / 100;
+    char        sbuf[128];
     wxNode      *node=NULL;
     wxFontStruct *xft_font;
 
-    if (point_scale > 256)
-      return NULL;
 
     if (angle != rotation) {
       wxFont *rot;
       rot = GetRotated(angle);
-      return rot->GetInternalAAFont(scale, angle);
+      return rot->GetInternalAAFont(scale_x, scale_y, angle);
     }
 
-    if ((node = scaled_xft_fonts->Find(int_scale))) {
+    limit_point_scale(point_size, &scale_x, &scale_y);
+    sprintf(sbuf, "%g %g", scale_x, scale_y);
+
+    if ((node = scaled_xft_fonts->Find(sbuf))) {
       xft_font = (wxFontStruct*)node->Data();
     } else {
-      xft_font = wxLoadQueryNearestAAFont(point_scale, font_id, family, style, weight,
+      xft_font = wxLoadQueryNearestAAFont(point_size, scale_x, scale_y, 
+					  font_id, family, style, weight,
 					  underlined, smoothing, size_in_pixels, angle);
 
       /* Record a 0x1 to mean "no AA font": */
       if (!xft_font)
 	xft_font = (wxFontStruct*)0x1;
 
-      scaled_xft_fonts->Append(int_scale, (wxObject*)xft_font);
+      scaled_xft_fonts->Append(sbuf, (wxObject*)xft_font);
     }
     if (xft_font == (wxFontStruct*)0x1)
       return NULL;    
@@ -316,7 +326,7 @@ int wxFont::HasAASubstitutions()
   return 0;
 }
 
-void *wxFont::GetNextAASubstitution(int index, float scale, float angle)
+void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, float angle)
 {
   wxFont *subs;
   wxNode *node;
@@ -357,7 +367,7 @@ void *wxFont::GetNextAASubstitution(int index, float scale, float angle)
     substitute_xft_fonts->Append(index, (wxObject*)subs);
   }
 
-  return subs->GetInternalAAFont(scale, angle);
+  return subs->GetInternalAAFont(scale_x, scale_y, angle);
 }
 #endif
 
@@ -438,7 +448,8 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 
 #ifdef WX_USE_XFT
 
-static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int family,
+static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, float scale_y,
+					      int fontid, int family,
 					      int style, int weight,
 					      Bool underlined, int smoothing, Bool sip,
 					      float angle)
@@ -451,7 +462,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
   if (name && (name[0] != ' '))
     /* Not an Xft font name */
     return NULL;
-  
+
   {
     int sl, wt;
     const char *ex_tags[2];
@@ -490,9 +501,10 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
       break;
     }
 
-    if (angle) {
+    if (angle || (scale_x != 1.0) || (scale_y != 1.0)) {
       XftMatrixInit(&rot);
       XftMatrixRotate(&rot, cos(angle), sin(angle));
+      XftMatrixScale(&rot, scale_x, scale_y);
       ex_vals[ex_pos] = (long)&rot;
       ex_types[ex_pos] = XftTypeMatrix;
       ex_tags[ex_pos++] = XFT_MATRIX;
@@ -535,7 +547,8 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
 
 #endif
 
-static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
+static XFontStruct *wxLoadQueryFont(int point_size, float scale_x, float scale_y,
+				    int fontid, int style,
 				    int weight, Bool underlined, 
 				    int si_try_again, Bool sip, float angle)
 {
@@ -587,7 +600,9 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
   } else
     sip = 0;
 
-  if (found && (angle != 0.0)) {
+  if (found && ((angle != 0.0) 
+		|| (scale_x != 1.0)
+		|| (scale_y != 1.0))) {
     /* Replace %d with %s: */
     char *rename, *matrix_str;
     double matrix[4];
@@ -604,9 +619,10 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
       }
     }
 
-    matrix[0] = matrix[3] = ((double)point_size / 10) * cos(angle);
-    matrix[1] = ((double)point_size / 10) * sin(angle);
-    matrix[2] = -matrix[1];
+    matrix[0] = ((double)point_size * scale_x) * cos(angle);
+    matrix[1] = ((double)point_size * scale_y) * sin(angle);
+    matrix[2] = -((double)point_size * scale_x) * sin(angle);
+    matrix[3] = ((double)point_size * scale_y) * cos(angle);
 
     matrix_str = new char[128];
     sprintf(matrix_str, "[%g %g %g %g]", 
@@ -619,22 +635,25 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
     
     sprintf(buffer, rename, matrix_str);
   } else {
-    sprintf(buffer, name, sip ? point_size/10 : point_size);
+    sprintf(buffer, name, 
+	    (sip ? point_size : point_size * 10));
   }
 
   s = XLoadQueryFont(wxAPP_DISPLAY, buffer);
 
   if (!s && si_try_again && ((style == wxSLANT) || (style == wxITALIC))) {
     /* Try slant/italic instead of italic/slant: */
-    s = wxLoadQueryFont(point_size, fontid, 
-			(style == wxSLANT) ? wxITALIC : wxSLANT, 
-			weight, underlined, 0, sip, angle);
+    s = wxLoadQueryFont(point_size, scale_x, scale_y, 
+			fontid, (style == wxSLANT) ? wxITALIC : wxSLANT, 
+			weight, underlined, 
+			0, sip, angle);
   }
   
   return s;
 }
 
-static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
+static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float scale_y,
+					   int fontid, int family,
 					   int style, int weight,
 					   Bool underlined, Bool sip, float angle)
 {
@@ -643,7 +662,9 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int famil
 
   while (1) {
 
-    font = wxLoadQueryFont(point_size, fontid, style, weight, underlined, 1, sip, angle);
+    font = wxLoadQueryFont(point_size, scale_x, scale_y, 
+			   fontid, style, weight, underlined, 
+			   1, sip, angle);
 
     if (!font) {
       // search up and down by stepsize 10
@@ -652,19 +673,29 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int famil
       int i;
 
       // Try plain style
-      font = wxLoadQueryFont(point_size, fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
+      font = wxLoadQueryFont(point_size, scale_x, scale_y, 
+			     fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined, 
+			     1, sip, angle);
 
       // Search for smaller size (approx.)
       for (i=point_size-10; !font && i >= 10 && i >= min_size; i -= 10) {
-	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, sip, angle);
+	font = wxLoadQueryFont(i, scale_x, scale_y,
+			       fontid, style, weight, underlined, 
+			       1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
+	  font = wxLoadQueryFont(i, scale_x, scale_y, fontid,
+				 wxNORMAL, wxNORMAL_WEIGHT, underlined, 
+				 1, sip, angle);
       }
       // Search for larger size (approx.)
       for (i=point_size+10; !font && i <= max_size; i += 10) {
-	font = wxLoadQueryFont(i, fontid, style, weight, underlined, 1, sip, angle);
+	font = wxLoadQueryFont(i, scale_x, scale_y, 
+			       fontid, style, weight, underlined, 
+			       1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 1, sip, angle);
+	  font = wxLoadQueryFont(i, scale_x, scale_y, 
+				 fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 
+				 1, sip, angle);
       }
     }
     

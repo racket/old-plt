@@ -122,6 +122,8 @@ static Scheme_Object *top_next_name;
 
 static Scheme_Object *is_method_symbol;
 
+static int cont_capture_count;
+
 typedef void (*DW_PrePost_Proc)(void *);
 
 #define CONS(a,b) scheme_make_pair(a,b)
@@ -1823,12 +1825,14 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
        int and_mode, int or_mode)
      /* common code for `map', `for-each', `andmap' and `ormap' */
 {
-  int i, size = 0, l;
+# define NUM_QUICK_ARGS 3
+# define NUM_QUICK_RES  5
+  int i, size = 0, l, pos;
   int can_multi;
-  Scheme_Object *quick1[5], *quick2[5], **working;
-  Scheme_Object *pair, *v;
-  Scheme_Object *retfirst, *retlast = NULL;
-  Scheme_Object **args;
+  Scheme_Object *quick1[NUM_QUICK_ARGS], *quick2[NUM_QUICK_ARGS];
+  Scheme_Object *quick3[NUM_QUICK_RES], **working, **args, **resarray;
+  Scheme_Object *v, *retval;
+  int cc;
 
   can_multi = (!make_result && !and_mode && !or_mode);
 
@@ -1871,7 +1875,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     return NULL;
   }
 
-  if (argc < 6) {
+  if (argc <= (NUM_QUICK_ARGS + 1)) {
     args = quick1;
     working = quick2;
   } else {
@@ -1879,23 +1883,31 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     working = MALLOC_N(Scheme_Object *, argc - 1);
   }
 
+  if (size <= NUM_QUICK_RES) {
+    resarray = quick3;
+  } else {
+    if (make_result)
+      resarray = MALLOC_N(Scheme_Object *, size);
+    else
+      resarray = NULL;
+  }
+
   /* Copy argc into working array */
-  for (i = 1; i < argc ; i++) {
+  for (i = 1; i < argc; i++) {
     working[i-1] = argv[i];
   }
 
   --argc;
 
-  if (make_result)
-    retfirst = retlast = scheme_null;
-  else if (and_mode)
-    retfirst = scheme_true;
+  if (and_mode)
+    retval = scheme_true;
   else if (or_mode)
-    retfirst = scheme_false;
+    retval = scheme_false;
   else
-    retfirst = scheme_void;
+    retval = scheme_void;
 
-  while (!SCHEME_NULLP(working[0])) {
+  pos = 0;
+  while (pos < size) {
     /* collect args to apply */
     for (i = 0; i < argc ; i++) {
       if (!SCHEME_PAIRP(working[i])) {
@@ -1910,30 +1922,47 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
       working[i] = SCHEME_CDR(working[i]);
     }
 
+    cc = cont_capture_count;
+
     if (can_multi)
       v = _scheme_apply_multi(argv[0], argc, args);
     else
       v = _scheme_apply(argv[0], argc, args);
 
-    if (make_result) {
-      pair = scheme_make_pair(v, scheme_null);
-      if (SCHEME_NULLP (retfirst))
-	retfirst = retlast = pair;
-      else {
-	SCHEME_CDR (retlast) = pair;
-	retlast = pair;
+    if (cc != cont_capture_count) {
+      /* Copy arrays to avoid messing with other continuations */
+      if (make_result && (size > NUM_QUICK_RES)) {
+	Scheme_Object **naya;
+	naya = MALLOC_N(Scheme_Object *, size);
+	memcpy(naya, resarray, pos * sizeof(Scheme_Object *));
+	resarray = naya;
       }
+      if (argc > NUM_QUICK_ARGS) {
+	Scheme_Object **naya;
+	args = MALLOC_N(Scheme_Object *, argc);
+	naya = MALLOC_N(Scheme_Object *, argc);
+	memcpy(naya, working, argc * sizeof(Scheme_Object *));
+	working = naya;
+      }
+    }
+
+    if (make_result) {
+      resarray[pos] = v;
     } else if (and_mode) {
       if (SCHEME_FALSEP(v))
 	return scheme_false;
-      retfirst = v;
+      retval = v;
     } else if (or_mode) {
       if (SCHEME_TRUEP(v))
 	return v;
     }
+    pos++;
   }
 
-  return retfirst;
+  if (make_result)
+    retval = scheme_build_list(size, resarray);
+
+  return retval;
 }
 
 static Scheme_Object *
@@ -2132,6 +2161,7 @@ call_cc (int argc, Scheme_Object *argv[])
       overflow->captured = 1;
     }
   }
+  cont_capture_count++;
 
   /* Hide call/cc's arg off of stack */
   p->ku.k.p1 = argv[0];

@@ -522,36 +522,26 @@ Scheme_Object *scheme_make_immutable_pair(Scheme_Object *car, Scheme_Object *cdr
 
 Scheme_Object *scheme_build_list(int size, Scheme_Object **argv)
 {
-  Scheme_Object *first = scheme_null, *last = NULL, *pair;
+  Scheme_Object *pair = scheme_null;
   int i;
 
-  for (i = 0; i < size; i++) {
-    pair = scheme_make_pair(argv[i], scheme_null);
-    if (!last)
-      first = pair;
-    else
-      SCHEME_CDR (last) = pair;
-    last = pair;
+  for (i = size; i--; ) {
+    pair = scheme_make_pair(argv[i], pair);
   }
 
-  return first;
+  return pair;
 }
 
 Scheme_Object *scheme_alloc_list(int size)
 {
-  Scheme_Object *first = scheme_null, *last = NULL, *pair;
+  Scheme_Object *pair = scheme_null;
   int i;
 
-  for (i = 0; i < size; i++) {
-    pair = scheme_make_pair(scheme_false, scheme_null);
-    if (!last)
-      first = pair;
-    else
-      SCHEME_CDR(last) = pair;
-    last = pair;
+  for (i = size; i--; ) {
+    pair = scheme_make_pair(scheme_false, pair);
   }
 
-  return first;
+  return pair;
 }
 
 void scheme_make_list_immutable(Scheme_Object *l)

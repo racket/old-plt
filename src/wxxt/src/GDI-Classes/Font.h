@@ -66,12 +66,12 @@ public:
     wxFont *GetRotated(float angle);
     int CanRotate();
 
-    void  *GetInternalFont(float scale = 1.0, float angle = 0.0); // return type XFontStruct*
-    void  *GetInternalAAFont(float scale = 1.0, float angle = 0.0); // return type wxFontStruct*
+    void  *GetInternalFont(float scale_x = 1.0, float scale_y = 1.0, float angle = 0.0); // return type XFontStruct*
+    void  *GetInternalAAFont(float scale_x = 1.0, float scale_y = 1.0, float angle = 0.0); // return type wxFontStruct*
 
 #ifdef WX_USE_XFT
     int HasAASubstitutions(void);
-    void *GetNextAASubstitution(int index, float scale, float angle);
+    void *GetNextAASubstitution(int index, float scale_x, float scale_y, float angle);
 #endif
 
 private:

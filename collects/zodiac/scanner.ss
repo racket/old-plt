@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id$
+;;  $Id: scanner.ss,v 1.1 1997/02/25 16:09:20 krentel Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -537,7 +537,10 @@
                       (let ([c  char]
                             [num  (text->number l)])
                         (get-char)
-                        (if (index-integer? num)
+                        (if #t
+			  ; Used to have
+			  ; (index-integer? num)
+			  ; here, but this is gone now.
                             (z:token  size-vec-tag  (list  num  c)
                                       start-loc  (prev-loc))
                             (z:error  "vector constant size too large")))]

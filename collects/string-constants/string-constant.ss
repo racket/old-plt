@@ -61,59 +61,63 @@
       (and env-var-set
            (with-handlers ([exn:read? (lambda (x) #t)])
              (read (open-input-string env-var-set)))))
-    
-    (define warning-message
-      (let* (;; type no-warning-cache-key = (cons symbol symbol)
-             ;; warning-table : (listof (list no-warning-cache-key (listof (list sym string))))
-             [warning-table null]
-             [check-one-way
-              (lambda (sc1 sc2)
-                (let ([assoc1 (sc-constants sc1)]
-                      [assoc2 (sc-constants sc2)])
-                  (for-each
-                   (lambda (pair1)
-                     (let* ([constant1 (car pair1)]
-                            [value1 (cadr pair1)]
-                            [pair2 (assq constant1 assoc2)])
-                       (unless pair2
-                         (let ([no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
-                           (when (or (env-var-set? (sc-language-name sc1))
-                                     (env-var-set? (sc-language-name sc2)))
-                             (cond
-                               [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
-                                =>
-                                (lambda (x)
-                                  (let ([ent (car x)])
-                                    (set-car! (cdr ent) (cons (list constant1 value1) (cadr ent)))))]
-                               [else
-                                (set! warning-table (cons (list no-warning-cache-key
-                                                                (list (list constant1 value1)))
-                                                          warning-table))]))))))
-                   assoc1)))])
-        
-        (for-each (lambda (x) 
-                    (check-one-way x first-string-constant-set)
-                    (check-one-way first-string-constant-set x))
-                  (cdr available-string-constant-sets))
-        
-        (let ([sp (open-output-string)])
-          (for-each
-           (lambda (bad)
-             (let* ([lang-pair (car bad)]
-                    [constants (cadr bad)]
-                    [lang1-name (car lang-pair)]
-                    [lang2-name (cdr lang-pair)])
-               (fprintf sp "WARNING: language ~a had but ~a does not:\n"
-                        lang1-name
-                        lang2-name)
-               (for-each
-                (lambda (x) (fprintf sp "   ~s\n" x))
-                (quicksort
-                 constants
-                 (lambda (x y) (string<=? (symbol->string (car x)) (symbol->string (car y))))))
-               (newline sp)))
-           warning-table)
-          (get-output-string sp))))
+
+    (define the-warning-message #f)
+    (define (get-warning-message)
+      (unless the-warning-message
+	(set! the-warning-message
+	      (let* (;; type no-warning-cache-key = (cons symbol symbol)
+		     ;; warning-table : (listof (list no-warning-cache-key (listof (list sym string))))
+		     [warning-table null]
+		     [check-one-way
+		      (lambda (sc1 sc2)
+			(let ([assoc1 (sc-constants sc1)]
+			      [assoc2 (sc-constants sc2)])
+			  (for-each
+			   (lambda (pair1)
+			     (let* ([constant1 (car pair1)]
+				    [value1 (cadr pair1)]
+				    [pair2 (assq constant1 assoc2)])
+			       (unless pair2
+				 (let ([no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
+				   (when (or (env-var-set? (sc-language-name sc1))
+					     (env-var-set? (sc-language-name sc2)))
+				     (cond
+				      [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
+				       =>
+				       (lambda (x)
+					 (let ([ent (car x)])
+					   (set-car! (cdr ent) (cons (list constant1 value1) (cadr ent)))))]
+				      [else
+				       (set! warning-table (cons (list no-warning-cache-key
+								       (list (list constant1 value1)))
+								 warning-table))]))))))
+			   assoc1)))])
+		
+		(for-each (lambda (x) 
+			    (check-one-way x first-string-constant-set)
+			    (check-one-way first-string-constant-set x))
+			  (cdr available-string-constant-sets))
+		
+		(let ([sp (open-output-string)])
+		  (for-each
+		   (lambda (bad)
+		     (let* ([lang-pair (car bad)]
+			    [constants (cadr bad)]
+			    [lang1-name (car lang-pair)]
+			    [lang2-name (cdr lang-pair)])
+		       (fprintf sp "WARNING: language ~a had but ~a does not:\n"
+				lang1-name
+				lang2-name)
+		       (for-each
+			(lambda (x) (fprintf sp "   ~s\n" x))
+			(quicksort
+			 constants
+			 (lambda (x y) (string<=? (symbol->string (car x)) (symbol->string (car y))))))
+		       (newline sp)))
+		   warning-table)
+		  (get-output-string sp)))))
+      the-warning-message)
     
     (define (string-constant/proc stx)
       (syntax-case stx ()
@@ -137,18 +141,18 @@
                                                          (cadr default-val))))
                                                  available-string-constant-sets)]
                            [(languages ...) (map sc-language-name available-string-constant-sets)]
-                           [first-constant (cadr (assq datum (sc-constants first-string-constant-set)))]
-                           [warning-message warning-message])
+                           [first-constant (cadr (assq datum (sc-constants first-string-constant-set)))])
                (with-syntax ([conditional-for-string
                               (syntax/loc stx
                                 (cond
                                   [(eq? language 'languages) constants] ...
                                   [else first-constant]))])
                  (if env-var-set
-                     (syntax/loc stx
-                       (begin
-                         (maybe-print-message warning-message)
-                         conditional-for-string))
+		     (with-syntax ([warning-message (get-warning-message)])
+		       (syntax/loc stx
+			 (begin
+			   (maybe-print-message warning-message)
+			   conditional-for-string)))
                      (syntax/loc stx conditional-for-string))))))]))
     
     (define (string-constants/proc stx)

@@ -339,9 +339,9 @@
   (extend-parsed->raw reference-unit-form?
     (lambda (expr p->r)
       (case (reference-unit-form-kind expr)
-	((exp) `((if (reference-unit-form-signed? expr)
-		   'reference-unit/sig
-		   'reference-unit)
+	((exp) `(,(if (reference-unit-form-signed? expr)
+		    'reference-unit/sig
+		    'reference-unit)
 		  ,(sexp->raw (reference-unit-form-file expr))))
 	((imp) `(reference-unit-imports
 		  ,(sexp->raw (reference-unit-form-file expr))))

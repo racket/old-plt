@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.10 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.11 1999/11/18 16:35:08 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -81,6 +81,10 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 		   int num_rows, long style, char *name)
 {
     int i;
+    wxWindow_Xintern *ph;
+    Bool vert;
+    Dimension ww, hh; float lw, lh;
+    Widget wgt;
 
     if ( (num_toggles = n) <= 0 ) {
 	wxDebugMsg("%s created without items (n=0)!\n", name);
@@ -91,7 +95,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
     ChainToPanel(panel, style, name);
 
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
 
     label = wxGetCtlLabel(label);
 
@@ -108,52 +112,55 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	num_rows = num_toggles / num_rows;
     }
 
+    ph = parent->GetHandle();
+    
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
-	 XtNlabel,       label,
-	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
-	 XtNfont,        label_font->GetInternalFont(),
-	 XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
-	 XtNframeWidth,  0, /* MATTHEW: [5] No frame */
-	 XtNshrinkToFit, (width < 0 || height < 0),
-	 NULL);
+    wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
+				  XtNlabel,       label,
+				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
+				  XtNbackground,  bg->GetPixel(cmap),
+				  XtNforeground,  label_fg->GetPixel(cmap),
+				  XtNfont,        label_font->GetInternalFont(),
+				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
+				  XtNframeWidth,  0,
+				  XtNshrinkToFit, (width < 0 || height < 0),
+				  NULL);
+    X->frame = wgt;
     // create group widget, which holds the the toggles
-    X->handle = XtVaCreateManagedWidget
-	("radiobox", xfwfGroupWidgetClass, X->frame,
-	 XtNselectionStyle, (style & wxAT_MOST_ONE) ?
-	 		     XfwfSingleSelection : XfwfOneSelection,
-	 XtNstoreByRow,     FALSE,
-	 XtNlabel,          NULL,
-	 XtNframeWidth,     0,
-	 XtNbackground,  bg->GetPixel(cmap), /* MATTHEW */
-	 XtNrows,           num_rows, /* MATTHEW: [5] */
-	 XtNshrinkToFit,    (width < 0 || height < 0),
-	 NULL);
+    wgt = XtVaCreateManagedWidget("radiobox", xfwfGroupWidgetClass, X->frame,
+				  XtNselectionStyle, (style & wxAT_MOST_ONE) ?
+				  XfwfSingleSelection : XfwfOneSelection,
+				  XtNstoreByRow,     FALSE,
+				  XtNlabel,          NULL,
+				  XtNframeWidth,     0,
+				  XtNbackground,     bg->GetPixel(cmap),
+				  XtNrows,           num_rows,
+				  XtNshrinkToFit,    (width < 0 || height < 0),
+				  NULL);
+    X->handle = wgt;
     // create the toggles
-    toggles = (void*)new Widget[num_toggles];
+    toggles = new long[num_toggles];
     enabled = new Bool[num_toggles];
     for (i=0; i < num_toggles; ++i) {
+	char num_name[10]; 
+	char *tlabel;
         enabled[i] = 1;
-	char num_name[10]; sprintf(num_name, "%d", i);
-	char *label = wxGetCtlLabel(choices[i]);
-	((Widget*)toggles)[i] = XtVaCreateManagedWidget
-	    (num_name, xfwfToggleWidgetClass, X->handle,
-	     XtNlabel,         label,
-	     XtNbackground,    bg->GetPixel(cmap),
-	     XtNforeground,    fg->GetPixel(cmap),
-	     XtNfont,          font->GetInternalFont(),
-	     XtNshrinkToFit,   TRUE,
-	     NULL);
+	sprintf(num_name, "%d", i);
+	tlabel = wxGetCtlLabel(choices[i]);
+	wgt = XtVaCreateManagedWidget(num_name, xfwfToggleWidgetClass, X->handle,
+				      XtNlabel,         tlabel,
+				      XtNbackground,    bg->GetPixel(cmap),
+				      XtNforeground,    fg->GetPixel(cmap),
+				      XtNfont,          font->GetInternalFont(),
+				      XtNshrinkToFit,   TRUE,
+				      NULL);
+	((Widget*)toggles)[i] = wgt;
     }
     // set data declared in wxItem
     callback = func;
     XtAddCallback(X->handle, XtNactivate, wxRadioBox::EventCallback,
 		  (XtPointer)this);
     // resize enforcer
-    Dimension ww, hh; float lw, lh;
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
       GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
@@ -167,7 +174,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
-    for (i=0; i < num_toggles; ++i)
+    for (i = 0; i < num_toggles; i++) {
       XtInsertEventHandler(((Widget*)toggles)[i],
 			   KeyPressMask |	// for PreOnChar
 			   ButtonPressMask |	// for PreOnEvent
@@ -179,6 +186,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   (XtEventHandler)wxWindow::WindowEventHandler,
 			   (XtPointer)saferef,
 			   XtListHead);
+    }
 
     return TRUE;
 }
@@ -188,6 +196,10 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 		   int num_rows, long style, char *name)
 {
     int i;
+    Bool vert;
+    wxWindow_Xintern *ph;
+    Dimension ww, hh; float lw, lh;
+    Widget wgt;
 
     if ( (num_toggles = n) <= 0 ) {
 	wxDebugMsg("%s created without items (n=0)!\n", name);
@@ -198,10 +210,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
     label = wxGetCtlLabel(label);
 
-    /* MATTHEW: [5] */
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
 
-    /* MATTHEW: [5] */
     if ((style & wxVERTICAL) == wxVERTICAL) {
       if (num_rows <= 0)
 	num_rows = num_toggles;
@@ -214,39 +224,48 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	num_rows = num_toggles / num_rows;
     }
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
-	 XtNlabel,       label,
-	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
-	 XtNfont,        label_font->GetInternalFont(),
-	 XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
-	 XtNframeWidth,  0, /* MATTHEW: no frame */
-	 XtNshrinkToFit, TRUE,
-	 NULL);
+    wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
+				  XtNlabel,       label,
+				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
+				  XtNbackground,  bg->GetPixel(cmap),
+				  XtNforeground,  label_fg->GetPixel(cmap),
+				  XtNfont,        label_font->GetInternalFont(),
+				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
+				  XtNframeWidth,  0, /* MATTHEW: no frame */
+				  XtNshrinkToFit, TRUE,
+				  NULL);
+    X->frame = wgt;
+
     // create group widget, which holds the the toggles
-    X->handle = XtVaCreateManagedWidget
-	("radiobox", xfwfGroupWidgetClass, X->frame,
-	 XtNselectionStyle, (style & wxAT_MOST_ONE) ?
-	 		     XfwfSingleSelection : XfwfOneSelection,
-	 XtNstoreByRow,     FALSE,
-	 XtNlabel,          NULL,
-	 XtNframeWidth,     0,
-	 XtNbackground,     bg->GetPixel(cmap), /* MATTHEW */
-	 XtNrows,           num_rows,/* MATTHEW: [5] */
-	 XtNshrinkToFit,    TRUE,
-	 NULL);
+    wgt = XtVaCreateManagedWidget("radiobox", xfwfGroupWidgetClass, X->frame,
+				  XtNselectionStyle, (style & wxAT_MOST_ONE) ?
+				  XfwfSingleSelection : XfwfOneSelection,
+				  XtNstoreByRow,     FALSE,
+				  XtNlabel,          NULL,
+				  XtNframeWidth,     0,
+				  XtNbackground,     bg->GetPixel(cmap), /* MATTHEW */
+				  XtNrows,           num_rows,/* MATTHEW: [5] */
+				  XtNshrinkToFit,    TRUE,
+				  NULL);
+    X->handle = wgt;
     // create the toggles
-    toggles = (void*)new Widget[num_toggles];
+    toggles = new long[num_toggles];
     enabled = new Bool[num_toggles];
+#ifdef MZ_PRECISE_GC
+    bm_labels = (wxBitmap *)GC_malloc(num_toggles * sizeof(wxBitmap *));
+#else
     bm_labels = new wxBitmap*[num_toggles];
+#endif
     for (i=0; i < num_toggles; ++i) {
-	char num_name[10]; sprintf(num_name, "%d", i);
+	char num_name[10];
 
 	char *kind;
 	void *label;
+
+	sprintf(num_name, "%d", i);
 
 	enabled[i] = 1;
 
@@ -261,21 +280,20 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	  bm_labels[i] = NULL;
 	}
 
-	((Widget*)toggles)[i] = XtVaCreateManagedWidget
-	    (num_name, xfwfToggleWidgetClass, X->handle,
-	     kind,             label,
-	     XtNbackground,    bg->GetPixel(cmap),
-	     XtNforeground,    fg->GetPixel(cmap),
-	     XtNfont,          font->GetInternalFont(),
-	     XtNshrinkToFit,   TRUE,
-	     NULL);
+	wgt = XtVaCreateManagedWidget(num_name, xfwfToggleWidgetClass, X->handle,
+				      kind,             label,
+				      XtNbackground,    bg->GetPixel(cmap),
+				      XtNforeground,    fg->GetPixel(cmap),
+				      XtNfont,          font->GetInternalFont(),
+				      XtNshrinkToFit,   TRUE,
+				      NULL);
+	((Widget*)toggles)[i] = wgt;
     }
     // set data declared in wxItem
     callback = func;
     XtAddCallback(X->handle, XtNactivate, wxRadioBox::EventCallback,
 		  (XtPointer)this);
     // resize enforcer
-    Dimension ww, hh; float lw, lh;
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
       GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
@@ -289,7 +307,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
-    for (i = 0; i < num_toggles; i++)
+    for (i = 0; i < num_toggles; i++) {
       XtInsertEventHandler(((Widget*)toggles)[i],
 			   KeyPressMask |	// for PreOnChar
 			   ButtonPressMask |	// for PreOnEvent
@@ -301,6 +319,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   (XtEventHandler)wxWindow::WindowEventHandler,
 			   (XtPointer)saferef,
 			   XtListHead);
+    }
 
     return TRUE;
 }
@@ -309,11 +328,12 @@ wxRadioBox::~wxRadioBox(void)
 {
   if (bm_labels) {
     int i;
-    for (i = 0; i < num_toggles; i++)
+    for (i = 0; i < num_toggles; i++) {
       if (bm_labels[i]) {
 	--bm_labels[i]->selectedIntoDC;
 	XtVaSetValues(((Widget*)toggles)[i], XtNpixmap, NULL, NULL);
       }
+    }
   }
 
   if (num_toggles) {
@@ -337,15 +357,20 @@ void wxRadioBox::Enable(int item, Bool enable)
 
 void wxRadioBox::ChangeToGray(Bool gray)
 {
+  int i;
+
   wxWindow::ChangeToGray(gray);
-  for (int i = 0; i < num_toggles; i++)
+  for (i = 0; i < num_toggles; i++) {
     XtSetSensitive(TOGGLES[i], gray ? FALSE : enabled[i]);
+  }
 }
 
 int wxRadioBox::FindString(char *s)
 {
-  for (int i=0; i < num_toggles; ++i) {
-    char *l = GetLabel(i); /* MATTHEW: [5] */
+  int i;
+  for (i = 0; i < num_toggles; i++) {
+    char *l;
+    l = GetLabel(i);
     if (l && !strcmp(l, s))
       return i;
   }
@@ -377,7 +402,8 @@ int wxRadioBox::GetSelection(void)
 char *wxRadioBox::GetStringSelection(void)
 {
     char *label = NULL;
-    int  item = GetSelection();
+    int  item;
+    item = GetSelection();
 
     if (0 <= item && item < num_toggles)
 	XtVaGetValues(TOGGLES[item], XtNlabel, &label, NULL);
@@ -407,18 +433,20 @@ void wxRadioBox::SetLabel(int item, wxBitmap *bitmap)
 {
   if (0 <= item && item < num_toggles
       && bm_labels && bm_labels[item]) {
+    Pixmap pm;
+    pm = GETPIXMAP(bitmap);
     --bm_labels[item]->selectedIntoDC;
     bm_labels[item] = bitmap;
     bm_labels[item]->selectedIntoDC++;
     XtVaSetValues(TOGGLES[item], XtNlabel, NULL,
-		  XtNpixmap, GETPIXMAP(bitmap), NULL);
+		  XtNpixmap, pm, NULL);
   }
 }
 
 void wxRadioBox::SetSelection(int item)
 {
   if (0 <= item && item < num_toggles)
-    XtVaSetValues(X->handle, XtNselection, long(item), NULL);
+    XtVaSetValues(X->handle, XtNselection, (long)item, NULL);
 }
 
 void wxRadioBox::SetStringSelection(char *s)
@@ -488,12 +516,15 @@ int wxRadioBox::ButtonFocus(int which)
     // Set the focus on the just-clicked button
     // find frame of this widget
     wxWindow *win = this;
-    for (/*wxWindow *win = this*/; win; win = win->GetParent())
+    for (/*wxWindow *win = this*/; win; win = win->GetParent()) {
       if (wxSubType(win->__type, wxTYPE_FRAME))
 	break;
+    }
     
     if (win) {
-      XtSetKeyboardFocus(win->GetHandle()->frame, (Widget)TOGGLES[which]);
+      wxWindow_Xintern *h;
+      h = win->GetHandle();
+      XtSetKeyboardFocus(h->frame, (Widget)TOGGLES[which]);
     }
 
     return -1;

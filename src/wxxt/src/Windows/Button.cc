@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.5 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Button.cc,v 1.6 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -65,14 +65,19 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 		      int x, int y, int width, int height,
 		      long style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Widget wgt;
+
     ChainToPanel(panel, style, name);
 
     label = wxGetCtlLabel(label);
     bm_label = NULL;
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
@@ -80,8 +85,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNframeWidth,  style ? 2 : 0,
 	 XtNframeType,   XfwfSunken,
 	 NULL);
+    X->frame = wgt;
     // create widget
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("button", xfwfButtonWidgetClass, X->frame,
 	 XtNlabel,       label,
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -91,6 +97,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNhighlightThickness, 0,
 	 XtNtraversalOn, FALSE,
 	 NULL);
+    X->handle = wgt;
     // propagate key events from frame to button widget
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
     // set data declared in wxItem
@@ -108,6 +115,10 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 		      int x, int y, int width, int height,
 		      long style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Pixmap pm;
+    Widget wgt;
+
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
       return Create(panel, function, "<bad-image>", x, y, width, height, style, name);
 
@@ -116,24 +127,29 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 
     ChainToPanel(panel, style, name);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
+    X->frame = wgt;
     // create widget
-    X->handle = XtVaCreateManagedWidget
+    pm = GETPIXMAP(bitmap);
+    wgt = XtVaCreateManagedWidget
 	("button", xfwfButtonWidgetClass, X->frame,
-	 XtNpixmap,      GETPIXMAP(bitmap),
+	 XtNpixmap,      pm,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  fg->GetPixel(cmap),
 	 XtNfont,        font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
+    X->handle = wgt;
     // propagate key events from frame to button widget
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
     // set data declared in wxItem
@@ -187,19 +203,22 @@ void wxButton::SetLabel(wxBitmap *bitmap)
 {
   if (bm_label && bitmap && bitmap->Ok() && (bitmap->selectedIntoDC >= 0)
       && (bitmap->GetDepth()==1 || bitmap->GetDepth()==wxDisplayDepth())) {
+    Pixmap pm;
     --bm_label->selectedIntoDC;
     bm_label = bitmap;
     bm_label->selectedIntoDC++;
-    XtVaSetValues(X->handle, XtNpixmap, GETPIXMAP(bitmap), NULL);
+    pm = GETPIXMAP(bitmap);
+    XtVaSetValues(X->handle, XtNpixmap, pm, NULL);
   }
 }
 
 char *wxButton::GetLabel(void)
 {
+    char *label = NULL;
+    
     if (!X->handle) // forbid, if no widget associated
 	return NULL;
 
-    char *label = NULL;
     XtVaGetValues(X->handle, XtNlabel, &label, NULL);
     return label;
 }

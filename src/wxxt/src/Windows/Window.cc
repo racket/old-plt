@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.35 1999/11/18 23:25:14 mflatt Exp $
+ * $Id: Window.cc,v 1.36 1999/11/19 14:15:38 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -103,8 +103,11 @@ wxWindow::wxWindow(void)
     style            = 0;
     user_edit_mode   = FALSE;
 
-    /* MATTHEW */
-    saferef = (wxWindow **)MALLOC_SAFEREF(sizeof(wxWindow *));
+    {
+      wxWindow **wa;
+      wa = (wxWindow **)MALLOC_SAFEREF(sizeof(wxWindow *));
+      saferef = wa;
+    }
     *saferef = this;
     misc_flags = 0;
     /* except for frames, windows start out shown: */

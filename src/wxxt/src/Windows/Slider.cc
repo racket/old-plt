@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.8 1999/11/04 17:25:39 mflatt Exp $
+ * $Id: Slider.cc,v 1.9 1999/11/18 16:35:08 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -61,18 +61,25 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 		      int init_value, int min_value, int max_value, int length,
 		      int x, int y, long style, char *name)
 {
+    float swidth, sheight; 
+    Bool vert;
+    wxWindow_Xintern *ph;
+    Widget wgt;
+
     ChainToPanel(panel, style, name);
 
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
    
     // label = wxGetCtlLabel(label);
 
     minimum = min_value;
     maximum = max_value;
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -82,31 +89,34 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNframeWidth,  2,
 	 XtNshrinkToFit, TRUE,
 	 NULL);
+    X->frame = wgt;
     // compute sizes of the slider widget
-    float swidth, sheight; 
     if (style & (wxHORIZONTAL << 2)) {
       swidth = sheight = 20;
     } else {
       char tempstring[80];
-      sprintf(tempstring, "-%d", max(abs(max_value), abs(min_value)));
+      int mxv, mnv;
+      mxv = abs(max_value); mnv = abs(min_value);
+      sprintf(tempstring, "-%d", max(mxv, mnv));
       GetTextExtent(tempstring, &swidth, &sheight);
       swidth += 8; sheight += 8; // shadows and margin
     }
     if (length <= 0)
       length = 100;
     // create the slider widget
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("slider", xfwfSlider2WidgetClass, X->frame,
 	 XtNbackground,    bg->GetPixel(cmap),
 	 XtNforeground,    fg->GetPixel(cmap),
 	 XtNthumbColor,    bg->GetPixel(cmap),
 	 XtNfont,          font->GetInternalFont(),
-	 XtNwidth,         style & wxVERTICAL ? int(swidth) : length,
-	 XtNheight,        style & wxVERTICAL ? length : int(sheight),
+	 XtNwidth,         style & wxVERTICAL ? ((int)swidth) : length,
+	 XtNheight,        style & wxVERTICAL ? length : ((int)sheight),
 	 XtNframeType,     XfwfRaised,
 	 XtNframeWidth,    0,
 	 XtNhighlightThickness, 0,
 	 NULL);
+    X->handle = wgt;
     if (style & wxVERTICAL) {
 	XfwfResizeThumb(X->handle, 1.0, min(0.9,sheight/length));
     } else {
@@ -133,9 +143,12 @@ void wxSlider::OnSize(int width, int height)
       XfwfResizeThumb(X->handle, 0.2, 1.0);
     }
   } else {
-    float swidth, sheight; char tempstring[80];
+    float swidth, sheight;
+    char tempstring[80];
     Dimension length;
-    sprintf(tempstring, "-%d", max(abs(maximum), abs(minimum)));
+    int mxv, mnv;
+    mxv = abs(maximum); mnv = abs(minimum);
+    sprintf(tempstring, "-%d", max(mxv, mnv));
     GetTextExtent(tempstring, &swidth, &sheight);
     swidth += 8; sheight += 8; // shadows and margin
     if (style & wxVERTICAL) {
@@ -167,10 +180,10 @@ void wxSlider::SetValue(int new_value)
       }
       if (style & wxVERTICAL)
 	XfwfMoveThumb(X->handle,
-		      0.0, float(value-minimum)/float(maximum-minimum));
+		      0.0, ((float)value-minimum)/((float)maximum-minimum));
       else
 	XfwfMoveThumb(X->handle,
-		      float(value-minimum)/float(maximum-minimum), 0.0);
+		      ((float)value-minimum)/((float)maximum-minimum), 0.0);
     }
 }
 

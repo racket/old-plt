@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.5 1998/12/15 17:23:53 mflatt Exp $
+ * $Id: Message.cc,v 1.6 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -64,24 +64,29 @@ static void do_nothing()
 Bool wxMessage::Create(wxPanel *panel, char *message,
 		      int x, int y, long style, char *name)
 {
-  // message = wxGetCtlLabel(message);
+    wxWindow_Xintern *ph;
+    Widget wgt;
 
     bm_label = NULL;
 
     ChainToPanel(panel, style, name);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateWidget
+	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
+    X->frame = wgt;
+
     XtManageChild(X->frame);
     // create widget
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("message", xfwfLabelWidgetClass, X->frame,
 	 XtNlabel,       message,
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -95,6 +100,7 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
 	     XtNouterOffset, 1, XtNinnerOffset, 1,
 	     XtNframeWidth,  2, XtNframeType, XfwfChiseled,
 	     NULL);
+    X->handle = wgt;
 
     panel->PositionItem(this, x, y, -1, -1);
     AddEventHandlers();
@@ -111,6 +117,10 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
 Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
 		      int x, int y, long style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Widget wgt;
+    Pixmap pm;
+
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
       return Create(panel, "<bad-image>", x, y, style, name);
 
@@ -119,19 +129,24 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
 
     ChainToPanel(panel, style, name);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
+    X->frame = wgt;
+
     // create widget
-    X->handle = XtVaCreateManagedWidget
+    pm = GETPIXMAP(bitmap);
+    wgt = XtVaCreateManagedWidget
 	("Message", xfwfLabelWidgetClass, X->frame,
-	 XtNpixmap,      GETPIXMAP(bitmap),
+	 XtNpixmap,      pm,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
@@ -143,6 +158,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
 	     XtNouterOffset, 1, XtNinnerOffset, 1,
 	     XtNframeWidth,  2, XtNframeType, XfwfChiseled,
 	     NULL);
+    X->handle = wgt;
 
     panel->PositionItem(this, x, y, -1, -1);
 
@@ -184,19 +200,23 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 {
   if (bm_label && bitmap && bitmap->Ok() && (bitmap->selectedIntoDC >= 0)
       && (bitmap->GetDepth()==1 || bitmap->GetDepth()==wxDisplayDepth())) {
+    Pixmap pm;
     --bm_label->selectedIntoDC;
     bm_label = bitmap;
     bm_label->selectedIntoDC++;
-    XtVaSetValues(X->handle, XtNlabel, NULL, XtNpixmap, GETPIXMAP(bitmap), NULL);
+    pm = GETPIXMAP(bitmap);
+    XtVaSetValues(X->handle, XtNlabel, NULL, XtNpixmap, pm, NULL);
   }
 }
 
 char *wxMessage::GetLabel(void)
 {
-    if (!X->handle) // forbid, if no widget associated
-	return NULL;
+  char *label;
 
-    char *label = NULL;
-    XtVaGetValues(X->handle, XtNlabel, &label, NULL);
-    return label;
+  if (!X->handle) // forbid, if no widget associated
+    return NULL;
+  
+  label = NULL;
+  XtVaGetValues(X->handle, XtNlabel, &label, NULL);
+  return label;
 }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.17 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Choice.cc,v 1.18 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -68,15 +68,21 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 		      int x, int y, int width, int height,
 		      int n, char *choices[], long style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Bool vert;
+    Widget button, wgt;
+
     ChainToPanel(panel, style, name);
 
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
 
     label = wxGetCtlLabel(label);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -84,8 +90,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 NULL);
+    X->frame = wgt;
     // create widget
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("choice", xfwfLabelWidgetClass, X->frame,
 	 XtNlabel,       n > 0 ? choices[0] : "",
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -97,8 +104,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 // XtNtraversalOn, TRUE, /* MATTHEW */
 	 NULL);
+    X->handle = wgt;
     // arrow widget which pops up a menu
-    Widget button = XtVaCreateManagedWidget
+    button = XtVaCreateManagedWidget
 	("choice_button", xfwfArrowWidgetClass, X->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  bg->GetPixel(cmap),
@@ -111,8 +119,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     XtAddCallback(button, XtNcallback, wxChoice::EventCallback, (XtPointer)this);
 
     selection = n > 0 ? 0 : -1;
-    for (int i = 0; i < n; ++i)
-	Append(choices[i]);
+    for (int i = 0; i < n; ++i) {
+      Append(choices[i]);
+    }
 
     if (width < 0) {
       float maxw = 0, labelw = 0;
@@ -187,9 +196,10 @@ static char *protect_amp(char *s)
     /* protect "&" */
     int i, amp = 0;
     char *s2;
-    for (i = 0; s[i]; i++)
+    for (i = 0; s[i]; i++) {
       if (s[i] == '&')
 	amp++;
+    }
 
     s2 = new WXGC_ATOMIC char[i + amp + 1];
     for (i = 0, amp = 0; s[i]; i++, amp++) {
@@ -210,11 +220,12 @@ char *wxchoice_unprotect_amp(char *s)
     /* strip "&&" */
     int i, amp = 0;
     char *s2;
-    for (i = 0; s[i]; i++)
+    for (i = 0; s[i]; i++) {
       if (s[i] == '&') {
 	amp++;
 	i++;
       }
+    }
 
     s2 = new WXGC_ATOMIC char[i - amp + 1];
     amp = 0;
@@ -256,14 +267,16 @@ int wxChoice::FindString(char *s)
 
 char *wxChoice::GetString(int n)
 {
-  char *s = choice_menu->GetLabel(n);
+  char *s;
+  s = choice_menu->GetLabel(n);
 
   return s ? wxchoice_unprotect_amp(s) : (char *)NULL;
 }
 
 char *wxChoice::GetStringSelection(void)
 {
-  char *s = choice_menu->GetLabel(selection);
+  char *s;
+  s = choice_menu->GetLabel(selection);
   
   return s ? wxchoice_unprotect_amp(s) : (char *)NULL;
 }
@@ -271,15 +284,17 @@ char *wxChoice::GetStringSelection(void)
 void wxChoice::SetSelection(int n)
 {
   if (0 <= n && n < num_choices) {
+    char *label;
     selection = n;
-    char *label = choice_menu->GetLabel(n);
+    label = choice_menu->GetLabel(n);
     XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, label, NULL);
   }
 }
 
 Bool wxChoice::SetStringSelection(char *s)
 {
-  int i = FindString(s);
+  int i;
+  i = FindString(s);
   if (i > -1) {
     SetSelection(i);
     return TRUE;
@@ -301,6 +316,7 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
     wxChoice *choice = (wxChoice*)clientData;
+    Dimension hh;
 
     choice->SetFocus();
 
@@ -310,7 +326,6 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     choice->choice_menu->SetForegroundColour(choice->fg);
 
     // popup menu below "button"
-    Dimension hh;
     XtVaGetValues(choice->X->handle, XtNheight, &hh, NULL);
 
     choice->PopupMenu(choice->choice_menu, 0, (int)hh);
@@ -353,7 +368,8 @@ void wxChoice::OnChar(wxKeyEvent *e)
   }
 
   if (delta) {
-    int s = GetSelection();
+    int s;
+    s = GetSelection();
     SetSelection(s + delta);
     if (s != GetSelection()) {
       wxCommandEvent *event;

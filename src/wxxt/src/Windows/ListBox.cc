@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.16 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: ListBox.cc,v 1.17 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -80,31 +80,41 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 		       Bool multiple, int x, int y, int width, int height,
 		       int n, char **choices, long style, char *name)
 {
-    ChainToPanel(panel, style|long(multiple), name);
+    wxWindow_Xintern *ph;
+    Widget wgt;
+    Bool vert;
+    Dimension row_height;
+    long labelw = 0, labelh = 0;
 
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    ChainToPanel(panel, style | ((long)multiple), name);
+    
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
 
     title = wxGetCtlLabel(title);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       title,
 	 XtNalignment,   vert ? XfwfTop : XfwfTopLeft,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
 	 NULL);
+    X->frame = wgt;
     // create viewport
-    X->scroll = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("viewport", xfwfScrolledWindowWidgetClass, X->frame,
 	 XtNhideHScrollbar, TRUE,
 	 XtNbackground, bg->GetPixel(cmap), /* MATTHEW */
 	 XtNdoScroll, FALSE,
 	 XtNhighlightThickness, 2,
 	 NULL);
+    X->scroll = wgt;
     // create multi list
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("list", xfwfMultiListWidgetClass, X->scroll,
 	 XtNbackground,     bg->GetPixel(cmap),
 	 XtNforeground,     fg->GetPixel(cmap),
@@ -117,10 +127,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNmaxSelectable,  (multiple & (wxMULTIPLE | wxEXTENDED)) ? 10000 : 1,
 	 XtNclickExtends,   (Boolean)(multiple & wxEXTENDED),
 	 NULL);
+    X->handle = wgt;
 
     Set(n, choices);
     // configure scrollbar
-    Dimension row_height;
     XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
     XtVaSetValues(X->scroll,  XtNvScrollAmount, row_height, NULL);
     // callback
@@ -128,7 +138,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     XtAddCallback(X->handle, XtNcallback,
 		  wxListBox::EventCallback,  (XtPointer)this);
 
-    long labelw = 0, labelh = 0;
     if (title) {
       float w, h;
       char *label_stripped;
@@ -163,19 +172,24 @@ void wxListBox::ChangeColours(void)
 {
     wxItem::ChangeColours();
     if (X->scroll) {
-	if (parent->GetBackgroundColour())
-	    XtVaSetValues(X->scroll, XtNbackground,
-			  parent->GetBackgroundColour()->GetPixel(cmap), NULL);
-	if (label_fg)
-	    XtVaSetValues(X->scroll, XtNforeground,
-			  label_fg->GetPixel(cmap), NULL);
+      wxColour *bgc;
+      bgc = parent->GetBackgroundColour();
+      if (bgc) {
+	unsigned long pixel;
+	pixel = bgc->GetPixel(cmap);
+	XtVaSetValues(X->scroll, XtNbackground,
+		      pixel, NULL);
+      }
+      if (label_fg)
+	XtVaSetValues(X->scroll, XtNforeground,
+		      label_fg->GetPixel(cmap), NULL);
     }
 }
 
 void wxListBox::SetSize(int x, int y, int width, int height, int flags)
 {
     if (width > -1)
-	XtVaSetValues(X->handle, XtNlongest, Dimension(width), NULL); 
+      XtVaSetValues(X->handle, XtNlongest, (Dimension)width, NULL); 
     wxItem::SetSize(x, y, width, height, flags);
     XtVaSetValues(X->handle, XtNwidth, 0, NULL);
 }
@@ -191,9 +205,11 @@ void wxListBox::Append(char *item)
   count = GetSelections(&selections);
 
   if (num_free == 0) {
+    char **new_choices, **new_client_data;
+
     num_free = LIST_CHUNK_SIZE;
-    char    **new_choices     = new char *[num_choices+LIST_CHUNK_SIZE];
-    char    **new_client_data = new char *[num_choices+LIST_CHUNK_SIZE];
+    new_choices     = new char *[num_choices+LIST_CHUNK_SIZE];
+    new_client_data = new char *[num_choices+LIST_CHUNK_SIZE];
     // copy current choices
     for (i=0; i<num_choices; ++i) {
       new_choices[i] = choices[i];
@@ -204,7 +220,11 @@ void wxListBox::Append(char *item)
     delete client_data;  client_data = new_client_data;
   }
   // set new item
-  choices[num_choices]     = copystring(item);
+  {
+    char *s;
+    s = copystring(item);
+    choices[num_choices]     = s;
+  }
   client_data[num_choices] = NULL;
   // one choice more, one free space less
   ++num_choices; --num_free;
@@ -223,17 +243,11 @@ void wxListBox::Append(char *item, char *_client_data)
 
 void wxListBox::Clear(void)
 {
-    if (choices) {
-	// free strings
-	for (int i=0; i<num_choices; ++i)
-	    delete choices[i];
-	// free array
-	delete choices;
-	choices = NULL;
-    }
+    if (choices)
+      choices = NULL;
     if (client_data) {
-	delete client_data;
-	client_data = NULL;
+      delete client_data;
+      client_data = NULL;
     }
     num_choices = num_free = 0;
     SetInternalData();
@@ -266,10 +280,13 @@ void wxListBox::Delete(int n)
 
 void wxListBox::InsertItems(int n_items, char **items, int pos)
 {
-    pos = pos < num_choices ? pos : num_choices;
     int     i, j;
-    char    **new_choices     = new char *[num_choices+n_items];
-    char    **new_client_data = new char *[num_choices+n_items];
+    char **new_choices, **new_client_data;
+
+    pos = pos < num_choices ? pos : num_choices;
+
+    new_choices     = new char *[num_choices+n_items];
+    new_client_data = new char *[num_choices+n_items];
 
     for (i = 0; i < pos; ++i) {			// copy choices previous to pos
 	new_choices[i] = choices[i];
@@ -293,36 +310,53 @@ void wxListBox::InsertItems(int n_items, char **items, int pos)
 
 void wxListBox::Set(int n, char *_choices[])
 {
-    // clear ListBox
-    Clear();
-    // copy choices and initialize client_data
-    num_choices = n;
-    num_free = LIST_CHUNK_SIZE;
-    choices = new char*[n+num_free];
-    client_data = new char*[n+num_free];
-    for (int i=0; i<n; ++i) {
-	choices[i] = copystring(_choices[i]);
-	client_data[i] = NULL;
-    }
-    SetInternalData();
+  int i;
+  char **sa;
+
+  // clear ListBox
+  Clear();
+
+  // copy choices and initialize client_data
+  num_choices = n;
+  num_free = LIST_CHUNK_SIZE;
+  sa = new char*[n+num_free];
+  choices = sa;
+  sa = new char*[n+num_free];
+  client_data = sa;
+  for (i = 0; i < n; i++) {
+    char *s;
+    s = copystring(_choices[i]);
+    choices[i] = s;
+    client_data[i] = NULL;
+  }
+  SetInternalData();
 }
 
 void wxListBox::Set(wxStringList *slist)
 {
-    int	n = slist->Number();
+    int	n;
     int i = 0;
+    wxNode *node;
+    char **sa;
+
+    n = slist->Number();
 
     // clear ListBox
     Clear();
     // copy choices and initialize client_data
     num_choices = n;
     num_free = LIST_CHUNK_SIZE;
-    choices = new char*[n+num_free];
-    client_data = new char*[n+num_free];
-    for (wxNode *node = slist->First(); node; node = node->Next()) {
-	choices[i] = copystring((char*)node->Data());
-	client_data[i] = NULL;
-	++i;
+    sa = new char*[n+num_free];
+    choices = sa;
+    sa = new char*[n+num_free];
+    client_data = sa;
+    for (node = slist->First(); node; node = node->Next()) {
+      char *s;
+      s = (char*)node->Data();
+      s = copystring(s);
+      choices[i] = s;
+      client_data[i] = NULL;
+      ++i;
     }
     SetInternalData();
 }
@@ -330,14 +364,14 @@ void wxListBox::Set(wxStringList *slist)
 void wxListBox::SetInternalData(void)
 {
     int ww, hh;
+    Position pos;
 
     GetSize(&ww, &hh);
     XfwfMultiListSetNewData(
 	MULTILIST, num_choices ? choices : (String*)NULL, num_choices,
 	ww, TRUE, (Boolean*)NULL);
    
-    /* MATTHEW: Make sure current scroll pos is legal. */
-    Position pos;
+    /* Make sure current scroll pos is legal. */
     XtVaGetValues(X->handle, XtNy, &pos, NULL);
     Scroll(0, pos);
 }
@@ -373,9 +407,10 @@ void wxListBox::SetFirstItem(char *s)
 int wxListBox::NumberOfVisibleItems()
 {
   Dimension row_height;
+  int cw, ch;
+
   XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
 
-  int cw, ch;
   GetClientSize(&cw, &ch);
   
   ch = ch / row_height;
@@ -394,10 +429,11 @@ void wxListBox::Deselect(int n)
 
 int wxListBox::FindString(char *s)
 {
-    for (int i=0; i<num_choices; ++i)
-	if (!strcmp(s, choices[i]))
-	    return i;
-    return -1;
+  for (int i=0; i<num_choices; ++i) {
+    if (!strcmp(s, choices[i]))
+      return i;
+  }
+  return -1;
 }
 
 char *wxListBox::GetClientData(int n)
@@ -409,11 +445,11 @@ char *wxListBox::GetClientData(int n)
 
 int wxListBox::GetSelection(void)
 {
-    XfwfMultiListReturnStruct *rs
-	= XfwfMultiListGetHighlighted(MULTILIST);
-    if (rs->num_selected >= 1)
-	return rs->selected_items[0];
-    return -1;
+  XfwfMultiListReturnStruct *rs;
+  rs = XfwfMultiListGetHighlighted(MULTILIST);
+  if (rs->num_selected >= 1)
+    return rs->selected_items[0];
+  return -1;
 }
 
 static int int_le(const void *a, const void *b)
@@ -423,12 +459,15 @@ static int int_le(const void *a, const void *b)
 
 int wxListBox::GetSelections(int **list_selections)
 {
-    XfwfMultiListReturnStruct *rs
-	= XfwfMultiListGetHighlighted(MULTILIST);
+    XfwfMultiListReturnStruct *rs;
+    int *selections, i;
 
-    int *selections = new int[rs->num_selected], i;
-    for (i = 0; i < rs->num_selected; i++)
+    rs = XfwfMultiListGetHighlighted(MULTILIST);
+
+    selections = new int[rs->num_selected];
+    for (i = 0; i < rs->num_selected; i++) {
       selections[i] = rs->selected_items[i];
+    }
     
     qsort(selections, rs->num_selected, sizeof(int), int_le);
 
@@ -501,7 +540,8 @@ Bool wxListBox::SetStringSelection(char *s)
 void wxListBox::SetString(int n, char *s)
 {
   if (0 <= n && n < num_choices) {
-    choices[n] = copystring(s);
+    s = copystring(s);
+    choices[n] = s;
     SetInternalData();    
   }
 }
@@ -546,7 +586,8 @@ void wxListBox::OnChar(wxKeyEvent *e)
 
   if (delta && num_choices) {
     int *sels;
-    int n = GetSelections(&sels);
+    int n;
+    n = GetSelections(&sels);
     if (n <= 1) {
       int s;
       if (n == 1)

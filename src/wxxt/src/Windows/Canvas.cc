@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.12 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Canvas.cc,v 1.13 1999/11/21 00:08:48 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -62,11 +62,15 @@ wxCanvas::wxCanvas(wxPanel *parent, int x, int y, int width, int height,
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 		      int style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Widget wgt;
     ChainToPanel(panel, style, name);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  label_fg->GetPixel(cmap),
 	 XtNfont,        label_font->GetInternalFont(),
@@ -74,8 +78,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNhighlightThickness, 0,
 	 XtNframeWidth, 0,
 	 NULL);
+    X->frame = wgt;
     // create scrolled area
-    X->scroll = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("viewport", xfwfScrolledWindowWidgetClass, X->frame,
 	 XtNhideHScrollbar, TRUE,
 	 XtNhideVScrollbar, TRUE,
@@ -88,16 +93,22 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNspacing, 0,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 NULL);
+    X->scroll = wgt;
     // create canvas
-    X->handle = XtVaCreateManagedWidget
+    {
+      unsigned long pixel;
+      pixel = wxWHITE->GetPixel();
+      wgt = XtVaCreateManagedWidget
 	("canvas", xfwfCanvasWidgetClass, X->scroll,
 	 XtNbackingStore, (style & wxBACKINGSTORE) ? Always : NotUseful,
 	 XtNborderWidth,  0,
-	 XtNbackground,  wxWHITE->GetPixel(),
+	 XtNbackground,  pixel,
 	 XtNhighlightThickness, 0,
 	 XtNframeWidth, 0,
 	 XtNtraversalOn, FALSE,
 	 NULL);
+      X->handle = wgt;
+    }
     // Initialize CanvasDC
     CreateDC();
     dc->SetBackground(wxWHITE); // white brush as default for canvas background
@@ -207,6 +218,8 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
     if (y_len < 0) v_pixels = -1;
 
     if (setVirtualSize) {
+      Arg a[4];
+
       XtVaSetValues(X->scroll, XtNautoAdjustScrollbars, 1, NULL);
 
       misc_flags -= (misc_flags & 8);
@@ -233,13 +246,12 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 	v_size = 1;
 
       // adjust size and position of canvas
-      Arg a[4];
       a[0].name = XtNabs_height;
-      a[0].value = v_pixels > 0 ? Dimension(v_size) : 0;
+      a[0].value = v_pixels > 0 ? ((Dimension)v_size) : 0;
       a[1].name = XtNrel_height;
       *(float *)&(a[1].value) = (float)(v_pixels > 0 ? 0.0 : 1.0);
       a[2].name = XtNabs_width;
-      a[2].value = h_pixels > 0 ? Dimension(h_size) : 0;
+      a[2].value = h_pixels > 0 ? ((Dimension)h_size) : 0;
       a[3].name = XtNrel_width;
       *(float *)&(a[3].value) = (float)(h_pixels > 0 ? 0.0 : 1.0);
 
@@ -254,9 +266,10 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
 		      0);
       }
     } else {
+      Arg a[8];
+
       XtVaSetValues(X->scroll, XtNautoAdjustScrollbars, 0, NULL);
 
-      Arg a[8];
       a[0].name = XtNabs_height;
       a[0].value = 0;
       a[1].name = XtNrel_height;
@@ -321,12 +334,16 @@ void wxCanvas::ChangeColours(void)
 {
     wxItem::ChangeColours();
     if (X->scroll) {
-	if (parent->GetBackgroundColour())
-	    XtVaSetValues(X->scroll, XtNbackground,
-			  parent->GetBackgroundColour()->GetPixel(cmap), NULL);
-	if (label_fg)
-	    XtVaSetValues(X->scroll, XtNforeground,
-			  label_fg->GetPixel(cmap), NULL);
+      wxColour *bgc;
+      bgc = parent->GetBackgroundColour();
+      if (bgc) {
+	unsigned long pixel;
+	pixel = bgc->GetPixel(cmap);
+	XtVaSetValues(X->scroll, XtNbackground, pixel, NULL);
+      }
+      if (label_fg)
+	XtVaSetValues(X->scroll, XtNforeground,
+		      label_fg->GetPixel(cmap), NULL);
     }
 }
 

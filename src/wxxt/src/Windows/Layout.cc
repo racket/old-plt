@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Layout.cc,v 1.2 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Layout.cc,v 1.3 1999/11/19 22:02:38 mflatt Exp $
  *
  * Purpose: layout classes
  *
@@ -145,11 +145,13 @@ Bool wxIndividualLayoutConstraint::ResetIfWin(wxWindow *otherW)
 Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constraints,
 						     wxWindow *win)
 {
+    int edge_pos;
+
     if (relationship == wxAbsolute || done == TRUE) {
 	return (done = TRUE);
     }
 
-    int edge_pos = (win && otherWin) ? GetEdge(otherEdge, win, otherWin) : -1;
+    edge_pos = (win && otherWin) ? GetEdge(otherEdge, win, otherWin) : -1;
     switch (myEdge) {
     case wxLeft:
 	switch (relationship) {
@@ -183,9 +185,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for left\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxRight:
@@ -220,9 +221,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for right\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxTop:
@@ -257,9 +257,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for top\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxBottom:
@@ -294,9 +293,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for bottom\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxCentreX:
@@ -338,9 +336,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for centreX\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxCentreY:
@@ -382,9 +379,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for centreY\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxWidth:
@@ -417,9 +413,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for width\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     case wxHeight:
@@ -451,9 +446,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    }
 	    break;
-        default:
-	    wxDebugMsg("wxLayout: %s has unallowed constraint for height\n",
-		       win->GetName());
+	default:
+	  break;
 	}
 	break; // goto bottom and return FALSE
     }
@@ -479,11 +473,10 @@ int wxIndividualLayoutConstraint::GetEdge(wxEdge which, wxWindow *thisWin,
 	case wxCentreX:			    return (w/2);
 	case wxCentreY:			    return (h/2);
 	}
-    } else if (thisWin == other) {
-	wxDebugMsg("wxLayout: %s constrained to itself\n", thisWin->GetName());
     } else {
-	wxLayoutConstraints *constr = other->GetConstraints();
+	wxLayoutConstraints *constr;
 	wxIndividualLayoutConstraint *iconstr = NULL;
+	constr = other->GetConstraints();
 	switch (which) {
 	case wxLeft:	    iconstr = &(constr->left); break;
 	case wxTop:	    iconstr = &(constr->top); break;
@@ -542,13 +535,13 @@ void wxWindow::Layout(void)
      *
      */
 
-    // Layout only if children
-    if (children->Number() == 0)
-	return;
-
     wxChildNode *node;
     wxWindow *child;
     wxLayoutConstraints *constr;
+
+    // Layout only if children
+    if (children->Number() == 0)
+	return;
 
     // reset all constraints to NOT done
     for (node = children->First(); node; node = node->Next()) {
@@ -558,17 +551,19 @@ void wxWindow::Layout(void)
 	child->GetConstraints()->UnDone();
     }
     // iterate through child until (no changes) || (no left iterations)
-    int  left_iterations = wxLAYOUT_MAX_ITERATIONS;
-    Bool changes;
-    do {
+    {
+      int  left_iterations = wxLAYOUT_MAX_ITERATIONS;
+      Bool changes;
+      do {
 	changes = FALSE;
 	for (node = children->First(); node; node = node->Next()) {
-	    child  = (wxWindow *)node->Data();
-	    if (wxSubType(child->__type, wxTYPE_FRAME))
-		continue;
-	    changes |= child->GetConstraints()->SatisfyConstraints(child);
+	  child  = (wxWindow *)node->Data();
+	  if (wxSubType(child->__type, wxTYPE_FRAME))
+	    continue;
+	  changes |= child->GetConstraints()->SatisfyConstraints(child);
 	}
-    } while (changes && --left_iterations);
+      } while (changes && --left_iterations);
+    }
     // set sizes and positions as computed above
     for (node = children->First(); node; node = node->Next()) {
 	child  = (wxWindow *)node->Data();
@@ -582,72 +577,49 @@ void wxWindow::Layout(void)
 			     constr->width.value, constr->height.value);
 	    // layout child
 	    child->Layout();
-	} else {
-	    wxDebugMsg("\tcould not compute values for %s\n",
-		       child->GetName());
 	}
     }
 }
 
 void wxPanel::Layout(void)
 {
-#if 0
-    wxWindow *one_child   = NULL;
-    int      num_children = 0;
-
-    // check if frame has only ONE child
-    if (children) {
-	for (wxChildNode *node = children->First(); node; node = node->Next()) {
-	    wxWindow *child = (wxWindow*)(node->Data());
-	    if ( child && !wxSubType(child->__type, wxTYPE_FRAME) ) {
-		one_child = child; ++num_children;
-	    }
-	}
-    }
-    // ONE child shall fit into frame
-    if (num_children == 1) {
-	int ww, hh;
-	GetClientSize(&ww, &hh);
-	one_child->SetSize(0 /* PANEL_HMARGIN */, 0 /* PANEL_VMARGIN */,
-			   ww/* -2*PANEL_HMARGIN */, hh /* -2*PANEL_VMARGIN */);
-    } else {
-	// layout panel
-	wxWindow::Layout();
-    }
-#else
     wxWindow::Layout();
-#endif
 }
 
 void wxFrame::Layout(void)
 {
     wxWindow *one_child   = NULL;
     int      num_children = 0;
+    wxWindow *child;
+    wxChildNode *node;
 
     // check if frame has only ONE child
     if (children) {
-	for (wxChildNode *node = children->First(); node; node = node->Next()) {
-	    wxWindow *child = (wxWindow*)(node->Data());
-	    if ( child && !wxSubType(child->__type, wxTYPE_FRAME) ) {
-		// skip menubar and status line for computation
-		int i=0;
-		for ( /* i=0 */; i<num_status; ++i)
-		    if (child == (wxWindow*)status[i])
-			break;
-		if (child == (wxWindow*)menubar || i < num_status) {
-		    continue;
-		}
-		one_child = child; ++num_children;
-	    }
+      for (node = children->First(); node; node = node->Next()) {
+	child = (wxWindow*)(node->Data());
+	if ( child && !wxSubType(child->__type, wxTYPE_FRAME) ) {
+	  // skip menubar and status line for computation
+	  int i;
+	  for (i = 0; i < num_status; i++) {
+	    if (child == (wxWindow*)status[i])
+	      break;
+	  }
+	  if (child == (wxWindow*)menubar || i < num_status) {
+	    continue;
+	  }
+	  one_child = child; ++num_children;
 	}
+      }
     }
+
     // ONE child shall fit into frame
     if (num_children == 1) {
-	int ww, hh;
-	GetClientSize(&ww, &hh);
-	one_child->SetSize(/* PANEL_HMARGIN */ 0, /* PANEL_VMARGIN */ 0,
-			   ww /* -2*PANEL_HMARGIN */, hh /*-2*PANEL_VMARGIN */);
+      int ww, hh;
+      GetClientSize(&ww, &hh);
+      one_child->SetSize(/* PANEL_HMARGIN */ 0, /* PANEL_VMARGIN */ 0,
+			 ww /* -2*PANEL_HMARGIN */, hh /*-2*PANEL_VMARGIN */);
     }
+
     // layout window (necessary for ONE child too because of menubar and status)
     wxWindow::Layout();
 }

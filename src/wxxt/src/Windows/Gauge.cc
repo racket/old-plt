@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.6 1998/09/17 03:30:41 mflatt Exp $
+ * $Id: Gauge.cc,v 1.7 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -61,16 +61,23 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range,
 Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 		     int x, int y, int width, int height, long style, char *name)
 {
+    Widget wgt;
+    wxWindow_Xintern *ph;
+    Bool vert;
+    float lw, lh, lvh, lhw;
+
     ChainToPanel(panel, style, name);
 
-    Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
+    vert = (panel->GetLabelPosition() == wxVERTICAL);
     range     = _range;
 
     label = wxGetCtlLabel(label);
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfTraversingEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
 	 XtNbackground,  bg->GetPixel(cmap),
@@ -80,8 +87,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,
 	 NULL);
+    X->frame = wgt;
     // create the slider widget
-    X->handle = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("gauge", xfwfSlider2WidgetClass, X->frame,
 	 XtNbackground,    bg->GetPixel(cmap),
 	 XtNforeground,    fg->GetPixel(cmap),
@@ -91,12 +99,12 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNframeWidth,    0,
 	 XtNhighlightThickness, 0,
 	 NULL);
+    X->handle = wgt;
     XtUninstallTranslations(X->handle);
     SetValue(0);
     // set data declared in wxItem
     // panel positioning
 
-    float lw, lh, lvh, lhw;
     if (label)
       GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
     else
@@ -145,10 +153,10 @@ void wxGauge::SetValue(int new_value)
 	value = new_value;
 	if (style & wxVERTICAL) {
 	    XfwfMoveThumb  (X->handle, 0.0, 1.0                      );
-	    XfwfResizeThumb(X->handle, 1.0, float(value)/float(range));
+	    XfwfResizeThumb(X->handle, 1.0, ((float)value)/((float)range));
 	} else {
 	    XfwfMoveThumb  (X->handle, 0.0,                       0.0);
-	    XfwfResizeThumb(X->handle, float(value)/float(range), 1.0);
+	    XfwfResizeThumb(X->handle, ((float)value)/((float)range), 1.0);
 	}
     }
 }

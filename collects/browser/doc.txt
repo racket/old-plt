@@ -295,6 +295,7 @@ matching thefollowing signatures:
 
     setup:plt-installer^
     mred^
+    net:tcp^ (see "tcp-sig.ss" in the "net" collection)
 
  It exports the browser^ signature.
  

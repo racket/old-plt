@@ -1,5 +1,6 @@
 (define-signature ricedefs^
-  (eq?
+  (<=
+   eq?
    boolean=?
    cons
    set-cdr!

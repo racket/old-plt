@@ -88,6 +88,7 @@
 		    signal-undefined
 		    signal-not-boolean
 		    eq?-only-compares-symbols?
+		    <=-at-least-two-args
 		    disallow-untagged-inexact-numbers
 		    print-tagged-inexact-numbers
 		    whole/fractional-exact-numbers

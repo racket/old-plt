@@ -25,6 +25,7 @@
   (define primitive-load (current-load))
   (define primitive-eval (current-eval))
 
+  (define <=-at-least-two-args (make-parameter #f))
   (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
   
@@ -39,6 +40,7 @@
 				signal-undefined
 				signal-not-boolean
 				eq?-only-compares-symbols?
+				<=-at-least-two-args
 				disallow-untagged-inexact-numbers
 				print-tagged-inexact-numbers
 				whole/fractional-exact-numbers
@@ -63,6 +65,7 @@
 			       (signal-undefined #t)
 			       (signal-not-boolean #t)
 			       (eq?-only-compares-symbols? #t)
+			       (<=-at-least-two-args #t)
 			       (disallow-untagged-inexact-numbers #f)
 			       (print-tagged-inexact-numbers #t)
 			       (whole/fractional-exact-numbers #f)
@@ -79,6 +82,7 @@
 				   (signal-undefined #t)
 				   (signal-not-boolean #t)
 				   (eq?-only-compares-symbols? #t)
+				   (<=-at-least-two-args #t)
 				   (disallow-untagged-inexact-numbers #f)
 				   (print-tagged-inexact-numbers #t)
 				   (whole/fractional-exact-numbers #f)
@@ -95,6 +99,7 @@
 			       (signal-undefined #t)
 			       (signal-not-boolean #f)
 			       (eq?-only-compares-symbols? #f)
+			       (<=-at-least-two-args #t)
 			       (disallow-untagged-inexact-numbers #f)
 			       (print-tagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
@@ -111,6 +116,7 @@
 			    (signal-undefined #t)
 			    (signal-not-boolean #f)
 			    (eq?-only-compares-symbols? #f)
+			    (<=-at-least-two-args #f)
 			    (disallow-untagged-inexact-numbers #f)
 			    (print-tagged-inexact-numbers #f)
 			    (whole/fractional-exact-numbers #f)
@@ -127,6 +133,7 @@
 			      (signal-undefined #t)
 			      (signal-not-boolean #f)
 			      (eq?-only-compares-symbols? #f)
+			      (<=-at-least-two-args #f)
 			      (disallow-untagged-inexact-numbers #f)
 			      (print-tagged-inexact-numbers #f)
 			      (whole/fractional-exact-numbers #f)
@@ -458,7 +465,7 @@
 
     ;; build-parameterization : (list-of symbols)
     ;;                          setting
-    ;;                          (X Y -> (unit (import) (export ...)))
+    ;;                          (X Y Z -> (unit (import) (export ...)))
     ;;                       -> parameterization
     (define (build-parameterization namespace-flags setting handle-invokation)
       (let* ([parameterization (make-parameterization)]
@@ -508,6 +515,7 @@
 					     (setting-allow-improper-lists? setting)))
 	    
 	    (eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
+	    (<=-at-least-two-args (setting-<=-at-least-two-args setting))
 	    
 	    (zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
 
@@ -549,7 +557,8 @@
 	  (lambda ()
 	    (unless (setting-use-zodiac? setting)
 	      (require-library "corem.ss"))))
-	(handle-invokation zodiac:allow-improper-lists
+	(handle-invokation <=-at-least-two-args
+			   zodiac:allow-improper-lists
 			   eq?-only-compares-symbols
 			   parameterization)
 	parameterization)))

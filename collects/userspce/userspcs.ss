@@ -11,5 +11,6 @@
    (open ricedefs^)))
 
 (define-signature plt:userspace:params^
-  (allow-improper-lists
+  (<=-at-least-two-args
+   allow-improper-lists
    eq?-only-compares-symbols))

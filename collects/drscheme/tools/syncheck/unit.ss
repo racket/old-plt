@@ -582,21 +582,17 @@
 				   (send definitions-edit begin-edit-sequence))
 				 (lambda ()
 				   (let* ([new-name (format "~a" (string->symbol input-name))]
-					  [_ (begin (print-struct #f) (printf "sorting ~a~n" occurrances))]
 					  [sorted (mzlib:function@:quicksort
 						   occurrances
 						   (lambda (x y)
 						     (<= (zodiac:location-offset (zodiac:zodiac-start y))
 							 (zodiac:location-offset (zodiac:zodiac-start x)))))]
-					  [_ (printf "sorted~n")]
 					  [rename-one
 					   (lambda (z)
-					     (printf "rename-one.1~n")
 					     (begin0
 					      (send definitions-edit insert new-name
 						    (zodiac:location-offset (zodiac:zodiac-start z))
-						    (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))
-					      (printf "rename-one.2~n")))])
+						    (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
 				     (for-each rename-one sorted))
 				   (button-callback))
 				 (lambda ()

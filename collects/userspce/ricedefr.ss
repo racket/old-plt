@@ -2,7 +2,9 @@
       [orig-set-cdr! #%set-cdr!]
       [orig-list* #%list*]
       [orig-append #%append]
-      [orig-append! #%append!])
+      [orig-append! #%append!]
+
+      [orig-<= <=])
   (unit/sig ricedefs^
     (import [params : plt:userspace:params^])
 
@@ -45,7 +47,13 @@
 			last
 			(map (lambda (x) (format "~e" x)) args))))]
 	    [else (loop (cdr l))]))))
-    
+
+    (define <=
+      (if (params:<=-at-least-two-args)
+	  (lambda (x y . args)
+	    (apply orig-<= (cons x (cons y args))))
+	  orig-<=))
+
     (define cons (if (params:allow-improper-lists)
 		     orig-cons
 		     (lambda (a b)

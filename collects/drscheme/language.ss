@@ -146,6 +146,11 @@
 			  basis:setting-eq?-only-compares-symbols?
 			  "Eq? only compares symbols"
 			  dynamic-panel)]
+	 [<=-at-least-two-args
+	  (make-check-box basis:set-setting-<=-at-least-two-args!
+			  basis:setting-<=-at-least-two-args
+			  "comparison operators require at least two arguments"
+			  dynamic-panel)]
 #|
 	 [disallow-untagged-inexact-numbers
 	  (make-check-box basis:set-setting-disallow-untagged-inexact-numbers!
@@ -224,6 +229,7 @@
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
 		   (compare-check-box signal-not-boolean basis:setting-signal-not-boolean)
 		   (compare-check-box eq?-only-compares-symbols? basis:setting-eq?-only-compares-symbols?)
+		   (compare-check-box <=-at-least-two-args basis:setting-<=-at-least-two-args)
 		   ; (compare-check-box disallow-untagged-inexact-numbers basis:setting-disallow-untagged-inexact-numbers)
 		   (compare-check-box allow-improper-lists? basis:setting-allow-improper-lists?)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
@@ -274,6 +280,7 @@
 		       basis:setting-signal-not-boolean
 		       ; basis:setting-disallow-untagged-inexact-numbers
 		       basis:setting-eq?-only-compares-symbols?
+		       basis:setting-<=-at-least-two-args
 		       basis:setting-allow-improper-lists?
 		       basis:setting-sharing-printing?
 		       basis:setting-print-tagged-inexact-numbers
@@ -286,6 +293,7 @@
 		       signal-not-boolean
 		       ; disallow-untagged-inexact-numbers
 		       eq?-only-compares-symbols?
+		       <=-at-least-two-args
 		       allow-improper-lists?
 		       sharing-printing?
 		       print-tagged-inexact-numbers

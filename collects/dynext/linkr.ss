@@ -41,13 +41,11 @@
       [(sparc-solaris i386-solaris) (list "-G")]
       [(sparc-sunos4) (list "-Bdynamic")]
       [(i386-freebsd-2.x) (list "-Bshareable")]
-      [(rs6k-aix) (let ([version (read (car (process* "/usr/bin/uname" "-v")))])
-		    (list "-bM:SRE"
-			  (format "-bI:~a/mzscheme.exp" include-dir)
-			  (format "-bE:~a/ext.exp" include-dir)
-			  (if (= 3 version)
-			      "-e _nostart"
-			      "-bnoentry")))]
+      [(rs6k-aix) (list "-bM:SRE"
+			"-brtl"
+			(format "-bI:~a/mzscheme.exp" include-dir)
+			(format "-bE:~a/ext.exp" include-dir)
+			"-bnoentry")]
       [(parisc-hpux) (list "-b")]
       [else (list "-shared")]))
 

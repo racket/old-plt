@@ -143,6 +143,12 @@
                   `(((,highlight-placeholder) ((if 3 4 5)))
                     ((,highlight-placeholder) (4))))
 
+(test-beginner-sequence "(if (if true false true) false true)"
+                        `((((if ,highlight-placeholder false true)) ((if true false true)))
+                          (((if ,highlight-placeholder false true)) (false))
+                          ((,highlight-placeholder) ((if false false true)))
+                          ((,highlight-placeholder) (true))))
+
 (test-mz-sequence "((lambda (x) x) 3)"
                   `(((,highlight-placeholder) (((lambda (x) x) 3)))
                     ((,highlight-placeholder) (3))))

@@ -2963,19 +2963,23 @@
   (define (find-library-collection-paths)
     (path-list-string->path-list
      (or (getenv "PLTCOLLECTS") "")
-     (or (ormap
-	  (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))
-	  (list
-	   (lambda () (let ((v (getenv "PLTHOME")))
-			(and v (build-path v "collects"))))
-	   (lambda () (find-executable-path (find-system-path 'exec-file) "collects"))
-	   ;; When binary is in bin/ subdir:
-	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up "collects")))
-	   ;; When binary is in .bin/<platform> subdir:
-	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up "collects")))
-	   ;; When binary is in bin/<appname>.app/Contents/Macos subdir:
-	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up "collects")))))
-	 null)))
+     (cons
+      (build-path (find-system-path 'addon-dir)
+		  (version)
+		  "collects")
+      (or (ormap
+	   (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))
+	   (list
+	    (lambda () (let ((v (getenv "PLTHOME")))
+			 (and v (build-path v "collects"))))
+	    (lambda () (find-executable-path (find-system-path 'exec-file) "collects"))
+	    ;; When binary is in bin/ subdir:
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up "collects")))
+	    ;; When binary is in .bin/<platform> subdir:
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up "collects")))
+	    ;; When binary is in bin/<appname>.app/Contents/Macos subdir:
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up "collects")))))
+	  null))))
 
   ;; -------------------------------------------------------------------------
 

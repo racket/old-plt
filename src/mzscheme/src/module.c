@@ -3508,11 +3508,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     /* Do all-defined provides */
     for (; !SCHEME_NULLP(all_defs_out); all_defs_out = SCHEME_CDR(all_defs_out)) {
-      Scheme_Object *exns, *ree, *exl, *name, *a, *adl, *exname;
+      Scheme_Object *exns, *ree, *ree_kw, *exl, *name, *a, *adl, *exname;
 	    
       ree = SCHEME_CAR(all_defs_out);
       exl = SCHEME_CDR(ree);
-      ree = SCHEME_CAR(ree);
+      ree_kw = SCHEME_CAR(ree);
 	    
       /* Make sure each excluded name was defined: */
       for (exns = exl; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
@@ -3523,7 +3523,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  scheme_wrong_syntax("module", a, ree, "excluded identifier was not defined");
 	}
       }
-
 
       for (adl = all_defs; SCHEME_PAIRP(adl); adl = SCHEME_CDR(adl)) {
 	name = SCHEME_CAR(adl);
@@ -3540,10 +3539,21 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	if (SCHEME_STX_NULLP(exns)) {
 	  /* not excluded */
-	  if (scheme_hash_get(provided, exname))
-	    scheme_wrong_syntax("module", exname, ree, "identifier already provided");
-	  
-	  scheme_hash_set(provided, exname, name);
+
+	  /* Check that ree_kw and the identifier have the same
+	     introduction (in case one or the other was introduced by
+	     a macro). We perform this check by getting exname's tl_id
+	     as if it had ree_kw's context, then comparing that result
+	     to the actual tl_id. */
+	  a = scheme_datum_to_syntax(exname, scheme_false, ree_kw, 0, 0);
+	  a = scheme_tl_id_sym(env->genv, a, 0);
+
+	  if (SAME_OBJ(a, name)) {
+	    if (scheme_hash_get(provided, exname))
+	      scheme_wrong_syntax("module", exname, ree, "identifier already provided");
+	    
+	    scheme_hash_set(provided, exname, name);
+	  }
 	}
       }
     }

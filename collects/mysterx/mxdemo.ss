@@ -7,16 +7,18 @@
 
 (send caldoc insert-html 
 	(string-append	
-	"<H1 id=\"mx-header\">MysterX Demo</H1>"
-	"<p>"
-	"<hr>"
-	"<p>"
-	(coclass->html "Calendar Control 8.0")))
+	 "<H1 id=\"mx-header\">MysterX Demo</H1>"
+	 "<p>"
+	 "<hr>"
+	 "<p>"
+	 (coclass->html "Calendar Control 8.0")
+	 "<p>"
+	 "<H3 id=\"event-header\"></H3>"))
 
 (define cal (car (send caldoc objects)))
 
 ; the control panel document 
-(define ctrldoc (make-object mx-document% "Control Panel" 180 320 600 300 '()))
+(define ctrldoc (make-object mx-document% "Control Panel" 180 350 600 300 '()))
 
 (send ctrldoc insert-html 
 	(string-append	
@@ -73,8 +75,31 @@
 	
 	"<table align=center>"
 
-	"<td><BUTTON id=\"About\">About</BUTTON></td>"))
+	"<td><BUTTON id=\"About\">About</BUTTON></td>"
+
+	"</table>"
+
+	"<p>"
+
+	"<table align=center>"
 	
+	"<td id=\"event-reflector\">Click on the calendar</td>"
+
+	"</table>"))
+	
+(define reflector (send ctrldoc find-element "TD" "event-reflector"))
+
+(com-register-event-handler 
+ cal "Click" 
+ (lambda ()
+   (send reflector set-color! "white") 
+   (send reflector set-background-color! "blue")
+   (thread
+    (lambda ()
+      (sleep 0.25)
+      (send reflector set-color! "black") 
+      (send reflector set-background-color! "white")))))
+
 (define (about-handler ev)
   (when (send ev click?)
 	(com-invoke cal "AboutBox")))
@@ -146,3 +171,4 @@
 
 (send ctrldoc handle-events)
 
+			       

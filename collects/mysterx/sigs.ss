@@ -8,10 +8,13 @@
    com-methods
    com-get-properties
    com-set-properties
+   com-events
    com-method-type
    com-get-property-type
    com-set-property-type
+   com-event-type
    com-help
+   com-register-event-handler
    com-all-coclasses
    com-all-controls
    coclass->html
@@ -25,10 +28,13 @@
    com-methods
    com-get-properties
    com-set-properties
+   com-events	
    com-method-type
    com-get-property-type
    com-set-property-type
+   com-event-type
    com-help
+   com-register-event-handler
    com-all-coclasses
    com-all-controls
    coclass->html

@@ -11,19 +11,18 @@
 
 (module vmphase mzscheme 
   (require (lib "unitsig.ss")
-	  (lib "list.ss")
-	  (lib "etc.ss"))
+	   (lib "list.ss")
+	   (lib "etc.ss"))
 
   (require (lib "zodiac-sig.ss" "syntax")
 	   (lib "primitives.ss" "syntax"))
 
-  (require "sig.ss")
-  (require "../sig.ss")
+  (require "sig.ss"
+	   "../sig.ss")
 
   (provide vmphase@)
   (define vmphase@
-    (unit/sig
-	compiler:vmphase^
+    (unit/sig compiler:vmphase^
       (import (compiler:option : compiler:option^)
 	      compiler:library^
 	      compiler:cstructs^
@@ -758,11 +757,12 @@
 			 [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f #t)]
 			 [body (convert (zodiac:with-continuation-mark-form-body ast)
 					multi?
-					(lambda (val) (if var
-							  (list (make-vm:wcm-remember!
-								 (zodiac:zodiac-stx ast)
-								 var val))
-							  (leaf val)))
+					(lambda (val) 
+					  (if var
+					      (list (make-vm:wcm-remember!
+						     (zodiac:zodiac-stx ast)
+						     var val))
+					      (leaf val)))
 					(and (not wcm-var) tail-pos)
 					(and (not wcm-var) tail?)
 					used?)]

@@ -1355,7 +1355,11 @@
 			    
 			    (let ([var (get-annotation ast)])
 			      (add-local-var! var)))
-			
+
+			(zodiac:set-with-continuation-mark-form-body!
+			 ast
+			 body)
+
 			(values ast body-multi))]
 
 		     ;;-----------------------------------------------------------------

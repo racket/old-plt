@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.150 1998/04/21 02:59:55 robby Exp $
+; $Id: scm-main.ss,v 1.151 1998/05/08 22:15:22 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -897,7 +897,8 @@
 	      (in-pattern-1 (if (language<=? 'structured)
 			      '(_ () b) '(_ () b ...)))
 	      (out-pattern-1 (if (language<=? 'structured)
-			       'b '(begin b ...)))
+			       '(let-values () b)
+			       '(let-values () b ...)))
 	      (in-pattern-2 (if (language<=? 'structured)
 			      '(_ ((v0 e0) (v1 e1) ...) b)
 			      '(_ ((v0 e0) (v1 e1) ...) b ...)))

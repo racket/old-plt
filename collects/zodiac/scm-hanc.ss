@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.45 1998/03/14 14:49:38 shriram Exp $
+; $Id: scm-hanc.ss,v 1.46 1998/03/18 22:06:21 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -18,7 +18,7 @@
 		(sign:names null)
 		(in:rest null)
 		(sign:rest null))
-      (if (null? in:all)
+      (if (null? sign:all)
 	(begin
 	  (let loop ((in in:rest)
 		      (signs (map car sign:rest)))

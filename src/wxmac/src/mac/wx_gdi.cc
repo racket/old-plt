@@ -806,14 +806,12 @@ static void FreeGWorld(GWorldPtr x_pixmap)
 
 //------------------ Original GrafPtr ------------------------------------------
 
-static CGrafPtr original_grafptr;
-
 CGrafPtr wxGetGrafPtr(void)
 {
-  if (!original_grafptr)
-    GetPort(&original_grafptr);
-  
-  return original_grafptr;
+  if (!gMacFontGrafPort)
+    gMacFontGrafPort = CreateNewPort();
+
+  return gMacFontGrafPort;
 }
 
 //------------------ BitMaps ------------------------------------------

@@ -326,6 +326,8 @@ macxsrc/wx_check.cc: $(WXMACDIR)/mac/wx_check.cc $(WXMACBDIR)/wx_check.o $(XFORM
 	$(XFORMWP) $(WXMACDIR)/mac/wx_check.cc macxsrc/wx_check.cc
 macxsrc/wx_tabc.cc: $(WXMACDIR)/mac/wx_tabc.cc $(WXMACBDIR)/wx_tabc.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_tabc.cc macxsrc/wx_tabc.cc
+macxsrc/wx_gbox.cc: $(WXMACDIR)/mac/wx_gbox.cc $(WXMACBDIR)/wx_gbox.o $(XFORMDEP) $(MACXPRECOMP)
+	$(XFORMWP) $(WXMACDIR)/mac/wx_gbox.cc macxsrc/wx_gbox.cc
 macxsrc/wx_mac_utils.cc: $(WXMACDIR)/mac/wx_mac_utils.cc $(WXMACBDIR)/wx_mac_utils.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_mac_utils.cc macxsrc/wx_mac_utils.cc
 
@@ -726,6 +728,8 @@ mwx_check.o: macxsrc/wx_check.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_check.o macxsrc/wx_check.cc
 mwx_tabc.o: macxsrc/wx_tabc.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_tabc.o macxsrc/wx_tabc.cc
+mwx_gbox.o: macxsrc/wx_gbox.cc $(MACPRECOMPDEP)
+	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_gbox.o macxsrc/wx_gbox.cc
 mwx_mac_utils.o: macxsrc/wx_mac_utils.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_mac_utils.o macxsrc/wx_mac_utils.cc
 
@@ -988,6 +992,7 @@ wx_mac_XSRCS = \
   macxsrc/wx_lbox.cc \
   macxsrc/wx_check.cc \
   macxsrc/wx_tabc.cc \
+  macxsrc/wx_gbox.cc \
   macxsrc/wx_mac_utils.cc \
 \
   macxsrc/wx_bmp.cc \
@@ -1189,6 +1194,7 @@ wx_mac_XOBJS = \
   mwx_lbox.o \
   mwx_check.o \
   mwx_tabc.o \
+  mwx_gbox.o \
   mwx_mac_utils.o \
 \
   mwx_bmp.o \

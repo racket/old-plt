@@ -18,12 +18,12 @@
 #define TAB_TOP_SPACE 12
 #define TAB_CONTROL_HEIGHT 30
 #define TAB_CONTENT_MARGIN 2
-#define TAB_BOTTOM_EXTRA_MARGIN 2
+#define TAB_BOTTOM_EXTRA_MARGIN 3
 #define TAB_TITLE_SPACE 20
 #define TAB_PANE_OVERLAP 7
 
 static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
-ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
+static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
 
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)
 {
@@ -110,7 +110,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowWidth = r.right - r.left;
   cWindowHeight = r.bottom - r.top;
 #else
-  cWindowHeight = TAB_TOP_SPACE + TAB_CONTROL_HEIGHT + (2 * TAB_CONTENT_MARGIN) + TAB_BOTTOM_EXTRA_MARGIN;
+  cWindowHeight = TAB_TOP_SPACE + TAB_CONTROL_HEIGHT + TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN + 5;
   cWindowWidth = TAB_TITLE_SPACE;
   for (i = 0; i < N; i++) {
     float x, y;
@@ -310,12 +310,12 @@ void wxTabChoice::Paint(void)
       itemRect.top += (TAB_PANE_OVERLAP >> 1);
       itemRect.left -= 2;
       itemRect.right += 2;
-      itemRect.bottom += 5;
+      itemRect.bottom += 3;
       RectRgn(clipRgn, &itemRect);
-      itemRect.top += 10;
+      itemRect.top += 11;
       itemRect.left += 3;
-      itemRect.right -= 3;
-      itemRect.bottom -= 6;
+      itemRect.right -= 2;
+      itemRect.bottom -= 2;
       RectRgn(innerRgn, &itemRect);
       DiffRgn(clipRgn, innerRgn, clipRgn);
       SetClip(clipRgn);
@@ -341,12 +341,14 @@ void wxTabChoice::DoShow(Bool show)
     SetCurrentDC();
     if (show) {
       ::ShowControl(cMacControl);
-      if (pane)
+      if (pane) {
 	::ShowControl(pane);
+      }
     } else {
       ::HideControl(cMacControl);
-      if (pane)
+      if (pane) {
 	::HideControl(pane);
+      }
     }
   }
   
@@ -428,13 +430,12 @@ void wxTabChoice::OnEvent(wxMouseEvent *event)
 	trackResult = ::TrackControl(cMacControl, startPt, NULL);
       else
 	trackResult = Track(startPt);
-      Paint(); /* This is the handle thread; can't be in update */
+      Paint(); /* This is the handler thread; can't be in update */
     } else
       trackResult = 1;
     if (trackResult) {
       wxCommandEvent *commandEvent;
       commandEvent = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
-      // SetValue(!GetValue()); // toggle checkbox
       ProcessCommand(commandEvent);
     }
   }
@@ -492,8 +493,6 @@ void wxTabChoice::Append(char *s)
   }
 
   if (s && !cHidden) {
-    /* for some reason, the toolbox is stupid about drawing
-       the new control; force a redraw */
     Paint();
     Refresh(); /* in case an update is in progress */
   }

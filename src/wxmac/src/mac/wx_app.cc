@@ -88,8 +88,6 @@ wxApp::wxApp():wxbApp()
   
   ::FlushEvents(everyEvent, 0);
 
-  gMacFontGrafPort = CreateNewPort();
-
   wxREGGLOB(wxScreen::gScreenWindow);
   {
     wxScreen *sc;

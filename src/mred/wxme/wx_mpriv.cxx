@@ -179,9 +179,14 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
       scrollEnd = end;
     }
     
-    caretBlinked = FALSE;
-    if (ScrollToPosition(scrollStart, posateol, TRUE, scrollEnd, bias))
-      needRefresh = FALSE;
+    {
+      int wasBlinked = caretBlinked;
+      caretBlinked = FALSE;
+      if (ScrollToPosition(scrollStart, posateol, TRUE, scrollEnd, bias))
+	needRefresh = FALSE;
+      else
+	caretBlinked = wasBlinked;
+    }
   }
 
   if (needRefresh) {

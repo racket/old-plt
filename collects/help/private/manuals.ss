@@ -13,14 +13,14 @@
            "../servlets/private/util.ss"
            "../servlets/private/headelts.ss")
 
-  (provide main-manual-page
-	   manual-entry)
+  (provide main-manual-page)
   (provide finddoc
 	   findreldoc
-           finddoc-page
 	   finddoc-page-anchor)
   
-  (provide/contract [get-doc-name (path? . -> . string?)]
+  (provide/contract [manual-entry (string? string? string? . -> . xexpr?)]
+                    [finddoc-page (string? string? . -> . string?)]
+                    [get-doc-name (path? . -> . string?)]
                     [find-doc-directories (-> (listof path?))]
                     [find-doc-directory (path? . -> . (union false? path?))]
                     [find-doc-names (-> (listof (cons/p path? string?)))]
@@ -111,6 +111,8 @@
   (define (finddoc-lookup manual index-key label)
     (let ([key (string->symbol manual)]
 	  [docdir (find-doc-directory (string->path manual))])
+      (unless docdir
+        (error 'finddoc-lookup "manual ~s not found"  manual))
       (let ([l (hash-table-get
 		finddoc-ht
 		key

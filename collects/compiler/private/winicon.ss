@@ -11,6 +11,8 @@
     (integer-byte-string->integer (read-string 2 p) #f #f))
   (define (dword->integer p)
     (integer-byte-string->integer (read-string 4 p) #f #f))
+  (define (3/2word->integer p)
+    (integer-byte-string->integer (string-append (read-string 3 p) "\0") #f #f))
 
   (define (integer->dword i p)
     (display (integer->integer-byte-string i 4 #f #f) p))
@@ -371,34 +373,39 @@
 			      (arithmetic-shift (bitwise-and b 64) -6)
 			      (arithmetic-shift (bitwise-and b 128) -7)))])
 	  (let ([main-image
-		 (if (= bits-per-pixel 32)
-		     ;; RGB mode:
-		     (read-n (* w h) dword->integer cons)
-		     ;; Index mode:
-		     (let ([color-table (list->vector
-					 (read-n (if (zero? num-colors)
-						     (arithmetic-shift 1 bits-per-pixel)
-						     num-colors)
-						 dword->integer cons))]
-			   [image (read-lines (/ w (/ 8 bits-per-pixel))
-					      h
-					      (lambda (p)
-						(let ([b (byte->integer p)])
-						  (case bits-per-pixel
-						    [(1) (split-bits b)]
-						    [(2)
-						     (list
-						      (bitwise-and b 3)
-						      (arithmetic-shift (bitwise-and b 12) -2)
-						      (arithmetic-shift (bitwise-and b 48) -4)
-						      (arithmetic-shift (bitwise-and b 192) -6))]
-						    [(4)
-						     (list
-						      (bitwise-and b 15)
-						      (arithmetic-shift (bitwise-and b 240) -4))]
-						    [(8) (list b)])))
-					      append)])
-		       (map (lambda (i) (vector-ref color-table i)) image)))])
+		 (cond
+                   [(= bits-per-pixel 32)
+                    ;; RGB mode:
+                    (read-n (* w h) dword->integer cons)]
+                   [(= bits-per-pixel 24)
+                    ;; RGB mode:
+                    (read-n (* w h) 3/2word->integer cons)]
+                   [else
+                    ;; Index mode:
+                    (let ([color-table (list->vector
+                                        (read-n (if (zero? num-colors)
+                                                    (arithmetic-shift 1 bits-per-pixel)
+                                                    num-colors)
+                                                dword->integer cons))]
+                          [image (read-lines (/ w (/ 8 bits-per-pixel))
+                                             h
+                                             (lambda (p)
+                                               (let ([b (byte->integer p)])
+                                                 (case bits-per-pixel
+                                                   [(1) (split-bits b)]
+                                                   [(2)
+                                                    (list
+                                                     (bitwise-and b 3)
+                                                     (arithmetic-shift (bitwise-and b 12) -2)
+                                                     (arithmetic-shift (bitwise-and b 48) -4)
+                                                     (arithmetic-shift (bitwise-and b 192) -6))]
+                                                   [(4)
+                                                    (list
+                                                     (bitwise-and b 15)
+                                                     (arithmetic-shift (bitwise-and b 240) -4))]
+                                                   [(8) (list b)])))
+                                             append)])
+                      (map (lambda (i) (vector-ref color-table i)) image))])])
 	    (let ([mask (read-lines (/ w 8)
 				    h
 				    (lambda (p) (split-bits (byte->integer p)))

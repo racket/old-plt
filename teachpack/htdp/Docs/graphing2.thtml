@@ -1,0 +1,22 @@
+{ (define LIBNAME "Graphing Functions")
+  (define FILENAME "graphing2.ss")
+  (include "head.tinc") }
+
+The teachpack <code>graphing2.ss</code> provides two operations for
+graphing functions on the Cartesian
+plane (between -5 and 5 in both directions):
+graphics functions:
+<menu>
+<li><code>{(idx graph-fun)}</code> : (number -> number) symbol -> true; <br>
+draws a function in bulletized form with a given color
+<li><code>{(idx graph-line)}</code> : (number -> number) symbol -> true (no arguments); <br>
+draws a function in small line increments with a given color
+</menu>
+The legal color symbols are:
+ 'white 'black 'yellow 'green 'aqua 'pink
+ 'wheat 'grey 'brown 'blue 'violet 'cyan
+ 'turquoise 'magenta 'salmon 'red.
+
+<br>
+
+{(include "foot.tinc")}

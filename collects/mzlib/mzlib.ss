@@ -3,7 +3,6 @@
 
 (require-library "core.ss")
 
-(require-library "spidey.ss")
 (require-library "trigger.ss")
 (require-library "zmath.ss")
 (require-library "pconvert.ss")

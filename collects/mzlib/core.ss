@@ -4,7 +4,6 @@
 (require-relative-library "coreu.ss")
 
 (require-relative-library "pretty.ss")
-(require-relative-library "defstru.ss")
 (require-relative-library "file.ss")
 (require-relative-library "function.ss")
 (require-relative-library "compat.ss")

@@ -89,7 +89,7 @@
 			    table)))
 	     (raise-type-error 'parse-command-line "table of spec sets" table))
      (unless (and (procedure? finish)
-		  (let ([a (arity unknown-flag)])
+		  (let ([a (arity finish)])
 		    (or (and (number? a) (>= a 1))
 			(arity-at-least? a))))
 	     (raise-type-error 'parse-command-line "finish procedure of simple arity 1 or more" finish))
@@ -101,6 +101,15 @@
 		  (let ([a (arity unknown-flag)])
 		    (or (number? a) (arity-at-least? a))))
 	     (raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
+
+     (let ([a (arity finish)]
+	   [l (length finish-help)])
+       (unless (= (or (and (number? a) (sub1 a))
+		      (and (arity-at-least? a)
+			   (max 1 (arity-at-least-value a))))
+		  l)
+	   (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
+
      (let* ([once-spec-set
 	     (lambda (lines)
 	       (let ([set (cons #f (apply append (map car lines)))])
@@ -161,7 +170,7 @@
 		     (apply finish options args)
 		     (let ([a (arity finish)])
 		       (error (string->symbol program)
-			      (format "expects~a, given ~a argument~a~a"
+			      (format "expects~a on the command line, given ~a argument~a~a"
 				      (if (null? finish-help)
 					  " no arguments"
 					  (let ([s (open-output-string)])

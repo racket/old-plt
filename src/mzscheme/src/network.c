@@ -2607,7 +2607,7 @@ static void register_tcp_listener_sync()
 {
 #ifdef USE_TCP
   scheme_add_evt(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
-  scheme_add_evt(scheme_listener_type, (Scheme_Ready_Fun)tcp_check_accept_evt, tcp_accept_evt_needs_wakeup, NULL, 0);
+  scheme_add_evt(scheme_tcp_accept_evt_type, (Scheme_Ready_Fun)tcp_check_accept_evt, tcp_accept_evt_needs_wakeup, NULL, 0);
 # ifdef UDP_IS_SUPPORTED
   scheme_add_evt(scheme_udp_evt_type, (Scheme_Ready_Fun)udp_evt_check_ready, udp_evt_needs_wakeup, NULL, 0);
 # endif
@@ -3532,7 +3532,7 @@ static int udp_evt_check_ready(Scheme_Object *_uw, Scheme_Schedule_Info *sinfo)
 			 uw->str, uw->offset, uw->offset + uw->len, 
 			 (uw->with_addr ? &dest_addr : 0), 0);
       if (SCHEME_TRUEP(r)) {
-	scheme_set_sync_target(sinfo, r, NULL, NULL, 0, 0);
+	scheme_set_sync_target(sinfo, scheme_void, NULL, NULL, 0, 0);
 	return 1;
       } else
 	return 0;

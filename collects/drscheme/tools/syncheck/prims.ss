@@ -55,7 +55,8 @@
       beginning
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input.               None but the first number can be zero."))
+        "   to compute the rational quotient of its input. 
+              None but the first number can be zero."))
     (hash-table-put!
       beginning
       'max
@@ -448,7 +449,17 @@
       beginning
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+    (hash-table-put!
+      beginning
+      'memv
+      '("memv: (any list -> (union false list))"
+        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+    (hash-table-put!
+      beginning
+      'member
+      '("member: (any list -> (union false list))"
+        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
     (hash-table-put!
       beginning
       'reverse
@@ -680,10 +691,6 @@
         "        to extract the y component of a posn"))
     (hash-table-put!
       beginning
-      'read
-      '("read: (-> sexp)" "      to read input from the user"))
-    (hash-table-put!
-      beginning
       'error
       '("error: (symbol string -> void)" "       to signal an error"))
     (hash-table-put!
@@ -728,11 +735,6 @@
       'values
       '("values: (any ... -> (values any ...))"
         "        to return multiple values"))
-    (hash-table-put!
-      beginning
-      'printf
-      '("printf: (string any ... -> void)"
-        "        to format the first argument and print it to stdout"))
     (hash-table-put!
       beginning
       'void
@@ -809,7 +811,8 @@
       intermediate
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input.               None but the first number can be zero."))
+        "   to compute the rational quotient of its input. 
+              None but the first number can be zero."))
     (hash-table-put!
       intermediate
       'max
@@ -1202,7 +1205,17 @@
       intermediate
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+    (hash-table-put!
+      intermediate
+      'memv
+      '("memv: (any list -> (union false list))"
+        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+    (hash-table-put!
+      intermediate
+      'member
+      '("member: (any list -> (union false list))"
+        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
     (hash-table-put!
       intermediate
       'reverse
@@ -1437,10 +1450,6 @@
         "        to extract the y component of a posn"))
     (hash-table-put!
       intermediate
-      'read
-      '("read: (-> sexp)" "      to read input from the user"))
-    (hash-table-put!
-      intermediate
       'error
       '("error: (symbol string -> void)" "       to signal an error"))
     (hash-table-put!
@@ -1485,11 +1494,6 @@
       'values
       '("values: (any ... -> (values any ...))"
         "        to return multiple values"))
-    (hash-table-put!
-      intermediate
-      'printf
-      '("printf: (string any ... -> void)"
-        "        to format the first argument and print it to stdout"))
     (hash-table-put!
       intermediate
       'void
@@ -1566,7 +1570,8 @@
       advanced
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input.               None but the first number can be zero."))
+        "   to compute the rational quotient of its input. 
+              None but the first number can be zero."))
     (hash-table-put!
       advanced
       'max
@@ -1959,7 +1964,17 @@
       advanced
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+    (hash-table-put!
+      advanced
+      'memv
+      '("memv: (any list -> (union false list))"
+        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+    (hash-table-put!
+      advanced
+      'member
+      '("member: (any list -> (union false list))"
+        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
     (hash-table-put!
       advanced
       'reverse
@@ -2221,10 +2236,6 @@
         "             to update the x component of a posn"))
     (hash-table-put!
       advanced
-      'read
-      '("read: (-> sexp)" "      to read input from the user"))
-    (hash-table-put!
-      advanced
       'error
       '("error: (symbol string -> void)" "       to signal an error"))
     (hash-table-put!
@@ -2269,11 +2280,6 @@
       'values
       '("values: (any ... -> (values any ...))"
         "        to return multiple values"))
-    (hash-table-put!
-      advanced
-      'printf
-      '("printf: (string any ... -> void)"
-        "        to format the first argument and print it to stdout"))
     (hash-table-put!
       advanced
       'void
@@ -2380,6 +2386,11 @@
       'vector-ref
       '("vector-ref: ((vector x) nat -> x)"
         "            to extract an element from a vector"))
+    (hash-table-put!
+      advanced
+      'vector-length
+      '("vector-length: ((vector x) -> nat)"
+        "               to determine the length of a vector"))
     (hash-table-put!
       advanced
       'vector-set!

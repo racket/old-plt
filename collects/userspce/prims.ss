@@ -93,6 +93,8 @@
        append
        length
        memq
+       memv
+       member
        reverse
        assq
        equal?
@@ -140,7 +142,6 @@
        posn?
        posn-x
        posn-y
-       read
        error
        struct?
        equal?
@@ -151,7 +152,6 @@
        time-apply
        apply
        values
-       printf
        void
        void?
        raise
@@ -250,6 +250,8 @@
        append
        length
        memq
+       memv
+       member
        reverse
        assq
        equal?
@@ -297,7 +299,6 @@
        posn?
        posn-x
        posn-y
-       read
        error
        struct?
        equal?
@@ -308,7 +309,6 @@
        time-apply
        apply
        values
-       printf
        void
        void?
        raise
@@ -407,6 +407,8 @@
        append
        length
        memq
+       memv
+       member
        reverse
        assq
        equal?
@@ -460,7 +462,6 @@
        posn-y
        set-posn-x!
        set-posn-y!
-       read
        error
        struct?
        equal?
@@ -471,7 +472,6 @@
        time-apply
        apply
        values
-       printf
        void
        void?
        raise
@@ -494,6 +494,7 @@
        make-vector
        build-vector
        vector-ref
+       vector-length
        vector-set!
        vector?
        box

@@ -232,15 +232,6 @@ typedef struct Scheme_Debugging_Info {
   Scheme_Object *src;
 } Scheme_Debugging_Info;
 
-typedef struct Scheme_Sema {
-  Scheme_Type type;
-#ifdef MZ_REAL_THREADS
-  void *sema;
-#else
-  long value;  
-#endif
-} Scheme_Sema;
-
 typedef struct Scheme_Symbol {
   Scheme_Type type;
   short len;
@@ -453,6 +444,7 @@ typedef struct Scheme_Saved_Stack {
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
   long runstack_size;
+  Scheme_Object **runstack_last_mark;
   struct Scheme_Saved_Stack *prev;
 } Scheme_Saved_Stack;
 
@@ -584,7 +576,11 @@ typedef struct Scheme_Process {
   void **user_tls;
   int user_tls_size;
 
+  struct Scheme_Process_Manager_Hop *mr_hop;
+
   Scheme_Manager_Reference *mref;
+
+  Scheme_Object **cont_mark_chain;
 } Scheme_Process;
 
 /* Type readers & writers for compiled code data */
@@ -890,11 +886,9 @@ extern int scheme_defining_primitives;
 
 /* These flags must be set before MzScheme is started: */
 extern int scheme_case_sensitive; /* Defaults to 0 */
-extern int scheme_constant_builtins; /* Defaults to 0 */
 extern int scheme_no_keywords; /* Defaults to 0 */
 extern int scheme_allow_set_undefined; /* Defaults to 0 */
 extern int scheme_escape_continuations_only; /* Defaults to 0 */
-extern int scheme_secure_primitive_exn; /* Defaults to 0 */
 extern int scheme_allow_cond_auto_else; /* Defaults to 1 */
 extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */

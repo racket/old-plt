@@ -1,3 +1,20 @@
+Version 100, ??, 1998
+Changed class syntax, splitting public clause use into:
+  `public' : defines ivars not in superclass
+  `override' : defines ivars already in superclass
+Removed letrec*; letrec has the same semantics
+Removed constant-name and constant-name-all-globals
+Removed secure-primitive-exception-types
+MzLib cleanup:
+ Removed all c.ss libraries, plus constan[t].ss
+ Removed catch-errors and let-enumerate from macro.ss
+ Removed make-class and make-class* from compat.ss
+ Removed zsin, zcos, ztan, zasin, zacos, zatan, zlog, zexp,
+  and zsqrt from zmath.ss (MzScheme's built-ins do complex)
+ Moved from functio.ss to thread.ss: dynamic-disable-break,
+  dynamic-wind/protect-break, make-single-threader
+ Moved MzLib's compat.ss out of the core
+
 Version 53, July 25, 1998
 Changed file-modify-seconds to file-or-directory-modify-seconds
 Changed rename-file to rename-file-or-directory

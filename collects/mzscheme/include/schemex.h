@@ -89,6 +89,8 @@ void (*scheme_swap_process)(Scheme_Process *process);
 #else
 void (*scheme_process_block_w_process)(float sleep_time, Scheme_Process *p);
 #endif
+void (*scheme_weak_suspend_thread)(Scheme_Process *p);
+void (*scheme_weak_resume_thread)(Scheme_Process *p);
 int (*scheme_block_until)(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
 int (*scheme_in_main_thread)(void);
 int (*scheme_tls_allocate)();
@@ -385,7 +387,6 @@ void (*scheme_add_global_symbol)(Scheme_Object *name, Scheme_Object *val,
 			      Scheme_Env *env);
 void (*scheme_remove_global_symbol)(Scheme_Object *name, Scheme_Env *env);
 void (*scheme_add_global_constant_symbol)(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
-void (*scheme_constant)(Scheme_Object *sym, Scheme_Env *env);
 void (*scheme_set_keyword)(Scheme_Object *name, Scheme_Env *env);
 Scheme_Object *(*scheme_make_envunbox)(Scheme_Object *value);
 Scheme_Object *(*scheme_lookup_global)(Scheme_Object *symbol, Scheme_Env *env);
@@ -418,6 +419,17 @@ Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
 int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
 #ifndef NO_OBJECT_SYSTEM
 /* Objects */
+int (*scheme_is_subclass)(Scheme_Object *sub, Scheme_Object *parent);
+int (*scheme_is_implementation)(Scheme_Object *cl, Scheme_Object *in);
+int (*scheme_is_interface_extension)(Scheme_Object *n1, Scheme_Object *n2);
+int (*scheme_is_a)(Scheme_Object *obj, Scheme_Object *sclass);
+const char *(*scheme_get_class_name)(Scheme_Object *cl, int *len);
+const char *(*scheme_get_interface_name)(Scheme_Object *cl, int *len);
+Scheme_Object *(*scheme_make_object)(Scheme_Object *sclass, 
+				  int argc, Scheme_Object **argv);
+Scheme_Object *(*scheme_make_uninited_object)(Scheme_Object *sclass);
+Scheme_Object *(*scheme_find_ivar)(Scheme_Object *obj, Scheme_Object *sym, int force);
+/* OLD class-making interface (Still used by xctocc) */
 Scheme_Object *(*scheme_make_class)(const char *name, Scheme_Object *sup, 
 				 Scheme_Method_Prim *init, int num_methods);
 void (*scheme_add_method)(Scheme_Object *cl, const char *name, 
@@ -425,16 +437,8 @@ void (*scheme_add_method)(Scheme_Object *cl, const char *name,
 void (*scheme_add_method_w_arity)(Scheme_Object *cl, const char *name, 
 			       Scheme_Method_Prim *f, int mina, int maxa);
 void (*scheme_made_class)(Scheme_Object *cl);
-Scheme_Object *(*scheme_make_object)(Scheme_Object *sclass, 
-				  int argc, Scheme_Object **argv);
-Scheme_Object *(*scheme_make_uninited_object)(Scheme_Object *sclass);
-Scheme_Object *(*scheme_find_ivar)(Scheme_Object *obj, Scheme_Object *sym, int force);
-int (*scheme_is_subclass)(Scheme_Object *sub, Scheme_Object *parent);
-int (*scheme_is_implementation)(Scheme_Object *cl, Scheme_Object *in);
-int (*scheme_is_interface_extension)(Scheme_Object *n1, Scheme_Object *n2);
-int (*scheme_is_a)(Scheme_Object *obj, Scheme_Object *sclass);
-const char *(*scheme_get_class_name)(Scheme_Object *cl, int *len);
-const char *(*scheme_get_interface_name)(Scheme_Object *cl, int *len);
+Scheme_Object *(*scheme_class_to_interface)(Scheme_Object *cl, char *name);
+/* NEW class-making interface */
 struct Scheme_Class_Assembly *(*scheme_make_class_assembly)(const char *name, int n_interfaces,
 							 int n_public, Scheme_Object **names,
 							 int n_inh, Scheme_Object **inheritd,
@@ -494,9 +498,6 @@ char *(*scheme_banner)(void);
 char *(*scheme_version)(void);
 int (*scheme_check_proc_arity)(const char *where, int a,
 			    int which, int argc, Scheme_Object **argv);
-#ifndef NO_SCHEME_EXNS
-void (*scheme_secure_exceptions)(Scheme_Env *env);
-#endif
 char *(*scheme_make_provided_string)(Scheme_Object *o, int count, int *len);
 char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **argv);
 void (*scheme_no_dumps)(char *why);

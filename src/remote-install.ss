@@ -2,7 +2,8 @@
 
 string=? ; exec mzscheme/mzscheme -qr $0 "$@"
 
-(require (lib "cmdline.ss"))
+(require (lib "cmdline.ss")
+	 (lib "process.ss"))
 
 ;; from-remote-host : (union string #f)
 (define from-remote-host #f)
@@ -38,23 +39,22 @@ string=? ; exec mzscheme/mzscheme -qr $0 "$@"
 
 (define plt-relative-files
   (case (system-type)
-    [(macosx) (list (make-pr (build-path "mred" "mred")
-                             (build-path "bin"))
-                    (make-pr (build-path "mred" "mred3m")
-                             (build-path "bin"))
-                    (make-pr (build-path "mred" "Starter.app")
+    [(macosx) (list (make-pr (build-path "src" "mred" "MrEd.app")
+                             (build-path 'same))
+                    (make-pr (build-path "src" "mred" "MrEd3m.app")
+                             (build-path 'same))
+                    (make-pr (build-path "src" "mred" "Starter.app")
                              (build-path "collects" "launcher"))
-                    (make-pr (build-path "mzscheme" "mzscheme")
+                    (make-pr (build-path "src" "mzscheme" "mzscheme")
                              (build-path "bin"))
                     (make-pr (build-path "mzscheme" "mzscheme3m")
-                             (build-path "bin"))
-                    (make-pr (build-path "mzscheme" "dynsrc" "mzdyn.c")
-                             (build-path "collects" "mzscheme" "lib")))]
+                             (build-path "bin")))]
     [else (error 'remote-install.ss "only works for macos x")]))
 
 (define home-directory-relative-files
   (case (system-type)
-    [(macosx) (list (make-pr (build-path "mred"
+    [(macosx) (list (make-pr (build-path "src"
+					 "mred"
                                          "PLT_MrEd.framework"
                                          "Versions"
                                          (version))
@@ -62,7 +62,8 @@ string=? ; exec mzscheme/mzscheme -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"))
-                    (make-pr (build-path "mzscheme"
+                    (make-pr (build-path "src"
+					 "mzscheme"
                                          "PLT_MzScheme.framework"
                                          "Versions"
                                          (version))
@@ -74,14 +75,14 @@ string=? ; exec mzscheme/mzscheme -qr $0 "$@"
 
 (define (do-copy src-rel dest-rel)
   (lambda (pr)
-    (printf
-     "~a"
-     (format "scp -r ~a~a ~a~a"
-             (if from-remote-host (format "~a:" from-remote-host) "")
-             (build-path src-rel (pr-from pr))
-             (if to-remote-host (format "~a:" to-remote-host) "")
-             (build-path dest-rel (pr-to pr))))
-    (newline)))
+    (let ([cmd
+	   (format "scp -r ~a~a ~a~a"
+		   (if from-remote-host (format "~a:" from-remote-host) "")
+		   (build-path src-rel (pr-from pr))
+		   (if to-remote-host (format "~a:" to-remote-host) "")
+		   (build-path dest-rel (pr-to pr)))])
+      (printf "~a\n" cmd)
+      (system cmd))))
 
 (for-each (do-copy src-plt-home dest-plt-home) plt-relative-files)
-(for-each (do-copy "~" "~") home-directory-relative-files)
+(for-each (do-copy src-plt-home "~") home-directory-relative-files)

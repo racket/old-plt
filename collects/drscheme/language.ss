@@ -77,7 +77,7 @@
 			 [message (make-object mred:message% p name)])
 		    (make-object mred:vertical-panel% p -1 -1 -1 -1 wx:const-border)))]
 	       [input-syntax-panel (make-sub-panel "Input Syntax")]
-	       [dynamic-panel (make-sub-panel "Dynamic Properties")]
+	       [dynamic-panel (make-sub-panel "Safety Properties")]
 	       [output-syntax-panel (make-sub-panel "Output Syntax")]
 			 
 	       [_ (make-object mred:horizontal-panel% language-panel)]

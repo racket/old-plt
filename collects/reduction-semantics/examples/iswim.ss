@@ -18,6 +18,7 @@
 	      (b number)
 	      (o1 "add1" "sub1" "iszero")
 	      (o2 "+" "-" "*" "^")
+	      (on o1 o2)
 	      
 	      ;; Evaluation contexts:
 	      (E hole
@@ -27,17 +28,11 @@
 		 (o2 E M)
 		 (o2 V E))))
 
-  (define M?
-    ;; to check whether an expression is in M, apply a reduction that
-    ;; matches only Ms, and see whether it generates any results
-    (let ([m-to-7 (list (reduction iswim-grammar M 7))])
-      (lambda (a)
-        (pair? (reduce m-to-7 a)))))
-
-  (define V?
-    (let ([v-to-7 (list (reduction iswim-grammar V 7))])
-      (lambda (M)
-        (pair? (reduce v-to-7 M)))))
+  (define M? (language->predicate iswim-grammar 'M))
+  (define V? (language->predicate iswim-grammar 'V))
+  (define o1? (language->predicate iswim-grammar 'o1))
+  (define o2? (language->predicate iswim-grammar 'o2))
+  (define on? (language->predicate iswim-grammar 'on))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Substitution:
@@ -108,8 +103,20 @@
                     (cons beta_v delta)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Abbreviations:
+  ;; Helpers:
   
+  (define (delta*n on Vs)
+    (let ([l (reduce delta `(,on ,@Vs))])
+      (if (null? l)
+	  #f
+	  (car l))))
+
+  (define (delta*1 o1 V)
+    (delta*n o1 (list V)))
+
+  (define (delta*2 o2 V1 V2)
+    (delta*n o2 (list V1 V2)))
+
   ;; function-reduce*
   (define (function-reduce* reds expr done?)
     (cons 
@@ -157,9 +164,14 @@
   (provide/contract (iswim-grammar compiled-lang?)
 		    (M? (any? . -> . boolean?))
 		    (V? (M? . -> . boolean?))
+		    (o1? (M? . -> . boolean?))
+		    (o2? (M? . -> . boolean?))
 		    (iswim-subst (M? symbol? M? . -> . M?))
 		    (beta_v red?)
 		    (delta (listof red?))
+		    (delta*1 (o1? V?  . -> . V?))
+		    (delta*2 (o2? V? V? . -> . V?))
+		    (delta*n (on? (listof V?) . -> . V?))
 		    (->v (listof red?))
 		    (:->v (listof red?))
 		    (function-reduce* ((listof red?) any? (any? . -> . boolean?) 

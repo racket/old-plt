@@ -12,6 +12,7 @@
 	   compiled-lang? red?)
   
   (provide/contract
+   (language->predicate (compiled-lang? symbol? . -> . (any? . -> . boolean?)))
    (match-pattern (compiled-pattern any? . -> . (union false? (listof bindings?))))
    (compile-pattern (compiled-lang? any? . -> . compiled-pattern))
    (reduce ((listof (lambda (x) (red? x))) any? . -> . (listof any?)))
@@ -159,6 +160,10 @@
              (raise-syntax-error 'language "malformed non-terminal" stx x)]))
         (syntax->list (syntax (x ...))))]))
   
+  (define (language->predicate lang id)
+    (let ([p (compile-pattern lang id)])
+      (lambda (x)
+	(and (match-pattern p x) #t))))
     
   ;; reduce : (listof red) exp -> (listof exp)
   (define (reduce reductions exp)

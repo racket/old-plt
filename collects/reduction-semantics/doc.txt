@@ -150,10 +150,14 @@ closure of that non-terminal.
 The (pattern ...) pattern matches a sexpression list, where
 each pattern matches an element of the list. In addition, if
 a list pattern contains an ellipses that is not treated as a
-literal, instead it duplicates the patterns that came
-before. Ellipses may be placed anywhere inside the row of
-patterns, except in the first position or after another
-ellipses. Multiple ellispes are allowed.
+literal, instead it matches any number of duplications of the
+pattern that came before the ellipses (including 0). Furthemore,
+each (name <symbol> <pattern>) in the duplicated pattern
+binds a list of matches to <symbol>, instead of a single match.
+(A nested duplicated pattern creates a list of list matches,
+etc.) Ellipses may be placed anywhere inside the row of 
+patterns,  except in the first position or immediately after
+another ellipses.  Multiple ellispes are allowed.
 
 > (language (non-terminal pattern ...) ...)     SYNTAX
 

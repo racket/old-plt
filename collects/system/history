@@ -1,5 +1,8 @@
 SYSTEM HISTORY
 --------------
+Version 49:
+- mred:make-invokable-unit now must return a unit/sig, not a unit.
+
 Version 47:
 - find-string-embedded of mred:edit% is just like find-string except it
   searches in embedded buffers as well.

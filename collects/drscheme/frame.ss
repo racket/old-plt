@@ -125,7 +125,7 @@
 	(public
 	  [get-canvas% 
 	   (let ([%
-		  (class mred:simple-frame-canvas% args
+		  (class mred:wrapping-canvas% args
 		    (inherit get-media)
 		    (rename [super-edit-modified edit-modified])
 		    (public
@@ -389,7 +389,7 @@
 	
 	(sequence
 	  (send definitions-edit set-mode (make-object mred:scheme-mode%))
-	  (send* interactions-canvas (set-media interactions-edit) (set-frame this))
+	  (send* interactions-canvas (set-media interactions-edit))
 	  (send interactions-edit set-auto-set-wrap #t)
 	  (change-to-file filename))
 

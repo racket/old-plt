@@ -59,12 +59,18 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 
 (add-flags current-extension-linker-flags (list "-lcurses"))
 
+(define (delete/continue x)
+  (with-handlers ([(lambda (x) #t) void])
+    (delete-file x)))
+
 (make 
  ((mzrl.so (mzrl.o dir)
 	   (link-extension #f (list mzrl.o) mzrl.so))
   
   (mzrl.o ("mzrl.c" header version-header dir)
 	  (compile-extension #f "mzrl.c" mzrl.o ()))
+
+  ("clean" () (begin (delete/continue mzrl.o) (delete/continue mzrl.so)))
   
   (dir ()
        (make-directory* dir)))

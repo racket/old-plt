@@ -81,7 +81,21 @@
       (cond
        (baseline? (send-command (compute-baseline-move packages robots) out))
        (else
-	(send-command (compute-move packages robots) out)))
+        (let ((command (compute-move packages robots)))
+          (when (eq? (command-command command) 'p)
+            (printf "Robot ~a is picking up ~a~n" (player-id) (map package-id (command-arg command))))
+          (when (eq? (command-command command) 'd)
+            (printf "Robot ~a is dropping ~a for score ~a~n" 
+                    (player-id) 
+                    (map package-id (command-arg command))
+                    (apply + (map package-weight (command-arg command)))))
+;          (when (or (eq? (command-command command) 'n)
+;                    (eq? (command-command command) 's)
+;                    (eq? (command-command command) 'e)
+;                    (eq? (command-command command) 'w))
+;            (printf "Robot ~a is moving ~a from ~a,~a~n" (player-id) 
+;                    (command-command command) (get-player-x) (get-player-y)))
+          (send-command command out))))
       (let ((robots (read-response! update-score
 				    packages
 				    in 

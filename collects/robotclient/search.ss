@@ -1,5 +1,7 @@
 (module search mzscheme
   
+  (require (lib "list.ss"))
+  
   (require "board.ss"
            "client-parameters.ss"
            "heuristics.ss"
@@ -118,10 +120,10 @@
           ((not (null? d)) (maker d-weight x y d-bid 'D d))
           ((not (null? p)) (maker p-weight x y p-bid 'P p))
           (else
-           (list (when n-weight (maker n-weight x (add1 y) n-bid 'N null))
-                 (when s-weight (maker s-weight x (sub1 y) s-bid 'S null))
-                 (when e-weight (maker e-weight (add1 x) y e-bid 'E null))
-                 (when w-weight (maker w-weight (sub1 x) y w-bid 'W null))))))))          
+           (list (when n-weight (maker (direction-weight 'N n-weight x y) x (add1 y) n-bid 'N null))
+                 (when e-weight (maker (direction-weight 'E e-weight x y) (add1 x) y e-bid 'E null))
+                 (when s-weight (maker (direction-weight 'S s-weight x y) x (sub1 y) s-bid 'S null))
+                 (when w-weight (maker (direction-weight 'W w-weight x y) (sub1 x) y w-bid 'W null))))))))          
   
   (define (generate-moves x y weight back back-check g command)
     (let ((maker (move-maker (weight-from-goal g) back g command))
@@ -149,10 +151,26 @@
         (cond
           ((not (null? d)) (maker d-weight x y d-bid))
           (else
-           (list (when n-weight (maker (+ weight n-weight) x (add1 y) n-bid))
-                 (when s-weight (maker (+ weight s-weight) x (sub1 y) s-bid))
-                 (when e-weight (maker (+ weight e-weight) (add1 x) y e-bid))
-                 (when w-weight (maker (+ weight w-weight) (sub1 x) y w-bid))))))))
+           (list (when n-weight (maker (+ weight (direction-weight 'N n-weight x y)) x (add1 y) n-bid))
+                 (when e-weight (maker (+ weight (direction-weight 'E e-weight x y)) (add1 x) y e-bid))
+                 (when s-weight (maker (+ weight (direction-weight 'S s-weight x y)) x (sub1 y) s-bid))
+                 (when w-weight (maker (+ weight (direction-weight 'W w-weight x y)) (sub1 x) y w-bid))))))))
+  
+  (define (destination-in-direction? x y dir)
+    (and (not (null? (packages-held)))
+         (ormap (lambda (x) x)
+                (map (lambda (pack)
+                       (case dir 
+                         ((n) (> (package-y pack) y))
+                         ((s) (< (package-y pack) y))
+                         ((e) (> (package-x pack) x))
+                         ((w) (< (package-x pack) x))))
+                     (packages-held)))))
+  
+  (define (direction-weight dir weight x y)
+    (if (destination-in-direction? x y dir)
+        (+ weight (destination-in-direction-value))
+        weight))
   
   (define (compute-move packages robots)
     (queue-head null)

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.199 2000/01/02 23:28:25 robby Exp $
+; $Id: scm-main.ss,v 1.200 2000/01/10 22:51:11 clements Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -614,6 +614,7 @@
   (add-primitivized-micro-form 'quote intermediate-vocabulary (make-quote-micro #t))
   (add-primitivized-micro-form 'quote scheme-vocabulary (make-quote-micro #t))
 
+  ;; This second variable is no longer being used
   (define (make-set!-micro dont-mutate-lexical-varrefs?)
     (let* ((kwd '())
 	   (in-pattern `(_ var val))
@@ -631,12 +632,6 @@
 				   (expand-expr
 				    (pat:pexpand 'val p-env kwd)
 				    env attributes vocab)))))
-		(when (and dont-mutate-lexical-varrefs?
-			   (lexical-varref? id-expr))
-		      (static-error
-		       expr
-		       "Cannot mutate the lexically-bound identifier ~s"
-		       (binding-orig-name (bound-varref-binding id-expr))))
 		(create-set!-form id-expr expr-expr expr))
 	      (static-error expr "Malformed set!"))))))
 

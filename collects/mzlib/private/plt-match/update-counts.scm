@@ -45,6 +45,37 @@
                    test-list)
             )))
 
+       (logical-member
+        (lambda (item lst)
+          (ormap (lambda (cur)
+                   (logical-equal? item cur))
+                 lst)))
+         
+       (logical-equal?  
+        (lambda x
+          (if (pair? x)
+              (let ((exp8163 (cdr x)))
+                (if (and (pair? exp8163) (null? (cdr exp8163)))
+                    (if (equal? (car exp8163) (car x))
+                        ((lambda (a) #t) (car x))
+                        (let ((exp8164 (car x)))
+                          (if (and (pair? exp8164) (equal? (car exp8164) 'list?))
+                              (let ((exp8165 (cdr exp8164)))
+                                (if (and (pair? exp8165) (null? (cdr exp8165)))
+                                    (let ((exp8166 (car exp8163)))
+                                      (if (and (pair? exp8166) (equal? (car exp8166) 'null?))
+                                          (let ((exp8167 (cdr exp8166)))
+                                            (if (and (pair? exp8167)
+                                                     (null? (cdr exp8167))
+                                                     (equal? (car exp8167) (car exp8165)))
+                                                ((lambda (x) #t) (car exp8165))
+                                                ((lambda (else) #f) x)))
+                                          ((lambda (else) #f) x)))
+                                    ((lambda (else) #f) x)))
+                              ((lambda (else) #f) x))))
+                    ((lambda (else) #f) x)))
+              ((lambda (else) #f) x))))
+
        (truncate 
         (lambda (pos used-set-neg)
           (cond ((null? used-set-neg)
@@ -91,7 +122,9 @@
                        (hash-table-get mem-table (test-tst test)
                                       (lambda ()
                                          (when (
-                                                member
+                                                ;member
+                                                logical-member
+                                                ;inverse-in
                                                 (test-tst test) (car l))
                                            (set-test-times-used! test (add1 (test-times-used test)))
                                            (set-test-used-set! test (cons p (test-used-set test)))

@@ -45,122 +45,122 @@
   (lambda (ae kf ks pat dot-dot-k stx let-bound)
     (lambda (sf bv)
       (let* ((k (stx-dot-dot-k? dot-dot-k))
-             (ksucc (lambda (sf bv)
+             (ksucc (lambda (sf bv) 
                       (let ((bound (getbindings pat)))
-                        (if (syntax? bound)
-                            (kf sf bv)
-                        (syntax-case pat (_)
-                          (_ (ks sf bv))
-                          (the-pat
-                           (null? bound)
-                           (with-syntax ((exp-sym (syntax exp-sym)))
-                             (let* ((ptst (next-outer
-                                           pat
-                                           (syntax exp-sym)
-                                           sf
-                                           bv
-                                           let-bound
-                                           (lambda (sf bv) (syntax #f))
-                                           (lambda (sf bv) (syntax #t))))
-                                    (tst (syntax-case ptst ()
-                                           ((pred eta)
-                                            (and (identifier?
-                                                  (syntax pred))
+                           (if (syntax? bound)
+                               (kf sf bv)
+                               (syntax-case pat (_)
+                                 (_ (ks sf bv))
+                                 (the-pat
+                                  (null? bound)
+                                  (with-syntax ((exp-sym (syntax exp-sym)))
+                                    (let* ((ptst (next-outer
+                                                  pat
+                                                  (syntax exp-sym)
+                                                  sf
+                                                  bv
+                                                  let-bound
+                                                  (lambda (sf bv) (syntax #f))
+                                                  (lambda (sf bv) (syntax #t))))
+                                           (tst (syntax-case ptst ()
+                                                  ((pred eta)
+                                                   (and (identifier?
+                                                         (syntax pred))
                                         ;free-identifier=?
-                                                 (stx-equal?
-                                                  (syntax eta)
-                                                  (syntax exp-sym)))
-                                            (syntax pred))
-                                           (whatever
-                                            (quasisyntax/loc 
-                                             stx 
-                                             (lambda (exp-sym)
-                                               #,ptst))))))
-                               (assm (quasisyntax/loc 
-                                      stx 
-                                      (andmap #,tst 
-                                              #,(subst-bindings ae let-bound)))
-                                     (kf sf bv)
-                                     (ks sf bv)))))
-                          (id
-                           (and (identifier? (syntax id))
-                                (stx-equal? (syntax id)
-                                            (car bound)))
-                           (next-outer (syntax id) ae sf bv let-bound kf ks))
-                          (the-pat
-                           (let ((binding-list-names
-                                  (map (lambda (x)
-                                         (datum->syntax-object
-                                          (quote-syntax here)
-                                          (symbol-append
-                                           (gensym (syntax-object->datum x))
-                                           '-bindings)))
-                                       bound))
-                                 (loop-name (quasisyntax/loc 
-                                             (syntax the-pat) 
-                                             #,(gensym 'loop)))
-                                 (exp-name (quasisyntax/loc 
-                                            (syntax the-pat) 
-                                            #,(gensym 'exp))))
-                             (quasisyntax/loc
-                              stx
-                              (let #,loop-name
-                                ((#,exp-name #,(subst-bindings ae let-bound))
-                                 #,@(map
-                                     (lambda (x)
-                                       (quasisyntax/loc
-                                        stx
-                                        (#,x '())))
-                                     binding-list-names))
-                                (if (null? #,exp-name)
-                                    #,(ks sf
-                                          (append
-                                           (map cons
-                                                bound
-                                                (map
-                                                 (lambda (x)
+                                                        (stx-equal?
+                                                         (syntax eta)
+                                                         (syntax exp-sym)))
+                                                   (syntax pred))
+                                                  (whatever
                                                    (quasisyntax/loc 
                                                     stx 
-                                                    (reverse #,x)))
-                                                 binding-list-names))
-                                           bv))
-                                    #,(next-outer (syntax the-pat)
-                                                  (quasisyntax/loc 
+                                                    (lambda (exp-sym)
+                                               #,ptst))))))
+                                      (assm (quasisyntax/loc 
+                                             stx 
+                                             (andmap #,tst 
+                                                     #,(subst-bindings ae let-bound)))
+                                            (kf sf bv)
+                                            (ks sf bv)))))
+                                 (id
+                                  (and (identifier? (syntax id))
+                                       (stx-equal? (syntax id)
+                                                   (car bound)))
+                                  (next-outer (syntax id) ae sf bv let-bound kf ks))
+                                 (the-pat
+                                  (let ((binding-list-names
+                                         (map (lambda (x)
+                                                (datum->syntax-object
+                                                 (quote-syntax here)
+                                                 (symbol-append
+                                                  (gensym (syntax-object->datum x))
+                                           '-bindings)))
+                                              bound))
+                                        (loop-name (quasisyntax/loc 
+                                                    (syntax the-pat) 
+                                                    #,(gensym 'loop)))
+                                        (exp-name (quasisyntax/loc 
                                                    (syntax the-pat) 
-                                                   (car #,exp-name))
-                                                  sf
-                                                  bv  ;; we always start
-                                                  ;; over with the old
-                                                  ;; bindings
-                                                  let-bound
-                                                  kf
-                                                  (lambda (sf bv)
-                                                    (quasisyntax/loc
-                                                     stx
-                                                     (#,loop-name
-                                                      (cdr #,exp-name)
-                                                      #,@(map
-                                                          (lambda
-                                                              (b-var
-                                                               bindings-var)
-                                                            (quasisyntax/loc
-                                                             stx
-                                                             (cons
-                                                              #,(get-bind-val
-                                                                  b-var
-                                                                  bv)
-                                                              #,bindings-var)))
-                                                          bound binding-list-names))))))))))))))))
-        (case k
-          ((0) (ksucc sf bv))
-          ((1) (emit (lambda (exp) (quasisyntax/loc stx (pair? #,exp)))
-                     ae
-                     let-bound
-                     sf bv kf ksucc))
-          (else (emit (lambda (exp) (quasisyntax/loc stx (>= (length #,exp) #,k)))
-                      ae
-                      let-bound
-                      sf bv kf ksucc)))))))
+                                                   #,(gensym 'exp))))
+                                    (quasisyntax/loc
+                                     stx
+                                     (let #,loop-name
+                                       ((#,exp-name #,(subst-bindings ae let-bound))
+                                        #,@(map
+                                            (lambda (x)
+                                              (quasisyntax/loc
+                                               stx
+                                               (#,x '())))
+                                            binding-list-names))
+                                       (if (null? #,exp-name)
+                                           #,(ks sf
+                                                 (append
+                                                  (map cons
+                                                       bound
+                                                       (map
+                                                        (lambda (x)
+                                                          (quasisyntax/loc 
+                                                           stx 
+                                                           (reverse #,x)))
+                                                        binding-list-names))
+                                                  bv))
+                                           #,(next-outer (syntax the-pat)
+                                                         (quasisyntax/loc 
+                                                          (syntax the-pat) 
+                                                          (car #,exp-name))
+                                                         sf
+                                                         bv  ;; we always start
+                                                         ;; over with the old
+                                                         ;; bindings
+                                                         let-bound
+                                                         kf
+                                                         (lambda (sf bv)
+                                                           (quasisyntax/loc
+                                                            stx
+                                                            (#,loop-name
+                                                             (cdr #,exp-name)
+                                                             #,@(map
+                                                                 (lambda
+                                                                     (b-var
+                                                                      bindings-var)
+                                                                   (quasisyntax/loc
+                                                                    stx
+                                                                    (cons
+                                                                     #,(get-bind-val
+                                                                        b-var
+                                                                        bv)
+                                                                     #,bindings-var)))
+                                                                 bound binding-list-names))))))))))))))))
+           (case k
+             ((0) (ksucc sf bv))
+             ((1) (emit (lambda (exp) (quasisyntax/loc stx (pair? #,exp)))
+                        ae
+                        let-bound
+                        sf bv kf ksucc))
+             (else (emit (lambda (exp) (quasisyntax/loc stx (>= (length #,exp) #,k)))
+                         ae
+                         let-bound
+                         sf bv kf ksucc)))))))
 
 ;;!(function handle-inner-ddk-list
 ;;          (form (handle-inner-ddk-list ae kf ks pat
@@ -196,17 +196,17 @@
   (lambda (ae kf ks pat dot-dot-k pat-rest stx let-bound)
     (lambda (sf bv)
       (let* ((k (stx-dot-dot-k? dot-dot-k)))
-        (let ((bound (getbindings pat)))
-          (if (syntax? bound)
-              (kf sf bv)
-          (syntax-case pat (_)
-            (_
-             (stx-null? pat-rest)
-             (ks sf bv))
-            (the-pat
-             (null? bound)
-             (with-syntax ((exp-sym (syntax exp-sym)))
-               (let* ((ptst (next-outer
+           (let ((bound (getbindings pat)))
+             (if (syntax? bound)
+                 (kf sf bv)
+                 (syntax-case pat (_)
+                   (_
+                    (stx-null? pat-rest)
+                    (ks sf bv))
+                   (the-pat
+                    (null? bound)
+                    (with-syntax ((exp-sym (syntax exp-sym)))
+                      (let* ((ptst (next-outer
                              pat
                              (syntax exp-sym)
                              sf

@@ -263,8 +263,7 @@
                                                (cdr top-group)))
                                              fail
                                              let-bound
-                                             bv
-                                             )
+                                             bv)
                                             sf bv)))
                                        failed
                                        let-bound))))))))

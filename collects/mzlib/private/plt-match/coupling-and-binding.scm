@@ -45,14 +45,28 @@
                            #,(((test-comp (car test-list)) 
                                (couple-tests (cdr test-list)
                                              ks-func
-                                             kf-func
+                                             (if (negate-test? cur-test) 
+                                                 (lambda (let-bound)
+                                                   (lambda (sf bv)
+                                                     (quasisyntax/loc
+                                                      (test-bind-exp-stx cur-test)
+                                                      (match-failure))))
+                                                 kf-func)
+                                             ;kf-func
                                              let-bound) 
                                kf let-bound) sf bv)))))
                     (let* ((kf (kf-func let-bound)))
                       ((test-comp (car test-list)) 
                        (couple-tests (cdr test-list)
                                      ks-func
-                                     kf-func
+                                     (if (negate-test? cur-test) 
+                                         (lambda (let-bound)
+                                           (lambda (sf bv)
+                                             (quasisyntax/loc
+                                              (test-bind-exp-stx cur-test)
+                                              (match-failure))))
+                                         kf-func) 
+                                        ;kf-func
                                      let-bound) 
                        kf 
                        let-bound)))))))

@@ -28,36 +28,36 @@
   (include "pattern-predicates.scm")
   (define (keyword? x)
     (let ((x (syntax-object->datum x)))
-      (member x 
-              '( 
-                quasiquote 
-                quote 
-                unquote 
+      (member x
+              '(
+                quasiquote
+                quote
+                unquote
                 unquote-splicing
                 hash-table
-                list-no-order 
+                list-no-order
                 list-rest
-                list 
-                app 
-                struct 
+                list
+                app
+                struct
                 var
                 vector
                 box
-                ? 
-                and 
-                or 
-                not 
-                set! 
+                ?
+                and
+                or
+                not
+                set!
                 get!
                 ))))
   (define (append-if-necc sym stx)
     (syntax-case stx ()
       (() (syntax (list)))
-      ((a ...) 
+      ((a ...)
        (quasisyntax/loc stx (#,sym a ...)))
       (p (syntax p))))
 
-  ;(write (syntax-object->datum p)) (newline)
+                                        ;(write (syntax-object->datum p)) (newline)
   (syntax-case*
    p
    (_ list quote quasiquote vector box ? app and or not struct set! var
@@ -68,47 +68,58 @@
        (and (identifier? (syntax pt))
             (pattern-var? (syntax-object->datum (syntax pt)))
             (not (stx-dot-dot-k? (syntax pt))))
-       (list (make-act `bind-var-pat
-                       ae
-                       (lambda (ks kf let-bound)
-                         (lambda (sf bv)
-                           (ks sf (cons (cons (syntax pt) ae) bv)))))))
+       (render-test-list (syntax/loc stx (var pt)) ae stx))
       ((var pt)
        (identifier? (syntax pt))
        (list (make-act `bind-var-pat
                        ae
                        (lambda (ks kf let-bound)
                          (lambda (sf bv)
-                           (ks sf (cons (cons (syntax pt) ae) bv)))))))
+                           (let ((raw-id (syntax-object->datum (syntax pt))))
+                             (cond ((ormap (lambda (x)
+                                             (if (equal? raw-id (syntax-object->datum (car x)))
+                                                 (cdr x) #f)) bv)
+                                    => (lambda (bound-exp)
+                                         (emit (lambda (exp)
+                                                 (quasisyntax/loc
+                                                  p
+                                                  (equal? #,exp #,(subst-bindings bound-exp let-bound))))
+                                               ae
+                                               let-bound
+                                               sf bv kf ks)))
+                                   (else
+                                    (ks sf (cons (cons (syntax pt) ae) bv))))))))))
 
       ((list)
-       (list (make-reg-test
-              `(null? ,(syntax-object->datum ae))
-              ae
-              (lambda (ks kf let-bound)
-                (lambda (sf bv)
-                  (emit (lambda (exp) 
-                          (quasisyntax/loc p (null? #,exp)))
-                        ae
-                        let-bound
-                        sf
-                        bv
-                        kf
-                        ks))))))
+       (list
+        (make-reg-test
+         `(null? ,(syntax-object->datum ae))
+         ae
+         (lambda (ks kf let-bound)
+           (lambda (sf bv)
+             (emit (lambda (exp)
+                     (quasisyntax/loc p (null? #,exp)))
+                   ae
+                   let-bound
+                   sf
+                   bv
+                   kf
+                   ks))))))
       ('()
-       (list (make-reg-test
-              `(null? ,(syntax-object->datum ae))
-              ae
-              (lambda (ks kf let-bound)
-                (lambda (sf bv)
-                  (emit (lambda (exp) 
-                          (quasisyntax/loc p (null? #,exp)))
-                        ae
-                        let-bound
-                        sf
-                        bv
-                        kf
-                        ks)))))
+       (list
+        (make-reg-test
+         `(null? ,(syntax-object->datum ae))
+         ae
+         (lambda (ks kf let-bound)
+           (lambda (sf bv)
+             (emit (lambda (exp)
+                     (quasisyntax/loc p (null? #,exp)))
+                   ae
+                   let-bound
+                   sf
+                   bv
+                   kf
+                   ks)))))
        )
 
       (pt
@@ -196,53 +207,52 @@
             (append (render-test-list (syntax pat1) ae stx)
                     (loop (syntax (pats ...))))))))
 
-
       ((or pats ...)
-         (list (make-act
-                'or-pat ;`(or-pat ,(syntax-object->datum ae))
-                ae
-                (lambda (ks kf let-bound)
-                  (lambda (sf bv)
-                    (or-gen ae (syntax-e (syntax (pats ...)))
-                            stx sf bv ks kf let-bound))))))
+       (list (make-act
+              'or-pat ;`(or-pat ,(syntax-object->datum ae))
+              ae
+              (lambda (ks kf let-bound)
+                (lambda (sf bv)
+                  (or-gen ae (syntax-e (syntax (pats ...)))
+                          stx sf bv ks kf let-bound))))))
 
-; backtracking or
+                                        ; backtracking or
 
-;       ((or pats ...)
-;        (let* ((pat-list (syntax->list (syntax (pats ...)))))
-;          (let* ((bound (getbindings (stx-car (syntax (pats ...)))))
-;                 (bind-map
-;                  (map (lambda (x)
-;                         (cons x
-;                               #`#,(gensym (syntax-object->datum x))))
-;                       bound))
-;                 (id (begin (set! or-id (add1 or-id)) (sub1 or-id))))
-;            (write id)(newline)
-;            (write (syntax-object->datum (syntax (pats ...))))(newline)
-;            (list 
-;             (make-act
-;              'or-pat
-;              ae
-;              (lambda (ks kf let-bound)
-;                (lambda (sf bv)
-;                  (write id)(newline)
-;                  (if (stx-null? (syntax (pats ...)))
-;                      (kf sf bv)
-;                      #`(let #,(map (lambda (b)
-;                                      #`(#,(cdr b) '()))
-;                                    bind-map)
-;                          (if (or                               
-;                               #,@(map (lambda (p)
-;                                         #`(#,(create-test-func
-;                                               p
-;                                               sf
-;                                               let-bound
-;                                               bind-map
-;                                               #f) #,(subst-bindings ae 
-;                                                            let-bound)))
-;                                       pat-list))
-;                              #,(ks sf (append bind-map bv))
-;                              #,(kf sf bv)))))))))))
+                                        ;       ((or pats ...)
+                                        ;        (let* ((pat-list (syntax->list (syntax (pats ...)))))
+                                        ;          (let* ((bound (getbindings (stx-car (syntax (pats ...)))))
+                                        ;                 (bind-map
+                                        ;                  (map (lambda (x)
+                                        ;                         (cons x
+                                        ;                               #`#,(gensym (syntax-object->datum x))))
+                                        ;                       bound))
+                                        ;                 (id (begin (set! or-id (add1 or-id)) (sub1 or-id))))
+                                        ;            (write id)(newline)
+                                        ;            (write (syntax-object->datum (syntax (pats ...))))(newline)
+                                        ;            (list
+                                        ;             (make-act
+                                        ;              'or-pat
+                                        ;              ae
+                                        ;              (lambda (ks kf let-bound)
+                                        ;                (lambda (sf bv)
+                                        ;                  (write id)(newline)
+                                        ;                  (if (stx-null? (syntax (pats ...)))
+                                        ;                      (kf sf bv)
+                                        ;                      #`(let #,(map (lambda (b)
+                                        ;                                      #`(#,(cdr b) '()))
+                                        ;                                    bind-map)
+                                        ;                          (if (or
+                                        ;                               #,@(map (lambda (p)
+                                        ;                                         #`(#,(create-test-func
+                                        ;                                               p
+                                        ;                                               sf
+                                        ;                                               let-bound
+                                        ;                                               bind-map
+                                        ;                                               #f) #,(subst-bindings ae
+                                        ;                                                            let-bound)))
+                                        ;                                       pat-list))
+                                        ;                              #,(ks sf (append bind-map bv))
+                                        ;                              #,(kf sf bv)))))))))))
 
       ((not pat)
        (list (make-act
@@ -262,21 +272,21 @@
                   (ddk (ddk-only-at-end-of-list? pat-list)))
              (if (or (not ddk-list)
                      (and ddk-list ddk))
-                 (let* ((bound (getbindings (append-if-necc 'list 
-                                             (syntax (pats ...)))))
+                 (let* ((bound (getbindings (append-if-necc 'list
+                                                            (syntax (pats ...)))))
                         (bind-map
                          (map (lambda (x)
                                 (cons x
                                       #`#,(gensym (syntax-object->datum x))))
                               bound)))
-                   
-                   (list 
+
+                   (list
                     (make-shape-test
                      `(list? ,(syntax-object->datum ae))
                      ae
                      (lambda (ks kf let-bound)
                        (lambda (sf bv)
-                         (emit (lambda (exp) 
+                         (emit (lambda (exp)
                                  (quasisyntax/loc stx (list? #,exp)))
                                ae
                                let-bound
@@ -345,10 +355,10 @@
                (lambda (pat)
                  (syntax-case pat ()
                    ((key value) (syntax (list key value)))
-                   (ddk 
+                   (ddk
                     (stx-dot-dot-k? (syntax ddk))
                     (syntax ddk))
-                   (id 
+                   (id
                     (and (identifier? (syntax id))
                          (pattern-var? (syntax-object->datum (syntax id)))
                          (not (stx-dot-dot-k? (syntax id))))
@@ -404,13 +414,13 @@
                    "fields for structure in pattern"))
                  (cons
                   (make-shape-test
-                   `(struct-pred ,(syntax-object->datum pred) 
-                                 ,(map syntax-object->datum parental-chain) 
+                   `(struct-pred ,(syntax-object->datum pred)
+                                 ,(map syntax-object->datum parental-chain)
                                  ,(syntax-object->datum ae))
                    ae
                    (lambda (ks kf let-bound)
                      (lambda (sf bv)
-                       (emit (lambda (exp) 
+                       (emit (lambda (exp)
                                (quasisyntax/loc stx (struct-pred #,pred #,parental-chain #,exp)))
                              ae
                              let-bound
@@ -431,13 +441,13 @@
                                        ae
                                        (lambda (ks kf let-bound)
                                          (lambda (sf bv)
-                                           (ks sf 
+                                           (ks sf
                                                (cons (cons (syntax setter-name)
-                                                           #`(lambda (y) 
-                                                               (#,(list-ref 
-                                                                   mutators 
+                                                           #`(lambda (y)
+                                                               (#,(list-ref
+                                                                   mutators
                                                                    n)
-                                                                #,ae y))) 
+                                                                #,ae y)))
                                                      bv)))))))
                                ((get! getter-name)
                                 (list (make-act
@@ -445,19 +455,19 @@
                                        ae
                                        (lambda (ks kf let-bound)
                                          (lambda (sf bv)
-                                           (ks sf 
+                                           (ks sf
                                                (cons (cons (syntax getter-name)
-                                                           #`(lambda () 
-                                                               (#,(list-ref 
-                                                                   accessors 
-                                                                   n) 
-                                                                #,ae))) 
+                                                           #`(lambda ()
+                                                               (#,(list-ref
+                                                                   accessors
+                                                                   n)
+                                                                #,ae)))
                                                      bv)))))))
                                (_
                                 (render-test-list
                                  cur-pat
-                                 (quasisyntax/loc 
-                                  stx 
+                                 (quasisyntax/loc
+                                  stx
                                   (#,(list-ref accessors n) #,ae))
                                  stx))))
                            (rloop (+ 1 n))))))))))))
@@ -478,8 +488,8 @@
               ae
               (lambda (ks kf let-bound)
                 (lambda (sf bv)
-                  (ks sf (cons (cons (syntax ident) 
-                                     (setter ae p let-bound)) 
+                  (ks sf (cons (cons (syntax ident)
+                                     (setter ae p let-bound))
                                bv)))))))
       ;; syntax checking
       ((set! ident ...)
@@ -498,8 +508,8 @@
               ae
               (lambda (ks kf let-bound)
                 (lambda (sf bv)
-                  (ks sf (cons (cons (syntax ident) 
-                                     (getter ae p let-bound)) 
+                  (ks sf (cons (cons (syntax ident)
+                                     (getter ae p let-bound))
                                bv)))))))
       ((get! ident ...)
        (let ((x (length (syntax-e (syntax (ident ...))))))
@@ -521,6 +531,7 @@
          `(list? ,(syntax-object->datum ae))
          ae
          (lambda (ks kf let-bound)
+           ;;(write 'here)(write let-bound)(newline)
            (lambda (sf bv)
              (emit
               (lambda (exp) (quasisyntax/loc stx (list? #,exp)))
@@ -531,20 +542,20 @@
               kf
               ks))))
         (make-act
-         'list-ddk-pat  
+         'list-ddk-pat
          ae
          (lambda (ks kf let-bound)
            (if (stx-null? (syntax (pat-rest ...)))
                (handle-end-ddk-list ae kf ks
-                                    (syntax pat) 
-                                    (syntax dot-dot-k) 
+                                    (syntax pat)
+                                    (syntax dot-dot-k)
                                     stx let-bound)
                (handle-inner-ddk-list ae kf ks
-                                      (syntax pat) 
+                                      (syntax pat)
                                       (syntax dot-dot-k)
-                                      (append-if-necc 'list 
-                                       (syntax (pat-rest ...))) 
-                                      stx 
+                                      (append-if-necc 'list
+                                                      (syntax (pat-rest ...)))
+                                      stx
                                       let-bound))))))
 
       ((list-rest pat dot-dot-k pat-rest ...)
@@ -558,6 +569,7 @@
          `(pair? ,(syntax-object->datum ae))
          ae
          (lambda (ks kf let-bound)
+           ;;(write 'here)(write let-bound)(newline)
            (lambda (sf bv)
              (emit
               (lambda (exp) (quasisyntax/loc stx (pair? #,exp)))
@@ -568,19 +580,19 @@
               kf
               ks))))
         (make-act
-         'list-ddk-pat  
+         'list-ddk-pat
          ae
          (lambda (ks kf let-bound)
-           (handle-inner-ddk-list 
+           (handle-inner-ddk-list
             ae kf ks
-            (syntax pat) 
+            (syntax pat)
             (syntax dot-dot-k)
-            (if (= 1 (length 
+            (if (= 1 (length
                       (syntax->list (syntax (pat-rest ...)))))
                 (stx-car (syntax (pat-rest ...)))
                 (append-if-necc  'list-rest
-                 (syntax (pat-rest ...)))) 
-            stx 
+                                 (syntax (pat-rest ...))))
+            stx
             let-bound)))))
 
       ;; handle proper and improper lists
@@ -641,8 +653,6 @@
           (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae))
           stx))))
 
-
-
       ((list car-pat cdr-pat ...) ;pattern ;(pat1 pats ...)
        (not (or (memq (syntax-e (syntax car-pat))
                       '(unquote unquote-splicing))
@@ -667,19 +677,20 @@
                            (quasisyntax/loc (syntax car-pat) (car #,ae))
                            stx) ;(add-a e)
          (if (stx-null? (syntax (cdr-pat ...)))
-             (list (make-shape-test
-                    `(null? (cdr ,(syntax-object->datum ae)))
-                    ae
-                    (lambda (ks kf let-bound)
-                      (lambda (sf bv)
-                        (emit (lambda (exp) 
-                                (quasisyntax/loc p (null? #,exp)))
-                              (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae));ae
-                              let-bound
-                              sf
-                              bv
-                              kf
-                              ks)))))
+             (list
+              (make-shape-test
+               `(null? (cdr ,(syntax-object->datum ae)))
+               ae
+               (lambda (ks kf let-bound)
+                 (lambda (sf bv)
+                   (emit (lambda (exp)
+                           (quasisyntax/loc p (null? #,exp)))
+                         (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae));ae
+                         let-bound
+                         sf
+                         bv
+                         kf
+                         ks)))))
              (render-test-list
               (append-if-necc 'list (syntax (cdr-pat ...)))
               (quasisyntax/loc (syntax (cdr-pat ...)) (cdr #,ae))
@@ -704,8 +715,8 @@
          'vec-ddk-pat
          ae
          (lambda (ks kf let-bound)
-           (handle-ddk-vector ae kf ks 
-                              (syntax/loc p #(pats ...)) 
+           (handle-ddk-vector ae kf ks
+                              (syntax/loc p #(pats ...))
                               stx let-bound)))))
 
       ((vector pats ...)
@@ -734,8 +745,8 @@
          'vec-ddk-pat
          ae
          (lambda (ks kf let-bound)
-           (handle-ddk-vector-inner ae kf ks 
-                                    (syntax/loc p #(pats ...)) 
+           (handle-ddk-vector-inner ae kf ks
+                                    (syntax/loc p #(pats ...))
                                     stx let-bound)))))
 
       ((vector pats ...)
@@ -759,8 +770,8 @@
             (lambda (ks kf let-bound)
               (lambda (sf bv)
                 (emit
-                 (lambda (exp) (quasisyntax/loc 
-                                stx 
+                 (lambda (exp) (quasisyntax/loc
+                                stx
                                 (equal? (vector-length #,exp) #,vlen)))
                  ae
                  let-bound

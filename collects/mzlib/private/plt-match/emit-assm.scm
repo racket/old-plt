@@ -23,9 +23,6 @@
 (define emit
   (lambda (act-test-func ae let-bound sf bv kf ks)
     (let ((test (syntax-object->datum (act-test-func ae))))
-      ;(write sf)(newline)
-      
-      ;(write test)(newline)
       (cond
        ((in test sf) (ks sf bv))
        ((in `(not ,test) sf) (kf sf bv))

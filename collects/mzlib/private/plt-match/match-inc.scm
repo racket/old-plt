@@ -116,7 +116,8 @@
 (define gen-match
   (opt-lambda (exp tsf patlist stx [success-func #f])
     (include "test-structure.scm")
-    (include "coupling-and-binding-new.scm")
+    ;(include "coupling-and-binding-new.scm")
+    (include "coupling-and-binding.scm")
     (include "render-test-list.scm")
     (include "reorder-tests.scm")
     (include "update-counts.scm")

@@ -449,12 +449,14 @@
   ;;                           (sym
   ;;                            sym
   ;;                            (union syntax #f)
+  ;;                            string
   ;;                            ->
   ;;                            (alpha -> alpha)))
   ;; generic contract container; 
-  ;; the first to wrap is a symbol representing the name of the positive blame
-  ;; the second to wrap is the symbol representing the name of the negative blame
-  ;; the third argument to wrap is the src-info.
+  ;; the first arg to proc is a symbol representing the name of the positive blame
+  ;; the second arg to proc is the symbol representing the name of the negative blame
+  ;; the third argument to proc is the src-info.
+  ;; the fourth argumet is a textual representation of the original contract
   ;;
   ;; the argument to the result function is the value to test.
   ;; (the result function is the projection)
@@ -490,7 +492,7 @@
              name predicate))
     (make-flat-contract 
      name
-     (lambda (pos neg src-info) 
+     (lambda (pos neg src-info orig-str) 
        (lambda (val)
          (if (predicate val)
              val
@@ -498,6 +500,7 @@
               src-info
               pos
               neg
+              orig-str
               "expected type <~a>, given: ~e"
               name
               val))))
@@ -544,25 +547,27 @@
                         pos-blame
                         a-contract-raw
                         name))
-               (((contract-proc a-contract) pos-blame neg-blame src-info) name))))])))
+               (((contract-proc a-contract) pos-blame neg-blame src-info (contract-name a-contract))
+                name))))])))
   
-  ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
+  ;; raise-contract-error : (union syntax #f) symbol symbol string string args ... -> alpha
   ;; doesn't return
-  (define (raise-contract-error src-info to-blame other-party fmt . args)
+  (define (raise-contract-error src-info to-blame other-party orig-str fmt . args)
     (let ([blame-src (src-info-as-string src-info)]
 	  [specific-blame
 	   (let ([datum (syntax-object->datum src-info)])
 	     (if (symbol? datum)
-		 (format "broke ~a's contract" datum)
+		 (format "broke ~a's contract:" datum)
 		 "failed contract"))])
       (raise
        (make-exn
         (string->immutable-string
-         (string-append (format "~a~a: ~a ~a: "
+         (string-append (format "~a~a: ~a ~a ~a: "
                                 blame-src
                                 other-party
                                 to-blame
-                                specific-blame)
+                                specific-blame
+                                orig-str)
                         (apply format fmt args)))
         (current-continuation-marks)))))
   
@@ -644,9 +649,9 @@
     ;;           -> (syntax -> syntax)
     (define (make-/proc /h stx)
       (let-values ([(arguments-check build-proj check-val wrapper) (/h stx)])
-        (let ([outer-args (syntax (val pos-blame neg-blame src-info name-id))])
+        (let ([outer-args (syntax (val pos-blame neg-blame src-info orig-str name-id))])
           (with-syntax ([inner-check (check-val outer-args)]
-                        [(val pos-blame neg-blame src-info name-id) outer-args]
+                        [(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                         [(val-args body) (wrapper outer-args)])
             (with-syntax ([inner-lambda
                            (set-inferred-name-from
@@ -665,7 +670,7 @@
                     (syntax/loc stx
                       (make-contract
                        name-id
-                       (lambda (pos-blame neg-blame src-info)
+                       (lambda (pos-blame neg-blame src-info orig-str)
                          proj-code))))))))))))
     
     ;; case->/proc : syntax -> syntax
@@ -675,9 +680,9 @@
         [(_ cases ...)
          (let-values ([(arguments-check build-projs check-val wrapper)
                        (case->/h stx (syntax->list (syntax (cases ...))))])
-           (let ([outer-args (syntax (val pos-blame neg-blame src-info name-id))])
+           (let ([outer-args (syntax (val pos-blame neg-blame src-info orig-str name-id))])
              (with-syntax ([(inner-check ...) (check-val outer-args)]
-                           [(val pos-blame neg-blame src-info name-id) outer-args]
+                           [(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                            [(body ...) (wrapper outer-args)])
                (with-syntax ([inner-lambda 
                               (set-inferred-name-from
@@ -693,8 +698,8 @@
                       outer-args
                       (syntax/loc stx
                         (make-contract
-                         "case-> contract"
-                         (lambda (pos-blame neg-blame src-info)
+                         (apply build-compound-type-name 'case-> name-id)
+                         (lambda (pos-blame neg-blame src-info orig-str)
                            proj-code))))))))))]))
     
     ;; exactract-argument-lists : syntax -> (listof syntax)
@@ -751,28 +756,44 @@
              'more))))
 
     
-    ;; case->/h : syntax (listof syntax) 
-    ;;        -> (values (syntax -> syntax)
-    ;;                   (syntax -> syntax)
-    ;;                   (syntax syntax -> syntax) 
-    ;;                   (syntax -> syntax))
+    ;; case->/h : syntax
+    ;;            (listof syntax) 
+    ;;         -> (values (syntax -> syntax)
+    ;;                    (syntax -> syntax)
+    ;;                    (syntax syntax -> syntax) 
+    ;;                    (syntax -> syntax))
     ;; like the other /h functions, but composes the wrapper functions
     ;; together and combines the cases of the case-lambda into a single list.
     (define (case->/h orig-stx cases)
-      (let loop ([cases cases])
+      (let loop ([cases cases]
+                 [name-ids '()])
         (cond
-          [(null? cases) (values (lambda (outer-args x) x)
+          [(null? cases) (values (lambda (outer-args body)
+                                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                                                 [body body]
+                                                 [(name-ids ...) (reverse name-ids)])
+                                     (syntax
+                                      (let ([name-id (list name-ids ...)])
+                                        body))))
                                  (lambda (x y) y)
                                  (lambda (args) (syntax ()))
                                  (lambda (args) (syntax ())))]
           [else
-           (let ([/h (select/h (car cases) 'case-> orig-stx)])
+           (let ([/h (select/h (car cases) 'case-> orig-stx)]
+                 [new-id (car (generate-temporaries (syntax (case->name-id))))])
              (let-values ([(arguments-checks build-projs check-vals wrappers)
-                           (loop (cdr cases))]
+                           (loop (cdr cases) (cons new-id name-ids))]
                           [(arguments-check build-proj check-val wrapper)
                            (/h (car cases))])
                (values
-                (lambda (outer-args x) (arguments-check outer-args (arguments-checks outer-args x)))
+                (lambda (outer-args x) 
+                  (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                                [new-id new-id])
+                    (arguments-check 
+                     (syntax (val pos-blame neg-blame src-info orig-str new-id)) 
+                     (arguments-checks 
+                      outer-args
+                      x))))
                 (lambda (args inner)
                   (build-projs
                    args
@@ -797,7 +818,7 @@
          (and 
           (andmap method-specifier? (syntax->list (syntax (method-specifier ...))))
           (andmap identifier? (syntax->list (syntax (meth-name ...)))))
-         (let* ([outer-args (syntax (val pos-blame neg-blame src-info name-id))]
+         (let* ([outer-args (syntax (val pos-blame neg-blame src-info orig-str name-id))]
                 [val-meth-names (syntax->list (syntax (meth-name ...)))]
                 [super-meth-names (map prefix-super val-meth-names)]
                 [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
@@ -841,13 +862,14 @@
                                             (loop super)))]))]
                           [meth-contract-var meth-contract] ...)
                       (unless (class? val)
-                        (raise-contract-error src-info pos-blame neg-blame "expected a class, got: ~e" val))
+                        (raise-contract-error src-info pos-blame neg-blame orig-str "expected a class, got: ~e" val))
                       (let ([class-i (class->interface val)])
                         (void)
                         (unless (method-in-interface? 'meth-name class-i)
                           (raise-contract-error src-info
                                                 pos-blame 
                                                 neg-blame
+                                                orig-str
                                                 "expected class to have method ~a, got: ~e"
                                                 'meth-name
                                                 val))
@@ -881,7 +903,7 @@
       (syntax-case stx ()
         [(form (meth-name meth-contract) ...)
          (andmap identifier? (syntax->list (syntax (meth-name ...))))
-         (let* ([outer-args (syntax (val pos-blame neg-blame src-info name-id))]
+         (let* ([outer-args (syntax (val pos-blame neg-blame src-info orig-str name-id))]
                 [val-meth-names (syntax->list (syntax (meth-name ...)))]
                 [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
                 [val-meth-contract-vars (generate-temporaries val-meth-contracts)])
@@ -902,13 +924,14 @@
                 (lambda outer-args
                   (let ([meth-contract-var meth-contract] ...)
                     (unless (object? val)
-                      (raise-contract-error src-info pos-blame neg-blame "expected an object, got: ~e" val))
+                      (raise-contract-error src-info pos-blame neg-blame orig-str "expected an object, got: ~e" val))
                     (let ([obj-i (object-interface val)])
                       (void)
                       (unless (method-in-interface? 'meth-name obj-i)
                         (raise-contract-error src-info
                                               pos-blame 
                                               neg-blame
+                                              orig-str
                                               "expected class to have method ~a, got: ~e"
                                               'meth-name
                                               val))
@@ -957,7 +980,7 @@
     ;; constructs a wrapper method that checks the pre and post-condition, and
     ;; calls the original object's method
     (define (make-object-wrapper-method outer-args method-name contract-var contract-stx)
-      (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                     [method-name method-name]
                     [method-name-string (symbol->string (syntax-e method-name))]
                     [contract-var contract-var])
@@ -985,7 +1008,7 @@
     ;; constructs a wrapper method that checks the pre and post-condition, and
     ;; calls the super method inbetween.
     (define (make-class-wrapper-method outer-args method-name contract-var contract-stx)
-      (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+      (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                     [super-method-name (prefix-super method-name)]
                     [method-name method-name]
                     [method-name-string (symbol->string (syntax-e method-name))]
@@ -1067,59 +1090,180 @@
     (define (->/h stx)
       (syntax-case stx ()
         [(_) (raise-syntax-error '-> "expected at least one argument" stx)]
-        [(_ ct ...)
-         (let* ([rng-normal (car (last-pair (syntax->list (syntax (ct ...)))))]
-                [ignore-range-checking?
-                 (syntax-case rng-normal (any)
-                   [any #t]
-                   [_ #f])]
-                [range-values
-                 (syntax-case* rng-normal (any values) module-or-top-identifier=?
-                   [any (syntax (any?))] ;; range-values isn't actually used in this case
-                   [(values x ...)
-                    (syntax (x ...))]
-                   [_ (with-syntax ([rng-normal rng-normal])
-                        (syntax (rng-normal)))])])
-           (with-syntax ([(dom ...) (all-but-last (syntax->list (syntax (ct ...))))])
-             (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
-                           [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
-                           [(rng-x ...) (generate-temporaries range-values)]
-                           [(rng ...) range-values]
-                           [arity (length (syntax->list (syntax (dom ...))))])
-               (let ([->add-outer-check
-                      (lambda (body)
-                        (with-syntax ([body body])
-                          (syntax/loc stx
-                            (let ([dom-x dom] ...
-                                  [rng-x rng] ...)
-                              (coerce/select-contract -> dom) ... ;; just get error checking right
-                              (coerce/select-contract -> rng) ... ;; don't use the results at all
-                              body))))]
-                     [->body (if ignore-range-checking?
-                                 (syntax (->* (dom-x ...) any))
-                                 (syntax (->* (dom-x ...) (rng-x ...))))])
-                 (let-values ([(->*add-outer-check 
-                                ->*make-projections
-                                ->*make-inner-check 
-                                ->*make-body)
-                               (->*/h ->body)])
-                   (values 
-                    (lambda (outer-args body) (->add-outer-check (->*add-outer-check outer-args body)))
-                    ->*make-projections
-                    (lambda (stx) (->*make-inner-check stx))
-                    ->*make-body))))))]))
+        [(_ arg ...)
+         (with-syntax ([(dom ...) (all-but-last (syntax->list (syntax (arg ...))))]
+                       [rng (car (last-pair (syntax->list (syntax (arg ...)))))])
+           (syntax-case* (syntax rng) (any values) module-or-top-identifier=?
+
+             [any 
+              (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
+                            [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(arg-x ...) (generate-temporaries (syntax (dom ...)))])
+                (values
+                 (lambda (outer-args body)
+                   (with-syntax ([body body]
+                                 [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (let ([dom-contract-x (coerce-contract -> dom)] ...)
+                        (let ([dom-x (contract-proc dom-contract-x)] ...)
+                          (let ([name-id (build-compound-type-name '-> dom-contract-x ... 'any)])
+                            body))))))
+                 
+                 (lambda (outer-args inner-lambda)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                                 [inner-lambda inner-lambda])
+                     (syntax
+                      (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...)
+                        inner-lambda))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (unless (and (procedure? val)
+                                   (procedure-arity-includes? val dom-length))
+                        (raise-contract-error
+                         src-info
+                         pos-blame
+                         neg-blame
+                         orig-str
+                         "expected a procedure that accepts ~a arguments, given: ~e"
+                         dom-length
+                         val)))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      ((arg-x ...)
+                       (val (dom-projection-x arg-x) ...)))))))]
+             [(values rng ...)
+              (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
+                            [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
+                            
+                            [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
+                            [(rng-contract-x ...) (generate-temporaries (syntax (rng ...)))]
+                            [(rng-projection-x ...) (generate-temporaries (syntax (rng ...)))]
+                            [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
+                            [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
+                            [(res-x ...) (generate-temporaries (syntax (rng ...)))])
+                (values
+                 (lambda (outer-args body)
+                   (with-syntax ([body body]
+                                 [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (let ([dom-contract-x (coerce-contract -> dom)] ...
+                            [rng-contract-x (coerce-contract -> rng)] ...)
+                        (let ([dom-x (contract-proc dom-contract-x)] ...
+                              [rng-x (contract-proc rng-contract-x)] ...)
+                          (let ([name-id (build-compound-type-name 
+                                          '-> 
+                                          dom-contract-x ...
+                                          (build-compound-type-name 'values rng-contract-x ...))])
+                            body))))))
+                 
+                 (lambda (outer-args inner-lambda)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                                 [inner-lambda inner-lambda])
+                     (syntax
+                      (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                            [rng-projection-x (rng-x pos-blame neg-blame src-info orig-str)] ...)
+                        inner-lambda))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (unless (and (procedure? val)
+                                   (procedure-arity-includes? val dom-length))
+                        (raise-contract-error
+                         src-info
+                         pos-blame
+                         neg-blame
+                         orig-str
+                         "expected a procedure that accepts ~a arguments, given: ~e"
+                         dom-length
+                         val)))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      ((arg-x ...)
+                       (let-values ([(res-x ...) (val (dom-projection-x arg-x) ...)])
+                         (values (rng-projection-x
+                                  res-x)
+                                 ...))))))))]
+             [rng
+              (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
+                            [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
+                            [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
+                            
+                            [(rng-x) (generate-temporaries (syntax (rng)))]
+                            [(rng-contact-x) (generate-temporaries (syntax (rng)))]
+                            [(rng-projection-x) (generate-temporaries (syntax (rng)))]
+                            [(rng-ant-x) (generate-temporaries (syntax (rng)))]
+                            [(res-x) (generate-temporaries (syntax (rng)))])
+                (values
+                 (lambda (outer-args body)
+                   (with-syntax ([body body]
+                                 [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (let ([dom-contract-x (coerce-contract -> dom)] ...
+                            [rng-contract-x (coerce-contract -> rng)])
+                        (let ([dom-x (contract-proc dom-contract-x)] ...
+                              [rng-x (contract-proc rng-contract-x)])
+                          (let ([name-id (build-compound-type-name '-> dom-contract-x ... rng-contract-x)])
+                            body))))))
+                 
+                 (lambda (outer-args inner-lambda)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                                 [inner-lambda inner-lambda])
+                     (syntax
+                      (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                            [rng-projection-x (rng-x pos-blame neg-blame src-info orig-str)])
+                        inner-lambda))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      (unless (and (procedure? val)
+                                   (procedure-arity-includes? val dom-length))
+                        (raise-contract-error
+                         src-info
+                         pos-blame
+                         neg-blame
+                         orig-str
+                         "expected a procedure that accepts ~a arguments, given: ~e"
+                         dom-length
+                         val)))))
+                 
+                 (lambda (outer-args)
+                   (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
+                     (syntax
+                      ((arg-x ...)
+                       (let ([res-x (val (dom-projection-x arg-x) ...)])
+                         (rng-projection-x res-x))))))))]))]))
     
     ;; ->*/h : stx -> (values (syntax -> syntax) (syntax syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->*/h stx)
       (syntax-case stx (any)
         [(_ (dom ...) (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
                        [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
                        
                        [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
+                       [(rng-contract-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-projection-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
                        [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
@@ -1127,27 +1271,29 @@
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info name-id) outer-args])
+                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->* dom)] ...
-                       [rng-x (coerce/select-contract ->* rng)] ...)
-                   (let ([name-id (string-append "(->* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 ")")])
-                     body)))))
-
+                 (let ([dom-contract-x (coerce-contract ->* dom)] ...
+                       [rng-contract-x (coerce-contract ->* rng)] ...)
+                   (let ([dom-x (contract-proc dom-contract-x)] ...
+                         [rng-x (contract-proc rng-contract-x)] ...)
+                     (let ([name-id (string-append "(->* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " "
+                                                   (build-compound-type-name #f rng-contract-x ...)
+                                                   ")")])
+                       body))))))
+            
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...
-                       [rng-projection-x (rng-x pos-blame neg-blame src-info)] ...)
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                       [rng-projection-x (rng-x pos-blame neg-blame src-info orig-str)] ...)
                    inner-lambda))))
-
+            
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (and (procedure? val)
                               (procedure-arity-includes? val dom-length))
@@ -1155,12 +1301,13 @@
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
             
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ...)
                   (let-values ([(res-x ...) (val (dom-projection-x arg-x) ...)])
@@ -1169,6 +1316,7 @@
                             ...))))))))]
         [(_ (dom ...) any)
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
                        [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
@@ -1176,23 +1324,24 @@
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info name-id) outer-args])
+                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->* dom)] ...)
-                   (let ([name-id (string-append "(->* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " any)")])
-                     body)))))
+                 (let ([dom-contract-x (coerce-contract ->* dom)] ...)
+                   (let ([dom-x (contract-proc dom-contract-x)] ...)
+                     (let ([name-id (string-append "(->* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " any)")])
+                       body))))))
             
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...)
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...)
                    inner-lambda))))
             
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (and (procedure? val)
                               (procedure-arity-includes? val dom-length))
@@ -1200,26 +1349,30 @@
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
             
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ...)
                   (val (dom-projection-x arg-x) ...)))))))]
         [(_ (dom ...) rest (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
                        [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
                        [dom-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       [dom-rest-contract-x (car (generate-temporaries (list (syntax rest))))]
                        [dom-rest-projection-x (car (generate-temporaries (list (syntax rest))))]
                        [arg-rest-x (car (generate-temporaries (list (syntax rest))))]
                        
                        [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
+                       [(rng-contract-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-projection-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
                        [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
@@ -1227,40 +1380,45 @@
                        [arity (length (syntax->list (syntax (dom ...))))])
            (values
             (lambda (outer-args body)
-              (with-syntax ([body body])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
+                            [body body])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->* dom)] ...
-                       [dom-rest-x (coerce/select-contract ->* rest)]
-                       [rng-x (coerce/select-contract ->* rng)] ...)
-                   (let ([name-id (string-append "(->* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " "
-                                                 (contract->type-name dom-rest-x)
-                                                 " "
-                                                 (build-compound-type-name #f rng-x ...)
-                                                 ")")])
-                     body)))))
+                 (let ([dom-contract-x (coerce-contract ->* dom)] ...
+                       [dom-rest-contract-x (coerce-contract ->* rest)]
+                       [rng-contract-x (coerce-contract ->* rng)] ...)
+                   (let ([dom-x (contract-proc dom-contract-x)] ...
+                         [dom-rest-x (contract-proc dom-rest-contract-x)]
+                         [rng-x (contract-proc rng-contract-x)] ...)
+                     (let ([name-id (string-append "(->* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " "
+                                                   (contract->type-name dom-rest-contract-x)
+                                                   " "
+                                                   (build-compound-type-name #f rng-contract-x ...)
+                                                   ")")])
+                       body))))))
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...
-                       [dom-rest-projection-x (dom-rest-x neg-blame pos-blame src-info)]
-                       [rng-projection-x (rng-x pos-blame neg-blame src-info)] ...)
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                       [dom-rest-projection-x (dom-rest-x neg-blame pos-blame src-info orig-str)]
+                       [rng-projection-x (rng-x pos-blame neg-blame src-info orig-str)] ...)
                    inner-lambda))))
             (lambda (outer-args)
-              (with-syntax ([(val check-rev-contract check-same-contract failure name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (procedure? val)
                    (raise-contract-error
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ... . arg-rest-x)
                   (let-values ([(res-x ...)
@@ -1272,11 +1430,13 @@
                     (values (rng-projection-x res-x) ...))))))))]
 	[(_ (dom ...) rest any)
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
                        [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
                        [dom-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       [dom-rest-contract-x (car (generate-temporaries (list (syntax rest))))]
                        [dom-projection-rest-x (car (generate-temporaries (list (syntax rest))))]
                        [arg-rest-x (car (generate-temporaries (list (syntax rest))))]
                        
@@ -1284,36 +1444,39 @@
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info name-id) outer-args])
+                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->* dom)] ...
-                       [dom-rest-x (coerce/select-contract ->* rest)])
-                   (let ([name-id (string-append "(->* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " "
-                                                 (contract->type-name dom-rest-x)
-                                                 " any)")])
-                     body)))))
+                 (let ([dom-contract-x (coerce-contract ->* dom)] ...
+                       [dom-rest-contract-x (coerce-contract ->* rest)])
+                   (let ([dom-x (contract-proc dom-contract-x)] ...
+                         [dom-rest-x (contract-proc dom-rest-contract-x)])
+                     (let ([name-id (string-append "(->* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " "
+                                                   (contract->type-name dom-rest-contract-x)
+                                                   " any)")])
+                       body))))))
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...
-                       [dom-projection-rest-x (dom-rest-x neg-blame pos-blame src-info)])
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                       [dom-projection-rest-x (dom-rest-x neg-blame pos-blame src-info orig-str)])
                    inner-lambda))))
             (lambda (outer-args)
-              (with-syntax ([(val check-rev-contract check-same-contract failure name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (procedure? val)
                    (raise-contract-error
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ... . arg-rest-x)
                   (apply
@@ -1330,34 +1493,34 @@
          (with-syntax ([(dom ...) (all-but-last (syntax->list (syntax (ct ...))))]
                        [rng (car (last-pair (syntax->list (syntax (ct ...)))))])
            (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                         [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                          [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                          [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
                          [arity (length (syntax->list (syntax (dom ...))))])
              (values
               (lambda (outer-args body)
                 (with-syntax ([body body]
-                              [(val pos-blame neg-blame src-info name-id) outer-args])
+                              [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                   (syntax
-                   (let ([dom-x (coerce/select-contract ->d dom)] ...
-                         [rng-x rng])
-                     (unless (and (procedure? rng-x)
-                                  (procedure-arity-includes? rng-x arity))
-                       (error '->d "expected range portion to be a function that takes ~a arguments, given: ~e"
-                              arity
-                              rng-x))
-                     (let ([name-id (string-append "(->d "
-                                                   (build-compound-type-name #f dom-x ...)
-                                                   " ...)")])
-                       
-                       body)))))
+                   (let ([dom-contract-x (coerce-contract ->d dom)] ...)
+                     (let ([dom-x (contract-proc dom-contract-x)] ...
+                           [rng-x rng])
+                       (unless (and (procedure? rng-x)
+                                    (procedure-arity-includes? rng-x arity))
+                         (error '->d "expected range portion to be a function that takes ~a arguments, given: ~e"
+                                arity
+                                rng-x))
+                       (let ([name-id (build-compound-type-name '->d dom-contract-x ... '(... ...))])
+                         
+                         body))))))
               (lambda (outer-args inner-lambda)
-                (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                               [inner-lambda inner-lambda])
                   (syntax
-                   (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...)
+                   (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...)
                      inner-lambda))))
               (lambda (outer-args)
-                (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                   (syntax
                    (unless (and (procedure? val)
                                 (procedure-arity-includes? val arity))
@@ -1365,18 +1528,20 @@
                       src-info
                       pos-blame
                       neg-blame
+                      orig-str
                       "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
               (lambda (outer-args)
-                (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+                (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                   (syntax
                    ((arg-x ...)
                     (let ([rng-contract (rng-x arg-x ...)])
                       (((coerce/select-contract ->d rng-contract)
                         pos-blame
                         neg-blame
-                        src-info)
+                        src-info
+                        orig-str)
                        (val (dom-projection-x arg-x) ...))))))))))]))
     
     ;; ->d*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
@@ -1384,6 +1549,7 @@
       (syntax-case stx ()
         [(_ (dom ...) rng-mk)
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
                        [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
@@ -1391,26 +1557,27 @@
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info name-id) outer-args])
+                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->d* dom)] ...
-                       [rng-mk-x rng-mk])
-                   (unless (and (procedure? rng-mk-x)
-                                (procedure-arity-includes? rng-mk-x dom-length))
-                     (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
-                            dom-length rng-mk-x))
-                   (let ([name-id (string-append "(->d* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " ...)")])
-                     body)))))
+                 (let ([dom-contract-x (coerce-contract ->d* dom)] ...)
+                   (let ([dom-x (contract-proc dom-contract-x)] ...
+                         [rng-mk-x rng-mk])
+                     (unless (and (procedure? rng-mk-x)
+                                  (procedure-arity-includes? rng-mk-x dom-length))
+                       (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
+                              dom-length rng-mk-x))
+                     (let ([name-id (string-append "(->d* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " ...)")])
+                       body))))))
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...)
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...)
                    inner-lambda))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (and (procedure? val)
                               (procedure-arity-includes? val dom-length))
@@ -1418,11 +1585,12 @@
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ...)
                   (call-with-values
@@ -1442,54 +1610,60 @@
                                 (((coerce/select-contract ->d* rng-contract)
                                   pos-blame
                                   neg-blame
-                                  src-info)
+                                  src-info
+                                  orig-str)
                                  result))
                               rng-contracts
                               results))))))))))))]
         [(_ (dom ...) rest rng-mk)
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-contract-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-projection-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(dom-rest-x) (generate-temporaries (syntax (rest)))]
+                       [(dom-rest-contract-x) (generate-temporaries (syntax (rest)))]
                        [(dom-rest-projection-x) (generate-temporaries (syntax (rest)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
                        [arity (length (syntax->list (syntax (dom ...))))])
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
-                            [(val pos-blame neg-blame src-info name-id) outer-args])
+                            [(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (let ([dom-x (coerce/select-contract ->d* dom)] ...
-                       [dom-rest-x (coerce/select-contract ->d* rest)]
-                       [rng-mk-x rng-mk])
-                   (unless (procedure? rng-mk-x)
-                     (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
-                            arity rng-mk-x))
-                   (let ([name-id (string-append "(->d* "
-                                                 (build-compound-type-name #f dom-x ...)
-                                                 " "
-                                                 (contract->type-name dom-rest-x)
-                                                 " ...)")])
-                     body)))))
+                 (let ([dom-contract-x (coerce-contract ->d* dom)] ...
+                       [dom-rest-contract-x (coerce-contract ->d* rest)])
+                   (let ([dom-x (contract-proc dom-contract-x)] ...
+                         [dom-rest-x (contract-proc dom-rest-contract-x)]
+                         [rng-mk-x rng-mk])
+                     (unless (procedure? rng-mk-x)
+                       (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
+                              arity rng-mk-x))
+                     (let ([name-id (string-append "(->d* "
+                                                   (build-compound-type-name #f dom-contract-x ...)
+                                                   " "
+                                                   (contract->type-name dom-rest-contract-x)
+                                                   " ...)")])
+                       body))))))
             (lambda (outer-args inner-lambda)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
                             [inner-lambda inner-lambda])
                 (syntax
-                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...
-                       [dom-rest-projection-x (dom-rest-x neg-blame pos-blame src-info)])
+                 (let ([dom-projection-x (dom-x neg-blame pos-blame src-info orig-str)] ...
+                       [dom-rest-projection-x (dom-rest-x neg-blame pos-blame src-info orig-str)])
                    inner-lambda))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  (unless (procedure? val)
                    (raise-contract-error
                     src-info
                     pos-blame
                     neg-blame
+                    orig-str
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     arity
                     val)))))
             (lambda (outer-args)
-              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
+              (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
                  ((arg-x ... . rest-arg-x)
                   (call-with-values
@@ -1514,7 +1688,8 @@
                                 (((coerce/select-contract ->d* rng-contract)
                                   pos-blame
                                   neg-blame
-                                  src-info)
+                                  src-info
+                                  orig-str)
                                  result))
                               rng-contracts
                               results))))))))))))]))
@@ -1575,6 +1750,24 @@
              (contract-proc x)]
             [(and (procedure? x) (procedure-arity-includes? x 1))
              (contract-proc (flat-contract x))]
+            [else
+             (error 'name 
+                    "expected contract or procedure of arity 1, got ~e"
+                    x)])))]))
+  
+  ;; coerce-contract : id (union contract? procedure-arity-1) -> contract
+  ;; contract-proc = sym sym stx -> alpha -> alpha
+  ;; returns the procedure for the contract after extracting it from the
+  ;; struct. Coerces the argument to a flat contract if it is procedure, but first.
+  (define-syntax (coerce-contract stx)
+    (syntax-case stx ()
+      [(_ name val)
+       (syntax
+        (let ([x val])
+          (cond
+            [(contract? x) x]
+            [(and (procedure? x) (procedure-arity-includes? x 1))
+             (flat-contract x)]
             [else
              (error 'name 
                     "expected contract or procedure of arity 1, got ~e"
@@ -1663,7 +1856,7 @@
                              [fc/predicates null]
                              [args args])
                     (cond
-                      [(null? args) (values contract fc/predicates)]
+                      [(null? args) (values contract (reverse fc/predicates))]
                       [else 
                        (let ([arg (car args)])
                          (cond
@@ -1685,8 +1878,8 @@
            (let ([c-proc (contract-proc contract)])
              (make-contract
               (apply build-compound-type-name "union" (cons contract flat-contracts))
-              (lambda (pos neg src-info)
-                (let ([partial-contract (c-proc pos neg src-info)])
+              (lambda (pos neg src-info orig-str)
+                (let ([partial-contract (c-proc pos neg src-info orig-str)])
                   (lambda (val)
                     (cond
                       [(ormap (lambda (pred) (pred val)) predicates)
@@ -1701,20 +1894,20 @@
   
   (define false?
     (flat-named-contract
-     "false"
+     "false?"
      (lambda (x) (not x))))
   
   (define any?
     (make-flat-contract
      "any?"
-     (lambda (pos neg src-info) (lambda (val) val))
+     (lambda (pos neg src-info orig-str) (lambda (val) val))
      (lambda (x) #t)))
 
   (define (string/len n)
     (unless (number? n)
       (error 'string/len "expected a number as argument, got ~e" n))
     (flat-named-contract 
-     (format "string (up to ~a characters)" n)
+     (format "(string/len ~a)" n)
      (lambda (x)
        (and (string? x)
             ((string-length x) . < . n)))))
@@ -1726,15 +1919,13 @@
       (error 'symbols "expected symbols as arguments, given: ~a"
 	     (apply string-append (map (lambda (x) (format "~e " x)) ss))))
     (flat-named-contract
-     (apply string-append
-	    (format "'~a" (car ss))
-	    (map (lambda (x) (format ", '~a" x)) (cdr ss)))
+     (apply build-compound-type-name 'symbols (map (lambda (x) (format "'~s" x)) ss))
      (lambda (x)
        (memq x ss))))
   
   (define printable?
     (flat-named-contract
-     "printable"
+     "printable?"
      (lambda (x)
        (let printable? ([x x])
 	 (or (symbol? x)
@@ -1754,24 +1945,24 @@
   
   (define (>=/c x)
     (flat-named-contract
-     (format "number >= ~a" x)
+     (format "(>=/c ~a)" x)
      (lambda (y) (and (number? y) (>= y x)))))
   (define (<=/c x)
     (flat-named-contract
-     (format "number <= ~a" x)
+     (format "(<=/c ~a)" x)
      (lambda (y) (and (number? y) (<= y x)))))
   (define (</c x)
     (flat-named-contract
-     (format "number < ~a" x)
+     (format "(</c ~a)" x)
      (lambda (y) (and (number? y) (< y x)))))
   (define (>/c x)
     (flat-named-contract
-     (format "number > ~a" x)
+     (format "(>/c ~a)" x)
      (lambda (y) (and (number? y) (> y x)))))
 
   (define natural-number?
     (flat-named-contract
-     "natural-number"
+     "natural-number?"
      (lambda (x)
        (and (number? x)
 	    (integer? x)
@@ -1782,7 +1973,7 @@
                  (integer? end))
       (error 'integer-in "expected two integers as arguments, got ~e and ~e" start end))
     (flat-named-contract 
-     (format "integer between ~a and ~a, inclusive" start end)
+     (format "(integer-in ~a ~a)" start end)
      (lambda (x)
        (and (integer? x)
             (<= start x end)))))
@@ -1792,7 +1983,7 @@
                  (real? end))
       (error 'real-in "expected two real numbers as arguments, got ~e and ~e" start end))
     (flat-named-contract 
-     (format "real between ~a and ~a, inclusive" start end)
+     (format "(real-in ~a ~a)" start end)
      (lambda (x)
        (and (real? x)
             (<= start x end)))))
@@ -1825,19 +2016,18 @@
 		   [(null? preds) pred]
 		   [else
 		    (let* ([fst (to-predicate (car preds))])
-		      (loop (lambda (x) (and (pred x) (fst x)))
+		      (loop (let ([and/c-contract? (lambda (x) (and (pred x) (fst x)))])
+                              and/c-contract?)
 			    (cdr preds)))]))])
 	 (flat-contract pred))]
       [else
-       (let ([contract/procs 
-              (map (lambda (x) (if (contract? x) 
-                                   (contract-proc x)
-                                   (contract-proc (flat-contract x)))) 
-                   fs)])
+       (let* ([contracts (map (lambda (x) (if (contract? x) x (flat-contract x))) fs)]
+              [contract/procs (map contract-proc contracts)])
 	 (make-contract
-          (apply build-compound-type-name "and/c" fs)
-           (lambda (pos neg src-info)
-             (let ([partial-contracts (map (lambda (contract/proc) (contract/proc pos neg src-info)) contract/procs)])
+          (apply build-compound-type-name "and/c" contracts)
+           (lambda (pos neg src-info orig-str)
+             (let ([partial-contracts (map (lambda (contract/proc) (contract/proc pos neg src-info orig-str))
+                                           contract/procs)])
                (let loop ([ctct (car partial-contracts)]
                           [rest (cdr partial-contracts)])
                  (cond
@@ -1861,9 +2051,12 @@
       (error 'is-a?/c "expected <interface> or <class>, given: ~e" <%>))
     (let ([name (object-name <%>)])
       (flat-named-contract
-       (if name
-	   (format "instance of ~a" name)
-	   "instance of <<unknown>>")
+       (cond
+         [name
+          (format "(is-a?/c ~a)" name)]
+         [(class? <%>)
+          "(is-a?/c unknown%)"]
+         [else "(is-a?/c unknown<%>)"])
        (lambda (x) (is-a? x <%>)))))
 
   (define (listof p)
@@ -1882,18 +2075,20 @@
        (syntax
         (let ([predicate?-name predicate?]
               [fill-name fill])
-          (lambda (_p)
-            (let ([p (coerce/select-contract name _p)])
+          (lambda (input)
+            (let* ([ctc (coerce-contract name input)]
+                   [p (contract-proc ctc)])
               (make-contract
-               (build-compound-type-name 'name p)
-               (lambda (pos neg src-info)
-                 (let ([p-app (p pos neg src-info)])
+               (build-compound-type-name 'name ctc)
+               (lambda (pos neg src-info orig-str)
+                 (let ([p-app (p pos neg src-info orig-str)])
                    (lambda (val)
                      (unless (predicate?-name val)
                        (raise-contract-error
                         src-info
                         pos
                         neg
+                        orig-str
                         "expected <~a>, given: ~e"
                         'type-name
                         val))
@@ -1990,8 +2185,8 @@
               (let ([procs (coerce/select-contract name params)] ...)
                 (make-contract
                  (build-compound-type-name 'name params ...)
-                 (lambda (pos neg src-info)
-                   (let ([p-apps (procs pos neg src-info)] ...)
+                 (lambda (pos neg src-info orig-str)
+                   (let ([p-apps (procs pos neg src-info orig-str)] ...)
                      (lambda (v)
                        (if (and (immutable? v)
                                 (predicate?-name v))
@@ -2000,6 +2195,7 @@
                             src-info
                             pos
                             neg
+                            orig-str
                             "expected <~a>, given: ~e"
                             'type-name
                             v)))))))))))]
@@ -2013,8 +2209,8 @@
             (let ([procs (map (lambda (param) (coerce/select-contract name param)) params)])
               (make-contract
                (apply build-compound-type-name 'name params)
-               (lambda (pos neg src-info)
-                 (let ([p-apps (map (lambda (proc) (proc pos neg src-info)) procs)]
+               (lambda (pos neg src-info orig-str)
+                 (let ([p-apps (map (lambda (proc) (proc pos neg src-info orig-str)) procs)]
                        [count (length params)])
                    (lambda (v)
                      (if (and (immutable? v)
@@ -2032,6 +2228,7 @@
                           src-info
                           pos
                           neg
+                          orig-str
                           "expected <~a>, given: ~e"
                           'type-name
                           v))))))))))]))
@@ -2092,17 +2289,28 @@
         (and (procedure? pred)
              (procedure-arity-includes? pred 1))))
   
+  ;; build-compound-type-name : (union symbol #f) (union contract symbol string) ... -> string
   (define (build-compound-type-name name . fs)
-    (let ([strs (map contract->type-name fs)])
-      (format "(~a~a)" 
-              (or name "")
-              (apply string-append
-                     (let loop ([strs strs])
-                       (cond
-                         [(null? strs) null]
-                         [else (cons " "
-                                     (cons (car strs)
-                                           (loop (cdr strs))))]))))))
+    (let* ([strs (map (lambda (x) (cond
+                                    [(symbol? x)
+                                     (format "~a" x)]
+                                    [(string? x) x]
+                                    [else (contract->type-name x)]))
+                      fs)]
+           [with-spaces
+            (let loop ([strs strs])
+              (cond
+                [(null? strs) null]
+                [else (cons " "
+                            (cons (car strs)
+                                  (loop (cdr strs))))]))])
+      (cond
+        [name
+         (format "(~a~a)" name (apply string-append with-spaces))]
+        [(null? with-spaces)
+         "()"]
+        [else 
+         (format "(~a)" (apply string-append (cdr with-spaces)))])))
   
   (define (subclass?/c %)
     (unless (class? %)
@@ -2110,8 +2318,8 @@
     (let ([name (object-name %)])
       (flat-named-contract
        (if name
-	   (format "subclass of ~a" name)
-	   "subclass of <<unknown>>")
+           (format "(subclass?/c ~a)" name)
+	   "(subclass?/c unknown%)")
        (lambda (x) (subclass? x %)))))
 
   (define (implementation?/c <%>)
@@ -2120,8 +2328,8 @@
     (let ([name (object-name <%>)])
       (flat-named-contract
        (if name
-	   (format "implementation of ~a" name)
-	   "implementation of <<unknown>>")
+	   (format "(implementation?/c ~a)" name)
+	   "(implementation?/c unknown<%>)")
        (lambda (x) (implementation? x <%>)))))
 
   (define mixin-contract (class? . ->d . subclass?/c))

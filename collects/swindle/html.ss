@@ -162,7 +162,7 @@
   ;; new buffer on every call in case of threading
   (let* ([bufsize 4096] [buffer (make-string bufsize)])
     (let loop ()
-      (let ([l (read-string-avail! buffer)])
+      (let ([l (read-bytes-avail! buffer)])
         (unless (eof-object? l)
           (display (if (< l bufsize) (substring buffer 0 l) buffer))
           (loop))))))

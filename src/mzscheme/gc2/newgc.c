@@ -1021,7 +1021,9 @@ inline static void reset_weak_finalizers(void)
 
   for(wfnl = weak_finalizers; wfnl; wfnl = wfnl->next) {
     *(void**)(NUM(GC_resolve(wfnl->p)) + wfnl->offset) = wfnl->saved;
-    gcMARK(wfnl->saved); wfnl->saved = NULL;
+    if(marked(wfnl->p))
+      gcMARK(wfnl->saved); 
+    wfnl->saved = NULL;
   }
 }
 
@@ -1871,6 +1873,7 @@ inline static void repair_xtagged_page(struct mpage *page)
   void **start = PPTR(NUM(page) + HEADER_SIZEB);
   void **end = PPTR(NUM(page) + page->size);
 
+  GC_DEBUG("Repairing xtagged object at %p\n", start);
   while(start < end) {
     GC_fixup_xtagged(start + 1);
     start += ((struct objhead *)start)->size;
@@ -2186,7 +2189,7 @@ static void garbage_collect(int force_full)
   static unsigned int since_last_full = 0;
   static unsigned int running_finalizers = 0;
 
-  gc_full = force_full || !generations_available || (since_last_full = 15);
+  gc_full = force_full || !generations_available || (since_last_full == 15);
   number++; if(gc_full) since_last_full = 0; else since_last_full++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   

@@ -139,7 +139,7 @@
             [(eof-object? c) c]
             [(eq? c #\&) (lex-entity in pos)]
             [(eq? c #\<) (lex-tag-cdata-pi-comment in pos)]
-            [(eq? c 'special) (read-char-or-special in)]
+            [(not (char? c)) (read-char-or-special in)]
             [else (lex-pcdata in pos)])))
       
       ; lex-entity : Input-port (-> Location) -> Entity
@@ -263,7 +263,8 @@
       (define (skip-space in)
         (let loop ()
           (let ([c (peek-char-or-special in)])
-            (when (and (not (eof-object? c)) (not (eq? 'special c)) (char-whitespace? c))
+            (when (and (char? c)
+                       (char-whitespace? c))
               (read-char in)
               (loop)))))
       
@@ -274,7 +275,10 @@
               [data (let loop ()
                       (let ([next (peek-char-or-special in)])
                         (cond
-                          [(or (eof-object? next) (eq? next 'special) (eq? next #\&) (eq? next #\<))
+                          [(or (eof-object? next)
+			       (not (char? next))
+			       (eq? next #\&)
+			       (eq? next #\<))
                            null]
                           [(and (char-whitespace? next) (collapse-whitespace))
                            (skip-space in)

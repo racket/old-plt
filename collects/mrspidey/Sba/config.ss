@@ -27,7 +27,7 @@
   (define st:restricted 
     (not (string? (current-load-relative-directory))))
   (define st:name    "MrSpidey")
-  (define st:version (lambda () "49s1"))
+  (define st:version (lambda () "100"))
 
   ;; ----------------------------------------------------------------------
   ;; Front end parameters

@@ -123,7 +123,7 @@
     (define get-url-i/o-ports
       (lambda (url)
 	(let ((url (parse-url url)))
-	  (let ((scheme (url-scheme url))
+	  (let ((method (url-method url))
 		 (path (url-path url))
 		 (search (url-search url))
 		 (fragment (url-fragment url)))

@@ -260,11 +260,11 @@
 	      (format ">Release:        ~a" plt-version)
 	      ">Environment:"
 	      (format "~a" environment)
-	      (format "~n~a" "Docs Installed:")
+	      (format "~n~a" "Docs installed:")
 	      (format "~a" docs-installed)
 	      (format "~n~a" "Collections:")
 	      (format "~a" collects-installed)
-	      (format "~nHuman Language: ~a" human-language))
+	      (format "~nHuman language: ~a" human-language))
 	     (map
 	      (lambda (item)
 		(format "~a: ~a" (car item) (cadr item)))

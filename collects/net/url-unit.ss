@@ -22,7 +22,7 @@
     (unit/sig net:url^
       (import net:tcp^)
 
-      (define-struct (url-exception exn) ())
+      (define-struct (url-exception exn:fail) ())
 
       (define current-proxy-servers
         (make-parameter null (lambda (v)
@@ -52,11 +52,12 @@
 
       (define url-error
         (lambda (fmt . args)
-          (let ((s (apply format fmt (map (lambda (arg)
-                                            (if (url? arg)
-                                                (url->string arg)
-                                                arg))
-                                          args))))
+          (let ((s (string->immutable-string
+                    (apply format fmt (map (lambda (arg)
+                                             (if (url? arg)
+                                                 (url->string arg)
+                                                 arg))
+                                           args)))))
             (raise (make-url-exception s (current-continuation-marks))))))
 
       (define-struct url (scheme user host port path query fragment))

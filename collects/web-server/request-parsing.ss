@@ -40,7 +40,10 @@
     (let-values ([(method uri major-version minor-version)
                   (read-request-line ip)])
       (let ([headers (read-headers ip)])
-        (let-values ([(host-ip client-ip) (tcp-addresses ip)])
+        (let-values ([(host-ip client-ip)
+                      (if (tcp-port? ip)
+                          (tcp-addresses ip)
+                          (values "127.0.0.1" "127.0.0.1"))])
           (values
            (make-request method uri headers '() host-ip client-ip)
            (close-connection?

@@ -4,6 +4,7 @@
 
   (define-signature web-server^
     (serve
+     serve-ports
      ; for environment:
      server-loop))
   

@@ -8,7 +8,8 @@
            (lib "mred.ss" "mred")
            (lib "string-constant.ss" "string-constants")
            (lib "contract.ss")
-	   (lib "thread.ss"))
+           (lib "port.ss")
+           (lib "thread.ss"))
   
   (define doc-prs (listof (cons/p string? string?)))
   

@@ -4,8 +4,11 @@
            "cookie.ss"
 	   (lib "contract.ss"))
   
-  (provide make-home-page-url
-           prefix-with-server)
+  (provide home-page-url
+           prefix-with-server
+           fake-help-desk-host)
+  
+  (define fake-help-desk-host "helpdesk.plt-scheme.org")
   
   (define (search-type? x)
     (member x '("keyword" "keyword-index" "keyword-index-text")))
@@ -29,13 +32,12 @@
                       (union false? string?)
                       . -> .
                       string?))
-   (make-missing-manual-url (hd-cookie? string? string? string? . -> . string?))
-   (search-for-docs (hd-cookie? string? search-type? search-how? any? (listof symbol?) any? 
+   (make-missing-manual-url (string? string? string? . -> . string?))
+   (search-for-docs (string? search-type? search-how? any? (listof symbol?) any? 
                                 (union false? string?) . -> . any?))
-   (goto-hd-location (hd-cookie? (lambda (sym)
-                                   (memq sym hd-location-syms))
-                                 . -> . 
-                                 any))
+   (goto-hd-location ((lambda (sym) (memq sym hd-location-syms))
+                      . -> . 
+                      any))
    [make-docs-plt-url (string? . -> . string?)]
    [make-docs-html-url (string? . -> . string?)])
 
@@ -54,21 +56,17 @@
             manual-name))
   
   (define (prefix-with-server cookie suffix)
-    (format "http://127.0.0.1:~a~a"
-            (hd-cookie-port cookie)
-            suffix))
+    (format "http://~a~a" fake-help-desk-host suffix))
   
-  (define results-url-prefix
-    "http://127.0.0.1:~a/servlets/results.ss?")
+  (define results-url-prefix (format "http://~a/servlets/results.ss?" fake-help-desk-host))
   
   (define relative-results-url-prefix "/servlets/results.ss?")
 
-  (define (make-home-page-url port)
-    (format "http://127.0.0.1:~a/servlets/home.ss" port))
+  (define home-page-url (format "http://~a/servlets/home.ss" fake-help-desk-host))
   
   (define (make-missing-manual-url cookie coll name link)
-    (format "http://127.0.0.1:~a/servlets/missing-manual.ss?manual=~a&name=~a&link=~a"
-            (hd-cookie-port cookie)
+    (format "http://~a/servlets/missing-manual.ss?manual=~a&name=~a&link=~a"
+            fake-help-desk-host
             coll
             (hexify-string name)
             (hexify-string link)))
@@ -113,8 +111,8 @@
 
   (define (search-for-docs cookie search-string search-type match-type lucky? manuals doc.txt? lang-name)
     (unless (string=? search-string "")
-      (let* ([port (hd-cookie-port cookie)]
-             [url (make-results-url (hd-cookie-port cookie)
+      (let* ([port '(hd-cookie-port cookie)]
+             [url (make-results-url '(hd-cookie-port cookie)
                                     search-string
                                     search-type
                                     match-type

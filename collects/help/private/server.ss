@@ -1,30 +1,29 @@
 (module server mzscheme 
-
-  (require (lib "internal-server.ss" "web-server")
+  (require (lib "web-server-unit.ss" "web-server")
+           (lib "sig.ss" "web-server")
            (lib "configuration.ss" "web-server")
            (lib "etc.ss")
            (lib "file.ss")
-	   "browser-extensions.ss"
+           (lib "unitsig.ss")
+           (lib "tcp-sig.ss" "net")
            "cookie.ss")
   
-  (provide start-help-server)
+  (provide get-serve-ports)
   
-  (define start-help-server
-    (opt-lambda ([addl-browser-frame-mixin (lambda (x) x)])
-      (let* ([configuration (build-developer-configuration (build-config-exp))]
-             [hd-cookie (make-hd-cookie min-port #f #f #f #f #f #f)]
-             [combined-browser-mixin
-              (compose addl-browser-frame-mixin
-                       (make-help-desk-frame-mixin hd-cookie))])
-        (let-values ([(shutdown-server url-on-server-test extract-url-path url->string find-browser new-browser)
-                      (internal-serve configuration min-port #f combined-browser-mixin)])
-          (set-hd-cookie-shutdown-server! hd-cookie shutdown-server)
-          (set-hd-cookie-url-on-server-test! hd-cookie url-on-server-test)
-          (set-hd-cookie-extract-url-path! hd-cookie extract-url-path)
-          (set-hd-cookie-url->string! hd-cookie url->string)
-          (set-hd-cookie-find-browser! hd-cookie find-browser)
-          (set-hd-cookie-new-browser! hd-cookie new-browser)
-          hd-cookie))))
+  (define (get-serve-ports)
+    (let ([config (build-developer-configuration (build-config-exp))])
+      (invoke-unit/sig
+       (compound-unit/sig
+         (import (t : net:tcp^))
+         (link
+          [c : web-config^ (config)]
+          [s : web-server^ (web-server@ t c)]
+          [m : () ((unit/sig ()
+                     (import web-server^)
+                     serve-ports)
+                   s)])
+         (export))
+       net:tcp^)))
   
   (define min-port 8000)
   (define max-port 8900)

@@ -22,6 +22,8 @@
    (visit-url-in-browser (hd-cookie? string? . -> . void?))
    (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
   
+  (define (start-help-server x) (void))
+  
   (provide 
    
    ;; manual ordering
@@ -53,5 +55,5 @@
    goto-manual-link
    goto-hd-location
    
-   make-home-page-url
+   home-page-url
    ))

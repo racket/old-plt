@@ -1,5 +1,5 @@
 
-(module browser-extensions mzscheme
+(module gui mzscheme
   (require (lib "framework.ss" "framework")
            (lib "mred.ss" "mred")
            (lib "class.ss")
@@ -9,14 +9,18 @@
            (lib "string-constant.ss" "string-constants")
            (lib "url.ss" "net")
            (lib "external.ss" "browser")
+           (lib "browser.ss" "browser")
            (lib "bday.ss" "framework" "private")
            "standard-urls.ss"
            "cookie.ss"
            "docpos.ss"
-           "manuals.ss")
+           "manuals.ss"
+           "server.ss")
   
-  (provide make-help-desk-frame-mixin
-           make-bug-report/help-desk-mixin)
+  (provide new-help-desk)
+  
+  (define (new-help-desk) (new ((make-help-desk-frame-mixin) hyper-frame%)
+                               (start-url home-page-url)))
   
   ;; where should the pref stuff really go?
   (preferences:set-default 'drscheme:help-desk:last-url-string "" string?)
@@ -31,12 +35,12 @@
   (add-to-browser-prefs-panel
    (lambda (panel)
      (let* ([cbp (instantiate group-box-panel% ()
-			      (parent panel)
-			      (label (string-constant plt:hd:external-link-in-help))
-			      (alignment '(left center))
-			      (stretchable-height #f)
-			      (style '(deleted)))]
-	    [cb (instantiate check-box% ()
+                   (parent panel)
+                   (label (string-constant plt:hd:external-link-in-help))
+                   (alignment '(left center))
+                   (stretchable-height #f)
+                   (style '(deleted)))]
+            [cb (instantiate check-box% ()
                   (label (string-constant plt:hd:use-homebrew-browser))
                   (parent cbp)
                   (value (preferences:get 'drscheme:help-desk:separate-browser))
@@ -51,17 +55,17 @@
         (lambda (p v) (send cb set-value (not v))))
        (void))))
   
-  (define (make-help-desk-frame-mixin hd-cookie)
+  (define (make-help-desk-frame-mixin)
     (compose
-     (make-catch-url-frame-mixin hd-cookie)
-     (make-bug-report/help-desk-mixin hd-cookie)
-     (make-help-desk-framework-mixin hd-cookie)
+     make-catch-url-frame-mixin
+     bug-report/help-desk-mixin
+     make-help-desk-framework-mixin
      browser-scroll-frame-mixin
      frame:searchable-mixin
      frame:standard-menus-mixin
-     (make-search-button-mixin hd-cookie)))
+     make-search-button-mixin))
   
-  (define (make-bug-report/help-desk-mixin hd-cookie)
+  (define bug-report/help-desk-mixin
     (mixin (frame:standard-menus<%>) ()
       (define/override (file-menu:create-open-recent?) #f)
       (define/override (help-menu:about-string)
@@ -87,162 +91,188 @@
       (inherit get-hyper-panel)
 
       (define/override (on-subwindow-char w e)
-	(or (let ([txt (send (send (get-hyper-panel) get-canvas) get-editor)])
-	      (let ([km (send txt get-hyper-keymap)])
-		(send km handle-key-event txt e)))
-	    (super on-subwindow-char w e)))
+        (or (let ([txt (send (send (get-hyper-panel) get-canvas) get-editor)])
+              (let ([km (send txt get-hyper-keymap)])
+                (send km handle-key-event txt e)))
+            (super on-subwindow-char w e)))
 
       (super-new)))
 
   ;; redirect urls to outside pages to external browsers (depending on the preferences settings)
   ;; also catches links into documentation that isn't installed yet and sends that
   ;; to the missing manuals page.
-  (define (make-catch-url-frame-mixin hd-cookie)
-    (define (catch-url-hyper-panel-mixin %)
-      (class %
-        (define/override (get-canvas%)
-          (catch-url-canvas-mixin (super get-canvas%)))
-        (super-new)))
-    
-    (define (catch-url-canvas-mixin %)
-      (class %
-        
-        (define/override (get-editor%) (hd-editor-mixin (super get-editor%)))
-        
-        (define/override (remap-url url)
-          (let ([internal-url-test (hd-cookie-url-on-server-test hd-cookie)]
-                [extract-url-path (hd-cookie-extract-url-path hd-cookie)])
-            (cond
-              [(internal-url-test url)
-               =>
-               (lambda (s)
-                 (let ([external?
-                        (cond
-                          
-                          ;; .plt files are always internal, no matter where from
-                          ;; they will be caught elsewhere.
-                          [(regexp-match #rx".plt$" s)
-                           #f]
-                          
-                          ;; files on download.plt-scheme.org in /doc are considered
-                          ;; things that we should view in the browser itself.
-                          [(is-download.plt-scheme.org/doc-url? s)
-                           #f]
-                          
-                          [(preferences:get 'drscheme:help-desk:ask-about-external-urls)
-                           (ask-user-about-separate-browser)]
-                          [else
-                           (preferences:get 'drscheme:help-desk:separate-browser)])])
-                   (if external? 
-                       (begin (send-url s) #f)
-                       url)))]
-              [(extract-url-path url)
-               =>
-               (lambda (path)
-                 (if (and (not (null? path))
-                          (not (null? (cdr path)))
-                          (equal? "doc" (car path)))
-                     (let* ([coll (cadr path)]
-                            [index? (has-index-installed? (string->path coll))]
-                            [just-visit-url?
-                             (or (not (assoc coll known-docs))
-                                 index?)])
-                       (cond
-                         [just-visit-url? url]
-                         [else
-                          (let ([doc-pr (assoc coll known-docs)]
-                                [url-str ((hd-cookie-url->string hd-cookie) url)])
-                            (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
-                     url))]
-              [else url])))
-        (super-new)))
-
-    ;; has-index-installed? : path -> boolean
-    (define (has-index-installed? doc-coll)
-      (let loop ([docs-dirs (find-doc-directories)])
-        (cond
-          [(null? docs-dirs) #f]
-          [else
-           (let ([doc-dir (car docs-dirs)])
-             (let-values ([(base name dir?) (split-path doc-dir)])
-               (or (and (equal? doc-coll name)
-                        (get-index-file doc-dir))
-                   (loop (cdr docs-dirs)))))])))
-
-    (define sk-bitmap #f)
-    
-    (define hd-editor-mixin
-      (mixin (editor<%>) ()
-        (define show-sk? #t)
-
-        (define/override (on-event evt)
+  (define make-catch-url-frame-mixin
+    (let ()
+      (define (catch-url-hyper-panel-mixin %)
+        (class %
+          (define/override (get-canvas%)
+            (catch-url-canvas-mixin (super get-canvas%)))
+          (super-new)))
+      
+      (define (catch-url-canvas-mixin %)
+        (class %
+          
+          (define/override (get-editor%) (hd-editor-mixin (super get-editor%)))
+          
+          (define/override (remap-url url)
+            (let ([internal-url-test (lambda (x) #f)])
+              (cond
+                [(and (url? url)
+                      (string=? fake-help-desk-host (url-host url)))
+                 (printf "found one! ~s\n" (url->string url))
+                 (make-faux-url
+                  (lambda ()
+                    (let-values ([(req-in req-out) (make-pipe)]
+                                 [(resp-in resp-out) (make-pipe)])
+                      (thread
+                       (lambda ()
+                         (display "GET / HTTP/1.0\r\n\r\n" req-out)
+                         (close-output-port req-out)))
+                      (let ([t2 (parameterize ([current-custodian (make-custodian)])
+                                  (thread 
+                                   (lambda ()
+                                     (let ([serve-ports (get-serve-ports)])
+                                       (serve-ports req-in resp-out))))
+                                  (thread (lambda () (semaphore-wait (make-semaphore)))))])
+                        (thread
+                         (lambda ()
+                           (thread-wait t2)
+                           (close-output-port resp-out)
+                           (close-input-port req-in)))
+                        (values (purify-port resp-in)
+                                resp-in))))
+                  #t)]
+                [#f
+                 =>
+                 (lambda (s)
+                   (let ([external?
+                          (cond
+                            
+                            ;; .plt files are always internal, no matter where from
+                            ;; they will be caught elsewhere.
+                            [(regexp-match #rx".plt$" s)
+                             #f]
+                            
+                            ;; files on download.plt-scheme.org in /doc are considered
+                            ;; things that we should view in the browser itself.
+                            [(is-download.plt-scheme.org/doc-url? s)
+                             #f]
+                            
+                            [(preferences:get 'drscheme:help-desk:ask-about-external-urls)
+                             (ask-user-about-separate-browser)]
+                            [else
+                             (preferences:get 'drscheme:help-desk:separate-browser)])])
+                     (if external? 
+                         (begin (send-url s) #f)
+                         url)))]
+                [(and (url? url)
+                      (url-path url))
+                 =>
+                 (lambda (path)
+                   (if (and (not (null? path))
+                            (not (null? (cdr path)))
+                            (equal? "doc" (car path)))
+                       (let* ([coll (cadr path)]
+                              [index? (has-index-installed? (string->path coll))]
+                              [just-visit-url?
+                               (or (not (assoc coll known-docs))
+                                   index?)])
+                         (cond
+                           [just-visit-url? url]
+                           [else
+                            (let ([doc-pr (assoc coll known-docs)]
+                                  [url-str (url->string url)])
+                              (make-missing-manual-url  coll (cdr doc-pr) url-str))]))
+                       url))]
+                [else url])))
+          (super-new)))
+      
+      ;; has-index-installed? : path -> boolean
+      (define (has-index-installed? doc-coll)
+        (let loop ([docs-dirs (find-doc-directories)])
           (cond
-            [(and show-sk? 
-                  (sk-bday?)
-                  (send evt button-down? 'right))
-             (let ([admin (get-admin)])
-               (let ([menu (new popup-menu%)])
-                 (new menu-item% 
-                      (parent menu)
-                      (label (string-constant happy-birthday-shriram))
-                      (callback (lambda (x y)
-                                  (set! show-sk? #f)
-                                  (let ([wb (box 0)]
-                                        [hb (box 0)]
-                                        [xb (box 0)]
-                                        [yb (box 0)])
-                                    (send admin get-view xb yb wb hb)
-                                    (send admin needs-update (unbox xb) (unbox yb) (unbox wb) (unbox hb))))))
-                 (send (get-canvas) popup-menu menu
-                       (+ (send evt get-x) 1)
-                       (+ (send evt get-y) 1))))]
-            [else (super on-event evt)]))
-             
-        
-        (inherit dc-location-to-editor-location get-admin)
-        (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
-          (super on-paint before? dc left top right bottom dx dy draw-caret)
-          (when before?
-            (when (and show-sk? (sk-bday?))
-              (unless sk-bitmap
-                (set! sk-bitmap (make-object bitmap% (build-path (collection-path "icons") "sk.jpg"))))
-              
-              (let ([admin (get-admin)])
-                (when admin
-                  (let*-values ([(view-w view-h) (get-view-w/h admin)]
-                                [(view-x view-y)
-                                 (values (- (/ view-w 2) (/ (send sk-bitmap get-width) 2))
-                                         (- view-h (send sk-bitmap get-height)))]
-                                ;; note: view coordinates are not exactly canvas dc coordinates
-                                ;; but they are off by a fixed amount (same on all platforms)
-                                ;; (note: dc-location in this method means canvas dc, which is
-                                ;;  different from the dc coming in here (offscreen bitmaps))
-                                [(editor-x editor-y) (dc-location-to-editor-location view-x view-y)]
-                                [(dc-x dc-y) (values (+ editor-x dx)
-                                                     (+ editor-y dy))])
-                    (send dc draw-bitmap sk-bitmap dc-x dc-y)))))))
-        (define/private (get-view-w/h admin)
-          (let ([wb (box 0)]
-                [hb (box 0)])
-            (send admin get-view #f #f wb hb)
-            (values (unbox wb)
-                    (unbox hb))))
-
-        (inherit get-canvas)
-        (define/override (init-browser-status-line top-level-window) 
-          (send top-level-window change-search-to-status))
-        (define/override (update-browser-status-line top-level-window s) 
-          (send top-level-window set-search-status-contents s))
-        (define/override (close-browser-status-line top-level-window) 
-          (send  top-level-window change-status-to-search))
-        
-        (super-new)))
-    
-    (lambda (%)
-      (class %
-        (define/override (get-hyper-panel%)
-          (catch-url-hyper-panel-mixin (super get-hyper-panel%)))
-        (super-new))))
+            [(null? docs-dirs) #f]
+            [else
+             (let ([doc-dir (car docs-dirs)])
+               (let-values ([(base name dir?) (split-path doc-dir)])
+                 (or (and (equal? doc-coll name)
+                          (get-index-file doc-dir))
+                     (loop (cdr docs-dirs)))))])))
+      
+      (define sk-bitmap #f)
+      
+      (define hd-editor-mixin
+        (mixin (editor<%>) ()
+          (define show-sk? #t)
+          
+          (define/override (on-event evt)
+            (cond
+              [(and show-sk? 
+                    (sk-bday?)
+                    (send evt button-down? 'right))
+               (let ([admin (get-admin)])
+                 (let ([menu (new popup-menu%)])
+                   (new menu-item% 
+                        (parent menu)
+                        (label (string-constant happy-birthday-shriram))
+                        (callback (lambda (x y)
+                                    (set! show-sk? #f)
+                                    (let ([wb (box 0)]
+                                          [hb (box 0)]
+                                          [xb (box 0)]
+                                          [yb (box 0)])
+                                      (send admin get-view xb yb wb hb)
+                                      (send admin needs-update (unbox xb) (unbox yb) (unbox wb) (unbox hb))))))
+                   (send (get-canvas) popup-menu menu
+                         (+ (send evt get-x) 1)
+                         (+ (send evt get-y) 1))))]
+              [else (super on-event evt)]))
+          
+          
+          (inherit dc-location-to-editor-location get-admin)
+          (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
+            (super on-paint before? dc left top right bottom dx dy draw-caret)
+            (when before?
+              (when (and show-sk? (sk-bday?))
+                (unless sk-bitmap
+                  (set! sk-bitmap (make-object bitmap% (build-path (collection-path "icons") "sk.jpg"))))
+                
+                (let ([admin (get-admin)])
+                  (when admin
+                    (let*-values ([(view-w view-h) (get-view-w/h admin)]
+                                  [(view-x view-y)
+                                   (values (- (/ view-w 2) (/ (send sk-bitmap get-width) 2))
+                                           (- view-h (send sk-bitmap get-height)))]
+                                  ;; note: view coordinates are not exactly canvas dc coordinates
+                                  ;; but they are off by a fixed amount (same on all platforms)
+                                  ;; (note: dc-location in this method means canvas dc, which is
+                                  ;;  different from the dc coming in here (offscreen bitmaps))
+                                  [(editor-x editor-y) (dc-location-to-editor-location view-x view-y)]
+                                  [(dc-x dc-y) (values (+ editor-x dx)
+                                                       (+ editor-y dy))])
+                      (send dc draw-bitmap sk-bitmap dc-x dc-y)))))))
+          (define/private (get-view-w/h admin)
+            (let ([wb (box 0)]
+                  [hb (box 0)])
+              (send admin get-view #f #f wb hb)
+              (values (unbox wb)
+                      (unbox hb))))
+          
+          (inherit get-canvas)
+          (define/override (init-browser-status-line top-level-window)
+            (send top-level-window change-search-to-status))
+          (define/override (update-browser-status-line top-level-window s) 
+            (send top-level-window set-search-status-contents s))
+          (define/override (close-browser-status-line top-level-window) 
+            (send top-level-window change-status-to-search))
+          
+          (super-new)))
+      
+      (lambda (%)
+        (class %
+          (define/override (get-hyper-panel%)
+            (catch-url-hyper-panel-mixin (super get-hyper-panel%)))
+          (super-new)))))
 
   (define (is-download.plt-scheme.org/doc-url? s)
     (let ([url (string->url s)])
@@ -320,17 +350,13 @@
     answer)
   
   
-  (define (make-help-desk-framework-mixin hd-cookie)
+  (define make-help-desk-framework-mixin 
     (mixin (frame:searchable<%> frame:standard-menus<%>) ()
       (define/override (get-text-to-search)
         (send (send (send this get-hyper-panel) get-canvas) get-editor))
       
       (define/override (file-menu:create-new?) #t)
-      (define/override (file-menu:new-callback x y)
-        (visit-url-in-new-browser 
-         hd-cookie
-         (make-home-page-url
-          (hd-cookie-port hd-cookie))))
+      (define/override (file-menu:new-callback x y) (visit-url-in-new-browser home-page-url))
 
       (define/override (file-menu:create-open-recent?) #f)
       
@@ -371,7 +397,7 @@
       
       (frame:reorder-menus this)))
   
-  (define (make-search-button-mixin hd-cookie)
+  (define make-search-button-mixin
     (mixin (frame:basic<%>) ()
       (field [search-panel #f])
 
@@ -392,26 +418,30 @@
           main-panel))
       
       ;; these methods have the same name as the methods in the browser.
+      ;; they are called during super initialization, so they protect themselves...
       (define/public (change-search-to-status)
-        (send search/status-panel active-child status-panel))
+        (when search/status-panel
+          (send search/status-panel active-child status-panel)))
       (define/public (set-search-status-contents s)
-        (send status-message set-label s))
+        (when status-message
+          (send status-message set-label s)))
       (define/public (change-status-to-search) 
-        (send search/status-panel active-child field-panel))
+        (when search/status-panel
+          (send search/status-panel active-child field-panel)))
       
-      
-      (super-new (label (string-constant help-desk)))
-      
-      (let ([hp (send this get-hyper-panel)])
-        (send hp set-init-page (make-home-page-url (hd-cookie-port hd-cookie)))
-        (send (send hp get-canvas) allow-tab-exit #t))
-      
-      (inherit get-menu-bar)
       (field [search/status-panel #f]
              [field-panel #f]
              [status-panel #f]
              [status-message #f]
              [choices-panel #f])
+
+      (super-new (label (string-constant help-desk)))
+      
+      (let ([hp (send this get-hyper-panel)])
+        (send hp set-init-page home-page-url)
+        (send (send hp get-canvas) allow-tab-exit #t))
+      
+      (inherit get-menu-bar)
       (let ()
         (define search-menu (instantiate menu% ()
                               (label (string-constant plt:hd:search))
@@ -491,7 +521,6 @@
         (define (search-callback lucky?)
           (let-values ([(manuals doc.txt?) (order-manuals (map car (find-doc-names)))])
             (let ([url (make-results-url
-                        (hd-cookie-port hd-cookie)
                         (send search-field get-value)
                         (case (send search-where get-selection)
                           [(0) "keyword"]

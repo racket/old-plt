@@ -39,6 +39,8 @@
 #define GET_RE_LOCK() SCHEME_GET_LOCK()
 #define RELEASE_RE_LOCK() SCHEME_RELEASE_LOCK()
 
+typedef int rxpos;
+
 typedef struct regexp {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -51,8 +53,8 @@ typedef struct regexp {
   char program[1];		/* Unwarranted chumminess with compiler. */
 } regexp;
 
-static regexp *regcomp(char *, int);
-static int regexec(regexp *, char *, int, char **, char **);
+static regexp *regcomp(char *, rxpos, int);
+static int regexec(regexp *, char *, int, int, rxpos *, rxpos *);
 
 /* 156 is octal 234: */
 #define MAGIC   156
@@ -121,7 +123,7 @@ static int regexec(regexp *, char *, int, char **, char **);
 #define	CLOSE	70	/* no	Analogous to OPEN. */
 
 # define OPSTR(o) (o + 2)
-# define OPLEN(o) ((int)(((unsigned char *)o)[0] << 8) | (((unsigned char *)o)[1]))
+# define OPLEN(o) ((int)(((unsigned char *)regstr)[o] << 8) | (((unsigned char *)regstr)[o+1]))
 
 /*
  * Opcode notes:
@@ -155,8 +157,8 @@ static int regexec(regexp *, char *, int, char **, char **);
  * Using two bytes for the "next" pointer is vast overkill for most things,
  * but allows patterns to get big without disasters.
  */
-#define	OP(p)	(*(p))
-#define	NEXT(p)	(((*((p)+1)&255)<<8) + (*((p)+2)&255))
+#define	OP(p)	(regstr[p])
+#define	NEXT(p)	(((((unsigned char *)regstr)[(p)+1]&255)<<8) + (((unsigned char *)regstr)[(p)+2]&255))
 #define	OPERAND(p)	((p) + 3)
 
 /*
@@ -173,7 +175,7 @@ static int regexec(regexp *, char *, int, char **, char **);
 #define	UCHARAT(p)	((int)*(p)&CHARBITS)
 #endif
 
-#define	FAIL(m)	{ regerror(m); return(NULL); }
+#define	FAIL(m)	{ regerror(m); return 0; }
 #define	ISMULT(c)	((c) == '*' || (c) == '+' || (c) == '?')
 #define	META	"^$.[()|?+*\\"
 
@@ -188,11 +190,15 @@ static int regexec(regexp *, char *, int, char **, char **);
 /*
  * Global work variables for regcomp().
  */
-static char *regparse, *regparse_end; /* Input-scan pointer. */
+static char *regstr, *regparsestr;
+
+static rxpos regparse, regparse_end; /* Input-scan pointer. */
 static int regnpar;		/* () count. */
 static char regdummy;
-static char *regcode;		/* Code-emit pointer; &regdummy = don't. */
+static rxpos regcode;		/* Code-emit pointer; &regdummy = don't. */
 static long regsize;		/* Code size. */
+
+#define REGDUMMY &regdummy
 
 /*
  * Forward declarations for regcomp()'s friends.
@@ -200,21 +206,17 @@ static long regsize;		/* Code size. */
 #ifndef STATIC
 #define	STATIC	static
 #endif
-STATIC char *reg(int, int *);
-STATIC char *regbranch(int *);
-STATIC char *regpiece(int *);
-STATIC char *regatom(int *);
-STATIC char *regnode(char);
-STATIC char *regnext(char *);
+STATIC rxpos reg(int, int *);
+STATIC rxpos regbranch(int *);
+STATIC rxpos regpiece(int *);
+STATIC rxpos regatom(int *);
+STATIC rxpos regnode(char);
+STATIC rxpos regnext(rxpos);
 STATIC void regc(char);
-STATIC void reginsert(char, char *);
-STATIC void regtail(char *, char *);
-STATIC void regoptail(char *, char *);
+STATIC void reginsert(char, rxpos);
+STATIC void regtail(rxpos, rxpos);
+STATIC void regoptail(rxpos, rxpos);
 STATIC int regstrcspn(char *, char *, char *);
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_ARITH;
-#endif
 
 static void
 regerror(char *s)
@@ -239,26 +241,25 @@ regerror(char *s)
  * of the structure of the compiled regexp.
  */
 static regexp *
-regcomp(char *exp, int explen)
+regcomp(char *expstr, rxpos exp, int explen)
 {
-  MZREGISTER regexp *r;
-  MZREGISTER char *scan;
-  MZREGISTER char *longest;
-  MZREGISTER int len;
+  regexp *r;
+  rxpos scan;
+  rxpos longest;
+  int len;
   int flags;
   
-  if (exp == NULL)
-    FAIL("NULL argument");
-  
   /* First pass: determine size, legality. */
+  regstr = REGDUMMY;
+  regparsestr = expstr;
   regparse = exp;
   regparse_end = exp + explen;
   regnpar = 1;
   regsize = 0L;
-  regcode = &regdummy;
+  regcode = 1;
   regc(MAGIC);
-  if (reg(0, &flags) == NULL)
-    return(NULL);
+  if (reg(0, &flags) == 0)
+    return NULL;
   
   /* Small enough for pointer-storage convention? */
   if (regsize >= 32767L)		/* Probably could be 65535L. */
@@ -266,10 +267,6 @@ regcomp(char *exp, int explen)
   
   /* Allocate space. */
   r = (regexp *)scheme_malloc_tagged(sizeof(regexp) + (unsigned)regsize);
-
-  /* Senora/Precise GC: reset the globals */
-  regparse = exp;
-  regparse_end = exp + explen;
 
   if (r == NULL)
     FAIL("out of space");
@@ -284,23 +281,24 @@ regcomp(char *exp, int explen)
   regparse = exp;
   regparse_end = exp + explen;
   regnpar = 1;
-  regcode = r->program;
+  regstr = (char *)r;
+  regcode = (char *)r->program - (char *)r;
   regc(MAGIC);
-  if (reg(0, &flags) == NULL)
-    return(NULL);
+  if (reg(0, &flags) == 0)
+    return NULL;
   
   /* Dig out information for optimizations. */
   r->regstart = '\0';	/* Worst-case defaults. */
   r->reganch = 0;
   r->regmust = -1;
   r->regmlen = 0;
-  scan = r->program+1;			/* First BRANCH. */
+  scan = (r->program+1) - (char *)r;    /* First BRANCH. */
   if (OP(regnext(scan)) == END) {	/* Only one top-level choice. */
     scan = OPERAND(scan);
     
     /* Starting-point info. */
     if (OP(scan) == EXACTLY)
-      r->regstart = *(OPSTR(OPERAND(scan)));
+      r->regstart = regstr[OPSTR(OPERAND(scan))];
     else if (OP(scan) == BOL)
       r->reganch++;
     
@@ -313,15 +311,15 @@ regcomp(char *exp, int explen)
      * strong reason, but sufficient in the absence of others.
      */
     if (flags&SPSTART) {
-      longest = NULL;
+      longest = 0;
       len = 0;
-      for (; scan != NULL; scan = regnext(scan)) {
+      for (; scan != 0; scan = regnext(scan)) {
 	if (OP(scan) == EXACTLY && OPLEN(OPERAND(scan)) >= len) {
 	  /* Skip regmust if it contains a null character: */
-	  char *ls = OPSTR(OPERAND(scan));
+	  rxpos ls = OPSTR(OPERAND(scan));
 	  int ll = OPLEN(OPERAND(scan)), i;
 	  for (i = 0; i < ll; i++) {
-	    if (!ls[i])
+	    if (!regstr[ls + i])
 	      break;
 	  }
 	  if (i >= ll) {
@@ -331,7 +329,7 @@ regcomp(char *exp, int explen)
 	}
       }
       if (longest)
-	r->regmust = longest - (char *)r;
+	r->regmust = longest;
       r->regmlen = len;
     }
   }
@@ -348,13 +346,13 @@ regcomp(char *exp, int explen)
    * is a trifle forced, but the need to tie the tails of the branches to what
    * follows makes it hard to avoid.
    */
-static char *
+static rxpos
 reg(int paren, int *flagp)
 {
-  MZREGISTER char *ret;
-  MZREGISTER char *br;
-  MZREGISTER char *ender;
-  MZREGISTER int parno = 0;
+  rxpos ret;
+  rxpos br;
+  rxpos ender;
+  int parno = 0;
   int flags;
 
   *flagp = HASWIDTH;		/* Tentatively. */
@@ -372,24 +370,24 @@ reg(int paren, int *flagp)
       ret = regnode(OPEN+parno);
     }
   } else
-    ret = NULL;
+    ret = 0;
 
   /* Pick up the branches, linking them together. */
   br = regbranch(&flags);
-  if (br == NULL)
-    return(NULL);
-  if (ret != NULL)
+  if (br == 0)
+    return 0;
+  if (ret != 0)
     regtail(ret, br);		/* OPEN -> first. */
   else
     ret = br;
   if (!(flags&HASWIDTH))
     *flagp &= ~HASWIDTH;
   *flagp |= flags&SPSTART;
-  while (*regparse == '|') {
+  while (regparsestr[regparse] == '|') {
     regparse++;
     br = regbranch(&flags);
-    if (br == NULL)
-      return(NULL);
+    if (br == 0)
+      return 0;
     regtail(ret, br);		/* BRANCH -> BRANCH. */
     if (!(flags&HASWIDTH))
       *flagp &= ~HASWIDTH;
@@ -411,22 +409,22 @@ reg(int paren, int *flagp)
   regtail(ret, ender);
 
   /* Hook the tails of the branches to the closing node. */
-  for (br = ret; br != NULL; br = regnext(br)) {
+  for (br = ret; br != 0; br = regnext(br)) {
     regoptail(br, ender);
   }
 
   /* Check for proper termination. */
-  if (paren && *regparse++ != ')') {
+  if (paren && regparsestr[regparse++] != ')') {
     FAIL("missing closing parenthesis in pattern");
   } else if (!paren && regparse != regparse_end) {
-    if (*regparse == ')') {
+    if (regparsestr[regparse] == ')') {
       FAIL("extra closing parenthesis in pattern");
     } else
       FAIL("junk on end");	/* "Can't happen". */
     /* NOTREACHED */
   }
 
-  return(ret);
+  return ret;
 }
 
 /*
@@ -434,30 +432,32 @@ reg(int paren, int *flagp)
    *
    * Implements the concatenation operator.
    */
-static char *
+static rxpos
 regbranch(int *flagp)
 {
-  MZREGISTER char *ret;
-  MZREGISTER char *chain;
-  MZREGISTER char *latest;
+  rxpos ret;
+  rxpos chain;
+  rxpos latest;
   int flags;
 
   *flagp = WORST;		/* Tentatively. */
 
   ret = regnode(BRANCH);
-  chain = NULL;
-  while (regparse != regparse_end && *regparse != '|' && *regparse != ')') {
+  chain = 0;
+  while (regparse != regparse_end 
+	 && regparsestr[regparse] != '|' 
+	 && regparsestr[regparse] != ')') {
     latest = regpiece(&flags);
-    if (latest == NULL)
-      return(NULL);
+    if (latest == 0)
+      return 0;
     *flagp |= flags&HASWIDTH;
-    if (chain == NULL)		/* First piece. */
+    if (chain == 0)		/* First piece. */
       *flagp |= flags&SPSTART;
     else
       regtail(chain, latest);
     chain = latest;
   }
-  if (chain == NULL)		/* Loop ran zero times. */
+  if (chain == 0)		/* Loop ran zero times. */
     (void) regnode(NOTHING);
 
   return(ret);
@@ -472,19 +472,19 @@ regbranch(int *flagp)
    * It might seem that this node could be dispensed with entirely, but the
    * endmarker role is not redundant.
    */
-static char *
+static rxpos 
 regpiece(int *flagp)
 {
-  MZREGISTER char *ret;
-  MZREGISTER char op;
-  MZREGISTER char *next;
+  rxpos ret;
+  char op;
+  rxpos next;
   int flags, greedy;
 
   ret = regatom(&flags);
-  if (ret == NULL)
-    return(NULL);
+  if (ret == 0)
+    return 0;
 
-  op = *regparse;
+  op = regparsestr[regparse];
   if (!ISMULT(op)) {
     *flagp = flags;
     return(ret);
@@ -494,7 +494,7 @@ regpiece(int *flagp)
     FAIL("* or + operand could be empty");
   *flagp = (op != '+') ? (WORST|SPSTART) : (WORST|HASWIDTH);
 
-  if (regparse[1] == '?') {
+  if (regparsestr[regparse+1] == '?') {
     greedy = 0;
     regparse++;
   } else
@@ -557,7 +557,7 @@ regpiece(int *flagp)
     regoptail(ret + 6, ret + 3);
   }
   regparse++;
-  if (ISMULT(*regparse))
+  if (ISMULT(regparsestr[regparse]))
     FAIL("nested *, ?, or + in pattern");
 
   return(ret);
@@ -571,147 +571,147 @@ regpiece(int *flagp)
    * faster to run.  Backslashed characters are exceptions, each becoming a
    * separate node; the code is simpler that way and it's not worth fixing.
  */
-static char *
+static rxpos 
 regatom(int *flagp)
 {
-	MZREGISTER char *ret;
-	int flags;
+  rxpos ret;
+  int flags;
 
-	*flagp = WORST;		/* Tentatively. */
+  *flagp = WORST;		/* Tentatively. */
 
-	switch (*regparse++) {
-	case '^':
-	  ret = regnode(BOL);
-	  break;
-	case '$':
-	  ret = regnode(EOL);
-	  break;
-	case '.':
-	  ret = regnode(ANY);
-	  *flagp |= HASWIDTH|SIMPLE;
-	  break;
-	case '[': {
-	  MZREGISTER int xclass;
-	  MZREGISTER int classend, len;
-	  char *l0, *l1;
+  switch (regparsestr[regparse++]) {
+  case '^':
+    ret = regnode(BOL);
+    break;
+  case '$':
+    ret = regnode(EOL);
+    break;
+  case '.':
+    ret = regnode(ANY);
+    *flagp |= HASWIDTH|SIMPLE;
+    break;
+  case '[': {
+    int xclass;
+    int classend, len;
+    rxpos l0, l1;
 
-	  if (*regparse == '^') { /* Complement of range. */
-	    ret = regnode(ANYBUT);
-	    regparse++;
-	  } else
-	    ret = regnode(ANYOF);
-	  len = 0;
-	  l0 = regcode;
-	  regc(0);
-	  l1 = regcode;
-	  regc(0);
-	  if (*regparse == ']' || *regparse == '-') {
-	    regc(*regparse++);
+    if (regparsestr[regparse] == '^') { /* Complement of range. */
+      ret = regnode(ANYBUT);
+      regparse++;
+    } else
+      ret = regnode(ANYOF);
+    len = 0;
+    l0 = regcode;
+    regc(0);
+    l1 = regcode;
+    regc(0);
+    if (regparsestr[regparse] == ']' || regparsestr[regparse] == '-') {
+      regc(regparsestr[regparse++]);
+      len++;
+    }
+    while (regparse != regparse_end && regparsestr[regparse] != ']') {
+      if (regparsestr[regparse] == '-') {
+	regparse++;
+	if (regparsestr[regparse] == ']' || regparse == regparse_end) {
+	  regc('-');
+	  len++;
+	} else {
+	  xclass = UCHARAT(regparsestr + (regparse-2))+1;
+	  classend = UCHARAT(regparsestr + regparse);
+	  if (xclass > classend+1)
+	    FAIL("invalid range within square brackets in pattern");
+	  for (; xclass <= classend; xclass++) {
+	    regc(xclass);
 	    len++;
 	  }
-	  while (regparse != regparse_end && *regparse != ']') {
-	    if (*regparse == '-') {
-	      regparse++;
-	      if (*regparse == ']' || regparse == regparse_end) {
-		regc('-');
-		len++;
-	      } else {
-		xclass = UCHARAT(regparse-2)+1;
-		classend = UCHARAT(regparse);
-		if (xclass > classend+1)
-		  FAIL("invalid range within square brackets in pattern");
-		for (; xclass <= classend; xclass++) {
-		  regc(xclass);
-		  len++;
-		}
-		regparse++;
-	      }
-	    } else {
-	      regc(*regparse++);
-	      len++;
-	    }
-	  }
-	  if (*regparse != ']')
-	    FAIL("missing closing square bracket in pattern");
 	  regparse++;
-	  *l0 = (len >> 8);
-	  *l1 = (len & 255);
-	  *flagp |= HASWIDTH|SIMPLE;
 	}
-	  break;
-	case '(':
-	  ret = reg(1, &flags);
-	  if (ret == NULL)
-	    return(NULL);
-	  *flagp |= flags&(HASWIDTH|SPSTART);
-	  break;
-	case '|':
-	case ')':
-	  FAIL("internal urp");	/* Supposed to be caught earlier. */
-	  break;
-	case '?':
-	case '+':
-	case '*':
-	  FAIL("?, +, or * follows nothing in pattern");
-	  break;
-	case '\\':
-	  if (regparse == regparse_end)
-	    FAIL("trailing backslash in pattern");
-	  ret = regnode(EXACTLY);
-	  regc(0);
-	  regc(1);
-	  regc(*regparse++);
-	  *flagp |= HASWIDTH|SIMPLE;
-	  break;
-	default: {
-	  MZREGISTER int len;
-	  MZREGISTER char ender;
-
-	  regparse--;
-	  len = regstrcspn(regparse, regparse_end, META);
-	  if (len <= 0)
-	    FAIL("internal disaster");
-	  ender = *(regparse+len);
-	  if (len > 1 && ISMULT(ender))
-	    len--;		/* Back off clear of ?+* operand. */
-	  *flagp |= HASWIDTH;
-	  if (len == 1)
-	    *flagp |= SIMPLE;
-	  ret = regnode(EXACTLY);
-	  regc(len >> 8); regc(len & 255);
-	  while (len > 0) {
-	    regc(*regparse++);
-	    len--;
-	  }
-	}
-	  break;
-	}
-	
-	return(ret);
+      } else {
+	regc(regparsestr[regparse++]);
+	len++;
       }
+    }
+    if (regparsestr[regparse] != ']')
+      FAIL("missing closing square bracket in pattern");
+    regparse++;
+    regstr[l0] = (len >> 8);
+    regstr[l1] = (len & 255);
+    *flagp |= HASWIDTH|SIMPLE;
+  }
+  break;
+  case '(':
+    ret = reg(1, &flags);
+    if (ret == 0)
+      return 0;
+    *flagp |= flags&(HASWIDTH|SPSTART);
+    break;
+  case '|':
+  case ')':
+    FAIL("internal urp");	/* Supposed to be caught earlier. */
+    break;
+  case '?':
+  case '+':
+  case '*':
+    FAIL("?, +, or * follows nothing in pattern");
+    break;
+  case '\\':
+    if (regparse == regparse_end)
+      FAIL("trailing backslash in pattern");
+    ret = regnode(EXACTLY);
+    regc(0);
+    regc(1);
+    regc(regparsestr[regparse++]);
+    *flagp |= HASWIDTH|SIMPLE;
+    break;
+  default: {
+      int len;
+      char ender;
+
+      regparse--;
+      len = regstrcspn(regparsestr + regparse, regparsestr + regparse_end, META);
+      if (len <= 0)
+	FAIL("internal disaster");
+      ender = regparsestr[regparse+len];
+      if (len > 1 && ISMULT(ender))
+	len--;		/* Back off clear of ?+* operand. */
+      *flagp |= HASWIDTH;
+      if (len == 1)
+	*flagp |= SIMPLE;
+      ret = regnode(EXACTLY);
+      regc(len >> 8); regc(len & 255);
+      while (len > 0) {
+	regc(regparsestr[regparse++]);
+	len--;
+      }
+    }
+    break;
+  }
+	
+  return ret;
+}
 
 /*
    - regnode - emit a node
    */
-static char *			/* Location. */
+static rxpos 			/* Location. */
 regnode(char op)
 {
-  MZREGISTER char *ret;
-  MZREGISTER char *ptr;
+  rxpos ret;
+  rxpos ptr;
 
   ret = regcode;
-  if (ret == &regdummy) {
+  if (regstr == REGDUMMY) {
     regsize += 3;
-    return(ret);
+    return ret;
   }
 
   ptr = ret;
-  *ptr++ = op;
-  *ptr++ = '\0';		/* Null "next" pointer. */
-  *ptr++ = '\0';
+  regstr[ptr++] = op;
+  regstr[ptr++] = '\0';		/* Null "next" pointer. */
+  regstr[ptr++] = '\0';
   regcode = ptr;
 
-  return(ret);
+  return ret;
 }
 
 /*
@@ -720,8 +720,8 @@ regnode(char op)
 static void
 regc(char b)
 {
-  if (regcode != &regdummy)
-    *regcode++ = b;
+  if (regstr != REGDUMMY)
+    regstr[regcode++] = b;
   else
     regsize++;
 }
@@ -732,13 +732,13 @@ regc(char b)
    * Means relocating the operand.
    */
 static void
-reginsert(char op, char *opnd)
+reginsert(char op, rxpos opnd)
 {
-  MZREGISTER char *src;
-  MZREGISTER char *dst;
-  MZREGISTER char *place;
+  rxpos src;
+  rxpos dst;
+  rxpos place;
 
-  if (regcode == &regdummy) {
+  if (regstr == REGDUMMY) {
     regsize += 3;
     return;
   }
@@ -747,33 +747,33 @@ reginsert(char op, char *opnd)
   regcode += 3;
   dst = regcode;
   while (src > opnd) {
-    *--dst = *--src;
+    regstr[--dst] = regstr[--src];
   }
 
   place = opnd;			/* Op node, where operand used to be. */
-  *place++ = op;
-  *place++ = '\0';
-  *place++ = '\0';
+  regstr[place++] = op;
+  regstr[place++] = '\0';
+  regstr[place++] = '\0';
 }
 
 /*
    - regtail - set the next-pointer at the end of a node chain
    */
 static void
-regtail(char *p, char *val)
+regtail(rxpos p, rxpos val)
 {
-  MZREGISTER char *scan;
-  MZREGISTER char *temp;
-  MZREGISTER int offset;
+  rxpos scan;
+  rxpos temp;
+  int offset;
 
-  if (p == &regdummy)
+  if (regstr == REGDUMMY)
     return;
 
   /* Find last node. */
   scan = p;
   for (;;) {
     temp = regnext(scan);
-    if (temp == NULL)
+    if (temp == 0)
       break;
     scan = temp;
   }
@@ -782,32 +782,32 @@ regtail(char *p, char *val)
     offset = scan - val;
   else
     offset = val - scan;
-  *(scan+1) = (offset>>8)&255;
-  *(scan+2) = offset&255;
+  regstr[scan+1] = (offset>>8)&255;
+  regstr[scan+2] = offset&255;
 }
 
 /*
    - regoptail - regtail on operand of first argument; nop if operandless
    */
 static void
-regoptail(char *p, char *val)
+regoptail(rxpos p, rxpos val)
 {
   /* "Operandless" and "op != BRANCH" are synonymous in practice. */
-  if (p == NULL || p == &regdummy || OP(p) != BRANCH)
+  if (p == 0 || regstr == REGDUMMY || OP(p) != BRANCH)
     return;
   regtail(OPERAND(p), val);
 }
 
-static char *l_strchr(char *a, int l, int c)
+static rxpos l_strchr(char *str, rxpos a, int l, int c)
 {
   int i;
 
   for (i = 0; i < l; i++) {
-    if (a[i] == c)
+    if (str[a + i] == c)
       return a + i;
   }
 
-  return NULL;
+  return -1;
 }
 
 /*
@@ -817,17 +817,18 @@ static char *l_strchr(char *a, int l, int c)
 /*
  * Global work variables for regexec().
  */
-static char *reginput, *reginput_start, *reginput_end; /* String-input pointer. */
-static char *regbol;		/* Beginning of input, for ^ check. */
-static char **regstartp;	/* Pointer to startp array. */
-static char **regendp;		/* Ditto for endp. */
+static char *reginstr;
+static rxpos reginput, reginput_start, reginput_end; /* String-input pointer. */
+static rxpos regbol;		/* Beginning of input, for ^ check. */
+static rxpos *regstartp;	/* Pointer to startp array. */
+static rxpos *regendp;		/* Ditto for endp. */
 
 /*
  * Forwards.
  */
-STATIC int regtry(regexp *, char *, int, char **, char **);
-STATIC int regmatch(char *);
-STATIC int regrepeat(char *);
+STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *);
+STATIC int regmatch(rxpos);
+STATIC int regrepeat(rxpos);
 
 #ifdef DEBUG
 int regnarrate = 0;
@@ -839,17 +840,11 @@ STATIC char *regprop();
    - regexec - match a regexp against a string
    */
 static int
-regexec(regexp *prog, char *string, int stringlen, char **startp, char **endp)
+regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp)
 {
-  MZREGISTER char *s;
-  MZREGISTER int slen;
+  int spos;
+  int slen;
  
-  /* Be paranoid... */
-  if (prog == NULL || string == NULL) {
-    regerror("NULL parameter");
-    return(0);
-  }
-
   /* Check validity of program. */
   if (UCHARAT(prog->program) != MAGIC) {
     regerror("corrupted program");
@@ -858,82 +853,86 @@ regexec(regexp *prog, char *string, int stringlen, char **startp, char **endp)
 
   /* If there is a "must appear" string, look for it. */
   if (prog->regmust >= 0) {
-    s = string;
+    spos = stringpos;
     slen = stringlen;
-    while ((s = l_strchr(s, slen, ((char *)prog + prog->regmust)[0])) != NULL) {
+    while ((spos = l_strchr(string, spos, slen, ((char *)prog + prog->regmust)[0])) != -1) {
       int i, l = prog->regmlen;
       char *p = ((char *)prog + prog->regmust);
-      slen = stringlen - (s - string);
+      slen = stringlen - (spos - stringpos);
       for (i = 0; (i < l) && (i < slen); i++) {
-	if (s[i] != p[i])
+	if (string[spos + i] != p[i])
 	  break;
       }
       if (i >= l)
 	break; /* Found it. */
-      s++;
+      spos++;
       slen--;
     }
-    if (s == NULL)		/* Not present. */
-      return(0);
+    if (spos == -1) /* Not present. */
+      return 0;
   }
 
   /* Mark beginning of line for ^ . */
-  regbol = string;
+  regbol = stringpos;
 
   /* Simplest case:  anchored match need be tried only once. */
   if (prog->reganch)
-    return(regtry(prog, string, stringlen, startp, endp));
+    return(regtry(prog, string, stringpos, stringlen, startp, endp));
 
   /* Messy cases:  unanchored match. */
-  s = string;
-  if (prog->regstart != '\0')
+  spos = stringpos;
+  if (prog->regstart != '\0') {
     /* We know what char it must start with. */
-    while ((s = l_strchr(s, stringlen - (s - string), prog->regstart)) != NULL) {
-      if (regtry(prog, s, stringlen - (s - string), startp, endp))
-	return(1);
-      s++;
+    while ((spos = l_strchr(string, spos, stringlen - (spos - stringpos), prog->regstart)) != -1) {
+      if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
+	return 1;
+      spos++;
     }
-  else {
+  } else {
     /* We don't -- general case. */
-    char *e = string + stringlen;
+    rxpos e = stringpos + stringlen;
     do {
-      if (regtry(prog, s, stringlen - (s - string), startp, endp))
-	return (1);
-    } while (s++ != e);
+      if (regtry(prog, string, spos, stringlen - (spos - stringpos), startp, endp))
+	return 1;
+    } while (spos++ != e);
   }
 
   /* Failure. */
-  return(0);
+  return 0;
 }
 
 /*
    - regtry - try match at specific point
    */
 static int			/* 0 failure, 1 success */
-regtry(regexp *prog, char *string, int stringlen, char **startp, char **endp)
+regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp)
 {
-  MZREGISTER int i;
-  MZREGISTER char **sp;
-  MZREGISTER char **ep;
+  int i;
+  rxpos *sp;
+  rxpos *ep;
 
-  reginput = string;
-  reginput_start = string;
-  reginput_end = string + stringlen;
+  reginstr = string;
+  reginput = stringpos;
+  reginput_start = stringpos;
+  reginput_end = stringpos + stringlen;
   regstartp = startp;
   regendp = endp;
 
   sp = startp;
   ep = endp;
   for (i = prog->nsubexp; i > 0; i--) {
-    *sp++ = NULL;
-    *ep++ = NULL;
+    *sp++ = -1;
+    *ep++ = -1;
   }
-  if (regmatch(prog->program + 1)) {
-    startp[0] = string;
+  sp = ep = NULL;
+
+  regstr = (char *)prog;
+  if (regmatch((prog->program + 1) - (char *)prog)) {
+    startp[0] = stringpos;
     endp[0] = reginput;
-    return(1);
+    return 1;
   } else
-    return(0);
+    return 0;
 }
 
 /*
@@ -947,21 +946,13 @@ regtry(regexp *prog, char *string, int stringlen, char **startp, char **endp)
    * by recursion.
    */
 static int			/* 0 failure, 1 success */
-regmatch(char *prog)
+regmatch(rxpos prog)
 {
-  MZREGISTER char *scan;		/* Current node. */
-  char *next;			/* Next node. */
+  rxpos scan;		/* Current node. */
+  rxpos next;			/* Next node. */
 
   scan = prog;
-#ifdef DEBUG
-  if (scan != NULL && regnarrate)
-    fprintf(stderr, "%s(\n", regprop(scan));
-#endif
-  while (scan != NULL) {
-#ifdef DEBUG
-    if (regnarrate)
-      fprintf(stderr, "%s...\n", regprop(scan));
-#endif
+  while (scan != 0) {
     next = regnext(scan);
 
     switch (OP(scan)) {
@@ -979,27 +970,27 @@ regmatch(char *prog)
       reginput++;
       break;
     case EXACTLY: {
-      MZREGISTER int len, i;
-      MZREGISTER char *opnd;
+      int len, i;
+      rxpos opnd;
 
       opnd = OPSTR(OPERAND(scan));
       len = OPLEN(OPERAND(scan));
       if (len > reginput_end - reginput)
 	return 0;
       for (i = 0; i < len; i++) {
-	if (opnd[i] != reginput[i])
+	if (regstr[opnd+i] != reginstr[reginput+i])
 	  return 0;
       }
       reginput += len;
     }
       break;
     case ANYOF:
-      if (reginput == reginput_end || !l_strchr(OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), *reginput))
+      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), reginstr[reginput]) == -1))
 	return(0);
       reginput++;
       break;
     case ANYBUT:
-      if (reginput == reginput_end || l_strchr(OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), *reginput))
+      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), reginstr[reginput]) != -1))
 	return(0);
       reginput++;
       break;
@@ -1008,7 +999,7 @@ regmatch(char *prog)
     case BACK:
       break;
     case BRANCH: {
-      MZREGISTER char *save;
+      rxpos save;
 
       if (OP(next) != BRANCH)	/* No choice. */
 	next = OPERAND(scan);	/* Avoid recursion. */
@@ -1019,7 +1010,7 @@ regmatch(char *prog)
 	    return(1);
 	  reginput = save;
 	  scan = regnext(scan);
-	} while (scan != NULL && OP(scan) == BRANCH);
+	} while (scan != 0 && OP(scan) == BRANCH);
 	return(0);
 	/* NOTREACHED */
       }
@@ -1029,10 +1020,10 @@ regmatch(char *prog)
     case PLUS:
     case STAR2:
     case PLUS2: {
-      MZREGISTER char nextch;
-      MZREGISTER int no;
-      MZREGISTER char *save;
-      MZREGISTER int min;
+      char nextch;
+      int no;
+      rxpos save;
+      int min;
       int greedy = (OP(scan) == STAR || OP(scan) == PLUS);
 
       /*
@@ -1041,14 +1032,14 @@ regmatch(char *prog)
        */
       nextch = '\0';
       if (OP(next) == EXACTLY)
-	nextch = *OPSTR(OPERAND(next));
-      min = (OP(scan) == STAR) ? 0 : 1;
+	nextch = regstr[OPSTR(OPERAND(next))];
+      min = ((OP(scan) == STAR) || (OP(scan) == STAR2)) ? 0 : 1;
       save = reginput;
       no = regrepeat(OPERAND(scan));
       if (greedy) {
 	while (no >= min) {
 	  /* If it could work, try it. */
-	  if (nextch == '\0' || *reginput == nextch)
+	  if (nextch == '\0' || reginstr[reginput] == nextch)
 	    if (regmatch(next))
 	      return(1);
 	  /* Couldn't or didn't -- back up. */
@@ -1060,7 +1051,7 @@ regmatch(char *prog)
 	for (i = min; i <= no; i++) {
 	  reginput = save + i;
 	  /* If it could work, try it. */
-	  if (nextch == '\0' || *reginput == nextch)
+	  if (nextch == '\0' || reginstr[reginput] == nextch)
 	    if (regmatch(next))
 	      return(1);
 	}
@@ -1075,7 +1066,7 @@ regmatch(char *prog)
       {
 	int isopen;
 	int no;
-	char *save;
+	rxpos save;
 
 	switch (OP(scan)) {
 	case OPENN:
@@ -1105,7 +1096,7 @@ regmatch(char *prog)
 	     * invocation of the same parentheses
 	     * already has.
 	     */
-	    if (regstartp[no] == NULL)
+	    if (regstartp[no] == -1)
 	      regstartp[no] = save;
 	    return(1);
 	  } else
@@ -1117,7 +1108,7 @@ regmatch(char *prog)
 	     * invocation of the same parentheses
 	     * already has.
 	     */
-	    if (regendp[no] == NULL)
+	    if (regendp[no] == -1)
 	      regendp[no] = save;
 	    return(1);
 	  } else
@@ -1142,11 +1133,11 @@ regmatch(char *prog)
    - regrepeat - repeatedly match something simple, report how many
    */
 static int
-regrepeat(char *p)
+regrepeat(rxpos p)
 {
-  MZREGISTER int count = 0;
-  MZREGISTER char *scan;
-  MZREGISTER char *opnd;
+  int count = 0;
+  rxpos scan;
+  rxpos opnd;
 
   scan = reginput;
   opnd = OPERAND(p);
@@ -1157,21 +1148,21 @@ regrepeat(char *p)
     break;
   case EXACTLY:
     {
-      char *opnd2 = OPSTR(opnd);
-      while (*opnd2 == *scan) {
+      rxpos opnd2 = OPSTR(opnd);
+      while (regstr[opnd2] == reginstr[scan]) {
 	count++;
 	scan++;
       }
     }
     break;
   case ANYOF:
-    while (scan != reginput_end && l_strchr(OPSTR(opnd), OPLEN(opnd), *scan)) {
+    while (scan != reginput_end && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) != -1)) {
       count++;
       scan++;
     }
     break;
   case ANYBUT:
-    while (scan != reginput_end && !l_strchr(OPSTR(opnd), OPLEN(opnd), *scan)) {
+    while (scan != reginput_end && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) == -1)) {
       count++;
       scan++;
     }
@@ -1189,155 +1180,23 @@ regrepeat(char *p)
 /*
    - regnext - dig the "next" pointer out of a node
    */
-static char *
-regnext(char *p)
+static rxpos
+regnext(rxpos p)
 {
-  MZREGISTER int offset;
+  int offset;
 
-  if (p == &regdummy)
-    return(NULL);
+  if (regstr == REGDUMMY)
+    return 0;
 
   offset = NEXT(p);
   if (offset == 0)
-    return(NULL);
+    return 0;
 
   if (OP(p) == BACK)
-    return(p-offset);
+    return (p-offset);
   else
-    return(p+offset);
+    return (p+offset);
 }
-
-#ifdef DEBUG
-
-STATIC char *regprop();
-
-/*
-   - regdump - dump a regexp onto stdout in vaguely comprehensible form
-   */
-static void
-regdump(r)
-     regexp *r;
-{
-  MZREGISTER char *s;
-  MZREGISTER char op = EXACTLY;	/* Arbitrary non-END op. */
-  MZREGISTER char *next;
-  extern char *strchr();
-
-
-  s = r->program + 1;
-  while (op != END) {		/* While that wasn't END last time... */
-    op = OP(s);
-    printf("%2d%s", s-r->program, regprop(s)); /* Where, what. */
-    next = regnext(s);
-    if (next == NULL)		/* Next ptr. */
-      printf("(0)");
-    else 
-      printf("(%d)", (s-r->program)+(next-s));
-    s += 3;
-    if (op == ANYOF || op == ANYBUT || op == EXACTLY) {
-      /* Literal string, where present. */
-#  error This needs to be fixed to deal with OPLEN and OPSTR
-      while (*s != '\0') {
-	putchar(*s);
-	s++;
-      }
-      s++;
-    }
-    putchar('\n');
-  }
-
-  /* Header fields of interest. */
-  if (r->regstart != '\0')
-    printf("start `%c' ", r->regstart);
-  if (r->reganch)
-    printf("anchored ");
-  if (r->regmust >= 0)
-    printf("must have \"%s\"", (char *)r + r->regmust);
-  printf("\n");
-}
-
-/*
-   - regprop - printable representation of opcode
-   */
-static char *
-regprop(op)
-     char *op;
-{
-  MZREGISTER char *p;
-  static char buf[50];
-
-  (void) strcpy(buf, ":");
-
-  switch (OP(op)) {
-  case BOL:
-    p = "BOL";
-    break;
-  case EOL:
-    p = "EOL";
-    break;
-  case ANY:
-    p = "ANY";
-    break;
-  case ANYOF:
-    p = "ANYOF";
-    break;
-  case ANYBUT:
-    p = "ANYBUT";
-    break;
-  case BRANCH:
-    p = "BRANCH";
-    break;
-  case EXACTLY:
-    p = "EXACTLY";
-    break;
-  case NOTHING:
-    p = "NOTHING";
-    break;
-  case BACK:
-    p = "BACK";
-    break;
-  case END:
-    p = "END";
-    break;
-  case OPEN+1:
-  case OPEN+2:
-  case OPEN+3:
-  case OPEN+4:
-  case OPEN+5:
-  case OPEN+6:
-  case OPEN+7:
-  case OPEN+8:
-  case OPEN+9:
-    sprintf(buf+strlen(buf), "OPEN%d", OP(op)-OPEN);
-    p = NULL;
-    break;
-  case CLOSE+1:
-  case CLOSE+2:
-  case CLOSE+3:
-  case CLOSE+4:
-  case CLOSE+5:
-  case CLOSE+6:
-  case CLOSE+7:
-  case CLOSE+8:
-  case CLOSE+9:
-    sprintf(buf+strlen(buf), "CLOSE%d", OP(op)-CLOSE);
-    p = NULL;
-    break;
-  case STAR:
-    p = "STAR";
-    break;
-  case PLUS:
-    p = "PLUS";
-    break;
-  default:
-    regerror("corrupted opcode");
-    break;
-  }
-  if (p != NULL)
-    (void) strcat(buf, p);
-  return(buf);
-}
-#endif
 
 /*
  * strcspn - find length of initial segment of s1 consisting entirely
@@ -1347,9 +1206,9 @@ regprop(op)
 static int
 regstrcspn(char *s1, char *e1, char *s2)
 {
-  MZREGISTER char *scan1;
-  MZREGISTER char *scan2;
-  MZREGISTER int count;
+  char *scan1;
+  char *scan2;
+  int count;
 
   count = 0;
   for (scan1 = s1; scan1 != e1; scan1++) {
@@ -1362,10 +1221,6 @@ regstrcspn(char *s1, char *e1, char *s2)
   return(count);
 }
 
-#ifdef MZ_PRECISE_GC
-START_XFORM_ARITH;
-#endif
-
 #ifndef strncpy
   extern char *strncpy();
 #endif
@@ -1374,12 +1229,12 @@ START_XFORM_ARITH;
    - regsub - perform substitutions after a regexp match
    */
 static 
-char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, long iso, unsigned long srcbase, char **startp, char **endp)
+char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, rxpos *startp, rxpos *endp)
 {
   char *dest;
-  MZREGISTER char c;
-  MZREGISTER long no;
-  MZREGISTER long len;
+  char c;
+  long no;
+  long len;
   long destalloc, destlen, srcpos;
 	
   destalloc = 2 * sourcelen;
@@ -1387,11 +1242,6 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
   dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	
 
-  if (prog == NULL || src == NULL || dest == NULL) {
-    regerror("NULL parm to regsub");
-    return "";
-  }
-	
   srcpos = 0;
   while (srcpos < sourcelen) {
     c = src[srcpos++];
@@ -1425,7 +1275,7 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
       dest[destlen++] = c;
     } else if (no >= prog->nsubexp) {
       /* Number too big; prentend it's the empty string */
-    } else if (startp[no] != NULL && endp[no] != NULL) {
+    } else if (startp[no] != -1 && endp[no] != -1) {
       len = endp[no] - startp[no];
       if (len + destlen >= destalloc) {
 	char *old = dest;
@@ -1433,7 +1283,7 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
       }
-      memcpy(dest + destlen, insrc + iso + ((unsigned long)startp[no] - srcbase), len);
+      memcpy(dest + destlen, insrc + startp[no], len);
       destlen += len;
     }
   }
@@ -1454,7 +1304,7 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 
   GET_RE_LOCK();
 
-  re = (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
+  re = (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
 
   RELEASE_RE_LOCK();
   
@@ -1465,8 +1315,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
 				  int argc, Scheme_Object *argv[])
 {
   regexp *r;
-  char *s, *full_s, **startp, **endp;
-  unsigned long srcbase;
+  char *full_s;
+  rxpos *startp, *endp;
   int offset = 0, endset, m;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
@@ -1494,50 +1344,38 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
   if (SCHEME_STRINGP(argv[0])) {
     GET_RE_LOCK();
-    r = regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
+    r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
     RELEASE_RE_LOCK();
   } else
     r = (regexp *)argv[0];
 
   full_s = SCHEME_STR_VAL(argv[1]);
 
-  startp = MALLOC_N_ATOMIC(char *, r->nsubexp);
-  endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
-
-  /* s might be mis-aligned, so with MZ_PRECISE_GC we rely on 
-     GC not happening for a while... */
-  s = full_s + offset;
-
-  srcbase = (unsigned long)s; /* precise gc: srcbase isn't moved */
-  /* No GCs during regexc... */
+  startp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
+  endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
   GET_RE_LOCK();
-  m = regexec(r, s, endset - offset, startp, endp);
+  m = regexec(r, full_s, offset, endset - offset, startp, endp);
   RELEASE_RE_LOCK();
 
   if (m) {
     int i;
     Scheme_Object *l = scheme_null;
 
-    s = NULL; /* Cleart mis-aligned pointer */
-
-    /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
-
     for (i = r->nsubexp; i--; ) {
-      if (startp[i]) {
+      if (startp[i] != -1) {
 	if (pos) {
 	  long startpd, endpd;
 
-	  startpd = ((unsigned long)startp[i] - srcbase) + offset;
-	  endpd = ((unsigned long)endp[i] - srcbase) + offset;
+	  startpd = startp[i];;
+	  endpd = endp[i];
 	
 	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startpd),
 						scheme_make_integer(endpd)),
 			       l);
 	} else {
-	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s,
-							       offset + ((unsigned long)startp[i] - srcbase), 
-							       (endp[i] - startp[i]),
+	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s, startp[i], 
+							       endp[i] - startp[i],
 							       1),
 			       l);
 	}
@@ -1564,8 +1402,8 @@ static Scheme_Object *positions(int argc, Scheme_Object *argv[])
 static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 {
   regexp *r;
-  char *source, *prefix = NULL, **startp, **endp;
-  unsigned long srcbase;
+  char *source, *prefix = NULL;
+  rxpos *startp, *endp;
   int prefix_len = 0, sourcelen, srcoffset = 0;
 
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
@@ -1578,7 +1416,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 
   if (SCHEME_STRINGP(argv[0])) {
     GET_RE_LOCK();
-    r = regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
+    r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
     RELEASE_RE_LOCK();
   } else
     r = (regexp *)argv[0];
@@ -1586,31 +1424,26 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   source = SCHEME_STR_VAL(argv[1]);
   sourcelen = SCHEME_STRTAG_VAL(argv[1]);
 
-  startp = MALLOC_N_ATOMIC(char *, r->nsubexp);
-  endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
+  startp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
+  endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
   while (1) {
     int m;
 
-    srcbase = (unsigned long)source + srcoffset; /* precise gc: srcbase isn't moved */
-
-    /* No GCs during regexec... */
     GET_RE_LOCK();
-    m = regexec(r, source + srcoffset, sourcelen - srcoffset, startp, endp);
+    m = regexec(r, source, srcoffset, sourcelen - srcoffset, startp, endp);
     RELEASE_RE_LOCK();
 
     if (m) {
       char *insert;
       long len, end, startpd, endpd;
       
-      /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
-
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, source, srcoffset, srcbase, startp, endp);
+      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, source, startp, endp);
       
       end = SCHEME_STRTAG_VAL(argv[1]);
       
-      startpd = ((unsigned long)startp[0] - srcbase);
-      endpd = ((unsigned long)endp[0] - srcbase);
+      startpd = startp[0];
+      endpd = endp[0];
       
       if (!startpd && (endpd == end) && !prefix)
 	return scheme_make_sized_string(insert, len, 0);
@@ -1618,29 +1451,29 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 	char *result;
 	long total;
 	
-	total = len + startpd + (end - endpd);
+	total = len + (startpd - srcoffset) + (end - endpd);
 	
 	result = (char *)scheme_malloc_atomic(total + 1);
-	memcpy(result, source + srcoffset, startpd);
-	memcpy(result + startpd, insert, len);
-	memcpy(result + startpd + len, source + srcoffset + endpd, (end - endpd) + 1);
+	memcpy(result, source + srcoffset, startpd - srcoffset);
+	memcpy(result + (startpd - srcoffset), insert, len);
+	memcpy(result + (startpd - srcoffset) + len, source + endpd, (end - endpd) + 1);
 	
 	return scheme_make_sized_string(result, total, 0);
       } else {
 	char *naya;
 	long total;
 	
-	total = len + prefix_len + startpd;
+	total = len + prefix_len + (startpd - srcoffset);
 	
 	naya = (char *)scheme_malloc_atomic(total + 1);
 	memcpy(naya, prefix, prefix_len);
-	memcpy(naya + prefix_len, source + srcoffset, startpd);
-	memcpy(naya + prefix_len + startpd, insert, len);
+	memcpy(naya + prefix_len, source + srcoffset, startpd - srcoffset);
+	memcpy(naya + prefix_len + (startpd - srcoffset), insert, len);
 
 	prefix = naya;
 	prefix_len = total;
 
-	srcoffset += endpd;
+	srcoffset = endpd;
       }
     } else if (!prefix)
       return argv[1];
@@ -1690,6 +1523,10 @@ void scheme_regexp_initialize(Scheme_Env *env)
 #ifdef MZ_PRECISE_GC
   GC_REG_TRAV(scheme_regexp_type, mark_regexp);
 #endif
+
+  REGISTER_SO(regparsestr);
+  REGISTER_SO(regstr);
+  REGISTER_SO(reginstr);
 
   scheme_add_global_constant("regexp", 
 			     scheme_make_prim_w_arity(make_regexp, 

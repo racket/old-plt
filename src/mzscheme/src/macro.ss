@@ -574,9 +574,11 @@
     (if (and l
              (> (length l) 2))
         (datum->syntax
-         (list* (quote-syntax #%if)
-		(stx-car (stx-cdr x))
-		(stx-cdr (stx-cdr x)))
+         (list (quote-syntax #%if)
+	       (stx-car (stx-cdr x))
+	       (list*
+		(quote-syntax #%begin)
+		(stx-cdr (stx-cdr x))))
 	 x
 	 (quote-syntax here))
         (syntax-error
@@ -592,10 +594,12 @@
     (if (and l
              (> (length l) 2))
         (datum->syntax
-         (list* (quote-syntax #%if)
-		(stx-car (stx-cdr x))
-		(quote-syntax (#%void))
-		(stx-cdr (stx-cdr x)))
+         (list (quote-syntax #%if)
+	       (stx-car (stx-cdr x))
+	       (quote-syntax (#%void))
+	       (list*
+		(quote-syntax #%begin)
+		(stx-cdr (stx-cdr x))))
 	 x
 	 (quote-syntax here))
         (syntax-error

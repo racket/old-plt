@@ -314,15 +314,14 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     if ((x >= 0) && (y >= 0)) {
       /* Tell the window manager that we really meant the initial position: */
       XSizeHints hints;
-      hints.flags = PPosition;
+      hints.flags = USPosition;
       if ((width >= 0) && (height >= 0))
-	hints.flags |= PSize;
+	hints.flags |= USSize;
       hints.x = x;
       hints.y = y;
       hints.width = width;
       hints.height = height;
       XSetWMNormalHints(XtDisplay(X->frame), XtWindow(X->frame), &hints);
-
     }
 
     if (!plt_mask) {

@@ -659,8 +659,9 @@ void scheme_define_parse(Scheme_Object *form,
 			 int defmacro,
 			 Scheme_Comp_Env *env)
 {
-  Scheme_Object *vars, *rest;
+  Scheme_Object *vars;
   int len;
+  DupCheckRecord r;
 
   if (!scheme_is_toplevel(env))
     scheme_wrong_syntax(NULL, NULL, form, "illegal use (not at top-level)");
@@ -676,6 +677,8 @@ void scheme_define_parse(Scheme_Object *form,
 
   *var = vars;
 
+  scheme_begin_dup_symbol_check(&r, env);
+
   while (SCHEME_STX_PAIRP(vars)) {
     Scheme_Object *name, *rest;
 
@@ -689,12 +692,7 @@ void scheme_define_parse(Scheme_Object *form,
 
     vars = SCHEME_STX_CDR(vars);
 
-    for (rest = vars; SCHEME_STX_PAIRP(rest); rest = SCHEME_STX_CDR(rest)) {
-      Scheme_Object *param;
-      param = SCHEME_STX_CAR(rest);
-      if (scheme_stx_bound_eq(param, name, env->genv->phase))
-	scheme_wrong_syntax(NULL, name, form, "duplicate binding name");
-    }
+    scheme_dup_symbol_check(&r, NULL, name, "binding", form);
   }  
 
   if (!SCHEME_STX_NULLP(vars))

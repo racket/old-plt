@@ -6,6 +6,9 @@ Inexact (i.e., floating-point) numbers are not write/read invariant
 "synrule.ss" is missing `let-syntax' and `letrec-syntax' and doesn't
  handle macro-in-macro interactions properly
 
+Under Windows and Unix, a DNS lookup by tcp-connect blocks all
+ MzScheme threads
+
 Under MacOS, in the standalone MzScheme application, a blocking read 
  from stdin blocks all MzScheme threads
 

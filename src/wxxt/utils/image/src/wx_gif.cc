@@ -122,19 +122,27 @@ int wxImage::LoadGIF(char *fname,int nc)
   
   /* the +256's are so we can read truncated GIF files without fear of 
      segmentation violation */
-  if (!(ptr = RawGIF = (byte *) malloc(filesize+256)))
+  if (!(ptr = RawGIF = (byte *) malloc(filesize+256))) {
+    fclose(fp);
     return( GifError("not enough memory to read gif file") );
+  }
   
-  if (!(Raster = (byte *) malloc(filesize+256)))    
+  if (!(Raster = (byte *) malloc(filesize+256))) {
+    fclose(fp);
     return( GifError("not enough memory to read gif file") );
+  }
   
-  if (fread(ptr, filesize, 1, fp) != 1) 
+  if (fread(ptr, filesize, 1, fp) != 1) {
+    fclose(fp);
     return( GifError("GIF data read failed") );
+  }
   
   /* MATTHEW */
   if (strncmp((const char *)ptr, (const char *)id, 6)
-      && strncmp((const char *)ptr, (const char *)id2, 6))
+      && strncmp((const char *)ptr, (const char *)id2, 6)) {
+    fclose(fp);
     return( GifError("not a GIF file"));
+  }
   
   ptr += 6;
   
@@ -154,8 +162,10 @@ int wxImage::LoadGIF(char *fname,int nc)
   
   Background = NEXTBYTE;		/* background color... not used. */
   
-  if (NEXTBYTE)		/* supposed to be NULL */
+  if (NEXTBYTE) { /* supposed to be NULL */
+    fclose(fp);
     return( GifError("corrupt GIF file (screen descriptor)") );
+  }
   
   
   /* Read in global colormap. */
@@ -204,8 +214,10 @@ int wxImage::LoadGIF(char *fname,int nc)
 
 
   /* Check for image seperator */
-  if (i != IMAGESEP) 
+  if (i != IMAGESEP) {
+    fclose(fp);
     return( GifError("corrupt GIF file (no image separator)") );
+  }
   
   /* Now read in values from the image descriptor */
   
@@ -294,8 +306,10 @@ int wxImage::LoadGIF(char *fname,int nc)
   pWIDE = Width;  pHIGH = Height;
   maxpixels = Width*Height;
   picptr = pic = (byte *) malloc(maxpixels);
-  if (!pic) 
+  if (!pic) {
+    fclose(fp);
     return( GifError("not enough memory for 'pic'") );
+  }
 
   
   /* Decompress the file, continuing until you see the GIF EOF code.

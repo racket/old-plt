@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.22 1998/11/28 04:50:35 mflatt Exp $
+ * $Id: Window.cc,v 1.23 1999/02/27 04:38:45 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -58,6 +58,8 @@ extern void wxSetSensitive(Widget, Bool enabled);
 #define SHOWN_FLAG 0x4
 #define NO_AUTO_SCROLL_FLAG 0x8
 #define FOCUS_FLAG 0x10
+#define REPORT_ZERO_WIDTH_FLAG 0x20
+#define REPORT_ZERO_HEIGHT_FLAG 0x40
 
 IMPLEMENT_DYNAMIC_CLASS(wxWindow, wxEvtHandler)
 
@@ -299,10 +301,17 @@ void wxWindow::Configure(int x, int y, int width, int height)
     }
 
     /* MATTHEW: [5] Make sure width, height != 0 */
-    if (!width)
+    if (!width) {
       width = 1;
-    if (!height)
+      misc_flags |= REPORT_ZERO_WIDTH_FLAG;
+    } else
+      misc_flags -= (misc_flags & REPORT_ZERO_WIDTH_FLAG);
+
+    if (!height) {
       height = 1;
+      misc_flags |= REPORT_ZERO_HEIGHT_FLAG;
+    } else
+      misc_flags -= (misc_flags & REPORT_ZERO_HEIGHT_FLAG);
 
     Position cx, cy;
     Dimension cw, ch;
@@ -348,6 +357,11 @@ void wxWindow::GetSize(int *width, int *height)
     Dimension ww, hh;
     XtVaGetValues(X->frame, XtNwidth, &ww, XtNheight, &hh, NULL);
     *width = ww; *height = hh;
+
+    if (misc_flags & REPORT_ZERO_WIDTH_FLAG)
+      *width = 0;
+    if (misc_flags & REPORT_ZERO_HEIGHT_FLAG)
+      *height = 0;
 }
 
 /* MATTHEW: Client size is different from size */
@@ -375,6 +389,7 @@ void wxWindow::GetClientSize(int *width, int *height)
     }
 
     XtVaGetValues(X->frame, XtNwidth, &fw, XtNheight, &fh, NULL);
+
     /* If frame < contained, don't believe the number! */
     if (fw < dww)
       dww = 0;

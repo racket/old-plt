@@ -244,7 +244,7 @@ extern Scheme_Object *scheme_initialize(Scheme_Env *env);
 # define INIT_FILENAME "~/.mzschemerc"
 #else
 # ifdef DOS_FILE_SYSTEM
-#  define INIT_FILENAME "%%HOMEDIRVE%%\\%%HOMEPATH%%\\mzschemerc.ss"
+#  define INIT_FILENAME "%%HOMEDRIVE%%\\%%HOMEPATH%%\\mzschemerc.ss"
 # else
 #  define INIT_FILENAME "PREFERENCES:mzschemerc.ss"
 # endif

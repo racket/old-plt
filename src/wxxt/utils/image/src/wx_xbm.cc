@@ -64,14 +64,18 @@ int wxImage::LoadXBM(char *fname, int nc)
 
   /* read width:  skip lines until we hit a #define */
   while (1) {
-    if (!fgets(line,256,fp)) 
+    if (!fgets(line,256,fp)) {
+      fclose(fp);
       return 1;
-//      return(XBMError("EOF reached in header info."));
+      // return(XBMError("EOF reached in header info."));
+    }
 
     if (strncmp(line,"#define",7)==0) {
-      if (sscanf(line,"#define %*s %d", &w) != 1) 
+      if (sscanf(line,"#define %*s %d", &w) != 1) {
+	fclose(fp);
         return 1;
-//	return(XBMError("Unable to read 'width'"));
+	// return(XBMError("Unable to read 'width'"));
+      }
       else break;
     }
   }
@@ -79,14 +83,18 @@ int wxImage::LoadXBM(char *fname, int nc)
 
   /* read height:  skip lines until we hit another #define */
   while (1) {
-    if (!fgets(line,256,fp)) 
+    if (!fgets(line,256,fp)) {
+      fclose(fp);
       return 1;
-//      return(XBMError("EOF reached in header info."));
+      // return(XBMError("EOF reached in header info."));
+    }
 
     if (strncmp(line,"#define",7)==0) {
-      if (sscanf(line,"#define %*s %d", &h) != 1) 
+      if (sscanf(line,"#define %*s %d", &h) != 1) {
+	fclose(fp);
         return 1;
-//	return(XBMError("Unable to read 'height'"));
+	// return(XBMError("Unable to read 'height'"));
+      }
       else break;
     }
   }
@@ -97,9 +105,11 @@ int wxImage::LoadXBM(char *fname, int nc)
   c = getc(fp);  c1 = getc(fp);
   while (c1!=EOF && !(c=='0' && c1=='x') ) { c = c1;  c1 = getc(fp); }
 
-  if (c1==EOF) 
+  if (c1==EOF) {
+    fclose(fp);
     return 1;
-//    return(XBMError("No bitmap data found"));
+    // return(XBMError("No bitmap data found"));
+  }
 
 
   /* load up the stuff XV expects us to load up */

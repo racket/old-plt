@@ -23,7 +23,7 @@
  * precedence is structured in regular expressions.  Serious changes in
  * regular-expression syntax might require a total rethink.
  *
- * from Vladimir Tsyshevs:
+ * from Vladimir Tsyshevsky:
  *  additional optional parameter `offset' in `regexp-match'
  *  and `regexp-match-positions'
  */

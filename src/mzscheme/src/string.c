@@ -2604,11 +2604,11 @@ int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 {
   int r;
 
-  r = CompareString(LOCALE_USER_DEFAULT,
-		    ((cvt_case ? NORM_IGNORECASE : 0)
-		     | NORM_IGNOREKANATYPE
-		     | NORM_IGNOREWIDTH),
-		    s1 + d1, l1, s2 + d2, l2);
+  r = CompareStringW(LOCALE_USER_DEFAULT,
+		     ((cvt_case ? NORM_IGNORECASE : 0)
+		      | NORM_IGNOREKANATYPE
+		      | NORM_IGNOREWIDTH),
+		     s1 + d1, l1, s2 + d2, l2);
 
   return r - 2;
 }

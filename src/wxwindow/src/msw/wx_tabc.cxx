@@ -70,16 +70,23 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   hwndTab = CreateWindow(WC_TABCONTROL, "", 
 			 WS_CHILD | WS_CLIPSIBLINGS,
-			 0, 0, width, height,
+			 0, 0, width ? width : 40, height,
 			 cparent->handle, (HMENU)windows_id, wxhInstance, NULL);
  
   // Add tabs for each day of the week. 
   tie.mask = TCIF_TEXT;
  
-  for (i = 0; i < n; i++) { 
-    tie.pszText = choices[i];
-    TabCtrl_InsertItem(hwndTab, i, &tie);
-  } 
+  if (n) {
+    for (i = 0; i < n; i++) { 
+      tie.pszText = choices[i];
+      TabCtrl_InsertItem(hwndTab, i, &tie);
+    } 
+  } else {
+    /* for height-meausing purposes, add one: */
+    tie.pszText = "Dummy";
+    TabCtrl_InsertItem(hwndTab, 0, &tie);
+  }
+    
 
   SubclassControl(hwndTab);
 
@@ -97,6 +104,9 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   prc.left = prc.top = prc.right = prc.bottom = 0;
   TabCtrl_AdjustRect(hwndTab, TRUE, &prc);
     
+  if (!n)
+    Delete(0);
+
   SetSize(x, y, width, prc.bottom - prc.top);
 
   ShowWindow(hwndTab, SW_SHOW);
@@ -153,10 +163,23 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
 void wxTabChoice::Append(char *s)
 {
   TCITEM tie;
+  int shownhide = 0;
+
+  /* The control misupdates when going from 0 to non-zero
+     tabs. Hide before making the transition, then show
+     after. */
+  if (!Number() && IsShown())
+    shownhide = 1;
+
+  if (shownhide)
+    ShowWindow((HWND)ms_handle, SW_HIDE);
 
   tie.mask = TCIF_TEXT;
   tie.pszText = s;
   TabCtrl_InsertItem((HWND)ms_handle, Number(), &tie);
+
+  if (shownhide)
+    ShowWindow((HWND)ms_handle, SW_SHOW);
 }
 
 void wxTabChoice::Delete(int i)

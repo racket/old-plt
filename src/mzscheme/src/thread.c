@@ -1088,6 +1088,10 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
 
   process->type = scheme_thread_type;
 
+#ifdef MZ_PRECISE_GC
+  GC_register_thread(process);
+#endif
+
   process->stack_start = 0;
 
   if (!scheme_main_thread) {
@@ -1754,6 +1758,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   np = MALLOC_ONE_TAGGED(Scheme_Thread);
   np->type = scheme_thread_type;
+#ifdef MZ_PRECISE_GC
+  GC_register_thread(np);
+#endif
   np->running = MZTHREAD_RUNNING;
   np->ran_some = 1;
 

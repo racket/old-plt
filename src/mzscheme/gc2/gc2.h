@@ -44,6 +44,10 @@ void GC_init_type_tags(int count, int weakbox);
    some freedom in the layout of a weak box, so it performs weak box
    traversals itself, but MzScheme gets to choose the tag.) */
 
+void GC_register_thread(void *);
+/*
+   Indicates that a just-allocated point is for a thread record. */
+
 extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
 /*

@@ -544,6 +544,8 @@
   "expected `tool-names' and `tools' to be lists of the same length, in info.ss file for ~s, got ~e and ~e")
  (tool-tool-icons-same-length
   "expected `tool-icons' and `tools' to be lists of the same length, in info.ss file for ~s, got ~e and ~e")
+ (tool-tool-urls-same-length
+  "expected `tool-urls' and `tools' to be lists of the same length, in info.ss file for ~s, got ~e and ~e")
  (error-getting-info-tool
   "error loading info.ss file for ~s")
  (tool-error-phase1 "Error in phase 1 for tool ~s; ~s")

@@ -1490,6 +1490,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
        Also, when AlphaBlend is available, we need to create a bitmaps
        with alphas in it. */
+    int mono_src;
 
     if (mask == source) {
       /* This is ok. Just use dc_src as mdc. */
@@ -1507,9 +1508,12 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
       mdc = blit_mdc->ThisDC();
     }
 
-    invented = new wxBitmap(iw, ih, source->GetDepth() == 1);
+    mono_src = (source->GetDepth() == 1);
+    
+    invented = new wxBitmap(iw, ih, mono_src);
     if (invented->Ok()) {
-      void *pBits = NULL; /* set with use_alpha... */
+      GC_CAN_IGNORE void *pBits = NULL; /* set with use_alpha... */
+      int mono_mask;
 
       if (mask->GetDepth() > 1) {
 	if (!tried_ab) {
@@ -1548,7 +1552,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
 	if (use_alpha) {
 	  /* "Pre-compute" alpha in the invented DC */
-	  BYTE *pPixel;
+	  GC_CAN_IGNORE BYTE *pPixel;
 	  COLORREF mcol;
 	  int i, j, gray;
 
@@ -1578,7 +1582,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
 	  /* Ignore the mask and... */
 	  mask = NULL;
-	  if (source->GetDepth() == 1) {
+	  if (mono_src) {
 	    /* Mono source: Now use invented_dc instead of src_dc,
 	       and it all works out. */
 	    xsrc1 = 0;

@@ -75,7 +75,6 @@ wxMenu::~wxMenu(void)
     
     next = node->Next();
     delete item;
-    delete node;
     node = next;
   }
 }

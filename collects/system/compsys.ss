@@ -51,7 +51,13 @@
 			   [len (string-length file)]
 			   [basename (substring file 0 (- len 3))]
 			   [suffix (substring file (- len 3) len)]
-			   [zo (string-append basename ".zo")]
+			   [zo (let-values ([(base file dir?)
+					     (split-path basename)])
+				   (let ([dir (build-path base "compiled")])
+				     (unless (directory-exists? dir)
+					     (make-directory dir))
+				     (build-path dir
+						 (string-append file ".zo"))))]
 			   [error-handler
 			    (lambda (e) 
 			      (delete-file zo)

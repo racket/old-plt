@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.37 1997/07/21 15:51:43 shriram Exp $
+; $Id: scm-hanc.ss,v 1.38 1997/08/11 20:15:18 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -525,54 +525,56 @@
 
 ; --------------------------------------------------------------------
 
-(add-primitivized-micro-form 'define-signature scheme-vocabulary
-  (let* ((kwd '())
-	  (in-pattern '(_ name sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((name (pat:pexpand 'name p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd)))
-	      (valid-syntactic-id? name)
-	      (unless (get-top-level-status attributes)
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'define-signature scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ name sig))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((name (pat:pexpand 'name p-env kwd))
+		     (sig (pat:pexpand 'sig p-env kwd)))
+		(valid-syntactic-id? name)
+		(unless (get-top-level-status attributes)
 		  (static-error expr "Only supported at top-level"))
-	      (let ((elements
-		      (signature-elements
-			(expand-expr sig env attributes sig-vocab))))
-		(add-signature name attributes elements))
-	      (expand-expr
-		(structurize-syntax '(#%void) expr)
-		env attributes vocab))))
-	(else
-	  (static-error expr "Malformed define-signature"))))))
+		(let ((elements
+			(signature-elements
+			  (expand-expr sig env attributes sig-vocab))))
+		  (add-signature name attributes elements))
+		(expand-expr
+		  (structurize-syntax '(#%void) expr)
+		  env attributes vocab))))
+	  (else
+	    (static-error expr "Malformed define-signature")))))))
 
-(add-primitivized-micro-form 'let-signature scheme-vocabulary
-  (let* ((kwd '())
-	  (in-pattern '(_ name sig b0 b1 ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((name (pat:pexpand 'name p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd))
-		   (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
-	      (valid-syntactic-id? name)
-	      (let* ((elements
-		       (signature-elements
-			 (expand-expr sig env attributes sig-vocab)))
-		      (old-value (push-signature name attributes elements))
-		      (output (expand-expr
-				(structurize-syntax body expr)
-				env attributes vocab)))
-		(pop-signature name attributes old-value)
-		output))))
-	(else
-	  (static-error expr "Malformed let-signature"))))))
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'let-signature scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ name sig b0 b1 ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((name (pat:pexpand 'name p-env kwd))
+		     (sig (pat:pexpand 'sig p-env kwd))
+		     (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
+		(valid-syntactic-id? name)
+		(let* ((elements
+			 (signature-elements
+			   (expand-expr sig env attributes sig-vocab)))
+			(old-value (push-signature name attributes elements))
+			(output (expand-expr
+				  (structurize-syntax body expr)
+				  env attributes vocab)))
+		  (pop-signature name attributes old-value)
+		  output))))
+	  (else
+	    (static-error expr "Malformed let-signature")))))))
 
 (define u/s-expand-includes-vocab
   (create-vocabulary 'u/s-expand-includes-vocab))
@@ -658,73 +660,74 @@
 	(else
           (static-error expr "Malformed include"))))))
 
-(add-primitivized-micro-form 'unit/sig scheme-vocabulary
-  (let* ((kwd-1 '(import rename))
-	  (in-pattern-1 '(_ signature
-			   (import imports ...)
-			   (rename renames ...)
-			   clauses ...))
-	  (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	  (kwd-2 '(import))
-	  (in-pattern-2 '(_ signature
-			   (import imports ...)
-			   clauses ...))
-	  (out-pattern-2 '(unit/sig signature
-			    (import imports ...)
-			    (rename)
-			    clauses ...))
-	  (m&e-2 (pat:make-match&env in-pattern-2 kwd-2)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e-1 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let* ((in:signature (pat:pexpand 'signature p-env kwd-1))
-		    (in:imports (pat:pexpand '(imports ...) p-env kwd-1))
-		    (in:renames (pat:pexpand '(renames ...) p-env kwd-1))
-		    (in:clauses (pat:pexpand '(clauses ...) p-env kwd-1)))
-	      (let* ((prim-unit:imports (apply append
-					  (map (lambda (import)
-						 (expand-expr import env
-						   attributes
-						   u/s-prim-imports-vocab))
-					    in:imports)))
-		      (prim-unit:exports (create-prim-exports in:signature
-					   in:renames expr env attributes))
-		      (prim-unit:clauses
-			(apply append
-			  (map (lambda (clause)
-				 (expand-expr clause env attributes
-				   u/s-expand-includes-vocab))
-			    in:clauses)))
-		      (sign-unit:imports (map (lambda (import)
-						(expand-expr import env
-						  attributes
-						  u/s-sign-imports-vocab))
-					   in:imports))
-		      (sign-unit:exports (expand-expr in:signature env
-					   attributes u/s-sign-exports-vocab)))
-		(expand-expr
-		  (structurize-syntax
-		    `(#%make-unit-with-signature
-		       (unit
-			 (import ,@prim-unit:imports)
-			 (export ,@prim-unit:exports)
-			 ,@prim-unit:clauses)
-		       (quote ,sign-unit:imports)
-		       (quote ,sign-unit:exports))
-		    expr)
-		  env attributes vocab)))))
-	((pat:match-against m&e-2 expr env)
-	  =>
-	  (lambda (p-env)
-	    (expand-expr
-	      (structurize-syntax
-		(pat:pexpand out-pattern-2 p-env kwd-2)
-		expr)
-	      env attributes vocab)))
-	(else
-	  (static-error expr "Malformed unit/sig"))))))
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'unit/sig scheme-vocabulary
+    (let* ((kwd-1 '(import rename))
+	    (in-pattern-1 '(_ signature
+			     (import imports ...)
+			     (rename renames ...)
+			     clauses ...))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
+	    (kwd-2 '(import))
+	    (in-pattern-2 '(_ signature
+			     (import imports ...)
+			     clauses ...))
+	    (out-pattern-2 '(unit/sig signature
+			      (import imports ...)
+			      (rename)
+			      clauses ...))
+	    (m&e-2 (pat:make-match&env in-pattern-2 kwd-2)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e-1 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let* ((in:signature (pat:pexpand 'signature p-env kwd-1))
+		      (in:imports (pat:pexpand '(imports ...) p-env kwd-1))
+		      (in:renames (pat:pexpand '(renames ...) p-env kwd-1))
+		      (in:clauses (pat:pexpand '(clauses ...) p-env kwd-1)))
+		(let* ((prim-unit:imports (apply append
+					    (map (lambda (import)
+						   (expand-expr import env
+						     attributes
+						     u/s-prim-imports-vocab))
+					      in:imports)))
+			(prim-unit:exports (create-prim-exports in:signature
+					     in:renames expr env attributes))
+			(prim-unit:clauses
+			  (apply append
+			    (map (lambda (clause)
+				   (expand-expr clause env attributes
+				     u/s-expand-includes-vocab))
+			      in:clauses)))
+			(sign-unit:imports (map (lambda (import)
+						  (expand-expr import env
+						    attributes
+						    u/s-sign-imports-vocab))
+					     in:imports))
+			(sign-unit:exports (expand-expr in:signature env
+					     attributes u/s-sign-exports-vocab)))
+		  (expand-expr
+		    (structurize-syntax
+		      `(#%make-unit-with-signature
+			 (unit
+			   (import ,@prim-unit:imports)
+			   (export ,@prim-unit:exports)
+			   ,@prim-unit:clauses)
+			 (quote ,sign-unit:imports)
+			 (quote ,sign-unit:exports))
+		      expr)
+		    env attributes vocab)))))
+	  ((pat:match-against m&e-2 expr env)
+	    =>
+	    (lambda (p-env)
+	      (expand-expr
+		(structurize-syntax
+		  (pat:pexpand out-pattern-2 p-env kwd-2)
+		  expr)
+		env attributes vocab)))
+	  (else
+	    (static-error expr "Malformed unit/sig")))))))
 
 ; --------------------------------------------------------------------
 
@@ -1633,97 +1636,98 @@
 	   (expand-expr l env attributes cu/s-link-record-tag-sigs-vocab))
       links)))
 
-(add-primitivized-micro-form 'compound-unit/sig scheme-vocabulary
-  (let* ((kwd '(import link export))
-	  (in-pattern '(_
-			 (import imports ...)
-			 (link links ...)
-			 (export exports ...)))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (put-attribute attributes cu/s-attr
-	      (cons (make-hash-table)
-		(get-attribute attributes cu/s-attr
-		  (lambda () '()))))
-	    (let* ((in:imports (pat:pexpand '(imports ...) p-env kwd))
-		    (in:links (pat:pexpand '(links ...) p-env kwd))
-		    (in:exports (pat:pexpand '(exports ...) p-env kwd)))
-	      (record-tag-signatures in:imports in:links env attributes)
-	      ; linkage = given to verify-linkage-signature-match
-	      ; prim = goes into underlying compound-unit
-	      ; sign = given to make-unit-with-signature
-	      (let* ((linkage:tags (map (lambda (l)
-					  (expand-expr l env attributes
-					    cu/s-link-tags-vocab))
-				     in:links))
-		      (linkage:unit-vars linkage:tags)
-		      (linkage:unit-exprs (map (lambda (l)
-						 (expand-expr l env attributes
-						   cu/s-link-exprs-vocab))
-					    in:links))
-		      (linkage:link-exports
-			(map (lambda (l)
-			       (expand-expr l env attributes
-				 cu/s-link-exports-vocab))
-			  in:links))
-		      (linkage:link-imports
-			(map (lambda (l)
-			       (expand-expr l env attributes
-				 cu/s-link-linking-sigs-vocab))
-			  in:links))
-		      (prim:imports (apply append
-				      (map (lambda (l)
-					     (expand-expr l env attributes
-					       cu/s-link-imports-vocab))
-					in:imports)))
-		      (prim:links (map (lambda (l)
-					 (expand-expr l env attributes
-					   cu/s-link-prim-unit-names-vocab))
-				    in:links))
-		      (prim:exports (map (lambda (e)
-					   (expand-expr e env attributes
-					     cu/s-prim-export-vocab))
-				      in:exports))
-		      (sign:imports (map (lambda (i)
-					   (expand-expr i env attributes
-					     cu/s-sign-imports-vocab))
-				      in:imports))
-		      (sign:exports (apply append
-				      (map (lambda (e)
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'compound-unit/sig scheme-vocabulary
+    (let* ((kwd '(import link export))
+	    (in-pattern '(_
+			   (import imports ...)
+			   (link links ...)
+			   (export exports ...)))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (put-attribute attributes cu/s-attr
+		(cons (make-hash-table)
+		  (get-attribute attributes cu/s-attr
+		    (lambda () '()))))
+	      (let* ((in:imports (pat:pexpand '(imports ...) p-env kwd))
+		      (in:links (pat:pexpand '(links ...) p-env kwd))
+		      (in:exports (pat:pexpand '(exports ...) p-env kwd)))
+		(record-tag-signatures in:imports in:links env attributes)
+					; linkage = given to verify-linkage-signature-match
+					; prim = goes into underlying compound-unit
+					; sign = given to make-unit-with-signature
+		(let* ((linkage:tags (map (lambda (l)
+					    (expand-expr l env attributes
+					      cu/s-link-tags-vocab))
+				       in:links))
+			(linkage:unit-vars linkage:tags)
+			(linkage:unit-exprs (map (lambda (l)
+						   (expand-expr l env attributes
+						     cu/s-link-exprs-vocab))
+					      in:links))
+			(linkage:link-exports
+			  (map (lambda (l)
+				 (expand-expr l env attributes
+				   cu/s-link-exports-vocab))
+			    in:links))
+			(linkage:link-imports
+			  (map (lambda (l)
+				 (expand-expr l env attributes
+				   cu/s-link-linking-sigs-vocab))
+			    in:links))
+			(prim:imports (apply append
+					(map (lambda (l)
+					       (expand-expr l env attributes
+						 cu/s-link-imports-vocab))
+					  in:imports)))
+			(prim:links (map (lambda (l)
+					   (expand-expr l env attributes
+					     cu/s-link-prim-unit-names-vocab))
+				      in:links))
+			(prim:exports (map (lambda (e)
 					     (expand-expr e env attributes
-					       cu/s-export-sign-vocab))
-					in:exports))))
-		(let ((output
-			`(let ,(map list linkage:unit-vars linkage:unit-exprs)
-			   (#%verify-linkage-signature-match
-			     'compound-unit/sig
-			     ',linkage:tags
-			     (#%list ,@linkage:unit-vars)
-			     ',linkage:link-exports
-			     ',linkage:link-imports)
-			   (#%make-unit-with-signature
-			     (compound-unit
-			       (import ,@prim:imports)
-			       (link ,@(map (lambda (tag body)
-					      `(,tag
-						 ((#%unit-with-signature-unit
-						    ,tag)
-						   ,@body)))
-					 linkage:tags prim:links))
-			       (export ,@prim:exports))
-			     ',sign:imports
-			     ',sign:exports))))
-		  (expand-expr
-		    (structurize-syntax
-		      output
-		      expr)
-		    env attributes vocab))))))
-	(else
-	  (static-error expr "Malformed compound-unit/sig"))))))
+					       cu/s-prim-export-vocab))
+					in:exports))
+			(sign:imports (map (lambda (i)
+					     (expand-expr i env attributes
+					       cu/s-sign-imports-vocab))
+					in:imports))
+			(sign:exports (apply append
+					(map (lambda (e)
+					       (expand-expr e env attributes
+						 cu/s-export-sign-vocab))
+					  in:exports))))
+		  (let ((output
+			  `(let ,(map list linkage:unit-vars linkage:unit-exprs)
+			     (#%verify-linkage-signature-match
+			       'compound-unit/sig
+			       ',linkage:tags
+			       (#%list ,@linkage:unit-vars)
+			       ',linkage:link-exports
+			       ',linkage:link-imports)
+			     (#%make-unit-with-signature
+			       (compound-unit
+				 (import ,@prim:imports)
+				 (link ,@(map (lambda (tag body)
+						`(,tag
+						   ((#%unit-with-signature-unit
+						      ,tag)
+						     ,@body)))
+					   linkage:tags prim:links))
+				 (export ,@prim:exports))
+			       ',sign:imports
+			       ',sign:exports))))
+		    (expand-expr
+		      (structurize-syntax
+			output
+			expr)
+		      env attributes vocab))))))
+	  (else
+	    (static-error expr "Malformed compound-unit/sig")))))))
 
 ; --------------------------------------------------------------------
 
@@ -1799,120 +1803,123 @@
 	    (signature-elements
 	      (expand-expr expr env attributes sig-vocab))))))))
 
-(add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary
-  (let* ((kwd '())
-	  (in-pattern '(_ expr linkage ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((in:expr (pat:pexpand 'expr p-env kwd))
-		   (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
-	      (let ((proc:linkage (map (lambda (l)
-					 (expand-expr l env attributes
-					   iu/s-linkage-vocab))
-				    in:linkage))
-		     (proc:imports (apply append
-				     (map (lambda (l)
-					    (expand-expr l env attributes
-					      iu/s-imports-vocab))
-				       in:linkage))))
-		(expand-expr
-		  (structurize-syntax
-		    `(let ((unit ,in:expr))
-		       (#%verify-linkage-signature-match
-			 'invoke-unit/sig
-			 '(invoke)
-			 (#%list unit)
-			 '(())
-			 '(,proc:linkage))
-		       (invoke-unit
-			 (#%unit-with-signature-unit unit)
-			 ,@proc:imports))
-		    expr)
-		  env attributes vocab)))))
-	(else
-	  (static-error expr "Malformed invoke-unit/sig"))))))
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ expr linkage ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((in:expr (pat:pexpand 'expr p-env kwd))
+		     (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
+		(let ((proc:linkage (map (lambda (l)
+					   (expand-expr l env attributes
+					     iu/s-linkage-vocab))
+				      in:linkage))
+		       (proc:imports (apply append
+				       (map (lambda (l)
+					      (expand-expr l env attributes
+						iu/s-imports-vocab))
+					 in:linkage))))
+		  (expand-expr
+		    (structurize-syntax
+		      `(let ((unit ,in:expr))
+			 (#%verify-linkage-signature-match
+			   'invoke-unit/sig
+			   '(invoke)
+			   (#%list unit)
+			   '(())
+			   '(,proc:linkage))
+			 (invoke-unit
+			   (#%unit-with-signature-unit unit)
+			   ,@proc:imports))
+		      expr)
+		    env attributes vocab)))))
+	  (else
+	    (static-error expr "Malformed invoke-unit/sig")))))))
 
-(add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary
-  (let* ((kwd '())
-	  (in-pattern-1 '(_ expr))
-	  (out-pattern-1 '(invoke-open-unit/sig expr #f))
-	  (in-pattern-2 '(_ expr name-spec linkage ...))
-	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e-1 expr env)
-	  =>
-	  (lambda (p-env)
-	    (expand-expr
-	      (structurize-syntax
-		(pat:pexpand out-pattern-1 p-env kwd)
-		expr)
-	      env attributes vocab)))
-	((pat:match-against m&e-2 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((in:expr (pat:pexpand 'expr p-env kwd))
-		   (in:name-spec (pat:pexpand 'name-spec p-env kwd))
-		   (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
-	      (let ((proc:linkage (map (lambda (l)
-					 (expand-expr l env attributes
-					   iu/s-linkage-vocab))
-				    in:linkage))
-		     (proc:imports (apply append
-				     (map (lambda (l)
-					    (expand-expr l env attributes
-					      iu/s-imports-vocab))
-				       in:linkage))))
-		(expand-expr
-		  (structurize-syntax
-		    `(let ((unit ,in:expr))
-		       (#%verify-linkage-signature-match
-			 'invoke-open-unit/sig
-			 '(invoke)
-			 (#%list unit)
-			 '(())
-			 '(,proc:linkage))
-		       (invoke-open-unit
-			 (#%unit-with-signature-unit unit)
-			 ,in:name-spec
-			 ,@proc:imports))
-		    expr)
-		  env attributes vocab)))))
-	(else
-	  (static-error expr "Malformed invoke-open-unit/sig"))))))
-
-(add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary
-  (let* ((kwd '())
-	  (in-pattern '(_ expr (in-sig ...) out-sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((in-expr (pat:pexpand 'expr p-env kwd))
-		   (in-sigs (pat:pexpand '(in-sig ...) p-env kwd))
-		   (out-sig (pat:pexpand 'out-sig p-env kwd)))
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern-1 '(_ expr))
+	    (out-pattern-1 '(invoke-open-unit/sig expr #f))
+	    (in-pattern-2 '(_ expr name-spec linkage ...))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e-1 expr env)
+	    =>
+	    (lambda (p-env)
 	      (expand-expr
 		(structurize-syntax
-		  `(#%make-unit-with-signature
-		     ,in-expr
-		     ',(map (lambda (s)
-			      (let ((proc:s
-				      (expand-expr s env attributes
-					sig-vocab)))
-				(cons (signature-name proc:s)
-				  (signature-exploded proc:s))))
-			 in-sigs)
-		     ',(let ((proc:s
-			       (expand-expr out-sig env attributes sig-vocab)))
-			 (signature-exploded proc:s)))
+		  (pat:pexpand out-pattern-1 p-env kwd)
 		  expr)
-		env attributes vocab))))
-	(else
-	  (static-error expr "Malformed unit->unit/sig"))))))
+		env attributes vocab)))
+	  ((pat:match-against m&e-2 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((in:expr (pat:pexpand 'expr p-env kwd))
+		     (in:name-spec (pat:pexpand 'name-spec p-env kwd))
+		     (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
+		(let ((proc:linkage (map (lambda (l)
+					   (expand-expr l env attributes
+					     iu/s-linkage-vocab))
+				      in:linkage))
+		       (proc:imports (apply append
+				       (map (lambda (l)
+					      (expand-expr l env attributes
+						iu/s-imports-vocab))
+					 in:linkage))))
+		  (expand-expr
+		    (structurize-syntax
+		      `(let ((unit ,in:expr))
+			 (#%verify-linkage-signature-match
+			   'invoke-open-unit/sig
+			   '(invoke)
+			   (#%list unit)
+			   '(())
+			   '(,proc:linkage))
+			 (invoke-open-unit
+			   (#%unit-with-signature-unit unit)
+			   ,in:name-spec
+			   ,@proc:imports))
+		      expr)
+		    env attributes vocab)))))
+	  (else
+	    (static-error expr "Malformed invoke-open-unit/sig")))))))
+
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ expr (in-sig ...) out-sig))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((in-expr (pat:pexpand 'expr p-env kwd))
+		     (in-sigs (pat:pexpand '(in-sig ...) p-env kwd))
+		     (out-sig (pat:pexpand 'out-sig p-env kwd)))
+		(expand-expr
+		  (structurize-syntax
+		    `(#%make-unit-with-signature
+		       ,in-expr
+		       ',(map (lambda (s)
+				(let ((proc:s
+					(expand-expr s env attributes
+					  sig-vocab)))
+				  (cons (signature-name proc:s)
+				    (signature-exploded proc:s))))
+			   in-sigs)
+		       ',(let ((proc:s
+				 (expand-expr out-sig env attributes sig-vocab)))
+			   (signature-exploded proc:s)))
+		    expr)
+		  env attributes vocab))))
+	  (else
+	    (static-error expr "Malformed unit->unit/sig")))))))

@@ -850,11 +850,11 @@
   ;;
   (define (make-pexpand p proto-r k dest)
     (define top p)
-    (define (expander p proto-r local-top use-ellipses?)
+    (define (expander p proto-r local-top use-ellipses? hash!)
       (cond
        [(and use-ellipses? (ellipsis? p))
 	(let* ([p-head (stx-car p)]
-	       [nestings (get-ellipsis-nestings p-head k)])
+	       [nestings (and proto-r (get-ellipsis-nestings p-head k))])
 	  (when (null? nestings)
 	    (apply
 	     raise-syntax-error 
@@ -890,8 +890,8 @@
 			 (pick-specificity
 			  top
 			  local-top))))]
-		 [rest (expander (stx-cdr (stx-cdr p)) proto-r local-top #t)]
-		 [ehead (expander p-head (and proto-r (append proto-rr-shallow proto-rr-deep)) p-head #t)])
+		 [rest (expander (stx-cdr (stx-cdr p)) proto-r local-top #t hash!)]
+		 [ehead (expander p-head (and proto-r (append proto-rr-shallow proto-rr-deep)) p-head #t hash!)])
 	    (if proto-r
 		`(lambda (r)
 		   ,(let ([pre (let ([deeps
@@ -914,7 +914,8 @@
 		      (if (eq? post 'null)
 			  pre
 			  `(append ,pre ,post))))
-		(append! ehead rest))))]
+		;; variables were hashed
+		(void))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
@@ -923,7 +924,7 @@
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
-		    (expander dp proto-r dp #f))
+		    (expander dp proto-r dp #f hash!))
 		  (apply
 		   raise-syntax-error 
 		   'syntax
@@ -931,17 +932,18 @@
 		   (pick-specificity
 		    top
 		    local-top)))
-	      (let ([ehd (expander hd proto-r hd use-ellipses?)]
-		    [etl (expander (stx-cdr p) proto-r local-top use-ellipses?)])
+	      (let ([ehd (expander hd proto-r hd use-ellipses? hash!)]
+		    [etl (expander (stx-cdr p) proto-r local-top use-ellipses? hash!)])
 		(if proto-r
 		    `(lambda (r)
 		       ,(apply-cons (apply-to-r ehd) (apply-to-r etl) p))
-		    (cons ehd etl)))))]
+		    ;; variables were hashed
+		    (void)))))]
        [(identifier? p)
 	(if (stx-memq p k) 
 	    (if proto-r 
 		`(lambda (r) (quote-syntax ,p))
-		null)
+		(void))
 	    (if proto-r
 		(let ((x (stx-memq p proto-r)))
 		  (if x 
@@ -958,16 +960,26 @@
 			    local-top)))
 			(check-not-pattern p proto-r)
 			`(lambda (r) (quote-syntax ,p)))))
-		(list p)))]
+		(hash! p)))]
        [(null? p) 
 	;; Not syntax, so avoid useless syntax info
 	(if proto-r 
 	    `(lambda (r) null)
-	    null)]
+	    (void))]
        [else (if proto-r 
 		 `(lambda (r) (quote-syntax ,p))
-		 null)]))
-    (let ([l (expander p proto-r p #t)])
+		 (void))]))
+    (let* ([ht (if proto-r
+		   #f
+		   (make-hash-table))]
+	   [l (expander p proto-r p #t
+			(if proto-r
+			    #f
+			    (lambda (r)
+			      (let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
+				(unless (and (pair? l)
+					     (ormap (lambda (i) (module-identifier=? i r)) l))
+				  (hash-table-put! ht (syntax-e r) (cons r l)))))))])
       (if proto-r
 	  `(lambda (r src)
 	     ,(let ([main `(datum->syntax-object (quote-syntax ,dest) ,(apply-to-r l) src)])
@@ -996,18 +1008,7 @@
 			     (current-exception-handler exnh))))))
 		    main)))
 	  ;; Get list of unique vars:
-	  (let ([ht (make-hash-table)])
-	    (let loop ([r l])
-	      (cond
-	       [(syntax? r)
-		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
-		  (unless (ormap (lambda (i) (module-identifier=? i r)) l)
-		    (hash-table-put! ht (syntax-e r) (cons r l))))]
-	       [(pair? r)
-		(loop (car r))
-		(loop (cdr r))]
-	       [else (void)]))
-	    (apply append (hash-table-map ht (lambda (k v) v)))))))
+	  (apply append (hash-table-map ht (lambda (k v) v))))))
 
   ;; apply-to-r creates an S-expression that applies
   ;; rest to `r', but it also optimizes ((lambda (r) E) r)
@@ -1137,9 +1138,11 @@
   ;; Tests if x is an ellipsing pattern of the form
   ;;   (blah ... . blah2)
   (define (ellipsis? x)
-    (and (stx-pair? x) (stx-pair? (stx-cdr x)) 
-	 (eq? (syntax-e (stx-car (stx-cdr x))) '...)
-	 (not (eq? (syntax-e (stx-car x)) '...))))
+    (and (stx-pair? x) 
+	 (let ([d (stx-cdr x)])
+	   (and (stx-pair? d) 
+		(eq? (syntax-e (stx-car d)) '...)
+		(not (eq? (syntax-e (stx-car x)) '...))))))
 
   ;; Takes an environment prototype and removes
   ;; the ellipsis-nesting information.

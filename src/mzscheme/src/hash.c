@@ -42,8 +42,10 @@
 #define FILL_FACTOR 2
 #endif
 
+#define MIN_HTABLE_SIZE 7
+
 long scheme_hash_primes[] = 
-{7, 31, 127, 257, 521, 1031, 2053, 4099, 8209, 16411, 
+{MIN_HTABLE_SIZE, 31, 127, 257, 521, 1031, 2053, 4099, 8209, 16411, 
    32779, 65543, 131101, 262147, 425329, 1048583, 2097169,
    4194319, 8388617, 16777259, 33554467, 67108879, 134217757,
    268435459, 536870923, 1073741827};
@@ -141,18 +143,19 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 {
   Scheme_Object *tkey, **keys;
   hash_v_t h, h2, useme = 0;
+  long size = table->size;
 
  rehash_key:
 
   if (table->make_hash_indices) {
     table->make_hash_indices((void *)key, &h, &h2);
-    h = h % table->size;
-    h2 = h2 % table->size;
+    h = h % size;
+    h2 = h2 % size;
   } else {
     long lkey;
     lkey = PTR_TO_LONG((Scheme_Object *)key);
-    h = (lkey >> 2) % table->size;
-    h2 = (lkey >> 3) % table->size;
+    h = (lkey >> 2) % size;
+    h2 = (lkey >> 3) % size;
   }
 
   if (h < 0) h = -h;
@@ -181,7 +184,7 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 	} else
 	  return table->vals[h];
       }
-      h = (h + h2) % table->size;
+      h = (h + h2) % size;
     }
   } else {
     while ((tkey = keys[h])) {
@@ -198,7 +201,7 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 	  useme = h;
 	}
       } 
-      h = (h + h2) % table->size;
+      h = (h + h2) % size;
     }
   }
 
@@ -208,25 +211,26 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
   if (set == 1) {
     h = useme;
     --table->count; /* counter increment below */
-  } else if (table->count * FILL_FACTOR >= table->size) {
+  } else if (table->count * FILL_FACTOR >= size) {
     /* Rehash */
     int i, oldsize = table->size;
     Scheme_Object **oldkeys = table->keys;
     Scheme_Object **oldvals = table->vals;
 
     table->size = scheme_hash_primes[++table->step];
+    size = table->size;
     
     {
       Scheme_Object **ba;
-      ba = MALLOC_N(Scheme_Object *, table->size);
+      ba = MALLOC_N(Scheme_Object *, size);
       table->vals = ba;
-      ba = MALLOC_N(Scheme_Object *, table->size);
+      ba = MALLOC_N(Scheme_Object *, size);
       table->keys = ba;
     }
 
     table->count = 0;
     for (i = 0; i < oldsize; i++) {
-      if (oldkeys[i])
+      if (oldkeys[i] && !SAME_PTR(oldkeys[i], GONE))
 	do_hash(table, oldkeys[i], 2, oldvals[i]);
     }
 

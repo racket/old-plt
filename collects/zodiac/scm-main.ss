@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.217 2000/06/17 16:54:00 mflatt Exp $
+; $Id: scm-main.ss,v 1.218 2000/06/23 00:48:44 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1093,7 +1093,7 @@
 	  (add-primitivized-micro-form 'define-struct full-local-extract-vocab
 				       (make-ds-micro internal-handler #t #f)))))
 
-    (define (make-let-struct-micro begin? allow-supertype?)
+    (define (make-let-struct-micro begin? allow-supertype? hide-setters?)
       (let* ((kwd '())
 	     (in-pattern `(_ type-spec (fields ...) ,@(get-expr-pattern begin?)))
 	     (m&e-in (pat:make-match&env in-pattern kwd)))
@@ -1120,7 +1120,8 @@
 		 (expand-expr
 		  (structurize-syntax
 		   `(#%let-values
-			((,(generate-struct-names type fields expr)
+			((,(generate-struct-names type fields expr
+			     #f #f hide-setters?)
 			  (#%struct ,type-spec ,fields)))
 		      ,@body)
 		   expr '(-1)
@@ -1130,13 +1131,13 @@
 
     (add-primitivized-micro-form 'let-struct
 				 intermediate-vocabulary
-				 (make-let-struct-micro #f #f))
-;    (add-primitivized-micro-form 'let-struct
-;				 advanced-vocabulary
-;				 (make-let-struct-micro #t #t))
+				 (make-let-struct-micro #f #f #t))
+    (add-primitivized-micro-form 'let-struct
+				 advanced-vocabulary
+				 (make-let-struct-micro #f #t #f))
     (add-primitivized-micro-form 'let-struct
 				 scheme-vocabulary
-				 (make-let-struct-micro #t #t))
+				 (make-let-struct-micro #t #t #f))
     
   ; ----------------------------------------------------------------------
 
@@ -1216,7 +1217,7 @@
 	    "time" 'kwd:time
 	    expr "malformed expression")))))
   
-  (add-primitivized-macro-form 'time advanced-vocabulary
+  (add-primitivized-macro-form 'time intermediate-vocabulary
     (make-time-macro #f))
   (add-primitivized-macro-form 'time scheme-vocabulary
     (make-time-macro #t))

@@ -806,10 +806,10 @@ do not occur (fallbacks that are never fallen back to):
 
      beginner:      |#(
 
-  term:internal-def-not-foll-by-expr   ;; *
-  term:duplicate-internal-def          ;; *
+  term:internal-def-not-foll-by-expr
+  term:duplicate-internal-def
   term:case/lambda-only-in-def
-  term:define-internal-invalid-posn    ;; *
+  term:define-internal-invalid-posn
   term:define-illegal-implicit-begin
   term:if-must-have-else
   term:quote-not-on-symbol
@@ -830,9 +830,9 @@ do not occur (fallbacks that are never fallen back to):
 
 )#|  intermediate:  |#(
 
-  term:internal-def-not-foll-by-expr  ;; *
-  term:duplicate-internal-def         ;; *
-  term:define-internal-invalid-posn   ;; *
+  term:internal-def-not-foll-by-expr
+  term:duplicate-internal-def
+  term:define-internal-invalid-posn
   term:define-illegal-implicit-begin
   term:if-must-have-else
   term:cond-else-only-in-last
@@ -853,9 +853,9 @@ do not occur (fallbacks that are never fallen back to):
 
 )#|  advanced:      |#(
 
-  term:internal-def-not-foll-by-expr   ;; *
-  term:duplicate-internal-def          ;; *
-  term:define-internal-invalid-posn    ;; *
+  term:internal-def-not-foll-by-expr
+  term:duplicate-internal-def
+  term:define-internal-invalid-posn
   term:struct-not-id
   term:super-struct-invalid
   term:super-struct-not-id

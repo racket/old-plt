@@ -1,5 +1,6 @@
 (module spell mzscheme
   (require (lib "lex.ss" "parser-tools")
+           (prefix : (lib "lex-sre.ss" "parser-tools"))
            (lib "class.ss")
            (lib "string.ss")
            (lib "list.ss")
@@ -11,19 +12,17 @@
   (provide/contract [activate-spelling ((is-a?/c color:text<%>) . -> . void?)])
   
   (define-lex-abbrevs
-   (letter (: (- #\A #\Z) (- #\a #\z)))
-   (extended-letter (: letter #\'))
-   (word (@ (* extended-letter) (+ letter) (* extended-letter)))
-   (paren (: #\( #\) #\[ #\] #\{ #\}))
-   (white (: #\page #\newline #\return #\tab #\vtab #\space)))
+   (extended-alphabetic (:or alphabetic #\'))
+   (word (:: (:* extended-alphabetic) (:+ alphabetic) (:* extended-alphabetic)))
+   (paren (char-set "()[]{}")))
                                    
   (define get-word
     (lexer 
-     ((+ white)
+     ((:+ whitespace)
       (values lexeme 'white-space #f (position-offset start-pos) (position-offset end-pos)))
      (paren
       (values lexeme 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
-     ((+ (^ (: letter white paren)))
+     ((:+ (:~ (:or alphabetic whitespace paren)))
       (values lexeme 'other #f (position-offset start-pos) (position-offset end-pos)))
      (word
       (let ((ok (spelled-correctly? lexeme)))

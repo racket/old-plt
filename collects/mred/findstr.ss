@@ -477,7 +477,7 @@
 			      #t)
 		       #f)))]
 	      [search
-	       (lambda (direction)
+	       (opt-lambda ([direction searching-direction])
 		 (send find-edit set-searching-frame this)
 		 (if hidden?
 		     (unhide-search)

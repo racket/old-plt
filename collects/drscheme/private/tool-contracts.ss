@@ -646,66 +646,6 @@
    ""
    "It is only initialized on the user's thread")
   
-  (drscheme:rep:which-number-snip
-   (case->
-    ((number?
-      . -> .
-      (symbols 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e))
-     . -> .
-     void?)
-    (->
-     (number?
-      . -> .
-      (symbols 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e))))
-   ((which-number-snip) ())
-   
-   "This function is called if"
-   "@flink drscheme:rep:use-number-snip"
-   "returns \\rawscm{\\#t} for some kind of snip."
-   "When that happens, this parameter determines what"
-   "kind of snip to use."
-   ""
-   "The symbol \\rawscm{'mixed-fraction} indicates a mixed"
-   "fraction snip. The symbol \\rawscm{'repeating-decimal}"
-   "indicates a decimal expansion, possibly with an overbar on a"
-   "suffix of the decimal expansion indicating that suffix is"
-   "repeated forever. Either symbol suffixed with \\rawscm{-e} is"
-   "the same, except that an \\rawscm{\\#e} is prefixed to the"
-   "number when viewed in decimal notation.")
-  
-  (drscheme:rep:use-number-snip
-   (case->
-    (-> (any? . -> . boolean?))
-    ((any? . -> . boolean?) . -> . void?))
-   (() (use-number-snip?))
-   
-   "This is a parameter whose value is a predicate determines if"
-   "DrScheme uses a mixed fraction snip, a repeating decimal"
-   "snip, or a regular ASCII improper fraction for printing"
-   "numbers. "
-   ""
-   "If the value of the parameter returns \\rawscm{\\#t}, a mixed"
-   "improper fraction snip is used. If it returns"
-   "\\rawscm{'repeating-decimal}, a repeating decimal snip is"
-   "used. If it returns \\rawscm{\\#f}, an ASCII improper fraction"
-   "is used."
-   ""
-   "Its default value is:"
-   "\\begin{verbatim}"
-   "(lambda (x)"
-   "   (if (and (number? x)"
-   "            (exact? x)"
-   "            (real? x)"
-   "            (not (integer? x)))"
-   "       #t"
-   "       #f))"
-   "\\end{verbatim}"
-   ""
-   "The value of this parameter must not return \\rawscm{\\#t}"
-   "more often than the above code, or else the snip"
-   "implementation will fail. It may, however, return"
-   "\\rawscm{\\#f} more often.")
-  
 
 ;                                                                        
 ;                                                                        
@@ -1415,13 +1355,11 @@
      (render-value (any? 
                     any?
                     output-port?
-                    (union false? ((union false? (is-a?/c snip%)) . -> . void?))
                     . -> .
                     void?))
      (render-value/format (any? 
                            any?
                            output-port?
-                           (union false? ((union false? (is-a?/c snip%)) . -> . void?))
                            number?
                            . -> .
                            any))

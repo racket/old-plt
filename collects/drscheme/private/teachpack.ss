@@ -115,14 +115,14 @@
         
       ;; marshall-teachpack-cache : teachpack-cache -> writable
       (define (marshall-teachpack-cache cache)
-        (map cache-entry-filename (teachpack-cache-tps cache)))
+        (map (lambda (x) (path->bytes (cache-entry-filename x))) (teachpack-cache-tps cache)))
       
       ;; unmarshall-teachpack-cache : writable -> teachpack-cache
       (define (unmarshall-teachpack-cache lof)
         (make-teachpack-cache
          (if (and (list? lof)
-                  (andmap string? lof))
-             (map (lambda (x) (make-cache-entry x)) lof)
+                  (andmap bytes? lof))
+             (map (lambda (x) (make-cache-entry (bytes->path x))) lof)
              null)))
       
       ;; teachpack-cache-filenames : teachpack-cache -> (listof string)

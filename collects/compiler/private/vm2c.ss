@@ -327,7 +327,7 @@
 		    (fprintf port "~a}~n" vm->c:indent-spaces))))
 	    (caloop (cdr l) (add1 pos)))))
 
-      (define (vm->c:emit-top-levels! kind return? per-load? count vm-list locals-list 
+      (define (vm->c:emit-top-levels! kind return? per-load? null-self-modidx? count vm-list locals-list 
 				      globals-list max-arity module mod-syntax? c-port)
 	;; count == -1 => go to the end of the list
 	(let tls-loop ([i 0]
@@ -346,6 +346,7 @@
 			(if mod-syntax? "Syntax_" "")
 			module)
 		       ""))
+	  (when null-self-modidx? (fprintf c-port "#define self_modidx NULL~n"))
 	  (when (> max-arity 0)
 	    (fprintf c-port
 		     "~aScheme_Object * arg[~a];~n"
@@ -360,6 +361,7 @@
 		(begin
 		  (unless (or (null? vml) (= n count) (not return?))
 		    (fprintf c-port "~areturn NULL;~n" vm->c:indent-spaces))
+		  (when null-self-modidx? (fprintf c-port "#undef self_modidx~n"))
 		  (fprintf c-port 
 			   "} /* end of ~a_~a */~n~n" kind i)
 		  (if (or (null? vml) (= n count))

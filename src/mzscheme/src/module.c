@@ -972,9 +972,11 @@ static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[])
   if (SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("module-path-index-join", "non-symbol", 0, argc, argv);
 
-  if (SCHEME_TRUEP(argv[1])
-      && !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_module_index_type))
-    scheme_wrong_type("module-path-index-join", "module-path-index or #f", 1, argc, argv);
+  if (argv[1]) { /* mzc will generate NULL sometimes; see scheme_declare_module(), below */
+    if (SCHEME_TRUEP(argv[1])
+	&& !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_module_index_type))
+      scheme_wrong_type("module-path-index-join", "module-path-index or #f", 1, argc, argv);
+  }
 
   return scheme_make_modidx(argv[0], argv[1], scheme_false);
 }
@@ -1872,15 +1874,21 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   Scheme_Object *var_provides, *syntax_provides, *ind_provides, **exs, **exss, **exns;
   int nvar, nsyntax, i;
 
+  /* shape is: (list requires et-requires var-provides syntax-provides
+     indirect-provides kernel-exclusion) where var-provides and
+     syntax-provides can contain broken module index paths; they're
+     broken because they contain NULL in place of self_modix (which
+     hasn't been created before this function is called). */
+
   name = SCHEME_CAR(shape);
   shape = SCHEME_CDR(shape);
   requires = SCHEME_CAR(shape);
   shape = SCHEME_CDR(shape);
   et_requires = SCHEME_CAR(shape);
   shape = SCHEME_CDR(shape);
-  var_provides = SCHEME_CAR(shape);
+  var_provides = SCHEME_CAR(shape); /* self_modix is NULLed! */
   shape = SCHEME_CDR(shape);
-  syntax_provides = SCHEME_CAR(shape);
+  syntax_provides = SCHEME_CAR(shape); /* self_modix is NULLed! */
   shape = SCHEME_CDR(shape);
   ind_provides = SCHEME_CAR(shape);
   shape = SCHEME_CDR(shape);
@@ -1931,7 +1939,23 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
       exss[i] = SCHEME_CAR(a);
       a = SCHEME_CDR(a);
       exs[i] = SCHEME_CAR(a);
-      exns[i] = SCHEME_CDR(a);
+      exns[i] = SCHEME_CDR(a);      
+      /* If exss[i] is a module_index, it ends in a NULL where it should
+	 end in self_modix: */
+      if (SAME_TYPE(SCHEME_TYPE(exss[i]), scheme_module_index_type)) {
+	Scheme_Modidx *f = (Scheme_Modidx *)exss[i], *naya, *prev = NULL, *first = NULL;
+	while (f) {
+	  naya = (Scheme_Modidx *)scheme_make_modidx(f->path, f->base, scheme_false);
+	  f = (Scheme_Modidx *)f->base;
+	  if (prev)
+	    prev->base = (Scheme_Object *)naya;
+	  prev = naya;
+	  if (!first)
+	    first = naya;
+	}
+	prev->base = self_modidx;
+	exss[i] = (Scheme_Object *)first;
+      }
     }
   }
 

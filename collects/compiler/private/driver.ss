@@ -1115,7 +1115,7 @@
 				   [init-constants-count
 				    (if (zero? number-of-true-constants)
 					-1
-					(vm->c:emit-top-levels! "init_constants" #f #f number-of-true-constants
+					(vm->c:emit-top-levels! "init_constants" #f #f #t number-of-true-constants
 								(block-source s:file-block)
 								locals globals
 								(block-max-arity s:file-block)
@@ -1131,7 +1131,7 @@
 					      (vm->c:emit-top-levels! (format "module~a_body_~a" 
 									      (if syntax? "_syntax" "")
 									      i)
-								      #f #f -1
+								      #f #f #f -1
 								      (block-source s:file-block)
 								      locals
 								      globals
@@ -1147,7 +1147,7 @@
 					  (vm->c:emit-module-glue! c-port i (caar counts) (cadar counts))
 					  (loop (add1 i) (cdr counts))))]
 				   [top-level-count
-				    (vm->c:emit-top-levels! "top_level" #t #t -1
+				    (vm->c:emit-top-levels! "top_level" #t #t #f -1
 							    (list-tail (block-source s:file-block) number-of-true-constants)
 							    (list-tail locals number-of-true-constants)
 							    (list-tail globals number-of-true-constants)

@@ -1,4 +1,4 @@
-Time-stamp: <98/08/17 14:48:50 shriram>
+Time-stamp: <99/01/21 15:31:18 shriram>
 
 Package: cgi
 Collection: net
@@ -79,6 +79,12 @@ html-string x list (html-string) x [color x color x color x color x
   representing a HTML color; in order, they represent the color of the
   text, the background, un-visited links, visited links, and a link
   being selected.
+
+string->html :
+string -> html-string
+
+  Converts a string into an html-string by applying the appropriate
+  HTML quoting conventions.
 
 generate-link-text :
 string x html-string -> html-string

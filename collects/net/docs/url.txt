@@ -1,4 +1,4 @@
-Time-stamp: <98/03/17 20:23:30 shriram>
+Time-stamp: <99/01/21 15:32:46 shriram>
 
 Package: url
 Collection: net
@@ -32,9 +32,11 @@ pure-port:
   A pure port is one from which the MIME headers have been removed, so
   that what remains is purely the first content fragment.
 
-mime-header:
+struct mime-header (name value)
+name : string
+value : string
 
-  String corresponding to an Internet header of the sort used by MIME.
+  MIME header.
 
 PROCEDURES -----------------------------------------------------------
 
@@ -65,7 +67,7 @@ iport -> ()
 purify-port :
 iport -> list (mime-header)
 
-  Purifies a port, returning the MIM headers.
+  Purifies a port, returning the MIME headers.
 
 string->url :
 string -> url

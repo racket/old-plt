@@ -1380,7 +1380,7 @@
       (lambda (expr env)
 	(static-error expr "Unquote-splicing outside quasiquote")))
 
-    (include "new-qq.ss")
+    (include "qq.ss")
 
     (set! local-parse-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)

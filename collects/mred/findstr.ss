@@ -419,11 +419,12 @@
 	       (lambda () 
 		 (get-edit))]
 	      [hide-search
-	       (lambda ()
+	       (opt-lambda ([startup? #f])
 		 (send super-root delete-child search-panel)
 		 (clear-highlight)
-		 (send (send (get-edit-to-search)
-			     get-canvas) set-focus)
+		 (unless startup?
+		   (send (send (get-edit-to-search)
+			       get-canvas) set-focus))
 		 (set! hidden? #t))]
 	      [unhide-search
 	       (lambda ()
@@ -556,7 +557,7 @@
 	      (send replace-canvas set-media replace-edit) 
 	      (send find-edit add-canvas find-canvas)
 	      (send replace-edit add-canvas replace-canvas)
-	      (hide-search))
+	      (hide-search #t))
 	    ))))
 
     (define find-string

@@ -896,7 +896,8 @@
 	  (sequence
 	    (apply super-init args)))))
       
-      (define transparent-io-edit% (make-transparent-io-edit% console-edit%))
+      (define transparent-io-edit% 
+	(make-transparent-io-edit% (make-console-edit% mred:edit:edit%)))
 
 
     (define make-console-frame%

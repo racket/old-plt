@@ -439,11 +439,13 @@
 	     [time-semaphore (make-semaphore 1)]
 	     [magic-space 25]
 	     [wide-time "00:00pm"]
+	     [_ (send time-edit lock #t)]
 	     [update-time
 	      (lambda ()
 		(dynamic-wind
 		 (lambda ()
-		   (semaphore-wait time-semaphore))
+		   (semaphore-wait time-semaphore)
+		   (send time-edit lock #f))
 		 (lambda ()
 		   (send* time-edit 
 		     (erase)
@@ -458,6 +460,7 @@
 				(modulo minutes 10)
 				(if (< hours 12) "am" "pm"))))))
 		 (lambda ()
+		   (send time-edit lock #t)
 		   (semaphore-post time-semaphore))))]
 	     [determine-width
 	      (lambda (string canvas edit)
@@ -564,13 +567,15 @@
 				     [line-start (send edit line-start-position line)])
 				(format "~a:~a" line (- pos line-start))))])
 		       (send* position-edit
+			 (lock #f)
 			 (erase)
 			 (insert 
 			  (if (= start end)
 			      (make-one start)
 			      (string-append (make-one start)
 					     "-"
-					     (make-one end)))))))))])
+					     (make-one end))))
+			 (lock #t))))))])
 
 	    (inherit get-edit)
 	    (public
@@ -623,9 +628,10 @@
 	      (send* time-canvas 
 		(set-media time-edit)
 		(stretchable-in-x #f))
-	      (determine-width "000:000-000:000" 
+	      (determine-width "0000:000-0000:000" 
 			       position-canvas
 			       position-edit)
+	      (send position-edit lock #t)
 	      (semaphore-wait time-semaphore)
 	      (determine-width wide-time time-canvas time-edit)
 	      (semaphore-post time-semaphore)

@@ -7,7 +7,7 @@
            (lib "class.ss")
            (lib "etc.ss")
            (lib "list.ss")
-           (prefix model: "private/model.ss")
+           (prefix model: "private/debugger-model.ss")
 	   "private/my-macros.ss"
            "private/shared.ss"
            (prefix x: "private/mred-extensions.ss")
@@ -108,12 +108,10 @@
                (send next-button enable #f)
                (if (send s-frame get-can-step)
                    (semaphore-post continue-semaphore)
-                   (begin
-                     (message-box "Stepper"
-                                  (string-append
-                                   "The source text for this program has changed or is no longer "
-                                   "available.  No further steps can be computed."))
-                     (send next-button enable #t))))
+                   (message-box "Stepper"
+                                (string-append
+                                 "The source text for this program has changed or is no longer "
+                                 "available.  No further steps can be computed."))))
         
              (define s-frame (make-object debugger-frame% drscheme-frame))
              
@@ -130,52 +128,11 @@
                (apply string-append (map (lx (format "---\n~e\n" _)) strings)))
 
              ; receive-result takes a result from the model and renders it on-screen
-             ; : (step-result semaphore -> void)
+             ; : (string semaphore -> void)
              (define (receive-result result continue-user-computation-semaphore)
+               (send text insert result (send text last-position) 'same #t)
                (set! continue-semaphore continue-user-computation-semaphore)
-               (let ([step-text
-                      (cond [(before-after-result? result) 
-                             (line-append
-                              'before-after-result
-                              (before-after-result-finished-exprs result)
-                              (before-after-result-exp result)
-                              (before-after-result-redex result)
-                              (before-after-result-post-exp result)
-                              (before-after-result-reduct result)
-                              #f
-                              (before-after-result-after-exprs result))]
-                            [(before-error-result? result)
-                             (line-append
-                              'before-error-result
-                              (before-error-result-finished-exprs result)
-                              (before-error-result-exp result)
-                              (before-error-result-redex result)
-                              null
-                              null
-                              (before-error-result-err-msg result)
-                              (before-error-result-after-exprs result))]
-                            [(error-result? result)
-                             (line-append
-                              'error-result
-                              (error-result-finished-exprs result)
-                              null
-                              null
-                              null
-                              null
-                              (error-result-err-msg result)
-                              null)]
-                            [(finished-result? result)
-                             (line-append
-                              'finished-result
-                              (finished-result-finished-exprs result)
-                              null
-                              null
-                              null
-                              null
-                              #f
-                              null)])])
-                 (send text insert (string-append "Result:\n" step-text) (send text last-position) 'same #t)))
-                
+               (send next-button enable #t))
                 
              ; need to capture the custodian as the thread starts up:
              (define (program-expander-prime init iter)

@@ -16,6 +16,7 @@
 		     (add1 (or (get-attribute attributes 'qq-level)
 			     qq-base-level))))
 	      (put-attribute attributes 'qq-level new-qq-level)
+	      (put-attribute attributes 'qq-changed? #f)
 	      (let ((result (expand-expr template
 			      env attributes qq-vocab)))
 		(put-attribute attributes 'qq-level (sub1 new-qq-level))

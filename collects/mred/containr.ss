@@ -96,6 +96,11 @@
 	  (function a b)
 	  (values (unbox a) (unbox b)))))
     
+
+    (define non-negative-number?
+      (lambda (n)
+	(and (real? n) (not (negative? n)))))
+
     ; make-item%: creates items which are suitable for placing into
     ;  containers.
     ; input: item%: a wx:item% descendant (but see below) from which the
@@ -113,7 +118,8 @@
     ; through this function to create panel%.  (Yes, this is
     ; cheating.  So what's your point?)
     (define make-item%
-      (lambda (item% stretch-x? stretch-y? make-default-size)
+      (opt-lambda (item% stretch-x? stretch-y? make-default-size
+		    [init-min-width 0] [init-min-height 0])
 	(class item% args
 	  (inherit
 	    get-width
@@ -123,44 +129,29 @@
 	    get-parent
 	    set-size)
 	  
-	  (private
-	    
-	    ; the "default position" of the object; defined to be the
-            ; creation position of the object.
-	    default-x
-	    default-y
-	    
-	    ; sets the default position fields of the object based on the
-            ; object's current position.  Designed to be called from the
-	    ; object's constructor.
-	    [set-default-posn
-	      (lambda ()
-		(set! default-x (get-x))
-		(set! default-y (get-y)))]
-	    
-
-	    ; input: init-value: initial value for the param (moved to #t
-	    ;          if not boolean).
-	    ;        function-name: a symbol, intended to be the name of
-	    ;          the created function (used in error).
-	    ; returns: a function which behaves exactly like the result of
-	    ;   make-parameter (out of mzlib); if the argument is not
-	    ;   boolean, it is interpreted as #t; after the parameter is
-	    ;   set, force-redraw is called.
-	    [make-stretchable-parameter
-	      (lambda (init-value function-name)
-		(let ([parm-value init-value])
-		  (case-lambda
-		    [() parm-value]
-		    [(new-value) (if (boolean? new-value)
-				     (begin
-				       (set! parm-value new-value)
-				       (force-redraw))
-				     (error function-name
-					    "Expected a boolean; given ~s"
-					    new-value))])))])
-	  
 	  (public
+	    
+	    ; make-item-param: makes a getter/setter function which
+	    ;   controls a parameter of one of the container items.
+	    ; input: init-value: initial value for parameter
+	    ;        test: function which takes one argument and returns a
+	    ;          boolean indicating whether or not a value is
+	    ;          acceptable as a value of the parameter.
+	    ;        failure: function which takes one argument (the
+	    ;          illegal value); called when the value passed in is
+	    ;          illegal. 
+	    ; returns: function of zero or 1 args which gets/sets a
+	    ;   parameter. 
+	    [make-item-param
+	      (lambda (init-value test failure)
+		(let ([curr-value init-value])
+		  (case-lambda
+		    [() curr-value]
+		    [(new-val) (if (test new-val)
+				   (begin
+				     (set! curr-value new-val)
+				     (force-redraw))
+				   (failure new-val))])))]
 	    
 	    ; a unique numeric ID for the object (for debugging).
 	    object-ID
@@ -170,6 +161,37 @@
             ; a validity indicator.
 	    min-width
 	    min-height
+
+	    ; default-x: gets/sets default x position.  Errors out if new
+	    ; value is not a non-negative real number; forces a redraw upon
+	    ; a set.
+	    [default-x
+	      (make-item-param 0 non-negative-number?
+		(lambda (val)
+		  (error 'default-x
+		    "Expected a non-negative real; received ~s" val)))]
+
+	    [default-y
+	      (make-item-param 0 non-negative-number?
+		(lambda (val)
+		  (error 'default-y
+		    "Expected a non-negative real; received ~s" val)))]
+
+	    ; gets/sets user's requirement for minimum width.  Errors out
+	    ; if new value is not a non-negative real number.  Forces a
+	    ; redraw upon a set.
+	    [user-min-width
+	      (make-item-param init-min-width non-negative-number?
+		(lambda (val)
+		  (error 'user-min-width
+		    "Expected a non-negative real; received ~s" val)))]
+
+	    ; like user-min-width, but the other direction.
+	    [user-min-height
+	      (make-item-param init-min-height non-negative-number?
+		(lambda (val)
+		  (error 'user-min-height
+		    "Expected a non-negative real; received ~s" val)))]
 	    
 	    ; stretchable-in-x?: gets/sets horiz stretchability property.
 	    ; input: either nothing or a boolean.
@@ -178,12 +200,18 @@
 	    ; effects: (if boolean value passed in) sets H stretchability
 	    ;   prop. to specified value.
 	    [stretchable-in-x?
-	      (make-stretchable-parameter stretch-x? 'stretchable-in-x?)]
+	      (make-item-param stretch-x? boolean?
+		(lambda (val)
+		  (error 'stretchable-in-x?
+		    "Expected a boolean; received ~s" val)))]
 	    
 	    ; stretchable-in-y?: see stretchable-in-x? but substitute "y"
             ;   for "x" and "horizontal" for "vertical".
 	    [stretchable-in-y?
-	      (make-stretchable-parameter stretch-y? 'stretchable-in-y?)]
+	      (make-item-param stretch-y? boolean?
+		(lambda (val)
+		  (error 'stretchable-in-y?
+		    "Expected a boolean; received ~s" val)))]
 	    
 	    ; get-info: passes necessary info up to parent.
 	    ; input: none
@@ -195,7 +223,7 @@
 		(mred:debug:printf 'container
 		  "Entering get-info; object ~s" object-ID)
 		(let* ([min-size (get-min-size)]
-		       [result (make-child-info default-x default-y
+		       [result (make-child-info (default-x) (default-y)
 						(car min-size) (cadr min-size)
 						(stretchable-in-x?)
 						(stretchable-in-y?))])
@@ -226,7 +254,9 @@
 		  object-ID)
 		(mred:debug:printf 'container "Result:  ~s"
 		  (list min-width min-height))
-		(list min-width min-height))])
+		(list
+		  (max min-width (user-min-width))
+		  (max min-height (user-min-height))))])
 	  (sequence
 	    (apply super-init (apply make-default-size args))
 	    (set! min-width (get-width))
@@ -234,7 +264,8 @@
 	    
 	    (set! object-ID counter)
 	    (set! counter (add1 counter))
-	    (set-default-posn)
+	    (default-x (get-x))
+	    (default-y (get-y))
 	    (let ([parent (car args)])  ; this, at least, is consistent
 	      (cond
 		[(or (is-a? parent frame%)
@@ -277,22 +308,9 @@
     ; these next definitions descend classes from the children of wx:item%
     ; which can be inserted into panel% objects.
     (define button%
-      (class (make-item% wx:button% #f #f standard-make-default-size) args
-	(inherit
-	  force-redraw
-	  min-width
-	  min-height)
-	(private
-	  [set-min-size
-	    (lambda ()
-	      (set! min-height (max min-button-height min-height))
-	      (set! min-width (max min-button-width min-width))
-	      (force-redraw))])
-	(sequence
-	  (apply super-init args)
-	  (set-min-size))))
-	
-    
+      (make-item% wx:button% #f #f standard-make-default-size
+	  min-button-width min-button-height))
+
     (define check-box%
       (make-item% wx:check-box% #f #f standard-make-default-size))
     
@@ -577,6 +595,8 @@
 	  object-ID
 	  get-width
 	  get-height
+	  user-min-width
+	  user-min-height
 	  get-client-size
 	  get-parent)
 	
@@ -705,8 +725,10 @@
 			   const-default-spacing const-default-spacing)]
 		       [delta-w (- (get-width) client-w)]
 		       [delta-h (- (get-height) client-h)])
-		   (list (+ delta-w (car min-client-size))
-		         (+ delta-h (cadr min-client-size)))))))]
+		   (list (max (user-min-width)
+			      (+ delta-w (car min-client-size)))
+		         (max (user-min-height)
+			   (+ delta-h (cadr min-client-size))))))))]
 		     
 	  
 	  ; on-size: called when the container is resized (usu by its
@@ -756,7 +778,7 @@
 			(child-info-y-posn curr-info)
 			(child-info-x-min curr-info)
 			(child-info-y-min curr-info))
-		      (place-children (cdr children-info))))))]
+		      (place-children (cdr children-info) width height)))))]
 
 	  ; redraw: redraws panel and all children
 	  ; input: width, height: size of drawable area in panel.
@@ -941,7 +963,8 @@
 	(letrec ([gms-help
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
-			 (list x-accum y-accum)
+			 (list (max x-accum (send container user-min-width))
+			   (max y-accum (send container user-min-height)))
 			 (gms-help
 			   (cdr kid-info)
 			   (compute-x x-accum kid-info)

@@ -72,6 +72,9 @@
 	   struct:optarglist
 	   struct:optarglist-entry
 	   struct:origin
+	   struct:override-binding
+	   struct:override-clause
+	   struct:override-varref
 	   struct:paroptarglist
 	   struct:paroptarglist-entry
 	   struct:parsed

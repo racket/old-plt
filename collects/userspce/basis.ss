@@ -473,7 +473,7 @@
 	     [custodian (make-custodian)]
 	     [n (apply make-namespace
 		       (if (setting-use-zodiac? setting)
-			   (append (list 'no-constants 'hash-percent-syntax) namespace-flags)
+			   (append (list 'hash-percent-syntax) namespace-flags)
 			   namespace-flags))])
 	(with-parameterization parameterization
 	  (lambda ()

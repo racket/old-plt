@@ -589,9 +589,7 @@
                                       (- (cdr pos) (car pos))))))
                      (loop (+ line-number 1))]))))
             'text)))))
-  
+
 ;; -> string
 ;; stub for soon to come mred primitive
 (define (get-directory) "")
-
-(multi-file-search)

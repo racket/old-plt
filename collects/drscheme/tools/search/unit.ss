@@ -22,7 +22,7 @@
       (override
         [edit-menu:between-find-and-preferences
          (lambda (edit-menu)
-           (make-object menu% "Multi-file Search" (lambda (x y) (multi-file-search)))
+           (make-object menu% "Multi-file Search" edit-menu (lambda (x y) (multi-file-search)))
            (super-edit-menu:between-find-and-preferences edit-menu))])
       (sequence (apply super-init args))))
   

@@ -19,7 +19,7 @@
 
 HWND browserHwnd;
 
-BROWSER_WINDOW_STYLE_OPTION styleOptions[] = {
+BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
   
   // keep alphabetic for bsearch()
   
@@ -283,23 +283,13 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-puts("Translating string");
-
   url = stringToBSTR(SCHEME_STR_VAL(argv[1]),SCHEME_STRLEN_VAL(argv[1]));
-
-puts("Done translating string");
 
   memset(vars,0,sizeof(vars));
 
-puts("About to navigate");
-
   pIWebBrowser2->Navigate(url,vars,vars+1,vars+2,vars+3);
 
-puts("Done navigating");
-
   SysFreeString(url);
-
-puts("Freed URL");
 
   return scheme_void;
 }
@@ -429,7 +419,7 @@ Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
 
   retval = BSTRToSchemeString(url);
 
-  SysFreeString(url);
+  // SysFreeString(url);
 
   return retval;
 }

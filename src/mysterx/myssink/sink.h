@@ -8,13 +8,13 @@
 #include "bstr.h"
 #include "sinktbl.h"
 
+#define EVENT_HANDLER_TBL_SIZE (93)
+
 typedef struct _event_handler_entry_ { // entry in hash table
   DISPID dispId;
   Scheme_Object *handler;
   _event_handler_entry_ *next;
 } EVENT_HANDLER_ENTRY;
-
-const int EVENT_HANDLER_TBL_SIZE = 93;
 
 /////////////////////////////////////////////////////////////////////////////
 // CSink
@@ -25,7 +25,6 @@ class ATL_NO_VTABLE CSink :
 {
 
 private:
-  //  Scheme_Extension_Table *scheme_extension_table;
   MYSSINK_TABLE *myssink_table;
 
   Scheme_Object *variantToSchemeObject(VARIANTARG *);
@@ -39,10 +38,7 @@ private:
   EVENT_HANDLER_ENTRY eventHandlerTable[EVENT_HANDLER_TBL_SIZE];
 
 public:
-  CSink() {
-    memset(eventHandlerTable,0,sizeof(eventHandlerTable));
-  }
-
+  CSink();
   ~CSink();
 
 DECLARE_REGISTRY_RESOURCEID(IDR_SINK)

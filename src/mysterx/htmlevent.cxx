@@ -16,7 +16,7 @@
 #include "mysterx.h"
 
 // number of elts should be same as in EVENT_TYPE enumeration
-static WCHAR *eventNames[11]; 
+WCHAR *eventNames[11]; 
 
 static BOOL html_event_available(MX_Browser_Object *browser) {
   VARIANT_BOOL val;

@@ -1,4 +1,4 @@
-// Sink.cpp : Implementation of CSink
+// Sink.cxx : Implementation of CSink
 
 #include "stdafx.h"
 #include <stdio.h>
@@ -51,6 +51,12 @@ EVENT_HANDLER_ENTRY *CSink::lookupHandler(DISPID dispId) {
   return NULL;
 }
 
+// constructor
+
+CSink::CSink(void) {
+  memset(eventHandlerTable,0,sizeof(eventHandlerTable));
+}
+
 // destructor
 
 CSink::~CSink(void) {
@@ -75,8 +81,7 @@ CSink::~CSink(void) {
 STDMETHODIMP CSink::set_extension_table(int p)
 {
   scheme_extension_table = (Scheme_Extension_Table *)p;
-  scheme_register_extension_global(&scheme_extension_table,
-				   sizeof(Scheme_Extension_Table *));
+  scheme_dont_gc_ptr(scheme_extension_table);
   return S_OK;
 }
 

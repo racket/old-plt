@@ -557,4 +557,7 @@ extern HANDLE browserHwndMutex;
 extern HANDLE createHwndSem;
 extern HANDLE eventSinkMutex;
 extern HWND browserHwnd;
+extern BROWSER_WINDOW_STYLE_OPTION styleOptions[6];
+extern WCHAR *eventNames[11];
+
 

@@ -102,6 +102,7 @@ STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
 
 STDMETHODIMP CEventQueue::set_extension_table(int p) {
   scheme_extension_table = (Scheme_Extension_Table *)p;
+  scheme_register_extension_global(&_Module,sizeof(_Module));
   return S_OK;
 }
 

@@ -153,8 +153,6 @@ enum {
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
   scheme_rt_param_data,
-  scheme_rt_param_ext_rec,
-  scheme_rt_param_ext_rec_data,
   scheme_rt_will,
   scheme_rt_will_registration,
   scheme_rt_breakable_wait,
@@ -169,6 +167,8 @@ enum {
   scheme_rt_unit_data_closure,
   scheme_rt_compound_linked_data,
   scheme_rt_do_invoke_data,
+  scheme_rt_finalization,
+  scheme_rt_finalizations,
   scheme_process_hop_type,
 #endif
 

@@ -1227,4 +1227,14 @@ typedef struct {
 # define END_ESCAPEABLE() \
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
 
+void scheme_reset_prepared_error_buffer(void);
+
+#ifdef MZ_PRECISE_GC
+# define WEAKIFY(x) scheme_make_weak_box(x)
+# define WEAKIFIED(x) SCHEME_BOX_VAL(x)
+#else
+# define WEAKIFY(x) x
+# define WEAKIFIED(x) x
+#endif
+
 #endif /* __mzscheme_private__ */

@@ -283,7 +283,7 @@ zo:
 mzscheme2k:
 	cd src; $(XMAKE) all
 	cd gc2; $(XMAKE) all
-	cd gc2; $(XMAKE) mzscheme2k
+	cd gc2; $(XMAKE) $(MZBUILDDIR)mzscheme2k
 
 depend:
 	cd src; $(XMAKE) -e depend 

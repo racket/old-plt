@@ -125,6 +125,12 @@ scheme_hash_table (int size, int type, int has_const, int forever)
 
 typedef int hash_v_t;
 
+#ifdef MZ_PRECISE_GC
+# define EXTRACT_WEAK(x) SCHEME_BOX_VAL(x)
+#else
+# define EXTRACT_WEAK(x) (*(char **)(x))
+#endif
+
 static Scheme_Bucket *
 get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b)
 {
@@ -210,8 +216,8 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     table->count = 0;
     if (table->weak) {
       for (i = 0; i < oldsize; i++) {
-	if (old[i] && old[i]->key && *(void **)old[i]->key)
-	  get_bucket(table, *(char **)old[i]->key, 1, old[i]);
+	if (old[i] && old[i]->key && EXTRACT_WEAK(old[i]->key))
+	  get_bucket(table, (char *)EXTRACT_WEAK(old[i]->key), 1, old[i]);
       }
     } else {
       for (i = 0; i < oldsize; i++) {
@@ -250,13 +256,19 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
       ((Scheme_Bucket_With_Const_Flag *)bucket)->flags = 0;
 
     if (table->weak) {
+#ifdef MZ_PRECISE_GC
+      Scheme_Weak_Box *kb;
+      kb = (Scheme_Weak_Box *)scheme_make_weak_box(key);
+      bucket->key = (char *)kb;
+      kb->secondary_erase = (Scheme_Object *)bucket;
+#else
       char *kb;
       kb = (char *)MALLOC_ONE_WEAK(void *);
       bucket->key = kb;
       *(void **)bucket->key = (void *)key;
-      /* FXIME: Precise GC */
       scheme_weak_reference_indirect((void **)bucket->key, (void *)key);
       scheme_weak_reference_indirect((void **)&bucket->val, (void *)key);
+#endif
     } else
       bucket->key = (char *)key;
     bucket->val = NULL;
@@ -324,7 +336,7 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
 
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b)
 {
-  get_bucket(table, table->weak ? *(char **)b->key : b->key, 1, b);
+  get_bucket(table, table->weak ? (char *)EXTRACT_WEAK(b->key) : b->key, 1, b);
 }
 
 void *

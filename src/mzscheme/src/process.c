@@ -258,20 +258,6 @@ typedef struct {
   Scheme_Object *defval;
 } ParamData;
 
-typedef struct ParamExtensionRecData {
-  MZTAG_IF_REQUIRED
-  Scheme_Object *p;
-  Scheme_Object *key;
-} ParamExtensionRecData;
-
-typedef struct ParamExtensionRec {
-  MZTAG_IF_REQUIRED
-  ParamExtensionRecData *data; /* weak content */
-  struct ParamExtensionRec *next;
-} ParamExtensionRec;
-
-static ParamExtensionRec *param_ext_recs;
-
 enum {
   CONFIG_DIRECT,
   CONFIG_INDIRECT
@@ -279,7 +265,7 @@ enum {
 
 typedef struct Scheme_Process_Manager_Hop {
   Scheme_Type type;
-  Scheme_Process *p;
+  Scheme_Process *p; /* really an indirection with precise gc */
 } Scheme_Process_Manager_Hop;
 
 typedef struct {
@@ -506,7 +492,6 @@ void scheme_init_process(Scheme_Env *env)
 
   if (scheme_starting_up) {
     REGISTER_SO(namespace_options);
-    REGISTER_SO(param_ext_recs);
 
 #ifdef MZ_REAL_THREADS
     make_namespace_mutex = SCHEME_MAKE_MUTEX();
@@ -731,7 +716,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     process->mr_hop = hop;
     hop->type = scheme_process_hop_type;
-    hop->p = process;
+    hop->p = (Scheme_Process *)WEAKIFY((Scheme_Object *)process);
 
     mref = scheme_add_managed(mgr
 			      ? mgr
@@ -739,7 +724,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 			      (Scheme_Object *)hop, NULL, NULL, 0);
     process->mref = mref;
 
+#ifndef MZ_PRECISE_GC
     scheme_weak_reference((void **)&hop->p);
+#endif
   }
 
   return process;
@@ -809,6 +796,22 @@ static void add_managed_box(Scheme_Manager *m,
   m->count++;
 }
 
+#ifdef MZ_PRECISE_GC
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Manager *val;
+} Scheme_Manager_Weak_Box;
+
+# define MALLOC_MREF() (Scheme_Manager_Reference *)scheme_make_weak_box(NULL)
+# define MANAGER_FAM(x) ((Scheme_Manager_Weak_Box *)x)->val
+# define xMANAGER_FAM(x) SCHEME_BOX_VAL(x)
+#else
+# define MALLOC_MREF() MALLOC_ONE_WEAK(Scheme_Manager_Reference)
+# define MANAGER_FAM(x) *(x)
+# define xMANAGER_FAM(x) *(x)
+#endif
+
 static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
 			   Scheme_Close_Manager_Client **old_f, void **old_data)
 {
@@ -817,7 +820,7 @@ static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
 
   GET_CUST_LOCK();
 
-  m = *mr;
+  m = MANAGER_FAM(mr);
   if (!m) {
     RELEASE_CUST_LOCK();
     return;
@@ -825,9 +828,9 @@ static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
 
   for (i = m->count; i--; ) {
     if (m->boxes[i] && SAME_OBJ((*(m->boxes[i])),  o)) {
-      *(m->boxes[i]) = 0;
+      MANAGER_FAM(m->boxes[i]) = 0;
       m->boxes[i] = NULL;
-      *(m->mrefs[i]) = 0;
+      MANAGER_FAM(m->mrefs[i]) = 0;
       m->mrefs[i] = NULL;
       if (old_f)
 	*old_f = m->closers[i];
@@ -855,30 +858,30 @@ static void adjust_manager_family(void *mgr, void *ignored)
   Scheme_Manager *r = (Scheme_Manager *)mgr, *parent, *m;
   int i;
 
-  parent = *r->parent;
+  parent = MANAGER_FAM(r->parent);
 
   GET_CUST_LOCK();
 
   if (parent) {
     /* Remove from parent's list of children: */
-    if (*parent->children == r) {
-      *parent->children = *(r->sibling);
+    if (MANAGER_FAM(parent->children) == r) {
+      MANAGER_FAM(parent->children) = MANAGER_FAM(r->sibling);
     } else {
-      m = *parent->children;
-      while (m && *m->sibling != r) {
-	m = *m->sibling;
+      m = MANAGER_FAM(parent->children);
+      while (m && MANAGER_FAM(m->sibling) != r) {
+	m = MANAGER_FAM(m->sibling);
       }
       if (m)
-	*m->sibling = *r->sibling;
+	MANAGER_FAM(m->sibling) = MANAGER_FAM(r->sibling);
     }
 
     /* Add children to parent's list: */
-    for (m = *r->children; m; ) {
-      Scheme_Manager *next = *m->sibling;
+    for (m = MANAGER_FAM(r->children); m; ) {
+      Scheme_Manager *next = MANAGER_FAM(m->sibling);
       
-      *m->parent = parent;
-      *m->sibling = *parent->children;
-      *parent->children = m;
+      MANAGER_FAM(m->parent) = parent;
+      MANAGER_FAM(m->sibling) = MANAGER_FAM(parent->children);
+      MANAGER_FAM(parent->children) = m;
 
       m = next;
     }
@@ -886,22 +889,23 @@ static void adjust_manager_family(void *mgr, void *ignored)
     /* Add remaining managed items to parent: */
     for (i = 0; i < r->count; i++) {
       if (r->boxes[i]) {
-	*(r->mrefs[i]) = parent;
+	MANAGER_FAM(r->mrefs[i]) = parent;
 	add_managed_box(parent, r->boxes[i], r->mrefs[i], r->closers[i], r->data[i]);
       }
     }
   }
 
-  *r->parent = NULL;
-  *r->sibling = NULL;
-  *r->children = NULL;
+  MANAGER_FAM(r->parent) = NULL;
+  MANAGER_FAM(r->sibling) = NULL;
+  MANAGER_FAM(r->children) = NULL;
 
   RELEASE_CUST_LOCK();
 }
 
 Scheme_Manager *scheme_make_manager(Scheme_Manager *parent) 
 {
-  Scheme_Manager *m, **mw;
+  Scheme_Manager *m;
+  Scheme_Manager_Reference *mw;
 
   m = MALLOC_ONE_TAGGED(Scheme_Manager);
 
@@ -909,22 +913,22 @@ Scheme_Manager *scheme_make_manager(Scheme_Manager *parent)
 
   m->alloc = m->count = 0;
 
-  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  mw = MALLOC_MREF();
   m->parent = mw;
-  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  mw = MALLOC_MREF();
   m->children = mw;
-  mw = MALLOC_ONE_WEAK(Scheme_Manager*);
+  mw = MALLOC_MREF();
   m->sibling = mw;
 
-  *(m->children) = NULL;
-  *(m->sibling) = NULL;
+  MANAGER_FAM(m->children) = NULL;
+  MANAGER_FAM(m->sibling) = NULL;
 
-  *(m->parent) = parent;
+  MANAGER_FAM(m->parent) = parent;
   if (parent) {
-    *m->sibling = *parent->children;
-    *parent->children = m;
+    MANAGER_FAM(m->sibling) = MANAGER_FAM(parent->children);
+    MANAGER_FAM(parent->children) = m;
   } else
-    *(m->sibling) = NULL;
+    MANAGER_FAM(m->sibling) = NULL;
 
   scheme_add_finalizer(m, adjust_manager_family, NULL);
 
@@ -933,29 +937,37 @@ Scheme_Manager *scheme_make_manager(Scheme_Manager *parent)
 
 static void rebox_willdone_object(void *o, void *mr)
 {
-  Scheme_Manager *m = *(Scheme_Manager **)mr;
+  Scheme_Manager *m = MANAGER_FAM((Scheme_Manager_Reference *)mr);
   Scheme_Close_Manager_Client *f;
   void *data;
 
   /* Still needs management? */
   if (m) {
+#ifdef MZ_PRECISE_GC
+    Scheme_Object *b;
+#else
     Scheme_Object **b;
+#endif
 
     remove_managed(mr, o, &f, &data);
 
+#ifdef MZ_PRECISE_GC
+    b = scheme_box(NULL);
+#else
     b = MALLOC_ONE(Scheme_Object*); /* not atomic this time */
-    *b = o;
+#endif
+    xMANAGER_FAM(b) = o;
     
     /* Put the manager back: */
-    *(Scheme_Manager **)mr = m;
+    MANAGER_FAM((Scheme_Manager_Reference *)mr) = m;
 
-    add_managed_box(m, b, mr, f, data);
+    add_managed_box(m, (Scheme_Object **)b, (Scheme_Manager_Reference *)mr, f, data);
   }
 }
 
 static void managed_object_gone(void *o, void *mr)
 {
-  Scheme_Manager *m = *(Scheme_Manager **)mr;
+  Scheme_Manager *m = MANAGER_FAM((Scheme_Manager_Reference *)mr);
 
   /* Still has management? */
   if (m)
@@ -966,18 +978,26 @@ static void managed_object_gone(void *o, void *mr)
 Scheme_Manager_Reference *scheme_add_managed(Scheme_Manager *m, Scheme_Object *o, 
 					     Scheme_Close_Manager_Client *f, void *data, int must_close)
 {
-  Scheme_Object **b;
+#ifdef MZ_PRECISE_GC
+    Scheme_Object *b;
+#else
+    Scheme_Object **b;
+#endif
   Scheme_Manager_Reference *mr;
 
+#ifdef MZ_PRECISE_GC
+  b = scheme_make_weak_box(NULL);
+#else
   b = MALLOC_ONE_WEAK(Scheme_Object*);
-  *b = o;
+#endif
+  xMANAGER_FAM(b) = o;
 
-  mr = MALLOC_ONE_WEAK(Scheme_Manager_Reference);
+  mr = MALLOC_MREF();
 
   if (!m)
     m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
 
-  *mr = m;
+  MANAGER_FAM(mr) = m;
 
   /* The atomic link via the box `b' allows the execution of wills for
      o. After this, we should either drop the object or we have to
@@ -997,7 +1017,7 @@ Scheme_Manager_Reference *scheme_add_managed(Scheme_Manager *m, Scheme_Object *o
 #endif
 
   GET_CUST_LOCK();
-  add_managed_box(m, b, mr, f, data);
+  add_managed_box(m, (Scheme_Object **)b, mr, f, data);
   RELEASE_CUST_LOCK();
 
   return mr;
@@ -1014,8 +1034,8 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
   Scheme_Manager *c, *next;
 
   /* Kill children first: */
-  for (c = *(m->children); c; c = next) {
-    next = *(c->sibling);
+  for (c = MANAGER_FAM(m->children); c; c = next) {
+    next = MANAGER_FAM(c->sibling);
     ks = do_close_managed(c);
     if (ks)
       kill_self = ks;
@@ -1028,13 +1048,13 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
       Scheme_Close_Manager_Client *f;
       void *data;
 
-      o = *(m->boxes[i]);
+      o = xMANAGER_FAM(m->boxes[i]);
 
       f = m->closers[i];
       data = m->data[i];
-      *(m->boxes[i]) = NULL;
+      MANAGER_FAM(m->boxes[i]) = NULL;
       m->boxes[i] = NULL;
-      *(m->mrefs[i]) = NULL;
+      MANAGER_FAM(m->mrefs[i]) = NULL;
       m->mrefs[i] = NULL;
       m->data[i] = NULL;
       --m->count;
@@ -1042,7 +1062,7 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
       if (SAME_TYPE(SCHEME_TYPE(o), scheme_process_hop_type)) {
 #ifndef NO_SCHEME_THREADS
 	/* We've added an indirection and made it weak. See mr_hop note above. */
-	Scheme_Process *p = ((Scheme_Process_Manager_Hop *)o)->p;
+	Scheme_Process *p = (Scheme_Process *)WEAKIFIED(((Scheme_Process_Manager_Hop *)o)->p);
 
 	if (p)
 	  if (do_kill_thread(p))
@@ -2388,10 +2408,10 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
 
   /* Check management of the thread: */
   current = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
-  m = *p->mref;
+  m = MANAGER_FAM(p->mref);
 
   while (NOT_SAME_OBJ(m, current)) {
-    m = *m->parent;
+    m = MANAGER_FAM(m->parent);
     if (!m) {
       scheme_raise_exn(MZEXN_MISC,
 		       "kill-thread: the current custodian does not "
@@ -2626,10 +2646,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
     hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
     np->mr_hop = hop;
     hop->type = scheme_process_hop_type;
-    hop->p = np;
+    hop->p = (Scheme_Process *)WEAKIFY((Scheme_Object *)np);
     mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     np->mref = mref;
+#ifndef MZ_PRECISE_GC
     scheme_weak_reference((void **)&hop->p);
+#endif
   }
 
 #ifdef RUNSTACK_IS_GLOBAL
@@ -2656,7 +2678,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   }
 
   scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
+#ifdef MZ_PRECISE_GC
+  WEAKIFIED(np->mr_hop) = NULL;
+#else
   scheme_unweak_reference((void **)&np->mr_hop->p);
+#endif
   scheme_remove_all_finalization(np->mr_hop);
 
   if (np->prev)
@@ -2743,7 +2769,6 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
 {
   Scheme_Object *p;
   ParamData *data;
-  ParamExtensionRec *erec, *prev;
   void *k;
 
   k = scheme_make_pair(scheme_true, scheme_false); /* generates a key */
@@ -2762,37 +2787,6 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   p = scheme_make_closed_prim_w_arity(do_param, (void *)data, 
 				      "parameter-procedure", 0, 1);
   ((Scheme_Primitive_Proc *)p)->flags |= SCHEME_PRIM_IS_PARAMETER;
-
-  /* Throw away expired ext recs: */
-  prev = NULL;
-  for (erec = param_ext_recs; erec; erec = erec->next) {
-    if (!erec->data->p) {
-      if (prev)
-	prev->next = erec->next;
-      else
-	param_ext_recs = erec->next;
-    } else
-      prev = erec;
-  }
-
-  erec = MALLOC_ONE(ParamExtensionRec);
-#ifdef MZTAG_REQUIRED
-  erec->type = scheme_rt_param_ext_rec;
-#endif
-  erec->next = param_ext_recs;
-  param_ext_recs = erec;
-  {
-    ParamExtensionRecData *erd;
-    erd = MALLOC_ONE_WEAK_RT(ParamExtensionRecData);
-    erec->data = erd;
-  }
-#ifdef MZTAG_REQUIRED
-  erec->data->type = scheme_rt_param_ext_rec_data;
-#endif
-  erec->data->p = p;
-  erec->data->key = (Scheme_Object *)k;
-
-  scheme_weak_reference((void **)&erec->data->p);
 
   return p;
 }
@@ -4075,9 +4069,9 @@ static int mark_config_val(void *p, Mark_Proc mark)
     int i;
     
     for (i = max_configs; i--; ) {
-      c->configs[i] = mark(c->configs[i]);
+      gcMARK(c->configs[i]);
     }
-    c->extensions = mark(c->extensions);
+    gcMARK(c->extensions);
   }
 
   return gcBYTES_TO_WORDS((sizeof(Scheme_Config)
@@ -4089,9 +4083,9 @@ static int mark_will_executor_val(void *p, Mark_Proc mark)
   if (mark) {
     WillExecutor *e = (WillExecutor *)p;
 
-    e->sema = mark(e->sema);
-    e->first = mark(e->first);
-    e->last = mark(e->last);
+    gcMARK(e->sema);
+    gcMARK(e->first);
+    gcMARK(e->last);
   } 
 
   return gcBYTES_TO_WORDS(sizeof(WillExecutor));
@@ -4102,14 +4096,14 @@ static int mark_manager_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Manager *m = (Scheme_Manager *)p;
 
-    m->boxes = mark(m->boxes);
-    m->mrefs = mark(m->mrefs);
-    m->closers = mark(m->closers);
-    m->data = mark(m->data);
+    gcMARK(m->boxes);
+    gcMARK(m->mrefs);
+    gcMARK(m->closers);
+    gcMARK(m->data);
 
-    m->parent = mark(m->parent);
-    m->sibling = mark(m->sibling);
-    m->children = mark(m->children);
+    gcMARK(m->parent);
+    gcMARK(m->sibling);
+    gcMARK(m->children);
   }
 
   return gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
@@ -4150,30 +4144,6 @@ static int mark_param_data(void *p, Mark_Proc mark)
   return gcBYTES_TO_WORDS(sizeof(ParamData));
 }
 
-static int mark_param_ext_rec(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ParamExtensionRec *r = (ParamExtensionRec *)p;
-    
-    gcMARK(r->data);
-    gcMARK(r->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ParamExtensionRec));
-}
-
-static int mark_param_ext_rec_data(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ParamExtensionRecData *d = (ParamExtensionRecData *)p;
-
-    gcMARK(d->key);
-    gcMARK(d->p);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ParamExtensionRecData));
-}
-
 static int mark_will(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -4209,8 +4179,6 @@ static void register_traversers(void)
 
   GC_register_traverser(scheme_rt_namespace_option, mark_namespace_option);
   GC_register_traverser(scheme_rt_param_data, mark_param_data);
-  GC_register_traverser(scheme_rt_param_ext_rec, mark_param_ext_rec);
-  GC_register_traverser(scheme_rt_param_ext_rec_data, mark_param_ext_rec_data);
   GC_register_traverser(scheme_rt_will, mark_will);
   GC_register_traverser(scheme_rt_will_registration, mark_will_registration);
 }

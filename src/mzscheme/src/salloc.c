@@ -330,23 +330,19 @@ void *scheme_malloc_uncollectable_tagged(size_t s)
 #endif
 
 typedef struct Finalization {
+  MZTAG_IF_REQUIRED
   void (*f)(void *o, void *data);
   void *data;
   struct Finalization *next, *prev;
 } Finalization;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Finalization *scheme_first, *scheme_last;
   void (*ext_f)(void *o, void *data);
   void *ext_data;
   Finalization *prim_first, *prim_last;
 } Finalizations;
-
-typedef struct {
-  void **p; /* place to zero out */
-  Finalizations *src_fns, *dest_fns; /* Mutual finalizations to adjust */
-  Finalization *src_fn, *dest_fn;
-} ZeroingRecord;
 
 static void do_next_finalization(void *o, void *data)
 {
@@ -408,12 +404,18 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 
   if (!ext) {
     fn = MALLOC_ONE(Finalization);
+#ifdef MZTAG_REQUIRED
+    fn->type = scheme_rt_finalization;
+#endif
     fn->f = f;
     fn->data = data;
   } else
     fn = NULL;
 
   prealloced = MALLOC_ONE(Finalizations); /* may not need this... */
+#ifdef MZTAG_REQUIRED
+  prealloced->type = scheme_rt_finalizations;
+#endif
 
   GET_FIN_LOCK();
 
@@ -478,6 +480,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   RELEASE_FIN_LOCK();
 }
 
+#ifndef MZ_PRECISE_GC
 void scheme_weak_reference(void **p)
 {
   scheme_weak_reference_indirect(p, *p);
@@ -485,10 +488,7 @@ void scheme_weak_reference(void **p)
 
 void scheme_weak_reference_indirect(void **p, void *v)
 {
-#ifndef MZ_PRECISE_GC
-  /* FIXME */
   if (GC_base(v) == v)
-#endif
     GC_register_late_disappearing_link(p, v);
 }
 
@@ -496,6 +496,7 @@ void scheme_unweak_reference(void **p)
 {
   GC_unregister_disappearing_link(p);
 }
+#endif
 
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
@@ -676,6 +677,7 @@ void (*scheme_external_dump_info)(void);
 void (*scheme_external_dump_arg)(Scheme_Object *arg);
 char *(*scheme_external_dump_type)(void *v);
 
+#ifdef USE_TAGGED_ALLOCATION
 static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
 			  int *ipt, int *opt, int *th)
 {
@@ -702,6 +704,7 @@ static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
   if (*m->children)
     count_managed(*m->children, c, a, u, t, ipt, opt, th);
 }
+#endif
 
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 {

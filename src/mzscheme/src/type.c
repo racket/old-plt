@@ -620,9 +620,9 @@ static int bignum_obj(void *p, Mark_Proc mark)
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
   if (mark) {
-    if (!b->allocated_inline)
+    if (!b->allocated_inline) {
       gcMARK(b->digits);
-    else
+    } else
       b->digits = ((Small_Bignum *)b)->v;
   }
 
@@ -982,7 +982,6 @@ void scheme_register_traversers(void)
   GC_register_traverser(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_register_traverser(scheme_sema_type, sema_val);
   GC_register_traverser(scheme_hash_table_type, hash_table_val);
-  GC_register_traverser(scheme_weak_box_type, small_object);
   GC_register_traverser(scheme_id_macro_type, small_object);
   GC_register_traverser(scheme_exp_time_type, small_object);
   GC_register_traverser(scheme_namespace_type, namespace_val);

@@ -524,18 +524,6 @@
 			      
 			      local-vars)
 		       (append extra-vars local-vars))])
-	  ;; Look for function calls in decl section:
-	  (for-each
-	   (lambda (e)
-	     (let ([el (body->lines e #t)])
-	       (for-each
-		(lambda (e)
-		  ;; We're not really interested in the conversion.
-		  ;; We just want to complain about function calls:
-		  (convert-function-calls e null (make-live-var-info -1 null null 0) #t))
-		el)))
-	   decls)
-
 	  ;; Convert calls and body (recusively)
 	  (let-values ([(orig-maxlive) (live-var-info-maxlive live-vars)]
 		       [(body-x live-vars)
@@ -563,26 +551,41 @@
 								     live-vars
 								     #f)])
 				(values (cons e rest) live-vars))))])
-	    (values (apply
-		     append
-		     (append
-		      decls
-		      (list (append (if label?
-					(list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
-					null)
-				    (if setup-stack?
-					(apply append (live-var-info-new-vars live-vars))
-					null)
-				    (if (and setup-stack? (not (negative? (live-var-info-maxlive live-vars))))
-					(list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
-										(live-var-info-maxlive live-vars))))
-					null)))
-		      body-x))
-		    (make-live-var-info (max orig-maxlive
-					     (live-var-info-maxlive live-vars))
-					(live-var-info-vars live-vars)
-					(live-var-info-new-vars live-vars)
-					(live-var-info-num-calls live-vars))))))))
+	    ;; Collect live vars and look for function calls in decl section:
+	    (let ([live-vars
+		   (let loop ([decls decls][live-vars live-vars])
+		     (if (null? decls)
+			 live-vars
+			 (let dloop ([el (body->lines (car decls) #t)]
+				     [live-vars live-vars])
+			   (if (null? el)
+			       (loop (cdr decls) live-vars)
+			       (let-values ([(_ live-vars)
+					     ;; We're not really interested in the conversion.
+					     ;; We just want to get live vars and
+					     ;;complain about function calls:
+					     (convert-function-calls (car el) extra-vars live-vars #t)])
+				 (loop (cdr el) live-vars))))))])
+	      (values (apply
+		       append
+		       (append
+			decls
+			(list (append (if label?
+					  (list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
+					  null)
+				      (if setup-stack?
+					  (apply append (live-var-info-new-vars live-vars))
+					  null)
+				      (if (and setup-stack? (not (negative? (live-var-info-maxlive live-vars))))
+					  (list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
+										  (live-var-info-maxlive live-vars))))
+					  null)))
+			body-x))
+		      (make-live-var-info (max orig-maxlive
+					       (live-var-info-maxlive live-vars))
+					  (live-var-info-vars live-vars)
+					  (live-var-info-new-vars live-vars)
+					  (live-var-info-num-calls live-vars)))))))))
 
 (define (looks-like-call? e-)
   ;; e- is a reversed expression

@@ -259,8 +259,16 @@ typedef struct Scheme_Vector {
   Scheme_Object *els[1];
 } Scheme_Vector;
 
+#ifdef MZ_PRECISE_GC
+typedef struct GC_Weak_Box Scheme_Weak_Box;
+#endif
+
 typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
+#ifdef MZ_PRECISE_GC
+typedef struct Scheme_Weak_Box Scheme_Manager_Reference;
+#else
 typedef struct Scheme_Manager *Scheme_Manager_Reference;
+#endif
 
 typedef struct Scheme_Manager {
   Scheme_Type type;
@@ -272,9 +280,9 @@ typedef struct Scheme_Manager {
   void **data;
 
   /* weak indirections: */
-  struct Scheme_Manager **parent;
-  struct Scheme_Manager **sibling;
-  struct Scheme_Manager **children;
+  Scheme_Manager_Reference *parent;
+  Scheme_Manager_Reference *sibling;
+  Scheme_Manager_Reference *children;
 } Scheme_Manager;
 
 typedef struct Scheme_Input_Port

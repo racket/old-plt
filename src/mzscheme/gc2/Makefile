@@ -231,8 +231,8 @@ $(OBJDIR)/main.o: $(XSRCDIR)/main.c
 $(OBJDIR)/gc2.o: gc2.c gc2.h
 	$(CC) $(CFLAGS) -c gc2.c -o $(OBJDIR)/gc2.o
 
-mzscheme2k: ctok $(OBJS)
-	$(CC) -o mzscheme2k $(OBJS) $(LIBS)
+$(MZBUILDDIR)mzscheme2k: ctok $(OBJS)
+	$(CC) -o $(MZBUILDDIR)mzscheme2k $(OBJS) $(LIBS)
 
 ctok: lex.yy.c
 	gcc -g -o ctok lex.yy.c

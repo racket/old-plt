@@ -1282,6 +1282,15 @@ static Scheme_Object *hash_table_for_each(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_make_weak_box(Scheme_Object *v)
 {
+#ifdef MZ_PRECISE_GC
+  Scheme_Weak_Box *b;
+
+  b = MALLOC_ONE_TAGGED(Scheme_Weak_Box);
+  b->type = scheme_weak_box_type;
+  b->val = v;
+  
+  return (Scheme_Object *)b;
+#else
   Scheme_Small_Object *obj;
 
   obj = MALLOC_ONE_TAGGED_WEAK(Scheme_Small_Object);
@@ -1289,11 +1298,10 @@ Scheme_Object *scheme_make_weak_box(Scheme_Object *v)
   obj->type = scheme_weak_box_type;
 
   obj->u.ptr_val = v;
-#ifndef MZ_PRECISE_GC
   scheme_weak_reference((void **)&obj->u.ptr_val);
-#endif
 
   return (Scheme_Object *)obj;
+#endif
 }
 
 static Scheme_Object *make_weak_box(int argc, Scheme_Object *argv[])

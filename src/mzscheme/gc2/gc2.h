@@ -51,20 +51,22 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
 
 void GC_free(void *); /* noop */
 
-void GC_general_register_disappearing_link(void **p, void *a);
-void GC_register_late_disappearing_link(void **p, void *a);
-void GC_general_unregister_disappearing_link(void **p, void *a);
-
-void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
-			   void *data, void (**oldf)(void *p, void *data), 
-			   void **olddata);
-void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data), 
-				       void *data, void (**oldf)(void *p, void *data), 
-				       void **olddata);
 void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata);
-void GC_unregister_disappearing_link(void **p);
+
+/* Only used to clear finalizer: */
+void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
+			   void *data, void (**oldf)(void *p, void *data), 
+			   void **olddata);
+
+typedef struct GC_Weak_Box {
+  Scheme_Type type;
+  short keyex;
+  struct Scheme_Object *val;
+  struct Scheme_Object *secondary_erase;
+  struct GC_Weak_Box *next;
+} GC_Weak_Box;
 
 extern void **GC_variable_stack;
 extern int GC_variable_count;
@@ -79,7 +81,9 @@ void GC_mark_variable_stack(void **var_stack,
 			    long delta,
 			    void *limit);
 
-#define gcMARK(x) x = mark(x)
+extern void *GC_alloc_space, *GC_alloc_top;
+
+#define gcMARK(x) if (((void *)(x) >= GC_alloc_space) && ((void *)(x) <= GC_alloc_top)) x = mark(x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 
 # ifdef __cplusplus

@@ -1,0 +1,5 @@
+(unit/sig ()
+  (import before^)
+  (send edit sync)
+  (send edit end-edit-sequence)
+  (send frame show #t))

@@ -15,16 +15,21 @@
 
 
 #include <stdio.h>
+#ifndef _WIN32_WCE
 #include <signal.h>
+#endif
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 #ifdef SOLARIS_THREADS
 # include <sys/syscall.h>
 #endif
-#ifdef MSWIN32
+#if defined(MSWIN32) || defined(MSWINCE)
+# define WIN32_LEAN_AND_MEAN
+# define NOSERVICE
 # include <windows.h>
+# include <tchar.h>
 #endif
 
 # ifdef THREADS
@@ -40,17 +45,25 @@
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
 #          ifdef WIN32_THREADS
-              /* MATTHEW: MzScheme fakes DLL-ness. No GC_API here. */
-	      /* GC_API */ CRITICAL_SECTION GC_allocate_ml;
+#	      if defined(_DLL) || defined(GC_DLL)
+		 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
+#	      else
+		 CRITICAL_SECTION GC_allocate_ml;
+#	      endif
 #          else
-#             if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-		 || defined(IRIX_JDK_THREADS)
-#		ifdef UNDEFINED
-		    pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-#		endif
+#             if defined(IRIX_THREADS) \
+		 || (defined(LINUX_THREADS) && defined(USE_SPIN_LOCK))
 	        pthread_t GC_lock_holder = NO_THREAD;
 #	      else
-	        --> declare allocator lock here
+#	        if defined(HPUX_THREADS) \
+		   || defined(LINUX_THREADS) && !defined(USE_SPIN_LOCK)
+		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+	          pthread_t GC_lock_holder = NO_THREAD;
+			/* Used only for assertions, and to prevent	 */
+			/* recursive reentry in the system call wrapper. */
+#		else 
+	          --> declare allocator lock here
+#		endif
 #	      endif
 #	   endif
 #	endif
@@ -64,15 +77,21 @@ GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 GC_bool GC_debugging_started = FALSE;
 	/* defined here so we don't have to load debug_malloc.o */
 
-void (*GC_check_heap)() = (void (*)())0;
+void (*GC_check_heap) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
 
-void (*GC_start_call_back)() = (void (*)())0;
+void (*GC_start_call_back) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
 
 ptr_t GC_stackbottom = 0;
 
 GC_bool GC_dont_gc = 0;
 
 GC_bool GC_quiet = 0;
+
+#ifdef FIND_LEAK
+  int GC_find_leak = 1;
+#else
+  int GC_find_leak = 0;
+#endif
 
 /*ARGSUSED*/
 GC_PTR GC_default_oom_fn GC_PROTO((size_t bytes_requested))
@@ -96,23 +115,33 @@ extern signed_word GC_mem_found;
     {
 	register unsigned i;
 
-	/* Map size 0 to 1.  This avoids problems at lower levels. */
-	  GC_size_map[0] = 1;
-	/* One word objects don't have to be 2 word aligned.	   */
-	  for (i = 1; i < sizeof(word); i++) {
-	      GC_size_map[i] = 1;
+	/* Map size 0 to something bigger.			*/
+	/* This avoids problems at lower levels.		*/
+	/* One word objects don't have to be 2 word aligned,	*/
+	/* unless we're using mark bytes.	   		*/
+	  for (i = 0; i < sizeof(word); i++) {
+	      GC_size_map[i] = MIN_WORDS;
 	  }
-	  GC_size_map[sizeof(word)] = ROUNDED_UP_WORDS(sizeof(word));
+#	  ifdef USE_MARK_BYTES
+	    GC_size_map[sizeof(word)] = ALIGNED_WORDS(sizeof(word));
+#	  else
+	    GC_size_map[sizeof(word)] = ROUNDED_UP_WORDS(sizeof(word));
+#	  endif
 	for (i = sizeof(word) + 1; i <= 8 * sizeof(word); i++) {
-#           ifdef ALIGN_DOUBLE
-	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 1) & (~1);
-#           else
-	      GC_size_map[i] = ROUNDED_UP_WORDS(i);
-#           endif
+	    GC_size_map[i] = ALIGNED_WORDS(i);
 	}
 	for (i = 8*sizeof(word) + 1; i <= 16 * sizeof(word); i++) {
 	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 1) & (~1);
 	}
+#	ifdef GC_GCJ_SUPPORT
+	   /* Make all sizes up to 32 words predictable, so that a 	*/
+	   /* compiler can statically perform the same computation,	*/
+	   /* or at least a computation that results in similar size	*/
+	   /* classes.							*/
+	   for (i = 16*sizeof(word) + 1; i <= 32 * sizeof(word); i++) {
+	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 3) & (~3);
+	   }
+#	endif
 	/* We leave the rest of the array to be filled in on demand. */
     }
     
@@ -386,9 +415,19 @@ size_t GC_get_heap_size GC_PROTO(())
     return ((size_t) GC_heapsize);
 }
 
+size_t GC_get_free_bytes GC_PROTO(())
+{
+    return ((size_t) GC_large_free_bytes);
+}
+
 size_t GC_get_bytes_since_gc GC_PROTO(())
 {
     return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
+}
+
+size_t GC_get_total_bytes GC_PROTO(())
+{
+    return ((size_t) WORDS_TO_BYTES(GC_words_allocd+GC_words_allocd_before_gc));
 }
 
 GC_bool GC_is_initialized = FALSE;
@@ -405,15 +444,21 @@ void GC_init()
 
 }
 
-#ifdef MSWIN32
-    extern void GC_init_win32();
+#if defined(MSWIN32) || defined(MSWINCE)
+    CRITICAL_SECTION GC_write_cs;
 #endif
 
-/* MATTHEW: see calls in GC_init_inner */
+#ifdef MSWIN32
+    extern void GC_init_win32 GC_PROTO((void));
+#endif
+
+/* PLTSCHEME: see calls in GC_init_inner */
 extern void GC_register_fnl_statics(void);
 extern void GC_register_allch_statics(void);
 extern void GC_register_bl_statics(void);
+#ifdef STUBBORN_ALLOC
 extern void GC_register_stubborn_statics(void);
+#endif
 extern int GC_use_registered_statics;
 
 extern void GC_setpagesize();
@@ -425,43 +470,41 @@ void GC_init_inner()
 #   endif
     
     if (GC_is_initialized) return;
+#   if defined(MSWIN32) || defined(MSWINCE)
+	InitializeCriticalSection(&GC_write_cs);
+#   endif
     GC_setpagesize();
-    GC_exclude_static_roots(beginGC_arrays, end_gc_area);
-#   ifdef PRINTSTATS
-	if ((ptr_t)endGC_arrays != (ptr_t)(&GC_obj_kinds)) {
-	    GC_printf0("Reordering linker, didn't exclude obj_kinds\n");
-	}
+    GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
+    GC_exclude_static_roots(beginGC_obj_kinds, endGC_obj_kinds);
+#   ifdef SEPARATE_GLOBALS
+      GC_exclude_static_roots(beginGC_objfreelist, endGC_objfreelist);
+      GC_exclude_static_roots(beginGC_aobjfreelist, endGC_aobjfreelist);
 #   endif
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
-#   if defined(LINUX) && (defined(POWERPC) || defined(ALPHA) || defined(SPARC))
+#   if defined(SEARCH_FOR_DATA_START)
+	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
 #   endif
+#   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+       || defined(HPUX_THREADS) || defined(SOLARIS_THREADS)
+        GC_thr_init();
+#   endif
 #   ifdef SOLARIS_THREADS
-	GC_thr_init();
 	/* We need dirty bits in order to find live stack sections.	*/
         GC_dirty_init();
 #   endif
-#   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-       || defined(IRIX_JDK_THREADS)
-        GC_thr_init();
-#   endif
 #   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
-       || defined(IRIX_THREADS) || defined(LINUX_THREADS)
+       || defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+       || defined(HPUX_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
       }
 #   endif
-    if  (sizeof (ptr_t) != sizeof(word)) {
-        ABORT("sizeof (ptr_t) != sizeof(word)\n");
-    }
-    if  (sizeof (signed_word) != sizeof(word)) {
-        ABORT("sizeof (signed_word) != sizeof(word)\n");
-    }
-    if  (sizeof (struct hblk) != HBLKSIZE) {
-        ABORT("sizeof (struct hblk) != HBLKSIZE\n");
-    }
+    GC_ASSERT(sizeof (ptr_t) == sizeof(word));
+    GC_ASSERT(sizeof (signed_word) == sizeof(word));
+    GC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
 #     if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
   	ABORT(
@@ -472,55 +515,33 @@ void GC_init_inner()
   	  "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
 #     endif
 #     ifdef STACK_GROWS_DOWN
-        if ((word)(&dummy) > (word)GC_stackbottom) {
-          GC_err_printf0(
-          	"STACK_GROWS_DOWN is defd, but stack appears to grow up\n");
-#	  ifndef UTS4  /* Compiler bug workaround */
-            GC_err_printf2("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
-          	   	   (unsigned long) (&dummy),
-          	   	   (unsigned long) GC_stackbottom);
-#	  endif
-          ABORT("stack direction 3\n");
-        }
+        GC_ASSERT((word)(&dummy) <= (word)GC_stackbottom);
 #     else
-        if ((word)(&dummy) < (word)GC_stackbottom) {
-          GC_err_printf0(
-          	"STACK_GROWS_UP is defd, but stack appears to grow down\n");
-          GC_err_printf2("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
-          	       	 (unsigned long) (&dummy),
-          	     	 (unsigned long) GC_stackbottom);
-          ABORT("stack direction 4");
-        }
+        GC_ASSERT((word)(&dummy) >= (word)GC_stackbottom);
 #     endif
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
-      if ((word)(-1) < (word)0) {
-    	GC_err_printf0("The type word should be an unsigned integer type\n");
-    	GC_err_printf0("It appears to be signed\n");
-    	ABORT("word");
-      }
+      GC_ASSERT((word)(-1) > (word)0);
+      /* word should be unsigned */
 #   endif
-    if ((signed_word)(-1) >= (signed_word)0) {
-    	GC_err_printf0(
-    		"The type signed_word should be a signed integer type\n");
-    	GC_err_printf0("It appears to be unsigned\n");
-    	ABORT("signed_word");
-    }
+    GC_ASSERT((signed_word)(-1) < (signed_word)0);
     
-    /* MATTHEW: In case we use near data for 68k Mac, this array is declared FAR */
+    /* PLTSCHEME: In case we use near data for 68k Mac, this array is declared FAR */
 #ifdef __MC68K__
     GC_add_roots_inner((ptr_t)&GC_arrays, 
                        (ptr_t)(((char *)&GC_arrays) + sizeof(GC_arrays)), 
                        FALSE);
 #endif
 
-    /* MATTHEW: for platforms where we don't want to try to find the
+    /* PLTSCHEME: for platforms where we don't want to try to find the
        static variables, we explicitly register the GC's statics. */
     if (GC_use_registered_statics) {
       GC_register_fnl_statics();
       GC_register_allch_statics();
       GC_register_bl_statics();
+#ifdef STUBBORN_ALLOC
       GC_register_stubborn_statics();
+#endif
     }
 
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
@@ -555,10 +576,10 @@ void GC_init_inner()
 #   endif
     /* Get black list set up */
       GC_gcollect_inner();
+    GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
 #   endif
-    GC_is_initialized = TRUE;
     /* Convince lint that some things are used */
 #   ifdef LINT
       {
@@ -579,7 +600,8 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
-# if  !defined(FIND_LEAK) && !defined(SMALL_CONFIG)
+# if !defined(SMALL_CONFIG)
+  if (!GC_find_leak) {
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
@@ -617,29 +639,46 @@ void GC_enable_incremental GC_PROTO(())
 out:
     UNLOCK();
     ENABLE_SIGNALS();
+  }
 # endif
 }
 
 
-#ifdef MSWIN32
-# define LOG_FILE "gc.log"
+#if defined(MSWIN32) || defined(MSWINCE)
+# define LOG_FILE _T("gc.log")
 
-  HANDLE GC_stdout = 0, GC_stderr;
-  int GC_tmp;
-  DWORD GC_junk;
+  HANDLE GC_stdout = 0;
 
-  void GC_set_files()
+  void GC_deinit()
   {
-    if (!GC_stdout) {
-        GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE,
-        		       FILE_SHARE_READ | FILE_SHARE_WRITE,
-        		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
-        		       NULL); 
-    	if (INVALID_HANDLE_VALUE == GC_stdout) ABORT("Open of log file failed");
-    }
-    if (GC_stderr == 0) {
-	GC_stderr = GC_stdout;
-    }
+      if (GC_is_initialized) {
+  	DeleteCriticalSection(&GC_write_cs);
+      }
+  }
+
+  int GC_write(buf, len)
+  char * buf;
+  size_t len;
+  {
+      BOOL tmp;
+      DWORD written;
+      if (len == 0)
+	  return 0;
+      EnterCriticalSection(&GC_write_cs);
+      if (GC_stdout == INVALID_HANDLE_VALUE) {
+	  return -1;
+      } else if (GC_stdout == 0) {
+	  GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE,
+        			 FILE_SHARE_READ | FILE_SHARE_WRITE,
+        			 NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
+        			 NULL); 
+    	  if (GC_stdout == INVALID_HANDLE_VALUE) ABORT("Open of log file failed");
+      }
+      tmp = WriteFile(GC_stdout, buf, len, &written, NULL);
+      if (!tmp)
+	  DebugBreak();
+      LeaveCriticalSection(&GC_write_cs);
+      return tmp ? (int)written : -1;
   }
 
 #endif
@@ -660,7 +699,7 @@ int GC_tmp;  /* Should really be local ... */
   }
 #endif
 
-#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32)
+#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
   int GC_stdout = 1;
   int GC_stderr = 2;
 # if !defined(AMIGA)
@@ -668,7 +707,7 @@ int GC_tmp;  /* Should really be local ... */
 # endif
 #endif
 
-#if !defined(MSWIN32)  && !defined(OS2) && !defined(MACOS)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) && !defined(MACOS)
 int GC_write(fd, buf, len)
 int fd;
 char *buf;
@@ -691,11 +730,8 @@ size_t len;
 }
 #endif /* UN*X */
 
-#ifdef MSWIN32
-#   define WRITE(f, buf, len) (GC_set_files(), \
-			       GC_tmp = WriteFile((f), (buf), \
-			       			  (len), &GC_junk, NULL),\
-			       (GC_tmp? 1 : -1))
+#if defined(MSWIN32) || defined(MSWINCE)
+#   define WRITE(f, buf, len) GC_write(buf, len)
 #else
 #   if defined(OS2) || defined(MACOS)
 #   define WRITE(f, buf, len) (GC_set_files(), \
@@ -713,7 +749,7 @@ size_t len;
 /* same size as long, and that the format conversions expect something	  */
 /* of that size.							  */
 void GC_printf(format, a, b, c, d, e, f)
-char * format;
+GC_CONST char * format;
 long a, b, c, d, e, f;
 {
     char buf[1025];
@@ -726,7 +762,7 @@ long a, b, c, d, e, f;
 }
 
 void GC_err_printf(format, a, b, c, d, e, f)
-char * format;
+GC_CONST char * format;
 long a, b, c, d, e, f;
 {
     char buf[1025];
@@ -738,7 +774,7 @@ long a, b, c, d, e, f;
 }
 
 void GC_err_puts(s)
-char *s;
+GC_CONST char *s;
 {
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
@@ -775,10 +811,28 @@ GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
 #ifndef PCR
 void GC_abort(msg)
-char * msg;
+GC_CONST char * msg;
 {
-    GC_err_printf1("%s\n", msg);
-    (void) abort();
+#   if defined(MSWIN32)
+      (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
+      DebugBreak();
+#   else
+      GC_err_printf1("%s\n", msg);
+#   endif
+#   if defined(LINUX) || defined(HPUX) || defined(SUNOS5) || defined(IRIX)
+	if (getenv("GC_LOOP_ON_ABORT") != NULL) {
+	    /* In many cases it's easier to debug a running process.	*/
+	    /* It's arguably nicer to sleep, but that makes it harder	*/
+	    /* to look at the thread if the debugger doesn't know much	*/
+	    /* about threads.						*/
+	    for(;;);
+	}
+#   endif
+#   ifdef MSWIN32
+	DebugBreak();
+#   else
+        (void) abort();
+#   endif
 }
 #endif
 
@@ -815,7 +869,8 @@ struct callinfo info[NFRAMES];
 
 #endif /* SAVE_CALL_CHAIN */
 
-# ifdef SRC_M3
+/* Needed by SRC_M3, gcj, and should perhaps be the official interface	*/
+/* to GC_dont_gc.							*/
 void GC_enable()
 {
     GC_dont_gc--;
@@ -825,7 +880,6 @@ void GC_disable()
 {
     GC_dont_gc++;
 }
-# endif
 
 #if !defined(NO_DEBUGGING)
 
@@ -841,10 +895,9 @@ void GC_dump()
     GC_print_block_list();
 }
 
-# endif /* NO_DEBUGGING */
+#endif /* NO_DEBUGGING */
 
-
-/* MATTHEW: GC_get_memory_use */
+/* PLTSCHEME: GC_get_memory_use */
 static void get_size(struct hblk *h, word lptr)
 {
   hdr *hhdr = HDR(h);

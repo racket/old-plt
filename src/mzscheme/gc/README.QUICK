@@ -1,5 +1,7 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+Copyright (c) 1999 by Hewlett-Packard. All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -38,4 +40,18 @@ to never contain pointers, use GC_MALLOC_ATOMIC instead of
 GC_MALLOC.
 
 Define GC_DEBUG before including gc.h for additional checking.
+
+WARNINGS:
+
+Do not store the only pointer to an object in memory allocated
+with system malloc, since the collector usually does not scan
+memory allocated in this way.
+
+Use with threads may be supported on your system, but requires the
+collector to be built with thread support.  See Makefile.  The collector
+does not guarantee to scan thread-local storage (e.g. of the kind accessed
+with pthread_getspecific()).  The collector does scan thread stacks,
+though, so generally the best solution is to ensure that any pointers
+stored in thread-local storage are also stored on the thread's stack for
+the duration of their lifetime.
 

@@ -70,7 +70,7 @@ OBJS= data.o create.o misc.o rgb.o \
 all: libXpm.a
 
 clean: 
-	$(RM) *.o libXpm.a
+	rm *.o libXpm.a
 
 libXpm.a: $(OBJS)
 	$(AR) $(ARFLAGS) libXpm.a $(OBJS)

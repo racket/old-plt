@@ -1,6 +1,7 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
 Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
-Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved.
+Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,31 +12,31 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 5.0alpha2 of a conservative garbage collector for C and C++.
+This is version 6.0alpha4 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
-http://reality.sgi.com/boehm/gc.html
+http://www.hpl.hp.com/personal/Hans_Boehm/gc
 
 HISTORY -
 
   Early versions of this collector were developed as a part of research
 projects supported in part by the National Science Foundation
 and the Defense Advance Research Projects Agency.
-Much of the code was rewritten by Hans-J. Boehm at Xerox PARC
-and is now maintained by him at SGI (boehm@sgi.com or boehm@acm.org).
+Much of the code was rewritten by Hans-J. Boehm (boehm@acm.org) at Xerox PARC,
+SGI, and HP Labs.
 
 Some other contributors:  
 
 More recent contributors are mentioned in the modification history at the
 end of this file.  My apologies for any omissions.
 
-The SPARC specific code was contributed by Mark Weiser
-(weiser@parc.xerox.com).  The Encore Multimax modifications were supplied by
+The SPARC specific code was contributed by Mark Weiser.
+The Encore Multimax modifications were supplied by
 Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the RT is largely due
-to Vernon Lee (scorpion@rice.edu), on machines made available by IBM.
+to Vernon Lee, on machines made available by IBM.
 Much of the HP specific code and a number of good suggestions for improving the
-generic code are due to Walter Underwood (wunder@hp-ses.sde.hp.com).
+generic code are due to Walter Underwood.
 Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
 Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
 subsequently provided updates and information on variation between ULTRIX
@@ -150,7 +151,7 @@ with ALL_INTERIOR_POINTERS and to use GC_malloc_ignore_off_page if
 you get collector warnings from allocations of very large objects.
 See README.debugging for details.
 
-  Note that pointers inside memory allocated by the standard "malloc" are not
+  WARNING: pointers inside memory allocated by the standard "malloc" are not
 seen by the garbage collector.  Thus objects pointed to only from such a
 region may be prematurely deallocated.  It is thus suggested that the
 standard "malloc" be used only for memory regions, such as I/O buffers, that
@@ -160,13 +161,17 @@ are correctly recognized.  (Note that GC_malloc_uncollectable has semantics
 similar to standard malloc, but allocates objects that are traced by the
 collector.)
 
-  The collector does not always know how to find pointers in data
+  WARNING: the collector does not always know how to find pointers in data
 areas that are associated with dynamic libraries.  This is easy to
 remedy IF you know how to find those data areas on your operating
 system (see GC_add_roots).  Code for doing this under SunOS, IRIX 5.X and 6.X,
 HP/UX, Alpha OSF/1, Linux, and win32 is included and used by default.  (See
 README.win32 for win32 details.)  On other systems pointers from dynamic
 library data areas may not be considered by the collector.
+If you're writing a program that depends on the collector scanning
+dynamic library data areas, it may be a good idea to include at least
+one call to GC_is_visible() to ensure that those areas are visible
+to the collector.
 
   Note that the garbage collector does not need to be informed of shared
 read-only data.  However if the shared library mechanism can introduce
@@ -174,17 +179,22 @@ discontiguous data areas that may contain pointers, then the collector does
 need to be informed.
 
   Signal processing for most signals may be deferred during collection,
-and during uninterruptible parts of the allocation process.  Unlike
-standard ANSI C mallocs, it can be safe to invoke malloc
-from a signal handler while another malloc is in progress, provided
-the original malloc is not restarted.  (Empirically, many UNIX
-applications already assume this.)  To obtain this level  of signal
-safety, remove the definition of -DNO_SIGNALS in Makefile.  This incurs
-a minor performance penalty, and hence is no longer the default.
+and during uninterruptible parts of the allocation process.
+Like standard ANSI C mallocs, by default it is unsafe to invoke
+malloc (and other GC routines) from a signal handler while another
+malloc call may be in progress. Removing -DNO_SIGNALS from Makefile
+attempts to remedy that.  But that may not be reliable with a compiler that
+substantially reorders memory operations inside GC_malloc.
 
   The allocator/collector can also be configured for thread-safe operation.
 (Full signal safety can also be achieved, but only at the cost of two system
 calls per malloc, which is usually unacceptable.)
+WARNING: the collector does not guarantee to scan thread-local storage
+(e.g. of the kind accessed with pthread_getspecific()).  The collector
+does scan thread stacks, though, so generally the best solution is to
+ensure that any pointers stored in thread-local storage are also
+stored on the thread's stack for the duration of their lifetime.
+(This is arguably a longstanding bug, but it hasn't been fixed yet.)
 
 INSTALLATION AND PORTABILITY
 
@@ -202,11 +212,11 @@ about configuring the collector, which is useful primarily if you have
 a machine that's not already supported.  Gctest is a somewhat superficial
 test of collector functionality.  Failure is indicated by a core dump or
 a message to the effect that the collector is broken.  Gctest takes about 
-35 seconds to run on a SPARCstation 2. On a slower machine,
-expect it to take a while.  It may use up to 8 MB of memory.  (The
-multi-threaded version will use more.)  "Make test" will also, as
-its last step, attempt to build and test the "cord" string library.
-This will fail without an ANSI C compiler.
+35 seconds to run on a SPARCstation 2. It may use up to 8 MB of memory.  (The
+multi-threaded version will use more.  64-bit versions may use more.)
+"Make test" will also, as its last step, attempt to build and test the
+"cord" string library.  This will fail without an ANSI C compiler, but
+the garbage collector itself should still be usable.
 
   The Makefile will generate a library gc.a which you should link against.
 Typing "make cords" will add the cord library to gc.a.
@@ -214,7 +224,6 @@ Note that this requires an ANSI C compiler.
 
   It is suggested that if you need to replace a piece of the collector
 (e.g. GC_mark_rts.c) you simply list your version ahead of gc.a on the
-		work.)
 ld command line, rather than replacing the one in gc.a.  (This will
 generate numerous warnings under some versions of AIX, but it still
 works.)
@@ -239,7 +248,7 @@ files.
 
   Dynamic libraries are completely supported only under SunOS
 (and even that support is not functional on the last Sun 3 release),
-IRIX 5&6, HP-PA, Win32 (not Win32S) and OSF/1 on DEC AXP machines.
+Linux, IRIX 5&6, HP-PA, Win32 (not Win32S) and OSF/1 on DEC AXP machines.
 On other machines we recommend that you do one of the following:
 
   1) Add dynamic library support (and send us the code).
@@ -475,9 +484,8 @@ intended to run with malloc/free (e.g. code with extreme real-time or
 portability constraints).  To do so define FIND_LEAK in Makefile
 This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
-object is found that has not been explicitly freed.  The collector will
-no longer reclaim inaccessible memory; in this form it is purely a
-debugging tool.
+object is found that has not been explicitly freed.  Such objects will
+also be automatically reclaimed.
   Productive use of this facility normally involves redefining report_leak
 to do something more intelligent.  This typically requires annotating
 objects with additional information (e.g. creation time stack trace) that
@@ -1485,9 +1493,282 @@ Since 4.14
 
 Since 5.0alpha1
  - Fixed bugs introduced in alpha1 (OpenBSD & large block initialization).
-
  - Added -DKEEP_BACK_PTRS and backptr.h interface.  (The implementation
    idea came from Al Demers.)
+
+Since 5.0alpha2
+ - Added some highly incomplete code to support a copied young generation.
+   Comments on nursery.h are appreciated.
+ - Changed -DFIND_LEAK, -DJAVA_FINALIZATION, and -DFINALIZE_ON_DEMAND,
+   so the same effect could be obtained with a runtime switch.   This is
+   a step towards standardizing on a single dynamic GC library.
+ - Significantly changed the way leak detection is handled, as a consequence
+   of the above.
+
+Since 5.0 alpha3
+ - Added protection fault handling patch for Linux/M68K from Fergus
+   Henderson and Roman Hodek.
+ - Removed the tests for SGI_SOURCE in new_gc_alloc.h.  This was causing that
+   interface to fail on nonSGI platforms.
+ - Changed the Linux stack finding code to use /proc, after changing it
+   to use HEURISTIC1.  (Thanks to David Mossberger for pointing out the
+   /proc hook.)
+ - Added HP/UX incremental GC support and HP/UX 11 thread support.
+   Thread support is currently still flakey.
+ - Added basic Linux/IA64 support.
+ - Integrated Anthony Green's PicoJava support.
+ - Integrated Scott Ananian's StrongARM/NetBSD support.
+ - Fixed some fairly serious performance bugs in the incremental
+   collector.  These have probably been there essentially forever.
+   (Mark bits were sometimes set before scanning dirty pages.
+   The reclaim phase unnecessarily dirtied full small object pages.)
+ - Changed the reclaim phase to ignore nearly full pages to avoid
+   touching them.
+ - Limited GC_black_list_spacing to roughly the heap growth increment.
+ - Changed full collection triggering heuristic to decrease full GC
+   frequency by default, but to explicitly trigger full GCs during
+   heap growth.  This doesn't always improve things, but on average it's
+   probably a win.
+ - GC_debug_free(0, ...) failed.  Thanks to Fergus Henderson for the
+   bug report and fix.
+
+Since 5.0 alpha4
+ - GC_malloc_explicitly_typed and friends sometimes failed to
+   initialize first word.
+ - Added allocation routines and support in the marker for mark descriptors
+   in a type structure referenced by the first word of an object.  This was
+   introduced to support gcj, but hopefully in a way that makes it
+   generically useful.
+ - Added GC_requested_heapsize, and inhibited collections in nonincremental
+   mode if the actual used heap size is less than what was explicitly
+   requested.
+ - The Solaris pthreads version of GC_pthread_create didn't handle a NULL
+   attribute pointer.  Solaris thread support used the wrong default thread
+   stack size.  (Thanks to Melissa O'Neill for the patch.)
+ - Changed PUSH_CONTENTS macro to no longer modify first parameter.
+   This usually doesn't matter, but it was certainly an accident waiting
+   to happen ...
+ - Added GC_register_finalizer_no_order and friends to gc.h.  They're
+   needed by Java implementations.
+ - Integrated a fix for a win32 deadlock resulting from clock() calling
+   malloc.  (Thanks to Chris Dodd.)
+ - Integrated Hiroshi Kawashima's port to Linux/MIPS.  This was designed
+   for a handheld platform, and may or may not be sufficient for other
+   machines.
+ - Fixed a va_arg problem with the %c specifier in cordprnt.c.  It appears
+   that this was always broken, but recent versions of gcc are the first to
+   report the (statically detectable) bug.
+ - Added an attempt at a more general solution to dlopen races/deadlocks.
+   GC_dlopen now temporarily disables collection.  Still not ideal, but ...
+ - Added -DUSE_I686_PREFETCH, -DUSE_3DNOW_PREFETCH, and support for IA64
+   prefetch instructions.  May improve performance measurably, but I'm not
+   sure the code will run correctly on processors that don't support the
+   instruction.  Won't build except with very recent gcc.
+ - Added caching for header lookups in the marker.  This seems to result
+   in a barely measurable performance gain.  Added support for interleaved
+   lookups of two pointers, but unconfigured that since the performance
+   gain is currently near zero, and it adds to code size.
+ - Changed Linux DATA_START definition to check both data_start and
+   __data_start, since nothing else seems to be portable.
+ - Added -DUSE_LD_WRAP to optionally take advantage of the GNU ld function
+   wrapping mechanism.  Probably currently useful only on Linux.
+ - Moved some variables for the scratch allocator into GC_arrays, on
+   Martin Hirzel's suggestion.
+ - Fixed a win32 threads bug that caused the collector to not look for
+   interior pointers from one of the thread stacks without
+   ALL_INTERIOR_POINTERS.  (Thanks to Jeff Sturm.)
+ - Added Mingw32 support.  (Thanks again to Jeff Sturm for the patch.)
+ - Changed the alpha port to use the generic register scanning code instead
+   of alpha_mach_dep.s.  Alpha_mach_dep.s doesn't look for pointers in fp
+   registers, but gcc sometimes spills pointers there.  (Thanks to Manuel
+   Serrano for helping me debug this by email.)  Changed the IA64 code to
+   do something similar for similar reasons.
+
+[5.0alpha5 doesn't really exist, but it may have escaped.]
+
+Since 5.0alpha6:
+ - -DREDIRECT_MALLOC was broken in alpha6. Fixed.
+ - Cleaned up gc_ccp.h slightly, thus also causing the HP C++ compiler to
+   accept it.
+ - Removed accidental reference to dbg_mlc.c, which caused dbg_mlc.o to be
+   linked into every executable.
+ - Added PREFETCH to bitmap marker.  Changed it to use the header cache.
+ - GC_push_marked sometimes pushed one object too many, resulting in a
+   segmentation fault in GC_mark_from_mark_stack.  This was probably an old
+   bug.  It finally showed up in gctest on win32.
+ - Gc_priv.h erroneously #defined GC_incremental to be TRUE instead of FALSE
+   when SMALL_CONFIG was defined.  This was no doubt a major performance bug for
+   the default win32 configuration.
+ - Removed -DSMALL_CONFIG from NT_MAKEFILE.  It seemed like an anchronism now
+   that the average PC has 64MB or so.
+ - Integrated Bryce McKinley's patches for linux threads and dynamic loading
+   from the libgcj tree.  Turned on dynamic loading support for Linux/PPC.
+ - Changed the stack finding code to use environ on HP/UX.  (Thanks
+   to Gustavo Rodriguez-Rivera for the suggestion.)  This should probably
+   be done on other platforms, too.  Since I can't test those, that'll
+   wait until after 5.0.
+
+Since 5.0alpha7:
+ - Fixed threadlibs.c for linux threads.  -DUSE_LD_WRAP was broken and
+   -ldl was omitted.  Fixed Linux stack finding code to handle
+   -DUSE_LD_WRAP correctly.
+ - Added MSWIN32 exception handler around marker, so that the collector
+   can recover from root segments that are unmapped during the collection.
+   This caused occasional failures under Windows 98, and may also be
+   an issue under Windows NT/2000.
+
+Since 5.0
+ - Fixed a gc.h header bug which showed up under Irix.  (Thanks to
+   Dan Sullivan.)
+ - Fixed a typo in GC_double_descr in typd_mlc.c not getting traced correctly.
+   This probably could result in objects described by array descriptors not
+   getting traced correctly.  (Thanks to Ben Hutchings for pointing this out.)
+ - The block nearly full tests in reclaim.c were not correct for 64 bit
+   environments.  This could result in unnecessary heap growth under unlikely
+   conditions.
+
+Since 5.1
+ - dyn_load.c declared GC_scratch_last_end_ptr as an extern even if it
+   was defined as a macro.  This prevented the collector from building on
+   Irix.
+ - We quietly assumed that indirect mark descriptors were never 0.
+   Our own typed allocation interface violated that.  This could result
+   in segmentation faults in the marker with typed allocation.
+ - Fixed a _DUSE_MUNMAP bug in the heap block allocation code.
+   (Thanks to Ben Hutchings for the patch.)
+ - Taught the collector about VC++ handling array operator new.
+   (Thanks again to Ben Hutchings for the patch.)
+ - The two copies of gc_hdrs.h had diverged.  Made one a link to the other
+   again.
+
+Since 5.2  (A few 5.2 patches are not in 6.0alpha1)
+ - Fixed _end declaration for OSF1.
+ - There were lots of spurious leak reports in leak detection mode, caused
+   by the fact that some pages were not being swept, and hence unmarked
+   objects weren't making it onto free lists.  (This bug dated back to 5.0.)
+ - Fixed a typo in the liblinuxgc.so Makefile rule.
+ - Added the GetExitCodeThread to Win32 GC_stop_world to (mostly) work
+   around a Windows 95 GetOpenFileName problem.  (Thanks to Jacob Navia.)
+
+Since 5.3
+ - Fixed a typo that prevented compilation with -DUSE_3DNOW_PREFETCH.
+   (Thanks to Shawn Wagner for actually testing this.)
+ - Fixed GC_is_thread_stack in solaris_threads.c.  It forgot to return a value
+   in the common case.  I wonder why nobody noticed?
+
+Since 5.4  (A few 5.3 patches are not in 6.0alpha2)
+ - Added HP/PA prefetch support.
+ - Added -DDBG_HDRS_ALL and -DSHORT_DBG_HDRS to reduce the cost and improve
+   the reliability of generating pointer backtrace information, e.g. in
+   the Bigloo environment.
+ - Added parallel marking support (-DPARALLEL_MARK).  This currently
+   works only under IA32 and IA64 Linux, but it shouldn't be hard to adapt
+   to other platforms.  This is intended to be a lighter-weight (less
+   new code, probably not as scalable) solution than the work by Toshio Endo
+   et al, at the University of Tokyo.  A number of their ideas were
+   reused, though the code wasn't, and the underlying data structure
+   is significantly different.  In particular, we keep the global mark
+   stack as a single shared data structure, but most of the work is done
+   on smaller thread-local mark stacks.
+ - Changed GC_malloc_many to be cheaper, and to require less mutual exclusion
+   with -DPARALLEL_MARK.
+ - Added full support for thread local allocation under Linux
+   (-DTHREAD_LOCAL_ALLOC).  This is a thin veneer on GC_malloc_many, and
+   should be easily portable to other platforms, especially those that
+   support pthreads.
+ - CLEAR_DOUBLE was not always getting invoked when it should have been.
+ - GC_gcj_malloc and friends used different out of memory handling than
+   everything else, probably because I forgot about one when I implemented
+   the other.  They now both call GC_oom_fn(), not GC_oom_action().
+ - Integrated Jakub Jelinek's fixes for Linux/SPARC.
+ - Moved GC_objfreelist, GC_aobjfreelist, and GC_words_allocd out of
+   GC_arrays, and separately registered the first two as excluded roots.
+   This makes code compiled with gc_inl.h less dependent on the
+   collector version.  (It would be nice to remove the inclusion of
+   gc_priv.h by gc_inl.h completely, but we're not there yet.  The
+   locking definitions in gc_priv.h are still referenced.)
+   This change was later coniditoned on SEPARATE_GLOBALS, which
+   is not defined by default, since it involves a performance hit.
+ - Register GC_obj_kinds separately as an excluded root region.  The
+   attempt to register it with GC_arrays was usually failing.  (This wasn't
+   serious, but seemed to generate some confusion.) 
+ - Moved backptr.h to gc_backptr.h.
+
+Since 6.0alpha1
+ - Added USE_MARK_BYTES to reduce the need for compare-and-swap on platforms
+   for which that's expensive.
+ - Fixed a locking bug ib GC_gcj_malloc and some locking assertion problems.
+ - Added a missing volatile to OR_WORD and renamed the parameter to
+   GC_compare_and_swap so it's not a C++ reserved word.  (Thanks to
+   Toshio Endo for pointing out both of those.)
+ - Changed Linux dynamic library registration code to look at /proc/self/maps
+   instead of the rld data structures when REDIRECT_MALLOC is defined.
+   Otherwise some of the rld data data structures may be prematurely garbage
+   collected.  (Thanks to Eric Benson for helping to track this down.)
+ - Fixed USE_LD_WRAP a bit more, so it should now work without threads.
+ - Renamed XXX_THREADS macros to GC_XXX_THREADS for namespace correctness.
+   Tomporarily added some backward compatibility definitions.  Renamed
+   USE_LD_WRAP to GC_USE_LD_WRAP.
+ - Many MACOSX POWERPC changes, some additions to the gctest output, and
+   a few minor generic bug fixes.  (Thanks to Dietmar Planitzer.)
+
+Since 6.0 alpha2
+ - Fixed the /proc/self/maps code to not seek, since that apparently is not
+   reliable across all interesting kernels.
+ - Fixed some compilation problems in the absence of PARALLEL_MARK
+   (introduced in alpha2).
+ - Fixed an algorithmic problem with PARALLEL_MARK.  If work needs to
+   be given back to the main mark "stack", the BOTTOM entries of the local
+   stack should be given away, not the top ones.  This has substantial
+   performance impact, especially for > 2 processors, from what I can tell.
+ - Extracted gc_lock.h from gc_priv.h.  This should eventually make it a
+   bit easier to avoid including gc_priv.h in clients.
+ - Moved all include files to include/ and removed duplicate links to the
+   same file.  The old scheme was a bad idea because it was too easy to get the
+   copies out of sync, and many systems don't support hard links.
+   Unfortunately, it's likely that I broke some of the non-Unix Makefiles in
+   the process, although I tried to update them appropriately.
+ - Removed the partial support for a copied nursery.  It's not clear that
+   this would be a tremendous win, since we don't consistently lose to
+   generational copying collectors.  And it would significantly complicate
+   many things.  May be reintroduced if/when it really turns out to win.
+ - Removed references to IRIX_JDK_THREADS, since I believe there never
+   were and never will be any clients.
+ - Added some code to linux_threads.c to possibly support HPUX threads
+   using the Linux code.  Unfortunately, it doesn't work yet, and is
+   currently disabled.
+ - Added support under Linux/X86 for saving the call chain, both in (debug)
+   objects for client debugging, and in GC_arrays._last_stack for GC
+   debugging.  This was previously supported only under Solaris.  It is
+   not enabled by default under X86, since it requires that code be compiled
+   to explicitly dave frame pointers on the call stack.  (With gcc this
+   currently happens by default, but is often turned off explicitly.)
+   To turn it on, define SAVE_CALL_CHAIN.
+ 
+Since 6.0 alpha3
+ - Moved up the detection of mostly full blocks to the initiatiation of the
+   sweep phase.  This eliminates some lock conention in the PARALLEL_MARK case,
+   as multiple threads try to look at mostly full blocks concurrently.
+ - Restored the code in GC_malloc_many that grabs a prefix of the global
+   free list.  This avoids the case in which every GC_malloc_many call
+   tries and fails to allocate a new heap block, and the returns a single
+   object from the global free list.
+ - Some minor fixes in new_hblk.c.  (Attempted to build free lists in order
+   of increasing addresses instead of decreasing addresses for cache performance
+   reasons.  But this seems to be only a very minor gain with -DEAGER_SWEEP,
+   and a loss in other cases.  So the change was backed out.)
+ - Fixed some of the documentation.  (Thanks in large part to Fergus
+   Henderson.)
+ - Fixed the Linux USE_PROC_FOR_LIBRARIES code to deal with apps that perform
+   large numbers of mmaps.  (Thanks to Eric Benson.)  Also fixed that code to
+   deal with short reads.
+ - Added GC_get_total_bytes(). 
+ - Fixed leak detection mode to avoid spurious messages under linuxthreads.
+   (This should also now be easy for the other supported threads packages.
+   But the code is tricky enough that I'm hesitant to do it without being able
+   to test.  Everything allocated in the GC thread support itself should be
+   explicitly deallocated.)
+ - Made it possible (with luck) to redirect malloc to GC_local_malloc.
 
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector
@@ -1502,8 +1783,10 @@ To do:
    be possible to conditionally intercept mmap and use GC_exclude_static_roots.
    The real fix is to walk rld data structures, which looks possible.
  - Integrate MIT and DEC pthreads ports.
- - Deal with very uneven black-listing distributions.  If all the black listed
-   blocks reside in the newly allocated heap section, the heuristic for
-   temporarily ignoring black-listing fails, and the heap grows too much.
-   (This was observed in only one case, and could be worked around, but ...)
- - Some platform specific updates are waiting for 4.15alpha1. 
+ - Incremental collector should handle large objects better.  Currently,
+   it looks like the whole object is treated as dirty if any part of it
+   is.
+ - Cord/cordprnt.c doesn't build on a few platforms (notably PowerPC), since
+   we make some unwarranted assumptions about how varargs are handled.  This
+   currently makes the cord-aware versions of printf unusable on some platforms.
+   Fixing this is unfortunately not trivial.

@@ -20,15 +20,15 @@ You may want to reverse this decisions if you use -DREDIRECT_MALLOC=...
 
 SOLARIS THREADS:
 
-The collector must be compiled with -DSOLARIS_THREADS to be thread safe.
+The collector must be compiled with -DGC_SOLARIS_THREADS (thr_ functions)
+or -DGC_SOLARIS_PTHREADS (pthread_ functions) to be thread safe.
 It is also essential that gc.h be included in files that call thr_create,
 thr_join, thr_suspend, thr_continue, or dlopen.  Gc.h macro defines
 these to also do GC bookkeeping, etc.  Gc.h must be included with
-SOLARIS_THREADS defined, otherwise these replacements are not visible.
+one or both of these macros defined, otherwise
+these replacements are not visible.
 A collector built in this way way only be used by programs that are
 linked with the threads library.
-
-If you are using the Pthreads interface, also define _SOLARIS_PTHREADS.
 
 In this mode, the collector contains various workarounds for older Solaris
 bugs.  Mostly, these should not be noticeable unless you look at system
@@ -37,13 +37,10 @@ a thread stack.  If you know that you will only be running Solaris2.5
 or later, it should be possible to fix this by compiling the collector
 with -DSOLARIS23_MPROTECT_BUG_FIXED.
 
-Jeremy Fitzhardinge points out that there is a problem with the dlopen
-replacement, in that startup code in the library is run while the allocation
-lock is held.  This appears to be difficult to fix, since the collector does
-look at data structures maintained by dlopen, and hence some locking is needed
-around the dlopen call.  Defining USE_PROC_FOR_LIBRARIES will get address
-space layout information from /proc avoiding the dlopen lock.  But this has
-other disadvanatages, e.g. mmapped files may be scanned.
+Since 5.0 alpha5, dlopen disables collection temporarily,
+unless USE_PROC_FOR_LIBRARIES is defined.  In some unlikely cases, this
+can result in unpleasant heap growth.  But it seems better than the
+race/deadlock issues we had before.
 
 If solaris_threads are used on an X86 processor with malloc redirected to
 GC_malloc, it is necessary to call GC_thr_init explicitly before forking the

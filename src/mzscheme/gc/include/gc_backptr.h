@@ -20,6 +20,8 @@
  * The implementation idea is due to A. Demers.
  */
 
+#ifndef GC_BACKPTR_H
+#define GC_BACKPTR_H
 /* Store information about the object referencing dest in *base_p     */
 /* and *offset_p.                                                     */
 /* If multiple objects or roots point to dest, the one reported	      */
@@ -29,9 +31,11 @@
 /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
 /*   Returns 1 on success, 0 if source couldn't be determined.        */
 /* Dest can be any address within a heap object.                      */
-typedef enum {  GC_UNREFERENCED, /* No refence info available.		*/
+typedef enum {  GC_UNREFERENCED, /* No reference info available.	*/
 		GC_NO_SPACE,	/* Dest not allocated with debug alloc  */
 		GC_REFD_FROM_ROOT, /* Referenced directly by root *base_p */
+		GC_REFD_FROM_REG,  /* Referenced from a register, i.e.	*/
+				   /* a root without an address.	*/
 		GC_REFD_FROM_HEAP, /* Referenced from another heap obj. */
 		GC_FINALIZER_REFD /* Finalizable and hence accessible.  */
 } GC_ref_kind;
@@ -53,4 +57,9 @@ void * GC_generate_random_valid_address(void);
 /* source in dbg_mlc.c also serves as a sample client.	      */
 void GC_generate_random_backtrace(void);
 
+/* Print a backtrace from a specific address.  Used by the 	*/
+/* above.  The client should call GC_gcollect() immediately	*/
+/* before invocation.						*/
+void GC_print_backtrace(void *);
 
+#endif /* GC_BACKPTR_H */

@@ -13,7 +13,7 @@
 
 //
 // This is a C++ header file that is intended to replace the SGI STL
-// alloc.h.
+// alloc.h.  This assumes SGI STL version < 3.0.
 //
 // This assumes the collector has been compiled with -DATOMIC_UNCOLLECTABLE
 // and -DALL_INTERIOR_POINTERS.  We also recommend
@@ -24,6 +24,9 @@
 //
 // This uses template classes with static members, and hence does not work
 // with g++ 2.7.2 and earlier.
+//
+// This code assumes that the collector itself has been compiled with a
+// compiler that defines __STDC__ .
 //
 
 #include "gc.h"

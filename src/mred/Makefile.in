@@ -137,6 +137,7 @@ clean:
 	rm -f gc2/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
+	cd ../wxcommon/jpeg; $(MAKE) clean
 
 install:
 	if [ ! -d $(srcdir)/../../.bin ] ; then mkdir $(srcdir)/../../.bin ; fi

@@ -14,7 +14,7 @@
 /* Boehm, July 31, 1995 5:02 pm PDT */
 
 
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 # ifdef STUBBORN_ALLOC
 /* Stubborn object (hard to change, nearly immutable) allocation. */
@@ -50,7 +50,7 @@ void GC_stubborn_init()
 #   define INIT_SIZE 10
 
     GC_changing_list_start = (GC_PTR *)
-    			GC_generic_malloc_inner(
+    			GC_INTERNAL_MALLOC(
     				(word)(INIT_SIZE * sizeof(GC_PTR)),
     				PTRFREE);
     BZERO(GC_changing_list_start,
@@ -88,7 +88,7 @@ GC_bool GC_compact_changing_list()
     }
     if (2 * count > old_size) new_size = 2 * count;
     new_list = (GC_PTR *)
-    		GC_generic_malloc_inner(
+    		GC_INTERNAL_MALLOC(
     				new_size * sizeof(GC_PTR), PTRFREE);
     		/* PTRFREE is a lie.  But we don't want the collector to  */
     		/* consider these.  We do want the list itself to be  	  */
@@ -289,6 +289,16 @@ void GC_clean_changing_list()
 #   endif
 }
 
+/* PLTSCHEME: GC_register_stubborn_statics */
+/* See call in GC_init_inner (misc.c) for details. */
+void GC_register_stubborn_statics(void)
+{
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE)
+  REG(GC_changing_list_current);
+  REG(GC_changing_list_limit);
+  REG(GC_changing_list_start);
+}
+
 #else /* !STUBBORN_ALLOC */
 
 # ifdef __STDC__
@@ -313,16 +323,4 @@ GC_PTR p;
 {
 }
 
-
 #endif
-
-
-/* MATTHEW: GC_register_stubborn_statics */
-/* See call in GC_init_inner (misc.c) for details. */
-void GC_register_stubborn_statics(void)
-{
-#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE)
-  REG(GC_changing_list_current);
-  REG(GC_changing_list_limit);
-  REG(GC_changing_list_start);
-}

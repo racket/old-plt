@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  */
 /* Boehm, August 9, 1995 6:09 pm PDT */
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 /*
  * We maintain several hash tables of hblks that have had false hits.
@@ -52,15 +52,19 @@ word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
 
 void GC_clear_bl();
 
-void GC_default_print_heap_obj_proc(p)
-ptr_t p;
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_default_print_heap_obj_proc(ptr_t p)
+# else
+    void GC_default_print_heap_obj_proc(p)
+    ptr_t p;
+# endif
 {
     ptr_t base = GC_base(p);
 
     GC_err_printf2("start: 0x%lx, appr. length: %ld", base, GC_size(base));
 }
 
-void (*GC_print_heap_obj)(/* char * s, ptr_t p */) =
+void (*GC_print_heap_obj) GC_PROTO((ptr_t p)) =
 				GC_default_print_heap_obj_proc;
 
 void GC_print_source_ptr(p)
@@ -144,6 +148,13 @@ void GC_promote_black_lists()
     }
     if (GC_black_list_spacing < 3 * HBLKSIZE) {
     	GC_black_list_spacing = 3 * HBLKSIZE;
+    }
+    if (GC_black_list_spacing > MAXHINCR * HBLKSIZE) {
+	GC_black_list_spacing = MAXHINCR * HBLKSIZE;
+	/* Makes it easier to allocate really huge blocks, which otherwise */
+	/* may have problems with nonuniform blacklist distributions.	   */
+	/* This way we should always succeed immediately after growing the */ 
+	/* heap.							   */
     }
 }
 
@@ -290,11 +301,11 @@ static word total_stack_black_listed()
 }
 
 
-/* MATTHEW: GC_register_bl_statics */
+/* PLTSCHEME: GC_register_bl_statics */
 /* See call in GC_init_inner (misc.c) for details. */
 void GC_register_bl_statics(void)
 {
-#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1)
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, 0)
   REG(GC_incomplete_normal_bl);
   REG(GC_incomplete_stack_bl);
   REG(GC_old_normal_bl);

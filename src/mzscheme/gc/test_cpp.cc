@@ -28,14 +28,22 @@ few minutes to complete.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef __GNUC__
-#   include "gc_alloc.h"
+#ifdef __GNUC__
+#   include "include/new_gc_alloc.h"
+#else
+#   include "include/gc_alloc.h"
 #endif
 extern "C" {
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 }
 #ifdef MSWIN32
 #   include <windows.h>
+#endif
+#ifdef GC_NAME_CONFLICT
+#   define USE_GC UseGC
+    struct foo * GC;
+#else
+#   define USE_GC GC
 #endif
 
 
@@ -187,8 +195,12 @@ int APIENTRY WinMain(
     argc = sizeof(argv_)/sizeof(argv_[0]);  //       commandline
 #  endif 
     int i, iters, n;
-#   if !defined(__GNUC__) && !defined(MACOS)
-      int *x = (int *)alloc::allocate(sizeof(int));
+#   if !defined(MACOS)
+#     ifdef __GNUC__
+        int *x = (int *)gc_alloc::allocate(sizeof(int));
+#     else
+        int *x = (int *)alloc::allocate(sizeof(int));
+#     endif
 
       *x = 29;
       x -= 3;
@@ -214,7 +226,7 @@ int APIENTRY WinMain(
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
             C c1( 2 );           /* stack allocation should work too */
-            D* d = ::new (GC, D::CleanUp, (void*) i) D( i );
+            D* d = ::new (USE_GC, D::CleanUp, (void*) i) D( i );
             F* f = new F;
             if (0 == i % 10) delete c;}
 
@@ -222,9 +234,9 @@ int APIENTRY WinMain(
             drop the references to them immediately, forcing many
             collections. */
         for (i = 0; i < 1000000; i++) {
-            A* a = new (GC) A( i );
+            A* a = new (USE_GC) A( i );
             B* b = new B( i );
-            b = new (GC) B( i );
+            b = new (USE_GC) B( i );
             if (0 == i % 10) {
                 B::Deleting( 1 );
                 delete b;

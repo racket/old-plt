@@ -664,11 +664,13 @@ void GC_add_roots(void *start, void *end) {
   unsigned short owner = current_owner();
 
   if(owner >= roots_top) {
+    unsigned long old_roots_top = roots_top;
+
     roots_top = owner + SET_OF_ROOTS_GROW_AMT;
     roots = (struct root **)realloc(roots, roots_top * sizeof(struct root *));
-    bzero( (void*)((unsigned long)roots + ((roots_top - SET_OF_ROOTS_GROW_AMT)
+    bzero( (void*)((unsigned long)roots + (old_roots_top
 					   * sizeof(struct root *))),
-           SET_OF_ROOTS_GROW_AMT * sizeof(struct root *) );
+           (roots_top - old_roots_top) * sizeof(struct root *) );
   }
 
   if(roots[owner] == NULL) {
@@ -731,7 +733,7 @@ inline struct owner_list *get_root_owners(struct owner_list *ol) {
   unsigned short i;
 
   for(i = 0; i < roots_top; i++)
-    if(roots[i])
+    if(roots[i]) 
       if(!owner_list_member_p(ol, i))
 	ol = owner_list_add(ol, i);
   return ol;
@@ -1050,7 +1052,6 @@ inline void fixup_all_threads(void) {
       gcFIXUP(thread->thread);
       fixup_table[scheme_thread_type](thread->thread);
     } else {
-      printf("dead thread\n");
       thread->thread = NULL;
     }
   }
@@ -2125,7 +2126,6 @@ static void gc_collect(int force_full) {
     default: collection_top = 0; collection_cycle++; break;
   }
   collection_full_p = (collection_top == (GENERATIONS - 1));
-
 
   /* rip away the pages we might collect */
   for(i = 0; i <= collection_top; i++)

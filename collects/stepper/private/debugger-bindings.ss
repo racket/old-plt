@@ -3,7 +3,7 @@
 
 (module debugger-bindings mzscheme
   (require (lib "contracts.ss")
-           (lib "private/marks.ss" "stepper")
+           "marks.ss"
            (lib "etc.ss")
            (lib "list.ss"))
   

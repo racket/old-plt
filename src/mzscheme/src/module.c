@@ -3385,7 +3385,7 @@ static Scheme_Object *add_req(Scheme_Object *imods, Scheme_Object *requires)
   return requires;
 }
 
-static Scheme_Object *add_lifted_defn(Scheme_Object *data, Scheme_Object *id, Scheme_Object *expr)
+static Scheme_Object *add_lifted_defn(Scheme_Object *data, Scheme_Object *id, Scheme_Object *expr, Scheme_Comp_Env *_env)
 {
   Scheme_Comp_Env *env;
   Scheme_Object *self_modidx, *rn, *name;
@@ -3402,7 +3402,7 @@ static Scheme_Object *add_lifted_defn(Scheme_Object *data, Scheme_Object *id, Sc
   /* Add a renaming: */
   scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name, 0);
 
-  return scheme_make_lifted_defn(scheme_sys_wraps(env), id, expr);
+  return scheme_make_lifted_defn(scheme_sys_wraps(env), id, expr, _env);
 }
 
 static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env, 

@@ -2055,7 +2055,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       if (!var) {
 	/* Top variable */
 	stx = top_symbol;
-	not_allowed = "reference to top-level identifiers";
+	not_allowed = "reference to top-level identifier";
 	normal = top_expander;
 	form = find_name; /* in case it was re-mapped */
 	looking_for_top = 1;
@@ -2225,13 +2225,21 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  if (!var && /* !env->genv->module && */ looking_for_top) {
+  if (!var && looking_for_top) {
     /* If form is a marked name, then force #%top binding.
        This is so temporaries can be used as defined ids. */
     Scheme_Object *nm;
     nm = scheme_tl_id_sym(env->genv, form, 0);
     if (!SAME_OBJ(nm, SCHEME_STX_VAL(form))) {
-      var = top_expander;
+      stx = scheme_datum_to_syntax(top_symbol, scheme_false, scheme_sys_wraps(env), 0, 0);
+
+      /* Should be either top_expander or stop_expander: */
+      var = scheme_lookup_binding(stx, env,
+				  SCHEME_NULL_FOR_UNBOUND
+				  + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+				  + SCHEME_DONT_MARK_USE,
+				  rec[drec].certs, env->in_modidx, 
+				  &menv, NULL);
     }
   }
 
@@ -2557,7 +2565,7 @@ Scheme_Object *scheme_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   return scheme_compile_expand_expr(form, env, erec, drec, 0);
 }
 
-static Scheme_Object *pair_lifted(Scheme_Object *_ip, Scheme_Object *id, Scheme_Object *expr)
+static Scheme_Object *pair_lifted(Scheme_Object *_ip, Scheme_Object *id, Scheme_Object *expr, Scheme_Comp_Env *env)
 {
   Scheme_Comp_Env **ip = (Scheme_Comp_Env **)_ip, *naya;
 
@@ -2587,7 +2595,7 @@ compile_expand_expr_lift_to_let(Scheme_Object *form, Scheme_Comp_Env *env,
 
      This function also relies on the way that compilation of `let'
      works. A let-bound variable is compiled to a count of the frames
-     to skip and the indiex within the frame, so we can insert new
+     to skip and the index within the frame, so we can insert new
      frames without affecting lookups computed so far. Inserting each
      new frame before any previous one turns out to be consistent with
      the nested `let's that we generate at the end. 
@@ -4750,9 +4758,12 @@ Scheme_Object *scheme_get_stop_expander(void)
 }
 
 Scheme_Object *
-scheme_make_lifted_defn(Scheme_Object *sys_wraps, Scheme_Object *id, Scheme_Object *expr)
+scheme_make_lifted_defn(Scheme_Object *sys_wraps, Scheme_Object *id, Scheme_Object *expr, Scheme_Comp_Env *env)
 {
   Scheme_Object *l;
+
+  /* Registers marked id: */
+  scheme_tl_id_sym(env->genv, id, 2);
 
   l = icons(scheme_datum_to_syntax(define_values_symbol, scheme_false, sys_wraps, 0, 0), 
 	    icons(scheme_make_immutable_pair(id, scheme_null),

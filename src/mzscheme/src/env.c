@@ -3226,10 +3226,9 @@ local_certify(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 local_lift_expr(int argc, Scheme_Object *argv[])
 {
-  Scheme_Env *menv, *genv;
+  Scheme_Env *menv;
   Scheme_Comp_Env *env, *orig_env;
-  Scheme_Object *id, *local_mark, *expr, *data, *vec, *a[1], *id_sym;
-  char buf[16];
+  Scheme_Object *id, *local_mark, *expr, *data, *vec, *id_sym;
   Scheme_Lift_Capture_Proc cp;  
 
   expr = argv[0];
@@ -3253,19 +3252,9 @@ local_lift_expr(int argc, Scheme_Object *argv[])
   
   expr = scheme_add_remove_mark(expr, local_mark);
 
-  genv = env->genv;
-  while (1) {
-    genv->id_counter++;
-    sprintf(buf, "lifted%d", genv->id_counter++);
-    id_sym = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
-
-    id = scheme_datum_to_syntax(id_sym, scheme_false, scheme_false, 0, 0);
-    a[0] = id;
-    id = local_module_introduce(1, a);
-
-    if (!scheme_stx_parallel_is_used(id_sym, id))
-      break;
-  }
+  id_sym = scheme_intern_exact_parallel_symbol("lifted", 6);
+  id = scheme_datum_to_syntax(id_sym, scheme_false, scheme_false, 0, 0);
+  id = scheme_add_remove_mark(id, scheme_new_mark());
 
   vec = COMPILE_DATA(env)->lifts;
   cp = *(Scheme_Lift_Capture_Proc *)SCHEME_VEC_ELS(vec)[1];
@@ -3278,7 +3267,7 @@ local_lift_expr(int argc, Scheme_Object *argv[])
 			 scheme_current_thread->current_local_certs, 
 			 NULL);
 
-  expr = cp(data, id, expr);
+  expr = cp(data, id, expr, orig_env);
 
   expr = scheme_make_pair(expr, SCHEME_VEC_ELS(vec)[0]);
   SCHEME_VEC_ELS(vec)[0] = expr;

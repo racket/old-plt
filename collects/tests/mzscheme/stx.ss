@@ -956,5 +956,51 @@
 (test 1 eval (expand #'(let ([x 5]) (@@local-top (@@foo 1)))))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check interaction of macro-introduced/lifted names and
+;;  module->namespace
+
+(let ([go-once
+       (lambda (eval)
+	 (parameterize ([current-namespace (make-namespace)])
+	   (eval '(module mm mzscheme
+		    (define-syntax (define$ stx)
+		      (syntax-case stx ()
+			[(_ id val)
+			 (with-syntax ([x (datum->syntax-object #f 'x)])
+			   #'(begin
+			       (define x val)
+			       (define-syntax (id stx) #'x)))]))
+		    (define$ a 1)
+		    (define$ b 2)
+		    (printf "~a ~a~n" a b)))
+	   (eval '(require mm))
+	   (eval '(current-namespace (module->namespace 'mm)))
+
+	   (eval '(define$ c 7))
+	   (test '(1 2 7) eval '(list a b c))
+	   (eval '(define$ d 8))
+	   (test '(1 2 7 8) eval '(list a b c d)))
+
+	 (parameterize ([current-namespace (make-namespace)])
+	   (eval '(module mm mzscheme
+		    (define-syntax (define$ stx)
+		      (syntax-case stx ()
+			[(_ id val)
+			 (with-syntax ([x (syntax-local-lift-expression #'val)])
+			   #'(define-syntax (id stx) #'x))]))
+		    (define$ a 1)
+		    (define$ b 2)
+		    (printf "~a ~a~n" a b)))
+	   (eval '(require mm))
+	   (eval '(current-namespace (module->namespace 'mm)))
+
+	   (eval '(define$ c 7))
+	   (test '(1 2 7) eval '(list a b c))
+	   (eval '(define$ d 8))
+	   (test '(1 2 7 8) eval '(list a b c d))))])
+  (go-once eval)
+  (go-once (lambda (e) (eval (expand e)))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

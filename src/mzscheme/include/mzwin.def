@@ -220,6 +220,8 @@ EXPORTS
  scheme_make_port_type
  scheme_make_input_port
  scheme_make_output_port
+ scheme_open_input_file
+ scheme_open_output_file
  scheme_make_file_input_port
  scheme_make_named_file_input_port
  scheme_make_file_output_port
@@ -230,6 +232,7 @@ EXPORTS
  scheme_get_sized_string_output
  scheme_pipe
  scheme_pipe_with_limit
+ scheme_set_file_position
  scheme_file_exists
  scheme_directory_exists
  scheme_expand_filename

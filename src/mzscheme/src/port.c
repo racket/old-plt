@@ -2400,6 +2400,22 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 #endif
 }
 
+Scheme_Object *scheme_open_input_file(const char *name, const char *who)
+{
+  Scheme_Object *a[1];
+
+  a[0]= scheme_make_string(name);
+  return scheme_do_open_input_file((char *)who, 0, 1, a);
+}
+
+Scheme_Object *scheme_open_output_file(const char *name, const char *who)
+{
+  Scheme_Object *a[2];
+
+  a[0]= scheme_make_string(name);
+  a[1] = truncate_replace_symbol;
+  return scheme_do_open_output_file((char *)who, 0, 2, a);
+}
 
 Scheme_Object *
 scheme_file_position(int argc, Scheme_Object *argv[])
@@ -2621,6 +2637,15 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 
     return scheme_make_integer(p);
   }
+}
+
+void scheme_set_file_position(Scheme_Object *port, long pos)
+{
+  Scheme_Object *a[2];
+
+  a[0] = port;
+  a[1] = scheme_make_integer(pos);
+  (void)scheme_file_position(2, a);
 }
 
 Scheme_Object *

@@ -228,7 +228,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void _Delete(wxSnip *, wxDeleteSnipRecord *del);
 
-  Bool InsertFile(FILE *f, Bool clearStyles, Bool showErrors);
+  Bool InsertFile(Scheme_Object *f, Bool clearStyles, Bool showErrors);
 
   void Draw(wxDC *dc, float dx, float dy, 
 	    float cx, float cy, float cw, float ch, 

@@ -3,7 +3,7 @@
 #ifndef wx_medio
 #define wx_medio
 
-#include <stdio.h>
+#include "scheme.h"
 
 class wxMediaStreamInBase : public wxObject
 {
@@ -28,9 +28,9 @@ class wxMediaStreamOutBase : public wxObject
 
 class wxMediaStreamInFileBase : public wxMediaStreamInBase
 {
-  FILE *f;
+  Scheme_Object *f;
  public:
-  wxMediaStreamInFileBase(FILE *s);
+  wxMediaStreamInFileBase(Scheme_Object *s);
   ~wxMediaStreamInFileBase();
 
   long Tell(void);
@@ -42,9 +42,9 @@ class wxMediaStreamInFileBase : public wxMediaStreamInBase
 
 class wxMediaStreamOutFileBase : public wxMediaStreamOutBase
 {
-  FILE *f;
+  Scheme_Object *f;
  public:
-  wxMediaStreamOutFileBase(FILE *s);
+  wxMediaStreamOutFileBase(Scheme_Object *s);
   ~wxMediaStreamOutFileBase();
 
   long Tell(void);
@@ -96,7 +96,7 @@ class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
 #define MRED_START_STR_LEN 4
 #define MRED_FORMAT_STR "01"
 #define MRED_FORMAT_STR_LEN 2
-#define MRED_VERSION_STR "03"
+#define MRED_VERSION_STR "04"
 #define MRED_VERSION_STR_LEN 2
 
 #define WXME_VERSION_ONE(f) (f->read_version[1] == '1')

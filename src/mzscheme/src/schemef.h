@@ -478,6 +478,9 @@ MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
 						      int must_close);
 
+MZ_EXTERN Scheme_Object *scheme_open_input_file(const char *name, const char *who);
+MZ_EXTERN Scheme_Object *scheme_open_output_file(const char *name, const char *who);
+
 MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
 MZ_EXTERN Scheme_Object *scheme_make_named_file_input_port(FILE *fp, const char *filename);
 MZ_EXTERN Scheme_Object *scheme_make_file_output_port(FILE *fp);
@@ -490,6 +493,8 @@ MZ_EXTERN char *scheme_get_sized_string_output(Scheme_Object *, long *len);
 
 MZ_EXTERN void scheme_pipe(Scheme_Object **read, Scheme_Object **write);
 MZ_EXTERN void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);
+
+MZ_EXTERN void scheme_set_file_position(Scheme_Object *port, long pos);
 
 MZ_EXTERN int scheme_file_exists(char *filename);
 MZ_EXTERN int scheme_directory_exists(char *dirname);

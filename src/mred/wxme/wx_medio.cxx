@@ -123,7 +123,7 @@ void wxMediaStream::SetHeaderFlag(wxSnipClass *c)
 
 /****************************************************************/
 
-wxMediaStreamInFileBase::wxMediaStreamInFileBase(FILE *s)
+wxMediaStreamInFileBase::wxMediaStreamInFileBase(Scheme_Object *s)
 {
   f = s;
 }
@@ -134,22 +134,22 @@ wxMediaStreamInFileBase::~wxMediaStreamInFileBase()
 
 long wxMediaStreamInFileBase::Tell(void)
 {
-  return ftell(f);
+  return scheme_tell(f);
 }
 
 void wxMediaStreamInFileBase::Seek(long p)
 {
-  fseek(f, p, 0);
+  scheme_set_file_position(f, p);
 }
 
 void wxMediaStreamInFileBase::Skip(long n)
 {
-  fseek(f, n, 1);
+  scheme_set_file_position(f, n + scheme_tell(f));
 }
 
 Bool wxMediaStreamInFileBase::Bad(void)
 {
-  return ferror(f);
+  return FALSE;
 }
 
 long wxMediaStreamInFileBase::Read(char *data, long len)
@@ -157,12 +157,12 @@ long wxMediaStreamInFileBase::Read(char *data, long len)
   if (len <= 0)
     return 0;
 
-  return fread(data, 1, len, f);
+  return scheme_get_string("read in editor-stream-in%", f, data, 0, len, 0, 0, NULL);
 }
 
 /****************************************************************/
 
-wxMediaStreamOutFileBase::wxMediaStreamOutFileBase(FILE *s)
+wxMediaStreamOutFileBase::wxMediaStreamOutFileBase(Scheme_Object *s)
 {
   f = s;
 }
@@ -173,17 +173,17 @@ wxMediaStreamOutFileBase::~wxMediaStreamOutFileBase()
 
 long wxMediaStreamOutFileBase::Tell(void)
 {
-  return ftell(f);
+  return scheme_tell(f);
 }
 
 void wxMediaStreamOutFileBase::Seek(long p)
 {
-  fseek(f, p, 0);
+  scheme_set_file_position(f, p);
 }
 
 Bool wxMediaStreamOutFileBase::Bad(void)
 {
-  return ferror(f);
+  return FALSE;
 }
 
 void wxMediaStreamOutFileBase::Write(char *data, long len)
@@ -191,7 +191,7 @@ void wxMediaStreamOutFileBase::Write(char *data, long len)
   if (len <= 0)
     return;
 
-  fwrite(data, 1, len, f);
+  scheme_put_string("write in editor-stream-out%", f, data, 0, len, 0);
 }
 
 /****************************************************************/

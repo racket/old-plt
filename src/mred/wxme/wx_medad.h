@@ -18,7 +18,7 @@ enum {
 
 #define STD_STYLE "Standard"
 
-extern int wxmeCheckFormatAndVersion(wxMediaStream *s, Bool showErrors);
+extern int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, Bool showErrors);
 
 class wxMediaAdmin;
 class wxKeymap;

@@ -885,7 +885,6 @@ Bool wxMediaSnipMediaAdmin::DelayRefresh()
 
 /************************************************************************/
 
-typedef struct { short type; } Scheme_Object;
 extern wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *, const char*, int);
 
 #define GET_EDIT(vb) objscheme_unbundle_wxMediaEdit((Scheme_Object *)vb, NULL, 0)

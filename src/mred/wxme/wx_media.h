@@ -4,6 +4,8 @@
 #ifndef __WX_MEDIA__
 #define __WX_MEDIA__
 
+#include "scheme.h"
+
 #include "wx_panel.h"
 #include "wx_canvs.h"
 #include "wx_dcmem.h"
@@ -581,7 +583,7 @@ class wxMediaEdit : public wxMediaBuffer
 		      long start, long end, long **positions, 
 		      Bool, Bool, Bool);
   
-  Bool InsertFile(FILE *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
+  Bool InsertFile(Scheme_Object *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
 
   void RecalcLines(wxDC *dc, Bool calcGraphic = TRUE);
   Bool CheckFlow(float maxw, wxDC *dc, float Y, long startp, wxSnip *start);

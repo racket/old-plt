@@ -2483,9 +2483,8 @@ void wxMediaPasteboard::SetSnipData(wxSnip *snip, wxBufferData *data)
 
 Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
-  FILE *f;
+  Scheme_Object *f;
   Bool ok;
-  const char *fn;
 
   if (userLocked || writeLocked)
     return FALSE;
@@ -2509,8 +2508,6 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (!file)
     return FALSE;
 
-  fn = wxmeExpandFilename(file, "load-file in pasteboard%", 0);
-
   if (!CanLoadFile(file, wxMEDIA_FF_STD))
     return FALSE;
   OnLoadFile(file, wxMEDIA_FF_STD);
@@ -2522,7 +2519,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
     return FALSE;
   }
 
-  f = fopen(fn, "rb");
+  f = scheme_open_input_file(file, "load-file in pasteboard%");
   
   if (!f) {
     if (showErrors)
@@ -2557,14 +2554,12 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 
 Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
-  FILE *f;
-  const char *fn;
+  Scheme_Object *f;
 
   if (userLocked || writeLocked)
     return FALSE;
 
-  fn = wxmeExpandFilename(file, "insert-file in pasteboard%", 0);
-  f = fopen(fn, "rb");
+  f = scheme_open_input_file(file, "insert-file in pasteboard%");
   
   if (!f)
     return FALSE;
@@ -2572,7 +2567,7 @@ Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showEr
   return InsertFile(f, FALSE, showErrors);
 }
 
-Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
+Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, Bool clearStyles, Bool showErrors)
 {
   int n;
   char buffer[MRED_START_STR_LEN + 1];
@@ -2581,21 +2576,24 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
   if (userLocked || writeLocked)
     return FALSE;
 
-  n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
+  n = scheme_get_string("insert-file in pasteboard%", f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
   buffer[MRED_START_STR_LEN] = 0;
-  if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
+  if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)) {
     if (showErrors)
       wxmeError("insert-file in pasteboard%: not a MrEd editor<%> file");
     fileerr = TRUE;
   } else {
     wxMediaStreamInFileBase *b;
     wxMediaStreamIn *mf;
+    char vbuf[MRED_FORMAT_STR_LEN + MRED_VERSION_STR_LEN+ 1];
     
     b = new wxMediaStreamInFileBase(f);
     mf = new wxMediaStreamIn(b);
     
-    fread((char *)mf->read_format, 1, MRED_FORMAT_STR_LEN, f);
-    fread((char *)mf->read_version, 1, MRED_VERSION_STR_LEN, f);
+    b->Read(vbuf, MRED_FORMAT_STR_LEN);
+    memcpy((char *)mf->read_format, vbuf, MRED_FORMAT_STR_LEN);
+    b->Read(vbuf, MRED_VERSION_STR_LEN);
+    memcpy((char *)mf->read_version, vbuf, MRED_VERSION_STR_LEN);
 
     if (wxmeCheckFormatAndVersion(mf,showErrors)) {
       if (wxReadMediaGlobalHeader(mf)) {
@@ -2614,9 +2612,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
       fileerr = TRUE;
   }
 
-  fileerr = fileerr || ferror(f);
-  
-  fclose(f);
+  scheme_close_input_port(f);
 
   if (fileerr && showErrors)
     wxmeError("insert-file in pasteboard%: error loading the file");
@@ -2626,12 +2622,11 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
 
 Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 {
-  FILE *f;
+  Scheme_Object *f;
   Bool fileerr;
   Bool no_set_filename;
   wxMediaStreamOutFileBase *b;
   wxMediaStreamOut *mf;
-  const char *fn;
 
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
@@ -2660,13 +2655,11 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 
   no_set_filename = (format == wxMEDIA_FF_COPY);
 
-  fn = wxmeExpandFilename(file, "save-file in pasteboard%", 0);
-
   if (!CanSaveFile(file, wxMEDIA_FF_STD))
     return FALSE;
   OnSaveFile(file, wxMEDIA_FF_STD);
   
-  f = fopen(fn, "wb");
+  f = scheme_open_output_file(file, "save-file in pasteboard%");
   
   if (!f) {
     if (showErrors)
@@ -2681,12 +2674,13 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   wxMediaSetFileCreatorType(file, TRUE);
 #endif
 
-  fwrite(MRED_START_STR, 1, MRED_START_STR_LEN, f);
-  fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
-  fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
-
   b = new wxMediaStreamOutFileBase(f);
   mf = new wxMediaStreamOut(b);
+  
+  b->Write(MRED_START_STR, MRED_START_STR_LEN);
+  b->Write(MRED_FORMAT_STR, MRED_FORMAT_STR_LEN);
+  b->Write(MRED_VERSION_STR, MRED_VERSION_STR_LEN);
+  b->Write(" ## ", 4);
   
   wxWriteMediaGlobalHeader(mf);
   if (mf->Ok())
@@ -2697,7 +2691,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   
   fileerr = fileerr || !mf->Ok();
 
-  fclose(f);
+  scheme_close_output_port(f);
 
   if (fileerr && showErrors)
     wxmeError("save-file in pasteboard%: error writing the file");

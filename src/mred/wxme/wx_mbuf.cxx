@@ -94,7 +94,6 @@ wxMediaBuffer *wxMediaBuffer::lastUsedOffscreen = NULL;
 END_XFORM_SKIP;
 #endif
 
-typedef struct { short type; } Scheme_Object;
 extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
 extern Scheme_Object *objscheme_bundle_wxMediaBuffer(wxMediaBuffer*);
 
@@ -703,7 +702,7 @@ Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 
 /**********************************************************************/
 
-int wxmeCheckFormatAndVersion(wxMediaStream *s, Bool showErrors)
+int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, Bool showErrors)
 {
   if (strcmp(s->read_format, MRED_FORMAT_STR)) {
     if (showErrors)
@@ -712,10 +711,27 @@ int wxmeCheckFormatAndVersion(wxMediaStream *s, Bool showErrors)
   }
   if (strcmp(s->read_version, MRED_VERSION_STR)
       && strcmp(s->read_version, "01")
-      && strcmp(s->read_version, "02")) {
+      && strcmp(s->read_version, "02")
+      && strcmp(s->read_version, "03")) {
     if (showErrors)
       wxmeError("load-file: unknown version number");
     return 0;
+  }
+
+  if (!strcmp(s->read_version, MRED_VERSION_STR)) {
+    /* Need to skip " ## " */
+    char buf[4];
+    long l = 4;
+    s->Get(&l, (char *)buf);
+    if ((l != 4)
+	|| (buf[0] != ' ')
+	|| (buf[1] != '#')
+	|| (buf[2] != '#')
+	|| (buf[3] != ' ')) {
+      if (showErrors)
+	wxmeError("load-file: missing ' ## ' mark");
+      return 0;
+    }
   }
 
   return 1;

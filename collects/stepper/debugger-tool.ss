@@ -26,7 +26,7 @@
       (define debugger-bitmap
         (drscheme:unit:make-bitmap
          "Debug"
-         (build-path (collection-path "icons") "foot.bmp")))
+         (build-path (collection-path "icons") "foot.png")))
 
       (define debugger-unit-frame<%>
         (interface ()

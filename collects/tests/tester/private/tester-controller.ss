@@ -71,13 +71,18 @@
                (expect->str expect)
                "\n\nReceived\n" 
                (received->str received)))))
+
+    ; save-selections : (listof (list str val (listof (list str val))) -> void
+    ; saves the tests that were run
+    
     
     (define selection-list null)
     (define view
       (make-object view%
         
-        ; okay-press : (listof (list str val (listof (list str val)))
+        ; okay-press : 
         (lambda (btn evnt)
+          
           (send model run-tests (send view get-current-test-selections)))
         
         ; prev-error
@@ -136,7 +141,7 @@
           (begin
             (send view tick-loading-gauge)
             (send view update-load-text (format "Error occured: ~a" (exn-message exn)))
-            (printf "loading error: ~a" (exn-message exn))))
+            (printf "loading error: ~a~n" (exn-message exn))))
         
         ; gui:choose->done
         (lambda (total-tests)

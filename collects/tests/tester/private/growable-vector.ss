@@ -3,7 +3,10 @@
 ;; gvector-set!
 (module growable-vector mzscheme
   (provide (rename produce-gvector make-gvector)
+           gvector
            list->gvector
+           vector->gvector
+           gvector->vector
            gvector->list
            gvector-length
            gvector-ref
@@ -30,11 +33,39 @@
            k)
           (raise-mismatch-error 'make-gvector "expects k >= 1, given: " k))])))
 
+;; gvector : X ... -> gvector[X]
+;; makes a gvector of the given arguments. analagous to the vector function.
+(define gvector
+  (lambda args
+    (list->gvector args)))
+  
+;; vector->gvector: vector[X] -> gvector[X]
+;; produces a gvector with the same initial size and contents as the given
+;; vector. The result does not share memory with the input.
+(define (vector->gvector vec)
+  (let ((newvec (make-vector (vector-length vec))))
+    (begin
+      (vector-copy! vec newvec)
+      (make-gvector newvec (vector-length newvec)))))
+  
+;; gvector->vector : gvector[X] -> vector[X]
+;; produces a vector with the same size and contents as the given gvector.
+;; the result vector does not share memory with the gvector.
+(define (gvector->vector gvec)
+  (let ((newvec (make-vector (gvector-curr-size gvec))))
+    (begin
+      (vector-copy-n! (gvector-curr-size gvec)
+                      (gvector-items gvec)
+                      newvec)
+      newvec)))
+  
 ;; list->gvector : (listof value) -> gvector[value]
 (define (list->gvector l)
   (let ((v (list->vector l)))
     (make-gvector v (vector-length v))))
-  
+
+;; gvector->list : gvector[X] -> (listof X)
+;; produces a list version of the given gvector
 (define (gvector->list gvec)
   (let ((len (gvector-curr-size gvec))
         (items (gvector-items gvec)))
@@ -80,19 +111,23 @@
             (set-gvector-items! gvec new-vec)
             (set-gvector-curr-size! gvec (add1 old-size)))))))
 
-;; vector-copy! : vector x vector -> void
-;; copies the contents of the first vector into the second
-;; does not check that the new vector is large enough because
-;; all code that calls this function knows the vector is big enough anyway
-(define (vector-copy! old-vec new-vec)
-  (let ((old-size (vector-length old-vec)))
-    (let loop ((i 0))
-      (cond
-        [(= i old-size) (void)]
-        [else
-         (begin
-           (vector-set! new-vec i (vector-ref old-vec i))
-           (loop (add1 i)))]))))
+;; vector-copy! : vector[value] x vector[value] -> void
+;; copies the contents of the first vector into the second vector without
+;; checking to see if the new vector has enough space.
+(define (vector-copy! old new)
+  (vector-copy-n! (vector-length old) old new))
+
+;; vector-copy-n! : natnum x vector[value] x vector[value] -> void
+;; copies the first n elements of the old vector into the new vector.
+;; does not check to see if there is enough room in the new vector.
+(define (vector-copy-n! n old-vec new-vec)
+  (let loop ((i 0))
+    (cond
+      [(= i n) (void)]
+      [else
+       (begin
+         (vector-set! new-vec i (vector-ref old-vec i))
+         (loop (add1 i)))])))
   
 ;; gvector-grow! : gvector x number x [value] -> void
 ;; grows the given gvector to at least the given size. If the gvector is

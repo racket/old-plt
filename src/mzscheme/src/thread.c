@@ -1745,7 +1745,7 @@ static TSET_IL Scheme_Object *get_t_set_prev(Scheme_Object *o)
 
 static void schedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 {
-  num_running_threads++;
+  num_running_threads += 1;
 
   while (1) {
     set_t_set_next(s, t_set->first);
@@ -1767,7 +1767,7 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
   Scheme_Object *prev;
   Scheme_Object *next;
 
-  --num_running_threads;
+  num_running_threads -= 1;
 
   while (1) {
     prev = get_t_set_prev(s);

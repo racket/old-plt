@@ -168,11 +168,17 @@
       (define (simple-module-based-language-render-value/format value settings port put-snip)
         (let ([converted-value
                (simple-module-based-language-convert-value value settings)])
-          (cond
-            [(simple-settings-insert-newlines settings)
-             (pretty-print converted-value port)]
-            [else
-             (write converted-value port)])))
+	  (parameterize ([print-graph
+			  ;; only turn on print-graph when using `write' printing style
+			  ;; because the sharing is being taken care of by the print-convert
+			  ;; sexp construction when using other printing styles.
+			  (and (eq? (simple-settings-printing-style settings) 'write)
+			       (simple-settings-show-sharing settings))])
+	    (cond
+	      [(simple-settings-insert-newlines settings)
+	       (pretty-print converted-value port)]
+	      [else
+	       (write converted-value port)]))))
       
       ;; simple-module-based-language-render-value : TST settings port (union #f (snip% -> void)) -> void
       (define (simple-module-based-language-render-value value settings port put-snip)
@@ -183,10 +189,12 @@
       (case (simple-settings-printing-style settings)
         [(write) value]
         [(constructor)
-         (parameterize ([constructor-style-printing #t])
+         (parameterize ([constructor-style-printing #t]
+			[show-sharing (simple-settings-show-sharing settings)])
            (print-convert value))]
         [(quasiquote)
-         (parameterize ([constructor-style-printing #f])
+         (parameterize ([constructor-style-printing #f]
+			[show-sharing (simple-settings-show-sharing settings)])
            (print-convert value))]))
         
       ;; initialize-simple-module-based-language : setting module-spec ((-> void) -> void)

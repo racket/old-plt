@@ -110,12 +110,14 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   if (format == 'TEXT') {
     /* TEXT means MacRoman to the OS, but Latin-1 to MrEd.
        If necessary, convert Latin-1 to Unicode and use utxt. */
-    int i;
+    int i, had_newline;
 
     length = strlen((char *)obj);
 
     for (i = 0; i < length; i++) {
-      if (((unsigned char *)obj)[i] > 127)
+      if (((unsigned char *)obj)[i] == '\n')
+	had_newline = 1;
+      else if (((unsigned char *)obj)[i] > 127)
 	break;
     }
 
@@ -148,6 +150,16 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       }
       format = 'utxt';
       length = usize;
+    } else if (had_newline) {
+      /* Change '\n' to '\r' */
+      char *s;
+      s = new WXGC_ATOMIC char[length];
+      memcpy(s, obj, length);
+      for (i = 0; i < length; i++) {
+	if (s[i] == '\n')
+	  s[i] = '\r';
+      }
+      obj = (wxObject *)s;
     }
   } else {
     length = (long)width * height;

@@ -1740,7 +1740,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("set-color in brush% (color% case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-color in brush% (color% case)", 0));
 
-    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush"));
+    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-color"), "brush", "brush"));
     WITH_VAR_STACK(((wxBrush *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0));
 
     
@@ -1757,7 +1757,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("set-color in brush% (color name case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-color in brush% (color name case)"));
 
-    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush"));
+    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-color"), "brush", "brush"));
     WITH_VAR_STACK(((wxBrush *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0));
 
     
@@ -1777,7 +1777,7 @@ static Scheme_Object *os_wxBrushSetColour(int n,  Scheme_Object *p[])
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 0, 255, "set-color in brush% (rgb values case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 255, "set-color in brush% (rgb values case)"));
 
-    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush"));
+    if (!((wxBrush *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-color"), "brush", "brush"));
     WITH_VAR_STACK(((wxBrush *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0, x1, x2));
 
     
@@ -2465,7 +2465,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("set-color in pen% (color% case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-color in pen% (color% case)", 0));
 
-    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen"));
+    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-color"), "pen", "pen"));
     WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0));
 
     
@@ -2482,7 +2482,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("set-color in pen% (color name case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-color in pen% (color name case)"));
 
-    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen"));
+    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-color"), "pen", "pen"));
     WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0));
 
     
@@ -2502,7 +2502,7 @@ static Scheme_Object *os_wxPenSetColour(int n,  Scheme_Object *p[])
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 0, 255, "set-color in pen% (rgb values case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 255, "set-color in pen% (rgb values case)"));
 
-    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen"));
+    if (!((wxPen *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-color"), "pen", "pen"));
     WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)p[0])->primdata)->SetColour(x0, x1, x2));
 
     

@@ -144,9 +144,9 @@
 @CREATOR (string,SYM[brushStyle]); <> color name
 
 @ "get-color" : wxColour! GetColour();
-@ "set-color" : void SetColour(wxColour!); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color%
-@ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color name
-@ "set-color" : void SetColour(ubyte,ubyte,ubyte); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
+@ "set-color" : void SetColour(wxColour!); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-color")] <> color%
+@ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-color")] <> color name
+@ "set-color" : void SetColour(ubyte,ubyte,ubyte); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-color")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKOK[0.METHODNAME("brush%","set-stipple")]|CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-stipple")]
@@ -208,9 +208,9 @@
 @ "set-join" : void SetJoin(SYM[join]);
 
 @ "get-color" : wxColour! GetColour();
-@ "set-color" : void SetColour(wxColour!);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
-@ "set-color" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
-@ "set-color" : void SetColour(ubyte,ubyte,ubyte);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
+@ "set-color" : void SetColour(wxColour!);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-color")] <> color%
+@ "set-color" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-color")] <> color name
+@ "set-color" : void SetColour(ubyte,ubyte,ubyte);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-color")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKBW[0.METHODNAME("pen%","set-stipple")]|CHECKEIGHT[0.METHODNAME("pen%","set-stipple")]|CHECKOK[0.METHODNAME("pen%","set-stipple")]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]

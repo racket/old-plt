@@ -6,7 +6,7 @@
 			 (require-library "sig.ss" "mred")
 			 (require-library "texpicts.ss" "texpict")
 			 (require-library "mrpicts.ss" "texpict"))]
-    [(compile-omit-files) (list "commons.ss" "texpicts.ss" "mrpicts.ss")]
+    [(compile-omit-files) (list "commons.ss" "texpicts.ss" "mrpicts.ss" "utilss.ss")]
     [(help-desk-message)
      (format "Mz/Mr: ~s" `(require-library "texpict.ss" "texpict"))]
     [else (fail)]))

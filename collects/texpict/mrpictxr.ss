@@ -180,14 +180,37 @@
 			 dx (- h+top dy size)
 			 size size))]
 		[(oval)
-		 (let ([b (get-brush)])
+		 (let ([b (get-brush)]
+		       [rx (- dx (/ (cadr x) 2))]
+		       [ry (- h+top dy (/ (caddr x) 2))])
 		   (set-brush (find-or-create-brush "BLACK" 'transparent))
-		   (send dc draw-rounded-rectangle
-			 (- dx (/ (cadr x) 2))
-			 (- h+top dy (/ (caddr x) 2))
-			 (cadr x) (caddr x)
-			 -0.2)
-		   (set-brush b))]
+		   (let ([part (cadddr x)]
+			 [cr (send dc get-clipping-region)]
+			 [set-rect (lambda (l t r b)
+				     (let ([cr (make-object region% dc)])
+				       (send cr set-rectangle
+					     (+ rx (* l (cadr x)))
+					     (+ ry (* t (caddr x)))
+					     (* (- r l) (cadr x))
+					     (* (- b t) (caddr x)))
+				       cr))])
+		     (send dc set-clipping-region
+			   (cond
+			    [(string=? part "[tl]")
+			     (set-rect 0 0 0.5 0.5)]
+			    [(string=? part "[tr]")
+			     (set-rect 0.5 0 1.0 0.5)]
+			    [(string=? part "[bl]")
+			     (set-rect 0 0.5 0.5 1.0)]
+			    [(string=? part "[br]")
+			     (set-rect 0.5 0.5 1.0 1.0)]
+			    [else cr]))
+		     (send dc draw-rounded-rectangle
+			   rx ry
+			   (cadr x) (caddr x)
+			   -0.2)
+		     (send dc set-clipping-region cr)
+		     (set-brush b)))]
 		[(bezier)
 		 (draw-spline (+ dx (list-ref x 1))
 			      (- h+top (+ dy (list-ref x 2)))

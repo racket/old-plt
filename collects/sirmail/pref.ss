@@ -25,10 +25,10 @@
     (preferences:set-un/marshall pref
 				 (lambda (x) (if (path? x)
 						 (path->bytes x)
-						 x)))
+						 x))
 				 (lambda (x) (if (bytes? x)
 						 (bytes->path x) 
-						 x)))
+						 x))))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Definitions                                 ;;

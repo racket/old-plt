@@ -181,7 +181,7 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
 
   if (SCHEME_VEC_SIZE(vec)) {
     char *vstr;
-    long vlen;
+    int vlen;
     vstr = scheme_make_provided_string(vec, 2, &vlen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,

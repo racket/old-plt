@@ -24,7 +24,6 @@
 	      last
 	      (loop v)))))))
 
-(current-memory-use)
 (define readerrtype
   (if (defined? 'read/zodiac)
       (lambda (x) (lambda (y) #t))
@@ -35,8 +34,6 @@
   (with-censor
    (lambda ()
      (let loop ([n 0])
-       (when (= n 128)
-	 (SECTION readerrtype))
        (unless (= n 256)
 	       (let* ([c0 (integer->char n)]
 		      [c (if (read-case-sensitive)
@@ -59,7 +56,6 @@
 			      (readstr (string #\a c #\b))))]))
 	       (loop (add1 n)))))))
 
-(SECTION 'a)
 (error-test '(readstr ")") (readerrtype exn:read?))
 (error-test '(readstr "[)") (readerrtype exn:read?))
 (error-test '(readstr "[}") (readerrtype exn:read?))

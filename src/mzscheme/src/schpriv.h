@@ -752,7 +752,6 @@ void scheme_wrong_syntax(const char *where,
 			 const char *detail, ...);
 void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv);
 
-void scheme_raise_else(const char *where, Scheme_Object *v);
 void scheme_raise_out_of_memory(const char *where, const char *msg, ...);
 
 void scheme_raise(Scheme_Object *exn);

@@ -1017,18 +1017,6 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
 		   s, slen);
 }
 
-void scheme_raise_else(const char *where, Scheme_Object *v)
-{
-  char *r;
-  int rlen;
-
-  r = scheme_make_provided_string(v, 1, &rlen);
-
-  scheme_raise_exn(MZEXN_ELSE, 
-		   "%s: no match found for %t",
-		   where, r, rlen);
-}
-
 void scheme_unbound_global(Scheme_Object *name)
 {
   scheme_raise_exn(MZEXN_VARIABLE, 

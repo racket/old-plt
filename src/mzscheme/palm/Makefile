@@ -9,8 +9,12 @@ CFLAGS = $(DEBUGFLAGS) $(CFLAGS_NODBG)
 CPPFLAGS = $(OPTIONS) $(THREADFLAGS) $(OPTIONS) -I../include
 
 PALMCPP = m68k-palmos-cpp
+PALMINCS = -I/usr/local/palmdev/include/Core \
+           -I/usr/local/palmdev/include/Core/Hardware \
+           -I/usr/local/palmdev/include/Core/System \
+           -I/usr/local/palmdev/include/Core/UI
 
-XFORM = ../$(MZBUILDDIR)mzscheme -rq ../gc2/xform.ss --note --palm "$(PALMCPP) $(CPPFLAGS)"
+XFORM = ../$(MZBUILDDIR)mzscheme -rq ../gc2/xform.ss --notes --palm "$(PALMCPP) $(CPPFLAGS) $(PALMINCS)"
 XSRCDIR = xsrc
 SRCDIR = ../src
 
@@ -84,7 +88,7 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/main.c
 
 all: objects $(OBJDIR) ../gc2/ctok xsrc
-	$(XMAKE) xobjects
+	$(XMAKE) xsrcs
 
 xsrcs: $(XSRCS)
 
@@ -100,71 +104,71 @@ xobjects: $(OBJS)
 XFORMDEP = ../gc2/xform.ss
 
 $(XSRCDIR)/salloc.c: $(SRCDIR)/$(OBJDIR)/salloc.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c
+	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c $(XSRCDIR)/salloc.map 
 $(XSRCDIR)/bignum.c: $(SRCDIR)/$(OBJDIR)/bignum.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/bignum.c $(XSRCDIR)/bignum.c
+	$(XFORM) $(SRCDIR)/bignum.c $(XSRCDIR)/bignum.c $(XSRCDIR)/bignum.map
 $(XSRCDIR)/bool.c: $(SRCDIR)/$(OBJDIR)/bool.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/bool.c $(XSRCDIR)/bool.c
+	$(XFORM) $(SRCDIR)/bool.c $(XSRCDIR)/bool.c $(XSRCDIR)/bool.map
 $(XSRCDIR)/char.c: $(SRCDIR)/$(OBJDIR)/char.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/char.c $(XSRCDIR)/char.c
+	$(XFORM) $(SRCDIR)/char.c $(XSRCDIR)/char.c $(XSRCDIR)/char.map
 $(XSRCDIR)/complex.c: $(SRCDIR)/$(OBJDIR)/complex.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/complex.c $(XSRCDIR)/complex.c
+	$(XFORM) $(SRCDIR)/complex.c $(XSRCDIR)/complex.c $(XSRCDIR)/complex.map
 $(XSRCDIR)/dynext.c: $(SRCDIR)/$(OBJDIR)/dynext.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/dynext.c $(XSRCDIR)/dynext.c
+	$(XFORM) $(SRCDIR)/dynext.c $(XSRCDIR)/dynext.c $(XSRCDIR)/dynext.map
 $(XSRCDIR)/env.c: $(SRCDIR)/$(OBJDIR)/env.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/env.c $(XSRCDIR)/env.c
+	$(XFORM) $(SRCDIR)/env.c $(XSRCDIR)/env.c $(XSRCDIR)/env.map
 $(XSRCDIR)/error.c: $(SRCDIR)/$(OBJDIR)/error.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/error.c $(XSRCDIR)/error.c
+	$(XFORM) $(SRCDIR)/error.c $(XSRCDIR)/error.c $(XSRCDIR)/error.map
 $(XSRCDIR)/eval.c: $(SRCDIR)/$(OBJDIR)/eval.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/eval.c $(XSRCDIR)/eval.c
+	$(XFORM) $(SRCDIR)/eval.c $(XSRCDIR)/eval.c $(XSRCDIR)/eval.map
 $(XSRCDIR)/file.c: $(SRCDIR)/$(OBJDIR)/file.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/file.c $(XSRCDIR)/file.c
+	$(XFORM) $(SRCDIR)/file.c $(XSRCDIR)/file.c $(XSRCDIR)/file.map
 $(XSRCDIR)/fun.c: $(SRCDIR)/$(OBJDIR)/fun.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/fun.c $(XSRCDIR)/fun.c
+	$(XFORM) $(SRCDIR)/fun.c $(XSRCDIR)/fun.c $(XSRCDIR)/fun.map
 $(XSRCDIR)/hash.c: $(SRCDIR)/$(OBJDIR)/hash.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/hash.c $(XSRCDIR)/hash.c
+	$(XFORM) $(SRCDIR)/hash.c $(XSRCDIR)/hash.c $(XSRCDIR)/hash.map
 $(XSRCDIR)/image.c: $(SRCDIR)/$(OBJDIR)/image.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/image.c $(XSRCDIR)/image.c
+	$(XFORM) $(SRCDIR)/image.c $(XSRCDIR)/image.c $(XSRCDIR)/image.map
 $(XSRCDIR)/list.c: $(SRCDIR)/$(OBJDIR)/list.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/list.c
+	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/list.c $(XSRCDIR)/list.map
 $(XSRCDIR)/number.c: $(SRCDIR)/$(OBJDIR)/number.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/number.c $(XSRCDIR)/number.c
+	$(XFORM) $(SRCDIR)/number.c $(XSRCDIR)/number.c $(XSRCDIR)/number.map
 $(XSRCDIR)/object.c: $(SRCDIR)/$(OBJDIR)/object.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/object.c $(XSRCDIR)/object.c
+	$(XFORM) $(SRCDIR)/object.c $(XSRCDIR)/object.c $(XSRCDIR)/object.map
 $(XSRCDIR)/port.c: $(SRCDIR)/$(OBJDIR)/port.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/port.c $(XSRCDIR)/port.c
+	$(XFORM) $(SRCDIR)/port.c $(XSRCDIR)/port.c $(XSRCDIR)/port.map
 $(XSRCDIR)/print.c: $(SRCDIR)/$(OBJDIR)/print.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/print.c $(XSRCDIR)/print.c
+	$(XFORM) $(SRCDIR)/print.c $(XSRCDIR)/print.c $(XSRCDIR)/print.map
 $(XSRCDIR)/process.c: $(SRCDIR)/$(OBJDIR)/process.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/process.c $(XSRCDIR)/process.c
+	$(XFORM) $(SRCDIR)/process.c $(XSRCDIR)/process.c $(XSRCDIR)/process.map
 $(XSRCDIR)/promise.c: $(SRCDIR)/$(OBJDIR)/promise.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/promise.c $(XSRCDIR)/promise.c
+	$(XFORM) $(SRCDIR)/promise.c $(XSRCDIR)/promise.c $(XSRCDIR)/promise.map
 $(XSRCDIR)/rational.c: $(SRCDIR)/$(OBJDIR)/rational.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/rational.c $(XSRCDIR)/rational.c
+	$(XFORM) $(SRCDIR)/rational.c $(XSRCDIR)/rational.c $(XSRCDIR)/rational.map
 $(XSRCDIR)/read.c: $(SRCDIR)/$(OBJDIR)/read.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/read.c $(XSRCDIR)/read.c
+	$(XFORM) $(SRCDIR)/read.c $(XSRCDIR)/read.c $(XSRCDIR)/read.map
 $(XSRCDIR)/regexp.c: $(SRCDIR)/$(OBJDIR)/regexp.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/regexp.c $(XSRCDIR)/regexp.c
+	$(XFORM) $(SRCDIR)/regexp.c $(XSRCDIR)/regexp.c $(XSRCDIR)/regexp.map
 $(XSRCDIR)/sema.c: $(SRCDIR)/$(OBJDIR)/sema.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/sema.c $(XSRCDIR)/sema.c
+	$(XFORM) $(SRCDIR)/sema.c $(XSRCDIR)/sema.c $(XSRCDIR)/sema.map
 $(XSRCDIR)/setjmpup.c: $(SRCDIR)/$(OBJDIR)/setjmpup.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/setjmpup.c $(XSRCDIR)/setjmpup.c
+	$(XFORM) $(SRCDIR)/setjmpup.c $(XSRCDIR)/setjmpup.c $(XSRCDIR)/setjmpup.map
 $(XSRCDIR)/string.c: $(SRCDIR)/$(OBJDIR)/string.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/string.c $(XSRCDIR)/string.c -I$(OBJDIR)
+	$(XFORM) $(SRCDIR)/string.c $(XSRCDIR)/string.c $(XSRCDIR)/string.map -I$(OBJDIR)
 $(XSRCDIR)/struct.c: $(SRCDIR)/$(OBJDIR)/struct.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/struct.c $(XSRCDIR)/struct.c
+	$(XFORM) $(SRCDIR)/struct.c $(XSRCDIR)/struct.c $(XSRCDIR)/struct.map
 $(XSRCDIR)/symbol.c: $(SRCDIR)/$(OBJDIR)/symbol.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/symbol.c $(XSRCDIR)/symbol.c
+	$(XFORM) $(SRCDIR)/symbol.c $(XSRCDIR)/symbol.c $(XSRCDIR)/symbol.map
 $(XSRCDIR)/syntax.c: $(SRCDIR)/$(OBJDIR)/syntax.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/syntax.c $(XSRCDIR)/syntax.c
+	$(XFORM) $(SRCDIR)/syntax.c $(XSRCDIR)/syntax.c $(XSRCDIR)/syntax.map
 $(XSRCDIR)/type.c: $(SRCDIR)/$(OBJDIR)/type.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/type.c $(XSRCDIR)/type.c
+	$(XFORM) $(SRCDIR)/type.c $(XSRCDIR)/type.c $(XSRCDIR)/type.map
 $(XSRCDIR)/unit.c: $(SRCDIR)/$(OBJDIR)/unit.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/unit.c $(XSRCDIR)/unit.c
+	$(XFORM) $(SRCDIR)/unit.c $(XSRCDIR)/unit.c $(XSRCDIR)/unit.map
 $(XSRCDIR)/vector.c: $(SRCDIR)/$(OBJDIR)/vector.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
+	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c $(XSRCDIR)/vector.map
 $(XSRCDIR)/main.c: ../$(OBJDIR)/main.o $(XFORMDEP)
-	$(XFORM) ../main.c $(XSRCDIR)/main.c
+	$(XFORM) ../main.c $(XSRCDIR)/main.c $(XSRCDIR)/main.map
 
 
 $(OBJDIR)/salloc.o: $(XSRCDIR)/salloc.c

@@ -728,6 +728,9 @@ Scheme_Object *scheme_make_float(float f)
 
 /* locals */
 
+/* Compiler helper: */
+#define ESCAPED_BEFORE_HERE  return NULL
+
 #define NEED_NUMBER(name) \
   scheme_wrong_type(#name, "number", 0, argc, argv)
 #define NEED_REAL(name) \
@@ -935,7 +938,7 @@ zero_p (int argc, Scheme_Object *argv[])
  
   NEED_NUMBER(zero?);
 
-  return NULL;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -977,7 +980,7 @@ positive_p (int argc, Scheme_Object *argv[])
 
   NEED_REAL(positive?);
 
-  return NULL;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -1018,7 +1021,7 @@ negative_p (int argc, Scheme_Object *argv[])
 
   NEED_REAL(negative?);
 
-  return NULL;
+  ESCAPED_BEFORE_HERE;
 }
 
 #ifdef PALMOS_STUFF
@@ -1048,7 +1051,7 @@ scheme_odd_p (int argc, Scheme_Object *argv[])
 
   NEED_INTEGER(odd?);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -1074,7 +1077,7 @@ even_p (int argc, Scheme_Object *argv[])
 
   NEED_INTEGER(even?);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 Scheme_Object *
@@ -1107,7 +1110,7 @@ scheme_add1 (int argc, Scheme_Object *argv[])
 
   NEED_NUMBER(add1);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 Scheme_Object *
@@ -1140,7 +1143,7 @@ scheme_sub1 (int argc, Scheme_Object *argv[])
   
   NEED_NUMBER(sub1);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 GEN_BIN_PROT(bin_max);
@@ -1258,6 +1261,10 @@ minus (int argc, Scheme_Object *argv[])
   int i;
 
   ret = argv[0];
+  if (!SCHEME_NUMBERP(ret)) {
+    scheme_wrong_type("-", "number", 0, argc, argv);
+    ESCAPED_BEFORE_HERE;
+  }
   if (argc == 1) {
     if (SCHEME_FLOATP(ret)) {
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -1266,17 +1273,13 @@ minus (int argc, Scheme_Object *argv[])
 #endif
       return scheme_make_double(-SCHEME_DBL_VAL(ret));
     }
-    if (!SCHEME_NUMBERP(ret)) {
-      scheme_wrong_type("-", "number", 0, argc, argv);
-      return NULL;
-    }
     return scheme_bin_minus(zeroi, ret);
   }
   for (i = 1; i < argc; i++) {
     Scheme_Object *o = argv[i];
     if (!SCHEME_NUMBERP(o)) {
       scheme_wrong_type("-", "number", i, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
     ret = scheme_bin_minus(ret, o);
   }
@@ -1292,7 +1295,7 @@ div_prim (int argc, Scheme_Object *argv[])
   ret = argv[0];
   if (!SCHEME_NUMBERP(ret)) {
     scheme_wrong_type("/", "number", 0, argc, argv);
-    return NULL;
+    ESCAPED_BEFORE_HERE;
   }
   if (argc == 1) {
     if (ret != zeroi)
@@ -1300,7 +1303,7 @@ div_prim (int argc, Scheme_Object *argv[])
     else {
       scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, ret,
 		       "/: division by zero");
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
   }
   for (i = 1; i < argc; i++) {
@@ -1308,7 +1311,7 @@ div_prim (int argc, Scheme_Object *argv[])
 
     if (!SCHEME_NUMBERP(o)) {
       scheme_wrong_type("/", "number", i, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
 
     if (o != zeroi)
@@ -1316,7 +1319,7 @@ div_prim (int argc, Scheme_Object *argv[])
     else {
       scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
 		       "/: division by zero");
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
   }
   return ret;
@@ -1361,7 +1364,7 @@ abs_prim (int argc, Scheme_Object *argv[])
 
   NEED_REAL(abs);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *to_bignum(const Scheme_Object *o)
@@ -1441,10 +1444,14 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
   }
 #endif
 
+#if 0
+  /* I'm pretty sure this isn't needed, but I'm keeping the code just
+     in case... 03/19/2000 */
   if (SCHEME_RATIONALP(n1))
     WRONG_TYPE("quotient", "integer", n1);
   if (SCHEME_RATIONALP(n2))
     WRONG_TYPE("quotient", "integer", n2);
+#endif
   
   n1 = to_bignum(n1);
   n2 = to_bignum(n2);
@@ -1702,7 +1709,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
       i2 = scheme_bignum_to_double(n2);
 
     if (i1 < 0)
-      i1 = -1;
+      i1 = -i1;
     if (i2 < 0)
       i2 = -i2;
     if (i1 > i2) {
@@ -1713,8 +1720,11 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
       b = i1;
     }
 
+#if 0
+    /* Shouldn't happen, since +nan.0 isn't an integer */
     if (MZ_IS_NAN(a) || MZ_IS_NAN(b))
       return nan_object;
+#endif
     if (MZ_IS_POS_INFINITY(a))
       return scheme_make_double(b);
     
@@ -1767,9 +1777,6 @@ bin_lcm (Scheme_Object *n1, Scheme_Object *n2)
 
   d = scheme_bin_gcd(n1, n2);
   
-  if (NOT_SAME_OBJ(zero_p(1, &d), scheme_false))
-    return d;
-
   ret = scheme_bin_mult(n1, scheme_bin_quotient(n2, d));
 
   return abs_prim(1, &ret);
@@ -1801,7 +1808,7 @@ floor_prim (int argc, Scheme_Object *argv[])
 
   NEED_REAL(floor);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -1830,7 +1837,7 @@ ceiling (int argc, Scheme_Object *argv[])
 
   NEED_REAL(ceiling);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -1871,7 +1878,7 @@ sch_truncate (int argc, Scheme_Object *argv[])
 
   NEED_REAL(truncate);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -1948,7 +1955,7 @@ sch_round (int argc, Scheme_Object *argv[])
 
   NEED_REAL(round);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -2070,7 +2077,7 @@ static Scheme_Object *get_frac(char *name, int low_p,
       n = scheme_rational_numerator(n);
   } else {
     scheme_wrong_type(name, REAL_NUMBER_STR, 0, argc, argv);
-    return scheme_void;   
+    ESCAPED_BEFORE_HERE;   
   }
   
   if (SCHEME_DBLP(orig))
@@ -2259,12 +2266,12 @@ atan_prim (int argc, Scheme_Object *argv[])
   else if (SCHEME_COMPLEXP(n1)) {
     if (argc > 1) {
       scheme_wrong_type("atan (with two arguments)", REAL_NUMBER_STR, 0, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     } else
       return complex_atan(n1);
   } else {
     NEED_NUMBER(atan);
-    v = 0.0;
+    ESCAPED_BEFORE_HERE;
   }
 
   if (argc == 2) {
@@ -2291,7 +2298,7 @@ atan_prim (int argc, Scheme_Object *argv[])
       v2 = scheme_rational_to_double(n2);
     else {
       scheme_wrong_type("atan", REAL_NUMBER_STR, 1, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
 
     if ((v == 0.0) && (v2 == 0.0)) {
@@ -2455,8 +2462,10 @@ scheme_expt(int argc, Scheme_Object *argv[])
 
   if (argv[1] == scheme_make_integer(1))
     return n;
-  if (n == scheme_make_integer(1))
-    return n;
+  if (n == scheme_make_integer(1)) {
+    if (SCHEME_NUMBERP(argv[1]))
+      return n;
+  }
 
   if (argv[0] == zeroi) {
     if (SCHEME_FLOATP(e)) {
@@ -2474,7 +2483,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, argv[0],
 		       "expt: undefined for 0 and %s",
 		       scheme_make_provided_string(e, 0, NULL));
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
   }
 
@@ -2644,7 +2653,7 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
     } else if (o == zeroi) {
       scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
 		       "angle: undefined for 0");
-      return scheme_void;
+      ESCAPED_BEFORE_HERE;
     } else if (SCHEME_TRUEP(positive_p(1, argv)))
       return zeroi;
     else
@@ -2695,7 +2704,7 @@ exact_to_inexact (int argc, Scheme_Object *argv[])
 
   NEED_NUMBER(exact->inexact);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -2743,7 +2752,7 @@ inexact_to_exact (int argc, Scheme_Object *argv[])
 
   NEED_NUMBER(inexact->exact);
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -2763,7 +2772,7 @@ number_to_string (int argc, Scheme_Object *argv[])
 
     if ((radix != 2) && (radix != 8) && (radix != 10)  && (radix != 16)) {
       scheme_wrong_type("number->string", "2, 8, 10, or 16", 1, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
     
     radix = SCHEME_INT_VAL(argv[1]);
@@ -2978,7 +2987,7 @@ string_to_number (int argc, Scheme_Object *argv[])
     
     if ((radix < 2) || (radix > 16)) {
       scheme_wrong_type("string->number", "exact integer in [2, 16]", 1, argc, argv);
-      return NULL;
+      ESCAPED_BEFORE_HERE;
     }
   } else
     radix = 10;
@@ -3033,20 +3042,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
   return NULL;
 }
 
-static const char *NICE_SIZE(const char *s)
-{
-  if (strlen(s) > 255) {
-    char *s2;
-    s2 = scheme_malloc_atomic(256);
-    memcpy(s2, s, 252);
-    s2[252] = '.';
-    s2[253] = '.';
-    s2[254] = '.';
-    s2[255] = 0;
-    return s2;
-  } else
-    return s;
-}
+#define NICE_SIZE(s) s, len
 
 #ifdef PALMOS_STUFF
 # pragma segment number4
@@ -3201,7 +3197,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (radix_set) {
 	if (complain)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad radix specification: %s",
+			   "read-number: bad radix specification: %t",
 			   NICE_SIZE(str));
 	else
 	  return scheme_false;
@@ -3211,7 +3207,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (is_float || is_not_float) {
 	if (complain)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad exactness specification: %s", 
+			   "read-number: bad exactness specification: %t", 
 			   NICE_SIZE(str));
 	else
 	  return scheme_false;
@@ -3246,7 +3242,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     default:
       if (complain)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: bad `#' indicator in %s",
+			 "read-number: bad `#' indicator in %t",
 			 NICE_SIZE(str));
       return scheme_false;
     }
@@ -3311,7 +3307,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	  *div_by_zero = 1;
 	if (complain)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: division by zero in %s",
+			   "read-number: division by zero in %t",
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3376,7 +3372,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	  *div_by_zero = 1;
 	if (complain)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: division by zero in %s", 
+			   "read-number: division by zero in %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3419,7 +3415,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (!ch) {
       if (report)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: embedded null character: %s",
+			 "read-number: embedded null character: %t",
 			 NICE_SIZE(str));
       return scheme_false;
     } else if (isinexactmark(ch) && ((radix <= 10) || !isbaseNdigit(radix, ch))) {
@@ -3430,7 +3426,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if ((has_sign > 0) || ((has_sign == 0) && (i == 1))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: too many signs: %s", 
+			   "read-number: too many signs: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3439,14 +3435,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_at) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: cannot mix `@' and `i': %s", 
+			   "read-number: cannot mix `@' and `i': %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
       if (i + 1 < len) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: `i' must be at the end: %s", 
+			   "read-number: `i' must be at the end: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3455,14 +3451,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_at) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: too many `@'s: %s", 
+			   "read-number: too many `@'s: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
       if (!i) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: `@' cannot be at start: %s", 
+			   "read-number: `@' cannot be at start: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3530,7 +3526,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	*div_by_zero = 1;
       if (complain)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: division by zero in %s", 
+			 "read-number: division by zero in %t", 
 			 NICE_SIZE(str));
       return scheme_false;
     }
@@ -3616,7 +3612,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	*div_by_zero = 1;
       if (complain)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: division by zero in %s", 
+			 "read-number: division by zero in %t", 
 			 NICE_SIZE(str));
       return scheme_false;
     }
@@ -3649,7 +3645,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_decimal) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: multiple decimal points: %s", 
+			   "read-number: multiple decimal points: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3657,7 +3653,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: decimal points and fractions "
-			   "cannot be mixed: %s", 
+			   "cannot be mixed: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3667,7 +3663,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	if (!i) {
 	  if (report)
 	    scheme_raise_exn(MZEXN_READ, complain, 
-			     "read-number: cannot begin with `%c' in %s", 
+			     "read-number: cannot begin with `%c' in %t", 
 			     ch, NICE_SIZE(str));
 	  return scheme_false;
 	}
@@ -3678,14 +3674,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (!i) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: cannot have slash at start: %s", 
+			   "read-number: cannot have slash at start: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
       if (has_slash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: multiple slashes: %s", 
+			   "read-number: multiple slashes: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3693,14 +3689,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: decimal points and fractions "
-			   "cannot be mixed: %s", 
+			   "cannot be mixed: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
       if (has_hash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: misplaced hash: %s", 
+			   "read-number: misplaced hash: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3709,7 +3705,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_slash || has_decimal || has_hash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: misplaced sign: %s", 
+			   "read-number: misplaced sign: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3717,7 +3713,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_slash || /* has_decimal || (radix > 10) || */ !saw_digit) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: misplaced hash: %s", 
+			   "read-number: misplaced hash: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3726,14 +3722,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_decimal) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad decimal number: %s", 
+			   "read-number: bad decimal number: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
       if (has_hash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: misplaced hash: %s", 
+			   "read-number: misplaced hash: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3745,7 +3741,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (has_hash) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: misplaced hash: %s", 
+			   "read-number: misplaced hash: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3786,7 +3782,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if ((ptr - strcpy) < len) {
       if (report)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: bad decimal number %s",
+			 "read-number: bad decimal number %t",
 			 NICE_SIZE(str));
       return scheme_false;
     } 
@@ -3844,7 +3840,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (SCHEME_FALSEP(exponent)) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad exponent: %s", 
+			   "read-number: bad exponent: %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3875,12 +3871,12 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	    *div_by_zero = 1;
 	  if (complain)
 	    scheme_raise_exn(MZEXN_READ, complain, 
-			     "read-number: division by zero in %s", 
+			     "read-number: division by zero in %t", 
 			     NICE_SIZE(str));
 	}
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad number %s", 
+			   "read-number: bad number %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3926,7 +3922,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				    || ((radix > 10) && isbaseNdigit(radix, digits[0]))))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad decimal number %s", 
+			   "read-number: bad decimal number %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -3945,7 +3941,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	/* can get here with bad radix */
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
-			   "read-number: bad number %s", 
+			   "read-number: bad number %t", 
 			   NICE_SIZE(str));
 	return scheme_false;
       }
@@ -4043,7 +4039,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (SCHEME_TRUEP(zero_p(1, &n2))) {
       if (complain)
 	scheme_raise_exn(MZEXN_READ, complain, 
-			 "read-number: division by zero in %s", 
+			 "read-number: division by zero in %t", 
 			 NICE_SIZE(str));
       if (div_by_zero)
 	*div_by_zero = 1;
@@ -4067,7 +4063,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   if (SAME_OBJ(o, scheme_false)) {
     if (report)
       scheme_raise_exn(MZEXN_READ, complain, 
-		       "read-number: bad number %s", 
+		       "read-number: bad number %t", 
 		       NICE_SIZE(str));
   } else if (is_float) {
     /* Special case: "#i-0" => -0. */
@@ -4098,7 +4094,7 @@ bitwise_not(int argc, Scheme_Object *argv[])
     return scheme_bignum_not(o);
    
   scheme_wrong_type("bitwise-not", "exact integer", 0, argc, argv);
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *
@@ -4111,7 +4107,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
   
   if (!SCHEME_EXACT_INTEGERP(v)) {
     scheme_wrong_type("arithmetic-shift", "exact integer", 1, argc, argv);
-    return NULL;
+    ESCAPED_BEFORE_HERE;
   }
   so = argv[1];
   if (!SCHEME_INTP(so)) {
@@ -4125,7 +4121,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
 	scheme_raise_out_of_memory("arithmetic-shift", NULL);
     } else
       scheme_wrong_type("arithmetic-shift", "exact integer", 1, argc, argv);
-    return NULL;
+    ESCAPED_BEFORE_HERE;
   }
   
   shift = SCHEME_INT_VAL(so);
@@ -4179,7 +4175,7 @@ random_seed(int argc, Scheme_Object *argv[])
 
   sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
 
-  return scheme_void;
+  ESCAPED_BEFORE_HERE;
 }
 
 static Scheme_Object *

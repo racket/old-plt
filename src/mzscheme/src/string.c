@@ -407,7 +407,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
 {
   if (SCHEME_STRTAG_VAL(s)) {
     char *sstr;
-    long slen;
+    int slen;
     
     sstr = scheme_make_provided_string(s, 2, &slen);
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
@@ -1024,7 +1024,8 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   if (num_err || char_err) {
     int pos = (num_err ? num_err : char_err) - 1;
     char *args, *bstr;
-    long alen, blen;
+    long alen;
+    int blen;
     char *type = (num_err ? "exact-number" : "character");
     Scheme_Object *bad = argv[pos];
 

@@ -60,7 +60,7 @@
 #endif
 
 #ifdef PALMOS_STUFF
-#include <Pilot.h>
+#include <PalmOS.h>
 #endif
 
 #include <stdio.h>

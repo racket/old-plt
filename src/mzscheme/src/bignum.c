@@ -257,6 +257,8 @@ int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b)
   aa = SCHEME_BIGDIG(a);
   ba = SCHEME_BIGDIG(b);
   
+  /* Why is this code here? (How can al be negative?)
+     03/19/2000 */
   if (al < 0)
     al = -al;
 

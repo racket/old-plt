@@ -53,7 +53,7 @@
 (define file-in (cadr cmd-line))
 (define file-out (filter-false (caddr cmd-line)))
 (define palm-out (if palm?
-		     (cadddr cmd-line)))
+		     (cadddr cmd-line)
 		     #f))
 
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
@@ -67,12 +67,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define cpp-process
-  (process (format "~a ~a ~a ~a"
+  (process (format "~a ~a ~a"
 		   cpp
 		   (if pgc? "-DMZ_PRECISE_GC" "")
-		   (if (null? (cdddr cmd-line))
-		       ""
-		       (cadddr cmd-line))
 		   file-in)))
 (close-output-port (cadr cpp-process))
 
@@ -153,6 +150,11 @@
   (apply fprintf (current-error-port) format args)
   (newline (current-error-port))
   (set! exit-with-error? #t))
+
+(define map-port
+  (if palm-out
+      (open-output-file palm-out 'truncate)
+      #f))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Output common defns
@@ -241,6 +243,10 @@
 (define CURRENT_NEW_THIS (string->symbol "CURRENT_NEW_THIS"))
 (define RESTORE_CURRENT_NEW_VAR_STACK (string->symbol "RESTORE_CURRENT_NEW_VAR_STACK"))
 (define XFORM_RESET_VAR_STACK (string->symbol "XFORM_RESET_VAR_STACK"))
+
+(define _OS_CALL (string->symbol "_OS_CALL"))
+(define _OS_CALL_WITH_SELECTOR (string->symbol "_OS_CALL_WITH_SELECTOR"))
+(define _OS_CALL_WITH_16BIT_SELECTOR (string->symbol "_OS_CALL_WITH_16BIT_SELECTOR"))
 
 (define non-functions
   '(<= < > >= == != !
@@ -519,19 +525,19 @@
 	      (list->seq (process-top-level (seq->list (seq-in body-v)) where))))
 	   (cdddr e))]
    
-   [(prototype? e)
-    (let ([name (register-proto-information e)])
-      (when show-info?
-	(printf "/* PROTO ~a */~n" name))
-      (if palm?
-	  (add-segment-label e)
-	  e))]
    [(typedef? e)
     (when show-info?
       (printf "/* TYPEDEF */~n"))
     (when pgc?
       (check-pointer-type e))
     e]
+   [(prototype? e)
+    (let ([name (register-proto-information e)])
+      (when show-info?
+	(printf "/* PROTO ~a */~n" name))
+      (if palm?
+	  (add-segment-label name e)
+	  e))]
    [(struct-decl? e)
     (if (braces? (caddr e))
 	(begin
@@ -551,22 +557,26 @@
 	  e))]
    [(function? e)
     (let ([name (register-proto-information e)])
-      (when show-info? (printf "/* FUNCTION ~a */~n" name)))
-    (if (or (not pgc?)
-	    (and where 
-		 (regexp-match "[.]h$" where)
-		 (let loop ([e e][prev #f])
-		   (cond
-		    [(null? e) #t]
-		    [(and (eq? ':: (tok-n (car e)))
-			  prev
-			  (eq? (tok-n prev) (tok-n (cadr e))))
-		     ;; inline constructor: need to convert
-		     #f]
-		    [else (loop (cdr e) (car e))]))))
-	;; Not pgc, or still in headers and probably a simple inlined function
-	e
-	(convert-function e))]
+      (when show-info? (printf "/* FUNCTION ~a */~n" name))
+      (if (or (not pgc?)
+	      (and where 
+		   (regexp-match "[.]h$" where)
+		   (let loop ([e e][prev #f])
+		     (cond
+		      [(null? e) #t]
+		      [(and (eq? ':: (tok-n (car e)))
+			    prev
+			    (eq? (tok-n prev) (tok-n (cadr e))))
+		       ;; inline constructor: need to convert
+		       #f]
+		      [else (loop (cdr e) (car e))]))))
+	  ;; Not pgc, or still in headers and probably a simple inlined function
+	  (begin
+	    (when palm?
+	      (fprintf map-port "(impl ~s)~n" name)
+	      (call-graph name e))
+	    e)
+	  (convert-function e)))]
    [(var-decl? e)
     (when show-info? (printf "/* VAR */~n"))
     (when pgc?
@@ -601,8 +611,10 @@
 	 (or (and
 	      ;; next-to-last is parens
 	      (parens? (list-ref e (- l 2)))
-	      ;; Symbol before parens
-	      (symbol? (tok-n (list-ref e (- l 3)))))
+	      ;; Symbol before parens, not '=
+	      (let ([s (tok-n (list-ref e (- l 3)))])
+		(and (symbol? s)
+		     (not (eq? '= s)))))
 	     (and
 	      ;; next-to-last is 0, then =, then parens
 	      (eq? 0 (tok-n (list-ref e (- l 2))))
@@ -870,6 +882,21 @@
 	   (begin
 	     (set! struct-defs (cons (cons name l) struct-defs))
 	     name)))))
+
+(define (add-segment-label name e)
+  (let loop ([e e])
+    (cond
+     [(null? (cdr e))
+      (fprintf map-port "(decl ~s)~n" name)
+      (list (make-tok (string->symbol (format "SEGOF_~a" name) )
+		      #f #f)
+	    (car e))]
+     [(memq (tok-n (car e)) (list _OS_CALL _OS_CALL_WITH_SELECTOR _OS_CALL_WITH_16BIT_SELECTOR))
+      ;; No segment wanted
+      e]
+     [else
+      (cons (car e) (loop (cdr e)))])))
+	
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Transformations
@@ -2221,6 +2248,40 @@
 
 (define (convert-paren-interior v vars c++-class live-vars complain-not-in)
   (convert-seq-interior v #t vars c++-class live-vars complain-not-in))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Palm call-graph
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (call-graph name e)
+  (let ([body-v (let* ([len (sub1 (length e))]
+		       [v (list-ref e len)])
+		  ;; Function may have trailing semicolon:
+		  (if (eq? semi (tok-n v))
+		      (list-ref e (sub1 len))
+		      v))])
+    (call-graph/body name (seq->list (seq-in body-v)))))
+
+(define (call-graph/body name body-e)
+  (let ([el (body->lines body-e #f)])
+    (for-each
+     (lambda (v)
+       (call-graph/stmt name v))
+     el)))
+
+(define (call-graph/stmt name e)
+  ;; e is a single statement
+  (for-each
+   (lambda (v)
+    (cond
+     [(seq? v)
+      (call-graph/body name (seq->list (seq-in v)))]
+     [(assq (tok-n v) (prototyped))
+      (fprintf map-port
+	       "(call ~s ~s)~n"
+	       name (tok-n v))]
+     [else (void)]))
+   e))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; More "parsing", main loop

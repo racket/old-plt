@@ -830,28 +830,43 @@
                 (e:internal-error expr "cannot annotate units or classes in foot-wrap mode")]
                
                [(z:unit-form? expr)
-                (let*-values 
-                    ([(imports) (z:unit-form-imports expr)]
-                     [(exports) (map (lambda (export)
+                (let* ([imports (z:unit-form-imports expr)]
+                       [exports (map (lambda (export)
                                        (list (translate-varref (car export))
                                              (z:read-object (cdr export))))
                                      (z:unit-form-exports expr))]
-                     [(clauses free-vars-lists)
-                      (dual-map (lambda (expr)
-                                  (annotate/inner expr 'all #f #t #t #f))
-                                (z:unit-form-clauses expr))]
-                     [(_) (for-each utils:check-for-keyword imports)]
-                     [(annotated) `(#%unit
-                                    (import ,@(map get-binding-name imports))
-                                    (export ,@exports)
-                                    ,@clauses)]
-                     [(free-bindings) 
-                      (binding-set-remove
-                       (binding-set-union imports
-                                          (extract-top-level-slots (z:unit-form-clauses expr)))
-                       (apply binding-set-union free-vars-lists)
-                       expr)])
-                  (values (appropriate-wrap annotated free-bindings) free-bindings))]
+                       [_ (for-each utils:check-for-keyword imports)])
+                  (ccond 
+                   [cheap-wrap?
+                    (let*-values
+                        ([(clauses free-vars-lists)
+                          (dual-map (lambda (expr)
+                                      (annotate/inner expr 'all #f #t #f))
+                                    (z:unit-form-clauses expr))]
+                         [(annotated) `(#%unit
+                                        (import ,@(map get-binding-name imports))
+                                        (export ,@exports)
+                                        ,@clauses)]
+                         [(free-bindings) 
+                          (binding-set-remove
+                           (binding-set-union imports
+                                              (extract-top-level-slots (z:unit-form-clauses expr)))
+                           (apply binding-set-union free-vars-lists)
+                           expr)])
+                      (values (appropriate-wrap annotated free-bindings) free-bindings))]
+                   [ankle-wrap?
+                    (let*-values
+                        ([(process-clause
+                           (lambda (clause)
+                             (if (z:define-values-form? clause)
+                                 (let*-values
+                                     ([(binding-names) (map z:varref-var (z:define-values-form-vars clause))]
+                                      [(annotated-rhs free-vars)
+                                       (set!-rhs-recur (z:define-values-form-val clause) 
+                                                       (if (null? binding-names)
+                                                           #f
+                                                           (car binding-names)))])
+                                   (values `(#%set!-values ,binding-names annotated-rhs) free-vars ; I AM HERE
 	       
                [(z:compound-unit-form? expr)
                 (let ((imports (map get-binding-name
@@ -1064,7 +1079,7 @@
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
-                         (annotate/inner expr 'all #f #t #t #f)])
+                         (annotate/inner expr 'all #f #t #f)])
              annotated)))
          
          ; body of local

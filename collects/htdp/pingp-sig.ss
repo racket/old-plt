@@ -17,7 +17,7 @@
     change-height
     change-speed
     change-wind
-    NORTH SOUTH EAST WEST
+    NORTH SOUTH EAST WEST FAR-WEST 
     PADDLE-X
     PADDLE-Y
     ))

@@ -509,7 +509,7 @@
                           [(1) "containing-match"]
                           [(2) "regexp-match"])
                         lucky?
-                        manuals
+                        (map string->symbol manuals)
                         doc.txt?
                         (get-language-name))])
               ;; have to use `send this' since I don't know yet

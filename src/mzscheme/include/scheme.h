@@ -1041,8 +1041,13 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #define scheme_break_waiting(p) (p->external_break)
 
 #ifndef USE_MZ_SETJMP
-# define scheme_mz_longjmp(b, v) longjmp(b, v)
-# define scheme_mz_setjmp(b) setjmp(b)
+# ifdef USE_UNDERSCORE_SETJMP
+#  define scheme_mz_longjmp(b, v) _longjmp(b, v)
+#  define scheme_mz_setjmp(b) _setjmp(b)
+# else
+#  define scheme_mz_longjmp(b, v) longjmp(b, v)
+#  define scheme_mz_setjmp(b) setjmp(b)
+# endif
 #endif
 
 #ifdef MZ_PRECISE_GC

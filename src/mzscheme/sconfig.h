@@ -307,6 +307,8 @@
 #  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
 # endif
 
+# define USE_UNDERSCORE_SETJMP
+
 # define USE_IEEE_FP_PREDS
 # define FREEBSD_CONTROL_387
 # define POW_HANDLES_INF_CORRECTLY
@@ -991,6 +993,9 @@
  /* SIGCHILD_DOESNT_INTERRUPT_SELECT indicates that the SIGCHILD
     signal, sent when a child OS process dies, does not interrupt
     select(). This flag is needed for Cygwin B20. */
+
+ /* USE_UNDERSCORE_SETJMP uses _setjmp() instead of setjmp() to avoid
+    sigmal-mask work. */
 
   /**********************/
  /* Inexact Arithmetic */

@@ -41,6 +41,7 @@
 #define scheme_add_managed (scheme_extension_table->scheme_add_managed)
 #define scheme_remove_managed (scheme_extension_table->scheme_remove_managed)
 #define scheme_close_managed (scheme_extension_table->scheme_close_managed)
+#define scheme_schedule_custodian_close (scheme_extension_table->scheme_schedule_custodian_close)
 #define scheme_add_atexit_closer (scheme_extension_table->scheme_add_atexit_closer)
 #define scheme_add_waitable (scheme_extension_table->scheme_add_waitable)
 #define scheme_add_waitable_through_sema (scheme_extension_table->scheme_add_waitable_through_sema)

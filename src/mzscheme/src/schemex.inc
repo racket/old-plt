@@ -41,6 +41,7 @@
   scheme_extension_table->scheme_add_managed = scheme_add_managed;
   scheme_extension_table->scheme_remove_managed = scheme_remove_managed;
   scheme_extension_table->scheme_close_managed = scheme_close_managed;
+  scheme_extension_table->scheme_schedule_custodian_close = scheme_schedule_custodian_close;
   scheme_extension_table->scheme_add_atexit_closer = scheme_add_atexit_closer;
   scheme_extension_table->scheme_add_waitable = scheme_add_waitable;
   scheme_extension_table->scheme_add_waitable_through_sema = scheme_add_waitable_through_sema;

@@ -33,6 +33,7 @@ EXPORTS
  scheme_add_managed
  scheme_remove_managed
  scheme_close_managed
+ scheme_schedule_custodian_close
  scheme_add_atexit_closer
  scheme_add_waitable
  scheme_add_waitable_through_sema

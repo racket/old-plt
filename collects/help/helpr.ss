@@ -5,7 +5,8 @@
 	 (FILE : mzlib:file^)
 	 (URL : mzlib:url^)
 	 (MRED : mred^)
-	 (FRAMEWORK : framework^))
+	 (FRAMEWORK : framework^)
+	 (MIXIN : (frame-mixin)))
  (link [BROWSER : browser^ ((require-library "browserr.ss" "browser")
 			    FUNCTION STRING FILE URL MRED)]
        [SEARCH : help:search^ ((require-relative-library "search.ss")
@@ -14,6 +15,6 @@
 	     ((require-relative-library "helpwin.ss")
 	      SEARCH
 	      BROWSER FUNCTION STRING FILE URL
-	      MRED FRAMEWORK)])
+	      MRED FRAMEWORK MIXIN)])
  (export (open HELP)))
 

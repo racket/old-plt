@@ -7,7 +7,60 @@
 	  mzlib:file^
 	  mzlib:url^
 	  mred^
-	  (framework : framework^))
+	  (framework : framework^)
+	  (frame-mixin))
+
+  (define last-url-string #f)
+
+  (define (open-url-from-user parent goto-url)
+    (letrec ([d (make-object dialog% "Open URL" parent 500)]
+	     [t (make-object text-field% "URL:" d
+			     (lambda (t e)
+			       (update-ok)))]
+	     [p (make-object horizontal-panel% d)]
+	     [browse (make-object button% "Browse..." p
+				  (lambda (b e)
+				    (let ([f (get-file)])
+				      (when f
+					(send t set-value (string-append "file:" f))
+					(update-ok)))))]
+	     [spacer (make-object vertical-pane% p)]
+	     [ok (make-object button% "Open" p
+			      (lambda (b e)
+				(let* ([s (send t get-value)]
+				       [done (lambda ()
+					       (set! last-url-string s)
+					       (send d show #f))])
+				  (with-handlers ([void
+						   (lambda (x)
+						     (if (exn:file-saved-instead? x)
+							 (done)
+							 (unless (exn:cancelled? x)
+							   (message-box "Bad URL" 
+									(format "Bad URL: ~a" (exn-message x))
+									d))))])
+				    (let ([url (string->url
+						(cond
+						 [(regexp-match ":" s) s]
+						 [(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
+						  (string-append "http://" s)]
+						 [else
+						  (string-append "file:" s)]))])
+				      (goto-url url)
+				      (done)))))
+			      '(border))]
+	     [update-ok (lambda () (send ok enable 
+					 (positive? (send (send t get-editor) 
+							  last-position))))]
+	     [cancel (make-object button% "Cancel" p 
+				  (lambda (b e) (send d show #f)))])
+      (when last-url-string 
+	(send t set-value last-url-string))
+      (send p set-alignment 'right 'center)
+      (update-ok)
+      (send d center)
+      (send t focus)
+      (send d show #t)))
 
   (define go-unit
     (unit (import startup-url extend-file-menu)
@@ -31,52 +84,125 @@
 		    (loop (add1 n) (format "Help Desk ~a" n))
 		    name))))
 
-	  (define f (make-object (class framework:frame:basic% args
-				   (rename [super-on-subwindow-char on-subwindow-char])
-				   (public
-				     [search-for-help
-				      (lambda (text type mode)
-					(send (send search-text get-editor) erase)
-					(run-search text 
-						    (case type
-						      [(keyword) 0]
-						      [(keyword+index) 1]
-						      [(all) 2]
-						      [else (raise-type-error 'search-for-help
-									      "'keyword, 'keyword-index, or 'all"
-									      type)])
-						    (case mode
-						      [(exact) 0]
-						      [(contains) 1]
-						      [(regexp) 2]
-						      [else (raise-type-error 'search-for-help
-									      "'exact, 'contains, or 'regexp"
-									      mode)])))])
-				   (override 
-				     [on-subwindow-char 
-				      (lambda (w e)
-					(case (send e get-key-code)
-					  [(prior) (send (send results get-editor) move-position 'up #f 'page) #t]
-					  [(next) (send (send results get-editor) move-position 'down #f 'page) #t]
-					  [(left) (if (send e get-meta-down)
-						      (send html-panel rewind)
-						      (super-on-subwindow-char w e))]
-					  [(right) (if (send e get-meta-down)
-						       (send html-panel forward)
+	  (define f (make-object (frame-mixin
+				  (class framework:frame:standard-menus% args
+				    (inherit get-edit-target-object)
+				    (rename [super-on-subwindow-char on-subwindow-char])
+				    (public
+				      [search-for-help
+				       (lambda (text type mode)
+					 (send (send search-text get-editor) erase)
+					 (run-search text 
+						     (case type
+						       [(keyword) 0]
+						       [(keyword+index) 1]
+						       [(all) 2]
+						       [else (raise-type-error 'search-for-help
+									       "'keyword, 'keyword-index, or 'all"
+									       type)])
+						     (case mode
+						       [(exact) 0]
+						       [(contains) 1]
+						       [(regexp) 2]
+						       [else (raise-type-error 'search-for-help
+									       "'exact, 'contains, or 'regexp"
+									       mode)])))]
+
+				      [goto-url (lambda (url) (send results goto-url url #f))])
+						  
+
+				    (private
+				      [edit-menu:do (lambda (const)
+						      (lambda (menu evt)
+							(let ([edit (get-edit-target-object)])
+							  (when (and edit (is-a? edit editor<%>))
+							    (send edit do-edit-operation const)))))])
+				    
+				    (override
+				      [file-menu:new-string (lambda () "Help Desk")]
+				      [file-menu:new (lambda (i e) (new-help-frame startup-url extend-file-menu))]
+
+				      [file-menu:open-string (lambda () "URL")]
+				      [file-menu:open
+				       (lambda (i e)
+					 (open-url-from-user this goto-url))]
+				      
+				      [file-menu:print (lambda (i e) (send (send results get-editor) print))]
+
+				      [edit-menu:undo (edit-menu:do 'undo)]
+				      [edit-menu:redo (edit-menu:do 'redo)]
+				      [edit-menu:cut (edit-menu:do 'cut)]
+				      [edit-menu:clear (edit-menu:do 'clear)]
+				      [edit-menu:copy (edit-menu:do 'copy)]
+				      [edit-menu:paste (edit-menu:do 'paste)]
+				      [edit-menu:select-all (edit-menu:do 'select-all)]
+
+				      [edit-menu:find-string (lambda () "in Page...")]
+				      [edit-menu:find (lambda (i e)
+							(send results force-display-focus #t)
+							(letrec ([d (make-object dialog% "Find" f 300)]
+								 [enable-find (lambda ()
+										(send find enable 
+										      (positive? (send (send t get-editor) 
+												       last-position))))]
+								 [t (make-object text-field% "Find:" d
+										 (lambda (t e) (enable-find)))]
+								 [p (make-object horizontal-panel% d)]
+								 [find (make-object button% "Find" p
+										    (lambda (b e)
+										      (find-str (send t get-value)))
+										    '(border))]
+								 [close (make-object button% "Close" p
+										     (lambda (b e) (send d show #f)))])
+							  (send t set-value (or last-find-str ""))
+							  (enable-find)
+							  (send p set-alignment 'right 'center)
+							  (send d center)
+							  (send t focus)
+							  (send d show #t))
+							(send results force-display-focus #f))]
+				      [edit-menu:between-find-and-preferences
+				       (lambda (menu)
+					 (make-object menu-item% "Find Again" menu
+						      (lambda (i e) (find-str))
+						      (and (framework:preferences:get 'framework:menu-bindings)
+							   #\G))
+					 (make-object separator-menu-item% menu))]
+
+				      [help-menu:after-about
+				       (lambda (menu)
+					 (make-object menu-item% "Help" menu
+						      (lambda (i e)
+							(message-box
+							 "Help on Help"
+							 "Click the `Home' button, then follow the `How to use Help Desk' link."))))])
+				    
+				    (override 
+				      [on-subwindow-char 
+				       (lambda (w e)
+					 (case (send e get-key-code)
+					   [(prior) (send (send results get-editor) move-position 'up #f 'page) #t]
+					   [(next) (send (send results get-editor) move-position 'down #f 'page) #t]
+					   [(left) (if (send e get-meta-down)
+						       (send html-panel rewind)
 						       (super-on-subwindow-char w e))]
-					  [else (if (and (eq? #\tab (send e get-key-code))
-							 (eq? w results))
-						    ; Override normal behavior, which is to pass the tab on to
-						    ; the edit
-						    (if (send e get-shift-down)
-							(send before-results focus)
-							(let ([e (send search-text get-editor)])
-							  (send search-text focus)
-							  (send e set-position 0 (send e last-position)
-								#f #t 'local)))
-						    (super-on-subwindow-char w e))]))])
-				   (sequence (apply super-init args)))
+					   [(right) (if (send e get-meta-down)
+							(send html-panel forward)
+							(super-on-subwindow-char w e))]
+					   [else (if (and (eq? #\tab (send e get-key-code))
+							  (eq? w results))
+						     ; Override normal behavior, which is to pass the tab on to
+						     ; the edit
+						     (if (send e get-shift-down)
+							 (send before-results focus)
+							 (let ([e (send search-text get-editor)])
+							   (send search-text focus)
+							   (send e set-position 0 (send e last-position)
+								 #f #t 'local)))
+						     (super-on-subwindow-char w e))]))])
+				    (sequence (apply super-init args))))
 				 (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 60)))))
+
 	  (define html-panel (make-object (class hyper-panel% ()
 					    (inherit get-canvas)
 					    (rename [super-leaving-page leaving-page])
@@ -236,108 +362,6 @@
 				(send e set-position pos (+ pos (string-length s)))
 				(bell))))))
 		  (bell))]))
-
-	  (define last-url-string #f)
-
-	  (let* ([mb (send f get-menu-bar)]
-		 [file (make-object menu% "&File" mb)]
-		 [edit (make-object menu% "&Edit" mb)])
-	    (append-editor-operation-menu-items edit)
-	    (make-object separator-menu-item% edit)
-	    (make-object menu-item% "Find on Page..." edit
-			 (lambda (i e)
-			   (send results force-display-focus #t)
-			   (letrec ([d (make-object dialog% "Find" f 300)]
-				    [enable-find (lambda ()
-						   (send find enable 
-							 (positive? (send (send t get-editor) 
-									  last-position))))]
-				    [t (make-object text-field% "Find:" d
-						    (lambda (t e) (enable-find)))]
-				    [p (make-object horizontal-panel% d)]
-				    [find (make-object button% "Find" p
-						       (lambda (b e)
-							 (find-str (send t get-value)))
-						       '(border))]
-				    [close (make-object button% "Close" p
-							(lambda (b e) (send d show #f)))])
-			     (send t set-value (or last-find-str ""))
-			     (enable-find)
-			     (send p set-alignment 'right 'center)
-			     (send d center)
-			     (send t focus)
-			     (send d show #t))
-			   (send results force-display-focus #f))
-			 #\F)
-	    (make-object menu-item% "Find Again" edit
-			 (lambda (i e) (find-str))
-			 #\G)
-
-	    (make-object menu-item% "Open URL..." file 
-			 (lambda (i e)
-			   (letrec ([d (make-object dialog% "Open URL" f 500)]
-				    [t (make-object text-field% "URL:" d
-						    (lambda (t e)
-						      (update-ok)))]
-				    [p (make-object horizontal-panel% d)]
-				    [browse (make-object button% "Browse..." p
-							 (lambda (b e)
-							   (let ([f (get-file)])
-							     (when f
-							       (send t set-value (string-append "file:" f))
-							       (update-ok)))))]
-				    [spacer (make-object vertical-pane% p)]
-				    [ok (make-object button% "Open" p
-						     (lambda (b e)
-						       (let* ([s (send t get-value)]
-							      [done (lambda ()
-								      (set! last-url-string s)
-								      (send d show #f))])
-							 (with-handlers ([void
-									  (lambda (x)
-									    (if (exn:file-saved-instead? x)
-										(done)
-										(unless (exn:cancelled? x)
-										  (message-box "Bad URL" 
-											       (format "Bad URL: ~a" (exn-message x))
-											       d))))])
-							   (let ([url (string->url
-								       (cond
-									[(regexp-match ":" s) s]
-									[(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
-									 (string-append "http://" s)]
-									[else
-									 (string-append "file:" s)]))])
-							     (send results goto-url url #f)
-							     (done)))))
-						     '(border))]
-				    [update-ok (lambda () (send ok enable 
-								(positive? (send (send t get-editor) 
-										 last-position))))]
-				    [cancel (make-object button% "Cancel" p 
-							 (lambda (b e) (send d show #f)))])
-			     (when last-url-string 
-			       (send t set-value last-url-string))
-			     (send p set-alignment 'right 'center)
-			     (update-ok)
-			     (send d center)
-			     (send t focus)
-			     (send d show #t)))
-			 #\O)
-	    (make-object menu-item% "New Help Desk" file 
-			 (lambda (m i) (new-help-frame startup-url extend-file-menu))
-			 #\N)
-	    (when extend-file-menu
-	      (extend-file-menu file))
-	    (make-object separator-menu-item% file)
-	    (make-object menu-item% "Print" file
-			 (lambda (m i) (send (send results get-editor) print))
-			 #\P)
-	    (make-object separator-menu-item% file)
-	    (make-object menu-item% "Close" file (lambda (i e) (send f close)) #\W)
-	    (make-object menu-item% 
-			 (if (eq? (system-type) 'windows) "E&xit" "Quit" )
-			 file (lambda (i e) (framework:exit:exit)) #\Q))
 
 	  (framework:frame:reorder-menus f)
 
@@ -512,5 +536,4 @@
   (define (new-help-frame startup-url extend-file-menu)
     (invoke-unit go-unit startup-url extend-file-menu))
 
-  new-help-frame)
-
+  (values new-help-frame open-url-from-user))

@@ -29,29 +29,45 @@ the following imports:
   mzlib:url^ - not really in MzLib; it's in the "net" collection
   mred^
   framework^
+  (frame-mixin) - a mixin to be applied to Help Desk's frame, which
+                  is derived from framework:frame:standard-menus%
 
 It exports
 
 > help:help^
 
-which contains one item:
+which contains two items:
 
-> (new-help-frame startup-url) - takes a a url (a string or a url
+> (new-help-frame startup-url) - takes a url (a string or a url
        record) to use as the initial page for the window. Returns a
-       frame% object.
+       frame% object (more specifically, an instance of
+       framework:frame:standard-menus%). See below for information
+       about public methods of this object.
 
-The returned frame is derived from franework's frame:basic% and has
-one extra method:
+> (open-url-from-user parent-window open-url-proc) - opens a dialog
+       from which the user selects a url to open. The `parent'
+       argument specifies a parent window for the dialog. The
+       `open-url-proc' proecdure is called with a URL structure (see
+       the URL library in the "net" collection). If `open-url-proc'
+       raises an `exn:file-saved-instead' or `exn:cancelled' exception
+       (as defined by the "browser" collections), it is caught. The
+       dialog is not closed until an URL is opened sucessfully or the
+       user clicks the Cancel button.
+
+The frame returned by `new-help-frame' provides two extra methods:
 
 > search-for-help :: (send a-help-frame search-for-help string type mode)
     - simulates a user-initiated search in the window, where `string'
     is the search input, `type' is 'keyword, 'keyword+index, or 'all,
     and `mode' is 'exact, 'contains, or 'regexp.
 
+> open-url :: (send a-help-frame open-url url) - opens the given URL
+    within the help frame.
+
 All of the helpr.ss unit's imports must be initialized before the Help
-Desk unit itself. For dynamic-linking convenience, the`
-new-help-frame' procedure is also returned as the value of the unit's
-initialization expression.
+Desk unit itself. For dynamic-linking convenience, the
+`new-help-frame' and `open-url-from-user' procedures are also returned
+as the value of the unit's initialization expression.
 
 _Creating Help Desk Documentation_
 ==================================

@@ -11,6 +11,6 @@
 (begin-elaboration-time
  (require-library "sig.ss" "browser"))
 
-;; Interface; search reports results through these procedures
 (define-signature help:help^
-  (new-help-frame))
+  (new-help-frame
+   open-url-from-user))

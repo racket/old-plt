@@ -35,20 +35,20 @@
 
   ;; ********************************************************************************
   ;; The current-servlet-context parameter
-  (define current-servlet-context (make-parameter #f))
+  (define current-servlet-context (make-thread-cell #f))
 
   ;; clear-continuations! -> void
   ;; replace the k-table for the current servlet-instance
   (define (clear-continuations!)
     (set-servlet-instance-k-table!
      (servlet-context-instance
-      (current-servlet-context))
+      (thread-cell-ref current-servlet-context))
      (make-hash-table)))
 
   ;; store-continuation!: continuation -> url-string
   ;; store a continuation in the k-table for the current servlet-instance
   (define (store-continuation! k)
-    (let* ([ctxt  (current-servlet-context)]
+    (let* ([ctxt  (thread-cell-ref current-servlet-context)]
            [inst (servlet-context-instance ctxt)]
            [next-k-id (servlet-instance-next-k-id inst)]
            [k-table (servlet-instance-k-table inst)])
@@ -140,9 +140,9 @@
   ;; send a response and don't clear the continuation table
   (define (send/back resp)
     (output-page/port
-     (servlet-context-connection (current-servlet-context))
+     (servlet-context-connection (thread-cell-ref current-servlet-context))
      resp)
-    ((servlet-context-suspend (current-servlet-context))))
+    ((servlet-context-suspend (thread-cell-ref current-servlet-context))))
   
   ;; send/finish: response -> void
   ;; send a response and clear the continuation table
@@ -155,9 +155,9 @@
   (define (send/suspend response-generator)
     (let/cc k
       (output-page/port
-       (servlet-context-connection (current-servlet-context))
+       (servlet-context-connection (thread-cell-ref current-servlet-context))
        (response-generator (store-continuation! k)))
-      ((servlet-context-suspend (current-servlet-context)))))
+      ((servlet-context-suspend (thread-cell-ref current-servlet-context)))))
     
 
   ;; send/forward: (url -> response) -> request

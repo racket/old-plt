@@ -1,77 +1,99 @@
 (module servlet-tables mzscheme
-  (require "channel.ss"
-	   "internal-structs.ss"
-	   "util.ss"
-	   "servlet-sig.ss"
-           (lib "xml.ss" "xml"))
-  (provide gen-send/suspend gen-resume-next-request
-	   add-new-instance timeout-error TEXT/HTML-MIME-TYPE purge-table)
+  (require (lib "contract.ss")
+           (lib "url.ss" "net")
+           (lib "list.ss"))
+  (provide (struct exn:servlet-instance ())
+           (struct exn:servlet-continuation ())
+           (struct servlet-context (instance connection request suspend))
+           (struct servlet-instance (invoke-id k-table next-k-id mutex))
+           current-servlet-context)
 
-  ; : method Url instance-table sym (servlet -> void) -> void
-  (define (purge-table method uri instances invoke-id clear!)
-    (let ([inst (hash-table-get instances invoke-id (lambda () #f))])
-      (when inst
-        (clear! inst)
-        (let loop ()
-          (async-channel-get-available
-           (servlet-instance-channel inst)
-           (lambda (x)
-             (timeout-error method uri (car x))
-             (loop)))))))
-  
-  ; more here - refactor gen-send/suspend, but look at development environment first
-  
-  ; gen-send/suspend : url sym instance-table (response -> void) (instance -> doesn't) -> (str -> response) -> request
-  (define (gen-send/suspend uri invoke-id instances output-page resume-next-request)
-    (lambda (page-maker)
-      (let/cc k
-        (let* ([inst (hash-table-get instances invoke-id)]
-               [c (servlet-instance-channel inst)]
-               [k-count (add1 (servlet-instance-k-counter inst))]
-               [cont-table (servlet-instance-cont-table inst)]
-               [k-id (format "k~a-~a" k-count (random 2000000000))])
-          (set-servlet-instance-k-counter! inst k-count)
-          (hash-table-put! cont-table (string->symbol k-id) k)
-          (output-page (page-maker (update-params uri (format "~a*~a" invoke-id k-id))))
-          (resume-next-request inst)))))
-  
-  ; :  (-> void) (channel -> void) -> instance -> doesn't
-  (define (gen-resume-next-request update-time! update-channel!)
-    (lambda (inst)
-      (let ([resume (async-channel-get (servlet-instance-channel inst))])
-        ; set! - modeling things that change over time
-        (update-time!)
-        ; set! justified - communicating between threads
-        (update-channel! (car resume))
-        ((cadr resume) (caddr resume)))))
-  
-  ; add-new-instance : servlet-instance sym instance-table -> void
-  (define (add-new-instance new-instance invoke-id instances)
-    (hash-table-put! instances invoke-id new-instance))
-  
-  (define TEXT/HTML-MIME-TYPE "text/html")
-  
-  (define TIME-OUT-CODE 200)
-  (define TIME-OUT-HEADERS null)
-  
-  ;(define TIME-OUT-HEADERS
-  ;  `(("Location: " ,(url-path uri))
-  ;    ("Retry-After: 5")))
-  
-  ; timeout-error : Method Url channel -> void
-  ; the code must not be an error because some configurations of IE produce
-  ; "Internal Error, please see Microsoft's search engine" for 500 responses
-  ; instead of displaying the server's error message.
-  (define (timeout-error method uri channel)
-    (async-channel-put
-     channel
-     (make-response/full
-      TIME-OUT-CODE "Timeout" (current-seconds) TEXT/HTML-MIME-TYPE TIME-OUT-HEADERS
-      (if (eq? method 'head)
-          null
-          (list (xexpr->string
-                 `(html (head (title "Timeout"))
-                        (body
-                         (p "The transaction referred to by this url is no longer active."
-                            "  Please " (a ((href ,(update-params uri #f))) "restart")
-                            " the transaction."))))))))))
+  (define-struct servlet-context (instance connection request suspend))
+  (define-struct servlet-instance (invoke-id k-table next-k-id mutex))
+
+  (provide/contract
+   [continuation-url? (url? . -> . (union boolean? (list/p symbol? number?)))]
+   [embed-ids (symbol? number? url? . -> . string?)]
+   [create-new-instance! (hash-table? symbol? . -> . servlet-instance?)]
+   )
+
+  ;; The current-servlet-context parameter
+  (define current-servlet-context (make-thread-cell #f))
+
+  ;; not found in the instance table
+  (define-struct (exn:servlet-instance exn) ())
+  ;; not found in the continuatin table
+  (define-struct (exn:servlet-continuation exn) ())
+
+
+  ;; create-new-instance! args -> servlet-instance
+  (define (create-new-instance! instance-table invoke-id)
+    (let ([inst (make-servlet-instance invoke-id (make-hash-table) 0
+                                       (make-semaphore 0))])
+      (hash-table-put! instance-table invoke-id inst)
+      inst))
+
+  ;; ********************************************************************************
+  ;; Parameter Embedding
+
+  (define URL-PARAMS:REGEXP (regexp "([^\\*]*)\\*(.*)"))
+
+  (define (match-url-params x) (regexp-match URL-PARAMS:REGEXP x))
+
+  ;; embed-ids: number number url -> string
+  ;; embedd the two numbers in a url
+  (define (embed-ids invoke-id k-id in-url)
+    (insert-param
+     in-url
+     (format "~a*~a" invoke-id k-id)))
+
+  ;; continuation-url?: url -> (union (list number number) #f)
+  ;; determine if this url encodes a continuation and extract the instance id and
+  ;; continuation id.
+  (define (continuation-url? a-url)
+    (let ([str (url->param a-url)])
+      (and str
+           (let ([param-match (cdr (match-url-params str))])
+             (list (string->symbol (car param-match))
+                   (string->number (cadr param-match)))))))
+
+  ;; url->param: url -> (union string #f)
+  (define (url->param a-url)
+    (let ([l (filter path/param? (url-path a-url))])
+      (and (not (null? l))
+           (path/param-param (car l)))))
+
+  ;; insert-param: url string -> string
+  ;; add a path/param to the path in a url
+  ;; (assumes that there is only one path/param)
+  (define (insert-param in-url new-param-str)
+    (url->string
+     (replace-path
+      (lambda (old-path)
+        (if (null? old-path)
+            (list (make-path/param "" new-param-str))
+            (let* ([car-old-path (car old-path)])
+              (cons (make-path/param (if (path/param? car-old-path)
+                                         (path/param-path car-old-path)
+                                         car-old-path)
+                                     new-param-str)
+                    (cdr old-path)))))
+      in-url)))
+
+  ;; replace-path: (url-path -> url-path) url -> url
+  ;; make a new url by replacing the path part of a url with a function
+  ;; of the url's old path
+  (define (replace-path proc in-url)
+    (let ([new-path (proc (url-path in-url))])
+      (make-url
+       (url-scheme in-url)
+       (url-user in-url)
+       (url-host in-url)
+       (url-port in-url)
+       new-path
+       (url-query in-url)
+       (url-fragment in-url))))
+
+  ;; **************************************************
+
+  )

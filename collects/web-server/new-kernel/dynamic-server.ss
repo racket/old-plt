@@ -4,7 +4,6 @@
            "util.ss"
            "request-parsing.ss"
            "response-encoding.ss"
-           "connection-manager.ss"
            "server-kernel-structs.ss"
            "servlet.ss")
   (provide meta-serve)
@@ -82,16 +81,16 @@
                    [k-table
                     (servlet-instance-k-table inst)])
               (let/ec suspend
-                (parameterize ([current-servlet-context
-                                (make-servlet-context
-                                 inst conn req
-                                 (lambda () (suspend #t)))])
-               ((hash-table-get k-table (cadr k-ref)
-                                (lambda ()
-                                  (raise
-                                   (make-exn:servlet-continuation
-                                    "" (current-continuation-marks)))))
-                req))))))]
+                (thread-cell-set! current-servlet-context
+                                  (make-servlet-context
+                                   inst conn req
+                                   (lambda () (suspend #t))))
+                ((hash-table-get k-table (cadr k-ref)
+                                 (lambda ()
+                                   (raise
+                                    (make-exn:servlet-continuation
+                                     "" (current-continuation-marks)))))
+                 req)))))]
      [else (load-servlet/path servlet-path conn req)]))
 
   ;; **************************************************
@@ -102,12 +101,12 @@
   (define (load-servlet/path servlet-path conn req)
     (myprint "servlet-path = ~a~n" servlet-path)
     (let/ec suspend
-     (parameterize ([current-servlet-context
-                     (make-servlet-context (create-new-instance!)
+     (parameterize ([current-namespace (make-servlet-namespace)])
+      (thread-cell-set! current-servlet-context
+                        (make-servlet-context (create-new-instance!)
                                            conn req
-                                           (lambda () (suspend #t)))]
-                    [current-namespace (make-servlet-namespace)])
-      (namespace-require `(file ,(path->string servlet-path))))))
+                                           (lambda () (suspend #t)))
+      (namespace-require `(file ,(path->string servlet-path)))))))
 
   ;; servlet-import-modules is a (listof symbol)
   ;; use the current-module-name resolver to get the symbols for all the

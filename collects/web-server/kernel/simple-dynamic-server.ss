@@ -55,12 +55,23 @@
        [(continuation-url? uri)
         => (lambda (k-ref)
              (invoke-servlet-continuation conn req k-ref))]
-
        [else
-        (let-values ([(svt-path path-prefix path-suffix)
+        (serve-dynamic-resource/path conn req d-pair suff)])))
+
+  ;; serve-dynamic-resource/path: connection request dynamic-pair logical-path
+  ;;                              -> void
+  ;; This is not a continuation-url so the loading behavior is determined by
+  ;; the url path. Build the servlet path and dispatch based on the resource
+  ;; type
+  (define (serve-dynamic-resource/path conn req d-pair suff)
+    (let-values ([(svt-path path-prefix path-suffix)
                       (build-servlet-path d-pair suff)])
-          (cond
-           [svt-path
+      (cond
+       [svt-path
+        (let-values ([(base name must-be-dir?) (split-path svt-path)])
+          ;; don't need to check must-be-dir? because build-servlet-path
+          ;; should always return a path to a file.
+          (parameterize ([current-directory base])
             (set-request-path-prefix! req path-prefix)
             (set-request-path-suffix! req path-suffix)
             (cond
@@ -70,9 +81,13 @@
               => (lambda (pk-ref)
                    (invoke-persistent-continuation svt-path conn req pk-ref))]
              [else
-              (load-servlet svt-path conn req)])]
-           [else
-            (report-error 404 conn (request-method req))]))])))
+              (load-servlet svt-path conn req)])))]
+       [else
+        (report-error 404 conn (request-method req))])))
+
+
+
+
 
   (define-struct (exn:servlet-instance exn) ())
   (define-struct (exn:servlet-continuation exn) ())

@@ -2,13 +2,7 @@
   (require (lib "unitsig.ss")
 	   (lib "mred-sig.ss" "mred"))
 
-  (require "gui-utils-sig.ss"
-	   "gui-utils-unit.ss"
-
-           "test-sig.ss"
-           "test-unit.ss"
-           
-           "framework-sig.ss"
+  (require "framework-sig.ss"
 	   "private/sig.ss"
 
            "private/application.ss"
@@ -38,25 +32,22 @@
 	   "private/scheme.ss"
 	   "private/main.ss")
 
-  (provide framework@
-	   frameworkc@)
+  (provide framework@)
 
-  (define frameworkc@
+  (define framework@
     (compound-unit/sig
-      (import [mred : mred^]
-	      [test : framework:test^]
-	      [gui-utils : framework:gui-utils^])
+      (import [mred : mred^])
       (link [application : framework:application^ (application@)]
 	    [version : framework:version^ (version@)]
 	    [color-model : framework:color-model^ (color-model@ )]
 	    [exn : framework:exn^ (exn@)]
-	    [exit : framework:exit^ (exit@ mred preferences gui-utils)]
+	    [exit : framework:exit^ (exit@ mred preferences)]
 	    [menu : framework:menu^ (menu@ mred preferences)]
 	    [preferences : framework:preferences^
 			 (preferences@ mred exn exit panel)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences)]
 	    [handler : framework:handler^
-		     (handler@ mred gui-utils finder group text preferences frame)] 
+		     (handler@ mred finder group text preferences frame)] 
 	    [keymap : framework:keymap^
 		    (keymap@ mred preferences finder handler scheme-paren frame editor)]
 	    [match-cache : framework:match-cache^ (match-cache@)]
@@ -66,22 +57,22 @@
 	    [icon : framework:icon^ (icon@ mred)]
 	    [editor : framework:editor^
 		    (editor@ mred autosave finder path-utils keymap icon
-			     preferences text pasteboard frame gui-utils handler)]
+			     preferences text pasteboard frame handler)]
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
-		  (text@ mred icon editor preferences keymap gui-utils color-model frame scheme)]
-	    [finder : framework:finder^ (finder@ mred preferences gui-utils keymap)]
+		  (text@ mred icon editor preferences keymap color-model frame scheme)]
+	    [finder : framework:finder^ (finder@ mred preferences keymap)]
 	    [group : framework:group^ 
-                   (group@ mred application frame preferences gui-utils text canvas menu)]
+                   (group@ mred application frame preferences text canvas menu)]
 	    [canvas : framework:canvas^ (canvas@ mred preferences frame)]
 	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 
-		   (frame@ mred group preferences icon handler application panel gui-utils
+		   (frame@ mred group preferences icon handler application panel
 			   exit finder keymap text pasteboard editor canvas menu)]
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren
 			     scheme-paren icon keymap text editor frame)]
-	    [main : framework:main^ (main@ mred preferences exit group gui-utils)])
+	    [main : framework:main^ (main@ mred preferences exit group)])
       (export
        (unit menu)
        (unit application)
@@ -107,15 +98,4 @@
        (unit panel)
        (unit frame)
        (unit scheme)
-       (unit main))))
-
-  (define framework@
-    (compound-unit/sig
-      (import [mred : mred^])
-      (link [test : framework:test^ (framework:test@ mred)]
-	    [gui-utils : framework:gui-utils^ (framework:gui-utils@ mred)]
-	    [f : frameworkc^ (frameworkc@ mred test gui-utils)])
-      (export
-       (unit test)
-       (unit gui-utils)
-       (open f)))))
+       (unit main)))))

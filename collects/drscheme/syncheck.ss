@@ -620,7 +620,7 @@
               (send report-error-parent-panel change-children
                     (lambda (l) (remq report-error-panel l)))))
           
-          (define (show-error-report) 
+          (define (show-error-report)
             (unless (member report-error-panel (send report-error-parent-panel get-children))
               (send report-error-parent-panel change-children
                     (lambda (l) (cons report-error-panel l)))))
@@ -639,6 +639,8 @@
               (lock #t)
               (end-edit-sequence))
 
+            (show-error-report)
+            
             (let ([do-highlight
                    (lambda (src start span)
                      (when (and (is-a? src fw:text:basic<%>)
@@ -659,9 +661,7 @@
                      (do-highlight (syntax-source stx)
                                    (syntax-position stx)
                                    (syntax-span stx))))]
-                [else (void)]))
-            
-            (show-error-report))
+                [else (void)])))
           
           (rename [super-make-root-area-container make-root-area-container])
           (field
@@ -756,17 +756,25 @@
                                (syncheck:clear-highlighting)
                                (cleanup)
                                (custodian-shutdown-all user-custodian))))))]
-                     [error-termination
+                     [error-display
                       (lambda (msg exn)
+                        (report-error msg exn))]
+                     [uncaught-exception-raised
+                      (lambda ()
                         (set! normal-termination? #t)
-                        (cleanup)
                         (syncheck:clear-highlighting)
-                        (report-error msg exn)
+                        (cleanup)
                         (custodian-shutdown-all user-custodian))]
                      [init-proc
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
+                        (error-display-handler (lambda (msg exn) (error-display msg exn)))
+                        (current-exception-handler
+                         (let ([oh (current-exception-handler)])
+                           (lambda (exn)
+                             (uncaught-exception-raised)
+                             (oh exn))))
                         (set! user-custodian (current-custodian))
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])
@@ -786,7 +794,6 @@
                                                      (send definitions-text last-position))
                     (send definitions-text get-next-settings)
                     init-proc
-                    error-termination
                     kill-termination
                     (lambda (sexp loop) ; =user=
                       (cond

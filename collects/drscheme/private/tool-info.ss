@@ -13,7 +13,6 @@
  ((union port? drscheme:language:text/pos?)
   drscheme:language-configuration:language-settings?
   (-> void?)
-  (string? any? . -> . void?)
   (-> void?)
   ((union eof-object? syntax? (cons/p string? any?))
    (-> void?)
@@ -21,7 +20,7 @@
    void?)
   . -> .
   void?)
- (input language-settings init error kill iter)
+ (input language-settings init kill-termination iter)
 
 "Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."
@@ -90,14 +89,7 @@
 "\\MzLink{mz:p:current-directory}{current-directory} and"
 "\\MzLink{mz:p:current-load-relative-directory}{current-load-relative-directory}"
 "parameters are not set, so if there are appropriate directories,"
-"the \\var{init} method is a good place to set them."
-""
-"The \\var{error-termination} argument is called when an error occurs."
-"It is called on the user's thread."
-"If it is called, the \\var{iter} argument is not called"
-"again. The user's"
-"\\MzLink{mz:p:error-display-handler}{\\rawscm{error-display-handler}}"
-"is set to call the \\var{error} argument."
+"the \\var{init} argument is a good place to set them."
 ""
 "The \\var{kill-termination} argument is called when the main thread of"
 "the eventspace terminates, no matter if the custodian was"
@@ -111,6 +103,11 @@
 "expanded program and once more with eof, unless an error is"
 "raised during expansion."
 "It is called from the user's thread."
+"If an exception is raised during expansion of the"
+"user's program, \\var{iter} is not called."
+"Consider setting the exception-handler during \\var{init} to"
+"handle this situation."
+""
 "Additionally,"
 "\\rawscm{eval-compile-time-part-of-top-level} is called after"
 "the program is expanded, but before \\var{iter} is called."

@@ -78,6 +78,9 @@ static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *unbound_stx;
 
+static int num_initial_modules;
+static Scheme_Object **initial_modules;
+
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
 			   int isval, void *data, Scheme_Object *e);
@@ -91,6 +94,11 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
+
+
+/**********************************************************************/
+/*                           initialization                           */
+/**********************************************************************/
 
 void scheme_init_module(Scheme_Env *env)
 {
@@ -259,10 +267,10 @@ void scheme_finish_kernel(Scheme_Env *env)
   all_from_except_symbol = scheme_intern_symbol("all-from-except");
 }
 
-void scheme_import_from_original_env(Scheme_Env *env)
+void scheme_import_from_original_env(Scheme_Env *env, int syntax_only)
 {
   Scheme_Object *rn, **exs;
-  int i;
+  int i, c;
 
   rn = env->rename;
   if (!rn) {
@@ -271,7 +279,9 @@ void scheme_import_from_original_env(Scheme_Env *env)
   }
 
   exs = kernel->exports;
-  for (i = kernel->num_exports; i--; ) {
+  c = kernel->num_exports;
+  i = (syntax_only ? kernel->num_var_exports : 0);
+  for (; i < c; i++) {
     scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
   }
 }
@@ -308,6 +318,49 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   }
 
   return w;
+}
+
+void scheme_save_initial_module_set(Scheme_Env *env)
+{
+  int i, c, count;
+  Scheme_Bucket **bs, *b;
+	
+  bs = env->module_registry->buckets;
+  c = env->module_registry->size;
+
+  count = 0;
+  for (i = 0; i < c; i++) {
+    b = bs[i];
+    if (b && b->val) {
+      count++;
+    }
+  }
+
+  num_initial_modules = count;
+
+  REGISTER_SO(initial_modules);
+  initial_modules = MALLOC_N(Scheme_Object *, 2 * count);
+
+  count = 0;
+  for (i = 0; i < c; i++) {
+    b = bs[i];
+    if (b && b->val) {
+      initial_modules[count++] = (Scheme_Object *)b->key;
+      initial_modules[count++] = (Scheme_Object *)b->val;
+    }
+  }
+}
+
+void scheme_install_initial_module_set(Scheme_Env *env)
+{
+  int i;
+
+  for (i = 0; i < num_initial_modules; i++) {
+    scheme_add_to_table(env->module_registry, 
+			(char *)initial_modules[i << 1],
+			(char *)initial_modules[(i << 1) + 1],
+			0);
+  }
 }
 
 /**********************************************************************/
@@ -518,13 +571,12 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     env->module_syntax = syntax;
   }
 
-  if (restart)
-    syntax = NULL;
-  else {
+  if (!restart) {
     syntax = scheme_lookup_in_table(env->module_syntax, (const char *)m->modname);
     if (syntax)
       return;
-  }
+  } else
+    syntax = NULL;
 
   menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
   if (!menv || restart) {
@@ -535,7 +587,8 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
       menv->phase = env->phase;
       menv->link_midx = syntax_idx;
       menv->for_syntax_of = for_syntax_of;
-    }
+    } else
+      menv->module = m;
 
     if (!m->accessible) {
       Scheme_Hash_Table *ht;
@@ -584,15 +637,11 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 		    NULL, SCHEME_CAR(l));
   }
 
-  if (restart)
-    syntax = (Scheme_Hash_Table *)scheme_lookup_in_table(env->module_syntax, 
-							 (const char *)m->modname);
-
   if (!syntax) {
     syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     scheme_add_to_table(env->module_syntax, (const char *)m->modname, syntax, 0);
   }
-
+    
   /* Lazily start the module. Map all syntax names to a lazy marker: */
   body = m->et_body;
   for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
@@ -733,7 +782,7 @@ module_execute(Scheme_Object *data)
 
   scheme_add_to_table(env->module_registry, (const char *)m->modname, m, 0);
 
-  /* Replaced an already-running module? */
+  /* Replaced an already-running or already-syntaxing module? */
   menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
   if (menv) {
     if (menv->running)

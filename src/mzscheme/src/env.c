@@ -140,10 +140,11 @@ Scheme_Env *scheme_basic_env()
     scheme_init_error_escape_proc(scheme_current_process);
 
     env = scheme_make_empty_env();
-    scheme_import_from_original_env(env);
+    scheme_import_from_original_env(env, 1);
+    scheme_copy_from_original_env(env);
     
     scheme_prepare_exp_env(env);
-    scheme_import_from_original_env(env->exp_env);
+    scheme_import_from_original_env(env->exp_env, 0);
 
     scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
@@ -250,10 +251,11 @@ Scheme_Env *scheme_basic_env()
   make_init_env();
 
   env = scheme_make_empty_env();
-  scheme_import_from_original_env(env);
+  scheme_import_from_original_env(env, 1);
+  scheme_copy_from_original_env(env);
 
   scheme_prepare_exp_env(env);
-  scheme_import_from_original_env(env->exp_env);
+  scheme_import_from_original_env(env->exp_env, 0);
 
   scheme_add_embedded_builtins(env);
 
@@ -265,6 +267,8 @@ Scheme_Env *scheme_basic_env()
   scheme_starting_up = 0;
 
   scheme_init_getenv();
+
+  scheme_save_initial_module_set(env);
 
 #ifdef TIME_STARTUP_PROCESS
   printf("done @ %ld\n#endif\n", scheme_get_process_milliseconds());
@@ -518,7 +522,7 @@ scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
     b = scheme_bucket_from_table(env->toplevel, (const char *)sym);
     b->val = obj;
     ((Scheme_Bucket_With_Home *)b)->home = env;
-    if (constant) {
+    if (constant && scheme_defining_primitives) {
       ((Scheme_Bucket_With_Flags *)b)->id = builtin_ref_counter++;
       ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_HAS_REF_ID;
     }
@@ -583,6 +587,39 @@ scheme_remove_global(const char *name, Scheme_Env *env)
   sym = scheme_intern_symbol(name);
 
   scheme_remove_global_symbol(sym, env);
+}
+
+void scheme_copy_from_original_env(Scheme_Env *env)
+{
+  Scheme_Hash_Table *ht;
+  Scheme_Bucket **bs;
+  Scheme_Object *call_ec;
+  int i;
+  
+  ht = scheme_initial_env->toplevel;
+  bs = ht->buckets;
+
+  if (scheme_escape_continuations_only)
+    call_ec = scheme_lookup_global(scheme_intern_symbol("call/ec"), scheme_initial_env);
+  else
+    call_ec = NULL;
+  
+  for (i = ht->size; i--; ) {
+    Scheme_Bucket *b = bs[i];
+    if (b && b->val) {
+      Scheme_Object *name = (Scheme_Object *)b->key;
+      Scheme_Object *val = (Scheme_Object *)b->val;
+
+      if (call_ec) {
+	char *s = SCHEME_SYM_VAL(name);
+	/* WARNING: s is GC-misaligned... */
+	if ((s[0] == 'c') && (!strcmp(s, "call/cc") || !strcmp(s, "call-with-current-continuation")))
+	  val = call_ec;
+      }
+
+      scheme_add_global_constant_symbol(name, val, env);
+    }
+  }
 }
 
 Scheme_Object **scheme_make_builtin_references_table(void)

@@ -327,7 +327,8 @@ scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env,
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
 Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
 
-void scheme_import_from_original_env(Scheme_Env *env);
+void scheme_import_from_original_env(Scheme_Env *env, int syntax_only);
+void scheme_copy_from_original_env(Scheme_Env *env);
 
 /*========================================================================*/
 /*                              structs                                   */
@@ -1465,6 +1466,9 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
 Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved);
 
 extern Scheme_Env *scheme_initial_env;
+
+void scheme_save_initial_module_set(Scheme_Env *env);
+void scheme_install_initial_module_set(Scheme_Env *env);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

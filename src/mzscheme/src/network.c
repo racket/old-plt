@@ -1537,7 +1537,10 @@ static long gethostbyname_in_thread(void *data)
 {
   struct hostent *host;
   host = gethostbyname(ghbn_hostname);
-  return *(long *)host->h_addr_list[0];
+  if (host)
+    return *(long *)host->h_addr_list[0];
+  else
+    return 0;
 }
 
 static void release_ghbn_lock(GHBN_Rec *rec)

@@ -1296,20 +1296,26 @@ static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
     return (Scheme_Object *)t;
   } else {
     /* Normal */
-    Scheme_Hash_Table *t;
-
-    t = scheme_make_hash_table(SCHEME_hash_ptr);
-
-    if (flags[1]) {
-      Scheme_Object *sema;
-      sema = scheme_make_sema(1);
-      t->mutex = sema;
-      t->compare = compare_equal;
-      t->make_hash_indices = make_hash_indices_for_equal;
-    }
-
-    return (Scheme_Object *)t;
+    if (flags[1])
+      return (Scheme_Object *)scheme_make_hash_table_equal();
+    else
+      return (Scheme_Object *)scheme_make_hash_table(SCHEME_hash_ptr);
   }
+}
+
+Scheme_Hash_Table *scheme_make_hash_table_equal()
+{
+  Scheme_Hash_Table *t;
+  Scheme_Object *sema;
+
+  t = scheme_make_hash_table(SCHEME_hash_ptr);
+  
+  sema = scheme_make_sema(1);
+  t->mutex = sema;
+  t->compare = compare_equal;
+  t->make_hash_indices = make_hash_indices_for_equal;
+
+  return t;  
 }
 
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
@@ -1331,6 +1337,11 @@ static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
     return scheme_true;
   } else
     return scheme_false;
+}
+
+int scheme_is_hash_table_equal(Scheme_Object *o)
+{
+  return (((Scheme_Hash_Table *)o)->compare == compare_equal);
 }
 
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])

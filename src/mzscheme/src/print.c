@@ -41,6 +41,7 @@
 #define quick_print_graph quick_can_read_graph
 #define quick_print_box quick_can_read_box
 #define quick_print_vec_shorthand quick_square_brackets_are_parens
+#define quick_print_hash_table quick_curly_braces_are_parens
 /* Don't use can_read_pipe_quote or case_sens! */
 
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
@@ -80,7 +81,9 @@ static Scheme_Hash_Table *global_constants_ht;
     || (qk(p->quick_print_box, 1) && SCHEME_BOXP(obj)) \
     || (qk(p->quick_print_struct  \
 	   && SCHEME_STRUCTP(obj) \
-	   && PRINTABLE_STRUCT(obj, p), 0)))
+	   && PRINTABLE_STRUCT(obj, p), 0)) \
+    || (qk(p->quick_print_hash_table \
+	   && SCHEME_HASHTP(obj), 0)))
 #define ssQUICK(x, isbox) x
 #define ssQUICKp(x, isbox) (p ? x : isbox)
 #define ssALL(x, isbox) 1
@@ -332,7 +335,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
       || (p->quick_print_struct 
 	  && (SAME_TYPE(t, scheme_structure_type)
 	      || SAME_TYPE(t, scheme_proc_struct_type))
-	  && PRINTABLE_STRUCT(obj, p))) {
+	  && PRINTABLE_STRUCT(obj, p))
+      || (p->quick_print_hash_table
+	  && SAME_TYPE(t, scheme_hash_table_type))) {
     if (scheme_hash_get(ht, obj))
       return 1;
     scheme_hash_set(ht, obj, (Scheme_Object *)0x1);
@@ -344,7 +349,8 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
       return 1;
     if (check_cycles(SCHEME_CDR(obj), p, ht))
       return 1;
-  } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
+  } else if (SCHEME_BOXP(obj)) {
+    /* got here => printable */
     if (check_cycles(SCHEME_BOX_VAL(obj), p, ht))
       return 1;
   } else if (SCHEME_VECTORP(obj)) {
@@ -366,6 +372,24 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
 	if (check_cycles(((Scheme_Structure *)obj)->slots[i], p, ht)) {
 	  return 1;
 	}
+      }
+    }
+  }  else if (SCHEME_HASHTP(obj)) {
+    /* got here => printable */
+    Scheme_Hash_Table *t;
+    Scheme_Object **keys, **vals, *val;
+    int i;
+    
+    t = (Scheme_Hash_Table *)obj;
+    keys = t->keys;
+    vals = t->vals;
+    for (i = t->size; i--; ) {
+      if (vals[i]) {
+	val = vals[i];
+	if (check_cycles(keys[i], p, ht))
+	  return 1;
+	if (check_cycles(val, p, ht))
+	  return 1;
       }
     }
   }
@@ -434,6 +458,13 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
       }
     }
     obj->type = t;
+  } else if (p->quick_print_hash_table
+	     && SCHEME_HASHTP(obj)) {
+    if (!((Scheme_Hash_Table *)obj)->count)
+      cycle = 0;
+    else
+      /* don't bother with fast checks for non-empty hash tables */
+      cycle = -1;
   } else
     cycle = 0;
 
@@ -522,6 +553,21 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
       if (scheme_inspector_sees_part(obj, p->quick_inspector, i))
 	setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, p);
     }
+  } else if (p && SCHEME_HASHTP(obj)) { /* got here => printable */
+    Scheme_Hash_Table *t;
+    Scheme_Object **keys, **vals, *val;
+    int i;
+    
+    t = (Scheme_Hash_Table *)obj;
+    keys = t->keys;
+    vals = t->vals;
+    for (i = t->size; i--; ) {
+      if (vals[i]) {
+	val = vals[i];
+	setup_graph_table(keys[i], ht, counter, p);
+	setup_graph_table(val, ht, counter, p);
+      }
+    }
   }
 }
 
@@ -562,6 +608,7 @@ print_to_string(Scheme_Object *obj,
   p->quick_print_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_BOX));
   p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
   p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
+  p->quick_print_hash_table = 1;
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
   p->quick_case_sens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
   p->quick_inspector = scheme_get_param(config, MZCONFIG_INSPECTOR);
@@ -1035,6 +1082,42 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       else
 	print_this_string(p, "#&", 0, 2);
       closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, symtab, rnht, p);
+    }
+  else if (p->quick_print_hash_table && SCHEME_HASHTP(obj))
+    {
+      if (compact)
+	print_escaped(p, notdisplay, obj, ht);
+      else {
+	Scheme_Hash_Table *t;
+	Scheme_Object **keys, **vals, *val;
+	int i, size, did_one = 0;
+
+	print_this_string(p, "#hash", 0, 5);
+	if (!scheme_is_hash_table_equal(obj))
+	  print_this_string(p, "eq", 0, 2);
+	print_this_string(p, "(", 0, 1);
+
+	t = (Scheme_Hash_Table *)obj;
+	keys = t->keys;
+	vals = t->vals;
+	size = t->size;
+	for (i = 0; i < size; i++) {
+	  if (vals[i]) {
+	    if (did_one)
+	      print_this_string(p, " ", 0, 1);
+	    print_this_string(p, "(", 0, 1);
+	    val = vals[i];
+	    print(keys[i], notdisplay, compact, ht, symtab, rnht, p);
+	    print_this_string(p, " ", 0, 1);
+	    print(val, notdisplay, compact, ht, symtab, rnht, p);
+	    print_this_string(p, ")", 0, 1);
+	    did_one = 1;
+	  }
+	}
+	print_this_string(p, ")", 0, 1);
+
+	closed = 1;
+      }
     }
   else if (SAME_OBJ(obj, scheme_true))
     {

@@ -839,6 +839,8 @@ long scheme_equal_hash_key(Scheme_Object *o)
     Scheme_Object **vals, **keys;
     int i;
 
+#   include "mzhashchk.inc"
+
     k = (k << 1) + 3;
     
     keys = t->keys;
@@ -857,6 +859,8 @@ long scheme_equal_hash_key(Scheme_Object *o)
     const char *key;
     int i, weak;
   
+#   include "mzhashchk.inc"
+
     buckets = t->buckets;
     weak = t->weak;
 
@@ -988,6 +992,8 @@ long scheme_equal_hash_key2(Scheme_Object *o)
     int i;
     long k = 0;
 
+#   include "mzhashchk.inc"
+
     keys = t->keys;
     vals = t->vals;
     for (i = t->size; i--; ) {
@@ -1004,6 +1010,8 @@ long scheme_equal_hash_key2(Scheme_Object *o)
     const char *key;
     int i, weak;
     long k = 0;
+
+#   include "mzhashchk.inc"
   
     buckets = t->buckets;
     weak = t->weak;

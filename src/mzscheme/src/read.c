@@ -202,6 +202,9 @@ static Scheme_Object *unsyntax_symbol;
 static Scheme_Object *unsyntax_splicing_symbol;
 static Scheme_Object *quasisyntax_symbol;
 
+/* For reocginizing unresolved hash tables: */
+static Scheme_Object *an_uninterned_symbol;
+
 /* Table of built-in variable refs for .zo loading: */
 static Scheme_Object **variable_references;
 
@@ -221,6 +224,7 @@ void scheme_init_read(Scheme_Env *env)
   REGISTER_SO(unsyntax_symbol);
   REGISTER_SO(unsyntax_splicing_symbol);
   REGISTER_SO(quasisyntax_symbol);
+  REGISTER_SO(an_uninterned_symbol);
     
   quote_symbol = scheme_intern_symbol("quote");
   quasiquote_symbol = scheme_intern_symbol("quasiquote");
@@ -230,6 +234,8 @@ void scheme_init_read(Scheme_Env *env)
   unsyntax_symbol = scheme_intern_symbol("unsyntax");
   unsyntax_splicing_symbol = scheme_intern_symbol("unsyntax-splicing");
   quasisyntax_symbol = scheme_intern_symbol("quasisyntax");
+
+  an_uninterned_symbol = scheme_make_symbol("unresolved");
 
 #ifdef MZ_PRECISE_GC
   register_traversers();
@@ -1045,6 +1051,33 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
       }
       SCHEME_VEC_ELS(obj)[i] = rr;
     }
+  } else if (SCHEME_HASHTP(obj)) {
+    Scheme_Object *l;
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)obj;
+
+    /* Use an_uninterned_symbol to recognize tables
+       that come from #hash(...). */
+    l = scheme_hash_get(t, an_uninterned_symbol);
+    if (l) {
+      /* l is a list of 2-element lists.
+	 Resolve references inside l.
+	 Then hash. */
+      Scheme_Object *a, *key, *val;
+
+      l = resolve_references(l, port, mkstx);
+
+      if (mkstx)
+	l = scheme_syntax_to_datum(l, 0, NULL);
+
+      scheme_hash_set(t, an_uninterned_symbol, NULL);
+      for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	a = SCHEME_CAR(l);
+	key = SCHEME_CAR(a);
+	val = SCHEME_CADR(a);
+	
+	scheme_hash_set(t, key, val);
+      }
+    }
   }
 
   return result;
@@ -1186,16 +1219,19 @@ read_list(Scheme_Object *port,
       }
 
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, indentation, 
-		      "read: expected a '%c'%s", closer, suggestion);
+		      "read: expected a '%c'%s%s", closer, 
+		      (ch != EOF) ? " after hash value" : "",
+		      suggestion);
       return NULL;
     }
 
     if (ch == closer) {
       if ((elements < 2) && (shape == mz_shape_hash_elem)) {
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
-			"read: expected %d %s before '%c'", closer,
+			"read: expected %d %s before '%c'",
 			2 - elements,
-			(elements == 1) ? "more element" : "elements");
+			(elements == 1) ? "more element" : "elements",
+			closer);
 	return NULL;
       }
 
@@ -1255,6 +1291,15 @@ read_list(Scheme_Object *port,
 
     ch = skip_whitespace_comments(port, stxsrc, indentation);
     if (ch == closer) {
+      if ((elements < 2) && (shape == mz_shape_hash_elem)) {
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+			"read: expected %d %s before '%c'",
+			2 - elements,
+			(elements == 1) ? "more element" : "elements",
+			closer);
+	return NULL;
+      }
+
       cdr = pair;
       if (!list)
 	list = cdr;
@@ -1806,7 +1851,7 @@ read_character(Scheme_Object *port,
       scheme_getc(port); /* must be last */
       
     if (last < '0' || last > '7' || ch > '3') {
-      scheme_read_err(port, stxsrc, line, col, pos, ((last == EOF) || (last == SCHEME_SPECIAL)) ? 3 : 4, 0, indentation, 
+      scheme_read_err(port, stxsrc, line, col, pos, ((last == EOF) || (last == SCHEME_SPECIAL)) ? 3 : 4, last, indentation, 
 		      "read: bad character constant #\\%c%c%c",
 		      ch, next, ((last == EOF) || (last == SCHEME_SPECIAL)) ? ' ' : last);
       return NULL;
@@ -1947,18 +1992,41 @@ static Scheme_Object *read_box(Scheme_Object *port,
 /*                         hash table reader                              */
 /*========================================================================*/
 
-/* "(", "[", or "{" has been read */
+/* "(" has been read */
 static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
 				long line, long col, long pos,
 				char closer,  int eq,
 				Scheme_Hash_Table **ht,
 				Scheme_Object *indentation)
 {
-  Scheme_Object *l;
+  Scheme_Object *l, *a, *key, *val, *result;
+  Scheme_Hash_Table *t;
 
+  /* using mz_shape_hash_list ensures that l is a list of 2-element lists */
   l = read_list(port, stxsrc, line, col, pos, closer, mz_shape_hash_list, 1, ht, indentation);
 
-  return l;
+  if (eq)
+    t = scheme_make_hash_table(SCHEME_hash_ptr);
+  else
+    t = scheme_make_hash_table_equal();
+
+  /* Wait for placeholders to be resolved before mapping keys to
+     values, because a placeholder may be used in a key. */
+  scheme_hash_set(t, an_uninterned_symbol, l);
+
+  if (!*ht) {
+    /* So that resolve_references is called to build the table: */
+    Scheme_Hash_Table *tht;
+    tht = scheme_make_hash_table(SCHEME_hash_ptr);
+    *ht = tht;
+  }
+
+  result = (Scheme_Object *)t;
+
+  if (stxsrc)
+    result = scheme_make_stx_w_offset(result, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+
+  return result;
 }
 
 /*========================================================================*/

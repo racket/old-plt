@@ -5,6 +5,7 @@
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [drscheme:aries : drscheme:aries^]
+	    [drscheme:edit : drscheme:edit^]
 	    [drscheme:spawn : drscheme:spawn^])
 
     (mred:debug:printf 'invoke "drscheme:project@")
@@ -17,14 +18,14 @@
 	  (class drscheme:aries:frame% args
 	    (inherit set-project)
 	    (sequence
-	      (mred:debug:printf 'super-init "before.1~n")
+	      (mred:debug:printf 'super-init "before.1")
 	      (apply super-init args)
-	      (mred:debug:printf 'super-init "after.1~n")
+	      (mred:debug:printf 'super-init "after.1")
 	      (set-project project)))])
 	(sequence
-	  (mred:debug:printf 'super-init "before.9~n")
+	  (mred:debug:printf 'super-init "before.9")
 	  (apply super-init args)
-	  (mred:debug:printf 'super-init "after.9~n"))))
+	  (mred:debug:printf 'super-init "after.9"))))
 
     (mred:set-preference-default 'drscheme:project-visible? #f)
 
@@ -59,7 +60,7 @@
 	    [project-extension "spj"]
 	    [group% scheme-project-frame-group%]
 	    
-	    [console-edit (make-object drscheme:aries:console-edit%)])
+	    [console-edit (make-object drscheme:edit:console-edit%)])
 	  
 	  (public
 	    
@@ -222,9 +223,9 @@
 			       "Sorry"))])
 	  
 	  (sequence
-	    (mred:debug:printf 'super-init "before.10~n")
+	    (mred:debug:printf 'super-init "before.10")
 	    (super-init filename #f)
-	    (mred:debug:printf 'super-init "after.10~n"))
+	    (mred:debug:printf 'super-init "after.10"))
 	  
 	  (public
 	    [button-panel (make-object mred:horizontal-panel% panel)]
@@ -240,11 +241,11 @@
 	    (send panel change-children (lambda (l) (cons button-panel l))) 
 	    (send button-panel stretchable-in-y? #f)
 	    
-	    (mred:debug:printf 'super-init "before visibility check~n")
+	    (mred:debug:printf 'super-init "before visibility check")
 	    (if visible?
 		(show #t)
 		(make-object drscheme:aries:frame% #f #t group))
-	    (mred:debug:printf 'super-init "after visibility check~n")
+	    (mred:debug:printf 'super-init "after visibility check")
 	    
 	    (mred:show-busy-cursor
 	     (lambda ()
@@ -255,9 +256,9 @@
     (define scheme-project-frame%
       (make-scheme-project-frame% mred:project-frame%))
 
-    (mred:debug:printf 'super-init "before console~n")
+    (mred:debug:printf 'super-init "before console")
     (define console (make-object scheme-project-frame%))
-    (mred:debug:printf 'super-init "after console~n")
+    (mred:debug:printf 'super-init "after console")
     (define eval-string (ivar (ivar console console-edit) do-eval))
 
     (mred:insert-format-handler "Scheme Project" "spj"

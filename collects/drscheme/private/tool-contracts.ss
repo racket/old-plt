@@ -1390,7 +1390,7 @@
                          void?))
      (default-settings (-> any?))
      (default-settings? (any? . -> . boolean?))
-     (order-manuals ((listof string?) . -> . (values (listof string?) boolean?)))
+     (order-manuals ((listof bytes?) . -> . (values (listof bytes?) boolean?)))
      (front-end/complete-program (input-port?
                                   any?
                                   drscheme:teachpack:teachpack-cache?

@@ -224,10 +224,10 @@ lexer:
 parser:
 If the error token can be shifted, but parsing is unable to resume, throw an
 error instead of infinite looping.
-
+The parser wants to read one token beyond the end token, which is ok
+if the end token comes from an eof in the port, but not otherwise.
 
 both:
-debugging
 raise-read-error arguments
 
 Potential future additions:
@@ -246,6 +246,5 @@ Error check for use of an end token in a production
 Error check the use of error productions
 
 both:
-Code documentation
 Increase runtime speed
 Add more information for check syntax

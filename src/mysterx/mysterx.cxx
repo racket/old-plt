@@ -458,8 +458,6 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
     return;
   }
 
-  pIUnknown->AddRef();
-
   scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
 							MZCONFIG_MANAGER),

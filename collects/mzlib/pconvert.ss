@@ -325,6 +325,10 @@
 						...)]
 			      [(void? expr) '(void)]
 			      [(promise? expr) '(delay ...)]
+			      [(unit? expr) (build-named 
+					     expr
+					     (lambda () 
+					       '(unit ...)))]
 			      [(struct? expr)
 			       (let ([name (symbol->string
 					    (vector-ref (struct->vector expr) 0))])
@@ -335,10 +339,6 @@
 							    (string-length name))))
 				       (map recur (cdr (vector->list
 							(struct->vector expr))))))]
-			      [(unit? expr) (build-named 
-					     expr
-					     (lambda () 
-					       '(unit ...)))]
 			      [(and (number? expr) (exact? expr))
 			       (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
 				 (cond

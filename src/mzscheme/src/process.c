@@ -1182,7 +1182,7 @@ void scheme_swap_process(Scheme_Process *new_process)
   }
 }
 
-void scheme_select_process(Scheme_Process *start_process)
+static void select_process(Scheme_Process *start_process)
 {
   Scheme_Process *new_process = start_process;
 
@@ -1318,7 +1318,7 @@ static void start_child(Scheme_Process * volatile child,
 #endif
     
 #ifndef MZ_REAL_THREADS
-    scheme_select_process(NULL);
+    select_process(NULL);
     
     /* Shouldn't get here! */
     scheme_signal_error("bad process switch");
@@ -1429,6 +1429,8 @@ Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config)
 #ifndef MZ_REAL_THREADS
 # ifdef DO_STACK_CHECK
 #  define THREAD_STACK_SPACE (STACK_SAFETY_MARGIN / 2)
+void scheme_check_stack_ok(char *s); /* prototype, needed for PalmOS */
+
 void scheme_check_stack_ok(char *s) {
 #  include "mzstkchk.h"
   {
@@ -2022,7 +2024,7 @@ static void exit_or_escape(Scheme_Process *p)
 
 #ifndef MZ_REAL_THREADS
   remove_process(p);
-  scheme_select_process(NULL);
+  select_process(NULL);
 #else
   remove_process(p);
   SCHEME_EXIT_THREAD();
@@ -2260,6 +2262,9 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 }
 
 #ifndef MZ_REAL_THREADS
+void scheme_start_atomic(void);
+void scheme_end_atomic(void);
+
 void scheme_start_atomic(void)
 {
   if (!do_atomic)
@@ -2296,7 +2301,7 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
   r->running |= MZTHREAD_SUSPENDED;
 
   if (r == scheme_current_process) {
-    scheme_select_process(swap_to);
+    select_process(swap_to);
 
     /* Killed while suspended? */
     if ((r->running & MZTHREAD_KILLED) && !(r->running & MZTHREAD_NEED_KILL_CLEANUP))

@@ -2,16 +2,23 @@
 srcdir = @srcdir@
 
 PALMCPP = m68k-palmos-gcc -E
-PALMCC = m68k-palmos-gcc
+PALMCC = m68k-palmos-gcc -mnoshort -save-temps
 PALMAS = m68k-palmos-as -mno-68881 -m68000 -l
+PALMDISASM = m68k-palmos-objdump --disassemble-all
 MULTIGEN = multigen
+BUILDPRC = build-prc
+PILRC = pilrc
 
-PALMINCS = -I/usr/local/palmdev/include/Core \
-           -I/usr/local/palmdev/include/Core/Hardware \
-           -I/usr/local/palmdev/include/Core/System \
-           -I/usr/local/palmdev/include/Core/UI
+PALMINCDIR = /usr/local/palmdev/include
+
+PALMINCS = -I$(PALMINCDIR)/Core \
+           -I$(PALMINCDIR)/Core/Hardware \
+           -I$(PALMINCDIR)/Core/System \
+           -I$(PALMINCDIR)/Core/UI
 CPPFLAGS = @OPTIONS@ -I$(srcdir)/../include
-CFLAGS = -I.
+XCFLAGS = -I.
+CFLAGS = $(XCFLAGS) $(CPPFLAGS) $(PALMINCS)
+DBG = -g
 
 XFORM = ../mzscheme -rq $(srcdir)/../gc2/xform.ss --notes --palm  ../gc2/ctok "$(PALMCPP) $(CPPFLAGS) -DUSE_SENORA_GC $(PALMINCS)"
 XSRCDIR = xsrc
@@ -57,9 +64,10 @@ OBJS =  salloc.o \
         unit.o \
         unitsig.o \
 	vector.o \
-	main.o \
 	sgc.o \
-        mz-sections.o
+        mz-sections.o \
+	utils.o \
+	palm.o
 
 XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/bignum.c \
@@ -101,7 +109,6 @@ XSRCS = $(XSRCDIR)/salloc.c \
         $(XSRCDIR)/unit.c \
         $(XSRCDIR)/unitsig.c \
 	$(XSRCDIR)/vector.c \
-	$(XSRCDIR)/main.c \
 	$(XSRCDIR)/sgc.c
 
 XMAPS = $(XSRCDIR)/salloc.map \
@@ -144,7 +151,6 @@ XMAPS = $(XSRCDIR)/salloc.map \
         $(XSRCDIR)/unit.map \
         $(XSRCDIR)/unitsig.map \
 	$(XSRCDIR)/vector.map \
-	$(XSRCDIR)/main.map \
 	$(XSRCDIR)/sgc.map
 
 all: ../gc2/ctok xsrc
@@ -160,11 +166,25 @@ segmap.h: $(XSRCS) $(srcdir)/partition.ss
 
 xobjects: $(OBJS)
 
-mzscheme.prc: xobjects mz-sections.ld
-	$(PALMCC) $(OBJS) mz-sections.ld -lm
+mzscheme.prc: mzscheme built-res.dmy
+	$(BUILDPRC) -o mzscheme.prc mz.def mzscheme *.bin
+
+mzscheme: $(OBJS) mz-sections.ld
+	$(PALMCC) $(DBG) -o mzscheme $(OBJS) mz-sections.ld -lm
 
 mz-sections.s: mz.def
 	$(MULTIGEN) mz.def
+
+built-res.dmy: $(srcdir)/mzscheme.rcp $(srcdir)/mzscheme.pbm $(srcdir)/resnum.h
+	rm -f *.bin
+	$(PILRC) -I $(srcdir) $(srcdir)/mzscheme.rcp .
+	touch built-res.dmy
+
+mzscheme.s: mzscheme
+	$(PALMDISASM) mzscheme > mzscheme.s
+
+debug-info.ss: mzscheme.s $(OBJS) $(srcdir)/debuginfo.ss
+	../mzscheme -qr $(srcdir)/debuginfo.ss -o debug-info.ss -d mzscheme.s $(OBJS)
 
 XFORMDEP = $(srcdir)/../gc2/xform.ss
 
@@ -248,99 +268,99 @@ $(XSRCDIR)/unitsig.c: ../src/unitsig.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/unitsig.c $(XSRCDIR)/unitsig.c $(XSRCDIR)/unitsig.map
 $(XSRCDIR)/vector.c: ../src/vector.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c $(XSRCDIR)/vector.map
-$(XSRCDIR)/main.c: ../main.o $(XFORMDEP)
-	$(XFORM) $(srcdir)/../main.c $(XSRCDIR)/main.c $(XSRCDIR)/main.map
 $(XSRCDIR)/sgc.c: $(srcdir)/../sgc/sgc.c $(XFORMDEP)
 	$(XFORM) $(srcdir)/../sgc/sgc.c $(XSRCDIR)/sgc.c $(XSRCDIR)/sgc.map
 
 OBJDEP = segmap.h
 
 salloc.o: $(OBJDEP) $(XSRCDIR)/salloc.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/salloc.c -o salloc.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/salloc.c -o salloc.o
 bignum.o: $(OBJDEP) $(XSRCDIR)/bignum.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/bignum.c -o bignum.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/bignum.c -o bignum.o
 bool.o: $(OBJDEP) $(XSRCDIR)/bool.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/bool.c -o bool.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/bool.c -o bool.o
 builtin.o: $(OBJDEP) $(XSRCDIR)/builtin.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/builtin.c -o builtin.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/builtin.c -o builtin.o
 char.o: $(OBJDEP) $(XSRCDIR)/char.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/char.c -o char.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/char.c -o char.o
 complex.o: $(OBJDEP) $(XSRCDIR)/complex.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/complex.c -o complex.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/complex.c -o complex.o
 dynext.o: $(OBJDEP) $(XSRCDIR)/dynext.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/dynext.c -o dynext.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/dynext.c -o dynext.o
 env.o: $(OBJDEP) $(XSRCDIR)/env.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/env.c -o env.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/env.c -o env.o
 error.o: $(OBJDEP) $(XSRCDIR)/error.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/error.c -o error.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/error.c -o error.o
 eval.o: $(OBJDEP) $(XSRCDIR)/eval.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/eval.c -o eval.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/eval.c -o eval.o
 file.o: $(OBJDEP) $(XSRCDIR)/file.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/file.c -o file.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/file.c -o file.o
 fun.o: $(OBJDEP) $(XSRCDIR)/fun.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/fun.c -o fun.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/fun.c -o fun.o
 hash.o: $(OBJDEP) $(XSRCDIR)/hash.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/hash.c -o hash.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/hash.c -o hash.o
 image.o: $(OBJDEP) $(XSRCDIR)/image.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/image.c -o image.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/image.c -o image.o
 list.o: $(OBJDEP) $(XSRCDIR)/list.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/list.c -o list.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/list.c -o list.o
 network.o: $(OBJDEP) $(XSRCDIR)/network.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/network.c -o network.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/network.c -o network.o
 numarith.o: $(OBJDEP) $(XSRCDIR)/numarith.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/numarith.c -o numarith.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/numarith.c -o numarith.o
 number.o: $(OBJDEP) $(XSRCDIR)/number.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/number.c -o number.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/number.c -o number.o
 numcomp.o: $(OBJDEP) $(XSRCDIR)/numcomp.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/numcomp.c -o numcomp.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/numcomp.c -o numcomp.o
 numstr.o: $(OBJDEP) $(XSRCDIR)/numstr.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/numstr.c -o numstr.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/numstr.c -o numstr.o
 objclass.o: $(OBJDEP) $(XSRCDIR)/objclass.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/objclass.c -o objclass.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/objclass.c -o objclass.o
 object.o: $(OBJDEP) $(XSRCDIR)/object.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/object.c -o object.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/object.c -o object.o
 port.o: $(OBJDEP) $(XSRCDIR)/port.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/port.c -o port.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/port.c -o port.o
 portfun.o: $(OBJDEP) $(XSRCDIR)/portfun.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/portfun.c -o portfun.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/portfun.c -o portfun.o
 print.o: $(OBJDEP) $(XSRCDIR)/print.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/print.c -o print.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/print.c -o print.o
 process.o: $(OBJDEP) $(XSRCDIR)/process.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/process.c -o process.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/process.c -o process.o
 promise.o: $(OBJDEP) $(XSRCDIR)/promise.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/promise.c -o promise.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/promise.c -o promise.o
 rational.o: $(OBJDEP) $(XSRCDIR)/rational.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/rational.c -o rational.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/rational.c -o rational.o
 read.o: $(OBJDEP) $(XSRCDIR)/read.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/read.c -o read.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/read.c -o read.o
 regexp.o: $(OBJDEP) $(XSRCDIR)/regexp.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/regexp.c -o regexp.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/regexp.c -o regexp.o
 sema.o: $(OBJDEP) $(XSRCDIR)/sema.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/sema.c -o sema.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/sema.c -o sema.o
 setjmpup.o: $(OBJDEP) $(XSRCDIR)/setjmpup.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/setjmpup.c -o setjmpup.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/setjmpup.c -o setjmpup.o
 string.o: $(OBJDEP) $(XSRCDIR)/string.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/string.c -o string.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/string.c -o string.o
 struct.o: $(OBJDEP) $(XSRCDIR)/struct.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/struct.c -o struct.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/struct.c -o struct.o
 symbol.o: $(OBJDEP) $(XSRCDIR)/symbol.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/symbol.c -o symbol.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/symbol.c -o symbol.o
 syntax.o: $(OBJDEP) $(XSRCDIR)/syntax.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/syntax.c -o syntax.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/syntax.c -o syntax.o
 type.o: $(OBJDEP) $(XSRCDIR)/type.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/type.c -o type.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/type.c -o type.o
 unit.o: $(OBJDEP) $(XSRCDIR)/unit.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/unit.c -o unit.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/unit.c -o unit.o
 unitsig.o: $(OBJDEP) $(XSRCDIR)/unitsig.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/unitsig.c -o unitsig.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/unitsig.c -o unitsig.o
 vector.o: $(OBJDEP) $(XSRCDIR)/vector.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/vector.c -o vector.o
-main.o: $(OBJDEP) $(XSRCDIR)/main.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/main.c -o main.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/vector.c -o vector.o
 sgc.o: $(OBJDEP) $(XSRCDIR)/sgc.c
-	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/sgc.c -o sgc.o
+	$(PALMCC) $(XCFLAGS) -c $(XSRCDIR)/sgc.c -o sgc.o
 mz-sections.o: mz-sections.s
 	$(PALMAS) -o mz-sections.o mz-sections.s
+utils.o: $(srcdir)/utils.c
+	$(PALMCC) $(CFLAGS) $(DBG) -c $(srcdir)/utils.c -o utils.o
+palm.o: $(srcdir)/palm.c segmap.h
+	$(PALMCC) $(CFLAGS) $(DBG) -c $(srcdir)/palm.c -o palm.o
 
 ../gc2/ctok: ../gc2/lex.yy.c
 	gcc -g -o ../gc2/ctok ../gc2/lex.yy.c

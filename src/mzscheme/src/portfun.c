@@ -44,7 +44,7 @@ static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
-static Scheme_Object *read_string (int, Scheme_Object *[]);
+static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
 static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
@@ -53,7 +53,7 @@ static Scheme_Object *eof_object_p (int, Scheme_Object *[]);
 static Scheme_Object *char_ready_p (int, Scheme_Object *[]);
 static Scheme_Object *sch_write (int, Scheme_Object *[]);
 static Scheme_Object *display (int, Scheme_Object *[]);
-static Scheme_Object *print (int, Scheme_Object *[]);
+static Scheme_Object *sch_print (int, Scheme_Object *[]);
 static Scheme_Object *newline (int, Scheme_Object *[]);
 static Scheme_Object *write_char (int, Scheme_Object *[]);
 static Scheme_Object *load (int, Scheme_Object *[]);
@@ -141,7 +141,7 @@ scheme_init_port_fun(Scheme_Env *env)
     scheme_display_proc = scheme_make_prim_w_arity(display, 
 						   "display", 
 						   1, 2);
-    scheme_print_proc = scheme_make_prim_w_arity(print, 
+    scheme_print_proc = scheme_make_prim_w_arity(sch_print, 
 						 "print", 
 						 1, 2);
     
@@ -282,7 +282,7 @@ scheme_init_port_fun(Scheme_Env *env)
 						      0, 2), 
 			     env);
   scheme_add_global_constant("read-string", 
-			     scheme_make_prim_w_arity(read_string, 
+			     scheme_make_prim_w_arity(sch_read_string, 
 						      "read-string", 
 						      1, 2), 
 			     env);
@@ -1417,7 +1417,7 @@ read_line (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-read_string(int argc, Scheme_Object *argv[])
+sch_read_string(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *str;
   long size, got;
@@ -1727,7 +1727,7 @@ display (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-print (int argc, Scheme_Object *argv[])
+sch_print (int argc, Scheme_Object *argv[])
 {
   return display_write("print", argc, argv, -1);
 }

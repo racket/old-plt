@@ -76,7 +76,7 @@ static void string_hash_indices(void *_key, long *_h, long *_h2)
 }
 
 #ifdef PALMOS_STUFF
-int p_strcmp(char *a, char *b)
+static int p_strcmp(char *a, char *b)
 {
   return strcmp(a, b);
 }

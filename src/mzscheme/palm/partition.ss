@@ -1,5 +1,19 @@
 
-(define files (vector->list argv))
+(require-library "cmdline.ss")
+
+(define to-main-seg #f)
+(define fatal-error? #f)
+
+(define files
+  (command-line
+   "partition.ss"
+   argv
+   (once-each
+    [("--main") file "put a file in the main segment"
+		(set! to-main-seg file)])
+   (args files
+	 files)))
+
 (read-case-sensitive #t)
 
 ;;;;;; Load decls
@@ -8,6 +22,8 @@
 
 (define limit 100)
 
+(define multiple-ok '(malloc free div))
+
 (for-each
  (lambda (f)
    (with-input-from-file f
@@ -15,28 +31,53 @@
        (let ([fname (let-values ([(base name dir?) (split-path f)])
 		      (let* ([m (regexp-match "^(.*)[.]map$" name)]
 			     [n (cadr m)])
-			(if (> (string-length n) 6)
-			    (substring n 0 6)
-			    n)))]
+			(if (equal? n to-main-seg)
+			    #f
+			    (if (> (string-length n) 6)
+				(substring n 0 6)
+				n))))]
 	     [cnt 0])
 	 (let loop ()
 	   (let ([r (read)])
 	     (unless (eof-object? r)
 	       (case (car r)
-		 [(impl) 
+		 [(impl simpl) 
 		  (set! cnt (add1 cnt))
+		  (let ([old-f (hash-table-get source (cadr r) (lambda () #f))])
+		    (when old-f
+		      (unless (memq (cadr r) multiple-ok)
+			(fprintf (current-error-port) "Warning: multiple declarations: ~a, in ~a and ~a~n" 
+				 (cadr r) old-f fname))))
+		  (when (and (eq? (car r) 'impl)
+			     (eq? 'undeclared (hash-table-get source (cadr r) (lambda () 'undeclared)))
+			     (not (memq (cadr r) multiple-ok)))
+		    (fprintf (current-error-port) "~a: global ~a in ~a was not declared~n" 
+			     (if fname "Error" "Warning")
+			     (cadr r) fname)
+		    (when fname (set! fatal-error? #t)))
 		  (hash-table-put! source (cadr r) 
-				   (if (< cnt limit)
+				   (if (or (< cnt limit)
+					   (not fname))
 				       fname
 				       (format "~a~c" fname 
 					       (integer->char
 						(+ 65 (quotient cnt limit))))))]
 		 [(decl) (hash-table-get source (cadr r)
 					 (lambda ()
-					   (hash-table-put! source (cadr r) #f)))]
+					   (hash-table-put! source (cadr r) #f)
+					   #f))]
 		 [else (void)])
 	       (loop))))))))
  files)
+
+(for-each
+ (lambda (l)
+   (hash-table-put! source l #f))
+ multiple-ok)
+
+
+(when fatal-error?
+  (exit 1))
 
 ;;;;;; Output labels
 

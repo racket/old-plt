@@ -589,12 +589,14 @@
 		       #f]
 		      [else (loop (cdr e) (car e))]))))
 	  ;; Not pgc, or still in headers and probably a simple inlined function
-	  (begin
+	  (let ([palm-static? (and palm? (eq? 'static (tok-n (car e))))])
 	    (when palm?
-	      (fprintf map-port "(impl ~s)~n" name)
+	      (fprintf map-port "(~aimpl ~s)~n" 
+		       (if palm-static? "s" "")
+		       name)
 	      (call-graph name e))
 	    (append
-	     (if (and palm? (eq? 'static (tok-n (car e))))
+	     (if palm-static?
 		 ;; Need to make sure prototype is there for section
 		 (add-segment-label
 		  name

@@ -288,7 +288,11 @@ typedef jmpbuf jmp_buf[1];
    Since it should be a power of 2, LOG_SECTOR_SEGMENT_SIZE is
    specified directly. A larger block size speeds up GC, but wastes
    more unallocated bytes in same-size buckets. */
+#ifdef __palmos__
+# define LOG_SECTOR_SEGMENT_SIZE 9
+#else
 # define LOG_SECTOR_SEGMENT_SIZE 12
+#endif
 #define SECTOR_SEGMENT_SIZE (1 << LOG_SECTOR_SEGMENT_SIZE)
 #define SECTOR_SEGMENT_MASK (~(SECTOR_SEGMENT_SIZE-1))
 
@@ -937,7 +941,7 @@ static void *malloc_plain_sector(int count)
   if (!m) {
     if (GC_out_of_memory)
       GC_out_of_memory();
-    FPRINTF(STDERR, "out of memory\n");	
+    FPRINTF(STDERR, "out of memory\n");
     exit(-1);
   }
 
@@ -1327,7 +1331,7 @@ static void *malloc_managed(long size)
   return NULL;
 }
 
-void free_managed(void *s)
+static void free_managed(void *s)
 {
   int i;
   unsigned long p;
@@ -1482,7 +1486,7 @@ static void init_static_variables(void)
 
 static int initialized = 0;
 
-void GC_initialize(void)
+static void GC_initialize(void)
 {
   int i;
 
@@ -1570,10 +1574,10 @@ void *GC_get_stack_base(void)
   return GC_stackbottom;
 }
 
-void *find_ptr(void *d, int *_size,
-	       MemoryBlock **_block, int *_pos,
-	       MemoryChunk **_chunk,
-	       int find_anyway)
+static void *find_ptr(void *d, int *_size,
+		      MemoryBlock **_block, int *_pos,
+		      MemoryChunk **_chunk,
+		      int find_anyway)
 {
   unsigned long p = PTR_TO_INT(d);
 
@@ -1646,6 +1650,11 @@ void *GC_base(void *d)
   
   return p;
 }
+
+int GC_size(void *d);
+int GC_is_atomic(void *d);
+int GC_orig_size(void *d);
+void *GC_orig_base(void *d);
 
 int GC_size(void *d)
 {
@@ -2088,11 +2097,11 @@ static int num_newblock_allocs_stat;
 #define KEEP_SET_INFO_ARG(x) /* empty */
 #endif
 
-void *do_malloc(SET_NO_BACKINFO
-		unsigned long size, 
-		MemoryBlock **common,
-		MemoryChunk **othersptr,
-		int flags)
+static void *do_malloc(SET_NO_BACKINFO
+		       unsigned long size, 
+		       MemoryBlock **common,
+		       MemoryChunk **othersptr,
+		       int flags)
 {
   MemoryBlock **find, *block;
   MemoryBlock **common_ends;
@@ -2646,6 +2655,7 @@ void GC_unregister_disappearing_link(void **p)
   /* We'll do it later */
 }
 
+#if 0
 DisappearingLink *GC_find_dl(void *p)
 {
   DisappearingLink *dl;
@@ -2660,6 +2670,7 @@ DisappearingLink *GC_find_dl(void *p)
 
   return NULL;
 }
+#endif
 
 static void register_finalizer(void *p, void (*f)(void *p, void *data), 
 			       void *data, void (**oldf)(void *p, void *data), 
@@ -4210,7 +4221,7 @@ void GC_flush_mark_stack()
 static long last_gc_end;
 #endif
 
-void do_GC_gcollect(void *stack_now)
+static void do_GC_gcollect(void *stack_now)
 {
   long root_marked;
   int j;

@@ -1932,7 +1932,10 @@ static HANDLE **spec_handle;
 HANDLE dup_spec_handle(HANDLE h, int id)
 {
   HANDLE *hp;
-  int i;
+  int i, len;
+
+  if (!id)
+    return h;
 
   if (!spec_handle) {
     REGISTER_SO(spec_handle);
@@ -1947,16 +1950,24 @@ HANDLE dup_spec_handle(HANDLE h, int id)
   }
 
   hp = MALLOC_N_ATOMIC(HANDLE, len + 3);
-  for (len = 0; spec_handle[id][len]; len++) {
-    hp[len] = spec_handle[id][len];
+  for (i = 0; i < len; i++) {
+    hp[i] = spec_handle[id][i];
   }
 
   if (!len)
     hp[len++] = h;
 
-  h = DuplicateHandle(hp[0]);
-  hp[len] = h;
-  hp[len + 1] = 0;
+  if (!DuplicateHandle(GetCurrentProcess(), hp[0],
+		       GetCurrentProcess(), &h, 0, 
+		       1, /* inherited */
+		       DUPLICATE_SAME_ACCESS)) {
+    h = 0;
+  } else {
+    hp[len++] = h;
+  }
+  hp[len] = INVALID_HANDLE_VALUE;
+
+  spec_handle[id] = hp;
 
   return h;
 }
@@ -2088,7 +2099,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   }
 #else
 # ifdef WINDOWS_FILE_HANDLES
-  spec_id = scheme_is_special_filename(filename);
+  spec_id = scheme_is_special_filename(filename, 1);
   if (spec_id && spec_handle && spec_handle[spec_id]) {
     fd = dup_spec_handle(0, spec_id);
   } else {
@@ -2099,7 +2110,8 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 		    OPEN_EXISTING,
 		    0,
 		    NULL);
-    fd = dup_spec_handle(fd, spec_id);
+    if (fd != INVALID_HANDLE_VALUE)
+      fd = dup_spec_handle(fd, spec_id);
   }
 
   if (fd == INVALID_HANDLE_VALUE) {
@@ -2324,7 +2336,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   else if (existsok  == 2)
     hmode = OPEN_ALWAYS;
 
-  spec_id = scheme_is_special_filename(filename);
+  spec_id = scheme_is_special_filename(filename, 1);
   if (spec_id && spec_handle && spec_handle[spec_id] 
       && (hmode != CREATE_NEW) && (hmode != CREATE_ALWAYS)) {
     fd = dup_spec_handle(0, spec_id);
@@ -2336,7 +2348,8 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 		    hmode,
 		    FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
 		    NULL);
-    fd = dup_spec_handle(fd, spec_id);
+    if (fd != INVALID_HANDLE_VALUE)
+      fd = dup_spec_handle(fd, spec_id);
   }
 
   if (fd == INVALID_HANDLE_VALUE) {

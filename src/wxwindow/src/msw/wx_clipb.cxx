@@ -268,7 +268,7 @@ wxClipboard::wxClipboard()
 wxClipboard::~wxClipboard()
 {
   if (clipOwner)
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
   if (cbString)
     delete[] cbString;
 }
@@ -285,11 +285,11 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
 {
   Bool got_selection;
 
-  if (clipOwner)
-    clipOwner->BeingReplaced();
+  if (clipOwner) 
+    MrEdQueueBeingReplaced(clipOwner);
   clipOwner = client;
+  clipOwner->context = wxGetContextForFrame();
   if (cbString) {
-    delete[] cbString;
     cbString = NULL;
   }
 
@@ -320,7 +320,7 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   got_selection = FALSE; // Assume another process takes over
 
   if (!got_selection) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
 }
@@ -335,7 +335,7 @@ void wxClipboard::SetClipboardString(char *str, long time)
   Bool got_selection;
 
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
   if (cbString)
@@ -377,7 +377,7 @@ char *wxClipboard::GetClipboardString(long time)
 void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
 {
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
   }
   if (cbString) {

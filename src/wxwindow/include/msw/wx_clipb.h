@@ -41,6 +41,8 @@ class wxClipboardClient : public wxObject
      out on the Macintosh */
   wxStringList *formats;
 
+  void *context; /* eventspace */
+
   wxClipboardClient();
 
   /* This method is called when the client is losing the selection. */
@@ -99,5 +101,8 @@ void wxInitClipboard(void);
 
 /* The clipboard */
 extern wxClipboard *wxTheClipboard;
+
+extern char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *length);
+extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
 #endif // wx_clipbh

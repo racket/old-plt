@@ -5901,10 +5901,13 @@ static Scheme_Object *os_wxImageSnipGetFilename(Scheme_Object *obj, int n,  Sche
   Bool* x0 = &_x0;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
+  if (n > 0) {
+    if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
     *x0 = objscheme_unbundle_bool(objscheme_nullable_unbox(p[0], "get-filename in image-snip%"), "get-filename in image-snip%"", extracting boxed argument");
+  } else
+    x0 = NULL;
 
   
   r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->GetFilename(x0);
@@ -6602,7 +6605,7 @@ if (os_wxImageSnip_class) {
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2);
  scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype", os_wxImageSnipGetFiletype, 0, 0);
- scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename", os_wxImageSnipGetFilename, 1, 1);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename", os_wxImageSnipGetFilename, 0, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "load-file", os_wxImageSnipLoadFile, 1, 4);
  scheme_add_method_w_arity(os_wxImageSnip_class, "get-scroll-step-offset", os_wxImageSnipGetScrollStepOffset, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "find-scroll-step", os_wxImageSnipFindScrollStep, 1, 1);

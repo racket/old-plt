@@ -83,7 +83,7 @@
 @CREATOR (ubyte,ubyte,ubyte); <> rgb values
 @CREATOR (string); <> color name
 
-@ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color".METHODNAME("color%","=")]
+@ "copy-from" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color".METHODNAME("color%","copy-from")]
 // @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 @ "ok?" : bool Ok();
 @ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color".METHODNAME("color%","set")]

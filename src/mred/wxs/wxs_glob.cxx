@@ -497,8 +497,8 @@ void objscheme_setup_wxsGlobal(void *env)
 {
   scheme_install_xc_global("flush-display", scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "flush-display", 0, 0), env);
   scheme_install_xc_global("yield", scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "yield", 0, 1), env);
-  scheme_install_xc_global("write-resource", scheme_make_prim(wxsGlobalwxWriteResource), env);
-  scheme_install_xc_global("get-resource", scheme_make_prim(wxsGlobalwxGetResource), env);
+  scheme_install_xc_global("write-resource", scheme_make_prim_w_arity(wxsGlobalwxWriteResource, "write-resource", 3, 4), env);
+  scheme_install_xc_global("get-resource", scheme_make_prim_w_arity(wxsGlobalwxGetResource, "get-resource", 3, 4), env);
   scheme_install_xc_global("label->plain-label", scheme_make_prim_w_arity(wxsGlobalwxStripMenuCodes_Scheme, "label->plain-label", 1, 1), env);
   scheme_install_xc_global("display-size", scheme_make_prim_w_arity(wxsGlobalwxDisplaySize, "display-size", 2, 2), env);
   scheme_install_xc_global("bell", scheme_make_prim_w_arity(wxsGlobalwxBell, "bell", 0, 0), env);

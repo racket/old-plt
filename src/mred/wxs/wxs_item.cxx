@@ -679,7 +679,7 @@ if (os_wxMessage_class) {
 } else {
   os_wxMessage_class = objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7);
 
- scheme_add_method(os_wxMessage_class, "set-label", os_wxMessageSetLabel);
+ scheme_add_method_w_arity(os_wxMessage_class, "set-label", os_wxMessageSetLabel, 1, 1);
  scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event", os_wxMessagePreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char", os_wxMessagePreOnChar, 2, 2);

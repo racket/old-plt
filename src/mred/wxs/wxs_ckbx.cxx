@@ -623,7 +623,7 @@ if (os_wxCheckBox_class) {
 } else {
   os_wxCheckBox_class = objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9);
 
- scheme_add_method(os_wxCheckBox_class, "set-label", os_wxCheckBoxSetLabel);
+ scheme_add_method_w_arity(os_wxCheckBox_class, "set-label", os_wxCheckBoxSetLabel, 1, 1);
  scheme_add_method_w_arity(os_wxCheckBox_class, "set-value", os_wxCheckBoxSetValue, 1, 1);
  scheme_add_method_w_arity(os_wxCheckBox_class, "get-value", os_wxCheckBoxGetValue, 0, 0);
  scheme_add_method_w_arity(os_wxCheckBox_class, "on-drop-file", os_wxCheckBoxOnDropFile, 1, 1);

@@ -156,15 +156,13 @@
 @ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,int=1,long=-1,long=-1,bool=TRUE,bool=TRUE);
 
 @ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],long?=NULL)
-@ "get-snip-position-and-location" : void GetSnipPositionAndLocation(wxSnip!,long?,float?,float?);
+@ "get-snip-position-and-location" : void GetSnipPositionAndLocation(wxSnip!,long?,float?=NULL,float?=NULL);
 @ "get-snip-position" : long GetSnipPosition(wxSnip!);
 
 @MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
 
 @ "get-text" : string/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
 @ "get-character" : uchar GetCharacter(nnlong);
-
-@ "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,nnlong,bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut%,long,long=-1); <> with position

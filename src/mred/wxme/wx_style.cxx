@@ -132,10 +132,14 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     styleOff = wxBASE;
     underlinedOn = underlinedOff = FALSE;
     transparentTextBackingOn = transparentTextBackingOff = FALSE;
-    foregroundMult.Set(1, 1, 1);
-    foregroundAdd.Set(0, 0, 0);
-    backgroundMult.Set(1, 1, 1);
-    backgroundAdd.Set(0, 0, 0);
+    foregroundMult = new wxMultColour;
+    foregroundMult->Set(1, 1, 1);
+    foregroundAdd = new wxAddColour;
+    foregroundAdd->Set(0, 0, 0);
+    backgroundMult = new wxMultColour;
+    backgroundMult->Set(1, 1, 1);
+    backgroundAdd = new wxAddColour;
+    backgroundAdd->Set(0, 0, 0);
     alignmentOn = wxBASE;
     alignmentOff = wxBASE;
     break;
@@ -212,10 +216,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     alignmentOff = wxBASE;
     /* fall through ... */
   case wxCHANGE_NORMAL_COLOUR: /* ^^ falls through */
-    foregroundMult.Set(0, 0, 0);
-    foregroundAdd.Set(0, 0, 0);
-    backgroundMult.Set(0, 0, 0);
-    backgroundAdd.Set(255, 255, 255);
+    foregroundMult->Set(0, 0, 0);
+    foregroundAdd->Set(0, 0, 0);
+    backgroundMult->Set(0, 0, 0);
+    backgroundAdd->Set(255, 255, 255);
     break;
   }
 
@@ -256,9 +260,9 @@ wxStyleDelta *wxStyleDelta::SetDeltaBackground(wxColour& colour)
   transparentTextBackingOn = FALSE;
   transparentTextBackingOff = TRUE;
 
-  backgroundMult.Set(0, 0, 0);
+  backgroundMult->Set(0, 0, 0);
   colour.Get(&r, &g, &b);
-  backgroundAdd.Set(r, g, b);
+  backgroundAdd->Set(r, g, b);
 
   return this;
 }
@@ -276,9 +280,9 @@ wxStyleDelta *wxStyleDelta::SetDeltaForeground(wxColour& colour)
 {
   unsigned char r, g, b;
 
-  foregroundMult.Set(0, 0, 0);
+  foregroundMult->Set(0, 0, 0);
   colour.Get(&r, &g, &b);
-  foregroundAdd.Set(r, g, b);
+  foregroundAdd->Set(r, g, b);
   return this;
 }
 
@@ -295,10 +299,10 @@ Bool wxStyleDelta::Collapse(wxStyleDelta &deltaIn)
   if (sizeMult && sizeMult != 1.0 && deltaIn.sizeAdd != 0)
     return FALSE;
 
-  foregroundMult.Get(&amfr, &amfb, &amfg);
-  backgroundMult.Get(&ambr, &ambb, &ambg);
-  deltaIn.foregroundAdd.Get(&bafr, &bafb, &bafg);
-  deltaIn.backgroundAdd.Get(&babr, &babb, &babg);
+  foregroundMult->Get(&amfr, &amfb, &amfg);
+  backgroundMult->Get(&ambr, &ambb, &ambg);
+  deltaIn.foregroundAdd->Get(&bafr, &bafb, &bafg);
+  deltaIn.backgroundAdd->Get(&babr, &babb, &babg);
   if ((amfr && amfr != 1.0 && bafr != 0)
       || (amfg && amfg != 1.0 && bafg != 0)
       || (amfb && amfb != 1.0 && bafb != 0)
@@ -348,22 +352,22 @@ Bool wxStyleDelta::Collapse(wxStyleDelta &deltaIn)
 
   /* Collapsing is possible. */
 
-  deltaIn.foregroundMult.Get(&bmfr, &bmfb, &bmfg);
-  deltaIn.backgroundMult.Get(&bmbr, &bmbb, &bmbg);
-  foregroundAdd.Get(&aafr, &aafb, &aafg);
-  backgroundAdd.Get(&aabr, &aabb, &aabg);
+  deltaIn.foregroundMult->Get(&bmfr, &bmfb, &bmfg);
+  deltaIn.backgroundMult->Get(&bmbr, &bmbb, &bmbg);
+  foregroundAdd->Get(&aafr, &aafb, &aafg);
+  backgroundAdd->Get(&aabr, &aabb, &aabg);
   
   sizeAdd += (int)(sizeMult * deltaIn.sizeAdd);
   sizeMult *= deltaIn.sizeMult;
 
-  foregroundMult.Set(amfr * bmfr, amfb * bmfb, amfg * bmfg);
-  backgroundMult.Set(ambr * bmbr, ambb * bmbb, ambg * bmbg);
-  foregroundAdd.Set(aafr + (int)(amfr * bafr), 
-		    aafb + (int)(amfb * bafb), 
-		    aafg + (int)(amfg * bafg));
-  backgroundAdd.Set(aabr + (int)(ambr * babr), 
-		    aabb + (int)(ambb * babb), 
-		    aabg + (int)(ambg * babg));
+  foregroundMult->Set(amfr * bmfr, amfb * bmfb, amfg * bmfg);
+  backgroundMult->Set(ambr * bmbr, ambb * bmbb, ambg * bmbg);
+  foregroundAdd->Set(aafr + (int)(amfr * bafr), 
+		     aafb + (int)(amfb * bafb), 
+		     aafg + (int)(amfg * bafg));
+  backgroundAdd->Set(aabr + (int)(ambr * babr), 
+		     aabb + (int)(ambb * babb), 
+		     aabg + (int)(ambg * babg));
 
   if (family == wxBASE && !face) {
     family = deltaIn.family;
@@ -420,14 +424,14 @@ Bool wxStyleDelta::Equal(wxStyleDelta &deltaIn)
   short aabr, aabb, aabg, aafr, aafb, aafg;
   short babr, babb, babg, bafr, bafb, bafg;
   
-  foregroundMult.Get(&amfr, &amfb, &amfg);
-  backgroundMult.Get(&ambr, &ambb, &ambg);
-  foregroundAdd.Get(&aafr, &aafb, &aafg);
-  backgroundAdd.Get(&aabr, &aabb, &aabg);
-  deltaIn.foregroundMult.Get(&bmfr, &bmfb, &bmfg);
-  deltaIn.backgroundMult.Get(&bmbr, &bmbb, &bmbg);
-  deltaIn.foregroundAdd.Get(&bafr, &bafb, &bafg);
-  deltaIn.backgroundAdd.Get(&babr, &babb, &babg);
+  foregroundMult->Get(&amfr, &amfb, &amfg);
+  backgroundMult->Get(&ambr, &ambb, &ambg);
+  foregroundAdd->Get(&aafr, &aafb, &aafg);
+  backgroundAdd->Get(&aabr, &aabb, &aabg);
+  deltaIn.foregroundMult->Get(&bmfr, &bmfb, &bmfg);
+  deltaIn.backgroundMult->Get(&bmbr, &bmbb, &bmbg);
+  deltaIn.foregroundAdd->Get(&bafr, &bafb, &bafg);
+  deltaIn.backgroundAdd->Get(&babr, &babb, &babg);
 
   return (((!face && !deltaIn.face && family == deltaIn.family)
 	   || (face && deltaIn.face && !strcmp(face, deltaIn.face)))
@@ -464,18 +468,18 @@ void wxStyleDelta::Copy(wxStyleDelta *in)
   DCOPY(underlinedOff);
   DCOPY(transparentTextBackingOn);
   DCOPY(transparentTextBackingOff);
-  DCOPY(foregroundMult.r);
-  DCOPY(foregroundMult.g);
-  DCOPY(foregroundMult.b);
-  DCOPY(foregroundAdd.r);
-  DCOPY(foregroundAdd.g);
-  DCOPY(foregroundAdd.b);
-  DCOPY(backgroundMult.r);
-  DCOPY(backgroundMult.g);
-  DCOPY(backgroundMult.b);
-  DCOPY(backgroundAdd.r);
-  DCOPY(backgroundAdd.g);
-  DCOPY(backgroundAdd.b);
+  DCOPY(foregroundMult->r);
+  DCOPY(foregroundMult->g);
+  DCOPY(foregroundMult->b);
+  DCOPY(foregroundAdd->r);
+  DCOPY(foregroundAdd->g);
+  DCOPY(foregroundAdd->b);
+  DCOPY(backgroundMult->r);
+  DCOPY(backgroundMult->g);
+  DCOPY(backgroundMult->b);
+  DCOPY(backgroundAdd->r);
+  DCOPY(backgroundAdd->g);
+  DCOPY(backgroundAdd->b);
   DCOPY(alignmentOn);
   DCOPY(alignmentOff);
 }
@@ -614,16 +618,16 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     transText = base->transText;
   
   base->foreground.Get(&r, &g, &b);
-  u.delta->foregroundMult.Get(&rm, &gm, &bm);
-  u.delta->foregroundAdd.Get(&rp, &gp, &bp);
+  u.delta->foregroundMult->Get(&rm, &gm, &bm);
+  u.delta->foregroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
   target->foreground.Set(r, g, b);
 
   base->background.Get(&r, &g, &b);
-  u.delta->backgroundMult.Get(&rm, &gm, &bm);
-  u.delta->backgroundAdd.Get(&rp, &gp, &bp);
+  u.delta->backgroundMult->Get(&rm, &gm, &bm);
+  u.delta->backgroundAdd->Get(&rp, &gp, &bp);
   r = ColourNum(r * rm + rp);
   g = ColourNum(g * gm + gp);
   b = ColourNum(b * bm + bp);
@@ -1503,20 +1507,20 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 	f >> delta.transparentTextBackingOff;
       }
       
-      f >> delta.foregroundMult.r;
-      f >> delta.foregroundMult.g;
-      f >> delta.foregroundMult.b;
-      f >> delta.backgroundMult.r;
-      f >> delta.backgroundMult.g;
-      f >> delta.backgroundMult.b;
+      f >> delta.foregroundMult->r;
+      f >> delta.foregroundMult->g;
+      f >> delta.foregroundMult->b;
+      f >> delta.backgroundMult->r;
+      f >> delta.backgroundMult->g;
+      f >> delta.backgroundMult->b;
       f >> r;
       f >> g;
       f >> b;
-      delta.foregroundAdd.Set(r, g, b);
+      delta.foregroundAdd->Set(r, g, b);
       f >> r;
       f >> g;
       f >> b;
-      delta.backgroundAdd.Set(r, g, b);
+      delta.backgroundAdd->Set(r, g, b);
       if (WXME_VERSION_ONE() || WXME_VERSION_TWO()) {
 	if (r || g || b)
 	  delta.transparentTextBackingOff = TRUE;
@@ -1601,17 +1605,17 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut &f)
       f << delta.transparentTextBackingOn;
       f << delta.transparentTextBackingOff;
 
-      f << delta.foregroundMult.r;
-      f << delta.foregroundMult.g;
-      f << delta.foregroundMult.b;
-      f << delta.backgroundMult.r;
-      f << delta.backgroundMult.g;
-      f << delta.backgroundMult.b;
-      delta.foregroundAdd.Get(&r, &g, &b);
+      f << delta.foregroundMult->r;
+      f << delta.foregroundMult->g;
+      f << delta.foregroundMult->b;
+      f << delta.backgroundMult->r;
+      f << delta.backgroundMult->g;
+      f << delta.backgroundMult->b;
+      delta.foregroundAdd->Get(&r, &g, &b);
       f << r;
       f << g;
       f << b;
-      delta.backgroundAdd.Get(&r, &g, &b);
+      delta.backgroundAdd->Get(&r, &g, &b);
       f << r;
       f << g;
       f << b;

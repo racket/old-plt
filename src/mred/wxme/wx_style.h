@@ -80,8 +80,8 @@ class wxStyleDelta : public wxObject
   Bool underlinedOff;
   Bool transparentTextBackingOn;
   Bool transparentTextBackingOff;
-  wxMultColour foregroundMult, backgroundMult;
-  wxAddColour foregroundAdd, backgroundAdd;
+  wxMultColour *foregroundMult, *backgroundMult;
+  wxAddColour *foregroundAdd, *backgroundAdd;
   int alignmentOn;
   int alignmentOff;
   

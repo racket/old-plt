@@ -9,6 +9,7 @@
 @HEADER
 
 @CLASSBASE wxMultColour "mult-color" : "object"
+@INTERFACE "mult-color"
 
 @IVAR "r" : float r
 @IVAR "g" : float g
@@ -20,6 +21,7 @@
 @END
 
 @CLASSBASE wxAddColour "add-color" : "object"
+@INTERFACE "add-color"
 
 @IVAR "r" : short r
 @IVAR "g" : short g
@@ -108,10 +110,10 @@
 @IVAR "underlined-off" : bool underlinedOff
 @IVAR "transparent-text-backing-on" : bool transparentTextBackingOn
 @IVAR "transparent-text-backing-off" : bool transparentTextBackingOff
-@IVAR r "foreground-mult" : wxMultColour% foregroundMult
-@IVAR r "background-mult" : wxMultColour% backgroundMult
-@IVAR r "foreground-add" : wxAddColour% foregroundAdd
-@IVAR r "background-add" : wxAddColour% backgroundAdd
+@IVAR r "foreground-mult" : wxMultColour! foregroundMult
+@IVAR r "background-mult" : wxMultColour! backgroundMult
+@IVAR r "foreground-add" : wxAddColour! foregroundAdd
+@IVAR r "background-add" : wxAddColour! backgroundAdd
 @IVAR "alignment-on" : SYM[align] alignmentOn
 @IVAR "alignment-off" : SYM[align] alignmentOff
   

@@ -93,7 +93,7 @@
 // This isn't `pathname' because it expands internally
 @ "load-file" : void LoadFile(nstring,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
-@ "get-filename" : nstring GetFilename(bool?);
+@ "get-filename" : nstring GetFilename(bool?=NULL);
 @ "get-filetype" : SYM[bitmapType] GetFiletype();
 
 @ "set-bitmap" : void SetBitmap(wxBitmap!);

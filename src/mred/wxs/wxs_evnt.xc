@@ -179,7 +179,7 @@
 
 @CREATOR (SYM[mouseEventType]);
 
-@ "button-changed?" : bool Button(SYM[buttonId]);
+@ "button-changed?" : bool Button(SYM[buttonId]=-1);
 @ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);
 @ "button-up?" : bool ButtonUp(SYM[buttonId]=-1);
 @ "dragging?" : bool Dragging();

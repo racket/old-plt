@@ -935,7 +935,7 @@ if (os_wxRadioBox_class) {
 } else {
   os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 14);
 
- scheme_add_method(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable);
+ scheme_add_method_w_arity(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable, 1, 2);
  scheme_add_method_w_arity(os_wxRadioBox_class, "get-string", os_wxRadioBoxGetString, 1, 1);
  scheme_add_method_w_arity(os_wxRadioBox_class, "set-selection", os_wxRadioBoxSetSelection, 1, 1);
  scheme_add_method_w_arity(os_wxRadioBox_class, "set-string-selection", os_wxRadioBoxSetStringSelection, 1, 1);

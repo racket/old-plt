@@ -746,7 +746,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
 static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Object *);
 
 
@@ -3851,30 +3850,6 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaEditInsertFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-  string x0;
-  int x1;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "insert-file in text%");
-  if (n > 1) {
-    x1 = unbundle_symset_fileType(p[1], "insert-file in text%");
-  } else
-    x1 = wxMEDIA_FF_GUESS;
-
-  
-  r = ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->InsertFile(x0, x1);
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaEditGetCharacter(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3970,14 +3945,20 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
     x1 = NULL;
   else
     *x1 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[1], "get-snip-position-and-location in text%"), "get-snip-position-and-location in text%"", extracting boxed argument");
-  if (XC_SCHEME_NULLP(p[2]))
+  if (n > 2) {
+    if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
     *x2 = objscheme_unbundle_float(objscheme_nullable_unbox(p[2], "get-snip-position-and-location in text%"), "get-snip-position-and-location in text%"", extracting boxed argument");
-  if (XC_SCHEME_NULLP(p[3]))
+  } else
+    x2 = NULL;
+  if (n > 3) {
+    if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
     *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-snip-position-and-location in text%"), "get-snip-position-and-location in text%"", extracting boxed argument");
+  } else
+    x3 = NULL;
 
   
   ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetSnipPositionAndLocation(x0, x1, x2, x3);
@@ -6625,7 +6606,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 131);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 130);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6659,13 +6640,12 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-overwrite-mode", os_wxMediaEditGetOverwriteMode, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-file-format", os_wxMediaEditSetFileFormat, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file-format", os_wxMediaEditGetFileFormat, 0, 0);
- scheme_add_method(os_wxMediaEdit_class, "write-to-file", os_wxMediaEditWriteToFile);
- scheme_add_method(os_wxMediaEdit_class, "read-from-file", os_wxMediaEditReadFromFile);
- scheme_add_method_w_arity(os_wxMediaEdit_class, "insert-file", os_wxMediaEditInsertFile, 1, 2);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file", os_wxMediaEditWriteToFile, 1, 3);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file", os_wxMediaEditReadFromFile, 1, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character", os_wxMediaEditGetCharacter, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text", os_wxMediaEditGetText, 0, 4);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position", os_wxMediaEditGetSnipPosition, 1, 1);
- scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location", os_wxMediaEditGetSnipPositionAndLocation, 4, 4);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location", os_wxMediaEditGetSnipPositionAndLocation, 2, 4);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip", os_wxMediaEditFindSnip, 2, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6);
@@ -6690,17 +6670,17 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-line", os_wxMediaEditFindLine, 1, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position", os_wxMediaEditFindPosition, 2, 5);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "split-snip", os_wxMediaEditSplitSnip, 1, 1);
- scheme_add_method(os_wxMediaEdit_class, "change-style", os_wxMediaEditChangeStyle);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style", os_wxMediaEditChangeStyle, 1, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste", os_wxMediaEditDoPaste, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "do-copy", os_wxMediaEditDoCopy, 4, 4);
- scheme_add_method(os_wxMediaEdit_class, "kill", os_wxMediaEditKill);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "kill", os_wxMediaEditKill, 0, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paste-next", os_wxMediaEditPasteNext, 0, 0);
- scheme_add_method(os_wxMediaEdit_class, "paste", os_wxMediaEditPaste);
- scheme_add_method(os_wxMediaEdit_class, "copy", os_wxMediaEditCopy);
- scheme_add_method(os_wxMediaEdit_class, "cut", os_wxMediaEditCut);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "paste", os_wxMediaEditPaste, 0, 3);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "copy", os_wxMediaEditCopy, 0, 4);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "cut", os_wxMediaEditCut, 0, 4);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "erase", os_wxMediaEditErase, 0, 0);
- scheme_add_method(os_wxMediaEdit_class, "delete", os_wxMediaEditDelete);
- scheme_add_method(os_wxMediaEdit_class, "insert", os_wxMediaEditInsert);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "delete", os_wxMediaEditDelete, 0, 3);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "insert", os_wxMediaEditInsert, 1, 5);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-off", os_wxMediaEditFlashOff, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-on", os_wxMediaEditFlashOn, 2, 5);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-anchor", os_wxMediaEditGetAnchor, 0, 0);

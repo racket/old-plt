@@ -1096,7 +1096,7 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "deselect", os_wxListBoxDeselect, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "delete", os_wxListBoxDelete, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "clear", os_wxListBoxClear, 0, 0);
- scheme_add_method(os_wxListBox_class, "append", os_wxListBoxAppend);
+ scheme_add_method_w_arity(os_wxListBox_class, "append", os_wxListBoxAppend, 1, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "on-drop-file", os_wxListBoxOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "pre-on-event", os_wxListBoxPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "pre-on-char", os_wxListBoxPreOnChar, 2, 2);

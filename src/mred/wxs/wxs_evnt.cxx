@@ -1783,7 +1783,10 @@ static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_O
   int x0;
 
   
-  x0 = unbundle_symset_buttonId(p[0], "button-changed? in mouse-event%");
+  if (n > 0) {
+    x0 = unbundle_symset_buttonId(p[0], "button-changed? in mouse-event%");
+  } else
+    x0 = -1;
 
   
   r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Button(x0);
@@ -2127,7 +2130,7 @@ if (os_wxMouseEvent_class) {
  scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 1, 1);
+ scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 0, 1);
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type", objscheme_wxMouseEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type", objscheme_wxMouseEvent_SeteventType, 1, 1);

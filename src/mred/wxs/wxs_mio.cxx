@@ -1462,12 +1462,12 @@ if (os_wxMediaStreamIn_class) {
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "skip", os_wxMediaStreamInSkip, 1, 1);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "remove-boundary", os_wxMediaStreamInRemoveBoundary, 0, 0);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "set-boundary", os_wxMediaStreamInSetBoundary, 1, 1);
- scheme_add_method(os_wxMediaStreamIn_class, ">>", os_wxMediaStreamInoperatorGTGT);
+ scheme_add_method_w_arity(os_wxMediaStreamIn_class, ">>", os_wxMediaStreamInoperatorGTGT, 1, 1);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-inexact", os_wxMediaStreamInGetInexact, 0, 0);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-exact", os_wxMediaStreamInGetExact, 0, 0);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-fixed", os_wxMediaStreamInGetFixed, 1, 1);
  scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get-string", os_wxMediaStreamInGetString, 0, 1);
- scheme_add_method(os_wxMediaStreamIn_class, "get", os_wxMediaStreamInGet);
+ scheme_add_method_w_arity(os_wxMediaStreamIn_class, "get", os_wxMediaStreamInGet, 1, 1);
 
 
   scheme_made_class(os_wxMediaStreamIn_class);
@@ -1773,9 +1773,9 @@ if (os_wxMediaStreamOut_class) {
  scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?", os_wxMediaStreamOutOk, 0, 0);
  scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to", os_wxMediaStreamOutJumpTo, 1, 1);
  scheme_add_method_w_arity(os_wxMediaStreamOut_class, "tell", os_wxMediaStreamOutTell, 0, 0);
- scheme_add_method(os_wxMediaStreamOut_class, "<<", os_wxMediaStreamOutoperatorLTLT);
+ scheme_add_method_w_arity(os_wxMediaStreamOut_class, "<<", os_wxMediaStreamOutoperatorLTLT, 1, 1);
  scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put-fixed", os_wxMediaStreamOutPutFixed, 1, 1);
- scheme_add_method(os_wxMediaStreamOut_class, "put", os_wxMediaStreamOutPut);
+ scheme_add_method_w_arity(os_wxMediaStreamOut_class, "put", os_wxMediaStreamOutPut, 1, 2);
 
 
   scheme_made_class(os_wxMediaStreamOut_class);

@@ -666,7 +666,7 @@ if (os_wxFontList_class) {
   os_wxFontList_class = objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1);
 
 #if  USE_FONT_NAME_DIRECTORY
- scheme_add_method(os_wxFontList_class, "find-or-create-font", os_wxFontListFindOrCreateFont);
+ scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font", os_wxFontListFindOrCreateFont, 4, 6);
 #endif
 
 
@@ -872,9 +872,9 @@ static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "= in color%", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "copy-from in color%", 0);
 
-  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("color%","="), "color", "color");
+  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("color%","copy-from"), "color", "color");
   r = &((wxColour *)((Scheme_Class_Object *)obj)->primdata)->operator=(*x0);
 
   
@@ -944,7 +944,7 @@ if (os_wxColour_class) {
  scheme_add_method_w_arity(os_wxColour_class, "red", os_wxColourRed, 0, 0);
  scheme_add_method_w_arity(os_wxColour_class, "set", os_wxColourSet, 3, 3);
  scheme_add_method_w_arity(os_wxColour_class, "ok?", os_wxColourOk, 0, 0);
- scheme_add_method_w_arity(os_wxColour_class, "=", os_wxColouroperatorEQUAL, 1, 1);
+ scheme_add_method_w_arity(os_wxColour_class, "copy-from", os_wxColouroperatorEQUAL, 1, 1);
 
 
   scheme_made_class(os_wxColour_class);
@@ -1684,7 +1684,7 @@ if (os_wxBrush_class) {
  scheme_add_method_w_arity(os_wxBrush_class, "get-style", os_wxBrushGetStyle, 0, 0);
  scheme_add_method_w_arity(os_wxBrush_class, "set-stipple", os_wxBrushSetStipple, 1, 1);
  scheme_add_method_w_arity(os_wxBrush_class, "get-stipple", os_wxBrushGetStipple, 0, 0);
- scheme_add_method(os_wxBrush_class, "set-color", os_wxBrushSetColour);
+ scheme_add_method_w_arity(os_wxBrush_class, "set-color", os_wxBrushSetColour, 1, 3);
  scheme_add_method_w_arity(os_wxBrush_class, "get-color", os_wxBrushGetColour, 0, 0);
 
 
@@ -1837,7 +1837,7 @@ if (os_wxBrushList_class) {
 } else {
   os_wxBrushList_class = objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 1);
 
- scheme_add_method(os_wxBrushList_class, "find-or-create-brush", os_wxBrushListFindOrCreateBrush);
+ scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush", os_wxBrushListFindOrCreateBrush, 2, 2);
 
 
   scheme_made_class(os_wxBrushList_class);
@@ -2396,7 +2396,7 @@ if (os_wxPen_class) {
  scheme_add_method_w_arity(os_wxPen_class, "get-style", os_wxPenGetStyle, 0, 0);
  scheme_add_method_w_arity(os_wxPen_class, "set-stipple", os_wxPenSetStipple, 1, 1);
  scheme_add_method_w_arity(os_wxPen_class, "get-stipple", os_wxPenGetStipple, 0, 0);
- scheme_add_method(os_wxPen_class, "set-color", os_wxPenSetColour);
+ scheme_add_method_w_arity(os_wxPen_class, "set-color", os_wxPenSetColour, 1, 3);
  scheme_add_method_w_arity(os_wxPen_class, "get-color", os_wxPenGetColour, 0, 0);
  scheme_add_method_w_arity(os_wxPen_class, "set-join", os_wxPenSetJoin, 1, 1);
  scheme_add_method_w_arity(os_wxPen_class, "get-join", os_wxPenGetJoin, 0, 0);
@@ -2560,7 +2560,7 @@ if (os_wxPenList_class) {
 } else {
   os_wxPenList_class = objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 1);
 
- scheme_add_method(os_wxPenList_class, "find-or-create-pen", os_wxPenListFindOrCreatePen);
+ scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen", os_wxPenListFindOrCreatePen, 3, 3);
 
 
   scheme_made_class(os_wxPenList_class);

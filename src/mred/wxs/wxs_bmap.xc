@@ -36,7 +36,7 @@
 
 @CLASSBASE wxIcon "icon" : "bitmap"
 
-@CREATOR (string, SYM[bitmapType]);
+@CREATOR (string, SYM[bitmapType]=0);
 
 @END
 

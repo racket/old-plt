@@ -621,7 +621,7 @@ if (os_wxButton_class) {
 } else {
   os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
 
- scheme_add_method(os_wxButton_class, "set-label", os_wxButtonSetLabel);
+ scheme_add_method_w_arity(os_wxButton_class, "set-label", os_wxButtonSetLabel, 1, 1);
  scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2);

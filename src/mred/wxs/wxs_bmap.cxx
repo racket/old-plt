@@ -465,7 +465,7 @@ class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *obj, const char *wher
 class os_wxIcon : public wxIcon {
  public:
 
-  os_wxIcon(Scheme_Object * obj, string x0, int x1);
+  os_wxIcon(Scheme_Object * obj, string x0, int x1 = 0);
   ~os_wxIcon();
 };
 
@@ -492,10 +492,13 @@ static Scheme_Object *os_wxIcon_ConstructScheme(Scheme_Object *obj, int n,  Sche
   int x1;
 
   
-  if (n != 2) 
-    scheme_wrong_count("initialization in icon%", 2, 2, n, p);
+  if ((n < 1) ||(n > 2)) 
+    scheme_wrong_count("initialization in icon%", 1, 2, n, p);
   x0 = (string)objscheme_unbundle_string(p[0], "initialization in icon%");
-  x1 = unbundle_symset_bitmapType(p[1], "initialization in icon%");
+  if (n > 1) {
+    x1 = unbundle_symset_bitmapType(p[1], "initialization in icon%");
+  } else
+    x1 = 0;
 
   
   realobj = new os_wxIcon(obj, x0, x1);

@@ -42,6 +42,7 @@ public:
 #endif
 
 @CLASSBASE baseMetaFile "meta-file" : "object"
+@INTERFACE "meta-file"
 
 // @CREATOR (string=NULL);
 

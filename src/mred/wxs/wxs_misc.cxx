@@ -63,6 +63,8 @@ class os_baseMetaFile : public baseMetaFile {
 
 Scheme_Object *os_baseMetaFile_class;
 
+Scheme_Object *os_baseMetaFile_interface;
+
 os_baseMetaFile::~os_baseMetaFile()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -79,11 +81,11 @@ static Scheme_Object *os_baseMetaFileSetClipboard(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "set-clipboard in meta-file%");
+    x0 = objscheme_unbundle_integer(p[0], "set-clipboard in meta-file<%>");
   } else
     x0 = 0;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "set-clipboard in meta-file%");
+    x1 = objscheme_unbundle_integer(p[1], "set-clipboard in meta-file<%>");
   } else
     x1 = 0;
 
@@ -103,7 +105,7 @@ static Scheme_Object *os_baseMetaFilePlay(Scheme_Object *obj, int n,  Scheme_Obj
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "play in meta-file%", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "play in meta-file<%>", 0);
 
   
   ((baseMetaFile *)((Scheme_Class_Object *)obj)->primdata)->Play(x0);
@@ -134,6 +136,7 @@ void objscheme_setup_baseMetaFile(void *env)
 {
 if (os_baseMetaFile_class) {
     objscheme_add_global_class(os_baseMetaFile_class, "meta-file%", env);
+    objscheme_add_global_interface(os_baseMetaFile_interface, "meta-file" "<%>", env);
 } else {
   os_baseMetaFile_class = objscheme_def_prim_class(env, "meta-file%", "object%", NULL, 3);
 
@@ -144,6 +147,9 @@ if (os_baseMetaFile_class) {
 
   scheme_made_class(os_baseMetaFile_class);
 
+  os_baseMetaFile_interface = scheme_class_to_interface(os_baseMetaFile_class, "meta-file" "<%>");
+
+  objscheme_add_global_interface(os_baseMetaFile_interface, "meta-file" "<%>", env);
 
 }
 }

@@ -29,6 +29,8 @@ class os_wxMultColour : public wxMultColour {
 
 Scheme_Object *os_wxMultColour_class;
 
+Scheme_Object *os_wxMultColour_interface;
+
 os_wxMultColour::~os_wxMultColour()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -44,9 +46,9 @@ static Scheme_Object *os_wxMultColourSet(Scheme_Object *obj, int n,  Scheme_Obje
   float x2;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set in mult-color%");
-  x1 = objscheme_unbundle_float(p[1], "set in mult-color%");
-  x2 = objscheme_unbundle_float(p[2], "set in mult-color%");
+  x0 = objscheme_unbundle_float(p[0], "set in mult-color<%>");
+  x1 = objscheme_unbundle_float(p[1], "set in mult-color<%>");
+  x2 = objscheme_unbundle_float(p[2], "set in mult-color<%>");
 
   
   ((wxMultColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
@@ -69,9 +71,9 @@ static Scheme_Object *os_wxMultColourGet(Scheme_Object *obj, int n,  Scheme_Obje
   float* x2 = &_x2;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
-      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in mult-color<%>"), "get in mult-color<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get in mult-color<%>"), "get in mult-color<%>"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get in mult-color<%>"), "get in mult-color<%>"", extracting boxed argument");
 
   
   ((wxMultColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);
@@ -181,6 +183,7 @@ void objscheme_setup_wxMultColour(void *env)
 {
 if (os_wxMultColour_class) {
     objscheme_add_global_class(os_wxMultColour_class, "mult-color%", env);
+    objscheme_add_global_interface(os_wxMultColour_interface, "mult-color" "<%>", env);
 } else {
   os_wxMultColour_class = objscheme_def_prim_class(env, "mult-color%", "object%", NULL, 8);
 
@@ -196,6 +199,9 @@ if (os_wxMultColour_class) {
 
   scheme_made_class(os_wxMultColour_class);
 
+  os_wxMultColour_interface = scheme_class_to_interface(os_wxMultColour_class, "mult-color" "<%>");
+
+  objscheme_add_global_interface(os_wxMultColour_interface, "mult-color" "<%>", env);
 
 }
 }
@@ -261,6 +267,8 @@ class os_wxAddColour : public wxAddColour {
 
 Scheme_Object *os_wxAddColour_class;
 
+Scheme_Object *os_wxAddColour_interface;
+
 os_wxAddColour::~os_wxAddColour()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -276,9 +284,9 @@ static Scheme_Object *os_wxAddColourSet(Scheme_Object *obj, int n,  Scheme_Objec
   short x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set in add-color%");
-  x1 = objscheme_unbundle_integer(p[1], "set in add-color%");
-  x2 = objscheme_unbundle_integer(p[2], "set in add-color%");
+  x0 = objscheme_unbundle_integer(p[0], "set in add-color<%>");
+  x1 = objscheme_unbundle_integer(p[1], "set in add-color<%>");
+  x2 = objscheme_unbundle_integer(p[2], "set in add-color<%>");
 
   
   ((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
@@ -301,9 +309,9 @@ static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Objec
   short* x2 = &_x2;
 
   
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in add-color%"), "get in add-color%"", extracting boxed argument");
-      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get in add-color%"), "get in add-color%"", extracting boxed argument");
-      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get in add-color%"), "get in add-color%"", extracting boxed argument");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in add-color<%>"), "get in add-color<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get in add-color<%>"), "get in add-color<%>"", extracting boxed argument");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get in add-color<%>"), "get in add-color<%>"", extracting boxed argument");
 
   
   ((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);
@@ -413,6 +421,7 @@ void objscheme_setup_wxAddColour(void *env)
 {
 if (os_wxAddColour_class) {
     objscheme_add_global_class(os_wxAddColour_class, "add-color%", env);
+    objscheme_add_global_interface(os_wxAddColour_interface, "add-color" "<%>", env);
 } else {
   os_wxAddColour_class = objscheme_def_prim_class(env, "add-color%", "object%", NULL, 8);
 
@@ -428,6 +437,9 @@ if (os_wxAddColour_class) {
 
   scheme_made_class(os_wxAddColour_class);
 
+  os_wxAddColour_interface = scheme_class_to_interface(os_wxAddColour_class, "add-color" "<%>");
+
+  objscheme_add_global_interface(os_wxAddColour_interface, "add-color" "<%>", env);
 
 }
 }
@@ -1612,9 +1624,9 @@ static Scheme_Object *objscheme_wxStyleDelta_GetforegroundMult(Scheme_Object *ob
   if (n) scheme_wrong_count("get-foreground-mult in style-delta%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
-    v = &((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundMult;
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundMult;
   else
-    v = &((wxStyleDelta *)cobj->primdata)->foregroundMult;
+    v = ((wxStyleDelta *)cobj->primdata)->foregroundMult;
 
   return objscheme_bundle_wxMultColour(v);
 }
@@ -1628,9 +1640,9 @@ static Scheme_Object *objscheme_wxStyleDelta_GetbackgroundMult(Scheme_Object *ob
   if (n) scheme_wrong_count("get-background-mult in style-delta%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
-    v = &((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundMult;
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundMult;
   else
-    v = &((wxStyleDelta *)cobj->primdata)->backgroundMult;
+    v = ((wxStyleDelta *)cobj->primdata)->backgroundMult;
 
   return objscheme_bundle_wxMultColour(v);
 }
@@ -1644,9 +1656,9 @@ static Scheme_Object *objscheme_wxStyleDelta_GetforegroundAdd(Scheme_Object *obj
   if (n) scheme_wrong_count("get-foreground-add in style-delta%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
-    v = &((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundAdd;
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundAdd;
   else
-    v = &((wxStyleDelta *)cobj->primdata)->foregroundAdd;
+    v = ((wxStyleDelta *)cobj->primdata)->foregroundAdd;
 
   return objscheme_bundle_wxAddColour(v);
 }
@@ -1660,9 +1672,9 @@ static Scheme_Object *objscheme_wxStyleDelta_GetbackgroundAdd(Scheme_Object *obj
   if (n) scheme_wrong_count("get-background-add in style-delta%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
-    v = &((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundAdd;
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundAdd;
   else
-    v = &((wxStyleDelta *)cobj->primdata)->backgroundAdd;
+    v = ((wxStyleDelta *)cobj->primdata)->backgroundAdd;
 
   return objscheme_bundle_wxAddColour(v);
 }
@@ -1849,10 +1861,10 @@ if (os_wxStyleDelta_class) {
  scheme_add_method_w_arity(os_wxStyleDelta_class, "copy", os_wxStyleDeltaCopy, 1, 1);
  scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse", os_wxStyleDeltaCollapse, 1, 1);
  scheme_add_method_w_arity(os_wxStyleDelta_class, "equal?", os_wxStyleDeltaEqual, 1, 1);
- scheme_add_method(os_wxStyleDelta_class, "set-delta-foreground", os_wxStyleDeltaSetDeltaForeground);
- scheme_add_method(os_wxStyleDelta_class, "set-delta-background", os_wxStyleDeltaSetDeltaBackground);
+ scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-foreground", os_wxStyleDeltaSetDeltaForeground, 1, 1);
+ scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-background", os_wxStyleDeltaSetDeltaBackground, 1, 1);
  scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face", os_wxStyleDeltaSetDeltaFace, 1, 1);
- scheme_add_method(os_wxStyleDelta_class, "set-delta", os_wxStyleDeltaSetDelta);
+ scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta", os_wxStyleDeltaSetDelta, 0, 2);
 
   scheme_add_method_w_arity(os_wxStyleDelta_class,"get-family", objscheme_wxStyleDelta_Getfamily, 0, 0);
   scheme_add_method_w_arity(os_wxStyleDelta_class,"set-family", objscheme_wxStyleDelta_Setfamily, 1, 1);

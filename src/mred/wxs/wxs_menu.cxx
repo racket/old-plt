@@ -372,7 +372,7 @@ if (os_wxMenu_class) {
  scheme_add_method_w_arity(os_wxMenu_class, "append-separator", os_wxMenuAppendSeparator, 0, 0);
  scheme_add_method_w_arity(os_wxMenu_class, "delete-by-position", os_wxMenuDeleteByPosition, 1, 1);
  scheme_add_method_w_arity(os_wxMenu_class, "delete", os_wxMenuDelete, 1, 1);
- scheme_add_method(os_wxMenu_class, "append", os_wxMenuAppend);
+ scheme_add_method_w_arity(os_wxMenu_class, "append", os_wxMenuAppend, 2, 4);
 
 
   scheme_made_class(os_wxMenu_class);

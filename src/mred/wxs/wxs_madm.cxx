@@ -4059,7 +4059,7 @@ if (os_wxKeymap_class) {
  scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap", os_wxKeymapChainToKeymap, 2, 2);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-break-sequence-callback", os_wxKeymapSetBreakSequenceCallback, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-error-callback", os_wxKeymapSetErrorCallback, 1, 1);
- scheme_add_method(os_wxKeymap_class, "call-function", os_wxKeymapCallFunction);
+ scheme_add_method_w_arity(os_wxKeymap_class, "call-function", os_wxKeymapCallFunction, 3, 4);
  scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-mouse-function", os_wxKeymapRemoveGrabMouseFunction, 0, 0);
  scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-mouse-function", os_wxKeymapSetGrabMouseFunction, 1, 1);
  scheme_add_method_w_arity(os_wxKeymap_class, "add-mouse-function", os_wxKeymapAddMouseFunction, 2, 2);

@@ -1,5 +1,5 @@
 
-(add-color%
+(add-color<%>
  add-editor-keymap-functions
  add-text-keymap-functions
  add-pasteboard-keymap-functions
@@ -57,10 +57,10 @@
  editor-stream-out-string-base%
  editor-wordbreak-map%
  memory-dc%
- meta-file%
+ meta-file<%>
  meta-file-dc%
  mouse-event%
- mult-color%
+ mult-color<%>
  pen%
  pen-list%
  point%

@@ -21,6 +21,7 @@
        (show "<HTML>"
 	     (xexpr->string
 	      `(HEAD ,hd-css
+	             (TITLE "PLT manual installation progress")
 		     ,(make-javascript
 		       "function hideStop() {"
 		       " document.forms[0].elements[1].disabled=\"true\""

@@ -10,8 +10,8 @@
     (color-highlight `(H2 () ,s)))
 
  `(HTML 
-   (TITLE "Documentation")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+	(TITLE "Documentation"))
    (BODY 
     (H1  "Documentation")
     (A ((NAME "docs") (VALUE "Documentation")))

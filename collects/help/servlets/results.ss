@@ -50,7 +50,7 @@
       (set! last-header s)
       (set! search-responses
 	    (cons `(B ((STYLE "font-family:Verdana,Helvetica,sans-serif")) 
-		      ,s) 
+		      ,s)
 		  (cons `(BR)
 			search-responses)))))
 
@@ -83,7 +83,8 @@
 
   (define (pretty-label label keyword?) 
     (if keyword?
-	`(FONT ((FACE "monospace")) ,label)
+	`(FONT ((FACE "monospace"))
+	       ,label)
 	label))
 
   (define (maybe-extract-coll s)
@@ -211,7 +212,8 @@
        `(HTML
 	 (HEAD
 	  (META ((HTTP-EQUIV "refresh")
-		 (CONTENT ,(format "0;URL=~a" href)))))
+		 (CONTENT ,(format "0;URL=~a" href))))
+	  (TITLE "PLT Help Desk lucky search result"))
 	 (BODY
 	  "If this page does not refresh, "
 	  (A ((HREF ,href)) "click here") ".")))))
@@ -229,10 +231,11 @@
 
   (define (make-results-page items)
     `(HTML
-      (HEAD ,hd-css)
+      (HEAD ,hd-css
+	    (TITLE "PLT Help Desk search results"))
       (BODY
-       (FONT ((SIZE "+2")) 
-	     (B "Search results"))
+       (FONT ((SIZE "+1"))
+	     ,(color-with "blue" `(B "Search results")))
        (BR)
        ,@items)))
 
@@ -266,7 +269,8 @@
     `(HTML
       (HEAD
        ,(make-javascript
-	 "window.history.back()"))
+	 "window.history.back()")
+       (TITLE "Empty search string in PLT Help Desk"))
       (BODY
        (H2 "Empty search string")
        (P)

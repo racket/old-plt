@@ -2,6 +2,7 @@
          (lib "servlet-sig.ss" "web-server"))
 
 (require "private/util.ss")
+(require "private/hd-css.ss")
 (require "private/refresh-util.ss")
 
 (unit/sig ()
@@ -9,6 +10,8 @@
 
   (define no-dir-page
     `(HTML
+      (HEAD ,hd-css
+            (TITLE "CVS refresh error"))	
       (BODY
        (H1 ,(color-with "red"
 			"CVS refresh error"))
@@ -33,6 +36,8 @@
 
   (let ([hex-dir (hexify-string tmp-directory)])
     `(HTML 
+      (HEAD ,hd-css
+	    (TITLE "Refresh PLT manuals"))
       (FRAMESET ((ROWS "100,*"))
 		(FRAMESET ((COLS "*,110"))
 			  (FRAME ((NAME "refresh")

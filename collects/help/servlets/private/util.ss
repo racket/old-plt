@@ -14,7 +14,6 @@
 	   search-bg-default
 	   search-text-default
 	   search-link-default
-	   new-browser-default
 	   sys-link-default
 	   color-highlight
 	   color-with
@@ -50,7 +49,6 @@
   (define search-text-default "black")
   (define search-link-default "darkblue")
   (define sys-link-default "dimgray")
-  (define new-browser-default #t)
 
   (define *the-highlight-color* "forestgreen")
 

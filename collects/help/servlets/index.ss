@@ -26,7 +26,8 @@
 	 [match-type (get-binding 'match-type)]
 	 [lucky? (get-binding 'lucky)])
   `(HTML 
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+	  (TITLE "PLT Help Desk"))
     (FRAMESET ((ROWS ,(string-append search-height ",*")))
 	      (FRAME ((NAME "search")
 		      (SRC "/servlets/search.ss")

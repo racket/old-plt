@@ -8,8 +8,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "A Note on Language Levels") 
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+	(TITLE "A Note on Language Levels") )
    (BODY 
     (H1  "A Note on Language Levels") 
     (A ((NAME "language levels") (VALUE "language levels")))

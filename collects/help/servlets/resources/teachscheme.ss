@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "TeachScheme! Workshops")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "TeachScheme! Workshops"))
    (BODY 
     (H1  "TeachScheme! Workshops")	
     (A ((NAME "workshops") (VALUE "TeachScheme! workshops")))

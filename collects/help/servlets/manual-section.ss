@@ -19,6 +19,7 @@
 		      (finddoc-page-anchor manual section))])
     `(HTML
       (HEAD ,hd-css
+	    (TITLE "PLT manual section")
 	    (META ((HTTP-EQUIV "refresh")
 		   (CONTENT ,(format "0;URL=~a" url)))))
 

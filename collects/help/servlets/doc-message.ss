@@ -8,7 +8,8 @@
 
   (let ([bindings (request-bindings initial-request)])
     `(HTML 
-      (HEAD ,hd-css)
+      (HEAD ,hd-css
+	    (TITLE "PLT collection message"))
       (BODY 
        (B ((STYLE "color:green")) 
 	  ,(extract-binding/single 'msg bindings))

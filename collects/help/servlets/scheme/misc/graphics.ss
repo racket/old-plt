@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "How to write graphics programs")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to write graphics programs"))
    (BODY 
     (H1 "How to write graphics programs")
     (A ((NAME "gfx") (VALUE "Graphics")))

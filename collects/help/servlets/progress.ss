@@ -14,7 +14,7 @@
    (lambda (show)
      (show "<HTML>")
      (show (xexpr->string
-	    `(HEAD ,hd-css)))
+	    `(HEAD ,hd-css (TITLE "PLT manual download progress"))))
      (show "<BODY>")
      (show (xexpr->string 
 	    `(H3 ,(color-with 

@@ -7,8 +7,8 @@
   (import servlet^)
 
   `(HTML 
-    (TITLE "Libraries")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+          (TITLE "Libraries"))
     (BODY 
      (H1  "Libraries")
      (A ((NAME "libraries") (VALUE "extensions")))  

@@ -19,8 +19,8 @@
 	      ,name " bugs"))))
 
  `(HTML
-   (TITLE "Known Bugs")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "Known Bugs"))
    (BODY
     (H1 "Known Bugs in PLT Scheme")
     (A ((NAME "bugs") (VALUE "Bugs")))

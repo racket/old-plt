@@ -7,8 +7,8 @@
   (import servlet^)
 
   `(HTML 
-    (TITLE "How to write Unix shell scripts")  
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+          (TITLE "How to write Unix shell scripts"))  
     (BODY 
      (H1 "How to write Unix shell scripts")  
      (A ((NAME "sh") (VALUE "Shell scripts")))

@@ -9,7 +9,8 @@
   (import servlet^)
 
  `(HTML
-   (HEAD ,hd-css)	
+   (HEAD ,hd-css
+	 (TITLE "PLT Help Desk"))
    (BODY 
     (H1 "PLT Help Desk")
     (UL

@@ -17,6 +17,7 @@
      (show "<HTML>")
      (show (xexpr->string
 	    `(HEAD ,hd-css
+	           (TITLE "Stopping PLT manual refresh")
 		   ,(make-javascript
 		       "function finish() {"
 		       " document.forms[0].elements[1].disabled=\"true\""

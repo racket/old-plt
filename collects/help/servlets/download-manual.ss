@@ -10,7 +10,8 @@
 
   (define no-dir-page
     `(HTML
-      (HEAD ,hd-css)	
+      (HEAD ,hd-css
+	    (TITLE "PLT manual download error"))
       (BODY
        (H1 ,(color-with "red"
 			"Manual download error"))

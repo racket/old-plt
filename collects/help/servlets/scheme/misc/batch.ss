@@ -8,8 +8,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE  "How to write Windows batch files")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE  "How to write Windows batch files"))
    (BODY 
     (H1  "How to write Windows batch files")
     (A ((NAME "sh") (VALUE "Batch files")))

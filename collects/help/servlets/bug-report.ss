@@ -54,7 +54,9 @@
     (map make-option available-priorities))
 
   `(HTML 
-    (HEAD ,hd-css)	
+    (HEAD 
+	,hd-css
+	(TITLE "PLT bug report"))
     (BODY 
      (TABLE ((CELLPADDING "0")
 	     (CELLSPACING "0")

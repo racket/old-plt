@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "How to build a stand-alone executable")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to build a stand-alone executable"))
    (BODY 
     (H1 "How to build a stand-alone executable")
     (A ((NAME "exec") (VALUE "Standalone executables")))

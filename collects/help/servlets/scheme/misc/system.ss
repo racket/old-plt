@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML
-   (TITLE "How to call low-level system routines") 
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to call low-level system routines")) 
    (BODY
     (H1 "How to call low-level system routines") 
     (A ((NAME "os") (VALUE "Low-level operating system calls")))

@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "How to connect to databases")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to connect to databases"))
    (BODY 
     (H1  "How to connect to databases") 
     (A ((NAME "db") (VALUE "Database connections")))

@@ -114,7 +114,8 @@
       (cond 
        [(not (null? missing-fields))
 	`(HTML 
-	  (HEAD ,hd-css)
+	  (HEAD ,hd-css
+		(TITLE "PLT bug report, missing information"))
 	  (BODY
 	   (H1 ,(color-with error-color "Missing information"))
 	   (P)
@@ -132,7 +133,8 @@
 			   "your browser and supply the missing information."))))]
        [(not (member #\@ (string->list reply-to)))
 	`(HTML 
-	  (HEAD ,hd-css)
+	  (HEAD ,hd-css
+	        (TITLE "Invalid e-mail address"))
 	  (BODY 
 	   (H1 ,(color-with error-color "Invalid e-mail address"))
 	   (P)
@@ -148,7 +150,8 @@
 			   "and enter a valid e-mail address."))))]
        [else
 	`(HTML 
-	  (HEAD ,hd-css)
+	  (HEAD ,hd-css
+		(TITLE "Confirm PLT bug report"))
 	  (BODY
 	   (TABLE ((CELLPADDING "0")
 		   (CELLSPACING "0")
@@ -239,7 +242,8 @@
 	   `(HTML 
 	     (HEAD
 	      ,(redir-javascript k-url)
-	      ,hd-css)
+	      ,hd-css
+              (TITLE "Sending PLT bug report"))		
 	     (BODY ((onLoad ,(onload-redir 2)))
 		   (FONT ((SIZE "+2")) (B "Sending bug report to PLT")))
 	     (P)
@@ -254,7 +258,8 @@
 		       (NAME "go")) "click here") " to continue")))))]
 	[error-page
 	 `(HTML
-	   (HEAD ,hd-css)
+	   (HEAD ,hd-css
+	         (TITLE "Transmission error for bug report"))
 	   (BODY
 	    ,(make-top-table "Transmission error")
 	    (P)
@@ -281,7 +286,8 @@
 	    ,(make-field-table)))]
 	[done-page
 	 `(HTML 
-	   (HEAD ,hd-css)
+	   (HEAD ,hd-css
+		 (TITLE "PLT bug report sent"))
 	   (BODY
 	    ,(make-top-table "Bug report sent")
 	    (P)

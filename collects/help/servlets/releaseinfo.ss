@@ -11,8 +11,8 @@
    `(LI (B (A ((HREF ,url)) ,txt))))
 
  `(HTML 
-   (TITLE "Release Information")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+	 (TITLE "Release Information"))
    (BODY 
     (H1  "Release Information") 
     (P)

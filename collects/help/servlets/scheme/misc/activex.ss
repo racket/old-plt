@@ -8,8 +8,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "How to use ActiveX components")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to use ActiveX components"))
    (BODY 
     (H1  "How to use ActiveX components")
     (A ((NAME "com") (VALUE "COM")))

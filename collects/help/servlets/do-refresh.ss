@@ -30,7 +30,8 @@
 		      (for-each f known-docs))])
        (doc-collections-changed)
        (show "<HTML>")
-       (show (xexpr->string `(HEAD ,hd-css)))
+       (show (xexpr->string 
+	`(HEAD ,hd-css (TITLE "PLT manual download progress")))))
        (show "<BODY><PRE>")
        (let-values ([(iport oport) (make-pipe)])
          (set-progress-input-port! iport)		   

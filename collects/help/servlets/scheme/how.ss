@@ -13,8 +13,8 @@
 
   (define soft-page
     `(HTML 
-      (TITLE "Software & Components")
-      (HEAD ,hd-css)
+      (HEAD ,hd-css
+	    (TITLE "Software & Components"))
       (BODY 
        (H1  "Software & Components")
        ,(color-highlight `(H2  "DrScheme"))

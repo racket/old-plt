@@ -12,7 +12,8 @@
 
   (define complete-page	
     `(HTML 
-      (HEAD ,hd-css)
+      (HEAD ,hd-css
+	    (TITLE "PLT Help Desk configuration"))
       (BODY
        (H1 "Configuration complete")
        (P)
@@ -20,6 +21,8 @@
 
   (define (make-error-page msgs)
     `(HTML 
+      (HEAD ,hd-css
+	    (TITLE "PLT Help Desk configuration error"))
       (BODY
        (H1 ((STYLE "color:red"))
 	   "Configuration error")
@@ -47,11 +50,7 @@
   (let* ([bindings (request-bindings initial-request)]
 	 [extract-fun (lambda (sym)
 			(extract-binding/single sym bindings))]
-	 [vals (map extract-fun names)]
-	 [new-browser? (with-handlers 
-		       ((void (lambda _ #f)))
-		       (extract-binding/single 'new-browser bindings))])
-				     
+	 [vals (map extract-fun names)])
 
     (when (not (string->number (car vals)))
 	  (add-error!
@@ -62,8 +61,6 @@
 	     ([void (lambda _ 
 		      (add-error! "Error saving configuration"))])
 	     (put-prefs names vals)))
-
-    (put-prefs '(new-browser) `(,(if new-browser? #t #f)))
 
     (if (errors?)
 	 (make-error-page error-msgs)

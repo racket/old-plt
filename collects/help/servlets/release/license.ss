@@ -15,8 +15,8 @@
   (import servlet^)
 
   `(HTML
-    (TITLE "License")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+          (TITLE "License"))
     (BODY
      (A ((NAME "lic") (VALUE "License")))
      (B "PLT Software") (BR)

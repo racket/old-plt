@@ -49,6 +49,7 @@
       `(OPTION ,attribs ,txt)))
 
   `(HTML 
+    (HEAD (TITLE "PLT Help Desk search"))
     (BODY ((BGCOLOR ,search-bg))
 	  (FORM ((ACTION "/servlets/results.ss")
 		 (TARGET "main")

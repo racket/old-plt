@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "Mailing Lists")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "Mailing Lists"))
    (BODY 
     (A ((NAME "mail") (VALUE "mailing lists")))
     (H1  "Mailing Lists")

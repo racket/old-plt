@@ -8,8 +8,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE  "How to write CGI scripts")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE  "How to write CGI scripts"))
    (BODY 
     (H1  "How to write CGI scripts")
     (A ((NAME "cgi") (VALUE "CGI scripts")))

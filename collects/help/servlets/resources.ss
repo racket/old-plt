@@ -7,8 +7,8 @@
   (import servlet^)
 
   `(HTML 
-    (TITLE "External Resources")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+	  (TITLE "External Resources"))
     (BODY 
      (H1  "External Resources")
      (P)

@@ -12,7 +12,8 @@
     (delete-directory/r tmp-dir)
 
     `(HTML 
-      (HEAD ,hd-css)	  
+      (HEAD ,hd-css
+	    (TITLE "PLT manuals refresh stopped"))
       (BODY
 	(H2 (B ,(color-with "red" "Refresh of CVS manuals stopped")))
 	(P)

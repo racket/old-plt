@@ -7,8 +7,8 @@
   (import servlet^)
 
  `(HTML 
-   (TITLE "Why DrScheme?")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "Why DrScheme?"))
    (BODY 
     (H1 "Why DrScheme?") 
     "Teaching introductory computing courses with Scheme, or any other "

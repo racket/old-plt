@@ -8,8 +8,8 @@
   (import servlet^)
   
   `(HTML
-    (TITLE "Downloadable Patches")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+	  (TITLE "Downloadable Patches"))
     (H1 "Downloadable Patches")
     (A ((NAME="patches") (VALUE "Downloadable patches")))
     "The following Web page may contain downloadable patches to fix serious bugs in "

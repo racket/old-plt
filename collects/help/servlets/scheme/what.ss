@@ -13,8 +13,8 @@
 	       `(B ,s)))
 
  `(HTML 
-   (TITLE "Scheme Languages")
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "Scheme Languages"))
    (BODY 
     (H1  "Scheme Languages")  
     (A ((NAME "scheme") (VALUE "Language Family")))

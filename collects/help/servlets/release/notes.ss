@@ -22,8 +22,8 @@
   (import servlet^)
 
   `(HTML
-    (TITLE "Release notes")
-    (HEAD ,hd-css)
+    (HEAD ,hd-css
+         (TITLE "PLT release notes"))
     (H1 "Release Notes for PLT Scheme version " ,(version))
     (A ((NAME "relnotes") (VALUE "Release notes")))
     "Detailed release notes:"

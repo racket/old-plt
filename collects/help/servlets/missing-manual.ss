@@ -18,7 +18,8 @@
 			  manual)]
 	 [external-connections? (unbox external-box)])
     `(HTML
-      (HEAD ,hd-css)
+      (HEAD ,hd-css
+            (TITLE "Missing PLT manual")) 
       (BODY ((BGCOLOR "white")) 
        ,(color-with "red"
 		    `(H1 "Documentation missing"))

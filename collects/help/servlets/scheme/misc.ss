@@ -33,7 +33,8 @@
   (import servlet^)
 
  `(HTML 
-   (HEAD ,hd-css)
+   (HEAD ,hd-css
+         (TITLE "How to do things in Scheme"))  
    (BODY 
     (H1 "How to do things in Scheme") 
     (UL 

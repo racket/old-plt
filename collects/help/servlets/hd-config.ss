@@ -2,6 +2,7 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "file.ss")
+	 (lib "etc.ss")
 	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
@@ -20,15 +21,18 @@
     (get-pref/default 'search-link search-link-default))
   (define sys-link-color 
     (get-pref/default 'sys-link sys-link-default))
-  (define new-browser
-    (get-pref/default 'new-browser new-browser-default))
+
+  (define (make-labelled-option default)
+    (lambda (s-val s-label)
+      (if (string=? s-val default)
+      `(OPTION ((SELECTED "true")
+		(VALUE ,s-val)) ,s-label)
+      `(OPTION ((VALUE ,s-val)) ,s-label))))
 
   (define (make-option default)
-    (lambda (s)
-      (if (string=? s default)
-      `(OPTION ((SELECTED "true")
-		(VALUE ,s)) ,s)
-      `(OPTION ((VALUE ,s)) ,s))))
+    (let ([f (make-labelled-option default)])
+      (lambda (s)
+	(f s s))))
 
   (define config-page
     `(HTML 
@@ -56,22 +60,13 @@
 	 (string-append " updateSysLinkColor(\"" sys-link-color "\")")
 	 (string-append " updateTextColor(\"" search-text-color "\")")
          "}")
+	(TITLE "PLT Help Desk configuration")
 	,hd-css)
       (BODY 
-       (H1  "Help Desk configuration")
+       (H1  "PLT Help Desk configuration")
        (P)
        (FORM ((ACTION "/servlets/update-config.ss")
 	      (METHOD "POST"))
-	     (TABLE ((ALIGN "center"))
-		    ,(let ([attrs '((TYPE "checkbox")
-			      (NAME "new-browser")
-			      (VALUE "dummy"))])
-		       `(TR (TD
-			     (INPUT ,(if new-browser 
-					 (cons '(CHECKED "true") attrs)
-					 attrs)))
-			    (TD (B "Request new window for Help Desk browser")))))
-	     (P)
 	     (TABLE ((BGCOLOR "white")
 		     (ALIGN "center")
 		     (BORDER "2")
@@ -79,7 +74,7 @@
 		     (CELLPADDING "4")
 		     (CELLSPACING "2")
 		     (COLS "2"))
-		    (TR (TH ((ALIGN "center")
+	       (TR (TH ((ALIGN "center")
 			     (COLSPAN "2")) 
 			    (FONT ((FACE "serif")
 				   (SIZE "+2"))
@@ -135,8 +130,7 @@
 		      (CELLPADDING "4")
 		      (WIDTH "50%"))
 		      (TR (TD 
-			   "The colors above will change in response "
-			   "to your selections "
+			   "The selections you make will be shown here "
 			   "if you have Javascript enabled and "
 			   "a recent, standards-compliant browser."))))
 	     (P)
@@ -153,8 +147,6 @@
 	      ,home-page)))))
   
   config-page)
-
-
 
 
 

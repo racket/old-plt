@@ -19,4 +19,7 @@
   ;Stores an integer offset for interactions offset
   (define interactions-offset (make-parameter 0))
   
+  ;Stores if we are execution window executing
+  (define execution? (make-parameter #f))
+  
   ) 

@@ -62,6 +62,8 @@
       (for-each (lambda (def)
                   (let ((defname (cons (id-string (def-name def)) pname)))
                     (send type-recs add-to-env (car defname) pname current-loc)
+                    (when (execution?)
+                      (send type-recs add-to-env (car defname) pname 'interactions))
                     (send type-recs add-class-req defname #f current-loc)
                     (send type-recs add-require-syntax defname
                           (build-require-syntax (car defname) pname 
@@ -73,6 +75,7 @@
                     (send type-recs add-to-records def-name
                           (lambda () (process-class/iface def pname type-recs (null? args) level)))))
                   (package-defs prog))
+      (execution? #f)
       
       ;Add package information to environment
       (add-my-package type-recs pname (package-defs prog) current-loc level)

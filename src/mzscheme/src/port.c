@@ -5106,7 +5106,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #ifdef USE_ITIMER
       /* Turn off the timer. */
       struct itimerval t, old;
-      sigset_t sigs;
+      sigset_t sigs, old_sigs;
   
       t.it_value.tv_sec = 0;
       t.it_value.tv_usec = 0;
@@ -5115,16 +5115,19 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       
       setitimer(ITIMER_PROF, &t, &old);
       
+      /* Clear already-queued PROF signal, if any: */
       START_XFORM_SKIP;
+      sigfillset(&sigs);
+      sigprocmask(SIG_SETMASK, &sigs, &old_sigs);
       while (!sigpending(&sigs)) {
-	/* Clear already-queued signal, if any: */
 	if (sigismember(&sigs, SIGPROF)) {
-	  sigemptyset(&sigs);
-	  sigaddset(&sigs, SIGPROF);	  
+	  sigfillset(&sigs);
+	  sigdelset(&sigs, SIGPROF);	  
 	  sigsuspend(&sigs);
 	} else
 	  break;
       }
+      sigprocmask(SIG_SETMASK, &old_sigs, NULL);
       END_XFORM_SKIP;
 #endif
     }

@@ -180,20 +180,20 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   
   cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
 		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		     DEFAULT_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		     PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
   
   if (!cfont) {
     /* Try defaulting to family: */
     ff_face = wxTheFontNameDirectory->GetScreenName(family, weight, style);
     cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       DEFAULT_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		       PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
   }
 
   if (!cfont)
     cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
+		       PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
 
   RegisterGDIObject((HANDLE)cfont);
 

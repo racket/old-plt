@@ -179,10 +179,21 @@
     ;; relto must be a complete path
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (resolve-module-path path (if base
-					(resolve-module-path-index base relto)
-					relto))
+	  (resolve-module-path path (resolve-possible-module-path-index base relto))
 	  relto)))
+
+  (define (resolve-possible-module-path-index base relto)
+    (cond
+     [(module-path-index? base)
+      (resolve-module-path-index base relto)]
+     [(symbol? base)
+      (let ([s (symbol->string base)])
+	(if (and ((string-length s) . > . 0)
+		 (char=? #\, (string-ref s 0)))
+	    `(file ,(substring s 1 (string-length s)))
+	    relto))]
+     [else
+      relto]))
 
   (define re:path-only (regexp "^(.*)/[^/]*$"))
 
@@ -255,9 +266,7 @@
   (define (collapse-module-path-index mpi relto-mp)
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (collapse-module-path path (if base
-					 (resolve-module-path-index base relto-mp)
-					 relto-mp))
+	  (collapse-module-path path (resolve-possible-module-path-index base relto-mp))
 	  relto-mp)))
 
   (define (show-import-tree module-path)

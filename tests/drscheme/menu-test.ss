@@ -36,6 +36,7 @@
 	 '("Open..." 
 	   "Open URL..." 
 	   "Save Definitions As..." 
+	   "Save Definitions As Text..." 
 	   "Save Interactions"
 	   "Save Interactions As..."
 	   "Save Interactions As Text..."

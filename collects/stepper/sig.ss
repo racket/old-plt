@@ -59,8 +59,7 @@
    debug-key))
 
 (define-signature stepper:reconstruct^
-  (expose-mark-list
-   reconstruct-completed
+  (reconstruct-completed
    reconstruct-current
    final-mark-list?
    skip-result-step?

@@ -26,8 +26,11 @@
   
   (define (extract-zodiac-location mark-set)
     (let ([mark-list (continuation-mark-set->list mark-set annotate:debug-key)])
-      (printf "extracted location: ~a~n" (car ((car mark-list))))
-      (car ((car mark-list)))))
+      (if (null? mark-list)
+          #f
+          (begin
+            (printf "extracted location: ~a~n" (car ((car mark-list))))
+            (car ((car mark-list)))))))
   
   (define (break)
     (let ([break-info (continuation-mark-set->list (current-continuation-marks) annotate:debug-key)])

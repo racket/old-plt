@@ -10,7 +10,6 @@
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [f : framework^]
-          [xmls : xml-reconstruct^]
           stepper:shared^)
 
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
@@ -214,18 +213,6 @@
                      (format-sexp exp region color)
                      (format-sexp (insert-highlighted-value exp region) region color)))]
                  
-              ; hacked-format-sexp exists to enable xml-style un-mangling of xml steps.
-              ; unfortunately, it's broken for simple symbols (that print as foo rather than 'foo).
-              [hacked-format-sexp
-               (lambda (exp region color)
-                 (if (confusable-value? region)
-                     (let-values ([(new-exp dont-care)
-                                  (xmls:patch-up-sexp exp no-sexp)])
-                       (format-sexp new-exp region color))
-                     (let-values ([(new-exp new-region) 
-                                     (xmls:patch-up-sexp (insert-highlighted-value exp region) region)])
-                         (format-sexp new-exp new-region color))))]
-              
               [format-whole-step
                (lambda ()
                  (lock #f)
@@ -361,7 +348,7 @@
                 (update-view view-currently-updating)))
             
             (define text-stream
-              (f:gui-utils:read-snips/chars-from-buffer (ivar drscheme-frame definitions-text)))
+              (f:gui-utils:read-snips/chars-from-text (ivar drscheme-frame definitions-text)))
             
             (define step 
               (invoke-unit/sig (require-library-unit/sig "stepper-instance.ss" "stepper")

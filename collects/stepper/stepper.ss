@@ -26,9 +26,6 @@
                                    zodiac
                                    error
                                    zcp)]
-        [xml-support : xml-reconstruct^ 
-                      ((require-library-unit/sig "xml-support.ss" "stepper")
-                       error)]
         [stepper-view-controller : ()
                  ((require-library-unit/sig "stepper-view-controller.ss" "stepper")
                   core
@@ -40,6 +37,5 @@
                   drscheme
                   print-convert
                   framework
-                  xml-support
                   shared)])       
       (export))

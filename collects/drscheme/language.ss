@@ -32,6 +32,14 @@
 	    (list 'Quasi-R4RS (make-setting 'advanced
 					    #t #t #t #t #f #t #t #f #f
 					    'r4rs-style))))
+    
+    (define (setting-name setting)
+      (or (ormap (lambda (x)
+		   (if (equal? (second x) setting)
+		       (first x)
+		       #f))
+		 settings)
+	  'Custom))
 
     (define copy-setting
       (lambda (x)
@@ -111,16 +119,18 @@
 	     [f (make-object mred:dialog-box% '() "Language" #t)]
 	     [main (make-object mred:vertical-panel% f)]
 	     [language-panel (make-object mred:horizontal-panel% main -1 -1 -1 -1 wx:const-border)]
-	     [customization-panel (make-object mred:vertical-panel% main)]
+	     [customization-panel (make-object mred:horizontal-panel% main)]
+	     [customization-left-panel (make-object mred:vertical-panel% customization-panel)]
+	     [customization-right-panel (make-object mred:vertical-panel% customization-panel)]
 	     [when-message (make-object mred:message% main "Language changes effective after next execution")]
 	     [make-sub-panel
-	      (lambda (name)
-		(let* ([p (make-object mred:vertical-panel% customization-panel)]
+	      (lambda (name panel)
+		(let* ([p (make-object mred:vertical-panel% panel)]
 		       [message (make-object mred:message% p name)])
 		  (make-object mred:vertical-panel% p -1 -1 -1 -1 wx:const-border)))]
-	     [input-syntax-panel (make-sub-panel "Input Syntax")]
-	     [dynamic-panel (make-sub-panel "Safety Properties")]
-	     [output-syntax-panel (make-sub-panel "Output Syntax")]
+	     [input-syntax-panel (make-sub-panel "Input Syntax" customization-right-panel)]
+	     [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
+	     [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
 	     
 	     [_1 (make-object mred:horizontal-panel% language-panel)]
 	     [specifics-shown? #f]
@@ -244,7 +254,7 @@
 	     [abbreviate-cons-as-list?
 	      (make-check-box set-setting-abbreviate-cons-as-list?!
 			      abbreviate-cons-as-list?
-			      "Abbreviate multiples cons's with list when possible?"
+			      "Abbreviate multiples cons's with list?"
 			      output-syntax-panel)]
 	     [sharing-printing?
 	      (make-check-box set-setting-sharing-printing?!

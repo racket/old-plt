@@ -14,6 +14,23 @@
   
   (mred:debug:printf 'invoke "drscheme:rep@")
   
+  (define WELCOME-DELTA (make-object wx:style-delta%
+				     wx:const-change-family
+				     wx:const-decorative))
+  (define CLICK-DELTA (make-object wx:style-delta%))
+  (define RED-DELTA (make-object wx:style-delta%))
+  (send* CLICK-DELTA
+    (copy WELCOME-DELTA)
+    (set-delta-foreground "BLUE")
+    (set-delta wx:const-change-underline 1))
+  (send* RED-DELTA
+    (copy WELCOME-DELTA)
+    (set-delta-foreground "RED"))
+  (define WARNING-STYLE-DELTA (make-object wx:style-delta% wx:const-change-bold 0))
+  (send* WARNING-STYLE-DELTA
+    (set-delta-foreground "BLACK")
+    (set-delta-background "YELLOW"))
+
   (define report-exception-error
     (lambda (exn last-resort-edit)
       (if (exn? exn)
@@ -280,20 +297,15 @@
 	  [ask-about-kill? #f])
 	(public
 	  [insert-warning
-	   (let ([warning-style-delta
-		  (make-object wx:style-delta% wx:const-change-bold 0)])
-	     (send* warning-style-delta
-	       (set-delta-foreground "BLACK")
-	       (set-delta-background "YELLOW"))
-	     (lambda ()
-	       (begin-edit-sequence)
-	       (insert #\newline (last-position) (last-position))
-	       (let ([start (last-position)])
-		 (insert "WARNING: Program has changed. Click Execute."
-			 start start)
-		 (let ([end (last-position)])
-		   (change-style warning-style-delta start end)))
-	       (end-edit-sequence)))]
+	   (lambda ()
+	     (begin-edit-sequence)
+	     (insert #\newline (last-position) (last-position))
+	     (let ([start (last-position)])
+	       (insert "WARNING: Program has changed. Click Execute."
+		       start start)
+	       (let ([end (last-position)])
+		 (change-style WARNING-STYLE-DELTA start end)))
+	     (end-edit-sequence))]
 	  [do-eval
 	   (let ([count 0])
 	     (lambda (start end)
@@ -570,6 +582,14 @@
 				  (process-file/zodiac filename process-sexps #t)))))
 		    (lambda ()
 		      (user-load-relative-directory old-load-relative-directory)))))))])
+	(private 
+	  [insert-delta
+	   (lambda (s delta)
+	     (let ([before (get-end-position)])
+	       (insert s)
+	       (let ([after (get-end-position)])
+		 (change-style delta before after)
+		 (values before after))))])
 	(public
 	  [takeover void]
 	  [shutting-down? #f]
@@ -615,55 +635,36 @@
 	       (set! vocab (zodiac:create-vocabulary
 			    'scheme-w/user-defined-macros/drscheme
 			    zodiac:scheme-vocabulary))
-
 	       (unless (mred:get-preference 'drscheme:keep-interactions-history)
 		 (set-resetting #t)
 		 (delete reset-console-start-position (last-position))
-		 (set-prompt-mode #f)				   
+		 (set-prompt-mode #f)
 		 (set-resetting #f))
+	       (set-position (last-position) (last-position))
+	       (insert-delta "Language: " WELCOME-DELTA)
+	       (insert-delta 
+		(symbol->string
+		 (drscheme:language:setting-name 
+		  (mred:get-preference
+		   'drscheme:settings)))
+		    RED-DELTA)
+	       (insert-delta (format ".~n") WELCOME-DELTA)
 	       (super-reset-console)))]
 	  [initialize-console
 	   (lambda ()
 	     (super-initialize-console)
-	     (let* ([delta (make-object wx:style-delta%
-					wx:const-change-family
-					wx:const-decorative)]
-		    [click-delta (make-object wx:style-delta%)]
-		    [red-delta (make-object wx:style-delta%)])
-	       (send click-delta copy delta)
-	       (send click-delta set-delta-foreground "BLUE")
-	       (send click-delta set-delta wx:const-change-underline 1)
-	       (send red-delta copy delta)
-	       (send red-delta set-delta-foreground "RED")
-	       
-	       (let ([dd output-delta]
-		     [insert-delta
-		      (lambda (s delta)
-			(let ([before (get-end-position)])
-			  (insert s)
-			  (let ([after (get-end-position)])
-			    (change-style delta before after)
-			    (values before after))))])
-		 (insert-delta "Welcome to " delta)
-		 (let-values ([(before after)
-			       (insert-delta "DrScheme" click-delta)])
-		   (insert-delta (format ", version ~a.~nVocabulary: " (mred:version))
-				 delta)
-		   (insert-delta 
-		    (format "~a"
-			    (list-ref
-			     drscheme:basis:level-strings
-			     (drscheme:basis:level->number
-			      (drscheme:language:setting-vocabulary-symbol
-			       (mred:get-preference
-				'drscheme:settings)))))
-		    red-delta)
-		   (insert-delta (format ".~n") delta)
-		   (set-clickback before after 
-				  (lambda args (drscheme:app:about-drscheme))
-				  click-delta)))
-	       (set-last-header-position (get-end-position))
-	       (reset-console)))])
+	     
+	     (let ([dd output-delta])
+	       (insert-delta "Welcome to " WELCOME-DELTA)
+	       (let-values ([(before after)
+			     (insert-delta "DrScheme" CLICK-DELTA)])
+		 (insert-delta (format ", version ~a.~n" (mred:version))
+			       WELCOME-DELTA)
+		 (set-clickback before after 
+				(lambda args (drscheme:app:about-drscheme))
+				CLICK-DELTA)))
+	     (set-last-header-position (get-end-position))
+	     (reset-console))])
 	
 	(sequence
 	  (mred:debug:printf 'super-init "before drscheme:rep:edit")

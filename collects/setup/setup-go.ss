@@ -27,7 +27,7 @@
 			(make-zo #f)]
       [("-x" "--no-launcher") "Do not produce launcher programs"
 			      (make-launchers #f)]
-      [("-i" "--no-install") "Do not call collection-specific installers"
+      [("-i" "--no-install") "Do not call collection-specific installers (just the post-installer)"
 			     (call-install #f)]
       [("-e" "--extension") "Produce native code extensions"
 			    (make-so #t)]

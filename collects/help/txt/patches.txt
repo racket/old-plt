@@ -138,7 +138,7 @@ a signature is changed)
                        (number->string patch-number))])
       (case request
         [(name) patch-name]
-        [(install-collection)
+        [(post-install-collection)
          (lambda (plt-home)
            (let/ec skip-it
              (let* ([source-directory (collection-path patch-name)]

@@ -1306,7 +1306,7 @@
 "(make-maker 'scheme-report-environment r5(append r4-syntax r4) #%r4)"
 "(make-maker 'null-environment '() r4-syntax '()))))"
 );
-  JUST_DEFINED_FUNC(report-environment);
+  JUST_DEFINED_FUNC(scheme-report-environment);
   JUST_DEFINED_FUNC(null-environment);
   EVAL_ONE_STR(
 "(#%define interaction-environment #%current-namespace)"

@@ -1308,7 +1308,7 @@
       (make-maker 'scheme-report-environment r5 (append r4-syntax r4) #%r4)
       (make-maker 'null-environment '() r4-syntax '()))))
 
-> fstop report-environment null-environment <
+> fstop scheme-report-environment null-environment <
 
 (#%define interaction-environment #%current-namespace)
 

@@ -1070,7 +1070,7 @@
 112, 101, 110, 100, 188, 187, 184, 234, 181, 13, 47, 110, 117, 108, 108, 45, 101, 110, 118, 105, 114, 
 111, 110, 109, 101, 110, 116, 13, 5, 186, 13, 5, 0};
     EVAL_ONE_SIZED_STR((char *)expr, 2531);
-    JUST_DEFINED_FUNC(report-environment);
+    JUST_DEFINED_FUNC(scheme-report-environment);
     JUST_DEFINED_FUNC(null-environment);
   }
   {

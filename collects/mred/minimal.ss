@@ -1,16 +1,16 @@
 (compound-unit/sig (import [function : mzlib:function^]
 			   [wx : wx^])
-  (link [constants : mred:constants^ ((reference-unit/sig "constant.ss"))]
+  (link [constants : mred:constants^ ((require-unit/sig "constant.ss"))]
 	[testable : mred:testable-window^
-		  ((reference-unit/sig "testable.ss") wx)]
+		  ((require-unit/sig "testable.ss") wx)]
 	[connections : mred:connections^
-		     ((reference-unit/sig "connect.ss")
+		     ((require-unit/sig "connect.ss")
 		      wx
 		      constants
 		      function
 		      testable)]
 	[container : mred:container^
-		   ((reference-unit/sig "containr.ss") wx 
+		   ((require-unit/sig "containr.ss") wx 
 		    constants testable connections function)])
   (export (unit constants)
 	  (unit testable)

@@ -35,13 +35,13 @@
 	      (when (directory-exists? (unbox path-box))
 		(wx:set-afm-path (unbox path-box))))
 	    
-	    (require-library (info 'app-sig-library
+	    (require-library/proc (info 'app-sig-library
 				   (lambda ()
 				     (error 'mred:startup-application
 					    "no app-sig-library in collection info")))
 			     collection)
 	    
-	    (let ([app (require-library (info 'app-unit-library
+	    (let ([app (require-library/proc (info 'app-unit-library
 					      (lambda ()
 						(error 'mred:startup-application
 						       "no app-unit-library in collection info")))

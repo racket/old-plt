@@ -868,7 +868,7 @@
 		 (lambda (name ivar-sym)
 		   (send keymap add-key-function name
 			 (lambda (edit event)
-			   ((uq-ivar (get-mode edit) ivar-sym)
+			   ((ivar/proc (get-mode edit) ivar-sym)
 			    edit
 			    (send edit get-start-position)))))])
 	    (add-pos-function "remove-sexp" 'remove-sexp)
@@ -885,7 +885,7 @@
 		 (lambda (name ivar-sym)
 		   (send keymap add-key-function name
 			 (lambda (edit event)
-			   ((uq-ivar (get-mode edit) ivar-sym)
+			   ((ivar/proc (get-mode edit) ivar-sym)
 			    edit))))])
 	    (add-edit-function "select-forward-sexp" 'select-forward-sexp)
 	    (add-edit-function "select-backward-sexp" 'select-backward-sexp)

@@ -1,8 +1,8 @@
 ;;
-;; $Id: link.ss,v 1.46 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: link.ss,v 1.47 1998/01/27 21:54:14 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^])
   (link [wx : wx^ (wx@)]
-	[mred : mred^ ((reference-unit/sig "linkwx.ss") core wx)])
+	[mred : mred^ ((require-unit/sig "linkwx.ss") core wx)])
   (export (open mred)))

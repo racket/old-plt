@@ -1,5 +1,5 @@
 ;;
-;; $Id: containr.ss,v 1.34 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: containr.ss,v 1.35 1998/01/27 21:54:11 robby Exp $
 ;;
 
 ; resizes too small really confuse things, since client sizes wrap (-2
@@ -42,15 +42,15 @@
 	    [function : mzlib:function^])
 
     (link [container-frames : mred:container-frames^
-	    ((reference-relative-library-unit/sig "contfram.ss") wx
+	    ((require-relative-library-unit/sig "contfram.ss") wx
 	     constants connections container-children container-panels)]
 
 	  [container-children : mred:container-children^
-	    ((reference-relative-library-unit/sig "contkids.ss") wx
+	    ((require-relative-library-unit/sig "contkids.ss") wx
 	     constants testable connections container-frames container-panels)]
 
 	  [container-panels : mred:container-panels^
-	    ((reference-relative-library-unit/sig "contpanl.ss") wx
+	    ((require-relative-library-unit/sig "contpanl.ss") wx
 	     constants connections function container-children)])
 
     (export

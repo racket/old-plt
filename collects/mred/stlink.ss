@@ -1,5 +1,5 @@
 ;;
-;; $Id: stlink.ss,v 1.12 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: stlink.ss,v 1.13 1998/01/27 21:54:16 robby Exp $
 ;;
 ;; Link the gui tester together into compound unit.
 ;;
@@ -16,17 +16,15 @@
 
   (link
     [run : mred:test:run^
-      ((reference-unit/sig "strun.ss") wx)]
+      ((require-unit/sig "strun.ss") wx)]
     
     [prim : mred:test:primitives^
-      ((reference-unit/sig "stprims.ss") wx testable keymap run)]
+      ((require-unit/sig "stprims.ss") wx testable keymap run)]
 
     [drscheme : mred:test:drscheme^
-      ((reference-unit/sig "stdrs.ss") wx testable)])
+      ((require-unit/sig "stdrs.ss") wx testable)])
 
   (export
     (open run)
     (open prim)
-    (unit drscheme drs))
-
-  )
+    (unit drscheme drs)))

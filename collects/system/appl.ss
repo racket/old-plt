@@ -57,7 +57,7 @@
 	  (compound-unit/sig (import [I : mred:application-imports^]
 				     [core : mzlib:core^]
 				     [cmdline : mzlib:command-line^])
-	    (link [mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
+	    (link [mred : mred^ ((require-library-unit/sig "link.ss" "mred") core)]
 		  [cmdline-table : (user-setup? argv) (cmdline-table@ mred cmdline I)]
 		  [console : (console) (console@ mred (cmdline-table : (argv)))]
 		  [wx : wx^ (wx@)]
@@ -68,8 +68,8 @@
       (import (I : mred:application-imports^))
       (link
        [wx : wx^ (wx@)]
-       [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-       [cmdline : mzlib:command-line^ ((reference-library-unit/sig "cmdliner.ss"))]
+       [core : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
+       [cmdline : mzlib:command-line^ ((require-library-unit/sig "cmdliner.ss"))]
        [flat-mred : ((open mred^) console) (inner-compound@ I core cmdline)])
       (export (unit flat-mred mred)
 	      (unit wx)

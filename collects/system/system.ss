@@ -61,7 +61,7 @@
 		 [("-A")
 		  ,(lambda (_ collection)
 		     (set! app-collection collection)
-		     (set! info (require-library "info.ss" collection)))
+		     (set! info (require-library/proc "info.ss" collection)))
 		  ("Use collection's info.ss for application"
 		   "collection")]
 		 [("-a")
@@ -156,7 +156,7 @@
 		  [cmdline-table : (output-spidey-file table info app-collection)
 				 (cmdline-table)]
 		  [cmdline : mzlib:command-line^
-			   ((reference-library-unit/sig "cmdliner.ss"))]
+			   ((require-library-unit/sig "cmdliner.ss"))]
 		  [main : () (main cmdline-table I splash/invoke wx cmdline)])
 	    (export))])
     (lambda input-args

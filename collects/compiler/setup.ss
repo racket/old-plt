@@ -438,7 +438,8 @@
   (for-each clean-collection collections-to-compile))
 
 (when (or (make-zo) (make-so))
-  (require-library "compile.ss" "compiler")
+  (parameterize ([require-library-use-compiled #f])
+    (require-library "compile.ss" "compiler"))
   (compiler:option:verbose (compiler-verbose))
   (compiler:option:compile-subcollections #f))
 

@@ -1,4 +1,4 @@
-((reference-library "appl.ss" "system")
+((require-library "appl.ss" "system")
  (unit/sig (console)
    (import [mred : mred^]
 	   [I : mred:application-imports^])

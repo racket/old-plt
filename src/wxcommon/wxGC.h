@@ -58,11 +58,6 @@ extern "C" {
 extern void *GC_cpp_malloc(size_t);
 extern void *GC_cpp_malloc_array(size_t);
 extern void GC_cpp_delete(class gc *);
-extern void GC_pre_allocate(size_t);
-extern void GC_use_preallocated();
-extern void *GC_get_current_new();
-extern void *GC_pop_current_new();
-extern void GC_restore_current_new_var_stack();
 # define GC_register_finalizer_ignore_self GC_register_finalizer
 #endif
 
@@ -93,7 +88,7 @@ public:
 
 #ifdef MZ_PRECISE_GC
   /* Overridden in each subclass: */
-  virtual int gcMark(Mark_Proc mp);
+  virtual void gcMark(Mark_Proc mp);
 #endif
 };
 
@@ -108,7 +103,7 @@ public:
   void install_cleanup();  
 
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mp);
+  void gcMark(Mark_Proc mp);
 #endif
 };
 

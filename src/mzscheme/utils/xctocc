@@ -141,12 +141,19 @@ sub DoPrintClass
 
 	# Print creation prototypes:
 	if ($#distinct_creators >= 0) {
+	    $did_one_creator = 0;
 	    foreach $creator (@distinct_creators) {
 		&ReadFields($dummyfields . $creator);
-		print "  ${newclass}(Scheme_Object * obj";
-		print ", " if ($#paramtypes >= 0);
+		if ($did_one_creator) {
+		    printf "#ifndef MZ_PRECISE_GC\n";
+		}
+		print "  ${newclass} CONSTRUCTOR_ARGS((";
 		&PrintParams(1);
-		print ");\n";
+		print "));\n";
+		if ($did_one_creator) {
+		    printf "#endif\n";
+		}
+		$did_one_creator = 1;
 	    }
 	}
 
@@ -179,13 +186,13 @@ sub DoPrintClass
 
     if (!$global && !$common) {
 	print "#ifdef MZ_PRECISE_GC\n";
-	print "  int gcMark(Mark_Proc mark);\n";
+	print "  void gcMark(Mark_Proc mark);\n";
 	print "#endif\n";
 
 	print "};\n\n";
 
 	print "#ifdef MZ_PRECISE_GC\n";
-	print "int ${newclass}::gcMark(Mark_Proc mark) {\n";
+	print "void ${newclass}::gcMark(Mark_Proc mark) {\n";
 	print "  ${oldclass}::gcMark(mark);\n";
 	print "  if (mark) {\n";
 
@@ -196,7 +203,6 @@ sub DoPrintClass
 	}
 
 	print "  }\n";
-	print "  return gcBYTES_TO_WORDS(sizeof(*this));\n";
 	print "}\n";
 	print "#endif\n\n";
 
@@ -217,20 +223,27 @@ sub DoPrintClass
     if (!$global && !$common) {
 	#Do creation methods
 	if ($#distinct_creators >= 0) {
+	    $did_one_creator = 0;
 	    foreach $creator (@distinct_creators) {
 		&ReadFields($dummyfields . $creator);
+		if ($did_one_creator) {
+		    printf "#ifndef MZ_PRECISE_GC\n";
+		}
 		&OIStart;
-		print "${newclass}::${newclass}(Scheme_Object *";
-		print ", " if ($#paramtypes >= 0);
+		print "${newclass}::${newclass} CONSTRUCTOR_ARGS((";
 		&PrintParams(0);
-		print ")\n";
-		print ": ${oldclass}(";
+		print "))\n";
+		print "CONSTRUCTOR_INIT(: ${oldclass}(";
 		&PrintArgs(1);
-		print ")\n";
+		print "))\n";
 		print "{\n";
 		print "}\n";
 		&OIEnd;
+		if ($did_one_creator) {
+		    printf "#endif\n";
+		}
 		print "\n";
+		$did_one_creator = 1;
 	    }
 	}
 
@@ -1427,10 +1440,14 @@ sub PrintSpecificFunction
     print "$prefix  " . &ApplyMacros($glueprecall) . "\n";
 
     if ($iscreator) {
-	print "$prefix  realobj = NEW_OBJECT(${newclass}, (obj";
-	print ", " if ($#paramtypes >= 0);
+	print "$prefix  realobj = WITH_VAR_STACK(new ${newclass} CONSTRUCTOR_ARGS((";
+	&PrintArgs();
+	print ")));\n";
+	print "#ifdef MZ_PRECISE_GC\n";
+	print "$prefix  WITH_VAR_STACK(realobj->gcInit_${oldclass}(";
 	&PrintArgs();
 	print "));\n";
+	print "#endif\n";
 	print "$prefix  realobj->__gc_external = (void *)obj;\n";
 	print "$prefix  objscheme_note_creation(obj);\n";
     } elsif ($common) {

@@ -120,10 +120,7 @@
 (printf "~n")
 
 ;; C++ cupport:
-(printf "#define PRE_ALLOCATE(t) GC_pre_allocate(sizeof(t))~n")
-(printf "#define NEW_OBJ(t) (new t,  (t *)GC_pop_current_new())~n")
-(printf "#define NEW_OBJECT(t, args) (new t args,  (t *)GC_pop_current_new())~n")
-(printf "#define NEW_PREALLOCED_OBJECT(t, args) (GC_use_preallocated(), new t args,  (t *)GC_pop_current_new())~n")
+(printf "#define NEW_OBJ(t) new t~n")
 (printf "#define NEW_ARRAY(t, array) (new t array)~n")
 (printf "#define NEW_ATOM(t) (new (AtomicGC) t)~n")
 (printf "#define NEW_PTR(t) (new t)~n")
@@ -131,8 +128,6 @@
 (printf "#define NEW_PTR_ARRAY(t, array) (new t* array)~n")
 (printf "#define DELETE(x) (delete x)~n")
 (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
-(printf "#define CURRENT_NEW_THIS GC_get_current_new()~n")
-(printf "#define RESTORE_CURRENT_NEW_VAR_STACK GC_restore_current_new_var_stack()~n")
 (printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
 (printf "~n")
 
@@ -141,6 +136,7 @@
 (define-struct (parens struct:seq) ())
 (define-struct (brackets struct:seq) ())
 (define-struct (braces struct:seq) ())
+(define-struct (creation-parens struct:parens) ())
 (define-struct (call struct:tok) (func args live tag))
 (define-struct (block-push struct:tok) (vars tag super-tag))
 (define-struct (note struct:tok) (s))
@@ -157,11 +153,11 @@
 
 (define-struct prototype (type args static? pointer? pointer?-determined?))
 
-(define-struct c++-class (parent prototyped top-vars init-vars))
+(define-struct c++-class (parent parent-name prototyped top-vars))
 
 (define c++-classes null)
 
-(define show-info? #f)
+(define show-info? #t)
 
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
@@ -176,8 +172,6 @@
 (define GC_cpp_delete (string->symbol "GC_cpp_delete"))
 (define PRE_ALLOCATE (string->symbol "PRE_ALLOCATE"))
 (define NEW_OBJ (string->symbol "NEW_OBJ"))
-(define NEW_OBJECT (string->symbol "NEW_OBJECT"))
-(define NEW_PREALLOCED_OBJECT (string->symbol "NEW_PREALLOCED_OBJECT"))
 (define NEW_ARRAY (string->symbol "NEW_ARRAY"))
 (define NEW_ATOM (string->symbol "NEW_ATOM"))
 (define NEW_PTR (string->symbol "NEW_PTR"))
@@ -233,6 +227,7 @@
 
 (define (get-constructor v)
   (cond
+   [(creation-parens? v) make-creation-parens]
    [(parens? v) make-parens]
    [(brackets? v) make-brackets]
    [(braces? v) make-braces]))
@@ -476,8 +471,18 @@
    [(function? e)
     (let ([name (register-proto-information e)])
       (when show-info? (printf "/* FUNCTION ~a */~n" name)))
-    (if (and where (regexp-match "[.]h$" where))
-	;; Still in headers; probably an inlined function
+    (if (and where 
+	     (regexp-match "[.]h$" where)
+	     (let loop ([e e][prev #f])
+	       (cond
+		[(null? e) #t]
+		[(and (eq? ':: (tok-n (car e)))
+		      prev
+		      (eq? (tok-n prev) (tok-n (cadr e))))
+		 ;; inline constructor: need to convert
+		 #f]
+		[else (loop (cdr e) (car e))])))
+	;; Still in headers; probably a simple inlined function
 	e
 	(convert-function e))]
    [(var-decl? e)
@@ -814,7 +819,7 @@
 		      (tok-n (list-ref e (sub1 body-pos)))
 		      #f)]
 	   [cl (make-c++-class super
-			       null
+			       super
 			       null
 			       null)]
 	   [pt (prototyped)]
@@ -824,50 +829,13 @@
       (top-vars null)
       (let* ([body-v (list-ref e body-pos)]
 	     [body-e (process-top-level (seq->list (seq-in body-v)))]
-	     [methods (prototyped)]
-	     ;; Get all pointer args to constructors:
-	     [init-vars (let loop ([methods methods][result null])
-			  (if (null? methods)
-			      ;; Done; rename the init vars:
-			      (let loop ([l result][pos 0])
-				(if (null? l)
-				    null
-				    (cons
-				     (cons (string->symbol (format "InItVaR~a" pos))
-					   (cdar l))
-				     (loop (cdr l) (add1 pos)))))
-			      ;; Handle this method
-			      (loop (cdr methods)
-				    (let ([m (car methods)])
-				      (if (eq? (car m) name)
-					  ;; Get vars for this constructor, see what new
-					  ;;  buckets we need to accomodate them
-					  (let ([vars (get-pointer-vars-from-seq 
-						       (append (prototype-args (cdr m))
-							       (list (make-tok '|,| #f #f)))
-						       "CONSTRPTR"
-						       #t)])
-					    (append
-					     ;; Find out what we need to add:
-					     (let loop ([vars vars][result result])
-					       (cond
-						[(null? vars) null]
-						[(ormap (lambda (r) (and (equal? (cdar vars) (cdr r)) r)) result)
-						 ;; reuse existing:
-						 => (lambda (r)
-						      (loop (cdr vars) (filter (lambda (x) (not (eq? x r))) result)))]
-						[else 
-						 ;; Add new:
-						 (cons (car vars) (loop (cdr vars) result))]))
-					     result))
-					  result)))))])
+	     [methods (prototyped)])
 	;; Save prototype list, but remove constructor and statics:
 	(set-c++-class-prototyped! cl (filter (lambda (x)
 						(not (or (eq? (car x) name)
 							 (prototype-static? (cdr x)))))
 					      methods))
 	(set-c++-class-top-vars! cl (top-vars))
-	(set-c++-class-init-vars! cl init-vars)
 	(prototyped pt)
 	(top-vars vs)
 	(let loop ([e e][p body-pos])
@@ -886,53 +854,67 @@
 		      (seq-close body-v)
 		      (list->seq
 		       (append
-			body-e
+
+			;; Replace constructors names with gcInit_ names:
+			(let loop ([e body-e][did-one? #f])
+			  (cond
+			   [(null? e) (if did-one?
+					  null
+					  ;; Need an explicit gcInit_ method:
+					  (list
+					   (make-tok 'inline #f #f)
+					   (make-tok 'void #f #f)
+					   (make-gc-init-tok name)
+					   (make-parens "(" #f #f ")" (seq))
+					   (make-braces "{" #f #f "}" 
+							(if super
+							    (seq
+							     (make-tok 'this #f #f)
+							     (make-tok '-> #f #f)
+							     (make-gc-init-tok super)
+							     (make-parens "(" #f #f ")" (seq))
+							     (make-tok semi #f #f))
+							    (seq)))))]
+			   [(eq? (tok-n (car e)) '~)
+			    (cons (car e) (cons (cadr e) (loop (cddr e) did-one?)))]
+			   [(and (eq? (tok-n (car e)) name)
+				 (parens? (cadr e)))
+			    (cons (make-tok 'void #f #f)
+				  (cons (make-gc-init-tok (tok-n (car e)))
+					(loop (cdr e) #t)))]
+			   [else (cons (car e) (loop (cdr e) did-one?))]))
+
 			(if (or (eq? name 'gc)
 				(assq gcMark (c++-class-prototyped cl)))
 			    ;; Don't add to gc or to a class that has it
 			    null
 
-			    ;; Add init-var decls and gcMARK method:
-			    (append
-			     (list
-			      (make-tok 'private #f #f)
-			      (make-tok ': #f #f))
-			     ;; init-var decls:
-			     (apply
-			      append
-			      (map
-			       (lambda (r)
-				 (append
-				  (type->decl (cdr r) (car e))
-				  (list (make-tok (car r) #f #f)
-					(make-tok semi #f #f))))
-			       init-vars))
-			     (list
-			      (make-tok 'public #f #f)
-			      (make-tok ': #f #f)
-			      ;; gcMARK method:
-			      (make-tok 'int #f #f)
-			      (make-tok gcMark #f #f)
-			      (make-parens
-			       "(" #f #f ")"
-			       (seq (make-tok Mark_Proc #f #f)
-				    (make-tok 'mark #f #f)))
-			      (make-braces
-			       "{" #f #f "}"
-			       (list->seq
-				(make-mark-body (or super 'gc)
-						(c++-class-top-vars cl)
-						init-vars
-						(car e))))))))))
+			    ;; Add gcMARK method:
+			    (list
+			     (make-tok 'public #f #f)
+			     (make-tok ': #f #f)
+			     ;; gcMARK method:
+			     (make-tok 'void #f #f)
+			     (make-tok gcMark #f #f)
+			     (make-parens
+			      "(" #f #f ")"
+			      (seq (make-tok Mark_Proc #f #f)
+				   (make-tok 'mark #f #f)))
+			     (make-braces
+			      "{" #f #f "}"
+			      (list->seq
+			       (make-mark-body (or super 'gc)
+					       (c++-class-top-vars cl)
+					       (car e)))))))))
 		     (cdr e)))
+	      
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
-(define (make-mark-body super vars init-vars where-v)
+(define (make-mark-body super vars where-v)
   (let ([pointers (append
 		   (filter (lambda (x)
 			     (not (non-pointer-type? (cdr x))))
-			   vars)
-		   init-vars)])
+			   vars))])
     (append
      (list
       (make-tok super #f #f)
@@ -965,18 +947,7 @@
 			(list (make-tok '|,| #f #f)
 			      (make-tok (car x) #f #f)))))
 		     (make-tok semi #f #f)))
-		  pointers))))))
-     (list
-      (make-tok 'return #f #f)
-      (make-tok gcBYTES_TO_WORDS #f #f)
-      (make-parens
-       "(" #f #f ")"
-       (seq
-	(make-tok 'sizeof #f #f)
-	(make-parens
-	 "(" #f #f ")"
-	 (seq (make-tok '*this #f #f)))))
-      (make-tok semi #f #f)))))
+		  pointers)))))))))
 
 (define (find-c++-class class-name report-err?)
   (and class-name
@@ -1008,6 +979,20 @@
   (get-c++-class-member var c++-class c++-class-prototyped))
 
 (define used-self? #f)
+
+(define (new-vars->decls vars)
+  (apply
+   append
+   (map
+    (lambda (tv)
+      (list (make-tok (car tv) #f #f)
+	    (make-tok '* #f #f)
+	    (make-tok (cdr tv) #f #f)
+	    (make-tok semi #f #f)))
+    vars)))
+
+(define (make-gc-init-tok s)
+  (make-tok (string->symbol (format "gcInit_~a" s)) #f #f))
 
 (define (convert-function e)
   (let*-values ([(body-v len) (let* ([len (sub1 (length e))]
@@ -1047,73 +1032,39 @@
 					(eq? function-name class-name)
 					(eq? function-name '~))
 				    c++-class))]
-		[(init-mapping) (and (eq? class-name function-name)
-				     c++-class
-				     ;; Map init args to in-class slots
-				     (let ([init-slots (c++-class-init-vars c++-class)])
-				       (let loop ([args arg-vars][inits init-slots])
-					 (if (null? args)
-					     null
-					     (let ([r (ormap (lambda (r)
-							       (and (equal? (cdar args) (cdr r))
-								    r))
-							     inits)])
-					       (unless r
-						 (log-error "[INIT] ~a in ~a: Couldn't find init mapping for ~a" 
-							    (tok-line (car e)) (tok-file (car e))
-							    (caar args)))
-					       (cons
-						(or r (cons 'fake
-							    (make-pointer-type 'int 1)))
-						(loop (cdr args) (filter (lambda (x) (not (eq? r x))) inits))))))))]
-		[(make-init-setups) (lambda ()
-				      (if init-mapping
-					  (let loop ([setups
-						      (quicksort
-						       (map (lambda (arg init)
-							      (list
-							       (make-tok (car init) #f #f)
-							       (make-parens
-								"(" #f #f ")"
-								(seq (make-tok (car arg) #f #f)))))
-							    arg-vars init-mapping)
-						       ;; Sort based on init var name (to match decl order):
-						       (lambda (a b)
-							 (string<? (symbol->string (tok-n (car a)))
-								   (symbol->string (tok-n (car b))))))])
-					    (cond
-					     [(null? setups) null]
-					     [(null? (cdr setups))
-					      (car setups)]
-					     [else
-					      (append (car setups)
-						      (list (make-tok '|,| #f #f))
-						      (loop (cdr setups)))]))
-					  null))])
+		[(initializers) (let loop ([e e][len len])
+				  (cond
+				   [(zero? len) #f]
+				   [(eq? (tok-n (car e)) ':)
+				    (cons (cadr e) (caddr e))]
+				   [else (loop (cdr e) (sub1 len))]))])
      (append
-      (let loop ([e e][len len][setup-mode 'waiting])
+      
+      (let loop ([e e][len len][need-void? #t])
 	(cond
-	 [(and (eq? ': (tok-n (car e)))
-	       (eq? setup-mode 'waiting))
-	  ;; Insert constructor setups with comma separator
-	  (cons (car e) 
-		(append
-		 (let ([s (make-init-setups)])
-		   (if (null? s)
-		       null
-		       (append s (list (make-tok '|,| #f #f)))))
-		 (loop (cdr e) (sub1 len) 'done)))]
-	 [(and (zero? len)
-	       (eq? setup-mode 'waiting))
-	  ;; Constructor setups without comma
-	  (let ([l (make-init-setups)])
-	    (if (null? l)
-		null
-		(cons (make-tok ': #f #f) l)))]
 	 [(zero? len)
 	  null]
+	 [(eq? (tok-n (car e)) ':)
+	  ;; skip initializers
+	  null]
+	 [(and function-name
+	       (eq? function-name class-name)
+	       (eq? (tok-n (car e)) class-name)
+	       (parens? (cadr e)))
+	  ;; Replace constructor name with gcInit_ name:
+	  (cons (make-gc-init-tok (tok-n (car e)))
+		(loop (cdr e) (sub1 len) #f))]
+	 [(eq? (tok-n (car e)) 'inline)
+	  ;; Don't want 'void before 'inline
+	  (cons (car e) (loop (cdr e) (sub1 len) need-void?))]
 	 [else
-	  (cons (car e) (loop (cdr e) (sub1 len) setup-mode))]))
+	  (if (and need-void?
+		   function-name
+		   (eq? function-name class-name))
+	      (cons (make-tok 'void #f #f)
+		    (loop e len #f))
+	      (cons (car e) 
+		    (loop (cdr e) (sub1 len) #f)))]))
       (list
        (make-braces
 	(tok-n body-v)
@@ -1122,9 +1073,10 @@
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
 		      (convert-body (if c++-class
-					(let ([e (begin
-						   (set! used-self? #f)
-						   (convert-class-vars body-e all-arg-vars c++-class))])
+					(let* ([new-vars-box (box null)]
+					       [e (begin
+						    (set! used-self? #f)
+						    (convert-class-vars body-e all-arg-vars c++-class new-vars-box))])
 					  (append
 					   ;; If sElF is used, add its declaration.
 					   (if used-self?
@@ -1133,68 +1085,44 @@
 						(make-tok '* #f #f)
 						(make-tok sElF #f #f)
 						(make-tok '= #f #f)
-						;; If this is a constructor, we get sElF in
-						;;  a special way
-						(if (eq? class-name function-name)
-						    (make-parens
-						     "(" #f #f ")"
-						     (seq
-						      (make-parens
-						       "(" #f #f ")"
-						       (seq (make-tok class-name #f #f)
-							    (make-tok '* #f #f)))
-						      (make-tok CURRENT_NEW_THIS #f #f)))
-						    (make-tok 'this #f #f))
+						(make-tok 'this #f #f)
 						(make-tok semi #f #f))
 					       null)
+					   ;; New vars for obj creation:
+					   (new-vars->decls (unbox new-vars-box))
 					   ;; The main body:
 					   e))
 
 					;; Do any conversion?
 					(if source-is-c++?
-					    (convert-class-vars body-e all-arg-vars #f)
+					    (let* ([new-vars-box (box null)]
+						   [e (convert-class-vars body-e all-arg-vars #f new-vars-box)])
+					      (append
+					       (new-vars->decls (unbox new-vars-box))
+					       e))
 					    body-e))
 				    arg-vars arg-vars
-				    c++-class
-				    (lambda ()
-				      (append
-				       ;; If this is a constructor, reser var stack
-				       ;;  because super constructor left it too deep
-				       (if (and c++-class
-						(eq? function-name class-name))
-					   (list
-					    (make-tok RESTORE_CURRENT_NEW_VAR_STACK #f #f)
-					    (make-tok semi #f #f))
-					   null)
-
-				       ;; If this is a constructor, need to patch init args,
-				       ;;  because super constructor may have triggered a GC
-				       (if init-mapping
-					   (apply
-					    append
-					    (map
-					     (lambda (arg init)
-					       (list
-						(make-tok (car arg) #f #f)
-						(make-tok '= #f #f)
-						(make-tok sElF #f #f)
-						(make-tok '-> #f #f)
-						(make-tok (car init) #f #f)
-						(make-tok semi #f #f)
-						(make-tok sElF #f #f)
-						(make-tok '-> #f #f)
-						(make-tok (car init) #f #f)
-						(make-tok '= #f #f)
-						(make-tok NULL_ #f #f)
-						(make-tok semi #f #f)))
-					     arg-vars init-mapping))
-					   
-					   ;; No patches:
-					   null)))
+				    c++-class 
+				    ;; Moved initializers, if constructor
+				    (if (and function-name
+					     (eq? class-name function-name))
+					(let ([super-type (if initializers
+							      (tok-n (car initializers))
+							      (c++-class-parent-name c++-class))]
+					      [super-args (if initializers
+							      (cdr initializers)
+							      (make-parens "(" #f #f ")" (seq)))])
+					  (list (list (make-tok sElF #f #f)
+						      (make-tok '-> #f #f)
+						      (make-gc-init-tok super-type)
+						      super-args
+						      (make-tok semi #f #f))))
+					null)
+				    (lambda () null)
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
 	  (list->seq body-e)))))))
 
-(define (convert-class-vars body-e arg-vars c++-class)
+(define (convert-class-vars body-e arg-vars c++-class new-vars-box)
   (let ([el (body->lines body-e #f)])
     (when c++-class
       (let-values ([(decls body) (split-decls el)])
@@ -1304,48 +1232,64 @@
 		      #t
 		      paren-arrows?)]
 	       [(and (pair? (cddr e))
-		     (seq? (caddr e)))
-		(let* ([normal-alloc? (or atom? 
-					  (brackets? (caddr e))
-					  (null? (seq-in (caddr e))))]
-		       [alloc (list
-			       (make-tok (if (brackets? (caddr e)) 
-					     (if atom? 
-						 NEW_ATOM_ARRAY 
-						 NEW_ARRAY)
-					     (if atom? NEW_ATOM (if normal-alloc?
-								    NEW_OBJECT
-								    NEW_PREALLOCED_OBJECT)))
-					 (tok-line v) (tok-file v))
+		     (brackets? (caddr e)))
+		;; An array of objects
+		(loop (list*
+		       (make-tok (if atom? 
+				     NEW_ATOM_ARRAY 
+				     NEW_ARRAY)
+				 #f #f)
+		       (make-parens
+			"(" (tok-line v) (tok-file v) ")"
+			(seq (cadr e) 
+			     (make-tok '|,| #f #f) 
+			     (caddr e)))
+		       (cdddr e))
+		      #t
+		      paren-arrows?)]
+	       [(or (and (pair? (cddr e))
+			 (parens? (caddr e)))
+		    (not atom?))
+		;; An object with init argument
+		(when atom?
+		  (log-error "[CONFUSED] ~a in ~a: atomic type with initializers?"
+			     (tok-line v) (tok-file v)))
+		(let ([args? (and (pair? (cddr e))
+				  (parens? (caddr e)))]
+		      [line (tok-line v)]
+		      [file (tok-file v)]
+		      [new-var (string->symbol (format "~a_created" (tok-n (cadr e))))])
+		  (unless (assq (tok-n (cadr e)) (unbox new-vars-box))
+		    (set-box! new-vars-box (cons (cons (tok-n (cadr e)) new-var)
+						 (unbox new-vars-box))))
+		  (loop (list*
+			 (make-creation-parens
+			  "(" line file ")"
+			  (seq
+			   (make-tok new-var line file) 
+			   (make-tok '= line file) 
+			   (make-tok NEW_OBJ line file)
+			   (make-parens
+			    "(" line file ")"
+			    (seq (cadr e)))
+			   (make-tok '|,| line file) 
+			   (make-tok new-var line file) 
+			   (make-tok '-> line file) 
+			   (make-gc-init-tok (tok-n (cadr e)))
+			   (if args?
+			       (caddr e)
 			       (make-parens
-				"(" (tok-line v) (tok-file v) ")"
-				(seq (cadr e) 
-				     (make-tok '|,| #f #f) 
-				     (caddr e))))])
-		  (loop (if normal-alloc?
-			    ;; Normal allocate:
-			    (append
-			     alloc
-			     (cdddr e))
-			    ;; Pre-allocate object, which may move args
-			    (cons
-			     (make-parens
-			      "(" (tok-line v) (tok-file v) ")"
-			      (list->seq
-			       (append
-				(list
-				 (make-tok PRE_ALLOCATE #f #f)
-				 (make-parens
-				  "(" (tok-line v) (tok-file v) ")"
-				  (seq (cadr e)))
-				 (make-tok '|,| #f #f))
-				alloc)))
-			     (cdddr e)))
+				"(" line file ")"
+				(seq)))
+			   (make-tok '|,| line file) 
+			   (make-tok new-var line file)))
+			 ((if args? cdddr cddr) e))
 			#t
 			paren-arrows?))]
 	       [else
+		;; An atom
 		(loop (list*
-		       (make-tok (if atom? NEW_ATOM NEW_OBJ) (tok-line v) (tok-file v))
+		       (make-tok NEW_ATOM NEW_OBJ (tok-line v) (tok-file v))
 		       (make-parens
 			"(" (tok-line v) (tok-file v) ")"
 			(seq (cadr e)))
@@ -1383,7 +1327,7 @@
 	      [(braces? v)
 	       (make-braces
 		"{" (tok-line v) (tok-file v) "}"
-		(list->seq (convert-class-vars (seq->list (seq-in v)) arg-vars c++-class)))]
+		(list->seq (convert-class-vars (seq->list (seq-in v)) arg-vars c++-class new-vars-box)))]
 	      [(seq? v)
 	       ((get-constructor v)
 		(tok-n v) (tok-line v) (tok-file v) (seq-close v)
@@ -1408,7 +1352,7 @@
 (define (is-generated? x)
   (regexp-match re:funcarg (symbol->string (car x))))
 
-(define (convert-body body-e extra-vars pushable-vars c++-class after-vars-thunk live-vars setup-stack?)
+(define (convert-body body-e extra-vars pushable-vars c++-class initializers after-vars-thunk live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
     (let-values ([(decls body) (split-decls el)])
       (let* ([local-vars 
@@ -1429,7 +1373,7 @@
 		       [(orig-maxpush) (live-var-info-maxpush live-vars)]
 		       [(orig-tag) (live-var-info-tag live-vars)]
 		       [(body-x live-vars)
-			(let loop ([body body])
+			(let loop ([body (append initializers body)])
 			  (cond
 			   [(null? body)
 			    ;; Starting live-vars record for this block:
@@ -1924,7 +1868,8 @@
 	      (let ([special-case-type (and (not (null? assignee))
 					    (null? (cdr assignee))
 					    (= 2 (length result))
-					    (call? (car result))
+					    (or (call? (car result))
+						(creation-parens? (car result)))
 					    (eq? semi (tok-n (cadr result)))
 					    (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class vars)])
 					      (and m (cdr m))))])
@@ -2008,7 +1953,7 @@
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
 		       (lambda (live-vars)
-			 (convert-body (seq->list (seq-in v)) vars null c++-class (lambda () null) live-vars #f))]
+			 (convert-body (seq->list (seq-in v)) vars null c++-class null (lambda () null) live-vars #f))]
 		      ;; First conversion
 		      [(e live-vars) (convert-brace-body live-vars)]
 		      ;; Proc to filter live and pushed vars, dropping vars no longer in scope:

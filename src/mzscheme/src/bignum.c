@@ -289,7 +289,7 @@ static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
     return o;
 }
 
-/* 
+/*
    copy the bignum a, and if msd != 0, concat. it as the most significant
    digit
 */
@@ -365,7 +365,7 @@ int scheme_bignum_lt(const Scheme_Object *a, const Scheme_Object *b)
     return 1;
   else if (a_pos && !b_pos)
     return 0;
-  else 
+  else
     res = bignum_abs_cmp(a, b);
   if (!a_pos)
     return (res > 0);
@@ -1014,7 +1014,7 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
   while (i < slen && str[i] == 0) {
     ++i;
   }
-  
+
   if (i == slen) {
     if (alloc) {
       str2 = (unsigned char *)scheme_malloc_atomic(2);
@@ -1043,7 +1043,7 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
     else
       str2[i] = str[i + start] + 'a' - 10;
   }
-  
+
   str2[slen - 1] = 0;
 
   return (char *)str2;
@@ -1064,7 +1064,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
   if (radix < 0 || radix > 16) {
     return scheme_false;
   }
-  
+
   negate = 0;
   stri = offset;
   while ((str[stri] == '+') || (str[stri] == '-')) {
@@ -1394,7 +1394,7 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       v = (double)SCHEME_INT_VAL(n);
     else {
       v = scheme_bignum_to_double(n);
-      
+
       if (MZ_IS_POS_INFINITY(v)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
 	return scheme_make_float(v);
@@ -1403,9 +1403,9 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
 #endif
       }
     }
-    
+
     v = sqrt(v);
-    
+
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
     return scheme_make_float(v);
 #else
@@ -1428,8 +1428,6 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
     tmp = n;
     n = d;
     d = tmp;
-    d_size = n_size;
-    n_size = SCHEME_BIGLEN(n);
   }
 
   n_size = SCHEME_BIGLEN(n);
@@ -1437,7 +1435,7 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
 
   r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;
-    
+
 #ifdef MZ_PRECISE_GC
   n_digs = SCHEME_BIGDIG(n);
   d_digs = SCHEME_BIGDIG(d);
@@ -1454,7 +1452,7 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
   {
     bigdig mask;
     int b, w, nz = 0, dz = 0;
-    
+
     b = 1; w = 0; mask = 0x1;
     while (!(n_digs[w] & mask)) {
       nz++;
@@ -1497,7 +1495,7 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
       if (w)
 	mpn_rshift(d_digs, d_digs, d_size, w);
     }
-    
+
     if (nz < dz)
       res_double = nz;
     else
@@ -1515,7 +1513,7 @@ Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
   r_digs = PROTECT_RESULT(r_alloc);
 
   r_size = mpn_gcd(r_digs, d_digs, d_size, n_digs, n_size);
- 
+
   RELEASE(d_digs);
   RELEASE(n_digs);
   FINISH_RESULT(r_digs, r_size);

@@ -34,7 +34,7 @@
       [("-v" "--verbose")
        ,(lambda (flag)
 	  (verbose #t))
-       ("See names of compiled files")]
+       ("See printf's and names of compiled files")]
       [("-m" "--make-verbose")
        ,(lambda (flag)
 	  (make-verbose #t))

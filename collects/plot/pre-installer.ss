@@ -77,25 +77,25 @@
            [fit-c-files     `("fit-low-level" "fit" "matrix")])
       (unless (do-copy (final-so-file fit-scheme-file))
         (make-ext fit-scheme-file fit-c-files fit-src-dir)))
-    (let ([plot-scheme-file (build-path here "plplot-low-level")])
+    (let* ([plot-scheme-file (build-path here "plplot-low-level")]
+           [plot-src-dir (build-path here "src" "all")]
+           [plot-c-files
+            (map (lambda (f) (regexp-replace #rx".c$" f ""))
+                 (cons (file-name-from-path plot-scheme-file)
+                       (filter (lambda (f)
+                                 (and (regexp-match #rx".c$" f)
+                                      (not (regexp-match
+                                            (file-name-from-path
+                                             plot-scheme-file)
+                                            f))))
+                               (directory-list plot-src-dir))))])
       (unless (do-copy (final-so-file plot-scheme-file))
         (parameterize ([current-extension-compiler-flags
                         (append (current-extension-compiler-flags)
                                 (case (system-type)
                                   [(windows) '("/DHAVE_LIBPNG" "/DPLD_png")]
                                   [else '("-DHAVE_LIBPNG" "-DPLD_png")]))])
-          (let* ([plot-src-dir (build-path here "src" "all")]
-                 [plot-c-files
-                  (map (lambda (f) (regexp-replace #rx".c$" f ""))
-                       (cons (file-name-from-path plot-scheme-file)
-                             (filter (lambda (f)
-                                       (and (regexp-match #rx".c$" f)
-                                            (not (regexp-match
-                                                  (file-name-from-path
-                                                   plot-scheme-file)
-                                                  f))))
-                                     (directory-list plot-src-dir))))])
-            (make-ext plot-scheme-file plot-c-files plot-src-dir)))))
+          (make-ext plot-scheme-file plot-c-files plot-src-dir))))
 
     ;; copy plot docs from src here
     #;

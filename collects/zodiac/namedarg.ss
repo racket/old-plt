@@ -2,7 +2,7 @@
 
 (begin-construction-time
 
-(reference-library "match.ss"))
+(reference-library "match.ss")
 (reference-library "macro.ss")
 
 (invoke-open-unit

@@ -56,10 +56,10 @@
      (e-ctxt hole
              (x v ... e-ctxt e ...)
              (prim-op v ... e-ctxt e ...)
-             (cond [e-ctxt e] [e e] ...)
-             (cond [e-ctxt e] [e e] ... [else e])
-             (and e-ctxt e ...)
-             (or e-ctxt e ...))
+             (cond [false e] ... [e-ctxt e] [e e] ...)
+             (cond [false e] ... [e-ctxt e] [e e] ... [else e])
+             (and true ... e-ctxt e ...)
+             (or false ... e-ctxt e ...))
      
      (d/e-v (define x (lambda (x x ...) e))
             (define (x x x ...) e)
@@ -127,63 +127,22 @@
       [(_ lhs rhs)
        (syntax (reduction lang (in-hole p-ctxt lhs) rhs))]))
 
-  #|
-  (define-syntax (template stx)
-    (define (build name depth)
-      (let loop ([depth depth]
-                 [exp name])
-        (cond
-          [(zero? depth) name]
-          [else (loop (- depth 1) 
-                      (datum->syntax-object
-                       name 
-                       `(,exp ...)))])))
-    (syntax-case stx ()
-      ([_ ([name depth] ...) exp]
-       (with-syntax ([(name-d ...) 
-                      (map (lambda (name depth)
-                             (build name
-                                    (syntax-object->datum depth)))
-                           (syntax->list (syntax (name ...)))
-                           (syntax->list (syntax (depth ...))))])
-         (syntax
-          (with-syntax ([name name-d] ...)
-            (syntax-object->datum (syntax exp))))))))
-  
-  (let ([xs (list 1 2 3)]
-        [ys (list 4 5 6)])
-    (template ([xs 1]
-               [ys 1])
-              ((xs ys) ...)))
-  
-  |#
-  
   (define reductions
     (list
      
-     ((and false e ...) . --> . 'false)
-     ((and true false e ...) . --> . 'false)
-     ((and true true) . --> . 'true)
-     ((and true true (name e e) (name es e) ...) . --> . `(and true ,e ,@es))
-     ((side-condition (and (name v v) e ...) 
-                      (and (not (eq? v 'true)) (not (eq? v 'false))))
-      . e--> .
-      "and: question result is not true or false")
-     ((side-condition (and boolean (name v v) e ...)
-                      (and (not (eq? v 'true)) (not (eq? v 'false))))
+     ((and true ... false e ...) . --> . 'false)
+     ((and true ...) . --> . 'true)
+     ((side-condition (and true ... (name v v) e ...)
+                      (and (not (eq? v 'true))
+                           (not (eq? v 'false))))
       . e--> .
       "and: question result is not true or false")
      
-     ((or true e ...) . --> . 'true)
-     ((or false true e ...) . --> . 'true)
-     ((or false false) . --> . 'false)
-     ((or false false (name e e) (name es e) ...) . --> . `(or false ,e ,@es))
-     ((side-condition (or (name v v) e ...) 
-                      (and (not (eq? v 'true)) (not (eq? v 'false))))
-      . e--> .
-      "or: question result is not true or false")
-     ((side-condition (or boolean (name v v) e ...)
-                      (and (not (eq? v 'true)) (not (eq? v 'false))))
+     ((or false ... true e ...) . --> . 'true)
+     ((or false ...) . --> . 'false)
+     ((side-condition (or false ... (name v v) e ...)
+                      (and (not (eq? v 'true))
+                           (not (eq? v 'false))))
       . e--> .
       "or: question result is not true or false")
      
@@ -196,30 +155,27 @@
       "if: question result is not true or false")
      
      
-     ((cond (false e) (name next (e e)) (name rest (e e)) ...)
-      . --> .
-      `(cond ,next ,@rest))
-     ((cond (false e) (name rest (e e)) ... (name last (else e)))
-      . --> . 
-      `(cond ,@rest ,last))
-     ((cond (true (name e e)) (e e) ...) . --> . e)
-     ((cond (true (name e e)) (e e) ... (else e)) . --> . e)
-     ((cond (else (name e e))) . --> . e)
+     ((cond (false e) ... (true (name e e)) (e e) ...) . --> . e)
+     ((cond (false e) ... (true (name e e)) (e e) ... (else e)) . --> . e)
+     ((cond (false e) ... (else (name e e))) . --> . e)
+     ((cond (false e) ...) . e--> . "cond: all question results were false")
+     
      ((side-condition
-       (cond ((name v v) e) (e e) ...)
+       (cond (false e) ... ((name v v) e) (e e) ...)
        (and (not (eq? v 'false))
             (not (eq? v 'true))
             (not (eq? v 'else))))
       . e--> .
       "cond: question result is not true or false")
+     
      ((side-condition
-       (cond ((name v v) e) (e e) ... (else e))
+       (cond (false e) ... ((name v v) e) (e e) ... (else e))
        (and (not (eq? v 'false))
             (not (eq? v 'true))
             (not (eq? v 'else))))
       . e--> .
       "cond: question result is not true or false")
-     ((cond (false e)) . e--> . "cond: all question results were false")
+     
 
      ((empty? empty) . --> . 'true)
      ((side-condition (empty? (name v v))
@@ -490,6 +446,43 @@
           (fprintf (current-error-port) "FAILED:   ~s\ngot:      ~s\nexpected: ~s\n" in got out)
           (set! failed-tests (+ failed-tests 1))))))
   
+  (define (test-all step . steps)
+    (set! total-tests (+ total-tests 1))
+    (let loop ([this step]
+               [rest steps])
+      (let ([nexts (reduce reductions this)])
+        (cond
+          [(null? rest)
+           (unless (null? nexts)
+             (set! failed-tests (+ failed-tests 1))
+             (fprintf (current-error-port) "FAILED: ~s\n  last step: ~s\n  reduced to: ~s\n"
+                      step
+                      this
+                      nexts))]
+          [else
+           (cond
+             [(and (pair? nexts)
+                   (null? (cdr nexts)))
+              (let ([next (car nexts)])
+                (if (equal? next (car rest))
+                    (loop (car rest)
+                          (cdr rest))
+                    (begin
+                      (set! failed-tests (+ failed-tests 1))
+                      (fprintf (current-error-port) 
+                               "FAILED: ~s\n     step: ~s\n expected: ~s\n      got: ~s\n"
+                               step
+                               this
+                               (car rest)
+                               next))))]
+             [else
+              (set! failed-tests (+ failed-tests 1))
+              (fprintf (current-error-port)
+                       "FAILED: ~s\n  step: ~s\n  not single step: ~s\n"
+                       step
+                       this
+                       nexts)])]))))
+  
   (define (normalize term failed)
     (let loop ([term term]
                [n 1000])
@@ -699,11 +692,11 @@
       '((cond [else 1]))
       '(1))
      
-     (test
+     (test-all
       '((cond [false 1] [else 2]))
       '(2))
      
-     (test
+     (test-all
       '((cond [false 1] [false 2]))
       "cond: all question results were false")
      
@@ -715,37 +708,69 @@
       '((cond [(empty? empty) 'infinite] [else 3]))
       '('infinite))
      
-     (test
+     (test-all
+      '((cond [(if false false false) 'x] [(if true true true) 'y] [(if false false false) 'z]))
+      '((cond [false 'x] [(if true true true) 'y] [(if false false false) 'z]))
+      '((cond [false 'x] [true 'y] [(if false false false) 'z]))
+      '('y))
+     
+     (test-all
+      '((cond [(if false false false) 'x] [(if true true true) 'y] [else 'z]))
+      '((cond [false 'x] [(if true true true) 'y] [else 'z]))
+      '((cond [false 'x] [true 'y] [else 'z]))
+      '('y))
+     
+     (test-all
+      '((cond [(if false false false) 'x] [(if false false false) 'y] [else 'z]))
+      '((cond [false 'x] [(if false false false) 'y] [else 'z]))
+      '((cond [false 'x] [false 'y] [else 'z]))
+      '('z))
+     
+     (test-all
       '((and true true 3))
       "and: question result is not true or false")
      
-     (test
+     (test-all
       '((and 1 true true))
       "and: question result is not true or false")
      
-     (test
+     (test-all
       '((and true true true false))
       '(false))
      
-     (test
+     (test-all
       '((and false true))
       '(false))
      
-     (test
+     (test-all
       '((or false false 3))
       "or: question result is not true or false")
      
-     (test
+     (test-all
       '((or 1 false false))
       "or: question result is not true or false")
      
-     (test
+     (test-all
       '((or false false false true))
       '(true))
      
-     (test
+     (test-all
       '((or true false))
       '(true))
+     
+     (test-all
+      '((or (if false false false) (if false false false) (if true true true) (if false false false)))
+      '((or false (if false false false) (if true true true) (if false false false)))
+      '((or false false (if true true true) (if false false false)))
+      '((or false false true (if false false false)))
+      '(true))
+     
+     (test-all
+      '((and (if true true true) (if true true true) (if false false false) (if true true true)))
+      '((and true (if true true true) (if false false false) (if true true true)))
+      '((and true true (if false false false) (if true true true)))
+      '((and true true false (if true true true)))
+      '(false))
      
      (test
       '((if 1 2 3))

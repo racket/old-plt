@@ -358,10 +358,12 @@
 					 #f)))]
 				[set-close-menu-item-state! 
 				 (lambda (frame state)
-				   (let ([close-menu-item 
-					  (get-standard-menu-close-item frame)])
-				     (when close-menu-item
-					   (send (ivar frame file-menu) enable close-menu-item state))))])
+				   (when (is-a? frame mred:standard-menus-frame)
+					 (let ([close-menu-item 
+						(get-standard-menu-close-item frame)])
+					   (when close-menu-item
+						 (send (ivar frame file-menu) 
+						       enable close-menu-item state)))))])
 		       (public [file-menu 'file-menu-uninitialized]
 			       [edit-menu 'edit-menu-uninitialized]
 			       [windows-menu 'windows-menu-uninitialized]

@@ -20,7 +20,7 @@
 
 (define-signature plt:aries-no-break^
   (annotate
-   extract-zodiac-location
+   extract-zodiac-locations
    w-c-m-key
    make-zodiac-mark
    signal-not-boolean

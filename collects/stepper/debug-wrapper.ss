@@ -19,11 +19,10 @@
       (set! current-environments new-envs)
       (car annotateds)))
   
-  (define (extract-zodiac-location mark-set)
+  ;; extract-zodiac-locations : mark-set -> (listof zodiac)
+  (define (extract-zodiac-locations mark-set)
     (let ([mark-list (continuation-mark-set->list mark-set annotate:debug-key)])
-      (if (null? mark-list)
-          #f
-          (marks:mark-source (car mark-list)))))
+      (map marks:mark-source mark-list)))
   
   (define (make-zodiac-mark location)
     (marks:make-cheap-mark location))

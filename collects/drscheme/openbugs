@@ -1,3 +1,7 @@
+- in the language dialog box:
+  - allow set! on undefined is ignored
+  - show sharing is ignored
+
 - in the lowest language level (define (f . x) x) is incorrectly a
   syntax error.
 

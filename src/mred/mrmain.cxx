@@ -298,6 +298,12 @@ int main(int argc, char *argv[])
 
   Drop_GetArgs(&argc, &argv, &wx_in_terminal);
 
+  {
+    ProcessSerialNumber psn;
+    GetCurrentProcess(&psn);    
+    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
+  }
+
 # ifndef OS_X
   wx_original_argv_zero = argv[0];
 # endif

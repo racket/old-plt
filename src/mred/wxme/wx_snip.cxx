@@ -1567,12 +1567,12 @@ void wxImageSnip::SetBitmap(wxBitmap *map, wxBitmap *msk, int refresh)
   }
 }
 
-wxBitmap *wxImageSnip::GetBitmap()
+wxBitmap *wxImageSnip::GetSnipBitmap()
 {
   return bm;
 }
 
-wxBitmap *wxImageSnip::GetBitmapMask()
+wxBitmap *wxImageSnip::GetSnipBitmapMask()
 {
   return mask;
 }

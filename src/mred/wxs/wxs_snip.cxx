@@ -7472,7 +7472,7 @@ static Scheme_Object *os_wxImageSnipSetOffset(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxImageSnipGetBitmapMask(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxImageSnipGetSnipBitmapMask(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -7485,7 +7485,7 @@ static Scheme_Object *os_wxImageSnipGetBitmapMask(int n,  Scheme_Object *p[])
   
 
   
-  r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetBitmapMask());
+  r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetSnipBitmapMask());
 
   
   
@@ -7493,7 +7493,7 @@ static Scheme_Object *os_wxImageSnipGetBitmapMask(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
-static Scheme_Object *os_wxImageSnipGetBitmap(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxImageSnipGetSnipBitmap(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -7506,7 +7506,7 @@ static Scheme_Object *os_wxImageSnipGetBitmap(int n,  Scheme_Object *p[])
   
 
   
-  r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetBitmap());
+  r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetSnipBitmap());
 
   
   
@@ -8517,8 +8517,8 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
   os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 31));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", (Scheme_Method_Prim *)os_wxImageSnipSetOffset, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-bitmap-mask" " method", (Scheme_Method_Prim *)os_wxImageSnipGetBitmapMask, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-bitmap" " method", (Scheme_Method_Prim *)os_wxImageSnipGetBitmap, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-bitmap-mask" " method", (Scheme_Method_Prim *)os_wxImageSnipGetSnipBitmapMask, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-bitmap" " method", (Scheme_Method_Prim *)os_wxImageSnipGetSnipBitmap, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxImageSnipSetBitmap, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype" " method", (Scheme_Method_Prim *)os_wxImageSnipGetFiletype, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename" " method", (Scheme_Method_Prim *)os_wxImageSnipGetFilename, 0, 1));

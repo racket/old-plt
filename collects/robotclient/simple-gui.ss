@@ -96,7 +96,9 @@
           (let ((d (make-object style-delta%)))
             (send d set-face "-misc-fixed")
             (send map-text change-style d))
-          (send map-text set-position 0 'same)
+          (send map-text set-position (send map-text get-end-position) 'same)
+          (send map-text insert (format "money: ~a~n" (player-money)))
+          (send map-text insert (format "score: ~a~n" (score)))
           (send map-text end-edit-sequence)))
       
       (define/public (end) (send f show #t))

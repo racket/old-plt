@@ -61,7 +61,7 @@
   (define-values (listener port)
     (let loop ([port 8000])
       (with-handlers ([void (lambda (exn) (loop (add1 port)))])
-        (values (tcp-listen port 10 #t "127.0.0.1")
+        (values (tcp-listen port 10 #f "127.0.0.1")
                 port))))
   
   (define instances (make-hash-table))

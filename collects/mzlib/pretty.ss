@@ -233,6 +233,8 @@
    (define pretty-print (make-pretty-print #f))
    (define pretty-display (make-pretty-print #t))
 
+   (define-struct mark (str def))
+
    (define (generic-write obj display? width output output-hooked 
 			  print-graph? print-struct? print-vec-length?
 			  depth size-hook print-line
@@ -245,7 +247,22 @@
      (define show-inexactness? (pretty-print-show-inexactness))
      (define exact-as-decimal? (pretty-print-exact-as-decimal))
      
-     (define-struct mark (str def))
+     (define vector->repeatless-list
+       (if print-vec-length?
+	   (lambda (v)
+	     (let ([len (vector-length v)])
+	       (let ([last (vector-ref v (sub1 len))])
+		 (let loop ([i (- len 2)])
+		   (if (i . < . 0)
+		       (list last)
+		       (let ([e (vector-ref v i)])
+			 (if (eq? e last)
+			     (loop (sub1 i))
+			     (let loop ([i (sub1 i)][r (list e last)])
+			       (if (i . < . 0)
+				   r
+				   (loop (sub1 i) (cons (vector-ref v i) r)))))))))))
+	   vector->list))
 
      (define found-cycle
        (or print-graph?
@@ -260,7 +277,12 @@
 			(let ([cycle
 			       (cond
 				[(vector? obj)
-				 (ormap loop (vector->list obj))]
+				 (let ([len (vector-length obj)])
+				   (let loop ([i 0])
+				     (if 
+				      (= i len)
+				      (or (vector-ref obj i)
+					  (loop (add1 i))))))]
 				[(pair? obj)
 				 (or (loop (car obj))
 				     (loop (cdr obj)))]
@@ -286,7 +308,13 @@
 			       (hash-table-put! table obj #f)
 			       (cond
 				[(vector? obj)
-				 (loop (vector->list obj))]
+				 (let ([len (vector-length obj)])
+				   (let loop ([i 0])
+				     (if 
+				      (= i len)
+				      (begin
+					(loop (vector-ref obj i))
+					(loop (add1 i))))))]
 				[(pair? obj)
 				 (loop (car obj))
 				 (loop (cdr obj))]
@@ -337,18 +365,6 @@
 	     ((unquote)          ",")
 	     ((unquote-splicing) ",@")
              ((syntax)           "#'"))))
-
-       (define (drop-repeated l)
-	 (if (null? l)
-	     null
-	     (let ([rest (drop-repeated (cdr l))])
-	       (cond
-		[(and (pair? rest)
-		      (null? (cdr rest))
-		      (eq? (car l) (car rest)))
-		 rest]
-		[(eq? rest (cdr l)) l]
-		[else (cons (car l) rest)]))))
 
        (define (out str col)
 	 (and col (output str) (+ col (string-length str))))
@@ -435,10 +451,7 @@
 					 obj #t col
 					 #f #f
 					 (lambda (col)
-					   (wr-lst (let ([l (vector->list obj)])
-						     (if print-vec-length?
-							 (drop-repeated l)
-							 l))
+					   (wr-lst (vector->repeatless-list obj)
 						   (let ([col (out "#" col)])
 						     (if print-vec-length?
 							 (out (number->string (vector-length obj)) col)
@@ -598,10 +611,7 @@
 			    (cond
 			     [(pair? obj) (pp-pair obj col extra depth)]
 			     [(vector? obj)
-			      (pp-list (let ([l (vector->list obj)])
-					 (if print-vec-length?
-					     (drop-repeated l)
-					     l))
+			      (pp-list (vector->repeatless-list obj)
 				       (let ([col (out "#" col)])
 					 (if print-vec-length?
 					     (out (number->string (vector-length obj)) col)

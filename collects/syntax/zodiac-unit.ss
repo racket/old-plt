@@ -324,6 +324,7 @@
 		     et-body)
 		    (syntax-property stx 'module-variable-provides)
 		    (syntax-property stx 'module-syntax-provides)
+		    (syntax-property stx 'module-indirect-provides)
 		    (syntax-property stx 'module-kernel-reprovide-hint)
 		    (syntax-property stx 'module-self-path-index)))]
 		[(require i ...)
@@ -665,17 +666,17 @@
 
       (define-struct (module-form struct:parsed) (name requires for-syntax-requires 
 						       body syntax-body 
-						       provides syntax-provides 
+						       provides syntax-provides indirect-provides
 						       kernel-reprovide-hint
 						       self-path-index))
       (define (create-module-form z name rt-requires et-requires 
 				  rt-body et-body 
-				  var-provides syntax-provides 
+				  var-provides syntax-provides indirect-provides
 				  kernel-hint self)
 	(make-module-form (zodiac-stx z) (mk-back) 
 			  name rt-requires et-requires 
 			  rt-body et-body 
-			  var-provides syntax-provides 
+			  var-provides syntax-provides indirect-provides
 			  kernel-hint self))
 
       (define-struct (require/provide-form struct:parsed) ())

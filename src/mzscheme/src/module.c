@@ -1189,7 +1189,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
 
-  if (!SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
+  if (m->prim_et_body || !SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
     /* Set lazy-syntax flag. */
     menv->lazy_syntax = 1;
   }
@@ -1218,15 +1218,29 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 		 exp_env, 0,
 		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
   }
+  
+  if (menv->module->prim_et_body) {
+    Scheme_Invoke_Proc ivk = menv->module->prim_et_body;
+    Scheme_Env *cenv;
 
-  for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    e = SCHEME_CAR(body);
+    /* Top simplify mzc's job, we make up an environment where the
+       syntax table is the same as menv, and the exp_env is exp_env */
+    cenv = MALLOC_ONE_TAGGED(Scheme_Env);
+    cenv->module = menv->module;
+    cenv->syntax = menv->syntax;
+    cenv->exp_env = exp_env;    
 
-    names = SCHEME_VEC_ELS(e)[0];
-    let_depth = SCHEME_INT_VAL(SCHEME_VEC_ELS(e)[2]);
-    e = SCHEME_VEC_ELS(e)[1];
-
-    eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, let_depth, syntax);
+    ivk(cenv, menv->phase, menv->module->self_modidx, menv->module->body);
+  } else {
+    for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+      e = SCHEME_CAR(body);
+      
+      names = SCHEME_VEC_ELS(e)[0];
+      let_depth = SCHEME_INT_VAL(SCHEME_VEC_ELS(e)[2]);
+      e = SCHEME_VEC_ELS(e)[1];
+      
+      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, let_depth, syntax);
+    }
   }
 }
 
@@ -1262,9 +1276,14 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   body = m->body;
 
-  for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    e = scheme_link_expr(SCHEME_CAR(body), menv);
-    _scheme_eval_linked_expr_multi(e);
+  if (menv->module->prim_body) {
+    Scheme_Invoke_Proc ivk = menv->module->prim_body;
+    ivk(menv, menv->phase, menv->module->self_modidx, body);
+  } else {
+    for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+      e = scheme_link_expr(SCHEME_CAR(body), menv);
+      _scheme_eval_linked_expr_multi(e);
+    }
   }
 }
 
@@ -1661,12 +1680,18 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-variable-provides"),
 			       SCHEME_CAR(hints));
+      hints = SCHEME_CDR(hints);
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-syntax-provides"),
-			       SCHEME_CADR(hints));
+			       SCHEME_CAR(hints));
+      hints = SCHEME_CDR(hints);
+      fm = scheme_stx_property(fm, 
+			       scheme_intern_symbol("module-indirect-provides"),
+			       SCHEME_CAR(hints));
+      hints = SCHEME_CDR(hints);
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-kernel-reprovide-hint"),
-			       SCHEME_CADR(SCHEME_CDR(hints)));
+			       SCHEME_CAR(hints));
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-self-index-path"),
 			       self_modidx);
@@ -1689,6 +1714,102 @@ module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
     depth++;
 
   return do_module(form, env, NULL, 0, depth, boundname);
+}
+
+/* The mzc interface: */
+void
+scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc ivk, Scheme_Invoke_Proc sivk, 
+		      void *data, Scheme_Env *env)
+{
+  Scheme_Module *m;
+  Scheme_Object *name, *prefix, *a;
+  Scheme_Object *requires, *et_requires, *kernel_exclusion;
+  Scheme_Object *var_provides, *syntax_provides, *ind_provides, **exs, **exss, **exns;
+  int nvar, nsyntax, i;
+
+  name = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  requires = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  et_requires = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  var_provides = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  syntax_provides = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  ind_provides = SCHEME_CAR(shape);
+  shape = SCHEME_CDR(shape);
+  kernel_exclusion = SCHEME_CAR(shape);
+
+  m = MALLOC_ONE_TAGGED(Scheme_Module);
+  m->type = scheme_module_type;
+
+  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  if (SCHEME_SYMBOLP(prefix))
+    name = scheme_symbol_append(prefix, name);
+  
+  m->modname = name;
+
+  m->requires = requires;
+  m->et_requires = et_requires;
+
+  m->prim_body = ivk;
+  m->prim_et_body = sivk;
+
+  m->body = data;
+
+  nvar = scheme_list_length(var_provides);
+  nsyntax = scheme_list_length(syntax_provides);
+
+  exs = MALLOC_N(Scheme_Object *, nvar + nsyntax);
+  exss = MALLOC_N(Scheme_Object *, nvar + nsyntax);
+  exns = MALLOC_N(Scheme_Object *, nvar + nsyntax);
+
+  var_provides = scheme_append(var_provides, syntax_provides);
+
+  for (i = 0; i < nvar + nsyntax; i++, var_provides = SCHEME_CDR(var_provides)) {
+    a = SCHEME_CAR(var_provides);
+    if (SCHEME_SYMBOLP(a)) {
+      exs[i] = a;
+      exns[i] = a;
+      exss[i] = scheme_false; /* means "self" */
+    } else if (SCHEME_SYMBOLP(SCHEME_CDR(a))) {
+      exs[i] = SCHEME_CDR(a);
+      exns[i] = SCHEME_CAR(a);
+      exss[i] = scheme_false; /* means "self" */
+    } else {
+      exss[i] = SCHEME_CAR(a);
+      a = SCHEME_CDR(a);
+      exs[i] = SCHEME_CDR(a);
+      exns[i] = SCHEME_CAR(a);
+    }
+  }
+
+  m->provides = exs;
+  m->provide_srcs = exss;
+  m->provide_src_names = exns;
+  m->num_provides = nvar + nsyntax;
+  m->num_var_provides = nvar;
+
+  m->reprovide_kernel = SCHEME_TRUEP(kernel_exclusion);
+  m->kernel_exclusion = kernel_exclusion;
+  
+  nvar = scheme_list_length(ind_provides);
+  if (nvar) {
+    exs = MALLOC_N(Scheme_Object *, nvar);
+    for (i = 0; i < nvar; i++, ind_provides = SCHEME_CDR(ind_provides)) {
+      exs[i] = SCHEME_CAR(ind_provides);
+    }
+  } else
+    exs = NULL;
+
+  m->indirect_provides = exs;
+  m->num_indirect_provides = nvar;
+
+  a = scheme_make_modidx(scheme_false, scheme_false, m->modname);
+  m->self_modidx = a;
+
+  scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 }
 
 /**********************************************************************/
@@ -2536,6 +2657,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
        for module information:
          'module-variable-provides = '(export-var-item ...)
          'module-syntax-provides = '(export-var-item ...)
+	 'module-indirect-provides = '(id ...)
          'module-kernel-reprovide-hint = 'kernel-reexport
 
       item = name
@@ -2558,6 +2680,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	result = scheme_make_pair(scheme_true, result);
     } else
       result = scheme_make_pair(scheme_false, result);
+
+    /* Indirect provides */ 
+    a = scheme_null;
+    for (j = 0; j < exicount; j++) {
+      a = scheme_make_pair(exis[j], a);
+    }
+    result = scheme_make_pair(a, result);
     
     /* add syntax and value exports: */
     for (j = 0; j < 2; j++) {

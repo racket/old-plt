@@ -158,6 +158,10 @@ extern void scheme_regexp_initialize(Scheme_Env *env);
 #endif
 void scheme_init_getenv(void);
 
+/* Type readers & writers for compiled code data */
+typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
+typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
+
 extern Scheme_Type_Reader *scheme_type_readers;
 extern Scheme_Type_Writer *scheme_type_writers;
 
@@ -1513,7 +1517,10 @@ typedef struct Scheme_Module
   Scheme_Object *et_requires; /* list of module access paths */
   Scheme_Object *requires;    /* list of module access paths */
 
-  Scheme_Object *body;
+  Scheme_Invoke_Proc prim_body;
+  Scheme_Invoke_Proc prim_et_body;
+
+  Scheme_Object *body;        /* or data, if prim_body */
   Scheme_Object *et_body;
 
   Scheme_Object **provides;          /* symbols (extenal names) */

@@ -252,6 +252,7 @@ scheme_save_initial_module_set
 scheme_primitive_module
 scheme_finish_primitive_module
 scheme_make_modidx
+scheme_declare_module
 scheme_intern_symbol
 scheme_intern_exact_symbol
 scheme_make_symbol

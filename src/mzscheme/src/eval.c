@@ -530,7 +530,8 @@ int scheme_omittable_expr(Scheme_Object *o)
       || (vtype == scheme_local_type)
       || (vtype == scheme_local_unbox_type)
       || (vtype == scheme_unclosed_procedure_type)
-      || (vtype == scheme_compiled_unclosed_procedure_type))
+      || (vtype == scheme_compiled_unclosed_procedure_type)
+      || (vtype == scheme_case_lambda_sequence_type))
     return 1;
 
   if ((vtype == scheme_branch_type)) {
@@ -941,6 +942,10 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 {
   int i;
+
+  /* Change (begin e1 ... (set!-for-let [x 10] (void)) e2 ...)
+     to (begin e1 ... (set!-for-let [x 10] e2 ...)), which 
+     avoids an unneeded recursive call in the evaluator */
 
   for (i = 0; i < s->count - 1; i++) {
     Scheme_Object *v;

@@ -1302,7 +1302,7 @@
 	       [(vm:module-create? ast)
 		(emit-expr "scheme_declare_module(")
 		(process (vm:module-create-shape ast) indent-level #f #f)
-		(emit ", module_invoke_~a, module_invoke_syntax_~a, PLS"
+		(emit ", module_invoke_~a, module_invoke_syntax_~a, PLS, SCHEME_CURRENT_ENV(pr)"
 		      (vm:module-create-id ast) (vm:module-create-id ast))
 		(emit ")")]
 

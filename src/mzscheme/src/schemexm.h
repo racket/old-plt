@@ -316,6 +316,7 @@
 #define scheme_primitive_module (scheme_extension_table->scheme_primitive_module)
 #define scheme_finish_primitive_module (scheme_extension_table->scheme_finish_primitive_module)
 #define scheme_make_modidx (scheme_extension_table->scheme_make_modidx)
+#define scheme_declare_module (scheme_extension_table->scheme_declare_module)
 #define scheme_intern_symbol (scheme_extension_table->scheme_intern_symbol)
 #define scheme_intern_exact_symbol (scheme_extension_table->scheme_intern_exact_symbol)
 #define scheme_make_symbol (scheme_extension_table->scheme_make_symbol)

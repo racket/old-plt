@@ -263,7 +263,7 @@
 	   (syntax/loc expr (define-syntaxes (name ...) marked)))]
 
 	;; Just wrap body expressions
-	[(module name init-import (#%plain-module-begin module-data body ...))
+	[(module name init-import (#%plain-module-begin body ...))
 	 top?
 	 (with-syntax ([bodyl
 			(map (lambda (b)

@@ -72,7 +72,7 @@
       ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
       ("mzc" . "PLT mzc: MzScheme Compiler Manual")
       ("srfi" . "SRFI documents inside PLT")
-      ;; ("teachpack" . "Teachpacks for How to Design Programs")
+      ("teachpack" . "Teachpacks for How to Design Programs")
       ("tools" . "PLT Tools: DrScheme Extension Manual")
       ("tour" . "A Brief Tour of DrScheme version 205")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")

@@ -428,7 +428,7 @@
       ;; if the continuation-capture is attempted in tail position then we
       ;; should be just fine.
       (make-test-case
-       "continuation capture from a tail call"
+       "continuation capture from tail position of untranslated procedure"
        
        (let ([ta-eval
               (make-module-eval
@@ -449,7 +449,53 @@
          
          (assert = 2 (ta-eval '(dispatch-start 1)))))
       
-      ;; TODO: send/suspend has an implicit call/cc hardcoded into it.
-      ;; so need to duplicate the tests above but with send/suspend.
+      (make-test-case
+       "attempt send/suspend from standard call to map"
+       
+       (let ([m13-eval
+              (make-module-eval
+               (module m11 "../persistent-interaction.ss"
+                 (define (id x) x)
+                 
+                 (let ([ignore (start-interaction car)])
+                   (map
+                    (lambda (n) (send/suspend
+                                 (lambda (k)
+                                   (let ([ignore (printf "n = ~s~n" n)])
+                                     k))))
+                    (list 1 2 3)))))])
+
+         (assert-true (catch-unsafe-context-exn
+                       (lambda () (m13-eval '(dispatch-start 'foo)))))))
+      
+      (make-test-case
+       "attempt send/suspend from tail position of untranslated procedure"
+       
+       (let ([ta-eval
+              (make-module-eval
+               (module ta mzscheme
+                 (provide tail-apply)
+               
+                 (define (tail-apply f . args)
+                   (apply f args))))])
+         
+         (ta-eval '(module m14 "../persistent-interaction.ss"
+                     (require ta)
+                     
+                     (let ([ignore (start-interaction car)])
+                       (+ 1 (tail-apply
+                             (lambda (n)
+                               (cadr
+                                (send/suspend
+                                 (lambda (k)
+                                   (let ([ignore (printf "n = ~s~n" n)])
+                                     k))))) 7)))))
+         (ta-eval '(require m14))
+         
+         (let ([k0 (ta-eval '(dispatch-start 'foo))])
+           (assert = 3 (ta-eval `(dispatch (list ,k0 2))))
+           (assert = 0 (ta-eval `(dispatch (list ,k0 -1)))))))
+               
+       
       
       ))))

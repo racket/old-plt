@@ -541,6 +541,7 @@ void scheme_wrong_syntax(const char *where,
 
 
   if (form) 
+    /* don't use error_write_to_string_w_max since this is code */
     v = scheme_write_to_string_w_max(form, NULL, len);
   else {
     form = scheme_false;
@@ -548,6 +549,7 @@ void scheme_wrong_syntax(const char *where,
   }
 
   if (detail_form)
+    /* don't use error_write_to_string_w_max since this is code */
     dv = scheme_write_to_string_w_max(detail_form, NULL, len);
   else
     dv = NULL;

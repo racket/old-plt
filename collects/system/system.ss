@@ -60,7 +60,7 @@
       (lambda ()
 	(set! mred:debug:new-eval (make-eval 'wx))
 	(set! mred:make-application@ mred:non-unit-make-application@)
-	(mred:load-zo/ss "link")
+	(load-recent "link")
 	(for-each (lambda (id) 
 		     (let ([value (global-defined-value id)])
 		       (printf "defining ~a~n" id)
@@ -130,26 +130,9 @@
 (constant mred:plt-home-directory)
 (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
 
-(define mred:load-zo/ss
-  (lambda (x)
-    (let/ec k
-      (let* ([ss-file (string-append x ".ss")]
-	     [zo-file (string-append x ".zo")]
-	     [file (cond
-		    [(and (not (file-exists? ss-file))
-			  (not (file-exists? zo-file)))
-		     (printf "WARNING: cannot find: ~a or ~a.~n" ss-file zo-file)
-		     (k #f)]
-		    [(not (file-exists? ss-file)) zo-file]
-		    [(not (file-exists? zo-file)) ss-file]
-		    [(<= (file-modify-seconds ss-file)
-			 (file-modify-seconds zo-file))
-		     zo-file]
-		    [else ss-file])])
-	(load/cd file)
-	#t))))
+(require-library (build-path mred:plt-home-directory "lib" "require.ss"))
 
-(for-each mred:load-zo/ss
+(for-each load-recent
 	  (list "sig" "macros"
 
 		;; standard system units

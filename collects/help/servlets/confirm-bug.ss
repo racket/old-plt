@@ -9,8 +9,21 @@
 
   (define error-color "red")
 
+  (define how-to-repeat-label "How to repeat")
+  (define description-label "Description")
+
   (define (make-field-entry label val)
-    `(TR (TD (B ,label ": ")) (TD ,val)))
+    (let ([text-field?
+	   (member label 
+		   `(,how-to-repeat-label ,description-label))])
+    `(TR ,(if text-field?
+	      '((VALIGN "top"))
+	      '())
+	 (TD (B ,label ": "))
+	 (TD
+	  ,(if text-field?
+	      `(PRE ,val)
+	      val)))))
 
   (define (make-field-entry-from-pair pr)
     (make-field-entry (car pr) (cadr pr)))
@@ -54,8 +67,6 @@
 	   (set! missing-fields
 		(cons "Description or Steps to reproduce"
 		      missing-fields)))
-
-
 
      (cond 
       [(not (null? missing-fields))
@@ -136,15 +147,16 @@
 		    ("Severity" ,severity)
 		    ("Bug class" ,bug-class)
 		    ("Priority" ,priority)
-		    ("Description" ,description)
-		    ("How to repeat" ,how-to-repeat))))
+		    (,description-label ,description)
+		    (,how-to-repeat-label ,how-to-repeat))))
 	  (P)
 	  (B "The following information has been extracted from your "
 	     "PLT Scheme installation, and will be sent with your bug report.")
 	  (P)
 	  (TABLE 
 	   ((COLS "2")
-	    (BORDER "2"))
+	    (BORDER "2")
+	    (WIDTH "85%"))
 	   ,@(map make-synth-entry 
 		  '(("PLT version" version)
 		    ("Environment" environment)

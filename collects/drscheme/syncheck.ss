@@ -1000,7 +1000,7 @@
             (open-status-line 'drscheme:check-syntax)
             (update-status-line 'drscheme:check-syntax status-init)
             (let-values ([(expanded-expression expansion-completed) (make-traversal)]
-                         [(old-break-thread old-kill-eventspace) (get-breakables)])
+                         [(old-break-thread old-custodian) (get-breakables)])
               (let* ([definitions-text (get-definitions-text)]
                      [drs-eventspace (current-eventspace)]
                      [user-namespace #f]
@@ -1009,7 +1009,7 @@
                      [normal-termination? #f]
                      [cleanup
                       (lambda () ; =drs=
-                        (set-breakables old-break-thread old-kill-eventspace)
+                        (set-breakables old-break-thread old-custodian)
                         (enable-evaluation)
                         (send definitions-text end-edit-sequence)
                         (close-status-line 'drscheme:check-syntax))]

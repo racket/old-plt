@@ -601,7 +601,7 @@ static void finalize_eagers(int eager_level)
 	     with eager finalizations. Otherwise, this mark bit
 	     could break the chain from one (non-eager) finalizeable
 	     to another. */
-	  (*(curr_fo -> fo_mark_proc))(real_ptr);
+	  GC_set_mark_bit(real_ptr);
 	  
 	  /* Delete from hash table */
 	  next_fo = fo_next(curr_fo);

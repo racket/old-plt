@@ -23,6 +23,42 @@
 	    (wx:get-font-from-user prompt init)
 	    (wx:message-box "not yet implemented"))))
 
+    (define get-text-from-user
+      (opt-lambda (message [caption "Input text"]
+			   [default-value ""]
+			   [parent null]
+			   [x -1] [y -1]
+			   [center? #t])
+	(let* ([f (make-object mred:container:dialog-box% parent caption #t x y)]
+	       [p (make-object mred:container:vertical-panel% f)])
+	  (if center?
+	      (make-object mred:container:message% p message)
+	      (let ([mp (make-object mred:container:horizontal-panel% p)])
+		(make-object mred:container:message% mp message)
+		(make-object mred:container:horizontal-panel% mp)))
+	  (let* ([c (make-object mred:canvas:one-line-canvas% p)]
+		 [e (make-object mred:edit:edit%)]
+		 [bp (make-object mred:container:horizontal-panel% p)]
+		 [_ (make-object mred:container:horizontal-panel% bp)]
+		 [hit-ok? #t]
+		 [cancel (make-object mred:container:button% bp
+				      (lambda (b evt)
+					(set! hit-ok? #f)
+					(send f show #f))
+				      "Cancel")]
+		 [ok (make-object mred:container:button% bp
+				  (lambda (b evt) (send f show #f))
+				  "OK")])
+	    (send* e
+	      (insert default-value)
+	      (set-position 0 (string-length default-value)))
+	    (send* c (set-lines 3) (set-media e) (set-focus))
+	    (send ok user-min-width (send cancel user-min-width))
+	    (send f set-size 20 20 -1 -1)
+	    (send f show #t)
+	    (and hit-ok?
+		(send e get-text))))))
+
     (define message-box
       (let ([e% (class-asi mred:edit:edit%
 		  (public

@@ -158,6 +158,7 @@
 (define-signature mred:gui-utils^
   (get-font-from-user
    get-colour-from-user
+   get-text-from-user
    message-box
    cursor-delay
    show-busy-cursor

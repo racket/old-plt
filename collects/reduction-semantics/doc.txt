@@ -31,9 +31,6 @@ this tool:
   proof in the Contracts for Higher Order Functions paper
   (ICFP 2002).
 
-  _ho-contracts-pp.scm_: the pretty printer for
-  ho-contracts.ss. 
-
   _macro.ss_: models macro expansion as a reduction semantics.
 
   _omega.ss_: the call by value lambda calculus and omega.
@@ -105,14 +102,14 @@ _name_: The pattern:
 
   (name <symbol> <pattern>)
 
-matches <pattern> and binds it to the name <symbol>. 
+matches <pattern> and binds using it to the name <symbol>. 
 
 _in-hole_: The (in-hole <pattern> <pattern>) matches the first
 pattern. This match must include exactly one match against the `hole'
 pattern. The `hole' pattern matches any sexpression. Then, the
 sexpression that matched the hole pattern is used to match against the
-second pattern. The in-hole pattern also binds `hole' in the
-right-hand side of a reduction.
+second pattern. The in-hole pattern also binds `hole' using `term-let' 
+in the right-hand side of a reduction.
 
 _in-hole*_: The (in-hole* <symbol> <pattern> <pattern>) is just like
 the in-hole pattern, except that you can specify the name to be
@@ -151,7 +148,8 @@ _side-condition_: The (side-condition pattern guard) pattern matches
 what the embedded pattern matches, and then the guard expression is
 evaluated. If it returns #f, the pattern fails to match, and if it
 returns anything else, the pattern matches. In addition, any
-occurrences of `name' in the pattern will be bound in the guard.
+occurrences of `name' in the pattern are bound using `term-let'
+(see below) in the guard.
 
 _cross_: The (cross <symbol>) pattern is used for the compatible
 closure functions. If the language contains a non-terminal with the
@@ -192,6 +190,50 @@ evaluation contexts and v for values.
 Returns #t if its argument was produced by `language', #f
 otherwise.
 
+
+> (term-let ([id-pat expr] ...) body)           SYNTAX
+
+id-pat ::= id | (id-pat ...)
+
+Binds each id to the value yielded by evaluating the
+corresponding expr such that the ids are accessible to the 
+term syntactic form described below. Identifier-patterns 
+indicate the ellipsis-depth of each identifier; 
+every identifier inside an ellipsis must be bound to a 
+list with nested depth at least equal to the 
+ellipsis-depth 
+
+> (term s-expr)                                 SYNTAX
+
+This form is a dual to patterns for use in building new terms
+or accessing the values introduced by pattern matches. It 
+behaves identically to quasiquote except that names bound by
+`term-let' are implicitly substituted with the values those
+names were bound to, expanding ellipses as in-place sublists
+in the same manner as right-hand sides of syntax-case
+patterns.
+
+For example,
+
+(term-let ([body '(+ x 1)]
+           [(expr ...) '(+ - (values * /))]
+           [((id ...) ...) '((a) (b) (c d))])
+  (term (let-values ([(id ...) expr] ...) body)))
+
+evaluates to
+
+'(let-values ([(a) +] 
+              [(b) -] 
+              [(c d) (values * /)]) 
+   (+ x 1))
+
+It is an error for a term variable to appear in an 
+expression with an ellipsis-depth different from the
+depth with which it was bound by `term-let'. It is also
+an error for two `term-let'-bound identifiers bound to lists
+of different lengths to appear together inside any
+term expression followed by an ellipsis.
+
 > (reduction language pattern bodies ...)       SYNTAX
 
 This form defines a reduction. The first position must
@@ -206,29 +248,24 @@ would be written like this:
 
      (reduction lc-lang
                 (in-hole (name c c)
-                         ((lambda ((name xs variable) ...) (name body e))
-                          (name args v) ...))
-                (replace c hole 
-                 (foldl lc-subst body args xs)))
-
-The first name is the lang definition from above. The second
-argument is a pattern for an evaluation context. Here's how
-it looks without the `name' patterns:
-
-                (in-hole c
-                         ((lambda (variable ...) e)
-                          v ...))
+                         ((lambda (variable_i ...) e_body)
+                          v_i ...))
+                (replace (term c) (term hole) 
+                 (foldl lc-subst (term e_body) 
+                                 (term (v_i ...)) 
+                                 (term (variable_i ...)))))
 
 The in-hole pattern matches a term against `c', and binds
 what matches the hole to `hole'. Then, it matches what
 matched the hole against ((lambda (variable) e) v).
 
-With the name patterns restored, c, hole, xs, body, and args
-are bound in the right hand side of the reduction. Then,
-when the reduction matches, the result is the result of
-evaluating the last argument to reduction. See `replace'
-below and lc-subst is defined by using the subst.ss library
-below.
+Because of the name pattern and the subscripted variable names
+we used, c, hole, variable_i, e_body, and v_i
+are bound with `term-let' in the right hand side of the 
+reduction. Then, when the reduction matches, the result is 
+the result of evaluating the last argument to reduction. 
+See `replace' below and lc-subst is defined by using the 
+subst.ss library below.
 
 > (reduction/context language context pattern bodies ...)   SYNTAX
 
@@ -240,8 +277,10 @@ example is this:
      (reduction/context 
       lang
       c
-      ((lambda ((name x variable)) (name body e)) (name arg v))
-      (lc-subst x arg body))
+      ((lambda (variable_i ...) e_body) v_i ...)
+      (lc-subst (term (variable_i ...))
+                (term (v_i ...))
+                (term e_body))))
 
 > red? : (any? . -> . boolean?)
 

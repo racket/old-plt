@@ -56,6 +56,8 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
       (get-remote-version)
       (version)))
 
+(printf "Installation version ~a\n" vers)
+
 (define-struct pr (from to))
 
 (define plt-relative-files

@@ -336,7 +336,7 @@
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
-	            (init-transparent-io)
+	            (init-transparent-io #f)
 		    (send transparent-edit 
 			  generic-write s 
 			  (lambda (start end)
@@ -374,38 +374,42 @@
 	       (super-set-auto-set-wrap x)
 	       (for-each (lambda (c) (send c widen-snips x)) canvases))]
 	    [init-transparent-io
-	     (lambda ()
+	     (lambda (grab-focus?)
 	       (unless transparent-edit
-		 (when prompt-mode?
-		   (set! prompt-mode? #f)
-		   (insert #\newline))
-		 (set! transparent-edit (make-object transparent-io-edit%))
-		 (send transparent-edit enable-autoprompt #f)
-		 (dynamic-wind
-		  (lambda () (begin-edit-sequence #f))
-		  (lambda ()		  
-		    (send transparent-edit set-auto-set-wrap #t)
-		    (let ([snip (make-object wx:media-snip% transparent-edit)])
-		      (insert snip)
-		      (insert #\newline)
-		      (for-each (lambda (c) (send c add-wide-snip snip))
-				canvases))
-		    (let ([a (send transparent-edit get-admin)])
-		      (unless (null? a)
-			(send a grab-caret))))
-		  (lambda () (end-edit-sequence)))
-		 (set! prompt-position (last-position))))]
+		 (let ([starting-at-prompt-mode? prompt-mode?])
+		   (set! transparent-edit (make-object transparent-io-edit%))
+		   (send transparent-edit enable-autoprompt #f)
+		   (dynamic-wind
+		    (lambda () (begin-edit-sequence #f))
+		    (lambda ()		  
+		      (when starting-at-prompt-mode?
+			(set! prompt-mode? #f)
+			(insert #\newline))
+		      (send transparent-edit set-auto-set-wrap #t)
+		      (let ([snip (make-object wx:media-snip% transparent-edit)])
+			(insert snip)
+			(insert #\newline)
+			(for-each (lambda (c) (send c add-wide-snip snip))
+				  canvases))
+		      (when grab-focus?
+			(let ([a (send transparent-edit get-admin)])
+			  (unless (null? a)
+			    (send a grab-caret))))
+		      (when starting-at-prompt-mode?
+			(insert-prompt)))
+		    (lambda () (end-edit-sequence)))
+		   (set! prompt-position (last-position)))))]
 	    [single-threader (make-single-threader)]
 	    [this-in-read
 	     (let* ([g (lambda ()
-			 (init-transparent-io)
+			 (init-transparent-io #t)
 			 (send transparent-edit fetch-char))]
 		    [f (lambda () (mzlib:function:dynamic-delay-break g))])
 	       (lambda ()
 		 (single-threader f)))]
 	    [transparent-read
 	     (let* ([g (lambda ()
-			 (init-transparent-io)
+			 (init-transparent-io #t)
 			 (send transparent-edit fetch-sexp))]
 		    [f (lambda ()
 			 (mzlib:function:dynamic-delay-break g))])
@@ -590,6 +594,7 @@
 			(if balanced?
 			    (begin
 			      (delete start last)
+			      (cleanup-transparent-io)
 			      (do-save-and-eval prompt-position start))
 			    (super-on-local-char key)))]
 		     [(< start prompt-position)
@@ -603,7 +608,6 @@
 	      
 	      [insert-prompt
 	       (lambda ()
-		 (cleanup-transparent-io)
 		 (set! prompt-mode? #t)
 		 (let* ([last (last-position)]
 			[start-selection (get-start-position)]
@@ -635,9 +639,10 @@
 		     (set! prompt-position (- prompt-position len)))
 		 (super-after-delete start len))])
 	    
-	    (private
+	    (public
 	      [reset-console-start-position 0]
-	      [reset-console-end-position #f]
+	      [reset-console-end-position #f])
+	  (private
 	      [reset-console-end-location #f]
 	      [reset-console-start-location #f]
 	      [reset-console-locations

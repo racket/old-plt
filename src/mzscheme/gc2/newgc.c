@@ -1170,15 +1170,15 @@ void GC_init_type_tags(int count, int weakbox)
 #ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);     
 #endif
-#ifdef NEED_OSX_SIGBUS
-    {
-      struct sigaction act, oact;
-      act.sa_handler = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_RESTART;
-      sigaction(SIGBUS, &act, &oact);
-    }
-#endif
+/* #ifdef NEED_OSX_SIGBUS */
+/*     { */
+/*       struct sigaction act, oact; */
+/*       act.sa_handler = fault_handler; */
+/*       sigemptyset(&act.sa_mask); */
+/*       act.sa_flags = SA_RESTART; */
+/*       sigaction(SIGBUS, &act, &oact); */
+/*     } */
+/* #endif */
 #ifdef NEED_SIGACTION
     {
       struct sigaction act, oact;
@@ -2493,7 +2493,7 @@ inline static void mark_all_roots(void)
   /* first clear out all the memory_use values for this top */
   for(i = 0; i < owner_table_top; i++) 
     if(owner_table[i]) 
-      for(j = 0; j <= collection_top; j++)
+      for(j = 0; j < collection_top; j++)
 	owner_table[i]->memory_use[j] = 0;
   /* and set up the data in the thread list */
   prepare_thread_list_for_collection();
@@ -2510,6 +2510,7 @@ inline static void mark_all_roots(void)
   while(cur) {
     int owner = custodian_to_owner_set(cur);
 
+    SET_CURRENT_MARK_OWNER(owner);
     owner_table[owner]->finalizers = 
       mark_finalizers(owner_table[owner]->finalizers, 0);
     mark_roots(owner_table[owner]->roots);
@@ -2635,11 +2636,11 @@ inline static void free_and_protect_pages(void)
   collection_from_pages = NULL;
 
   /* protect the new pages */
-  for(i = 1; i < GENERATIONS; i++) 
-    for(j = 0; j < MPAGE_TYPES; j++)
-      if(j != MPAGE_ATOMIC)
-        for(work = pages[i][j]; work; work = work->next)
-          protect_pages(work, work->size, 0); 
+/*   for(i = 1; i < GENERATIONS; i++)  */
+/*     for(j = 0; j < MPAGE_TYPES; j++) */
+/*       if(j != MPAGE_ATOMIC) */
+/*         for(work = pages[i][j]; work; work = work->next) */
+/*           protect_pages(work, work->size, 0);  */
 }
 
 static void garbage_collect(int force_full) 
@@ -2647,6 +2648,7 @@ static void garbage_collect(int force_full)
   unsigned short i;
 
   force_full = force_full | SUGGEST_FORCE_FULL();
+  force_full = 1;
   if(GC_collect_start_callback) GC_collect_start_callback();
   if(force_full) collection_top = (GENERATIONS - 1); else 
     collection_top = COMPUTE_COLLECTION_TOP(collection_number);
@@ -2655,8 +2657,7 @@ static void garbage_collect(int force_full)
   INIT_DEBUG_FILE();
   GC_DEBUG("Before collection (top = %i)\n", collection_top);
   DUMP_HEAP();
-/*   printf("Collection #%li starting (top = %i)", collection_number, collection_top);  */
-/*   fflush(stdout); */
+  printf("Collection #%li starting (top = %i)\n", collection_number, collection_top);
 
   prepare_pages_for_collection();
   mark_all_roots();
@@ -2682,6 +2683,7 @@ static void garbage_collect(int force_full)
 
   GC_DEBUG("After collection (top = %i)\n", collection_top);
   DUMP_HEAP();
+  printf("After collection (top = %i\n", collection_top); fflush(stdout);
 
   /* run any queued finalizers */
   if(!running_finalizers) {

@@ -946,8 +946,7 @@ static int tcp_char_ready (Scheme_Input_Port *port)
 #endif
 
 #ifdef USE_MAC_TCP
-  if ((data->tcp.state == SOCK_STATE_CONNECTED)
-      (data->tcp.state == SOCK_STATE_OUTPUT_CLOSED)) {
+  if ((data->tcp.state == SOCK_STATE_CONNECTED)) {
     /* socket is connected */
     TCPiopbX *xpb;
     TCPiopb *pb;
@@ -1204,7 +1203,8 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 #endif
 #ifdef USE_MAC_TCP
   errid = 0;
-  if (data->tcp.state == SOCK_STATE_CONNECTED) {
+  if ((data->tcp.state == SOCK_STATE_CONNECTED) ||
+      (data->tcp.state == SOCK_STATE_OUTPUT_CLOSED)) {
     /* socket is connected */
     TCPiopbX *xpb;
     TCPiopb *pb;

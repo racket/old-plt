@@ -32,6 +32,7 @@
      "Mario Latendresse, "
      "Scott Owens, "
      "Jamie Raymond, "
+     "Paul Schlie, "
      "Dorai Sitaram, "
      "Mike Sperber, "
      "Francisco Solsona, "
@@ -41,7 +42,7 @@
      "Noel Welsh, "
      "and "
      "Adam Wick "
-     "for contributions of prototypes, libraries, and criticism of PLT documentation."))
+     "for contributions of prototypes, libraries, testing, and criticism of PLT documentation."))
 
   (define (get-translating-acks)
     (string-append

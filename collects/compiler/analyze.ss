@@ -526,9 +526,9 @@
 						(code-free-vars code))
 				 locals-used))
 		(set! captured-vars
-		      (set-union (code-captured-vars code)
-				 (set-union (code-free-vars code)
-					    captured-vars)))
+		      (set-union (set-minus (code-free-vars code)
+					    local-vars)
+				 captured-vars))
 		
 		; If there are no free vars, this closure will be lifted
 		; out of the current expression, so don't add global
@@ -558,8 +558,8 @@
 							(code-local-vars code)))
 		  (set-code-global-vars! code (set-union global-vars
 							 (code-global-vars code)))
-		  (set-code-captured-vars! code (set-union used-vars
-							   (code-used-vars code)))
+		  (set-code-used-vars! code (set-union used-vars
+						       (code-used-vars code)))
 		  (set-code-captured-vars! code (set-union captured-vars
 							   (code-captured-vars code)))
 		  (set-code-children! code children)

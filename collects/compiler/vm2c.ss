@@ -880,7 +880,7 @@
 			(list->set imports)
 			(list->set import-anchors))]
 	   [used-imports (set-intersect
-			  (code-captured-vars code)
+			  (code-used-vars code)
 			  import-set)])
 
       ; Only unpack import & import-anchors if they are used

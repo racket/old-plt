@@ -69,6 +69,15 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
+ * _GCalc_ - Not really a game, but a demonstration of "concrete
+   abstractions".  See
+     http://www.grame.fr/Research/GCalcul/Graphic_Calculus.html
+     ftp://ftp.grame.fr/pub/Documents/ICMC94LambdaCalc.pdf
+   for the theoretic details, and see the doc.txt file for usage
+   instructions.
+
+                                              - by Eli
+
 
 Implementing new Games
 ----------------------

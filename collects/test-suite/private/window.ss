@@ -1,4 +1,4 @@
-;; note:   It bothers me that this file references the frame:standard-menus as it is merely a base
+;; note:  It bothers me that this file references the frame:standard-menus as it is merely a base
 ;;       window class and should allow the layout mixin to define the fact that it has standard menus
 
 (module window mzscheme

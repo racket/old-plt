@@ -23,16 +23,13 @@ to the original stdout of DrScheme.
   (provide tool@)
   
   (define o (current-output-port))
+  (define (oprintf . args) (apply fprintf o args))
   
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
       (define (phase1) (void))
-      
-      (define (printf . args)
-        (apply fprintf o args))
-      
       
       (define htdp-language<%>
         (interface ()
@@ -377,12 +374,22 @@ to the original stdout of DrScheme.
       
       (define test-coverage-enabled (make-parameter #t))
       (define current-test-coverage-info (make-parameter #f))
+      
       (define (initialize-test-coverage-point key expr)
         (unless (current-test-coverage-info)
 	  (let ([ht (make-hash-table)])
 	    (current-test-coverage-info ht)
-	    (send (drscheme:rep:current-rep) set-test-coverage-info ht)))
+	    (send (drscheme:rep:current-rep) set-test-coverage-info
+                  ht
+                  (let ([s (make-object style-delta%)])
+                    (send s set-delta-foreground "black")
+                    s)
+                  (let ([s (make-object style-delta%)])
+                    (send s set-delta-foreground "firebrick")
+                    s)
+                  #f)))
         (hash-table-put! (current-test-coverage-info) key (list #f expr)))
+      
       (define (test-covered key)
         (let ([v (hash-table-get (current-test-coverage-info) key)])
           (set-car! v #t)))

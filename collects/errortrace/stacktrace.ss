@@ -1,3 +1,4 @@
+
 (module stacktrace mzscheme
   (require (lib "unitsig.ss")
            (lib "kerncase.ss" "syntax")
@@ -34,27 +35,11 @@
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Test case coverage instrumenter
 
-      ;; The next three procedures are called by `annotate' and `annotate-top' to wrap
+      ;; The next procedure is called by `annotate' and `annotate-top' to wrap
       ;; expressions with test suite coverage information.  Returning the
       ;; first argument means no tests coverage information is collected.
-
-      ;; test-coverage-point/seq : syntax[list of expressions] syntax[original expression] -> 
-      ;;                           syntax[list of expressions]
-      ;; sets a test coverage point when there is an implicit begin somewhere
-      (define (test-coverage-point/seq bodies expr)
-        (if (test-coverage-enabled)
-            (let ([key (gensym 'test-coverage-point/seq)])
-              (initialize-test-coverage-point key expr)
-              (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
-                            [bodies bodies]
-                            [test-covered test-covered])
-                (syntax
-                 ((test-covered 'key)
-                  .
-                  bodies))))
-            bodies))
       
-      ;; test-coverage-point : syntax syntax[original expression] -> syntax
+      ;; test-coverage-point : syntax syntax -> syntax
       ;; sets a test coverage point for a single expression
       (define (test-coverage-point body expr)
         (if (test-coverage-enabled)
@@ -68,12 +53,6 @@
                    (test-covered 'key)
                    body))))
             body))
-      
-      (define (test-coverage-annotate-lambda entire-expr expr)
-        (syntax-case expr ()
-          [(args bodies ...)
-           (with-syntax ([(new-bodies ...) (test-coverage-point/seq (syntax (bodies ...)) entire-expr)])
-             (syntax (args new-bodies ...)))]))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Profiling instrumenter
@@ -228,187 +207,178 @@
       
       (define (make-annotate top? name)
         (lambda (expr trans?)
-          (kernel-syntax-case expr trans?
-                              [_
-                               (identifier? expr)
-                               (if (eq? 'lexical (identifier-binding expr))
-                                   ;; lexical variable - no error possile
-                                   expr
-                                   ;; might be undefined/uninitialized
-                                   (with-mark expr make-st-mark expr))]
-                              
-                              [(#%top . _)
-                               ;; might be undefined/uninitialized
-                               (with-mark expr make-st-mark expr)]
-                              [(#%datum . _)
-                               ;; no error possible
-                               expr]
-                              
-                              ;; Can't put annotation on the outside
-                              [(define-values names rhs)
-                               top?
-                               (with-syntax ([marked (with-mark expr
-								make-st-mark
-                                                                (annotate-named
-                                                                 (syntax-case (syntax names) ()
-                                                                   [(id)
-                                                                    (syntax id)]
-                                                                   [_else #f])
-                                                                 (syntax rhs)
-                                                                 trans?))])
-                                 (syntax/loc expr (define-values names marked)))]
-                              [(begin . exprs)
-                               top?
-                               (annotate-seq
-                                trans? expr (quote-syntax begin)
-                                (syntax exprs)
-                                annotate-top)]
-                              [(define-syntaxes (name ...) rhs)
-                               top?
-                               (with-syntax ([marked (with-mark expr
-								make-st-mark
-                                                                (annotate-named
-                                                                 (let ([l (syntax->list (syntax (name ...)))])
-                                                                   (and (pair? l)
-                                                                        (null? (cdr l))
-                                                                        (car l)))
-                                                                 (syntax rhs)
-                                                                 #t))])
-                                 (syntax/loc expr (define-syntaxes (name ...) marked)))]
-                              
-                              ;; Just wrap body expressions
-                              [(module name init-import (#%plain-module-begin body ...))
-                               top?
-                               (with-syntax ([bodyl
-                                              (map (lambda (b)
-                                                     (annotate-top b trans?))
-                                                   (syntax->list (syntax (body ...))))])
-                                 (datum->syntax-object
-                                  expr
-                                  ;; Preserve original #%module-begin:
-                                  (list (syntax module) (syntax name) (syntax init-import) 
-                                        (cons (syntax #%plain-module-begin) (syntax bodyl)))
-                                  expr))]
-                              
-                              ;; No way to wrap
-                              [(require i ...) expr]
-                              [(require-for-syntax i ...) expr]
-                              ;; No error possible (and no way to wrap)
-                              [(provide i ...) expr]
-                              
-                              ;; No error possible
-                              [(quote _)
-                               expr]
-                              [(quote-syntax _)
-                               expr]
-                              
-                              ;; Wrap body, also a profile point
-                              [(lambda args . body)
-                               (with-syntax ([cl 
-                                              (test-coverage-annotate-lambda
-                                               expr
-                                               (profile-annotate-lambda 
-                                                name expr 
-                                                (syntax args) (syntax body) 
+          (test-coverage-point 
+           (kernel-syntax-case expr trans?
+             [_
+              (identifier? expr)
+              (if (eq? 'lexical (identifier-binding expr))
+                  ;; lexical variable - no error possile
+                  expr
+                  ;; might be undefined/uninitialized
+                  (with-mark expr make-st-mark expr))]
+             
+             [(#%top . _)
+              ;; might be undefined/uninitialized
+              (with-mark expr make-st-mark expr)]
+             [(#%datum . _)
+              ;; no error possible
+              expr]
+             
+             ;; Can't put annotation on the outside
+             [(define-values names rhs)
+              top?
+              (with-syntax ([marked (with-mark expr
+                                               make-st-mark
+                                               (annotate-named
+                                                (syntax-case (syntax names) ()
+                                                  [(id)
+                                                   (syntax id)]
+                                                  [_else #f])
+                                                (syntax rhs)
                                                 trans?))])
-                                 (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
-                              [(case-lambda clauses ...)
-                               (with-syntax ([([args . body] ...)
-                                              (syntax (clauses ...))])
-                                 (with-syntax ([new-clauses
-                                                (map
-                                                 (lambda (args body clause)
-                                                   (test-coverage-annotate-lambda
-                                                    clause
-                                                    (profile-annotate-lambda name expr args body trans?)))
-                                                 (syntax->list (syntax (args ...))) 
-                                                 (syntax->list (syntax (body ...)))
-                                                 (syntax->list (syntax (clauses ...))))])
-                                   (keep-lambda-properties 
-                                    expr 
-                                    (syntax/loc expr 
-                                      (case-lambda . new-clauses)))))]
-                              
-                              ;; Wrap RHSs and body
-                              [(let-values ([vars rhs] ...) . body)
-                               (with-mark expr 
-					  make-st-mark
-                                          (annotate-let #f trans?
-                                                        (syntax (vars ...))
-                                                        (syntax (rhs ...))
-                                                        (syntax body)))]
-                              [(letrec-values ([vars rhs] ...) . body)
-                               (with-mark expr 
-					  make-st-mark
-                                          (annotate-let #t trans?
-                                                        (syntax (vars ...))
-                                                        (syntax (rhs ...))
-                                                        (syntax body)))]
-                              
-                              ;; Wrap RHS
-                              [(set! var rhs)
-                               (with-syntax ([rhs (annotate-named 
-                                                   (syntax var)
-                                                   (syntax rhs)
-                                                   trans?)])
-                                 ;; set! might fail on undefined variable, or too many values:
-                                 (with-mark expr make-st-mark (syntax/loc expr (set! var rhs))))]
-                              
-                              ;; Wrap subexpressions only
-                              [(begin . body)
-                               (with-mark expr
-					  make-st-mark
-                                          (annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
-                              [(begin0 . body)
-                               (with-mark expr
-					  make-st-mark
-                                          (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
-                              [(if tst thn els)
-                               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
-                                             [w-thn
-                                              (test-coverage-point (annotate (syntax thn) trans?)
-                                                                   (syntax thn))]
-                                             [w-els
-                                              (test-coverage-point (annotate (syntax els) trans?)
-                                                                   (syntax els))])
-                                 
-                                 (with-mark
-                                  expr
-                                  make-st-mark
-                                  (syntax/loc expr
-                                    (if w-tst w-thn w-els))))]
-                              [(if tst thn)
-                               (with-syntax ([w-tst (annotate (syntax tst) trans?)]
-                                             [w-thn 
-                                              (test-coverage-point (annotate (syntax thn) trans?)
-                                                                   (syntax thn))])
-                                 (with-mark 
-                                  expr 
-                                  make-st-mark 
-                                  (syntax/loc expr
-                                    (if w-tst w-thn))))]
-                              [(with-continuation-mark . body)
-                               (with-mark expr
-					  make-st-mark
-                                          (annotate-seq 
-                                           trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
-                              
-                              ;; Wrap whole application, plus subexpressions
-                              [(#%app . body)
-                               (if (stx-null? (syntax body))
-                                   ;; It's a null:
-                                   expr
-                                   (with-mark expr
-					      make-st-mark
-                                              (annotate-seq trans? expr 
-                                                            (syntax #%app) (syntax body) 
-                                                            annotate)))]
-                              
-                              [_else
-                               (error 'errortrace
-                                      "unrecognized expression form~a: ~e"
-                                      (if top? " at top-level" "")
-                                      (syntax-object->datum expr))])))
+                (syntax/loc expr (define-values names marked)))]
+             [(begin . exprs)
+              top?
+              (annotate-seq
+               trans? expr (quote-syntax begin)
+               (syntax exprs)
+               annotate-top)]
+             [(define-syntaxes (name ...) rhs)
+              top?
+              (with-syntax ([marked (with-mark expr
+                                               make-st-mark
+                                               (annotate-named
+                                                (let ([l (syntax->list (syntax (name ...)))])
+                                                  (and (pair? l)
+                                                       (null? (cdr l))
+                                                       (car l)))
+                                                (syntax rhs)
+                                                #t))])
+                (syntax/loc expr (define-syntaxes (name ...) marked)))]
+             
+             ;; Just wrap body expressions
+             [(module name init-import (#%plain-module-begin body ...))
+              top?
+              (with-syntax ([bodyl
+                             (map (lambda (b)
+                                    (annotate-top b trans?))
+                                  (syntax->list (syntax (body ...))))])
+                (datum->syntax-object
+                 expr
+                 ;; Preserve original #%module-begin:
+                 (list (syntax module) (syntax name) (syntax init-import) 
+                       (cons (syntax #%plain-module-begin) (syntax bodyl)))
+                 expr))]
+             
+             ;; No way to wrap
+             [(require i ...) expr]
+             [(require-for-syntax i ...) expr]
+             ;; No error possible (and no way to wrap)
+             [(provide i ...) expr]
+             
+             ;; No error possible
+             [(quote _)
+              expr]
+             [(quote-syntax _)
+              expr]
+             
+             ;; Wrap body, also a profile point
+             [(lambda args . body)
+              (with-syntax ([cl 
+                             (profile-annotate-lambda 
+                              name expr 
+                              (syntax args) (syntax body) 
+                              trans?)])
+                (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
+             [(case-lambda clauses ...)
+              (with-syntax ([([args . body] ...)
+                             (syntax (clauses ...))])
+                (with-syntax ([new-clauses
+                               (map
+                                (lambda (args body clause) (profile-annotate-lambda name expr args body trans?))
+                                (syntax->list (syntax (args ...))) 
+                                (syntax->list (syntax (body ...)))
+                                (syntax->list (syntax (clauses ...))))])
+                  (keep-lambda-properties 
+                   expr 
+                   (syntax/loc expr 
+                     (case-lambda . new-clauses)))))]
+             
+             ;; Wrap RHSs and body
+             [(let-values ([vars rhs] ...) . body)
+              (with-mark expr 
+                         make-st-mark
+                         (annotate-let #f trans?
+                                       (syntax (vars ...))
+                                       (syntax (rhs ...))
+                                       (syntax body)))]
+             [(letrec-values ([vars rhs] ...) . body)
+              (with-mark expr 
+                         make-st-mark
+                         (annotate-let #t trans?
+                                       (syntax (vars ...))
+                                       (syntax (rhs ...))
+                                       (syntax body)))]
+             
+             ;; Wrap RHS
+             [(set! var rhs)
+              (with-syntax ([rhs (annotate-named 
+                                  (syntax var)
+                                  (syntax rhs)
+                                  trans?)])
+                ;; set! might fail on undefined variable, or too many values:
+                (with-mark expr make-st-mark (syntax/loc expr (set! var rhs))))]
+             
+             ;; Wrap subexpressions only
+             [(begin . body)
+              (with-mark expr
+                         make-st-mark
+                         (annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
+             [(begin0 . body)
+              (with-mark expr
+                         make-st-mark
+                         (annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
+             [(if tst thn els)
+              (with-syntax ([w-tst (annotate (syntax tst) trans?)]
+                            [w-thn (annotate (syntax thn) trans?)]
+                            [w-els (annotate (syntax els) trans?)])
+                
+                (with-mark
+                 expr
+                 make-st-mark
+                 (syntax/loc expr
+                   (if w-tst w-thn w-els))))]
+             [(if tst thn)
+              (with-syntax ([w-tst (annotate (syntax tst) trans?)]
+                            [w-thn (annotate (syntax thn) trans?)])
+                (with-mark 
+                 expr 
+                 make-st-mark 
+                 (syntax/loc expr
+                   (if w-tst w-thn))))]
+             [(with-continuation-mark . body)
+              (with-mark expr
+                         make-st-mark
+                         (annotate-seq 
+                          trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
+             
+             ;; Wrap whole application, plus subexpressions
+             [(#%app . body)
+              (if (stx-null? (syntax body))
+                  ;; It's a null:
+                  expr
+                  (with-mark expr
+                             make-st-mark
+                             (annotate-seq trans? expr 
+                                           (syntax #%app) (syntax body) 
+                                           annotate)))]
+             
+             [_else
+              (error 'errortrace
+                     "unrecognized expression form~a: ~e"
+                     (if top? " at top-level" "")
+                     (syntax-object->datum expr))])
+           expr)))
       
       (define annotate (make-annotate #f #f))
       (define annotate-top (make-annotate #t #f))

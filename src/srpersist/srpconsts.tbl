@@ -522,7 +522,6 @@ SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
 #if (ODBCVER >= 0x300)
   { "sql-c-wchar", SQL_C_WCHAR },
   { "sql-c-numeric", SQL_C_NUMERIC },
-  { "sql-c-timestamp", SQL_C_TIMESTAMP },
   { "sql-c-type-timestamp", SQL_C_TYPE_TIMESTAMP },
   { "sql-c-type-date", SQL_C_TYPE_DATE },
   { "sql-c-type-time", SQL_C_TYPE_TIME },

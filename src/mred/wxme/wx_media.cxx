@@ -519,35 +519,37 @@ void wxMediaEdit::OnChar(wxKeyEvent &event)
 void wxMediaEdit::OnDefaultChar(wxKeyEvent &event)
 {
   long code;
+  int ok = 0;
 
   if (!admin)
     return;
 
   code = event.KeyCode();
 
-  if (code == WXK_RETURN 
-      || code == WXK_TAB
-      || (code >= 32 && code <= 126)) {
-    if (overwriteMode && (startpos == endpos))
-      Insert(code, startpos, startpos + 1);
-    else
-      Insert(code);
-  } else  {
-    switch(code) {
-    case WXK_BACK:
-    case WXK_DELETE:
-      Delete();
-      break;
-    case WXK_RIGHT:
-    case WXK_LEFT:
-    case WXK_UP:
-    case WXK_DOWN:
-    case WXK_HOME:
-    case WXK_END:
-    case WXK_PRIOR:
-    case WXK_NEXT:
-      MovePosition(code, event.ShiftDown());
-      break;
+  switch(code) {
+  case WXK_BACK:
+  case WXK_DELETE:
+    Delete();
+    break;
+  case WXK_RIGHT:
+  case WXK_LEFT:
+  case WXK_UP:
+  case WXK_DOWN:
+  case WXK_HOME:
+  case WXK_END:
+  case WXK_PRIOR:
+  case WXK_NEXT:
+    MovePosition(code, event.ShiftDown());
+    break;
+  case WXK_RETURN:
+  case WXK_TAB:
+    ok = 1;
+  default:
+    if (ok || (code >= 32 && code <= 255)) {
+      if (overwriteMode && (startpos == endpos))
+	Insert(code, startpos, startpos + 1);
+      else
+	Insert(code);
     }
   }
 }

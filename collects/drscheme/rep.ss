@@ -583,7 +583,7 @@
 	     (set! user-setting (mred:get-preference 'drscheme:settings))
 
 	     (let ([p (basis:build-parameterization
-		       (lambda () (load (build-path (collection-path "system") "debug.ss")))
+		       (lambda () '(load (build-path (collection-path "system") "debug.ss")))
 		       (list 'wx)
 		       (mred:get-preference 'drscheme:settings)
 		       (let ([l@

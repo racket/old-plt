@@ -32,8 +32,7 @@
 		     quasi-r4rs-parameters pretty-print file)]
 	[zodiac : drscheme:zodiac^
 		((require-unit/sig "zodiac.ss")
-		 beginner
-		 intermediate
-		 advanced
+		 beginner intermediate advanced    ;; this is the real line
+		 ;quasi-r4rs quasi-r4rs quasi-r4rs ;; use this to test!
 		 quasi-r4rs)])
   (export (open zodiac)))

@@ -2750,18 +2750,17 @@ void MrEdApp::DoDefaultAboutItem()
 {
   DialogPtr dial;
   short hit;
-  GrafPtr port;
+  CGrafPtr port;
+  GDHandle device;
  
   dial = GetNewDialog(129, NULL, (WindowRef)-1);
-  GetPort(&port);
-#ifdef OS_X
-  SetPort(GetDialogPort(dial));
-#else
-  SetPort((GrafPort *)GetDialogPort(dial));
-#endif  
+  GetGWorld(&port,&device);
+
+  SetGWorld(GetDialogPort(dial),GetGDevice());
+
   TextFont(kFontIDGeneva);
   TextSize(10);
-  SetPort(port);
+  SetGWorld(port,device);
 
   ModalDialog(NULL, &hit);
   

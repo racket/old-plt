@@ -1837,9 +1837,7 @@
 
 (define output-title
   (lambda (title)
-    (emit "<h1")
-    (unless *html-presentation?* (emit " class=title align=center><br><br"))
-    (emit ">")
+    (emit "<h1 class=title>")
     (bgroup)
     (tex2page-string (string-append "\\let\\\\\\break " title))
     (egroup)
@@ -2178,9 +2176,7 @@
                      (char-whitespace? c)
                      (char=? c #\newline)))))))))
       (do-end-para)
-      (emit "<h1")
-      (unless *html-presentation?* (emit " class=beginsection"))
-      (emit ">")
+      (emit "<h1 class=beginsection>")
       (bgroup)
       (fluid-let ((*tabular-stack* (list 'header))) (tex2page-string header))
       (egroup)
@@ -3721,10 +3717,9 @@
         (cond
          ((eqv? top-or-bottom 'top)
           (emit "<div id=")
-          (cond
-           (first-page? (emit "title"))
-           (else (display "," *js-port*) (emit "content")))
+          (emit (if first-page? "title" "content"))
           (emit ">")
+          (unless first-page? (display #\, *js-port*))
           (newline *js-port*)
           (display "     " *js-port*)
           (display #\' *js-port*)
@@ -7339,9 +7334,26 @@
     (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
       (ensure-file-deleted css-file)
       (set! *css-port* (open-output-file css-file))
-      (display
-        "\n               body {\n               color: black;\n               /*   background-color: #e5e5e5;*/\n               background-color: #ffffff;\n               /*background-color: beige;*/\n               margin-top: 2em;\n               margin-left: 8%;\n               margin-right: 8%;\n               }\n\n               h1,h2,h3,h4,h5,h6 {\n               margin-top: .5em;\n               }\n\n               .title {\n               font-size: 200%;\n               font-weight: normal;\n               }\n\n               .partheading {\n               font-size: 100%;\n               }\n\n               .chapterheading {\n               font-size: 100%;\n               }\n\n               .beginsection {\n               font-size: 110%;\n               }\n\n               .tiny {\n               font-size: 40%;\n               }\n\n               .scriptsize {\n               font-size: 60%;\n               }\n\n               .footnotesize {\n               font-size: 75%;\n               }\n\n               .small {\n               font-size: 90%;\n               }\n\n               .normalsize {\n               font-size: 100%;\n               }\n\n               .large {\n               font-size: 120%;\n               }\n\n               .largecap {\n               font-size: 150%;\n               }\n\n               .largeup {\n               font-size: 200%;\n               }\n\n               .huge {\n               font-size: 300%;\n               }\n\n               .hugecap {\n               font-size: 350%;\n               }\n\n               pre {\n               margin-left: 2em;\n               }\n\n               blockquote {\n               margin-left: 2em;\n               }\n\n               ol {\n               list-style-type: decimal;\n               }\n\n               ol ol {\n               list-style-type: lower-alpha;\n               }\n\n               ol ol ol {\n               list-style-type: lower-roman;\n               }\n\n               ol ol ol ol {\n               list-style-type: upper-alpha;\n               }\n\n               /*\n               .verbatim {\n               color: #4d0000;\n               }\n               */\n\n               tt i {\n               font-family: serif;\n               }\n\n               .verbatim em {\n               font-family: serif;\n               }\n\n               .scheme em {\n               font-family: serif;\n               color: black;\n               }\n\n               .scheme {\n               color: brown;\n               }\n\n               .scheme .keyword {\n               color: #990000;\n               font-weight: bold;\n               }\n\n               .scheme .builtin {\n               color: #990000;\n               }\n\n               .scheme .variable {\n               color: navy;\n               }\n\n               .scheme .global {\n               color: purple;\n               }\n\n               .scheme .selfeval {\n               color: green;\n               }\n\n               .scheme .comment {\n               color:  teal;\n               }\n\n               .schemeresponse {\n               color: green;\n               }\n\n               .navigation {\n               color: red;\n               text-align: right;\n               font-size: medium;\n               font-style: italic;\n               }\n\n               .disable {\n               /* color: #e5e5e5; */\n               color: gray;\n               }\n\n               .smallcaps {\n               font-size: 75%;\n               }\n\n               .smallprint {\n               color: gray;\n               font-size: 75%;\n               text-align: right;\n               }\n\n               /*\n               .smallprint hr {\n               text-align: left;\n               width: 40%;\n               }\n               */\n\n               .footnoterule {\n               text-align: left;\n               width: 40%;\n               }\n\n               .colophon {\n               color: gray;\n               font-size: 80%;\n               text-align: right;\n               }\n\n               .colophon a {\n               color: gray;\n               }\n               "
-        *css-port*))))
+      (when #t
+        (display
+          "\n                 body {\n                 color: black;\n                 /*   background-color: #e5e5e5;*/\n                 background-color: #ffffff;\n                 /*background-color: beige;*/\n                 margin-top: 2em;\n                 margin-left: 8%;\n                 margin-right: 8%;\n                 }\n\n                 h1,h2,h3,h4,h5,h6 {\n                 margin-top: .5em;\n                 }\n\n                 .partheading {\n                 font-size: 100%;\n                 }\n\n                 .chapterheading {\n                 font-size: 100%;\n                 }\n\n                 .tiny {\n                 font-size: 40%;\n                 }\n\n                 .scriptsize {\n                 font-size: 60%;\n                 }\n\n                 .footnotesize {\n                 font-size: 75%;\n                 }\n\n                 .small {\n                 font-size: 90%;\n                 }\n\n                 .normalsize {\n                 font-size: 100%;\n                 }\n\n                 .large {\n                 font-size: 120%;\n                 }\n\n                 .largecap {\n                 font-size: 150%;\n                 }\n\n                 .largeup {\n                 font-size: 200%;\n                 }\n\n                 .huge {\n                 font-size: 300%;\n                 }\n\n                 .hugecap {\n                 font-size: 350%;\n                 }\n\n                 pre {\n                 margin-left: 2em;\n                 }\n\n                 blockquote {\n                 margin-left: 2em;\n                 }\n\n                 ol {\n                 list-style-type: decimal;\n                 }\n\n                 ol ol {\n                 list-style-type: lower-alpha;\n                 }\n\n                 ol ol ol {\n                 list-style-type: lower-roman;\n                 }\n\n                 ol ol ol ol {\n                 list-style-type: upper-alpha;\n                 }\n\n                 /*\n                 .verbatim {\n                 color: #4d0000;\n                 }\n                 */\n\n                 .scheme em {\n                 color: black;\n                 }\n\n                 .scheme {\n                 color: brown;\n                 }\n\n                 .scheme .keyword {\n                 color: #990000;\n                 font-weight: bold;\n                 }\n\n                 .scheme .builtin {\n                 color: #990000;\n                 }\n\n                 .scheme .variable {\n                 color: navy;\n                 }\n\n                 .scheme .global {\n                 color: purple;\n                 }\n\n                 .scheme .selfeval {\n                 color: green;\n                 }\n\n                 .scheme .comment {\n                 color:  teal;\n                 }\n\n                 .schemeresponse {\n                 color: green;\n                 }\n\n                 .navigation {\n                 color: red;\n                 text-align: right;\n                 font-size: medium;\n                 font-style: italic;\n                 }\n\n                 .disable {\n                 /* color: #e5e5e5; */\n                 color: gray;\n                 }\n\n                 .smallcaps {\n                 font-size: 75%;\n                 }\n\n                 .smallprint {\n                 color: gray;\n                 font-size: 75%;\n                 text-align: right;\n                 }\n\n                 /*\n                 .smallprint hr {\n                 text-align: left;\n                 width: 40%;\n                 }\n                 */\n\n                 .footnoterule {\n                 text-align: left;\n                 width: 40%;\n                 }\n\n                 .colophon {\n                 color: gray;\n                 font-size: 80%;\n                 text-align: right;\n                 }\n\n                 .colophon a {\n                 color: gray;\n                 }\n                 "
+          *css-port*))
+      (unless *html-presentation?*
+        (display
+          "\n                 .title {\n                 font-size: 200%;\n                 font-weight: normal;\n                 margin-top: 2.8em;\n                 text-align: center;\n                 }\n\n                 .beginsection {\n                 font-size: 110%;\n                 }\n\n                 tt i {\n                 font-family: serif;\n                 }\n\n                 .verbatim em {\n                 font-family: serif;\n                 }\n\n                 .scheme em {\n                 font-family: serif;\n                 }\n                 "
+          *css-port*))
+      (when *html-presentation?*
+        (display
+          "\n                 body {\n                 background: white;\n                 font-size: 22;\n                 font-weight: bold;\n                 font-family: Verdana, Arial, Lucida;\n                 }\n\n                 div#content {\n                 position: absolute;\n                 top: 10px;\n                 left: 150px;\n                 }\n\n                 div#other {\n                 position: absolute;\n                 top: 0px;\n                 left: 0px;\n                 height: 100%;\n                 width: 100%;\n                 background-color: transparent;\n                 z-index: 1;\n                 }\n\n                 h1 {\n                 color: darkblue;\n                 font-size: 1.5em;\n                 padding-bottom: 20px;\n                 border-bottom: thick solid blue;\n                 }\n\n                 div > ul {\n                 margin-left: -1em;\n                 }\n                 "
+          *css-port*))
+      (when (and *html-presentation?* *title*)
+        (display
+          "\n                 div#title {\n                 position: absolute;\n                 top: 150px;\n                 left: 250px;\n                 }\n                 "
+          *css-port*))
+      (when (and *html-presentation?* (not *title*))
+        (display
+          "\n                 div#title {\n                 position: absolute;\n                 top: 10px;\n                 left: 150px;\n                 }\n                 "
+          *css-port*)))))
 
 (define start-js-file
   (lambda ()
@@ -7349,14 +7361,7 @@
       (let ((js-file (string-append *aux-dir/* *jobname* *js-file-suffix*)))
         (ensure-file-deleted js-file)
         (set! *js-port* (open-output-file js-file))
-        (display "var toc = new Array(" *js-port*))
-      (display
-        "\n               body {\n               background: white;\n               font-size: 22;\n               font-weight: bold;\n               font-family: Verdana, Arial, Lucida;\n               }\n\n               div#content {\n               position: absolute;\n               top: 10px;\n               left: 150px;\n               }\n\n               div#title {\n               position: absolute;\n               top: 150px;\n               left: 250px;\n               }\n\n               div#other {\n               position: absolute;\n               top: 0px;\n               left: 0px;\n               height: 100%;\n               width: 100%;\n               background-color: transparent;\n               z-index: 1;\n               }\n\n               h1 {\n               color: darkblue;\n               font-size: 1.5em;\n               padding-bottom: 20px;\n               border-bottom: thick solid blue;\n               }\n               "
-        *css-port*)
-      (unless *title*
-        (display
-          "\n                          div#title {\n                          top: 10px;\n                          left: 150px;\n                          }\n                          "
-          *css-port*)))))
+        (display "var toc = new Array(" *js-port*)))))
 
 (define load-aux-file
   (lambda ()

@@ -25,6 +25,21 @@
 			(cdr row))))
 	   rows))
 
+    (define (remove-docs rows exceptions)
+      (map (lambda (row)
+	     (cons (car row)
+		   (let loop ([l (cdr row)])
+		     (cond
+		      [(null? l) null]
+		      [(memq (let ([i (cadar l)])
+			       (if (symbol? i)
+				   i
+				   (cadr i)))
+			     exceptions)
+		       (loop (cdr l))]
+		      [else (cons (car l) (loop (cdr l)))]))))
+	   rows))
+
     (syntax-case stx ()
       [(_ label row ...)
        (begin
@@ -35,6 +50,47 @@
 	    stx
 	    (syntax label)))
 	 (let ([rows (map (lambda (row)
+			    ;; Helper:
+			    (define (get-existing tag path label exceptions)
+			      (unless (identifier? tag)
+				(raise-syntax-error
+				 'provide-and-document
+				 "prefix tag is not an identifier"
+				 stx
+				 tag))
+			      (unless (identifier? label)
+				(raise-syntax-error
+				 'provide-and-document
+				 "label is not an identifier"
+				 stx
+				 label))
+			      (for-each
+			       (lambda (except)
+				 (unless (identifier? except)
+				   (raise-syntax-error
+				    'provide-and-document
+				    "exclusion is not an identifier"
+				    stx
+				    except)))
+			       exceptions)
+			      (let ([mod ((current-module-name-resolver) path #f #f)])
+				;; Execute syntax part at top-level:
+				(dynamic-require mod (void))
+				;; Extract documentation via top-level:
+				(let ([docs ((dynamic-require-for-syntax 
+					      '(lib "doctable.ss" "syntax" "private") 
+					      'lookup-documentation)
+					     mod
+					     (syntax-e label))])
+				  (unless docs
+				    (raise-syntax-error
+				     'provide-and-document
+				     "could not find provided documentation"
+				     stx
+				     row))
+				  (remove-docs (add-prefix tag docs)
+					       (map syntax-e exceptions)))))
+			    ;; Parse row:
 			    (syntax-case row ()
 			      [(header proc ...)
 			       (string? (syntax-e (syntax header)))
@@ -58,34 +114,14 @@
 			       (let ([tag (syntax tag)]
 				     [label (syntax label)]
 				     [path (syntax-object->datum (syntax path))])
-				 (unless (identifier? tag)
-				   (raise-syntax-error
-				    'provide-and-document
-				    "prefix tag is not an identifier"
-				    stx
-				    tag))
-				 (unless (identifier? label)
-				   (raise-syntax-error
-				    'provide-and-document
-				    "label is not an identifier"
-				    stx
-				    label))
-				 (let ([mod ((current-module-name-resolver) path #f #f)])
-				   ;; Execute syntax part at top-level:
-				   (dynamic-require mod (void))
-				   ;; Extract documentation via top-level:
-				   (let ([docs ((dynamic-require-for-syntax 
-						 '(lib "doctable.ss" "syntax" "private") 
-						 'lookup-documentation)
-						mod
-						(syntax-e label))])
-				     (unless docs
-				       (raise-syntax-error
-					'provide-and-document
-					"could not find provided documentation"
-					stx
-					row))
-				     (add-prefix tag docs))))]))
+				 (get-existing tag path label null))]
+			      [(all-from-except tag path label exception ...)
+			       (eq? 'all-from-except (syntax-e (syntax all-from-except)))
+			       (let ([tag (syntax tag)]
+				     [label (syntax label)]
+				     [path (syntax-object->datum (syntax path))]
+				     [exceptions (syntax->list (syntax (exception ...)))])
+				 (get-existing tag path label exceptions))]))
 			  (syntax->list (syntax (row ...))))]
 	       [imports (apply
 			 append
@@ -94,7 +130,7 @@
 				  [(header . _)
 				   (string? (syntax-e (syntax header)))
 				   null]
-				  [(all-from tag path label)
+				  [(all-from/-except tag path label except ...)
 				   (list (syntax (require (prefix tag path))))]))
 			      (syntax->list (syntax (row ...)))))])
 	   ;; Collapse rows for a section name:

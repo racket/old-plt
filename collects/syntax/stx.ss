@@ -65,5 +65,14 @@
 			    flat-end))))
 	      e))))
 
+  (define (module-or-top-identifier=? a b)
+    (or (module-identifier=? a b)
+	(and (eq? (syntax-e a) (syntax-e b))
+	     (module-identifier=? a
+				  (datum->syntax-object
+				   #f
+				   (syntax-e b))))))
+
   (provide stx-null? stx-pair? stx-list?
-	   stx-car stx-cdr stx->list))
+	   stx-car stx-cdr stx->list
+	   module-or-top-identifier=?))

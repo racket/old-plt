@@ -117,6 +117,7 @@ MZ_EXTERN int scheme_is_waitable(Scheme_Object *o);
 MZ_EXTERN Scheme_Object *scheme_wait_on_waitable(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo);
 MZ_EXTERN void scheme_waitable_needs_wakeup(Scheme_Object *o, void *fds);
 MZ_EXTERN Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[]);
+MZ_EXTERN Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object *argv[]);
 
 MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data);
 

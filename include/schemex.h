@@ -97,6 +97,7 @@ int (*scheme_is_waitable)(Scheme_Object *o);
 Scheme_Object *(*scheme_wait_on_waitable)(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo);
 void (*scheme_waitable_needs_wakeup)(Scheme_Object *o, void *fds);
 Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_object_wait_multiple_enable_break)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
 Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
 int (*scheme_close_should_force_port_closed)();

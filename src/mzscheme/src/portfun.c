@@ -77,6 +77,7 @@ static Scheme_Object *port_write_handler(int, Scheme_Object **args);
 static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *port_count_lines(int, Scheme_Object **args);
+static Scheme_Object *port_next_location(int, Scheme_Object **args);
 
 static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[]);
@@ -465,6 +466,12 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(port_count_lines, 
 						      "port-count-lines!", 
 						      1, 1),
+			     env);
+  scheme_add_global_constant("port-next-location", 
+			     scheme_make_prim_w_arity2(port_next_location, 
+						       "port-next-location", 
+						       1, 1, 
+						       3, 3),
 			     env);
 }
 
@@ -2132,6 +2139,25 @@ static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
   scheme_count_lines(argv[0]);
 
   return scheme_void;
+}
+
+static Scheme_Object *port_next_location(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *a[3];
+  long line, col, pos;
+
+  if (!SCHEME_INPORTP(argv[0]))
+    scheme_wrong_type("port-next-location", "input-port", 0, argc, argv);
+
+  line = scheme_tell_line(argv[0]);
+  col = scheme_tell_column(argv[0]);
+  pos = scheme_tell(argv[0]);
+
+  a[0] = ((line < 0) ? scheme_false : scheme_make_integer(line));
+  a[1] = ((col < 0) ? scheme_false : scheme_make_integer(col));
+  a[2] = ((pos < 0) ? scheme_false : scheme_make_integer(pos));
+
+  return scheme_values(3, a);
 }
 
 typedef struct {

@@ -1251,7 +1251,7 @@ char *scheme_banner(void)
       "3m"
 #endif      
       " version " MZSCHEME_VERSION VERSION_SUFFIX
-      ", Copyright (c) 1995-2001 PLT\n";
+      ", Copyright (c) 1995-2002 PLT\n";
 }
 
 void scheme_set_banner(char *s)

@@ -1030,21 +1030,6 @@ void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
 
-#if CHECKS
-  {
-    MPage *m;
-
-    m = find_page(p);
-
-    if ((m->type != MTYPE_TAGGED) && (m->type != MTYPE_XTAGGED)) {
-      fprintf(stderr, "Not xtagged: %lx (%d)\n", 
-	      (long)p, m->type);
-      CRASH();
-    }
-    recent_size = ((long *)p)[-1];
-  }
-#endif
-
   /* Allcation might trigger GC, so we use park: */
   park[0] = p;
 

@@ -117,4 +117,4 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 #else
 # define MRED3M ""
 #endif
-#define BANNER "MrEd" MRED3M " version " MZSCHEME_VERSION ", Copyright (c) 1995-2001 PLT\n"
+#define BANNER "MrEd" MRED3M " version " MZSCHEME_VERSION ", Copyright (c) 1995-2002 PLT\n"

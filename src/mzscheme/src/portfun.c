@@ -2205,7 +2205,7 @@ static Scheme_Object *do_load_handler(void *data)
 
       /* If d is NULL, shape was wrong */
       if (!d) {
-	if (!other)
+	if (!other || !SCHEME_SYMBOLP(other))
 	  other = scheme_make_string("something else");
 	else {
 	  char *s, *t;

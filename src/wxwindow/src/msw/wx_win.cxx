@@ -1736,6 +1736,15 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
   if (!handle)
     return;
 
+  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS)) {
+    wxCanvas * c;
+    wxDC *dc;
+    c = (wxCanvas *)wx_window;
+    dc = c->GetDC();
+    if (dc)
+      dc->ReleaseGraphics();
+  }
+
   if (calcScrolledOffset) {
     if ((xscroll_lines > 0) || (yscroll_lines > 0)) {
       wxCanvas * c;

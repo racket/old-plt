@@ -974,8 +974,11 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
     
     pts = newPointFs(n);
     for (i = 0; i < n; i++) {
-      pts[i].X = SmoothingXFormX(points[i].x + xoffset);
-      pts[i].Y = SmoothingXFormY(points[i].y + yoffset);
+      double x, y;
+      x = SmoothingXFormX(points[i].x + xoffset);
+      y = SmoothingXFormY(points[i].y + yoffset);
+      pts[i].X = x;
+      pts[i].Y = y;
     }
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
@@ -1172,8 +1175,11 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 
       pts = newPointFs(n);
       for (i = 0; i < n; i++) {
-	pts[i].X = SmoothingXFormX(points[i].x + xoffset);
-	pts[i].Y = SmoothingXFormY(points[i].y + yoffset);
+	double x, y;
+	x = SmoothingXFormX(points[i].x + xoffset);
+	y = SmoothingXFormY(points[i].y + yoffset);
+	pts[i].X = x;
+	pts[i].Y = y;
       }
 
       

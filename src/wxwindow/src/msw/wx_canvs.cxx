@@ -152,6 +152,12 @@ void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
     MoveWindow(wnd->handle, x, y, w - (combo ? COMBO_WIDTH : 0), h, TRUE);
     if (combo)
       combo->SetSize(x, y, w, h);
+    {
+      wxDC *dc;
+      dc = GetDC();
+      if (dc)
+	dc->ReleaseGraphics();
+    }
     OnSize(w, h);
   }
 }

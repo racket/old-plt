@@ -4,7 +4,7 @@
 ################################
 # included in ../GNUmakefile
 
-XFORM = ../mzscheme/mzscheme2k -rq $(srcdir)/../mzscheme/gc2/xform.ss "gcc -E -I$(srcdir)/../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(GUI) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src"
+XFORM = ../mzscheme/mzscheme2k -rq $(srcdir)/../mzscheme/gc2/xform.ss ../mzscheme/gc2/ctok "gcc -E -I$(srcdir)/../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(GUI) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src"
 XFORMDEP = $(srcdir)/../mzscheme/gc2/xform.ss $(srcdir)/../mzscheme/gc2/gc2.h
 
 WXBDIR=../wxxt

@@ -1463,9 +1463,10 @@ static Scheme_Object *gen_compare(char *name, int pos,
 						scheme_make_integer(endpd)),
 			       l);
 	} else {
-	  l = scheme_make_pair(scheme_make_sized_string(full_s + offset + ((unsigned long)startp[i] - srcbase), 
-							(endp[i] - startp[i]),
-							1),
+	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s,
+							       offset + ((unsigned long)startp[i] - srcbase), 
+							       (endp[i] - startp[i]),
+							       1),
 			       l);
 	}
       } else

@@ -1855,9 +1855,10 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
 #endif
   else 
     {
-      file = scheme_make_sized_string(s + p + 1, 
-				      len - p - last_was_sep - 1, 
-				      1);
+      file = scheme_make_sized_offset_string(s,
+					     p + 1, 
+					     len - p - last_was_sep - 1, 
+					     1);
       is_dir = last_was_sep;
     }
 
@@ -2782,7 +2783,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     if (!(find_position & 0x15))
       scheme_process_block(0);
     
-    n = scheme_make_sized_string(buf + 1, buf[0], 1);
+    n = scheme_make_sized_offset_string(buf, 1, buf[0], 1);
     elem = scheme_make_pair(n, scheme_null);
     if (last)
       SCHEME_CDR(last) = elem;
@@ -2932,8 +2933,8 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
       break;
     
     name[name[0] + 1] = ':';
-    v = scheme_make_pair(scheme_make_sized_string((char *)name + 1, 
-						  name[0] + 1, 1), 
+    v = scheme_make_pair(scheme_make_sized_offset_string((char *)name, 1, 
+							 name[0] + 1, 1), 
     	                 scheme_null);
     if (last)
       SCHEME_CDR(last) = v;

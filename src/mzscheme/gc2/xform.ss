@@ -49,11 +49,12 @@
       #f
       s))
 
-(define cpp (filter-false (car cmd-line)))
-(define file-in (cadr cmd-line))
-(define file-out (filter-false (caddr cmd-line)))
+(define ctok (car cmd-line))
+(define cpp (filter-false (cadr cmd-line)))
+(define file-in (caddr cmd-line))
+(define file-out (filter-false (cadddr cmd-line)))
 (define palm-out (if palm?
-		     (cadddr cmd-line)
+		     (cadddr (cdr cmd-line))
 		     #f))
 
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
@@ -74,7 +75,7 @@
 (close-output-port (cadr cpp-process))
 
 (define ctok-process
-  (process (build-path (current-directory) "ctok")))
+  (process ctok))
 
 (define (mk-error-thread proc)
   (thread (lambda ()
@@ -171,6 +172,8 @@
   (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
   (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
   (printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
+  (printf "#define NULLED_OUT ((void *)0)~n")
+  (printf "#define NULL_OUT_ARRAY(a) memset(a, 0, sizeof(a))~n")
   (printf "~n")
   
   ;; C++ cupport:
@@ -223,7 +226,8 @@
 (define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
 (define Scheme_Object (string->symbol "Scheme_Object"))
 (define sElF (string->symbol "sElF"))
-(define NULL_ (string->symbol "0"))
+(define NULLED_OUT (string->symbol "NULLED_OUT"))
+(define NULL_OUT_ARRAY (string->symbol "NULL_OUT_ARRAY"))
 (define gcMark (string->symbol "gcMark"))
 (define gcFixup (string->symbol "gcFixup"))
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
@@ -1615,6 +1619,54 @@
 						   "block push"
 						   #f #f
 						   newly-pushed (live-var-info-tag live-vars) orig-tag)))))
+			  ;; Null out local vars:
+			  (map (lambda (var)
+				 (let null-var ([full-name (car var)][vtype (cdr var)])
+				   (cond
+				    [(union-type? vtype)
+				     null]
+				    [(array-type? vtype)
+				     (let ([c (array-type-count vtype)])
+				       (if (<= c 3)
+					   (let loop ([n 0])
+					     (if (= n c)
+						 null
+						 (append
+						  (null-var (string->symbol
+							     (format "~a[~a]" full-name n))
+							    #f)
+						  (loop (add1 n)))))
+					   (list (make-tok NULL_OUT_ARRAY #f #f)
+						 (make-parens "(" #f #f ")"
+							      (seq (make-tok full-name #f #f)))
+						 (make-tok semi #f #f))))]
+				    [(struct-type? vtype)
+				     (let aloop ([array-index 0])
+				       ;; Push each struct in array (or only struct if not an array)
+				       (let loop ([l (cdr (assq (struct-type-struct vtype) struct-defs))])
+					 (if (null? l)
+					     (if (and (struct-array-type? vtype)
+						      (< (add1 array-index) (struct-array-type-count vtype)))
+						 ;; Next in array
+						 (aloop (add1 array-index))
+						 ;; All done
+						 null)
+					     (append
+					      (null-var (string->symbol
+							 (format "~a~a.~a"
+								 full-name 
+								 (if (struct-array-type? vtype)
+								     (format "[~a]" array-index)
+								     "")
+								 (caar l)))
+							(cdar l))
+					      (loop (cdr l))))))]
+				    [else
+				     (list (make-tok full-name #f #f)
+					   (make-tok '= #f #f)
+					   (make-tok NULLED_OUT #f #f)
+					   (make-tok semi #f #f))])))
+			       local-vars)
 			  body-x))
 			;; Restore original tag and union max live vars:
 			(make-live-var-info orig-tag

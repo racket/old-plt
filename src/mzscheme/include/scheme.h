@@ -798,7 +798,7 @@ typedef struct Scheme_Output_Port
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
   void *port_data;
-  void (*write_string_fun)(char *str, long len, struct Scheme_Output_Port *);
+  void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
   void (*close_fun) (struct Scheme_Output_Port *);
   long pos;
   Scheme_Object *display_handler;

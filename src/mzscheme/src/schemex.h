@@ -262,6 +262,7 @@ Scheme_Object *(*scheme_make_closure)(Scheme_Env *env, Scheme_Object *code);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
 Scheme_Object *(*scheme_make_string)(const char *chars);
 Scheme_Object *(*scheme_make_sized_string)(char *chars, long len, int copy);
+Scheme_Object *(*scheme_make_sized_offset_string)(char *chars, long d, long len, int copy);
 Scheme_Object *(*scheme_make_immutable_sized_string)(char *chars, long len, int copy);
 Scheme_Object *(*scheme_make_string_without_copying)(char *chars);
 Scheme_Object *(*scheme_alloc_string)(int size, char fill);
@@ -345,6 +346,7 @@ void (*scheme_display)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_write_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_display_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_write_string)(const char *str, long len, Scheme_Object *port);
+void (*scheme_write_offset_string)(const char *str, long d, long len, Scheme_Object *port);
 char *(*scheme_write_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_display_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
@@ -381,7 +383,7 @@ Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 					    void *data,
 					    void (*write_string_fun)
-					    (char*,long, Scheme_Output_Port*),
+					    (char*, long, long, Scheme_Output_Port*),
 					    void (*close_fun)
 					    (Scheme_Output_Port*),
 					    int must_close);

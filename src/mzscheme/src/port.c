@@ -454,7 +454,7 @@ static Scheme_Object *default_display_handler;
 static Scheme_Object *default_write_handler;
 static Scheme_Object *default_print_handler;
 
-typedef void (*Write_String_Fun)(char *str, long len, struct Scheme_Output_Port *);
+typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
 typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
 
 typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
@@ -1436,7 +1436,7 @@ scheme_make_input_port(Scheme_Object *subtype,
 Scheme_Output_Port *
 scheme_make_output_port(Scheme_Object *subtype,
 			void *data,
-			void (*write_string_fun)(char *str, long,
+			void (*write_string_fun)(char *str, long, long,
 						 Scheme_Output_Port*),
 			void (*close_fun) (Scheme_Output_Port*),
 			int must_close)
@@ -2032,7 +2032,7 @@ scheme_close_input_port (Scheme_Object *port)
 }
 
 void 
-scheme_write_string(const char *str, long len, Scheme_Object *port)
+scheme_write_offset_string(const char *str, long d, long len, Scheme_Object *port)
 {
   Scheme_Output_Port *op;
 
@@ -2044,11 +2044,17 @@ scheme_write_string(const char *str, long len, Scheme_Object *port)
 
   {
     Write_String_Fun f = op->write_string_fun;
-    f((char *)str, len, op);
+    f((char *)str, d, len, op);
   }
   op->pos += len;
 
   END_LOCK_PORT(op->sema);
+}
+
+void 
+scheme_write_string(const char *str, long len, Scheme_Object *port)
+{
+  scheme_write_offset_string(str, 0, len, port);
 }
 
 long
@@ -3256,9 +3262,8 @@ static void tested_file_close_output(Scheme_Output_Port *p)
 static void flush_tested(Scheme_Output_Port *port);
 
 static void
-tested_file_write_string(char *sstr, long llen, Scheme_Output_Port *port)
+tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port)
 {
-  char *str = sstr;
   long len = llen;
   Tested_Output_File *top;
   mz_jmp_buf savebuf;
@@ -3289,9 +3294,9 @@ tested_file_write_string(char *sstr, long llen, Scheme_Output_Port *port)
 	n = len;
 	if (n > TIF_BUFFER)
 	  n = TIF_BUFFER;
-	memcpy(top->c, str, n);
+	memcpy(top->c, str + dd, n);
 	top->ccount = n;
-	str += n;
+	dd += n;
 	len -= n;
       }
 
@@ -3332,11 +3337,11 @@ tested_file_write_string(char *sstr, long llen, Scheme_Output_Port *port)
 
   if (llen > 0) { 
     while (llen--) {
-      if (*sstr == '\n' || *sstr == '\r') {
+      if (str[dd] == '\n' || str[dd] == '\r') {
 	flush_tested(port);
 	break;
       }
-      sstr++;
+      dd++;
     }
   }
 }
@@ -3344,7 +3349,7 @@ tested_file_write_string(char *sstr, long llen, Scheme_Output_Port *port)
 static void
 flush_tested(Scheme_Output_Port *port)
 {
-  tested_file_write_string(NULL, -1, port);
+  tested_file_write_string(NULL, 0, -1, port);
 }
 
 static long write_for_tested_file(void *data)
@@ -3547,7 +3552,7 @@ scheme_make_string_input_port(const char *str)
 /*========================================================================*/
 
 static void
-string_write_string(char *str, long len, Scheme_Output_Port *port)
+string_write_string(char *str, long d, long len, Scheme_Output_Port *port)
 {
   Scheme_Indexed_String *is;
 
@@ -3571,7 +3576,7 @@ string_write_string(char *str, long len, Scheme_Output_Port *port)
     memcpy(is->string, old, is->index);
   }
   
-  memcpy(is->string + is->index, str, len);
+  memcpy(is->string + is->index, str + d, len);
   is->index += len;
 }
 
@@ -3708,7 +3713,7 @@ user_close_input(Scheme_Input_Port *port)
    and block on it. */
 
 static void
-file_write_string(char *str, long len, Scheme_Output_Port *port)
+file_write_string(char *str, long d, long len, Scheme_Output_Port *port)
 {
   FILE *fp;
 
@@ -3717,7 +3722,7 @@ file_write_string(char *str, long len, Scheme_Output_Port *port)
 
   fp = ((Scheme_Output_File *)port->port_data)->f;
 
-  if (fwrite(str, len, 1, fp) != 1) {
+  if (fwrite(str + d, len, 1, fp) != 1) {
     scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		     port,
 		     "error writing to file port (%e)",
@@ -3726,7 +3731,7 @@ file_write_string(char *str, long len, Scheme_Output_Port *port)
   }
 
   while (len--) {
-    if (*str == '\n' || *str == '\r') {
+    if (str[d] == '\n' || str[d] == '\r') {
       if (fflush(fp)) {
 	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			 port,
@@ -3735,7 +3740,7 @@ file_write_string(char *str, long len, Scheme_Output_Port *port)
       }
       break;
     }
-    str++;
+    d++;
   }
 }
 
@@ -3924,7 +3929,7 @@ static int flush_fd(Scheme_Output_Port *op,
 }
 
 static void
-fd_write_string(char *str, long len, Scheme_Output_Port *port)
+fd_write_string(char *str, long d, long len, Scheme_Output_Port *port)
 {
   Scheme_FD *fop;
   long l;
@@ -3939,26 +3944,26 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
 
   l = MZPORT_FD_BUFFSIZE - fop->bufcount;
   if (len <= l) {
-    memcpy(fop->buffer + fop->bufcount, str, len);
+    memcpy(fop->buffer + fop->bufcount, str + d, len);
     fop->bufcount += len;
   } else {
     if (fop->bufcount)
       flush_fd(port, NULL, 0, 0, 0);
     if (len <= MZPORT_FD_BUFFSIZE) {
-      memcpy(fop->buffer, str, len);
+      memcpy(fop->buffer, str + d, len);
       fop->bufcount = len;
     } else {
-      flush_fd(port, str, len, 0, 0);
+      flush_fd(port, str, len, d, 0);
       return; /* Don't check for flush */
     }
   }
 
   while (len--) {
-    if (*str == '\n' || *str == '\r') {
+    if (str[d] == '\n' || str[d] == '\r') {
       flush_fd(port, NULL, 0, 0, 0);
       break;
     }
-    str++;
+    d++;
   }
 }
 
@@ -4017,11 +4022,11 @@ void flush_original_output_fds(void)
 /*========================================================================*/
 
 static void
-user_write(char *str, long len, Scheme_Output_Port *port)
+user_write(char *str, long d, long len, Scheme_Output_Port *port)
 {
   Scheme_Object *fun, *p[1];
   
-  p[0] = scheme_make_sized_string(str, len, 1);
+  p[0] = scheme_make_sized_offset_string(str, d, len, 1);
 
   fun = ((Scheme_Object **) port->port_data)[0];
   _scheme_apply_multi(fun, 1, p);
@@ -5069,24 +5074,15 @@ write_string_avail(int argc, Scheme_Object *argv[])
        to guarantee the right behavior on errors. */
     char str2[1];
     str2[0] = SCHEME_STR_VAL(str)[start];
-    scheme_write_string(str2, 1, port);
+    scheme_write_offset_string(str2, 0, 1, port);
     scheme_flush_output(port);
     putten = 1;
   } else {
     /* Ports without flushing or errors; use scheme_write_string
        and write it all. */
     putten = size;
-    if (start & 0x1) {
-      /* For precise GC, write first char, then we
-	 can offset the string pointer. */
-      char str2[1];
-      str2[0] = SCHEME_STR_VAL(str)[start];
-      scheme_write_string(str2, 1, port);
-      size--;
-      start++;
-    }
     if (size) {
-      scheme_write_string(SCHEME_STR_VAL(str) + start, size, port);
+      scheme_write_offset_string(SCHEME_STR_VAL(str), start, size, port);
     }
   }
 
@@ -5199,7 +5195,7 @@ display_write(char *name,
 	check_closed(name, "output", port, op->closed);
 	{
 	  Write_String_Fun f = op->write_string_fun;
-	  f(SCHEME_STR_VAL(v), len, op);
+	  f(SCHEME_STR_VAL(v), 0, len, op);
 	}
 	op->pos += len;
       } else
@@ -5273,7 +5269,7 @@ newline (int argc, Scheme_Object *argv[])
   else
     port = CURRENT_OUTPUT_PORT(scheme_config);
   
-  scheme_write_string("\n", 1, port);
+  scheme_write_offset_string("\n", 0, 1, port);
 
   return scheme_void;
 }
@@ -5303,7 +5299,7 @@ write_char (int argc, Scheme_Object *argv[])
   check_closed("write-char", "output", port, op->closed);
   {
     Write_String_Fun f = op->write_string_fun;
-    f((char *)buffer, 1, op);
+    f((char *)buffer, 0, 1, op);
   }
   op->pos++;
 #endif
@@ -5998,7 +5994,7 @@ static int pipe_getc(Scheme_Input_Port *p)
   return c;
 }
 
-static void pipe_write(char *str, long len, Scheme_Output_Port *p)
+static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
 {
   Scheme_Pipe *pipe;
   long avail, firstpos, firstn, secondn, endpos;
@@ -6067,9 +6063,9 @@ static void pipe_write(char *str, long len, Scheme_Output_Port *p)
   }
 
   if (firstn)
-    memcpy(pipe->buf + firstpos, str, firstn);
+    memcpy(pipe->buf + firstpos, str + d, firstn);
   if (secondn)
-    memcpy(pipe->buf, str + firstn, secondn);
+    memcpy(pipe->buf, str + d + firstn, secondn);
 
   pipe->bufend = endpos;
 
@@ -8030,7 +8026,7 @@ static void tcp_close_input(Scheme_Input_Port *port)
 }
 
 /* forward decls: */
-static void tcp_write_string(char *s, long len, Scheme_Output_Port *port);
+static void tcp_write_string(char *s, long d, long len, Scheme_Output_Port *port);
 static void tcp_close_output(Scheme_Output_Port *port);
 
 static int tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port)
@@ -8204,9 +8200,9 @@ static int tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
   return sent;
 }
 
-static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
+static void tcp_write_string(char *s, long d, long len, Scheme_Output_Port *port)
 {
-  tcp_write_nb_string(s, len, 0, 0, port);
+  tcp_write_nb_string(s, len, d, 0, port);
 }
 
 static void tcp_close_output(Scheme_Output_Port *port)

@@ -9,7 +9,7 @@ RANLIB = @RANLIB@
 CFLAGS = @CFLAGS@ @OPTIONS@ -I$(srcdir)/../include
 LIBS = @LIBS@
 
-XFORM = ../mzscheme -rq $(srcdir)/xform.ss "$(CPP) $(CFLAGS)"
+XFORM = ../mzscheme -rq $(srcdir)/xform.ss ctok "$(CPP) $(CFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = $(srcdir)/../src
 

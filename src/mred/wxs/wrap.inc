@@ -8898,7 +8898,7 @@
 "(send p set-alignment"
 " 'right"
 " 'center)"
-"(send p stretchable-height #f)"
+"(send f stretchable-height #f)"
 "(make-object button%"
 " \"Cancel\""
 " p"

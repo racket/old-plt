@@ -1,4 +1,4 @@
-(module client "mzscheme-test.ss"
+(module client mzscheme
   (require "board.ss"
            "baseline.ss"
 	   "client-parameters.ss"
@@ -10,7 +10,7 @@
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
                                 (custodian-shutdown-all client-custodian)
-                                (printf "~a~n" (exn-message ex))
+                                ;(printf "~a~n" (exn-message ex))
                                 ;(display (score))(newline)
                                 ;(raise ex)
                                 (score))))
@@ -60,12 +60,13 @@
   (define (do-turn update-score baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
-      (printf "~a~n" (map
-		      (lambda (p)
-			(list (package-id p)
-			      (package-x p)
-			      (package-y p)))
-		      packages))
+;;      (printf "~a~n" (map
+;;		      (lambda (p)
+;;			(list (package-id p)
+;;			      (package-x p)
+;;			      (package-y p)
+;;			      (package-weight p)))
+;;		      packages))
       (cond
         ((null? packages) (fix-home!)))
       (cond

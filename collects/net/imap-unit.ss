@@ -233,6 +233,7 @@
 	      (set-imap-recent! imap (car i))]
 	     [(tag-eq? (cadr i) 'EXPUNGE)
 	      (let ([n (car i)])
+		(log "Recording expunge: ~s~n" n)
 		;; add it to the tree of expunges
 		(expunge-insert! (imap-expunges imap) n)
 		;; decrement exists count:

@@ -15,25 +15,22 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler
 
 ;; The code to be loaded from DrScheme
 
-;;(printf "loading drspidey.ss (cd ~s)~n" (current-directory))
+(printf "loading drspidey.ss (cd ~s)~n" (current-directory))
 
 (require-relative-library "pltrc-co.ss")
 (require-relative-library "macros.ss")
 
-#|
-(begin-elaboration-time
-  (unless (getenv "MREDCOMPILE") 
-    (match:set-error-control 'match)))
-|#
-
 (require-library "load.ss" "zodiac")
 
 (require-library "sigs.ss" "mrspidey" "Sba")
+
 (define mrspidey:sba@
   (require-library "link.ss" "mrspidey" "Sba"))
+
 (require-library "loadu.ss" "mrspidey" "Gui")
 
 (define mrspidey:interaction@
@@ -72,16 +69,17 @@
 (define mrspidey-tool@
   (unit/sig ()
     (import
-      [mred : mred^]
+      mred^
+      framework^
       mrspidey-gui^)
-    (mred:add-version-spec 'sd 1)
+    (version:add-spec 'sd 1)
     (lambda (frame)
       (let* ( [edit (ivar frame definitions-edit)]
               [name (send edit get-filename)])
         (if (string? name)
           (when
-            (or (not (send edit modified?))
-              (let ([action (mred:unsaved-warning name "Analyze" #t)])
+            (or (not (send edit is-modified?))
+              (let ([action (gui-utils:unsaved-warning name "Analyze" #t)])
                 (case action
                   [(save) (send edit save-file)]
                   [(continue) #t]
@@ -92,7 +90,7 @@
 			    [(dir name is-dir) (split-path (path->complete-path filename))])
 		(parameterize ([current-load-relative-directory dir])
 		  (send spidey run-mrspidey filename)))))
-          (mred:message-box
+          (message-box
 	   "MrSpidey can only process programs that are saved to a file"
 	   "MrSpidey Error"))))))
 
@@ -131,48 +129,78 @@
 
 (define tool@
   (compound-unit/sig 
-   (import [WX : wx^]
+   (import [FRAMEWORK : framework^]
 	   [MRED : mred^]
 	   [MZLIB : mzlib:core^]
 	   [PCONVERT : mzlib:print-convert^]
 	   [DRSCHEME : drscheme:export^]
 	   [ZODIAC-UNUSED : zodiac:system^])
-   (link [PARAMETERS : plt:parameters^
-		     ((unit/sig plt:parameters^
-			(import)
-			(define check-syntax-level 'advanced)))]
-	 [INTERFACE : zodiac:interface^
-		    (mrspidey:zodiac:interface@ INTERACTION)]
-	 [ZODIAC : zodiac:system^
-		 (zodiac:system@ 
-		  INTERFACE PARAMETERS 
-		  (MZLIB pretty-print@)
-		  (MZLIB file@))]
-	 [INTERACTION : mrspidey:interaction^
+    (link [INTERFACE : zodiac:interface^
+		     (mrspidey:zodiac:interface@ INTERACTION)]
+	  [ZODIAC : zodiac:system^
+		  (zodiac:system@ 
+		   INTERFACE (MZLIB pretty-print) 
+		   (MZLIB file))]
+
+	  ; browser units
+
+	  [URL : mzlib:url^
+	       ((require-library "urlr.ss" "net") (MZLIB file))]
+	  [BTREE : relative-btree^ ((require-library "btree.ss" "browser"))]
+	  [BULLET : bullet-snip^ ((require-library "bullet.ss" "browser") MRED)]
+	  [HTML : browser:html^ ((require-library "html.ss" "browser") 
+			      (MZLIB file)
+			      (MZLIB string)
+			      BTREE URL BULLET MRED)]	
+	  [BROWSER : browser^
+		   ((require-library "hyper.ss" "browser")
+		    HTML 
+		    (MZLIB function)
+		    (MZLIB string)
+		    URL MRED)]
+
+	  ; end browser units
+
+	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
 		       MRED ZODIAC
-		       (MZLIB file@))]
+		       (MZLIB file))]
 	 [SBA : mrspidey:sba^
 	      (mrspidey:sba@ 
 	       INTERACTION 
-	       ((MZLIB function@) : mrspidey:mzlib:function^)
-	       (MZLIB pretty-print@)
-	       (MZLIB file@)
-	       (MZLIB string@)
+	       ((MZLIB function) : mrspidey:mzlib:function^)
+	       (MZLIB pretty-print)
+	       (MZLIB file)
+	       (MZLIB string)
 	       ZODIAC)]
 	 [GUI : mrspidey-gui^
 	      (mrspidey-gui@ 
-	       WX MRED 
-	       ((MZLIB function@) : mrspidey:mzlib:function^)
-	       (MZLIB pretty-print@)
-	       (MZLIB file@)
-	       (MZLIB string@)
+	       MRED 
+	       FRAMEWORK
+	       BROWSER
+	       ((MZLIB function) : mrspidey:mzlib:function^)
+	       (MZLIB pretty-print)
+	       (MZLIB file)
+	       (MZLIB string)
 	       SBA INTERACTION ZODIAC)]
 	 [TOOL : () 
 	       (mrspidey-tool@ 
-		MRED GUI)])
+		MRED FRAMEWORK GUI)])
    (export)))
 
-;;(printf "tool@ defined~n")
+(printf "tool@ defined~n")
 
 ;; ----------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+

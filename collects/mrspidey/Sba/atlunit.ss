@@ -556,6 +556,7 @@
 		  [(exps parsed-exp ftype nu-tref nu-tdef nu-tbang)
 		   ;; we don't consider indirectly included files
 		   ;; to be included
+		   ; (printf "bar!~n")
 		   (parameterize ([record-analyzed-file-hook
 				   (lambda (filename . _)
 				     (void))])

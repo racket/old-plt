@@ -24,24 +24,24 @@
 
 (define mrspidey:error-handler
   (make-parameter
-    (case-lambda
-      [(message object)
-        (unless (zodiac:zodiac? object)
-          (printf "Bad object in mrspidey:error-handler ~s~n" object)
-          ((mrspidey:error-handler) message))
-        (let* ([loc (zodiac:zodiac-start object)])
-          (unless (zodiac:location? loc)
-            (printf "Bad location in mrspidey:error-handler ~s~n" loc)
-            ((mrspidey:error-handler) message))
-          (error 'MrSpidey "~a"
-            (format "~a at ~s line ~s, column ~s~n"
-              message
-              (file-name-from-path (zodiac:location-file loc))
-              (zodiac:location-line loc)
-              (zodiac:location-column loc))))]
-      [(message)
-        (error 'MrSpidey "~a" (format "~a~n" message))])
-    (lambda (x) x)))
+   (case-lambda
+    [(message object)
+     (unless (zodiac:zodiac? object)
+	     (printf "Bad object in mrspidey:error-handler ~s~n" object)
+	     ((mrspidey:error-handler) message))
+     (let* ([loc (zodiac:zodiac-start object)])
+       (unless (zodiac:location? loc)
+	       (printf "Bad location in mrspidey:error-handler ~s~n" loc)
+	       ((mrspidey:error-handler) message))
+       (error 'MrSpidey "~a"
+	      (format "~a at ~s line ~s, column ~s~n"
+		      message
+		      (file-name-from-path (zodiac:location-file loc))
+		      (zodiac:location-line loc)
+		      (zodiac:location-column loc))))]
+    [(message)
+     (error 'MrSpidey "~a" (format "~a~n" message))])
+   (lambda (x) x)))
 
 (define mrspidey:internal-error error)
 
@@ -56,21 +56,21 @@
 
 (define mrspidey:add-summary-handler
   (make-parameter
-    (match-lambda*
-      [(str loc word-no) 
-        (cond
-          [(zodiac:location? loc)
-            (printf "~a at line ~s, file ~s~n" 
-              str 
-              (zodiac:location-line loc)
-              (file-name-from-path (zodiac:location-file loc)))]
-          [(zodiac:zodiac? loc)
-            (mrspidey:add-summary str (zodiac:zodiac-start loc) word-no)]
-          [else
-            (printf "Bad location in mrspidey:add-summary-handler ~s~n" loc)
-            (mrspidey:add-summary str)])]
-      [(str . _) (printf "~a~n" str)])
-    (lambda (x) x)))
+   (match-lambda*
+    [(str loc word-no) 
+     (cond
+      [(zodiac:location? loc)
+       (printf "~a at line ~s, file ~s~n" 
+	       str 
+	       (zodiac:location-line loc)
+	       (file-name-from-path (zodiac:location-file loc)))]
+      [(zodiac:zodiac? loc)
+       (mrspidey:add-summary str (zodiac:zodiac-start loc) word-no)]
+      [else
+       (printf "Bad location in mrspidey:add-summary-handler ~s~n" loc)
+       (mrspidey:add-summary str)])]
+    [(str . _) (printf "~a~n" str)])
+   (lambda (x) x)))
 
 (define (mrspidey:warning . line)
   (apply (mrspidey:warning-handler) line))
@@ -92,26 +92,26 @@
 
 (define default-mrspidey:progress-handler
   (let ([current ()]
-        [fresh-line #t])
+	[fresh-line #t])
     (letrec 
-        ([f (match-lambda*
-             [((? string? name) line)
-              (unless (equal? name current)
-                (f 'fresh-line)
-                (set! current name)
-                (mrspidey:progress-output name))
-              (mrspidey:progress-output (format "[~s]" line))
-              (flush-output)
-              (set! fresh-line #f)]
-             [((? string? str)) 
-              (f 'fresh-line)
-              (mrspidey:progress-output str)
-              (f #\newline)]
-             [(#\newline)
-              (mrspidey:progress-output (format "~n"))
-              (set! fresh-line #t)]
-             [('fresh-line)
-              (unless fresh-line (f #\newline))])])
+	([f (match-lambda*
+	     [((? string? name) line)
+	      (unless (equal? name current)
+		      (f 'fresh-line)
+		      (set! current name)
+		      (mrspidey:progress-output name))
+	      (mrspidey:progress-output (format "[~s]" line))
+	      (flush-output)
+	      (set! fresh-line #f)]
+	     [((? string? str)) 
+	      (f 'fresh-line)
+	      (mrspidey:progress-output str)
+	      (f #\newline)]
+	     [(#\newline)
+	      (mrspidey:progress-output (format "~n"))
+	      (set! fresh-line #t)]
+	     [('fresh-line)
+	      (unless fresh-line (f #\newline))])])
       f)))
 
 (define mrspidey:progress-handler
@@ -125,20 +125,18 @@
 
 (define mrspidey:progress-output-handler
   (make-parameter (lambda (str) (display str) (flush-output)) 
-                  (lambda (x) x)))
+		  (lambda (x) x)))
 
 ;; ----------------------------------------------------------------------
 
 (define record-analyzed-file-hook
   (make-parameter
    (lambda (filename . _)
-     (printf "Record-analyzed-file ~s~n" filename))
+     (printf "record-analyzed-file ~s~n" filename))
    (lambda (x) x)))
 
 (define (record-analyzed-file . args)
   (apply (record-analyzed-file-hook) args))
-
-;; ----------------------------------------------------------------------
 
 ;(trace mrspidey:warning)
 ;(trace mrspidey:error)

@@ -959,9 +959,9 @@
        
        ;; -- parameter utilities
        ;; We should arguably have a separate type for parameter procedures
-       (make-parameter (forall (x i)
-			       (x optional (i -> x) 
-				  -> (optional i -> (union x void)))))
+       ;(make-parameter (forall (x i)
+       ;	 		       (x optional (i -> x) 
+       ;				  -> (optional i -> (union x void)))))
        (parameter?            (_ -> bool))
        (parameter-procedure=? (_ _ -> bool))
 

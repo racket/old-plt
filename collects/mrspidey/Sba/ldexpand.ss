@@ -349,9 +349,10 @@
       (require-library "core.ss")
       (require-library "macro.ss"))
     (let* ([defs2 (if needs-expand?
-		      (zodiac:expand-program defs
-					     attributes
-					     zodiac:mrspidey-vocabulary)
+		      (zodiac:scheme-expand-program 
+		       defs
+		       attributes
+		       zodiac:mrspidey-vocabulary)
 		      defs)]
 	   [defs2 (zodiac:inline-begins defs2)]
 	   [_ (zodiac:initialize-mutated defs2)]

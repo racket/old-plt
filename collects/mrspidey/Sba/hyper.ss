@@ -64,22 +64,21 @@
     (and arrow-filter (symbol->string (template-type (car arrow-filter)))))
 
   (define (analysis-get-filters)
-    (cons 
-     (cons "No filter" #f)
-     (map 
-      (lambda (C) (cons (symbol->string C) C))
-      (append
-       `( nil num sym str void undefined true false 
-	      box cons vec eof iport oport
-	      promise unit thread hash-table regexp parameterization semaphore)
-       (filter
-	(lambda (x) x)
-	(hash-table-map
-	 constructor-env
-	 (lambda (c template)
-	   (and
-	    (memq template-structure (template-super-templates template))
-	    c))))))))
+    (append
+     '("No filter"
+       "nil" "num" "sym" "str" "void" "undefined" "true" "false"
+       "box" "cons" "vec" "eof" "iport" "oport"
+       "promise" "unit" "thread" "hash-table" "regexp" "parameterization" 
+       "semaphore")
+     (map car
+	  (filter
+	   (lambda (x) x)
+	   (hash-table-map
+	    constructor-env
+	    (lambda (c template)
+	      (and
+	       (memq template-structure (template-super-templates template))
+	       c)))))))
 
   ;; ------------------------------
 
@@ -423,7 +422,7 @@
 			(if (memq ftype visited)
 			    ;; going around a loop
 			    (traverse rest-paths)
-			    (let* ( [parents (analysis-parents ftype file-visable?)])
+			    (let* ( [parents #f ]);(analysis-parents ftype file-visable?)])
 			      (set! visited (cons ftype visited))
 			      (if (and (null? parents) (null? rest-paths))
 				  ;; this path has terminated, and is the only one left, 

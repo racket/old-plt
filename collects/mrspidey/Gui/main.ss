@@ -16,6 +16,7 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler 
 
 (define-struct fileinfo (filename frame thunk-port annotations))
 ;; annotations may also be (-> zodiac:parsed)
@@ -26,15 +27,15 @@
 
 (define (wrap-busy-cursor thunk)
   (dynamic-wind
-    (lambda () (wx:begin-busy-cursor))
+    (lambda () (begin-busy-cursor))
     thunk
-    (lambda () (wx:end-busy-cursor))))
+    (lambda () (end-busy-cursor))))
 
 ; ----------------------------------------------------------------------
 (define tm (void))
 
 (define MrSpidey%
-  (class null ()
+  (class object% ()
 
     (public 
 
@@ -53,32 +54,28 @@
        (lambda ()
          (pretty-debug-gui `(init-progress-frame))
          (let* ( [f (parameterize
-                      ([wx:current-eventspace (wx:make-eventspace)])
-                      (make-object mred:frame% '() 
-                        (format "~a Progress" st:name)))]
-                 [p (make-object mred:vertical-panel% f)]
-                 [c (make-object mred:wrapping-canvas% p)]
-                 [ph (make-object mred:horizontal-panel% p)]
-                 [_ (send ph stretchable-in-y #f)]
-                 [_ (make-object mred:horizontal-panel% ph)]
-                 [b (make-object mred:button% ph 
-                      (lambda _ (send f show #f))
-                      "Hide")]
-                 [e (make-object mred:media-edit%)])
+                      ([current-eventspace (make-eventspace)])
+                      (make-object frame% (format "~a Progress" st:name)))]
+                 [p (make-object vertical-panel% f)]
+                 [c (make-object editor-canvas% p)]
+                 [ph (make-object horizontal-panel% p)]
+                 [_ (send ph stretchable-height #f)]
+                 [_ (make-object horizontal-panel% ph)]
+                 [b (make-object button% "Hide" ph 
+                      (lambda _ (send f show #f)))]
+                 [e (make-object text%)])
            (set! progress-frame f)
            (set! progress-canvas c)
            (set! progress-edit e)
-           (send p add-child c)
-           ;;(send c set-media e)
-           (send progress-frame set-size -1 -1 400 200);; ht was 130
+           (send progress-frame resize 400 200)
            (send progress-frame show #f)))]
 
       [new-progress-frame!
        (lambda ()
          (pretty-debug-gui `(new-progress-frame))
-         (set! progress-edit (make-object mred:media-edit%))
+         (set! progress-edit (make-object text%))
          (send progress-edit lock #t)
-         (send progress-canvas set-media progress-edit)
+         (send progress-canvas set-editor progress-edit)
          (send progress-frame show #t)
          (send progress-frame iconize #f)
          (pretty-debug-gui `(new-progress-frame-done)))]
@@ -88,7 +85,6 @@
            (let*
                ( [old-progress-handler (mrspidey:progress-handler)]
                  [current '()]
-
                  [current-start-time 0]
                  [width 6]
                  [total-width 18])
@@ -105,7 +101,7 @@
                                   current-start-time)
                             width))
                         (send progress-edit last-position)))]
-                   [f (match-lambda*
+		  [f (match-lambda*
                       [((? string? name) line)
                        (if (equal? name current)
                          (let ([end (send progress-edit last-position)])
@@ -139,7 +135,7 @@
                     (lambda args
                       ;;(apply old-progress-handler args)
                       (apply g args)
-                      (wx:flush-display))])
+                      (flush-display))])
                  (send progress-frame show #t)
                  (begin0 
                    (thunk)
@@ -185,21 +181,21 @@
                 [frame (filename->frame file)])
            (if frame
                (send frame focus-def (zodiac:location-offset loc))
-               (wx:message-box
+               (message-box
                 (format "File ~s is not loaded" (file-name-from-path file))
                 "Error"
-                (bitwise-ior wx:const-ok)))))]
+                (bitwise-ior 'ok)))))]
 
       ;; ------------------------------
 
       [open-analyzed-file-choice
         (lambda ()
           (let ([choice
-                  (wx:get-single-choice
-                    "Select referenced unit file to open"
+                  (get-choices-from-user
                     "Open Unit"
+                    "Select referenced unit file to open"
                     (quicksort (map fileinfo-filename fileinfo*) string<?)
-                    '() -1 -1 #t 500 300)])
+                    #f '() '(single))])
             (when (string? choice)
               (open-fileinfo (filename->fileinfo choice) #t))))]
 
@@ -226,7 +222,7 @@
          (pretty-debug-gui
            `(add-no-show-frame ,filename ,fi ,@first-frame-locs))
          (assert (not frame))
-         (let ([summary-edit (make-object mred:media-edit%)])
+         (let ([summary-edit (make-object text%)])
            (initialize-summary summary-edit)
            (pretty-debug-gui `(summary-initialized))
            (parameterize
@@ -256,14 +252,14 @@
 
       [initialize-summary
         (lambda (edit)
-          (let* ([delta (make-object wx:style-delta%
-                          wx:const-change-family
-                          wx:const-decorative)]
-                  [click-delta (make-object wx:style-delta%)])
-            (send delta set-delta wx:const-change-size 10)
+          (let* ([delta (make-object style-delta% 
+				     'change-family
+				     'decorative)]
+                  [click-delta (make-object style-delta%)])
+            (send delta set-delta 'change-size 10)
             (send click-delta copy delta)
             (send click-delta set-delta-foreground "BLUE")
-            (send click-delta set-delta wx:const-change-underline 1)
+            (send click-delta set-delta 'change-underline #t)
 
             (let ( [insert
                      (lambda (s)
@@ -274,14 +270,14 @@
               (let*-values
                 ( [(s1 e1) (insert "Welcome to ")]
                   [(s2 e2) (insert "MrSpidey")]
-                  [(s3 e3) (insert (format ", version ~a." (mred:version)))]
+                  [(s3 e3) (insert (format ", version ~a." (version:version)))]
                   [(s4 e4) (insert (format "~n"))])
                 (send edit change-style delta s1 e1)
                 (send edit change-style click-delta s2 e2)
                 (send edit change-style delta s3 e3)
                 (send edit set-clickback s2 e2
 		  (lambda args
-                    (make-object mred:hyper-view-frame% 
+                    (make-object hyper-text%
                       (string-append 
                         "file:"
                         (build-path
@@ -328,10 +324,10 @@
                            [end (unbox init-pos-box)]
                            [_ 
                              (for i 0 (add1 word-ofs)
-                               (set! end (mred:scheme-forward-match 
+                               (set! end (scheme-paren:forward-match 
                                            summary-edit end 
                                            (send summary-edit last-position))))]
-                           [start (mred:scheme-backward-match summary-edit end 0)])
+                           [start (scheme-paren:backward-match summary-edit end 0)])
              
                      '(pretty-debug-gui 
                         `(send summary-edit change-style check-link-delta
@@ -384,12 +380,13 @@
           (pretty-debug-gui `(annotate-edit ,mode ,filename))
           (match (filename->fileinfo filename)
             [($ fileinfo filename frame thunk-port annotations)
-              (let* ( [port (thunk-port)]
-                      [edit (make-object 
-                              (mode-edit-class mode)
-                              (if (multiple-files) "  " "")
-                              this canvas)])
-                (send edit set-filename filename)
+	     (let ([port (thunk-port)]
+		   [edit 
+		    (make-object 
+		     (mode-edit-class mode)
+		     (if (multiple-files) "  " "")
+		     this canvas)])
+                (send edit editor-set-filename filename)
                 (send edit edit-sequence
                   (lambda ()
                     (pretty-debug-gui "loading!")
@@ -409,13 +406,13 @@
                         (for i 0 NUM-EXTRA-LINES (send edit insert-line ""))))
                     (close-input-port port)
                     (pretty-debug-gui `(last-line ,(send edit last-line)))
-                    (send edit change-style base-delta 
-                      0 (send edit last-position))
+                    (send edit editor-change-style base-delta 
+                      0 (send edit editor-last-position))
 
                     (pretty-debug-gui "annotating!")
                     (annotate! filename edit mode annotations)
 
-                    (send edit set-position 0)
+                    (send edit editor-set-position 0)
                     (pretty-debug-gui `(annotate-buffer done))))
 
                 edit)]))]
@@ -502,7 +499,7 @@
       [run-mrspidey
 
        (lambda (file . first-frame-locs)
-         
+
          (pretty-debug-gui `(run-mrspidey ,file))
          (set! reanalyze 
              (lambda () (apply run-mrspidey file first-frame-locs)))
@@ -513,15 +510,14 @@
          (new-progress-frame!)
 
          (let ([file (normalize-path (normalize-path file))])
-           ;; Following calls record-anlyzed-file
+           ;; Following calls record-analyzed-file
            (st:analyze-and-make-annotations file)
-           (apply add-frame (filename->fileinfo file) #t first-frame-locs)
-
-           ))])
+           (apply add-frame (filename->fileinfo file) #t first-frame-locs)))])
 
     ;; ----------------------------------------------------------------------
 
     (sequence
+      (super-init)
       (set! tm this)
       (record-analyzed-file-hook local-record-analyzed-file)
       (init-progress-frame!))))
@@ -538,7 +534,7 @@
   (list 
     (make-mode
       "Types and Checks" 
-      flow-arrow:media-edit%
+      flow-arrow:edit%
       (list 
         'add-type-annotation 
         'add-check-annotation

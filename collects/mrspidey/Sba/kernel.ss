@@ -30,6 +30,7 @@
     ( (: num num)
       (! expr (union zodiac:parsed string false symbol))
       (! arrowto (listof FlowType))
+
       (! arrowfrom (listof FlowType))
       (! type-annotation any) ;; type-annotation% or file.ss (if from .za file)
       (! symbol sym)

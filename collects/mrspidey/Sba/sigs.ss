@@ -30,6 +30,21 @@
    remv
    quicksort))
 
+'(define-signature mrspidey:handlers^
+  (mrspidey:error
+   mrspidey:error-handler
+   mrspidey:internal-error
+   mrspidey:add-summary
+   mrspidey:add-summary-handler
+   mrspidey:warning
+   mrspidey:warning-handler
+   mrspidey:progress
+   mrspidey:progress-handler
+   mrspidey:progress-output
+   mrspidey:progress-output-handler
+   record-analyzed-file-hook
+   record-analyzed-file))
+
 (define-signature mrspidey:library-paras^ 
   (make-parameter-boolean
    make-parameter-integer

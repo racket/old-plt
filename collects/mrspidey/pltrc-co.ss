@@ -192,12 +192,12 @@
 	      (#%let ([param (#%caar params)]
 		      [orig (#%gensym)]
 		      [pz (#%gensym)])
-		 `(#%let* ([,pz ,param]
-			   [,orig (,pz)])
-		     (#%dynamic-wind
-		        (#%lambda () (,pz ,(#%cadar params)))
-		        (#%lambda () (parameterize* ,(cdr params) ,@body))
-			(#%lambda () (,pz ,orig)))))))))))
+		 `(#%let* ([param ,param]
+                           [,pz ,param])
+			  (#%dynamic-wind
+			   (#%lambda () (,pz ,(#%cadar params)))
+			   (#%lambda () (parameterize* ,(cdr params) ,@body))
+			   (#%lambda () (,pz ,orig)))))))))))
 
 
 ;;----------------------------------------------------------------------

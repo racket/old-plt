@@ -15,6 +15,7 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler 
 
 ; Global variable to record the most-recently created frame
 (define tf (void))
@@ -22,44 +23,52 @@
 (define shake-it-repetitions 25)
 
 (define spidey:frame%
-  (class 
 
-    mred:searchable-frame%
+  (class frame:searchable%
 
     (arg-main arg-filename summary-edit . init-locs)
 
-    (inherit show get-canvas get-canvas%
-      make-menu create-status-line set-status-text
-      get-position get-size set-icon panel
-      set-title file-menu set-title-prefix
-      set-size)
+    (inherit 
+     show get-menu-bar get-canvas get-canvas%
+     get-area-container
+     create-status-line set-status-text
+     get-size set-icon 
+     set-label-prefix
+     move resize)
 
     ;; ----------
 
     (rename
-      [super-on-close on-close]
-      [super-make-menu-bar make-menu-bar])
+      [super-on-close on-close])
 
     ;; ----------
-      
-    (public
 
-      ; [get-edit (lambda () program-edit)] ; MATTHEW asks: why was this here?
-      [auto-set-wrap #f]
-      [edit% flow-arrow:media-edit%]    
+    (override
       [on-close
         (lambda ignored
           (send main on-frame-close filename)
           (send this show #f)
           (remq-callback-sdl-alg-changed! flush-type-cache)
           (super-on-close))]
+      [file-menu:between-close-and-quit
+        (lambda (file-menu)
+	  (make-object menu-item% "Close All" file-menu 
+		       (lambda (mi ce) 
+			 (wrap-busy-cursor 
+			  (lambda () 
+			    (send main close-all-frames))))))])
+      
+    (public
 
+      [auto-set-wrap #f]
+      [edit% flow-arrow:edit%]    
+      [panel #f] 
       [set-show-mode
         (lambda (which)
           (pretty-debug-gui `(set-show-mode ,which))
           (unless (eq? which canvas-show-mode)
             (set! canvas-show-mode which)
-            (send summary-canvas stretchable-in-y (eq? which 'summary))
+            (send summary-canvas stretchable-height (eq? which 'summary))
             (send panel change-children
               (lambda (ignore)
                 (filter
@@ -71,54 +80,6 @@
                       summary-canvas)))))))]
 
       ;; ---------- Set up the menus
-      [file-menu:new #f]
-      [file-menu:open #f]
-      [file-menu:revert #f]
-      [file-menu:save #f]
-      [file-menu:save-as #f]
-      ;;[file-menu:print #f]
-      ;;[file-menu:between-print-and-close (lambda args (void))]
-      [file-menu:between-save-and-print (lambda args (void))]
-
-      [edit-menu:undo #f]   
-      [edit-menu:redo #f]
-      [edit-menu:cut #f]
-      [edit-menu:paste #f]
-      [edit-menu:delete #f]
-      ;;[edit-menu:find #f]
-      [edit-menu:replace #f]
-      [edit-menu:between-replace-and-preferences (lambda args (void))]
-
-      [file-menu:close on-close]
-      [file-menu:between-open-and-save
-        (lambda (file-menu)
-          (send file-menu
-            append-item
-            "Open ..."
-            (lambda () (send main open-analyzed-file-choice)))
-          (send file-menu
-            append-item
-            "Open All"
-            (lambda () (wrap-busy-cursor (lambda () (send main open-all #t)))))
-          (send file-menu
-            append-item
-            "Load All"
-            (lambda () (wrap-busy-cursor (lambda () (send main open-all #f)))))
-          (send file-menu
-            append-item
-            "Reanalyze"
-            (lambda () (wrap-busy-cursor (lambda () (send main reanalyze)))))
-          (send file-menu append-separator))]
-      [file-menu:between-close-and-quit
-        (lambda (file-menu)
-          (send file-menu
-            append-item
-            "Close All"
-            ;;(format "Close ~a" st:name)
-            (lambda () 
-              (wrap-busy-cursor 
-                (lambda () 
-                  (send main close-all-frames))))))]
 
       [flush-type-cache (lambda () (void))]
 
@@ -132,87 +93,44 @@
             ;;(printf "Summary-edit size ~s~n" (send summary-edit last-line))
             (set-show-mode 'both)))]
 
-      [make-menu-bar
-        (lambda ()
-          (let ([menu-bar (super-make-menu-bar)])
-            (let ([show-menu (make-menu)])
-              (send menu-bar append show-menu "Show")
-              (set! init-show-menu
-                (lambda ()
-                  (send show-menu
-                    append-check-set
-                    (list 
-                      (cons "Program Only" 'program)
-                      (cons "Summary Only" 'summary)
-                      (cons "Both"         'both))
-                    set-show-mode
-                    (case canvas-show-mode
-                      [(program) 0]
-                      [(summary) 1]
-                      [(both) 2]
-                      [else 0]))))
-                          
-              '(send show-menu append-separator)
-              '(send show-menu
-                 append-check-set
-                 (map (lambda (mode) (cons (mode-name mode) mode))
-                   modes)
-                 set-display-mode))
-
-            (let ([clear-menu (make-menu)])
-              (send menu-bar append clear-menu "Clear")
-              (send* clear-menu
-                (append-item 
-                  "Arrows+Types" 
-                  (lambda () 
-                    (wrap-busy-cursor 
-                      (lambda () 
-                        (send* program-edit 
-                          (delete-arrows)
-                          (delete-types))))
-                    "Removes both types and arrows from the window"))
-                (append-item
-                  "Arrows" 
-                  (lambda () 
-                    (wrap-busy-cursor 
-                      (lambda () 
-                        (send program-edit delete-arrows))))
-                  "Removes all arrows from the window")
-                (append-item
-                  "Types" 
-                  (lambda () 
-                    (wrap-busy-cursor 
-                      (lambda () 
-                        (send program-edit delete-types))))
-                  "Removes all types from the window"))
-              (unless st:restricted
-                (send clear-menu append-item
-                  "Shake Buffer" 
-                  (lambda () (for i 0 shake-it-repetitions (shake-it)))
-                  "Sends random inputs to buffer")
-                (send clear-menu append-item
-                  "Rewrite Buffer" 
-                  (lambda () 
-                    (wrap-busy-cursor 
-                      (lambda () 
-                        (set-display-mode display-mode))))
-                  "Removes all types and arrows from the window")))    
-
-            (let ([filter-menu (make-menu)])
-              (send menu-bar append filter-menu "Filter")
-              (send filter-menu
-                append-check-set
-                (analysis-get-filters)
-                analysis-set-arrow-filter!)
-              (analysis-set-arrow-filter! #f))
-
-            
-
-            menu-bar))]
-
       [init-show-menu #f]
       )
     
+    (override
+
+     [file-menu:new #f]
+     [file-menu:open #f]
+     [file-menu:revert #f]
+     [file-menu:save #f]
+     [file-menu:save-as #f]
+     [file-menu:close on-close]
+
+     [file-menu:between-open-and-revert
+      (lambda (file-menu)
+	(let ([new-item 
+	       (lambda (label cb)
+		 (make-object menu-item% label file-menu cb))])
+	  (new-item "Open..." 
+		    (lambda (mi ce) (send main open-analyzed-file-choice)))
+	  (new-item "Open All"
+		    (lambda (mi ce) (wrap-busy-cursor 
+				     (lambda () (send main open-all #t)))))
+	  (new-item "Load All" 
+		    (lambda (mi ce) (wrap-busy-cursor 
+				     (lambda () (send main open-all #f)))))
+	  (new-item "Reanalyze" 
+		    (lambda (mi ce) (wrap-busy-cursor 
+				     (lambda () (send main reanalyze)))))))]
+
+      [file-menu:between-save-as-and-print (lambda args (void))]
+
+      [edit-menu:undo #f]   
+      [edit-menu:redo #f]
+      [edit-menu:cut #f]
+      [edit-menu:paste #f]
+
+      [edit-menu:between-find-and-preferences (lambda args (void))])
+
     ;; ----------
 
     (public
@@ -233,14 +151,15 @@
           ;; and to load and annotate file
           (set! program-edit 
             (send main annotated-edit display-mode filename program-canvas))
-          (send program-canvas set-media program-edit))]
+          (send program-canvas set-editor 
+		(send program-edit get-editor)))]
 
       [focus-def
         (lambda (pos)
           (unless (memq display-mode '(program both))
             (set-show-mode 'both))
           (let* ( [real-pos (send program-edit real-start-position pos)]
-                  [end (mred:scheme-forward-match 
+                  [end (scheme-paren:forward-match 
                          program-edit real-pos 
                          (send program-edit last-position))])
             (thread
@@ -263,17 +182,102 @@
         `(Tframe ,arg-main ,arg-filename ,summary-edit ,@init-locs))
       (match init-locs
         [(w h x y) 
-          (pretty-debug-gui `(send this set-size ,(+ x 15) ,(+ y 15) ,w ,h))
-          (set-size x y w h)]
+          (pretty-debug-gui 
+	   `(begin (send this move ,(+ x 15) ,(+ y 15))
+		   (send this resize ,w ,h)))
+	  (move x y)
+	  (resize w h)]
         [() (void)])
       (pretty-debug-gui `(Tframe super-init))
       (let ([t (format "~a: ~a" 
                  st:name (file-name-from-path arg-filename))]) 
         (super-init t)
         (pretty-debug-gui `(Tframe super-init done))
-        (set-title-prefix t)))
+        (set-label-prefix t)))
 
-    	
+    (sequence
+      (set! panel (get-area-container)))
+
+    (sequence
+      (let* ([menu-bar (get-menu-bar)]
+	     [show-menu (make-object menu% "Show" menu-bar)]
+	     [clear-menu (make-object menu% "Clear" menu-bar)]
+	     [filter-menu (make-object menu% "Filter" menu-bar)]
+	     [check-program #f]
+	     [check-summary #f]
+	     [check-both #f]
+	     [check-alist #f]
+	     [show-callback 
+	      (lambda (item _)
+		(for-each
+		 (lambda (c) 
+		   (let ([check-item (car c)])
+		     (if (eq? check-item item)
+			 (set-show-mode (cadr c))
+			 (send check-item check #f))))
+		 check-alist))]
+	     [add-check (lambda (s) (make-object checkable-menu-item% 
+						 s show-menu show-callback))]
+	     [add-clear-item (lambda (s f) (make-object menu-item% 
+							s clear-menu f))]
+	     [filters (analysis-get-filters)]
+	     [filter-items '()])
+
+	(set! check-program (add-check "Program Only"))
+	(set! check-summary (add-check "Summary Only"))
+	(set! check-both (add-check "Both"))
+
+	(set! check-alist `((,check-program program)
+			    (,check-summary summary)
+			    (,check-both both)))
+
+	(send check-program check #t)
+
+	(set-show-mode canvas-show-mode)
+
+	(add-clear-item "Arrows+Types"  
+			(lambda (mi ce) 
+			  (wrap-busy-cursor 
+			   (lambda () 
+			     (send* program-edit 
+				    (delete-arrows)
+				    (delete-types))))
+			  "Removes both types and arrows from the window"))
+
+	(add-clear-item "Arrows"  
+			(lambda (mi ce) 
+			  (wrap-busy-cursor 
+			   (lambda () 
+			     (send program-edit delete-arrows)))))
+
+	(add-clear-item "Types"  
+			(lambda (mi ce) 
+			  (wrap-busy-cursor 
+			   (lambda () 
+			     (send program-edit delete-types)))))
+
+	(for-each
+	 (lambda (s)
+	   (set! filter-items
+		(cons (make-object checkable-menu-item% 
+				   s filter-menu 
+				   (lambda (item _)
+				     (let ([item-label (send item get-label)])
+				       (for-each
+					(lambda (f)
+					  (unless (string=? item-label 
+							    (send f get-label))
+						  (send f check #f)))
+					filter-items)
+				       (analysis-set-arrow-filter! 
+					(string->symbol item-label)))))
+		      filter-items)))
+	 filters)
+
+	(set! filter-items (reverse filter-items))
+	(send (car filter-items) check #t)
+	(analysis-set-arrow-filter! #f)))
+
     ;; ---------------------------------------------------------
 
     (sequence
@@ -295,14 +299,10 @@
       (pretty-debug-gui '(setting summary-canvas))
       (set! summary-canvas
         (and summary-edit
-          (let ([c (make-object (class-asi mred:one-line-canvas%
-					   (public
-					    [lines 5]
-					    [style-flags 0]))
-                    panel) 
-                  ])
-            (send c set-media summary-edit)
-            c)))
+          (let ([c (make-object editor-canvas% panel)])
+	    (send c set-line-count 5)
+	    (send c set-editor summary-edit)
+	    c)))
 
       (assert (is-a? summary-canvas mred:connections-media-canvas%))
       (pretty-debug-gui '(setting program-canvas))
@@ -313,11 +313,11 @@
       ;; ------------------------------------------------------------
       ;; install the icon
       
-      '(let ([icon (make-object wx:icon% 
+      '(let ([icon (make-object icon% 
                      (build-absolute-path 
                        (collection-path "mrspidey") ; MATTHEW: got rid of plt-home
                        "icon.gif")
-                     wx:const-bitmap-type-gif
+                     'gif
                      )])
          (when (send icon ok?) (set-icon icon)))
 
@@ -333,7 +333,6 @@
 
       ;;(set-display-mode display-mode)
       (calc-show)
-      (init-show-menu)
       (show #t)
       
       )))

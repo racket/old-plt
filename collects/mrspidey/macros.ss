@@ -80,13 +80,13 @@
 
       (define-macro pretty-debug-traverse-small (lambda args
         `(when debugging-traverse 
-           (dynamic-let ([pretty-print-depth 4]) (pretty-print-debug ,@args)))))
+           (let ([pretty-print-depth 4]) (pretty-print-debug ,@args)))))
 
       (define-macro pretty-debug-unit (lambda args
         (match args
           [(arg) `(when debugging-unit (pretty-print-debug ,arg))]
           [(arg depth)
             `(when debugging-unit
-               (dynamic-let ([pretty-print-depth ,depth]) (pretty-print-debug ,arg)))])))
+               (let ([pretty-print-depth ,depth]) (pretty-print-debug ,arg)))])))
       )))
 

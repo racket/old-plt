@@ -15,18 +15,24 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler 
+
+(define p #f) ; temp!!!!
 
 (define parameter-radio-boxes
-  (lambda (name param sym p major-dim direction)
-    (mred:set-preference-default sym (param) 
+  (lambda (name param sym p direction)
+    (preferences:set-default sym (param) 
       (lambda (x)
         (with-handlers ((exn? (lambda (exn) #f)))
           (param x)
           #t)))
-    (param (mred:get-preference sym))
+    (param (preferences:get sym))
     (let* ([o
              (make-object
-               mred:radio-box% p 
+               radio-box% 
+	       name 
+               (map cadr (param '?))
+	       p 
                (lambda (bx event)
                  ;;(printf "~s~n" (param '?))
                  (match
@@ -34,11 +40,7 @@
                      (send event get-command-int))
                    [(tag . _) 
                      (param tag)
-                     (mred:set-preference sym tag)]))
-               name 
-               -1 -1 -1 -1 
-               (map cadr (param '?))
-               major-dim
+                     (preferences:set sym tag)]))
                direction)]
             [pairs
               (map
@@ -52,34 +54,33 @@
                       "Can't find para in pairs ~s" (param))]
                   [(equal? (param) (cdar pairs)) n]
                   [else (loop (add1 n) (cdr pairs))]))])
-      (send o stretchable-in-x #t)
+      (send o stretchable-width #t)
       (send o set-selection default-ndx)
       o
       )))
 
 (define parameter-check-box
   (lambda (name param sym p)
-    (mred:set-preference-default sym (param) 
+    (preferences:set-default sym (param) 
       (lambda (x)
         (with-handlers ((exn? (lambda (exn) #f)))
           (param x)
           #t)))
-    (param (mred:get-preference sym))
-    (let* ( [hp (make-object mred:horizontal-panel% p)]
+    (param (preferences:get sym))
+    (let* ( [hp (make-object horizontal-panel% p)]
             [o
-              (make-object
-                mred:check-box% hp 
-                (lambda (bx event)
-                  ;;(printf "~s~n" (param '?))
-                  (match
-                    (list-ref (param '?)
-                      (send event get-command-int))
-                    [(tag . _) 
-                      (param tag)
-                      (mred:set-preference sym tag)]))
-                name 
-                -1 -1 -1 -1)]
-            [_ (make-object mred:horizontal-panel% hp)])
+              (make-object check-box% 
+			   name 
+			   hp 
+			   (lambda (bx event)
+			     ;;(printf "~s~n" (param '?))
+			     (match
+			      (list-ref (param '?)
+					(send event get-command-int))
+			      [(tag . _) 
+			       (param tag)
+			       (preferences:set sym tag)])))]
+            [_ (make-object horizontal-panel% hp)])
       (send o set-value (param))
       o
       )))
@@ -107,32 +108,32 @@
 
 ;; ======================================================================
 
-(mred:set-preference-default 'st:const-merge-size (st:const-merge-size) 
+(preferences:set-default 'st:const-merge-size (st:const-merge-size) 
   (lambda (x)
     (with-handlers ((exn? (lambda (exn) #f)))
       (st:const-merge-size x)
       #t)))
-(st:const-merge-size (mred:get-preference 'st:const-merge-size))
+(st:const-merge-size (preferences:get 'st:const-merge-size))
 
 (define mrspidey-mk-analysis-pref-panel
   (lambda (panel)
     (let*
-      ( [p (make-object mred:vertical-panel% panel)]
+      ( [p (make-object vertical-panel% panel)]
         
-        [vp (make-object mred:vertical-panel% p -1 -1 -1 -1)]
+        [vp (make-object vertical-panel% p)]
         [_ (parameter-check-box
              "Accurate constant types"
              st:constants 'st:constants
              vp)]
-        [g (make-object mred:slider% vp 
+        [g (make-object slider% 
+             "Constant merge size"
+             1 100 
+	     vp 
              (lambda (slider event)
                (st:const-merge-size (send event get-command-int))
-               (mred:set-preference 'st:const-merge-size 
-                 (send event get-command-int)))
-             "Constant merge size"
-             (st:const-merge-size)
-             1 100 
-             100)]
+               (preferences:set 'merge-size 
+				(send event get-command-int)))
+             (st:const-merge-size))]
         [_ (send g enable #t)]
         [_ (parameter-check-box
              "If splitting"
@@ -150,36 +151,36 @@
               "Polymorphism:"
               st:polymorphism
               'st:polymorphism
-              p 0 wx:const-horizontal)]
+              p '(horizontal))]
 
-        [vp (make-object mred:vertical-panel% p -1 -1 -1 -1)]
-        [vphp (make-object mred:horizontal-panel% vp)]
-        [_0 (make-object mred:message% vphp
-              "Polymorphism simplification algorithms:")]
-        [vphphp (make-object mred:horizontal-panel% vphp)]
+        [vp (make-object vertical-panel% p)]
+        [vphp (make-object horizontal-panel% vp)]
+        [_0 (make-object message% 
+			 "Polymorphism simplification algorithms:" 
+			 vphp)]
+        [vphphp (make-object horizontal-panel% vphp)]
         [_1 (parameter-radio-boxes
               "        "
               st:constraint-simplification-poly
               'st:constraint-simplification-poly
-              vp 0 wx:const-vertical)]
+              vp '(vertical))]
 
         [_ (parameter-radio-boxes
              "Save .za files in:"
              st:save-za-in
              'st:save-za-in
              p
-             0 wx:const-horizontal)]
+             '(horizontal))]
         )
-        
       p)))
 
-(mred:add-preference-panel
+(preferences:add-panel
   "MrSpidey Analysis"
   mrspidey-mk-analysis-pref-panel)
 
 (mrspidey-mk-analysis-pref-panel
-  (make-object mred:horizontal-panel%
-    (make-object mred:frame% '() "dummy")))
+  (make-object horizontal-panel%
+    (make-object frame% "dummy")))
 
 ;; ======================================================================
 
@@ -188,38 +189,38 @@
 
 (define (indented-vertical-radio-box p name param sym)
   (let*
-    ( [vp (make-object mred:vertical-panel% p -1 -1 -1 -1)]
-      [vphp1 (make-object mred:horizontal-panel% vp)]
-      [_0 (make-object mred:message% vphp1 name)]
-      [vphp2 (make-object mred:horizontal-panel% vp)]
-      [spc (make-object mred:horizontal-panel% vphp2)]
-      [_ (send spc user-min-width 20)]
-      [_ (send spc stretchable-in-x #f)]
+    ( [vp (make-object vertical-panel% p)]
+      [vphp1 (make-object horizontal-panel% vp)]
+      [_0 (make-object message% name vphp1)]
+      [vphp2 (make-object horizontal-panel% vp)]
+      [spc (make-object horizontal-panel% vphp2)]
+      [_ (send spc min-width 20)]
+      [_ (send spc stretchable-width #f)]
       [radio-box
         (parameter-radio-boxes
-          '()
+          #f
           param sym
-          vphp2 0 wx:const-vertical)]
-      [_ (send radio-box stretchable-in-x #t)]
-      [_ (make-object mred:horizontal-panel% vphp2)])
+          vphp2 '(vertical))]
+      [_ (send radio-box stretchable-width #t)]
+      [_ (make-object horizontal-panel% vphp2)])
     (void)))
 
 (define mrspidey-mk-type-display-prefs-panel
   (lambda (panel)
     (let*
-      ( [p (make-object mred:vertical-panel% panel )])
+      ( [p (make-object vertical-panel% panel )])
 
       (let* 
         (
           [sdl-fo-container-panel
-            (make-object mred:horizontal-panel% p)]
+            (make-object horizontal-panel% p)]
           [sdl-fo-sub-panel
-            (make-object mred:horizontal-panel% p)]
-          [spc (make-object mred:horizontal-panel% sdl-fo-sub-panel)]
-          [_ (send spc user-min-width 20)]
-          [_ (send spc stretchable-in-x #f)]
+            (make-object horizontal-panel% p)]
+          [spc (make-object horizontal-panel% sdl-fo-sub-panel)]
+          [_ (send spc min-width 20)]
+          [_ (send spc stretchable-width #f)]
           [sdl-fo-sub-sub-panel
-            (make-object mred:vertical-panel% sdl-fo-sub-panel)]
+            (make-object vertical-panel% sdl-fo-sub-panel)]
           [see-ivars-panel
             (parameter-check-box
               "Show instance variables"
@@ -249,7 +250,7 @@
                    (st:sdl-fo x)])
                'st:sdl-fo
                 sdl-fo-container-panel
-               0 wx:const-horizontal)])
+               '(horizontal))])
         (void))
         
       (indented-vertical-radio-box p 
@@ -261,23 +262,23 @@
         "Type naming:"
         (param-ctrls-sdl-alg st:naming-strategy)
         'st:naming-strategy
-        p 0 wx:const-horizontal)
+        p '(horizontal))
       (parameter-radio-boxes
         "Primitive types:"
         (param-ctrls-sdl-alg st:primitive-types)
         'st:primitive-types
-        p 0 wx:const-horizontal)
+        p '(horizontal))
 
       (let* 
         (
           [st:expand-output-type-container-panel
-            (make-object mred:horizontal-panel% p)]
+            (make-object horizontal-panel% p)]
           [st:expand-output-type-sub-panel
-            (make-object mred:horizontal-panel% p)]
-          [spc (make-object mred:horizontal-panel% 
+            (make-object horizontal-panel% p)]
+          [spc (make-object horizontal-panel% 
                  st:expand-output-type-sub-panel)]
-          [_ (send spc user-min-width 20)]
-          [_ (send spc stretchable-in-x #f)]
+          [_ (send spc min-width 20)]
+          [_ (send spc stretchable-width #f)]
           [sdl-tidy-object
             (parameter-check-box
               "Uses equivalences that make types tidy"
@@ -299,13 +300,13 @@
 
       p)))
 
-(mred:add-preference-panel
+(preferences:add-panel
   "MrSpidey Type Display"
   mrspidey-mk-type-display-prefs-panel)
 
 (mrspidey-mk-type-display-prefs-panel
-  (make-object mred:horizontal-panel%
-    (make-object mred:frame% '() "dummy")))
+  (make-object horizontal-panel%
+    (make-object frame% "dummy")))
 
 ;; ======================================================================
 
@@ -321,7 +322,7 @@
                    (error 'make-parameter-menu "Can't find para in pairs")]
                  [(equal? (parameter) (cdar pairs)) n]
                  [else (loop (add1 n) (cdr pairs))]))])
-     (let ([menu (make-object mred:menu%)])
+     (let ([menu (make-object menu%)])
        (send menu append-check-set pairs parameter default-ndx)
        ;;(parameter (cdar pairs))
        menu)))

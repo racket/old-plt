@@ -15,13 +15,15 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler 
 
 (require-relative-library "sigs.ss")
 
 (define mrspidey-gui@
   (unit/sig mrspidey-gui^
-    (import [wx : wx^]
-	    [mred : mred^]
+    (import mred^
+	    framework^
+	    browser^ 
 	    mrspidey:mzlib:function^
 	    mzlib:pretty-print^
 	    mzlib:file^

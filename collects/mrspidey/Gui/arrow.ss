@@ -16,17 +16,18 @@
 ; along with this program; if not, write to the Free Software
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
+; ported to MrEd 100 by Paul Steckler 
 
-(define arrow:media-edit%
+(define arrow:edit%
   (let* ([pi (* 2 (asin 1))]
          [arrow-head-angle (/ pi 8)]
          [cos-angle (cos arrow-head-angle)]
          [sin-angle (sin arrow-head-angle)]
          [arrow-head-size 10]
          [arrow-root-radius 3.5]
-         [cursor-arrow (make-object wx:cursor% wx:const-cursor-arrow)])
+         [cursor-arrow (make-object cursor% 'arrow)])
 
-    (class-asi graphics:media-edit%
+    (class-asi graphics:edit%
       (inherit delete-graphic draw-graphics add-graphic set-cursor)
       (public
         [delete-arrow (lambda (arrow) (delete-graphic arrow))]
@@ -61,15 +62,15 @@
                    [head-y  (* ofs-y arrow-head-size)]
                    [end-x   (+ end-x (* ofs-x delta))]
                    [end-y   (+ end-y (* ofs-y delta))]
-                   [pt1     (make-object wx:point% end-x end-y)]
+                   [pt1     (make-object point% end-x end-y)]
                    [pt2     (make-object 
-                             wx:point%
+                             point%
                              (+ end-x (* cos-angle head-x) 
                                 (* sin-angle head-y))
                              (+ end-y (- (* sin-angle head-x))
                                 (* cos-angle head-y)))]
                    [pt3     (make-object 
-                             wx:point%
+                             point%
                              (+ end-x (* cos-angle head-x)
                                 (- (* sin-angle head-y)))
                              (+ end-y (* sin-angle head-x)
@@ -81,11 +82,10 @@
                         (list 'draw-line (+ start-x dx) (+ start-y dy)
                               (+ end-x dx) (+ end-y dy)))
                       (let ([old-brush (send dc get-brush)]
-                            [old-pen   (send dc get-pen)]
-                            [old-logfn (send dc get-logical-function)])
+                            [old-pen   (send dc get-pen)])
                         (send dc set-brush brush)
                         (send dc set-pen pen)
-                        ;; (send dc set-logical-function wx:const-or)
+                        ;; (send dc set-logical-function 'or)
                         (send dc draw-line
                               (+ start-x dx) (+ start-y dy)
                               (+ end-x dx) (+ end-y dy))
@@ -96,8 +96,7 @@
                               (* 2 arrow-root-radius)
                               (* 2 arrow-root-radius))
                         (send dc set-brush old-brush)
-                        (send dc set-pen old-pen)                    
-                        (send dc set-logical-function old-logfn)))]
+                        (send dc set-pen old-pen)))]                    
                    [on-head?
                     (lambda (x y)
                       (let*

@@ -106,7 +106,8 @@
 			 (compose pretty-print-handler print-convert)
 			 pretty-print-handler))
 
-(define mzrice-eval (compose (current-eval) aries:annotate zodiac:expand))
+(define mzrice-eval (compose (current-eval)
+		      aries:annotate zodiac:scheme-expand))
 
 (define mzrice-load
   (lambda (f)

@@ -620,6 +620,6 @@
 	(make-import/export-form (zodiac-stx z)))
 
       (define-struct arglist (vars))
-      (define-struct sym-arglist ())
-      (define-struct list-arglist ())
-      (define-struct ilist-arglist ()))))
+      (define-struct (sym-arglist struct:arglist) ())
+      (define-struct (list-arglist struct:arglist) ())
+      (define-struct (ilist-arglist struct:arglist) ()))))

@@ -1983,6 +1983,9 @@
 (test -1 bitwise-ior 1234567890987654321 -1)
 (test -1 bitwise-ior -1 -1234567890987654321)
 (test -1 bitwise-ior -1234567890987654321 -1)
+(test -1 bitwise-ior #x-100000000 #x-ffffffff00000001)
+(test #x40000000 bitwise-not #x-40000001)
+(test #x-10000000000000000 bitwise-and #x-100000000 #x-ffffffff00000001)
 (test 59768263894155949306790119265740380833384181270442915835 bitwise-ior (expt 3 55) (expt 7 66))
 (test -154761616359031858012234187 bitwise-ior (- (expt 3 55)) (expt 7 66))
 (test -59768263894155949306790119265565931622375061091371745329 bitwise-ior (expt 3 55) (- (expt 7 66)))
@@ -2026,6 +2029,7 @@
 
 (test 1234567890987654321 arithmetic-shift 1234567890987654321 0)
 (test -1234567890987654321 arithmetic-shift -1234567890987654321 0)
+(test (expt 2 32) arithmetic-shift (expt 2 31) 1)
 
 (test (expt 2 256) arithmetic-shift (expt 2 128) 128)
 (test (expt 2 277) arithmetic-shift (expt 2 125) 152)

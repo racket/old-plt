@@ -51,13 +51,18 @@ TYPES ----------------------------------------------------------------
   5 = params, 6 = query, 7 = fragment
 
   If the scheme is "file", then the path is a platform-dependent
-  string to be reconstructed using build-path.  Otherwise it's a
-  url-path as defined in the standard.
+  string assumed to have been constructed using build-path.  Otherwise
+  it's a url-path as defined in the standard.
 
 > pure-port
 
   A pure port is one from which the MIME headers have been removed, so
   that what remains is purely the first content fragment.
+
+> impure-port
+
+  An impure port is one that still has its MIME headers.  Contrast
+  with a pure-port.
 
 > mime-header
   struct mime-header (name value)
@@ -68,39 +73,57 @@ TYPES ----------------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (file://path->fs-path string) -> path-string
-
-  Procedure that handles the translation of URL paths to paths on the
-  local filesystem (eg, for URLs with scheme "file", ie, URLs of the
-  form _file:_).  The procedure consumes "/"-delimited paths that may
-  or may not be absolute filesystem references (hence the name).  It
-  functions as follows:
-
-  The path is split into a sequence of segments delimited by "/".
-  Each segment is translated and combined with the remaining segments
-  using build-path.  The segments "", "." and ".." are treated
-  specially: the first two translate into the 'same directive and the
-  third into the 'up directive to build-path.
-
-  A leading slash is handled specially.  If the first segment is a
-  member of the strings returned by the filesystem-root-list
-  primitive, then it is treated as the root for build-path, and the
-  remaining segments are processed as above.  (This permits users on
-  systems with multiple roots (such as multi-disk systems) to
-  explicitly specify the root they wish to use.)  If the first segment
-  is not a member of this list, then the first string returned by
-  filesystem-root-list is used as the root, and all the segments are
-  processed as above.
-
 > unixpath->path
 
-  Deprecated name for file://path->fs-path.
+  This procedure, which used to be provided by this library, is no
+  longer supported.
 
-> (fs-path->file://path string) -> string
+> (string->url string) -> url
 
-  Accepts a platform specific path (on that platform) and returns the
-  equivalent file:// path (with the file: prefix)
-  
+  Turns a string into a URL.  If the string represents a URL with
+  scheme "file", the portion of the string past "file:" must respond
+  to either absolute-path? or relative-path?.  It is then inserted
+  verbatim into the url structure.
+
+> (combine-url/relative url string) -> url
+
+  Given a base URL and a relative path, combines the two and returns a
+  new URL as per the URL combination specification.  Call the
+  arguments base and relative.  They are combined according to the
+  following rules (applied in order until one matches):
+  - If either argument is an empty URL, the result is the other
+    argument.
+  - If relative sports a scheme, then the result is relative.
+  - If the base has scheme "file", the procedure uses the special rule 
+    specified below.
+  - If relative specifies a host, then the result is relative.
+  Failing the above, relative inherit's base's host and port.  Then:
+  - If the path of relative begins with a "/", the result is relative.
+  - If the path of relative is empty, then relative inherits base's
+    params and query, and the result is relative.
+  - Otherwise base and relative are combined as per the standard
+    specification of merging and normalization.
+
+  If the base has scheme "file", relative is treated as a
+  slash-separated path.  These path fragments are combined using
+  build-path, starting with the base's path.  Three path segments are
+  special: ".." corresponds to an 'up directive to build-path, while
+  "." and "" correspond to 'same.  As a consequence, if relative
+  begins with "/", this does not make it an absolute URL: the leading
+  slash is treated as if the initial segment is "", so this has no
+  effect, and base's path remains the base path of the result.
+
+> (netscape/string->url string) -> url
+
+  Turns a string into a URL, applying (what appear to be) Netscape's
+  conventions on automatically specifying the scheme: a string
+  starting with a slash gets the scheme "file", while all others get
+  the scheme "http".
+
+> (url->string url) -> string
+
+  Generates a string corresponding to the contents of the url struct.
+
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
@@ -117,24 +140,9 @@ PROCEDURES -----------------------------------------------------------
 
   Writes the output of a pure port.  For debugging purposes.
 
-> (purify-port input-port) -> list-of-mime-headers
+> (purify-port input-port) -> list (mime-headers)
 
   Purifies a port, returning the MIME headers.
-
-> (string->url string) -> url
-
-  Turns a string into a URL.
-  
-> (netscape/string->url string) -> url
-
-  Turns a string into a URL, applying (what appear to be) Netscape's
-  conventions on automatically specifying the scheme: a string
-  starting with a slash gets the scheme "file", while all others get
-  the scheme "http".
-
-> (url->string url) -> string
-
-  Generates a string corresponding to the contents of the url struct.
 
 > (call/input-url url url->port-proc port->void-proc [list-of-strings]) -> void
 
@@ -143,10 +151,28 @@ PROCEDURES -----------------------------------------------------------
   the (pure or impure) port and handles its contents.  The optional
   fourth argument is a set of strings to send to the server.
 
-> (combine-url/relative url string) -> url
+PRAGMATICS -----------------------------------------------------------
 
-  Given a base URL and a relative path, combines the two and returns a
-  new URL as per the URL combination specification.
+_file:_
+
+  The path portion of a file: URL is a platform-dependent string as
+  constructed by build-path.  Therefore, the simplest way to construct
+  a file: URL is to string-append "file:" onto the output of
+  build-path (or build-relative-path), then pass this to string->url
+  to obtain a URL structure.  Refer to the documentation on pathname
+  utilities to specify disks and so forth.
+
+_web documents_
+
+  To access the text of a document from the Web, first obtain its URL
+  as a string; convert this into a url structure using string->url;
+  then open the document using get-pure-port or get-impure-port,
+  depending on whether or not you wish to examine its MIME headers.
+  At this point you have a regular input port with which to process
+  the document like any other file.  Note that currently the only
+  supported protocol is "http".  The "news" protocol is not supported
+  directly by this library, but the news library in this collection
+  can be used to read NNTP documents.
 
 EXAMPLE --------------------------------------------------------------
 

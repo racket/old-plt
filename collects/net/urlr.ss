@@ -22,7 +22,6 @@
       (invoke-open-unit/sig mzlib:url@ #f)
       (define url:cs (string->url "http://www.cs.rice.edu/"))
       (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
-      (define comb combine-url/relative)
       (define (test url)
 	(call/input-url url
 	  get-pure-port
@@ -36,75 +35,6 @@
 					  arg))
 				   args))))
 	(raise (make-url-exception s (current-continuation-marks))))))
-
-  (define path-segment-regexp (regexp "([^/]*)/(.*)"))
-
-  (define file://rel-path->fs-path
-    (lambda (s)
-      (define translate-dir
-	(lambda (s)
-	  (cond
-	    [(string=? s "") 'same];; handle double slashes
-	    [(string=? s "..") 'up]
-	    [(string=? s ".") 'same]
-	    [else s])))
-      (let ([m (regexp-match path-segment-regexp s)])
-	(cond
-	  [(string=? s "") 'same]
-	  [(not m) s]
-	  [else
-	    (build-path (translate-dir (cadr m))
-	      (file://rel-path->fs-path (caddr m)))]))))
-
-  (define file://path->fs-path
-    (lambda (s)
-      (cond
-	[(string=? s "") ""]
-	[(string=? s "/") (car (filesystem-root-list))]
-	[(char=? #\/ (string-ref s 0))
-	  (let* ([m (regexp-match path-segment-regexp
-		      (substring s 1 (string-length s)))]
-		  [first-segment (cadr m)]
-		  [rest-segment (caddr m)]
-		  [root-list (filesystem-root-list)])
-	    (build-path
-	      (if (member first-segment root-list)
-		first-segment
-		(car root-list))
-	      (file://rel-path->fs-path
-		(substring s 1 (string-length s)))))]
-	[else (file://rel-path->fs-path s)])))
-
-  (define (fs-path->file://url-string p)
-    (let ([paths
-           (let loop ([p p]
-                      [acc null])
-             (let-values ([(base name dir?) (split-path p)])
-               (let ([next 
-                      (cons (cond
-                              [(string? name) name]
-                              [(eq? name 'up) ".."]
-                              [(eq? name 'same) "."])
-                            acc)])
-                 (if base
-                     (loop base next)
-                     next))))]
-          [trailing-slash? (let-values ([(base name dir?) (split-path p)])
-                             dir?)])
-      (if (null? paths)
-          "file://"
-          (apply string-append
-                 (list*
-                  "file://"
-                  (car paths)
-                  (let loop ([paths (cdr paths)])
-                    (cond
-                      [(null? paths) (if trailing-slash? (list "/") null)]
-                      [else (list* "/"
-                                   (car paths)
-                                   (loop (cdr paths)))])))))))
-
-  (define unixpath->path file://path->fs-path)
 
   ;; scheme : str + #f
   ;; host : str + #f
@@ -183,13 +113,9 @@
   ;; file://get-pure-port : url -> in-port
   (define file://get-pure-port
     (lambda (url)
-      (let ((host (url-host url)))
-	(if (or (not host)
-	      (string=? host "")
-	      (string=? host "localhost"))
-	  (open-input-file
-	    (file://path->fs-path (url-path url)))
-	  (url-error "Cannot get files from remote hosts")))))
+      (when (url-host url)
+        (url-error "Don't know how to get files from remote hosts"))
+      (open-input-file (url-path url))))
 
   ;; get-impure-port : url [x list (str)] -> in-port
   (define get-impure-port
@@ -201,7 +127,7 @@
 	  ((string=? scheme "http")
 	    (http://get-impure-port url strings))
 	  ((string=? scheme "file")
-	    (url-error "There are no impure file:// ports"))
+	    (url-error "There are no impure file: ports"))
 	  (else
 	    (url-error "Scheme ~a unsupported" scheme))))))
 
@@ -237,6 +163,28 @@
 	(not (url-query url)) (not (url-fragment url))
 	(andmap (lambda (c) (char=? c #\space))
 	  (string->list (url-path url))))))
+  
+  ;; file://combine-url/relative : fs-path x s/t/r -> fs-path
+  
+  (define file://combine-url/relative 
+    (let ((path-segment-regexp (regexp "([^/]*)/(.*)"))
+          (translate-dir
+           (lambda (s)
+             (cond
+               [(string=? s "") 'same] ;; handle double slashes
+               [(string=? s "..") 'up]
+               [(string=? s ".") 'same]
+               [else s]))))
+      (lambda (base str)
+        (build-path
+         base
+         (let loop ((str str))
+           (let ((m (regexp-match path-segment-regexp str)))
+             (cond
+               [(not m) str]
+               [else
+                (build-path (translate-dir (cadr m))
+                            (loop (caddr m)))])))))))
 
   ;; combine-url/relative : url x str -> url
   (define combine-url/relative
@@ -252,7 +200,18 @@
 	  (else				; Step 2c
 	    (set-url-scheme! relative (url-scheme base))
 	    (cond
-	      ((url-host relative)	; Step 3
+              ;; This case is here because the above tests
+              ;; ensure the relative extension is not really
+              ;; an absolute path itself, so we need not
+              ;; examine its contents further.
+              ((and (url-scheme base)   ; Interloper step
+                    (string=? (url-scheme base) "file"))
+               (set-url-path! relative
+                              (file://combine-url/relative 
+                               (url-path base)
+                               (url-path relative)))
+               relative)
+              ((url-host relative)	; Step 3
 		relative)
 	      (else
 		(set-url-host! relative (url-host base))
@@ -272,30 +231,8 @@
 			(set-url-query! relative (url-query base)))
 		      relative)
 		    (else		; Step 6
-		      (if (and (url-scheme base)
-			    (string=? (url-scheme base) "file"))
-
-			;; Important that:
-			;; 1. You set-url-path! the new path into
-			;;    `relative'.
-			;; 2. You return `relative' as the value
-			;;    from here without invoking
-			;;    `merge-and-normalize'.
-			;; The variable `rel-path' contains the
-			;; path portion of the relative URL.
-
-			(let+ ([val base-path (url-path base)]
-				[val (values base name must-be-dir?)
-				  (split-path base-path)]
-				[val base-dir (if must-be-dir? base-path base)]
-				[val ind-rel-path
-				  (file://rel-path->fs-path rel-path)]
-				[val merged (build-path base-dir
-					      ind-rel-path)])
-			  (set-url-path! relative merged)
-			  relative)
-			(merge-and-normalize
-			  (url-path base) relative))))))))))))
+                     (merge-and-normalize 
+                      (url-path base) relative)))))))))))
 
   (define merge-and-normalize
     (lambda (base-path relative-url)
@@ -489,14 +426,18 @@
 				scheme-start scheme-finish))))
 		(if (and scheme
 		      (string=? scheme "file"))
-		  (make-url
-		    scheme
-		    #f			; host
-		    #f			; port
-		    (build-path (substring string path-start total-length))
-		    #f			; params
-		    #f			; query
-		    #f)			; fragment
+                    (let ((path (substring string path-start total-length)))
+                      (if (or (relative-path? path)
+                              (absolute-path? path))
+                          (make-url
+                           scheme
+                           #f			; host
+                           #f			; port
+                           path
+                           #f			; params
+                           #f			; query
+                           #f)			; fragment
+                          (url-error "scheme 'file' path ~s neither relative nor absolute")))
 		  (let-values (((host port path)
 				 (parse-host/port/path
 				   string path-start path-finish)))

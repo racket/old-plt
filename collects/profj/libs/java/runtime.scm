@@ -73,7 +73,9 @@
                                     (lambda (exn msg)
                                       (send exn ArithmeticException-constructor-java.lang.String msg))
                                     (current-continuation-marks))))
-    (/ left right))
+    (if (and (exact? left) (exact? right))
+        (exact->inexact (/ left right))
+        (/ left right)))
      
   ;modulo: number number -> number
   (define (mod left right)

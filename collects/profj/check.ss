@@ -1283,7 +1283,7 @@
                           (method? (not (null? (get-method-records (id-string (car acc)) (lookup-this type-recs env))))))
                       (cond
                         ((or class? method?)
-                         (variable-not-found-error (if class? 'class-name 'method-name)) (car acc) (id-src (car acc)))
+                         (variable-not-found-error (if class? 'class-name 'method-name) (car acc) (id-src (car acc))))
                         ((close-to-keyword? (id-string (car acc)))
                          (close-to-keyword-error 'field (car acc) (id-src (car acc))))
                         (else
@@ -1389,6 +1389,7 @@
            (handle-call-error 
             (lambda (exn)
               (when (not (access? expr)) (raise exn))
+              (when (or (field-access? (access-name expr)) (local-access? expr)) (raise exn))
               (if (eq? level 'full)
                   (let ((record (car (find-static-class 
                                       (append (access-name expr) (list name))

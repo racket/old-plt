@@ -121,9 +121,10 @@
       (load-lang type-recs)
       (set-importer! type-recs find-implicit-import)
       (build-info ast level type-recs #f)
-      (check-defs (car (check-list)) level type-recs)
+      (unless (null? (check-list))
+        (check-defs (car (check-list)) level type-recs))
       (remove-from-packages ast type-recs)
-      (order-compilation-units (translate-program ast type-recs) type-recs)))
+      (order-cus (translate-program ast type-recs) type-recs)))
   
   ;compile-interactions: port location type-records level -> syntax
   (define (compile-interactions port location type-recs level)
@@ -165,74 +166,66 @@
   (define (empty-queue? q) (send q empty?))
   (define (add-to-work-queue q elts) (for-each (lambda (e) (send q push e)) elts))
   (define (queue-head q) (send q pop))
-          
 
-  (define (order-compilation-units units type-recs)
-    (letrec ((ordered-cu null)
-             (work-queue (make-queue))
-             ;compilation-unit to bool
-             (completed (make-hash-table))
-             
-             (completed? 
-              (lambda (elt)
-                (hash-table-get completed elt (lambda () #f))))
-             
-             (sort-from-element
-              (lambda (elt) 
-                (unless (completed? elt)
-                  (hash-table-put! completed elt #t)
-                  (set! ordered-cu (append ordered-cu (list elt)))
-                  (add-to-work-queue work-queue (get-local-depends (compilation-unit-depends elt)))
-                  (process-queue))))
-             
-             (process-queue
-              (lambda ()
-                (unless (empty-queue? work-queue)
-                  (let ((elt (queue-head work-queue)))
-                    (unless (completed? elt)
-                      (hash-table-put! completed elt #t)
-                      (set! ordered-cu (cons elt ordered-cu))
-                      (add-to-work-queue work-queue (get-local-depends (compilation-unit-depends elt)))
-                      (process-queue))))))
-             
-             (get-local-depends 
-              (lambda (reqs)
-                (if (null? reqs)
-                    null
-                    (let ((found? (find (car reqs))))
-                      (if found?
-                          (cons found? (get-local-depends (cdr reqs)))
-                          (get-local-depends (cdr reqs)))))))
-             
-             (find 
-              (lambda (req)
-                (letrec ((walker 
-                          (lambda (cus)
-                            (and (not (null? cus))
-                                 (if (contained-in? (car cus))
-                                     (car cus)
-                                     (walker (cdr cus))))))
-                         (class (req-class req))
-                         (contained-in? 
-                          (lambda (cu)
-                            (and (member class (compilation-unit-contains cu))
-                                 (equal? (req-path req)
-                                         (begin
-                                           (send type-recs set-location! (list-ref (compilation-unit-locations cu)
-                                                                                   (get-position class (compilation-unit-contains cu) 0)))
-                                           (send type-recs lookup-path class (lambda () (error 'internal-error)))))))))
-                  (walker units))))
-             
-             (get-position
-              (lambda (name names pos)
-                (if (or (null? (cdr names))
-                        (equal? name (car names)))
-                    pos
-                    (get-position name (cdr names) (add1 pos))))))
-      
-      (for-each sort-from-element units)
-      ordered-cu))
-                
+  ;split-cu (list compilation-unit) (list compilation-unit) (list compilation-unit) (lis compilation-unit) type-records 
+  ;          -> (values (list compilation-unit) (list compilation-unit)
+  (define (split-cu cus cus-full with-depends without-depends type-recs)
+    (if (null? cus)
+        (values with-depends without-depends)
+        (if (null? (get-local-depends (compilation-unit-depends (car cus)) cus-full type-recs))
+            (split-cu (cdr cus) cus-full with-depends (cons (car cus) without-depends) type-recs)
+            (split-cu (cdr cus) cus-full (cons (car cus) with-depends) without-depends type-recs))))
+  
+  ;ok-to-add? compilation-unit (list compilation-unit) type-records -> bool
+  (define (ok-to-add? cu cus cus-full type-recs)
+    (andmap (lambda (depends-on)
+              (dependency-satisfied? depends-on cus type-recs))
+            (get-local-depends (compilation-unit-depends cu) cus-full type-recs)))
+  
+  ;dependency-satisfied? req (list compilation-unit) type-records -> bool
+  (define (dependency-satisfied? depends-on cus type-recs)
+    (and (not (null? cus))
+         (or (is-in? depends-on (car cus) type-recs)
+             (dependency-satisfied? depends-on (cdr cus) type-recs))))
+  
+  ;get-local-depends: (list req) (list compilation-unit) type-records -> (list req)
+  (define (get-local-depends reqs cus type-recs)
+    (if (null? reqs)
+        null
+        (if (ormap (lambda (cu) (is-in? (car reqs) cu type-recs)) cus)
+            (cons (car reqs) (get-local-depends (cdr reqs) cus type-recs))
+            (get-local-depends (cdr reqs) cus type-recs))))
+  
+  ;is-in? req compilation-unit type-records -> bool
+  (define (is-in? class cu type-recs)
+    (and (member (req-class class) (compilation-unit-contains cu))
+         (equal? (req-path class)
+                 (begin
+                   (send type-recs set-location! (list-ref (compilation-unit-locations cu)
+                                                           (get-position (req-class class) (compilation-unit-contains cu) 0)))
+                   (send type-recs lookup-path (req-class class) (lambda () (error 'internal-error)))))))
+  
+  ;get-position: 'a (list 'a) int -> int
+  (define (get-position name names pos)
+    (if (or (null? (cdr names))
+            (equal? name (car names)))
+        pos
+        (get-position name (cdr names) (add1 pos))))
+  
+  ;order-cus (list compilation-unit) type-records -> (list compilation-unit)
+  (define (order-cus cus type-recs)
+    (let-values (((work-list ordered) (split-cu cus cus null null type-recs)))
+      (unless (null? work-list)
+        (let ((queue (make-queue)))
+          (for-each (lambda (cu) (send queue push cu)) work-list)
+          (let loop ()
+            (unless (empty-queue? queue)
+              (let ((cu (send queue pop)))
+                (if (ok-to-add? cu cus ordered type-recs)
+                    (set! ordered (cons cu ordered))
+                    (send queue push cu)))
+              (loop)))))
+      (reverse ordered)))
   
   (define (remove-from-packages ast type-recs) 
     (packages (filter (lambda (def) (not (contained-in? def (package-defs ast))))

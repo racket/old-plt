@@ -194,7 +194,7 @@
       (VariableDeclaratorId
        [(IDENTIFIER)
 	(make-var-decl (make-id $1 (build-src 1)) 
-                       (list (make-modifier 'private #f))
+                       (list (make-modifier 'public #f))
                        (make-type-spec #f 0 (build-src 1)) (build-src 1))])
 			
       (VariableInitializer

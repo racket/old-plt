@@ -1589,7 +1589,8 @@
   (define (translate-cast type expr src)
     (if (symbol? (type-spec-name type))
         (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type))) (build-src src))
-        (make-syntax #f `(javaRuntime:cast-reference ,expr ,(get-class-name type) (quote ,(get-class-name type))))))
+        (make-syntax #f `(javaRuntime:cast-reference ,expr ,(get-class-name type) (quote ,(get-class-name type)))
+                     (build-src src))))
   
   ;converted
   ;translate-instanceof: syntax type-spec src -> syntax

@@ -135,8 +135,8 @@ void wxBell(void)
   MessageBeep(MB_OK);
 }
 
-// Reading and writing resources (eg WIN.INI, .Xdefaults)
-#if USE_RESOURCES
+extern char *wxGetWindowsSetupFilePath(void);
+
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file)
 {
   if (file) {
@@ -159,9 +159,11 @@ Bool wxWriteResource(const char *section, const char *entry, char *value, const 
     }
 
     file = naya;
-    return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
-  } else
-    return WriteProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value);
+  } else {
+    file = wxGetWindowsSetupFilePath();
+  } 
+   
+  return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
 }
 
 Bool wxWriteResource(const char *section, const char *entry, float value, const char *file)
@@ -248,7 +250,6 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
   }
   else return FALSE;
 }
-#endif // USE_RESOURCES
 
 extern void wxResetCurrentCursor(void);
 

@@ -54,7 +54,7 @@
 					(case (string->symbol (system-library-subpath))
 					  [(parisc-hpux) '("-D_HPUX_SOURCE" "-fpic")]
 					  [(ppc-macosx) '("-fno-common" "-DOS_X" )]
-					  [(ppc-macosxonx) '("-fno-common" "-DOS_X" "-DXONX" )]
+					  [(ppc-darwin) '("-fno-common" "-DOS_X" "-DXONX" )]
 					  [else null])))
       (define unix-compile-flags (case (string->symbol (system-library-subpath))
 				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z")]

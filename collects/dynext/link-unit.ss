@@ -24,7 +24,7 @@
       (define (get-unix-linker)
 	(or (getenv "MZSCHEME_DYNEXT_LINKER")
 	    (let ([s (case (string->symbol (system-library-subpath))
-		       [(rs6k-aix ppc-macosx ppc-macosxonx) "cc"]
+		       [(rs6k-aix ppc-macosx ppc-darwin) "cc"]
 		       [else "ld"])])
 	      (find-executable-path s s))))
       
@@ -102,7 +102,7 @@
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
-	  [(ppc-macosx ppc-macosxonx) (list "-bundle" "-flat_namespace" "-undefined" "suppress")]
+	  [(ppc-macosx ppc-darwin) (list "-bundle" "-flat_namespace" "-undefined" "suppress")]
 	  [else (list "-shared")]))
 
       (define msvc-linker-flags (list "/LD"))

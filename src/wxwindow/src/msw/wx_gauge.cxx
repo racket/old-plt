@@ -11,7 +11,7 @@
 
 #include "wx.h"
 
-#include "..\..\contrib\gauge\zyzgauge.h"
+#include <commctrl.h>
 
 wxGauge::wxGauge(wxPanel *panel, char *label,
 		 int range, int x, int y, int width, int height,
@@ -25,6 +25,12 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 		     int range, int x, int y, int width, int height,
 		     long style, char *name)
 {
+  INITCOMMONCONTROLSEX icex;
+
+  icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+  icex.dwICC  = ICC_PROGRESS_CLASS;
+  InitCommonControlsEx(&icex);
+
   panel->AddChild(this);
 
   static_label = 0;
@@ -53,8 +59,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   windows_id = (int)NewId(this);
   
   HWND wx_button =
-    wxwmCreateWindowEx(0, "zYzGauge", label, 
-		       WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS,
+    wxwmCreateWindowEx(0, PROGRESS_CLASS, label, 
+		       WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS
+		       | ((windowStyle & wxHORIZONTAL) ? 0 : PBS_VERTICAL),
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
   
@@ -62,15 +69,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   
   SubclassControl(wx_button);
 
-  int wOrient = 0;
-
-  if (windowStyle & wxHORIZONTAL)
-    wOrient = ZYZG_ORIENT_LEFTTORIGHT;
-  else
-    wOrient = ZYZG_ORIENT_BOTTOMTOTOP;
-  
-  SendMessage(wx_button, ZYZG_SETORIENTATION, wOrient, 0);
-  SendMessage(wx_button, ZYZG_SETRANGE, range, 0);
+  SendMessage(wx_button, PBM_SETRANGE, 0, MAKELPARAM(0, range));
 
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
 
@@ -238,12 +237,12 @@ Bool wxGauge::Show(Bool show)
 
 void wxGauge::SetRange(int r)
 {
-  SendMessage((HWND)ms_handle, ZYZG_SETRANGE, r, 0);
+  SendMessage((HWND)ms_handle, PBM_SETRANGE, 0, MAKELPARAM(0, r));
 }
 
 void wxGauge::SetValue(int pos)
 {
-  SendMessage((HWND)ms_handle, ZYZG_SETPOSITION, pos, 0);
+  SendMessage((HWND)ms_handle, PBM_SETPOS, pos, 0);
 }
 
 void wxGauge::SetLabel(char *label)

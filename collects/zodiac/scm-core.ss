@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.47 1998/11/04 19:52:54 mflatt Exp $
+; $Id: scm-core.ss,v 1.48 1998/11/23 17:38:41 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -10,6 +10,7 @@
   (define-struct (varref struct:parsed) (var))
   (define-struct (top-level-varref struct:varref) ())
   (define-struct (top-level-varref/bind struct:top-level-varref) (slot))
+  (define-struct (top-level-varref/bind/unit struct:top-level-varref/bind) (unit?))
   (define-struct (bound-varref struct:varref) (binding))
   (define-struct (lexical-varref struct:bound-varref) ())
   (define-struct (app struct:parsed) (fun args))
@@ -57,6 +58,16 @@
       (make-top-level-varref/bind (zodiac-origin s)
 	(zodiac-start s) (zodiac-finish s)
 	(make-empty-back-box) v b)))
+
+  (define create-top-level-varref/bind/unit
+    (lambda (v b s)
+      (make-top-level-varref/bind/unit (zodiac-origin s)
+	(zodiac-start s) (zodiac-finish s)
+	(make-empty-back-box) v b
+	(let ([l (unbox b)])
+	  (if (null? l)
+	      #f
+	      (top-level-varref/bind/unit-unit? (car l)))))))
 
   (define create-bound-varref
     (lambda (constructor)
@@ -160,7 +171,7 @@
 	(let ((top-level-space (get-attribute attributes 'top-levels)))
 	  (if top-level-space
 	    (let ((ref
-		    (create-top-level-varref/bind
+		    (create-top-level-varref/bind/unit
 		      id
 		      (hash-table-get top-level-space id
 			(lambda ()

@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.55 1998/11/04 19:52:55 mflatt Exp $
+; $Id: sigs.ss,v 1.56 1998/11/20 21:20:12 mflatt Exp $
 
 (begin-construction-time (require-library "macro.ss"))
 (begin-construction-time (require-library "mzlibs.ss"))
@@ -64,6 +64,7 @@
     (struct varref (var))
     (struct top-level-varref ())          create-top-level-varref
     (struct top-level-varref/bind (slot)) create-top-level-varref/bind
+    (struct top-level-varref/bind/unit (unit?)) create-top-level-varref/bind/unit
     (struct bound-varref (binding))   create-bound-varref
     (struct lexical-varref ())        create-lexical-varref
     (struct app (fun args))           create-app

@@ -3,8 +3,7 @@
 	   "server-config.ss"
 	   "finddoc.ss"
 	   (lib "contracts.ss")
-	   (lib "util.ss" "help" "servlets" "private")
-	   (lib "search-util.ss" "help" "servlets" "private"))
+	   (lib "util.ss" "help" "servlets" "private"))
 
   ; sym, string assoc list
   (define hd-locations
@@ -49,8 +48,9 @@
 				    "lucky=~a")
 		     port (hexify-string search-string) search-type match-type
 		     (if lucky? "true" "false"))])
-	  (set-box! curr-search-type-box search-type)
-	  (set-box! curr-match-type-box match-type)
+	  (put-prefs '(plt:hd:search-type
+		       plt:hd:match-type)
+		     (list search-type match-type))
 	  (help-desk-navigate url))))
 
   ; cookie is an hd-cookie struct

@@ -25,22 +25,23 @@
 
   (define make-search-link (make-make-link search-link-color))
 
-  (define (default-option? opt)
-    (and (= 3 (length opt))
-	 (eq? (caddr opt) '*)))
-
   (define (make-option curr opt)
     (let* ([val (car opt)]
 	   [value-attrib `(VALUE ,val)]
-	   [attribs (if (or (and curr
-				 (string=? curr val))
-			    (and (not curr) 
-				 (default-option? opt)))
+	   [attribs (if (string=? curr val)
 			`(,value-attrib
 			  (SELECTED "true"))
 			`(,value-attrib))]
 	   [txt (cadr opt)])
       `(OPTION ,attribs ,txt)))
+
+  (define (curr-search-type) 
+    (get-pref/default 'plt:hd:search-type
+		      search-type-default))
+
+  (define (curr-match-type) 
+    (get-pref/default 'plt:hd:match-type
+		      match-type-default))
 
   (define (search-pane-form s)
     `(FORM ((ACTION "/servlets/results.ss")
@@ -79,14 +80,14 @@
 			     (SELECT ((NAME "search-type"))
 				     ,@(map (lambda (st)
 					      (make-option
-					       (unbox curr-search-type-box)
+					       (curr-search-type)
 					       st))
 					    search-types))
 			     'nbsp 
 			     (SELECT ((NAME "match-type"))
 				     ,@(map (lambda (mt)
 					      (make-option 
-					       (unbox curr-match-type-box)
+					       (curr-match-type)
 					       mt))
 					    match-types))))))
 		      (TD 'nbsp)

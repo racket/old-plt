@@ -29,6 +29,10 @@
 #pragma interface
 #endif
 
+#ifdef MEMORY_USE_METHOD
+# include "string.h"
+#endif
+
 void  wxInitStandardTypes(void);
 
 Bool  wxSubType(WXTYPE type1, WXTYPE type2);

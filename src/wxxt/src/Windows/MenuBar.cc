@@ -171,7 +171,7 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
     item->enabled   = TRUE;
     item->set       = FALSE;
     item->contents  = (menu_item*)menu->top;
-    menu->owner     = (wxMenuItem **)&item->contents;
+    menu->owner     = (wxMenuItem **)item;
     item->next      = NULL;
     tm = BUNDLE_TOP_MENU(menu);
     item->user_data = tm;

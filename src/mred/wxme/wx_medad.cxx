@@ -1197,10 +1197,12 @@ void wxMediaCanvas::SetMedia(wxMediaBuffer *m, Bool update)
     if (admin->nextadmin) {
       admin->nextadmin->prevadmin = admin->prevadmin;
       admin->nextadmin->AdjustStdFlag();
+      admin->nextadmin = NULL;
     }
     if (admin->prevadmin) {
       admin->prevadmin->nextadmin = admin->nextadmin;
       admin->prevadmin->AdjustStdFlag();
+      admin->prevadmin = NULL;
     }
     if (customCursor) {
       NoCustomCursor();

@@ -275,7 +275,7 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   item->contents  = (menu_item*)submenu->top;
   tm = BUNDLE_TOP_MENU(submenu);
   item->user_data = tm;
-  submenu->owner = (wxMenuItem **)&item->contents;
+  submenu->owner = (wxMenuItem **)item;
 #ifdef MZ_PRECISE_GC
   children->Append(submenu);
 #endif
@@ -322,7 +322,7 @@ Bool wxMenu::DeleteItem(long id, int pos)
 	topdummy = top;
       }
       if (owner)
-	*owner = top;
+	((menu_item *)owner)->contents = (menu_item *)top;
     } else {
       prev->next = found->next;
       if (prev->next)

@@ -408,7 +408,7 @@
 			   (lambda ()
 			     (mzlib:thread:dynamic-enable-break
 			      (lambda ()
-				(aries:annotate term read-expr))))
+				(aries:annotate term read-expr 'any))))
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
 		       ; Always read with zodiac
 		       [zodiac-read

@@ -10,7 +10,7 @@ since escape characters are difficult for people to read, a vertical
 bar (|) character in sexpr is converted to a double-quote (")
 character before it is parsed. Thus,
 
-  <A SCHEME="|This goes nowhere.|">Nowhere</A>
+  <A MZSCHEME="|This goes nowhere.|">Nowhere</A>
 
 creates a "Nowhere" hyperlink, which executes the Scheme program
 
@@ -20,6 +20,18 @@ The value of that program is a string. When a Scheme hyperlink returns
 a string, it is parsed as a new HTML document. Thus, where the use
 clicks on "Nowhere", the result is a new page that says "This goes
 nowhere."
+
+The browser also comment forms containing MZSCHEME=sexpr specially.
+Whereas the <A MZSCHEME=sexpr>...</A> form executes the expression
+when the user clicks, the MZSCHEME expression in a comment is executed
+immediately. If the result is a string, the comment is replaced in the
+input HTML stream with the content of the string. Thus,
+
+ <!-- MZSCHEME="(format |<B>Here</B>: ~a| (current-directory))" -->
+
+inserts the path of the current working directory into the containing
+document (and "Here" is boldfaced).
+
 
 ----------------------------------------
 

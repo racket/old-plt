@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.1 1996/01/10 14:57:10 markus Exp $
+ * $Id: Gauge.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -97,17 +97,31 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     SetValue(0);
     // set data declared in wxItem
     // panel positioning
+
+    float lw, lh, lvh, lhw;
+    if (label)
+      GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
+    else
+      lw = lh = 0;
+    if (vert) {
+      lhw = 0;
+      lvh = lh;
+    } else {
+      lhw = lw;
+      lvh = 0;
+    }
+
     panel->PositionItem(this, x, y, 
 			(width  > -1 
 			 ? width  
 			 : ((style & wxVERTICAL) 
-			    ? wxDEFAULT_GAUGE_HEIGHT
+			    ? lhw + wxDEFAULT_GAUGE_HEIGHT
 			    : wxDEFAULT_GAUGE_WIDTH)),
 			(height > -1 
 			 ? height 
 			 : ((style & wxVERTICAL) 
 			    ? wxDEFAULT_GAUGE_WIDTH
-			    : wxDEFAULT_GAUGE_HEIGHT)));
+			    : lvh + wxDEFAULT_GAUGE_HEIGHT)));
     AddEventHandlers();
 
     return TRUE;

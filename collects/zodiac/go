@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ "`basename $0`" = "go" ]; then
+    TOOL=""
+else
+    TOOL="spidey-"
+fi
+
+if [ "$1" = "" ]; then
+    ARG=""
+else
+    ARG="#f"
+fi
+
+mzscheme -x -f invoke.ss -e "(zodiac:${TOOL}see ${ARG})"

@@ -458,6 +458,7 @@
 
 
 	   (define (uncurry nextt argsyn init)
+;	     (pretty-print (format "uncurry: ~a ~a ~a" nextt argsyn init))
 	     (if (unify init (make-arrow (list nextt) (fresh-type-var)) argsyn)
 		 (let ([arglist (get-arglist init)])
 		   (if (> (length arglist) 1)
@@ -713,7 +714,7 @@
 		[(ref? t2) (unify (ref-type t1) (ref-type t2) syn)]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (raise-syntax-error #f "Expected an option type" syn)])]
-	      [else (raise-syntax-error #f "Bad type to unify" syn)]))
+	      [else (raise-syntax-error #f (format "Bad type to unify ~a" t1) syn)]))
 
 	   (define (unify-var type tbox syn)
 	     (if (null? (unbox tbox))
@@ -856,7 +857,7 @@
 ;	     (pretty-print (format "constant-check ~a" const))
 	     (cond
 	      [(syntax? const) (constant-check (syntax-object->datum const))]
-	      [(integer? const) "int"]
+	      [(exact? const) "int"]
 	      [(float? const) "float"]
 	      [(char? const) "char"]
 	      [(boolean? const) "bool"]

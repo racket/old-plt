@@ -552,7 +552,7 @@
 	   #f
 	   (or (equal? fun (car primlist)) (ml-primitive? fun (cdr primlist)))))
 
-     (define ml-prims (list + - * / equal? = <> <gt> <ge> <lt> <le> <or> <and> != not append string-append set-box! unbox)) 
+     (define ml-prims (list + - * / equal? = <> <gt> <ge> <lt> <le> <or> <and> expt != not append string-append set-box! unbox)) 
 
      (define (empty-context) 
        '(("+" operator +)

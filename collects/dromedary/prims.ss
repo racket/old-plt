@@ -249,6 +249,7 @@
 	(hash-table-put! built-in-and-user-funcs "!=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") !=))
 	(hash-table-put! built-in-and-user-funcs "not" (cons (make-arrow (list "bool") "bool") not))
 	(hash-table-put! built-in-and-user-funcs "~-" (cons (make-arrow (list "int") "int") -))
+	(hash-table-put! built-in-and-user-funcs "**" (cons (make-arrow (list "float" "float") "float") expt))
 	(hash-table-put! built-in-and-user-funcs "float" (cons (make-arrow (list "int") "float") (lambda (x) x)))
 	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
 	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string" "string") "string") string-append))

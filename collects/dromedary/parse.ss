@@ -544,9 +544,9 @@
       (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $2 ":=" (build-syn-list $2)))) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
-	(if (and (ast:pexp_constant? type) (number? (ast:pexp_constant-const type)))
-	    (ast:make-expression (ast:make-pexp_constant (- (ast:pexp_constant-const type))) (build-src 1 2))
-	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (string-append "~" $1))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
+	(if (and (ast:pexp_constant? type) (number? (syntax-object->datum (ast:pexp_constant-const type))))
+	    (ast:make-expression (ast:make-pexp_constant (datum->syntax-object $2 (- (syntax-object->datum (ast:pexp_constant-const type))) (build-syn-list $1 (ast:pexp_constant-const type)))) (build-src 1 2))
+	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (datum->syntax-object $1 (string-append "~" (syntax-object->datum $1)) (build-syn-list $1 $2)))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
      [(<simple_expr> DOT <label_longident> LESSMINUS <expr>)
       (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 5))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN LESSMINUS <expr>)

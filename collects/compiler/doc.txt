@@ -300,7 +300,7 @@ The low-level compiler functions from comp@ are:
     S-expression `expr'.  Future calls to mzc:compile-XXX will see the
     effects of the elaboration expression.
 
-> (compile-extensions scheme-source dest-dir) - Compiles a
+> (compile-extension scheme-source dest-dir) - Compiles a
     single Scheme file to an extension.
 
 > (compile-extension-to-c scheme-source dest-dir) - Compiles

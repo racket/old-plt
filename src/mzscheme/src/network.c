@@ -1152,7 +1152,7 @@ static void tcp_close_input(Scheme_Input_Port *port)
 
   data = (Scheme_Tcp *)port->port_data;
 
-#ifdef USE_WINSOCK_TCP
+#ifdef USE_SOCKETS_TCP
   shutdown(data->tcp, 0);
 #endif
 

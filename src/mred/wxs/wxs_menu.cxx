@@ -10,7 +10,6 @@
 
 #include "wxscheme.h"
 #include "wxs_menu.h"
-#include "wxscomon.h"
 
 
 
@@ -456,7 +455,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   } else
     x1 = NULL;
 
@@ -636,7 +635,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -730,7 +729,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -961,7 +960,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
     x1 = NULL;
     x2 = NULL;
 
-    x1 = __MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("menu-bar%","initialization"));x2 = __MakestringArray((1 < n) ? p[1] : scheme_null, &x0, METHODNAME("menu-bar%","initialization"));
+    x1 = WITH_VAR_STACK(__MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));x2 = WITH_VAR_STACK(__MakestringArray((1 < n) ? p[1] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));
     realobj = NEW_OBJECT(os_wxMenuBar, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);

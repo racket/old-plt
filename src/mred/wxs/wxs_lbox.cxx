@@ -25,20 +25,25 @@
 
 #include "wxscheme.h"
 #include "wxs_lbox.h"
-#include "wxscomon.h"
 
 
 static Scheme_Object* GetSelectionList(wxListBox *l)
 {
   int c, *v;
-  
-  c = l->GetSelections(&v);
+  Scheme_Object *cdr, *obj;;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, l);
+  VAR_STACK_PUSH(1, v);
+  VAR_STACK_PUSH(2, cdr);
 
-  Scheme_Object *cdr = scheme_null, *obj;
+
+  c = WITH_VAR_STACK(l->GetSelections(&v));
+
+  cdr = scheme_null;
 
   while (c--) {
-    obj = scheme_make_integer(v[c]);
-    cdr = scheme_make_pair(obj, cdr);
+    obj = WITH_VAR_STACK(scheme_make_integer(v[c]));
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -177,7 +182,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -553,7 +558,7 @@ static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object 
   
   x1 = NULL;
 
-  x1 = __MakestringArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("list%","set"));
+  x1 = WITH_VAR_STACK(__MakestringArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("list%","set")));
   WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1));
 
   
@@ -1131,7 +1136,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   if ((n < 3) ||(n > 11)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in list-box%", 3, 11, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in list-box%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in list-box%"));
   if (n > 3) {
     x3 = WITH_VAR_STACK(unbundle_symset_kind(p[3], "initialization in list-box%"));
@@ -1166,7 +1171,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   } else
     x11 = "button";
 
-  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, METHODNAME("list-box%","initialization"));
+  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = WITH_VAR_STACK(__MakestringArray((8 < n) ? p[8] : scheme_null, &x8, METHODNAME("list-box%","initialization")));
   realobj = NEW_OBJECT(os_wxListBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);

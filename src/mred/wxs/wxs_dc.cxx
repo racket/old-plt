@@ -38,7 +38,6 @@
 
 #include "wxscheme.h"
 #include "wxs_dc.h"
-#include "wxscomon.h"
 
 
 static Scheme_Object *textMode_wxTRANSPARENT_sym = NULL;
@@ -125,32 +124,44 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
-  wxColour *c;
-  c = NEW_OBJECT(wxColour,());
-  c->CopyFrom(dc->GetTextBackground());
+  wxColour *c, *bg;
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, dc);
+  VAR_STACK_PUSH(1, c);
+
+  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  bg = WITH_VAR_STACK(dc->GetTextBackground());
+  WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
 }
 
 static wxColour* dcGetTextForeground(wxDC *dc)
 {
-  wxColour *c;
-  c = NEW_OBJECT(wxColour,());
-  c->CopyFrom(dc->GetTextForeground());
+  wxColour *c, *fg;
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, dc);
+  VAR_STACK_PUSH(1, c);
+
+  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  fg = WITH_VAR_STACK(dc->GetTextForeground());
+  WITH_VAR_STACK(c->CopyFrom(fg));
   return c;
 }
 
 static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
 {
+  REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c);
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c));
   } else
     return FALSE;
 }
 
 static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
 {
+  REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c));
   } else
     return FALSE;
 }
@@ -159,16 +170,17 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
+  REMEMBER_VAR_STACK();
 
   if (!dc->Ok()) {
-   a[0] = a[1] = a[2] = a[3] = scheme_make_double(0.0);
+    a[0] = a[1] = a[2] = a[3] = WITH_REMEMBERED_STACK(scheme_make_double(0.0));
   } else {
-   dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
-
-    a[0] = scheme_make_double(w);
-    a[1] = scheme_make_double(h);
-    a[2] = scheme_make_double(d);
-    a[3] = scheme_make_double(asc);
+    WITH_REMEMBERED_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
+    
+    a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
+    a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
+    a[2] = WITH_REMEMBERED_STACK(scheme_make_double(d));
+    a[3] = WITH_REMEMBERED_STACK(scheme_make_double(asc));
   }
 
   return scheme_values(4, a);
@@ -178,13 +190,14 @@ static void* MyGetSize(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
+  REMEMBER_VAR_STACK();
 
   dc->GetSize(&w, &h);
 
-  a[0] = scheme_make_double(w);
-  a[1] = scheme_make_double(h);
+  a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
+  a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
 
-  return scheme_values(2, a);
+  return WITH_REMEMBERED_STACK(scheme_values(2, a));
 }
 
 
@@ -245,7 +258,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -1151,7 +1164,7 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x4 = wxODDEVEN_RULE;
 
-  x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon"));DO_OK_CHECK(scheme_void)
+  x1 = WITH_VAR_STACK(__MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon")));DO_OK_CHECK(scheme_void)
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawPolygon(x0, x1, x2, x3, x4));
 
   
@@ -1186,7 +1199,7 @@ static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object
   } else
     x3 = 0;
 
-  x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines"));DO_OK_CHECK(scheme_void)
+  x1 = WITH_VAR_STACK(__MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines")));DO_OK_CHECK(scheme_void)
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawLines(x0, x1, x2, x3));
 
   
@@ -1644,7 +1657,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-bitmap in bitmap-dc%", 1));
 
-  if (x0) { if (!x0->Ok()) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bad bitmap: ", p[0]); if (BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[0]); if (BM_IN_USE(x0)) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[0]); }
+  if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bad bitmap: ", p[0]); if (BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[0])); }
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->SelectObject(x0));
 
   

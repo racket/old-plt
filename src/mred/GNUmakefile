@@ -309,6 +309,11 @@ gc2/wx_medio.cc: wxme/wx_medio.cxx
 gc2/wx_style.cc: wxme/wx_style.cxx
 	$(XFORM) $< $@
 
+
+gc2/wxscheme.cc: wxs/wxscheme.cxx
+	$(XFORM) $< $@
+
+
 gc2/mred.cc: mred.cxx
 	$(XFORM) $< $@
 
@@ -396,6 +401,8 @@ XSRCS = gc2/Window.cc \
   gc2/wx_keym.cc \
   gc2/wx_medio.cc \
   gc2/wx_style.cc \
+\
+  gc2/wxscheme.cc \
 \
   gc2/mred.cc \
   gc2/mredx.cc

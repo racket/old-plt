@@ -53,13 +53,14 @@
 
 #include <stdlib.h>
 
-typedef struct GCBitmap {
+class GCBitmap {
+public:
   wxCanvas **canvasptr; /* weak reference */
   float x, y, w, h;
   float onx, ony, offx, offy;
   wxBitmap *on, *off;
   struct GCBitmap *next;
-} GCBitmap;
+};
 
 static GCBitmap *gc_bitmaps = NULL;
 extern "C" void (*GC_collect_start_callback)(void);
@@ -85,10 +86,8 @@ static Scheme_Object *mred_unit_opener, *mred_sig;
 
 typedef struct {
   int count;
-  struct {
-    char *name;
-    Scheme_Object *val;
-  } v[INSTALL_COUNT];
+  char *names[INSTALL_COUNT];
+  Scheme_Object *vals[INSTALL_COUNT];
 } InstallRec;
 
 static void wxScheme_Invoke(Scheme_Env *env)
@@ -100,9 +99,9 @@ static void wxScheme_Invoke(Scheme_Env *env)
 
   scheme_set_param(scheme_config, MZCONFIG_ENV, save);
 
-  if (!mred_sig)
+  if (!mred_sig) {
     mred_sig = scheme_lookup_global(scheme_intern_symbol("mred^"), env);
-  else
+  } else
     scheme_add_global("mred^", mred_sig, env);
 
   if (!get_file) {
@@ -120,8 +119,9 @@ static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* an
   InstallRec *rec = (InstallRec *)u->data;
   int i;
 
-  for (i = rec->count; i--; )
-    SCHEME_ENVBOX_VAL(boxes[i]) = rec->v[i].val;
+  for (i = rec->count; i--; ) {
+    SCHEME_ENVBOX_VAL(boxes[i]) = rec->vals[i];
+  }
 
   return scheme_void;
 }
@@ -130,10 +130,12 @@ extern "C" Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int
 
 void wxsScheme_setup(Scheme_Env *env)
 {
-  InstallRec *rec = (InstallRec *)scheme_malloc(sizeof(InstallRec));
+  InstallRec *rec;
   Scheme_Unit *u;
   int i;
-  Scheme_Object *link, *a[1];
+  Scheme_Object *link, *a[1], **exs;
+
+  rec = (InstallRec *)scheme_malloc(sizeof(InstallRec));
 
   objscheme_init(env);
 
@@ -149,11 +151,13 @@ void wxsScheme_setup(Scheme_Env *env)
   u->type = scheme_unit_type;
   u->num_imports = 0;
   u->num_exports = rec->count;
-  u->exports = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * rec->count);
+  exs = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * rec->count);
+  u->exports = exs;
   u->export_debug_names = NULL;
   u->data = (Scheme_Object *)rec;
   for (i = rec->count; i--; ) {
-    Scheme_Object *s = scheme_intern_symbol(rec->v[i].name);
+    Scheme_Object *s;
+    s = scheme_intern_symbol(rec->names[i]);
     u->exports[i] = s;
   }
   u->init_func = wxsUnit_Init;
@@ -189,8 +193,8 @@ void scheme_install_xc_global(char *name, Scheme_Object *val, void *env)
     exit(-1);
   }
 
-  rec->v[rec->count].name = name;
-  rec->v[rec->count].val = val;
+  rec->names[rec->count] = name;
+  rec->vals[rec->count] = val;
   rec->count++;
 }
 
@@ -199,9 +203,10 @@ Scheme_Object * scheme_lookup_xc_global(char *name, void *env)
   InstallRec *rec = (InstallRec *)env;
   int i;
 
-  for (i = 0; i < rec->count; i++)
-    if (!strcmp(rec->v[i].name, name))
-      return rec->v[i].val;
+  for (i = 0; i < rec->count; i++) {
+    if (!strcmp(rec->names[i], name))
+      return rec->vals[i];
+  }
 
   return NULL;
 }
@@ -215,11 +220,14 @@ static void draw_gc_bm(int on)
 {
   GCBitmap *gcbm = gc_bitmaps;
   while (gcbm) {
-    if (*gcbm->canvasptr)
-      ((wxCanvasDC *)(*gcbm->canvasptr)->GetDC())->GCBlit(gcbm->x, gcbm->y,
-							  gcbm->w, gcbm->h,
-							  on ? gcbm->on : gcbm->off,
-							  0, 0);
+    if (*gcbm->canvasptr) {
+      wxCanvasDC *dc;
+      dc = (wxCanvasDC *)(*gcbm->canvasptr)->GetDC();
+      dc->GCBlit(gcbm->x, gcbm->y,
+		 gcbm->w, gcbm->h,
+		 on ? gcbm->on : gcbm->off,
+		 0, 0);
+    }
     gcbm = gcbm->next;
   }
 #ifdef wx_x
@@ -274,12 +282,15 @@ static Scheme_Object *wxSchemeUnregisterCollectingBitmap(int, Scheme_Object **a)
 static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 {
   GCBitmap *gcbm;
+  wxCanvas **cp, *cvs;
 
   gcbm = new GCBitmap;
 
-  gcbm->canvasptr = (wxCanvas **)scheme_malloc_atomic(sizeof(wxCanvas*));
+  cp = (wxCanvas **)scheme_malloc_atomic(sizeof(wxCanvas*));
+  gcbm->canvasptr = cp;
 
-  *gcbm->canvasptr = objscheme_unbundle_wxCanvas(a[0], "register-collecting-blit", 0);
+  cvs = objscheme_unbundle_wxCanvas(a[0], "register-collecting-blit", 0);
+  *gcbm->canvasptr = cvs;
   gcbm->x = objscheme_unbundle_float(a[1], "register-collecting-blit");
   gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
   gcbm->w = objscheme_unbundle_nonnegative_float(a[3], "register-collecting-blit");
@@ -303,6 +314,7 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   gcbm->next = gc_bitmaps;
   gc_bitmaps = gcbm;
 
+  /* FIXME: needs to be a weak box */
   GC_general_register_disappearing_link((void **)gcbm->canvasptr, 
 					*gcbm->canvasptr);
 
@@ -627,6 +639,8 @@ static int CALLBACK get_font(ENUMLOGFONT FAR*  lpelf,
 }
 #endif
 
+typedef int (*Indirect_Cmp_Proc)(const void *, const void *);
+
 static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 {
   Scheme_Object *first = scheme_null, *last = NULL;
@@ -638,15 +652,18 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 #define __DISPLAY wxGetDisplay()
 #endif
   int count, i = 0;
-  char **xnames = XListFonts(__DISPLAY, "*", 50000, &count), **names;
+  char **xnames, **names;
   int last_pos = -1, last_len = 0;
 
+  xnames = XListFonts(__DISPLAY, "*", 50000, &count);
+
   names = new char* [count];
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     names[i] = xnames[i];
+  }
 
   qsort(names, count, sizeof(char *), 
-	(int (*)(const void *, const void *))indirect_strcmp);
+	(Indirect_Cmp_Proc)indirect_strcmp);
 
   i = 0;
 #endif
@@ -678,12 +695,14 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   while (1) {
     char *s;
     int l;
+    Scheme_Object *pr;
 
 #ifdef wx_x
     while ((i < count)
 	   && ((last_pos >= 0) 
-	       && !strncmp(names[i], names[last_pos], last_len)))
+	       && !strncmp(names[i], names[last_pos], last_len))) {
       i++;
+    }
     if (i >= count)
       break;
 
@@ -692,7 +711,7 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
       l = strlen(names[i]);
     } else {
       int c = 0;
-      for (l = 0; names[i][l]; l++)
+      for (l = 0; names[i][l]; l++) {
 	if (names[i][l] == '-') {
 	  c++;
 	  if (c == 3) {
@@ -708,6 +727,7 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 	    break;
 	  }
 	}
+      }
     }
     last_len = l;
     
@@ -737,7 +757,7 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     l = strlen(s);
 #endif
     
-    Scheme_Object *pr = scheme_make_pair(scheme_make_sized_string(s, l, 1), scheme_null);
+    pr = scheme_make_pair(scheme_make_sized_string(s, l, 1), scheme_null);
     if (last)
       SCHEME_CDR(last) = pr;
     else
@@ -1204,13 +1224,13 @@ extern "C" {
 extern char *wxmac_startup_directory;
 #endif
 
+enum {
+  id_init_file,
+  id_setup_file
+};
+
 static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
-  enum {
-    id_init_file,
-    id_setup_file
-  };
-
   int which;
 
   if (argv[0] == init_file_symbol)
@@ -1224,20 +1244,22 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   }
 
 #ifdef wx_x
-  Scheme_Object *home;
-
-  home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
-
-  int ends_in_slash;
-  ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
-
-  if (which == id_init_file)
-    return scheme_append_string(home,
-				scheme_make_string("/.mredrc" + ends_in_slash));
-
-  if (which == id_setup_file)
-    return scheme_append_string(home,
-				scheme_make_string("/.mred.resources" + ends_in_slash));
+  {
+    Scheme_Object *home;
+    int ends_in_slash;
+    
+    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+    
+    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
+    
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mredrc" + ends_in_slash));
+    
+    if (which == id_setup_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mred.resources" + ends_in_slash));
+  }
 #endif
 
 #ifdef wx_msw
@@ -1269,8 +1291,9 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
     i = strlen(s) - 1;
     
-    while (i && (s[i] != '\\'))
+    while (i && (s[i] != '\\')) {
       --i;
+    }
     s[i] = 0;
     home = scheme_make_string_without_copying(s);
   }
@@ -1363,8 +1386,10 @@ Bool wxsPrinterDialog(wxWindow *parent)
   if (SCHEME_FALSEP(r)) {
     return 0;
   } else {
-    wxPrintSetupData *p = objscheme_unbundle_wxPrintSetupData(r, NULL, 0);
-    *(wxGetThePrintSetupData()) = *p;
+    wxPrintSetupData *p, *p2;
+    p = objscheme_unbundle_wxPrintSetupData(r, NULL, 0);
+    p2 = wxGetThePrintSetupData();
+    p2->copy(p);
     return 1;
   }
 }
@@ -1450,7 +1475,8 @@ void wxsExecute(char **argv)
   int i, c;
   Scheme_Object *a[1], *s, *p;
 
-  for (i = 0; argv[i]; i++);
+  for (i = 0; argv[i]; i++) {
+  }
 
   c = i;
 

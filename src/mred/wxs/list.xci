@@ -21,7 +21,7 @@
 @IFDEFINE l_EXTRA = NULLTERM : 1 : 0
 @IFDEFINE l_TERMINATE = NULLTERM : f[i] = 0; :
 @IFDEFINE l_COPY = POINTWISE : l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y; : l_COPYDEST=l_COPYSRC;
-@IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l)); if (BM_SELECTED(l_COPYDEST)) scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l)); }
+@IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
 @IFDEFINE l_INTTYPE = SIZEISLONG : long : int
 
 @DEFINE l_TYPE = <TYPE>
@@ -34,13 +34,13 @@
 @MACRO ubList = NULL
 @MACRO cList = SCHEME_LISTP({x})
 
-@MACRO glueListSet[type.list.array.cnt.who] = x<array> = __Make<type>Array((<list> < n) ? p[<list>] : scheme_null, &x<cnt>, <who>);
-@MACRO glueUncountedListSet[type.list.array.who] = x<array> = __Make<type>Array((<array> < n) ? p[<list>] : scheme_null, NULL, <who>);
-@MACRO methListSet[type.list.array.cnt] = p[<list>] = __Make<type>List(x<array>, x<cnt>);
+@MACRO glueListSet[type.list.array.cnt.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<list> < n) ? p[<list>] : scheme_null, &x<cnt>, <who>));
+@MACRO glueUncountedListSet[type.list.array.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<array> < n) ? p[<list>] : scheme_null, NULL, <who>));
+@MACRO methListSet[type.list.array.cnt] = p[<list>] = WITH_VAR_STACK(__Make<type>List(x<array>, x<cnt>));
 
 @MACRO glueCleanup[array] = delete[] x<array>;
 
-@MACRO bReturnList[type.cnt] =  __Make<type>List({x}, *x<cnt>);
+@MACRO bReturnList[type.cnt] =  WITH_VAR_STACK(__Make<type>List({x}, *x<cnt>));
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
@@ -50,7 +50,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;

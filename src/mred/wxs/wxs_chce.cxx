@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_chce.h"
-#include "wxscomon.h"
 
 
 static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
@@ -116,7 +115,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -774,7 +773,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   if ((n < 3) ||(n > 10)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in choice%", 3, 10, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in choice%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in choice%"));
   if (n > 3) {
     x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in choice%"));
@@ -805,7 +804,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x10 = "checkBox";
 
-  x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("choice%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
+  x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("choice%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = NEW_OBJECT(os_wxChoice, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);

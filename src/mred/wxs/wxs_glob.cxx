@@ -34,7 +34,6 @@
 
 #include "wxscheme.h"
 #include "wxs_glob.h"
-#include "wxscomon.h"
 
 
 static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
@@ -81,9 +80,9 @@ extern Bool wxSchemeYield(void *sema);
 extern void wxFlushDisplay(void);
 
 #ifdef wx_x
-#define FILE_SEL_DEF_PATTERN "*"
+# define FILE_SEL_DEF_PATTERN "*"
 #else
-#define FILE_SEL_DEF_PATTERN "*.*"
+# define FILE_SEL_DEF_PATTERN "*.*"
 #endif
 
 static char *wxStripMenuCodes_Scheme(char *in)
@@ -91,16 +90,17 @@ static char *wxStripMenuCodes_Scheme(char *in)
   static char *buffer = NULL;
   static long buflen = 0;
   long len;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, in);
 
   len = strlen(in);
   if (buflen <= len) {
-    if (buffer)
-      delete[] buffer;
+    wxREGGLOB(buffer);
     buflen = 2 * len + 1;
-    buffer = new char[buflen];
+    buffer = WITH_VAR_STACK(GC_malloc_atomic(buflen));
   }
 
-  wxStripMenuCodes(in, buffer);
+  WITH_VAR_STACK(wxStripMenuCodes(in, buffer));
   return buffer;
 }
 

@@ -26,7 +26,6 @@
 
 #include "wxscheme.h"
 #include "wxs_win.h"
-#include "wxscomon.h"
 
 
 #ifdef wx_mac

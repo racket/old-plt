@@ -38,32 +38,44 @@
 
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
-  wxColour *c;
-  c = NEW_OBJECT(wxColour,());
-  c->CopyFrom(dc->GetTextBackground());
+  wxColour *c, *bg;
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, dc);
+  VAR_STACK_PUSH(1, c);
+
+  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  bg = WITH_VAR_STACK(dc->GetTextBackground());
+  WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
 }
 
 static wxColour* dcGetTextForeground(wxDC *dc)
 {
-  wxColour *c;
-  c = NEW_OBJECT(wxColour,());
-  c->CopyFrom(dc->GetTextForeground());
+  wxColour *c, *fg;
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, dc);
+  VAR_STACK_PUSH(1, c);
+
+  c = WITH_VAR_STACK(NEW_OBJECT(wxColour,()));
+  fg = WITH_VAR_STACK(dc->GetTextForeground());
+  WITH_VAR_STACK(c->CopyFrom(fg));
   return c;
 }
 
 static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
 {
+  REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c);
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c));
   } else
     return FALSE;
 }
 
 static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
 {
+  REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c));
   } else
     return FALSE;
 }
@@ -72,16 +84,17 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
+  REMEMBER_VAR_STACK();
 
   if (!dc->Ok()) {
-   a[0] = a[1] = a[2] = a[3] = scheme_make_double(0.0);
+    a[0] = a[1] = a[2] = a[3] = WITH_REMEMBERED_STACK(scheme_make_double(0.0));
   } else {
-   dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
-
-    a[0] = scheme_make_double(w);
-    a[1] = scheme_make_double(h);
-    a[2] = scheme_make_double(d);
-    a[3] = scheme_make_double(asc);
+    WITH_REMEMBERED_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
+    
+    a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
+    a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
+    a[2] = WITH_REMEMBERED_STACK(scheme_make_double(d));
+    a[3] = WITH_REMEMBERED_STACK(scheme_make_double(asc));
   }
 
   return scheme_values(4, a);
@@ -91,13 +104,14 @@ static void* MyGetSize(wxDC *dc)
 {
   float w, h;
   Scheme_Object *a[2];
+  REMEMBER_VAR_STACK();
 
   dc->GetSize(&w, &h);
 
-  a[0] = scheme_make_double(w);
-  a[1] = scheme_make_double(h);
+  a[0] = WITH_REMEMBERED_STACK(scheme_make_double(w));
+  a[1] = WITH_REMEMBERED_STACK(scheme_make_double(h));
 
-  return scheme_values(2, a);
+  return WITH_REMEMBERED_STACK(scheme_values(2, a));
 }
 
 @CLASSBASE wxDC "dc":"object"

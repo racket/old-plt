@@ -27,7 +27,6 @@
 
 #include "wxscheme.h"
 #include "wxs_cnvs.h"
-#include "wxscomon.h"
 
 
 #ifdef wx_xt

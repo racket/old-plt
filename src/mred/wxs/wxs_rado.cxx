@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_rado.h"
-#include "wxscomon.h"
 
 
 static Scheme_Object *radioboxStyle_wxVERTICAL_sym = NULL;
@@ -136,7 +135,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -210,7 +209,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #define l_EXTRA 0
 #define l_TERMINATE 
 #define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST { if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l)); if (BM_SELECTED(l_COPYDEST)) scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l)); }
+#define l_OKTEST { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
 #define l_INTTYPE int
 
 #define l_TYPE wxBitmap
@@ -231,7 +230,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -900,7 +899,7 @@ static Scheme_Object *os_wxRadioBoxOnKillFocus(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxRadioBox *realobj;
-  if ((n >= 8) && objscheme_istype_wxPanel(p[0], NULL, 0) && (SCHEME_NULLP(p[1]) || objscheme_istype_proc2(p[1], NULL)) && (XC_SCHEME_NULLP(p[2]) || objscheme_istype_string(p[2], NULL)) && objscheme_istype_number(p[3], NULL) && objscheme_istype_number(p[4], NULL) && objscheme_istype_number(p[5], NULL) && objscheme_istype_number(p[6], NULL) && (SCHEME_LISTP(p[7]) && (XC_SCHEME_NULLP(p[7]) || objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0)))) {
+  if ((n >= 8) && objscheme_istype_wxPanel(p[0], NULL, 0) && (SCHEME_NULLP(p[1]) || WITH_VAR_STACK(objscheme_istype_proc2(p[1], NULL))) && (XC_SCHEME_NULLP(p[2]) || objscheme_istype_string(p[2], NULL)) && objscheme_istype_number(p[3], NULL) && objscheme_istype_number(p[4], NULL) && objscheme_istype_number(p[5], NULL) && objscheme_istype_number(p[6], NULL) && (SCHEME_LISTP(p[7]) && (XC_SCHEME_NULLP(p[7]) || objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0)))) {
     class wxPanel* x0;
     wxFunction x1;
     nstring x2;
@@ -926,7 +925,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     if ((n < 8) ||(n > 11)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (bitmap list case)", 8, 11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (bitmap list case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (bitmap list case)"));
     x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in radio-box% (bitmap list case)"));
     x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in radio-box% (bitmap list case)"));
@@ -946,7 +945,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakewxBitmapArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization"));
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakewxBitmapArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
     realobj = NEW_OBJECT(os_wxRadioBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
@@ -978,7 +977,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     if ((n < 3) ||(n > 11)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (string list case)", 3, 11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (string list case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (string list case)"));
     if (n > 3) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in radio-box% (string list case)"));
@@ -1013,7 +1012,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization"));
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
     realobj = NEW_OBJECT(os_wxRadioBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);

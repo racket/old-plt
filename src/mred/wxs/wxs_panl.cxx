@@ -27,7 +27,6 @@
 
 #include "wxscheme.h"
 #include "wxs_panl.h"
-#include "wxscomon.h"
 
 
 #if !defined(wx_mac)
@@ -1651,7 +1650,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x8 = "dialogBox";
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);wxsCheckEventspace(METHODNAME("dialog%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("dialog%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = NEW_OBJECT(os_wxDialogBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);

@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_snip.h"
-#include "wxscomon.h"
 
 
 
@@ -1289,7 +1288,7 @@ static Scheme_Object *os_wxSnipAdjustCursor(Scheme_Object *obj, int n,  Scheme_O
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "adjust-cursor in snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::AdjustCursor(x0, x1, x2, x3, x4, x5));
   else
@@ -1327,7 +1326,7 @@ static Scheme_Object *os_wxSnipOnChar(Scheme_Object *obj, int n,  Scheme_Object 
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-char in snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[5], "on-char in snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnChar(x0, x1, x2, x3, x4, x5));
   else
@@ -1365,7 +1364,7 @@ static Scheme_Object *os_wxSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Object
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-event in snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "on-event in snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnEvent(x0, x1, x2, x3, x4, x5));
   else
@@ -1458,7 +1457,7 @@ static Scheme_Object *os_wxSnipGetText(Scheme_Object *obj, int n,  Scheme_Object
 
   
   
-  return scheme_make_sized_string(r, _x3, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
 #pragma argsused
@@ -1559,7 +1558,7 @@ static Scheme_Object *os_wxSnipDraw(Scheme_Object *obj, int n,  Scheme_Object *p
   x8 = WITH_VAR_STACK(objscheme_unbundle_float(p[8], "draw in snip%"));
   x9 = WITH_VAR_STACK(unbundle_symset_caret(p[9], "draw in snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
   else
@@ -1593,7 +1592,7 @@ static Scheme_Object *os_wxSnipPartialOffset(Scheme_Object *obj, int n,  Scheme_
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "partial-offset in snip%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "partial-offset in snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::PartialOffset(x0, x1, x2, x3));
   else
@@ -1678,7 +1677,7 @@ static Scheme_Object *os_wxSnipGetExtent(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -3117,7 +3116,7 @@ static Scheme_Object *os_wxTextSnipAdjustCursor(Scheme_Object *obj, int n,  Sche
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "adjust-cursor in string-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in string-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, x5));
   else
@@ -3155,7 +3154,7 @@ static Scheme_Object *os_wxTextSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-char in string-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[5], "on-char in string-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnChar(x0, x1, x2, x3, x4, x5));
   else
@@ -3193,7 +3192,7 @@ static Scheme_Object *os_wxTextSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-event in string-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "on-event in string-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnEvent(x0, x1, x2, x3, x4, x5));
   else
@@ -3286,7 +3285,7 @@ static Scheme_Object *os_wxTextSnipGetText(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return scheme_make_sized_string(r, _x3, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
 #pragma argsused
@@ -3387,7 +3386,7 @@ static Scheme_Object *os_wxTextSnipDraw(Scheme_Object *obj, int n,  Scheme_Objec
   x8 = WITH_VAR_STACK(objscheme_unbundle_float(p[8], "draw in string-snip%"));
   x9 = WITH_VAR_STACK(unbundle_symset_caret(p[9], "draw in string-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
   else
@@ -3421,7 +3420,7 @@ static Scheme_Object *os_wxTextSnipPartialOffset(Scheme_Object *obj, int n,  Sch
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "partial-offset in string-snip%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "partial-offset in string-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::PartialOffset(x0, x1, x2, x3));
   else
@@ -3506,7 +3505,7 @@ static Scheme_Object *os_wxTextSnipGetExtent(Scheme_Object *obj, int n,  Scheme_
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -4667,7 +4666,7 @@ static Scheme_Object *os_wxTabSnipAdjustCursor(Scheme_Object *obj, int n,  Schem
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "adjust-cursor in tab-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in tab-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, x5));
   else
@@ -4705,7 +4704,7 @@ static Scheme_Object *os_wxTabSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obje
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-char in tab-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[5], "on-char in tab-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnChar(x0, x1, x2, x3, x4, x5));
   else
@@ -4743,7 +4742,7 @@ static Scheme_Object *os_wxTabSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Obj
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-event in tab-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "on-event in tab-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnEvent(x0, x1, x2, x3, x4, x5));
   else
@@ -4836,7 +4835,7 @@ static Scheme_Object *os_wxTabSnipGetText(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   
-  return scheme_make_sized_string(r, _x3, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
 #pragma argsused
@@ -4937,7 +4936,7 @@ static Scheme_Object *os_wxTabSnipDraw(Scheme_Object *obj, int n,  Scheme_Object
   x8 = WITH_VAR_STACK(objscheme_unbundle_float(p[8], "draw in tab-snip%"));
   x9 = WITH_VAR_STACK(unbundle_symset_caret(p[9], "draw in tab-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
   else
@@ -4971,7 +4970,7 @@ static Scheme_Object *os_wxTabSnipPartialOffset(Scheme_Object *obj, int n,  Sche
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "partial-offset in tab-snip%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "partial-offset in tab-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::PartialOffset(x0, x1, x2, x3));
   else
@@ -5056,7 +5055,7 @@ static Scheme_Object *os_wxTabSnipGetExtent(Scheme_Object *obj, int n,  Scheme_O
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -6011,7 +6010,7 @@ static Scheme_Object *os_wxImageSnipSetBitmap(Scheme_Object *obj, int n,  Scheme
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-bitmap in image-snip%", 0));
 
-  { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
+  { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
   WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->SetBitmap(x0));
 
   
@@ -6108,7 +6107,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(Scheme_Object *obj, int n,  Scheme_
   
   WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1, x2, x3));
 
-  if (x0) scheme_process_block(0.0);
+  if (x0) WITH_VAR_STACK(scheme_process_block(0.0));
   
   return scheme_void;
 }
@@ -6424,7 +6423,7 @@ static Scheme_Object *os_wxImageSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "adjust-cursor in image-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in image-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, x5));
   else
@@ -6462,7 +6461,7 @@ static Scheme_Object *os_wxImageSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-char in image-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[5], "on-char in image-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnChar(x0, x1, x2, x3, x4, x5));
   else
@@ -6500,7 +6499,7 @@ static Scheme_Object *os_wxImageSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-event in image-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "on-event in image-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnEvent(x0, x1, x2, x3, x4, x5));
   else
@@ -6593,7 +6592,7 @@ static Scheme_Object *os_wxImageSnipGetText(Scheme_Object *obj, int n,  Scheme_O
 
   
   
-  return scheme_make_sized_string(r, _x3, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
 #pragma argsused
@@ -6694,7 +6693,7 @@ static Scheme_Object *os_wxImageSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x8 = WITH_VAR_STACK(objscheme_unbundle_float(p[8], "draw in image-snip%"));
   x9 = WITH_VAR_STACK(unbundle_symset_caret(p[9], "draw in image-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
   else
@@ -6728,7 +6727,7 @@ static Scheme_Object *os_wxImageSnipPartialOffset(Scheme_Object *obj, int n,  Sc
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "partial-offset in image-snip%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "partial-offset in image-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::PartialOffset(x0, x1, x2, x3));
   else
@@ -6813,7 +6812,7 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -6853,7 +6852,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
       WITH_VAR_STACK(scheme_wrong_count("initialization in image-snip% (bitmap case)", 1, 1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "initialization in image-snip% (bitmap case)", 0));
 
-    { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
     realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
@@ -6894,7 +6893,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
     realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0, x1, x2, x3));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
-    if (x0) scheme_process_block(0.0);
+    if (x0) WITH_VAR_STACK(scheme_process_block(0.0));
     
   }
 
@@ -8429,7 +8428,7 @@ static Scheme_Object *os_wxMediaSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "adjust-cursor in editor-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in editor-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, x5));
   else
@@ -8467,7 +8466,7 @@ static Scheme_Object *os_wxMediaSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-char in editor-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[5], "on-char in editor-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnChar(x0, x1, x2, x3, x4, x5));
   else
@@ -8505,7 +8504,7 @@ static Scheme_Object *os_wxMediaSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[4], "on-event in editor-snip%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[5], "on-event in editor-snip%", 0));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, x5));
   else
@@ -8598,7 +8597,7 @@ static Scheme_Object *os_wxMediaSnipGetText(Scheme_Object *obj, int n,  Scheme_O
 
   
   
-  return scheme_make_sized_string(r, _x3, 0);
+  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
 }
 
 #pragma argsused
@@ -8699,7 +8698,7 @@ static Scheme_Object *os_wxMediaSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x8 = WITH_VAR_STACK(objscheme_unbundle_float(p[8], "draw in editor-snip%"));
   x9 = WITH_VAR_STACK(unbundle_symset_caret(p[9], "draw in editor-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","draw"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
   else
@@ -8733,7 +8732,7 @@ static Scheme_Object *os_wxMediaSnipPartialOffset(Scheme_Object *obj, int n,  Sc
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[2], "partial-offset in editor-snip%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[3], "partial-offset in editor-snip%"));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","partial-offset"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::PartialOffset(x0, x1, x2, x3));
   else
@@ -8818,7 +8817,7 @@ static Scheme_Object *os_wxMediaSnipGetExtent(Scheme_Object *obj, int n,  Scheme
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-extent"), "bad device context: ", p[0]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else

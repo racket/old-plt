@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_slid.h"
-#include "wxscomon.h"
 
 
 #define wxPLAIN_SLIDER (wxHORIZONTAL << 2)
@@ -536,7 +535,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   if ((n < 7) ||(n > 11)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in slider%", 7, 11, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in slider%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in slider%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in slider%"));
   x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in slider%"));
@@ -559,7 +558,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x10 = "slider";
 
-  if (x3 < x4 || x5 < x3) scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[4]);if (x6 <= 0) x6 = 1;
+  if (x3 < x4 || x5 < x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[4]));if (x6 <= 0) x6 = 1;
   realobj = NEW_OBJECT(os_wxSlider, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);

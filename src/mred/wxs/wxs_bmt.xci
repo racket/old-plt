@@ -14,5 +14,5 @@
 @SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @ENDSYMBOLS
 
-@MACRO USEALLFUEL[ok] = if (<ok>) scheme_process_block(0.0);
+@MACRO USEALLFUEL[ok] = if (<ok>) WITH_VAR_STACK(scheme_process_block(0.0));
 

@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_mpb.h"
-#include "wxscomon.h"
 
 
 
@@ -4569,7 +4568,7 @@ static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Sc
   x7 = WITH_VAR_STACK(objscheme_unbundle_float(p[7], "on-paint in pasteboard%"));
   x8 = WITH_VAR_STACK(unbundle_symset_caret(p[8], "on-paint in pasteboard%"));
 
-  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]);
+  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else

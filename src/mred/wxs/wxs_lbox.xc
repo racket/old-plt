@@ -10,14 +10,20 @@
 static Scheme_Object* GetSelectionList(wxListBox *l)
 {
   int c, *v;
-  
-  c = l->GetSelections(&v);
+  Scheme_Object *cdr, *obj;;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, l);
+  VAR_STACK_PUSH(1, v);
+  VAR_STACK_PUSH(2, cdr);
 
-  Scheme_Object *cdr = scheme_null, *obj;
+
+  c = WITH_VAR_STACK(l->GetSelections(&v));
+
+  cdr = scheme_null;
 
   while (c--) {
-    obj = scheme_make_integer(v[c]);
-    cdr = scheme_make_pair(obj, cdr);
+    obj = WITH_VAR_STACK(scheme_make_integer(v[c]));
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;

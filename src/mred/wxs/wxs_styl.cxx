@@ -26,7 +26,6 @@
 
 #include "wxscheme.h"
 #include "wxs_styl.h"
-#include "wxscomon.h"
 
 
 
@@ -2115,7 +2114,7 @@ static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Obje
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0], "switch-to in style<%>", 0));
   x1 = WITH_VAR_STACK(objscheme_unbundle_wxStyle(p[1], "switch-to in style<%>", 1));
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("style%","switch-to"), "bad device context: ", p[0]);
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("style%","switch-to"), "bad device context: ", p[0]));
   WITH_VAR_STACK(((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SwitchTo(x0, x1));
 
   
@@ -3213,9 +3212,12 @@ class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *obj, const char
 static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
 {
   Scheme_Object *p[1];
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, f);
 
-  p[0] = s ? objscheme_bundle_wxStyle(s) : scheme_false;
 
-  scheme_apply_multi(f, 1, p);
+  p[0] = s ? WITH_VAR_STACK(objscheme_bundle_wxStyle(s)) : scheme_false;
+
+  WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
 }
 

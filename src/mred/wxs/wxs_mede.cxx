@@ -25,7 +25,6 @@
 
 #include "wxscheme.h"
 #include "wxs_mede.h"
-#include "wxscomon.h"
 
 
 #undef l_ADDRESS
@@ -72,7 +71,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -748,7 +747,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -3474,7 +3473,7 @@ static Scheme_Object *os_wxMediaEditSetTabs(Scheme_Object *obj, int n,  Scheme_O
   } else
     x3 = TRUE;
 
-  x0 = __MakefloatArray((0 < n) ? p[0] : scheme_null, &x1, METHODNAME("text%","set-tabs"));
+  x0 = WITH_VAR_STACK(__MakefloatArray((0 < n) ? p[0] : scheme_null, &x1, METHODNAME("text%","set-tabs")));
   WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->SetTabs(x0, x1, x2, x3));
 
   
@@ -3534,7 +3533,7 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
   if (n > 2 && !XC_SCHEME_NULLP(p[2]))
     WITH_VAR_STACK(objscheme_set_box(p[2], (_x2 ? scheme_true : scheme_false)));
   
-  return __MakefloatList(r, *x0);;
+  return WITH_VAR_STACK(__MakefloatList(r, *x0));;
 }
 
 #pragma argsused
@@ -3976,7 +3975,7 @@ static Scheme_Object *os_wxMediaEditFindStringAll(Scheme_Object *obj, int n,  Sc
 
   
   
-  return __MakelongList(r, *x1);;
+  return WITH_VAR_STACK(__MakelongList(r, *x1));;
 }
 
 #pragma argsused
@@ -6354,7 +6353,7 @@ static Scheme_Object *os_wxMediaEditOnPaint(Scheme_Object *obj, int n,  Scheme_O
   x7 = WITH_VAR_STACK(objscheme_unbundle_float(p[7], "on-paint in text%"));
   x8 = WITH_VAR_STACK(unbundle_symset_caret(p[8], "on-paint in text%"));
 
-  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]);
+  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[1]));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -7237,7 +7236,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x1 = NULL;
 
-  x1 = __MakefloatArray((1 < n) ? p[1] : scheme_null, &x2, METHODNAME("text%","initialization"));
+  x1 = WITH_VAR_STACK(__MakefloatArray((1 < n) ? p[1] : scheme_null, &x2, METHODNAME("text%","initialization")));
   realobj = NEW_OBJECT(os_wxMediaEdit, (obj, x0, x1, x2));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);

@@ -5,6 +5,8 @@
 
 @INCLUDE wxs.xci
 
+@HEADER
+
 class wxsGauge : public wxGauge
 {
  public:
@@ -19,12 +21,16 @@ class wxsGauge : public wxGauge
     range = rng; pos = 0;
   }
   void SetRange(int r) {
+    wxGauge *sElF = this;
+    SETUP_VAR_STACK(1);
+    VAR_STACK_PUSH(0, sElF);
+
     if (r > 0) {
       range = r;
-      wxGauge::SetRange(r);
+      WITH_VAR_STACK(sElF->wxGauge::SetRange(r));
       if (pos > r) {
        pos = r;
-       wxGauge::SetValue(r);
+       WITH_VAR_STACK(sElF->wxGauge::SetValue(r));
       }
     }
   }
@@ -37,8 +43,6 @@ class wxsGauge : public wxGauge
   int GetValue(void) { return pos; }
   int GetRange(void) { return range; }
 };
-
-@HEADER
 
 @BEGINSYMBOLS gaugeStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL

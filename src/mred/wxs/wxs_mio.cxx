@@ -26,7 +26,6 @@
 
 #include "wxscheme.h"
 #include "wxs_mio.h"
-#include "wxscomon.h"
 
 
 
@@ -74,7 +73,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
   while (c--) {
     obj = WITH_VAR_STACK(l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]));
-    cdr = scheme_make_pair(obj, cdr);
+    cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
   return cdr;
@@ -129,20 +128,25 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 {
   long c, i;
   Scheme_Object **a;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, r);
+  VAR_STACK_PUSH(1, vec);
+  VAR_STACK_PUSH(2, a);
+
 
   if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-		      "character vector", -1, 0, &vec);
+    WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
+		                     "character vector", -1, 0, &vec));
 
   c = *len = SCHEME_VEC_SIZE(vec);
 
   if (!r)
-    r = (char *)scheme_malloc_atomic(c);
+    r = WITH_VAR_STACK((char *)scheme_malloc_atomic(c));
 
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < c; i++) {
     if (!SCHEME_CHARP(a[i]))
-      scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-			"character vector", -1, 0, &vec);
+      WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
+				       "character vector", -1, 0, &vec));
     r[i] = SCHEME_CHAR_VAL(a[i]);
   }
 
@@ -153,15 +157,19 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 {
   long i;
   Scheme_Object **a;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH(0, r);
+  VAR_STACK_PUSH(1, vec);
+  VAR_STACK_PUSH(2, a);
 
   if (!vec)
-    vec = scheme_make_vector(len, scheme_make_char(0));
+    vec = WITH_VAR_STACK(scheme_make_vector(len, WITH_VAR_STACK(scheme_make_char(0))));
   else if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-		      "character vector", -1, 0, &vec);
+    WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
+		                     "character vector", -1, 0, &vec));
   
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < len; i++)
-    a[i] = scheme_make_char(r[i]);
+    a[i] = WITH_VAR_STACK(scheme_make_char(r[i]));
 
   return vec;
 }
@@ -610,7 +618,7 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
   } else {
   
   p[0] = NULL;
-  p[0] = __MakecharList(x0, x1);
+  p[0] = WITH_VAR_STACK(__MakecharList(x0, x1));
 
   v = WITH_VAR_STACK(scheme_apply(method, 1, p));
   
@@ -714,7 +722,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  S
   
   x0 = NULL;
 
-  x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write"));
+  x0 = WITH_VAR_STACK(__MakecharArray((0 < n) ? p[0] : scheme_null, &x1, METHODNAME("editor-stream-out-base%","write")));
   if (((Scheme_Class_Object *)obj)->primflag)
     WITH_VAR_STACK(((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1));
   else

@@ -2451,12 +2451,9 @@
 		       [else
 			(format "Quoting <unknown>:\r")])
                       "> "
-                      (let* ([s (regexp-replace #rx"\n" rendered-body "\n> ")]
-                             [len (string-length s)])
-                        (if (and (>= len 2)
-                                 (string=? "> " (substring s (- len 2) len)))
-                            (substring s 0 (- len 2))
-                            s))))
+                      (regexp-replace #rx"(?:\n> )*$"
+				      (regexp-replace* #rx"\n" rendered-body "\n> ")
+				      "")))
 		   "")
 	       null)))))
 

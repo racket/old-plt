@@ -1,0 +1,30 @@
+(module cookie mzscheme
+  (require (lib "class.ss")
+           (lib "contract.ss"))
+  
+  (define-struct hd-cookie (port 
+                            shutdown-server
+                            url-on-server-test
+                            extract-url-path
+                            find-browser
+                            new-browser)
+                 (make-inspector))
+  
+  (define (visit-url-in-browser hd-cookie url)
+    (let ([browser (or ((hd-cookie-find-browser hd-cookie))
+                       ((hd-cookie-new-browser hd-cookie)))])
+      (send browser show #t)
+      (let* ([hp (send browser get-hyper-panel)]
+             [hc (send hp get-canvas)])
+        (send hc goto-url url #f)
+        (void))))
+  
+  (provide/contract (visit-url-in-browser (hd-cookie? string? . -> . void?)))
+  
+  (provide
+   (struct hd-cookie (port 
+                      shutdown-server
+                      url-on-server-test
+                      extract-url-path
+                      find-browser
+                      new-browser))))

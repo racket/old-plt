@@ -80,7 +80,8 @@ their arguments and the size of their array arguments and signal an
 error if the they are incorrect.
 
 Examples:
-(require (lib "gl.ss" "sgl"))
+(require (lib "gl.ss" "sgl")
+         (lib "gl-vectors.ss" "sgl"))
 (glBegin GL_TRIANGLES)
 (glVertex3i 1 2 3)
 (glVertex4fv (vector->gl-float-vector (vector 1 2 3 4)))
@@ -128,7 +129,8 @@ The sgl module is still not yet complete and many functions from the gl
 module do not yet have counterparts in the sgl module.
 
 Examples:
-(require (prefix gl- (lib "gl.ss" "sgl")))
+(require (prefix gl- (lib "gl.ss" "sgl"))
+         (lib "gl-vectors.ss" "sgl"))
 (gl-begin 'triangles)
 (gl-vertex 1 2 3)
 (gl-vertex-v (vector->gl-float-vector (vector 1 2 3 4)))

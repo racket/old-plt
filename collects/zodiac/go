@@ -14,4 +14,4 @@ else
     ARG="#f"
 fi
 
-exec mzscheme -x -f invoke.ss -e "(zodiac:${TOOL}see ${ARG})"
+exec mzscheme -x  -f invoke.ss -e "(zodiac:${TOOL}see ${ARG})"

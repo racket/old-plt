@@ -1441,7 +1441,7 @@
       (define sorting-list (instantiate sorting-list% ()
                              (parent top-half)
                              (stretchable-height #f)
-                             ;(vertical-inset 2)
+			     (vertical-inset 2)
 			     (line-count 1)
                              (style '(hide-hscroll))))
       (define header-list (make-object header-list% top-half))

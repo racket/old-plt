@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.5 2004/09/21 19:39:25 cobbe Exp $
+;; $Id: reduction.ss,v 1.6 2004/12/31 22:14:18 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -361,7 +361,7 @@
       (program_ store_ (in-hole context_ (cast class-name_ null)))
       (term (program_
              store_
-             (replace (term context_) (term hole) 'null)))]
+             ,(replace (term context_) (term hole) 'null)))]
 
      ;; [nget]
      [reduction
@@ -375,6 +375,14 @@
      [reduction
       cj-lang
       (program_ store_ (in-hole context_ (set null id id value)))
+      (term (program_
+             store_
+             "error: dereferenced null"))]
+
+     ;; [ncall]
+     [reduction
+      cj-lang
+      (program_ store_ (in-hole context_ (send null id_meth value_arg ...)))
       (term (program_
              store_
              "error: dereferenced null"))]

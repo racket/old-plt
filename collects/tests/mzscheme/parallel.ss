@@ -4,7 +4,7 @@
 ;;  tests don't collide.
 
 (unless (defined? 'parallel-load)
-   (global-defined-value 'parallel-load "quiet.ss"))
+  (global-defined-value 'parallel-load "quiet.ss"))
 
 ; Runs n versions of test in parallel threads and namespaces, 
 ; waiting until all are done
@@ -13,33 +13,27 @@
 	[go (make-semaphore)])
     (let loop ([n n])
       (unless (zero? n)
-	      (let ([ns (make-namespace)]
-		    [p (make-parameterization)])
+	      (let ([ns (make-namespace)])
 		(thread
 		 (lambda ()
-		   (with-parameterization 
-		    p
-		    (lambda ()
-		      (parameterize ([current-namespace ns]
-				     [parameterization-branch-handler
-				      (lambda () (make-parameterization p))])
-				    (let ([dirname (format "sub~s" n)])
-				      (when (directory-exists? dirname)
-					(delete-directory* dirname))
-				      (make-directory dirname)
-				      (current-directory dirname)
-				      (dynamic-wind
-				       void
-				       (lambda ()
-					 (load test))
-				       (lambda ()
-					 (semaphore-post done)
-					 (semaphore-wait go)
-					 (printf "~nThread ~s:" n)
-					 (eval '(report-errs))
-					 (current-directory (build-path 'up))
-					 (delete-directory* dirname)
-					 (semaphore-post done)))))))))
+		   (parameterize ([current-namespace ns])
+		     (let ([dirname (format "sub~s" n)])
+		       (when (directory-exists? dirname)
+			 (delete-directory* dirname))
+		       (make-directory dirname)
+		       (current-directory dirname)
+		       (dynamic-wind
+			void
+			(lambda ()
+			  (load test))
+			(lambda ()
+			  (semaphore-post done)
+			  (semaphore-wait go)
+			  (printf "~nThread ~s:" n)
+			  (eval '(report-errs))
+			  (current-directory (build-path 'up))
+			  (delete-directory* dirname)
+			  (semaphore-post done)))))))
 		(loop (sub1 n)))))
     (let loop ([n n])
       (unless (zero? n)

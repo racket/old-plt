@@ -33,7 +33,6 @@
   (load-relative "name.ss"))
 (unless (defined? 'building-flat-tests)
   (load-relative "multi-expand.ss"))
-(load-relative "sharing-param.ss")
 
 ;; Ok, so this isn't really all of them. Here are more:
 ; thrport.ss

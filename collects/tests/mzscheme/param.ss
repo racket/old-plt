@@ -2,7 +2,7 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
-(SECTION 'parameterizations)
+(SECTION 'parameters)
 
 (let ([p (open-output-file "tmp5" 'replace)])
   (display (compile '(cons 1 2)) p)
@@ -213,15 +213,13 @@
 		      (list #t #f)
 		      '(let ([cont? #f])
 			 (thread-wait
-			  (parameterize ([parameterization-branch-handler
-					  current-parameterization])
-			     (thread
-			      (lambda ()
-				(break-thread (current-thread))
-				(sleep)
-				(set! cont? #t)))))
+			  (thread
+			   (lambda ()
+			     (break-thread (current-thread))
+			     (sleep)
+			     (set! cont? #t))))
 			 (when cont?
-			       (error 'break-enabled)))
+			   (error 'break-enabled)))
 		      exn:user?
 		      #f)
 		; exception-break-enabled: still needs test!
@@ -346,40 +344,10 @@
 	  (error-test expr exn?))))
  params)
 
-(define p1 (make-parameterization))
-(define p2 (make-parameterization p1))
-(define p3 (make-parameterization p2))
-(define p3.again (make-parameterization-with-sharing p3 p3 null void))
-
-(test #t parameterization? p1)
-(test #f parameterization? 'hi)
-(arity-test parameterization? 1 1)
-
-(test 'one (in-parameterization p3 test-param1))
-(test 'two (in-parameterization p3 test-param2))
-
 (define test-param3 (make-parameter 'hi))
-(test 'hi (in-parameterization p3 test-param3))
-((in-parameterization p3 test-param3) 'goodbye)
-(test 'goodbye (in-parameterization p3.again test-param3))
-
-(arity-test make-parameterization 0 1)
-(error-test '(make-parameterization #f))
-
-(arity-test in-parameterization 2 2)
-(error-test '(in-parameterization #f current-output-port))
-(error-test '(in-parameterization p1 (lambda (x) 8)))
-(error-test '(in-parameterization p1 add1))
-
-; Randomly set some
-(for-each
- (lambda (d)
-   (let* ([param (car d)]
-	  [alt1 (caadr d)])
-     (when (zero? (random 2))
-	   (display "setting ") (display param) (newline)
-	   (test (void) (in-parameterization p1 param) alt1))))
- params)
+(test 'hi test-param3)
+(test (void) test-param3 'bye)
+(test 'bye test-param3)
 
 (test #f parameter? add1)
 
@@ -387,11 +355,9 @@
  (lambda (d)
    (let* ([param (car d)]
 	  [alt1 (caadr d)]
-	  [bads (cadddr (cdr d))]
-	  [pp1 (in-parameterization p1 param)])
+	  [bads (cadddr (cdr d))])
      (test #t parameter? param)
      (arity-test param 0 1)
-     (arity-test pp1 0 1)
      (when bads
 	   (for-each
 	    (lambda (bad)
@@ -401,144 +367,9 @@
 					(bad-test-exn? bad))
 				(values bad
 					exn:application:type?))])
-			  (error-test `(,param ,bad) exn?)
-			  (error-test `(,pp1 ,bad) exn?)))
+		(error-test `(,param ,bad) exn?)))
 	    bads))))
  params)
-
-((in-parameterization p1 error-print-width) 577)
-(define main-pw (error-print-width))
-(test #f = 577 main-pw)
-
-(test #t = main-pw (blocking-thread (lambda () (error-print-width))))
-; Check branch handler use for thread and copying built-in and added
-;   parameters when making a parameterization without sharing
-(define another-user-param (make-parameter 'orig))
-(parameterize ([parameterization-branch-handler
-		(lambda ()
-		  (make-parameterization p1))])
-    (test #t equal? '(577 orig 578 new 578 new)
-	    (blocking-thread 
-	     (lambda () 
-	       (list
-		(begin0 
-		 (error-print-width)
-		 (error-print-width 578))
-		(begin0 
-		 (another-user-param)
-		 (another-user-param 'new))
-		(error-print-width)
-		(another-user-param)
-		(blocking-thread ; this thread made with p1's branch handler, which is the default one
-		 (lambda () (error-print-width)))
-		(blocking-thread ; this thread made with p1's branch handler, which is the default one
-		 (lambda () (another-user-param)))))))
-    (test #t = main-pw (error-print-width)))
-
-(test #t = main-pw (error-print-width))
-(test #t = main-pw (blocking-thread (lambda () (error-print-width))))
-
-(test 577 'ize (parameterize ([error-print-width 577])
-		  (error-print-width)))
-(test main-pw error-print-width)
-
-(test 577 with-new-parameterization
-      (lambda ()
-	(error-print-width 577)
-	(error-print-width)))
-(test main-pw error-print-width)
-
-(define (make-sharing share-from)
-  (make-parameterization-with-sharing 
-   p1 #f 
-   (list read-case-sensitive test-param2 test-param1)
-   (lambda (x)
-     (if (or (parameter-procedure=? x read-case-sensitive)
-	     (parameter-procedure=? x test-param2))
-	 share-from
-	 #f))))
-
-(define (check-sharing p-share other inh)
-  (define (check-one-param param v1 v2 shared?)
-    (with-parameterization 
-     p-share
-     (lambda ()
-       (test v1 param)
-       (parameterize ([param v2])
-          (test v2 param)
-	  (test (if shared? v2 v1) (in-parameterization other param))
-	  (test v1 (in-parameterization inh param))
-	  (if shared?
-	      (begin
-		((in-parameterization other param) v1)
-		(test v1 param)
-		(param v2))
-	      (with-parameterization
-	       other
-	       (lambda ()
-		 (parameterize ([param v1])
-		    (test v2 (in-parameterization p-share param)))))))
-       (test v1 param)
-       (test v1 (in-parameterization other param))
-       (with-parameterization 
-	other
-	(lambda ()
-	  (parameterize ([param v2])
-	     (test v2 param)
-	     (test v1 (in-parameterization inh param))
-	     (test (if shared? v2 v1) (in-parameterization p-share param)))))
-       (with-parameterization 
-	inh
-	(lambda ()
-	  (let ([o1 ((in-parameterization other param))]
-		[o2 ((in-parameterization p-share param))])
-	    (parameterize ([param v2])
-	     (test v2 param)
-	     (test o1 (in-parameterization other param))
-	     (test o2 (in-parameterization p-share param))))))
-       (test v1 param))))
-
-  (check-one-param read-accept-compiled #f #t #f)
-  (check-one-param read-case-sensitive #f #t #t)
-  (check-one-param test-param1 'one 'uno #f)
-  (check-one-param test-param2 'two 'dos #t))
-
-((in-parameterization p1 read-accept-compiled) #f)
-((in-parameterization p1 read-case-sensitive) #f)
-
-((in-parameterization p1 test-param2) 'two)
-((in-parameterization p1 test-param1) 'one)
-
-(define ps1.a (make-sharing p3))
-(define ps1.b (make-sharing p3))
-(define ps2 (make-sharing ps1.a))
-
-(check-sharing ps1.a p3 p1)
-(check-sharing ps1.b p3 p1)
-(check-sharing ps2 p3 p1)
-(check-sharing ps2 ps1.a p1)
-
-(test #t parameterization? (make-parameterization-with-sharing (current-parameterization) #f null void))
-(test #t parameterization? (make-parameterization-with-sharing (current-parameterization) (current-parameterization) null void))
-
-(arity-test make-parameterization-with-sharing 4 4)
-(error-test '(make-parameterization-with-sharing #f #f null void))
-(error-test '(make-parameterization-with-sharing (current-parameterization) 2 null void))
-(error-test '(make-parameterization-with-sharing (current-parameterization) #f (list 5) void))
-(error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive read-case-sensitive) void))
-(error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive) (lambda () 0)))
-(error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive) (lambda (x) 0))
-	    exn:misc?)
-
-(arity-test with-new-parameterization 1 1)
-(arity-test with-parameterization 2 2)
-
-(arity-test parameterization-branch-handler 0 1)
-(error-test '(parameterization-branch-handler 0))
-(error-test '(parameterization-branch-handler (lambda (x) x)))
-(error-test '(parameterize ([parameterization-branch-handler void])
-	       (thread void))
-	    exn:misc?)
 
 (test #t parameter-procedure=? read-accept-compiled read-accept-compiled)
 (test #f parameter-procedure=? read-accept-compiled read-case-sensitive)
@@ -548,18 +379,5 @@
 
 ; Test current-library-collection-paths?
 ; Test require-library-use-compiled?
-
-; Use this with SGC to check GC behavior:
-(define save-it #f)
-(define (pgc-check)
-  (let ([rp (current-parameterization)])
-    (let loop ([n 100][p rp])
-      (if (zero? n)
-	  (set! save-it p)
-	  (begin
-	    (make-parameter n)
-	    (make-parameterization)
-	    (make-parameterization-with-sharing rp rp null void)
-	    (loop (sub1 n) (make-parameterization-with-sharing p p null void)))))))
 
 (report-errs)

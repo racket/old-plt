@@ -290,41 +290,38 @@ _MysterX_
   Returns a string indicating the tag of the HTML
   element where the mouse is being moved from.
   Return value is valid only for events for which
-  `event-mouseover' or `event-mouseout' hold.
+  `mouseover?' or `mouseout?' hold.
 
 > from-id :: (send an-mx-event from-id)
 
   Returns a string indicating the identifier of
   the HTML element where the mouse is being moved
   from.  Return value is valid only for events for
-  which `event-mouseover' or `event-mouseout'
-  hold.
+  which `mouseover?' or `mouseout?' hold.
 
 > to-tag :: (send an-mx-event to-tag)
 
   Returns a string indicating the tag of the
   target HTML element where the mouse is being
   moved to.  Return value is valid only for events
-  for which `event-mouseover' or `event-mouseout'
-  hold.
+  for which `mouseover?' or `mouseout?' hold.
 
 > to-id :: (send an-mx-event to-id)
 
   Returns a string indicating the identifier of
   the target HTML element where the mouse is being
   moved from.  Return value is valid only for
-  events for which `event-mouseover' or
-  `event-mouseout' hold.
+  events for which `mouseover?' or `mouseout?' hold.
 
 > x :: (send an-mx-event x)
 
-  Returns an integer indicating the x-coordinate within the document 
-  where the event occurred.
+  Returns an integer indicating the x-coordinate 
+  within the document where the event occurred.
 
 > y :: (send an-mx-event y)
 
-  Returns an integer indicating the y-coordinate within the document 
-  where the event occurred.
+  Returns an integer indicating the y-coordinate 
+  within the document where the event occurred.
 
   COM types
   ---------

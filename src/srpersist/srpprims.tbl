@@ -23,7 +23,7 @@ static SRP_PRIM srpPrims[] = {
   { srp_free_row_status,"free-row-status!",1,1 },
   { srp_make_buffer,"make-buffer",1,2 },        
   { srp_free_buffer,"free-buffer!",1,1 },        
-  { srp_read_buffer,"read-buffer",1,1 },        
+  { srp_read_buffer,"read-buffer",1,2 },        
   { srp_write_buffer,"write-buffer!",2,3 },      
   { srp_read_boxed_uint,"read-boxed-uint",1,1 },      
 	

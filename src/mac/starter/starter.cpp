@@ -1,5 +1,23 @@
 
-#include "simpledrop.h"
+#ifndef WX_CARBON
+# include <Files.h>
+# include <Quickdraw.h>
+# include <Aliases.h>
+# include <Resources.h>
+# include <Windows.h>
+# include <Fonts.h>
+# include <Dialogs.h>
+# include <TextEdit.h>
+QDGlobals qd;
+#endif
+
+#define FOR_STARTER
+#define MZ_REGISTER_STATIC(x) /* empty */
+static char *scheme_mac_spec_to_path(FSSpec *spec);
+
+#include "simpledrop.cpp"
+
+#define FOR_MRED
 
 #ifdef FOR_MRED
 # define DEST_CREATOR 'MrEd'
@@ -11,6 +29,8 @@
 
 int strlen(char *s);
 int isspace(int c);
+
+static char *eof_hack = "<Insert offset here>";
 
 static char *protect_arg(char *s)
 {
@@ -118,9 +138,8 @@ int invoke_application(FSSpec *application, FSSpec *myself)
 {
   Str255 ourName;
   LaunchParamBlockRec rec;
-  AppParameters *app;
   int i, j, givenlen;
-  char *a, *b, buffer[1024];
+  char *a, *b, *buffer;
   long buffer_length;
   unsigned char *reason;
   short rsrcRef_ignored;
@@ -128,7 +147,10 @@ int invoke_application(FSSpec *application, FSSpec *myself)
   int argc;
   char **argv;
   ProcessSerialNumber psn;
-  short file;
+  SInt16 file;
+  int in_terminal; /* will be zero */
+  ProcessSerialNumber curPSN;
+  ProcessInfoRec info;
         
   psn.highLongOfPSN = 0;
   psn.lowLongOfPSN = kNoProcess;
@@ -162,19 +184,27 @@ int invoke_application(FSSpec *application, FSSpec *myself)
       }
     }
   }
-        
+
   /* Read our own data fork to get the command line: */
-  GetAppParms(ourName, &rsrcRef_ignored, &appParam_ignored);
+  GetCurrentProcess(&curPSN);
+  info.processInfoLength = sizeof(ProcessInfoRec);
+  info.processName = ourName;
+  info.processAppSpec = NULL;
+  GetProcessInformation(&curPSN, &info);
+
   if (HOpenDF(myself->vRefNum, myself->parID, ourName, fsRdPerm, &file)) {
+    buffer = NULL;
     buffer_length = 0;
   } else {
-    buffer_length = 1023;
+    buffer_length = ((long *)eof_hack)[0];
+    buffer = NewPtr(buffer_length + 1);
+    SetFPos(file, fsFromStart, ((long *)eof_hack)[1]);
     FSRead(file, &buffer_length, buffer);
     buffer[buffer_length] = 0;
   }
 		
   /* Get command-line arguments here */
-  Drop_GetArgs(&argc, &argv);
+  Drop_GetArgs(&argc, &argv, &in_terminal);
 
   /* Compute size of args from command-line */
   givenlen = 0;
@@ -183,19 +213,49 @@ int invoke_application(FSSpec *application, FSSpec *myself)
     givenlen += strlen(argv[i]) + 1; /* add space */
   }
 
-  app = (AppParameters *)NewPtr(sizeof(AppParameters) + buffer_length + givenlen);
-  app->theMsgEvent.what = kHighLevelEvent;
-  app->theMsgEvent.message = 'PLT ';
-  *(long *)&app->theMsgEvent.where = 'cmdl';
-  app->messageLength = buffer_length + givenlen;
-  a = ((char *)app) + sizeof(AppParameters);
-  b = buffer;
-  for (i = 0; i < buffer_length; i++)
-    a[i] = b[i];
-  for (j = 1; j < argc; j++) {
-    a[i++] = ' ';
-    while (*(argv[j]))
-      a[i++] = *(argv[j]++);
+  {
+    AEDesc myAddress;
+    AEDesc docDesc, launchDesc;
+    AEDescList theList;
+    AliasHandle withThis;
+    AppleEvent theEvent;
+    int alen;
+    OSErr myErr;
+
+    a = (char *)NewPtr(buffer_length + givenlen);
+    alen = buffer_length + givenlen;
+    b = buffer;
+    for (i = 0; i < buffer_length; i++)
+      a[i] = b[i];
+    for (j = 1; j < argc; j++) {
+      a[i++] = ' ';
+      while (*(argv[j]))
+	a[i++] = *(argv[j]++);
+    }
+
+    myErr = AECreateDesc(typeProcessSerialNumber, (Ptr)&curPSN, sizeof(ProcessSerialNumber), &myAddress);
+
+    AECreateAppleEvent('PLT ', 'cmdl', &myAddress, kAutoGenerateReturnID, kAnyTransactionID, &theEvent);
+
+    AECreateDesc(typeChar, (Ptr)a, alen, &docDesc);
+
+    /* create a list for the cmdline. */
+    AECreateList(nil, 0, false, &theList);
+    /* put it in the list */
+    AEPutDesc(&theList, 0, &docDesc);
+    AEPutParamDesc(&theEvent, keyDirectObject, &theList);
+    /* coerce the event from being an event into being appParms */
+    /*      If you just want to send an 'odoc' to an application that is */
+    /* already running, you can stop here and do an AESend on theEvent */
+    AECoerceDesc(&theEvent, typeAppParameters, &launchDesc);
+    HLock((Handle)theEvent.dataHandle);
+    /* and stuff it in the parameter block */
+    /* This is a little weird, since we're actually moving the event out of the */
+    /* AppParameters descriptor.  But it's necessary, the coercison to typeAppParameters */
+    /* stuffs the whole appleevent into one AERecord (instead of a AEDesc) so  */
+    /* the Finder gets the whole event as one handle.  It can then parse it itself */
+    /* to do the sending */
+    rec.launchAppParameters = (AppParametersPtr)*(launchDesc.dataHandle);
   }
 
   rec.launchBlockID = extendedBlock;
@@ -203,7 +263,6 @@ int invoke_application(FSSpec *application, FSSpec *myself)
   rec.launchFileFlags = 0;
   rec.launchControlFlags = launchNoFileFlags | launchContinue | launchUseMinimum;
   rec.launchAppSpec = application;
-  rec.launchAppParameters = app;
 
   switch (LaunchApplication(&rec)) {
   case noErr:
@@ -226,13 +285,13 @@ int invoke_application(FSSpec *application, FSSpec *myself)
 }
 
 
-int main(void)
+int main(int argc, char **argv)
 {
-  WDPBRec  wdrec;
   FSSpec application;
   OSErr err;
   FSSpec myself;
   
+#ifndef WX_CARBON
   MaxApplZone();
 	
   InitGraf(&qd.thePort);		/* initialize Mac stuff */
@@ -244,20 +303,17 @@ int main(void)
   
   MoreMasters();
   MoreMasters();
+#else
+  MoreMasterPointers(1);
+#endif
 
-
-  wdrec.ioNamePtr = myself.name;
-  if (PBHGetVol(&wdrec, 0))
+  if (HGetVol(myself.name, &myself.vRefNum, &myself.parID)) {
     return 0;
-  
-  myself.vRefNum = wdrec.ioWDVRefNum;
-  myself.parID = wdrec.ioWDDirID;
-  
+  }
 
   if (find_exec_spec(&application,&myself) == noErr) {
     return invoke_application(&application,&myself);
   }
-
 }
 
 
@@ -287,7 +343,7 @@ int isspace(int c)
 	  || (c == '\r'));
 }
 
-char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
+static char *scheme_mac_spec_to_path(FSSpec *spec)
 {
 #define QUICK_BUF_SIZE 256
 
@@ -298,10 +354,8 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
   long dirID = spec->parID;
 
   s = qbuf;
-  if (!given_dir) {
-    for (i = spec->name[0]; i; i--)
-      s[size++] = spec->name[i];
-  }
+  for (i = spec->name[0]; i; i--)
+    s[size++] = spec->name[i];
 
   while (1)  {
     pbrec.hFileInfo.ioNamePtr = (unsigned char *)buf;

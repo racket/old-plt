@@ -987,7 +987,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	  memcpy(s, format + start, i - start);
 	} else
 #endif
-	  s = format + start;
+	  s = (char *)format + start;
 	scheme_write_string((char *)s, i - start, port);
       }
       i++;
@@ -1093,7 +1093,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
       memcpy(s, format + start, i - start);
     } else
 #endif
-      s = format + start;
+      s = (char *)format + start;
     scheme_write_string((char *)s, i - start, port);
   }
 }

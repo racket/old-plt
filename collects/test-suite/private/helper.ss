@@ -67,7 +67,7 @@ saving doesn't work right -- need a snipclass for helper%
           (inherit get-editor)
           (field [prg-text (new scheme:text%)])
           (send (get-editor) insert 
-                (new (aligned-snip-mixin editor-snip%) 
+                (new editor-snip% 
                      (editor prg-text)
                      (left-margin 0)
                      (right-margin 0)

@@ -114,7 +114,8 @@
       ))
   
   (define base-snip%
-    (class (aligned-snip-mixin editor-snip%)
+    ;; this should be a stretchable-text-snip%
+    (class editor-snip%
       (super-instantiate ()
         (stretchable-width true)
         (stretchable-height false))))

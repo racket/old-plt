@@ -372,7 +372,7 @@
                  (valid-iface-implement? iface-records (header-implements info))
                                   
                  (let*-values (((old-methods) (class-record-methods super-record))
-                               ((f m) 
+                               ((f m i) 
                                 (if (memq 'strictfp test-mods)
                                     (process-members members old-methods cname type-recs level 
                                                      (find-strictfp modifiers))
@@ -414,12 +414,20 @@
                            (append m (filter (lambda (meth)
                                                (class-specific-method? meth m))
                                              (class-record-methods super-record)))
-                           null
+                           (append i (filter (lambda (i-r)
+                                               (not (memq 'private (inner-record-modifiers i-r))))
+                                             (class-record-inners super-record)))
                            (cons super-name (class-record-parents super-record))
                            (append (map name->list (header-implements info))
                                    (map class-record-parents iface-records)
                                    (class-record-ifaces super-record)))))
                      (send type-recs add-class-record record)
+                     
+                     (for-each (lambda (member)
+			     (when (def? member)
+			       (process-class/iface member package-name type-recs #f level #t)))
+			   members)
+                     
                      record))))))
         (if look-in-table?
             (get-record (send type-recs get-class-record cname build-record) type-recs)
@@ -501,7 +509,7 @@
                  
                  (valid-iface-extend? super-records (header-extends info))
                  
-                 (let-values (((f m) (process-members members null iname type-recs level)))
+                 (let-values (((f m i) (process-members members null iname type-recs level)))
                    
                    (valid-field-names? f members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
@@ -515,7 +523,7 @@
                            #f
                            (apply append (cons f (map class-record-fields super-records)))
                            (apply append (cons m (map class-record-methods super-records)))
-                           null
+                           (apply append (cons i (map class-record-inners super-records)))
                            (apply append (cons super-names 
                                                (map class-record-parents super-records)))
                            null)))
@@ -738,28 +746,37 @@
   ;;Methods to process fields and methods
   
   ;; process-members: (list members) (list method-record) (list string) type-records symbol -> 
-  ;;                     (values (list field-record) (list method-record))
+  ;;                     (values (list field-record) (list method-record) (list inner-record))
   (define (process-members members inherited-methods cname type-recs level . args)
     (let loop ((members members)
                (fields null)
-               (methods null))
+               (methods null)
+               (inners null))
       (cond
-        ((null? members) (values fields methods))
+        ((null? members) (values fields methods inners))
         ((field? (car members))
          (loop (cdr members)
                (cons (process-field (car members) cname type-recs level) fields)
-               methods))
+               methods
+               inners))
         ((method? (car members))
          (loop (cdr members)
                fields
                (cons (if (null? args)
                          (process-method (car members) inherited-methods cname type-recs level)
                          (process-method (car members) inherited-methods cname type-recs level (car args)))
-                         methods)))
+                         methods)
+               inners))
+        ((def? (car members))
+         (loop (cdr members)
+               fields
+               methods
+               (cons (process-inner (car members) cname type-recs level) inners)))
         (else
          (loop (cdr members)
                fields
-               methods)))))
+               methods
+               inners)))))
   
   ;; process-field: field (string list) type-records symbol -> field-record
   (define (process-field field cname type-recs level)
@@ -824,6 +841,12 @@
                           throws
                           over?
                           cname)))
+  
+  ;process-inner def (list name) type-records symbol -> inner-record
+  (define (process-inner def cname type-recs level)
+    (make-inner-record (filename-extension (def-name def))
+                       (map modifier-kind (header-modifiers (modifier-kind def)))
+                       (class-def? def)))
 
   ;overrides?: string (list type) (list method-record) -> (U bool method-record)
   (define (overrides? mname parms methods)

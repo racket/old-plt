@@ -142,7 +142,7 @@
   
   
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
-  ;;                    (list method-records) (list (list string)) (list (list strings)) (list (list strings)))
+  ;;                    (list method-records) (list inner-record) (list (list strings)) (list (list strings)))
   ;; After full processing fields and methods should contain all inherited fields 
   ;; and methods.  Also parents and ifaces should contain all super-classes/ifaces
   (define-struct class-record (name modifiers class? fields methods inners parents ifaces))
@@ -155,6 +155,9 @@
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
   (define-struct method-record (name modifiers rtype atypes throws override class))
 
+  ;;(make-inner-record string (list symbol) bool)
+  (define-struct inner-record (name modifiers class?))
+  
 ;                                                                                      
 ;                                                                            ;;        
 ;    ;                                                                        ;        
@@ -436,7 +439,7 @@
                                    (symbol=? 'class (car input))
                                    (map parse-field (list-ref input 3))
                                    (map parse-method (list-ref input 4))
-                                   (list-ref input 5)
+                                   (map parse-inner (list-ref input 5))
                                    (list-ref input 6)
                                    (list-ref input 7))))
              (parse-field
@@ -455,6 +458,11 @@
                                     (map parse-type (list-ref input 4))
                                     #f
                                     (list-ref input 5))))
+             (parse-inner
+              (lambda (input)
+                (make-inner-record (car input)
+                                   (cadr input)
+                                   (symbol=? 'class (caddr input)))))
              (parse-type
               (lambda (input)
                 (cond
@@ -477,7 +485,7 @@
                  (class-record-modifiers r)
                  (map field->list (class-record-fields r))
                  (map method->list (class-record-methods r))
-                 (class-record-inners r)
+                 (map inner->list (class-record-inners r))
                  (class-record-parents r)
                  (class-record-ifaces r))))
              (field->list
@@ -496,6 +504,11 @@
                  (map type->list (method-record-atypes m))
                  (map type->list (method-record-throws m))
                  (method-record-class m))))
+             (inner->list
+              (lambda (i)
+                (list (inner-record-name i)
+                      (inner-record-modifiers i)
+                      (if (inner-record-class? i) 'class 'interface))))
              (type->list
               (lambda (t)
                 (cond

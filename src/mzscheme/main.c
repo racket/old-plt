@@ -94,20 +94,10 @@ static void dangerdanger(int ignored)
 static Scheme_Object *orig_evaluator;
 #endif
 
-extern Scheme_Process *scheme_main_process;
-
 #ifndef MACINTOSH_EVENTS
-
-# ifdef MZ_REAL_THREADS
-extern int scheme_dont_send_break_signal;
-# endif
- 
 static void user_break_hit(int ignore)
 {
-  Scheme_Process *p = scheme_main_process;
-
-  if (!p->external_break)
-    scheme_break_thread(p);
+  scheme_break_thread(NULL);
 
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGINT, user_break_hit);
@@ -171,11 +161,8 @@ static int check_break_flag()
 
 static void handle_one(EventRecord *e)
 {
-  if (is_break_event(e)) {
-    Scheme_Process *p = scheme_main_process;
-    if (!p->external_break)
-      scheme_break_thread(p);
-  }
+  if (is_break_event(e))
+    scheme_break_thread(NULL);
   
 # ifdef MACINTOSH_SIOUX
   SIOUXHandleOneEvent(e);
@@ -186,11 +173,8 @@ static void MacSleep(float secs, void *fds)
 {
    EventRecord e;
    if (WaitNextEvent(everyEvent, &e, secs * 60, NULL)) {
-     if (is_break_event(&e)) {
-       Scheme_Process *p = scheme_main_process;
-       if (!p->external_break)
-         scheme_break_thread(p);
-     }
+     if (is_break_event(&e))
+       scheme_break_thread(NULL);
      
      handle_one(&e);
    }

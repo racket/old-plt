@@ -1308,8 +1308,11 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 
 void scheme_break_thread(Scheme_Process *p)
 {
-  if (!p)
+  if (!p) {
     p = scheme_current_process;
+    if (p->external_break) /* needed for real threads */
+      return;
+  }
 
   p->external_break = 1;
 

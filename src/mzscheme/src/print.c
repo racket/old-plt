@@ -35,6 +35,10 @@
 #define USE_BUFFERING_CPORT 1
 /* Companion to USE_BUFFERING_CPORT in read.c */
 
+/* Use Chez-style vector printing when saving is more than this
+   number: */
+#define VECTOR_ABBREV_WHEN_SAVING_N 0
+
 #define PRINT_MAXLEN_MIN 3
 
 /* locals */
@@ -1298,7 +1302,7 @@ static void
 print_vector(Scheme_Object *vec, int escaped, int compact, 
 	     Scheme_Hash_Table *ht, Scheme_Hash_Table *vht, Scheme_Process *p)
 {
-  int i, no_space_ok, size;
+  int i, no_space_ok, size, common = 0;
   Scheme_Object **elems;
 
   size = SCHEME_VEC_SIZE(vec);
@@ -1330,8 +1334,19 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
 
     print_compact(p, CPT_VECTOR);
     print_compact_number(p, size);
-  } else
-    print_this_string(p, "#(", 2);
+  } else {
+    for (i = size; i--; common++)
+      if (!i || (elems[i] != elems[i - 1]))
+	break;
+    
+    if (escaped && (common >= VECTOR_ABBREV_WHEN_SAVING_N)) {
+      char buffer[100];
+      sprintf(buffer, "#%d(", size);
+      print_this_string(p, buffer, -1);
+      size -= common;
+    } else
+      print_this_string(p, "#(", 2);
+  }
 
   for (i = 0; i < size; i++) {
     no_space_ok = print(elems[i], escaped, compact, ht, vht, p);

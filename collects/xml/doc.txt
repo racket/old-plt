@@ -143,7 +143,7 @@ Note: Xexpr is the only important one to understand.  Even then,
       Processing-instructions may be ignored.
 
 > Xexpr = String
-        |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
+        |  (cons Symbol (cons (listof (list Symbol String)) (listof Xexpr)))
         |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
         |  Symbol ;; symbolic entities such as &nbsp;
         |  Number ;; numeric entities like &#20;

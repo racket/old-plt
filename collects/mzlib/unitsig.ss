@@ -1,6 +1,5 @@
 
 (module unitsig mzscheme
-  (require "exstruct.ss")
   (require "unit.ss")
   (require "private/sigmatch.ss")
 

@@ -5,7 +5,6 @@
   (require (lib "stx.ss" "syntax"))
 
   (require "sigmatch.ss")
-  (require "../exstruct.ss")
   (require "../unit.ss")
   (require "../list.ss")
 

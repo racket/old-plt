@@ -98,7 +98,7 @@
          (let ([port (open-input-file file)]
                [title-value file])
            (let loop ()
-             (let ([sexp (with-handlers ([not-break-exn?
+             (let ([sexp (with-handlers ([exn:fail:read?
                                           (lambda (x) 
                                             (fprintf (current-error-port)
                                                      "couldn't read ~a: ~a\n"

@@ -520,7 +520,7 @@
                        ;; Might be called twice!
                        (preferences:set 'drscheme:help-desk:last-url-string s)
                        (send d show #f))])
-          (with-handlers ([not-break-exn?
+          (with-handlers ([exn:fail?
                            (lambda (x)
                              (message-box (string-constant bad-url) 
                                           (format (string-constant bad-url:this)

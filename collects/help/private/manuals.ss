@@ -140,14 +140,12 @@
   ; txt is the link text
   ;; warning: if the index file isn't present, this page
   (define (manual-entry man ndx txt)
-    (with-handlers ([not-break-exn?
+    (with-handlers ([exn:fail?
                      (lambda (x)
                        `(font ((color "red"))
                               ,txt
                               " ["
-                              ,(if (exn? x)
-                                   (exn-message x)
-                                   (format "~s" x))
+                              ,(exn-message x)
                               "]"))])
       `(A ((HREF ,(finddoc-page man ndx))) ,txt)))
   

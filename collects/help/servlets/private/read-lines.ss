@@ -134,7 +134,7 @@
           (let* ([rest-of-line (substring line 1 len)]
                  [port (open-input-string rest-of-line)]
                  [dist
-                  (with-handlers ([not-break-exn? (lambda (x) #f)])
+                  (with-handlers ([exn:fail:read? (lambda (x) #f)])
                     (read port)
                     (let-values ([(_1 _2 pos) (port-next-location port)])
                       pos))])

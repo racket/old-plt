@@ -21,7 +21,7 @@
 			      (lambda (a b) (string<? (cdr a) (cdr b))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])
-		(let cloop ([l (with-handlers ([not-break-exn? (lambda (x) null)])
+		(let cloop ([l (with-handlers ([exn:fail:filesystem? (lambda (x) null)])
                                  (directory-list path))]
 			    [path path]
 			    [collpath null]
@@ -39,12 +39,10 @@
                             [doc-txt-file (list colldir (string->path "doc.txt"))]
                             [this? (file-exists? (apply build-path doc-txt-file))])
                        (let-values ([(sub-docs sub-names)
-                                     (with-handlers ([not-break-exn?
+                                     (with-handlers ([exn:fail?
                                                       (lambda (x)
                                                         (values null null))])
-                                       (let ([l ((get-info lcollpath) 
-                                                 'doc-sub-collections 
-                                                 (lambda () null))])
+                                       (let ([l ((get-info lcollpath) 'doc-sub-collections (lambda () null))])
                                          (cloop l colldir lcollpath null null)))])
                          (let ([sub-names (map (lambda (s) (string-append (path->string coll) " " s)) sub-names)])
                            (let-values ([(ldocs lnames)

@@ -296,7 +296,7 @@
            (H2 "Empty search string"))))
       
       (define (lucky-search? bindings)
-        (with-handlers ([not-break-exn? (lambda _ #f)])
+        (with-handlers ([exn:fail? (lambda _ #f)])
           (let ([result (extract-binding/single 'lucky bindings)])
             (not (string=? result "false")))))
       
@@ -317,7 +317,7 @@
       
       (let* ([bindings (request-bindings initial-request)]
              [maybe-get (lambda (sym)
-                          (with-handlers ([not-break-exn? (lambda _ #f)])
+                          (with-handlers ([exn:fail? (lambda _ #f)])
                             (extract-binding/single sym bindings)))]
              [search-string (maybe-get 'search-string)]
              [search-type (maybe-get 'search-type)]

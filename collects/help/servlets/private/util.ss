@@ -29,7 +29,7 @@
   (define (plt-version)
     (let ([mz-version (version)]
           [stamp-collection
-           (with-handlers ([not-break-exn? (lambda (exn) #f)])
+           (with-handlers ([exn:fail:filesystem? (lambda (exn) #f)])
              (collection-path "cvs-time-stamp"))])
       (if (and stamp-collection (file-exists? (build-path stamp-collection "stamp.ss")))
           (format "~a-cvs~a" mz-version (dynamic-require '(lib "stamp.ss" "cvs-time-stamp") 'stamp))
@@ -67,8 +67,7 @@
 
   (define (cvs-or-nightly-build?)
     (or (directory-exists? (build-path (collection-path "help") "CVS"))
-        (with-handlers ([not-break-exn?
-                         (lambda (x) #f)])
+        (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
           (collection-path "cvs-time-stamp"))))
   
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\> #\+))

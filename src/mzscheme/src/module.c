@@ -3585,6 +3585,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	  if (copy_vars && start && (j < var_count) && !env->module && !env->phase) {
 	    Scheme_Env *menv;
 	    Scheme_Object *val;
+	    modidx = scheme_module_resolve(modidx);
 	    menv = scheme_module_access(modidx, env);
 	    val = scheme_lookup_in_table(menv->toplevel, (char *)exsns[j]);
 	    scheme_add_global_symbol(iname, val, env);

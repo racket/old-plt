@@ -1355,9 +1355,6 @@ float wxWindowDC::GetCharHeight(void)
     XCharStruct overall;
     XFontStruct *xfs;
 
-    if (!DRAWABLE) /* MATTHEW: [5] */
-      return 0;
-
     if (!current_font) // no font
 	return YDEV2LOGREL(12);
 
@@ -1372,9 +1369,6 @@ float wxWindowDC::GetCharWidth(void)
     int         direction, ascent, descent;
     XCharStruct overall;
     XFontStruct *xfs;
-
-    if (!DRAWABLE) /* MATTHEW: [5] */
-	return 0;
 
     if (!current_font)
 	return XDEV2LOGREL(16);
@@ -1394,9 +1388,6 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
   XCharStruct overall;
   XFontStruct *fontinfo;
   float w, h;
-
-    if (!DRAWABLE) /* MATTHEW: [5] */
-	return;
 
     font_to_use = _font ? _font : current_font;
     if (!font_to_use) {

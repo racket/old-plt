@@ -17,7 +17,9 @@ constructor for mx-browser% takes same arguments
  list may include 'scrollbars
 added find-element-by-id-or-name
  to mx-document%
-added focus method to mx-element%, 
+added methods selection and 
+ set-selection to mx-element%
+added focus method to mx-element%;
  works with IE5 or newer only
 removed getter and setter for whitespace
  and word-spacing properties, since not 

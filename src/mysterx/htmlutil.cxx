@@ -207,6 +207,72 @@ Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+// selections 
+
+Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IHTMLElement *pIHTMLElement;
+  IHTMLSelectElement *pIHTMLSelectElement;
+  BSTR selection;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("element-selection","mx-element",0,argc,argv);
+  }
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+
+  hr = pIHTMLElement->QueryInterface(IID_IHTMLSelectElement,
+				     (void **)&pIHTMLSelectElement);
+
+  if (hr != S_OK || pIHTMLSelectElement == NULL) {
+    codedComError("element-selection: Couldn't find IHTMLSelectElement interface",hr);
+  }
+
+  hr = pIHTMLSelectElement->get_value(&selection);
+
+  if (hr != S_OK) {
+    codedComError("element-selection: Error getting selection value",hr);
+  }
+
+  return BSTRToSchemeString(selection);
+}
+
+Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IHTMLElement *pIHTMLElement;
+  IHTMLSelectElement *pIHTMLSelectElement;
+  BSTR selection;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("element-set-selection!","mx-element",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("element-set-selection!","string",1,argc,argv);
+  }
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+
+  hr = pIHTMLElement->QueryInterface(IID_IHTMLSelectElement,
+				     (void **)&pIHTMLSelectElement);
+
+  if (hr != S_OK || pIHTMLSelectElement == NULL) {
+    codedComError("element-set-selection!: Couldn't find IHTMLSelectElement interface",hr);
+  }
+
+  selection = schemeStringToBSTR(argv[1]);
+
+  hr = pIHTMLSelectElement->put_value(selection);
+
+  SysFreeString(selection);
+
+  if (hr != S_OK) {
+    codedComError("element-selection: Error getting selection value",hr);
+  }
+
+  return scheme_void;
+}
+
 // IHTMLElement wrappers
 
 Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,char *name) {

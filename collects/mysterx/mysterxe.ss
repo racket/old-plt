@@ -124,6 +124,12 @@
 	    [focus
 	     (lambda ()
 	       (mxprims:element-focus elt))]
+	    [selection
+	     (lambda ()
+	       (mxprims:element-selection elt))]
+	    [set-selection!
+	     (lambda (val)
+	       (mxprims:element-set-selection! elt val))]
 	    [attribute
 	     (lambda (s)
 	       (mxprims:element-attribute elt s))]

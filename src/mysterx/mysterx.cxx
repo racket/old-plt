@@ -136,6 +136,8 @@ static MX_PRIM mxPrims[] = {
   { mx_element_append_text,"element-append-text",2,2 },
   { mx_element_replace_html,"element-replace-html",2,2 },
   { mx_element_focus,"element-focus",1,1 },
+  { mx_element_selection,"element-selection",1,1 },
+  { mx_element_set_selection,"element-set-selection!",2,2 },
   { mx_element_attribute,"element-attribute",2,2 },
   { mx_element_set_attribute,"element-set-attribute!",3,3 },
   { mx_element_click,"element-click",1,1 },

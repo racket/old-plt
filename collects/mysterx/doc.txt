@@ -636,6 +636,20 @@ the ITypeInfo interface.
   Sets the focus to the element.  This method works only with
   Internet Explorer 5 and later.
 
+> selection :: (send an-mx-element selection)
+
+  If the element has the SELECT tag, returns a string indicating
+  the value of the current selection.  Otherwise, an error
+  occurs.  The value of the selection may be different from
+  the string visible in the dropdown list.
+
+> set-selection! :: (send an-mx-element set-selection! val)
+
+  If the element has the SELECT tag, sets the selection to 
+  the entry with the value `val', a string.  Otherwise, an error
+  occurs.  The value of the selection may be different from
+  the string visible in the dropdown list.
+
 > attribute :: (send an-mx-element attribute attr)
 
   Retrieves the attribute named by the string `attr'.  The return

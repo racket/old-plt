@@ -82,6 +82,8 @@
    element-append-text
    element-replace-html
    element-focus	
+   element-selection
+   element-set-selection!
    element-attribute
    element-set-attribute!
    element-click

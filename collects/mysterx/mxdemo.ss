@@ -2,7 +2,7 @@
 
 ;;; requires Office 97 to be installed for Calendar Control to work
 
-(require (lib "class2.ss"))
+(require (lib "class.ss"))
 (require (lib "mysterx.ss" "mysterx"))
 
 ; the browser with the calendar

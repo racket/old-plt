@@ -14,7 +14,7 @@
 
   (require (prefix mzlib: (lib "list.ss")))
   (require (lib "string.ss"))
-  (require (lib "class2.ss"))
+  (require (lib "class.ss"))
 ;  (require (lib "url.ss" "net")) ;; waiting until ported
   (require (lib "etc.ss"))
   (require (lib "thread.ss"))

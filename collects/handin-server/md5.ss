@@ -288,31 +288,31 @@
   
   (define round1-operations
     (prepare
-     '((ABCD  0  7  1)  (DABC  1 12  2)  (CDAB  2 17  3)  (BCDA  3 22  4)
-       (ABCD  4  7  5)  (DABC  5 12  6)  (CDAB  6 17  7)  (BCDA  7 22  8)
-       (ABCD  8  7  9)  (DABC  9 12 10)  (CDAB 10 17 11)  (BCDA 11 22 12)
-       (ABCD 12  7 13)  (DABC 13 12 14)  (CDAB 14 17 15)  (BCDA 15 22 16))))
+     '((abcd  0  7  1)  (dabc  1 12  2)  (cdab  2 17  3)  (bcda  3 22  4)
+       (abcd  4  7  5)  (dabc  5 12  6)  (cdab  6 17  7)  (bcda  7 22  8)
+       (abcd  8  7  9)  (dabc  9 12 10)  (cdab 10 17 11)  (bcda 11 22 12)
+       (abcd 12  7 13)  (dabc 13 12 14)  (cdab 14 17 15)  (bcda 15 22 16))))
   
   (define round2-operations
     (prepare
-     '((ABCD  1  5 17)  (DABC  6  9 18)  (CDAB 11 14 19)  (BCDA  0 20 20)
-       (ABCD  5  5 21)  (DABC 10  9 22)  (CDAB 15 14 23)  (BCDA  4 20 24)
-       (ABCD  9  5 25)  (DABC 14  9 26)  (CDAB  3 14 27)  (BCDA  8 20 28)
-       (ABCD 13  5 29)  (DABC  2  9 30)  (CDAB  7 14 31)  (BCDA 12 20 32))))
+     '((abcd  1  5 17)  (dabc  6  9 18)  (cdab 11 14 19)  (bcda  0 20 20)
+       (abcd  5  5 21)  (dabc 10  9 22)  (cdab 15 14 23)  (bcda  4 20 24)
+       (abcd  9  5 25)  (dabc 14  9 26)  (cdab  3 14 27)  (bcda  8 20 28)
+       (abcd 13  5 29)  (dabc  2  9 30)  (cdab  7 14 31)  (bcda 12 20 32))))
   
   (define round3-operations
     (prepare
-     '((ABCD  5  4 33)  (DABC  8 11 34)  (CDAB 11 16 35)  (BCDA 14 23 36)
-       (ABCD  1  4 37)  (DABC  4 11 38)  (CDAB  7 16 39)  (BCDA 10 23 40)
-       (ABCD 13  4 41)  (DABC  0 11 42)  (CDAB  3 16 43)  (BCDA  6 23 44)
-       (ABCD  9  4 45)  (DABC 12 11 46)  (CDAB 15 16 47)  (BCDA  2 23 48))))
+     '((abcd  5  4 33)  (dabc  8 11 34)  (cdab 11 16 35)  (bcda 14 23 36)
+       (abcd  1  4 37)  (dabc  4 11 38)  (cdab  7 16 39)  (bcda 10 23 40)
+       (abcd 13  4 41)  (dabc  0 11 42)  (cdab  3 16 43)  (bcda  6 23 44)
+       (abcd  9  4 45)  (dabc 12 11 46)  (cdab 15 16 47)  (bcda  2 23 48))))
   
   (define round4-operations
     (prepare
-     '((ABCD  0  6 49)  (DABC  7 10 50)  (CDAB 14 15 51)  (BCDA  5 21 52)
-       (ABCD 12  6 53)  (DABC  3 10 54)  (CDAB 10 15 55)  (BCDA  1 21 56)
-       (ABCD  8  6 57)  (DABC 15 10 58)  (CDAB  6 15 59)  (BCDA 13 21 60)
-       (ABCD  4  6 61)  (DABC 11 10 62)  (CDAB  2 15 63)  (BCDA  9 21 64))))
+     '((abcd  0  6 49)  (dabc  7 10 50)  (cdab 14 15 51)  (bcda  5 21 52)
+       (abcd 12  6 53)  (dabc  3 10 54)  (cdab 10 15 55)  (bcda  1 21 56)
+       (abcd  8  6 57)  (dabc 15 10 58)  (cdab  6 15 59)  (bcda 13 21 60)
+       (abcd  4  6 61)  (dabc 11 10 62)  (cdab  2 15 63)  (bcda  9 21 64))))
   
   ; The operation without permutation is given by (respectively).
   

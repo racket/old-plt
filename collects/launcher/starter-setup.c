@@ -78,6 +78,10 @@ Scheme_Object *scheme_reload(Scheme_Env *env) {
   return result_proc; 
 }
 
+Scheme_Object *scheme_module_name() {
+  return scheme_make_string("starter-setup");
+}
+
 // basic functions:
 
 unsigned long strlen(const char *s)

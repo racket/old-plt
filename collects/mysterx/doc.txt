@@ -631,6 +631,11 @@ the ITypeInfo interface.
   height are a fixed percentage of the document window size.
   An instance of <com-object> is returned.
 
+> focus :: (send an-mx-element focus)
+
+  Sets the focus to the element.  This method works only with
+  Internet Explorer 5 and later.
+
 > attribute :: (send an-mx-element attribute attr)
 
   Retrieves the attribute named by the string `attr'.  The return

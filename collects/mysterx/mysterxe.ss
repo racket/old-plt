@@ -121,6 +121,9 @@
 			 (mxprims:com-register-object obj)
 			 obj)))
 		html-post))]
+	    [focus
+	     (lambda ()
+	       (mxprims:element-focus elt))]
 	    [attribute
 	     (lambda (s)
 	       (mxprims:element-attribute elt s))]

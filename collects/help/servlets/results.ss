@@ -146,7 +146,7 @@
 	   maybe-coll))]
        [else ; manual
 	(let* ([tidy-url (tidy-html-url url)]
-	       [exploded-url (explode-url tidy-url)]
+	       [exploded-url (simplify-strs (explode-url tidy-url))]
 	       [doc-dir (caddr exploded-url)]
 	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
 	       [installed? (hash-table-get installed-table
@@ -180,9 +180,25 @@
        (if (string=? str "")
 	   empty
 	   (list str))]))
-
   (define re:slash (regexp "^([^/]*)/(.*)$"))
 
+  ;; simplify-strs : (listof string) -> (listof string)
+  ;; syntactially simplifies paths. removes .. and . from the input
+  (define (simplify-strs orig-strs)
+    (let loop ([backside null]
+               [strs orig-strs])
+      (cond
+        [(null? strs) (reverse backside)]
+        [else
+         (let ([fst (car strs)])
+           (cond
+             [(equal? "." fst) (loop backside (cdr strs))]
+             [(equal? ".." fst) 
+              (when (null? backside) (error 'simplify-strs "cannot simplify: ~e" orig-strs))
+              (loop (cdr backside) (cdr strs))]
+             [else
+              (loop (cons fst backside) (cdr strs))]))])))
+  
   (define (make-text-href url page-label)
     (let ([maybe-coll (maybe-extract-coll last-header)])
       (format 

@@ -802,7 +802,14 @@
 		thread-post))])
 
 	   (sequence 
-	     (super-init))))
+	     (super-init)
+	     
+	     (thread
+	      (lambda () 
+		(let loop ()
+		  (mxprims:process-win-events)
+		     (sleep)
+		     (loop)))))))
 
   (let ([old-exit-handler (exit-handler)])
     (exit-handler 
@@ -813,8 +820,8 @@
 	    (cond
 	     [(com-object? val)
 	      (mxprims:com-release-object (cdr obj))]
-
-	     ; rely on GC to release interfaces in documents, elements
+	     
+             ; rely on GC to release interfaces in documents, elements
 	     ; not entirely reliable, since collector is conservative
 	     
 	     [(or (is-a? val mx-document%)
@@ -823,11 +830,7 @@
 	(make-global-value-list))
        (collect-garbage)
        (mxprims:release-type-table)
-       (old-exit-handler arg))))
+       (old-exit-handler arg)))))
 
-  (thread
-   (lambda () 
-     (let loop ()
-       (mxprims:process-win-events)
-       (sleep)
-       (loop)))))
+
+

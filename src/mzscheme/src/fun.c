@@ -656,6 +656,16 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   forms = scheme_add_env_renames(forms, frame, env);
 
   data->name = rec[drec].value_name;
+  if (!data->name) {
+    Scheme_Stx *cstx = (Scheme_Stx *)code;
+    if (cstx->line > 0) {
+      char buf[30];
+      Scheme_Object *name;
+      sprintf(buf, "%ld.%ld", cstx->line, cstx->col);
+      name = scheme_intern_symbol(buf);
+      data->name = name;
+    }
+  }
 
   scheme_compile_rec_done_local(rec, drec);
 

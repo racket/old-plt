@@ -29,7 +29,12 @@
     (if (list? p)
 	#t
 	(if (syntax? p) 
-	    (list? (syntax-e p))
+	    (if (list? (syntax-e p))
+		#t
+		(let loop ([l (syntax-e p)])
+		  (if (pair? l)
+		      (loop (cdr l))
+		      (stx-list? l))))
 	    #f))))
 
 (define-values (stx-improper-list?)
@@ -49,12 +54,6 @@
     (if (pair? p)
 	(cdr p)
 	(cdr (syntax-e p)))))
-
-(define-values (stx->list)
-  (lambda (e)
-    (if (syntax? e)
-	(syntax-e e)
-	e)))
 
 (define-values (stx-same?)
   (lambda (a b)
@@ -559,25 +558,27 @@
 
 (#%define-syntax #%let/ec 
   (#%lambda (code)
-    (#%if (and (stx-list? code)
-	       (> (length (stx->list code)) 2)
-	       (stx-symbol? (stx-car (stx-cdr code))))
-	  (let ([var (stx-car (stx-cdr code))]
-		[exprs (stx-cdr (stx-cdr code))])
-	    (datum->syntax
-	     `(#%call/ec (#%lambda (,var) ,@exprs))
-	     code (quote-syntax here)))
-	  (raise-syntax-error
-	   'let/ec
-	   "bad syntax"
-	   code))))
+    (let ([l (syntax->list code)])
+      (#%if (and l
+		 (> (length l) 2)
+		 (stx-symbol? (cadr l)))
+	    (let ([var (cadr l)]
+		  [exprs (stx-cdr (stx-cdr code))])
+	      (datum->syntax
+	       `(#%call/ec (#%lambda (,var) ,@exprs))
+	       code (quote-syntax here)))
+	    (raise-syntax-error
+	     'let/ec
+	     "bad syntax"
+	     code)))))
 
 > kstop let/ec <
 
 (#%define-syntax #%when
   (#%lambda (x)
-    (if (and (stx-list? x)
-             (> (length (stx->list x)) 2))
+   (let ([l (syntax->list x)])
+    (if (and l
+             (> (length l) 2))
         (datum->syntax
          (list* (quote-syntax #%if)
 		(stx-car (stx-cdr x))
@@ -587,14 +588,15 @@
         (syntax-error
          'when
          "bad syntax"
-         x))))
+         x)))))
 
 > kstop when <
 
 (#%define-syntax #%unless
   (#%lambda (x)
-    (if (and (stx-list? x)
-             (> (length (stx->list x)) 2))
+   (let ([l (syntax->list x)])
+    (if (and l
+             (> (length l) 2))
         (datum->syntax
          (list* (quote-syntax #%if)
 		(stx-car (stx-cdr x))
@@ -605,7 +607,7 @@
         (syntax-error
          'unless
          "bad syntax"
-         x))))
+         x)))))
 
 > kstop unless <
 

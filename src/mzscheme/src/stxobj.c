@@ -33,6 +33,7 @@ static Scheme_Object *syntax_e(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
@@ -42,7 +43,7 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 /* Wraps:
 
    A pair (cons <num> v) is a mark
-   A pair (cons <sym> (cons <stx> v)) is a rename
+   A pair (cons (vector <sym> <stx> <sym-or-#f>) v) is a rename
 
    For object with sub-syntax:
 
@@ -103,6 +104,11 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("syntax-source", 
 			     scheme_make_folding_prim(syntax_src,
 						      "syntax-source",
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("syntax->list", 
+			     scheme_make_folding_prim(syntax_to_list,
+						      "syntax->list",
 						      1, 1, 1),
 			     env);
 
@@ -197,7 +203,19 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   return (Scheme_Object *)stx;
 }
 
-Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *name, Scheme_Object *newname)
+Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
+{
+  Scheme_Object *v;
+
+  v = scheme_make_vector(3, NULL);
+  SCHEME_VEC_ELS(v)[0] = newname;
+  SCHEME_VEC_ELS(v)[1] = name;
+  SCHEME_VEC_ELS(v)[2] = scheme_false;
+
+  return v;
+}
+
+Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
@@ -216,13 +234,13 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *name, Scheme_O
     wraps = stx->wraps;
 
     here_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CAR(stx->wraps);
-    here_wraps = scheme_make_pair(newname, scheme_make_pair(name, here_wraps));
+    here_wraps = scheme_make_pair(rename, here_wraps);
     lazy_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CDR(stx->wraps);
-    lazy_wraps = scheme_make_pair(newname, scheme_make_pair(name, lazy_wraps));
+    lazy_wraps = scheme_make_pair(rename, lazy_wraps);
 
     wraps = scheme_make_pair(here_wraps, lazy_wraps);
   } else {
-    wraps = scheme_make_pair(newname, scheme_make_pair(name, stx->wraps));
+    wraps = scheme_make_pair(rename, stx->wraps);
   }
   
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
@@ -234,13 +252,12 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *name, Scheme_O
 static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl)
 {
   while (!SCHEME_NULLP(wl)) {
-    if (SCHEME_NUMBERP(SCHEME_CAR(wl))) {
+    if (SCHEME_VECTORP(SCHEME_CAR(wl)))
+      o = scheme_add_rename(o, SCHEME_CAR(wl));
+    else
       o = scheme_add_remove_mark(o, SCHEME_CAR(wl));
-      wl = SCHEME_CDR(wl);
-    } else {
-      o = scheme_add_rename(o, SCHEME_CADR(wl), SCHEME_CAR(wl));
-      wl = SCHEME_CDR(SCHEME_CDR(wl));
-    }
+
+    wl = SCHEME_CDR(wl);
   }
 
   return o;
@@ -262,14 +279,8 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
     
     /* Reverse the list of wraps, to preserve order: */
     while (!SCHEME_NULLP(wraps)) {
-      if (SCHEME_NUMBERP(SCHEME_CAR(wraps))) {
-	ml = scheme_make_pair(SCHEME_CAR(wraps), ml);
-	wraps = SCHEME_CDR(wraps);
-      } else {
-	ml = scheme_make_pair(SCHEME_CAR(wraps), 
-			      scheme_make_pair(SCHEME_CADR(wraps), ml));
-	wraps = SCHEME_CDDR(wraps);
-      }
+      ml = scheme_make_pair(SCHEME_CAR(wraps), ml);
+      wraps = SCHEME_CDR(wraps);
     }
 
     if (SCHEME_PAIRP(v)) {
@@ -323,11 +334,11 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
   while (1) {
     /* Skip over renames: */
     while (!SCHEME_NULLP(awl)
-	   && !SCHEME_NUMBERP(SCHEME_CAR(awl)))
-      awl = SCHEME_CDDR(awl);
+	   && SCHEME_VECTORP(SCHEME_CAR(awl)))
+      awl = SCHEME_CDR(awl);
     while (!SCHEME_NULLP(bwl)
-	   && !SCHEME_NUMBERP(SCHEME_CAR(bwl)))
-      bwl = SCHEME_CDDR(bwl);
+	   && SCHEME_VECTORP(SCHEME_CAR(bwl)))
+      bwl = SCHEME_CDR(bwl);
 
     /* Either at end? Then the same only if both at end. */
     if (SCHEME_NULLP(awl) || SCHEME_NULLP(bwl))
@@ -357,27 +368,35 @@ static Scheme_Object *resolve_env(Scheme_Object *a)
 	rename_stack = SCHEME_CDR(rename_stack);
       }
       return result;
-    } else if (SCHEME_NUMBERP(SCHEME_CAR(wraps)))
-      wraps = SCHEME_CDR(wraps);
-    else {
+    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Rename: */
-      Scheme_Object *envname, *renamed;
+      Scheme_Object *rename, *renamed;
 
-      envname = SCHEME_CAR(wraps);
-
-      renamed = SCHEME_CADR(wraps);
-      wraps = SCHEME_CDDR(wraps);
+      rename = SCHEME_CAR(wraps);
+      renamed = SCHEME_VEC_ELS(rename)[1];
 
       if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
 	if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
-	  Scheme_Object *other_env = resolve_env(renamed);
+	  Scheme_Object *other_env, *envname;
+	  
+	  envname = SCHEME_VEC_ELS(rename)[0];
+	  other_env = SCHEME_VEC_ELS(rename)[2];
+
+	  if (SCHEME_FALSEP(other_env)) {
+	    other_env = resolve_env(renamed);
+	    SCHEME_VEC_ELS(rename)[2] = other_env;
+	  }
+
 	  /* If it turns out that we're going to return
 	     other_env, then return envname instead. */
 	  rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
 					  rename_stack);
 	}
       }
-    }
+
+      wraps = SCHEME_CDR(wraps);
+    } else 
+      wraps = SCHEME_CDR(wraps);
   }
 }
 
@@ -507,6 +526,70 @@ int scheme_stx_proper_list_length(Scheme_Object *list)
     return len;
 
   return -1;
+}
+
+Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
+{
+  Scheme_Object *l = lst, *lflat, *first, *last;
+
+  /* Check whether the list ends in a null: */
+  while (SCHEME_PAIRP(l))
+    l = SCHEME_CDR(l);
+
+  if (SCHEME_NULLP(l)) {
+    /* Yes. We're done: */
+    if (islist)
+      *islist = 1;
+    return lst;
+  }
+
+  if (islist)
+    *islist = 0;
+
+  lflat = NULL;
+
+  /* Is it a syntax object, possibly with a list? */
+  if (SCHEME_STXP(l)) {
+    l = scheme_stx_content(l);
+    if (SCHEME_NULLP(l) || SCHEME_PAIRP(l)) {
+      int lislist;
+
+      lflat = scheme_flatten_syntax_list(l, &lislist);
+      if (!lislist) {
+	/* Not a list. Can't flatten this one. */
+	return lst;
+      }
+    } else {
+      /* Not a syntax list. No chance of flattening. */
+      return lst;
+    }
+  } else {
+    /* No. No chance of flattening, then. */
+    return lst;
+  }
+
+  /* Need to flatten, end with lflat */
+
+  if (islist)
+    *islist = 1;
+
+  first = last = NULL;
+  for (l = lst; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    Scheme_Object *p;
+    p = scheme_make_pair(SCHEME_CAR(l), scheme_null);
+    if (last)
+      SCHEME_CDR(last) = p;
+    else
+      first = p;
+    last = p;
+  }
+
+  if (last)
+    SCHEME_CDR(last) = lflat;
+  else
+    first = lflat;
+
+  return first;
 }
 
 /*========================================================================*/
@@ -910,6 +993,26 @@ static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
   return stx->src;
 }
 
+static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *l;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax->list", "syntax", 0, argc, argv);
+
+  l = scheme_stx_content(argv[0]);
+  if (SCHEME_NULLP(l))
+    return scheme_null;
+  else if (SCHEME_PAIRP(l)) {
+    int islist;
+    l = scheme_flatten_syntax_list(l, &islist);
+    if (islist)
+      return l;
+    else
+      return scheme_false;
+  } else
+    return scheme_false;
+}
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 {

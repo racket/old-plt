@@ -612,6 +612,7 @@ mark_const_binding {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcMARK(b->name);
+  gcMARK(b->rename);
   gcMARK(b->val);
   gcMARK(b->next);
   

@@ -1598,7 +1598,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	scheme_wrong_syntax("begin", NULL, first, 
 			    "bad syntax (" IMPROPER_LIST_FORM ")");
 
-      forms = scheme_append(content, SCHEME_STX_CDR(forms));
+      forms = scheme_append(scheme_flatten_syntax_list(content, NULL),
+			    SCHEME_STX_CDR(forms));
 
       if (SCHEME_STX_NULLP(forms)) {
 	scheme_wrong_syntax("begin", NULL, first, 
@@ -1659,7 +1660,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 		  scheme_wrong_syntax("begin", NULL, first, 
 				      "bad syntax (" IMPROPER_LIST_FORM ")");
 		
-		result = scheme_append(content, SCHEME_CDR(result));
+		result = scheme_append(scheme_flatten_syntax_list(content, NULL), 
+				       SCHEME_CDR(result));
 		goto define_try_again;
 	      } else
 		break;

@@ -389,9 +389,10 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
-Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *oldname, 
-				 Scheme_Object *newname);
+Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
+Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
+Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
@@ -1103,6 +1104,7 @@ typedef struct Scheme_Comp_Env
   Scheme_Env *genv;
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
+  struct Scheme_Object **renames;
 } Scheme_Comp_Env;
 
 #define CLOS_HAS_REST 1

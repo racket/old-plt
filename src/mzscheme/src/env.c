@@ -91,6 +91,7 @@ typedef struct Constant_Binding {
   MZTAG_IF_REQUIRED
   Scheme_Object *name;
   Scheme_Object *val;
+  Scheme_Object *rename;
   short before;
   struct Constant_Binding *next;
 } Constant_Binding;
@@ -1111,13 +1112,32 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
     uid = env_frame_uid(env);
 
     while (c) {
-      stx = scheme_add_rename(stx, c->name, uid);
+      if (!c->rename) {
+	Scheme_Object *rnm;
+	rnm = scheme_make_rename(c->name, uid);
+	c->rename = rnm;
+      }
+
+      stx = scheme_add_rename(stx, c->rename);
       c = c->next;
     }
     
+    if (!env->renames) {
+      Scheme_Object **rnms;
+      rnms = MALLOC_N(Scheme_Object *, env->num_bindings);
+      env->renames = rnms;
+    }
+
     for (i = env->num_bindings; i--; ) {
-      if (env->values[i])
-	stx = scheme_add_rename(stx, env->values[i], uid);
+      if (env->values[i]) {
+	if (!env->renames[i]) {
+	  Scheme_Object *rnm;
+	  rnm = scheme_make_rename(env->values[i], uid);
+	  env->renames[i] = rnm;
+	}
+
+	stx = scheme_add_rename(stx, env->renames[i]);
+      }
     }
 
     env = env->next;

@@ -1,3 +1,5 @@
+(require-library "compile.ss")
+
 (define file-names
   '("corelate" "invoke" "link" "misc" "pattern" "back"
      "scm-core" "scm-main" "scm-obj" "scm-unit" "scm-ou" "scm-spdy"

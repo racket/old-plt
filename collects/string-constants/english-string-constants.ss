@@ -611,6 +611,8 @@ please adhere to these guidelines:
  (show-menu-label "&Show")
  (show-overview "Show Program Contour") 
  (hide-overview "Hide Program Contour")
+ (show-module-browser "Show Module Browser")
+ (hide-module-browser "Hide Module Browser")
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")
@@ -976,6 +978,7 @@ please adhere to these guidelines:
  (module-browser "Module Browser") ;; frame title
  (module-browser... "Module Browser...") ;; menu item title
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
+ (module-browser-show-lib-paths "Show files loaded by (lib ..) paths")
 
  (happy-birthday-matthias "Happy Birthday, Matthias!")
  (happy-birthday-matthew "Happy Birthday, Matthew!")

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_group.h	1.2 5/9/94" */
-
 #ifndef wb_gaugeh
 #define wb_gaugeh
 
@@ -24,7 +22,6 @@ typedef       void    *wxbGauge;
 class wxbGauge: public wxItem
 {
  public:
-  wxbGauge(void);
   wxbGauge(wxPanel *panel, char *label, int range, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "gauge");
   ~wxbGauge(void);

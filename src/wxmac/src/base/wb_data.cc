@@ -19,13 +19,6 @@
 // Useful buffer, initialized in wxCommonInit
 char *wxBuffer = NULL;
 
-// Some global printer parameters
-float wx_printer_scale_x = 1.0;
-float wx_printer_scale_y = 1.0;
-float wx_printer_translate_x = 0.0;
-float wx_printer_translate_y = 0.0;
-int wxPageNumber;
-
 // GDI Object Lists
 wxBrushList *wxTheBrushList = NULL;
 wxPenList   *wxThePenList = NULL;

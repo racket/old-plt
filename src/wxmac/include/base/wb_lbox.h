@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_lbox.h	1.2 5/9/94" */
-
 #ifndef wxb_lboxh
 #define wxb_lboxh
 
@@ -30,16 +28,11 @@ class wxbListBox: public wxItem
   int *selections;
   int multiple;
 
-  wxbListBox(void);
   wxbListBox(wxPanel *panel, wxFunction func, char *Title, Bool Multiple = FALSE,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
              long style = 0, char *name = "listBox");
-#ifdef wx_mac
-  // Constructor (given parentPanel)
-  wxbListBox(wxPanel*	parentPanel, int x, int y, int width, int height, 
-  	int N, long style, char* windowName);
-#endif // wx_mac
+
   ~wxbListBox(void);
 
   virtual void Append(char *Item) = 0;

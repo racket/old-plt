@@ -7,15 +7,9 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_dccan.h	1.2 5/9/94" */
-
-
 #ifndef wxb_dccanh
 #define wxb_dccanh
 
-#ifndef IN_CPROTO
-// #include <fstream.h>
-#endif
 #include "common.h"
 #include "wx_dc.h"
 

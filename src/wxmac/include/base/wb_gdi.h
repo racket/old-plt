@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_gdi.h	1.2 5/9/94" */
-
 #ifndef wxb_gdih
 #define wxb_gdih
 
@@ -43,13 +41,6 @@ typedef enum {
  wxCURSOR_WAIT,
  wxCURSOR_WATCH,
  wxCURSOR_BLANK
-#ifdef wx_x
-  /* Not yet implemented for Windows */
-  , wxCURSOR_CROSS_REVERSE,
-  wxCURSOR_DOUBLE_ARROW,
-  wxCURSOR_BASED_ARROW_UP,
-  wxCURSOR_BASED_ARROW_DOWN
-#endif
 } _standard_cursors_t;
 
 #ifdef IN_CPROTO
@@ -64,17 +55,7 @@ typedef       void *wxColourDatabase;
 typedef       void *wxDash ;
 #else
 
-#ifdef wx_mac
 typedef    char wxDash ;
-#endif
-
-#ifdef wx_msw
-typedef    DWORD  wxDash ;
-#endif
-
-#ifdef wx_x
-typedef    char wxDash ;
-#endif
 
 // Font
 class wxFont;

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_check.h	1.2 5/9/94" */
-
 #ifndef wxb_checkh
 #define wxb_checkh
 
@@ -26,19 +24,12 @@ class wxbCheckBox: public wxItem
 {
  public:
 
-  wxbCheckBox(void);
   wxbCheckBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              long style = 0, char *name = "checkBox");
   wxbCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
              int x = -1, int y = -1, int width = -1, int height = -1,
              long style = 0, char *name = "checkBox");
-
-#ifdef wx_mac
-  // Constructor (given parentPanel)
-  wxbCheckBox(wxPanel* parentPanel, int x, int y, int width, int height,
-		long style, char* windowName);
-#endif // wx_mac
 
   ~wxbCheckBox(void);
 

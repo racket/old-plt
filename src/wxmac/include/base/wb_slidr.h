@@ -24,14 +24,9 @@ typedef       void    *wxbSlider ;
 class wxbSlider: public wxItem
 {
  public:
-  wxbSlider(void);
   wxbSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x = -1, int y = -1,
            long style = 0, char *name = "slider");
-#ifdef wx_mac
-  wxbSlider (wxPanel * panel, char *label, int value, int min_value, int max_value, 
-		int width, int x, int y, long style, char *windowName);
-#endif
 
   ~wxbSlider(void);
 

@@ -278,18 +278,6 @@ void wxbItem::ProcessCommand (wxCommandEvent * event)
 }
 
 
-wxbButton::wxbButton (void)
-{
-  __type = wxTYPE_BUTTON;
-  window_parent = NULL;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbButton::wxbButton (wxPanel * panel, wxFunction Function, char *label,
 	   int x, int y, int width, int height, long style, char *name)
 {
@@ -317,16 +305,6 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction Function, wxBitmap * bitmap,
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
 }
-
-#ifdef wx_mac
-// Constructor (given parentPanel)
-wxbButton::wxbButton (wxPanel* parentPanel, int x, int y,
-		int	width,int height, long style, char*	windowName)
-	: wxItem (parentPanel, x, y, width, height, style, windowName)
-{
-  __type = wxTYPE_BUTTON;
-}
-#endif 
 
 wxbButton::~wxbButton (void)
 {
@@ -538,17 +516,6 @@ void wxbFrame::SetMenuBar (wxMenuBar * menu_bar)
 }
 #endif
 
-// Single check box item
-wxbCheckBox::wxbCheckBox (void)
-{
-  __type = wxTYPE_CHECK_BOX;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func, char *Title,
 	     int x, int y, int width, int height, long style, char *name)
 {
@@ -561,13 +528,6 @@ wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func, char *Title,
   backColour = panel->backColour;
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
-}
-
-wxbCheckBox::wxbCheckBox (wxPanel* parentPanel, int x, int y, int width, int height,
-		long style, char* name) 
-	: wxItem (parentPanel, x, y, width, height, style,  name)
-{
-  __type = wxTYPE_CHECK_BOX;
 }
 
 wxbCheckBox::~wxbCheckBox (void)
@@ -619,18 +579,6 @@ Bool wxbChoice::SetStringSelection (char *s)
 }
 
 // Listbox item
-wxbListBox::wxbListBox (void)
-{
-  __type = wxTYPE_LIST_BOX;
-  selected = -1;
-  selections = 0;
-  no_items = 0;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
 
 wxbListBox::wxbListBox (wxPanel * panel, wxFunction func,
 	    char *Title, Bool Multiple,
@@ -685,18 +633,6 @@ Bool wxbListBox::SetStringSelection (char *s)
 }
 
 // Radiobox item
-wxbRadioBox::wxbRadioBox (void)
-{
-  __type = wxTYPE_RADIO_BOX;
-  selected = -1;
-  no_items = 0;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
 	     char *Title,
 	     int x, int y, int width, int height,
@@ -843,16 +779,6 @@ wxbMessage::~wxbMessage (void)
 {
 }
 
-wxbSlider::wxbSlider (void)
-{
-  __type = wxTYPE_SLIDER;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbSlider::wxbSlider (wxPanel * panel, wxFunction func, char *label, int value,
 	   int min_value, int max_value, int width, int x, int y, long style, char *name)
 {
@@ -872,17 +798,6 @@ wxbSlider::~wxbSlider (void)
 }
 
 #if  USE_GAUGE
-wxbGauge::wxbGauge (void)
-{
-  __type = wxTYPE_GAUGE;
-  window_parent = NULL;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
 
 wxbGauge::wxbGauge (wxPanel * panel, char *label,
 	   int range, int x, int y, int width, int height, long style, char *name)
@@ -903,118 +818,3 @@ wxbGauge::~wxbGauge (void)
 {
 }
 #endif // USE_GAUGE
-
-#ifdef wx_mac
-//-----wxMac specific 
-
-
-//-----------------------------------------------------------------------------
-wxbRadioBox::wxbRadioBox // Constructor (given parentPanel)
-	(
-		wxPanel*	parentPanel,
-		int 		x,
-		int			y,
-		int			width,
-		int			height,
-		int			N,
-		long		style,
-		char*		windowName
-	) :
-		wxItem (parentPanel, x, y, width, height, style, windowName),
-		no_items (N),
-		selected (-1)
-{
-	__type = wxTYPE_RADIO_BOX;
-}
-
-//-----------------------------------------------------------------------------
-//
-wxbListBox::wxbListBox 
-	(
-		wxPanel * parentPanel, 
-	    int x, 
-	    int y, 
-	    int width, 
-	    int height,
-	    int N, 
-	    long style, 
-	    char *windowName
-	) :
-		wxItem (parentPanel, x, y, width, height, style, windowName),
-		no_items (N),
-		selected (-1)
-{
-	__type = wxTYPE_LIST_BOX;
-}
-
-// ------------- Slider ---------------
-wxbSlider::wxbSlider 
-	(
-		wxPanel * panel, 
-		char *label, 
-		int value,
-		int min_value, 
-		int max_value, 
-		int width, 
-		int x, 
-		int y, 
-		long style, 
-		char *windowName
-	) : 
-		wxItem (panel, x, y, width, -1, style, windowName)
-{
-	__type = wxTYPE_SLIDER;
-}
-
-//-----------------------------------------------------------------------------
-wxbMenu::wxbMenu // Constructor (given Title)
-	(
-		char*		Title,
-		char*		windowName
-	) :
-		wxItem( windowName),
-		no_items (0),
-		title (macCopyString(Title)),
-		top_level_menu (NULL), // Kludge: will be set in wxMenu constructor
-		menu_bar (NULL)
-{
-	__type = wxTYPE_MENU;
-}
-
-//-----------------------------------------------------------------------------
-wxbMenuBar::wxbMenuBar // Constructor (given objectType)
-	(
-		char*		windowName
-	) :
-		wxItem( windowName),
-		n (0),
-		menus (NULL),
-		titles (NULL),
-		menu_bar_frame (NULL)
-{
-	__type = wxTYPE_MENU_BAR;
-}
-
-//-----------------------------------------------------------------------------
-wxbMenuBar::wxbMenuBar // Constructor (given Menus)
-	(
-		int			N,
-		wxMenu*		Menus[],
-		char*		Titles[],
-		char*		windowName
-	) :
-		wxItem( windowName),
-		n (N),
-		menus (Menus),
-		titles (Titles),
-		menu_bar_frame (NULL)
-{
-	__type = wxTYPE_MENU_BAR;
-	for (int i = 0; i < n; i++)
-	{
-		menus[i]->menu_bar = (wxMenuBar*) this;
-		menus[i]->SetTitle(titles[i]); 					// kludge
-	}
-}
-
-#endif // wx_mac

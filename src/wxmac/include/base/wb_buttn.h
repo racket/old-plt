@@ -26,22 +26,13 @@ class wxbButton: public wxItem
 {
  public:
 
-  wxbButton(void);
   wxbButton(wxPanel *panel, wxFunction func, char *label, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "button");
   wxbButton(wxPanel *panel, wxFunction func, wxBitmap *bitmap, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "button");
-#ifdef wx_mac
-  wxbButton (wxPanel* parentPanel, int x, int y,
-  		int width, int height, long	style, char* windowName);
-#endif
   ~wxbButton(void);
 
-#ifdef wx_mac
   virtual void SetDefault(Bool flag = TRUE) = 0;
-#else // wx_mac
-  virtual void SetDefault(void) = 0;
-#endif // wx_mac
   // Avoids compiler warning
   inline  void SetLabel(char *label) { wxItem::SetLabel(label) ; }
   virtual void SetLabel(wxBitmap *bitmap) = 0;

@@ -28,24 +28,16 @@ class wxbRadioBox: public wxItem
   int no_items;
   int selected;
 
-  wxbRadioBox(void);
   wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
              int majorDim = 0,
              long style = 0, char *name = "radioBox");
-#ifdef wx_mac
-  // Constructor (given parentPanel)
-  wxbRadioBox(wxPanel* parentPanel, int x, int y, int width, int height, int N,
-		long style, char* windowName);
-#endif // wx_mac
-#ifndef __BORLANDC__
   wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, wxBitmap **Choices = NULL,
              int majorDim = 0,
              long style = 0, char *name = "radioBox");
-#endif
 
   ~wxbRadioBox(void);
 

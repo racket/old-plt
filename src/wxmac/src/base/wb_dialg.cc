@@ -66,25 +66,6 @@ wxSaveFileSelector(char *what, char *extension, char *default_name)
   return wxDefaultFileSelector(FALSE, what, extension, default_name);
 }
 
-
-// Dialog box - like panel but doesn't need a frame, and is modal or
-// non-modal
-#ifndef wx_mac
-wxbDialogBox::wxbDialogBox(void)
-{
-  __type = wxTYPE_DIALOG_BOX;
-}
-wxbDialogBox::wxbDialogBox(wxWindow *Parent, char *Title, Bool Modal, 
-                         int x, int y, int width, int height, long style, char *name):
-  wxPanel()
-{
-  __type = wxTYPE_DIALOG_BOX;
-  windowStyle = style;
-}
-#else
-#endif
-
-
 Bool wxbDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal, 
                          int x, int y, int width, int height, long style, char *name)
 {

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_messg.h	1.2 5/9/94" */
-
 #ifndef wxb_messgh
 #define wxb_messgh
 
@@ -30,19 +28,17 @@ class wxbMessage: public wxItem
 
   wxbMessage(wxPanel *panel, char *message, int x = -1, int y = -1, long style = 0,
              char *name = "message");
-#ifdef wx_mac
+
   // Constructor (given parentArea)
   wxbMessage(wxArea* parentArea, int x, int y, int width, int height, long style,
 		char*		windowName);
  // Constructor (given parentWindow)
   wxbMessage(wxWindow* parentWindow,int x, int y, int width, int height, long style,
 		char* windowName);
-#endif // wx_mac
 
-#if USE_BITMAP_MESSAGE
   wxbMessage(wxPanel *panel, wxBitmap *image, int x = -1, int y = -1, long style = 0,
              char *name = "message");
-#endif
+
   ~wxbMessage(void);
 };
 

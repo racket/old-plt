@@ -7,24 +7,11 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_main.h	1.2 5/9/94" */
-
 #ifndef wxb_mainh
 #define wxb_mainh
 
 #include "common.h"
 #include "wx_obj.h"
-
-// Here's a macro you can use if your compiler
-// really, really wants main() to be in your main program
-// (e.g. hello.cc)
-
-#if defined(AIX) || defined(AIX4)
-#define IMPLEMENT_WXWIN_MAIN int main(int argc, char *argv[]) { return wxEntry(argc, argv); }
-#else
-#define IMPLEMENT_WXWIN_MAIN
-#endif
-
 
 #ifdef IN_CPROTO
 typedef       void    *wxbApp ;

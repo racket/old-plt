@@ -35,10 +35,9 @@ class wxbMenu: public wxItem
   wxList *menuItems;
 
   wxbMenu(char *Title = NULL, wxFunction func = NULL);
-#ifdef wx_mac
   // Constructor (given Title)
   wxbMenu (char* Title, char* windowName);
-#endif
+
   ~wxbMenu(void);
   
   virtual void AppendSeparator(void) = 0;
@@ -72,12 +71,11 @@ class wxbMenuBar: public wxItem
 
   wxbMenuBar(void);
   wxbMenuBar(int n, wxMenu *menus[], char *Titles[]);
-#ifdef wx_mac
   // Constructor (given objectType)
   wxbMenuBar(char* windowName);
   // Constructor (given Menus)
   wxbMenuBar(int N, wxMenu* Menus[], char* Titles[], char* windowName);
-#endif
+
   ~wxbMenuBar(void);
 
   virtual void Append(wxMenu *menu, char *title);

@@ -7,20 +7,14 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)common.h	1.2 5/9/94" */
-
 #ifndef wxb_commonh
 #define wxb_commonh
 
-#ifdef WX_CARBON
-# ifdef OS_X
-#  include <Carbon/Carbon.h>
-# else
-#  include <Carbon.h>
-#  include <string.h>
-# endif
+#ifdef OS_X
+# include <Carbon/Carbon.h>
 #else
-# include <QuickDraw.h>
+# include <Carbon.h>
+# include <string.h>
 #endif
 
 #ifndef macintosh
@@ -36,74 +30,18 @@
 #define CheckMemOK(v) (v ? 0 : wxOutOfMemory())
 extern void *wxOutOfMemory();
 
-//////////////////////////////////////////////////////////////////////////////////
-// Currently Only MS-Windows/NT, XView and Motif are supported
-//
-#if defined(wx_hp) && !defined(wx_motif) && !defined(wx_xview)
-# define wx_motif
-#endif
-#if defined(wx_xview) || defined(wx_motif)
-# define wx_x
-#elif defined(applec) || defined(__MWERKS__) || defined(WX_CARBON)
-	// the Mac test must come before the MS-Windows test because __WINDOWS__
-	// is defined whenever the Apple <Windows.h> file is included
-#	ifndef wx_mac
-#		define wx_mac
-#	endif
-#	ifndef PYLIB
-#		ifndef GUSI
-#			define GUSI
-#		endif
-#	endif
-#elif defined(__WINDOWS__) || defined(__WINDOWS_386__) || defined(__NT__) || defined(__MSDOS__) 
-# ifndef wx_msw
-#  define wx_msw
-# endif
+#ifndef wx_mac
+# define wx_mac
 #endif
 
-// Make sure the environment is set correctly
-#if defined(wx_msw) && defined(wx_x)
-# error "Target can't be both X and Windows"
-#elif defined(wx_xview) && defined(wx_motif)
-# error "Target can't be both XView and Motif!"
-#elif !defined(wx_xview) && !defined(wx_motif) && !defined(wx_msw) && !defined(wx_mac)
-# error "No Target! Use -D[wx_motif|wx_xview|wx_msw|wx_mac]"
-#endif
-
-#ifdef wx_motif
-  typedef int Bool;
-# define TRUE  1
-# define FALSE 0
-# define Bool_DEFINED
-#endif
-#if defined(wx_xview)
-# define Bool int
-# define True  1
-# define False 0
-# define TRUE  1
-# define FALSE 0
-# define Bool_DEFINED
-#endif
-#if defined(wx_msw)
-# include <windows.h>
-# ifndef Bool
-   typedef int Bool;
-#  define Bool_DEFINED
-# endif
-#endif
 #ifdef wx_mac
 typedef int Bool;
-#define Bool_DEFINED
+# define Bool_DEFINED
 #endif
 
 #ifndef TRUE
 # define TRUE  1
 # define FALSE 0
-#endif
-
-// wxWindows checks for WIN32, not __WIN32__
-#if (defined(__WIN32__) && !defined(WIN32))
-#define WIN32
 #endif
 
 typedef short int WXTYPE;
@@ -165,15 +103,9 @@ typedef short int WXTYPE;
 #define wxUSER_COLOURS     0x04000000
 #define wxVERTICAL_LABEL   0x08000000
 
-#ifndef wx_motif
-# define wxFLAT            wxBORDER
-# define wxBACKINGSTORE    0x00000000
-# define wxMOTIF_RESIZE    0x00000000
-#else
 # define wxFLAT            0x00000100
 # define wxBACKINGSTORE    0x00004000
 # define wxMOTIF_RESIZE    0x01000000
-#endif
 
 // Effect of this flags: when creating wxItem with labels and/or value,
 // say new wxText(...,"label",...,"init_value"), the item is created with
@@ -208,23 +140,9 @@ typedef short int WXTYPE;
 #define wxCANCEL_BUTTON_SECOND  0x00300000
 #define wxMASK_CANCEL           0x00300000
 
-#if MOTIF_MANAGE && defined(wx_motif)
-#define wxDEFAULT_DIALOG_STYLE	(wxMOTIF_RESIZE|wxSYSTEM_MENU|wxCAPTION|wxTHICK_FRAME)
-#else
 #define wxDEFAULT_DIALOG_STYLE	(wxSYSTEM_MENU|wxCAPTION|wxTHICK_FRAME)
-#endif
 
-#ifdef wx_motif
-#define       wxENH_DEFAULT   (wxCAPTION|wxMOTIF_RESIZE|wxBOTTOM_COMMANDS|wxSTATUS_FOOTER|wxNO_CANCEL_BUTTON)
-#elif defined(wx_xview)
-# define wxENH_DEFAULT   (wxBOTTOM_COMMANDS|wxSTATUS_FOOTER|wxNO_CANCEL_BUTTON)
-#elif defined(wx_msw)
-# define wxENH_DEFAULT   (wxRIGHT_COMMANDS|wxSTATUS_FOOTER|wxCANCEL_BUTTON_SECOND)
-#elif defined(wx_mac)
 # define wxENH_DEFAULT 0L
-#else
-#error "Only Motif, XView and MS-Windows/Windows-NT platforms are currently supported"
-#endif
 #define wxCOLOURED             0x00400000
 
 
@@ -512,6 +430,7 @@ const int kInactiveControl = 255;
 extern GDHandle wxGetGDHandle(void);
 extern CGrafPtr wxGetGrafPtr(void);
 
+/* Extra "events" to suppliment the old Mac OS constants: */
 #define leaveEvt 42
 #define wheelEvt 43
 #define mouseMenuDown 44

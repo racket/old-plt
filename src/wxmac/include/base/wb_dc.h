@@ -7,9 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_dc.h	1.2 5/9/94" */
-
-
 #ifndef wxb_dch
 #define wxb_dch
 
@@ -26,14 +23,12 @@
 #define wxDEVICE_PIXMAP  4
                             // X pixmap
 
-#if defined(wx_x) || defined(wx_mac)
 #define MM_TEXT        1
 #define MM_ISOTROPIC   2
 #define MM_ANISOTROPIC 3
 #define MM_LOMETRIC    4
 #define MM_HIMETRIC    5
 #define MM_TWIPS       6
-#endif
 
 #define MM_POINTS      7
 #define MM_METRIC      8
@@ -88,9 +83,6 @@ class wxbDC: public wxObject
   Bool autoSetting ;
 
   wxbDC(void);
-
-  // Create a printer DC
-//  wxDC(char *driver, char *device, char *output, Bool interactive = TRUE);
 
   ~wxbDC(void);
 
@@ -214,13 +206,6 @@ class wxbDC: public wxObject
  
 
 };
-
-extern char wx_printer_file[];
-extern float wx_printer_scale_x;
-extern float wx_printer_scale_y;
-extern float wx_printer_translate_x;
-extern float wx_printer_translate_y;
-extern int wxPageNumber;
 
 // Conversion
 #define METRIC_CONVERSION_CONSTANT  0.0393700787

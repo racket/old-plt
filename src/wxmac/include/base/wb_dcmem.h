@@ -7,9 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_dcmem.h	1.2 5/9/94" */
-
-
 #ifndef wxb_dcmemh
 #define wxb_dcmemh
 
@@ -25,7 +22,6 @@ class wxbMemoryDC: public wxCanvasDC
 {
  public:
   inline wxbMemoryDC(void) { }
-  inline wxbMemoryDC(wxCanvasDC *old_dc) {} // Create compatible DC
 
   inline ~wxbMemoryDC(void) { }
   virtual void SelectObject(wxBitmap *bitmap) = 0;

@@ -534,6 +534,15 @@
 	   void)])
   (test '(apple "banana" [coconut]) read p))
 
+(let ([test-file (open-output-file "tmp2" 'truncate)])
+  (test 7 write-string-avail (make-string 7 #\a) test-file)
+  (test 4095 write-string-avail (make-string 4095 #\b) test-file)
+  (test 4096 write-string-avail (make-string 4096 #\c) test-file)
+  (test 4097 write-string-avail (make-string 4097 #\d) test-file)
+  (test (+ 7 4095 4096 4097) file-position test-file)
+  (close-output-port test-file)
+  (test (+ 7 4095 4096 4097) file-size "tmp2"))
+
 (define test-file 
   (open-output-file "tmp2" 'truncate))
 (write-char #\; test-file)

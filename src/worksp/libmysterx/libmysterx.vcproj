@@ -19,29 +19,38 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				InlineFunctionExpansion="0"
+				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\include;..\..\mysterx\mysc;..\..\mysterx\myspage;..\..\mysterx\myssink"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
-				MinimalRebuild="TRUE"
+				StringPooling="FALSE"
+				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				SuppressStartupBanner="FALSE"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+                                Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\lib\msvc\mzdyn.obj ..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib mscoree.lib corguids.lib mysc\$(ConfigurationName)\mysc.lib htmlhelp.lib"
-				OutputFile="$(OutDir)/mxmain.dll"
+				AdditionalDependencies="..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
+				OutputFile="$(OutDir)\mxmain.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="LIBCD.lib;LIBCMT.lib"
 				ModuleDefinitionFile="..\..\mysterx\mxmain.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/libmysterx.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/libmysterx.lib"
+				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -67,28 +76,39 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="TRUE"
+				InlineFunctionExpansion="0"
+				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\include;..\..\mysterx\mysc;..\..\mysterx\myspage;..\..\mysterx\myssink"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMYSTERX_EXPORTS"
-				StringPooling="TRUE"
+				StringPooling="FALSE"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="TRUE"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
+				ObjectFile=""
+				ProgramDataBaseFileName=""
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				SuppressStartupBanner="FALSE"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+                                Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/libmysterx.dll"
+				AdditionalDependencies="..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
+				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/libmysterx.lib"
+				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>

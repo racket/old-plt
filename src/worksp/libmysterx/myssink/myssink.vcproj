@@ -33,7 +33,7 @@
 				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Register $(InputName).dll"
+				Description="Copy $(InputName).dll to collects"
 				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
 				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
@@ -96,7 +96,7 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Copy library to collects"
+				Description="Copy $(InputName).dll to collects"
 				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
 				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool

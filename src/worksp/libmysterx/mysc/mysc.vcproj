@@ -24,7 +24,7 @@
 				MinimalRebuild="TRUE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -33,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/mysc.lib"/>
+				OutputFile="$(OutDir)\$(InputName).lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -56,22 +56,27 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="TRUE"
+				InlineFunctionExpansion="0"
+				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				StringPooling="TRUE"
-				RuntimeLibrary="4"
-				EnableFunctionLevelLinking="TRUE"
+				StringPooling="FALSE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
+				ObjectFile=""
+				ProgramDataBaseFileName=""
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				SuppressStartupBanner="FALSE"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/myssc.lib"/>
+				OutputFile="$(OutDir)\$(InputName).lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool

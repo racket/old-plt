@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.h,v 1.2 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: DialogBox.h,v 1.3 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -26,7 +26,7 @@
 #ifndef DialogBox_h
 #define DialogBox_h
 
-#ifndef __GNUG__
+#ifdef __GNUG__
 #pragma interface
 #endif
 

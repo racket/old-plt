@@ -43,18 +43,26 @@
   (define (str-list->dos-str flags)
     (letrec ([trans
 	      (lambda (s)
-		(if (or (regexp-match (string #\space #\newline #\tab #\return) s)
+		(if (or (regexp-match (string #\space #\newline #\tab #\return #\vtab) s)
 			(regexp-match "\"" s)
 			(regexp-match "\\\\" s))
 		    (list->string
 		     (let loop ([l (string->list s)][wrote-slash 0])
-		       (case (car l)
-			 [(#\\) (cons #\\ (loop (cdr l) (add1 wrote-slash)))]
-			 [(#\") (append
-				 (string->list (make-string wrote-slash #\\))
-				 `(#\" #\\ #\" #\")
-				 (loop (cdr l) 0))]
-			 [else (cons (car l) (loop (cdr l) 0))])))
+		       (cond
+			[(null? l) null]
+			[(char-whitespace? (car l))
+			 (append
+			  (string->list (make-string wrote-slash #\\))
+			  (list #\" (car l) #\")
+			  (loop (cdr l) 0))]
+			[else
+			 (case (car l)
+			   [(#\\) (cons #\\ (loop (cdr l) (add1 wrote-slash)))]
+			   [(#\") (append
+				   (string->list (make-string wrote-slash #\\))
+				   `(#\" #\\ #\" #\")
+				   (loop (cdr l) 0))]
+			   [else (cons (car l) (loop (cdr l) 0))])])))
 		    s))])
       (string-append/spaces trans flags)))
 

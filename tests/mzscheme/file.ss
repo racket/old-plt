@@ -290,6 +290,13 @@
 (err/rt-test (read-char p) exn:i/o:port:closed?)
 (err/rt-test (char-ready? p) exn:i/o:port:closed?)
 
+(define-values (in-p out-p) (open-input-output-file "tmp4" 'update))
+(test #\7 read-char in-p)
+(close-output-port out-p)
+(test #\7 read-char in-p)
+(test eof read-char in-p)
+(close-input-port in-p)
+
 (define p (open-output-file "tmp4" 'update))
 (display 6 p)
 (close-output-port p)
@@ -327,6 +334,23 @@
 (define p (open-input-file "tmp4"))
 (test eof read p)
 (close-input-port p)
+
+(define-values (in-p out-p) (open-input-output-file "tmp4" 'update))
+(fprintf out-p "hi~n")
+(flush-output out-p)
+(test eof read-char in-p)
+(test 3 file-position out-p)
+(test 3 file-position in-p)
+(file-position out-p 0)
+(test 0 file-position out-p)
+(test 0 file-position in-p)
+(test #\h read-char in-p) ; might read more characters into a buffer!
+(file-position out-p 1)
+(close-input-port in-p)
+(test 1 file-position out-p)
+(write-char #\x out-p)
+(close-output-port out-p)
+(test 'hx with-input-from-file "tmp4" read)
 
 (arity-test call-with-input-file 2 3)
 (arity-test call-with-output-file 2 4)

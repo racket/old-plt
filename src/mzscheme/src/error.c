@@ -1125,11 +1125,11 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
 		     long line, long col, long pos, long span, 
-		     int gotc,
+		     int gotc, Scheme_Object *indentation,
 		     const char *detail, ...)
 {
   va_list args;
-  char *s, *ls, lbuf[30], *fn;
+  char *s, *ls, lbuf[30], *fn, *suggests;
   long slen, fnlen;
   int show_loc;
 
@@ -1192,7 +1192,11 @@ void scheme_read_err(Scheme_Object *port,
     fn = "";
     fnlen = 0;
   }
-    
+
+  if (indentation)
+    suggests = scheme_extract_indentation_suggestions(indentation);
+  else
+    suggests = "";
 
   scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ), 
 		   stxsrc ? stxsrc : scheme_false,
@@ -1200,9 +1204,9 @@ void scheme_read_err(Scheme_Object *port,
 		   (col < 0) ? scheme_false : scheme_make_integer(col),
 		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
 		   (span < 0) ? scheme_false : scheme_make_integer(span),
-		   "%t%s%t", 
+		   "%t%s%t%s", 
 		   fn, fnlen, ls,
-		   s, slen);
+		   s, slen, suggests);
 }
 
 const char *scheme_compile_stx_string = "compile";

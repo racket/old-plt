@@ -685,6 +685,10 @@ static void *obj_buffer[OBJ_BUFFER_SIZE];
 static int obj_buffer_pos;
 static int obj_type;
 
+# define NUM_RECORDED_APP_SIZES 5
+static int app_sizes[NUM_RECORDED_APP_SIZES+1];
+static int app_arg_kinds[NUM_RECORDED_APP_SIZES][NUM_RECORDED_APP_SIZES][5];
+
 void count_tagged(void *p, int size, void *data)
 {
   int which = SCHEME_TYPE((Scheme_Object *)p);
@@ -703,6 +707,25 @@ void count_tagged(void *p, int size, void *data)
     if (obj_buffer_pos < OBJ_BUFFER_SIZE) {
       obj_buffer[obj_buffer_pos++] = p;
     }
+  }
+
+  if (which == scheme_application_type) {
+    Scheme_App_Rec *app = (Scheme_App_Rec *)p;
+    int cnt;
+    cnt = app->num_args;
+    if (cnt >= NUM_RECORDED_APP_SIZES) {
+      cnt = NUM_RECORDED_APP_SIZES;
+    } else {
+      int i, devals, kind;
+      devals = sizeof(Scheme_App_Rec) + (app->num_args * sizeof(Scheme_Object *));
+      for (i = 0; i <= cnt; i++) {
+	kind = ((char *)app + devals)[i];
+	if ((kind >= 0) && (kind <= 4)) {
+	  app_arg_kinds[cnt][i][kind]++;
+	}
+      }
+    }
+    app_sizes[cnt]++;
   }
 }
 
@@ -916,6 +939,19 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     }
     scheme_envunbox_count = scheme_envunbox_size = 0;
     bad_seeds = 0;
+    for (i = 0; i <= NUM_RECORDED_APP_SIZES; i++) {
+      app_sizes[i] = 0;
+    }
+    {
+      int j, k;
+      for (i = 0; i < NUM_RECORDED_APP_SIZES; i++) {
+	for (j = 0; j <= i; j++) {
+	  for (k = 0; k <= 4; k++) {
+	    app_arg_kinds[i][j][k] = 0;
+	  }
+	}
+      }
+    }
 
     traced = GC_trace_count(&stack_c, &roots_c, &uncollectable_c, &final_c);
     GC_dump();
@@ -996,6 +1032,25 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 			  "total", total_count, total_size, 
 			  total_actual_size);
     scheme_console_printf("End MzScheme\n");
+
+    scheme_console_printf("Begin Apps\n");
+    for (i = 0; i < NUM_RECORDED_APP_SIZES; i++) {
+      int j, k;
+      scheme_console_printf("  %d%s: %d", i, 
+			    (i == NUM_RECORDED_APP_SIZES ? "+" : ""), 
+			    app_sizes[i]);
+      for (j = 0; j <= i; j++) {
+	scheme_console_printf(" (");
+	for (k = 0; k <= 4; k++) {
+	  if (k)
+	    scheme_console_printf(",");
+	  scheme_console_printf("%d", app_arg_kinds[i][j][k]);
+	}
+	scheme_console_printf(")");
+      }
+      scheme_console_printf("\n");
+    }
+    scheme_console_printf("End Apps\n");
 
     {
       Scheme_Custodian *m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);

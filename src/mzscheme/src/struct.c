@@ -1323,16 +1323,17 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
 					  func_name,
 					  1 + need_pos, 1 + need_pos, 1);
       flags |= SCHEME_PRIM_IS_STRUCT_GETTER;
-      if (need_pos)
-	struct_type->accessor = p;
+      /* Cache the accessor only if `struct_info' is used.
+	 This avoids keep lots of useless accessors.
+	 if (need_pos) struct_type->accessor = p; */
     } else {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_setter,
 					  (void *)i,
 					  func_name,
 					  2 + need_pos, 2 + need_pos, 0);
       flags |= SCHEME_PRIM_IS_STRUCT_SETTER;
-      if (need_pos)
-	struct_type->mutator = p;
+      /* See note above:
+	 if (need_pos) struct_type->mutator = p; */
     }
   }
 

@@ -311,7 +311,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *complain,
 				  int *div_by_zero,
 				  int test_only,
-				  Scheme_Object *stxsrc, long line, long col, long pos, long span)
+				  Scheme_Object *stxsrc, long line, long col, long pos, long span,
+				  Scheme_Object *indentation)
 {
   int i, has_decimal, must_parse, has_slash;
   int report, delta;
@@ -331,7 +332,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (str[delta+1] != 'E' && str[delta+1] != 'e' && str[delta+1] != 'I' && str[delta+1] != 'i') {
       if (radix_set) {
 	if (complain)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad radix specification: %t",
 			  str, len);
 	else
@@ -341,7 +342,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else {
       if (is_float || is_not_float) {
 	if (complain)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad exactness specification: %t", 
 			  str, len);
 	else
@@ -376,7 +377,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       break;
     default:
       if (complain)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: bad `#' indicator `%c': %t",
 			str[delta+1], str, len);
       return scheme_false;
@@ -391,7 +392,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
   if (!(len - delta)) {
     if (report)
-      scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+      scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 		      "read-number: no digits");
     return scheme_false;
   }
@@ -435,13 +436,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				 is_float, is_not_float, 1,
 				 radix, 1, 0,
 				 &dbz, test_only,
-				 stxsrc, line, col, pos, span);
+				 stxsrc, line, col, pos, span,
+				 indentation);
 
       if (dbz) {
 	if (div_by_zero)
 	  *div_by_zero = 1;
 	if (complain)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: division by zero: %t",
 			  str, len);
 	return scheme_false;
@@ -501,13 +503,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				   is_float, is_not_float, 1,
 				   radix, 1, 0,
 				   &dbz, test_only,
-				   stxsrc, line, col, pos, span);
+				   stxsrc, line, col, pos, span,
+				   indentation);
 
       if (dbz) {
 	if (div_by_zero)
 	  *div_by_zero = 1;
 	if (complain)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: division by zero: %t", 
 			  str, len);
 	return scheme_false;
@@ -550,7 +553,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     int ch = str[i];
     if (!ch) {
       if (report)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: embedded null character: %t",
 			str, len);
       return scheme_false;
@@ -561,7 +564,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if ((ch == '+') || (ch == '-')) {
       if ((has_sign > delta) || ((has_sign == delta) && (i == delta+1))) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			   "read-number: too many signs: %t", 
 			   str, len);
 	return scheme_false;
@@ -570,14 +573,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if (((ch == 'I') || (ch == 'i')) && (has_sign >= delta)) {
       if (has_at) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: cannot mix `@' and `i': %t", 
 			  str, len);
 	return scheme_false;
       }
       if (i + 1 < len) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: `i' must be at the end: %t", 
 			  str, len);
 	return scheme_false;
@@ -586,14 +589,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if (ch == '@') {
       if (has_at) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: too many `@'s: %t", 
 			  str, len);
 	return scheme_false;
       }
       if (i == delta) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: `@' cannot be at start: %t", 
 			  str, len);
 	return scheme_false;
@@ -628,7 +631,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
 			      &fdbz, test_only,
-			      stxsrc, line, col, pos, span);
+			      stxsrc, line, col, pos, span,
+			      indentation);
     else
       n1 = zeroi;
 
@@ -646,7 +650,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
 			      &sdbz, test_only,
-			      stxsrc, line, col, pos, span);
+			      stxsrc, line, col, pos, span,
+			      indentation);
     else if (str[has_sign] == '-')
       n2 = scheme_make_integer(-1);
     else
@@ -665,7 +670,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (div_by_zero)
 	*div_by_zero = 1;
       if (complain)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			 "read-number: division by zero: %t", 
 			 str, len);
       return scheme_false;
@@ -710,7 +715,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			    is_float, is_not_float, decimal_means_float,
 			    radix, 1, next_complain,
 			    &fdbz, test_only,
-			    stxsrc, line, col, pos, span);
+			    stxsrc, line, col, pos, span,
+			    indentation);
 
     if (!fdbz) {
       if (SCHEME_FALSEP(n2))
@@ -723,7 +729,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  radix, 1, complain,
 				  div_by_zero,
 				  test_only,
-				  stxsrc, line, col, pos, span);
+				  stxsrc, line, col, pos, span,
+				  indentation);
 
       n2 = scheme_exact_to_inexact(1, &n2); /* uses default conversion: float or double */
 
@@ -738,7 +745,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			      radix, 1, next_complain,
 			      &sdbz,
 			      test_only,
-			      stxsrc, line, col, pos, span);
+			      stxsrc, line, col, pos, span,
+			      indentation);
 
       /* Special case: magnitude is zero => zero */
       if (n1 == zeroi)
@@ -755,7 +763,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (div_by_zero)
 	*div_by_zero = 1;
       if (complain)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: division by zero in %t", 
 			str, len);
       return scheme_false;
@@ -789,14 +797,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (ch == '.') {
       if (has_decimal) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: multiple decimal points: %t", 
 			  str, len);
 	return scheme_false;
       }
       if (has_slash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: decimal points and fractions "
 			  "cannot be mixed: %t", 
 			  str, len);
@@ -807,7 +815,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if ((radix <= 10) || !isbaseNdigit(radix, ch)) {
 	if (i == delta) {
 	  if (report)
-	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			    "read-number: cannot begin with `%c' in %t", 
 			    ch, str, len);
 	  return scheme_false;
@@ -818,21 +826,21 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if (ch == '/') {
       if (i == delta) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: cannot have slash at start: %t", 
 			  str, len);
 	return scheme_false;
       }
       if (has_slash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: multiple slashes: %t", 
 			  str, len);
 	return scheme_false;
       }
       if (has_decimal) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: decimal points and fractions "
 			  "cannot be mixed: %t", 
 			  str, len);
@@ -840,7 +848,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
       if (has_hash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
 			  str, len);
 	return scheme_false;
@@ -849,7 +857,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if ((ch == '-') || (ch == '+')) {
       if (has_slash || has_decimal || has_hash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced sign: %t", 
 			  str, len);
 	return scheme_false;
@@ -857,7 +865,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if (ch == '#') {
       if (has_slash || /* has_decimal || (radix > 10) || */ !saw_digit) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
 			  str, len);
 	return scheme_false;
@@ -866,14 +874,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } else if (!isdigit(ch) && !((radix > 10) && isbaseNdigit(radix, ch))) {
       if (has_decimal) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad decimal number: %t", 
 			  str, len);
 	return scheme_false;
       }
       if (has_hash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
 			  str, len);
 	return scheme_false;
@@ -885,7 +893,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	saw_nonzero_digit = 1;
       if (has_hash) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: misplaced hash: %t", 
 			  str, len);
 	return scheme_false;
@@ -935,7 +943,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if ((ptr - cpy) < len) {
       ptr = NULL; /* because not precise-gc aligned */
       if (report)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: bad decimal number %t",
 			str, len);
       return scheme_false;
@@ -992,7 +1000,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       exponent = scheme_read_bignum(substr, 0, radix);
       if (SCHEME_FALSEP(exponent)) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad exponent: %t", 
 			  str, len);
 	return scheme_false;
@@ -1017,19 +1025,20 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				    radix, 1, next_complain,
 				    &dbz,
 				    test_only,
-				    stxsrc, line, col, pos, span);
+				    stxsrc, line, col, pos, span,
+				    indentation);
 
       if (SCHEME_FALSEP(mantissa)) {
 	if (dbz) {
 	  if (div_by_zero)
 	    *div_by_zero = 1;
 	  if (complain)
-	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	    scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			    "read-number: division by zero: %t", 
 			    str, len);
 	}
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad number: %t", 
 			  str, len);
 	return scheme_false;
@@ -1075,7 +1084,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	  || !dcp || (dcp == 1 && !(isdigit((unsigned char)digits[0])
 				    || ((radix > 10) && isbaseNdigit(radix, digits[0]))))) {
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			  "read-number: bad decimal number %t", 
 			  str, len);
 	return scheme_false;
@@ -1094,7 +1103,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (SCHEME_FALSEP(mantissa)) {
 	/* can get here with bad radix */
 	if (report)
-	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			   "read-number: bad number: %t", 
 			   str, len);
 	return scheme_false;
@@ -1163,7 +1172,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			    radix, 1, next_complain,
 			    div_by_zero,
 			    test_only,
-			    stxsrc, line, col, pos, span);
+			    stxsrc, line, col, pos, span,
+			    indentation);
     if (SAME_OBJ(n1, scheme_false))
       return scheme_false;
 
@@ -1186,7 +1196,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 			      radix, 1, next_complain,
 			      div_by_zero,
 			      test_only,
-			      stxsrc, line, col, pos, span);
+			      stxsrc, line, col, pos, span,
+			      indentation);
     }
 
     if (SAME_OBJ(n2, scheme_false))
@@ -1194,7 +1205,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     if (SCHEME_TRUEP(scheme_zero_p(1, &n2))) {
       if (complain)
-	scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 			"read-number: division by zero: %t", 
 			str, len);
       if (div_by_zero)
@@ -1218,7 +1229,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   o = scheme_read_bignum(str, delta, radix);
   if (SAME_OBJ(o, scheme_false)) {
     if (report)
-      scheme_read_err(complain, stxsrc, line, col, pos, span, 0,
+      scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
 		      "read-number: bad number: %t", 
 		      str, len);
   } else if (is_float) {
@@ -1300,7 +1311,8 @@ string_to_number (int argc, Scheme_Object *argv[])
   return scheme_read_number(str, len, 
 			    0, 0, decimal_inexact,
 			    radix, 0, NULL, NULL,
-			    0, NULL, 0, 0, 0, 0);
+			    0, NULL, 0, 0, 0, 0,
+			    NULL);
 }
 
 

@@ -1092,7 +1092,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *port,
 				  int *div_by_zero,
 				  int test_only,
-				  Scheme_Object *stxsrc, long line, long col, long pos, long span);
+				  Scheme_Object *stxsrc, long line, long col, long pos, long span,
+				  Scheme_Object *indentation);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -1722,7 +1723,9 @@ void scheme_clear_modidx_cache(void);
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
 		     long line, long column, long pos, long span,
-		     int is_eof, const char *detail, ...);
+		     int is_eof, Scheme_Object *indentation,
+		     const char *detail, ...);
+char *scheme_extract_indentation_suggestions(Scheme_Object *indentation);
 
 void scheme_wrong_syntax(const char *where,
 			 Scheme_Object *local_form, 

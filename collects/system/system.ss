@@ -165,7 +165,7 @@
 		  [exit : mred:exit^ (mred:exit@ debug)]
 		  [mode : mred:mode^ (mred:mode@ debug keymap)]
 		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
-		  [keymap : mred:keymap^ (mred:keymap@ debug preferences finder handler find-string scheme-paren gui-utils)]
+		  [keymap : mred:keymap^ (mred:keymap@ debug preferences exit finder handler find-string scheme-paren gui-utils)]
 		  [match-cache : mred:match-cache^ (mred:match-cache@ debug)]
 		  [scheme-paren : mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
 		  [paren : mred:paren^ (mred:paren@ debug)]

@@ -14,6 +14,6 @@
     (let-values ([(creator type) (file-creator-and-type p)])
       (unless (string=? "TEXT" type)
 	(printf "Textifying ~a~n" p)
-	(file-creator-and-type creator "TEXT" p)))]))
+	(file-creator-and-type p creator "TEXT")))]))
 
 (go (build-path (this-expression-source-directory) 'up 'up))

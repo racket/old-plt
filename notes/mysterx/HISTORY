@@ -1,3 +1,10 @@
+Version 204
+
+Methods and properties in inherited COM classes 
+ now reported by com-methods, com-get-properties,
+ com-set-properties, and used properly by com-invoke,
+ com-get-property, and com-set-property!
+
 Version 203
 
 The installer no longer displays dialog boxes 

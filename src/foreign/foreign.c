@@ -565,9 +565,9 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   (<C>?scheme_true:scheme_false)
  */
 
-/* Strings -- no copying is done.
- * #f is not NULL since these are used only for strings, use byte
- * strings if this is what you need. */
+/* Strings -- no copying is done (when possible).
+ * #f is not NULL only for byte-strings, for other strings it is
+ * meaningless to use NULL. */
 
 #define FOREIGN_string_ucs_4 (19)
 /* Type Name:   string/ucs-4 (string_ucs_4)
@@ -1308,6 +1308,7 @@ static Scheme_Object *foreign_ctype_alignof(int argc, Scheme_Object *argv[])
   return NULL; /* shush the compiler */
 }
 
+static Scheme_Object *nonatomic_sym;
 static Scheme_Object *atomic_sym;
 static Scheme_Object *stubborn_sym;
 static Scheme_Object *uncollectable_sym;
@@ -1321,8 +1322,9 @@ static Scheme_Object *fail_ok_sym;
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
- *   'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the last one is for
- *   using the real malloc)
+ *   'nonatomic, 'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the first
+ *   one is the default (using scheme_malloc), the last one is for using the
+ *   real malloc)
  * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
  *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
@@ -1370,6 +1372,7 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
   if (mode == NULL)                           mf = scheme_malloc;
+  else if (SAME_OBJ(mode, nonatomic_sym))     mf = scheme_malloc;
   else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
   else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;
   else if (SAME_OBJ(mode, eternal_sym))       mf = scheme_malloc_eternal;
@@ -1923,6 +1926,8 @@ void scheme_init_foreign(Scheme_Env *env)
 #endif
   MZ_REGISTER_STATIC(opened_libs);
   opened_libs = scheme_make_hash_table(SCHEME_hash_string);
+  MZ_REGISTER_STATIC(nonatomic_sym);
+  nonatomic_sym = scheme_intern_symbol("nonatomic");
   MZ_REGISTER_STATIC(atomic_sym);
   atomic_sym = scheme_intern_symbol("atomic");
   MZ_REGISTER_STATIC(stubborn_sym);

@@ -1823,39 +1823,39 @@ file_char_ready (Scheme_Input_Port *port)
   if (fip->regfile || port->closed)
     return 1;
 
-#ifdef HAS_STANDARD_IOB  
+# ifdef HAS_STANDARD_IOB  
   if (fp->_cnt)
     return 1;
-#endif
-#ifdef HAS_SCO_IOB  
+# endif
+# ifdef HAS_SCO_IOB  
   if (fp->__cnt)
     return 1;
-#endif
-#ifdef HAS_GNU_IOB
+# endif
+# ifdef HAS_GNU_IOB
   if (fp->_egptr - fp->_gptr)
     return 1;
-#endif
-#ifdef HAS_CYGWIN_IOB
+# endif
+# ifdef HAS_CYGWIN_IOB
   if (fp->_r)
     return 1;
-#endif
-#ifdef HAS_LINUX_IOB
+# endif
+# ifdef HAS_LINUX_IOB
   if (fp->_IO_read_end - fp->_IO_read_ptr)
     return 1;
-#endif
-#ifdef HAS_BSD_IOB
+# endif
+# ifdef HAS_BSD_IOB
   if (fp->_r > 0)
     return 1;
-#endif
-#ifdef HAS_BEOS_IOB  
+# endif
+# ifdef HAS_BEOS_IOB  
   /* Not actually useful since BeOS doesn't have file descriptors... */
   if (fp->buffer_pos)
     return 1;
-#endif
-#ifdef HAS_OSKIT_IOB  
+# endif
+# ifdef HAS_OSKIT_IOB  
   if (fp->_r)
     return 1;
-#endif
+# endif
 
   if (feof(fp) || ferror(fp))
     return 1;
@@ -1863,11 +1863,9 @@ file_char_ready (Scheme_Input_Port *port)
   {
     int fd, r;
     DECL_FDSET(readfds, 1);
-    DECL_FDSET(exnfds, 1);
     struct timeval time = {0, 0};
 
     INIT_DECL_FDSET(readfds, 1);
-    INIT_DECL_FDSET(exnfds, 1);
 
     fd = fileno(fp);
     if (fd < 0)
@@ -1875,10 +1873,8 @@ file_char_ready (Scheme_Input_Port *port)
     
     MZ_FD_ZERO(readfds);
     MZ_FD_SET(fd, readfds);
-    MZ_FD_ZERO(exnfds);
-    MZ_FD_SET(fd, exnfds);
 
-    r = select(fd + 1, readfds, NULL, exnfds, &time);
+    r = select(fd + 1, readfds, NULL, NULL, &time);
 
     return r;
   }

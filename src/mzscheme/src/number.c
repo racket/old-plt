@@ -2524,8 +2524,8 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
     scheme_wrong_type("angle", "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o)) {
-    Scheme_Object *r = _scheme_complex_real_part(o);
-    Scheme_Object *i = _scheme_complex_imaginary_part(o);
+    Scheme_Object *r = (Scheme_Object *)_scheme_complex_real_part(o);
+    Scheme_Object *i = (Scheme_Object *)_scheme_complex_imaginary_part(o);
 
     return scheme_make_double(atan2(TO_DOUBLE_VAL(i), TO_DOUBLE_VAL(r)));
   } else {

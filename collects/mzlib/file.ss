@@ -392,7 +392,14 @@
 			 (lambda ()
 			   ;; Poor man's pretty-print: one line per entry
 			   (printf "(~n")
-			   (for-each (lambda (a) (printf " ~s~n" a)) f)
+			   (for-each (lambda (a)
+				       (if (list? (cadr a))
+					   (begin
+					     (printf " (~s~n  (~n" (car a))
+					     (for-each (lambda (i) (printf "  ~s~n" i)) (cadr a))
+					     (printf "  ))~n"))
+					   (printf " ~s~n" a)))
+				     f)
 			   (printf ")~n"))))
 		      'truncate/replace)
 		    (rename-file-or-directory tmp-file pref-file #t))))

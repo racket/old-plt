@@ -1740,12 +1740,16 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
   insert_q_callback(cs, cb);
 }
 
-#ifdef wx_msw
+#if defined(wx_msw) || defined(wx_mac)
 
 static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
 {
   wxWindow *w = (wxWindow *)d;
+#ifdef wx_msw
   w->OnPaint();
+#else
+  w->Paint();
+#endif
   return scheme_void;
 }
 
@@ -3161,7 +3165,9 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
   het->data = data;
   het->val = 0;
 
-  scheme_init_jmpup_buf(&het->progress_cont);
+  het->progress_cont = scheme_new_jmpupbuf_holder();
+  
+  scheme_init_jmpup_buf(&het->progress_cont->buf);
 
   scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
 
@@ -3177,7 +3183,10 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
     het->in_progress = 0;
     het->progress_is_resumed = 1;
     if (!scheme_setjmp(het->progress_base)) {
-      scheme_longjmpup(&het->progress_cont);    
+#ifdef MZ_PRECISE_GC
+      het->fixup_var_stack_chain = &__gc_var_stack__;
+#endif
+      scheme_longjmpup(&het->progress_cont->buf);    
     }
   }
 
@@ -3193,9 +3202,16 @@ static void suspend_het_progress(void)
   scheme_on_atomic_timeout = NULL;
 
   het->in_progress = 1;
-  if (scheme_setjmpup(&het->progress_cont, (void *)&het, het->progress_base_addr)) {
+  if (scheme_setjmpup(&het->progress_cont->buf, (void*)het->progress_cont, het->progress_base_addr)) {
     /* we're back */
-    scheme_reset_jmpup_buf(&het->progress_cont);
+    scheme_reset_jmpup_buf(&het->progress_cont->buf);
+#ifdef MZ_PRECISE_GC
+    /* Base addr points to the last valid gc_var_stack address.
+       Fixup that link to skip over the part of the stack we're
+       not using right now. */
+    ((void **)het->progress_base_addr)[0] = het->fixup_var_stack_chain;
+    ((void **)het->progress_base_addr)[1] = NULL;
+#endif
   } else {
     /* we're leaving */
     scheme_longjmp(het->progress_base, 1);
@@ -3227,7 +3243,11 @@ static void het_do_run_new(HiEventTramp * volatile het, int *iteration)
   int new_iter[32];
 
   if (iteration[0] == 3) {
+#ifdef MZ_PRECISE_GC
+    het->progress_base_addr = (void *)&__gc_var_stack__;
+#else
     het->progress_base_addr = (void *)new_iter;
+#endif
     het_run_new(het);
   } else {
     new_iter[0] = iteration[0] + 1;
@@ -3251,7 +3271,10 @@ int mred_het_run_some()
 	scheme_start_atomic();
 	scheme_on_atomic_timeout = suspend_het_progress;
 	if (!scheme_setjmp(het->progress_base)) {
-	  scheme_longjmpup(&het->progress_cont);
+#ifdef MZ_PRECISE_GC
+	  het->fixup_var_stack_chain = &__gc_var_stack__;
+#endif
+	  scheme_longjmpup(&het->progress_cont->buf);
 	} else {
 	  scheme_on_atomic_timeout = NULL;
 	  scheme_end_atomic_no_swap();

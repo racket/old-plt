@@ -376,6 +376,7 @@ void wxChoice::Append (char *Item)
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
   Paint();
+  Refresh(); /* in case an update is in progress */
 }
 
 void wxChoice::Clear (void)
@@ -389,6 +390,7 @@ void wxChoice::Clear (void)
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
   Paint();
+  Refresh(); /* in case an update is in progress */
 }
 
 
@@ -471,5 +473,6 @@ void wxChoice::SetLabel(char *label)
     OffsetRect(&r,SetOriginX,SetOriginY);
     EraseRect(&r);
     Paint();
+    Refresh(); /* in case an update is in progress */
   }
 }

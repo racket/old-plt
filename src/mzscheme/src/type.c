@@ -457,6 +457,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
 
   GC_REG_TRAV(scheme_security_guard_type, guard_val);
+
+  GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
 }
 
 END_XFORM_SKIP;

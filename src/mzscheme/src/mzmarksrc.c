@@ -771,6 +771,16 @@ guard_val {
   gcBYTES_TO_WORDS(sizeof(Scheme_Security_Guard));
 }
 
+buf_holder {
+ mark:
+  Scheme_Jumpup_Buf_Holder *h = (Scheme_Jumpup_Buf_Holder *)p;
+ 
+  MARK_jmpup(&h->buf);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Jumpup_Buf_Holder));
+}
+
 END type;
 
 /**********************************************************************/

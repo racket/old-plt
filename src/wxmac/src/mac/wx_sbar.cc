@@ -279,9 +279,14 @@ static pascal void TrackActionProc(ControlHandle theControl, short thePart)
   if (scrollBar) {
     /* Must queue callbacks only: */
     scrollBar->TrackAction(thePart);
+
+    while (wxHETYield(scrollBar) && StillDown()) { }
   }
 
-  while (wxHETYield() && ::StillDown()) { }
+#ifdef MZ_PRECISE_GC
+  /* Restore variable stack. */
+  GC_variable_stack = (void **)__gc_var_stack__[0];
+#endif
 }
 
 //-----------------------------------------------------------------------------

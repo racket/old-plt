@@ -20,6 +20,7 @@
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
 
+extern void MrEdQueuePaint(wxWindow *wx_window);
 
 //=============================================================================
 // Public constructors
@@ -392,7 +393,6 @@ void wxCanvas::SetScrollData
   }
 
   if (theDC) {
-    int need_paint = 0;
     int dH = 0;
     int dV = 0;
 
@@ -411,6 +411,8 @@ void wxCanvas::SetScrollData
     }
     
     if (dH != 0 || dV != 0) {
+      int need_repaint = 0;
+
       if (!IsHidden()) {
 	wxArea* clientArea;
 	RgnHandle theUpdateRgn;
@@ -424,17 +426,24 @@ void wxCanvas::SetScrollData
 	scrollRect.bottom = clientArea->Height();
 	scrollRect.right = clientArea->Width();
 	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
+	/* FIXME: what if this is not the handler thread,
+	   and the handler is in an update sequence? */
 	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
 	if (!EmptyRgn(theUpdateRgn))
-	  need_paint = 1;
+	  need_repaint = 1;
 	::DisposeRgn(theUpdateRgn);
       }
       theDC->device_origin_x += -dH;
       theDC->device_origin_y += -dV;
-    }
 
-    if (need_paint)
-      Paint();
+      /* FIXME: update problem applies here, too */
+      if (need_repaint) {
+	if (evnt)
+	  MrEdQueuePaint(this);
+	else
+	  Paint();
+      }
+    }
   }
 }
 

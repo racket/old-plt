@@ -2006,6 +2006,33 @@ int guard_val_FIXUP(void *p) {
 #define guard_val_IS_CONST_SIZE 1
 
 
+int buf_holder_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Jumpup_Buf_Holder));
+}
+
+int buf_holder_MARK(void *p) {
+  Scheme_Jumpup_Buf_Holder *h = (Scheme_Jumpup_Buf_Holder *)p;
+ 
+  MARK_jmpup(&h->buf);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Jumpup_Buf_Holder));
+}
+
+int buf_holder_FIXUP(void *p) {
+  Scheme_Jumpup_Buf_Holder *h = (Scheme_Jumpup_Buf_Holder *)p;
+ 
+  FIXUP_jmpup(&h->buf);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Jumpup_Buf_Holder));
+}
+
+#define buf_holder_IS_ATOMIC 0
+#define buf_holder_IS_CONST_SIZE 1
+
+
 #endif  /* TYPE */
 
 /**********************************************************************/

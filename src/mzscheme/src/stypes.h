@@ -181,6 +181,7 @@ enum {
   scheme_rt_read_special_dw,
   scheme_rt_regwork, /* 160 */
   scheme_rt_sinfo,
+  scheme_rt_buf_holder,
 #endif
 
   _scheme_last_type_

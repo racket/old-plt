@@ -4,6 +4,7 @@ scheme_setjmpup_relative
 scheme_longjmpup
 scheme_reset_jmpup_buf
 scheme_clear_escape
+scheme_new_jmpupbuf_holder
 scheme_make_config
 scheme_branch_config
 scheme_new_param

@@ -266,6 +266,7 @@ void wxGauge::SetValue(int v)
     SetControlValue(cMacControl,value);
   }
   Paint();
+  Refresh(); /* in case an update is in progress */
 }
 
 void wxGauge::SetRange(int v)
@@ -280,6 +281,7 @@ void wxGauge::SetRange(int v)
     SetControlValue(cMacControl,value);
   }
   Paint();
+  Refresh(); /* in case an update is in progress */
 }
 
 char* wxGauge::GetLabel(void)

@@ -1012,7 +1012,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
       event->when = TickCount();
       if (cont_event_context) {
 	/* Dragging... */
-	event->modifiers = GetMods() | btnState;
+	int mods;
+	mods = GetMods();
+	event->modifiers = mods | btnState;
 	event->message = 1;
 #ifdef RECORD_HISTORY
 	fprintf(history, "drag\n");
@@ -1020,7 +1022,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #endif
       } else {
 	if (keyOk) {
-	  event->modifiers = GetMods();
+	  int mods;
+	  mods = GetMods();
+	  event->modifiers = mods;
 	} else {
 	  event->modifiers = 0;
 	}
@@ -1468,6 +1472,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
   FSSpec x_fss;
   Handle alias = NULL;
   int retval = 1;
+  OSErr _err;
     
   switch (SCHEME_TYPE(v)) {
   case scheme_true_type:
@@ -1506,14 +1511,15 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	  long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
 	  if (!has_null(s, l)) {
 	    if (scheme_mac_path_to_spec(s, &x_fss)) {
-	      *err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
-	      if (*err == -43) {
+	      _err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
+	      *err = _err;
+	      if (_err == -43) {
 	        /* Can't make alias; make FSSpec, instead */
 	        type = typeFSS;
 	        data = (char *)&x_fss;
 	        size = sizeof(FSSpec);
 	        break;
-	      } else if (*err) {
+	      } else if (_err) {
 		*stage = "converting file to alias: ";
 		return NULL;
 	      }
@@ -1553,8 +1559,9 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
           
         list->descriptorType = typeNull;
         list->dataHandle = NULL;
-	*err = AECreateList(NULL, 0, isrec, list);
-	if (*err) {
+	_err = AECreateList(NULL, 0, isrec, list);
+	if (_err) {
+	  *err = _err;
 	  *stage = "cannot create list/record: ";
 	  return 0;
 	}
@@ -1588,20 +1595,22 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 		  
 	if (list_in) {
 	  if (kw)
-	    *err = AEPutKeyDesc(list_in, kw, list);
+	    _err = AEPutKeyDesc(list_in, kw, list);
 	  else
-	    *err = AEPutDesc(list_in, 0, list);
-	  if (*err) {
+	    _err = AEPutDesc(list_in, 0, list);
+	  if (_err) {
+	    *err = _err;
 	    *stage = "cannot add list item: ";
 	    AEDisposeDesc(list);
 	    return 0;
 	  }
 	} else {
 	  if (kw)
-	    *err = AEPutParamDesc(ae, kw, list);
+	    _err = AEPutParamDesc(ae, kw, list);
 	  else
-	    *err = AEPutParamDesc(ae, keyDirectObject, list);
-	  if (*err) {
+	    _err = AEPutParamDesc(ae, keyDirectObject, list);
+	  if (_err) {
+	    *err = _err;
 	    *stage = "cannot install argument: ";
 	    AEDisposeDesc(list);
 	    return 0;
@@ -1624,19 +1633,21 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
     
   if (list_in) {
     if (kw)
-      *err = AEPutKeyPtr(list_in, kw, type, data, size);
+      _err = AEPutKeyPtr(list_in, kw, type, data, size);
     else
-      *err = AEPutPtr(list_in, 0, type, data, size);
-    if (*err) {
+      _err = AEPutPtr(list_in, 0, type, data, size);
+    if (_err) {
+      *err = _err;
       *stage = "cannot add list item: ";
       retval = 0;
     }
   } else {
     if (kw)
-      *err = AEPutParamPtr(ae, kw, type, data, size);
+      _err = AEPutParamPtr(ae, kw, type, data, size);
     else
-      *err = AEPutParamPtr(ae, keyDirectObject, type, data, size);
-    if (*err) {
+      _err = AEPutParamPtr(ae, keyDirectObject, type, data, size);
+    if (_err) {
+      *err = _err;
       *stage = "cannot install argument: ";
       retval = 0;
     }
@@ -1656,6 +1667,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
   long sz;
   AEKeyword kw;
   Scheme_Object *result;
+  OSErr _err;
 
   if (list_in) {
     if (AEGetNthPtr(list_in, pos, typeWildCard, &kw, &rtype, NULL, 0, &sz))
@@ -1762,16 +1774,18 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
     }
     
     if (list_in) {
-      *err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
+      _err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
       if (record)
         *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
-      if (*err) {
+      if (_err) {
+	*err = _err;
         *stage = "lost a list value: ";
         return NULL;
       }
     } else {
-      *err = AEGetParamPtr(reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
-      if (*err) {
+      _err = AEGetParamPtr(reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
+      if (_err) {
+	*err = _err;
         *stage = "lost the return value: ";
         return NULL;
       }
@@ -2086,26 +2100,37 @@ ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, Contr
   return v;
 }
 
-int wxHETYield(void)
+int wxHETYield(wxWindow *win)
 {
   CGrafPtr savep;
   GDHandle savegd;
   ThemeDrawingState s;
   int more;
+  wxMacDC *mdc;
 
   if (!clipRgn)
     clipRgn = NewRgn();
 
-  ::GetGWorld(&savep, &savegd);  
+  GetGWorld(&savep, &savegd);  
   GetThemeDrawingState(&s);
   GetClip(clipRgn);
 
+  /* We assume that win was the old MacDC user, and savep is win's
+     MacDC. But control tracking has changed properties of the
+     grafport, so indicate the need for a rest: */
+  mdc = win->MacDC();
+  mdc->setCurrentUser(NULL);
+
   more = mred_het_run_some();
 
-  ::SetGWorld(savep, savegd);
+  SetGWorld(savep, savegd);
   SetThemeDrawingState(s, TRUE);
   SetClip(clipRgn);
 
+  /* Again. win may not be the current user, but whoever
+     is the current user for savep needs a reset. */
+  mdc->setCurrentUser(NULL);
+  
   return more;
 }
 

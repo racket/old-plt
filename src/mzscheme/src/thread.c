@@ -4325,6 +4325,22 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 /*                               precise GC                               */
 /*========================================================================*/
 
+Scheme_Jumpup_Buf_Holder *scheme_new_jmpupbuf_holder(void)
+/* Scheme_Jumpup_Buf_Holder exists for precise GC, and for external
+   programs that want to store Jumpup_Bufs, because the GC interaction
+   is tricky. For example, MrEd uses it for a special trampoline
+   implementation. */
+{
+  Scheme_Jumpup_Buf_Holder *h;
+
+  h = MALLOC_ONE_RT(Scheme_Jumpup_Buf_Holder);
+#ifdef MZ_PRECISE_GC
+  h->type = scheme_rt_buf_holder;
+#endif
+
+  return h;
+}
+
 #ifdef MZ_PRECISE_GC
 static unsigned long get_current_stack_start(void)
 {

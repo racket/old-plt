@@ -126,9 +126,12 @@ void wxmac_reg_globs(void);
 # else
 #  define HET_TIMER_T long
 # endif
+
+typedef int (*HiEventTrampProc)(void *);
+
 class HiEventTramp {
 public:
-  int (*f)(void *);
+  HiEventTrampProc f;
   void *data;
   int val;
   int in_progress;
@@ -136,14 +139,21 @@ public:
   Scheme_Object *old_param;
   void *progress_base_addr;
   mz_jmp_buf progress_base;
-  Scheme_Jumpup_Buf progress_cont;
+  Scheme_Jumpup_Buf_Holder *progress_cont;
   int timer_on;
   HET_TIMER_T timer_id;
-};
-int mred_het_run_some(void);
-extern int mred_het_param;
-int wxHiEventTrampoline(int (*f)(void *), void *data);
+#ifdef MZ_PRECISE_GC
+  void *fixup_var_stack_chain;
 #endif
+};
+
+int mred_het_run_some(void);
+
+extern int mred_het_param;
+
+int wxHiEventTrampoline(int (*f)(void *), void *data);
+
+#endif // NEED_HET_PARAM
 
 typedef void *(*ForEachFrameProc)(wxObject *, void *);
 void *MrEdForEachFrame(ForEachFrameProc fp, void *data);

@@ -1,3 +1,12 @@
+#|
+
+TODO: 
+
+fix the repeating decimal snip so that copies
+carry over the computation of the original
+(maybe just track the number of clicks?)
+
+|#
 (module snip mzscheme
   (require (lib "unitsig.ss")
            "drsig.ss"
@@ -48,68 +57,185 @@
   ;;; ;  ;;;    ;;;   ;;;;; ;; ; ;;  ;;; ; ;;;;;;
                                                  
                                                  
-                                                 
-
-      ;; find-repeat : 0 <= n < 1 -> (values (listof digit) (listof digit))
-      ;; finds the repeating and non-repeating portion of an exact number
-      (define (find-repeat n)
-        (let loop ([n n]
-                   [priors (list)]
-                   [non-repeating-digits (list)])
-          (let* ([d (floor (* n 10))]
-                 [m (- (* n 10) d)])
-            (cond
-              [(zero? m)
-               (values (reverse (cons d non-repeating-digits)) null)]
-              [else
-               (let* ([new-digits (cons d non-repeating-digits)]
-                      [new-priors (cons n priors)]
-                      [rep (extract-repeat m new-priors new-digits)])
-                 (if rep
-                     (values (car rep) (cadr rep))
-                     (loop m
-                           new-priors
-                           new-digits)))]))))
       
-      ;; extract-repeat : number[0<=n<1] (listof digit) (listof digit) ->
-      ;;                  (union #f (list (listof digit) (listof digit)))
-      (define (extract-repeat m priors non-repeating-digits)
-        (let loop ([priors (reverse priors)]
-                   [digits (reverse non-repeating-digits)]
-                   [digit-front null])
-          (cond
-            [(null? priors) #f]
-            [else
-             (let ([pm (car priors)])
-               (if (= m pm)
-                   (list (reverse digit-front) digits)
-                   (loop (cdr priors)
-                         (cdr digits)
-                         (cons (car digits) digit-front))))])))
-      
-      (define repeat-snip-class%
+      (define repeating-decimal-snip-class%
         (class snip-class%
           (define/override (read f)
-            (instantiate repeat-snip% ()
+            (instantiate repeating-decimal-number% ()
               [number (string->number (send f get-string))]
-              [whole-digits (send f get-string)]
-              [non-repeat-digits (send f get-string)]
-              [repeat-digits (send f get-string)]))
+              [prefix (send f get-string)]))
           (super-instantiate ())))
       
-      (define repeat-snipclass (make-object repeat-snip-class%))
-      (send repeat-snipclass set-version 1)
-      (send repeat-snipclass set-classname "drscheme:repeating-decimal")
-      (send (get-the-snip-class-list) add repeat-snipclass)
+      (define repeating-decimal-snipclass (make-object repeating-decimal-snip-class%))
+      (send repeating-decimal-snipclass set-version 2)
+      (send repeating-decimal-snipclass set-classname "drscheme:repeating-decimal")
       
-      (define repeat-snip%
-        (class* snip% (special<%>)
-          (init-field number whole-digits non-repeat-digits repeat-digits)
+      (define arrow-cursor (make-object cursor% 'arrow))
+
+      ;; cut-off : number
+      ;; indicates how many digits to fetch for each click
+      (define cut-off 25)
+      
+      (define repeating-decimal-number%
+        (class snip%
+          (init-field number
+                      [prefix ""])
           
-          (define/public (get-number) number)
-          (define/public (get-whole-digits) whole-digits)
-          (define/public (get-non-repeat-digits) non-repeat-digits)
-          (define/public (get-repeat-digits) repeat-digits)
+          ;; these fields are for the drawing code
+          (field 
+           ;; clickable-portion : (union #f string)
+           [clickable-portion #f]
+           ;; unbarred-portion : string
+           [unbarred-portion ""]
+           ;; barred-portion : (union #f string)
+           [barred-portion #f])
+          
+          ;; these fields are for the expansion calculation code
+          (field [whole-part (floor number)]
+                 [init-num (* 10 (numerator (- number whole-part)))]
+                 [den (denominator (- number whole-part))])
+          
+          ;; ht : number -o> (cons digit number)
+          ;; this maps from divisors of the denominator to
+          ;; digit and new divisor pairs. Use this
+          ;; to read off the decimal expansion.
+          (field [ht (make-hash-table 'equal)])
+          
+          ;; this field holds the state of the current computation
+          ;; of the numbers digits. If it is a number, it corresponds
+          ;; to the next starting divisor in the iteration.
+          ;; if it is #f, it means that the string of digits is
+          ;; fully computed.
+          (field [state init-num])
+          
+          ;; repeat : (union 'unk number #f)
+          ;; this field correlates with `state'. If `state' is a number,
+          ;; this field is 'unk. Otherwise, this is either a number of #f.
+          ;; #f indicates no repeat.
+          ;; a number indiates a repeat starting at `number' in `ht'.
+          (field [repeat 'unk])
+          
+          ;; iterate : -> void
+          ;; computes the next sequence of digits
+          ;; and update the GUI aspects of the snip
+          (define (iterate)
+            (expand-number)
+            (update-drawing-fields))
+          
+          (inherit get-admin)
+          
+          ;; iterate/reflow : -> void
+          ;; iterates the fraction and tells the administrator to redraw the numbers
+          (define (iterate/reflow)
+            (iterate)
+            (let ([admin (get-admin)])
+              (when admin
+                (let ([dc (send admin get-dc)]
+                      [font (send (get-style) get-font)])
+                  (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
+                               [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
+                               [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
+                    (let ([sw (+ w1 w2 w3)]
+                          [sh (if barred-portion (+ h1 2) h1)])
+                      (send admin resized this #t)
+                      '(send admin needs-update this 0 0 sw sh)))))))
+          
+          ;; one-step-division : number -> number number
+          ;; given a numerator and denominator,
+          ;; returns a digits and a new numerator to consider
+          (define/private (one-step-division num)
+            (cond
+              [(num . < . den) (values 0 (* 10 num))]
+              [else
+               (let ([qu (quotient num den)])
+                 (values qu (* 10 (- num (* qu den)))))]))
+          
+          ;; expand-number : -> void
+          ;; iterates until the numbers decimal expansion is completely computed,
+          ;; or the number's decimal expansion terminates.
+          (define/public (expand-number)
+            (when state
+              (let loop ([num state]
+                         [counter cut-off])
+                (cond
+                  [(hash-table-bound? ht num)
+                   (set! state #f)
+                   (set! repeat num)]
+                  [(zero? counter) 
+                   (set! state num)]
+                  [else
+                   (let-values ([(dig next-num) (one-step-division num)])
+                     (if (zero? next-num)
+                         (begin
+                           (hash-table-put! ht num (cons dig #t))
+                           (set! state #f)
+                           (set! repeat #f))
+                         (begin
+                           (hash-table-put! ht num (cons dig next-num))
+                           (loop next-num (- counter 1)))))]))))
+          
+          ;; update-drawing-fields : -> void
+          (define/public (update-drawing-fields)
+            (cond
+              [(number? state) 
+               (set! unbarred-portion
+                     (string-append
+                      prefix
+                      (if (zero? whole-part) "" (number->string whole-part))
+                      "."
+                      (apply string-append (map number->string (extract-non-cycle)))))
+               (set! barred-portion #f)
+               (set! clickable-portion "...")]
+              [(number? repeat)
+               (set! unbarred-portion
+                     (string-append
+                      prefix
+                      (if (zero? whole-part) "" (number->string whole-part))
+                      "."
+                      (apply string-append 
+                             (map number->string (extract-non-cycle)))))
+               (set! barred-portion (apply string-append (map number->string (extract-cycle))))
+               (set! clickable-portion #f)]
+              [else
+               (set! unbarred-portion
+                     (string-append
+                      prefix
+                      (if (zero? whole-part) "" (number->string whole-part))
+                      "."
+                      (apply string-append
+                             (map number->string (extract-non-cycle)))))
+               (set! barred-portion #f)
+               (set! clickable-portion #f)]))
+          
+          ;; extract-cycle : -> (listof digit)
+          ;; pre: (number? repeat)
+          (define (extract-cycle)
+            (let ([pr (hash-table-get ht repeat)])
+              (cons (car pr)
+                    (extract-helper (cdr pr)))))
+          
+          ;; extract-non-cycle : -> (listof digit)
+          (define/private (extract-non-cycle) (extract-helper init-num))
+          
+          (define/private (extract-helper start)
+            (let loop ([ind start])
+              (cond
+                [(equal? ind repeat) null]
+                [else
+                 (let* ([iter (hash-table-get ht ind)]
+                        [dig (car iter)]
+                        [next-num (cdr iter)])
+                   (cons dig
+                         (if (hash-table-bound? ht next-num)
+                             (loop next-num)
+                             null)))])))
+          
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;;                                                                  ;;
+          ;;                       snip infrastructure                        ;;
+          ;;                                                                  ;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          
           
           (define/public (read-special file line col pos)
             (values number 1))
@@ -117,103 +243,103 @@
           (define/override get-text
             (case-lambda
               [(offset num) (get-text offset num #f)]
-              [(offset num flattened?) (number->string number)]))
-
-          (define/override (copy)
-            (instantiate repeat-snip% ()
-              [number number]
-              [whole-digits whole-digits]
-              [non-repeat-digits non-repeat-digits]
-              [repeat-digits repeat-digits]))
+              [(offset num flattened?) 
+               (string-append 
+                unbarred-portion
+                (or barred-portion "")
+                (or clickable-portion ""))]))
           
           (define/override (write f)
             (send f put (number->string number))
-            (send f put whole-digits)
-            (send f put non-repeat-digits)
-            (send f put repeat-digits))
+            (send f put prefix))
+          
+          (define/override (copy)
+            (instantiate repeating-decimal-number% ()
+              [number number]
+              [prefix prefix]))
           
           (inherit get-style)
           (define/override (get-extent dc x y wb hb descent space lspace rspace)
-            (let ([font (send (get-style) get-font)]
-                  [old-font (send dc get-font)])
-              (send dc set-font font)
-              (let-values ([(w1 h1 d1 a1) (send dc get-text-extent whole-digits font)]
-                           [(w2 h2 d2 a2) (send dc get-text-extent "." font)]
-                           [(w3 h3 d3 a3) (send dc get-text-extent non-repeat-digits font)]
-                           [(w4 h4 d4 a4) (send dc get-text-extent repeat-digits font)])
-                (set-box/f! wb (+ w1 w2 w3 w4))
-                (set-box/f! hb (+ h1 2))
+            (let ([font (send (get-style) get-font)])
+              (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
+                           [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
+                           [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
+                (set-box/f! wb (+ w1 w2 w3))
+                (set-box/f! hb (if barred-portion 
+                                   (+ h1 2)
+                                   h1))
                 (set-box/f! descent d1)
-                (set-box/f! space (+ a1 2))
+                (set-box/f! space (if barred-portion
+                                      (+ a1 2)
+                                      a1))
                 (set-box/f! lspace 0)
-                (set-box/f! rspace 0))
-              (send dc set-font old-font)))
+                (set-box/f! rspace 0))))
+          
+          (define/private (get-text-extent/f dc str font)
+            (if str
+                (let-values ([(w h d a) (send dc get-text-extent str font)])
+                  (values w h d a))
+                (values 0 0 0 0)))
           
           (define/override (draw dc x y left top right bottom dx dy draw-caret?)
             (define (draw-digits digits x)
-              (let-values ([(w h a d) (send dc get-text-extent digits)])
-                (send dc draw-text digits x (+ y 2))
-                (+ x w)))
-            (let* ([whole-end (draw-digits whole-digits x)]
-                   [decimal-end (draw-digits "." whole-end)]
-                   [non-repeat-end (draw-digits non-repeat-digits decimal-end)]
-                   [repeat-end (draw-digits repeat-digits non-repeat-end)])
-              (unless (string=? "" repeat-digits)
-                (send dc draw-line non-repeat-end y (- repeat-end 1) y))))
+              (if digits
+                  (let-values ([(w h a d) (send dc get-text-extent digits)])
+                    (send dc draw-text digits x (if barred-portion (+ y 2) y))
+                    (+ x w))
+                  x))
+            (let* ([unbarred-end (draw-digits unbarred-portion x)]
+                   [barred-end (draw-digits barred-portion unbarred-end)]
+                   [clickable-end (draw-digits clickable-portion barred-end)])
+              (when barred-portion
+                (send dc draw-line unbarred-end y (- barred-end 1) y))))
+          
+          (define/override (adjust-cursor dc x y editorx editory evt)
+            (let ([sx (- (send evt get-x) x)]
+                  [sy (- (send evt get-y) y)]
+                  [font (send (get-style) get-font)])
+              (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
+                           [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
+                           [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
+                (let ([in-region? (<= (+ w1 w2) sx (+ w1 w2 w3))])
+                  (if in-region?
+                      arrow-cursor
+                      #f)))))
+          
+          (define/override (on-event dc x y editor-x editor-y evt)
+            (let ([sx (- (send evt get-x) x)]
+                  [sy (- (send evt get-y) y)]
+                  [font (send (get-style) get-font)])
+              (let-values ([(w1 h1 d1 a1) (get-text-extent/f dc unbarred-portion font)]
+                           [(w2 h2 d2 a2) (get-text-extent/f dc barred-portion font)]
+                           [(w3 h3 d3 a3) (get-text-extent/f dc clickable-portion font)])
+                (let ([in-region? (<= (+ w1 w2) sx (+ w1 w2 w3))])
+                  (cond
+                    [(send evt button-up?) (iterate/reflow)]
+                    [(or (send evt moving?)
+                         (send evt leaving?)
+                         (send evt entering?))
+                     '...]
+                    [else (void)])))))            
           
           (super-instantiate ())
-          
-          (inherit set-snipclass)
-          (set-snipclass repeat-snipclass)))
+          (inherit set-snipclass set-flags get-flags)
+          (set-flags (cons 'handles-events (get-flags)))
+          (set-snipclass repeating-decimal-snipclass)
+          (iterate))) ;; calc first digits
       
+      ;; hash-table-bound? : hash-table TST -> boolean
+      (define (hash-table-bound? ht key)
+        (let/ec k
+          (hash-table-get ht key (lambda () (k #f)))
+          #t))                                                
+
       ;; make-repeating-fraction-snip : number boolean -> snip
       (define (make-repeating-fraction-snip number e-prefix?)
-        (let* ([whole-part (floor number)]
-               [fraction-part (- number whole-part)])
-          (let-values ([(non-repeating repeating) (find-repeat fraction-part)])
-            (instantiate repeat-snip% ()
-              [number number]
-              [whole-digits (let ([raw (if (zero? whole-part)
-                                           ""
-                                           (format "~a" whole-part))])
-                              (if e-prefix?
-                                  (string-append "#e" raw)
-                                  raw))]
-              [repeat-digits
-               (apply string-append (map number->string repeating))]
-              [non-repeat-digits
-               (apply string-append (map number->string non-repeating))]))))
+        (instantiate repeating-decimal-number% ()
+          [number number]
+          [prefix (if e-prefix? "#e" "")]))
 
-#|
-
-;;; test code
-
-(define f (make-object frame% "frame" #f 300 150))
-(define t (make-object text%))
-(define ec (make-object editor-canvas% f t))
-(send t insert (make-repeating-fraction-snip 10/7))
-(send f show #t)
-
-(define (test-find-repeat frac digits repeat)
-  (let-values ([(got-digits got-repeat) (find-repeat frac)])
-    (unless (and (equal? got-digits digits)
-                 (equal? got-repeat repeat))
-      (printf "expected ~a -> ~a ~a\n     got ~a -> ~a ~a\n"
-              frac digits repeat
-              frac got-digits got-repeat))))
-
-(test-find-repeat 1/2 '(5) #f)
-(test-find-repeat 1/4 '(2 5) #f)
-(test-find-repeat #e.1234567 '(1 2 3 4 5 6 7) #f)
-(test-find-repeat 1/3 '() '(3))
-(test-find-repeat 1/30 '(0) '(3))
-(test-find-repeat 1/300 '(0 0) '(3))
-(test-find-repeat (+ 1/30000 #e.1234) '(1 2 3 4) '(3))
-(test-find-repeat 1/7 '() '(1 4 2 8 5 7))
-
-|#
-      
-      
 
                                                         
    ;;;                                ;                 

@@ -142,6 +142,7 @@ Misc:
   with the SRFI-27 reference implementation
  Added print-unreadable parameter
  Changed use-compiled-file-kinds to use-compiled-file-paths
+ Mac OS X: extension suffix changed from ".so" to ".dylib"
 Libraries:
  "class.ss" MzLib module: changed the interface to 
   make-primitive-class; see plt/collects/mzscheme/examples/tree.cxx 

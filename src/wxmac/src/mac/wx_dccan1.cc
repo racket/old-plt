@@ -319,9 +319,12 @@ void wxCanvasDC::SetClippingRegion(wxRegion *r)
 {
   if (clipping)
     --clipping->locked;
+
   clipping = r;
+
   if (clipping)
     clipping->locked++;
+
   SetCanvasClipping();
 }
 

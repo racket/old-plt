@@ -964,7 +964,13 @@ regexec(const char *who,
       if (regtry_port(prog, port, startp, endp, stringp, &len, &space, stringpos, stringlen - dropped, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
-	  scheme_get_string(who, port, *stringp, 0, *endp, 0, 0, 0);
+	  char *drain;
+	  if (nonpeek_offsets)
+	    drain = *stringp;
+	  else
+	    /* Allocate fresh in case we get different results from previous peek: */
+	    drain = (char *)scheme_malloc_atomic(*endp);
+	  scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	}
 
 	if (dropped && nonpeek_offsets)
@@ -1019,9 +1025,12 @@ regexec(const char *who,
 	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, stringlen - dropped, !space)) {
 	  if (!peek) {
 	    char *drain;
-	    
-	    drain = (char *)scheme_malloc_atomic(skip + *endp);
-	    scheme_get_string(who, port, drain, 0, skip + *endp, 0, 0, 0);
+	    if (nonpeek_offsets)
+	      drain = *stringp;
+	    else
+	      /* Allocate fresh in case we get different results from previous peek: */
+	      drain = (char *)scheme_malloc_atomic(*endp);
+	    scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	  }
 
 	  if (dropped && nonpeek_offsets)

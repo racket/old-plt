@@ -56,7 +56,7 @@
        [else (let ([n (peek-bytes-avail!* bstr skip evt (car ports))])
                (cond [(eq? n 0)
                       ;; Not ready, yet.
-                      (peek-bytes-avail!-evt str skip unless-evt (car ports))]
+                      (peek-bytes-avail!-evt bstr skip evt (car ports))]
                      [(eof-object? n)
                       ;; Port is exhausted, or we skipped past its input.
                       ;; If skip is not zero, we need to figure out

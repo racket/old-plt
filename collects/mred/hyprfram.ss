@@ -179,15 +179,10 @@
     (define make-hyper-view-frame%
       (lambda (super%)
 	(class-asi super%
-		   (inherit menu-bar% make-menu show)
-		   (public
-		    [make-menu-bar
-		     (lambda ()
-		       (let ([mb (make-object menu-bar%)]
-			     [file-menu (make-menu)])
-			 (send file-menu append-item "Close" (lambda () (show #f)))
-			 (send mb append file-menu "File")
-			 mb))]))))
+	  (inherit show)
+	  (public
+	    [file-menu:close (lambda () (show #f))]))))
+
     (define hyper-view-frame% 
       (make-hyper-view-frame% hyper-basic-frame%))
 

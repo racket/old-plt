@@ -30,11 +30,11 @@
 
     (define local-busy-cursor
       (let ([watch (make-object wx:cursor% wx:const-cursor-watch)])
-	(lambda (win thunk)		
+	(opt-lambda (win thunk [delay (cursor-delay)])
 	  (let* ([old-cursor #f]
 		 [cursor-off
 		  (delay-action
-		   (cursor-delay)
+		   delay
 		   (lambda ()
 		     (if win
 			 (set! old-cursor (send win set-cursor watch))

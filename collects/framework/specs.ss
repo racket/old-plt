@@ -166,30 +166,44 @@
         (syntax-case stx ()
           [(_) (raise-syntax-error '-> "expected at least one argument" stx)]
           [(_ ct ...)
-           (with-syntax ([(dom ...) (all-but-last (syntax->list (syntax (ct ...))))]
-                         [rng (car (last-pair (syntax->list (syntax (ct ...)))))])
-             (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
-                           [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
-                           [arity (length (syntax->list (syntax (dom ...))))])
-               (let ([->add-outer-check
-                      (lambda (body)
-                        (with-syntax ([body body])
-                          (syntax
-                           (let ([dom-x dom] ...
-                                 [rng-x rng])
-                             (unless (contract-p? dom-x)
-                               (error '-> "expected contract as argument, got ~e" dom-x)) ...
-                             (unless (contract-p? rng-x)
-                               (error '-> "expected contract as argument, got: ~e" rng-x))
-                             body))))]
-                     [->body (syntax (->* (dom-x ...) (rng-x)))])
-                 (let-values ([(->*add-outer-check ->*make-inner-check ->*make-body) (->*/h ->body)])
-                   (values 
-                    (lambda (x) (->add-outer-check (->*add-outer-check x)))
-                    (lambda (args)
-                      (->*make-inner-check args))
-                    (lambda (args)
-                      (->*make-body args)))))))]))
+	   (let* ([rng-normal (car (last-pair (syntax->list (syntax (ct ...)))))]
+		  [ignore-range-checking?
+		   (syntax-case rng-normal (any)
+		     [any #t]
+		     [_ #f])])
+	     (with-syntax ([(dom ...) (all-but-last (syntax->list (syntax (ct ...))))]
+			   [rng (if ignore-range-checking?
+				    (syntax any?)  ;; hack to simplify life...
+				    rng-normal)])
+	       (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
+			     [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
+			     [arity (length (syntax->list (syntax (dom ...))))])
+		 (let ([->add-outer-check
+			(lambda (body)
+			  (with-syntax ([body body])
+			    (syntax
+			     (let ([dom-x dom] ...
+				   [rng-x rng])
+			       (unless (contract-p? dom-x)
+				 (error '-> "expected contract as argument, got ~e" dom-x)) ...
+				 (unless (contract-p? rng-x)
+				   (error '-> "expected contract as argument, got: ~e" rng-x))
+				 body))))]
+		       [->body (syntax (->* (dom-x ...) (rng-x)))])
+		   (let-values ([(->*add-outer-check ->*make-inner-check ->*make-body) (->*/h ->body)])
+		     (values 
+		      (lambda (body) (->add-outer-check (->*add-outer-check body)))
+		      (lambda (stx) (->*make-inner-check stx))
+		      (if ignore-range-checking?
+			  (lambda (stx)
+			    (with-syntax ([(val pos-blame neg-blame src-info) stx])
+			      (syntax
+			       ((arg-x ...)
+				(val
+				 (check-contract dom-x arg-x neg-blame pos-blame src-info)
+				 ...)))))
+			  (lambda (stx)
+			    (->*make-body stx)))))))))]))
 
       ;; ->*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
       (define (->*/h stx)

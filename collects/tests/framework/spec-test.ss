@@ -197,6 +197,19 @@
    "pos")
 
 
+  (test/spec-passed
+   'contract-arrow-any1
+   '(contract (integer? . -> . any) (lambda (x) x) 'pos 'neg))
+  
+  (test/spec-failed
+   'contract-arrow-any2
+   '(contract (integer? . -> . any) (lambda (x y) x) 'pos 'neg)
+   "pos")
+  
+  (test/spec-failed
+   'contract-arrow-any3
+   '((contract (integer? . -> . any) (lambda (x) #f) 'pos 'neg) #t)
+   "neg")
 
   (test/spec-passed
    'contract-arrow-star-d1

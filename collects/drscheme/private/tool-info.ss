@@ -15,9 +15,9 @@
   (-> void?)
   (-> void?)
   ((union eof-object? syntax? (cons/p string? any?))
-   (-> void?)
+   (-> any)
    . -> .
-   void?)
+   any)
   . -> .
   void?)
  (input language-settings init kill-termination iter)

@@ -145,7 +145,7 @@ an appropriate subdirectory.
            (lib "file.ss")
            (lib "port.ss")
            (lib "list.ss")
-           (lib "plt-single-installer.ss" "setup")
+           
            (lib "date.ss")
            
            "config.ss"
@@ -156,7 +156,8 @@ an appropriate subdirectory.
            pkg-spec->full-pkg-spec
            get-package-from-cache
            get-package-from-server
-           install-pkg)
+           install-pkg
+           get-planet-module-path/pkg)
 
   (define install? (make-parameter #t)) ;; if #f, will not install packages and instead give an error
 
@@ -212,6 +213,13 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; resolves the given request. Returns a name corresponding to the module in the correct
   ; environment
   (define (planet-resolve spec module-path stx)
+    (let-values ([(path pkg) (get-planet-module-path/pkg spec module-path stx)])
+      (add-pkg-to-diamond-registry! pkg)
+      (do-require path (pkg-path pkg) module-path stx)))
+  
+  ;; get-planet-module-path/pkg :PLANET-REQUEST symbol syntax[PLANET-REQUEST] -> path PKG
+  ;; returns the matching package and the file path to the specific request
+  (define (get-planet-module-path/pkg spec module-path stx)
     (match (cdr spec)
       [(file-name pkg-spec path ...)
        (match-let*
@@ -224,12 +232,10 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                                     (raise (make-exn:fail
                                             "Could not find matching package"
                                             (current-continuation-marks))))))])
-         (add-pkg-to-diamond-registry! pkg)
-         (do-require file-name path module-path stx pkg))]
+         (values (apply build-path (pkg-path pkg) (append path (list file-name))) pkg))]
       [_ (raise-syntax-error 'require (format "Illegal PLaneT invocation: ~e" (cdr spec)) stx)]))
   
   ;; get-path : planet-request  -> path
-  
   
   ; pkg-spec->full-pkg-spec : PKG-SPEC syntax -> FULL-PKG-SPEC
   (define (pkg-spec->full-pkg-spec spec stx)
@@ -309,7 +315,10 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                (printf "\n============= Installing ~a on ~a =============\n" 
                        (pkg-spec-name pkg)
                        (current-time))
-               (install-planet-package path the-dir (list owner (pkg-spec-name pkg) extra-path maj min))))
+               ;; oh man is this a bad hack!
+               (parameterize ((current-namespace (make-namespace)))
+                 ((dynamic-require '(lib "plt-single-installer.ss" "setup") 'install-planet-package)
+                  path the-dir (list owner (pkg-spec-name pkg) extra-path maj min)))))
             (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir)))))
          
   ; download-package : FULL-PKG-SPEC -> RESPONSE
@@ -378,12 +387,12 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; Handles interaction with the module system
   ; ==========================================================================================
   
-  ; do-require : string path syntax PKG -> symbol
+  ; do-require : path path symbol syntax -> symbol
   ; requires the given filename, which must be a module, in the given path.
-  (define (do-require file path module-path stx pkg)
-    (parameterize ((current-load-relative-directory (pkg-path pkg)))    
+  (define (do-require file-path package-path module-path stx)
+    (parameterize ((current-load-relative-directory package-path))    
       ((current-module-name-resolver)
-       (apply build-path (pkg-path pkg) (append path (list file)))
+       file-path
        module-path
        stx)))
 

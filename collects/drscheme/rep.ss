@@ -193,7 +193,10 @@
 						"zodiac eval; structurized: ~a~n" structurized)]
 			  [_ (mred:debug:printf 'zodiac
 						"zodiac eval; unsexp: ~a~n" (zodiac:sexp->raw structurized))]
-			  [expanded (zodiac:scheme-expand structurized param)]
+			  [expanded (call/nal zodiac:scheme-expand/nal
+					      zodiac:scheme-expand
+					      (expression: structurized)
+					      (parameterization: param))]
 			  [_ (mred:debug:printf 'zodiac
 						"zodiac eval; expanded: ~a~n" expanded)]
 			  [_ (mred:debug:printf 'zodiac
@@ -310,7 +313,11 @@
 		       (let ([zodiac-read (reader)])
 			 (if (zodiac:eof? zodiac-read)
 			     (cleanup)
-			     (send-scheme (aries:annotate (zodiac:scheme-expand zodiac-read param))
+			     (send-scheme (aries:annotate (call/nal
+							   zodiac:scheme-expand/nal
+							   zodiac:scheme-expand
+							   (expression: zodiac-read)
+							   (parameterization: param)))
 					  void
 					  (lambda (error?)
 					    (if error?
@@ -338,7 +345,12 @@
 				   [z-sexp (reader)])
 			  (if (zodiac:eof? z-sexp)
 			      last
-			      (loop (user-eval (aries:annotate (zodiac:scheme-expand z-sexp param)))
+			      (loop (user-eval (aries:annotate
+						(call/nal
+						 zodiac:scheme-expand/nal
+						 zodiac:scheme-expand
+						 (expression: z-sexp)
+						 (parameterization: param))))
 				    (reader))))))
 		    (lambda ()
 		      (when (input-port? re-p)

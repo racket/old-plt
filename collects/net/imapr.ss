@@ -343,4 +343,4 @@
 			   (cons 
 			    (list flags name)
 			    sub-folders)))))))
-      sub-folders)))
+      (reverse sub-folders))))

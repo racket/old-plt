@@ -49,6 +49,8 @@ BSTR stringToBSTR(char *s,size_t len) {
   unicodeString = (WCHAR *)scheme_malloc((len + 1) * sizeof(WCHAR));
   scheme_dont_gc_ptr(unicodeString);
 
+MessageBox(NULL,"About to do translation","MX",0);
+
   hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len,
 			   unicodeString,len + 1);
 
@@ -58,13 +60,19 @@ BSTR stringToBSTR(char *s,size_t len) {
 
   unicodeString[len] = '\0';
 
+MessageBox(NULL,"About to allocate BSTR","MX",0);
+
   bstr = SysAllocString(unicodeString);
+
+MessageBox(NULL,"Allowing GC on unicode","MX",0);
 
   scheme_gc_ptr_ok(unicodeString);
 
   if (bstr == NULL) {
     scheme_signal_error("Error allocating string parameter");
   }
+
+MessageBox(NULL,"Allocated BSTR","MX",0);
 
   return bstr;
 }

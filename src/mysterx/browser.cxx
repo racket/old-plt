@@ -278,18 +278,28 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("navigate","mx-document",1,argc,argv);
+    scheme_wrong_type("navigate","string",1,argc,argv);
   }
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
+puts("Translating string");
+
   url = stringToBSTR(SCHEME_STR_VAL(argv[1]),SCHEME_STRLEN_VAL(argv[1]));
+
+puts("Done translating string");
 
   memset(vars,0,sizeof(vars));
 
+puts("About to navigate");
+
   pIWebBrowser2->Navigate(url,vars,vars+1,vars+2,vars+3);
 
+puts("Done navigating");
+
   SysFreeString(url);
+
+puts("Freed URL");
 
   return scheme_void;
 }

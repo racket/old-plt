@@ -19,7 +19,7 @@
   
   (define (dynamic-python-to-scheme)
 ;    (dynamic-require '(lib "compile-python.ss" "python") 'python-to-scheme))
-    (my-dynamic-require (current-namespace) '(lib "compile-python.ss" "python"))
+    ;(my-dynamic-require (current-namespace) '(lib "compile-python.ss" "python"))
     (namespace-variable-value 'python-to-scheme))
   
   ; python-import-from-module: (listof (list symbol (U symbol false))) symbol ... ->
@@ -160,8 +160,8 @@
   ; returns an initialized python namespace (empty namespace + python base)
   (define make-python-namespace
     (opt-lambda ([new-cache? #f])
-    (let ([p-n (make-namespace ;'initial)])
-                               'empty)])
+    (let ([p-n (make-namespace 'initial)])
+                               ;'empty)])
       ;(let ([caller (current-namespace)])
       ;  (parameterize ([current-namespace p-n])
       ;    (namespace-attach-module caller 'mzscheme)))
@@ -177,11 +177,14 @@
   ; see on-execute in the drscheme extension manual
   (define (init-python-namespace python-namespace)
     (my-dynamic-require python-namespace '(lib "base.ss" "python"))
-    (my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
-    (my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
-    (my-dynamic-require python-namespace '(lib "primitives.ss" "python")))
+    ;(my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
+    ;(my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
+    ;(my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
+    )
   
   (define (my-dynamic-require dest-namespace spec)
+    ;(parameterize ([current-namespace dest-namespace])
+    ;  (namespace-require spec)))
     (let ([cache (get-cache-namespace)]
           [path (lookup-cached-mzscheme-module spec)]
           [caller-namespace (current-namespace)])
@@ -191,8 +194,8 @@
           (namespace-attach-module cache path)
         ;  (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
           )
-          (namespace-require spec) ;path)
-          
+        (namespace-transformer-require spec)
+        (namespace-require spec) ;path)
         )))
     
   (define cache-namespace #f)

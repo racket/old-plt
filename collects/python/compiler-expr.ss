@@ -56,6 +56,17 @@
                               (unpack tuple
                                       (send (first-atom tuple) to-scheme)))
                             (filter list? (send parms get-pos)))))
+                     (let ([seq (send parms get-seq)])
+                       (if seq
+                           (let ([seq (send seq to-scheme)])
+                             `([,seq (list->py-tuple% ,seq)]))
+                           empty))
+                     ;(let ([dict (send parms get-dict)])
+                     ;  (if dict
+                     ;      (let ([dict (send dict to-scheme)])
+                     ;        `([,dict (begin (printf "at first, dict is ~a~n" dict)
+                     ;                        (assoc-list->py-dict% ,dict))]))
+                     ;      empty))
                      (if scope
                          (map (lambda (b)
                                 `[,(send b to-scheme) (void)])
@@ -68,18 +79,17 @@
   (define (generate-py-lambda name parms body-so scope)
     (let ([seq (send parms get-seq)]
           [dict (send parms get-dict)])
-      `(,(py-so 'procedure->py-function%)
-        ,(generate-lambda parms body-so scope)
-        ',name
-        (list ,@(map (lambda (p)
-                       `',(send (first-atom p) to-scheme))
-                     (send parms get-pos)))
-        (list ,@(map (lambda (k)
-                       `(cons ',(send (car k) to-scheme)
-                              ,(send (cdr k) to-scheme)))
-                     (send parms get-key)))
-        ,(and seq (send seq to-scheme))
-        ,(and dict (send dict to-scheme)))))
+      `(procedure->py-function% ,(generate-lambda parms body-so scope)
+                                ',name
+                                (list ,@(map (lambda (p)
+                                               `',(send (first-atom p) to-scheme))
+                                             (send parms get-pos)))
+                                (list ,@(map (lambda (k)
+                                               `(cons ',(send (car k) to-scheme)
+                                                      ,(send (cdr k) to-scheme)))
+                                             (send parms get-key)))
+                                ,(and seq (car `(',(send seq to-scheme))))
+                                ,(and dict (car `(',(send dict to-scheme)))))))
 
   
   (define parameters%
@@ -169,7 +179,9 @@
                        (reverse key))])
         (->orig-so (cond
                      [(and seq dict)
-                       `(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme))]
+                      (begin (printf "identifier binding for seq: ~a~n" (identifier-binding (send seq to-scheme)))
+                             (printf "identifier binding for runtime things: ~a~n" (identifier-binding (->orig-so 'test)))
+                       `(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme)))]
                      [seq `(,@Ps ,@Ks . ,(send seq to-scheme))]
                      [dict `(,(send dict to-scheme) ,@Ps ,@Ks)]
                      [else `(,@Ps ,@Ks)]))))
@@ -561,8 +573,8 @@
                                           (send e to-scheme))
                                         (reverse pos))]
                          [key-args (map (lambda (e)
-                                          (cons (send (car e) to-scheme)
-                                                (send (cdr e) to-scheme)))
+                                          `(list ,(car `(',(send (car e) to-scheme)))
+                                                 ,(send (cdr e) to-scheme)))
                                         (reverse key))])
                      (if (is-a? expression attribute-ref%)
                          `(,(py-so 'python-method-call)

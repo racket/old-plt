@@ -4,13 +4,13 @@
           ; (lib "etc.ss")
           ; "compiler.ss"
           ; "python-node.ss"
-          ; "primitives.ss" ;; need py-object%->string
+           "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
-           "python-import.ss")
-           ;"base.ss")
+           "python-import.ss"
+           ;"base.ss"
+           )
   
-  ;;;; temporary Python Evaluation module by Daniel ;;;;;;;
   
   (provide python
            ;read-python
@@ -23,22 +23,26 @@
            render-python-value/format)
   
   (define (convert-value value)
-    ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
+    (py-object%->string value))
+    ;(namespace-require '(lib "primitives.ss" "python"))
+    ;((namespace-variable-value 'py-object%->string) value))
+   ; ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
+  
+  (define (none? py-value)
+    ((dynamic-require '(lib "primitives.ss" "python") 'py-none?) py-value))
   
   (define (render-python-value/format value port port-write)
     (render-python-value value port port-write))
   
   (define (render-python-value value port port-write)
-            (let ([to-render (convert-value value)])
-                             ;(if (python-node? value)
-                             ;   (format "~a" (py-object%->string value))
-                             ;   value)])
-              (if #f ;port-write
-                  (port-write to-render)
-                  (display to-render port))))
-  
-
-
+    (unless (none? value)
+      (let ([to-render (convert-value value)])
+        ;(if (python-node? value)
+        ;   (format "~a" (py-object%->string value))
+        ;   value)])
+        (if #f ;port-write
+            (port-write to-render)
+            (display to-render port)))))
   
     
   (define (python path)
@@ -118,4 +122,13 @@
 ;    (eq? (first (send ax get-targs)) (first (send ax get-targs)))
 ;    (eq? (send ascope binding-tid btarg)
 ;         atarg))
+  
+;  (require (lib "etc.ss")
+;           "primitives.ss"
+;           "runtime-support.ss"
+;           "python-import.ss")
+;  (current-directory "tests/functions")
+;  (define astl (python-to-scheme "dict_args.py"))
+;  (define astle (map syntax-object->datum astl))
+  
   )

@@ -340,13 +340,42 @@
             (not (py-is? functor py-type%))) (py-call python-create-object
                                                       (cons functor arg-list))]
       [(py-is-a? functor py-function%) ;(dprintf "DEBUG: py-call got a py-function%~n")
+       ;;; TODO: cannot handle f(x=1, x=2) yet
        (let ([pos (python-get-member functor python-function-pos-ids-key #f)]
              [key (python-get-member functor python-function-key-ids-key #f)]
              [seq (python-get-member functor python-function-seq-id-key #f)]
              [dict (python-get-member functor python-function-dict-id-key #f)])
-       (py-call (py-function%->procedure functor)
-                arg-list
-                kw-args))]
+         (let ([min-arity (length pos)]
+               [num-pos-args (length arg-list)])
+         ;  (when (< num-pos-args min-arity)
+         ;    (error "Not enough arguments for " (py-object%->string functor)))
+           (let* ([all-parms (append pos key)]
+                  [to-go (if (> num-pos-args (+ min-arity (length key)))
+                             '()
+                             (list-tail all-parms num-pos-args))])
+             (for-each (lambda (parm)
+                         (when (assq parm kw-args)
+                           (error "cannot use a keyword argument to define a parameter already passed as a positional argument")))
+                       (list-head all-parms (- (length all-parms) (length to-go))))
+             (let ([rest-must-be-dict? false])
+               (for-each (lambda (parm)
+                           (cond
+                             [(assq parm kw-args) => (lambda (x)
+                                                       (when rest-must-be-dict?
+                                                         (error "Invalid order for keyword arguments"))
+                                                       (set! arg-list
+                                                             (append arg-list (cons (second x) empty)))
+                                                       (set! kw-args
+                                                             (nassq parm kw-args)))]
+                             [else (set! rest-must-be-dict? true)]))
+                         to-go))
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; to do here...
+             ;;;;;;;;; check when arg-list > pos (dump the rest to uhh... rest)
+           (py-call (py-function%->procedure functor)
+                    (if dict
+                        (begin ;(printf "keywords args: ~a~n" kw-args)
+                               (cons (assoc-list->py-dict% kw-args) arg-list))
+                        arg-list)))))]
       ;; else, it's a py-method% or some other thing that has a __call__ field
       [else (dprintf "DEBUG: py-call got something else~n")
        (py-call (python-get-member functor
@@ -354,7 +383,17 @@
                                    false)
                 (cons functor arg-list)
                 kw-args)])))
-  
+
+  (define (list-head list items)
+    (reverse (list-tail (reverse list)
+                        (- (length list) items))))
+
+(define (nassq sym assl)
+  (filter (lambda (x)
+            (not (eq? sym (first x))))
+          assl))
+
+
   ;; create instance object
   (define (python-create-object class . init-args)
     (dprintf "DEBUG: python-create-object~n")
@@ -436,7 +475,13 @@
                        ""
                        (hash-table-map ht
                                        (lambda (key value)
-                                         (string-append (py-object%->string key)
+                                         ;;;; the key is either a number or a symbol
+                                         (string-append (if (number? key)
+                                                            (number->string key)
+                                                            (string-append "'"
+                                                                           (symbol->string key)
+                                                                           "'"))
+                                                        ; (py-object%->string key)
                                                         ": "
                                                         (py-object%->string value))))))])
          (string-append "{"
@@ -722,6 +767,8 @@
   
   (define py-none (make-python-node py-none% (make-hash-table) #f))
   
+  (define (py-none? obj) (py-is? obj py-none))
+  
   (define (python-method-bound? method)
     (not (py-is? (python-get-member method 'im_self)
                  py-none)))
@@ -841,7 +888,7 @@
                                                  (hash-table-get (python-get-member this
                                                                                     scheme-hash-table-key
                                                                                     false)
-                                                                  key)))))
+                                                                  (->scheme key))))))
   
   
   (python-add-members py-module%

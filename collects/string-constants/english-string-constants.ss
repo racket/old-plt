@@ -948,7 +948,7 @@ please adhere to these guidelines:
  (vc-no-update-string "All installed PLT software packages are up-to-date")
 
  ;; special menu
- (special-menu "Special")
+ (special-menu "S&pecial")
  
  ;; large semi colon letters
  (insert-large-letters... "Insert Large Letters...")

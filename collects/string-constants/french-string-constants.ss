@@ -93,7 +93,7 @@
   (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
   
   (are-you-sure-you-want-to-switch-languages
-   "Ceci va changer le language utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")
+   "Ceci va changer le langage utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")
   
   (interact-with-drscheme-in-language "Interagir avec DrScheme en Français")
   
@@ -149,10 +149,10 @@
   (bug-report-field-environment "Environnement")
   (bug-report-field-tools "Outils")
   (bug-report-field-docs-installed "Documentations installées")
-  (bug-report-field-language "Language")
+  (bug-report-field-language "Langage")
   (bug-report-field-teachpacks "Teachpacks")
   (bug-report-field-collections "Collections")
-  (bug-report-field-human-language "Language humain")
+  (bug-report-field-human-language "Langage humain")
   (bug-report-field-version "Version")
   (bug-report-synthesized-information "Information Synthétisée")  ;; dialog title
   (bug-report-show-synthesized-info "Montrer l'information synthétisée")
@@ -401,8 +401,8 @@
   (take-a-tour "Faire un tour !")
   (release-notes "Notes pour la révision")
   (parenthetical-last-version "(version précédente ~a)")
-  (parenthetical-last-language "(language précédent ~a)")
-  (parenthetical-last-version/language "(version précédente ~a, language précédent ~a)")
+  (parenthetical-last-language "(langage précédent ~a)")
+  (parenthetical-last-version/language "(version précédente ~a, langage précédent ~a)")
   
   
   ;;; save file in particular format prompting.
@@ -799,7 +799,7 @@
   (collapse-menu-item-label "&Rassembler")
   
   ;;; language menu
-  (language-menu-name "&Language")
+  (language-menu-name "&Langage")
   
   ;;; scheme-menu
   (scheme-menu-name "&Scheme")
@@ -854,7 +854,7 @@
   
   ; the ~a is a language such as "module" or "algol60"
   (create-servlet-unsupported-language
-   "La création de servlets n'est pas possible avec le language ~a.")
+   "La création de servlets n'est pas possible avec le langage ~a.")
   
   ;;; buttons
   (execute-button-label "Exécuter")
@@ -898,8 +898,8 @@
   
   ;;; Language dialog
   (introduction-to-language-dialog
-   "Veuillez sélectionner un language. Un étudiant dans un cours d'introduction préférera le language par défaut.")
-  (language-dialog-title "Configurer le language")
+   "Veuillez sélectionner un langage. Un étudiant dans un cours d'introduction préférera le langage par défaut.")
+  (language-dialog-title "Configurer le langage")
   (case-sensitive-label "Différentier les lettres majuscules des minuscules.")
   (output-style-label "Style d'impression des résultats")
   (constructor-printing-style "Constructeur")
@@ -919,14 +919,14 @@
   (booleans-as-true/false-label "Imprimer les booléens sous forme true et false.")
   (show-details-button-label "Montrer les détails")
   (hide-details-button-label "Cacher les détails")
-  (choose-language-menu-item-label "Sélectionner le language...")
-  (revert-to-language-defaults "Retourner aux valeurs par défaut pour le language.")
-  (language-docs-button-label "Docs languages")
+  (choose-language-menu-item-label "Sélectionner le langage...")
+  (revert-to-language-defaults "Retourner aux valeurs par défaut pour le langage.")
+  (language-docs-button-label "Docs langages")
   (fraction-style "Style de fractions")
   (use-mixed-fractions "Fractions mêlées")
   (use-repeating-decimals "Décimales répétitives")
   (decimal-notation-for-rationals "Utiliser la notation décimale pour les nombres rationnels")
-  (please-select-a-language "Veuillez sélectionner un language")
+  (please-select-a-language "Veuillez sélectionner un langage")
   
   
   ;;; languages
@@ -942,18 +942,18 @@
   (advanced-one-line-summary "Intermédiaire plus lambda et mutation")
   (full-language "Complet") ;; also in the HtDP languages section
   (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
-  (r5rs-like-languages "R5RS et languages semblabes")
+  (r5rs-like-languages "R5RS et langages semblabes")
   (pretty-big-scheme "Assez gros Scheme")
   (pretty-big-scheme-one-line-summary "Graphique, plus de nombreuses bibliothèques standards")
   (r5rs-lang-name "Standard (R5RS)")
   (r5rs-one-line-summary "R5RS, de base")
   (expander "Expanseur") ; compression, compresseur, compresser => expansion, expanseur, expanser (expandeur, expander fait trop franglais et expandion n'existe pas)
   (expander-one-line-summary "Expanse les expressions au lieu de les évaluer")
-  (professional-languages "Languages professionnels")
-  (teaching-languages "Languages d'enseignement")
-  (experimental-languages "Languages expérimentaux")
+  (professional-languages "Langages professionnels")
+  (teaching-languages "Langages d'enseignement")
+  (experimental-languages "Langages expérimentaux")
   
-  (module-language-one-line-summary "Language avec module comme seule forme")
+  (module-language-one-line-summary "Langage avec module comme seule forme")
   
   
   ;;; debug language
@@ -991,7 +991,7 @@
   (profiling-show-profile "Montrer le profil")
   (profiling-hide-profile "Cacher le profil")
   (profiling-unknown-src "<< inconnu >>")
-  (profiling-no-information-available "Pas d'information de profilage disponible. Assurez vous que l'option de profilage ait été spécifiée pour ce language et que vous ayez exécuté le programme.")
+  (profiling-no-information-available "Pas d'information de profilage disponible. Assurez vous que l'option de profilage ait été spécifiée pour ce langage et que vous ayez exécuté le programme.")
   (profiling-clear? "Modifier le contenu de la fenêtre de définition invalide le profil. Voulez-vous continuer ?")
   
   ;; test coverage
@@ -1008,7 +1008,7 @@
   (next-stack-frames "Montrer les ~a appels de fonction suivants sur la pile.")
   
   ;;; welcoming message in repl
-  (language "Language")
+  (language "Langage")
   (custom "personnalisé")
   (teachpack "Teachpack")
   (welcome-to "Bienvenue dans")
@@ -1070,14 +1070,14 @@
   (module-browser-show-lib-paths/short "(require (lib ...))") ;; check box label in show module browser pane in drscheme window.
   (module-browser-refresh "Rafraîchir") ;; button label in show module browser pane in drscheme window.
   (module-browser-only-in-plt-and-module-langs
-   "Le navigateur de modules n'est disponible que pour les programmes écrits dans l'un des languages PLT ou dans le language \"module\", et seulement pour les programmes qui contiennent des modules.")
+   "Le navigateur de modules n'est disponible que pour les programmes écrits dans l'un des langages PLT ou dans le langage \"module\", et seulement pour les programmes qui contiennent des modules.")
   
   (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
   (happy-birthday-matthew "Joyeux anniversaire, Matthew !")
   (happy-birthday-shriram "Joyeux anniversaire, Shriram !")
   
-  (mrflow-using-default-language-title "Language par défaut utilisé")
-  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
+  (mrflow-using-default-language-title "Langage par défaut utilisé")
+  (mrflow-using-default-language "Le langage actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
   (mrflow-button-title "Analyzer")
   ;(mrflow-unknown-style-delta-error-title "Delta de Style de boîte inconnu")
   ;(mrflow-unknown-style-delta-error "Delta de style de boîte inconnu : ~a")
@@ -1093,8 +1093,8 @@
   ;(mrflow-syntax-exception "Exception syntaxique : ~a")
   ;(mrflow-unknown-exception-title "Exception inconnue")
   ;(mrflow-unknown-exception "Exception inconnue : ~a")
-  ;(mrflow-language-primitives-error-title "Erreur pour les primitives du language")
-  ;(mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language : ~a")
+  ;(mrflow-language-primitives-error-title "Erreur pour les primitives du langage")
+  ;(mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du langage : ~a")
   
   (snips-and-arrows-popup-menu-tack-all-arrows "Coller toutes les flèches")
   (snips-and-arrows-popup-menu-untack-all-arrows "Décoller toutes les flèches")

@@ -778,8 +778,10 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
       // But only shift down the extra line if doing so doesn't skip the whole area
       if (media->ScrollLineLocation(my) < find_dy + localy + fh)
 	sy = my;
+      else if (my > 0)
+	sy = my - 1;
       else
-	sy = max(0, my - 1);
+        sy = 0;
     } else
       sy = cy;
   } else

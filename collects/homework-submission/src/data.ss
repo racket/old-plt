@@ -7,12 +7,13 @@
   (define-struct session (username course))
 
   ;; A Course is a
-  ;; (make-course String String)
-  (define-struct course (name number))
+  ;; (make-course String String Symbol)
+  (define-struct course (name number position))
 
   (provide/contract
     (struct course ((name string?)
-                    (number string?)))
+                    (number string?)
+                    (position symbol?)))
     (struct session ((username string?)
                      (course (union course? not))))
     ))

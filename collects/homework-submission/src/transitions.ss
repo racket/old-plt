@@ -29,7 +29,7 @@
 
       ;; Action transition to the logged-in page.
       ;; ACTION: check that the username and password pair are correct.
-      ;; If the username and password match, send page-logged-in; otherwise
+      ;; If the username and password match, send page-courses; otherwise
       ;; send page-login with a message.
       (define-action-transition transition-log-in (username password)
         (cond
@@ -73,9 +73,8 @@
             ( else  
               (schedule-transaction
                 (lambda () (backend-update-password! username new-password1)))
-              (send/suspend/callback
-                (page-logged-in
-                  session "Your password has been changed.")) ))))
+              (main session "Your password has been changed.")
+               ))))
 
       ;; Direction transition to the user creation page.
       (define-transition transition-create-user
@@ -109,7 +108,8 @@
                                       (backend-create-account!
                                         name neu-id username password1)))
               (send/suspend/callback
-                (page-logged-in (make-session username #f)
+                (page-courses (make-session username #f)
+                              (schedule (lambda () (backend-courses username)))
                                 "Congrats, you've logged in.")) ))))
 
       ;; Direct transition to the courses selection page.
@@ -120,10 +120,34 @@
             (schedule (lambda () (backend-courses
                                    (session-username session)))))))
 
-      ;; Direct transition to the main page.
+      ;; Go to the main page for the position.
       (define-transition (transition-main session)
-        (send/suspend/callback
-          (page-logged-in session "Congrats, you've logged in.")))
+        (main session "Congrats, you've logged in."))
+
+      ;; Direct transition to the main student page.
+      (define-transition (transition-student-main session)
+        (main session "Congrats, you've logged in as a student."))
+
+      ;; Direct transition to the main non-student page.
+      (define-transition (transition-non-student-main session)
+        (main session "Congrats, you've logged in as a non-student."))
+
+      ;; Go to the main page for the position.
+      (define (main session message)
+        (let ((c (session-course session)))
+          (if (not c)
+            (send/suspend/callback
+              (page-courses
+                session
+                (schedule
+                  (lambda () (backend-courses (session-username session))))
+                message))
+            (let ((p (course-position c)))
+              (case p
+                ( (student)
+                  (send/suspend/callback (page-student-main session message)) )
+                ( else 
+                  (send/suspend/callback (page-non-student-main session message)) ))))))
 
       ))
 

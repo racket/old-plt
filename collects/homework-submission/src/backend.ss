@@ -93,13 +93,14 @@
   ;; The courses in which this user is enrolled.
   (define (courses username)
     (let ((q (send *connection* query
-                   (format (string-append "SELECT c.name, c.number "
-                                          "FROM courses c "
-                                          "JOIN course_people c_p "
-                                          "ON c.id = c_p.course_id "
-                                          "JOIN people p "
-                                          "ON p.id = c_p.person_id "
-                                          "WHERE p.username = '~a'")
+                   (format
+                     (string-append "SELECT c.name, c.number, c_p.position "
+                                    "FROM courses c "
+                                    "JOIN course_people c_p "
+                                    "ON c.id = c_p.course_id "
+                                    "JOIN people p "
+                                    "ON p.id = c_p.person_id "
+                                    "WHERE p.username = '~a'")
                            username))))
       (cond
         ( (RecordSet? q)
@@ -116,7 +117,8 @@
   ;; Convert a row represented as a vector into a course.
   (define (row->course r)
     (make-course (bytes->string/utf-8 (vector-ref r 0))
-                 (bytes->string/utf-8 (vector-ref r 1))))
+                 (bytes->string/utf-8 (vector-ref r 1))
+                 (string->symbol (bytes->string/utf-8 (vector-ref r 2)))))
 
   ;; exists? : String String -> Boolean
   ;; Is something known and existant in the database?

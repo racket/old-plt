@@ -29,7 +29,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Wrong Password"))))
         (login-page "Invalid username or password.")))
 
@@ -38,7 +38,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Test Password")))
               (list (hyperlink->k-url "Logout") '()))
         (login-page)))
@@ -48,7 +48,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Test Password"))))
         logged-in-page))
 
@@ -59,7 +59,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Test Password")))
               (list (hyperlink->k-url "Logout") '())
               'back
@@ -73,7 +73,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Test Password")))
               (list (hyperlink->k-url "Change Password") '())
               (list form->k-url
@@ -83,7 +83,7 @@ exec mzscheme -r "$0" "$@"
               (list (hyperlink->k-url "Logout") '()))
         (login-page))
       (void)
-      (backend:update-password! "The Test Username" "The Test Password"))
+      (backend:update-password! "The Test Student" "The Test Password"))
 
     (make-test-case
       (string-append
@@ -93,7 +93,7 @@ exec mzscheme -r "$0" "$@"
       (assert-output-response/suspended
         the-servlet
         (list (list form->k-url
-                    (list (cons 'username "The Test Username")
+                    (list (cons 'username "The Test Student")
                           (cons 'password "The Test Password")))
               (list (hyperlink->k-url "Change Password") '())
               (list form->k-url
@@ -111,7 +111,7 @@ exec mzscheme -r "$0" "$@"
               (list (hyperlink->k-url "Logout") '()))
         (login-page))
       (void)
-      (backend:update-password! "The Test Username" "The Test Password"))
+      (backend:update-password! "The Test Student" "The Test Password"))
 
     (make-test-case
       (string-append
@@ -130,7 +130,7 @@ exec mzscheme -r "$0" "$@"
               (list form->k-url
                     (list (cons 'name "Unmade User")
                           (cons 'neu-id "1234")
-                          (cons 'username "The Test Username") ;; Taken
+                          (cons 'username "The Test Student") ;; Taken
                           (cons 'password1 "unmade")
                           (cons 'password2 "unmade")))
               (list form->k-url
@@ -157,7 +157,7 @@ exec mzscheme -r "$0" "$@"
         the-servlet
         (list (list (hyperlink->k-url "Create Username") '())
               (list form->k-url
-                    (list (cons 'name "The Test Name")
+                    (list (cons 'name "The Test Student")
                           (cons 'neu-id "1111")
                           (cons 'username "not taken as a username")
                           (cons 'password1 "p")
@@ -166,9 +166,59 @@ exec mzscheme -r "$0" "$@"
       ;;; - "not taken as a username" must not be taken;
       ;;; - "The Test Name" must have a username.
       (backend:destroy-user! "not taken as a username")
-      ;;; "The Test Name"'s username must be "The Test Username"
+      ;;; "The Test Name"'s username must be "The Test Student"
       (backend:destroy-user! "not taken as a username")
       )
+
+    (make-test-case
+      (string-append
+        "A student logs in, selects his or her course, changes his or her "
+        "password, goes back to the course selection, selects the same course "
+        "and logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Student")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Change Password") '())
+              (list form->k-url
+                    (list (cons 'old-password "The Test Password")
+                          (cons 'new-password1 "The New Password")
+                          (cons 'new-password2 "The New Password")))
+              (list (hyperlink->k-url "Courses") '())
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      ;; setup
+      (void)
+      ;; cleanup
+      (backend:update-password! "The Test Student" "The Test Password"))
+
+    (make-test-case
+      (string-append
+        "A non-student logs in, selects his or her course, changes his or her "
+        "password, goes back to the course selection, selects the same course "
+        "and logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test NonStudent")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Change Password") '())
+              (list form->k-url
+                    (list (cons 'old-password "The Test Password")
+                          (cons 'new-password1 "The New Password")
+                          (cons 'new-password2 "The New Password")))
+              (list (hyperlink->k-url "Courses") '())
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      ;; setup
+      (void)
+      ;; cleanup
+      (backend:update-password! "The Test NonStudent" "The Test Password"))
 
     ))
 
@@ -242,29 +292,44 @@ exec mzscheme -r "$0" "$@"
 (define (cleanup)
   (db-do "BEGIN")
   (db-do "DELETE FROM people WHERE name = 'Unmade User'")
-  (db-do "DELETE FROM people WHERE name = 'The Test User'")
+  (db-do "DELETE FROM people WHERE name = 'The Test Student'")
+  (db-do "DELETE FROM people WHERE name = 'The Test NonStudent'")
   (db-do "DELETE FROM courses WHERE name = 'The Test Course'")
   (db-do (string-append
            "DELETE FROM course_people WHERE "
-           "person_id IN (SELECT id FROM people WHERE name = 'Unmade User' OR name = 'The Test User') AND "
-           "course_id = (SELECT id FROM courses WHERE name = 'The Test Course')"))
+           "person_id IN "
+           "(SELECT id FROM people "
+           "WHERE name = 'Unmade User' "
+           "OR name = 'The Test Student' "
+           "OR name = 'The Test NonStudent') "
+           "AND course_id = "
+           "(SELECT id FROM courses WHERE name = 'The Test Course')"))
   (db-do "COMMIT"))
 
 (cleanup)
 
 ;; Add
 (backend:add-user! "Unmade User" 1234)
-(backend:add-user! "The Test User" 1111)
-(backend:create-account! "The Test User" 1111 "The Test Username" "The Test Password")
+(backend:add-user! "The Test Student" 1111)
+(backend:add-user! "The Test NonStudent" 1111)
+(backend:create-account! "The Test Student" 1111 "The Test Student" "The Test Password")
+(backend:create-account! "The Test NonStudent" 1111 "The Test NonStudent" "The Test Password")
 (db-do "INSERT INTO courses (name, number) VALUES ('The Test Course','CSU000')")
 (db-do (string-append
-         "INSERT INTO course_people (person_id, course_id) "
+         "INSERT INTO course_people (person_id, course_id, position) "
          "VALUES ((SELECT id FROM people WHERE name = 'Unmade User'), "
-         "(SELECT id FROM courses WHERE name = 'The Test Course'))"))
+         "(SELECT id FROM courses WHERE name = 'The Test Course'), "
+         "'student')"))
 (db-do (string-append
-         "INSERT INTO course_people (person_id, course_id) "
-         "VALUES ((SELECT id FROM people WHERE name = 'The Test User'), "
-         "(SELECT id FROM courses WHERE name = 'The Test Course'))"))
+         "INSERT INTO course_people (person_id, course_id, position) "
+         "VALUES ((SELECT id FROM people WHERE name = 'The Test Student'), "
+         "(SELECT id FROM courses WHERE name = 'The Test Course'), "
+         "'student')"))
+(db-do (string-append
+         "INSERT INTO course_people (person_id, course_id, position) "
+         "VALUES ((SELECT id FROM people WHERE name = 'The Test NonStudent'), "
+         "(SELECT id FROM courses WHERE name = 'The Test Course'), "
+         "'instructor')"))
 
 ;; The test(s)
 (test/text-ui test-servlet)

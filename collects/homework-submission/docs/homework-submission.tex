@@ -15,10 +15,9 @@ Revision 4.
 
 The homework submission servlet is a tool for students to electronically submit
 homework assignments. It supports username and password authentication,
-changing passwords, logging out, account creation, and courses.
-%and a separation of students from non-students.
-Future goals are file submission, task assignment, and
-online grading.
+changing passwords, logging out, account creation, and courses.  and a
+separation of students from non-students. Future goals are file submission,
+task assignment, and online grading.
 
 \section{Use Cases}\label{sec:usecases}
 
@@ -47,17 +46,17 @@ then logs out.}
 \item{The Web server is restarted by the TA or instructor.}
 \end{itemize}
 
-%\subsubsection{New Use Cases}\label{subsubsec:newusecases}
-%\begin{itemize}
-%\item{A user creates an account, then logs out.}
-%\end{itemize}
+\subsubsection{New Use Cases}\label{subsubsec:newusecases}
+\begin{itemize}
+\item{A user creates an account, then logs out.}
+\end{itemize}
 
 \section{Goals}\label{sec:goals}
 
 The feature goals of this iteration are:
 
 \begin{itemize}
-\item{Multiple courses.}
+\item{A distinction between students and non-students.}
 \end{itemize}
 
 \section{Architecture}\label{sec:arch}
@@ -133,19 +132,14 @@ page-login : (() (xexpr?) . opt-> . xexpr/callback?)
 Prompt the user for his or her username and password.
 
 \begin{verbatim}
-page-log-in  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+page-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
 \end{verbatim}
-Confirm the user has logged in.
+Confirm the user has logged in as a student.
 
-%\begin{verbatim}
-%page-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
-%\end{verbatim}
-%Confirm the user has logged in as a student.
-
-%\begin{verbatim}
-%page-non-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
-%\end{verbatim}
-%Confirm the user has logged in as a non-student.
+\begin{verbatim}
+page-non-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+\end{verbatim}
+Confirm the user has logged in as a non-student.
 
 \begin{verbatim}
 page-change-password : ((session?) (xexpr?) . opt-> . 
@@ -224,22 +218,16 @@ transition-courses : (session? . -> .
 Direct transition to the courses selection page.
 
 \begin{verbatim}
-transition-main : (session? . -> .
-                    (request? . -> . xexpr/callback?))
+transition-student-main : (session? . -> .
+                            (request? . -> . xexpr/callback?))
 \end{verbatim}
-Direct transition to the main page.
+Direct transition to the main page for a student.
 
-%\begin{verbatim}
-%transition-student-main : (session? . -> .
-                            %(request? . -> . xexpr/callback?))
-%\end{verbatim}
-%Direct transition to the main page for a student.
-
-%\begin{verbatim}
-%transition-non-student-main : (session? . -> .
-                                %(request? . -> . xexpr/callback?))
-%\end{verbatim}
-%Direct transition to the main page for a non-student.
+\begin{verbatim}
+transition-non-student-main : (session? . -> .
+                                (request? . -> . xexpr/callback?))
+\end{verbatim}
+Direct transition to the main page for a non-student.
 
 \begin{verbatim}
 transition-log-in : (request? . -> . xexpr/callback??)

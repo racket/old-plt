@@ -6,14 +6,17 @@
 
   (define-signature pages^
     (page-login
-     page-logged-in
      page-change-password
      page-create-user
-     page-courses))
+     page-courses
+     page-student-main
+     page-non-student-main))
 
   (define-signature transitions^
     (transition-login
      transition-main
+     transition-student-main
+     transition-non-student-main
      transition-log-in
      transition-log-out
      transition-change-password

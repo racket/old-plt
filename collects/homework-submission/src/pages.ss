@@ -27,10 +27,18 @@
                 (submit-button "Log in"))
           (p (hyperlink transition-create-user "Create Username"))))
 
-      ;; Confirm the user has logged in.
-      (define page-logged-in
+      ;; Confirm the student has logged in.
+      (define page-student-main
         (page (session)
-          "You Are Logged In"
+          "You Are Logged In As A Student"
+          (p (hyperlink (transition-courses session) "Courses"))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Confirm the non-student has logged in.
+      (define page-non-student-main
+        (page (session)
+          "You Are Logged In As A Non-Student"
           (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
@@ -67,7 +75,7 @@
         (page (session courses)
           "Courses"
           (html-table "Courses in which you are enrolled"
-                      (list "Name" "Number")
+                      (list "Name" "Number" "Position")
                       (map
                         (lambda (c)
                           `(tr (td ,(hyperlink
@@ -76,7 +84,11 @@
                                           (session-username session)
                                           c))
                                       (course-name c)))
-                               (td ,(course-number c))))
+                               (td ,(course-number c))
+                               (td ,(if (symbol=? (course-position c)
+                                                  'student)
+                                      "Student"
+                                      "Non-student"))))
                         courses))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))

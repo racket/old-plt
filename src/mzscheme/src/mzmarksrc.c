@@ -648,18 +648,6 @@ mark_comp_info {
   gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
 }
 
-mark_cont_mark {
- mark:
-  Scheme_Cont_Mark *cm = (Scheme_Cont_Mark *)p;
-
-  gcMARK(cm->key);
-  gcMARK(cm->val);
-  gcMARK(cm->cached_chain);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
-}
-
 mark_saved_stack {
  mark:
   Scheme_Saved_Stack *saved = (Scheme_Saved_Stack *) p;

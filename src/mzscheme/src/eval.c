@@ -1793,7 +1793,7 @@ void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
   d->cont_mark_pos = MZ_CONT_MARK_POS;
   d->cont_mark_stack = MZ_CONT_MARK_STACK;
 
-  MZ_CONT_MARK_POS++;
+  MZ_CONT_MARK_POS += 2;
 }
 
 void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
@@ -1847,7 +1847,7 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
       /* Note: we perform allocations before changing p to avoid GC trouble,
 	 since MzScheme adjusts a thread's cont_mark_stack_segments on GC. */
       segs = MALLOC_N(Scheme_Cont_Mark *, c + 1);
-      seg = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+      seg = scheme_malloc_allow_interior(sizeof(Scheme_Cont_Mark) * SCHEME_MARK_SEGMENT_SIZE);
       segs[c] = seg;
 
       memcpy(segs, p->cont_mark_stack_segments, c * sizeof(Scheme_Cont_Mark *));
@@ -1861,12 +1861,9 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
     MZ_CONT_MARK_STACK++;
   }
 
-#ifdef MZTAG_REQUIRED
-  cm->type = scheme_rt_cont_mark;
-#endif
   cm->key = key;
   cm->val = val;
-  cm->pos = MZ_CONT_MARK_POS;
+  cm->pos = MZ_CONT_MARK_POS; /* always odd */
   cm->cached_chain = NULL;
 }
 
@@ -1875,7 +1872,7 @@ void scheme_temp_dec_mark_depth()
 #ifdef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
 #endif
-  --MZ_CONT_MARK_POS;
+  MZ_CONT_MARK_POS -= 2;
 }
 
 void scheme_temp_inc_mark_depth()
@@ -1883,7 +1880,7 @@ void scheme_temp_inc_mark_depth()
 #ifdef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
 #endif
-  MZ_CONT_MARK_POS++;
+  MZ_CONT_MARK_POS += 2;
 }
 
 static Scheme_Object *do_apply_known_k(void)
@@ -2002,7 +1999,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 
   p->runstack_saved = saved;
   p->runstack_size = size;
-  MZ_RUNSTACK_START = scheme_malloc_middleable(sizeof(Scheme_Object*) * size);
+  MZ_RUNSTACK_START = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * size);
   MZ_RUNSTACK = MZ_RUNSTACK_START + size;
   
   v = k();
@@ -2093,7 +2090,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
 #define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
-  MZ_CONT_MARK_POS++;
+  MZ_CONT_MARK_POS += 2;
   old_runstack = RUNSTACK;
   old_cont_mark_stack = MZ_CONT_MARK_STACK;
 
@@ -2108,7 +2105,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       p->ku.k.i2 = -1;
       
       UPDATE_THREAD_RSPTR();
-      --MZ_CONT_MARK_POS;
+      MZ_CONT_MARK_POS -= 2;
       return scheme_enlarge_runstack(100 * TAIL_COPY_THRESHOLD, (void *(*)(void))do_eval_k);
     }
 
@@ -2180,9 +2177,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	p->ku.k.i2 = -1;
 
 	UPDATE_THREAD_RSPTR();
-	--MZ_CONT_MARK_POS;
+	MZ_CONT_MARK_POS -= 2;
 	v = (Scheme_Object *)scheme_enlarge_runstack(data->max_let_depth, (void *(*)(void))do_eval_k);
-	MZ_CONT_MARK_POS++;
+	MZ_CONT_MARK_POS += 2;
 
 	goto returnv;
       }
@@ -2906,7 +2903,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   MZ_RUNSTACK = old_runstack;
   MZ_CONT_MARK_STACK = old_cont_mark_stack;
-  --MZ_CONT_MARK_POS;
+  MZ_CONT_MARK_POS -= 2;
 
   DEBUG_CHECK_TYPE(v);
 
@@ -3464,7 +3461,6 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_rt_compile_info, mark_comp_info);
-  GC_REG_TRAV(scheme_rt_cont_mark, mark_cont_mark);
   GC_REG_TRAV(scheme_rt_saved_stack, mark_saved_stack);
   GC_REG_TRAV(scheme_rt_eval_in_env, mark_eval_in_env);
 }

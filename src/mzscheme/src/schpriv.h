@@ -499,11 +499,12 @@ typedef struct Scheme_Saved_Stack {
 } Scheme_Saved_Stack;
 
 typedef struct Scheme_Cont_Mark {
-  MZTAG_IF_REQUIRED
+  /* Precise GC: We leave out the tag and make sure everything
+     is a pointer, then allocated with GC_malloc_allow_interior */
   Scheme_Object *key;
   Scheme_Object *val;
   struct Scheme_Cont_Mark_Chain *cached_chain;
-  MZ_MARK_POS_TYPE pos;
+  MZ_MARK_POS_TYPE pos; /* Odd numbers - to they look like non-pointers */
 } Scheme_Cont_Mark;
 
 typedef struct Scheme_Cont_Mark_Chain {

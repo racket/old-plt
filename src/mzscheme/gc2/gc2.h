@@ -149,10 +149,10 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
 /*
    Like plain malloc: pointer-free, never collected. */
 
-void *GC_malloc_middleable(size_t size_in_bytes);
+void *GC_malloc_allow_interior(size_t size_in_bytes);
 /*
    Alloc an array of pointers (typically large), and recognize
-   pointers into the middle of the array or just past the end of the
+   pointers into the middle of the array, or just past the end of the
    array. */
 
 void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val);

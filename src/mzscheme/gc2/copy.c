@@ -1755,7 +1755,7 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
 }
 
 /* Array of pointers: */
-void *GC_malloc_middleable(size_t size_in_bytes)
+void *GC_malloc_allow_interior(size_t size_in_bytes)
 {
   return malloc_untagged(size_in_bytes, 0xA0000000);
 }

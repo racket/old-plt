@@ -1069,7 +1069,7 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_envunbox GC_malloc_one_tagged
 # define scheme_malloc_weak GC_malloc_weak
 # define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
-# define scheme_malloc_middleable GC_malloc_middleable
+# define scheme_malloc_allow_interior GC_malloc_allow_interior
 #else
 # ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_tagged(size_t);
@@ -1088,7 +1088,7 @@ extern void *scheme_malloc_envunbox(size_t);
 #  define scheme_malloc_uncollectable_tagged scheme_malloc_uncollectable
 #  define scheme_malloc_envunbox scheme_malloc
 # endif
-# define scheme_malloc_middleable scheme_malloc
+# define scheme_malloc_allow_interior scheme_malloc
 #endif
 
 

@@ -1867,7 +1867,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cmcount = (long)MZ_CONT_MARK_STACK;
   {
     Scheme_Cont_Mark *cm;
-    cm = MALLOC_N_RT(Scheme_Cont_Mark, cmcount);
+    cm = MALLOC_N(Scheme_Cont_Mark, cmcount);
     cont->cont_mark_stack_copied = cm;
   }
   while (cmcount--) {
@@ -1961,7 +1961,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
 	  if (!segs[needed]) {
 	    Scheme_Cont_Mark *cm;
-	    cm = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+	    cm = scheme_malloc_allow_interior(sizeof(Scheme_Cont_Mark) * SCHEME_MARK_SEGMENT_SIZE);
 	    segs[needed] = cm;
 	  }
 	}

@@ -74,8 +74,8 @@
              (opt-lambda (source (line false) (column false) (position false))
                #;((is-a?/c text%) . -> . syntax-object?)
                ;; Creates a single syntax object out of the text or raises read-error
-               (define (text->syntax-object text)
-                 (match (text->syntax-objects text)
+               (define (text->syntax-object text always-scheme?)
+                 (match (text->syntax-objects text always-scheme?)
                    [() (raise-read-error (string-constant test-case-empty-error)
                                          source line false position 1)]
                    [(stx) stx]
@@ -86,22 +86,24 @@
                                       (syntax-column next)
                                       (syntax-position next)
                                       (syntax-span next))]))
+
                (if enabled?
-                     (with-syntax ([to-test-stx (syntax-property (text->syntax-object to-test)
+                     (with-syntax ([to-test-stx (syntax-property (text->syntax-object to-test #f)
                                                                  'stepper-test-suite-hint
                                                                  true)]
                                    [update-stx (lambda (x) (update x))] ; eta public method
                                    [set-actuals-stx set-actuals]
                                    [w printf])
                        (if error-box?
-                           (with-syntax ([exn-pred-stx (text->syntax-object should-raise)]
+                           (with-syntax ([exn-pred-stx (text->syntax-object should-raise #f)]
                                          [exn-handler-stx
                                           (if (empty-text? error-message)
                                               #'(lambda (v) true)
                                               #`(lambda (v)
                                                   (equal? (exn-message v)
                                                           #,(text->syntax-object
-                                                             error-message))))])
+                                                             error-message
+							     #f))))])
                              (syntax/loc (datum->syntax-object
                                           false 'ignored (list source line column position 1))
                                (test-error-case to-test-stx
@@ -109,8 +111,8 @@
                                                 exn-handler-stx
                                                 update-stx
                                                 set-actuals-stx)))
-                           (with-syntax ([exp-stx (text->syntax-object expected)]
-                                         [pred-stx (text->syntax-object predicate)])
+                           (with-syntax ([exp-stx (text->syntax-object expected #t)]
+                                         [pred-stx (text->syntax-object predicate #t)])
                              (syntax/loc (datum->syntax-object
                                           false 'ignored (list source line column position 1))
                                (test-case pred-stx
@@ -199,7 +201,7 @@
                     (enabled? enabled?)
                     (actual-show? actual-show?)
                     (collapsed? collapsed?)
-                    (show-predicate? show-right-pane?)
+                    (show-right-pane? show-right-pane?)
                     (error-box? error-box?)
                     (to-test new-to-test)
                     (expected new-expected)

@@ -10,6 +10,8 @@
   
   (provide text->syntax-object@
            text->syntax-object^)
+
+  (define top-id #'here)
   
   (define-signature text->syntax-object^ (text->syntax-objects))
   
@@ -19,7 +21,7 @@
       
       #;((is-a?/c text%) . -> . (listof syntax-object?))
       ;; a syntax object representing the text with the color of the given object
-      (define (text->syntax-objects text)
+      (define (text->syntax-objects text always-scheme?)
         (let ([port (open-input-text-editor text)])
           #;(-> (listof syntax-object?))
           ;; Reads all the syntax objects for the text%
@@ -34,10 +36,16 @@
                     (drscheme:language-configuration:language-settings-settings
                      language-settings)])
               (if (drscheme:language-configuration:language-settings? language-settings)
-                  (let ([thunk (send language front-end/interaction
-                                     (open-input-text-editor text)
-                                     settings
-                                     (drscheme:teachpack:new-teachpack-cache '()))])
+                  (let ([thunk (if always-scheme?
+				   (let ([p (open-input-text-editor text)])
+				     (lambda () (let ([v (read-syntax (object-name p) p)])
+						  (if (identifier? v)
+						      (datum->syntax-object top-id (syntax-e v) v v)
+						      v))))
+				   (send language front-end/interaction
+					 (open-input-text-editor text)
+					 settings
+					 (drscheme:teachpack:new-teachpack-cache '())))])
                     (let loop ()
                       (let ([expr (thunk)])
                         (cond [(eof-object? expr) empty]

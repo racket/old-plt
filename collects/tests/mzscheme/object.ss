@@ -800,4 +800,19 @@
 (test #t object? (new object%))
 (test #t object? (new (class object% () (init-field x) (super-instantiate ())) (x 1)))
 
+;; ------------------------------------------------------------
+;; `field' tests
+
+
+(syntax-test #'(get-field))
+(syntax-test #'(get-field a))
+(syntax-test #'(get-field 1 b))
+(syntax-test #'(get-field a b c))
+
+(error-test #'(get-field x (new (class object% (define x 1) (super-new))))
+            exn:application:mismatch?)
+(error-test #'(get-field x (new object%))
+            exn:application:mismatch?)
+(test #t zero? (get-field x (new (class object% (field [x 0]) (super-new)))))
+
 (report-errs)

@@ -59,11 +59,11 @@
 		       (vector-ref param-vector 1)))
 		    parameters))])
 
-  (let ([has-wx? (defined? 'wx@)]
-	[evt-param (and has-wx? 
-			(wx:eventspace-parameterization (wx:make-eventspace)))]
-	[new-param (make-parameterization)]
-	[cur-param (current-parameterization)])
+  (let* ([has-wx? (defined? 'wx@)]
+	 [evt-param (and has-wx? 
+			 (wx:eventspace-parameterization (wx:make-eventspace)))]
+	 [new-param (make-parameterization)]
+	 [cur-param (current-parameterization)])
 
     (test #f eq? cur-param new-param)
     (when has-wx?

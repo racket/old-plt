@@ -156,15 +156,22 @@
 		  (let ((r (resolve app-pos env vocab)))
 		    (cond
 		      ((macro-resolution? r)
-			(let* ((rewriter (macro-resolution-rewriter r))
-				(m (new-mark))
-				(marker (mark-expression m))
-				(rewritten (rewriter expr env))
-				(structurized (structurize-syntax
-						rewritten expr (list m)))
-				(expanded (expand-expr structurized env
-					    attributes vocab)))
-			  (set-macro-origin expanded app-pos)))
+			(with-handlers (((lambda (e)
+					   (and (exn? e)
+					     (not (exn:user? e))))
+					  (lambda (exn)
+					    (internal-error expr
+					      "Macro expansion error: ~a"
+					      exn))))
+			  (let* ((rewriter (macro-resolution-rewriter r))
+				  (m (new-mark))
+				  (marker (mark-expression m))
+				  (rewritten (rewriter expr env))
+				  (structurized (structurize-syntax
+						  rewritten expr (list m)))
+				  (expanded (expand-expr structurized env
+					      attributes vocab)))
+			    (set-macro-origin expanded app-pos))))
 		      ((micro-resolution? r)
 			((micro-resolution-rewriter r)
 			  expr env attributes vocab))

@@ -1,10 +1,10 @@
 (module planet-web-page mzscheme
   
   (require "../util.ss"
+           "planet-getinfo.ss"
            "../server-config.ss"
            (lib "xml.ss" "xml")
-           (lib "list.ss")
-           (lib "getinfo.ss" "setup"))
+           (lib "list.ss"))
   
   (provide build-web-page-file)
   

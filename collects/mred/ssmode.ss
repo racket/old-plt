@@ -733,7 +733,7 @@
 			    (end-edit-sequence))
 		     (wx:bell))
 		 #t))]
-	    [standard-style-delta scheme-mode-standard-style-delta]
+	    [standard-style-delta #f]
 	    [file-format wx:const-media-ff-text]
 	    [install
 	     (lambda (edit)

@@ -409,6 +409,7 @@
 		   ([(loc safe? border
 			  border-frontier-neighbors
 			  border-counts
+			  thunk
 			  k)
 		     (apply values escape-info)])
 		   (if (and (let* ([loc-assn (cdr (assq loc assns))])
@@ -419,7 +420,7 @@
 					       border-frontier-neighbors
 					       border-counts))
 			 ; show counterexample, then escape
-		       (k (counterexample-prompt assns loc safe?))
+		       (k (counterexample-prompt assns loc safe? thunk))
 		       (list assns)))
 		  (list assns))
 	      (let* ([curr (car fr)]
@@ -521,7 +522,7 @@
 				   #f))))])
 		  unsafe-count-consistent?))))]
        [counterexample-prompt
-	(lambda (assignment loc safe?)
+	(lambda (assignment loc safe? thunk)
 	  (let ([mbox-result
 		 (message-box/custom 
 		  *progname*
@@ -578,10 +579,9 @@
 				  (set! unsafe-needed (sub1 unsafe-needed)))
 				(send loc set-counterexample-safe! #t))))))
 	       (send canvas set-in-counterexample! #t)
-	       (draw)
-	       #t]
-	      [(2) #f]
-	      [(3) #t])))]
+	       (draw)]
+	      [(2) (thunk)]
+	      [(3) (void)])))]
        [forced-location?
         ; returns #t if loc is required to be safe?
 	(lambda (loc safe?)
@@ -590,7 +590,7 @@
 	   [(= pirates-left num-concealed) (not safe?)]
 	   [else #f]))]
        [find-consistent-frontier
-	(lambda (loc safe?)
+	(lambda (loc safe? thunk)
 	  (let/ec k
             (let* ([fr (frontier-list)]
 		   [assns null]
@@ -607,10 +607,9 @@
 		     border
 		     border-frontier-neighbors
 		     border-counts
+		     thunk
 		     k))
-	      ; we don't use the result
-	      ; either we escape out, or return #f
-	      #f)))])
+	      (thunk))))])
       (public*
        [ww-message
 	(lambda (s)
@@ -724,13 +723,12 @@
 		      (expose-thunk)]
 		     [(forced-location? loc (not safe?))
 		      (counterexample-prompt (list (cons loc safe?))
-					     loc safe?)]
+					     loc safe? expose-thunk)]
 		     [(in-frontier? loc)
 		      ; if there's any consistent frontier
 		      ;  with the opposite assertion
 		      ;  the assertion must be wrong
-		      (unless (find-consistent-frontier loc safe?)
-			      (expose-thunk))]
+		      (find-consistent-frontier loc safe? expose-thunk)]
 		     [else ; special cases for beyond frontier
 		      (cond
 		       [(uniform-consistent-frontiers)
@@ -740,11 +738,11 @@
 				    (car frontiers))])
 			    (if (= k pirates-left)
                                 ; no pirates beyond frontier
-				(if safe?
+				(when safe?
 				    (expose-thunk)
 				    (counterexample-prompt 
 				     (car frontiers)
-				     loc #f))
+				     loc #f expose-thunk))
 				(let ([b-f (beyond-frontier)])
 				  (if (= (- pirates-left k)
 					 (length b-f))
@@ -759,16 +757,18 @@
 						(cons c #t))
 					      b-f)
 					     (car frontiers)))
-					   loc #t)
+					   loc #t
+					   expose-thunk)
 					  (expose-thunk))
                                       ; must be a counterexample
 				      (counterexample-prompt 
 				       (cons
 					(cons loc safe?)
 					(car frontiers))
-				       loc safe?))))))]
+				       loc safe?
+				      expose-thunk))))))]
 		       [else ; a counterexample must exist
-			(find-consistent-frontier loc safe?)])])
+			(find-consistent-frontier loc safe? expose-thunk)])])
                     ; guess, not assertion
 		    (cond
 		     [(or (forced-location? loc safe?)

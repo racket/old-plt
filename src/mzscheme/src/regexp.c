@@ -1304,8 +1304,7 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
   destalloc = 2 * sourcelen;
   destlen = 0;
   dest = (char *)scheme_malloc_atomic(destalloc + 1);
-	
-
+  
   srcpos = 0;
   while (srcpos < sourcelen) {
     c = src[srcpos++];

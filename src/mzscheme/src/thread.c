@@ -3648,6 +3648,8 @@ void scheme_pop_kill_action()
 
 /* Forward decl: */
 static void transitive_resume(Scheme_Object *resumes);
+static void transitive_promote(Scheme_Thread *p, Scheme_Custodian *c);
+static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c);
 
 static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
 {
@@ -3779,9 +3781,11 @@ static void transitive_resume(Scheme_Object *resumes)
     
     p->ku.k.p1 = resumes;
 
+    p->suspend_break++;
     scheme_start_atomic();
     scheme_handle_stack_overflow(transitive_resume_k);
     scheme_end_atomic_no_swap();
+    --p->suspend_break;
 
     return;
   }
@@ -3798,11 +3802,67 @@ static void transitive_resume(Scheme_Object *resumes)
   }
 }
 
+static Scheme_Object *transitive_promote_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Thread *pp = (Scheme_Thread *)p->ku.k.p1;
+  Scheme_Custodian *c = (Scheme_Custodian *)p->ku.k.p2;
+  
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+
+  transitive_promote(pp, c);
+
+  return scheme_true;
+}
+
+static void transitive_promote(Scheme_Thread *p, Scheme_Custodian *c)
+{
+  Scheme_Hash_Table *ht;
+  Scheme_Object *t;
+  int i;
+
+#ifdef DO_STACK_CHECK
+#include "mzstkchk.h"
+  {
+    Scheme_Thread *pp = scheme_current_thread;
+    
+    pp->ku.k.p1 = p;
+    pp->ku.k.p2 = c;
+
+    pp->suspend_break++;
+    scheme_start_atomic();
+    scheme_handle_stack_overflow(transitive_promote_k);
+    scheme_end_atomic_no_swap();
+    --pp->suspend_break;
+
+    return;
+  }
+#endif
+
+  if (!p->transitive_resumes)
+    return;
+
+  ht = (Scheme_Hash_Table *)p->transitive_resumes;
+  
+  for (i = ht->size; i--; ) {
+    if (ht->vals[i]) {
+      t = SCHEME_PTR_VAL(ht->keys[i]);
+      if (t)
+	promote_thread((Scheme_Thread *)t, c);
+    }
+  }
+}
+
 static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
 {
   Scheme_Custodian *c, *cx;
   Scheme_Custodian_Reference *mref;  
   Scheme_Object *l;
+
+  /* This function also handles transitive promotion. Every transitive
+     target for p always has at least the custodians of p, so if we don't
+     add a custodian to p, we don't need to check the rest. */
   
   if (!p->mref || !CUSTODIAN_FAM(p->mref)) {
     /* The thread has no running custodian, so fall through to
@@ -3866,6 +3926,8 @@ static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
 	    }
 	  }
 
+	  transitive_promote(p, to_c);
+
 	  return;
 	}
       }
@@ -3875,6 +3937,8 @@ static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
       mref = scheme_add_managed(to_c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
       l = scheme_make_pair((Scheme_Object *)mref, p->extra_mrefs);
       p->extra_mrefs = l;
+
+      transitive_promote(p, to_c);
       return;
     }
   }
@@ -3886,6 +3950,8 @@ static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
 #ifdef MZ_PRECISE_GC
   GC_register_thread(p, to_c);
 #endif
+  
+  transitive_promote(p, to_c);
 }
 
 static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])

@@ -732,9 +732,11 @@ regoptail(char *p, char *val)
 
 static char *l_strchr(char *a, int l, int c)
 {
-  for (; l--; ) {
-    if (a[l] == c)
-      return a + l;
+  int i;
+
+  for (i = 0; i < l; i++) {
+    if (a[i] == c)
+      return a + i;
   }
 
   return NULL;

@@ -175,7 +175,9 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     Scheme_Complex *c1 = (Scheme_Complex *)obj1;
     Scheme_Complex *c2 = (Scheme_Complex *)obj2;
     return scheme_eqv(c1->r, c2->r) && scheme_eqv(c1->i, c2->i);
-  } else
+  } else if (t1 == scheme_char_type)
+    return SCHEME_CHAR_VAL(obj1) == SCHEME_CHAR_VAL(obj2);
+  else
     return 0;
 }
 

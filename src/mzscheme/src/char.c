@@ -57,6 +57,7 @@ static Scheme_Object *integer_to_char (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_titlecase (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_map_list (int argc, Scheme_Object *argv[]);
 
 void scheme_init_portable_case(void)
 {
@@ -221,6 +222,12 @@ void scheme_init_char (Scheme_Env *env)
 						      "char-titlecase", 
 						      1, 1, 1),
 			     env);
+
+  scheme_add_global_constant("make-char-mapped-list", 
+			     scheme_make_prim_w_arity(char_map_list, 
+						      "make-char-mapped-list", 
+						      0, 0),
+			     env);
 }
 
 Scheme_Object *scheme_make_char(mzchar ch)
@@ -356,3 +363,18 @@ GEN_RECASE(char_upcase, "char-upcase", scheme_toupper)
 GEN_RECASE(char_downcase, "char-downcase", scheme_tolower)
 GEN_RECASE(char_titlecase, "char-titlecase", scheme_totitle)
 
+static Scheme_Object *char_map_list (int argc, Scheme_Object *argv[])
+{
+  int i;
+  Scheme_Object *l = scheme_null;
+
+# define icons scheme_make_immutable_pair
+
+  for (i = NUM_UCHAR_RANGES - 2; i >= 0; i -= 2) {
+    l = icons(icons(scheme_make_integer_value(mapped_uchar_ranges[i]),
+		    scheme_make_integer_value(mapped_uchar_ranges[i+1])),
+	      l);
+  }
+
+  return l;
+}

@@ -1,6 +1,13 @@
 
 ;; This script parses UnicodeData.txt (the standard Unicode database,
-;; available from the web), and produces schuchar.inc.
+;; available from the web), and produces schuchar.inc, which is 
+;; used by scheme_isalpha, etc., and thus `char-alphabetic?', etc.
+
+;; Run as
+;;   mzscheme -r mk-uchar.ss
+;; in the script's directory, and have a copy of UnicodeData.txt
+;; in the same directory. The file schuchar.inc will be
+;; overwritten.
 
 (require (lib "list.ss"))
 
@@ -31,6 +38,8 @@
 	  r))))
 
 (define (combine up down title . l)  
+  ;; The scheme_is...() macros in scheme.h must match
+  ;;  the bit layout produced here
   (bitwise-ior
    (arithmetic-shift (indirect ups up) 12)
    (arithmetic-shift (indirect downs down) 18)
@@ -45,6 +54,13 @@
 
 (define hexes (map char->integer (string->list "0123456789abcdefABCDEF")))
 
+;; In principle, adjust this number to tune the result, but
+;;  the macros for accessing the table (in scheme.h) need to
+;;  be updated accordingly.
+;; In practice, it's unlikely that anything will ever work
+;;  much better than 8. (At the time this was implemented,
+;;  9 produced a table 10% smaller, but I left it at 8 
+;;  because it feels more intuitively correct.)
 (define low-bits 8)
 
 (define low (sub1 (expt 2 low-bits)))
@@ -53,7 +69,30 @@
 
 (define top (make-vector hi-count #f))
 
+(define range-bottom 0)
+(define range-top -1)
+(define ranges null)
+
+(define ccount 0)
+
 (define (map1 c v)
+  (set! ccount (add1 ccount))
+  (if (= c (add1 range-top))
+      (set! range-top c)
+      (begin
+	;; Drop surrogate from range.
+	;;  At the time of implemenation, the following
+	;;  was never executed, because #D7FF wasn't mapped:
+	(when (and (< range-bottom #xD800)
+		   (> range-top #xD800))
+	  (set! ranges (cons (cons range-bottom #xD7FF) ranges))
+	  (set! range-bottom #xE000))
+	;; ... but this one was executed.
+	(when (= range-bottom #xD800)
+	  (set! range-bottom #xE000))
+	(set! ranges (cons (cons range-bottom range-top) ranges))
+	(set! range-bottom c)
+	(set! range-top c)))
   (let ([top-index (arithmetic-shift c (- low-bits))])
     (let ([vec (vector-ref top top-index)])
       (unless vec
@@ -61,9 +100,16 @@
       (let ([vec (vector-ref top top-index)])
 	(vector-set! vec (bitwise-and c low) v)))))
 
+(define (mapn c from v)
+  (if (= c from)
+      (map1 c v)
+      (begin
+	(map1 from v)
+	(mapn c (add1 from) v))))
+
 (call-with-input-file "UnicodeData.txt"
   (lambda (i)
-    (let loop ()
+    (let loop ([prev-code 0])
       (let ([l (read-line i)])
 	(unless (eof-object? l)
 	  (let ([m (regexp-match #rx"^([0-9A-F]+);([^;]*);([^;]*);[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);([^;]*);([^;]*)"
@@ -76,48 +122,51 @@
 		  [up (string->number (cadddr (cdr m)) 16)]
 		  [down (string->number (cadddr (cddr m)) 16)]
 		  [title (string->number (cadddr (cdddr m)) 16)])
-	      (map1 code
-		   (combine
-		    (if up (- up code) 0)
-		    (if down (- down code) 0)
-		    (if title (- title code) 0)
+	      (mapn code
+		    (if (regexp-match #rx", Last>" name)
+			(add1 prev-code)
+			code)
+		    (combine
+		     (if up (- up code) 0)
+		     (if down (- down code) 0)
+		     (if title (- title code) 0)
 
-		    ;; graphic
-		    (member cat graphic-cats)
-		    ;; lowercase:
-		    (and (not (<= #x2000 code #x2FFF))
-			 (not down)
-			 (or up
-			     (regexp-match #rx"SMALL LETTER" name)
-			     (regexp-match #rx"SMALL LIGATURE" name)))
-		    ;; uppercase;
-		    (and (not (<= #x2000 code #x2FFF))
-			 (not up)
-			 (or down
-			     (regexp-match #rx"CAPITAL LETTER" name)
-			     (regexp-match #rx"CAPITAL LIGATURE" name)))
-		    ;; titlecase:
-		    (string=? cat "Lt")
-		    ;; letter
-		    (member cat letter-cats)
-		    ;; digit
-		    (member cat digit-cats)
-		    ;; hex digit
-		    (member code hexes)
-		    ;; whitespace
-		    (or (member cat space-cats)
-			(member code '(#x9 #xa #xb #xc #xd)))
-		    ;; control
-		    (or (<= #x0000 code #x001F)
-			(<= #x007F code #x009F))
-		    ;; punctuation
-		    (member cat punc-cats)
-		    ;; symbol
-		    (member cat sym-cats)
-		    ;; blank
-		    (or (string=? cat "Zs")
-			(= code #x9))))))
-	  (loop))))))
+		     ;; graphic
+		     (member cat graphic-cats)
+		     ;; lowercase:
+		     (and (not (<= #x2000 code #x2FFF))
+			  (not down)
+			  (or up
+			      (regexp-match #rx"SMALL LETTER" name)
+			      (regexp-match #rx"SMALL LIGATURE" name)))
+		     ;; uppercase;
+		     (and (not (<= #x2000 code #x2FFF))
+			  (not up)
+			  (or down
+			      (regexp-match #rx"CAPITAL LETTER" name)
+			      (regexp-match #rx"CAPITAL LIGATURE" name)))
+		     ;; titlecase:
+		     (string=? cat "Lt")
+		     ;; letter
+		     (member cat letter-cats)
+		     ;; digit
+		     (member cat digit-cats)
+		     ;; hex digit
+		     (member code hexes)
+		     ;; whitespace
+		     (or (member cat space-cats)
+			 (member code '(#x9 #xa #xb #xc #xd)))
+		     ;; control
+		     (or (<= #x0000 code #x001F)
+			 (<= #x007F code #x009F))
+		     ;; punctuation
+		     (member cat punc-cats)
+		     ;; symbol
+		     (member cat sym-cats)
+		     ;; blank
+		     (or (string=? cat "Zs")
+			 (= code #x9))))
+	      (loop code))))))))
 
 (define vectors (make-hash-table 'equal))
 
@@ -137,6 +186,13 @@
 (define world-count (expt 2 10))
 
 (printf "/* Generated by mk-uchar.ss */~n~n")
+
+(printf "/* Character count: ~a */~n" ccount)
+(printf "/* Table size: ~a */~n~n" 
+	(+ (* (add1 low) 
+	      (add1 (length (hash-table-map vectors cons))))
+	   (* 2 hi-count)
+	   world-count))
 
 (printf "unsigned int **scheme_uchar_table[~a];~n~n" world-count)
 (printf "static unsigned int *main_table[~a], *zero_table[~a];~n~n"
@@ -185,6 +241,19 @@
 (print-shift (car downs) (unbox (cdr downs)) "downs")
 (print-shift (car titles) (unbox (cdr titles)) "titles")
 
+(set! ranges (cons (cons range-bottom range-top) ranges))
+
+(printf "~n#define NUM_UCHAR_RANGES ~a~n" (length ranges))
+(printf "static int mapped_uchar_ranges[] = {~n")
+(for-each (lambda (r)
+	    (printf "0x~x, 0x~x~a~n"
+		    (car r) (cdr r)
+		    (if (= (cdr r) range-top)
+			""
+			",")))
+	  (reverse ranges))
+(printf "};~n")
+
 (printf "~nstatic void init_uchar_table(void)~n{~n")
 (printf "  int i;~n~n")
 (printf "  scheme_uchar_table[0] = main_table;~n")
@@ -199,10 +268,24 @@
 (let loop ([i 0])
   (unless (= i hi-count)
     (let ([vec (vector-ref top i)])
-      (when vec
-	(printf "  main_table[~a] = udata + ~a;~n"
-		i
-		(* (add1 low)
-		   (hash-table-get vectors vec (gensym 'u)))))
-      (loop (add1 i)))))
+      (if vec
+	  (let ([same-count (let loop ([j (add1 i)])
+			      (if (equal? vec (vector-ref top j))
+				  (loop (add1 j))
+				  (- j i)))]
+		[vec-pos (* (add1 low) (hash-table-get vectors vec))])
+	    (if (> same-count 4)
+		(begin
+		  (printf "  for (i = ~a; i < ~a; i++) {~n"
+			  i (+ i same-count))
+		  (printf "    main_table[i] = udata + ~a;~n"
+			  vec-pos)
+		  (printf "  }~n")
+		  (loop (+ same-count i)))
+		(begin
+		  (printf "  main_table[~a] = udata + ~a;~n"
+			  i
+			  vec-pos)
+		  (loop (add1 i)))))
+	  (loop (add1 i))))))
 (printf "}~n")

@@ -1477,7 +1477,19 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(pp, "#<cpointer>", 0, 12);
       } else {
 	print_this_string(pp, "#<cpointer:", 0, 12);
-	print_this_string(pp, SCHEME_CPTR_TYPE(obj), 0, -1);
+        if (SCHEME_SYMBOLP(SCHEME_CPTR_TYPE(obj))) {
+          print_this_string(pp,
+                            (char *)SCHEME_CPTR_TYPE(obj),
+                            ((char *)(SCHEME_SYM_VAL(SCHEME_CPTR_TYPE(obj))))
+                              - ((char *)SCHEME_CPTR_TYPE(obj)),
+                            SCHEME_SYM_LEN(SCHEME_CPTR_TYPE(obj)));
+        } else if (SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(obj))) {
+          print_byte_string(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(obj)),
+                            SCHEME_BYTE_STRLEN_VAL(SCHEME_CPTR_TYPE(obj)),
+                            notdisplay, pp);
+        } else {
+          print_this_string(pp, "#", 0, 1);
+        }
 	print_this_string(pp, ">", 0, 1);
       }
     }

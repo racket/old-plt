@@ -21,6 +21,11 @@
   All rights reserved.
 */
 
+/* This file implements all the MzScheme port types, which means it
+   deals with all the messy FILE and fie descriptor issues, as well
+   as implementing TCP. Also, system/process/execute are implemented
+   here, since much of the work has to do with ports. */
+
 #include "schpriv.h"
 #ifdef UNISTD_INCLUDE
 # include <unistd.h>
@@ -45,7 +50,6 @@
 # include <signal.h>
 # include <sys/types.h>
 # include <sys/wait.h>
-/* # include <sys/resource.h> */
 #endif
 #ifdef IO_INCLUDE
 # include <io.h>
@@ -366,6 +370,7 @@ static Scheme_Object *port_write_handler(int, Scheme_Object **args);
 static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
 
+static void flush_orig_outputs(void);
 #ifdef USE_FD_PORTS
 void flush_original_output_fds(void);
 #endif
@@ -449,6 +454,10 @@ static status_t kill_my_team(void *t)
 }
 #endif
 
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
+
 void 
 scheme_init_port (Scheme_Env *env)
 {
@@ -515,6 +524,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 
 #if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
+    /* Extra help to make sure we terminate properly: */
     resume_thread(spawn_thread(kill_my_team, "killer",
 			       B_NORMAL_PRIORITY, (void*)find_thread(NULL)));
 #endif
@@ -992,6 +1002,13 @@ scheme_init_port (Scheme_Env *env)
 #endif
 }
 
+/*========================================================================*/
+/*                                fd arrays                               */
+/*========================================================================*/
+
+/* Implement fd arrays (FD_SET, etc) with a runtime-determined size.
+   Also implement special hooks for Windows and BeOS "descriptors", like
+   even queues and semaphores. */
 
 #ifdef USE_DYNAMIC_FDSET_SIZE
 static int dynamic_fd_size;
@@ -1157,6 +1174,18 @@ void scheme_add_fd_eventmask(void *fds, int mask)
 #endif
 }
 
+/*========================================================================*/
+/*                      Windows thread suspension                         */
+/*========================================================================*/
+
+/* MzScheme creates Windows threads for various purposes, including
+   non-blocking FILE reads. Unfortunately, these threads can confuse
+   the GC if they move virtual pages around while its marking. So we
+   remember each created thread and suspend it during GC.
+
+   This work is not necessary if GC_use_registered_statics is set. */
+
+
 #ifdef WINDOWS_PROCESSES
 typedef struct Scheme_Thread_Memory {
   MZTAG_IF_REQUIRED
@@ -1258,6 +1287,10 @@ END_XFORM_SKIP;
 #endif
 
 #endif
+
+/*========================================================================*/
+/*                        Generic port support                            */
+/*========================================================================*/
 
 
 Scheme_Object *scheme_make_port_type(const char *name)
@@ -1811,174 +1844,10 @@ force_close_output_port(Scheme_Object *port)
   force_port_closed = 0;
 }
 
-/* file input ports */
 
-#ifdef USE_FD_PORTS
-static int
-fd_flush_done(Scheme_Object *port)
-{
-  Scheme_FD *fop;
-
-  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
-
-  return !fop->flushing;
-}
-
-static void wait_until_fd_flushed(Scheme_Output_Port *op)
-{
-  scheme_block_until(fd_flush_done, NULL, (Scheme_Object *)op, 0.0);
-}
-
-static int
-fd_write_ready (Scheme_Object *port)
-{
-  Scheme_FD *fop;
-
-  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
-
-  {
-    DECL_FDSET(writefds, 1);
-    DECL_FDSET(exnfds, 1);
-    struct timeval time = {0, 0};
-
-    INIT_DECL_FDSET(writefds, 1);
-    INIT_DECL_FDSET(exnfds, 1);
-
-    MZ_FD_ZERO(writefds);
-    MZ_FD_ZERO(exnfds);
-    MZ_FD_SET(fop->fd, writefds);
-    MZ_FD_SET(fop->fd, exnfds);
-    
-    return select(fop->fd + 1, NULL, writefds, exnfds, &time);
-  }
-}
-
-
-static void
-fd_write_need_wakeup(Scheme_Object *port, void *fds)
-{
-  Scheme_FD *fop;
-  void *fds2;
-  int n;
-
-  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
-
-  n = fop->fd;
-  fds2 = MZ_GET_FDSET(fds, 1);
-  MZ_FD_SET(n, (fd_set *)fds2);
-  fds2 = MZ_GET_FDSET(fds, 2);
-  MZ_FD_SET(n, (fd_set *)fds2);
-}
-
-static void release_flushing_lock(Scheme_Process *p)
-{
-  Scheme_FD *fop;
-
-  fop = (Scheme_FD *)p->private_kill_data;
-
-  fop->flushing = 0;
-}
-
-static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile int buflen)
-{
-  Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
-  volatile int offset = 0;
-
-  if (fop->flushing) {
-    if (force_port_closed) {
-      /* Give up */
-      return;
-    }
-    wait_until_fd_flushed(op);
-  }
-
-  if (!bufstr) {
-    bufstr = fop->buffer;
-    buflen = fop->bufcount;
-  }
-
-  if (buflen) {
-    fop->flushing = 1;
-    fop->bufcount = 0;
-    /* If write is interrupted, we drop chars on the floor.
-       Not ideal, but we'll go with it for now. */
-
-    while (1) {
-      long len;
-      int flags, errsaved;
-      
-      flags = fcntl(fop->fd, F_GETFL, 0);
-      fcntl(fop->fd, F_SETFL, flags | MZ_NONBLOCKING);
-      len = write(fop->fd, bufstr + offset, buflen - offset);
-      errsaved = errno;
-      fcntl(fop->fd, F_SETFL, flags);
-
-      if (len < 0) {
-	if (force_port_closed) {
-	  /* Don't signal exn or wait. Just give up. */
-	  return;
-	} else if (errsaved == EAGAIN) {
-	  /* Need to block; messy because we're holding a lock. */
-	  mz_jmp_buf savebuf;
-	  
-	  scheme_current_process->private_on_kill = release_flushing_lock;
-	  scheme_current_process->private_kill_data = fop;
-	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-	  if (scheme_setjmp(scheme_error_buf)) {
-	    /* Exception; release the lock: */
-	    fop->flushing = 0;
-	    scheme_current_process->private_on_kill = NULL;
-	    scheme_longjmp(savebuf, 1);
-	  } else {
-	    /* BLOCK */
-	    scheme_block_until(fd_write_ready, 
-			       fd_write_need_wakeup, 
-			       (Scheme_Object *)op, 0.0);
-	  }
-	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-	  scheme_current_process->private_on_kill = NULL;
-	  scheme_current_process->private_kill_data = NULL;
-	} else {
-	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
-			   op,
-			   "error writing to stream port (%d)",
-			   errno);
-	  return;
-	}
-      } else if (len + offset == buflen)
-	break;
-      else
-	offset += len;
-    }
-
-    fop->flushing = 0;
-  }
-}
-#endif
-
-static void flush_orig_outputs()
-{
-  /* Flush original output ports: */
-  Scheme_Output_Port *op;
-  
-  op = (Scheme_Output_Port *)scheme_orig_stdout_port;
-#ifdef USE_FD_PORTS
-  if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0);
-  else
-#endif
-    if (SAME_OBJ(op->sub_type, file_output_port_type))
-      fflush(((Scheme_Output_File *)op->port_data)->f);
-  
-  op = (Scheme_Output_Port *)scheme_orig_stderr_port;
-#ifdef USE_FD_PORTS
-  if (SAME_OBJ(op->sub_type, fd_output_port_type))
-    flush_fd(op, NULL, 0);
-  else
-#endif
-    if (SAME_OBJ(op->sub_type, file_output_port_type))
-      fflush(((Scheme_Output_File *)op->port_data)->f);
-}
+/*========================================================================*/
+/*                          FILE input ports                              */
+/*========================================================================*/
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
 static int try_get_fd_char(int fd, int *ready)
@@ -2220,8 +2089,12 @@ scheme_make_file_input_port(FILE *fp)
   return scheme_make_named_file_input_port(fp, "FILE");
 }
 
+
+/*========================================================================*/
+/*                           fd input ports                               */
+/*========================================================================*/
+
 #ifdef USE_FD_PORTS
-/* fd input ports */
 
 static int
 fd_char_ready (Scheme_Input_Port *port)
@@ -2374,6 +2247,10 @@ make_fd_input_port(int fd, const char *filename)
 }
 
 #endif
+
+/*========================================================================*/
+/*                    OSKit console input ports                           */
+/*========================================================================*/
 
 #ifdef USE_OSKIT_CONSOLE
 
@@ -2555,10 +2432,15 @@ void scheme_check_keyboard_input(void)
 
 #endif
 
+/*========================================================================*/
+/*                   Windows/BeOS FILE input ports                        */
+/*========================================================================*/
+
 /* Win32/BeOS input ports that could block on reads. The BeOS
    contortions are resonable, and they'll probably fix select()
    in the future so this code is unneeded. The Win32 contortions
    are insane, inefficient, and apparently unavoidable. */
+
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 
 #define TIF_BUFFER 500
@@ -2978,7 +2860,9 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 
 #endif
 
-/* string input ports */
+/*========================================================================*/
+/*                          string input ports                            */
+/*========================================================================*/
 
 static int 
 string_getc (Scheme_Input_Port *port)
@@ -3063,7 +2947,9 @@ scheme_make_string_input_port(const char *str)
   return scheme_make_sized_string_input_port(str, strlen(str));
 }
 
-/* string output ports */
+/*========================================================================*/
+/*                          string output ports                           */
+/*========================================================================*/
 
 static void
 string_write_string(char *str, long len, Scheme_Output_Port *port)
@@ -3151,7 +3037,9 @@ scheme_get_string_output(Scheme_Object *port)
   return scheme_get_sized_string_output(port, NULL);
 }
 
-/* user input ports */
+/*========================================================================*/
+/*                 "user" input ports (created from Scheme)               */
+/*========================================================================*/
 
 static int 
 user_getc (Scheme_Input_Port *port)
@@ -3208,7 +3096,14 @@ user_close_input(Scheme_Input_Port *port)
   _scheme_apply_multi(fun, 0, NULL);
 }
 
-/* file output ports */
+
+/*========================================================================*/
+/*                           FILE output ports                            */
+/*========================================================================*/
+
+/* Note that we don't try to implement non-blocking writes on FILE
+   objects. In Unix, a program could conceiveably open a named pipe 
+   and block on it. */
 
 static void
 file_write_string(char *str, long len, Scheme_Output_Port *port)
@@ -3270,8 +3165,153 @@ scheme_make_file_output_port(FILE *fp)
 						  1);
 }
 
+/*========================================================================*/
+/*                             fd output ports                            */
+/*========================================================================*/
+
+
 #ifdef USE_FD_PORTS
-/* fd output ports */
+
+static int
+fd_flush_done(Scheme_Object *port)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  return !fop->flushing;
+}
+
+static void wait_until_fd_flushed(Scheme_Output_Port *op)
+{
+  scheme_block_until(fd_flush_done, NULL, (Scheme_Object *)op, 0.0);
+}
+
+static int
+fd_write_ready (Scheme_Object *port)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  {
+    DECL_FDSET(writefds, 1);
+    DECL_FDSET(exnfds, 1);
+    struct timeval time = {0, 0};
+
+    INIT_DECL_FDSET(writefds, 1);
+    INIT_DECL_FDSET(exnfds, 1);
+
+    MZ_FD_ZERO(writefds);
+    MZ_FD_ZERO(exnfds);
+    MZ_FD_SET(fop->fd, writefds);
+    MZ_FD_SET(fop->fd, exnfds);
+    
+    return select(fop->fd + 1, NULL, writefds, exnfds, &time);
+  }
+}
+
+
+static void
+fd_write_need_wakeup(Scheme_Object *port, void *fds)
+{
+  Scheme_FD *fop;
+  void *fds2;
+  int n;
+
+  fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
+
+  n = fop->fd;
+  fds2 = MZ_GET_FDSET(fds, 1);
+  MZ_FD_SET(n, (fd_set *)fds2);
+  fds2 = MZ_GET_FDSET(fds, 2);
+  MZ_FD_SET(n, (fd_set *)fds2);
+}
+
+static void release_flushing_lock(Scheme_Process *p)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)p->private_kill_data;
+
+  fop->flushing = 0;
+}
+
+static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile int buflen)
+{
+  Scheme_FD * volatile fop = (Scheme_FD *)op->port_data;
+  volatile int offset = 0;
+
+  if (fop->flushing) {
+    if (force_port_closed) {
+      /* Give up */
+      return;
+    }
+    wait_until_fd_flushed(op);
+  }
+
+  if (!bufstr) {
+    bufstr = fop->buffer;
+    buflen = fop->bufcount;
+  }
+
+  if (buflen) {
+    fop->flushing = 1;
+    fop->bufcount = 0;
+    /* If write is interrupted, we drop chars on the floor.
+       Not ideal, but we'll go with it for now. */
+
+    while (1) {
+      long len;
+      int flags, errsaved;
+      
+      flags = fcntl(fop->fd, F_GETFL, 0);
+      fcntl(fop->fd, F_SETFL, flags | MZ_NONBLOCKING);
+      len = write(fop->fd, bufstr + offset, buflen - offset);
+      errsaved = errno;
+      fcntl(fop->fd, F_SETFL, flags);
+
+      if (len < 0) {
+	if (force_port_closed) {
+	  /* Don't signal exn or wait. Just give up. */
+	  return;
+	} else if (errsaved == EAGAIN) {
+	  /* Need to block; messy because we're holding a lock. */
+	  mz_jmp_buf savebuf;
+	  
+	  scheme_current_process->private_on_kill = release_flushing_lock;
+	  scheme_current_process->private_kill_data = fop;
+	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+	  if (scheme_setjmp(scheme_error_buf)) {
+	    /* Exception; release the lock: */
+	    fop->flushing = 0;
+	    scheme_current_process->private_on_kill = NULL;
+	    scheme_longjmp(savebuf, 1);
+	  } else {
+	    /* BLOCK */
+	    scheme_block_until(fd_write_ready, 
+			       fd_write_need_wakeup, 
+			       (Scheme_Object *)op, 0.0);
+	  }
+	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+	  scheme_current_process->private_on_kill = NULL;
+	  scheme_current_process->private_kill_data = NULL;
+	} else {
+	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+			   op,
+			   "error writing to stream port (%d)",
+			   errno);
+	  return;
+	}
+      } else if (len + offset == buflen)
+	break;
+      else
+	offset += len;
+    }
+
+    fop->flushing = 0;
+  }
+}
 
 static void
 fd_write_string(char *str, long len, Scheme_Output_Port *port)
@@ -3360,7 +3400,9 @@ void flush_original_output_fds(void)
 
 #endif
 
-/* user output ports */
+/*========================================================================*/
+/*                 "user" output ports (created from Scheme)              */
+/*========================================================================*/
 
 static void
 user_write(char *str, long len, Scheme_Output_Port *port)
@@ -3381,6 +3423,10 @@ user_close_output (Scheme_Output_Port *port)
   fun = ((Scheme_Object **) port->port_data)[1];
   _scheme_apply_multi(fun, 0, NULL);
 }
+
+/*========================================================================*/
+/*                    Scheme functions and helpers                        */
+/*========================================================================*/
 
 static Scheme_Object *
 input_port_p (int argc, Scheme_Object *argv[])
@@ -3876,6 +3922,30 @@ with_input_from_file(int argc, Scheme_Object *argv[])
   scheme_close_input_port(port);
 
   return v;
+}
+
+static void flush_orig_outputs(void)
+{
+  /* Flush original output ports: */
+  Scheme_Output_Port *op;
+  
+  op = (Scheme_Output_Port *)scheme_orig_stdout_port;
+#ifdef USE_FD_PORTS
+  if (SAME_OBJ(op->sub_type, fd_output_port_type))
+    flush_fd(op, NULL, 0);
+  else
+#endif
+    if (SAME_OBJ(op->sub_type, file_output_port_type))
+      fflush(((Scheme_Output_File *)op->port_data)->f);
+  
+  op = (Scheme_Output_Port *)scheme_orig_stderr_port;
+#ifdef USE_FD_PORTS
+  if (SAME_OBJ(op->sub_type, fd_output_port_type))
+    flush_fd(op, NULL, 0);
+  else
+#endif
+    if (SAME_OBJ(op->sub_type, file_output_port_type))
+      fflush(((Scheme_Output_File *)op->port_data)->f);
 }
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
@@ -4913,6 +4983,10 @@ void scheme_flush_output(Scheme_Object *port)
   (void)_flush_output(1, &port);
 }
 
+/*========================================================================*/
+/*                               pipe ports                               */
+/*========================================================================*/
+
 typedef struct {
   MZTAG_IF_REQUIRED
   unsigned char *buf;
@@ -5192,6 +5266,12 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
   return scheme_values(2, v);
 }
 
+/*========================================================================*/
+/*                        system/process/execute                          */
+/*========================================================================*/
+
+/* Unix, Windows, and BeOS support --- sadly, all mixed together */
+
 #ifdef PROCESS_FUNCTION
 
 # define USE_CREATE_PIPE
@@ -5221,6 +5301,8 @@ static int MyPipe(int *ph) {
 #endif
 
 #endif
+
+/**************** Unix: signal stuff ******************/
 
 #if defined(UNIX_PROCESSES)
 
@@ -5284,6 +5366,8 @@ END_XFORM_SKIP;
 #endif
 
 #endif
+
+/*********** Unix/Windows/BeOS: process status stuff *************/
 
 #if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
 
@@ -5388,6 +5472,8 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
 }
 #endif
 
+/*********** Windows: command-line construction *************/
+
 #ifdef WINDOWS_PROCESSES
 static char *cmdline_protect(char *s)
 {
@@ -5440,6 +5526,8 @@ static char *cmdline_protect(char *s)
   return s;
 }
 #endif /* WINDOWS_PROCESSES */
+
+/*********** BeOS: emulate Windows interface, roughly *************/
 
 #ifdef BEOS_PROCESSES
 extern char **environ;
@@ -5511,6 +5599,8 @@ static long spawnv(int type, char *command, const char *  const *argv)
   return (long)p;
 }
 #endif
+
+/*********** All: The main system/process/execute function *************/
 
 static Scheme_Object *process(int c, Scheme_Object *args[], 
 			      char *name, int shell, int synchonous, 
@@ -5881,6 +5971,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #endif
 }
 
+/************** Scheme interface  **************/
+/* Mostly, call process() with the right flags */
 
 static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
 {
@@ -5969,7 +6061,10 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 #endif
 }
 
-/**************************  T  C  P  *********************************/
+/*========================================================================*/
+/*                             TCP glue                                   */
+/*========================================================================*/
+
 
 /* These two need o be outside of USE_TCP */
 #define PORT_ID_TYPE "exact integer in [1, 65535]"
@@ -6452,7 +6547,9 @@ static void tcp_cleanup(void)
 #endif
 #endif
 
-/*************************** Generic **************************************/
+/*========================================================================*/
+/*                       TCP ports and listeners                          */
+/*========================================================================*/
 
 #ifdef USE_SOCKETS_TCP
 #define LISTENER_WAS_CLOSED(x) (((listener_t *)(x))->s == INVALID_SOCKET)
@@ -7092,6 +7189,10 @@ make_tcp_output_port(void *data)
 
 #endif /* USE_TCP */
 
+/*========================================================================*/
+/*                         TCP Scheme interface                           */
+/*========================================================================*/
+
 #ifndef NO_TCP_SUPPORT
 
 # ifdef PROTOENT_IS_INT
@@ -7728,6 +7829,19 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
 
 #endif /* !NO_TCP_SUPPORT */
 
+/*========================================================================*/
+/*                             sleeping                                   */
+/*========================================================================*/
+
+/* This code is used to implement sleeping when MzScheme is cimpletely
+   blocked on external objects, such as ports. For Unix, sleeping is
+   essentially just a select(). For Windows and BeOS, we essentially
+   have to implement select() ourselves, so that it works with both TCP
+   connections and stream ports all at once. (Why oh why don't they just
+   provide a select() that works?!?!) */
+
+/********************* Windows/BeOS TCP watcher *****************/
+
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 typedef struct 
 {
@@ -7744,6 +7858,8 @@ static long select_for_tcp(void *data)
   return 0;
 }
 #endif
+
+/********************* BeOS wait_multiple_sema *****************/
 
 #ifdef USE_BEOS_PORT_THREADS
 # define WAIT_OBJECT_0 1
@@ -7868,6 +7984,8 @@ static int wait_multiple_sema(int count, sem_id *a, float timeout)
 }
 #endif
 
+/****************** Windows/BeOS cleanup  *****************/
+
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array, 
 			  int *rps, int count)
@@ -7883,6 +8001,11 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 }
 #endif
 
+
+/******************** Main sleep function  *****************/
+/* The simple select() stuff is buried in Windows/BeOS
+   complexity. */
+
 static void default_sleep(float v, void *fds)
 {
 #ifdef USE_OSKIT_CONSOLE
@@ -7892,6 +8015,7 @@ static void default_sleep(float v, void *fds)
 #endif
 
   if (!fds) {
+    /* Nothing to block on - just sleep for some amount of time. */
 #ifndef NO_SLEEP
 # ifdef USE_BEOS_SNOOZE
     snooze((bigtime_t)(v * 1000000));
@@ -7904,6 +8028,8 @@ static void default_sleep(float v, void *fds)
 # endif
 #endif
   } else {
+    /* Something to block on - sort our the parts in Windows/BeOS. */
+
 #if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP) || defined(USE_BEOS_PORT_THREADS)
     int limit;
     fd_set *rd, *wr, *ex;
@@ -7937,6 +8063,8 @@ static void default_sleep(float v, void *fds)
     rd = (fd_set *)fds;
     wr = (fd_set *)MZ_GET_FDSET(fds, 1);
     ex = (fd_set *)MZ_GET_FDSET(fds, 2);
+
+    /******* Start Windows/BeOS stuff *******/
 
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
     {
@@ -8056,10 +8184,17 @@ static void default_sleep(float v, void *fds)
     }
 #endif
 
+    /******* End Windows/BeOS stuff *******/
+
     select(limit, rd, wr, ex, v ? &time : NULL);
 #endif
   }
 }
+
+/*========================================================================*/
+/*                       memory debugging help                            */
+/*========================================================================*/
+
 
 #ifdef MEMORY_COUNTING_ON
 void scheme_count_input_port(Scheme_Object *port, long *s, long *e, 
@@ -8138,7 +8273,9 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
 }
 #endif
 
-/**********************************************************************/
+/*========================================================================*/
+/*                       precise GC traversers                            */
+/*========================================================================*/
 
 #ifdef MZ_PRECISE_GC
 

@@ -379,7 +379,7 @@ static int TransferQueue(int all)
 {
   EventRecord e;
   int sleep_time = 0;
-  int delay_time = 1;
+  int delay_time = 0;
   
   /* Don't call WaitNextEvent too often. */
   static unsigned long lastTime;

@@ -111,8 +111,9 @@
       ;;                (-> Y) -> X
       ;; Runs a task in the background.
       ;; The `enable' function is called with #f as the first argument
-      ;;  to start the background task. The `break-thunk' can be
-      ;;  called to interrupt the task.
+      ;;  near the start of the background task. The `break-thunk' can be
+      ;;  called to interrupt the task. The `enable' function might
+      ;;  not get called at all if the task is fast enough.
       ;; The `go' function performs the task (in a thread created by
       ;;   as-background); it receives thunks that it can call to
       ;;   indicate when breaks are "safe". If the user tries to break
@@ -151,23 +152,27 @@
 			    (when breaking-dialog
 			      (send breaking-dialog show #f))
 			    (semaphore-post s)))])
-	  (let ([v (enable #f #f
-			   (lambda ()
-			     (semaphore-wait adjust-break)
-			     (if break-ok?
-				 (break-thread t)
-				 (let ([v (break-really-hard? (lambda (d) 
-								(set! breaking-dialog d)
-								(semaphore-post adjust-break)))])
-				   (semaphore-wait adjust-break)
-				   (set! breaking-dialog #f)
-				   (semaphore-post adjust-break)
-				   (when v
-				     (pre-kill)
-				     (kill-thread t)
-				     (exit))))))])
-	    (yield s)
-	    (enable #t v void))
+	  ;; If the operation is fast enough, no need to disable then yield then enable,
+	  ;; which makes the screen flash and causes events to get dropped. 1/4 second
+	  ;; seems "fast enough".
+	  (unless (object-wait-multiple 0.25 s)
+	    (let ([v (enable #f #f
+			     (lambda ()
+			       (semaphore-wait adjust-break)
+			       (if break-ok?
+				   (break-thread t)
+				   (let ([v (break-really-hard? (lambda (d) 
+								  (set! breaking-dialog d)
+								  (semaphore-post adjust-break)))])
+				     (semaphore-wait adjust-break)
+				     (set! breaking-dialog #f)
+				     (semaphore-post adjust-break)
+				     (when v
+				       (pre-kill)
+				       (kill-thread t)
+				       (exit))))))])
+	      (yield s)
+	      (enable #t v void)))
 	  (if exn
 	      (raise exn)
 	      (apply values v))))

@@ -64,7 +64,7 @@
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap color-model frame scheme)]
-            [color : framework:color^ (color@ preferences icon mode text)]
+            [color : framework:color^ (color@ preferences icon mode text color-prefs)]
             [color-prefs : framework:color-prefs^ (color-prefs@ preferences editor)]      
             [comment-box : framework:comment-box^
                          (comment-box@ text scheme keymap)]

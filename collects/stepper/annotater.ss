@@ -175,6 +175,30 @@
   
   (define debug-key (gensym "debug-key-"))
   
+  (define (read-exprs text)
+    (let ([reader (z:read text)])
+      (let read-loop ([new-expr (reader)])
+        (if (z:eof? new-expr)
+            ()
+            (cons new-expr (read-loop (reader)))))))
+  
+  (define (find-defined-vars expr)
+    (cond ([z:define-values? expr]
+           (map z:varref-var vars))
+          (else
+           null)))
+  
+  (define all-defs-list-sym (gensym "all-defs-list-"))
+  (define current-def-sym (gensym "current-def-"))
+  
+  (define (top-defs exprs)
+    (let ([all-defs (map find-defined-vars exprs)])
+      `((#%define-values (,all-defs-list-sym ,current-def-sym)
+         (values (#%quote ,all-defs) #f)))))
+  
+  (define (current-def-setter num)
+    `(#%set! ,current-def-sym ,num))
+           
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
   ; a) the body itself
@@ -195,21 +219,14 @@
   (define (annotate text break)
     (local
 	
-	; exprs : the result of doing zodiac's read on the text
-	
-	((define exprs
-	   (let ([reader (z:read text)])
-	     (let read-loop ([new-expr (reader)])
-	       (if (z:eof? new-expr)
-		   ()
-		   (cons new-expr (read-loop (reader)))))))
-			
-	 ; expr-source-offset : take a parsed expression and find its offset in the source
+        ; expr-source-offset : take a parsed expression and find its offset in the source
 	 ; (z:zodiac -> num)
 	 
+         #|
 	 (define (expr-source-offset expr)
 	   (z:location-offset (z:zodiac-start expr)))
-	 
+	 |#
+         
 	 ; comes-from-cond : determines whether an expression is expanded from a cond in the source
 	 
          #|
@@ -327,7 +344,7 @@
 				    ,(list raw-type annotated-super-expr)
 				    ,raw-fields)])
 			    (values annotated free-vars-super-expr))
-		      (values `(#%struct ,raw-type ,raw-fields))))]
+		      (values `(#%struct ,raw-type ,raw-fields) null)))]
 	       
 	       [(z:if-form? expr) 
 		(let+
@@ -408,7 +425,16 @@
       
       ; body of local
       
-      (map (lambda (expr) (annotate/inner expr #t)) exprs)))
+      (let ([exprs (read-exprs text)]
+            [annotated-exprs (map (lambda (expr) (annotate/inner expr #t)) exprs)]
+            [top-defines (top-defs exprs)]
+            [current-def-setters (build-list (length exprs) current-def-setter)]
+            [top-annotated-exprs (foldr (lambda (setter expr built)
+                                          (cons setter (cons expr built)))
+                                        current-def-setters
+                                        exprs)])
+        (append top-defines top-annotated-exprs)))
+            
   
 	 
   )

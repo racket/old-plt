@@ -1,6 +1,6 @@
 #| -*-Scheme-*-
 
-$Id: list.scm,v 14.20 1995/03/03 23:40:17 cph Exp $
+$Id: list.ss,v 1.1.1.1 1999/04/06 21:39:40 clements Exp $
 
 Copyright (c) 1988-93 Massachusetts Institute of Technology
 

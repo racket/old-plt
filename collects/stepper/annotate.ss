@@ -8,7 +8,7 @@
 
   (provide
    initial-env-package
-   annotate)e
+   annotate)
 
 ;  (import [z : zodiac^]
 ;          [utils : stepper:cogen-utils^]
@@ -17,16 +17,6 @@
 ;	  stepper:shared^
 ;          stepper:client-procs^)
 
-  ; this procedure returns (map fn list), with all #f's stripped out.
-  (define (mod-filter fn lst)
-    (if (null? lst)
-        null
-        (let ([result (fn (car lst))]
-              [rest (mod-filter fn (cdr lst))])
-          (if result
-              (cons result rest)
-              rest))))
-  
   ;; this looks wrong...
   (define (internal-error . x)
     (error 'annotater-internal-error "~s" x))

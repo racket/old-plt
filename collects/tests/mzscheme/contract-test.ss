@@ -2193,6 +2193,15 @@
                          'pos
                          'neg)])
       (for-each (lambda (x) (x 1)) ctc)))
+  
+  (test/spec-passed/result
+   'immutable20
+   '(let ([ctc (contract (list-immutable/c number?) 
+                         (list-immutable 1) 
+                         'pos
+                         'neg)])
+      (immutable? ctc))
+   #t)
 
   (test/pos-blame
    'vector-immutable1
@@ -2276,6 +2285,14 @@
               'pos
               'neg)
    (vector->immutable-vector (vector 1 #t)))
+  
+  (test/spec-passed/result
+   'vector-immutable12
+   '(immutable? (contract (vector-immutable/c number? boolean?) 
+                          (vector->immutable-vector (vector 1 #t))
+                          'pos
+                          'neg))
+   #t)
 
   (test/pos-blame
    'box-immutable1
@@ -2316,12 +2333,20 @@
       ((unbox ctc) 1)))
 
   (test/spec-passed/result
-   'vector-immutable6
+   'box-immutable6
    '(contract (box-immutable/c boolean?) 
               (box-immutable #t)
               'pos
               'neg)
    (box-immutable #t))
+  
+  (test/spec-passed/result
+   'box-immutable7
+   '(immutable? (contract (box-immutable/c boolean?) 
+                          (box-immutable #t)
+                          'pos
+                          'neg))
+   #t)
 
   
   (test/spec-passed 
@@ -2374,6 +2399,7 @@
   (test-flat-contract '(and/c number? integer?) 1 3/2)
 
   (test-flat-contract '(not/f integer?) #t 1)
+  (test-flat-contract '(=/c 2) 2 3)
   (test-flat-contract '(>=/c 5) 5 0)
   (test-flat-contract '(<=/c 5) 5 10)
   (test-flat-contract '(</c 5) 0 5)
@@ -2524,6 +2550,7 @@
   (test-name "(and/c number? (-> integer? integer?))" (and/c number? (-> integer? integer?)))
 
   (test-name "(not/f integer?)" (not/f integer?))
+  (test-name "(=/c 5)" (=/c 5))
   (test-name "(>=/c 5)" (>=/c 5))
   (test-name "(<=/c 5)" (<=/c 5))
   (test-name "(</c 5)" (</c 5))

@@ -2434,7 +2434,7 @@ add struct contracts for immutable structs?
 	   union
            and/c
 	   not/f
-           >=/c <=/c </c >/c 
+           =/c >=/c <=/c </c >/c 
            integer-in
 	   real-in
            natural-number?
@@ -2625,6 +2625,10 @@ add struct contracts for immutable structs?
 	     (and (box? x)
 		  (printable? (unbox x))))))))
   
+  (define (=/c x)
+    (flat-named-contract
+     (format "(=/c ~a)" x)
+     (lambda (y) (and (number? y) (= y x)))))
   (define (>=/c x)
     (flat-named-contract
      (format "(>=/c ~a)" x)

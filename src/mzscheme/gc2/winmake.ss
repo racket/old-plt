@@ -75,7 +75,7 @@
 		       (lambda (f)
 			 (>= t (file-or-directory-modify-seconds f)))
 		       deps))))
-    (unless (system- (format "cl.exe ~a /c ~a /Fo~a" flags c o))
+    (unless (system- (format "cl.exe ~a /MT /c ~a /Fo~a" flags c o))
       (error "failed compile"))))
 
 (define common-deps (list "xform.ss" "ctok.ss"))
@@ -105,7 +105,7 @@
 
 (define exe "mz2k.exe")
 
-(define libs "kernel32.lib user32.lib wsock32.lib libcmt.lib /nodefaultlib:LIBC")
+(define libs "/MT kernel32.lib user32.lib wsock32.lib")
 
 (let ([objs (list*
 	     "xsrc/main.obj"
@@ -123,7 +123,7 @@
 	     (> (file-or-directory-modify-seconds f)
 		ms))
 	   objs)
-      (unless (system- (format "cl.exe /Fo~a ~a ~a"
+      (unless (system- (format "cl.exe /out:~a ~a ~a"
 			       exe
 			       (let loop ([objs objs])
 				 (if (null? objs)

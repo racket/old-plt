@@ -3128,6 +3128,10 @@ static BOOL CALLBACK that_was_a_break(DWORD x)
   return TRUE;
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long StupidEofCheck(Tested_Input_File *tip)
 {
   DWORD got;
@@ -3142,8 +3146,16 @@ static long StupidEofCheck(Tested_Input_File *tip)
   return 0;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 static int stupid_windows_machine;
 
+#endif
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 #endif
 
 static long read_for_tested_file(void *data)
@@ -3259,6 +3271,10 @@ static long read_for_tested_file(void *data)
   return 0;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested)
 {
   Scheme_Input_Port *ip;
@@ -3268,6 +3284,11 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
     return _scheme_make_named_file_input_port(fp, name, 1);
     
   tip = MALLOC_ONE_RT(Tested_Input_File);
+#ifdef MZ_PRECSE_GC
+  /* FIXME! */
+  /* Use malloc because the testing thread needs to access it. */
+  tip = (Tested_Input_File *)malloc(sizeof(Tested_Input_File));
+#endif
 #ifdef MZTAG_REQUIRED
   tip->type = scheme_rt_tested_input_file;
 #endif
@@ -3568,6 +3589,10 @@ flush_tested(Scheme_Output_Port *port)
   tested_file_write_string(NULL, 0, -1, port);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long write_for_tested_file(void *data)
 {
   Tested_Output_File *top;
@@ -3600,6 +3625,10 @@ static long write_for_tested_file(void *data)
   return 0;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
 {
   Scheme_Output_Port *op;
@@ -3609,6 +3638,11 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
     return scheme_make_file_output_port(fp);
     
   top = MALLOC_ONE_RT(Tested_Output_File);
+#ifdef MZ_PRECSE_GC
+  /* FIXME! */
+  /* Use malloc because the testing thread needs to access it. */
+  top = (Tested_Output_File *)malloc(sizeof(Tested_Output_File));
+#endif
 #ifdef MZTAG_REQUIRED
   top->type = scheme_rt_tested_output_file;
 #endif
@@ -3623,9 +3657,6 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   top->done_sema = MAKE_SEMAPHORE();
 
 #ifdef WIN32_FD_HANDLES
-# ifdef NO_NEED_FOR_BEGINTHREAD
-#  define _beginthreadex CreateThread
-# endif
   {
     DWORD id;
     Scheme_Thread_Memory *tm;
@@ -5018,14 +5049,24 @@ typedef struct
   fd_set *rd, *wr, *ex;
 } Tcp_Select_Info;
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long select_for_tcp(void *data)
 {
+  /* Precise GC: we rely on the fact that a GC can't occur
+     during this thread's lifetime. */
   Tcp_Select_Info *info = (Tcp_Select_Info *)data;
   
   select(0, info->rd, info->wr, info->ex, NULL);  
 
   return 0;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 # ifdef USE_WINSOCK_TCP
 #  define TCP_T SOCKET

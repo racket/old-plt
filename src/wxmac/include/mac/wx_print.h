@@ -7,6 +7,33 @@
  * Copyright:	(c) 1995, AIAI, University of Edinburgh
  */
 
+/*
+ * In order to port this stuff to OS X, I'm trying to fathom exactly what
+ * happens in wx_print.cc and wx_dcpr1.cc.  Here's my best guess at what
+ * each class does, and some rough stabs at invariants.  It occurs to 
+ * me at this point that UML-type diagrams would be _very_ helpful here.
+ *
+ * classes in this file:
+ *
+ * wxPrintData : this is pretty straightforward: this class encapsulates
+ *   the persistent settings for a mac print session.  Under OS 8/9, this
+ *   means a TPrint structure.  Under carbon, this means a PMPrintSettings
+ *   and a PMPageFormat.  This class's constructor ensures that it always
+ *   starts with valid settings.  I don't know whether they can become in-
+ *   valid during execution.  There are a bunch of accessor functions which
+ *   provide access to the elements of these structures.  However, the 
+ *   encapsulated data is also public, so these accessors are for convenience
+ *   only.  The wxPrintData class does not refer to any other wx classes.
+ * 
+ * wxPrintDialog : this class represents the dialog.  It refers to a 
+ *   wxPrintData and a wxWindow (the parent).  It lives only as long as the
+ *   dialog is up.
+ *
+ * wxPrinter:  
+ *
+ *  JBC, 2001-07-03
+ */
+
 #ifndef wx_printh
 #define wx_printh
 
@@ -41,7 +68,12 @@ class wxPrintData: public wxObject
 {
  public:
   // macintosh
+#ifdef OS_X  
+  PMPrintSettings cPrintSettings;
+  PMPageFormat cPageFormat;
+#else
   THPrint macPrData;
+#endif
 
   wxPrintData(void);
   ~wxPrintData(void);
@@ -81,25 +113,15 @@ class wxPrintData: public wxObject
 class wxPrintDialog: public wxDialogBox
 {
  private:
-  wxPrintData printData;
-  wxDC *printerDC;
-  Bool destroyDC;
-  char *deviceName;
-  char *driverName;
-  char *portName;
+  wxPrintData *printData;
   wxWindow *dialogParent;
  public:
-  wxPrintDialog(wxWindow *parent, wxPrintData *data = NULL);
+  wxPrintDialog(wxWindow *parent, wxPrintData *data);
   ~wxPrintDialog(void);
 
-#ifdef wx_mac
   virtual void Show(Bool flag);
-#else
-  virtual void Show(Bool flag);
-#endif
 
   virtual wxPrintData& GetPrintData(void) { return printData; }
-  virtual wxDC *GetPrintDC(void);
 };
 
 /*
@@ -128,6 +150,7 @@ class wxPrinter: public wxObject
   virtual void ReportError(wxWindow *parent, wxPrintout *printout, char *message);
   virtual wxPrintData &GetPrintData(void);
   virtual inline Bool Abort(void) { return abortIt; }
+  
 };
 
 /*

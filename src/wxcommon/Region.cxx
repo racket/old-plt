@@ -620,10 +620,13 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
     *h = r.height;
 #endif
 #ifdef wx_mac
-    *x = (*rgn)->rgnBBox.left;
-    *y = (*rgn)->rgnBBox.top;
-    *w = (*rgn)->rgnBBox.right - *x;
-    *h = (*rgn)->rgnBBox.bottom - *y;
+    Rect r;
+    
+    GetRegionBounds(rgn,&r);
+    *x = r.left;
+    *y = r.top;
+    *w = r.right - *x;
+    *h = r.bottom - *y;
 #endif
 
     if (is_ps) {

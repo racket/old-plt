@@ -20,14 +20,6 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_mac_utils.h"
 #include "wx_area.h"
 
-// Declarations local to this file
-#define YSCALE(y) (yorigin - (y))
-#define     wx_round(a)    (int)((a)+.5)
-
-extern CGrafPtr wxMainColormap;
-
-void InstallColor(wxColour &c, int fg, Bool Colour);
-
 //-----------------------------------------------------------------------------
 // Default constructor
 //-----------------------------------------------------------------------------
@@ -174,8 +166,16 @@ void wxPrinterDC::Create(THPrint pData)
     min_x = 0; min_y = 0;
     max_x = 0; max_y = 0;
 
+#ifdef OS_X
+  PMRect pageRect;
+  
+  PMGetAdjustedPageRect(cPageFormat,&pageRect)
+  pixmapWidth = pageRect.right - pageRect.left;
+  pixmapHeight = pageRect.bottom - pageRect.top;
+#else
   pixmapWidth = (**prRecHandle).prInfo.rPage.right;
   pixmapHeight = (**prRecHandle).prInfo.rPage.bottom;
+#endif
 
   device = wxDEVICE_CANVAS;
   font = wxNORMAL_FONT;
@@ -226,11 +226,18 @@ void wxPrinterDC::Create(THPrint pData)
 wxPrinterDC::~wxPrinterDC(void)
 {
   if (ok) {
+#ifdef OS_X
+    PMEndDocument(cPrintContext);
+    if (close_handle) {
+        PMDisposePrintSettings(cPrintSettings);
+        PMDisposePageFormat(cPageFormat);
+    }
+#else    
     PrCloseDoc(prPort);
     if (close_handle)
       DisposeHandle((Handle)prRecHandle);
   }
-
+#endif
   wxPrClose();
 }
 
@@ -243,13 +250,23 @@ void wxPrinterDC::EndDoc(void) { }
 //-----------------------------------------------------------------------------
 void wxPrinterDC::StartPage(void)
 {
+#ifdef OS_X
+    if (cPrintContext)
+        PMBeginPage(cPrintContext,NULL);
+#else
   if (prPort)
     PrOpenPage(prPort, 0); 
+#endif
 }
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndPage(void)
 {
+#ifdef OS_X
+    if (cPrintContext)
+        PMEndPage(cPrintContext,NULL);
+#else
   if (prPort)
     PrClosePage(prPort);
+#endif
 }

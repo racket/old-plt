@@ -46,40 +46,13 @@
 #include "wx_dcps.h"
 #endif
 
-
-void printIdle(void);
-
-#ifdef	NO_UNIVERSAL
-
-ProcPtr printIdleUPP = (ProcPtr)&printIdle;
-extern ProcPtr printIdleUPP;
-
-#else	// ifdef NO_UNIVERSAL
-
-extern PrIdleUPP printIdleUPP;
-
-// Have universal headers, compiling PPC
-#define ppcPPC 1
-#ifdef ppcPPC
-RoutineDescriptor printIdleRD =
-BUILD_ROUTINE_DESCRIPTOR(uppPrIdleProcInfo,printIdle);
-PrIdleUPP printIdleUPP=(PrIdleUPP)&printIdleRD;
-
-#else	// ifdef __powerpc__
-
-// Have universal headers, compiling 68K
-PrIdleUPP printIdleUPP=(PrIdleUPP)&printIdle;
-
-#endif
-
-#endif
-
 static int popen_p;
+static Bool initialized = FALSE;
 
 #ifdef OS_X
 void wxPMBegin(void)
 {
-  if (!popen_p++) {
+  if (!initialized) {
     PMBegin();
     return PMError();
   }
@@ -88,7 +61,7 @@ void wxPMBegin(void)
 #else
 void wxPrOpen(void)
 {
-  if (!popen_p++) {
+  if (! initialized) {
     PrOpen();
     return PrError();
   }
@@ -99,20 +72,10 @@ void wxPrOpen(void)
 #ifdef OS_X
 void wxPMEnd(void)
 {
-  if (!--popen_p) {
-    PMEnd();
-    return PMError();
-  }
-  return noErr;
 }
 #else
 void wxPrClose(void)
 {
-  if (!--popen_p) {
-    PrClose();
-    return PrError();
-  }
-  return noErr;
 }
 #endif
 
@@ -120,70 +83,26 @@ wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
  wxDialogBox((wxFrame *)p, "Printer Dialog")
 {
   dialogParent = p;
-  printerDC = NULL;
-  destroyDC = TRUE;
-  deviceName = NULL;
-  driverName = NULL;
-  portName = NULL;
 
-  if (data)
-    printData = *data;
+  printData = data;
 
 }
 
 wxPrintDialog::~wxPrintDialog(void)
 {
-  if (destroyDC && printerDC)
-    delete printerDC;
-  if (deviceName) delete[] deviceName;
-  if (driverName) delete[] driverName;
-  if (portName) delete[] portName;
-  printData.macPrData = 0; // this is so ~wxPrintData wont delete THPrint
 }
 
-void wxPrintDialog::Show(Bool flag)
+Bool wxPrintDialog::Show(Bool flag)
 {
-
   Bool prtJob = FALSE;
-  short strp, endp;
 
-	/* MATTHEW: [6] */
-#if 0
-  endp = (**printData.macPrData).prJob.iLstPage;
-  strp = (**printData.macPrData).prJob.iFstPage;
+#ifdef OS_X
+  PMPrintDialog(printData.cPrintSettings,printData.cPageFormat,&prtJob);
+#else
+  prtJob = PrJobDialog(printData.macPrData);
 #endif
 
-  wxPrOpen();
-
-  PrValidate( printData.macPrData);
-
-  if (PrError() != fnfErr) {
-    prtJob = PrJobDialog(printData.macPrData);
-    if (!prtJob)
-    {
-       (**printData.macPrData).prJob.iLstPage = 0;
-       (**printData.macPrData).prJob.iFstPage = 0;
-       wxPrClose();
-       return;
-    }
-  }
-
-  if (PrError())
-    DisposeHandle((Handle)printData.macPrData);
-
-  wxPrClose();
-
-}
-
-wxDC *wxPrintDialog::GetPrintDC(void)
-{
-  if (printerDC)
-  {
-    destroyDC = FALSE;
-    return printerDC;
-  }
-  else
-    return NULL;
+  return prtJob;
 }
 
 /*
@@ -192,6 +111,27 @@ wxDC *wxPrintDialog::GetPrintDC(void)
 
 wxPrintData::wxPrintData(void)
 {
+#ifdef OS_X
+  if (PMCreatePrintSettings(&cPrintSettings) != noErr)
+    return;
+    
+  if (PMDefaultPrintSettings(cPrintSettings) != noErr) {
+    PMDisposePrintSettings(cPrintSettings);
+    return;
+  }
+  
+  if (PMCreatePageFormat(&cPageFormat) != noErr) {
+    PMDisposePrintSettings(cPrintSettings);
+    return;
+  }
+  
+  if (PMDefaultPageFormat(cPageFormat) != noErr) {
+    PMDisposePrintSettings(cPrintSettings);
+    PMDisposePageFormat(cPageFormat);
+    return;
+  }
+
+#else
   THPrint pd = (THPrint)NewHandleClear(sizeof(TPrint));
   CheckMemOK(pd);
   macPrData = pd;
@@ -202,43 +142,74 @@ wxPrintData::wxPrintData(void)
 
 wxPrintData::~wxPrintData(void)
 {
+#ifdef OS_X
+  if (cPrintSettings)
+    PMDisposePrintSettings(cPrintSettings);
+
+  if (cPageFormat)
+    PMDisposePageFormat(cPageFormat);
+#else
   if (macPrData)
     DisposeHandle((Handle)macPrData);
+#endif
 }
 
+#ifndef OS_X
+// can't implement this function under OS X
 void wxPrintData::SetAbortFlag()
 {
 	  (**macPrData).prJob.fFromUsr=TRUE;
 }
+#endif
 
 int wxPrintData::GetFromPage(void)
 {
+#ifdef OS_X
+  UInt32 result;
+  PMGetFirstPage(cPrintSettings,&result);
+  return result;
+#else
   return (**macPrData).prJob.iFstPage;
+#endif
 }
 
 int wxPrintData::GetToPage(void)
 {
+#ifdef OS_X
+  UInt32 result;
+  PMGetLastPage(cPrintSettings,&result);
+  return result;
+#else
   return (**macPrData).prJob.iLstPage;
+#endif
 }
 
 int wxPrintData::GetMinPage(void)
 {
-  return (**macPrData).prJob.iFstPage;
+  return GetFromPage();
 }
 
 int wxPrintData::GetMaxPage(void)
 {
-  return (**macPrData).prJob.iLstPage;
+  return GetToPage();
 }
 
 int wxPrintData::GetNoCopies(void)
 {
+#ifdef OS_X
+  UInt32 result;
+  PMGetCopies(cPrintSettings,&result);
+  return result;
+#else
   return (**macPrData).prJob.iCopies;
+#endif
 }
 
 Bool wxPrintData::GetAllPages(void)
 {
-  return ( GetMaxPage() == (**macPrData).prJob.iLstPage);
+  // here's the original (nonsensical) line:
+  // return ( GetMaxPage() == (**macPrData).prJob.iLstPage);
+  return TRUE;
 }
 
 Bool wxPrintData::GetCollate(void)
@@ -261,31 +232,46 @@ wxDC *wxPrintData::GetDC(void)
 
 void wxPrintData::SetFromPage(int p)
 {
+#ifdef OS_X
+  PMSetFirstPage(cPrintSettings,p,false);
+#else
   (**macPrData).prJob.iFstPage = p;
+#endif
 }
 
 void wxPrintData::SetToPage(int p)
 {
+#ifdef OS_X
+  PMSetLastPage(cPrintSettings,p,false);
+#else
   (**macPrData).prJob.iLstPage = p;
+#endif
 }
 
 void wxPrintData::SetMinPage(int p)
 {
-  (**macPrData).prJob.iFstPage = p;
+  SetFromPage(p);
 }
 
 void wxPrintData::SetMaxPage(int p)
 {
-  (**macPrData).prJob.iLstPage = p;
+  SetToPage(p);
 }
 
 void wxPrintData::SetNoCopies(int c)
 {
+#ifdef OS_X
+  PMSetCopies(cPrintSettings,c,false);
+#else
   (**macPrData).prJob.iCopies = c;
+#endif
 }
 
 void wxPrintData::SetAllPages(Bool flag)
 {
+#ifdef OS_X
+  PMSetPageRange(cPrintSettings,0,kPMPrintAllPages);
+#endif
 }
 
 void wxPrintData::SetCollate(Bool flag)
@@ -321,10 +307,12 @@ void wxPrintData::SetSetupDialog(Bool flag)
 //  PrClose();
 }
 
+#ifndef OS_X
 void wxPrintData::operator=(const wxPrintData& data)
 {
    this->macPrData = data.macPrData;
 }
+#endif
 
 /*
  * Printer
@@ -367,10 +355,16 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (maxPage == 0)
     return FALSE;
 
+#ifdef OS_X
+  if (! printData) {
+    printData = new wxPrintData;
+  }
+#else
   wxPrOpen();
   if (PrError() != fnfErr) {
     PrintDefault(printData.macPrData);
   }
+#endif  
 
   printData.SetMinPage(minPage);
   printData.SetMaxPage(maxPage);
@@ -521,7 +515,9 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
   delete dc;
   
+#ifdef OS_X
   wxPrClose();
+#endif
 
   return TRUE;
 }

@@ -160,7 +160,11 @@ static int QueueTransferredEvent(EventRecord *e)
 	TEFromScrap();
 	resume_ticks = TickCount();
       } else {
+#ifdef OS_X            
+        ClearCurrentScrap();
+#else
 	ZeroScrap();
+#endif
 	TEToScrap();
       }
         
@@ -355,7 +359,11 @@ int MrEdGetNextEvent(int check_only, int current_only,
        TEFromScrap();
        resume_ticks = TickCount();
      } else {
+#ifdef OS_X
+       ClearCurrentScrap();
+#else
        ZeroScrap();
+#endif
        TEToScrap();
      }
      
@@ -560,7 +568,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
   /* Try activate and high-level events: */
   for (q = first; q; q = q->next) {
     switch (q->event.what) {
+#ifndef OS_X    
+    // OS X does not support the diskEvt event. Yay!
     case diskEvt:
+#endif    
     case kHighLevelEvent:
        fc = NULL;
 	   if ((!c && !fc) || (!c && fc->ready) || (fc == c)) {

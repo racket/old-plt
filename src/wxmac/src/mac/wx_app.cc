@@ -31,6 +31,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_dialg.h"
 #include "wx_cmdlg.h"
 #include "wxTimeScale.h"
+#include "wx_print.h"
 #if (defined(powerc) || defined(__powerc)) && defined(MPW)
 QDGlobals 	qd;
 #endif
@@ -113,7 +114,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	wx_class = NULL;
 	wxSetLanguage(language);
 	cLastMousePos.v = cLastMousePos.h = -1;
-
+        
 }
 
 //-----------------------------------------------------------------------------

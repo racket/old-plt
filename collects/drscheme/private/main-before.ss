@@ -189,7 +189,23 @@
                    (send text begin-edit-sequence)
                    (send text lock #f)
                    (send text erase)
-                   (send text insert (format "<<language name>>"))
+                   (send text insert 
+                         (format
+                          ";; howmany : list-of-numbers -> number~
+                         \n;; to determine how many numbers are in `a-lon'~
+                         \n(define (howmany a-lon)~
+                         \n  (cond~
+                         \n    [(empty? a-lon) 0]~
+                         \n    [else (+ 1 (howmany (rest a-lon)))]))~
+                         \n~
+                         \n;; examples as tests~
+                         \n(howmany empty)~
+                         \n=~
+                         \n0~
+                         \n~
+                         \n(howmany (cons 1 (cons 2 (cons 3 empty))))~
+                         \n=~
+                         \n3"))
                    (send text set-position 0 0)
                    (send text lock #t)
                    (send text end-edit-sequence))])

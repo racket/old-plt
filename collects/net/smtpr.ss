@@ -79,7 +79,7 @@
 	   (lambda (l)
 	     (fprintf w "~a~a" (protect-line l) crlf))
 	   message-lines)
-	  (fprintf w "~a.~a" crlf crlf)
+	  (fprintf w ".~a" crlf)
 	  (check-reply r 250)
 	  (fprintf w "QUIT~a" crlf)
 	  (check-reply r 221)

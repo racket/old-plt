@@ -63,7 +63,7 @@ carry over the computation of the original
       (define cut-off 25)
       
       (define number-snip%
-        (class snip%
+        (class* snip% (special<%>)
           ;; number : number
           ;; this is the number to show
           (init-field number)

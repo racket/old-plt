@@ -260,10 +260,10 @@ _URL viewing_
 To load a module for accessing a Web _browser_ either
   (require (lib "external.ss" "browser"))
 or
-  (require (lib "send-url.ss" "net"))
+  (require (lib "sendurl.ss" "net"))
 
 The version in "browser" will prompt the user for a browser preference
-if not already set.  The version in "send-url.ss" lacks this capability,
+if not already set.  The version in "sendurl.ss" lacks this capability,
 but does not depend on MrEd's graphical toolbox.
 
 These modules define one main function:

@@ -1141,15 +1141,15 @@ static Bool IsCaptureAncestorArea(wxArea *area)
 	return FALSE;
 }
  
-Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
+Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 { // For point expressed in parent area c.s., seek deepest sub-window containing it
 	Bool result = FALSE;
 
 	if (!IsEnable())
 		return FALSE;
 
-	int hitX = mouseEvent.x - cWindowX; // window c.s.
-	int hitY = mouseEvent.y - cWindowY; // window c.s.
+	int hitX = mouseEvent->x - cWindowX; // window c.s.
+	int hitY = mouseEvent->y - cWindowY; // window c.s.
 
 	int capThis = (wxWindow::gMouseWindow == this);
 	wxArea* hitArea = NULL;
@@ -1168,7 +1168,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 		if (hitArea || capThis)
 		{
 			wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
-			*areaMouseEvent = mouseEvent;
+			*areaMouseEvent = *mouseEvent;
 			int hitAreaX, hitAreaY;
 			if (hitArea) {
 			  wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
@@ -1227,7 +1227,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 	/* Frame/dialog: hande all events, even outside the window */	
 	if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
 	  wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
-	  *areaMouseEvent = mouseEvent;
+	  *areaMouseEvent = *mouseEvent;
 	  int clientHitX = areaMouseEvent->x;
 	  int clientHitY = areaMouseEvent->y;
 	  ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.

@@ -40,7 +40,7 @@ class wxMenu;
 class wxWindow;
 
 // Callback function type definition
-typedef void (*wxFunction) (wxObject&, wxEvent&);
+typedef void (*wxFunction)(wxObject *, wxEvent *);
 
 /*
  * Base class for frame, panel, canvas, panel items, dialog box.
@@ -87,15 +87,15 @@ class wxbWindow: public wxObject
 
   inline virtual void Paint(void) {};             // Called when needs painting
   inline virtual void OnSize(int width, int height) {}; // Called on resize
-  inline virtual void OnEvent(wxMouseEvent& event) {};  // Called on mouse event
-  inline virtual void OnChar(wxKeyEvent& event) {};     // Called on character event
+  inline virtual void OnEvent(wxMouseEvent *event) {};  // Called on mouse event
+  inline virtual void OnChar(wxKeyEvent *event) {};     // Called on character event
   inline virtual Bool OnClose(void) { return TRUE; };  // Delete window if returns TRUE
   inline virtual void OnActivate(Bool active) {};       // Called on window activation (MSW)
   inline virtual void OnSetFocus(void) {};              // Called on setting focus
   inline virtual void OnKillFocus(void) {};             // Called on killing focus
   inline virtual void OnDropFile(char *files) {};
                                                  // Called when files dropped
-  inline virtual void OnCommand(wxWindow& win, wxCommandEvent& event) {};
+  inline virtual void OnCommand(wxWindow *win, wxCommandEvent *event) {};
                                                  // Called if child control has no
                                                  // callback function
 

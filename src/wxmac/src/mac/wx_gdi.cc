@@ -323,10 +323,10 @@ wxPen::~wxPen()
 }
 
 //-----------------------------------------------------------------------------
-wxPen::wxPen(wxColour& col, int Width, int Style):
+wxPen::wxPen(wxColour *col, int Width, int Style):
   wxbPen(col, Width, Style)
 {
-  colour = col;
+  colour.CopyFrom(col);
   stipple = NULL ;
   width = Width;
   style = Style;
@@ -334,9 +334,6 @@ wxPen::wxPen(wxColour& col, int Width, int Style):
   cap = wxCAP_ROUND ;
   nb_dash = 0 ;
   dash = NULL ;
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -351,10 +348,6 @@ wxPen::wxPen(char *col, int Width, int Style):
   cap = wxCAP_ROUND ;
   nb_dash = 0 ;
   dash = NULL ;
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen(this);
-#endif
 }
 
 // Brushes
@@ -365,29 +358,20 @@ wxBrush::wxBrush(void)
   colour = NULL;
   style = wxSOLID;
   stipple = NULL ;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
 wxBrush::~wxBrush()
 {
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->RemoveBrush(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
-wxBrush::wxBrush(wxColour& col, int Style):
+wxBrush::wxBrush(wxColour *col, int Style):
   wxbBrush(col, Style)
 {
   SetColour(col);
   style = Style;
   stipple = NULL ;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -397,9 +381,6 @@ wxBrush::wxBrush(char *col, int Style):
   SetColour(col);
   style = Style;
   stipple = NULL ;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush(this);
-#endif
 }
 
 // Cursors
@@ -409,9 +390,6 @@ wxCursor::wxCursor(void)
 {
   __type = wxTYPE_CURSOR;
   cMacCursor = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheCursorList->Append(this) ;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -419,9 +397,6 @@ wxCursor::wxCursor(char bits[], int width, int height, int depth)
 {
   __type = wxTYPE_CURSOR;
   cMacCursor = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheCursorList->Append(this) ;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -429,9 +404,6 @@ wxCursor::wxCursor(char *cursor_file)
 {
   __type = wxTYPE_CURSOR;
   cMacCursor = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheCursorList->Append(this) ;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -546,17 +518,11 @@ wxCursor::wxCursor(int cursor_type)
       break ;
     }
   }
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheCursorList->Append(this) ;
-#endif
 }
 
 //-----------------------------------------------------------------------------
 wxCursor::~wxCursor(void)
 {
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheCursorList->DeleteObject(this) ;
-#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -217,6 +217,11 @@ void wxInitClipboard(void)
     wxTheClipboard = new wxClipboard;
 }
 
+wxClipboardClient::wxClipboardClient()
+{
+  formats = new wxStringList;
+}
+
 wxClipboard::wxClipboard()
 {
   clipOwner = NULL;
@@ -260,8 +265,8 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
 
     wxEmptyClipboard();
 
-    formats = clipOwner->formats.ListToArray(FALSE);
-    for (i = clipOwner->formats.Number(); i--; ) {
+    formats = clipOwner->formats->ListToArray(FALSE);
+    for (i = clipOwner->formats->Number(); i--; ) {
       ftype = FormatStringToID(formats[i]);
       data = clipOwner->GetData(formats[i], &size);
       if (!wxSetClipboardData(ftype, (wxObject *)data, size, 1)) {
@@ -335,7 +340,7 @@ char *wxClipboard::GetClipboardString(long time)
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {
-    if (clipOwner->formats.Member(format))
+    if (clipOwner->formats->Member(format))
       return clipOwner->GetData(format, length);
     else
       return NULL;

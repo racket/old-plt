@@ -116,33 +116,7 @@ class wxbFont: public wxObject
   inline Bool GetUnderlined(void) { return underlined; }
 };
 
-class wxFontNameDirectory : public wxObject
-{
-  class wxHashTable *table;
-  int nextFontId;
- public:
-  wxFontNameDirectory(void);
-  ~wxFontNameDirectory();
-  void Initialize(void);
-  char *GetScreenName(int fontid, int weight, int style);
-  char *GetPostScriptName(int fontid, int weight, int style);
-  char *GetAFMName(int fontid, int weight, int style);
-
-  void SetScreenName(int fontid, int weight, int style, char *s);
-  void SetPostScriptName(int fontid, int weight, int style, char *s);
-  void SetAFMName(int fontid, int weight, int style, char *s);
-
-  void Initialize(int fontid, int family, const char *name);
-  int GetNewFontId(void);
-  
-  int FindOrCreateFontId(const char *name, int family); 
-
-  int GetFontId(const char *name);
-  char *GetFontName(int fontid);
-  int GetFamily(int fontid);
-};
-
-extern wxFontNameDirectory wxTheFontNameDirectory;
+#include "FontDirectory.h"
 
 // Colour
 class wxColour: public wxObject
@@ -153,15 +127,7 @@ class wxColour: public wxObject
   unsigned char blue;
   unsigned char green;
  public:
-#ifdef wx_x
-  int pixel;
-#endif
-#ifdef wx_msw
-  COLORREF pixel ;
-#endif
-#ifdef wx_mac
   RGBColor pixel;
-#endif
 
   int locked;
   inline Bool IsMutable(void) { return !locked; }
@@ -171,16 +137,10 @@ class wxColour: public wxObject
   wxColour(unsigned char r, unsigned char b, unsigned char g);
   wxColour(const char *col);
   ~wxColour(void) ;
+  wxColour *CopyFrom(wxColour *src);
   wxColour& operator =(wxColour& src) ;
   wxColour& operator =(const char *src) ;
-  inline int Ok(void)
-#ifdef wx_x
-//    { return (isInit && (pixel != -1)) ; } // Can't be right -- pixel can't
-                                             // always be initialized!
-    { return (isInit) ; }
-#else
-    { return (isInit) ; }
-#endif
+  inline int Ok(void) { return (isInit) ; }
 
   void Set(unsigned char r, unsigned char b, unsigned char g);
   void Get(unsigned char *r, unsigned char *b, unsigned char *g);
@@ -196,7 +156,6 @@ class wxColourMap;
 
 
 // Point
-#if (!USE_TYPEDEFS)
 class wxPoint: public wxObject
 {
  public:
@@ -206,14 +165,7 @@ class wxPoint: public wxObject
   wxPoint(float the_x, float the_y);
   ~wxPoint(void);
 };
-#else
-typedef struct {
-                float x ;
-                float y ;
-               } wxPoint ;
-#endif
 
-#if (!USE_TYPEDEFS)
 class wxIntPoint: public wxObject
 {
  public:
@@ -223,13 +175,6 @@ class wxIntPoint: public wxObject
   wxIntPoint(int the_x, int the_y);
   ~wxIntPoint(void);
 };
-#else
-typedef struct {
-                int x ;
-                int y ;
-               } wxIntPoint ;
-#endif
-
 
 // Pen
 class wxPen;
@@ -247,11 +192,11 @@ class wxbPen: public wxObject
   wxDash *dash ;
   wxColour colour;
   wxbPen(void);
-  wxbPen(wxColour& col, int width, int style);
+  wxbPen(wxColour *col, int width, int style);
   wxbPen(const char *col, int width, int style);
   ~wxbPen(void);
 
-  virtual void SetColour(wxColour& col) ;
+  virtual void SetColour(wxColour *col) ;
   virtual void SetColour(const char *col)  ;
   virtual void SetColour(char r, char g, char b)  ;
 
@@ -262,7 +207,7 @@ class wxbPen: public wxObject
   virtual void SetJoin(int join)  ;
   virtual void SetCap(int cap)  ;
 
-  virtual wxColour &GetColour(void);
+  virtual wxColour *GetColour(void);
   virtual int GetWidth(void);
   virtual int GetStyle(void);
   virtual int GetJoin(void);
@@ -285,17 +230,17 @@ class wxbBrush: public wxObject
  public:
   wxColour colour;
   wxbBrush(void);
-  wxbBrush(wxColour& col, int style);
+  wxbBrush(wxColour *col, int style);
   wxbBrush(char *col, int style);
   ~wxbBrush(void);
 
-  virtual void SetColour(wxColour& col)  ;
+  virtual void SetColour(wxColour *col)  ;
   virtual void SetColour(const char *col)  ;
   virtual void SetColour(char r, char g, char b)  ;
   virtual void SetStyle(int style)  ;
   virtual void SetStipple(wxBitmap* stipple=NULL)  ;
 
-  virtual wxColour &GetColour(void);
+  virtual wxColour *GetColour(void);
   virtual int GetStyle(void);
   virtual wxBitmap *GetStipple(void);
   
@@ -375,14 +320,10 @@ class wxFontList: public wxObject
 class wxColourDatabase: public wxList
 {
  public:
-#ifdef wx_mac
   wxColourDatabase(KeyType type);
-#else
-  wxColourDatabase(int type);
-#endif
   ~wxColourDatabase(void) ;
   wxColour *FindColour(const char *colour);
-  char *FindName(wxColour& colour);
+  char *FindName(wxColour *colour);
   void Initialize(void);
 };
 

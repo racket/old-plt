@@ -175,14 +175,12 @@ class wxbDC: public wxObject
   inline virtual int  GetMapMode(void) {return mapping_mode;};
 
   // The following methods provide a cleaner interface
-  inline virtual wxColor *GetBackground(void)      { wxColour *c = new wxColour;
-                                                     *c = current_background_color;
-                                                     return c; }
+  virtual wxColor *GetBackground(void);
   inline virtual wxBrush *GetBrush(void)           { return current_brush ;}
   inline virtual wxFont  *GetFont(void)            { return font ;}
   inline virtual wxPen   *GetPen(void)             { return current_pen ;}
-  inline virtual wxColour&GetTextBackground(void)  { return current_text_background ;}
-  inline virtual wxColour&GetTextForeground(void)  { return current_text_foreground ;}
+  inline virtual wxColour *GetTextBackground(void)  { return &current_text_background ;}
+  inline virtual wxColou *GetTextForeground(void)  { return &current_text_foreground ;}
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);

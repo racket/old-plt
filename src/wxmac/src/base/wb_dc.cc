@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cc,v 1.3 1998/08/19 20:59:22 robby Exp $
+ * RCS_ID:      $Id: wb_dc.cc,v 1.4 1999/10/05 16:43:15 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -128,6 +128,13 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
   DrawSpline(point_list);
 }
 #endif
+
+wxColor *wxbDC::GetBackground(void);
+{ 
+  wxColour *c = new wxColour;
+  c.CopyFrom(&current_background_color);
+  return c;
+}
 
 void wxbDC::SetLogicalOrigin(float x, float y)
 {

@@ -64,7 +64,7 @@ class wxPen: public wxbPen
 {
  public:
   wxPen(void);
-  wxPen(wxColour& col, int width, int style);
+  wxPen(wxColour *col, int width, int style);
   wxPen(char *col, int width, int style);
   ~wxPen(void);
 
@@ -75,7 +75,7 @@ class wxBrush: public wxbBrush
 {
  public:
   wxBrush(void);
-  wxBrush(wxColour& col, int style);
+  wxBrush(wxColour *col, int style);
   wxBrush(char *col, int style);
   ~wxBrush(void);
 

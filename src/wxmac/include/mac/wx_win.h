@@ -286,7 +286,7 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Mouse methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	virtual Bool SeekMouseEventArea(wxMouseEvent& mouseEvent); // mac platform only
+	virtual Bool SeekMouseEventArea(wxMouseEvent *mouseEvent); // mac platform only
 	virtual Bool AdjustCursor(int mouseX, int mouseY); // mac platform only - GRW
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -283,13 +283,13 @@ void wxApp::doMacMouseUp(void)
 		theMouseEvent.x = hitX;
 		theMouseEvent.y = hitY;
 		theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
-
+		
 		/* Grab is now only used for grabbing on mouse-down for canvases */
-        if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
-           mouseWindow->ReleaseMouse();
-				
+		if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
+		  mouseWindow->ReleaseMouse();
+		
 		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))
-		  mouseWindow->OnEvent(theMouseEvent);
+		  mouseWindow->OnEvent(&theMouseEvent);
 	}
 	else
  	{
@@ -319,7 +319,7 @@ void wxApp::doMacMouseUp(void)
  			theMouseEvent.y = hitY;
 			theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
 
- 			macWxFrame->SeekMouseEventArea(theMouseEvent);
+ 			macWxFrame->SeekMouseEventArea(&theMouseEvent);
  		}
  	}
 }
@@ -355,11 +355,11 @@ void wxApp::doMacMouseMotion(void)
 		theMouseEvent.y = hitY;
 		
 		/* Grab is now only used for grabbing on mouse-down for canvases */
-        if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS) && !isMouseDown)
-           mouseWindow->ReleaseMouse();
+		if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS) && !isMouseDown)
+		  mouseWindow->ReleaseMouse();
            
 		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))		  
-		  mouseWindow->OnEvent(theMouseEvent);
+		  mouseWindow->OnEvent(&theMouseEvent);
 	}
 	else
 	{
@@ -373,7 +373,7 @@ void wxApp::doMacMouseMotion(void)
 			theMouseEvent.x = hitX; // frame parent area c.s.
 			theMouseEvent.y = hitY; // frame parent area c.s.
 
-			macWxFrame->SeekMouseEventArea(theMouseEvent);
+			macWxFrame->SeekMouseEventArea(&theMouseEvent);
 		}
 	}
 }
@@ -404,7 +404,7 @@ void wxApp::doMacMouseLeave(void)
 	  theMouseEvent.y = cCurrentEvent.where.v;
 
 	  if (!doCallPreMouseEvent(win, win, &theMouseEvent))
-	    win->OnEvent(theMouseEvent);
+	    win->OnEvent(&theMouseEvent);
 	}
 }
 
@@ -786,7 +786,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
 	theMouseEvent.x = hitX; // frame parent area c.s.
 	theMouseEvent.y = hitY; // frame parent area c.s.
 
-	frame->SeekMouseEventArea(theMouseEvent);
+	frame->SeekMouseEventArea(&theMouseEvent);
 }
 
 //-----------------------------------------------------------------------------

@@ -40,11 +40,13 @@ Bool wxGetClipboardFormatName(int dataFormat, char *formatName, int maxCount);
 class wxClipboardClient : public wxObject
 {
  public:
-  wxStringList formats;
+  wxStringList *formats;
   /* This list should be filled in with strings indicating the formats
      this client can provide. Almost all clients will provide "TEXT".
      Format names should be 4 characters long, so things will work
      out on the Macintosh */
+
+  wxClipboardClient();
 
   virtual void BeingReplaced(void) = 0;
   /* This method is called when the client is losing the selection. */

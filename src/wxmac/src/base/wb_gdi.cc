@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.17 1999/10/05 13:55:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.18 1999/11/13 15:11:42 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -219,19 +219,27 @@ wxColour::~wxColour (void)
 //  wxTheColourList->DeleteObject (this);
 }
 
-wxColour& wxColour::operator =(wxColour& src)
+wxColour *wxColour::CopyFrom(wxColour *src)
 {
-  red = src.red;
-  green = src.green;
-  blue = src.blue;
-  pixel = src.pixel;
-  isInit = src.isInit;
-#ifdef wx_mac
+  red = src->red;
+  green = src->green;
+  blue = src->blue;
+  pixel = src->pixel;
+  isInit = src->isInit;
+
   pixel.red = red << 8;
   pixel.green = green << 8;
   pixel.blue = blue << 8;
-#endif
-  return (*this);
+
+  return this;
+}
+
+
+wxColour &wxColour::operator =(wxColour &src)
+{
+  CopyFrom(&src);
+
+  return this;
 }
 
 wxColour& wxColour::operator = (const char *col)
@@ -251,17 +259,11 @@ wxColour& wxColour::operator = (const char *col)
       blue = 0;
       isInit = FALSE;
     }
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = RGB (red, green, blue);
-#endif
-#ifdef wx_mac
+
   pixel.red = red << 8;
   pixel.green = green << 8;
   pixel.blue = blue << 8;
-#endif
+
   return (*this);
 }
 
@@ -271,17 +273,10 @@ void wxColour::Set (unsigned char r, unsigned char g, unsigned char b)
   green = g;
   blue = b;
   isInit = TRUE;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = RGB (red, green, blue);
-#endif
-#ifdef wx_mac
+
   pixel.red = red << 8;
   pixel.green = green << 8;
   pixel.blue = blue << 8;
-#endif
 }
 
 void wxColour::Get (unsigned char *r, unsigned char *g, unsigned char *b)
@@ -291,12 +286,7 @@ void wxColour::Get (unsigned char *r, unsigned char *g, unsigned char *b)
   *b = blue;
 }
 
-#ifdef wx_mac
-wxColourDatabase::wxColourDatabase(KeyType type):wxList(type)
-#else
-wxColourDatabase::wxColourDatabase (int type):
-wxList (type)
-#endif
+wxColourDatabase::wxColourDatabase(KeyType type) : wxList(type)
 {
 }
 
@@ -304,13 +294,14 @@ wxColourDatabase::~wxColourDatabase (void)
 {
   // Cleanup Colour allocated in Initialize()
   wxNode *node = First ();
-  while (node)
-    {
-      wxColour *col = (wxColour *) node->Data ();
-      wxNode *next = node->Next ();
-      delete col;
-      node = next;
-    }
+  while (node) {
+    wxColour *col;
+    wxNode *next;
+    col = (wxColour *) node->Data ();
+    next = node->Next ();
+    delete col;
+    node = next;
+  }
 }
 
 // Colour database stuff
@@ -418,49 +409,15 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   wxNode *node = Find(colour);
   if (node)
     return (wxColour *)node->Data();
-#if defined(wx_msw) || defined(wx_mac)
-  else return NULL;
-#else
-  else {
-    XColor xcolour;
-
-#ifdef wx_motif
-    Display *display = XtDisplay(wxTheApp->topLevel) ;
-#endif
-#ifdef wx_xview
-    Xv_Screen screen = xv_get(xview_server, SERVER_NTH_SCREEN, 0);
-    Xv_opaque root_window = xv_get(screen, XV_ROOT);
-    Display *display = (Display *)xv_get(root_window, XV_DISPLAY);
-#endif
-
-    if (!XParseColor(display, wxMainColormap,colour,&xcolour))
-      return NULL;
-
-    unsigned char r = (unsigned char)(xcolour.red >> 8);
-    unsigned char g = (unsigned char)(xcolour.green >> 8);
-    unsigned char b = (unsigned char)(xcolour.blue >> 8);
-
-    wxColour *col = new wxColour(r, g, b);
-    Append(colour, col);
-
-    return col;
-  }
-#endif
+  else 
+    return NULL;
 }
 
-/* Old FindColour
-wxColour *wxColourDatabase::FindColour (const char *colour)
+char *wxColourDatabase::FindName (wxColour *colour)
 {
-  wxNode *node = Find (colour);
-  return node ? (wxColour *) node->Data () : NULL ;
-}
-*/
-
-char *wxColourDatabase::FindName (wxColour& colour)
-{
-  unsigned char red = colour.Red ();
-  unsigned char green = colour.Green ();
-  unsigned char blue = colour.Blue ();
+  unsigned char red = colour->Red();
+  unsigned char green = colour->Green();
+  unsigned char blue = colour->Blue();
 
   for (wxNode * node = First (); node; node = node->Next ())
     {
@@ -484,16 +441,7 @@ wxInitializeStockObjects (void)
   wxThePenList = new wxPenList;
   wxTheFontList = new wxFontList;
   wxTheBitmapList = new wxGDIList;
-#ifdef wx_mac
   wxTheCursorList = new wxGDIList;
-#endif
-  // wxTheColourList =  new wxGDIList;
-
-#ifdef wx_motif
-#endif
-#ifdef wx_x
-  wxFontPool = new XFontPool;
-#endif
 
   wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
   wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
@@ -582,8 +530,8 @@ wxbPen::wxbPen (void)
 
 wxbPen::~wxbPen ()
 {
-	if (stipple)
-		--stipple->selectedIntoDC;
+  if (stipple)
+    --stipple->selectedIntoDC;
 }
 
 wxbPen::wxbPen (wxColour& col, int Width, int Style)
@@ -629,14 +577,14 @@ int wxbPen::GetDashes (wxDash ** ptr)
   return nb_dash;
 }
 
-wxColour& wxbPen::GetColour (void)
+wxColour *wxbPen::GetColour (void)
 {
-  return colour;
+  return &colour;
 }
 
-void wxbPen::SetColour (wxColour& col)
+void wxbPen::SetColour (wxColour *col)
 {
-  colour = col;
+  colour.CyopFrom(col);
 }
 
 void wxbPen::SetColour (const char *col)
@@ -697,11 +645,11 @@ wxbBrush::wxbBrush (void)
 
 wxbBrush::~wxbBrush ()
 {
-	if (stipple)
-		--stipple->selectedIntoDC;
+  if (stipple)
+    --stipple->selectedIntoDC;
 }
 
-wxbBrush::wxbBrush (wxColour& col, int Style)
+wxbBrush::wxbBrush (wxColour *col, int Style)
 {
   __type = wxTYPE_BRUSH;
   locked = 0;
@@ -723,14 +671,14 @@ wxBitmap *wxbBrush::GetStipple (void)
   return stipple;
 }
 
-wxColour& wxbBrush::GetColour (void)
+wxColour *wxbBrush::GetColour (void)
 {
-  return colour;
+  return &colour;
 }
 
-void wxbBrush::SetColour (wxColour& col)
+void wxbBrush::SetColour (wxColour *col)
 {
-  colour = col;
+  colour.CopyFrom(col);
 }
 
 void wxbBrush::SetColour (const char *col)
@@ -810,11 +758,11 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
     {
       wxPen *each_pen = (wxPen *) node->Data ();
       if (each_pen &&
-	  each_pen->GetWidth () == width &&
-	  each_pen->GetStyle () == style &&
-	  each_pen->GetColour ().Red () == colour->Red () &&
-	  each_pen->GetColour ().Green () == colour->Green () &&
-	  each_pen->GetColour ().Blue () == colour->Blue ())
+	  each_pen->GetWidth() == width &&
+	  each_pen->GetStyle() == style &&
+	  each_pen->GetColour()->Red () == colour->Red () &&
+	  each_pen->GetColour()->Green () == colour->Green () &&
+	  each_pen->GetColour()->Blue () == colour->Blue ())
 	return each_pen;
     }
   pen = new wxPen (*colour, width, style);
@@ -826,7 +774,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
 
 wxPen *wxPenList::FindOrCreatePen (char *colour, int width, int style)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour (colour);
+  wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
   if (the_colour)
     return FindOrCreatePen (the_colour, width, style);
   else
@@ -863,10 +811,10 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
     {
       wxBrush *each_brush = (wxBrush *) node->Data ();
       if (each_brush &&
-	  each_brush->GetStyle () == style &&
-	  each_brush->GetColour ().Red () == colour->Red () &&
-	  each_brush->GetColour ().Green () == colour->Green () &&
-	  each_brush->GetColour ().Blue () == colour->Blue ())
+	  each_brush->GetStyle() == style &&
+	  each_brush->GetColour()->Red() == colour->Red() &&
+	  each_brush->GetColour()->Green() == colour->Green() &&
+	  each_brush->GetColour()->Blue() == colour->Blue())
 	return each_brush;
     }
   brush = new wxBrush (*colour, style);

@@ -22,17 +22,13 @@
 typedef       void    *wxObject ;
 #else
 
-#if WXGARBAGE_COLLECTION_ON
-#include "gc_cpp.h"
+#include "wxGC.h"
+
 #define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
+
 class wxObject : public gc_cleanup
-#else
-#define WXGC_IGNORE(ptr)
-#define WXGC_ATOMIC
-class wxObject
-#endif
 {
   public:
   WXTYPE __type;

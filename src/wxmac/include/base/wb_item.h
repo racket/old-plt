@@ -32,16 +32,17 @@ class wxbItem: public wxWindow
  public:
  
     wxbItem(void);
-#ifdef wx_mac
-  // Constructor (given parentArea)
-  wxbItem(char* windowName, wxArea* parentArea, int x, int y, int width, int height,
-		long		style);
-  // Constructor (given parentWindow)
-  wxbItem(char*	windowName, wxWindow* parentWindow, int x, int y, int width, int height,
-  		long style);
-  // Constructor (given objectType; i.e., menu or menuBar)
-  wxbItem(char* windowName);
-#endif // wx_mac
+
+    // Constructor (given parentArea)
+    wxbItem(char* windowName, wxArea* parentArea, int x, int y, int width, int height,
+	    long style);
+    // Constructor (given parentWindow)
+    wxbItem(char* windowName, wxWindow* parentWindow, int x, int y, int width, int height,
+	    long style);
+    // Constructor (given objectType; i.e., menu or menuBar)
+    wxbItem(char* windowName);
+
+
    ~wxbItem(void);
 
    wxFont *buttonFont ;
@@ -51,26 +52,13 @@ class wxbItem: public wxWindow
    wxColour *buttonColour;
 
    int labelPosition;
-#ifndef wx_mac
-   virtual void GetSize(int *width, int *height) = 0;
-   virtual void GetPosition(int *x, int *y) = 0;
-   virtual void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO) = 0;
-   // Avoid compiler warning
-   void SetSize(int w, int h) { wxWindow::SetSize(w, h); }
-   virtual void SetClientSize(int width, int height);
-   virtual void SetFocus(void) = 0;
-#endif // wx_mac
    virtual void SetLabel(char *label) = 0;
    virtual char *GetLabel(void) = 0;
 
-   virtual void Command(wxCommandEvent& event);        // Simulates an event
-   virtual void ProcessCommand(wxCommandEvent& event); // Calls the callback and 
+   virtual void Command(wxCommandEvent *event);        // Simulates an event
+   virtual void ProcessCommand(wxCommandEvent *event); // Calls the callback and 
 
    // inline virtual void Show(Bool show) {};
-#ifndef wx_mac
-   virtual float GetCharWidth(void) = 0;
-   virtual float GetCharHeight(void) = 0;
-#endif // wx_mac
    virtual int GetLabelPosition(void);
    virtual void SetLabelPosition(int pos);
 

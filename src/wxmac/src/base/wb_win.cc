@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_win.cc,v 1.2 1998/04/16 14:34:56 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -36,17 +36,11 @@ wxbWindow::wxbWindow(void)
   __type = wxTYPE_WINDOW;
   windowStyle = 0;
   wx_client_data = NULL;
-#ifndef wx_mac
-  window_parent = NULL;
-#endif
   font = NULL;
   handle = NULL;
   windowName = NULL;
   callback = 0;
-  wx_cursor = NULL /* wxSTANDARD_CURSOR */;
-#ifndef wx_mac
-  children = new wxChildList;
-#endif
+  wx_cursor = NULL;
   paintingEnabled = TRUE;
   doubleClickAllowed = 0 ;
   winCaptured = FALSE;

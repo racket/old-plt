@@ -447,14 +447,14 @@ void wxButton::Highlight(Bool flag) // mac platform only
 }
 
 //-----------------------------------------------------------------------------
-void wxButton::OnEvent(wxMouseEvent& event) // mac platform only
+void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
-	if (event.LeftDown())
+	if (event->LeftDown())
 	{
 		SetCurrentDC();
 	
 		float fStartH, fStartV;
-		event.Position(&fStartH, &fStartV); // client c.s.
+		event->Position(&fStartH, &fStartV); // client c.s.
 		int startH = fStartH;
 		int startV = fStartV;
 	

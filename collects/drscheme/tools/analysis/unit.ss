@@ -19,14 +19,15 @@
 		   (lambda ()
 		     (load/use-compiled (build-path filename))
 		     (set! t
-			   (invoke-unit/sig
-				     (global-defined-value 'tool@) 
-				     (mred : mred^)
-				     mzlib:core^
-				     mzlib:print-convert^
-				     (drscheme : drscheme:export^)
-				     zodiac:system^
-				     plt:parameters^))
+			   (invoke-open-unit/sig
+			    (global-defined-value 'tool@) 
+			    mrspidey
+			    (mred : mred^)
+			    mzlib:core^
+			    mzlib:print-convert^
+			    (drscheme : drscheme:export^)
+			    zodiac:system^
+			    plt:parameters^))
 		     (t frame))))])
 	(class (drscheme:parameters:current-frame%) args
 	  (inherit button-panel)

@@ -24,10 +24,13 @@ and Unix:
     looks for gcc, then cc. #f indicates that no compiler could be
     found.
 
->  current-extension-compiler-flags - list of strings passed to the
-    compiler as flags. Under Windows, the default is (list "/c" "/O2")
-    for cl.exe, (list "-c" "-O2") for gcc.exe and bcc32.exe; under
-    Unix, (list "-c" "-O2").
+>  current-extension-compiler-flags - list of strings and thunks (see
+    `expand-for-compile-variant' below) for strings passed to the
+    compiler as flags. Under Windows, the default is (list "/c" "/O2"
+    3m-flag-thunk) for cl.exe and (list "-c" "-O2" 3m-flag-thunk) for
+    gcc.exe and bcc32.exe, where 3m-flag-thunk returns (list
+    "-DMZ_PRECISE_GC") for the '3m variant and null for any other
+    variant; under Unix, (list "-c" "-O2" 3m-flag-thunk).
 
 >  current-make-compile-include-strings - procedure that takes an
     include directory path and returns a list of strings for the
@@ -43,6 +46,11 @@ and Unix:
     Windows: "file" -> (list "/Fofile") for cl.exe, (list "-o" "file")
     for gcc.exe and bcc32.exe; Unix: "file" -> (list "-o" "file")
 
+>  compile-variant - a symbol, either 'normal or '3m, that indicates the
+    target for compilation.
+
+Helper functions:
+
 > (use-standard-compiler name) sets the above parameters for a
     particular known compiler. The acceptable names are 
     platforms-specific:
@@ -52,6 +60,13 @@ and Unix:
 
 > (get-standard-compilers) returns a list of standard compiler
     names for the current platform.
+
+> (expand-for-compile-variant l) takes a list of strings and thunks
+    and returns a list of strings. Each thunk in the input list is
+    applied to get a list of strings that is inlined in the
+    corresponding position in the output list. This expansion enables
+    occasional parameterization of flag lists, etc., depending on the
+    current compile variant.
 
 Under MacOS, none of these options are used. The compiler always
 uses CodeWarrior if it can be found and the compilation options
@@ -81,10 +96,11 @@ Linking parameters:
      AIX, it looks for ld. Under AIX, it looks for cc. #f indicates
      that no linker could be found.
 
->  current-extension-linker-flags - list of strings. Under Windows,
-     default is (list "/LD") for cl.exe, (list "--dll") for ld.exe,
-     (list "/Tpd" "/c") for ilink32.exe.  Under Unix, the default
-     varies greatly among platforms.
+>  current-extension-linker-flags - list of strings and thunks (see
+     `expand-for-link-variant' below). Under Windows, default is
+     (list "/LD") for cl.exe, (list "--dll") for ld.exe, (list "/Tpd"
+     "/c") for ilink32.exe.  Under Unix, the default varies greatly
+     among platforms.
 
 >  current-make-link-input-strings - procedure that takes an
      input file and returns a list of strings for the command line.
@@ -96,19 +112,26 @@ Linking parameters:
      (list "-e" "_dll_entry@12" "-o" "file") for ld.exe, something
      complex for ilink32.exe; Unix: "file" -> (list "-o" "file")
 
->  current-make-standard-link-libraries - a thunk that produces a list
-     of file paths (possibly depending on the link variant); For most
-     platforms with the 'normal variant, the default is
-     (list (build-path (collection-path "mzscheme" "lib") 
-                       (system-library-subpath)
-                       "mzdyn.o"))
+>  current-make-standard-link-libraries - a list of strings and thunks
+     (see `expand-for-link-variant' below) for file paths to be linked
+     with all supplied files.  For most platforms, the default is
+        (list (build-path (collection-path "mzscheme" "lib") 
+                          (system-library-subpath)
+                          mzdyn-thunk))
+     where mzdyn-thunk produces (list "mzdyn.o") for the 'normal
+     variant and (list "mzdyn3m.o") for the '3m variant.
 
->  link-variant - a symbol, either 'normal or '3m
+>  link-variant - a symbol, either 'normal or '3m, that indicates the
+    target for linking.
 
+Helper functions:
 
 >  (use-standard-linker name) sets the above parameters for a
      particular known linker. The acceptable names are
      platforms-specific, the same as for use-standard-compiler.
+
+> (expand-for-link-variant l) is the same as
+    `expand-for-compile-variant' (see above).
 
 Under MacOS, none of these options are used. The linker always uses
 CodeWarrior if it can be found and the linking options cannot be

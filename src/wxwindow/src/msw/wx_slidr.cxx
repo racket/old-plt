@@ -29,31 +29,35 @@ wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
 Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y, long style, char *name)
 {
+  wxWnd *cparent = NULL;
+  int cx;
+  int cy;
+  char *the_label = NULL ;
+  long msStyle = 0;
+  HWND scroll_bar;
+
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
   if (panel)
     cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
-  int cx;
-  int cy;
   wxGetCharSize(cparent->handle, &cx, &cy,buttonFont);
-
-  char *the_label = NULL ;
 
   if (label)
     the_label = copystring(label);
   
   // If label exists, create a static control for it.
   if (label) {
+    int nid;
+    nid = NewId(this);
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS
 				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				      wxhInstance, NULL);
 
     wxSetWinFont(labelFont, (HANDLE)static_label);
@@ -61,10 +65,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     static_label = NULL;
 
   if (!(style & (wxHORIZONTAL << 2))) {
+    int nid;
+    nid = NewId(this);
     edit_value = wxwmCreateWindowEx(0, STATIC_CLASS, NULL,
 				    STATIC_FLAGS | WS_CLIPSIBLINGS
 				    | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				    0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				    wxhInstance, NULL);
   } else
     edit_value = NULL;
@@ -82,19 +88,18 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 #endif
 
   // Now create slider
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
   
-  long msStyle = 0;
   if (windowStyle & wxVERTICAL)
     msStyle = SBS_VERT | WS_CHILD;
   else
     msStyle = SBS_HORZ | WS_CHILD;
     
-  HWND scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", wxBuffer,
-				       msStyle | WS_CLIPSIBLINGS
-				       | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-				       wxhInstance, NULL);
+  scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", wxBuffer,
+				  msStyle | WS_CLIPSIBLINGS
+				  | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				  0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				  wxhInstance, NULL);
 
   page_size = (int)((max_value-min_value)/10);
   s_max = max_value;
@@ -124,18 +129,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 #endif
 
   if (edit_value) {
-    HDC the_dc = GetWindowDC((HWND)edit_value);
-    if (buttonFont && buttonFont->GetInternalFont(the_dc)) {
+    wxSetWinFont(buttonFont, edit_value);
 #if SHOW_MIN_MAX
-      SendMessage((HWND)static_min,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-      SendMessage((HWND)static_max,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
+    wxSetWinFont(buttonFont, static_min);
+    wxSetWinFont(buttonFont, static_max);
 #endif
-      SendMessage((HWND)edit_value,WM_SETFONT,
-                  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    }
-    ReleaseDC((HWND)edit_value, the_dc);
   }
 
   if (windowStyle & wxVERTICAL)
@@ -161,12 +159,15 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 // Called from wx_win.cc: wxWnd::OnHScroll, wxWnd::OnVScroll
 void wxSliderEvent(HWND bar, WORD wParam, WORD pos)
 {
-  wxSlider *slider = (wxSlider *)wxSliderList->Find((long)bar);
+  wxSlider *slider;
+  int position;
+  int nScrollInc;
+
+  slider = (wxSlider *)wxSliderList->Find((long)bar);
   if (!slider)
     return;
 
-  int position = GetScrollPos(bar, SB_CTL);
-  int nScrollInc;
+  position = GetScrollPos(bar, SB_CTL);
 
   switch (wParam) {
   case SB_LINEUP:
@@ -224,9 +225,10 @@ wxSlider::~wxSlider(void)
 
 Bool wxSlider::Show(Bool show) 
 {
+  int cshow;
+
   wxWindow::Show(show);
 
-  int cshow;
   if (show)
     cshow = SW_SHOW;
   else
@@ -273,13 +275,14 @@ void wxSlider::SetLabel(char *label)
   {
     float w, h;
     RECT rect;
+    wxWindow *parent;
+    POINT point;
 
-    wxWindow *parent = GetParent();
+    parent = GetParent();
     GetWindowRect(static_label, &rect);
 
     // Since we now have the absolute screen coords,
     // if there's a parent we must subtract its top left corner
-    POINT point;
     point.x = rect.left;
     point.y = rect.top;
     if (parent)
@@ -298,6 +301,7 @@ void wxSlider::SetLabel(char *label)
 void wxSlider::GetSize(int *width, int *height)
 {
   RECT rect;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -319,8 +323,12 @@ void wxSlider::GetSize(int *width, int *height)
 
 void wxSlider::GetPosition(int *x, int *y)
 {
-  wxWindow *parent = GetParent();
   RECT rect;
+  wxWindow *parent;
+  POINT point;
+
+  parent = GetParent();
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -338,7 +346,6 @@ void wxSlider::GetPosition(int *x, int *y)
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent)
@@ -354,24 +361,24 @@ void wxSlider::GetPosition(int *x, int *y)
 void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
-  GetPosition(&currentX, &currentY);
-  if (x == -1)
-    x = currentX;
-  if (y == -1)
-    y = currentY;
-
   char buf[300];
-
+  float min_len;
+  float max_len, val_width;
   int x_offset = x;
   int y_offset = y;
   float label_width = 0;
-
   int ecx, cx;     // slider,min,max sizes
   int ecy, cy;
   int esep;
   float cyf = 0.0;
   int cxs = 0;    // label sizes
   int cys = 0;
+
+  GetPosition(&currentX, &currentY);
+  if (x == -1)
+    x = currentX;
+  if (y == -1)
+    y = currentY;
 
   wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
 
@@ -386,7 +393,6 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
     GetSize(&width, &height);
 
-  float min_len;
 #if SHOW_MIN_MAX
   GetWindowText(static_min, buf, 300);
   GetTextExtent(buf, &min_len, &cyf, NULL, NULL, buttonFont);
@@ -394,7 +400,6 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   min_len = 0;
 #endif
   
-  float max_len;
 #if SHOW_MIN_MAX
   GetWindowText(static_max, buf, 300);
   GetTextExtent(buf, &max_len, &cyf, NULL, NULL, buttonFont);
@@ -402,7 +407,6 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   max_len = 0;
 #endif
 
-  float val_width;
   if (edit_value) {
     float min_len, max_len;
     sprintf(buf, "%d", s_min);
@@ -423,6 +427,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   if ((windowStyle & wxVERTICAL) != wxVERTICAL) {
     // Horizontal
     int slider_height = cy + ecy + ecy/3;
+    int slider_length;
 
     // Center the whole control vertically
     if (height > 0) {
@@ -475,7 +480,6 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
       }
     }
 
-    int slider_length;
     if (width >= 0)
       slider_length = (int)(width - min_len - ecx/2 - max_len - ecx/2);
     else
@@ -506,7 +510,9 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
     // Vertical
     int slider_width = max(cy, val_width) + ecx/2 + val_width;
     //                         ^-- because it's the max of min & max
-    
+    int slider_length, total_height;
+    int mmcy, mmsep;
+
     // Center the whole control horizontally
     if (width > 0) {
       width -= slider_width;
@@ -522,14 +528,13 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
     }
 
 #if SHOW_MIN_MAX
-    int mmcy = ecy;
-    int mmsep = esep;
+    mmcy = ecy;
+    mmsep = esep;
 #else
-    int mmcy = 0;
-    int mmsep = 0;
+    mmcy = 0;
+    mmsep = 0;
 #endif
 
-    int slider_length;
     if (height >= 0)
       slider_length = (int)(height - 2*mmcy - 2*mmsep);
     else
@@ -537,7 +542,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
     // Slider must have a minimum/default length
     if (slider_length < 0)
       slider_length = 100;
-    int total_height = slider_length + 2*mmcy + 2*mmsep;
+    total_height = slider_length + 2*mmcy + 2*mmsep;
 
     if (static_label) {
       int dxs, dx, dys, dy;

@@ -72,9 +72,11 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   // If label exists, create a static control for it.
   if (Title) {
+    int nid;
+    nid = NewId(this);
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				      wxhInstance, NULL);
 
     wxSetWinFont(labelFont, (HANDLE)static_label);
@@ -95,7 +97,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (style & wxHSCROLL)
     wstyle |= WS_HSCROLL;
 
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
 
   wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
 				    wstyle | WS_CHILD | WS_CLIPSIBLINGS,
@@ -120,14 +122,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   // Subclass again for purposes of dialog editing mode
   SubclassControl(wx_list);
 
-  {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle) ;
-    if (buttonFont && buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc) ;
-  }
+  wxSetWinFont(buttonFont, ms_handle);
 
   SetSize(x, y, width, height);
 
@@ -267,8 +262,11 @@ void wxListBox::SetSelection(int N, Bool select, Bool one)
     return;
 
   if (multiple != wxSINGLE) {
-    if (one)
-      SendMessage((HWND)ms_handle, LB_SELITEMRANGE, 0, MAKELPARAM(0, Number()));
+    if (one) {
+      int nv;
+      nv = Number();
+      SendMessage((HWND)ms_handle, LB_SELITEMRANGE, 0, MAKELPARAM(0, nv));
+    }
     SendMessage((HWND)ms_handle, LB_SETSEL, select, N);
   } else {
     if (!select)

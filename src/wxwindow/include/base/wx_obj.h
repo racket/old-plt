@@ -26,7 +26,7 @@
 #ifdef MZ_PRECISE_GC
 # define WXGC_IGNORE(base, ptr) GC_finalization_weak_ptr((void **)base, (void **)&(ptr) - (void **)base)
 # define WXGC_ATOMIC /* empty */
-# define COPYSTRING_TO_ALIGNED(s, d) copystring_to_aligned(s, d)
+# define COPYSTRING_TO_ALIGNED(s, d) copystring(s, d)
 # define DELETE_OBJ delete_wxobject
 # define DELETE_VAL delete
 #else

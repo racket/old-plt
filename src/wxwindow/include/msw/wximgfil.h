@@ -91,7 +91,7 @@ public:
   void *GetRawImage();
   char * RawImage;  		//  Image data
   ushort ItCount;
-  char * IterImage;  		//  Image data
+  int IterImage;  		//  Image data
   ushort Deep;	 				// (bits x pixel)
   ushort Width, Height;    //  Dimensions
   long EfeWidth;	 // Efective Width
@@ -141,7 +141,7 @@ ushort navail_bytes;              /* # bytes left in block */
 ushort nbits_left;                /* # bits left in current byte */
 uchar b1;                           /* Current byte */
 uchar byte_buff[257];               /* Current block */
-uchar *pbytes;                      /* Pointer to next byte in block */
+int pbytes;                      /* Pointer to next byte in block */
 
 long code_mask[13];
 

@@ -112,7 +112,7 @@
 	   [(macos) null])
 	 (lambda (l)
 	   (unless (and (list? l) (andmap string? l))
-	     (raise-type-error 'current-extension-link-flags "list of strings" l))
+	     (raise-type-error 'current-extension-linker-flags "list of strings" l))
 	   l)))
 
       ;; See doc.txt:
@@ -159,13 +159,13 @@
 				   [else "msvc"])
 				  f))])
 	  (cond
-	   [win-gcc? (map file (list (wrap-3m "mzdyn~a.exp")
-				     (wrap-3m "mzdyn~a.o")
-				     "init.o"
-				     "fixup.o"))]
+	   [win-gcc? (list (wrap-3m (file "mzdyn~a.exp"))
+			   (wrap-3m (file "mzdyn~a.o"))
+			   (file "init.o")
+			   (file "fixup.o"))]
 	   [win-borland? (map file (list "mzdynb.obj"))]
-	   [else (map file (list (wrap-3m "mzdyn~a.exp")
-				 (wrap-3m "mzdyn~a.obj")))])))
+	   [else (list (wrap-3m (file "mzdyn~a.exp"))
+		       (wrap-3m (file "mzdyn~a.obj")))])))
       
       (define (get-unix/macos-link-libraries)
 	(list (wrap-3m (build-path std-library-dir "mzdyn~a.o"))))
@@ -247,7 +247,7 @@
 		       [command 
 			(append 
 			 (list c)
-			 (current-extension-linker-flags)
+			 (expand-for-link-variant (current-extension-linker-flags))
 			 (apply append (map (lambda (s) ((current-make-link-input-strings) s))
 					    in))
 			 libs

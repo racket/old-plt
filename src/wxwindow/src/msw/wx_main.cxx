@@ -80,23 +80,25 @@ void wxInitialize(HINSTANCE hInstance)
 				  PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS,
 				  "Arial");
 
-  ///////////////////////////////////////////////////////////////////////
-  // Register the frame window class.
-  WNDCLASS wndclass;   // Structure used to register Windows class.
-
-  wndclass.style         = CS_HREDRAW | CS_VREDRAW;
-  wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
-  wndclass.cbClsExtra    = 0;
-  wndclass.cbWndExtra    = sizeof(DWORD);
-  wndclass.hInstance     = hInstance;
-  wndclass.hIcon         = wxSTD_FRAME_ICON;
-  wndclass.hCursor       = NULL;
-  wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
-  wndclass.lpszMenuName  = NULL;
-  wndclass.lpszClassName = wxFrameClassName;
-
-  if (!RegisterClass(&wndclass))
-    wxFatalError("Can't register Frame Window class");
+  {
+    ///////////////////////////////////////////////////////////////////////
+    // Register the frame window class.
+    WNDCLASS wndclass;   // Structure used to register Windows class.
+    
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW;
+    wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
+    wndclass.cbClsExtra    = 0;
+    wndclass.cbWndExtra    = sizeof(DWORD);
+    wndclass.hInstance     = hInstance;
+    wndclass.hIcon         = wxSTD_FRAME_ICON;
+    wndclass.hCursor       = NULL;
+    wndclass.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
+    wndclass.lpszMenuName  = NULL;
+    wndclass.lpszClassName = wxFrameClassName;
+    
+    if (!RegisterClass(&wndclass))
+      wxFatalError("Can't register Frame Window class");
+  }
 
   {
     ///////////////////////////////////////////////////////////////////////
@@ -229,23 +231,24 @@ static int retValue = 0;
 
 static int parse_command_line(int count, char **command, char *buf, int maxargs)
 {
-  char *parse, *created, *write;
+  GC_CAN_IGNORE char *parse, *created, *write;
   int findquote = 0;
   
   parse = created = write = buf;
   while (*parse) {
-    while (*parse && isspace(*parse)) parse++;
+    while (*parse && isspace(*parse)) { parse++; }
     while (*parse && (!isspace(*parse) || findquote))	{
       if (*parse== '"') {
 	findquote = !findquote;
       } else if (*parse== '\\') {
 	char *next;
-	for (next = parse; *next == '\\'; next++);
+	for (next = parse; *next == '\\'; next++) { }
 	if (*next == '"') {
 	  /* Special handling: */
 	  int count = (next - parse), i;
-	  for (i = 1; i < count; i += 2)
+	  for (i = 1; i < count; i += 2) {
 	    *(write++) = '\\';
+	  }
 	  parse += (count - 1);
 	  if (count & 0x1) {
 	    *(write++) = '\"';
@@ -280,6 +283,9 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
 	      int (*main)(int, char**))
 {
   void *mzscheme_stack_start;
+  char **command;
+  int count;
+  char *buf;
 
   mzscheme_stack_start = (void *)&mzscheme_stack_start;
 
@@ -294,33 +300,27 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
   wxCreateApp();
 
   // Split command line into tokens, as in usual main(argc, argv)
-  char **command = new char*[50];
-  int count = 0;
-  char *buf = new char[strlen(m_lpCmdLine) + 1];
+  command = new char*[50];
+  count = 0;
+  buf = (char *)malloc(strlen(m_lpCmdLine) + 1);
   // Hangs around until end of app. in case
   // user carries pointers to the tokens
 
-  /* Model independent strcpy */
-  {
-    int i;
-    for (i = 0; (buf[i] = m_lpCmdLine[i]) != 0; i++)
-    {
-      /* loop */;
-    }
-  }
+  strcpy(buf, m_lpCmdLine);
 
   // Get application name
   {
     char name[1024];
+    char *d, *p;
+    
     ::GetModuleFileName(hInstance, name, 1023);
 
-    command[count++] = copystring(name);
-
+    d = copystring(name);
+    command[count++] = d;
+    
     strcpy(name, wxFileNameFromPath(name));
     wxStripExtension(name);
     wxTheApp->SetAppName(name);
-
-    char *d, *p;
 
     d = getenv("HOMEDRIVE");
     p = getenv("HOMEPATH");
@@ -347,8 +347,9 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
       ::GetModuleFileName(hInstance, name, 10923);
 
        i = strlen(name) - 1;    
-       while (i && (name[i] != '\\'))
+       while (i && (name[i] != '\\')) {
          --i;
+       }
        if (i)
 	 i++;
 
@@ -429,8 +430,9 @@ extern int wxEventReady();
 int wxApp::MainLoop(void)
 {
   keep_going = TRUE;
-  while (keep_going)
+  while (keep_going) {
     wxDoEvents();
+  }
 
   return 1;
 }
@@ -508,8 +510,9 @@ void wxExit(void)
 // Yield to incoming messages
 Bool wxYield(void)
 {
-  while (wxTheApp->Pending())
+  while (wxTheApp->Pending()) {
     wxTheApp->Dispatch();
+  }
 
   return TRUE;
 }

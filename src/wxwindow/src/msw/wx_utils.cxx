@@ -79,7 +79,8 @@ Bool wxGetUserName(char *buf, int maxSize)
 
 Bool wxRemoveFile(const char *file)
 {
-  int flag = remove(file);
+  int flag;
+  flag = remove(file);
   if (flag == 0) return TRUE;
   return FALSE;
 }
@@ -110,9 +111,9 @@ void wxDebugMsg(const char *fmt ...)
 // Non-fatal error: pop up message box and (possibly) continue
 void wxError(const char *msg, const char *title)
 {
-  sprintf(wxBuffer, "%s\nContinue?", msg);
-
   int msAns;
+
+  sprintf(wxBuffer, "%s\nContinue?", msg);
 
   msAns = MessageBox(NULL, (LPCSTR)wxBuffer, (LPCSTR)title,
 		     MB_ICONSTOP | MB_YESNO);
@@ -164,6 +165,7 @@ Bool wxWriteResource(const char *section, const char *entry, char *value, const 
     if (file) {
       char *naya;
       int len, i;
+
       len = strlen(file);
       
       naya = new char[len + 1];
@@ -277,8 +279,9 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
     wxBuffer[0] = 0;
     
     if (file) {
-      int n = GetPrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
-				      (LPSTR)wxBuffer, 1000, (LPCSTR)file);
+      int n;
+      n = GetPrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
+				  (LPSTR)wxBuffer, 1000, (LPCSTR)file);
       if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
 	return FALSE;
     }
@@ -291,7 +294,8 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 Bool wxGetResource(const char *section, const char *entry, float *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file);
+  Bool succ;
+  succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = (float)strtod(s, NULL);
@@ -303,7 +307,8 @@ Bool wxGetResource(const char *section, const char *entry, float *value, const c
 Bool wxGetResource(const char *section, const char *entry, long *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file);
+  Bool succ;
+  succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = strtol(s, NULL, 10);
@@ -315,7 +320,8 @@ Bool wxGetResource(const char *section, const char *entry, long *value, const ch
 Bool wxGetResource(const char *section, const char *entry, int *value, const char *file)
 {
   char *s = NULL;
-  Bool succ = wxGetResource(section, entry, (char **)&s, file);
+  Bool succ;
+  succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
     *value = (int)strtol(s, NULL, 10);
@@ -331,7 +337,8 @@ extern HCURSOR wxMSWSetCursor(HCURSOR c);
 // Set the cursor to the busy cursor for all windows
 void wxBeginBusyCursor(wxCursor *cursor)
 {
-  int wxBusyCursorCount = wxGetBusyState();
+  int wxBusyCursorCount;
+  wxBusyCursorCount = wxGetBusyState();
   wxBusyCursorCount++;
   wxSetBusyState(wxBusyCursorCount);
 
@@ -344,7 +351,8 @@ void wxBeginBusyCursor(wxCursor *cursor)
 // Restore cursor to normal
 void wxEndBusyCursor(void)
 {
-  int wxBusyCursorCount = wxGetBusyState();
+  int wxBusyCursorCount;
+  wxBusyCursorCount = wxGetBusyState();
   if (wxBusyCursorCount == 0)
     return;
   --wxBusyCursorCount;

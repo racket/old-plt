@@ -123,7 +123,6 @@ class wxbDC: public wxObject
   virtual void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
   // Any number of control points - a list of pointers to wxPoints
   virtual void DrawSpline(wxList *points);
-  virtual void DrawSpline(int n, wxPoint points[]);
 #endif
   virtual void DrawText(const char *text, float x, float y,
                         Bool use16bit = FALSE, int d = 0) = 0;

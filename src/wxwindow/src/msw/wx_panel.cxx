@@ -89,6 +89,10 @@ wxPanel::wxPanel(wxWindow *parent, int x, int y, int width, int height,
 Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long style,
                      char *name)
 {
+  wxPanelWnd *wnd;
+  wxWnd *cparent;
+  DWORD msflags = 0, exflags = 0;
+  
   if (!parent)
     return FALSE;
 
@@ -122,17 +126,16 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
 
   window_parent = parent;
 
-  wxWnd *cparent = NULL;
+  cparent = NULL;
   if (parent)
     cparent = (wxWnd *)parent->handle;
 
-  DWORD msflags = 0, exflags = 0;
   if (style & wxBORDER)
     exflags |= WS_EX_STATICEDGE;
   msflags |= WS_CHILD | WS_CLIPSIBLINGS | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
 
-  wxPanelWnd *wnd = new wxPanelWnd(cparent, wxPanelClassName, this, x, y, width, height, 
-				   msflags, exflags);
+  wnd = new wxPanelWnd(cparent, wxPanelClassName, this, x, y, width, height, 
+		       msflags, exflags);
 
   handle = (char *)wnd;
   if (parent) parent->AddChild(this);
@@ -160,20 +163,22 @@ void wxPanel::SetLabelPosition(int pos)  // wxHORIZONTAL or wxVERTICAL
 void wxPanel::SetSize(int x, int y, int w, int h, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
+  wxWnd *wnd;
+  int currentW,currentH;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int currentW,currentH;
   GetSize(&currentW, &currentH);
   if (w == -1)
     w = currentW;
   if (h == -1)
     h = currentH;
 
-  wxWnd *wnd = (wxWnd *)handle;
+  wnd = (wxWnd *)handle;
   if (wnd)
     MoveWindow(wnd->handle, x, y, w, h, TRUE);
 
@@ -290,8 +295,9 @@ void wxPanel::GetValidPosition(int *x, int *y)
 void wxPanel::Centre(int direction)
 {
   int x, y, width, height, panel_width, panel_height, new_x, new_y;
+  wxPanel *father;
 
-  wxPanel *father = (wxPanel *)GetParent();
+  father = (wxPanel *)GetParent();
   if (!father)
     return;
 

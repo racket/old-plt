@@ -16,20 +16,6 @@
 
 #if USE_SPLINES
 
-void wxbDC::DrawSpline(int n, wxPoint pts[])
-{
-  wxList *list;
-  int i;
-    
-  list = new wxList();
-  
-  for (i = 0; i < n; i++)
-    list->Append((wxObject*)&pts[i]);
-  DrawSpline(list);
-
-  delete list;
-}
-
 // defines and static declarations for DrawSpline
 
 #define half(z1,z2)	(float)((z1+z2)/2.0)

@@ -19,7 +19,6 @@
  * This software is provided "as is" without any express or implied warranty.
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -62,7 +61,8 @@ char *wxLoadXBM(char *fname, int *width, int *height)
   FILE  *fp;
   int    c, c1;
   int    i, j, k, bit, w, h;
-  unsigned char  *pix, *pic;
+  unsigned char  *pic;
+  int pixp;
   long   filesize;
   char   line[256];
   unsigned char   hex[256];
@@ -141,15 +141,15 @@ char *wxLoadXBM(char *fname, int *width, int *height)
 
   /* initialize the 'hex' array for zippy ASCII-hex -> int conversion */
 
-  for (i=0; i<256; i++) hex[i]=0;
-  for (i='0'; i<='9'; i++) hex[i] = i - '0';
-  for (i='a'; i<='f'; i++) hex[i] = i + 10 - 'a';
-  for (i='A'; i<='F'; i++) hex[i] = i + 10 - 'A';
+  for (i=0; i<256; i++) { hex[i]=0; }
+  for (i='0'; i<='9'; i++) { hex[i] = i - '0'; }
+  for (i='a'; i<='f'; i++) { hex[i] = i + 10 - 'a'; }
+  for (i='A'; i<='F'; i++) { hex[i] = i + 10 - 'A'; }
 
   /* read/convert the image data */
 
-  for (i=0, pix=pic; i<h; i++)
-    for (j=0,bit=0; j<w; j++, pix++, bit = ++bit&7) {
+  for (i=0, pixp=0; i<h; i++) {
+    for (j=0,bit=0; j<w; j++, pixp++, bit = ++bit&7) {
 
       if (!bit) {
 	/* get next byte from file.  we're already positioned at it */
@@ -167,9 +167,10 @@ char *wxLoadXBM(char *fname, int *width, int *height)
 	while (c1!=EOF && !(c=='0' && c1=='x') ) { c = c1;  c1 = getc(fp); }
       }
 
-      *pix = (k&1) ? 1 : 0;
+      pic[pixp] = (k&1) ? 1 : 0;
       k = k >> 1;
     }
+  }
 
   fclose(fp);
 
@@ -189,8 +190,9 @@ int wxSaveXBM(char *fname, char *pic, int w, int h)
      been called already to produce pic, otherwise the output won't be at all
      useful */
 
-  int   i,j,k,bit,len,nbytes;
+  int   i,j,k,bit,len,nbytes,retval;
   unsigned char *pix;
+  long pixp;
   char *name;
   FILE *fp;
 
@@ -208,10 +210,12 @@ int wxSaveXBM(char *fname, char *pic, int w, int h)
 
   nbytes = h * ((w+7)/8);   /* # of bytes to write */
 
-  for (i=0, len=1, pix=(unsigned char *)pic; i<h; i++) {
-    for (j=bit=k=0; j<w; j++,pix++) {
+  pix=(unsigned char *)pic;
+
+  for (i=0, len=1, pixp = 0; i<h; i++) {
+    for (j=bit=k=0; j<w; j++,pixp++) {
       k = (k>>1);
-      if (*pix) k |= 0x80;
+      if (pix[pixp]) k |= 0x80;
       bit++;
       if (bit==8) {
 	fprintf(fp,"0x%02x",(unsigned char) ~k);
@@ -233,7 +237,7 @@ int wxSaveXBM(char *fname, char *pic, int w, int h)
 
   fprintf(fp,"};\n");
 
-  int retval = 1;
+  retval = 1;
 
   if (ferror(fp)) retval = 0;
 

@@ -20,23 +20,25 @@ extern "C" {
   void scheme_forget_thread(struct Scheme_Thread_Memory *);
 };
 
-typedef struct {
+class PrimData {
+public:
   wxPDF f;
   void *data;
   BOOL result;
   BOOL done;
   BOOL usedir;
   HWND hwnd;
-} PrimData;
+};
 
 static long DoPrim(void *data)
 {
   PrimData *_data = (PrimData *)data;
-  MSG msg;
-  long old;
+  wxPDF pdf;
 
-  _data->result = _data->f(_data->data, _data->hwnd);
+  pdf = _data->f;
 
+  _data->result = pdf(_data->data, _data->hwnd);
+  
   _data->done = 1;
 
   return 0;
@@ -52,13 +54,18 @@ extern wxWindow *wxHWNDtoWindow(HWND);
 
 BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 {
-  long old;
   DWORD id;
   HANDLE th;
-  PrimData *_data = new PrimData;
+  PrimData *_data;
   BOOL result;
   HWND top;
   wxWindow *w;
+  wxList *disabled_windows;
+  wxChildNode *cnode;   
+  wxNode *node;   
+  wxChildList *tlw;
+
+  _data = new PrimData;
 
   _data->f = f;
   _data->data = data;
@@ -86,16 +93,15 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
   _data->hwnd = top;
 
   // Disable other windows:
-  wxList *disabled_windows;
-  wxChildNode *cnode;   
-  wxNode *node;   
   disabled_windows = new wxList;
-  for (cnode = wxTopLevelWindows(NULL)->First(); cnode; cnode = cnode->Next()) {
-    wxWindow *w = (wxWindow *)cnode->Data();
-    if (w && cnode->IsShown()) {
-      if (w->GetHWND() != top) {
-	disabled_windows->Append(w);
-	w->InternalEnable(FALSE);
+  tlw = wxTopLevelWindows(NULL);
+  for (cnode = tlw->First(); cnode; cnode = cnode->Next()) {
+    wxWindow *win;
+    win = (wxWindow *)cnode->Data();
+    if (win && cnode->IsShown()) {
+      if (win->GetHWND() != top) {
+	disabled_windows->Append(win);
+	win->InternalEnable(FALSE);
       }
     }
   }
@@ -110,7 +116,7 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 
     /* There used to be a call to AttachThreadInput() here.
        That was disasterous, because it interefered with the
-       carefulyl tuned event dispatching of mredmsw.cxx. */
+       carefully tuned event dispatching of mredmsw.cxx. */
 
     wxDispatchEventsUntil(Check, (void *)_data);
 
@@ -123,8 +129,9 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 
   /* Restore other windows: */
   for (node = disabled_windows->First(); node; node = node->Next()) {
-    wxWindow *w = (wxWindow *)node->Data();
-    w->InternalEnable(TRUE);
+    wxWindow *win;
+    win = (wxWindow *)node->Data();
+    win->InternalEnable(TRUE);
   }
 
   delete disabled_windows;

@@ -26,12 +26,15 @@ Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title),
 		      int WXUNUSED(width), int WXUNUSED(height),
 		      long style, char *WXUNUSED(name))
 {
+  wxChildList *tlw;
+
   windowStyle = style;
 
-  context = (void *)wxGetContextForFrame();
+  context = wxGetContextForFrame();
 
-  wxTopLevelWindows(this)->Append(this);
-  wxTopLevelWindows(this)->Show(this, FALSE);
+  tlw = wxTopLevelWindows(this);
+  tlw->Append(this);
+  tlw->Show(this, FALSE);
 
   SetShown(FALSE);
 
@@ -40,7 +43,9 @@ Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title),
 
 wxbFrame::~wxbFrame(void)
 {
-  wxTopLevelWindows(this)->DeleteObject(this);
+  wxChildList *tlw;
+  tlw = wxTopLevelWindows(this);
+  tlw->DeleteObject(this);
 }
 
 // Default resizing behaviour - if only ONE subwindow,
@@ -50,6 +55,7 @@ void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
   wxWindow *child = NULL;
   int noChildren = 0;
   wxChildNode *node;
+  wxChildList *cl;
   wxWindow *win;
   WXTYPE winType;
   int client_x, client_y;
@@ -59,7 +65,8 @@ void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
 
   // Search for a child which is a subwindow, not another frame.
   // Count the number of _subwindow_ children
-  for(node = GetChildren()->First(); node; node = node->Next())
+  cl = GetChildren();
+  for(node = cl->First(); node; node = node->Next())
   {
     win = (wxWindow *)node->Data();
     winType = win->__type;
@@ -96,7 +103,7 @@ void wxbFrame::OnMenuSelect(long id)
     menuBar = GetMenuBar();
     if (menuBar) {
       char *helpString;
-      helpString = GetMenuBar()->GetHelpString(id);
+      helpString = menuBar->GetHelpString(id);
       if (helpString) {
 	SetStatusText(helpString);
 	return;

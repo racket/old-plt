@@ -32,6 +32,9 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   wxWnd *cparent = NULL;
   TCITEM tie;
   INITCOMMONCONTROLSEX icex;
+  HWND hwndTab;
+  int width, height, nid;
+  RECT prc;
 
   __type = wxTYPE_TAB_CHOICE;
 
@@ -46,11 +49,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId(this);
-
-  HWND hwndTab;
-  int width, height;
-
+  windows_id = NewId(this);
+  
   {
     int cx, cy;
     float current_width, cyf, total_width = 0;
@@ -73,10 +73,12 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 			 0, 0, width ? width : 40, height,
 			 cparent->handle, (HMENU)windows_id, wxhInstance, NULL);
 
+  nid = NewId(this);
+
   /* For comctl32 version6, makes the panel background gray: */
   bgStatic = wxwmCreateWindowEx(0, STATIC_CLASS, "",
 				STATIC_FLAGS | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE,
-				0, 0, 200, 200, hwndTab, (HMENU)NewId(this),
+				0, 0, 200, 200, hwndTab, (HMENU)nid,
 				wxhInstance, NULL);
 
   tie.mask = TCIF_TEXT;
@@ -97,15 +99,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   ms_handle = (HANDLE)hwndTab;
 
-  if (buttonFont) {
-    HDC the_dc = GetWindowDC((HWND)ms_handle);
-    if (buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc);
-  }
+  wxSetWinFont(buttonFont, ms_handle);
 
-  RECT prc;
   prc.left = prc.top = prc.right = prc.bottom = 0;
   TabCtrl_AdjustRect(hwndTab, TRUE, &prc);
     
@@ -148,19 +143,12 @@ void wxTabChoice::Enable(Bool enable) {
 void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
-
-  char buf[300];
-
-  float current_width;
-
-  int cx;
-  int cy;
-  float cyf;
 
   if (width < 0)
     GetSize(&width, &height);
@@ -183,7 +171,7 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
 void wxTabChoice::Append(char *s)
 {
   TCITEM tie;
-  int shownhide = 0;
+  int shownhide = 0, nv;
 
   /* The control misupdates when going from 0 to non-zero
      tabs. Hide before making the transition, then show
@@ -196,7 +184,8 @@ void wxTabChoice::Append(char *s)
 
   tie.mask = TCIF_TEXT;
   tie.pszText = s;
-  TabCtrl_InsertItem((HWND)ms_handle, Number(), &tie);
+  nv = Number();
+  TabCtrl_InsertItem((HWND)ms_handle, nv, &tie);
 
   if (shownhide)
     ShowWindow((HWND)ms_handle, SW_SHOW);

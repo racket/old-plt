@@ -93,10 +93,13 @@ wxColour* wxColour::CopyFrom(const wxColour* col)
   return this;
 }
 
+#ifndef MZ_PRECISE_GC
 wxColour& wxColour::operator=(const wxColour& col)
 {
+  /* This method should never be called! */
   return *(CopyFrom(&col));
 }
+#endif
 
 wxColour::wxColour (const char *col)
 : wxObject(WXGC_NO_CLEANUP)
@@ -158,14 +161,16 @@ wxList ((KeyType)type)
 wxColourDatabase::~wxColourDatabase (void)
 {
   // Cleanup Colour allocated in Initialize()
-  wxNode *node = First ();
-  while (node)
-    {
-      wxColour *col = (wxColour *) node->Data ();
-      wxNode *next = node->Next ();
-      delete col;
-      node = next;
-    }
+  wxNode *node;
+  node = First();
+  while (node) {
+    wxColour *col;
+    wxNode *next;
+    col = (wxColour *) node->Data ();
+    next = node->Next ();
+    delete col;
+    node = next;
+  }
 }
 
 // Colour database stuff
@@ -196,13 +201,15 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   // Force capital so lc matches as in X
   char uc_colour[256];
   int i;
+  wxNode *node;
 
-  for (i = 0; colour[i] && i < 255; i++)
+  for (i = 0; colour[i] && i < 255; i++) {
     uc_colour[i] = toupper(colour[i]);
+  }
   uc_colour[i] = 0;
   colour = uc_colour;
 
-  wxNode *node = Find(colour);
+  node = Find(colour);
   if (node)
     return (wxColour *)node->Data();
 
@@ -211,20 +218,27 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
 
 char *wxColourDatabase::FindName (wxColour * colour)
 {
-  unsigned char red = colour->Red();
-  unsigned char green = colour->Green();
-  unsigned char blue = colour->Blue();
+  unsigned char red, rd;
+  unsigned char green, gn;
+  unsigned char blue, bl;
+  wxNode * node;
 
-  for (wxNode * node = First(); node; node = node->Next ())
-    {
-      wxColour *col = (wxColour *) node->Data ();
-      if (col->Red () == red && col->Green () == green && col->Blue () == blue)
-	{
-	  char *found = node->string_key;
-	  if (found)
-	    return found;
-	}
+  red = colour->Red();
+  green = colour->Green();
+  blue = colour->Blue();
+
+  for (node = First(); node; node = node->Next ()) {
+    wxColour *col;
+    col = (wxColour *)node->Data();
+    rd = col->Red();
+    gn = col->Green();
+    bl = col->Blue();
+    if (rd == red && gn == green && bl == blue) {
+      char *found = node->string_key;
+      if (found)
+	return found;
     }
+  }
   return NULL;			// Not Found
 
 }
@@ -502,14 +516,19 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
     return NULL;
 
   while ((node = list->NextNode(i))) {
-    wxPen *each_pen = (wxPen *) node->Data ();
+    wxPen *each_pen;
+    each_pen = (wxPen *) node->Data ();
     if (each_pen &&
 	each_pen->GetWidthF() == width &&
-	each_pen->GetStyle() == style &&
-	each_pen->GetColour()->Red () == colour->Red () &&
-	each_pen->GetColour()->Green () == colour->Green () &&
-	each_pen->GetColour()->Blue () == colour->Blue ())
-      return each_pen;
+	each_pen->GetStyle() == style) {
+      wxColour *col;
+      col = each_pen->GetColour();
+      if (col->Red () == colour->Red () &&
+	  col->Green () == colour->Green () &&
+	  col->Blue () == colour->Blue ()) {
+	return each_pen;
+      }
+    }
   }
   pen = new wxPen (colour, width, style);
 
@@ -522,7 +541,8 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
 
 wxPen *wxPenList::FindOrCreatePen (char *colour, float width, int style)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour (colour);
+  wxColour *the_colour;
+  the_colour = wxTheColourDatabase->FindColour (colour);
   if (the_colour)
     return FindOrCreatePen (the_colour, width, style);
   else
@@ -556,13 +576,17 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
     return NULL;
 
   while ((node = list->NextNode(i))) {
-    wxBrush *each_brush = (wxBrush *) node->Data ();
+    wxBrush *each_brush;
+    each_brush = (wxBrush *) node->Data ();
     if (each_brush &&
-	each_brush->GetStyle() == style &&
-	each_brush->GetColour()->Red () == colour->Red () &&
-	each_brush->GetColour()->Green () == colour->Green () &&
-	each_brush->GetColour()->Blue () == colour->Blue ())
-      return each_brush;
+	each_brush->GetStyle() == style) {
+      wxColour *col;
+      col = each_brush->GetColour();
+      if (col->Red () == colour->Red () &&
+	  col->Green () == colour->Green () &&
+	  col->Blue () == colour->Blue ())
+	return each_brush;
+    }
   }
 
   brush = new wxBrush (colour, style);
@@ -576,7 +600,8 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 
 wxBrush *wxBrushList::FindOrCreateBrush (char *colour, int style)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour (colour);
+  wxColour *the_colour;
+  the_colour = wxTheColourDatabase->FindColour (colour);
   if (the_colour)
     return FindOrCreateBrush (the_colour, style);
   else
@@ -608,7 +633,8 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
   wxChildNode *node;
 
   while ((node = list->NextNode(i))) {
-    wxFont *each_font = (wxFont *) node->Data ();
+    wxFont *each_font;
+    each_font = (wxFont *) node->Data ();
     if (each_font &&
 	each_font->GetPointSize () == PointSize &&
 	each_font->GetStyle () == Style &&
@@ -630,8 +656,10 @@ wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline,
 		  int smoothing)
 {
+  int fid;
+  fid = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory->FindOrCreateFontId(Face, Family),
+			  fid,
 			  Style,
 			  Weight,
 			  underline,

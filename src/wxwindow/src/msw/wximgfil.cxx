@@ -24,30 +24,32 @@
 
 void CreateOffScreenPixMap (HBITMAP *,wxGIF *gif);
 
-static struct {           
+typedef struct {
   char header[6];       
   ushort scrwidth;
   ushort scrheight;
   char pflds;
   char bcindx;
   char pxasrat;
-} dscgif;
+} t_dscgif;
+static t_dscgif dscgif;
 
-static struct {
+typedef struct {
   byte sep;
   ushort l;
   ushort t;
   ushort w;
   ushort h;
   byte  pf;
-} image;
+} t_image;
+static t_image image;
 
-static struct { 
+typedef struct { 
   ushort colres;
   ushort sogct;
   rgb paleta[256];
-} TabCol;
-
+} t_TabCol;
+static t_TabCol TabCol;
 
 static long Code_Mask[] = {
 	  0,
@@ -72,7 +74,7 @@ wxGIF::wxGIF( char * path)
 {
   navail_bytes = nbits_left = 0;
   lpbi = NULL;
-  for (ushort i=0; i<13; i++) code_mask[i] = Code_Mask[i];
+  for (ushort i=0; i<13; i++) { code_mask[i] = Code_Mask[i]; }
   if (path) {
     fp = fopen(path,"rb");
     if (!fp)
@@ -131,12 +133,13 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   unsigned char tstA[256];
   unsigned char *rgbTable, single, eid;
   ushort widlow, widhigh, hgtlow, hgthi, i;
+  ushort index = 0;
   
   fread((char*)&tstA[0],13,1,fp);
   
-  ushort index = 0;
-  for ( i=0; i<6;i++)
+  for ( i=0; i<6;i++) {
     dscgif.header[i] = tstA[index++];
+  }
   widlow = (ushort) tstA[index++];
   widhigh = ((ushort) tstA[index++]) * 256;
   hgtlow = (ushort)  tstA[index++];
@@ -154,15 +157,17 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   TabCol.colres = (dscgif.pflds >> 6) & 7 + 1;
   
   if (dscgif.pflds & 0x80) {
-    rgbTable = new unsigned char[3*TabCol.sogct];
-    int errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
-    unsigned char *tp = rgbTable;
+    int errcnt;
+    int tp;
+    rgbTable = new uchar[3*TabCol.sogct];
+    errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
+    tp = 0;
     for (i = 0; i < TabCol.sogct; i++) {
-      TabCol.paleta[i].r = *tp++;
-      TabCol.paleta[i].g = *tp++;
-      TabCol.paleta[i].b = *tp++;
+      TabCol.paleta[i].r = rgbTable[tp++];
+      TabCol.paleta[i].g = rgbTable[tp++];
+      TabCol.paleta[i].b = rgbTable[tp++];
     }
-    delete [] rgbTable;
+    rgbTable = NULL;
   }
 
   single = 0;
@@ -224,10 +229,9 @@ BOOL wxGIF::Extrae_imagen()
 {
   (void)getColorMap();
   ibf=GIFBUFTAM+1;
-  IterImage = RawImage; 
+  IterImage = 0; 
   ItCount = 0; 
   decoder(GetWidth());
-//  MacFixupPixelData( (unsigned char *) IterImage, Width*Height);
   return TRUE;
 }
 
@@ -262,65 +266,58 @@ ushort wxGIF::get_byte() {
  * a negative number in case of file errors...
  */
 ushort wxGIF::get_next_code()
-	{
-	ushort i, x;
-	ulong ret;
+{
+  ushort i, x;
+  ulong ret;
 
-	if (nbits_left == 0)
-      {
-		if (navail_bytes <= 0)
-			{
-
-         /* Out of bytes in current block, so read next block
-          */
-         pbytes = byte_buff;
-         if ((navail_bytes = get_byte()) < 0)
-            return(navail_bytes);
-         else if (navail_bytes)
-	    {
-				for (i = 0; i < navail_bytes; ++i)
-               {
-               if ((x = get_byte()) < 0)
-						return(x);
-					byte_buff[i] = x;
-					}
-            }
-			}
-      b1 = *pbytes++;
-		nbits_left = 8;
-		--navail_bytes;
+  if (nbits_left == 0) {
+    if (navail_bytes <= 0) {
+      /* Out of bytes in current block, so read next block
+       */
+      pbytes = 0;
+      navail_bytes = get_byte();
+      if (navail_bytes < 0)
+	return(navail_bytes);
+      else if (navail_bytes) {
+	for (i = 0; i < navail_bytes; ++i) {
+	  if ((x = get_byte()) < 0)
+	    return(x);
+	  byte_buff[i] = x;
+	}
       }
+    }
+    b1 = byte_buff[pbytes++];
+    nbits_left = 8;
+    --navail_bytes;
+  }
 
-   ret = b1 >> (8 - nbits_left);
-   while (curr_size > nbits_left)
-      {
-      if (navail_bytes <= 0)
-         {
-
-         /* Out of bytes in current block, so read next block
-			 */
-         pbytes = byte_buff;
-			if ((navail_bytes = get_byte()) < 0)
-            return(navail_bytes);
-			else if (navail_bytes)
-            {
-            for (i = 0; i < navail_bytes; ++i)
-					{
-					if ((x = get_byte()) < 0)
-                  return(x);
-               byte_buff[i] = x;
-               }
-            }
-         }
-      b1 = *pbytes++;
-      ret |= b1 << nbits_left;
-		nbits_left += 8;
-		--navail_bytes;
+  ret = b1 >> (8 - nbits_left);
+  while (curr_size > nbits_left) {
+    if (navail_bytes <= 0) {
+      /* Out of bytes in current block, so read next block
+       */
+      pbytes = 0;
+      navail_bytes = get_byte();
+      if (navail_bytes < 0)
+	return(navail_bytes);
+      else if (navail_bytes) {
+	for (i = 0; i < navail_bytes; ++i) {
+	  x = get_byte();
+	  if (x < 0)
+	    return(x);
+	  byte_buff[i] = x;
+	}
       }
-	nbits_left -= curr_size;
-	ret &= code_mask[curr_size];
-	return((ushort)(ret));
-   }
+    }
+    b1 = byte_buff[pbytes++];
+    ret = ret | (b1 << nbits_left);
+    nbits_left += 8;
+    --navail_bytes;
+  }
+  nbits_left -= curr_size;
+  ret &= code_mask[curr_size];
+  return ret;
+}
 
 
 /* short decoder(linewidth)
@@ -335,20 +332,20 @@ void wxGIF::InitInterlaceRow(int linewidth)
   
   count = ((Height - 1) / 8);
   if (lpos <= count) {
-    IterImage = RawImage + (linewidth * (lpos * 8));
+    IterImage = (linewidth * (lpos * 8));
   } else {
     lpos -= (count + 1);
     count = ((Height - 5) / 8);
     if (lpos <= count) {
-      IterImage = RawImage + (linewidth * (lpos * 8 + 4));
+      IterImage = (linewidth * (lpos * 8 + 4));
     } else {
       lpos -= (count + 1);
       count = ((Height - 3) / 4);
       if (lpos <= count) {
-        IterImage = RawImage + (linewidth * (lpos * 4 + 2));
+        IterImage = (linewidth * (lpos * 4 + 2));
       } else {
 	lpos -= (count + 1);
-        IterImage = RawImage + (linewidth * (lpos * 2 + 1));
+        IterImage = (linewidth * (lpos * 2 + 1));
       }
     }
   }
@@ -356,13 +353,13 @@ void wxGIF::InitInterlaceRow(int linewidth)
 
 ushort  wxGIF::decoder(ushort linewidth)
 {
-  register uchar *sp, *bufptr;
-  uchar *buf;
+  int bufptr, sp;
+  uchar *lbuf;
   register ushort code, fc, oc, bufcnt;
   ushort c, size, ret;
+  int interlace;
 
-	/* Initialize for decoding a new image...
-    */
+  /* Initialize for decoding a new image... */
   if ((size = get_byte()) < 0)
     return(size);
   if (size < 2 || 9 < size)
@@ -371,16 +368,15 @@ ushort  wxGIF::decoder(ushort linewidth)
   oc = fc = 0;
   ret = 0;
 
-  if ((buf = new uchar[linewidth + 1]/*(uchar *)malloc(linewidth + 1)*/) == NULL)
-    return(OUT_OF_MEMORY);
+  lbuf = new WXGC_ATOMIC uchar[linewidth + 1];
 
-  sp = stack;
-  bufptr = buf;
+  sp = 0;
+  bufptr = 0;
   bufcnt = linewidth;
 
-  int interlace = image.pf & INTERLACEMASK;
+  interlace = image.pf & INTERLACEMASK;
 
-   /* This is the main loop.  For each code we get we pass through the
+  /* This is the main loop.  For each code we get we pass through the
     * linked list of prefix codes, pushing the corresponding "character" for
     * each code onto the stack.  When the list reaches a single "character"
     * we push that on the stack too, and then start unstacking each
@@ -395,7 +391,6 @@ ushort  wxGIF::decoder(ushort linewidth)
 		 */
     if (c < 0)
     {
-      delete buf;
       return(0);
      }
 
@@ -433,7 +428,7 @@ ushort  wxGIF::decoder(ushort linewidth)
           * of the line, we have to send the buffer to the out_line()
           * routine...
           */
-      *bufptr++ = c;
+      lbuf[bufptr++] = c;
       if (--bufcnt == 0)
       {
         if (ItCount < Height)
@@ -441,15 +436,14 @@ ushort  wxGIF::decoder(ushort linewidth)
 	  if (interlace)
 	    InitInterlaceRow(linewidth);
 
-          for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+          for (ushort i=0; i<linewidth; i++) { RawImage[IterImage++] = lbuf[i]; }
           ItCount++;
         }
         else
         {
-          delete buf;
-          return(ret);
+          return ret;
         }
-        bufptr = buf;
+        bufptr = 0;
         bufcnt = linewidth;
       }
     }
@@ -473,7 +467,7 @@ ushort  wxGIF::decoder(ushort linewidth)
         if (code > slot)
           ++bad_code_count;
         code = oc;
-        *sp++ = fc;
+        stack[sp++] = fc;
        }
 
          /* Here we scan back along the linked list of prefixes, pushing
@@ -481,7 +475,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 			 */
         while (code >= newcodes)
         {
-          *sp++ = suffix[code];
+          stack[sp++] = suffix[code];
           code = prefix[code];
         }
 
@@ -492,7 +486,7 @@ ushort  wxGIF::decoder(ushort linewidth)
           * suffix and prefix...  I'm not certain if this is correct...
           * it might be more proper to overwrite the last code...
 			 */
-         *sp++ = code;
+         stack[sp++] = code;
          if (slot < top_slot)
          {
            suffix[slot] = fc = code;
@@ -511,9 +505,9 @@ ushort  wxGIF::decoder(ushort linewidth)
           * buffer...  And when the decode buffer is full, write another
 			 * line...
           */
-         while (sp > stack)
+         while (sp > 0)
          {
-            *bufptr++ = *(--sp);
+            lbuf[bufptr++] = stack[--sp];
             if (--bufcnt == 0)
             {
 	      if (interlace)
@@ -521,15 +515,14 @@ ushort  wxGIF::decoder(ushort linewidth)
 
               if (ItCount < Height)
               {
-                for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+                for (ushort i=0; i<linewidth; i++) { RawImage[IterImage++] = lbuf[i]; }
                 ItCount++;
               }
               else
               {
-                delete buf;
-                return(ret);
+                return ret;
               }
-              bufptr = buf;
+              bufptr = 0;
               bufcnt = linewidth;
             }
           }
@@ -541,18 +534,16 @@ ushort  wxGIF::decoder(ushort linewidth)
       {
 	if (interlace)
 	  InitInterlaceRow(linewidth);
-        for (ushort i=0; i<(linewidth - bufcnt); i++) *IterImage++ = buf[i];
+        for (ushort i=0; i<(linewidth - bufcnt); i++) { RawImage[IterImage++] = lbuf[i]; }
         ItCount++;
        }
        else
       {
-        delete buf;
-        return(ret);
+        return ret;
       }
-  bufptr = buf;
+  bufptr = 0;
   bufcnt = linewidth;
-  delete buf;
-  return(ret);
+  return ret;
 }
 
 //// these were all inline 
@@ -560,7 +551,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 //inline 
 void wxGIF::reset() 
 {
- IterImage = RawImage; 
+ IterImage = 0; 
  ItCount = 0; 
 }
 
@@ -568,7 +559,7 @@ void wxGIF::reset()
 void wxGIF::upset()
 {
   ItCount = Height-1;
-  IterImage = RawImage + EfeWidth*(Height-1);
+  IterImage = EfeWidth*(Height-1);
 }
 
 //inline 
@@ -590,13 +581,13 @@ Bool wxGIF::ItPrev()
 //inline 
 void wxGIF::SetRow(ushort n, byte *buf)
 {
-  for (ushort i=0; i<n; i++) IterImage[i] = buf[i];
+  for (ushort i=0; i<n; i++) { RawImage[IterImage+i] = buf[i]; }
 }
 
 //inline 
 void wxGIF::GetRow(ushort n, byte *buf)
 {
-  for (ushort i=0; i<n; i++) buf[i] = IterImage[i];
+  for (ushort i=0; i<n; i++) { buf[i] = RawImage[IterImage+i]; }
 }
 
 ///// end inliners
@@ -615,90 +606,97 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
 
 Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int getMask)
 {
+  wxGIF *gifImage;
  
   if (pal) *pal = NULL;
 
-  wxGIF *gifImage  = new wxGIF(fileName);
+  gifImage = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
-	int p = 0, i, j, h = gifImage->GetHeight();
-	int w = gifImage->GetWidth();
-	unsigned char *data;
-	wxMemoryDC *mem;
-	HDC hdc;
-	unsigned short *red, *green, *blue;
-	COLORREF cref;
-	int white;
+    int p = 0, i, j, h, w, datap;
+    unsigned char *data;
+    wxMemoryDC *mem;
+    HDC hdc;
+    unsigned short *red, *green, *blue;
+    COLORREF cref;
+    int white;
+
+    h = gifImage->GetHeight();
+    w = gifImage->GetWidth();
 	
-	bm->Create(w, h, -1);
+    bm->Create(w, h, -1);
 
-	if (!bm->Ok()) {
-	  delete gifImage;
-	  return FALSE;
+    if (!bm->Ok()) {
+      delete gifImage;
+      return FALSE;
+    }
+
+    mem = new wxMemoryDC();
+    mem->SelectObject(bm);
+
+    mem->Clear();
+
+    hdc = mem->cdc;
+
+    red = gifImage->red;
+    green = gifImage->green;
+    blue = gifImage->blue;
+
+    white = -1;
+    for (i = gifImage->numcmapentries; i--; ) {
+      if (red[i] == 255
+	  && green[i] == 255
+	  && blue[i] == 255) {
+	white = i;
+	break;
+      }
+    }
+
+    data = (unsigned char *)gifImage->GetRawImage();
+    datap = 0;
+	
+    for (j = 0; j < h; j++) {
+      for (i = 0; i < w; i++, datap++) {
+	int v = data[datap];
+	if (v != white) {
+	  cref = RGB(red[v], green[v], blue[v]);
+	  SetPixelV(hdc, i, j, cref);
 	}
+      }
+    }
 
-	mem = new wxMemoryDC();
-	mem->SelectObject(bm);
+    /* Make mask if requested and if there was a transparent
+       index: */
+    if (getMask && (gifImage->transparent_index >= 0)) {
+      wxBitmap *mbm;
+      int transparent_index = gifImage->transparent_index;
 
-	mem->Clear();
-
+      mbm = new wxBitmap(w, h, 1);
+      if (mbm->Ok()) {
+	int datap;
+	mem->SelectObject(mbm);
 	hdc = mem->cdc;
-
-	red = gifImage->red;
-	green = gifImage->green;
-	blue = gifImage->blue;
-
-	white = -1;
-	for (i = gifImage->numcmapentries; i--; )
-	  if (red[i] == 255
-	      && green[i] == 255
-	      && blue[i] == 255) {
-	    white = i;
-	    break;
-	  }
-
 	data = (unsigned char *)gifImage->GetRawImage();
-	
+	datap = 0;
 	for (j = 0; j < h; j++) {
-	  for (i = 0; i < w; i++, data++) {
-	    int v = *data;
-	    if (v != white) {
-	      cref = RGB(red[v], green[v], blue[v]);
-	      SetPixelV(hdc, i, j, cref);
+	  for (i = 0; i < w; i++, datap++) {
+	    int v = data[datap];
+	    if (v == transparent_index) {
+	      cref = RGB(255, 255, 255);
+	    } else {
+	      cref = RGB(0, 0, 0);
 	    }
+	    SetPixelV(hdc, i, j, cref);
 	  }
-	}
-
-	/* Make mask if requested and if there was a transparent
-           index: */
-	if (getMask && (gifImage->transparent_index >= 0)) {
-	  wxBitmap *mbm;
-	  int transparent_index = gifImage->transparent_index;
-
-	  mbm = new wxBitmap(w, h, 1);
-	  if (mbm->Ok()) {
-	    mem->SelectObject(mbm);
-	    hdc = mem->cdc;
-	    data = (unsigned char *)gifImage->GetRawImage();
-	    for (j = 0; j < h; j++) {
-	      for (i = 0; i < w; i++, data++) {
-		int v = *data;
-		if (v == transparent_index) {
-		  cref = RGB(255, 255, 255);
-		} else {
-		  cref = RGB(0, 0, 0);
-		}
-		SetPixelV(hdc, i, j, cref);
-	      }
-	    } 
-	    bm->SetMask(mbm);
-	  }
-	}
+	} 
+	bm->SetMask(mbm);
+      }
+    }
 	  
-	mem->SelectObject(NULL);
-	delete mem;
+    mem->SelectObject(NULL);
+    delete mem;
 	
-	delete gifImage;
-	return TRUE;
+    delete gifImage;
+    return TRUE;
   }
   
   if (gifImage)

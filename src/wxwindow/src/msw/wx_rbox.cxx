@@ -44,6 +44,8 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   LRESULT res;
   int tramp = wx_trampolining;
+  wxRBInfo *i;
+  long r;
 
   wx_trampolining = 0;
 
@@ -55,22 +57,22 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxRadioItemProc))
       return res;
 
-  wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
+  i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
   if (!i) return FALSE;
 
-  long r;
   if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
   if (tramp && (message == WM_LBUTTONDOWN)) {
     /* we've already trampolined, so no atomic lock needed */
-    wxRadioBox *rb = (wxRadioBox *)i->item;
+    wxRadioBox *rb;
+    rb = (wxRadioBox *)i->item;
     if (rb->buttonEnabled[i->which]) {
+      wxCommandEvent *event;
       rb->SetSelection(i->which);
       rb->ButtonFocus(i->which);
-      wxCommandEvent *event;
-	  event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
+      event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
       i->item->ProcessCommand(event);
     }
     return TRUE;
@@ -82,22 +84,28 @@ static FARPROC wxGenericRIProc;
 
 static void SubclassRadioButton(HWND hWnd, wxItem *item, int which)
 {
-  wxRBInfo *i = (wxRBInfo *)malloc(sizeof(wxRBInfo));
+  wxRBInfo *i;
+  FARPROC io;
+
+  i = (wxRBInfo *)malloc(sizeof(wxRBInfo));
   
   i->item = item;
   i->which = which;
 
   // Subclass again for purposes of dialog editing mode
   wxAddControlHandle(hWnd, (wxItem *)i);
-  i->old = (FARPROC) GetWindowLong(hWnd, GWL_WNDPROC);
-  if (!wxGenericRIProc)
+  io = (FARPROC)GetWindowLong(hWnd, GWL_WNDPROC);
+  i->old = io;
+  if (!wxGenericRIProc) {
     wxGenericRIProc = MakeProcInstance((FARPROC) wxRadioItemProc, wxhInstance);
+  }
   SetWindowLong(hWnd, GWL_WNDPROC, (LONG) wxGenericRIProc);
 }
 
 void UnsubclassRadioButton(HWND hWnd)
 {
-  wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
+  wxRBInfo *i;
+  i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
   if (i) {
     wxRemoveControlHandle(hWnd);
@@ -140,6 +148,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
                        int N, char **Choices, wxBitmap **bmChoices,
                        int MajorDim, long _style, char *name)
 {
+  wxWnd *cparent;
+  char *the_label;
+  HWND the_handle;
+  int i;
+
   panel->AddChild(this);
   if (MajorDim==0)
     MajorDim = N ;
@@ -149,46 +162,52 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   wxWinType = wxTYPE_HWND;
   isFafa = !!bmChoices;
 
-  wxWnd *cparent = (wxWnd *)(panel->handle);
+  cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
 
   panel->GetValidPosition(&x, &y);
 
-  char *the_label;
-
   the_label = copystring(Title ? Title : "");
-
-  HWND the_handle = cparent->handle;
-
-  ms_handle = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				 STATIC_FLAGS | WS_CLIPSIBLINGS
-				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				 0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
-				 wxhInstance, NULL);
-
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
-
-  SubclassControl((HWND)ms_handle);
 
   the_handle = cparent->handle;
 
-  radioButtons = new HWND[N];
-  radioWidth = new int[N];
-  radioHeight = new int[N];
-  if (bmChoices)
+  {
+    int nid;
+    nid = NewId(this);
+    ms_handle = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
+				   STATIC_FLAGS | WS_CLIPSIBLINGS
+				   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				   wxhInstance, NULL);
+  }
+
+  wxSetWinFont(labelFont, ms_handle);
+
+  SubclassControl((HWND)ms_handle);
+  
+  the_handle = cparent->handle;
+
+#ifdef MZ_PRECISE_GC
+  {
+    HWND *a;
+    a = (HWND *)GC_malloc_atomic(sizeof(HWND) * N);
+    radioButtons = a;
+  }
+#else
+  radioButtons = new WXGC_ATOMIC HWND[N];
+#endif
+  radioWidth = new WXGC_ATOMIC int[N];
+  radioHeight = new WXGC_ATOMIC int[N];
+  if (bmChoices) {
     bm_labels = new wxBitmap*[N];
-  else
+  } else {
     bm_labels = NULL;
+  }
   buttonEnabled = new Bool[N];
 
   subControls = new wxList();
 
-  int i;
   for (i = 0; i < N; i++) {
     long newId;
     long groupStyle = 0;
@@ -200,50 +219,63 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     buttonEnabled[i] = TRUE;
       
     if (bmChoices) {
-      radioWidth[i]  = bmChoices[i]->GetWidth()  + FB_MARGIN;
-      radioHeight[i] = bmChoices[i]->GetHeight() + FB_MARGIN;
       char tmp[32];
+      HWND rbhand;
+      wxBitmap *rbm;
+      int bw, bh;
+
+      rbm = bmChoices[i];
+
+      bw = rbm->GetWidth();
+      bh = rbm->GetHeight();
+
+      radioWidth[i]  = bw  + FB_MARGIN;
+      radioHeight[i] = bh + FB_MARGIN;
       sprintf(tmp, "Toggle%d", i);
       
-      bm_labels[i] = bmChoices[i];
-      bm_labels[i]->selectedIntoDC++;
-      radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
-					   groupStyle | BITRADIO_FLAGS
-					   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-					   0, 0, 0, 0,
-					   the_handle, (HMENU)newId, wxhInstance, NULL);
-	
-      SetBitmapDimensionEx(bmChoices[i]->ms_bitmap,
-			   bmChoices[i]->GetWidth(),
-			   bmChoices[i]->GetHeight(),
+      bm_labels[i] = rbm;
+      rbm->selectedIntoDC++;
+      rbhand = wxwmCreateWindowEx(0, FafaChck, tmp,
+				  groupStyle | BITRADIO_FLAGS
+				  | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				  0, 0, 0, 0,
+				  the_handle, (HMENU)newId, wxhInstance, NULL);
+      radioButtons[i] = rbhand;
+
+      SetBitmapDimensionEx(rbm->ms_bitmap,
+			   rbm->GetWidth(),
+			   rbm->GetHeight(),
 			   NULL);
-      SendMessage((HWND)radioButtons[i],WM_CHANGEBITMAP,
+      SendMessage((HWND)radioButtons[i], WM_CHANGEBITMAP,
 		  (WPARAM)0xFFFF,
-		  (LPARAM)bmChoices[i]->ms_bitmap);
+		  (LPARAM)rbm->ms_bitmap);
     } else {
+      HWND rbhand;
+
       radioWidth[i] = radioHeight[i] = -1 ;
-      radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
-					   groupStyle | RADIO_FLAGS
-					   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-					   0, 0, 0, 0,
-					   the_handle, (HMENU)newId, wxhInstance, NULL);
+      rbhand = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
+				  groupStyle | RADIO_FLAGS
+				  | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				  0, 0, 0, 0,
+				  the_handle, (HMENU)newId, wxhInstance, NULL);
+      radioButtons[i] = rbhand;
     }
 
     SubclassRadioButton(radioButtons[i], this, i);
-    HDC the_dc = GetWindowDC((HWND)radioButtons[i]) ;
-    if (buttonFont && buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)radioButtons[i],WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)radioButtons[i],the_dc) ;
+    wxSetWinFont(buttonFont, radioButtons[i]);
     subControls->Append((wxObject *)newId);
   }
 
   // Create a dummy radio control to end the group.
-  (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
-			   WS_GROUP | RADIO_FLAGS
-			   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-			   0, 0, 0, 0, 
-			   the_handle, (HMENU)NewId(this), wxhInstance, NULL);
+  {
+    int nid;
+    nid = NewId(this);
+    wxwmCreateWindowEx(0, RADIO_CLASS, "", 
+		       WS_GROUP | RADIO_FLAGS
+		       | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+		       0, 0, 0, 0, 
+		       the_handle, (HMENU)nid, wxhInstance, NULL);
+  }
 
   no_items = N;
   SetSelection(0);
@@ -270,18 +302,20 @@ wxRadioBox::~wxRadioBox(void)
   if (radioButtons) {
     int i;
     for (i = 0; i < no_items; i++) {
-	  UnsubclassRadioButton(radioButtons[i]);
+      UnsubclassRadioButton(radioButtons[i]);
       wxwmDestroyWindow(radioButtons[i]);
-	}
-    delete[] radioButtons;
+    }
   }
 
   if (bm_labels) {
     int i;
 
-    for (i = 0; i < no_items; i++)
-      if (bm_labels[i])
-	--bm_labels[i]->selectedIntoDC;
+    for (i = 0; i < no_items; i++) {
+      if (bm_labels[i]) {
+	wxBitmap *rbm = bm_labels[i];
+	--rbm->selectedIntoDC;
+      }
+    }
 
     bm_labels = NULL;
   }
@@ -314,13 +348,17 @@ void wxRadioBox::SetLabel(int item, char *label)
 
 void wxRadioBox::SetLabel(int item,wxBitmap *bitmap)
 {
+  wxBitmap *rbm;
+
   if (!bm_labels || !bm_labels[item]
       || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
     return;
 
-  --bm_labels[item]->selectedIntoDC;
+  rbm = bm_labels[item];
+
+  --rbm->selectedIntoDC;
   bm_labels[item] = bitmap;
-  bm_labels[item]->selectedIntoDC++;
+  bitmap->selectedIntoDC++;
 
   SetBitmapDimensionEx(bitmap->ms_bitmap,
 		       bitmap->GetWidth(),
@@ -329,8 +367,13 @@ void wxRadioBox::SetLabel(int item,wxBitmap *bitmap)
   SendMessage((HWND)radioButtons[item],WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
 	      (LPARAM)bitmap->ms_bitmap);
-  radioWidth[item] = bitmap->GetWidth() + FB_MARGIN ;
-  radioHeight[item] = bitmap->GetHeight() + FB_MARGIN ;
+  {
+    int bw, bh;
+    bw = bitmap->GetWidth();
+    bh = bitmap->GetHeight();
+    radioWidth[item] = bw + FB_MARGIN ;
+    radioHeight[item] = bh + FB_MARGIN ;
+  }
 }
 
 int wxRadioBox::FindString(char *s)
@@ -395,53 +438,44 @@ char *wxRadioBox::GetString(int N)
 void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
+  int y_offset = y;
+  int x_offset = x;
+  float current_width;
+  float cyf;
+  HWND wnd;
+  int cx1, cy1, startX, startY;
+  int maxWidth =  -1;
+  int maxHeight = -1;
+  int hlabel = 0;
+  char buf[400];
+  int i;
+  float label_width = 0;
+  float label_height = 0;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  char buf[400];
+  wnd = (HWND)ms_handle;
 
-  int y_offset = y;
-  int x_offset = x;
-  float current_width;
-
-  float cyf;
-  HWND wnd = (HWND)ms_handle;
-
-  int cx1, cy1;
-
-  // The layout looks like this:
-  //  - Title --------
-  //  | * item 1     |
-  //  | * item 2     |
-  //  ----------------
-  // Each item is actually its own window, and we're
-  //  responsible for putting each on in its place.
   // We find the height of the largest item, and then
   //  put maxHeight/2 space between each radio button.
   //  The label can be a different font from the rest.
 
   wxGetCharSize(wnd, &cx1, &cy1, buttonFont);
-  int maxWidth =  -1;
-  int maxHeight = -1;
-  int hlabel = 0;
-
-  float label_width = 0;
-  float label_height = 0;
 
   if ((style & HAS_LABEL)) {
+    int char_width, ignored;
     GetWindowText((HWND)ms_handle, buf, 300);
     GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, labelFont);
-    int char_width, ignored;
     wxGetCharSize(wnd, &char_width, &ignored, labelFont);
   } else {
     label_height = 0;
     label_width = 0;
   }
 
-  int i;
   for (i = 0 ; i < no_items; i++) {
     int eachWidth;
     int eachHeight ;
@@ -462,8 +496,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   if (ms_handle) {
     int totWidth;
     int totHeight;
-
-    int nbHor,nbVer;
+    int nbHor, nbVer;
 
     if (windowStyle & wxHORIZONTAL) {
       nbHor = majorDim;
@@ -508,10 +541,13 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 
   }
 
-  int startX = x_offset;
-  int startY = y_offset;
+  startX = x_offset;
+  startY = y_offset;
 
   for ( i = 0 ; i < no_items; i++) {
+    int eachWidth;
+    int eachHeight;
+
     // Bidimensional radio adjustment
     if (i && !(i % majorDim)) {
       if (windowStyle & wxHORIZONTAL) {
@@ -523,8 +559,6 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       }
     }
 
-    int eachWidth;
-    int eachHeight;
     if (radioWidth[i] < 0) {
       // It's a labeled item
       GetWindowText(radioButtons[i], buf, 300);
@@ -550,14 +584,16 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 void wxRadioBox::GetSize(int *width, int *height)
 {
   RECT rect;
+  int i;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   if (ms_handle)
     wxFindMaxSize((HWND)ms_handle, &rect);
 
-  int i;
-  for (i = 0; i < no_items; i++)
+  for (i = 0; i < no_items; i++) {
     wxFindMaxSize((HWND)radioButtons[i], &rect);
+  }
 
   *width = rect.right - rect.left;
   *height = rect.bottom - rect.top;
@@ -570,20 +606,24 @@ void wxRadioBox::GetClientSize(int *width, int *height)
 
 void wxRadioBox::GetPosition(int *x, int *y)
 {
-  wxWindow *parent = GetParent();
   RECT rect;
+  wxWindow *parent;
+  int i;
+  POINT point;
+
+  parent = GetParent();
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
-  int i;
-  for (i = 0; i < no_items; i++)
+  for (i = 0; i < no_items; i++) {
     wxFindMaxSize(radioButtons[i], &rect);
+  }
 
   if (ms_handle)
     wxFindMaxSize((HWND)ms_handle, &rect);
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent)
@@ -599,15 +639,11 @@ void wxRadioBox::GetPosition(int *x, int *y)
 char *wxRadioBox::GetLabel(void)
 {
   if (ms_handle) {
-
     if (!GetWindowText((HWND)ms_handle, wxBuffer, 300))
-
       return NULL;
-
     return wxBuffer;
-
-  }
-  else return NULL;
+  } else
+    return NULL;
 }
 
 void wxRadioBox::SetLabel(char *label)
@@ -627,6 +663,7 @@ void wxRadioBox::SetFocus(void)
 Bool wxRadioBox::Show(Bool show)
 {
   int cshow;
+  int i;
 
   SetShown(show);
 
@@ -639,9 +676,9 @@ Bool wxRadioBox::Show(Bool show)
 
   ShowWindow((HWND)ms_handle, cshow);
 
-  int i;
-  for (i = 0; i < no_items; i++)
+  for (i = 0; i < no_items; i++) {
     ShowWindow(radioButtons[i], cshow);
+  }
 
   return TRUE;
 }
@@ -663,9 +700,10 @@ void wxRadioBox::Enable(Bool enable)
 
 void wxRadioBox::ChangeToGray(Bool gray)
 {
+  int i;
+
   wxWindow::ChangeToGray(gray);
 
-  int i;
   for (i = 0; i < no_items; i++) {
     if (gray)
       ::EnableWindow(radioButtons[i], FALSE);
@@ -693,10 +731,12 @@ int wxRadioBox::ButtonFocus(int which)
 {
   if (which < 0) {
     int i;
-    HWND fw = ::GetFocus();
-    for (i = no_items; i--; )
+    HWND fw;
+    fw = ::GetFocus();
+    for (i = no_items; i--; ) {
       if (fw == radioButtons[i])
 	return i;
+    }
   } else if (which < no_items)
     ::SetFocus(radioButtons[which]);
 

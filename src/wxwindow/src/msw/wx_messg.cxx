@@ -72,11 +72,13 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   cparent = (wxWnd *)(panel->handle);
 
   if (image) {
+    int nid;
+    nid = NewId(this);
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
 				     | WS_GROUP | WS_CLIPSIBLINGS
 				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				     wxhInstance, NULL);
     
     SetBitmapDimensionEx(image->ms_bitmap,
@@ -87,21 +89,25 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
                   (WPARAM)0xFFFF,
                   (LPARAM)image->ms_bitmap);
   } else if (is_icon) {
+    int nid;
+    nid = NewId(this);
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
 				     | WS_GROUP | WS_CLIPSIBLINGS
 				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				     wxhInstance, NULL);
     
     SendMessage((HWND)static_item, WM_CHANGEICON,
 		(WPARAM)0xFFFF,
 		(LPARAM)icn);
   } else {
+    int nid;
+    nid = NewId(this);
     static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
 				     STATIC_FLAGS | WS_CLIPSIBLINGS
 				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				     wxhInstance, NULL);
   }
 
@@ -109,20 +115,19 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
 
   SubclassControl(static_item);
 
-  if (!image && labelFont) {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle);
-    if (labelFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc);
-  }
+  if (!image)
+    wxSetWinFont(labelFont, ms_handle);
 
   panel->GetValidPosition(&x, &y);
 
-  SetSize(x, y, 
-	  (is_icon ? icon_w : (image ? image->GetWidth() : -1)), 
-	  (is_icon ? icon_h : (image ? image->GetHeight() : -1)));
+  {
+    int iw, ih;
+    iw = (image ? image->GetWidth() : -1);
+    ih = (image ? image->GetHeight() : -1);
+    SetSize(x, y, 
+	    (is_icon ? icon_w : iw), 
+	    (is_icon ? icon_h : ih));
+  }
   panel->AdvanceCursor(this);
 
   if (style & wxINVISIBLE)
@@ -207,6 +212,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   int x, y;
   int w, h;
   RECT rect;
+  wxWindow *par;
 
   if (!bm_label || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
     return;
@@ -227,5 +233,6 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 	      (WPARAM)0xFFFF /*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
 	      (LPARAM)bitmap->ms_bitmap);
   
-  InvalidateRect(GetParent()->GetHWND(), &rect, TRUE);
+  par = GetParent();
+  InvalidateRect(par->GetHWND(), &rect, TRUE);
 }

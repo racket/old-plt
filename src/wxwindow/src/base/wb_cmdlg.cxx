@@ -21,7 +21,9 @@ wxDefaultFileSelector(Bool load, const char *what, char *extension, char *defaul
 
   sprintf(prompt, load ? "Select file" : "Save file", what);
 
-  if (*extension == '.') extension++;
+  if (*extension == '.') {
+    extension = COPYSTRING_TO_ALIGNED(extension, 1);
+  }
   sprintf(wild, "*.%s", extension);
 
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild);
@@ -70,7 +72,7 @@ void wxSplitMessage(char *message, wxList *messageList, wxPanel *panel)
     messageList->Append(mess);
     panel->NewLine();
 
-    currentMessage = copyMessage + i + 1;
+    currentMessage = COPYSTRING_TO_ALIGNED(copyMessage, i + 1);
   }
 }
 

@@ -58,8 +58,9 @@ char *wxbApp::GetAppName(void)
 
 void wxbApp::SetAppName(char *name)
 {
-  if (name)
+  if (name) {
     appName = copystring(name);
+  }
 }
 
 char *wxbApp::GetClassName(void)
@@ -69,8 +70,9 @@ char *wxbApp::GetClassName(void)
 
 void wxbApp::SetClassName(char *name)
 {
-  if (name)
+  if (name) {
     wx_class = copystring(name);
+  }
 }
 
 wxWindow *wxbApp::GetTopWindow(void)

@@ -30,7 +30,15 @@ wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data)
 
   printData = data;
 
-  ((PRINTDLG *)printData->printData)->hwndOwner = (p ? p->GetHWND() : (HWND)NULL);
+  {
+    HWND h;
+    if (p) {
+      h = p->GetHWND();
+    } else
+      h = NULL;
+    
+    ((PRINTDLG *)printData->printData)->hwndOwner = h;
+  }
 }
 
 wxPrintDialog::~wxPrintDialog(void)
@@ -74,7 +82,7 @@ wxDC *wxPrintDialog::GetPrintDC(void)
 wxPrintData::wxPrintData(void)
 {
   PRINTDLG *pd;
-  pd = new PRINTDLG;
+  pd = (PRINTDLG *)malloc(sizeof(PRINTDLG));
   printData = (void *)pd;
 
   memset(pd, 0, sizeof(PRINTDLG));
@@ -94,7 +102,7 @@ wxPrintData::wxPrintData(void)
 wxPrintData::~wxPrintData(void)
 {
   PRINTDLG *pd = (PRINTDLG *)printData;
-  delete pd;
+  free(pd);
 }
 
 int wxPrintData::GetFromPage(void)
@@ -204,10 +212,18 @@ wxPrinter::wxPrinter()
   printData = new wxPrintData();
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 wxWindow *wxPrinter::abortWindow = NULL;
 int aw_registered = 0;
 
 Bool wxPrinter::abortIt = FALSE;
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 wxPrinter::~wxPrinter(void)
 {
@@ -353,11 +369,11 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   return TRUE;
 }
 
-static void wxAbortWindowCancel(wxButton& WXUNUSED(but), wxCommandEvent& WXUNUSED(event))
+static void wxAbortWindowCancel(wxButton *WXUNUSED(but), wxCommandEvent *WXUNUSED(event))
 {
   wxPrinter::abortIt = TRUE;
   wxPrinter::abortWindow->Show(FALSE);
-  delete wxPrinter::abortWindow;
+  delete (wxPrinter::abortWindow);
   wxPrinter::abortWindow = NULL;
 }
 
@@ -389,7 +405,10 @@ void wxPrinter::ReportError(wxWindow *parent, wxPrintout *WXUNUSED(printout), ch
  
 wxPrintout::wxPrintout(char *title)
 {
-  printoutTitle = title ? copystring(title) : (char *)NULL;
+  if (title) {
+    printoutTitle = copystring(title);
+  } else
+    printoutTitle = (char *)NULL;
   printoutDC = NULL;
 }
 

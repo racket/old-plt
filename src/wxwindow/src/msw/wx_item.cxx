@@ -62,17 +62,20 @@ wxItem::wxItem(wxPanel *pnl) : wxbItem(pnl)
 
 wxItem::~wxItem(void)
 {
+  wxPanel *panel;
+  wxObject *obj;
+
   DoneIds(this);
 
   isBeingDeleted = TRUE;
   
   // item may be a menu, so check.
-  wxObject *obj = (wxObject *)GetParent();
+  obj = (wxObject *)GetParent();
   if (!obj || !wxSubType(obj->__type, wxTYPE_PANEL)) return;
 
   // If we delete an item, we should initialize the parent panel,
   // because it could now be invalid.
-  wxPanel *panel = (wxPanel *)GetParent();
+  panel = (wxPanel *)GetParent();
   if (panel)
   {
     panel->last_created = NULL;
@@ -112,15 +115,18 @@ void wxItem::GetSize(int *width, int *height)
 void wxItem::GetPosition(int *x, int *y)
 {
   HWND wnd = (HWND)ms_handle;
-  wxWindow *parent = GetParent();
+  wxWindow *parent;
   RECT rect;
+  POINT point;
+  
+  parent = GetParent();
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize(wnd, &rect);
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent)
@@ -181,12 +187,16 @@ Bool wxItem::Show(Bool show)
 
 void wxItem::SubclassControl(HWND hWnd)
 {
+  FARPROC owp;
+
   // Subclass again for purposes of dialog editing mode
   wxAddControlHandle(hWnd, this);
-  oldWndProc = (FARPROC) GetWindowLong(hWnd, GWL_WNDPROC);
-  if (!wxGenericControlSubClassProc)
+  owp = (FARPROC)GetWindowLong(hWnd, GWL_WNDPROC);
+  oldWndProc = owp;
+  if (!wxGenericControlSubClassProc) {
     wxGenericControlSubClassProc = MakeProcInstance((FARPROC)wxSubclassedGenericControlProc,
 						    wxhInstance);
+  }
   SetWindowLong(hWnd, GWL_WNDPROC, (LONG)wxGenericControlSubClassProc);
 }
 
@@ -242,11 +252,12 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
   int retval = 1;
   int nc = 0;
   int skip = 0;
+  wxPanel *panel;
 
   *result = 0;
   
   // If not in edit mode (or has been removed from parent), call the default proc.
-  wxPanel *panel = (wxPanel *)item->GetParent();
+  panel = (wxPanel *)item->GetParent();
 
   if (!wx_start_win_event("item", hWnd, message, wParam, lParam, tramp)) {
     /* Something has gone wrong. Give up. */
@@ -266,7 +277,8 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_SETFOCUS:
       {
 	if (item->IsShownTree()) {
-	  wxWindow *p = item->GetTopLevel();
+	  wxWindow *p;
+	  p = item->GetTopLevel();
 	  p->focusWindow = item;
 	  
 	  item->OnSetFocus();
@@ -312,8 +324,10 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_LBUTTONDBLCLK:  
-    {
-	int et;
+      {
+	int et, x, y, flags;
+	wxMouseEvent *event;
+
 	switch(message) {
         case WM_RBUTTONDOWN:
         case WM_RBUTTONDBLCLK:
@@ -344,26 +358,25 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  et = wxEVENT_TYPE_MOTION; break;
 	}
 	
-	int x = (int)LOWORD(lParam);
-	int y = (int)HIWORD(lParam);
-	int flags = (nc ? 0 : wParam);
+	x = (int)LOWORD(lParam);
+	y = (int)HIWORD(lParam);
+	flags = (nc ? 0 : wParam);
 	
-	wxMouseEvent *_event = new wxMouseEvent(et);
-	wxMouseEvent &event = *_event;
+	event = new wxMouseEvent(et);
 	
-	event.x = (float)x;
-	event.y = (float)y;
+	event->x = (float)x;
+	event->y = (float)y;
 	
-	event.shiftDown = (flags & MK_SHIFT);
-	event.controlDown = (flags & MK_CONTROL);
-	event.leftDown = (flags & MK_LBUTTON);
-	event.middleDown = (flags & MK_MBUTTON);
-	event.rightDown = (flags & MK_RBUTTON);
-	event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+	event->shiftDown = (flags & MK_SHIFT);
+	event->controlDown = (flags & MK_CONTROL);
+	event->leftDown = (flags & MK_LBUTTON);
+	event->middleDown = (flags & MK_MBUTTON);
+	event->rightDown = (flags & MK_RBUTTON);
+	event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
 	wxEntered(item, x, y, wParam);
 
-	if (item->CallPreOnEvent(item, &event))
+	if (item->CallPreOnEvent(item, event))
 	  retval = 0;
       }
 
@@ -406,7 +419,9 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
       }
     case WM_CHAR:  /* ^^^ fallthrough */
       if (!skip) {
-	wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+	wxKeyEvent *event;
+	
+	event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 	
 	event = wxMakeCharEvent(wParam, lParam, 
 				((message == WM_CHAR) || (message == WM_SYSCHAR)), 
@@ -441,6 +456,8 @@ LONG APIENTRY _EXPORT
 {
   LRESULT res;
   int tramp = wx_trampolining;
+  wxItem *item;
+  long r;
 
   wx_trampolining = 0;
 
@@ -452,14 +469,13 @@ LONG APIENTRY _EXPORT
   if (message == WM_GETDLGCODE)
     return DLGC_WANTMESSAGE;
 
-  wxItem *item = wxFindControlFromHandle(hWnd);
+  item = wxFindControlFromHandle(hWnd);
 
   if (!item) {
     wxDebugMsg("Panic! Cannot find wxItem for this HWND in wxSubclassedGenericControlProc.\n");
     return NULL;
   }
 
-  long r;
   if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 

@@ -31,11 +31,14 @@ wxMenuItem::~wxMenuItem(void)
 
 wxMenu::wxMenu(char *Title, wxFunction func):wxbMenu(Title, func)
 {
+  HANDLE msh;
+  
   mustBeBreaked = FALSE;
   no_items = 0;
   menu_bar = NULL;
   wxWinType = wxTYPE_HMENU;
-  ms_handle = (HANDLE)wxwmCreatePopupMenu();
+  msh = (HANDLE)wxwmCreatePopupMenu();
+  ms_handle = msh;
   save_ms_handle = NULL;
   top_level_menu = this;
   if (title)
@@ -54,7 +57,7 @@ wxMenu::~wxMenu(void)
   wxNode *next;
 
   if (ms_handle)
-	 wxwmDestroyMenu((HMENU)ms_handle);
+    wxwmDestroyMenu((HMENU)ms_handle);
   ms_handle = NULL;
 
   node = menuItems->First();
@@ -95,8 +98,9 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
   item->itemId = Id;
   item->itemName = copystring(Label);
   item->subMenu = NULL;
-  if (helpString)
+  if (helpString) {
     item->helpString = copystring(helpString);
+  }
 
   if (!wxMenuItemIDs) {
     wxREGGLOB(wxMenuItemIDs);
@@ -134,9 +138,11 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 
 void wxMenu::AppendSeparator(void)
 {
-  int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
+  int ms_flags;
   wxMenuItem *item;
   
+  ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
+
   mustBeBreaked = FALSE;
 
   if (ms_handle)
@@ -156,6 +162,7 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
 {
   wxMenuItem *item;
   int ms_flags;
+  HMENU menu, child;
 
   if (!SubMenu->ms_handle)
     return;
@@ -166,8 +173,9 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
   item->checkable = FALSE;
   item->itemId = Id;
   item->itemName = copystring(Label);
-  if (helpString)
+  if (helpString) {
     item->helpString = copystring(helpString);
+  }
   item->subMenu = SubMenu;
 
   menuItems->Append(item);
@@ -175,8 +183,8 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
   ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
   mustBeBreaked = FALSE;
 
-  HMENU menu = (HMENU)(ms_handle ? ms_handle : save_ms_handle);
-  HMENU child = (HMENU)SubMenu->ms_handle;
+  menu = (HMENU)(ms_handle ? ms_handle : save_ms_handle);
+  child = (HMENU)SubMenu->ms_handle;
   SubMenu->save_ms_handle = (HANDLE)child;
   SubMenu->ms_handle = NULL;
   AppendMenu(menu, MF_POPUP | MF_STRING | ms_flags, (UINT)child, Label);
@@ -244,7 +252,7 @@ void wxMenu::SelectMenu(void)
       for (i = 0; i < mb->n; i++) {
 	if (mb->menus[i] == this) {
 	  int key = 0;
-	  char *s = mb->titles[i];
+	  GC_CAN_IGNORE char *s = mb->titles[i];
 	  while (*s) {
 	    if (*s == '&') {
 	      key = s[1];
@@ -270,28 +278,34 @@ void wxMenu::SelectMenu(void)
 void wxMenu::Enable(long Id, Bool Flag)
 {
   int ms_flag;
+  int pos;
+  wxMenuItem *item;
+  HMENU mh;
+
   if (Flag)
     ms_flag = MF_ENABLED;
   else
     ms_flag = MF_GRAYED;
   
-  int pos;
-  wxMenuItem *item = FindItemForId(Id, NULL, &pos);
+  item = FindItemForId(Id, NULL, &pos);
   if (item == NULL)
     return;
 
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
   EnableMenuItem(mh, pos, MF_BYPOSITION | ms_flag);
 }
 
 void wxMenu::Check(long Id, Bool Flag)
 {
   int pos;
-  wxMenuItem *item = FindItemForId(Id, NULL, &pos);
+  int ms_flag;
+  wxMenuItem *item;
+  HMENU mh;
+
+  item = FindItemForId(Id, NULL, &pos);
   if (!item || !item->checkable)
     return;
-  int ms_flag;
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
 
   if (Flag)
     ms_flag = MF_CHECKED;
@@ -305,10 +319,13 @@ void wxMenu::Check(long Id, Bool Flag)
 Bool wxMenu::Checked(long Id)
 {
   int Flag = -1;
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
-
+  HMENU mh;
   int pos;
-  wxMenuItem *item = FindItemForId(Id, NULL, &pos);
+  wxMenuItem *item;
+
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+
+  item = FindItemForId(Id, NULL, &pos);
 
   if (mh && item)
     Flag = GetMenuState(mh, pos, MF_BYPOSITION);
@@ -324,14 +341,15 @@ Bool wxMenu::Checked(long Id)
 
 void wxMenu::SetTitle(char *label)
 {
-  if (title)
-    delete[] title;
-  if (label)
-    title = copystring(label);
-  else
-    title = copystring(" ");
+  HMENU mh;
 
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  if (label) {
+    title = copystring(label);
+  } else {
+    title = copystring(" ");
+  }
+
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
   if (mh)
     ModifyMenu(mh, 0,
 	       MF_BYPOSITION | MF_STRING | MF_DISABLED,
@@ -346,16 +364,20 @@ char *wxMenu::GetTitle()
 void wxMenu::SetLabel(long Id,char *label)
 {
   int pos;
-  wxMenuItem *item = FindItemForId(Id, NULL, &pos);
+  HMENU mh;
+  wxMenuItem *item;
+
+  item = FindItemForId(Id, NULL, &pos);
   if (item==NULL)
     return;
 
   item->itemName = copystring(label);
 
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
   if (mh) {
     if (!item->subMenu) {
-      UINT was_flag = GetMenuState(mh, pos, MF_BYPOSITION);
+      UINT was_flag;
+      was_flag = GetMenuState(mh, pos, MF_BYPOSITION);
       ModifyMenu(mh, pos, MF_BYPOSITION|MF_STRING|was_flag, 
 		 item->menuId, label);
     } else {
@@ -369,12 +391,14 @@ char *wxMenu::GetLabel(long Id)
 {
   static char tmp[128];
   int len, pos;
+  wxMenuItem *item;
+  HMENU mh;
 
-  wxMenuItem *item = FindItemForId(Id, NULL, &pos);
+  item = FindItemForId(Id, NULL, &pos);
   if (!item)
     return NULL;
 
-  HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
+  mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
 
   if (mh)
     len = GetMenuString(mh,pos,tmp,127,MF_BYPOSITION);
@@ -387,7 +411,9 @@ char *wxMenu::GetLabel(long Id)
 
 BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
 {
-  wxMenuItem *item = FindItemForMenuId(menuId);
+  wxMenuItem *item;
+
+  item = FindItemForMenuId(menuId);
 
   if (item) {
     wxPopupEvent *event;
@@ -409,11 +435,13 @@ extern HCURSOR wxMSWSetCursor(HCURSOR c);
 Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
   int r;
-
-  HWND hWnd = GetHWND();
-  HMENU hMenu = (HMENU)menu->ms_handle;
-  if (!hMenu) return FALSE;
+  HWND hWnd;
   POINT point;
+  HMENU hMenu = (HMENU)menu->ms_handle;
+
+  hWnd = GetHWND();
+
+  if (!hMenu) return FALSE;
   point.x = (int)x;
   point.y = (int)y;
   ::ClientToScreen(hWnd, &point);
@@ -439,13 +467,17 @@ wxMenuItem *wxMenu::FindItemForMenuId(WORD menuId)
 {
   wxNode *node;
   for (node = menuItems->First(); node; node = node->Next()) {
-    wxMenuItem *item = (wxMenuItem *)node->Data();
+    wxMenuItem *item;
+    item = (wxMenuItem *)node->Data();
     
     if (item->menuId == menuId)
       return item;
     
     if (item->subMenu) {
-      wxMenuItem *ans = item->subMenu->FindItemForMenuId(menuId);
+      wxMenuItem *ans;
+      wxMenu *menu;
+      menu = item->subMenu;
+      ans = menu->FindItemForMenuId(menuId);
       if (ans)
 	return ans;
     }
@@ -474,11 +506,11 @@ wxMenuBar::wxMenuBar(int N, wxMenu *Menus[], char *Titles[]):wxbMenuBar(N, Menus
 wxMenuBar::~wxMenuBar(void)
 {
   int i;
+  wxMenu *mnu;
 
-  for (i = 0; i < n; i++)
-  {
-    delete menus[i];
-    delete[] titles[i];
+  for (i = 0; i < n; i++) {
+    mnu = menus[i];
+    delete mnu;
   }
 }
 
@@ -489,12 +521,15 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
 
 Bool wxMenuBar::OnDelete(wxMenu *a_menu, int pos)
 {
+  wxMenu *mnu;
+
   if (!menu_bar_frame)
     return TRUE;
   
   if (RemoveMenu((HMENU)ms_handle, (UINT)pos, MF_BYPOSITION)) {
-    menus[pos]->ms_handle = menus[pos]->save_ms_handle;
-    menus[pos]->save_ms_handle = NULL;
+    mnu = menus[pos];
+    mnu->ms_handle = mnu->save_ms_handle;
+    mnu->save_ms_handle = NULL;
     
     if (menu_bar_frame)
       menu_bar_frame->DrawMenuBar();
@@ -530,7 +565,8 @@ Bool wxMenuBar::OnAppend(wxMenu *a_menu, char *title)
 void wxMenuBar::Enable(long Id, Bool Flag)
 {
   wxMenu *itemMenu = NULL;
-  wxMenuItem *item = FindItemForId(Id, &itemMenu);
+  wxMenuItem *item;
+  item = FindItemForId(Id, &itemMenu);
   if (!item)
     return;
 
@@ -539,10 +575,11 @@ void wxMenuBar::Enable(long Id, Bool Flag)
 
 void wxMenuBar::EnableTop(int pos,Bool flag)
 {
+  int ms_flag;
+
   if (!menu_bar_frame)
     return;
 
-  int ms_flag;
   if (flag)
     ms_flag = MF_ENABLED;
   else
@@ -555,7 +592,8 @@ void wxMenuBar::EnableTop(int pos,Bool flag)
 void wxMenuBar::Check(long Id, Bool Flag)
 {
   wxMenu *itemMenu = NULL;
-  wxMenuItem *item = FindItemForId(Id, &itemMenu);
+  wxMenuItem *item;
+  item = FindItemForId(Id, &itemMenu);
   if (!item)
    return;
 
@@ -565,7 +603,8 @@ void wxMenuBar::Check(long Id, Bool Flag)
 Bool wxMenuBar::Checked(long Id)
 {
   wxMenu *itemMenu = NULL;
-  wxMenuItem *item = FindItemForId(Id, &itemMenu);
+  wxMenuItem *item;
+  item = FindItemForId(Id, &itemMenu);
   if (!item)
     return FALSE;
 
@@ -575,7 +614,9 @@ Bool wxMenuBar::Checked(long Id)
 void wxMenuBar::SetLabel(long Id,char *label)
 {
   wxMenu *itemMenu = NULL;
-  wxMenuItem *item = FindItemForId(Id, &itemMenu);
+  wxMenuItem *item;
+
+  item = FindItemForId(Id, &itemMenu);
 
   if (!item)
     return;
@@ -586,7 +627,9 @@ void wxMenuBar::SetLabel(long Id,char *label)
 char *wxMenuBar::GetLabel(long Id)
 {
   wxMenu *itemMenu = NULL;
-  wxMenuItem *item = FindItemForId(Id, &itemMenu);
+  wxMenuItem *item;
+
+  item = FindItemForId(Id, &itemMenu);
 
   if (!item)
     return NULL;
@@ -596,15 +639,20 @@ char *wxMenuBar::GetLabel(long Id)
 
 void wxMenuBar::SetLabelTop(int pos,char *label)
 {
+  UINT was_flag;
+  char *s;
+
   if (pos < 0 || pos >= n)
     return;
 
-  titles[pos] = copystring(label);
+  s = copystring(label);
+  titles[pos] = s;
   
-  UINT was_flag = GetMenuState((HMENU)ms_handle,pos,MF_BYPOSITION);
+  was_flag = GetMenuState((HMENU)ms_handle,pos,MF_BYPOSITION);
   if (was_flag & MF_POPUP) {
+    HMENU popup;
     was_flag &= 0xff;
-    HMENU popup = GetSubMenu((HMENU)ms_handle,pos);
+    popup = GetSubMenu((HMENU)ms_handle,pos);
     ModifyMenu((HMENU)ms_handle,pos,MF_BYPOSITION|MF_STRING|was_flag,(UINT)popup,label);
   } else
     ModifyMenu((HMENU)ms_handle,pos,MF_BYPOSITION|MF_STRING|was_flag,pos,label);
@@ -616,28 +664,35 @@ void wxMenuBar::SetLabelTop(int pos,char *label)
 
 char *wxMenuBar::GetLabelTop(int pos)
 {
-  static char tmp[128];
-  int len = GetMenuString((HMENU)ms_handle,pos,tmp,127,MF_BYPOSITION);
+  static char tmp[256];
+  int len;
 
+  len = GetMenuString((HMENU)ms_handle,pos,tmp,255,MF_BYPOSITION);
+  
   if (!len)
     return 0L;
   tmp[len] = '\0';
-  char *p = copystring(tmp);
-  return(p);
+  return copystring(tmp);
 }
 
 void wxFrame::SetMenuBar(wxMenuBar *menu_bar)
 {
   int i;
-  HMENU menu = wxwmCreateMenu();
+  wxWnd *cframe;
+  HMENU menu;
+  wxMenu *mnu;
+
+  menu = wxwmCreateMenu();
 
   if (menu_bar->menu_bar_frame)
     return;
 
   for (i = 0; i < menu_bar->n; i++) {
-    HMENU popup = (HMENU)menu_bar->menus[i]->ms_handle;
-    menu_bar->menus[i]->save_ms_handle = (HANDLE)popup;
-    menu_bar->menus[i]->ms_handle = NULL;
+    HMENU popup;
+    mnu = menu_bar->menus[i];
+    popup = (HMENU)mnu->ms_handle;
+    mnu->save_ms_handle = (HANDLE)popup;
+    mnu->ms_handle = NULL;
     AppendMenu(menu, MF_POPUP | MF_STRING, (UINT)popup, menu_bar->titles[i]);
   }
 
@@ -645,7 +700,7 @@ void wxFrame::SetMenuBar(wxMenuBar *menu_bar)
   if (wx_menu_bar)
     delete wx_menu_bar;
 
-  wxWnd *cframe = (wxWnd *)handle;
+  cframe = (wxWnd *)handle;
   cframe->hMenu = menu;
 
   switch (frame_type) {
@@ -664,8 +719,11 @@ void wxFrame::SetMenuBar(wxMenuBar *menu_bar)
     }
   case wxMDI_CHILD:
     {
-      wxMDIFrame *parent = (wxMDIFrame *)GetParent()->handle;
-
+      wxMDIFrame *parent;
+      wxWindow *par;
+      par = GetParent();
+      parent = (wxMDIFrame *)par->handle;
+      
       if (((wxMDIChild *)cframe)->active) {
 	parent->parent_frame_active = FALSE;
 
@@ -693,8 +751,12 @@ wxMenuItem *wxMenuBar::FindItemForMenuId(WORD menuId)
 {
   int i;
   wxMenuItem *item;
-  for (i = 0; i < n; i++)
-    if ((item = menus[i]->FindItemForMenuId(menuId)))
+  wxMenu *menu;
+  for (i = 0; i < n; i++) {
+    menu = menus[i];
+    item = menu->FindItemForMenuId(menuId);
+    if (item)
       return item;
+  }
   return NULL;
 }

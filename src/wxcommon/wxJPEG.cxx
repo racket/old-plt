@@ -496,7 +496,7 @@ static void user_error_proc(png_structp png_ptr, png_const_charp msg)
   png_err_msg = new WXGC_ATOMIC char[len + 1];
   memcpy(png_err_msg, msg, len + 1);
   
-  longjmp(png_jmpbuf(png_ptr), 1);
+  longjmp(png_ptr->jmpbuf, 1);
 }
 
 static void user_warn_proc(png_structp info, png_const_charp msg)
@@ -637,7 +637,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    if (info_ptr == NULL)
    {
       fclose(fp);
-      png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+      png_destroy_read_struct(&png_ptr, NULL, NULL);
       return 0;
    }
 
@@ -649,12 +649,12 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    png_ptr_orig = png_ptr;
    info_ptr_orig = info_ptr;
 
-   if (setjmp(png_jmpbuf(png_ptr)))
+   if (setjmp(png_ptr->jmpbuf))
    {
      /* Free all of the memory associated with the png_ptr and info_ptr */
      png_ptr = png_ptr_orig;
      info_ptr = info_ptr_orig;
-     png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
      fclose(fp);
      if (dc)
        dc->SelectObject(NULL);
@@ -671,7 +671,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    png_read_info(png_ptr, info_ptr);
 
    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
-		&interlace_type, int_p_NULL, int_p_NULL);
+		&interlace_type, NULL, NULL);
 
    if (w_mask) {
      /* Is the mask actually useful? */
@@ -815,7 +815,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    if (!dc) {
      if (dc)
        dc->SelectObject(NULL);
-     png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
      fclose(fp);
      return 0;
    }
@@ -866,7 +866,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    /* At this point you have read the entire image */
 
    /* clean up after the read, and free any memory allocated - REQUIRED */
-   png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+   png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
    /* close the file */
    fclose(fp);
@@ -920,7 +920,7 @@ int wx_write_png(char *file_name, wxBitmap *bm)
    if (info_ptr == NULL)
    {
       fclose(fp);
-      png_destroy_write_struct(&png_ptr, png_infopp_NULL);
+      png_destroy_write_struct(&png_ptr, NULL);
       return 0;
    }
 
@@ -931,7 +931,7 @@ int wx_write_png(char *file_name, wxBitmap *bm)
 
    png_ptr_orig = png_ptr;
    info_ptr_orig = info_ptr;
-   if (setjmp(png_jmpbuf(png_ptr))) {
+   if (setjmp(png_ptr->jmpbuf)) {
      /* Free all of the memory associated with the png_ptr and info_ptr */
      png_ptr = png_ptr_orig;
      info_ptr = info_ptr_orig;

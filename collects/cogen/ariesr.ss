@@ -116,11 +116,21 @@
 	      (z:interface:internal-error arglist
 		"Given to arglist->ilist")))))
 
+      (define the-undefined-value
+	(letrec ((x x)) x))
+
       (define annotate
 	(lambda (expr)
 	  (cond
 	    [(z:bound-varref? expr)
-	      (z:varref-var expr)]
+	      (let ((v (z:varref-var expr)))
+		(wrap expr
+		  `(if (eq? ,v ,the-undefined-value)
+		     (raise (make-exn:variable
+			      ,(format "Undefined value in ~s" v)
+			      (debug-info-handler)
+			      ,v))
+		     ,v)))]
 
 	    [(z:top-level-varref? expr)
 	      (wrap expr (z:varref-var expr))]

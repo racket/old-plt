@@ -247,6 +247,7 @@
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures)
 	(define f% (class frame:basic%
+		     (rename [super-on-close on-close])
 		     (inherit get-menu-bar set-icon)
                      [define/public (send-message)
                        (send-msg)]
@@ -260,6 +261,7 @@
                                       this)))))
                      (define/override (on-close)
                        (send message-editor on-close)
+		       (super-on-close)
                        (exit-sirmail))
                      (super-instantiate ())
                      (when send-icon

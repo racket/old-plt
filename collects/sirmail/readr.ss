@@ -687,11 +687,6 @@
 	  (send e begin-edit-sequence)
           (send e set-line-spacing 0)
 	  (send i user-data (message-uid m))
-	  (send e insert from)
-	  (send e insert sep1)
-	  (send e insert subject)
-          (send e insert sep2)
-          (send e insert date)
 	  (send (send from get-editor) insert 
 		(one-line (or (parse-iso-8859-1 (message-from m))
 			      "<unknown>")))
@@ -704,6 +699,11 @@
 	    (apply-style i unread-delta))
 	  (when (memq 'marked (message-flags m))
 	    (apply-style i marked-delta))      
+	  (send e insert from)
+	  (send e insert sep1)
+	  (send e insert subject)
+          (send e insert sep2)
+          (send e insert date)
 	  (send e end-edit-sequence)
 	  i))
 
@@ -825,7 +825,8 @@
       
       (define sm-frame%
 	(class sm-super-frame%
-          (rename [super-on-subwindow-char on-subwindow-char])
+          (rename [super-on-subwindow-char on-subwindow-char]
+		  [super-on-close on-close])
           (inherit get-menu-bar set-icon)
 
           (define/override (file-menu:create-new?) #f)
@@ -886,7 +887,7 @@
                 (send disconnected-msg show #t))
               #\i))
           
-          (define/override (file-menu:close-callback i e) (logout))
+          (define/override (file-menu:close-callback i e) (send main-frame on-close))
           (define/override (file-menu:create-quit?) #f)
           
           ;; -------------------- Help Menu --------------------
@@ -920,7 +921,9 @@
               (update-frame-width)
               (super-on-size w h))]
           [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
-          [define/override on-close (lambda () (logout))]
+          [define/override on-close (lambda () 
+				      (super-on-close)
+				      (logout))]
           [define/override on-subwindow-char
             (lambda (w e)
               (or (and
@@ -1628,8 +1631,8 @@
          
          (let loop ()
            (let ([v (get-numbers)])
-             (when v
-               (set! vsz (format-number (car v)))
+             (when (and v (send main-frame is-shown?))
+	       (set! vsz (format-number (car v)))
                (set! rss (format-number (cadr v)))
                (sleep 10)
                (loop))))))

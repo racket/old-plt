@@ -71,7 +71,7 @@
 		(exit-sirmail))
 	      (eeh))))
 	 (thunk)
-	 (yield (make-semaphore))
+	 (yield 'wait)
 	 (exit-sirmail)))))
 
   ;; Reader windows -----------------------------------------------------------

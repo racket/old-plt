@@ -294,6 +294,13 @@
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
          ;    not be wrapped, if a begin).
+         ; f) a boolean used with ankle-wrap indicating whether this expression must be
+         ;    wrapped (in ankle-wrap, the needs-a-break property is widely determined
+         ;    by the enclosing context)
+         ; g) information about the binding name of the given expression.  This is used 
+         ;    to associate a name with a closure mark (though this may now be redundant)
+         ;    and to set up a (let ([x y]) x) so that mzscheme gets the right inferred-name
+         ;    for closures
 
          ; it returns
          ; a) an annotated s-expression
@@ -339,7 +346,15 @@
                                         expr))]
                   [appropriate-wrap (lambda (annotated free-bindings)
                                       (ccond [cheap-wrap? (cheap-wrap expr annotated)]
-                                             [ankle-wrap? (ankle-wcm-wrap annotated free-bindings)]))])
+                                             [ankle-wrap? (ankle-wcm-wrap annotated free-bindings)]))]
+                  [inferred-name-patch (lambda (annotated)
+                                         (if (not procedure-name-info)
+                                             annotated
+                                             (let ([name (ccond [(symbol? procedure-name-info) procedure-name-info]
+                                                                [(and (list? procedure-name-info)
+                                                                      (= (length procedure-name-info) 2))
+                                                                 (z:binding-orig-name (car procedure-name-info))])])
+                                               `(#%let ([,name ,annotated]) ,name))))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -760,15 +775,16 @@
                          closure)])
                   (if cheap-wrap?
                       (values annotated-case-lambda new-free-bindings)
-                      (let ([captured
+                      (let* ([patched (inferred-name-patch annotated-case-lambda)]
+                             [captured
                              (cond [(symbol? procedure-name-info)
-                                    `(,closure-storing-proc ,annotated-case-lambda ,closure-info)]
+                                    `(,closure-storing-proc ,patched ,closure-info)]
                                    [(pair? procedure-name-info)
                                     (if foot-wrap?
-                                         `(,closure-storing-proc ,annotated-case-lambda ,closure-info ,(cadr procedure-name-info))
-                                         `(,closure-storing-proc ,annotated-case-lambda ,closure-info #f))]
+                                         `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info))
+                                         `(,closure-storing-proc ,patched ,closure-info #f))]
                                    [else
-                                    `(,closure-storing-proc ,annotated-case-lambda ,closure-info)])])
+                                    `(,closure-storing-proc ,patched ,closure-info)])])
                         (values 
                          (ccond [foot-wrap? 
                                  (wcm-wrap (make-debug-info-normal new-free-bindings)
@@ -778,7 +794,7 @@
                          new-free-bindings))))]
                                 
                ; the annotation for w-c-m is insufficient for
-               ; debugging: there must be an intermediate let & set!s to
+               ; stepping: there must be an intermediate let & set!s to
                ; allow the user to see the computed values for the key and the
                ; value.
                

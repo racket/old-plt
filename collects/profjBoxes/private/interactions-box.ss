@@ -10,7 +10,9 @@
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
    (lib "framework.ss" "framework")
-   (lib "parser.ss" "profj"))
+   (lib "readerr.ss" "syntax")
+   (lib "parser.ss" "profj")
+   (lib "text-syntax-object.ss" "test-suite" "private"))
   
   (provide interactions-box@
            interactions-box^)
@@ -19,32 +21,44 @@
   
   (define interactions-box@
     (unit/sig interactions-box^
-      (import drscheme:tool^)
+      (import drscheme:tool^ text->syntax-object^)
       
       (define interactions-box%
         (class* editor-snip% (readable-snip<%>)
           
-          #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
-                  . -> .
-                  any?)
-          
+          #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
           (define/public read-special
             (opt-lambda (index source (line false) (column false) (position false))
+              #;((is-a?/c text%) . -> . syntax-object?)
+              (define (text->syntax-object text)
+                (match (text->syntax-objects text)
+                  [() (raise-read-error "Empty box"
+                                        source line #f position 1)]
+                  [(stx) stx]
+                  [(stx next rest-stx ...)
+                   (raise-read-error "Too many expressions"
+                                     text
+                                     (syntax-line next)
+                                     (syntax-column next)
+                                     (syntax-position next)
+                                     (syntax-span next))]))
               ;(lambda (level class-loc box-pos input-spec)
               (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
                 #`(begin
-                    #,@(map (lambda (interaction)
-                              (with-syntax ([display-output
-                                             (lambda (value)
-                                               (send interaction display-output value))])
-                                #`(display-output
-                                   #,(parse-interactions
-                                      (open-input-text-editor (send interaction get-input))
-                                      (send interaction get-input)
-                                      level))))
-                            (filter
-                             (lambda (x) (is-a? x interaction%))
-                             (send interactions get-children)))))))
+                    #,@(send interactions map-children
+                             (lambda (interaction)
+                               (if (is-a? interaction interaction%)
+                                   (with-syntax ([display-output
+                                                  (lambda (value)
+                                                    (send interaction display-output value))])
+                                     #`(display-output
+                                        #,(text->syntax-object (send interaction get-input))
+                                        ;#,(parse-interactions
+                                        ;   (open-input-text-editor (send interaction get-input))
+                                        ;   (send interaction get-input)
+                                        ;   level)
+                                        ))
+                                   #'(void))))))))
           
           (field
            [pb (new aligned-pasteboard%)]
@@ -62,16 +76,15 @@
       
       (define interactions-field%
         (class vertical-alignment%
-          (inherit get-pasteboard move-after)
+          (inherit get-pasteboard)
+          (inherit-field head)
+          (define/public (map-children f)
+            (send head map-to-list f))
           (define/public add-new
             (opt-lambda ((after false))
               (send (get-pasteboard) lock-alignment true)
               (let (#;[l (new hline% (parent this))]
-                    [i (new interaction% (parent this))])
-                (when after
-                  (move-after i after)
-                  #;(move-after l after)
-                  #;(move-after i l))
+                    [i (new interaction% (parent this) (after after))])
                 (send (get-pasteboard) lock-alignment false)
                 (send (send i get-input) set-caret-owner false 'global))))
           (super-new)))
@@ -80,13 +93,6 @@
         (class horizontal-alignment%
           (inherit get-parent)
           
-          (define program-editor%
-            (tabbable-text-mixin 
-             ((drscheme:unit:get-program-editor-mixin)
-              scheme:text%)))
-          
-          (field [input-text (new program-editor%)]
-                 [output-text (new text%)])
           #;(-> (is-a?/c text%))
           ;; The input of this interaction
           (define/public (get-input) input-text)
@@ -115,6 +121,14 @@
           
           (super-new)
           
+          (define program-editor%
+            ((drscheme:unit:get-program-editor-mixin)
+             (interaction-text this)))
+          
+          (field [input-text (new program-editor%)]
+                 [output-text (new text%)])
+          
+          (define/public (make-new) (ctrl-enter #f #f))
           (define (ctrl-enter b e) (send (get-parent) add-new this))
           
           (field [io (new vertical-alignment% (parent this))]
@@ -139,6 +153,37 @@
                           (stretchable-height false)
                           (with-border? false)))
                (parent output))
+          ))
+      
+      (define (interaction-text interaction)
+        (class scheme:text%
+          
+          (define (goto inter)
+            (when (is-a? inter interaction%)
+              (let ([text (send inter get-input)])
+                (send text set-caret-owner false 'global))))
+      
+          (field [movement-keymap (make-object keymap%)])
+          
+          (send* movement-keymap
+            (add-function "goto-next-interaction"
+                          (lambda (ignored event)
+                            (goto (send interaction next))))
+            (map-function ":c:right" "goto-next-interaction")
+            (add-function "goto-prev-interaction"
+                          (lambda (ignored event)
+                            (goto (send interaction prev))))
+            (map-function ":c:left" "goto-prev-interaction")
+            (add-function "make-new"
+                          (lambda (ignored event)
+                            (send interaction make-new)))
+            (map-function ":c:return" "make-new"))
+          
+          #;(-> (listof keymap%))
+          ;; the list of keymaps associated with this text
+          (define/override (get-keymaps)
+            (cons movement-keymap (super get-keymaps)))
+          (super-new)
           ))
       ))
   )

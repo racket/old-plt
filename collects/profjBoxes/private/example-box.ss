@@ -58,17 +58,16 @@
                            (- m-end m-start))))))
               ;(lambda (level class-loc box-pos input-spec)
               (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
-                #`(begin #,@(map
-                             (lambda (example)
-                               (with-syntax ([name (text->java-id
-                                                    (send example get-name))]
-                                             [value (parse-interactions
-                                                     (open-input-text-editor
-                                                      (send example get-value))
-                                                     (send example get-value)
-                                                     level)])
-                                 #'(define name value)))
-                             (send examples get-children))))))
+                #`(begin #,@(send examples map-children
+                                  (lambda (example)
+                                    (with-syntax ([name (text->java-id
+                                                         (send example get-name))]
+                                                  [value (parse-interactions
+                                                          (open-input-text-editor
+                                                           (send example get-value))
+                                                          (send example get-value)
+                                                          level)])
+                                      #'(define name value))))))))
           
           (field
            [pb (new aligned-pasteboard%)]
@@ -89,12 +88,13 @@
   
       (define examples-field%
         (class vertical-alignment%
-          (inherit get-children)
-          
+          (inherit-field head)
+          (define/public (map-chidlren f)
+            (send head map-to-list f))
           (define/public (add-new)
-            (let ([previous (last (get-children))]
-                  [example (new example% (parent this))])
-              (when previous
+            (let* ([example (new example% (parent this))]
+                   [previous (send example prev)])
+              (when (is-a? previous example%)
                 (set-tabbing (send previous get-value)
                              (send example get-type)))
               (set-tabbing (send example get-type)

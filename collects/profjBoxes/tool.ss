@@ -8,7 +8,8 @@
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
    "private/example-box.ss"
-   "private/interactions-box.ss")
+   "private/interactions-box.ss"
+   (lib "text-syntax-object.ss" "test-suite" "private"))
   
   (define extentions@
     (unit/sig drscheme:tool-exports^
@@ -64,7 +65,8 @@
       (import (TOOL : drscheme:tool^))
       (link (EXT : drscheme:tool-exports^ (extentions@ TOOL EXAMPLES INTERACTIONS))
             (EXAMPLES : example-box^ (example-box@ TOOL))
-            (INTERACTIONS : interactions-box^ (interactions-box@ TOOL)))
+            (INTERACTIONS : interactions-box^ (interactions-box@ TOOL SYNTAX))
+            (SYNTAX : text->syntax-object^ (text->syntax-object@ TOOL)))
       (export (var (EXT phase1))
               (var (EXT phase2)))))
   )

@@ -181,7 +181,7 @@ void gc_cleanup::gcFixup()
 static int size_cpp_object(void *p)
 {
   short size = ((short *)p)[1];
-  return size + 1 + ALIGN_DOUBLE;
+  return size + 1 + gcALIGN_DOUBLE;
 }
 
 static int mark_cpp_object(void *p)
@@ -191,7 +191,7 @@ static int mark_cpp_object(void *p)
 
   obj->gcMark();
 
-  return size + 1 + ALIGN_DOUBLE;
+  return size + 1 + gcALIGN_DOUBLE;
 }
 
 static int fixup_cpp_object(void *p)
@@ -201,14 +201,14 @@ static int fixup_cpp_object(void *p)
 
   obj->gcFixup();
 
-  return size + 1 + ALIGN_DOUBLE;
+  return size + 1 + gcALIGN_DOUBLE;
 }
 
 static int size_cpp_array_object(void *p)
 {
   short orig_size = ((short *)p)[1];
 
-  return orig_size + 1 + ALIGN_DOUBLE;
+  return orig_size + 1 + gcALIGN_DOUBLE;
 }
 
 static int do_cpp_array_object(void *p, int fixup)
@@ -218,7 +218,7 @@ static int do_cpp_array_object(void *p, int fixup)
   gc *obj;
   size_t s;
 
-  size = orig_size - 1 - ALIGN_DOUBLE;
+  size = orig_size - 1 - gcALIGN_DOUBLE;
   s = size / (*(long *)pp);
   
   /* FIXME: the count stuff is probably g++-specific: */
@@ -240,7 +240,7 @@ static int do_cpp_array_object(void *p, int fixup)
     size -= s;
   }
 
-  return orig_size + 1 + ALIGN_DOUBLE;
+  return orig_size + 1 + gcALIGN_DOUBLE;
 }
 
 static int mark_cpp_array_object(void *p)
@@ -257,7 +257,7 @@ static int size_preallocated_object(void *p)
 {
   short size = ((short *)p)[1];
   
-  return size + 1 + ALIGN_DOUBLE;
+  return size + 1 + gcALIGN_DOUBLE;
 }
 
 static int is_initialized;

@@ -1917,7 +1917,7 @@
 			 12 'default 'normal 'normal #f))
 
   (define gb:edit%
-    (class mred:pasteboard% ()
+    (class framework:pasteboard:info% ()
       (inherit set-selected find-next-selected-snip insert
 	       find-first-snip is-selected? add-selected remove-selected
 	       get-admin find-snip begin-edit-sequence end-edit-sequence
@@ -2503,27 +2503,7 @@
 	(min-height (+ icon-size (* margin 2)))
 	(stretchable-height #f))))
 
-  (define -my-base-frame%
-    (class mred:frame% (file)
-      (public
-	help-menu:about-string
-	help-menu:about
-	(help-menu:after-about void)
-	get-editor%)
-      (sequence
-	(super-init file #f 400 400)
-	(make-object mred:menu-bar% this))
-      (private
-	[c (make-object mred:editor-canvas% this)]
-	[e (make-object (get-editor%))])
-      (sequence
-	(send c set-editor e))
-      (public
-	[get-area-container (lambda () this)]
-	[get-editor (lambda () (send c get-editor))])))
-
-  (define my-base-frame% 
-    (framework:frame:pasteboard-mixin framework:frame:editor%))
+  (define my-base-frame% framework:frame:pasteboard-info-file%)
 
   (define gb:frame%
     (class my-base-frame% ([file #f])
@@ -2543,9 +2523,11 @@
 	   (make-object mred:menu-item% "GUI Builder Help"
 			help-menu
 			(lambda (itm evt)
-			  (let ([f (framework:handler:edit-file 
-				    (build-path (collection-path "guibuilder") "help.mre"))])
-			    (send (send f get-editor) lock #t))))
+			  (let ([f (make-object framework:frame:text-info-file%
+						(build-path (collection-path "guibuilder") 
+							    "help.mre"))])
+			    (send (send f get-editor) lock #t)
+			    (send f show #t))))
 	   (super-help-menu:after-about help-menu))]
 	
 	[get-editor% (lambda () gb:edit%)])

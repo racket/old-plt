@@ -177,6 +177,8 @@ os_wxsGauge::~os_wxsGauge()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxsGaugeOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxsGauge::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -195,7 +197,7 @@ void os_wxsGauge::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugeOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxsGauge::OnDropFile(x0);
   } else {
@@ -210,6 +212,8 @@ void os_wxsGauge::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxsGaugePreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxsGauge::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -230,7 +234,7 @@ Bool os_wxsGauge::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugePreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -252,6 +256,8 @@ Bool os_wxsGauge::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxsGaugePreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxsGauge::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -271,7 +277,7 @@ Bool os_wxsGauge::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugePreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -293,6 +299,8 @@ Bool os_wxsGauge::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxsGaugeOnSize(int n, Scheme_Object *p[]);
+
 void os_wxsGauge::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -310,7 +318,7 @@ void os_wxsGauge::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugeOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxsGauge::OnSize(x0, x1);
   } else {
@@ -326,6 +334,8 @@ void os_wxsGauge::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxsGaugeOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxsGauge::OnSetFocus()
 {
@@ -344,7 +354,7 @@ void os_wxsGauge::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugeOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxsGauge::OnSetFocus();
   } else {
@@ -358,6 +368,8 @@ void os_wxsGauge::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxsGaugeOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxsGauge::OnKillFocus()
 {
@@ -376,7 +388,7 @@ void os_wxsGauge::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxsGauge_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxsGaugeOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxsGauge::OnKillFocus();
   } else {

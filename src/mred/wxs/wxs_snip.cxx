@@ -314,6 +314,8 @@ os_wxSnip::~os_wxSnip()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxSnipSetUnmodified(int n, Scheme_Object *p[]);
+
 void os_wxSnip::SetUnmodified()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -331,7 +333,7 @@ void os_wxSnip::SetUnmodified()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "set-unmodified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipSetUnmodified)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::SetUnmodified();
   } else {
@@ -345,6 +347,8 @@ void os_wxSnip::SetUnmodified()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipGetScrollStepOffset(int n, Scheme_Object *p[]);
 
 nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
 {
@@ -363,7 +367,7 @@ nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-scroll-step-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipGetScrollStepOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::GetScrollStepOffset(x0);
   } else {
@@ -384,6 +388,8 @@ nnfloat os_wxSnip::GetScrollStepOffset(nnlong x0)
   }
 }
 
+static Scheme_Object *os_wxSnipFindScrollStep(int n, Scheme_Object *p[]);
+
 nnlong os_wxSnip::FindScrollStep(float x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -401,7 +407,7 @@ nnlong os_wxSnip::FindScrollStep(float x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "find-scroll-step", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipFindScrollStep)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::FindScrollStep(x0);
   } else {
@@ -422,6 +428,8 @@ nnlong os_wxSnip::FindScrollStep(float x0)
   }
 }
 
+static Scheme_Object *os_wxSnipGetNumScrollSteps(int n, Scheme_Object *p[]);
+
 nnlong os_wxSnip::GetNumScrollSteps()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -439,7 +447,7 @@ nnlong os_wxSnip::GetNumScrollSteps()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-num-scroll-steps", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipGetNumScrollSteps)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::GetNumScrollSteps();
   } else {
@@ -459,6 +467,8 @@ nnlong os_wxSnip::GetNumScrollSteps()
   }
 }
 
+static Scheme_Object *os_wxSnipSetAdmin(int n, Scheme_Object *p[]);
+
 void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -477,7 +487,7 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "set-admin", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipSetAdmin)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::SetAdmin(x0);
   } else {
@@ -492,6 +502,8 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipResize(int n, Scheme_Object *p[]);
 
 Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
 {
@@ -510,7 +522,7 @@ Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "resize", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipResize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::Resize(x0, x1);
   } else {
@@ -532,6 +544,8 @@ Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
+static Scheme_Object *os_wxSnipWrite(int n, Scheme_Object *p[]);
+
 void os_wxSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -550,7 +564,7 @@ void os_wxSnip::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipWrite)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::Write(x0);
   } else {
@@ -565,6 +579,8 @@ void os_wxSnip::Write(class wxMediaStreamOut* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipMatch(int n, Scheme_Object *p[]);
 
 Bool os_wxSnip::Match(class wxSnip* x0)
 {
@@ -584,7 +600,7 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "match?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipMatch)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::Match(x0);
   } else {
@@ -605,6 +621,8 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxSnipCanEdit(int n, Scheme_Object *p[]);
+
 Bool os_wxSnip::CanEdit(int x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -622,7 +640,7 @@ Bool os_wxSnip::CanEdit(int x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "can-do-edit-operation?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipCanEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::CanEdit(x0, x1);
   } else {
@@ -644,6 +662,8 @@ Bool os_wxSnip::CanEdit(int x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxSnipDoEdit(int n, Scheme_Object *p[]);
+
 void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -661,7 +681,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "do-edit-operation", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipDoEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::DoEdit(x0, x1, x2);
   } else {
@@ -678,6 +698,8 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipBlinkCaret(int n, Scheme_Object *p[]);
 
 void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
 {
@@ -697,7 +719,7 @@ void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "blink-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipBlinkCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::BlinkCaret(x0, x1, x2);
   } else {
@@ -714,6 +736,8 @@ void os_wxSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipOwnCaret(int n, Scheme_Object *p[]);
 
 void os_wxSnip::OwnCaret(Bool x0)
 {
@@ -732,7 +756,7 @@ void os_wxSnip::OwnCaret(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "own-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipOwnCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::OwnCaret(x0);
   } else {
@@ -747,6 +771,8 @@ void os_wxSnip::OwnCaret(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipAdjustCursor(int n, Scheme_Object *p[]);
 
 class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
@@ -767,7 +793,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "adjust-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdjustCursor)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
@@ -793,6 +819,8 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   }
 }
 
+static Scheme_Object *os_wxSnipOnChar(int n, Scheme_Object *p[]);
+
 void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -812,7 +840,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
@@ -833,6 +861,8 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   }
 }
 
+static Scheme_Object *os_wxSnipOnEvent(int n, Scheme_Object *p[]);
+
 void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -852,7 +882,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
@@ -873,6 +903,8 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   }
 }
 
+static Scheme_Object *os_wxSnipSizeCacheInvalid(int n, Scheme_Object *p[]);
+
 void os_wxSnip::SizeCacheInvalid()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -890,7 +922,7 @@ void os_wxSnip::SizeCacheInvalid()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipSizeCacheInvalid)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::SizeCacheInvalid();
   } else {
@@ -904,6 +936,8 @@ void os_wxSnip::SizeCacheInvalid()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipCopy(int n, Scheme_Object *p[]);
 
 class wxSnip* os_wxSnip::Copy()
 {
@@ -922,7 +956,7 @@ class wxSnip* os_wxSnip::Copy()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "copy", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipCopy)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::Copy();
   } else {
@@ -942,6 +976,8 @@ class wxSnip* os_wxSnip::Copy()
   }
 }
 
+static Scheme_Object *os_wxSnipGetTextBang(int n, Scheme_Object *p[]);
+
 void os_wxSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -960,7 +996,7 @@ void os_wxSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-text!", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipGetTextBang)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::GetTextBang(x0, x1, x2, x3);
   } else {
@@ -979,6 +1015,8 @@ void os_wxSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   }
 }
 
+static Scheme_Object *os_wxSnipGetText(int n, Scheme_Object *p[]);
+
 mzstring os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -996,7 +1034,7 @@ mzstring os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-text", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipGetText)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::GetText(x0, x1, x2, x3);
   } else {
@@ -1019,6 +1057,8 @@ mzstring os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   }
 }
 
+static Scheme_Object *os_wxSnipMergeWith(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1037,7 +1077,7 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "merge-with", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipMergeWith)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::MergeWith(x0);
   } else {
@@ -1057,6 +1097,8 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
   }
   }
 }
+
+static Scheme_Object *os_wxSnipSplit(int n, Scheme_Object *p[]);
 
 void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 {
@@ -1078,7 +1120,7 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "split", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipSplit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::Split(x0, x1, x2);
   } else {
@@ -1098,6 +1140,8 @@ void os_wxSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   }
 }
 
+static Scheme_Object *os_wxSnipDraw(int n, Scheme_Object *p[]);
+
 void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9)
 {
   Scheme_Object *p[POFFSET+10] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1116,7 +1160,7 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "draw", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipDraw)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
@@ -1141,6 +1185,8 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
   }
 }
 
+static Scheme_Object *os_wxSnipPartialOffset(int n, Scheme_Object *p[]);
+
 float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1159,7 +1205,7 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "partial-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipPartialOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnip::PartialOffset(x0, x1, x2, x3);
   } else {
@@ -1182,6 +1228,8 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   }
   }
 }
+
+static Scheme_Object *os_wxSnipGetExtent(int n, Scheme_Object *p[]);
 
 void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnfloat* x4, nnfloat* x5, nnfloat* x6, nnfloat* x7, nnfloat* x8)
 {
@@ -1208,7 +1256,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnflo
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-extent", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipGetExtent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
@@ -2507,6 +2555,8 @@ os_wxTextSnip::~os_wxTextSnip()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxTextSnipSetUnmodified(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::SetUnmodified()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -2524,7 +2574,7 @@ void os_wxTextSnip::SetUnmodified()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "set-unmodified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipSetUnmodified)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::SetUnmodified();
   } else {
@@ -2538,6 +2588,8 @@ void os_wxTextSnip::SetUnmodified()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipGetScrollStepOffset(int n, Scheme_Object *p[]);
 
 nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
 {
@@ -2556,7 +2608,7 @@ nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-scroll-step-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipGetScrollStepOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::GetScrollStepOffset(x0);
   } else {
@@ -2577,6 +2629,8 @@ nnfloat os_wxTextSnip::GetScrollStepOffset(nnlong x0)
   }
 }
 
+static Scheme_Object *os_wxTextSnipFindScrollStep(int n, Scheme_Object *p[]);
+
 nnlong os_wxTextSnip::FindScrollStep(float x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -2594,7 +2648,7 @@ nnlong os_wxTextSnip::FindScrollStep(float x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "find-scroll-step", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipFindScrollStep)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::FindScrollStep(x0);
   } else {
@@ -2615,6 +2669,8 @@ nnlong os_wxTextSnip::FindScrollStep(float x0)
   }
 }
 
+static Scheme_Object *os_wxTextSnipGetNumScrollSteps(int n, Scheme_Object *p[]);
+
 nnlong os_wxTextSnip::GetNumScrollSteps()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -2632,7 +2688,7 @@ nnlong os_wxTextSnip::GetNumScrollSteps()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-num-scroll-steps", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipGetNumScrollSteps)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::GetNumScrollSteps();
   } else {
@@ -2652,6 +2708,8 @@ nnlong os_wxTextSnip::GetNumScrollSteps()
   }
 }
 
+static Scheme_Object *os_wxTextSnipSetAdmin(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -2670,7 +2728,7 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "set-admin", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipSetAdmin)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::SetAdmin(x0);
   } else {
@@ -2685,6 +2743,8 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipResize(int n, Scheme_Object *p[]);
 
 Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
 {
@@ -2703,7 +2763,7 @@ Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "resize", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipResize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::Resize(x0, x1);
   } else {
@@ -2725,6 +2785,8 @@ Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
+static Scheme_Object *os_wxTextSnipWrite(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -2743,7 +2805,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipWrite)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::Write(x0);
   } else {
@@ -2758,6 +2820,8 @@ void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipMatch(int n, Scheme_Object *p[]);
 
 Bool os_wxTextSnip::Match(class wxSnip* x0)
 {
@@ -2777,7 +2841,7 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "match?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipMatch)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::Match(x0);
   } else {
@@ -2798,6 +2862,8 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxTextSnipCanEdit(int n, Scheme_Object *p[]);
+
 Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2815,7 +2881,7 @@ Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "can-do-edit-operation?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipCanEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::CanEdit(x0, x1);
   } else {
@@ -2837,6 +2903,8 @@ Bool os_wxTextSnip::CanEdit(int x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxTextSnipDoEdit(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2854,7 +2922,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "do-edit-operation", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipDoEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::DoEdit(x0, x1, x2);
   } else {
@@ -2871,6 +2939,8 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipBlinkCaret(int n, Scheme_Object *p[]);
 
 void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
 {
@@ -2890,7 +2960,7 @@ void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "blink-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipBlinkCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::BlinkCaret(x0, x1, x2);
   } else {
@@ -2907,6 +2977,8 @@ void os_wxTextSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipOwnCaret(int n, Scheme_Object *p[]);
 
 void os_wxTextSnip::OwnCaret(Bool x0)
 {
@@ -2925,7 +2997,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "own-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipOwnCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::OwnCaret(x0);
   } else {
@@ -2940,6 +3012,8 @@ void os_wxTextSnip::OwnCaret(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipAdjustCursor(int n, Scheme_Object *p[]);
 
 class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
@@ -2960,7 +3034,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "adjust-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipAdjustCursor)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
@@ -2986,6 +3060,8 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   }
 }
 
+static Scheme_Object *os_wxTextSnipOnChar(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3005,7 +3081,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
@@ -3026,6 +3102,8 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   }
 }
 
+static Scheme_Object *os_wxTextSnipOnEvent(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3045,7 +3123,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
@@ -3066,6 +3144,8 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   }
 }
 
+static Scheme_Object *os_wxTextSnipSizeCacheInvalid(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::SizeCacheInvalid()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -3083,7 +3163,7 @@ void os_wxTextSnip::SizeCacheInvalid()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipSizeCacheInvalid)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::SizeCacheInvalid();
   } else {
@@ -3097,6 +3177,8 @@ void os_wxTextSnip::SizeCacheInvalid()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTextSnipCopy(int n, Scheme_Object *p[]);
 
 class wxSnip* os_wxTextSnip::Copy()
 {
@@ -3115,7 +3197,7 @@ class wxSnip* os_wxTextSnip::Copy()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "copy", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipCopy)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::Copy();
   } else {
@@ -3135,6 +3217,8 @@ class wxSnip* os_wxTextSnip::Copy()
   }
 }
 
+static Scheme_Object *os_wxTextSnipGetTextBang(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3153,7 +3237,7 @@ void os_wxTextSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-text!", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipGetTextBang)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::GetTextBang(x0, x1, x2, x3);
   } else {
@@ -3172,6 +3256,8 @@ void os_wxTextSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   }
 }
 
+static Scheme_Object *os_wxTextSnipGetText(int n, Scheme_Object *p[]);
+
 mzstring os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3189,7 +3275,7 @@ mzstring os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-text", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipGetText)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::GetText(x0, x1, x2, x3);
   } else {
@@ -3212,6 +3298,8 @@ mzstring os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   }
 }
 
+static Scheme_Object *os_wxTextSnipMergeWith(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -3230,7 +3318,7 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "merge-with", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipMergeWith)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::MergeWith(x0);
   } else {
@@ -3250,6 +3338,8 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
   }
   }
 }
+
+static Scheme_Object *os_wxTextSnipSplit(int n, Scheme_Object *p[]);
 
 void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 {
@@ -3271,7 +3361,7 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "split", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipSplit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::Split(x0, x1, x2);
   } else {
@@ -3291,6 +3381,8 @@ void os_wxTextSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   }
 }
 
+static Scheme_Object *os_wxTextSnipDraw(int n, Scheme_Object *p[]);
+
 void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9)
 {
   Scheme_Object *p[POFFSET+10] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3309,7 +3401,7 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "draw", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipDraw)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
@@ -3334,6 +3426,8 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
   }
 }
 
+static Scheme_Object *os_wxTextSnipPartialOffset(int n, Scheme_Object *p[]);
+
 float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3352,7 +3446,7 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "partial-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipPartialOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTextSnip::PartialOffset(x0, x1, x2, x3);
   } else {
@@ -3375,6 +3469,8 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3
   }
   }
 }
+
+static Scheme_Object *os_wxTextSnipGetExtent(int n, Scheme_Object *p[]);
 
 void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnfloat* x4, nnfloat* x5, nnfloat* x6, nnfloat* x7, nnfloat* x8)
 {
@@ -3401,7 +3497,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, n
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-extent", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTextSnipGetExtent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
@@ -4507,6 +4603,8 @@ os_wxTabSnip::~os_wxTabSnip()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxTabSnipSetUnmodified(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::SetUnmodified()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -4524,7 +4622,7 @@ void os_wxTabSnip::SetUnmodified()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "set-unmodified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipSetUnmodified)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::SetUnmodified();
   } else {
@@ -4538,6 +4636,8 @@ void os_wxTabSnip::SetUnmodified()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipGetScrollStepOffset(int n, Scheme_Object *p[]);
 
 nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
 {
@@ -4556,7 +4656,7 @@ nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-scroll-step-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipGetScrollStepOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::GetScrollStepOffset(x0);
   } else {
@@ -4577,6 +4677,8 @@ nnfloat os_wxTabSnip::GetScrollStepOffset(nnlong x0)
   }
 }
 
+static Scheme_Object *os_wxTabSnipFindScrollStep(int n, Scheme_Object *p[]);
+
 nnlong os_wxTabSnip::FindScrollStep(float x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -4594,7 +4696,7 @@ nnlong os_wxTabSnip::FindScrollStep(float x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "find-scroll-step", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipFindScrollStep)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::FindScrollStep(x0);
   } else {
@@ -4615,6 +4717,8 @@ nnlong os_wxTabSnip::FindScrollStep(float x0)
   }
 }
 
+static Scheme_Object *os_wxTabSnipGetNumScrollSteps(int n, Scheme_Object *p[]);
+
 nnlong os_wxTabSnip::GetNumScrollSteps()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -4632,7 +4736,7 @@ nnlong os_wxTabSnip::GetNumScrollSteps()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-num-scroll-steps", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipGetNumScrollSteps)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::GetNumScrollSteps();
   } else {
@@ -4652,6 +4756,8 @@ nnlong os_wxTabSnip::GetNumScrollSteps()
   }
 }
 
+static Scheme_Object *os_wxTabSnipSetAdmin(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -4670,7 +4776,7 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "set-admin", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipSetAdmin)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::SetAdmin(x0);
   } else {
@@ -4685,6 +4791,8 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipResize(int n, Scheme_Object *p[]);
 
 Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
 {
@@ -4703,7 +4811,7 @@ Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "resize", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipResize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::Resize(x0, x1);
   } else {
@@ -4725,6 +4833,8 @@ Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
+static Scheme_Object *os_wxTabSnipWrite(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -4743,7 +4853,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipWrite)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::Write(x0);
   } else {
@@ -4758,6 +4868,8 @@ void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipMatch(int n, Scheme_Object *p[]);
 
 Bool os_wxTabSnip::Match(class wxSnip* x0)
 {
@@ -4777,7 +4889,7 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "match?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipMatch)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::Match(x0);
   } else {
@@ -4798,6 +4910,8 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxTabSnipCanEdit(int n, Scheme_Object *p[]);
+
 Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -4815,7 +4929,7 @@ Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "can-do-edit-operation?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipCanEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::CanEdit(x0, x1);
   } else {
@@ -4837,6 +4951,8 @@ Bool os_wxTabSnip::CanEdit(int x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxTabSnipDoEdit(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -4854,7 +4970,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "do-edit-operation", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipDoEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::DoEdit(x0, x1, x2);
   } else {
@@ -4871,6 +4987,8 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipBlinkCaret(int n, Scheme_Object *p[]);
 
 void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
 {
@@ -4890,7 +5008,7 @@ void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "blink-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipBlinkCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::BlinkCaret(x0, x1, x2);
   } else {
@@ -4907,6 +5025,8 @@ void os_wxTabSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipOwnCaret(int n, Scheme_Object *p[]);
 
 void os_wxTabSnip::OwnCaret(Bool x0)
 {
@@ -4925,7 +5045,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "own-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipOwnCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::OwnCaret(x0);
   } else {
@@ -4940,6 +5060,8 @@ void os_wxTabSnip::OwnCaret(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipAdjustCursor(int n, Scheme_Object *p[]);
 
 class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
@@ -4960,7 +5082,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "adjust-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipAdjustCursor)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
@@ -4986,6 +5108,8 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   }
 }
 
+static Scheme_Object *os_wxTabSnipOnChar(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5005,7 +5129,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
@@ -5026,6 +5150,8 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   }
 }
 
+static Scheme_Object *os_wxTabSnipOnEvent(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5045,7 +5171,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
@@ -5066,6 +5192,8 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   }
 }
 
+static Scheme_Object *os_wxTabSnipSizeCacheInvalid(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::SizeCacheInvalid()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -5083,7 +5211,7 @@ void os_wxTabSnip::SizeCacheInvalid()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipSizeCacheInvalid)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::SizeCacheInvalid();
   } else {
@@ -5097,6 +5225,8 @@ void os_wxTabSnip::SizeCacheInvalid()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabSnipCopy(int n, Scheme_Object *p[]);
 
 class wxSnip* os_wxTabSnip::Copy()
 {
@@ -5115,7 +5245,7 @@ class wxSnip* os_wxTabSnip::Copy()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "copy", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipCopy)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::Copy();
   } else {
@@ -5135,6 +5265,8 @@ class wxSnip* os_wxTabSnip::Copy()
   }
 }
 
+static Scheme_Object *os_wxTabSnipGetTextBang(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5153,7 +5285,7 @@ void os_wxTabSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-text!", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipGetTextBang)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::GetTextBang(x0, x1, x2, x3);
   } else {
@@ -5172,6 +5304,8 @@ void os_wxTabSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   }
 }
 
+static Scheme_Object *os_wxTabSnipGetText(int n, Scheme_Object *p[]);
+
 mzstring os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5189,7 +5323,7 @@ mzstring os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-text", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipGetText)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::GetText(x0, x1, x2, x3);
   } else {
@@ -5212,6 +5346,8 @@ mzstring os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   }
 }
 
+static Scheme_Object *os_wxTabSnipMergeWith(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -5230,7 +5366,7 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "merge-with", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipMergeWith)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::MergeWith(x0);
   } else {
@@ -5250,6 +5386,8 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
   }
   }
 }
+
+static Scheme_Object *os_wxTabSnipSplit(int n, Scheme_Object *p[]);
 
 void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 {
@@ -5271,7 +5409,7 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "split", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipSplit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::Split(x0, x1, x2);
   } else {
@@ -5291,6 +5429,8 @@ void os_wxTabSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   }
 }
 
+static Scheme_Object *os_wxTabSnipDraw(int n, Scheme_Object *p[]);
+
 void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9)
 {
   Scheme_Object *p[POFFSET+10] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5309,7 +5449,7 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "draw", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipDraw)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
@@ -5334,6 +5474,8 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
   }
 }
 
+static Scheme_Object *os_wxTabSnipPartialOffset(int n, Scheme_Object *p[]);
+
 float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -5352,7 +5494,7 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "partial-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipPartialOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxTabSnip::PartialOffset(x0, x1, x2, x3);
   } else {
@@ -5375,6 +5517,8 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
   }
   }
 }
+
+static Scheme_Object *os_wxTabSnipGetExtent(int n, Scheme_Object *p[]);
 
 void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnfloat* x4, nnfloat* x5, nnfloat* x6, nnfloat* x7, nnfloat* x8)
 {
@@ -5401,7 +5545,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nn
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-extent", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabSnipGetExtent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
@@ -6523,6 +6667,8 @@ os_wxImageSnip::~os_wxImageSnip()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxImageSnipSetUnmodified(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::SetUnmodified()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -6540,7 +6686,7 @@ void os_wxImageSnip::SetUnmodified()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "set-unmodified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipSetUnmodified)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::SetUnmodified();
   } else {
@@ -6554,6 +6700,8 @@ void os_wxImageSnip::SetUnmodified()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipGetScrollStepOffset(int n, Scheme_Object *p[]);
 
 nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
 {
@@ -6572,7 +6720,7 @@ nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-scroll-step-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipGetScrollStepOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::GetScrollStepOffset(x0);
   } else {
@@ -6593,6 +6741,8 @@ nnfloat os_wxImageSnip::GetScrollStepOffset(nnlong x0)
   }
 }
 
+static Scheme_Object *os_wxImageSnipFindScrollStep(int n, Scheme_Object *p[]);
+
 nnlong os_wxImageSnip::FindScrollStep(float x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -6610,7 +6760,7 @@ nnlong os_wxImageSnip::FindScrollStep(float x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "find-scroll-step", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipFindScrollStep)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::FindScrollStep(x0);
   } else {
@@ -6631,6 +6781,8 @@ nnlong os_wxImageSnip::FindScrollStep(float x0)
   }
 }
 
+static Scheme_Object *os_wxImageSnipGetNumScrollSteps(int n, Scheme_Object *p[]);
+
 nnlong os_wxImageSnip::GetNumScrollSteps()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -6648,7 +6800,7 @@ nnlong os_wxImageSnip::GetNumScrollSteps()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-num-scroll-steps", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipGetNumScrollSteps)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::GetNumScrollSteps();
   } else {
@@ -6668,6 +6820,8 @@ nnlong os_wxImageSnip::GetNumScrollSteps()
   }
 }
 
+static Scheme_Object *os_wxImageSnipSetAdmin(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -6686,7 +6840,7 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "set-admin", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipSetAdmin)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::SetAdmin(x0);
   } else {
@@ -6701,6 +6855,8 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipResize(int n, Scheme_Object *p[]);
 
 Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
 {
@@ -6719,7 +6875,7 @@ Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "resize", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipResize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::Resize(x0, x1);
   } else {
@@ -6741,6 +6897,8 @@ Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
+static Scheme_Object *os_wxImageSnipWrite(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -6759,7 +6917,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipWrite)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::Write(x0);
   } else {
@@ -6774,6 +6932,8 @@ void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipMatch(int n, Scheme_Object *p[]);
 
 Bool os_wxImageSnip::Match(class wxSnip* x0)
 {
@@ -6793,7 +6953,7 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "match?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipMatch)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::Match(x0);
   } else {
@@ -6814,6 +6974,8 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxImageSnipCanEdit(int n, Scheme_Object *p[]);
+
 Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -6831,7 +6993,7 @@ Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "can-do-edit-operation?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipCanEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::CanEdit(x0, x1);
   } else {
@@ -6853,6 +7015,8 @@ Bool os_wxImageSnip::CanEdit(int x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxImageSnipDoEdit(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -6870,7 +7034,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "do-edit-operation", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipDoEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::DoEdit(x0, x1, x2);
   } else {
@@ -6887,6 +7051,8 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipBlinkCaret(int n, Scheme_Object *p[]);
 
 void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
 {
@@ -6906,7 +7072,7 @@ void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "blink-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipBlinkCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::BlinkCaret(x0, x1, x2);
   } else {
@@ -6923,6 +7089,8 @@ void os_wxImageSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipOwnCaret(int n, Scheme_Object *p[]);
 
 void os_wxImageSnip::OwnCaret(Bool x0)
 {
@@ -6941,7 +7109,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "own-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipOwnCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::OwnCaret(x0);
   } else {
@@ -6956,6 +7124,8 @@ void os_wxImageSnip::OwnCaret(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipAdjustCursor(int n, Scheme_Object *p[]);
 
 class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
@@ -6976,7 +7146,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "adjust-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipAdjustCursor)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
@@ -7002,6 +7172,8 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   }
 }
 
+static Scheme_Object *os_wxImageSnipOnChar(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7021,7 +7193,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
@@ -7042,6 +7214,8 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   }
 }
 
+static Scheme_Object *os_wxImageSnipOnEvent(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7061,7 +7235,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
@@ -7082,6 +7256,8 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   }
 }
 
+static Scheme_Object *os_wxImageSnipSizeCacheInvalid(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::SizeCacheInvalid()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -7099,7 +7275,7 @@ void os_wxImageSnip::SizeCacheInvalid()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipSizeCacheInvalid)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::SizeCacheInvalid();
   } else {
@@ -7113,6 +7289,8 @@ void os_wxImageSnip::SizeCacheInvalid()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxImageSnipCopy(int n, Scheme_Object *p[]);
 
 class wxSnip* os_wxImageSnip::Copy()
 {
@@ -7131,7 +7309,7 @@ class wxSnip* os_wxImageSnip::Copy()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "copy", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipCopy)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::Copy();
   } else {
@@ -7151,6 +7329,8 @@ class wxSnip* os_wxImageSnip::Copy()
   }
 }
 
+static Scheme_Object *os_wxImageSnipGetTextBang(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7169,7 +7349,7 @@ void os_wxImageSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-text!", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipGetTextBang)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::GetTextBang(x0, x1, x2, x3);
   } else {
@@ -7188,6 +7368,8 @@ void os_wxImageSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   }
 }
 
+static Scheme_Object *os_wxImageSnipGetText(int n, Scheme_Object *p[]);
+
 mzstring os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7205,7 +7387,7 @@ mzstring os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-text", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipGetText)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::GetText(x0, x1, x2, x3);
   } else {
@@ -7228,6 +7410,8 @@ mzstring os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   }
 }
 
+static Scheme_Object *os_wxImageSnipMergeWith(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -7246,7 +7430,7 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "merge-with", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipMergeWith)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::MergeWith(x0);
   } else {
@@ -7266,6 +7450,8 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
   }
   }
 }
+
+static Scheme_Object *os_wxImageSnipSplit(int n, Scheme_Object *p[]);
 
 void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 {
@@ -7287,7 +7473,7 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "split", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipSplit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::Split(x0, x1, x2);
   } else {
@@ -7307,6 +7493,8 @@ void os_wxImageSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   }
 }
 
+static Scheme_Object *os_wxImageSnipDraw(int n, Scheme_Object *p[]);
+
 void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9)
 {
   Scheme_Object *p[POFFSET+10] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7325,7 +7513,7 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "draw", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipDraw)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
@@ -7350,6 +7538,8 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   }
 }
 
+static Scheme_Object *os_wxImageSnipPartialOffset(int n, Scheme_Object *p[]);
+
 float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -7368,7 +7558,7 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "partial-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipPartialOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxImageSnip::PartialOffset(x0, x1, x2, x3);
   } else {
@@ -7391,6 +7581,8 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   }
   }
 }
+
+static Scheme_Object *os_wxImageSnipGetExtent(int n, Scheme_Object *p[]);
 
 void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnfloat* x4, nnfloat* x5, nnfloat* x6, nnfloat* x7, nnfloat* x8)
 {
@@ -7417,7 +7609,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-extent", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxImageSnipGetExtent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
@@ -8686,6 +8878,8 @@ os_wxMediaSnip::~os_wxMediaSnip()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMediaSnipSetUnmodified(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::SetUnmodified()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -8703,7 +8897,7 @@ void os_wxMediaSnip::SetUnmodified()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "set-unmodified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipSetUnmodified)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::SetUnmodified();
   } else {
@@ -8717,6 +8911,8 @@ void os_wxMediaSnip::SetUnmodified()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipGetScrollStepOffset(int n, Scheme_Object *p[]);
 
 nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
 {
@@ -8735,7 +8931,7 @@ nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-scroll-step-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipGetScrollStepOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::GetScrollStepOffset(x0);
   } else {
@@ -8756,6 +8952,8 @@ nnfloat os_wxMediaSnip::GetScrollStepOffset(nnlong x0)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipFindScrollStep(int n, Scheme_Object *p[]);
+
 nnlong os_wxMediaSnip::FindScrollStep(float x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -8773,7 +8971,7 @@ nnlong os_wxMediaSnip::FindScrollStep(float x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "find-scroll-step", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipFindScrollStep)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::FindScrollStep(x0);
   } else {
@@ -8794,6 +8992,8 @@ nnlong os_wxMediaSnip::FindScrollStep(float x0)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipGetNumScrollSteps(int n, Scheme_Object *p[]);
+
 nnlong os_wxMediaSnip::GetNumScrollSteps()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -8811,7 +9011,7 @@ nnlong os_wxMediaSnip::GetNumScrollSteps()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-num-scroll-steps", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipGetNumScrollSteps)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::GetNumScrollSteps();
   } else {
@@ -8831,6 +9031,8 @@ nnlong os_wxMediaSnip::GetNumScrollSteps()
   }
 }
 
+static Scheme_Object *os_wxMediaSnipSetAdmin(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -8849,7 +9051,7 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "set-admin", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipSetAdmin)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::SetAdmin(x0);
   } else {
@@ -8864,6 +9066,8 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipResize(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
 {
@@ -8882,7 +9086,7 @@ Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "resize", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipResize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::Resize(x0, x1);
   } else {
@@ -8904,6 +9108,8 @@ Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipWrite(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -8922,7 +9128,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipWrite)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::Write(x0);
   } else {
@@ -8937,6 +9143,8 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipMatch(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaSnip::Match(class wxSnip* x0)
 {
@@ -8956,7 +9164,7 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "match?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipMatch)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::Match(x0);
   } else {
@@ -8977,6 +9185,8 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipCanEdit(int n, Scheme_Object *p[]);
+
 Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -8994,7 +9204,7 @@ Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "can-do-edit-operation?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipCanEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::CanEdit(x0, x1);
   } else {
@@ -9016,6 +9226,8 @@ Bool os_wxMediaSnip::CanEdit(int x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipDoEdit(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9033,7 +9245,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "do-edit-operation", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipDoEdit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::DoEdit(x0, x1, x2);
   } else {
@@ -9050,6 +9262,8 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipBlinkCaret(int n, Scheme_Object *p[]);
 
 void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
 {
@@ -9069,7 +9283,7 @@ void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "blink-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipBlinkCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::BlinkCaret(x0, x1, x2);
   } else {
@@ -9086,6 +9300,8 @@ void os_wxMediaSnip::BlinkCaret(class wxDC* x0, float x1, float x2)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipOwnCaret(int n, Scheme_Object *p[]);
 
 void os_wxMediaSnip::OwnCaret(Bool x0)
 {
@@ -9104,7 +9320,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "own-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipOwnCaret)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::OwnCaret(x0);
   } else {
@@ -9119,6 +9335,8 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipAdjustCursor(int n, Scheme_Object *p[]);
 
 class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
@@ -9139,7 +9357,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "adjust-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipAdjustCursor)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   } else {
@@ -9165,6 +9383,8 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   }
 }
 
+static Scheme_Object *os_wxMediaSnipOnChar(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9184,7 +9404,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::OnChar(x0, x1, x2, x3, x4, x5);
   } else {
@@ -9205,6 +9425,8 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   }
 }
 
+static Scheme_Object *os_wxMediaSnipOnEvent(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9224,7 +9446,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   } else {
@@ -9245,6 +9467,8 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   }
 }
 
+static Scheme_Object *os_wxMediaSnipSizeCacheInvalid(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::SizeCacheInvalid()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -9262,7 +9486,7 @@ void os_wxMediaSnip::SizeCacheInvalid()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "size-cache-invalid", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipSizeCacheInvalid)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::SizeCacheInvalid();
   } else {
@@ -9276,6 +9500,8 @@ void os_wxMediaSnip::SizeCacheInvalid()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaSnipCopy(int n, Scheme_Object *p[]);
 
 class wxSnip* os_wxMediaSnip::Copy()
 {
@@ -9294,7 +9520,7 @@ class wxSnip* os_wxMediaSnip::Copy()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "copy", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipCopy)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::Copy();
   } else {
@@ -9314,6 +9540,8 @@ class wxSnip* os_wxMediaSnip::Copy()
   }
 }
 
+static Scheme_Object *os_wxMediaSnipGetTextBang(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9332,7 +9560,7 @@ void os_wxMediaSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-text!", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipGetTextBang)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::GetTextBang(x0, x1, x2, x3);
   } else {
@@ -9351,6 +9579,8 @@ void os_wxMediaSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipGetText(int n, Scheme_Object *p[]);
+
 mzstring os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9368,7 +9598,7 @@ mzstring os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-text", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipGetText)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::GetText(x0, x1, x2, x3);
   } else {
@@ -9391,6 +9621,8 @@ mzstring os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipMergeWith(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -9409,7 +9641,7 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "merge-with", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipMergeWith)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::MergeWith(x0);
   } else {
@@ -9429,6 +9661,8 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
   }
   }
 }
+
+static Scheme_Object *os_wxMediaSnipSplit(int n, Scheme_Object *p[]);
 
 void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
 {
@@ -9450,7 +9684,7 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "split", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipSplit)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::Split(x0, x1, x2);
   } else {
@@ -9470,6 +9704,8 @@ void os_wxMediaSnip::Split(nnlong x0, class wxSnip** x1, class wxSnip** x2)
   }
 }
 
+static Scheme_Object *os_wxMediaSnipDraw(int n, Scheme_Object *p[]);
+
 void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9)
 {
   Scheme_Object *p[POFFSET+10] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9488,7 +9724,7 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "draw", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipDraw)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   } else {
@@ -9513,6 +9749,8 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   }
 }
 
+static Scheme_Object *os_wxMediaSnipPartialOffset(int n, Scheme_Object *p[]);
+
 float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -9531,7 +9769,7 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "partial-offset", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipPartialOffset)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxMediaSnip::PartialOffset(x0, x1, x2, x3);
   } else {
@@ -9554,6 +9792,8 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, nnlong x
   }
   }
 }
+
+static Scheme_Object *os_wxMediaSnipGetExtent(int n, Scheme_Object *p[]);
 
 void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, nnfloat* x4, nnfloat* x5, nnfloat* x6, nnfloat* x7, nnfloat* x8)
 {
@@ -9580,7 +9820,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-extent", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaSnipGetExtent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
@@ -11140,6 +11380,8 @@ os_wxBufferDataClass::~os_wxBufferDataClass()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxBufferDataClassRead(int n, Scheme_Object *p[]);
+
 class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -11158,7 +11400,7 @@ class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxBufferDataClass_class, "read", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxBufferDataClassRead)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -11628,6 +11870,8 @@ os_wxBufferData::~os_wxBufferData()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxBufferDataWrite(int n, Scheme_Object *p[]);
+
 Bool os_wxBufferData::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -11646,7 +11890,7 @@ Bool os_wxBufferData::Write(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxBufferData_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxBufferDataWrite)) {
     SET_VAR_STACK();
     return 0;
   } else {

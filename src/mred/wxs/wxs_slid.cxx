@@ -165,6 +165,8 @@ os_wxSlider::~os_wxSlider()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxSliderOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxSlider::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -183,7 +185,7 @@ void os_wxSlider::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSlider::OnDropFile(x0);
   } else {
@@ -198,6 +200,8 @@ void os_wxSlider::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSliderPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -218,7 +222,7 @@ Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -240,6 +244,8 @@ Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxSliderPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -259,7 +265,7 @@ Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -281,6 +287,8 @@ Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxSliderOnSize(int n, Scheme_Object *p[]);
+
 void os_wxSlider::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -298,7 +306,7 @@ void os_wxSlider::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSlider::OnSize(x0, x1);
   } else {
@@ -314,6 +322,8 @@ void os_wxSlider::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSliderOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxSlider::OnSetFocus()
 {
@@ -332,7 +342,7 @@ void os_wxSlider::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSlider::OnSetFocus();
   } else {
@@ -346,6 +356,8 @@ void os_wxSlider::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSliderOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxSlider::OnKillFocus()
 {
@@ -364,7 +376,7 @@ void os_wxSlider::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSlider_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSliderOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxSlider::OnKillFocus();
   } else {

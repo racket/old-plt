@@ -86,6 +86,8 @@ os_wxTimer::~os_wxTimer()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxTimerNotify(int n, Scheme_Object *p[]);
+
 void os_wxTimer::Notify()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -103,7 +105,7 @@ void os_wxTimer::Notify()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTimer_class, "notify", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTimerNotify)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTimer::Notify();
   } else {
@@ -693,6 +695,8 @@ os_wxClipboardClient::~os_wxClipboardClient()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxClipboardClientGetData(int n, Scheme_Object *p[]);
+
 nbstring os_wxClipboardClient::GetData(string x0, long* x1)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -711,7 +715,7 @@ nbstring os_wxClipboardClient::GetData(string x0, long* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxClipboardClient_class, "get-data", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxClipboardClientGetData)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -732,6 +736,8 @@ nbstring os_wxClipboardClient::GetData(string x0, long* x1)
   }
 }
 
+static Scheme_Object *os_wxClipboardClientBeingReplaced(int n, Scheme_Object *p[]);
+
 void os_wxClipboardClient::BeingReplaced()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -749,7 +755,7 @@ void os_wxClipboardClient::BeingReplaced()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxClipboardClientBeingReplaced)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {

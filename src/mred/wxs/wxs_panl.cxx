@@ -197,6 +197,8 @@ os_wxPanel::~os_wxPanel()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxPanelOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxPanel::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -215,7 +217,7 @@ void os_wxPanel::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxPanel::OnDropFile(x0);
   } else {
@@ -230,6 +232,8 @@ void os_wxPanel::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxPanelPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -250,7 +254,7 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -272,6 +276,8 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxPanelPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -291,7 +297,7 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -313,6 +319,8 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxPanelOnSize(int n, Scheme_Object *p[]);
+
 void os_wxPanel::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -330,7 +338,7 @@ void os_wxPanel::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxPanel::OnSize(x0, x1);
   } else {
@@ -346,6 +354,8 @@ void os_wxPanel::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxPanelOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxPanel::OnSetFocus()
 {
@@ -364,7 +374,7 @@ void os_wxPanel::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxPanel::OnSetFocus();
   } else {
@@ -378,6 +388,8 @@ void os_wxPanel::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxPanelOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxPanel::OnKillFocus()
 {
@@ -396,7 +408,7 @@ void os_wxPanel::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxPanel_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxPanelOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxPanel::OnKillFocus();
   } else {
@@ -1203,6 +1215,8 @@ os_wxDialogBox::~os_wxDialogBox()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxDialogBoxOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxDialogBox::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1221,7 +1235,7 @@ void os_wxDialogBox::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxDialogBox::OnDropFile(x0);
   } else {
@@ -1236,6 +1250,8 @@ void os_wxDialogBox::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxDialogBoxPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -1256,7 +1272,7 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1278,6 +1294,8 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxDialogBoxPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1297,7 +1315,7 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1319,6 +1337,8 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxDialogBoxOnSize(int n, Scheme_Object *p[]);
+
 void os_wxDialogBox::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1336,7 +1356,7 @@ void os_wxDialogBox::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxDialogBox::OnSize(x0, x1);
   } else {
@@ -1352,6 +1372,8 @@ void os_wxDialogBox::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxDialogBoxOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxDialogBox::OnSetFocus()
 {
@@ -1370,7 +1392,7 @@ void os_wxDialogBox::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxDialogBox::OnSetFocus();
   } else {
@@ -1384,6 +1406,8 @@ void os_wxDialogBox::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxDialogBoxOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxDialogBox::OnKillFocus()
 {
@@ -1402,7 +1426,7 @@ void os_wxDialogBox::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxDialogBox::OnKillFocus();
   } else {
@@ -1416,6 +1440,8 @@ void os_wxDialogBox::OnKillFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxDialogBoxOnClose(int n, Scheme_Object *p[]);
 
 Bool os_wxDialogBox::OnClose()
 {
@@ -1434,7 +1460,7 @@ Bool os_wxDialogBox::OnClose()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-close", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnClose)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxDialogBox::OnClose();
   } else {
@@ -1454,6 +1480,8 @@ Bool os_wxDialogBox::OnClose()
   }
 }
 
+static Scheme_Object *os_wxDialogBoxOnActivate(int n, Scheme_Object *p[]);
+
 void os_wxDialogBox::OnActivate(Bool x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1471,7 +1499,7 @@ void os_wxDialogBox::OnActivate(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxDialogBox_class, "on-activate", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxDialogBoxOnActivate)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxDialogBox::OnActivate(x0);
   } else {

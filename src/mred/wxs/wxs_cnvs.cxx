@@ -211,6 +211,8 @@ os_wxCanvas::~os_wxCanvas()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxCanvasOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxCanvas::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -229,7 +231,7 @@ void os_wxCanvas::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnDropFile(x0);
   } else {
@@ -244,6 +246,8 @@ void os_wxCanvas::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -264,7 +268,7 @@ Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -286,6 +290,8 @@ Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxCanvasPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -305,7 +311,7 @@ Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -327,6 +333,8 @@ Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxCanvasOnSize(int n, Scheme_Object *p[]);
+
 void os_wxCanvas::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -344,7 +352,7 @@ void os_wxCanvas::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnSize(x0, x1);
   } else {
@@ -360,6 +368,8 @@ void os_wxCanvas::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnSetFocus()
 {
@@ -378,7 +388,7 @@ void os_wxCanvas::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnSetFocus();
   } else {
@@ -392,6 +402,8 @@ void os_wxCanvas::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnKillFocus()
 {
@@ -410,7 +422,7 @@ void os_wxCanvas::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnKillFocus();
   } else {
@@ -424,6 +436,8 @@ void os_wxCanvas::OnKillFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnScroll(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
 {
@@ -443,7 +457,7 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-scroll", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnScroll)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnScroll(x0);
   } else {
@@ -458,6 +472,8 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnChar(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnChar(class wxKeyEvent* x0)
 {
@@ -477,7 +493,7 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnChar(x0);
   } else {
@@ -492,6 +508,8 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnEvent(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
 {
@@ -511,7 +529,7 @@ void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnEvent(x0);
   } else {
@@ -526,6 +544,8 @@ void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxCanvasOnPaint(int n, Scheme_Object *p[]);
 
 void os_wxCanvas::OnPaint()
 {
@@ -544,7 +564,7 @@ void os_wxCanvas::OnPaint()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxCanvas_class, "on-paint", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxCanvasOnPaint)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnPaint();
   } else {

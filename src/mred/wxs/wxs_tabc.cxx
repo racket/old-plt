@@ -304,6 +304,8 @@ os_wxTabChoice::~os_wxTabChoice()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxTabChoiceOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxTabChoice::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -322,7 +324,7 @@ void os_wxTabChoice::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoiceOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabChoice::OnDropFile(x0);
   } else {
@@ -337,6 +339,8 @@ void os_wxTabChoice::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabChoicePreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxTabChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -357,7 +361,7 @@ Bool os_wxTabChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoicePreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -379,6 +383,8 @@ Bool os_wxTabChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxTabChoicePreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxTabChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -398,7 +404,7 @@ Bool os_wxTabChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoicePreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -420,6 +426,8 @@ Bool os_wxTabChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxTabChoiceOnSize(int n, Scheme_Object *p[]);
+
 void os_wxTabChoice::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -437,7 +445,7 @@ void os_wxTabChoice::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoiceOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabChoice::OnSize(x0, x1);
   } else {
@@ -453,6 +461,8 @@ void os_wxTabChoice::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabChoiceOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxTabChoice::OnSetFocus()
 {
@@ -471,7 +481,7 @@ void os_wxTabChoice::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoiceOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabChoice::OnSetFocus();
   } else {
@@ -485,6 +495,8 @@ void os_wxTabChoice::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxTabChoiceOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxTabChoice::OnKillFocus()
 {
@@ -503,7 +515,7 @@ void os_wxTabChoice::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabChoice_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxTabChoiceOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxTabChoice::OnKillFocus();
   } else {
@@ -1054,6 +1066,8 @@ os_wxGroupBox::~os_wxGroupBox()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxGroupBoxOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxGroupBox::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1072,7 +1086,7 @@ void os_wxGroupBox::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxGroupBox::OnDropFile(x0);
   } else {
@@ -1087,6 +1101,8 @@ void os_wxGroupBox::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxGroupBoxPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxGroupBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -1107,7 +1123,7 @@ Bool os_wxGroupBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1129,6 +1145,8 @@ Bool os_wxGroupBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxGroupBoxPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxGroupBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1148,7 +1166,7 @@ Bool os_wxGroupBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1170,6 +1188,8 @@ Bool os_wxGroupBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxGroupBoxOnSize(int n, Scheme_Object *p[]);
+
 void os_wxGroupBox::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1187,7 +1207,7 @@ void os_wxGroupBox::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxGroupBox::OnSize(x0, x1);
   } else {
@@ -1203,6 +1223,8 @@ void os_wxGroupBox::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxGroupBoxOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxGroupBox::OnSetFocus()
 {
@@ -1221,7 +1243,7 @@ void os_wxGroupBox::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxGroupBox::OnSetFocus();
   } else {
@@ -1235,6 +1257,8 @@ void os_wxGroupBox::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxGroupBoxOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxGroupBox::OnKillFocus()
 {
@@ -1253,7 +1277,7 @@ void os_wxGroupBox::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxGroupBoxOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxGroupBox::OnKillFocus();
   } else {

@@ -49,37 +49,40 @@ static wxColor *the_color;
 extern void wxmeError(const char *e);
 extern int wxGetPreference(const char *name, char *res, long len);
 
+#ifndef DRAW_SCANLINE_DEFINED
+
 static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc,
 			  int mono)
 {
-  int colnum;
-
-  if (!the_color) {
-    wxREGGLOB(the_color);
-    the_color = new wxColour(0, 0, 0);
-  }
+  int colnum, r, g, b;
 
   for (colnum = 0; colnum < cols; colnum++) {
 #if WX_QUANTIZE
     if (!mono) {
       int v;
       v = row[colnum];
-      the_color->Set(colormap[0][v], colormap[1][v], colormap[2][v]);
+      r = colormap[0][v];
+      g = colormap[1][v];
+      b = colormap[2][v];
     } else {
 #endif
       if (step == 1) {
-	the_color->Set(row[colnum], row[colnum], row[colnum]);
+	r = row[colnum];
+	g = row[colnum];
+	b = row[colnum];
       } else {
-	the_color->Set(row[colnum * step], 
-		       row[colnum * step + 1], 
-		       row[colnum * step + 2]);
+	r = row[colnum * step];
+	g = row[colnum * step + 1];
+	b = row[colnum * step + 2];
       }
 #if WX_QUANTIZE
     }
 #endif
-    dc->SetPixel(colnum, rownum, the_color);
+    dc->SetPixelFast(colnum, rownum, r, g, b);
   }
 }
+
+#endif
 
 static void get_scanline(JSAMPROW row, int cols, int rownum, wxMemoryDC *dc)
 {
@@ -272,6 +275,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
   /* Here we use the library's state variable cinfo.output_scanline as the
    * loop counter, so that we don't have to keep track ourselves.
    */
+  dc->BeginSetPixelFast(0, 0, cinfo.output_width, cinfo.output_height);
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
      * Here the array is only one element long, but you could ask for
@@ -284,6 +288,7 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
 		  cinfo.output_components, cinfo.colormap,
 		  dc, cinfo.num_components == 1);
   }
+  dc->EndSetPixelFast();
 
   /* Step 7: Finish decompression */
 
@@ -516,25 +521,34 @@ static void user_warn_proc(png_structp info, png_const_charp msg)
 {
 }
 
+static void png_start_lines(wxMemoryDC *dc, wxMemoryDC *mdc, int width, int height)
+{
+  dc->BeginSetPixelFast(0, 0, width, height);
+  if (mdc)
+    mdc->BeginSetPixelFast(0, 0, width, height);
+}
+
+static void png_end_lines(wxMemoryDC *dc, wxMemoryDC *mdc)
+{
+  dc->EndSetPixelFast();
+  if (mdc)
+    mdc->EndSetPixelFast();
+}
+
 static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc, int step)
 {
   int colnum, delta;
 
-  if (!the_color) {
-    wxREGGLOB(the_color);
-    the_color = new wxColour(0, 0, 0);
-  }
-
   for (colnum = 0, delta = 0; colnum < cols; colnum++, delta += step) {
-    the_color->Set(row[delta], 
-		   row[delta + 1], 
-		   row[delta + 2]);
-    dc->SetPixel(colnum, rownum, the_color);
+    dc->SetPixelFast(colnum, rownum,
+		     row[delta], 
+		     row[delta + 1], 
+		     row[delta + 2]);
     if (mdc) {
-      the_color->Set(row[delta + 3],
-		     row[delta + 3],
-		     row[delta + 3]);
-      mdc->SetPixel(colnum, rownum, the_color);
+      mdc->SetPixelFast(colnum, rownum,
+			row[delta + 3],
+			row[delta + 3],
+			row[delta + 3]);
     }
   }
 }
@@ -840,9 +854,11 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    }
 
    if (is_mono) {
+     png_start_lines(dc, mdc, width, height);
      for (y = 0; y < height; y++) {
        png_draw_line1(rows[y], width, y, dc);
      }
+     png_end_lines(dc, mdc);
    } else {
      if (w_mask) {
        int mono_mask;
@@ -870,9 +886,11 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 	 mdc = NULL;
      }
 
+     png_start_lines(dc, mdc, width, height);
      for (y = 0; y < height; y++) {
        png_draw_line(rows[y], width, y, dc, mdc, w_mask ? 4 : 3);
      }
+     png_end_lines(dc, mdc);
    }
 
    /* read rest of file, and get additional chunks in info_ptr - REQUIRED */

@@ -257,6 +257,8 @@ os_wxMediaCanvas::~os_wxMediaCanvas()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMediaCanvasOnChar(int n, Scheme_Object *p[]);
+
 void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -275,7 +277,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnChar)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnChar(x0);
   } else {
@@ -290,6 +292,8 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasOnEvent(int n, Scheme_Object *p[]);
 
 void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
 {
@@ -309,7 +313,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnEvent(x0);
   } else {
@@ -324,6 +328,8 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasOnPaint(int n, Scheme_Object *p[]);
 
 void os_wxMediaCanvas::OnPaint()
 {
@@ -342,7 +348,7 @@ void os_wxMediaCanvas::OnPaint()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-paint", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnPaint)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnPaint();
   } else {
@@ -356,6 +362,8 @@ void os_wxMediaCanvas::OnPaint()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasOnDropFile(int n, Scheme_Object *p[]);
 
 void os_wxMediaCanvas::OnDropFile(epathname x0)
 {
@@ -375,7 +383,7 @@ void os_wxMediaCanvas::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnDropFile(x0);
   } else {
@@ -390,6 +398,8 @@ void os_wxMediaCanvas::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -410,7 +420,7 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -432,6 +442,8 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxMediaCanvasPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -451,7 +463,7 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -473,6 +485,8 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxMediaCanvasOnSize(int n, Scheme_Object *p[]);
+
 void os_wxMediaCanvas::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -490,7 +504,7 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnSize(x0, x1);
   } else {
@@ -506,6 +520,8 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxMediaCanvas::OnSetFocus()
 {
@@ -524,7 +540,7 @@ void os_wxMediaCanvas::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnSetFocus();
   } else {
@@ -538,6 +554,8 @@ void os_wxMediaCanvas::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxMediaCanvas::OnKillFocus()
 {
@@ -556,7 +574,7 @@ void os_wxMediaCanvas::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMediaCanvas::OnKillFocus();
   } else {
@@ -570,6 +588,8 @@ void os_wxMediaCanvas::OnKillFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaCanvasPopupForMedia(int n, Scheme_Object *p[]);
 
 class wxMenu* os_wxMediaCanvas::PopupForMedia(class wxMediaBuffer* x0, void* x1)
 {
@@ -590,7 +610,7 @@ class wxMenu* os_wxMediaCanvas::PopupForMedia(class wxMediaBuffer* x0, void* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaCanvas_class, "popup-for-editor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaCanvasPopupForMedia)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -1508,6 +1528,8 @@ os_wxMediaAdmin::~os_wxMediaAdmin()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMediaAdminModified(int n, Scheme_Object *p[]);
+
 void os_wxMediaAdmin::Modified(Bool x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1525,7 +1547,7 @@ void os_wxMediaAdmin::Modified(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "modified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminModified)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1540,6 +1562,8 @@ void os_wxMediaAdmin::Modified(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaAdminDelayRefresh(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaAdmin::DelayRefresh()
 {
@@ -1558,7 +1582,7 @@ Bool os_wxMediaAdmin::DelayRefresh()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "refresh-delayed?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminDelayRefresh)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1578,6 +1602,8 @@ Bool os_wxMediaAdmin::DelayRefresh()
   }
 }
 
+static Scheme_Object *os_wxMediaAdminPopupMenu(int n, Scheme_Object *p[]);
+
 Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1596,7 +1622,7 @@ Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "popup-menu", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminPopupMenu)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1619,6 +1645,8 @@ Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
   }
 }
 
+static Scheme_Object *os_wxMediaAdminUpdateCursor(int n, Scheme_Object *p[]);
+
 void os_wxMediaAdmin::UpdateCursor()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -1636,7 +1664,7 @@ void os_wxMediaAdmin::UpdateCursor()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "update-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminUpdateCursor)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1650,6 +1678,8 @@ void os_wxMediaAdmin::UpdateCursor()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaAdminNeedsUpdate(int n, Scheme_Object *p[]);
 
 void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
 {
@@ -1668,7 +1698,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "needs-update", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminNeedsUpdate)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1687,6 +1717,8 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
   }
 }
 
+static Scheme_Object *os_wxMediaAdminResized(int n, Scheme_Object *p[]);
+
 void os_wxMediaAdmin::Resized(Bool x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -1704,7 +1736,7 @@ void os_wxMediaAdmin::Resized(Bool x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "resized", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminResized)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1719,6 +1751,8 @@ void os_wxMediaAdmin::Resized(Bool x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaAdminGrabCaret(int n, Scheme_Object *p[]);
 
 void os_wxMediaAdmin::GrabCaret(int x0)
 {
@@ -1737,7 +1771,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "grab-caret", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminGrabCaret)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1752,6 +1786,8 @@ void os_wxMediaAdmin::GrabCaret(int x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaAdminScrollTo(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool x4, int x5)
 {
@@ -1770,7 +1806,7 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "scroll-to", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminScrollTo)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -1796,6 +1832,8 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool 
   }
 }
 
+static Scheme_Object *os_wxMediaAdminGetMaxView(int n, Scheme_Object *p[]);
+
 void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1818,7 +1856,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "get-max-view", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminGetMaxView)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1842,6 +1880,8 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
   }
 }
 
+static Scheme_Object *os_wxMediaAdminGetView(int n, Scheme_Object *p[]);
+
 void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1864,7 +1904,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "get-view", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminGetView)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -1888,6 +1928,8 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
   }
 }
 
+static Scheme_Object *os_wxMediaAdminGetDC(int n, Scheme_Object *p[]);
+
 class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -1909,7 +1951,7 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaAdmin_class, "get-dc", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaAdminGetDC)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -2625,6 +2667,8 @@ os_wxSnipAdmin::~os_wxSnipAdmin()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxSnipAdminModified(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2643,7 +2687,7 @@ void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "modified", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminModified)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -2659,6 +2703,8 @@ void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipAdminPopupMenu(int n, Scheme_Object *p[]);
 
 Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
 {
@@ -2679,7 +2725,7 @@ Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "popup-menu", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminPopupMenu)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -2703,6 +2749,8 @@ Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
   }
 }
 
+static Scheme_Object *os_wxSnipAdminUpdateCursor(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::UpdateCursor()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -2720,7 +2768,7 @@ void os_wxSnipAdmin::UpdateCursor()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "update-cursor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminUpdateCursor)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -2734,6 +2782,8 @@ void os_wxSnipAdmin::UpdateCursor()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipAdminReleaseSnip(int n, Scheme_Object *p[]);
 
 Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
 {
@@ -2753,7 +2803,7 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "release-snip", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminReleaseSnip)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -2774,6 +2824,8 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
   }
 }
 
+static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2792,7 +2844,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "needs-update", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminNeedsUpdate)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -2812,6 +2864,8 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
   }
 }
 
+static Scheme_Object *os_wxSnipAdminRecounted(int n, Scheme_Object *p[]);
+
 Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2830,7 +2884,7 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "recounted", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminRecounted)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -2852,6 +2906,8 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
   }
 }
 
+static Scheme_Object *os_wxSnipAdminResized(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2870,7 +2926,7 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "resized", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminResized)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -2886,6 +2942,8 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipAdminSetCaretOwner(int n, Scheme_Object *p[]);
 
 void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
 {
@@ -2905,7 +2963,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "set-caret-owner", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminSetCaretOwner)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -2921,6 +2979,8 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxSnipAdminScrollTo(int n, Scheme_Object *p[]);
 
 Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
 {
@@ -2940,7 +3000,7 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "scroll-to", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminScrollTo)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -2967,6 +3027,8 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
   }
 }
 
+static Scheme_Object *os_wxSnipAdminGetView(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, class wxSnip* x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -2990,7 +3052,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-view", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminGetView)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -3014,6 +3076,8 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
   }
 }
 
+static Scheme_Object *os_wxSnipAdminGetViewSize(int n, Scheme_Object *p[]);
+
 void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -3034,7 +3098,7 @@ void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-view-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminGetViewSize)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -3053,6 +3117,8 @@ void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
   }
 }
 
+static Scheme_Object *os_wxSnipAdminGetDC(int n, Scheme_Object *p[]);
+
 class wxDC* os_wxSnipAdmin::GetDC()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -3070,7 +3136,7 @@ class wxDC* os_wxSnipAdmin::GetDC()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-dc", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminGetDC)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -3090,6 +3156,8 @@ class wxDC* os_wxSnipAdmin::GetDC()
   }
 }
 
+static Scheme_Object *os_wxSnipAdminGetMedia(int n, Scheme_Object *p[]);
+
 class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -3107,7 +3175,7 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipAdmin_class, "get-editor", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipAdminGetMedia)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -3707,6 +3775,8 @@ os_wxSnipClass::~os_wxSnipClass()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxSnipClassWriteHeader(int n, Scheme_Object *p[]);
+
 Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -3725,7 +3795,7 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipClass_class, "write-header", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipClassWriteHeader)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnipClass::WriteHeader(x0);
   } else {
@@ -3746,6 +3816,8 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
   }
 }
 
+static Scheme_Object *os_wxSnipClassReadHeader(int n, Scheme_Object *p[]);
+
 Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -3764,7 +3836,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipClass_class, "read-header", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipClassReadHeader)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxSnipClass::ReadHeader(x0);
   } else {
@@ -3785,6 +3857,8 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
   }
 }
 
+static Scheme_Object *os_wxSnipClassRead(int n, Scheme_Object *p[]);
+
 class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -3803,7 +3877,7 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnipClass_class, "read", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxSnipClassRead)) {
     SET_VAR_STACK();
     return NULL;
   } else {
@@ -4393,6 +4467,8 @@ os_wxKeymap::~os_wxKeymap()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxKeymapHandleMouseEvent(int n, Scheme_Object *p[]);
+
 Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -4412,7 +4488,7 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxKeymap_class, "handle-mouse-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxKeymapHandleMouseEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxKeymap::HandleMouseEvent(x0, x1);
   } else {
@@ -4434,6 +4510,8 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxKeymapHandleKeyEvent(int n, Scheme_Object *p[]);
+
 Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -4453,7 +4531,7 @@ Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxKeymap_class, "handle-key-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxKeymapHandleKeyEvent)) {
     SET_VAR_STACK();
     READY_TO_RETURN; return ASSELF wxKeymap::HandleKeyEvent(x0, x1);
   } else {

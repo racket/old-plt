@@ -158,6 +158,8 @@ os_wxButton::~os_wxButton()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxButtonOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxButton::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -176,7 +178,7 @@ void os_wxButton::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnDropFile(x0);
   } else {
@@ -191,6 +193,8 @@ void os_wxButton::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxButtonPreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -211,7 +215,7 @@ Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonPreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -233,6 +237,8 @@ Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxButtonPreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxButton::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -252,7 +258,7 @@ Bool os_wxButton::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonPreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -274,6 +280,8 @@ Bool os_wxButton::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxButtonOnSize(int n, Scheme_Object *p[]);
+
 void os_wxButton::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -291,7 +299,7 @@ void os_wxButton::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnSize(x0, x1);
   } else {
@@ -307,6 +315,8 @@ void os_wxButton::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxButtonOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxButton::OnSetFocus()
 {
@@ -325,7 +335,7 @@ void os_wxButton::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnSetFocus();
   } else {
@@ -339,6 +349,8 @@ void os_wxButton::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxButtonOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxButton::OnKillFocus()
 {
@@ -357,7 +369,7 @@ void os_wxButton::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxButton_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxButtonOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnKillFocus();
   } else {

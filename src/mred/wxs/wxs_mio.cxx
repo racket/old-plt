@@ -235,6 +235,8 @@ os_wxMediaStreamInBase::~os_wxMediaStreamInBase()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMediaStreamInBaseRead(int n, Scheme_Object *p[]);
+
 long os_wxMediaStreamInBase::Read(char* x0, long x1)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -253,7 +255,7 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamInBase_class, "read", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamInBaseRead)) {
     SET_VAR_STACK();
     return 0;
   } else {
@@ -274,6 +276,8 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
   }
 }
 
+static Scheme_Object *os_wxMediaStreamInBaseBad(int n, Scheme_Object *p[]);
+
 Bool os_wxMediaStreamInBase::Bad()
 {
   Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
@@ -291,7 +295,7 @@ Bool os_wxMediaStreamInBase::Bad()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamInBase_class, "bad?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamInBaseBad)) {
     SET_VAR_STACK();
     return 0;
   } else {
@@ -311,6 +315,8 @@ Bool os_wxMediaStreamInBase::Bad()
   }
 }
 
+static Scheme_Object *os_wxMediaStreamInBaseSkip(int n, Scheme_Object *p[]);
+
 void os_wxMediaStreamInBase::Skip(nnlong x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -328,7 +334,7 @@ void os_wxMediaStreamInBase::Skip(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamInBase_class, "skip", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamInBaseSkip)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -343,6 +349,8 @@ void os_wxMediaStreamInBase::Skip(nnlong x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaStreamInBaseSeek(int n, Scheme_Object *p[]);
 
 void os_wxMediaStreamInBase::Seek(nnlong x0)
 {
@@ -361,7 +369,7 @@ void os_wxMediaStreamInBase::Seek(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamInBase_class, "seek", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamInBaseSeek)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -376,6 +384,8 @@ void os_wxMediaStreamInBase::Seek(nnlong x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaStreamInBaseTell(int n, Scheme_Object *p[]);
 
 long os_wxMediaStreamInBase::Tell()
 {
@@ -394,7 +404,7 @@ long os_wxMediaStreamInBase::Tell()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamInBase_class, "tell", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamInBaseTell)) {
     SET_VAR_STACK();
     return 0;
   } else {
@@ -688,6 +698,8 @@ os_wxMediaStreamOutBase::~os_wxMediaStreamOutBase()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMediaStreamOutBaseWrite(int n, Scheme_Object *p[]);
+
 void os_wxMediaStreamOutBase::Write(char* x0, long x1)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -706,7 +718,7 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamOutBase_class, "write", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamOutBaseWrite)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -721,6 +733,8 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaStreamOutBaseBad(int n, Scheme_Object *p[]);
 
 Bool os_wxMediaStreamOutBase::Bad()
 {
@@ -739,7 +753,7 @@ Bool os_wxMediaStreamOutBase::Bad()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamOutBase_class, "bad?", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamOutBaseBad)) {
     SET_VAR_STACK();
     return 0;
   } else {
@@ -759,6 +773,8 @@ Bool os_wxMediaStreamOutBase::Bad()
   }
 }
 
+static Scheme_Object *os_wxMediaStreamOutBaseSeek(int n, Scheme_Object *p[]);
+
 void os_wxMediaStreamOutBase::Seek(nnlong x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -776,7 +792,7 @@ void os_wxMediaStreamOutBase::Seek(nnlong x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamOutBase_class, "seek", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamOutBaseSeek)) {
     SET_VAR_STACK();
     { READY_TO_RETURN; return; }
   } else {
@@ -791,6 +807,8 @@ void os_wxMediaStreamOutBase::Seek(nnlong x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMediaStreamOutBaseTell(int n, Scheme_Object *p[]);
 
 long os_wxMediaStreamOutBase::Tell()
 {
@@ -809,7 +827,7 @@ long os_wxMediaStreamOutBase::Tell()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaStreamOutBase_class, "tell", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaStreamOutBaseTell)) {
     SET_VAR_STACK();
     return 0;
   } else {

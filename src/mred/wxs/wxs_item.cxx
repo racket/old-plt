@@ -370,6 +370,8 @@ os_wxMessage::~os_wxMessage()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
+static Scheme_Object *os_wxMessageOnDropFile(int n, Scheme_Object *p[]);
+
 void os_wxMessage::OnDropFile(epathname x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
@@ -388,7 +390,7 @@ void os_wxMessage::OnDropFile(epathname x0)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-drop-file", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessageOnDropFile)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMessage::OnDropFile(x0);
   } else {
@@ -403,6 +405,8 @@ void os_wxMessage::OnDropFile(epathname x0)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMessagePreOnEvent(int n, Scheme_Object *p[]);
 
 Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
@@ -423,7 +427,7 @@ Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "pre-on-event", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessagePreOnEvent)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -445,6 +449,8 @@ Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxMessagePreOnChar(int n, Scheme_Object *p[]);
+
 Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -464,7 +470,7 @@ Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "pre-on-char", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessagePreOnChar)) {
     SET_VAR_STACK();
     return FALSE;
   } else {
@@ -486,6 +492,8 @@ Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   }
 }
 
+static Scheme_Object *os_wxMessageOnSize(int n, Scheme_Object *p[]);
+
 void os_wxMessage::OnSize(int x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
@@ -503,7 +511,7 @@ void os_wxMessage::OnSize(int x0, int x1)
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-size", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessageOnSize)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMessage::OnSize(x0, x1);
   } else {
@@ -519,6 +527,8 @@ void os_wxMessage::OnSize(int x0, int x1)
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMessageOnSetFocus(int n, Scheme_Object *p[]);
 
 void os_wxMessage::OnSetFocus()
 {
@@ -537,7 +547,7 @@ void os_wxMessage::OnSetFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-set-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessageOnSetFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMessage::OnSetFocus();
   } else {
@@ -551,6 +561,8 @@ void os_wxMessage::OnSetFocus()
      READY_TO_RETURN;
   }
 }
+
+static Scheme_Object *os_wxMessageOnKillFocus(int n, Scheme_Object *p[]);
 
 void os_wxMessage::OnKillFocus()
 {
@@ -569,7 +581,7 @@ void os_wxMessage::OnKillFocus()
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMessage_class, "on-kill-focus", &mcache);
-  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMessageOnKillFocus)) {
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxMessage::OnKillFocus();
   } else {

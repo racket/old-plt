@@ -1360,6 +1360,12 @@ sub PrintMethod
     # 
     $methodfuncname = "${newclass}::${func}";
 
+    # Prototype for implementation
+    print "static Scheme_Object *";
+    print $newclass;
+    print $func;
+    print "(int n, Scheme_Object *p[]);\n\n";
+
     print &NormalType($returntype) . " ${methodfuncname}(";
     
     &PrintParams(0);
@@ -1486,7 +1492,10 @@ sub PrintMethod
     # print "    }\n"; else if (sj)
     # print "  } else {\n";
 
-    print "  if (!method || OBJSCHEME_PRIM_METHOD(method)) {\n";
+    print "  if (!method || OBJSCHEME_PRIM_METHOD(method, ";
+    print $newclass;
+    print $func;
+    print ")) {\n";
     print "    SET_VAR_STACK();\n    ";
 
     &PrintFailureHandling();

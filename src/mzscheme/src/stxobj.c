@@ -1331,7 +1331,7 @@ static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Obj
 
   if (!stx->certs) {
     if (!certs)
-      return stx;
+      return (Scheme_Object *)stx;
 
     if (use_key) {
       for (cl = certs; cl; cl = cl->next) {

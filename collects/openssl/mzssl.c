@@ -253,8 +253,8 @@ static const char *dup_errstr(const char *s) {
   long len;
   if (s){
     len = strlen(s);
-    t = scheme_malloc_atomic(len);
-    memcpy(t, s, len);
+    t = scheme_malloc_atomic(len+1);
+    memcpy(t, s, len+1);
     return t;
   } else
     return s;
@@ -281,9 +281,10 @@ static int get_ssl_error_msg(int errid, const char **msg, int status, int has_st
       *msg = NULL;
       return ERR_GET_REASON(errid);
     } else {
+      memset(buf, 0, 121);
+      /* wants a buffer of size 120: */
       ERR_error_string(errid, buf);
-      buf[120] = 0;
-      
+
       c = dup_errstr(buf);
       if (c)
 	*msg = c;
@@ -734,23 +735,21 @@ unsigned short check_port_and_convert(const char *name, int argc, Scheme_Object 
    client or server method functions. */
 SSL_METHOD *check_encrypt_and_convert(const char *name, int argc, Scheme_Object *argv[], int pos, int c)
 {
-  char *sym_val;
+  Scheme_Object *v;
+  
 
   if(argc <= pos)
     return (c ? SSLv23_client_method() : SSLv23_server_method());
     
-  if (!SCHEME_SYMBOLP(argv[pos]))
-    sym_val = "XXX";
-  else
-    sym_val = SCHEME_SYM_VAL(argv[pos]);
+  v = argv[pos];
 
-  if(!strcmp(sym_val, "sslv2-or-v3")) {
+  if(!SAME_OBJ(v, scheme_intern_symbol("sslv2-or-v3"))) {
     return (c ? SSLv23_client_method() : SSLv23_server_method());
-  } else if(!strcmp(sym_val, "sslv2")) {
+  } else if(!SAME_OBJ(v, scheme_intern_symbol("sslv2"))) {
     return (c ? SSLv2_client_method() : SSLv2_server_method());
-  } else if(!strcmp(sym_val, "sslv3")) {
+  } else if(!SAME_OBJ(v, scheme_intern_symbol("sslv3"))) {
     return (c ? SSLv3_client_method() : SSLv3_server_method());
-  } else if(!strcmp(sym_val, "tls")) {
+  } else if(!SAME_OBJ(v, scheme_intern_symbol("tls"))) {
     return (c ? TLSv1_client_method() : TLSv1_server_method());
   } else scheme_wrong_type(name, 
 			   "'sslv23, 'sslv2, 'sslv3, or 'tls", 
@@ -1162,6 +1161,33 @@ static int stop_listener(Scheme_Object *o)
   return was_closed;
 }
 
+static Scheme_Object *
+ssl_close(int argc, Scheme_Object *argv[])
+{
+  int was_closed;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
+    scheme_wrong_type("ssl-close", "ssl-listener", 0, argc, argv);
+
+  was_closed = stop_listener(argv[0]);
+
+  if (was_closed) {
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "ssl-close: listener was already closed");
+    return NULL;
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+ssl_listener_p(int argc, Scheme_Object *argv[])
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
+	  ? scheme_true
+	  : scheme_false);
+}
+
 enum {
   mzssl_CERT_CHAIN,
   mzssl_RSA_KEY
@@ -1332,6 +1358,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   
   SSL_load_error_strings();
 
+
+  scheme_add_waitable(ssl_listener_type,
+		      tcp_check_accept, tcp_accept_needs_wakeup,
+		      NULL);
+
   scheme_thread_w_custodian(thread, scheme_config, newcust);
   return scheme_reload(env);
 }
@@ -1353,6 +1384,12 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 
   v = scheme_make_prim_w_arity(ssl_listen,"ssl-listen",1,4);
   scheme_add_global("ssl-listen", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_close,"ssl-close",1,1);
+  scheme_add_global("ssl-close", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_listener_p,"ssl-listener?",1,1);
+  scheme_add_global("ssl-listener?", v, env);
 
   v = scheme_make_prim_w_arity(ssl_load_cert_chain,"ssl-load-certification-chain",2,2);
   scheme_add_global("ssl-load-certification-chain", v, env);

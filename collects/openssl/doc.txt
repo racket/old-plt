@@ -30,8 +30,17 @@ Like ssl-connect, but breaking is enabled while trying to connect.
 
 > (ssl-listen port-k [queue-k reuse? hostname-or-#f protocol-symbol])
 
-Like `tcp-listen', but the result is an SSL listener. The extra
-optional `protocol-symbol' is as for `ssl-connect'.
+Like `tcp-listen', but the result is an SSL listener (which is a
+waitable object). The extra optional `protocol-symbol' is as for
+`ssl-connect'.
+
+Call `ssl-load-certificate-chain' and `ssl-load-private-key' to
+avoid a _no shared cipher_ error on accepting connections.
+
+> (ssl-close ssl-listener)
+> (ssl-listener? v)
+
+Analogous to `tcp-close' and `tcp-listener?'.
 
 > (ssl-load-certification-chain ssl-listener pathname)
 

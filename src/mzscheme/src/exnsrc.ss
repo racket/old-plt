@@ -22,7 +22,7 @@ strings are types/comments.
 		  (type [expected "symbol" "name of the expected type"]
 			"wrong argument type to a procedure, not including divide-by-zero")
 		  (mismatch [] "bad argument combination (e.g., out-of-range index for a vector) or platform-specific integer range error")
-		  (divide-by-zero [] "divide by zero; \\scm{application-value} is always zero")
+		  (divide-by-zero [] "divide by zero; \\rawscm{application-value} is always zero")
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
      (syntax [expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)"
@@ -35,7 +35,7 @@ strings are types/comments.
 		 line "non-negative exact integer or {\\scmfalse}" "source line"
 		 column "non-negative exact integer or {\\scmfalse}" "source column"
 		 position "non-negative exact integer or {\\scmfalse}" "source position"]
-	   "\\scm{read} parsing error"
+	   "\\rawscm{read} parsing error"
 	   (eof [] "unexpected end-of-file"))
      
      (i/o [] -
@@ -44,7 +44,7 @@ strings are types/comments.
 		(write [] "error writing to a port")
 		(closed [] "attempt to operate on a closed port"))
 	  (filesystem [pathname "path" "file or directory pathname"
-				detail "symbol or {\\scmfalse}" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\scm{\\#f}"] 
+				detail "symbol or {\\scmfalse}" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\rawscm{\\#f}"] 
 		      "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
      

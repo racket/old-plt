@@ -136,50 +136,62 @@ Note: Users of the XML collection don't need to know most of these definitions.
 Note: Xexpr is the only important one to understand.  Even then,
       Processing-instructions may be ignored.
 
-> Xexpr ::= String
-         |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
-         |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
-         |  Symbol ;; symbolic entities such as &nbsp;
-         |  Number ;; numeric entities like &#20;
-         |  Misc
+> Xexpr = String
+        |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
+        |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
+        |  Symbol ;; symbolic entities such as &nbsp;
+        |  Number ;; numeric entities like &#20;
+        |  Misc
 
-> Document ::= (make-document Prolog Element (listof Processing-instruction))
+> Document = (make-document Prolog Element (listof Processing-instruction))
   (define-struct document (prolog element misc))
 
-> Prolog ::= (make-prolog (listof Misc) #f)
-  (define-struct prolog (misc dtd))
+> Prolog = (make-prolog (listof Misc) Document-type [Misc ...])
+  (define-struct prolog (misc dtd misc2))
+  The last field is a (listof Misc), but the maker accepts optional
+  arguments instead for backwards compatibility.
 
-> Element ::= (make-element Location Location
+> Document-type = #f | (make-document-type Symbol External-dtd #f)
+  (define-struct document-type (name external inlined))
+
+> External-dtd = (make-external-dtd/public str str)
+               | (make-external-dtd/system str)
+               | #f
+  (define-struct external-dtd (system))
+  (define-struct (external-dtd/public external-dtd) (public))
+  (define-struct (external-dtd/system external-dtd) ())
+
+> Element = (make-element Location Location
 			    Symbol
 			    (listof Attribute)
 			    (listof Content))
   (define-struct (element struct:source) (name attributes content))
 
-> Attribute ::= (make-attribute Location Location Symbol String)
+> Attribute = (make-attribute Location Location Symbol String)
   (define-struct (attribute struct:source) (name value))
 
-> Content ::= Pcdata
-           |  Element
-           |  Entity
-           |  Misc
+> Content = Pcdata
+          |  Element
+          |  Entity
+          |  Misc
 
-  Misc ::= Comment
-        |  Processing-instruction
+  Misc = Comment
+       |  Processing-instruction
 
-> Pcdata ::= (make-pcdata Location Location String)
+> Pcdata = (make-pcdata Location Location String)
   (define-struct (pcdata struct:source) (string))
 
-> Entity ::= (make-entity (U Nat Symbol))
+> Entity = (make-entity (U Nat Symbol))
   (define-struct entity (text))
 
-> Processing-instruction ::= (make-pi Location Location String (list String))
+> Processing-instruction = (make-pi Location Location String (list String))
   (define-struct (pi struct:source) (target-name instruction))
 
-> Comment ::= (make-comment String)
+> Comment = (make-comment String)
   (define-struct comment (text))
 
-  Source ::= (make-source Location Location)
+  Source = (make-source Location Location)
   (define-struct source (start stop))
 
-  Location ::= Nat
-            |  Symbol
+  Location = Nat
+           |  Symbol

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.3 1998/08/09 20:55:22 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.4 1998/08/10 12:53:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -210,9 +210,9 @@ void wxPanel::SetSize(int x, int y, int w, int h, int WXUNUSED(sizeFlags))
   int currentW,currentH;
   GetSize(&currentW, &currentH);
   if (w == -1)
-    w = currentW ;
+    w = currentW;
   if (h == -1)
-    h = currentH ;
+    h = currentH;
 
   wxWnd *wnd = (wxWnd *)handle;
   if (wnd)

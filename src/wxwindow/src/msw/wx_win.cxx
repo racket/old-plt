@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.16 1998/09/21 05:21:17 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.17 1998/10/19 03:49:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -526,16 +526,15 @@ void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFla
   int currentW,currentH;
   GetSize(&currentW, &currentH);
   if (width == -1)
-    actualWidth = currentW ;
+    actualWidth = currentW;
   if (height == -1)
-    actualHeight = currentH ;
+    actualHeight = currentH;
 
   HWND hWnd = GetHWND();
   if (hWnd)
     MoveWindow(hWnd, x, y, actualWidth, actualHeight, (BOOL)TRUE);
 
-  if (!(width == -1) && (height == -1))
-   ((wxWnd *)handle)->OnSize(width, height, 0);
+  ((wxWnd *)handle)->OnSize(actualWidth, actualHeight, 0);
 }
 
 void wxWindow::SetClientSize(int width, int height)
@@ -1668,8 +1667,9 @@ wxWnd::wxWnd(void)
   is_canvas = FALSE;
   cdc = NULL;
   ldc = NULL ;
-  dc_count = 0 ;
+  dc_count = 0;
 
+  mouse_in_window = FALSE;
 }
 
 wxWnd::~wxWnd(void)
@@ -2125,58 +2125,6 @@ BOOL wxWnd::OnEraseBkgnd(HDC WXUNUSED(pDC))
   return FALSE;
 }
 
-void wxWnd::OnLButtonDown(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnLButtonUp(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnLButtonDClick(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMButtonDown(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMButtonUp(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMButtonDClick(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnRButtonDown(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnRButtonUp(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnRButtonDClick(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMouseMove(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMouseEnter(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnMouseLeave(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flags))
-{
-}
-
-void wxWnd::OnChar(WORD WXUNUSED(wParam), LPARAM WXUNUSED(lParam), Bool WXUNUSED(isASCII))
-{
-}
-
 LONG wxWnd::DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam)
 {
 #if USE_ITSY_BITSY
@@ -2231,7 +2179,6 @@ wxSubWnd::wxSubWnd(wxWnd *parent, char *wclass, wxWindow *wx_win,
 
 {
   Create(parent, wclass, wx_win, NULL, x, y, width, height, style, dialog_template);
-  mouse_in_window = FALSE;
 }
 
 wxSubWnd::~wxSubWnd(void)
@@ -2332,28 +2279,8 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
     return FALSE;
 }
 
-void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
+void wxWnd::OnLButtonDown(int x, int y, UINT flags)
 {
-#ifdef WIN32
-  // DClick not clean supported on Win3.1, except if someone know
-  // how to emulate Sleep()...
-  // This means that your app will receive Down-Up-Dclick sequences
-  // rather than Dclick
-  if (wx_window && wx_window->doubleClickAllowed)
-  {
-    UINT time = GetDoubleClickTime() ;
-    Sleep(time) ;
-    MSG dummy ;
-    if (PeekMessage(&dummy,handle,
-                    WM_LBUTTONDBLCLK,WM_LBUTTONDBLCLK,
-                    PM_NOREMOVE)
-       )
-    {
-      PeekMessage(&dummy,handle,WM_LBUTTONUP,WM_LBUTTONUP,PM_REMOVE);
-      return; 
-    }
-  }
-#endif
 //wxDebugMsg("LButtonDown\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEFT_DOWN);
   wxMouseEvent &event = *_event;
@@ -2372,7 +2299,7 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+  if (wx_window && is_canvas)
     wx_window->CaptureMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
@@ -2381,7 +2308,7 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
+void wxWnd::OnLButtonUp(int x, int y, UINT flags)
 {
 //wxDebugMsg("LButtonUp\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
@@ -2400,7 +2327,7 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+  if (wx_window && is_canvas)
     wx_window->ReleaseMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
@@ -2410,7 +2337,7 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
+void wxWnd::OnLButtonDClick(int x, int y, UINT flags)
 {
 //wxDebugMsg("LButtonDClick\n") ;
   /* MATTHEW: If dclick not allowed, generate another single-click */
@@ -2439,26 +2366,8 @@ void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
+void wxWnd::OnMButtonDown(int x, int y, UINT flags)
 {
-#ifdef WIN32
-  // DClick not clean supported on Win3.1, except if someone know
-  // how to emulate Sleep()...
-  // This means that your app will receive Down-Up-Dclick sequences
-  // rather than Dclick
-  if (wx_window && wx_window->doubleClickAllowed) {
-    UINT time = GetDoubleClickTime() ;
-    Sleep(time) ;
-    MSG dummy ;
-    if (PeekMessage(&dummy,handle,
-                    WM_MBUTTONDBLCLK,WM_MBUTTONDBLCLK,
-                    PM_NOREMOVE)) {
-      PeekMessage(&dummy,handle,WM_MBUTTONUP,WM_MBUTTONUP,PM_REMOVE);
-      return; 
-    }
-  }
-#endif
-
 //wxDebugMsg("MButtonDown\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_DOWN);
   wxMouseEvent &event = *_event;
@@ -2477,7 +2386,7 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+  if (wx_window && is_canvas)
     wx_window->CaptureMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
@@ -2486,7 +2395,7 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
+void wxWnd::OnMButtonUp(int x, int y, UINT flags)
 {
 //wxDebugMsg("MButtonUp\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_UP);
@@ -2505,7 +2414,7 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+  if (wx_window && is_canvas)
     wx_window->ReleaseMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
@@ -2514,7 +2423,7 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
+void wxWnd::OnMButtonDClick(int x, int y, UINT flags)
 {
 //wxDebugMsg("MButtonDClick\n") ;
   /* MATTHEW: If dclick not allowed, generate another single-click */
@@ -2544,27 +2453,8 @@ void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
+void wxWnd::OnRButtonDown(int x, int y, UINT flags)
 {
-#ifdef WIN32
-  // DClick not clean supported on Win3.1, except if someone know
-  // how to emulate Sleep()...
-  // This means that your app will receive Down-Up-Dclick sequences
-  // rather than Dclick
-  if (wx_window && wx_window->doubleClickAllowed)
-  {
-    UINT time = GetDoubleClickTime() ;
-    Sleep(time) ;
-    MSG dummy ;
-    if (PeekMessage(&dummy,handle,
-                    WM_RBUTTONDBLCLK,WM_RBUTTONDBLCLK,
-                    PM_NOREMOVE)) {
-      PeekMessage(&dummy,handle,WM_RBUTTONUP,WM_RBUTTONUP,PM_REMOVE);
-      return; 
-    }
-  }
-#endif
-
   //wxDebugMsg("RButtonDown\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DOWN);
   wxMouseEvent &event = *_event;
@@ -2582,20 +2472,16 @@ void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->CaptureMouse();
-
+  if (wx_window && is_canvas)
+    wx_window->CaptureMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_DOWN;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
+void wxWnd::OnRButtonUp(int x, int y, UINT flags)
 {
 //wxDebugMsg("RButtonUp\n") ;
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_UP);
@@ -2614,11 +2500,8 @@ void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-  if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->ReleaseMouse();
-
-
+  if (wx_window && is_canvas)
+    wx_window->ReleaseMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_UP;
   if (wx_window) 
@@ -2628,9 +2511,8 @@ void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
+void wxWnd::OnRButtonDClick(int x, int y, UINT flags)
 {
-//wxDebugMsg("RButtonDClick\n") ;
   /* MATTHEW: If dclick not allowed, generate another single-click */
   wxMouseEvent *_event = new wxMouseEvent((wx_window && wx_window->doubleClickAllowed) ?
 					  wxEVENT_TYPE_RIGHT_DCLICK : wxEVENT_TYPE_RIGHT_DOWN);
@@ -2651,14 +2533,12 @@ void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_DCLICK;
 
-  /* MATTHEW: Always send event */
-  if (wx_window /* && wx_window->doubleClickAllowed */)
+  if (wx_window)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
+void wxWnd::OnMouseMove(int x, int y, UINT flags)
 {
   // Don't do the Leave/Enter fix if we've captured the window,
   // or SetCapture won't work properly.
@@ -2768,7 +2648,7 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
+void wxWnd::OnMouseEnter(int x, int y, UINT flags)
 {
 //wxDebugMsg("Client 0x%08x Enter %d,%d\n",this,x,y) ;
 
@@ -2795,13 +2675,11 @@ void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_ENTER_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
+void wxWnd::OnMouseLeave(int x, int y, UINT flags)
 {
 //wxDebugMsg("Client 0x%08x Leave %d,%d\n",this,x,y) ;
 
@@ -2828,18 +2706,15 @@ void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_LEAVE_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
-void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
+void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 {
   int id;
   Bool tempControlDown = FALSE;
-  if (isASCII)
-  {
+  if (isASCII) {
     // If 1 -> 26, translate to CTRL plus a letter.
     id = wParam;
     if ((id > 0) && (id < 27))
@@ -2868,13 +2743,11 @@ void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
         }
       }
     }
-  }
-  else
+  } else
     if ((id = wxCharCodeMSWToWX(wParam)) == 0)
       id = -1;
 
-  if ((id > -1) && wx_window)
-  {
+  if ((id > -1) && wx_window) {
     wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
     wxKeyEvent &event = *_event;
 
@@ -2900,8 +2773,7 @@ void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     DeviceToLogical(&fx,&fy) ;
     CalcUnscrolledPosition((int)fx,(int)fy,&event.x,&event.y) ;
 
-
-	if (!wx_window->CallPreOnChar(wx_window, &event))
+    if (!wx_window->CallPreOnChar(wx_window, &event))
       wx_window->GetEventHandler()->OnChar(event);
   }
 }

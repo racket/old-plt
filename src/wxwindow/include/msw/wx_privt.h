@@ -58,6 +58,7 @@ public:
     HANDLE accelerator_table;
     HMENU hMenu; // Menu, if any
 
+    Bool mouse_in_window;
     Bool is_canvas;
     Bool is_dialog;
     Bool userColours; // Usually FALSE, wxUSER_COLOURS overrides CTL3D etc. settings
@@ -162,8 +163,6 @@ public:
 class wxSubWnd : public wxWnd
 {
 public:
-    Bool mouse_in_window ;
-
     wxSubWnd(wxWnd *parent, char *wclass, wxWindow *wx_win,
                 int x, int y, int width, int height,
                 DWORD style, char *dialog_template = NULL);
@@ -175,24 +174,6 @@ public:
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
 
     // Canvas-type events
-    void OnLButtonDown(int x, int y, UINT flags);
-    void OnLButtonUp(int x, int y, UINT flags);
-    void OnLButtonDClick(int x, int y, UINT flags);
-
-    void OnMButtonDown(int x, int y, UINT flags);
-    void OnMButtonUp(int x, int y, UINT flags);
-    void OnMButtonDClick(int x, int y, UINT flags);
-
-    void OnRButtonDown(int x, int y, UINT flags);
-    void OnRButtonUp(int x, int y, UINT flags);
-    void OnRButtonDClick(int x, int y, UINT flags);
-
-    void OnMouseMove(int x, int y, UINT flags);
-    void OnMouseEnter(int x, int y, UINT flags);
-    void OnMouseLeave(int x, int y, UINT flags);
-
-    void OnChar(WORD wParam, LPARAM lParam, Bool isASCII = FALSE);
-
     void OnHScroll(WORD nSBCode, WORD pos, HWND control);
     void OnVScroll(WORD nSBCode, WORD pos, HWND control);
 };

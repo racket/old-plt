@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TypeTree.h,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
+ * $Id: TypeTree.h,v 1.2 1999/11/04 17:25:32 mflatt Exp $
  *
  * Purpose: type tree (type keys defined in common.h)
  *
@@ -37,8 +37,8 @@ char  *wxGetTypeName(WXTYPE type);
 
 class wxTypeDef : public wxObject {
 public:
-    inline wxTypeDef(void) : wxObject(FALSE)  { name = NULL; __type = wxTYPE_TYPEDEF; }
-    inline ~wxTypeDef(void)  { if (name) delete name; }
+  wxTypeDef(void);
+
 private:
     friend Bool wxSubType(WXTYPE type1, WXTYPE type2);
     friend char *wxGetTypeName(WXTYPE type);

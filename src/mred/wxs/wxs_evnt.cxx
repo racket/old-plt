@@ -36,26 +36,25 @@ START_XFORM_SKIP;
 class os_wxEvent : public wxEvent {
  public:
 
-  os_wxEvent(Scheme_Object * obj);
+  os_wxEvent CONSTRUCTOR_ARGS(());
   ~os_wxEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxEvent::gcMark(Mark_Proc mark) {
+void os_wxEvent::gcMark(Mark_Proc mark) {
   wxEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxEvent_class;
 
-os_wxEvent::os_wxEvent(Scheme_Object *)
-: wxEvent()
+os_wxEvent::os_wxEvent CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxEvent())
 {
 }
 
@@ -112,7 +111,10 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
     WITH_VAR_STACK(scheme_wrong_count("initialization in event%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxEvent, (obj));
+  realobj = WITH_VAR_STACK(new os_wxEvent CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxEvent());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -275,26 +277,25 @@ static Scheme_Object *bundle_symset_actionType(int v) {
 class os_wxCommandEvent : public wxCommandEvent {
  public:
 
-  os_wxCommandEvent(Scheme_Object * obj, int x0);
+  os_wxCommandEvent CONSTRUCTOR_ARGS((int x0));
   ~os_wxCommandEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxCommandEvent::gcMark(Mark_Proc mark) {
+void os_wxCommandEvent::gcMark(Mark_Proc mark) {
   wxCommandEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxCommandEvent_class;
 
-os_wxCommandEvent::os_wxCommandEvent(Scheme_Object *, int x0)
-: wxCommandEvent(x0)
+os_wxCommandEvent::os_wxCommandEvent CONSTRUCTOR_ARGS((int x0))
+CONSTRUCTOR_INIT(: wxCommandEvent(x0))
 {
 }
 
@@ -353,7 +354,10 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
   x0 = WITH_VAR_STACK(unbundle_symset_actionType(p[0], "initialization in control-event%"));
 
   
-  realobj = NEW_OBJECT(os_wxCommandEvent, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxCommandEvent CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxCommandEvent(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -447,26 +451,25 @@ class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, cons
 class os_wxPopupEvent : public wxPopupEvent {
  public:
 
-  os_wxPopupEvent(Scheme_Object * obj);
+  os_wxPopupEvent CONSTRUCTOR_ARGS(());
   ~os_wxPopupEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPopupEvent::gcMark(Mark_Proc mark) {
+void os_wxPopupEvent::gcMark(Mark_Proc mark) {
   wxPopupEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPopupEvent_class;
 
-os_wxPopupEvent::os_wxPopupEvent(Scheme_Object *)
-: wxPopupEvent()
+os_wxPopupEvent::os_wxPopupEvent CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPopupEvent())
 {
 }
 
@@ -523,7 +526,10 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in popup-event%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxPopupEvent, (obj));
+  realobj = WITH_VAR_STACK(new os_wxPopupEvent CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxPopupEvent());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -704,26 +710,25 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 class os_wxScrollEvent : public wxScrollEvent {
  public:
 
-  os_wxScrollEvent(Scheme_Object * obj);
+  os_wxScrollEvent CONSTRUCTOR_ARGS(());
   ~os_wxScrollEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxScrollEvent::gcMark(Mark_Proc mark) {
+void os_wxScrollEvent::gcMark(Mark_Proc mark) {
   wxScrollEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxScrollEvent_class;
 
-os_wxScrollEvent::os_wxScrollEvent(Scheme_Object *)
-: wxScrollEvent()
+os_wxScrollEvent::os_wxScrollEvent CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxScrollEvent())
 {
 }
 
@@ -846,7 +851,10 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
     WITH_VAR_STACK(scheme_wrong_count("initialization in scroll-event%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxScrollEvent, (obj));
+  realobj = WITH_VAR_STACK(new os_wxScrollEvent CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxScrollEvent());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1296,26 +1304,25 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
 class os_wxKeyEvent : public wxKeyEvent {
  public:
 
-  os_wxKeyEvent(Scheme_Object * obj, int x0 = wxEVENT_TYPE_CHAR);
+  os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = wxEVENT_TYPE_CHAR));
   ~os_wxKeyEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxKeyEvent::gcMark(Mark_Proc mark) {
+void os_wxKeyEvent::gcMark(Mark_Proc mark) {
   wxKeyEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxKeyEvent_class;
 
-os_wxKeyEvent::os_wxKeyEvent(Scheme_Object *, int x0)
-: wxKeyEvent(x0)
+os_wxKeyEvent::os_wxKeyEvent CONSTRUCTOR_ARGS((int x0))
+CONSTRUCTOR_INIT(: wxKeyEvent(x0))
 {
 }
 
@@ -1571,7 +1578,10 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in key-event%", 0, 0, n, p));
 
   x0=wxEVENT_TYPE_CHAR;
-  realobj = NEW_OBJECT(os_wxKeyEvent, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxKeyEvent CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxKeyEvent(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1773,26 +1783,25 @@ static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
 class os_wxMouseEvent : public wxMouseEvent {
  public:
 
-  os_wxMouseEvent(Scheme_Object * obj, int x0);
+  os_wxMouseEvent CONSTRUCTOR_ARGS((int x0));
   ~os_wxMouseEvent();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMouseEvent::gcMark(Mark_Proc mark) {
+void os_wxMouseEvent::gcMark(Mark_Proc mark) {
   wxMouseEvent::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMouseEvent_class;
 
-os_wxMouseEvent::os_wxMouseEvent(Scheme_Object *, int x0)
-: wxMouseEvent(x0)
+os_wxMouseEvent::os_wxMouseEvent CONSTRUCTOR_ARGS((int x0))
+CONSTRUCTOR_INIT(: wxMouseEvent(x0))
 {
 }
 
@@ -2317,7 +2326,10 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
   x0 = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[0], "initialization in mouse-event%"));
 
   
-  realobj = NEW_OBJECT(os_wxMouseEvent, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxMouseEvent CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMouseEvent(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

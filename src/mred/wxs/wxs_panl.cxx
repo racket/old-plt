@@ -131,9 +131,13 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 class os_wxPanel : public wxPanel {
  public:
 
-  os_wxPanel(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel");
-  os_wxPanel(Scheme_Object * obj, class wxDialogBox* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel");
-  os_wxPanel(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel");
+  os_wxPanel CONSTRUCTOR_ARGS((class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel"));
+#ifndef MZ_PRECISE_GC
+  os_wxPanel CONSTRUCTOR_ARGS((class wxDialogBox* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel"));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxPanel CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "panel"));
+#endif
   ~os_wxPanel();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -142,35 +146,38 @@ class os_wxPanel : public wxPanel {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPanel::gcMark(Mark_Proc mark) {
+void os_wxPanel::gcMark(Mark_Proc mark) {
   wxPanel::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPanel_class;
 
-os_wxPanel::os_wxPanel(Scheme_Object *, class wxFrame* x0, int x1, int x2, int x3, int x4, int x5, string x6)
-: wxPanel(x0, x1, x2, x3, x4, x5, x6)
+os_wxPanel::os_wxPanel CONSTRUCTOR_ARGS((class wxFrame* x0, int x1, int x2, int x3, int x4, int x5, string x6))
+CONSTRUCTOR_INIT(: wxPanel(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 
-os_wxPanel::os_wxPanel(Scheme_Object *, class wxDialogBox* x0, int x1, int x2, int x3, int x4, int x5, string x6)
-: wxPanel(x0, x1, x2, x3, x4, x5, x6)
+#ifndef MZ_PRECISE_GC
+os_wxPanel::os_wxPanel CONSTRUCTOR_ARGS((class wxDialogBox* x0, int x1, int x2, int x3, int x4, int x5, string x6))
+CONSTRUCTOR_INIT(: wxPanel(x0, x1, x2, x3, x4, x5, x6))
 {
 }
+#endif
 
-os_wxPanel::os_wxPanel(Scheme_Object *, class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6)
-: wxPanel(x0, x1, x2, x3, x4, x5, x6)
+#ifndef MZ_PRECISE_GC
+os_wxPanel::os_wxPanel CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6))
+CONSTRUCTOR_INIT(: wxPanel(x0, x1, x2, x3, x4, x5, x6))
 {
 }
+#endif
 
 os_wxPanel::~os_wxPanel()
 {
@@ -822,7 +829,10 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
+    realobj = WITH_VAR_STACK(new os_wxPanel CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPanel(x0, x1, x2, x3, x4, x5, x6));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -872,7 +882,10 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
+    realobj = WITH_VAR_STACK(new os_wxPanel CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPanel(x0, x1, x2, x3, x4, x5, x6));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -922,7 +935,10 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
+    realobj = WITH_VAR_STACK(new os_wxPanel CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPanel(x0, x1, x2, x3, x4, x5, x6));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1103,7 +1119,7 @@ extern void *wxsCheckEventspace(char *);
 class os_wxDialogBox : public wxDialogBox {
  public:
 
-  os_wxDialogBox(Scheme_Object * obj, class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = 0, string x8 = "dialogBox");
+  os_wxDialogBox CONSTRUCTOR_ARGS((class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = 0, string x8 = "dialogBox"));
   ~os_wxDialogBox();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -1114,23 +1130,22 @@ class os_wxDialogBox : public wxDialogBox {
   Bool OnClose();
   void OnActivate(Bool x0);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxDialogBox::gcMark(Mark_Proc mark) {
+void os_wxDialogBox::gcMark(Mark_Proc mark) {
   wxDialogBox::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxDialogBox_class;
 
-os_wxDialogBox::os_wxDialogBox(Scheme_Object *, class wxWindow* x0, nstring x1, Bool x2, int x3, int x4, int x5, int x6, int x7, string x8)
-: wxDialogBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+os_wxDialogBox::os_wxDialogBox CONSTRUCTOR_ARGS((class wxWindow* x0, nstring x1, Bool x2, int x3, int x4, int x5, int x6, int x7, string x8))
+CONSTRUCTOR_INIT(: wxDialogBox(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
 
@@ -1678,7 +1693,10 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
     x8 = "dialogBox";
 
   if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("dialog%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = NEW_OBJECT(os_wxDialogBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+  realobj = WITH_VAR_STACK(new os_wxDialogBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxDialogBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

@@ -19,13 +19,7 @@ class wxMediaAdmin : public wxObject
   int standard; /* Used to recognize standard display. Hack. */
   
  public:
-  wxMediaAdmin() : wxObject(WXGC_NO_CLEANUP)
-    {
-      standard = 0; 
-#if USE_OLD_TYPE_SYSTEM
-      __type = wxTYPE_MEDIA_ADMIN; 
-#endif
-    };
+  inline wxMediaAdmin();
 
   /* Usually called by wxMediaBuffer objects: */
   virtual wxDC *GetDC(float *x = NULL, float *y = NULL) = 0;
@@ -43,6 +37,15 @@ class wxMediaAdmin : public wxObject
   virtual void GetMaxView(float *x, float *y, float *w, float *h, 
 			  Bool full = FALSE);
   virtual Bool DelayRefresh();
+};
+
+inline wxMediaAdmin::wxMediaAdmin()
+     : wxObject(WXGC_NO_CLEANUP)
+{
+  standard = 0; 
+#if USE_OLD_TYPE_SYSTEM
+  __type = wxTYPE_MEDIA_ADMIN; 
+#endif
 };
 
 class wxCanvasMediaAdmin : public wxMediaAdmin
@@ -106,6 +109,9 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
 
  public:
 
+  /* Only to make wxs_madm.xc happy */
+  inline wxMediaSnipMediaAdmin();
+
   wxDC *GetDC(float *x = NULL, float *y = NULL);
   void GetView(float *x, float *y, float *h, float *w, Bool full = FALSE);
   Bool ScrollTo(float localx, float localy, float w, float h,
@@ -121,5 +127,11 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
 
   inline wxMediaSnip* GetSnip() { return snip; }
 };
+
+/* Only to make wxs_madm.xc happy */
+inline wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin()
+{
+  snip = NULL;
+}
 
 #endif /* __WX_MEDIA_ADMIN__ */

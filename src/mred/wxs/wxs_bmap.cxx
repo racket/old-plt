@@ -134,40 +134,47 @@ static Bool IsColor(wxBitmap *bm)
 class os_wxBitmap : public wxBitmap {
  public:
 
-  os_wxBitmap(Scheme_Object * obj, string x0, int x1, int x2);
-  os_wxBitmap(Scheme_Object * obj, int x0, int x1, Bool x2 = 0);
-  os_wxBitmap(Scheme_Object * obj, pathname x0, int x1 = 0);
+  os_wxBitmap CONSTRUCTOR_ARGS((string x0, int x1, int x2));
+#ifndef MZ_PRECISE_GC
+  os_wxBitmap CONSTRUCTOR_ARGS((int x0, int x1, Bool x2 = 0));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1 = 0));
+#endif
   ~os_wxBitmap();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBitmap::gcMark(Mark_Proc mark) {
+void os_wxBitmap::gcMark(Mark_Proc mark) {
   wxBitmap::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxBitmap_class;
 
-os_wxBitmap::os_wxBitmap(Scheme_Object *, string x0, int x1, int x2)
-: wxBitmap(x0, x1, x2)
+os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((string x0, int x1, int x2))
+CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 {
 }
 
-os_wxBitmap::os_wxBitmap(Scheme_Object *, int x0, int x1, Bool x2)
-: wxBitmap(x0, x1, x2)
+#ifndef MZ_PRECISE_GC
+os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((int x0, int x1, Bool x2))
+CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 {
 }
+#endif
 
-os_wxBitmap::os_wxBitmap(Scheme_Object *, pathname x0, int x1)
-: wxBitmap(x0, x1)
+#ifndef MZ_PRECISE_GC
+os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((pathname x0, int x1))
+CONSTRUCTOR_INIT(: wxBitmap(x0, x1))
 {
 }
+#endif
 
 os_wxBitmap::~os_wxBitmap()
 {
@@ -366,7 +373,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x2 = 0;
 
     
-    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -389,7 +399,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (datastring case)"));
 
     if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]));
-    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -413,7 +426,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x1 = 0;
 
     
-    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     if (realobj->Ok()) scheme_process_block(0.0);

@@ -53,27 +53,26 @@ extern void *wxsCheckEventspace(char *);
 class os_wxTimer : public wxTimer {
  public:
 
-  os_wxTimer(Scheme_Object * obj);
+  os_wxTimer CONSTRUCTOR_ARGS(());
   ~os_wxTimer();
   void Notify();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxTimer::gcMark(Mark_Proc mark) {
+void os_wxTimer::gcMark(Mark_Proc mark) {
   wxTimer::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxTimer_class;
 
-os_wxTimer::os_wxTimer(Scheme_Object *)
-: wxTimer()
+os_wxTimer::os_wxTimer CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxTimer())
 {
 }
 
@@ -217,7 +216,10 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
     WITH_VAR_STACK(scheme_wrong_count("initialization in timer%", 0, 0, n, p));
 
   WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("timer%","initialization")));
-  realobj = NEW_OBJECT(os_wxTimer, (obj));
+  realobj = WITH_VAR_STACK(new os_wxTimer CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxTimer());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -344,16 +346,15 @@ class os_wxClipboard : public wxClipboard {
 
   ~os_wxClipboard();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxClipboard::gcMark(Mark_Proc mark) {
+void os_wxClipboard::gcMark(Mark_Proc mark) {
   wxClipboard::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -587,28 +588,27 @@ class wxClipboard *objscheme_unbundle_wxClipboard(Scheme_Object *obj, const char
 class os_wxClipboardClient : public wxClipboardClient {
  public:
 
-  os_wxClipboardClient(Scheme_Object * obj);
+  os_wxClipboardClient CONSTRUCTOR_ARGS(());
   ~os_wxClipboardClient();
   nstring GetData(string x0, long* x1);
   void BeingReplaced();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxClipboardClient::gcMark(Mark_Proc mark) {
+void os_wxClipboardClient::gcMark(Mark_Proc mark) {
   wxClipboardClient::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxClipboardClient_class;
 
-os_wxClipboardClient::os_wxClipboardClient(Scheme_Object *)
-: wxClipboardClient()
+os_wxClipboardClient::os_wxClipboardClient CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxClipboardClient())
 {
 }
 
@@ -786,7 +786,10 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in clipboard-client%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxClipboardClient, (obj));
+  realobj = WITH_VAR_STACK(new os_wxClipboardClient CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxClipboardClient());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -951,26 +954,25 @@ static Scheme_Object *bundle_symset_psOrientation(int v) {
 class os_wxPrintSetupData : public wxPrintSetupData {
  public:
 
-  os_wxPrintSetupData(Scheme_Object * obj);
+  os_wxPrintSetupData CONSTRUCTOR_ARGS(());
   ~os_wxPrintSetupData();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPrintSetupData::gcMark(Mark_Proc mark) {
+void os_wxPrintSetupData::gcMark(Mark_Proc mark) {
   wxPrintSetupData::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPrintSetupData_class;
 
-os_wxPrintSetupData::os_wxPrintSetupData(Scheme_Object *)
-: wxPrintSetupData()
+os_wxPrintSetupData::os_wxPrintSetupData CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPrintSetupData())
 {
 }
 
@@ -1597,7 +1599,10 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, in
     WITH_VAR_STACK(scheme_wrong_count("initialization in ps-setup%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxPrintSetupData, (obj));
+  realobj = WITH_VAR_STACK(new os_wxPrintSetupData CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxPrintSetupData());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

@@ -185,7 +185,7 @@ class os_wxChoice : public wxChoice {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxChoice(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, string x10 = "checkBox");
+  os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, string x10 = "checkBox"));
   ~os_wxChoice();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -194,24 +194,23 @@ class os_wxChoice : public wxChoice {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxChoice::gcMark(Mark_Proc mark) {
+void os_wxChoice::gcMark(Mark_Proc mark) {
   wxChoice::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxChoice_class;
 
-os_wxChoice::os_wxChoice(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, string x10)
-: wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+os_wxChoice::os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, string x10))
+CONSTRUCTOR_INIT(: wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
 {
 }
 
@@ -822,7 +821,10 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x10 = "checkBox";
 
   x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("choice%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = NEW_OBJECT(os_wxChoice, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+  realobj = WITH_VAR_STACK(new os_wxChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   delete[] x8;

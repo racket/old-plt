@@ -344,7 +344,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxMediaPasteboard : public wxMediaPasteboard {
  public:
 
-  os_wxMediaPasteboard(Scheme_Object * obj);
+  os_wxMediaPasteboard CONSTRUCTOR_ARGS(());
   ~os_wxMediaPasteboard();
   void AfterInteractiveResize(class wxSnip* x0);
   void OnInteractiveResize(class wxSnip* x0);
@@ -417,23 +417,22 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaPasteboard::gcMark(Mark_Proc mark) {
+void os_wxMediaPasteboard::gcMark(Mark_Proc mark) {
   wxMediaPasteboard::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaPasteboard_class;
 
-os_wxMediaPasteboard::os_wxMediaPasteboard(Scheme_Object *)
-: wxMediaPasteboard()
+os_wxMediaPasteboard::os_wxMediaPasteboard CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaPasteboard())
 {
 }
 
@@ -5625,7 +5624,10 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in pasteboard%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaPasteboard, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaPasteboard CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaPasteboard());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

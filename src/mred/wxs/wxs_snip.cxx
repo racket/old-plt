@@ -254,7 +254,7 @@ static Scheme_Object *bundle_symset_editOp(int v) {
 class os_wxSnip : public wxSnip {
  public:
 
-  os_wxSnip(Scheme_Object * obj);
+  os_wxSnip CONSTRUCTOR_ARGS(());
   ~os_wxSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -278,23 +278,22 @@ class os_wxSnip : public wxSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxSnip::gcMark(Mark_Proc mark) {
+void os_wxSnip::gcMark(Mark_Proc mark) {
   wxSnip::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxSnip_class;
 
-os_wxSnip::os_wxSnip(Scheme_Object *)
-: wxSnip()
+os_wxSnip::os_wxSnip CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxSnip())
 {
 }
 
@@ -1950,7 +1949,10 @@ static Scheme_Object *os_wxSnip_ConstructScheme(Scheme_Object *obj, int n,  Sche
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxSnip, (obj));
+  realobj = WITH_VAR_STACK(new os_wxSnip CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxSnip());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2086,7 +2088,7 @@ class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *obj, const char *where, i
 class os_wxTextSnip : public wxTextSnip {
  public:
 
-  os_wxTextSnip(Scheme_Object * obj, nnlong x0 = 0);
+  os_wxTextSnip CONSTRUCTOR_ARGS((nnlong x0 = 0));
   ~os_wxTextSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -2110,23 +2112,22 @@ class os_wxTextSnip : public wxTextSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxTextSnip::gcMark(Mark_Proc mark) {
+void os_wxTextSnip::gcMark(Mark_Proc mark) {
   wxTextSnip::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxTextSnip_class;
 
-os_wxTextSnip::os_wxTextSnip(Scheme_Object *, nnlong x0)
-: wxTextSnip(x0)
+os_wxTextSnip::os_wxTextSnip CONSTRUCTOR_ARGS((nnlong x0))
+CONSTRUCTOR_INIT(: wxTextSnip(x0))
 {
 }
 
@@ -3580,7 +3581,10 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(Scheme_Object *obj, int n,  
     x0 = 0;
 
   
-  realobj = NEW_OBJECT(os_wxTextSnip, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxTextSnip CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxTextSnip(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3704,7 +3708,7 @@ class wxTextSnip *objscheme_unbundle_wxTextSnip(Scheme_Object *obj, const char *
 class os_wxTabSnip : public wxTabSnip {
  public:
 
-  os_wxTabSnip(Scheme_Object * obj);
+  os_wxTabSnip CONSTRUCTOR_ARGS(());
   ~os_wxTabSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -3728,23 +3732,22 @@ class os_wxTabSnip : public wxTabSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxTabSnip::gcMark(Mark_Proc mark) {
+void os_wxTabSnip::gcMark(Mark_Proc mark) {
   wxTabSnip::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxTabSnip_class;
 
-os_wxTabSnip::os_wxTabSnip(Scheme_Object *)
-: wxTabSnip()
+os_wxTabSnip::os_wxTabSnip CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxTabSnip())
 {
 }
 
@@ -5136,7 +5139,10 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(Scheme_Object *obj, int n,  S
     WITH_VAR_STACK(scheme_wrong_count("initialization in tab-snip%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxTabSnip, (obj));
+  realobj = WITH_VAR_STACK(new os_wxTabSnip CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxTabSnip());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -5323,8 +5329,10 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxImageSnip : public wxImageSnip {
  public:
 
-  os_wxImageSnip(Scheme_Object * obj, nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE);
-  os_wxImageSnip(Scheme_Object * obj, class wxBitmap* x0);
+  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
+#ifndef MZ_PRECISE_GC
+  os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0));
+#endif
   ~os_wxImageSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -5348,30 +5356,31 @@ class os_wxImageSnip : public wxImageSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxImageSnip::gcMark(Mark_Proc mark) {
+void os_wxImageSnip::gcMark(Mark_Proc mark) {
   wxImageSnip::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxImageSnip_class;
 
-os_wxImageSnip::os_wxImageSnip(Scheme_Object *, nstring x0, int x1, Bool x2, Bool x3)
-: wxImageSnip(x0, x1, x2, x3)
+os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0, int x1, Bool x2, Bool x3))
+CONSTRUCTOR_INIT(: wxImageSnip(x0, x1, x2, x3))
 {
 }
 
-os_wxImageSnip::os_wxImageSnip(Scheme_Object *, class wxBitmap* x0)
-: wxImageSnip(x0)
+#ifndef MZ_PRECISE_GC
+os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0))
+CONSTRUCTOR_INIT(: wxImageSnip(x0))
 {
 }
+#endif
 
 os_wxImageSnip::~os_wxImageSnip()
 {
@@ -6908,7 +6917,10 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "initialization in image-snip% (bitmap case)", 0));
 
     { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
-    realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0));
+    realobj = WITH_VAR_STACK(new os_wxImageSnip CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxImageSnip(x0));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -6945,7 +6957,10 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
       x3 = TRUE;
 
     
-    realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0, x1, x2, x3));
+    realobj = WITH_VAR_STACK(new os_wxImageSnip CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxImageSnip(x0, x1, x2, x3));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     if (x0) WITH_VAR_STACK(scheme_process_block(0.0));
@@ -7078,7 +7093,7 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 class os_wxMediaSnip : public wxMediaSnip {
  public:
 
-  os_wxMediaSnip(Scheme_Object * obj, class wxMediaBuffer* x0 = NULL, Bool x1 = TRUE, nnint x2 = wxMSNIPBOX_XMARGIN, nnint x3 = wxMSNIPBOX_YMARGIN, nnint x4 = wxMSNIPBOX_XMARGIN, nnint x5 = wxMSNIPBOX_YMARGIN, nnint x6 = wxMSNIPBOX_XINSET, nnint x7 = wxMSNIPBOX_YINSET, nnint x8 = wxMSNIPBOX_XINSET, nnint x9 = wxMSNIPBOX_YINSET, float x10 = -1, float x11 = -1, float x12 = -1, float x13 = -1);
+  os_wxMediaSnip CONSTRUCTOR_ARGS((class wxMediaBuffer* x0 = NULL, Bool x1 = TRUE, nnint x2 = wxMSNIPBOX_XMARGIN, nnint x3 = wxMSNIPBOX_YMARGIN, nnint x4 = wxMSNIPBOX_XMARGIN, nnint x5 = wxMSNIPBOX_YMARGIN, nnint x6 = wxMSNIPBOX_XINSET, nnint x7 = wxMSNIPBOX_YINSET, nnint x8 = wxMSNIPBOX_XINSET, nnint x9 = wxMSNIPBOX_YINSET, float x10 = -1, float x11 = -1, float x12 = -1, float x13 = -1));
   ~os_wxMediaSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -7102,23 +7117,22 @@ class os_wxMediaSnip : public wxMediaSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaSnip::gcMark(Mark_Proc mark) {
+void os_wxMediaSnip::gcMark(Mark_Proc mark) {
   wxMediaSnip::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaSnip_class;
 
-os_wxMediaSnip::os_wxMediaSnip(Scheme_Object *, class wxMediaBuffer* x0, Bool x1, nnint x2, nnint x3, nnint x4, nnint x5, nnint x6, nnint x7, nnint x8, nnint x9, float x10, float x11, float x12, float x13)
-: wxMediaSnip(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)
+os_wxMediaSnip::os_wxMediaSnip CONSTRUCTOR_ARGS((class wxMediaBuffer* x0, Bool x1, nnint x2, nnint x3, nnint x4, nnint x5, nnint x6, nnint x7, nnint x8, nnint x9, float x10, float x11, float x12, float x13))
+CONSTRUCTOR_INIT(: wxMediaSnip(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13))
 {
 }
 
@@ -9037,7 +9051,10 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(Scheme_Object *obj, int n, 
     x13 = -1;
 
   
-  realobj = NEW_OBJECT(os_wxMediaSnip, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13));
+  realobj = WITH_VAR_STACK(new os_wxMediaSnip CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaSnip(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -9170,27 +9187,26 @@ class wxMediaSnip *objscheme_unbundle_wxMediaSnip(Scheme_Object *obj, const char
 class os_wxBufferDataClass : public wxBufferDataClass {
  public:
 
-  os_wxBufferDataClass(Scheme_Object * obj);
+  os_wxBufferDataClass CONSTRUCTOR_ARGS(());
   ~os_wxBufferDataClass();
   class wxBufferData* Read(class wxMediaStreamIn* x0);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBufferDataClass::gcMark(Mark_Proc mark) {
+void os_wxBufferDataClass::gcMark(Mark_Proc mark) {
   wxBufferDataClass::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxBufferDataClass_class;
 
-os_wxBufferDataClass::os_wxBufferDataClass(Scheme_Object *)
-: wxBufferDataClass()
+os_wxBufferDataClass::os_wxBufferDataClass CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxBufferDataClass())
 {
 }
 
@@ -9304,7 +9320,10 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data-class%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxBufferDataClass, (obj));
+  realobj = WITH_VAR_STACK(new os_wxBufferDataClass CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxBufferDataClass());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -9400,16 +9419,15 @@ class os_wxBufferDataClassList : public wxBufferDataClassList {
 
   ~os_wxBufferDataClassList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBufferDataClassList::gcMark(Mark_Proc mark) {
+void os_wxBufferDataClassList::gcMark(Mark_Proc mark) {
   wxBufferDataClassList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -9645,27 +9663,26 @@ static void SetNextNoCycle(wxBufferData *dest, wxBufferData *naya)
 class os_wxBufferData : public wxBufferData {
  public:
 
-  os_wxBufferData(Scheme_Object * obj);
+  os_wxBufferData CONSTRUCTOR_ARGS(());
   ~os_wxBufferData();
   Bool Write(class wxMediaStreamOut* x0);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBufferData::gcMark(Mark_Proc mark) {
+void os_wxBufferData::gcMark(Mark_Proc mark) {
   wxBufferData::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxBufferData_class;
 
-os_wxBufferData::os_wxBufferData(Scheme_Object *)
-: wxBufferData()
+os_wxBufferData::os_wxBufferData CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxBufferData())
 {
 }
 
@@ -9820,7 +9837,10 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxBufferData, (obj));
+  realobj = WITH_VAR_STACK(new os_wxBufferData CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxBufferData());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

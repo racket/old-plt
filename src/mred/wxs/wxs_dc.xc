@@ -43,7 +43,10 @@ static wxColour* dcGetTextBackground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = NEW_OBJECT(wxColour,());
+  c = WITH_VAR_STACK(new wxColour());
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(c->gcInit_wxColour());
+#endif
   bg = WITH_VAR_STACK(dc->GetTextBackground());
   WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
@@ -56,7 +59,10 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = NEW_OBJECT(wxColour,());
+  c = WITH_VAR_STACK(new wxColour());
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(c->gcInit_wxColour());
+#endif
   fg = WITH_VAR_STACK(dc->GetTextForeground());
   WITH_VAR_STACK(c->CopyFrom(fg));
   return c;
@@ -197,30 +203,42 @@ static void* MyGetSize(wxDC *dc)
 
 @END
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 #ifdef wx_x
 
 class basePrinterDC : public wxObject
 {
 public:
-  basePrinterDC()
-  {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "%s", 
-		     METHODNAME("printer-dc%","initialization")": not supported for X Windows");
-  }
+  basePrinterDC();
 };
+
+basePrinterDC::basePrinterDC()
+{
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s", 
+		   METHODNAME("printer-dc%","initialization")": not supported for X Windows");
+}
 
 #else
 
 class basePrinterDC : public wxPrinterDC
 {
 public:
-  basePrinterDC()
-    : wxPrinterDC( )
-  {
-  }
+  basePrinterDC();
 };
 
+basePrinterDC::basePrinterDC() 
+: wxPrinterDC( )
+{
+}
+
+#endif
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 #endif
 
 @CLASSBASE basePrinterDC "printer-dc":"dc"

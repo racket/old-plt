@@ -180,7 +180,7 @@ typedef void *(*CAPOFunc)(void*);
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
-  os_wxMediaCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
+  os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL));
   ~os_wxMediaCanvas();
   void OnChar(class wxKeyEvent* x0);
   void OnEvent(class wxMouseEvent* x0);
@@ -192,23 +192,22 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaCanvas::gcMark(Mark_Proc mark) {
+void os_wxMediaCanvas::gcMark(Mark_Proc mark) {
   wxMediaCanvas::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaCanvas_class;
 
-os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object *, class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8)
-: wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+os_wxMediaCanvas::os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8))
+CONSTRUCTOR_INIT(: wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
 
@@ -983,7 +982,10 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     x8 = NULL;
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = NEW_OBJECT(os_wxMediaCanvas, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+  realobj = WITH_VAR_STACK(new os_wxMediaCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1095,7 +1097,7 @@ class wxMediaCanvas *objscheme_unbundle_wxMediaCanvas(Scheme_Object *obj, const 
 class os_wxMediaAdmin : public wxMediaAdmin {
  public:
 
-  os_wxMediaAdmin(Scheme_Object * obj);
+  os_wxMediaAdmin CONSTRUCTOR_ARGS(());
   ~os_wxMediaAdmin();
   Bool DelayRefresh();
   void UpdateCursor();
@@ -1107,23 +1109,22 @@ class os_wxMediaAdmin : public wxMediaAdmin {
   void GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
   class wxDC* GetDC(float* x0 = NULL, float* x1 = NULL);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaAdmin::gcMark(Mark_Proc mark) {
+void os_wxMediaAdmin::gcMark(Mark_Proc mark) {
   wxMediaAdmin::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaAdmin_class;
 
-os_wxMediaAdmin::os_wxMediaAdmin(Scheme_Object *)
-: wxMediaAdmin()
+os_wxMediaAdmin::os_wxMediaAdmin CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaAdmin())
 {
 }
 
@@ -1774,7 +1775,10 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-admin%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaAdmin, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaAdmin CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaAdmin());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1868,35 +1872,23 @@ class wxMediaAdmin *objscheme_unbundle_wxMediaAdmin(Scheme_Object *obj, const ch
 }
 
 
-// #define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
-// @CLASSBASE wxCanvasMediaAdmin "canvas-media-admin":"media-admin"
-// @CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
-// @VAR FIXCMA
-// @ "get-canvas" : wxMediaCanvas! GetCanvas()
-// @END
-
-#define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
-
-
 
 
 
 class os_wxMediaSnipMediaAdmin : public wxMediaSnipMediaAdmin {
  public:
-  FIXMSMA
 
   ~os_wxMediaSnipMediaAdmin();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaSnipMediaAdmin::gcMark(Mark_Proc mark) {
+void os_wxMediaSnipMediaAdmin::gcMark(Mark_Proc mark) {
   wxMediaSnipMediaAdmin::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -2016,7 +2008,7 @@ class wxMediaSnipMediaAdmin *objscheme_unbundle_wxMediaSnipMediaAdmin(Scheme_Obj
 class os_wxSnipAdmin : public wxSnipAdmin {
  public:
 
-  os_wxSnipAdmin(Scheme_Object * obj);
+  os_wxSnipAdmin CONSTRUCTOR_ARGS(());
   ~os_wxSnipAdmin();
   void UpdateCursor();
   Bool ReleaseSnip(class wxSnip* x0);
@@ -2030,23 +2022,22 @@ class os_wxSnipAdmin : public wxSnipAdmin {
   class wxDC* GetDC();
   class wxMediaBuffer* GetMedia();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxSnipAdmin::gcMark(Mark_Proc mark) {
+void os_wxSnipAdmin::gcMark(Mark_Proc mark) {
   wxSnipAdmin::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxSnipAdmin_class;
 
-os_wxSnipAdmin::os_wxSnipAdmin(Scheme_Object *)
-: wxSnipAdmin()
+os_wxSnipAdmin::os_wxSnipAdmin CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxSnipAdmin())
 {
 }
 
@@ -2773,7 +2764,10 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip-admin%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxSnipAdmin, (obj));
+  realobj = WITH_VAR_STACK(new os_wxSnipAdmin CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxSnipAdmin());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2875,11 +2869,10 @@ class wxSnipAdmin *objscheme_unbundle_wxSnipAdmin(Scheme_Object *obj, const char
 
 
 
-
 class os_wxSnipClass : public wxSnipClass {
  public:
 
-  os_wxSnipClass(Scheme_Object * obj);
+  os_wxSnipClass CONSTRUCTOR_ARGS(());
   ~os_wxSnipClass();
   void WriteDone();
   Bool WriteHeader(class wxMediaStreamOut* x0);
@@ -2887,23 +2880,22 @@ class os_wxSnipClass : public wxSnipClass {
   Bool ReadHeader(class wxMediaStreamIn* x0);
   class wxSnip* Read(class wxMediaStreamIn* x0);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxSnipClass::gcMark(Mark_Proc mark) {
+void os_wxSnipClass::gcMark(Mark_Proc mark) {
   wxSnipClass::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxSnipClass_class;
 
-os_wxSnipClass::os_wxSnipClass(Scheme_Object *)
-: wxSnipClass()
+os_wxSnipClass::os_wxSnipClass CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxSnipClass())
 {
 }
 
@@ -3262,7 +3254,10 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip-class%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxSnipClass, (obj));
+  realobj = WITH_VAR_STACK(new os_wxSnipClass CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxSnipClass());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3365,16 +3360,15 @@ class os_wxSnipClassList : public wxSnipClassList {
 
   ~os_wxSnipClassList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxSnipClassList::gcMark(Mark_Proc mark) {
+void os_wxSnipClassList::gcMark(Mark_Proc mark) {
   wxSnipClassList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -3638,28 +3632,27 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 class os_wxKeymap : public wxKeymap {
  public:
 
-  os_wxKeymap(Scheme_Object * obj);
+  os_wxKeymap CONSTRUCTOR_ARGS(());
   ~os_wxKeymap();
   Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1);
   Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxKeymap::gcMark(Mark_Proc mark) {
+void os_wxKeymap::gcMark(Mark_Proc mark) {
   wxKeymap::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxKeymap_class;
 
-os_wxKeymap::os_wxKeymap(Scheme_Object *)
-: wxKeymap()
+os_wxKeymap::os_wxKeymap CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxKeymap())
 {
 }
 
@@ -4131,7 +4124,10 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     WITH_VAR_STACK(scheme_wrong_count("initialization in keymap%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxKeymap, (obj));
+  realobj = WITH_VAR_STACK(new os_wxKeymap CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxKeymap());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -4363,26 +4359,25 @@ static Scheme_Object *bundle_symset_breakType(int v) {
 class os_wxMediaWordbreakMap : public wxMediaWordbreakMap {
  public:
 
-  os_wxMediaWordbreakMap(Scheme_Object * obj);
+  os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(());
   ~os_wxMediaWordbreakMap();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaWordbreakMap::gcMark(Mark_Proc mark) {
+void os_wxMediaWordbreakMap::gcMark(Mark_Proc mark) {
   wxMediaWordbreakMap::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaWordbreakMap_class;
 
-os_wxMediaWordbreakMap::os_wxMediaWordbreakMap(Scheme_Object *)
-: wxMediaWordbreakMap()
+os_wxMediaWordbreakMap::os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaWordbreakMap())
 {
 }
 
@@ -4455,7 +4450,10 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(Scheme_Object *obj,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-wordbreak-map%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaWordbreakMap, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaWordbreakMap());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

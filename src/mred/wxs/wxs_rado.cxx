@@ -304,8 +304,10 @@ class os_wxRadioBox : public wxRadioBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox");
-  os_wxRadioBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox");
+  os_wxRadioBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox"));
+#ifndef MZ_PRECISE_GC
+  os_wxRadioBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9 = 0, int x10 = wxVERTICAL, string x11 = "radioBox"));
+#endif
   ~os_wxRadioBox();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -314,31 +316,32 @@ class os_wxRadioBox : public wxRadioBox {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxRadioBox::gcMark(Mark_Proc mark) {
+void os_wxRadioBox::gcMark(Mark_Proc mark) {
   wxRadioBox::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxRadioBox_class;
 
-os_wxRadioBox::os_wxRadioBox(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, int x10, string x11)
-: wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+os_wxRadioBox::os_wxRadioBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, int x10, string x11))
+CONSTRUCTOR_INIT(: wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11))
 {
 }
 
-os_wxRadioBox::os_wxRadioBox(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9, int x10, string x11)
-: wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+#ifndef MZ_PRECISE_GC
+os_wxRadioBox::os_wxRadioBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, wxBitmap** x8, int x9, int x10, string x11))
+CONSTRUCTOR_INIT(: wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11))
 {
 }
+#endif
 
 os_wxRadioBox::~os_wxRadioBox()
 {
@@ -963,7 +966,10 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
       x11 = "radioBox";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakewxBitmapArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
-    realobj = NEW_OBJECT(os_wxRadioBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+    realobj = WITH_VAR_STACK(new os_wxRadioBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     delete[] x8;
@@ -1030,7 +1036,10 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
       x11 = "radioBox";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = WITH_VAR_STACK(__MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization")));
-    realobj = NEW_OBJECT(os_wxRadioBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+    realobj = WITH_VAR_STACK(new os_wxRadioBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxRadioBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     delete[] x8;

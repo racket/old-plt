@@ -82,21 +82,10 @@ typedef void *(*CAPOFunc)(void*);
 
 @END
 
-// #define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
-// @CLASSBASE wxCanvasMediaAdmin "canvas-media-admin":"media-admin"
-// @CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
-// @VAR FIXCMA
-// @ "get-canvas" : wxMediaCanvas! GetCanvas()
-// @END
-
-#define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
-
 @CLASSBASE wxMediaSnipMediaAdmin "editor-snip-editor-admin":"editor-admin"
 @INTERFACE "editor-snip-editor-admin"
 
 @CLASSID wxTYPE_MEDIA_SNIP_MEDIA_ADMIN
-
-@VAR FIXMSMA
 
 @ "get-snip" : wxMediaSnip! GetSnip()
 
@@ -121,7 +110,6 @@ typedef void *(*CAPOFunc)(void*);
 @ V "update-cursor" : void UpdateCursor();
 
 @END
-
 
 
 @CLASSBASE wxSnipClass "snip-class" : "object"

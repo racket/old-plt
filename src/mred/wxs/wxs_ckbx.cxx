@@ -85,8 +85,10 @@ class os_wxCheckBox : public wxCheckBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox");
-  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox");
+  os_wxCheckBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox"));
+#ifndef MZ_PRECISE_GC
+  os_wxCheckBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox"));
+#endif
   ~os_wxCheckBox();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -95,31 +97,32 @@ class os_wxCheckBox : public wxCheckBox {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxCheckBox::gcMark(Mark_Proc mark) {
+void os_wxCheckBox::gcMark(Mark_Proc mark) {
   wxCheckBox::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxCheckBox_class;
 
-os_wxCheckBox::os_wxCheckBox(Scheme_Object *, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8)
-: wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+os_wxCheckBox::os_wxCheckBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8))
+CONSTRUCTOR_INIT(: wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
 
-os_wxCheckBox::os_wxCheckBox(Scheme_Object *, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8)
-: wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+#ifndef MZ_PRECISE_GC
+os_wxCheckBox::os_wxCheckBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8))
+CONSTRUCTOR_INIT(: wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
+#endif
 
 os_wxCheckBox::~os_wxCheckBox()
 {
@@ -606,7 +609,10 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
       x8 = "checkBox";
 
     { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bad bitmap: ", p[2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = NEW_OBJECT(os_wxCheckBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    realobj = WITH_VAR_STACK(new os_wxCheckBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -661,7 +667,10 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
       x8 = "checkBox";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = NEW_OBJECT(os_wxCheckBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    realobj = WITH_VAR_STACK(new os_wxCheckBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     

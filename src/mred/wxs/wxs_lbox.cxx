@@ -256,7 +256,7 @@ class os_wxListBox : public wxListBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxListBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, string x11 = "button");
+  os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, string x11 = "button"));
   ~os_wxListBox();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -265,24 +265,23 @@ class os_wxListBox : public wxListBox {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxListBox::gcMark(Mark_Proc mark) {
+void os_wxListBox::gcMark(Mark_Proc mark) {
   wxListBox::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxListBox_class;
 
-os_wxListBox::os_wxListBox(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, string* x9, int x10, string x11)
-: wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+os_wxListBox::os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, string* x9, int x10, string x11))
+CONSTRUCTOR_INIT(: wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11))
 {
 }
 
@@ -1189,7 +1188,10 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
     x11 = "button";
 
   if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = WITH_VAR_STACK(__MakestringArray((8 < n) ? p[8] : scheme_null, &x8, METHODNAME("list-box%","initialization")));
-  realobj = NEW_OBJECT(os_wxListBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+  realobj = WITH_VAR_STACK(new os_wxListBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   delete[] x9;

@@ -39,16 +39,15 @@ class os_wxMultColour : public wxMultColour {
 
   ~os_wxMultColour();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMultColour::gcMark(Mark_Proc mark) {
+void os_wxMultColour::gcMark(Mark_Proc mark) {
   wxMultColour::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -316,16 +315,15 @@ class os_wxAddColour : public wxAddColour {
 
   ~os_wxAddColour();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxAddColour::gcMark(Mark_Proc mark) {
+void os_wxAddColour::gcMark(Mark_Proc mark) {
   wxAddColour::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -998,26 +996,25 @@ static int istype_symset_changeAlign(Scheme_Object *v, const char *where) {
 class os_wxStyleDelta : public wxStyleDelta {
  public:
 
-  os_wxStyleDelta(Scheme_Object * obj, int x0 = wxCHANGE_NOTHING, int x1 = 0);
+  os_wxStyleDelta CONSTRUCTOR_ARGS((int x0 = wxCHANGE_NOTHING, int x1 = 0));
   ~os_wxStyleDelta();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxStyleDelta::gcMark(Mark_Proc mark) {
+void os_wxStyleDelta::gcMark(Mark_Proc mark) {
   wxStyleDelta::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxStyleDelta_class;
 
-os_wxStyleDelta::os_wxStyleDelta(Scheme_Object *, int x0, int x1)
-: wxStyleDelta(x0, x1)
+os_wxStyleDelta::os_wxStyleDelta CONSTRUCTOR_ARGS((int x0, int x1))
+CONSTRUCTOR_INIT(: wxStyleDelta(x0, x1))
 {
 }
 
@@ -1923,7 +1920,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_align(p[1], "initialization in style-delta% (size case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1943,7 +1943,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in style-delta% (size case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1963,7 +1966,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "initialization in style-delta% (underline case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1983,7 +1989,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_weight(p[1], "initialization in style-delta% (weight case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2003,7 +2012,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_style(p[1], "initialization in style-delta% (style case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2023,7 +2035,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[1], "initialization in style-delta% (family case)"));
 
     
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2045,7 +2060,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
       x0 = wxCHANGE_NOTHING;
 
     x1 = 0;
-    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2186,16 +2204,15 @@ class os_wxStyle : public wxStyle {
 
   ~os_wxStyle();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxStyle::gcMark(Mark_Proc mark) {
+void os_wxStyle::gcMark(Mark_Proc mark) {
   wxStyle::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -2884,26 +2901,25 @@ static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 class os_wxStyleList : public wxStyleList {
  public:
 
-  os_wxStyleList(Scheme_Object * obj);
+  os_wxStyleList CONSTRUCTOR_ARGS(());
   ~os_wxStyleList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxStyleList::gcMark(Mark_Proc mark) {
+void os_wxStyleList::gcMark(Mark_Proc mark) {
   wxStyleList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxStyleList_class;
 
-os_wxStyleList::os_wxStyleList(Scheme_Object *)
-: wxStyleList()
+os_wxStyleList::os_wxStyleList CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxStyleList())
 {
 }
 
@@ -3233,7 +3249,10 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in style-list%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxStyleList, (obj));
+  realobj = WITH_VAR_STACK(new os_wxStyleList CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxStyleList());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

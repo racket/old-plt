@@ -421,21 +421,27 @@ public:
   XtPointer data;
   int ok;
 
-  wxXtTimer(XtTimerCallbackProc c, XtPointer d) : wxTimer()
-    {
-      callback = c;
-      data = d;
-      ok = 1;
-    }
+  wxXtTimer(XtTimerCallbackProc c, XtPointer d);
 
   void Stopped() { ok = 0; }
 
-  void Notify(void) {
-    wxYield();
-    if (ok)
-      callback(data, NULL);
-  }
+  void Notify(void);
 };
+
+wxXtTimer::wxXtTimer(XtTimerCallbackProc c, XtPointer d)
+: wxTimer()
+{
+  callback = c;
+  data = d;
+  ok = 1;
+}
+
+void wxXtTimer::Notify(void) {
+  wxYield();
+  if (ok)
+    callback(data, NULL);
+}
+
 
 extern "C" {
 
@@ -448,7 +454,8 @@ extern "C" {
   long wxAppAddTimeOut(XtAppContext, unsigned long interval, 
 		       XtTimerCallbackProc callback, XtPointer data)
     {
-      wxTimer *t = new wxXtTimer(callback, data);
+      wxTimer *t;
+      t = new wxXtTimer(callback, data);
       t->Start(interval, TRUE);
       return (long)t;
     }

@@ -7,6 +7,10 @@
 
 @HEADER
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 class wxsGauge : public wxGauge
 {
  public:
@@ -14,35 +18,47 @@ class wxsGauge : public wxGauge
 
    wxsGauge(wxPanel *panel, char *label, int rng,
 	    int x = -1, int y = -1, int width = -1, int height = -1,
-	    long style = wxHORIZONTAL, char *name = "gauge")
-    : wxGauge(panel, label, rng, x, y, width, height,
-	      style, name)
-  {
-    range = rng; pos = 0;
-  }
-  void SetRange(int r) {
-    wxGauge *sElF = this;
-    SETUP_VAR_STACK(1);
-    VAR_STACK_PUSH(0, sElF);
+	    long style = wxHORIZONTAL, char *name = "gauge");
 
-    if (r > 0) {
-      range = r;
-      WITH_VAR_STACK(sElF->wxGauge::SetRange(r));
-      if (pos > r) {
-       pos = r;
-       WITH_VAR_STACK(sElF->wxGauge::SetValue(r));
-      }
-    }
-  }
-  void SetValue(int v) {
-    if (v >= 0 && v <= range) {
-     pos = v;
-     wxGauge::SetValue(v);
-    }
-  }
-  int GetValue(void) { return pos; }
-  int GetRange(void) { return range; }
+   void SetRange(int r);
+
+   void SetValue(int v);
+
+   int GetValue(void) { return pos; }
+   int GetRange(void) { return range; }
 };
+
+wxsGauge::wxsGauge(wxPanel *panel, char *label, int rng,
+		   int x = -1, int y = -1, int width = -1, int height = -1,
+		   long style = wxHORIZONTAL, char *name = "gauge")
+: wxGauge(panel, label, rng, x, y, width, height,
+	  style, name)
+{
+  range = rng; pos = 0;
+}
+
+void wxsGauge::SetRange(int r)
+{
+  if (r > 0) {
+    range = r;
+    wxGauge::SetRange(r);
+    if (pos > r) {
+      pos = r;
+      wxGauge::SetValue(r);
+    }
+  }
+}
+
+void wxsGauge::SetValue(int v) {
+  if (v >= 0 && v <= range) {
+    pos = v;
+    wxGauge::SetValue(v);
+  }
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 @BEGINSYMBOLS gaugeStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL

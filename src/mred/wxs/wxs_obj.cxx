@@ -35,26 +35,25 @@ START_XFORM_SKIP;
 class os_wxObject : public wxObject {
  public:
 
-  os_wxObject(Scheme_Object * obj);
+  os_wxObject CONSTRUCTOR_ARGS(());
   ~os_wxObject();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxObject::gcMark(Mark_Proc mark) {
+void os_wxObject::gcMark(Mark_Proc mark) {
   wxObject::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxObject_class;
 
-os_wxObject::os_wxObject(Scheme_Object *)
-: wxObject()
+os_wxObject::os_wxObject CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxObject())
 {
 }
 
@@ -78,7 +77,10 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
     WITH_VAR_STACK(scheme_wrong_count("initialization in object%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxObject, (obj));
+  realobj = WITH_VAR_STACK(new os_wxObject CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxObject());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

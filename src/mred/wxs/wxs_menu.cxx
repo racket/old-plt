@@ -89,27 +89,26 @@ class os_wxMenu : public wxMenu {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxMenu(Scheme_Object * obj, nstring x0 = NULL, wxFunction x1 = NULL);
+  os_wxMenu CONSTRUCTOR_ARGS((nstring x0 = NULL, wxFunction x1 = NULL));
   ~os_wxMenu();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMenu::gcMark(Mark_Proc mark) {
+void os_wxMenu::gcMark(Mark_Proc mark) {
   wxMenu::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMenu_class;
 
-os_wxMenu::os_wxMenu(Scheme_Object *, nstring x0, wxFunction x1)
-: wxMenu(x0, x1)
+os_wxMenu::os_wxMenu CONSTRUCTOR_ARGS((nstring x0, wxFunction x1))
+CONSTRUCTOR_INIT(: wxMenu(x0, x1))
 {
 }
 
@@ -477,7 +476,10 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
     x1 = NULL;
 
   
-  realobj = NEW_OBJECT(os_wxMenu, (obj, x0, x1));
+  realobj = WITH_VAR_STACK(new os_wxMenu CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMenu(x0, x1));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -802,34 +804,37 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 class os_wxMenuBar : public wxMenuBar {
  public:
 
-  os_wxMenuBar(Scheme_Object * obj);
-  os_wxMenuBar(Scheme_Object * obj, int x0, wxMenu** x1, string* x2);
+  os_wxMenuBar CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxMenuBar CONSTRUCTOR_ARGS((int x0, wxMenu** x1, string* x2));
+#endif
   ~os_wxMenuBar();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMenuBar::gcMark(Mark_Proc mark) {
+void os_wxMenuBar::gcMark(Mark_Proc mark) {
   wxMenuBar::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMenuBar_class;
 
-os_wxMenuBar::os_wxMenuBar(Scheme_Object *)
-: wxMenuBar()
+os_wxMenuBar::os_wxMenuBar CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMenuBar())
 {
 }
 
-os_wxMenuBar::os_wxMenuBar(Scheme_Object *, int x0, wxMenu** x1, string* x2)
-: wxMenuBar(x0, x1, x2)
+#ifndef MZ_PRECISE_GC
+os_wxMenuBar::os_wxMenuBar CONSTRUCTOR_ARGS((int x0, wxMenu** x1, string* x2))
+CONSTRUCTOR_INIT(: wxMenuBar(x0, x1, x2))
 {
 }
+#endif
 
 os_wxMenuBar::~os_wxMenuBar()
 {
@@ -989,7 +994,10 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
     x2 = NULL;
 
     x1 = WITH_VAR_STACK(__MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));x2 = WITH_VAR_STACK(__MakestringArray((1 < n) ? p[1] : scheme_null, &x0, METHODNAME("menu-bar%","initialization")));
-    realobj = NEW_OBJECT(os_wxMenuBar, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxMenuBar(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1005,7 +1013,10 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
       WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxMenuBar, (obj));
+    realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxMenuBar());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1096,17 +1107,27 @@ class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *obj, const char *wh
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 class wxsMenuItem : public wxObject
 {
 public:
-  wxsMenuItem(void) {
-  }
+  wxsMenuItem(void);
 
   ExactLong Id(void) {
     return (ExactLong)this;
   }
 };
+
+wxsMenuItem::wxsMenuItem(void)
+{
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
@@ -1119,26 +1140,25 @@ wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 class os_wxsMenuItem : public wxsMenuItem {
  public:
 
-  os_wxsMenuItem(Scheme_Object * obj);
+  os_wxsMenuItem CONSTRUCTOR_ARGS(());
   ~os_wxsMenuItem();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxsMenuItem::gcMark(Mark_Proc mark) {
+void os_wxsMenuItem::gcMark(Mark_Proc mark) {
   wxsMenuItem::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxsMenuItem_class;
 
-os_wxsMenuItem::os_wxsMenuItem(Scheme_Object *)
-: wxsMenuItem()
+os_wxsMenuItem::os_wxsMenuItem CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxsMenuItem())
 {
 }
 
@@ -1184,7 +1204,10 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxsMenuItem, (obj));
+  realobj = WITH_VAR_STACK(new os_wxsMenuItem CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxsMenuItem());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

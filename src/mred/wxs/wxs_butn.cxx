@@ -102,8 +102,10 @@ class os_wxButton : public wxButton {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
-  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
+  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button"));
+#ifndef MZ_PRECISE_GC
+  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button"));
+#endif
   ~os_wxButton();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -112,31 +114,32 @@ class os_wxButton : public wxButton {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxButton::gcMark(Mark_Proc mark) {
+void os_wxButton::gcMark(Mark_Proc mark) {
   wxButton::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxButton_class;
 
-os_wxButton::os_wxButton(Scheme_Object *, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8)
-: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8))
+CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
 
-os_wxButton::os_wxButton(Scheme_Object *, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8)
-: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8)
+#ifndef MZ_PRECISE_GC
+os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8))
+CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8))
 {
 }
+#endif
 
 os_wxButton::~os_wxButton()
 {
@@ -578,7 +581,10 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x8 = "button";
 
     { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = NEW_OBJECT(os_wxButton, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -633,7 +639,10 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x8 = "button";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = NEW_OBJECT(os_wxButton, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     

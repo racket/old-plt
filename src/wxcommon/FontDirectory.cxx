@@ -156,13 +156,13 @@ class wxSuffixMap {
   wxSuffixMap();
 
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-int wxSuffixMap::gcMark(Mark_Proc mark) {
+void wxSuffixMap::gcMark(Mark_Proc mark) {
   if (mark) {
     int i, j;
     for (i = 0; i < wxNUM_WEIGHTS; i++)
@@ -170,7 +170,6 @@ int wxSuffixMap::gcMark(Mark_Proc mark) {
 	gcMARK_TYPED(char *, map[i][j]);
       }
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 END_XFORM_SKIP;
 #endif

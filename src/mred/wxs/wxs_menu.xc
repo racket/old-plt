@@ -86,17 +86,27 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 
 @END
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 class wxsMenuItem : public wxObject
 {
 public:
-  wxsMenuItem(void) {
-  }
+  wxsMenuItem(void);
 
   ExactLong Id(void) {
     return (ExactLong)this;
   }
 };
+
+wxsMenuItem::wxsMenuItem(void)
+{
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {

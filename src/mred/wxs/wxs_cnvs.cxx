@@ -137,7 +137,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 class os_wxCanvas : public wxCanvas {
  public:
 
-  os_wxCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas");
+  os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas"));
   ~os_wxCanvas();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -150,23 +150,22 @@ class os_wxCanvas : public wxCanvas {
   void OnEvent(class wxMouseEvent* x0);
   void OnPaint();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxCanvas::gcMark(Mark_Proc mark) {
+void os_wxCanvas::gcMark(Mark_Proc mark) {
   wxCanvas::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxCanvas_class;
 
-os_wxCanvas::os_wxCanvas(Scheme_Object *, class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6)
-: wxCanvas(x0, x1, x2, x3, x4, x5, x6)
+os_wxCanvas::os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6))
+CONSTRUCTOR_INIT(: wxCanvas(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 
@@ -1151,7 +1150,10 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x6 = "canvas";
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = NEW_OBJECT(os_wxCanvas, (obj, x0, x1, x2, x3, x4, x5, x6));
+  realobj = WITH_VAR_STACK(new os_wxCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxCanvas(x0, x1, x2, x3, x4, x5, x6));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

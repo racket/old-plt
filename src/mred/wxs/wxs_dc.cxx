@@ -132,7 +132,10 @@ static wxColour* dcGetTextBackground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = NEW_OBJECT(wxColour,());
+  c = WITH_VAR_STACK(new wxColour());
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(c->gcInit_wxColour());
+#endif
   bg = WITH_VAR_STACK(dc->GetTextBackground());
   WITH_VAR_STACK(c->CopyFrom(bg));
   return c;
@@ -145,7 +148,10 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
 
-  c = NEW_OBJECT(wxColour,());
+  c = WITH_VAR_STACK(new wxColour());
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(c->gcInit_wxColour());
+#endif
   fg = WITH_VAR_STACK(dc->GetTextForeground());
   WITH_VAR_STACK(c->CopyFrom(fg));
   return c;
@@ -352,16 +358,15 @@ class os_wxDC : public wxDC {
 
   ~os_wxDC();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxDC::gcMark(Mark_Proc mark) {
+void os_wxDC::gcMark(Mark_Proc mark) {
   wxDC::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -1615,26 +1620,25 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 class os_wxMemoryDC : public wxMemoryDC {
  public:
 
-  os_wxMemoryDC(Scheme_Object * obj);
+  os_wxMemoryDC CONSTRUCTOR_ARGS(());
   ~os_wxMemoryDC();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMemoryDC::gcMark(Mark_Proc mark) {
+void os_wxMemoryDC::gcMark(Mark_Proc mark) {
   wxMemoryDC::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMemoryDC_class;
 
-os_wxMemoryDC::os_wxMemoryDC(Scheme_Object *)
-: wxMemoryDC()
+os_wxMemoryDC::os_wxMemoryDC CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMemoryDC())
 {
 }
 
@@ -1761,7 +1765,10 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap-dc%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMemoryDC, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMemoryDC CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMemoryDC());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1858,26 +1865,25 @@ class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *
 class os_wxPostScriptDC : public wxPostScriptDC {
  public:
 
-  os_wxPostScriptDC(Scheme_Object * obj, Bool x0 = TRUE);
+  os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0 = TRUE));
   ~os_wxPostScriptDC();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPostScriptDC::gcMark(Mark_Proc mark) {
+void os_wxPostScriptDC::gcMark(Mark_Proc mark) {
   wxPostScriptDC::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPostScriptDC_class;
 
-os_wxPostScriptDC::os_wxPostScriptDC(Scheme_Object *, Bool x0)
-: wxPostScriptDC(x0)
+os_wxPostScriptDC::os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0))
+CONSTRUCTOR_INIT(: wxPostScriptDC(x0))
 {
 }
 
@@ -1906,7 +1912,10 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
     x0 = TRUE;
 
   
-  realobj = NEW_OBJECT(os_wxPostScriptDC, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxPostScriptDC CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxPostScriptDC(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1991,30 +2000,42 @@ class wxPostScriptDC *objscheme_unbundle_wxPostScriptDC(Scheme_Object *obj, cons
 }
 
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 #ifdef wx_x
 
 class basePrinterDC : public wxObject
 {
 public:
-  basePrinterDC()
-  {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "%s", 
-		     METHODNAME("printer-dc%","initialization")": not supported for X Windows");
-  }
+  basePrinterDC();
 };
+
+basePrinterDC::basePrinterDC()
+{
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s", 
+		   METHODNAME("printer-dc%","initialization")": not supported for X Windows");
+}
 
 #else
 
 class basePrinterDC : public wxPrinterDC
 {
 public:
-  basePrinterDC()
-    : wxPrinterDC( )
-  {
-  }
+  basePrinterDC();
 };
 
+basePrinterDC::basePrinterDC() 
+: wxPrinterDC( )
+{
+}
+
+#endif
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 #endif
 
 
@@ -2023,26 +2044,25 @@ public:
 class os_basePrinterDC : public basePrinterDC {
  public:
 
-  os_basePrinterDC(Scheme_Object * obj);
+  os_basePrinterDC CONSTRUCTOR_ARGS(());
   ~os_basePrinterDC();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_basePrinterDC::gcMark(Mark_Proc mark) {
+void os_basePrinterDC::gcMark(Mark_Proc mark) {
   basePrinterDC::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_basePrinterDC_class;
 
-os_basePrinterDC::os_basePrinterDC(Scheme_Object *)
-: basePrinterDC()
+os_basePrinterDC::os_basePrinterDC CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: basePrinterDC())
 {
 }
 
@@ -2066,7 +2086,10 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
     WITH_VAR_STACK(scheme_wrong_count("initialization in printer-dc%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_basePrinterDC, (obj));
+  realobj = WITH_VAR_STACK(new os_basePrinterDC CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_basePrinterDC());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

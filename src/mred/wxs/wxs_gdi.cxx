@@ -262,40 +262,47 @@ static Scheme_Object *bundle_symset_style(int v) {
 class os_wxFont : public wxFont {
  public:
 
-  os_wxFont(Scheme_Object * obj);
-  os_wxFont(Scheme_Object * obj, int x0, int x1, int x2, int x3, Bool x4 = 0);
-  os_wxFont(Scheme_Object * obj, int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0);
+  os_wxFont CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4 = 0));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0));
+#endif
   ~os_wxFont();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxFont::gcMark(Mark_Proc mark) {
+void os_wxFont::gcMark(Mark_Proc mark) {
   wxFont::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxFont_class;
 
-os_wxFont::os_wxFont(Scheme_Object *)
-: wxFont()
+os_wxFont::os_wxFont CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxFont())
 {
 }
 
-os_wxFont::os_wxFont(Scheme_Object *, int x0, int x1, int x2, int x3, Bool x4)
-: wxFont(x0, x1, x2, x3, x4)
+#ifndef MZ_PRECISE_GC
+os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4))
+CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4))
 {
 }
+#endif
 
-os_wxFont::os_wxFont(Scheme_Object *, int x0, cstring x1, int x2, int x3, int x4, Bool x5)
-: wxFont(x0, x1, x2, x3, x4, x5)
+#ifndef MZ_PRECISE_GC
+os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5))
+CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5))
 {
 }
+#endif
 
 os_wxFont::~os_wxFont()
 {
@@ -488,7 +495,10 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       x5 = 0;
 
     
-    realobj = NEW_OBJECT(os_wxFont, (obj, x0, x1, x2, x3, x4, x5));
+    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4, x5));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -517,7 +527,10 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       x4 = 0;
 
     
-    realobj = NEW_OBJECT(os_wxFont, (obj, x0, x1, x2, x3, x4));
+    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -533,7 +546,10 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       WITH_VAR_STACK(scheme_wrong_count("initialization in font% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxFont, (obj));
+    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxFont());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -633,26 +649,25 @@ class wxFont *objscheme_unbundle_wxFont(Scheme_Object *obj, const char *where, i
 class os_wxFontList : public wxFontList {
  public:
 
-  os_wxFontList(Scheme_Object * obj);
+  os_wxFontList CONSTRUCTOR_ARGS(());
   ~os_wxFontList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxFontList::gcMark(Mark_Proc mark) {
+void os_wxFontList::gcMark(Mark_Proc mark) {
   wxFontList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxFontList_class;
 
-os_wxFontList::os_wxFontList(Scheme_Object *)
-: wxFontList()
+os_wxFontList::os_wxFontList CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxFontList())
 {
 }
 
@@ -751,7 +766,10 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in font-list%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxFontList, (obj));
+  realobj = WITH_VAR_STACK(new os_wxFontList CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxFontList());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -850,40 +868,47 @@ class wxFontList *objscheme_unbundle_wxFontList(Scheme_Object *obj, const char *
 class os_wxColour : public wxColour {
  public:
 
-  os_wxColour(Scheme_Object * obj);
-  os_wxColour(Scheme_Object * obj, ubyte x0, ubyte x1, ubyte x2);
-  os_wxColour(Scheme_Object * obj, string x0);
+  os_wxColour CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxColour CONSTRUCTOR_ARGS((ubyte x0, ubyte x1, ubyte x2));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxColour CONSTRUCTOR_ARGS((string x0));
+#endif
   ~os_wxColour();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxColour::gcMark(Mark_Proc mark) {
+void os_wxColour::gcMark(Mark_Proc mark) {
   wxColour::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxColour_class;
 
-os_wxColour::os_wxColour(Scheme_Object *)
-: wxColour()
+os_wxColour::os_wxColour CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxColour())
 {
 }
 
-os_wxColour::os_wxColour(Scheme_Object *, ubyte x0, ubyte x1, ubyte x2)
-: wxColour(x0, x1, x2)
+#ifndef MZ_PRECISE_GC
+os_wxColour::os_wxColour CONSTRUCTOR_ARGS((ubyte x0, ubyte x1, ubyte x2))
+CONSTRUCTOR_INIT(: wxColour(x0, x1, x2))
 {
 }
+#endif
 
-os_wxColour::os_wxColour(Scheme_Object *, string x0)
-: wxColour(x0)
+#ifndef MZ_PRECISE_GC
+os_wxColour::os_wxColour CONSTRUCTOR_ARGS((string x0))
+CONSTRUCTOR_INIT(: wxColour(x0))
 {
 }
+#endif
 
 os_wxColour::~os_wxColour()
 {
@@ -1049,7 +1074,10 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in color% (color name case)"));
 
     
-    realobj = NEW_OBJECT(os_wxColour, (obj, x0));
+    realobj = WITH_VAR_STACK(new os_wxColour CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxColour(x0));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1071,7 +1099,10 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 0, 255, "initialization in color% (rgb values case)"));
 
     
-    realobj = NEW_OBJECT(os_wxColour, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxColour CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxColour(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1087,7 +1118,10 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
       WITH_VAR_STACK(scheme_wrong_count("initialization in color% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxColour, (obj));
+    realobj = WITH_VAR_STACK(new os_wxColour CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxColour());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1203,16 +1237,15 @@ class os_wxColourDatabase : public wxColourDatabase {
 
   ~os_wxColourDatabase();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxColourDatabase::gcMark(Mark_Proc mark) {
+void os_wxColourDatabase::gcMark(Mark_Proc mark) {
   wxColourDatabase::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -1337,34 +1370,37 @@ class wxColourDatabase *objscheme_unbundle_wxColourDatabase(Scheme_Object *obj, 
 class os_wxPoint : public wxPoint {
  public:
 
-  os_wxPoint(Scheme_Object * obj);
-  os_wxPoint(Scheme_Object * obj, float x0, float x1);
+  os_wxPoint CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxPoint CONSTRUCTOR_ARGS((float x0, float x1));
+#endif
   ~os_wxPoint();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPoint::gcMark(Mark_Proc mark) {
+void os_wxPoint::gcMark(Mark_Proc mark) {
   wxPoint::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPoint_class;
 
-os_wxPoint::os_wxPoint(Scheme_Object *)
-: wxPoint()
+os_wxPoint::os_wxPoint CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPoint())
 {
 }
 
-os_wxPoint::os_wxPoint(Scheme_Object *, float x0, float x1)
-: wxPoint(x0, x1)
+#ifndef MZ_PRECISE_GC
+os_wxPoint::os_wxPoint CONSTRUCTOR_ARGS((float x0, float x1))
+CONSTRUCTOR_INIT(: wxPoint(x0, x1))
 {
 }
+#endif
 
 os_wxPoint::~os_wxPoint()
 {
@@ -1457,7 +1493,10 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[1], "initialization in point% (xy values case)"));
 
     
-    realobj = NEW_OBJECT(os_wxPoint, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxPoint CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPoint(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1473,7 +1512,10 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
       WITH_VAR_STACK(scheme_wrong_count("initialization in point% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxPoint, (obj));
+    realobj = WITH_VAR_STACK(new os_wxPoint CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPoint());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1642,40 +1684,47 @@ static Scheme_Object *bundle_symset_brushStyle(int v) {
 class os_wxBrush : public wxBrush {
  public:
 
-  os_wxBrush(Scheme_Object * obj);
-  os_wxBrush(Scheme_Object * obj, class wxColour* x0, int x1);
-  os_wxBrush(Scheme_Object * obj, string x0, int x1);
+  os_wxBrush CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxBrush CONSTRUCTOR_ARGS((class wxColour* x0, int x1));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxBrush CONSTRUCTOR_ARGS((string x0, int x1));
+#endif
   ~os_wxBrush();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBrush::gcMark(Mark_Proc mark) {
+void os_wxBrush::gcMark(Mark_Proc mark) {
   wxBrush::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxBrush_class;
 
-os_wxBrush::os_wxBrush(Scheme_Object *)
-: wxBrush()
+os_wxBrush::os_wxBrush CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxBrush())
 {
 }
 
-os_wxBrush::os_wxBrush(Scheme_Object *, class wxColour* x0, int x1)
-: wxBrush(x0, x1)
+#ifndef MZ_PRECISE_GC
+os_wxBrush::os_wxBrush CONSTRUCTOR_ARGS((class wxColour* x0, int x1))
+CONSTRUCTOR_INIT(: wxBrush(x0, x1))
 {
 }
+#endif
 
-os_wxBrush::os_wxBrush(Scheme_Object *, string x0, int x1)
-: wxBrush(x0, x1)
+#ifndef MZ_PRECISE_GC
+os_wxBrush::os_wxBrush CONSTRUCTOR_ARGS((string x0, int x1))
+CONSTRUCTOR_INIT(: wxBrush(x0, x1))
 {
 }
+#endif
 
 os_wxBrush::~os_wxBrush()
 {
@@ -1884,7 +1933,10 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[1], "initialization in brush% (color name case)"));
 
     
-    realobj = NEW_OBJECT(os_wxBrush, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxBrush CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBrush(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1905,7 +1957,10 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[1], "initialization in brush% (color% case)"));
 
     
-    realobj = NEW_OBJECT(os_wxBrush, (obj, x0, x1));
+    realobj = WITH_VAR_STACK(new os_wxBrush CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBrush(x0, x1));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1921,7 +1976,10 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
       WITH_VAR_STACK(scheme_wrong_count("initialization in brush% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxBrush, (obj));
+    realobj = WITH_VAR_STACK(new os_wxBrush CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBrush());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2020,26 +2078,25 @@ class wxBrush *objscheme_unbundle_wxBrush(Scheme_Object *obj, const char *where,
 class os_wxBrushList : public wxBrushList {
  public:
 
-  os_wxBrushList(Scheme_Object * obj);
+  os_wxBrushList CONSTRUCTOR_ARGS(());
   ~os_wxBrushList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxBrushList::gcMark(Mark_Proc mark) {
+void os_wxBrushList::gcMark(Mark_Proc mark) {
   wxBrushList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxBrushList_class;
 
-os_wxBrushList::os_wxBrushList(Scheme_Object *)
-: wxBrushList()
+os_wxBrushList::os_wxBrushList CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxBrushList())
 {
 }
 
@@ -2115,7 +2172,10 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in brush-list%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxBrushList, (obj));
+  realobj = WITH_VAR_STACK(new os_wxBrushList CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxBrushList());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2361,40 +2421,47 @@ static Scheme_Object *bundle_symset_cap(int v) {
 class os_wxPen : public wxPen {
  public:
 
-  os_wxPen(Scheme_Object * obj);
-  os_wxPen(Scheme_Object * obj, class wxColour* x0, int x1, int x2);
-  os_wxPen(Scheme_Object * obj, string x0, int x1, int x2);
+  os_wxPen CONSTRUCTOR_ARGS(());
+#ifndef MZ_PRECISE_GC
+  os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, int x1, int x2));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxPen CONSTRUCTOR_ARGS((string x0, int x1, int x2));
+#endif
   ~os_wxPen();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPen::gcMark(Mark_Proc mark) {
+void os_wxPen::gcMark(Mark_Proc mark) {
   wxPen::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPen_class;
 
-os_wxPen::os_wxPen(Scheme_Object *)
-: wxPen()
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPen())
 {
 }
 
-os_wxPen::os_wxPen(Scheme_Object *, class wxColour* x0, int x1, int x2)
-: wxPen(x0, x1, x2)
+#ifndef MZ_PRECISE_GC
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, int x1, int x2))
+CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
+#endif
 
-os_wxPen::os_wxPen(Scheme_Object *, string x0, int x1, int x2)
-: wxPen(x0, x1, x2)
+#ifndef MZ_PRECISE_GC
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((string x0, int x1, int x2))
+CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
+#endif
 
 os_wxPen::~os_wxPen()
 {
@@ -2740,7 +2807,10 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color name case)"));
 
     
-    realobj = NEW_OBJECT(os_wxPen, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxPen CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPen(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2763,7 +2833,10 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color% case)"));
 
     
-    realobj = NEW_OBJECT(os_wxPen, (obj, x0, x1, x2));
+    realobj = WITH_VAR_STACK(new os_wxPen CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPen(x0, x1, x2));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2779,7 +2852,10 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
       WITH_VAR_STACK(scheme_wrong_count("initialization in pen% (no argument case)", 0, 0, n, p));
 
     
-    realobj = NEW_OBJECT(os_wxPen, (obj));
+    realobj = WITH_VAR_STACK(new os_wxPen CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxPen());
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2885,26 +2961,25 @@ class wxPen *objscheme_unbundle_wxPen(Scheme_Object *obj, const char *where, int
 class os_wxPenList : public wxPenList {
  public:
 
-  os_wxPenList(Scheme_Object * obj);
+  os_wxPenList CONSTRUCTOR_ARGS(());
   ~os_wxPenList();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxPenList::gcMark(Mark_Proc mark) {
+void os_wxPenList::gcMark(Mark_Proc mark) {
   wxPenList::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxPenList_class;
 
-os_wxPenList::os_wxPenList(Scheme_Object *)
-: wxPenList()
+os_wxPenList::os_wxPenList CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPenList())
 {
 }
 
@@ -2984,7 +3059,10 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
     WITH_VAR_STACK(scheme_wrong_count("initialization in pen-list%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxPenList, (obj));
+  realobj = WITH_VAR_STACK(new os_wxPenList CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxPenList());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3148,34 +3226,37 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, int x2 = 0, int x3 = 0);
-  os_wxCursor(Scheme_Object * obj, int x0);
+  os_wxCursor CONSTRUCTOR_ARGS((string x0, int x1 = 0, int x2 = 0, int x3 = 0));
+#ifndef MZ_PRECISE_GC
+  os_wxCursor CONSTRUCTOR_ARGS((int x0));
+#endif
   ~os_wxCursor();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxCursor::gcMark(Mark_Proc mark) {
+void os_wxCursor::gcMark(Mark_Proc mark) {
   wxCursor::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxCursor_class;
 
-os_wxCursor::os_wxCursor(Scheme_Object *, string x0, int x1, int x2, int x3)
-: wxCursor(x0, x1, x2, x3)
+os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((string x0, int x1, int x2, int x3))
+CONSTRUCTOR_INIT(: wxCursor(x0, x1, x2, x3))
 {
 }
 
-os_wxCursor::os_wxCursor(Scheme_Object *, int x0)
-: wxCursor(x0)
+#ifndef MZ_PRECISE_GC
+os_wxCursor::os_wxCursor CONSTRUCTOR_ARGS((int x0))
+CONSTRUCTOR_INIT(: wxCursor(x0))
 {
 }
+#endif
 
 os_wxCursor::~os_wxCursor()
 {
@@ -3222,7 +3303,10 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x0 = WITH_VAR_STACK(unbundle_symset_cursor(p[0], "initialization in cursor% (symbolic name case)"));
 
     
-    realobj = NEW_OBJECT(os_wxCursor, (obj, x0));
+    realobj = WITH_VAR_STACK(new os_wxCursor CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxCursor(x0));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -3256,7 +3340,10 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x3 = 0;
 
     
-    realobj = NEW_OBJECT(os_wxCursor, (obj, x0, x1, x2, x3));
+    realobj = WITH_VAR_STACK(new os_wxCursor CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxCursor(x0, x1, x2, x3));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -3485,26 +3572,25 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 class os_wxRegion : public wxRegion {
  public:
 
-  os_wxRegion(Scheme_Object * obj, class wxDC* x0);
+  os_wxRegion CONSTRUCTOR_ARGS((class wxDC* x0));
   ~os_wxRegion();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxRegion::gcMark(Mark_Proc mark) {
+void os_wxRegion::gcMark(Mark_Proc mark) {
   wxRegion::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxRegion_class;
 
-os_wxRegion::os_wxRegion(Scheme_Object *, class wxDC* x0)
-: wxRegion(x0)
+os_wxRegion::os_wxRegion CONSTRUCTOR_ARGS((class wxDC* x0))
+CONSTRUCTOR_INIT(: wxRegion(x0))
 {
 }
 
@@ -3834,7 +3920,10 @@ static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Sc
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0], "initialization in region%", 0));
 
   
-  realobj = NEW_OBJECT(os_wxRegion, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxRegion CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxRegion(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3948,16 +4037,15 @@ class os_wxFontNameDirectory : public wxFontNameDirectory {
 
   ~os_wxFontNameDirectory();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxFontNameDirectory::gcMark(Mark_Proc mark) {
+void os_wxFontNameDirectory::gcMark(Mark_Proc mark) {
   wxFontNameDirectory::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 

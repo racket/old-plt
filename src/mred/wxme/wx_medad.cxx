@@ -75,10 +75,7 @@ class wxUpdateCursorTimer : public wxTimer
 {
   wxCanvasMediaAdmin *admin;
  public:
-  wxUpdateCursorTimer(wxCanvasMediaAdmin *a) {
-    admin = a;
-    Start(0, TRUE);
-  }
+  wxUpdateCursorTimer(wxCanvasMediaAdmin *a);
   void Notify(void) {
     Stop();
     if (admin) {
@@ -91,15 +88,18 @@ class wxUpdateCursorTimer : public wxTimer
   }
 };
 
+wxUpdateCursorTimer::wxUpdateCursorTimer(wxCanvasMediaAdmin *a) {
+  admin = a;
+  Start(0, TRUE);
+}
+
 #define BLINK_DELAY 500
 
 class wxBlinkTimer : public wxTimer 
 {
   wxMediaCanvas *canvas;
  public:
-  wxBlinkTimer(wxMediaCanvas *c) {
-    canvas = c;
-  }
+  wxBlinkTimer(wxMediaCanvas *c);
   void Notify(void) {
     wxYield();
     if (canvas)
@@ -111,6 +111,10 @@ class wxBlinkTimer : public wxTimer
   }
 };
 
+wxBlinkTimer::wxBlinkTimer(wxMediaCanvas *c) {
+  canvas = c;
+}
+
 #define AUTO_DRAG_DELAY 100
 
 class wxAutoDragTimer : public wxTimer 
@@ -118,12 +122,7 @@ class wxAutoDragTimer : public wxTimer
   wxMediaCanvas *canvas;
   wxMouseEvent *event;
  public:
-  wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
-    canvas = c;
-    event = new wxMouseEvent(0);
-    memcpy(event, e, sizeof(wxMouseEvent));
-    Start(AUTO_DRAG_DELAY, TRUE);
-  }
+  wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e);
   void Notify(void) {
     wxYield(); /* In case we get too much time */
     if (canvas) {
@@ -136,6 +135,13 @@ class wxAutoDragTimer : public wxTimer
     Stop();
   }
 };
+
+wxAutoDragTimer::wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
+  canvas = c;
+  event = new wxMouseEvent(0);
+  memcpy(event, e, sizeof(wxMouseEvent));
+  Start(AUTO_DRAG_DELAY, TRUE);
+}
 
 /************************************************************************/
 

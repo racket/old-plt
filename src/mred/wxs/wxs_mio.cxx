@@ -183,7 +183,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 class os_wxMediaStreamInBase : public wxMediaStreamInBase {
  public:
 
-  os_wxMediaStreamInBase(Scheme_Object * obj);
+  os_wxMediaStreamInBase CONSTRUCTOR_ARGS(());
   ~os_wxMediaStreamInBase();
   long Read(char* x0, long x1);
   Bool Bad();
@@ -191,23 +191,22 @@ class os_wxMediaStreamInBase : public wxMediaStreamInBase {
   void Seek(nnlong x0);
   long Tell();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamInBase::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamInBase::gcMark(Mark_Proc mark) {
   wxMediaStreamInBase::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamInBase_class;
 
-os_wxMediaStreamInBase::os_wxMediaStreamInBase(Scheme_Object *)
-: wxMediaStreamInBase()
+os_wxMediaStreamInBase::os_wxMediaStreamInBase CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaStreamInBase())
 {
 }
 
@@ -497,7 +496,10 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-in-base%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaStreamInBase, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamInBase CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamInBase());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -592,30 +594,29 @@ class wxMediaStreamInBase *objscheme_unbundle_wxMediaStreamInBase(Scheme_Object 
 class os_wxMediaStreamOutBase : public wxMediaStreamOutBase {
  public:
 
-  os_wxMediaStreamOutBase(Scheme_Object * obj);
+  os_wxMediaStreamOutBase CONSTRUCTOR_ARGS(());
   ~os_wxMediaStreamOutBase();
   void Write(char* x0, long x1);
   Bool Bad();
   void Seek(nnlong x0);
   long Tell();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamOutBase::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamOutBase::gcMark(Mark_Proc mark) {
   wxMediaStreamOutBase::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamOutBase_class;
 
-os_wxMediaStreamOutBase::os_wxMediaStreamOutBase(Scheme_Object *)
-: wxMediaStreamOutBase()
+os_wxMediaStreamOutBase::os_wxMediaStreamOutBase CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaStreamOutBase())
 {
 }
 
@@ -850,7 +851,10 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-base%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaStreamOutBase, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamOutBase CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamOutBase());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -945,26 +949,25 @@ class wxMediaStreamOutBase *objscheme_unbundle_wxMediaStreamOutBase(Scheme_Objec
 class os_wxMediaStreamInStringBase : public wxMediaStreamInStringBase {
  public:
 
-  os_wxMediaStreamInStringBase(Scheme_Object * obj, string x0, long x1);
+  os_wxMediaStreamInStringBase CONSTRUCTOR_ARGS((string x0, long x1));
   ~os_wxMediaStreamInStringBase();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamInStringBase::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamInStringBase::gcMark(Mark_Proc mark) {
   wxMediaStreamInStringBase::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamInStringBase_class;
 
-os_wxMediaStreamInStringBase::os_wxMediaStreamInStringBase(Scheme_Object *, string x0, long x1)
-: wxMediaStreamInStringBase(x0, x1)
+os_wxMediaStreamInStringBase::os_wxMediaStreamInStringBase CONSTRUCTOR_ARGS((string x0, long x1))
+CONSTRUCTOR_INIT(: wxMediaStreamInStringBase(x0, x1))
 {
 }
 
@@ -992,7 +995,10 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in editor-stream-in-string-base%"));
 
   x1 = SCHEME_STRTAG_VAL(p[0]);
-  realobj = NEW_OBJECT(os_wxMediaStreamInStringBase, (obj, x0, x1));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamInStringBase CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamInStringBase(x0, x1));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1083,26 +1089,25 @@ class wxMediaStreamInStringBase *objscheme_unbundle_wxMediaStreamInStringBase(Sc
 class os_wxMediaStreamOutStringBase : public wxMediaStreamOutStringBase {
  public:
 
-  os_wxMediaStreamOutStringBase(Scheme_Object * obj);
+  os_wxMediaStreamOutStringBase CONSTRUCTOR_ARGS(());
   ~os_wxMediaStreamOutStringBase();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamOutStringBase::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamOutStringBase::gcMark(Mark_Proc mark) {
   wxMediaStreamOutStringBase::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamOutStringBase_class;
 
-os_wxMediaStreamOutStringBase::os_wxMediaStreamOutStringBase(Scheme_Object *)
-: wxMediaStreamOutStringBase()
+os_wxMediaStreamOutStringBase::os_wxMediaStreamOutStringBase CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxMediaStreamOutStringBase())
 {
 }
 
@@ -1150,7 +1155,10 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-string-base%", 0, 0, n, p));
 
   
-  realobj = NEW_OBJECT(os_wxMediaStreamOutStringBase, (obj));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamOutStringBase CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamOutStringBase());
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1261,26 +1269,25 @@ static double GetInexact(wxMediaStreamIn *s)
 class os_wxMediaStreamIn : public wxMediaStreamIn {
  public:
 
-  os_wxMediaStreamIn(Scheme_Object * obj, class wxMediaStreamInBase* x0);
+  os_wxMediaStreamIn CONSTRUCTOR_ARGS((class wxMediaStreamInBase* x0));
   ~os_wxMediaStreamIn();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamIn::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamIn::gcMark(Mark_Proc mark) {
   wxMediaStreamIn::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamIn_class;
 
-os_wxMediaStreamIn::os_wxMediaStreamIn(Scheme_Object *, class wxMediaStreamInBase* x0)
-: wxMediaStreamIn(x0)
+os_wxMediaStreamIn::os_wxMediaStreamIn CONSTRUCTOR_ARGS((class wxMediaStreamInBase* x0))
+CONSTRUCTOR_INIT(: wxMediaStreamIn(x0))
 {
 }
 
@@ -1597,7 +1604,10 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamInBase(p[0], "initialization in editor-stream-in%", 0));
 
   
-  realobj = NEW_OBJECT(os_wxMediaStreamIn, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamIn CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamIn(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1703,26 +1713,25 @@ class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, co
 class os_wxMediaStreamOut : public wxMediaStreamOut {
  public:
 
-  os_wxMediaStreamOut(Scheme_Object * obj, class wxMediaStreamOutBase* x0);
+  os_wxMediaStreamOut CONSTRUCTOR_ARGS((class wxMediaStreamOutBase* x0));
   ~os_wxMediaStreamOut();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaStreamOut::gcMark(Mark_Proc mark) {
+void os_wxMediaStreamOut::gcMark(Mark_Proc mark) {
   wxMediaStreamOut::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaStreamOut_class;
 
-os_wxMediaStreamOut::os_wxMediaStreamOut(Scheme_Object *, class wxMediaStreamOutBase* x0)
-: wxMediaStreamOut(x0)
+os_wxMediaStreamOut::os_wxMediaStreamOut CONSTRUCTOR_ARGS((class wxMediaStreamOutBase* x0))
+CONSTRUCTOR_INIT(: wxMediaStreamOut(x0))
 {
 }
 
@@ -1924,7 +1933,10 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOutBase(p[0], "initialization in editor-stream-out%", 0));
 
   
-  realobj = NEW_OBJECT(os_wxMediaStreamOut, (obj, x0));
+  realobj = WITH_VAR_STACK(new os_wxMediaStreamOut CONSTRUCTOR_ARGS((x0)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaStreamOut(x0));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

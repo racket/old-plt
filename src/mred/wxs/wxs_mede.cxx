@@ -876,7 +876,7 @@ class os_wxMediaEdit : public wxMediaEdit {
  public:
   Scheme_Object *scroll_closure;
 
-  os_wxMediaEdit(Scheme_Object * obj, nnfloat x0 = 1.0, float* x1 = NULL, int x2 = 0);
+  os_wxMediaEdit CONSTRUCTOR_ARGS((nnfloat x0 = 1.0, float* x1 = NULL, int x2 = 0));
   ~os_wxMediaEdit();
   class wxTabSnip* OnNewTabSnip();
   class wxTextSnip* OnNewTextSnip();
@@ -942,24 +942,23 @@ class os_wxMediaEdit : public wxMediaEdit {
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaEdit::gcMark(Mark_Proc mark) {
+void os_wxMediaEdit::gcMark(Mark_Proc mark) {
   wxMediaEdit::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, scroll_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMediaEdit_class;
 
-os_wxMediaEdit::os_wxMediaEdit(Scheme_Object *, nnfloat x0, float* x1, int x2)
-: wxMediaEdit(x0, x1, x2)
+os_wxMediaEdit::os_wxMediaEdit CONSTRUCTOR_ARGS((nnfloat x0, float* x1, int x2))
+CONSTRUCTOR_INIT(: wxMediaEdit(x0, x1, x2))
 {
 }
 
@@ -7254,7 +7253,10 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
     x1 = NULL;
 
   x1 = WITH_VAR_STACK(__MakefloatArray((1 < n) ? p[1] : scheme_null, &x2, METHODNAME("text%","initialization")));
-  realobj = NEW_OBJECT(os_wxMediaEdit, (obj, x0, x1, x2));
+  realobj = WITH_VAR_STACK(new os_wxMediaEdit CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxMediaEdit(x0, x1, x2));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

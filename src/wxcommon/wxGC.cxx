@@ -178,7 +178,7 @@ static int mark_cpp_object(void *p, Mark_Proc mark)
 
   obj->gcMark(mark);
 
-  return gcBYTES_TO_WORDS(size) + 1;
+  return size + 1;
 }
 
 static int mark_cpp_array_object(void *p, Mark_Proc mark)
@@ -186,16 +186,17 @@ static int mark_cpp_array_object(void *p, Mark_Proc mark)
   short size, orig_size = ((short *)p)[1];
   void **pp = (void **)gcPTR_TO_OBJ(p);
   gc *obj;
+  size_t s;
 
+  size = orig_size - 1;
+  s = size / (*(long *)p);
+  
   // skip count
   pp++;
-  size = orig_size - 1;
 
   while (size > 0) {
-    size_t s;
-
     obj = (gc *)pp;
-    s = obj->gcMark(mark);
+    obj->gcMark(mark);
 
     pp += s;
     size -= s;
@@ -216,9 +217,6 @@ static int is_initialized;
 static void initize(void)
 {
   /* Initialize: */
-  scheme_get_external_stack_val = get_new_stack;
-  scheme_set_external_stack_val = set_new_stack;
-  
   GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
   GC_register_traverser(scheme_rt_cpp_array_object, mark_cpp_array_object);
   GC_register_traverser(scheme_rt_preallocated_object, mark_preallocated_object);
@@ -237,7 +235,7 @@ void *GC_cpp_malloc(size_t size)
   p = GC_malloc_one_tagged(size + sizeof(long));
 
   ((short *)p)[0] = scheme_rt_cpp_object;
-  ((short *)p)[1] = (short)gcWORDS_TO_BYTES(size);
+  ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);
 
   return gcPTR_TO_OBJ(p);
 }

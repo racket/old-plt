@@ -46,16 +46,15 @@ class os_wxItem : public wxItem {
 
   ~os_wxItem();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxItem::gcMark(Mark_Proc mark) {
+void os_wxItem::gcMark(Mark_Proc mark) {
   wxItem::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
@@ -236,8 +235,10 @@ static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
 class os_wxMessage : public wxMessage {
  public:
 
-  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
-  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+#ifndef MZ_PRECISE_GC
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+#endif
   ~os_wxMessage();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -246,30 +247,31 @@ class os_wxMessage : public wxMessage {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMessage::gcMark(Mark_Proc mark) {
+void os_wxMessage::gcMark(Mark_Proc mark) {
   wxMessage::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxMessage_class;
 
-os_wxMessage::os_wxMessage(Scheme_Object *, class wxPanel* x0, string x1, int x2, int x3, int x4, string x5)
-: wxMessage(x0, x1, x2, x3, x4, x5)
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2, int x3, int x4, string x5))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
 {
 }
 
-os_wxMessage::os_wxMessage(Scheme_Object *, class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, string x5)
-: wxMessage(x0, x1, x2, x3, x4, x5)
+#ifndef MZ_PRECISE_GC
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, string x5))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
 {
 }
+#endif
 
 os_wxMessage::~os_wxMessage()
 {
@@ -699,7 +701,10 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
       x5 = "message";
 
     { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[1])); }
-    realobj = NEW_OBJECT(os_wxMessage, (obj, x0, x1, x2, x3, x4, x5));
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -742,7 +747,10 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
       x5 = "message";
 
     
-    realobj = NEW_OBJECT(os_wxMessage, (obj, x0, x1, x2, x3, x4, x5));
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+#endif
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     

@@ -149,7 +149,7 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 class os_wxFrame : public wxFrame {
  public:
 
-  os_wxFrame(Scheme_Object * obj, class wxFrame* x0, string x1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = 0, string x7 = "frame");
+  os_wxFrame CONSTRUCTOR_ARGS((class wxFrame* x0, string x1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = 0, string x7 = "frame"));
   ~os_wxFrame();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -161,23 +161,22 @@ class os_wxFrame : public wxFrame {
   Bool OnClose();
   void OnActivate(Bool x0);
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxFrame::gcMark(Mark_Proc mark) {
+void os_wxFrame::gcMark(Mark_Proc mark) {
   wxFrame::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxFrame_class;
 
-os_wxFrame::os_wxFrame(Scheme_Object *, class wxFrame* x0, string x1, int x2, int x3, int x4, int x5, int x6, string x7)
-: wxFrame(x0, x1, x2, x3, x4, x5, x6, x7)
+os_wxFrame::os_wxFrame CONSTRUCTOR_ARGS((class wxFrame* x0, string x1, int x2, int x3, int x4, int x5, int x6, string x7))
+CONSTRUCTOR_INIT(: wxFrame(x0, x1, x2, x3, x4, x5, x6, x7))
 {
 }
 
@@ -1025,7 +1024,10 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x7 = "frame";
 
   WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("frame%","initialization")));if (!x4) x4 = -1;if (!x5) x5 = -1;
-  realobj = NEW_OBJECT(os_wxFrame, (obj, x0, x1, x2, x3, x4, x5, x6, x7));
+  realobj = WITH_VAR_STACK(new os_wxFrame CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxFrame(x0, x1, x2, x3, x4, x5, x6, x7));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

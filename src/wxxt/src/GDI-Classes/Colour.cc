@@ -323,6 +323,12 @@ void wxColour::FreePixel(Bool del)
 // wxColourDatabase
 //-----------------------------------------------------------------------------
 
+wxColourDatabase::wxColourDatabase()
+: wxList(wxKEY_STRING)
+{
+  
+}
+
 wxColourDatabase::~wxColourDatabase (void)
 {
   wxNode *node;

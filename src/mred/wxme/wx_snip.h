@@ -325,7 +325,7 @@ class wxImageSnip : public wxInternalSnip
 class wxSnipAdmin : public wxObject
 {
  public:
-  wxSnipAdmin() : wxObject(WXGC_NO_CLEANUP) {}
+  inline wxSnipAdmin();
 
   virtual wxMediaBuffer *GetMedia(void) = 0;
 
@@ -343,6 +343,11 @@ class wxSnipAdmin : public wxObject
 
   virtual void UpdateCursor() = 0;
 };
+
+inline wxSnipAdmin::wxSnipAdmin()
+     : wxObject(WXGC_NO_CLEANUP)
+{
+}
 
 #define wxMSNIPBOX_XMARGIN 5
 #define wxMSNIPBOX_YMARGIN 5

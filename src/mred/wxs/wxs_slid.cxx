@@ -111,7 +111,7 @@ class os_wxSlider : public wxSlider {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxSlider(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7 = -1, int x8 = -1, int x9 = wxHORIZONTAL, string x10 = "slider");
+  os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7 = -1, int x8 = -1, int x9 = wxHORIZONTAL, string x10 = "slider"));
   ~os_wxSlider();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -120,24 +120,23 @@ class os_wxSlider : public wxSlider {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxSlider::gcMark(Mark_Proc mark) {
+void os_wxSlider::gcMark(Mark_Proc mark) {
   wxSlider::gcMark(mark);
   if (mark) {
     gcMARK_TYPED(Scheme_Object *, callback_closure);
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 
 static Scheme_Object *os_wxSlider_class;
 
-os_wxSlider::os_wxSlider(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, string x10)
-: wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+os_wxSlider::os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, string x10))
+CONSTRUCTOR_INIT(: wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
 {
 }
 
@@ -576,7 +575,10 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x10 = "slider";
 
   if (x3 < x4 || x5 < x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[4]));if (x6 <= 0) x6 = 1;
-  realobj = NEW_OBJECT(os_wxSlider, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+  realobj = WITH_VAR_STACK(new os_wxSlider CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+#endif
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

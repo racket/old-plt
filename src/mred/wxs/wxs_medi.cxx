@@ -531,16 +531,15 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 #ifdef MZ_PRECISE_GC
-  int gcMark(Mark_Proc mark);
+  void gcMark(Mark_Proc mark);
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-int os_wxMediaBuffer::gcMark(Mark_Proc mark) {
+void os_wxMediaBuffer::gcMark(Mark_Proc mark) {
   wxMediaBuffer::gcMark(mark);
   if (mark) {
   }
-  return gcBYTES_TO_WORDS(sizeof(*this));
 }
 #endif
 

@@ -3,7 +3,8 @@
   (require (lib "unitsig.ss"))
 
   (define-signature xml-structs^
-    ((struct document (prolog element misc))
+    ((struct location (line char offset))
+     (struct document (prolog element misc))
      (struct comment (text))
      (struct prolog (misc dtd))
      (struct element (name attributes content))

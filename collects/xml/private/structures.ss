@@ -10,7 +10,9 @@
     (unit/sig xml-structs^
       (import)
       
-      ;; Location ::= Nat | Symbol
+      ;; Location ::= (make-location Nat Nat) | Symbol
+      (define-struct location (line char offset))
+
       ;; Source ::= (make-source Location Location)
       (define-struct source (start stop))
       

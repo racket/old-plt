@@ -329,6 +329,10 @@ for "moving memory manager". MrEd3m is not yet available under Windows.
  MzScheme and MrEd executables, then uses them to build the 3m
  versions. Run `make install-3m' to install the 3m binaries.
 
+ Note on OS X (actually, PowerPC and gcc): gcc version 2.x has an
+ optimizer bug tha prevents 3m from building. Either use gcc 3.x or
+ supply --disable-opt to `configure'.
+
 * Windows
 
  Build and install the normal MzScheme and MrEd executables using

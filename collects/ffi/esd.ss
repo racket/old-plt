@@ -1,6 +1,6 @@
 (module esd mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libesd (ffi-lib "libesd"))
 

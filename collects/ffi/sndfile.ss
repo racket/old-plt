@@ -1,6 +1,6 @@
 (module sndfile mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libsndfile (ffi-lib "libsndfile"))
 

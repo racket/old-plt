@@ -1,6 +1,6 @@
 (module xosd mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libxosd (ffi-lib "libxosd"))
 

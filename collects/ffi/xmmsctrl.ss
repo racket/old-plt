@@ -1,6 +1,6 @@
 (module xmmsctrl mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libxmms (ffi-lib "libxmms"))
 

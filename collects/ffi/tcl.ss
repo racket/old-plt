@@ -1,6 +1,6 @@
 (module tcl mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libtcl (ffi-lib "libtcl"))
 

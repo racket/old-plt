@@ -1,0 +1,81 @@
+** To play _Goblet_, run the "Games" application. **
+
+"Gobblet!" is a board game from Blue Orange Games,
+www.blueorangegames.com.  The 3x3 version here correcponds to
+"Gobblet! Jr.", while the 4x4 version is "Gobblet!".
+
+The Blue Orange web site provides very clear rules to Gobblet! Jr. and
+Gobblet!. The rules are simple, though, so here they are in our words.
+
+
+-- GAME RULES --
+
+The 3x3 game is a generalization of tic-tac-toe:
+
+ * The object of the game is to get 3 in a row.
+
+ * Each player (red or yellow) starts with 6 pieces: two large, two
+   medium, and two small.
+
+ * On each turn, a player can either place a new piece on the board,
+   or move a piece already on the board (from anywhere to anywhere).
+
+ * A piece can be placed (or moved to) an empty space, or it can be
+   placed/moved on top of a smaller piece already on the board,
+   "gobbling" the smaller piece.
+
+ * Only visible pieces can be moved, and only visible pieces count
+   toward winning. However, when a piece is moved, any piece that it
+   gobbled stays put, and therefore becomes visible again.
+
+ * If moving a piece exposes 3-in-a-row for the other player, and if
+   the destination for the move does not cover up one of the other 2
+   pieces in the 3-in-a-row, then the other play wins (even if the
+   move makes 3-in-a-row for the moving player).
+
+ * Technically, if a player touches a piece, then the piece must be
+   moved on that turn. (In other words, you're not allowed to peek
+   under a piece to remind yourself whether it gobbled anything.) If
+   the piece can't be moved, the player forfeits. This particular rule
+   is not enforced.
+
+The 4x4 game has a few more rules:
+
+ * The object of the game is to get 4 in a row.
+
+ * Each player (red or yellow) starts with 12 pieces: three large,
+   three medium-large, three medium-small, and three small. These
+   pieces are initially arranged into three stacks off the board.
+
+ * On each turn, a player can either place a new piece on the board,
+   or move a piece already on the board (from anywhere to anywhere).
+   Only visible pieces can be moved onto the board (i.e., the initial
+   stacks prevent playing small pieces before any large pieces).
+
+ * A piece can be placed (or moved to) an empty space, or it can be
+   placed/moved on top of a smaller piece already on the board,
+   "gobbling" the smaller piece.
+
+ * If a piece is not already on the board, it can gobble a piece
+   already on the board only when the piece to gobble is part of 3 in
+   a row.
+
+ * Only visible pieces can be moved, and only visible pieces count
+   toward winning. However, when a piece is moved, any piece that it
+   gobbled stays put, and therefore becomes visible again.
+
+ * Technically, if a player touches a piece, then the piece must be
+   moved on that turn. (In other words, you're not allowed to peek
+   under a piece to remind yourself whether it gobbled anything.) If
+   the piece can't be moved, the player forfeits. This particular rule
+   is not enforced.
+
+
+-- INTERFACE --
+
+Click and drag pieces in the obvious way. The shadow under a piece
+shows where it will land when you drop it.
+
+Use the arrow keys to rotate the board. Use "+" and "-" to zoom in and
+out.
+

@@ -589,6 +589,7 @@ by Felleisen and Flatt.
                      delta as a function for binary operations.
 >                 delta*n : (on? (listof V?) . -> . (union false? V?))
                      delta as a function for any operation.
+
 ======================================================================
 
 The _helper.ss_ module provides additional helper functions and syntax.
@@ -734,3 +735,53 @@ Aggregates potential results for future exploration.
 
    Element equality is determined by `eq?' (with the expectation that
    elements are usually symbols).
+
+======================================================================
+
+The _generator.ss_ module provides a tool for generating instances of
+a grammar non-terminal.
+
+> lang->generator-table : (lang?
+                           (listof number?)
+                           (listof symbol?)
+                           (listof string?)
+                           (listof symbol?)
+                           number?
+                           . -> .
+                           generator-table?)
+
+  Prepares generator information for a particular language,
+  given a set of numbers to use for the `number' keyword, 
+  a set of symbols for `variable' and `variable-except',
+  and a set of string for `string'.
+
+  The fifth argument lists keywords that appear in the grammar but
+  that should be skipped (to limit the generation space). The last
+  argument should be 0, and it is currently ignored.
+
+> for-each-generated : (generator-table?
+                        (any? number? . -> . any)
+                        generator-table?
+                        symbol?
+                        . -> . any)
+
+  The first argument is a procedure to call with a series of generated
+  grammar instances and each term's size. Instances are generatedfrom
+  smallest to largest; the size of an instance is roughly the size of
+  the proof tree that demonstrates grammar membership.
+
+  The second argument is a generator table created with
+  `lang->generator-table'.
+
+  The third argument is a symbol, the name of a non-terminal for which
+  instances should be generated.
+
+> for-each-generated/size :  (generator-table?
+                              (any? number? . -> . any)
+                              generator-table?
+                              symbol?
+                              . -> . any)
+
+  Like `for-each-generated', except minimum and maxiumum sizes are
+  provided, and the order of generation is arbitrary (i.e., some
+  larger instances may be generated before smaller instances).

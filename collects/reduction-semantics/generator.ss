@@ -3,8 +3,7 @@
 
   (provide lang->generator-table
            for-each-generated
-           for-each-generated/size
-           generate-all/size)
+           for-each-generated/size)
   
   (define (lang->generator-table lang
 				 nums

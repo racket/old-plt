@@ -48,13 +48,18 @@
 	  (let ([v (cdr (hash-table-get profile-info key))])
 	    (set-car! v (+ (- (current-process-milliseconds) start) (car v))))))))
   
+  (export-indirect register-profile-start
+		   register-profile-done
+		   profile-key)
+
   (define (get-profile-results)
     (hash-table-map profile-info (lambda (key val)
                                    (let ([count (cadr val)]
                                          [time (caddr val)]
                                          [name (cadddr val)]
-                                         [cmss (cadddr (cdr val))])
-                                     (list count time name
+                                         [expr (cadddr (cdr val))]
+                                         [cmss (cadddr (cddr val))])
+                                     (list count time name expr
                                            (map
                                             (lambda (cms)
                                               (map (lambda (k)
@@ -79,7 +84,7 @@
     (let ([body (map (lambda (e) (annotate e env)) (stx->list body))])
       (if (profiling-enabled)
           (let ([key (gensym)])
-            (hash-table-put! profile-info key (list (box #f) 0 0 (or name expr) null))
+            (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
 	    (with-syntax ([key (datum->syntax key #f #f)]
 			  [start (datum->syntax (gensym) #f #f)])
 	      (with-syntax ([rest 
@@ -95,7 +100,7 @@
           body)))
   
   (define (insert-at-tail* e exprs)
-    (if (stx-null? (cdr exprs))
+    (if (stx-null? (stx-cdr exprs))
         (list (insert-at-tail e (stx-car exprs)))
         (cons (stx-car exprs) (insert-at-tail* e (stx-cdr exprs)))))
   
@@ -111,7 +116,7 @@
 	;; negligible time to eval
 	[id
 	 (identifier? sexpr)
-	 (syntax (begin e sexpr))]
+	 (syntax (begin e expr))]
 	[(quote _) (syntax (begin e expr))]
 	[(#%datum . d) (syntax (begin e expr))]
 	[(#%unbound . d) (syntax (begin e expr))]

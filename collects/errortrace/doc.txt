@@ -13,7 +13,7 @@ Quick instructions
   0) Throw away .zo versions of your source
 
   1) Prefix your program with
-      (require-library "errortrace.ss" "errortrace")
+      (import (lib "errortrace.ss" "errortrace"))
      or start MzScheme with the -L flag:
       mzscheme -L errortrace.ss errortrace
 
@@ -47,7 +47,7 @@ is reported.
 > (instrumenting-enabled on?) - enables/disables error tracing
   instrumentation
 
-The instrucmentation for storing exception information slows most
+The instrumentation for storing exception information slows most
 programs by a factor of 2 or 3.
 
 Do not load errortrace.ss before writing .zo files. Errortrace
@@ -120,14 +120,14 @@ To retireve all profiling information accumulated so far, call
 
 > (get-profile-results) - returns a list of lists that contain:
 
-  * the number of times the procedure was called.
+  * the number of times the procedure was called;
 
   * the number of milliseconds of process time consumed by the
-    procedure.
+    procedure;
 
-  * the inferred name or source of the procedure.
+  * the inferred name or #f of the procedure;
 
-  * the name of the procedure's source file or #f.
+  * the syntax source of the procedure; and
 
   * a list of call paths, recorded while `profile-paths-enabled' is
     set to #t. Each call path is a list containing two-element lists;

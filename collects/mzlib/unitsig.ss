@@ -326,6 +326,7 @@
 		   (provide . flattened)))))]))))
   
   (define (unit/sig? x) (signed-unit? x))
+  (define (unit/sig->unit x) (signed-unit-unit x))
 
   (provide define-signature
 	   let-signature
@@ -337,7 +338,7 @@
 	   verify-linkage-signature-match
 
 	   (struct signed-unit (unit imports exports))
-	   unit/sig?
+	   unit/sig? unit/sig->unit
 	   
 	   define-values/invoke-unit/sig
 	   namespace-variable-bind/invoke-unit/sig

@@ -361,8 +361,10 @@
 		      (if (and (quote-form? f)
 			    (z:string? (quote-form-expr f)))
 			(create-reference-unit-form
-			  (path->complete-path (quote-form-expr f)
-			    (current-load-relative-directory))
+			  (path->complete-path (z:read-object
+						 (quote-form-expr f))
+			    (or (current-load-relative-directory)
+			      (current-directory)))
 			  'exp
 			  signed?
 			  expr)
@@ -408,9 +410,15 @@
 			(static-error collection "Does not yield a string"))
 		      (create-reference-unit-form
 			(path->complete-path
-			  (mzlib:find-library (quote-form-expr f)
-			    (quote-form-expr c))
-			  (current-load-relative-directory))
+			  (or (mzlib:find-library (z:read-object
+						    (quote-form-expr f))
+				(z:read-object (quote-form-expr c)))
+			    (static-error expr
+			      "Unable to locate library ~a in collection ~a"
+			      (z:read-object (quote-form-expr f))
+			      (z:read-object (quote-form-expr c))))
+			  (or (current-load-relative-directory)
+			    (current-directory)))
 			'exp
 			signed?
 			expr)))))

@@ -1,3 +1,5 @@
+(printf "pconverr.ss~n")
+
   (unit/sig
       mzlib:print-convert^
     (import (s : mzlib:string^)
@@ -264,8 +266,7 @@
 				       (map recur (cdr (vector->list
 							(struct->vector expr))))))]
 			      [(unit? expr) (build-named (lambda () 
-							   (printf "hi~n")
-							   expr)
+							   '(unit ...))
 							 "#<unit>"
 							 6)]
 			      [else (hooks@:print-convert-hook

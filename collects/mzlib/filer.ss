@@ -42,7 +42,10 @@
 	      [normalize-path
 	       (case-lambda 
 		[(orig-path) (do-normalize-path orig-path (current-directory))]
-		[(orig-path wrt) (do-normalize-path orig-path wrt)])]
+		[(orig-path wrt) 
+		 (unless (complete-path? wrt)
+		    (raise-type-error 'normalize-path "complete path" wrt))
+		 (do-normalize-path orig-path wrt)])]
 	      [error-not-a-dir
 	       (lambda (path)
 		 (error 'normalize-path 

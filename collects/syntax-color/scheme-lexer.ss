@@ -67,7 +67,8 @@
                         (:: r e t u r n)
                         (:: r u b o u t))]
    
-   [bad-char (:or (:: "#\\" (:>= 2 alphabetic))
+   [bad-char (:or "#\\"
+                  (:: "#\\" (:>= 2 alphabetic))
                   (:: "#\\" (:/ "0" "3") digit8))]
        
    ;; What about byte string regexp strings
@@ -214,7 +215,7 @@
   (define scheme-lexer
     (lexer
      [(:+ scheme-whitespace) (ret lexeme 'white-space #f start-pos end-pos)]
-     [(:or "#t" "#f" "#T" "#F"
+     [(:or "#t" "#f" "#T" "#F" character
            (make-num digit2 radix2)
            (make-num digit8 radix8)
            (make-num digit10 radix10)
@@ -244,8 +245,9 @@
      [(special-error)
       (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
-     [(:& (:or bad-char bad-str bad-id)
-          (complement (:: (:or reader-command sharing "#|" "#;" "#&" script) any-string)))
+     [(:or bad-char bad-str 
+           (:& bad-id
+               (complement (:: (:or reader-command sharing "#\\" "#|" "#;" "#&" script) any-string))))
       (ret lexeme 'error #f start-pos end-pos)]
      [any-char (extend-error lexeme start-pos end-pos input-port)]))
   

@@ -1,18 +1,18 @@
 (module default-lexer mzscheme
-  (require (lib "lex.ss" "parser-tools"))
+  (require (lib "lex.ss" "parser-tools")
+           (prefix : (lib "lex-sre.ss" "parser-tools")))
   
   (provide default-lexer)
   
   (define-lex-abbrevs 
-   (parens (: #\( #\) #\[ #\] #\{ #\}))
-   (white-space (: #\newline #\return #\tab #\space #\vtab)))
+   (parens (:or #\( #\) #\[ #\] #\{ #\})))
                      
   
   (define default-lexer
     (lexer
-     ((+ (^ parens white-space))
+     ((:+ (:~ parens whitespace))
       (values lexeme 'no-color #f (position-offset start-pos) (position-offset end-pos)))
-     ((+ white-space)
+     ((:+ whitespace)
       (values lexeme 'white-space #f (position-offset start-pos) (position-offset end-pos)))
      (parens
       (values lexeme 'no-color (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))

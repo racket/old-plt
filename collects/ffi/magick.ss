@@ -1641,11 +1641,9 @@
 (defmagick* MagickSetImagePixels :
   (w x y map storage-type matrix) ::
   (w : _MagickWand) (x : _long) (y : _long)
-  (width : _ulong = (length (car matrix))) (width : _ulong = (length matrix))
+  (width : _ulong = (length (car matrix))) (height : _ulong = (length matrix))
   (map : _string) (storage-type : _StorageType)
-  (_pointer = (let* ([height (length matrix)]
-                     [width  (length (car matrix))]
-                     [size   (* width height (string-length map))]
+  (_pointer = (let* ([size   (* width height (string-length map))]
                      [type   (StorageType->type storage-type)]
                      [block  (malloc size type)])
                 (let loop ([m matrix] [n 0])

@@ -20,7 +20,8 @@
     (define make-hyper-canvas%
       (lambda (super%)
 	(class-asi super%
-		   (inherit get-media get-client-size set-focus on-paint on-size)
+		   (inherit get-media get-client-size set-focus on-paint on-size
+			    set-lazy-refresh get-lazy-refresh)
 		   (rename [super-set-media set-media])
 		   (public
 		    [history-stack ()]
@@ -76,15 +77,21 @@
 			      (position-to-top))
 			    (lambda ()
 			      (send edit end-edit-sequence))))
-			 (on-paint)
 			 (adjust-stacks-on-follow tag)
 			 (set-the-tag #f)))]
 		    [the-tag #f]
 		    [set-the-tag (lambda (tag) (set! the-tag tag))]
 		    [set-media  
-		     (opt-lambda (edit [display #t])
-		       (super-set-media edit (null? edit))
-		       (do-tag))]))))
+		     (opt-lambda (edit [display? #t])
+		       (let ([lazy? (get-lazy-refresh)])
+			 (dynamic-wind
+			  (lambda ()
+			    (set-lazy-refresh #t))
+			  (lambda ()
+			    (super-set-media edit display?)
+			    (do-tag))
+			  (lambda ()
+			    (set-lazy-refresh lazy?)))))]))))
 
     (define hyper-canvas% 
       (make-hyper-canvas% mred:canvas:simple-frame-canvas%))
@@ -95,7 +102,7 @@
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
 	  (inherit active-canvas edit active-edit panel
-		   make-menu menu-bar%
+		   make-menu menu-bar% show
 		   on-size)
 	  (rename [super-open-file open-file])
 	  (public
@@ -113,7 +120,7 @@
 		   (send canvas set-media (caadr backs))
 		   (send canvas set-history (cdr backs))
 		   (send canvas set-forward (cons (car backs) fors)))
-		 (send canvas set-focus )))]
+		 (send canvas set-focus)))]
 	    [do-forward
 	     (lambda (button event)
 	       (let* ([canvas (active-canvas)]
@@ -144,7 +151,7 @@
 	       (send (active-canvas) set-the-tag tag)
 	       (super-open-file filename))])
 	  (sequence
-	    (super-init file-name #t (if group group hyper-frame-group)))
+	    (super-init file-name #f (if group group hyper-frame-group)))
 	  
 	  (private
 	    (button-panel (make-object mred:container:horizontal-panel% panel))
@@ -159,10 +166,12 @@
 			  button-panel do-home "Home")))
 	  (sequence
 	    (send button-panel stretchable-in-y? #f)
+	    (send panel change-children reverse)
 	    (send (active-canvas) set-focus)
 	    (send (active-canvas) set-home tag)
 	    (send (active-canvas) set-history ())
-	    (send (active-canvas) adjust-stacks-on-follow tag)))))
+	    (send (active-canvas) adjust-stacks-on-follow tag)
+	    (show #t)))))
     (define hyper-basic-frame% (make-hyper-basic-frame% mred:editor-frame:editor-frame%))
 
     (define make-hyper-view-frame%
@@ -279,7 +288,7 @@
 		     menu-bar))])
 	       (sequence
 		 (super-init file-name group #f)
-		 (wx:yield)
+		 ; (wx:yield)
 		 (send (active-canvas) set-focus)
 		 (send (active-canvas) set-locking #f)))))
     (define hyper-make-frame% 

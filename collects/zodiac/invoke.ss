@@ -51,7 +51,8 @@
 	  (PRETTY : mzlib:pretty-print^
 	    (mzlib:pretty-print@))
 	  (SYSTEM : zodiac:system^
-	    (zodiac:system@ INTERFACE PARAMETERS PRETTY)))
+	    ((reference-unit/sig "link.ss")
+	      INTERFACE PARAMETERS PRETTY)))
 	(export (open SYSTEM) (open INTERFACE)))
       zodiac)))
 

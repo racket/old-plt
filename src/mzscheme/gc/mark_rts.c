@@ -536,7 +536,11 @@ ptr_t cold_gc_frame;
      */
 #   ifdef USE_GENERIC_PUSH_REGS
 	GC_generic_push_regs(cold_gc_frame);
-	MARK_FROM_MARK_STACK();
+	 /* PLTSCHEME: this isn't right! but it's better than nothing */
+	if (GC_mark_stack_top
+	    >= GC_mark_stack_limit - INITIAL_MARK_STACK_SIZE/2) {
+	  MARK_FROM_MARK_STACK();
+	}
 #   else
         GC_push_regs(); /* usually defined in machine_dep.c */
 #   endif

@@ -321,7 +321,7 @@
 		   ;styles-fixed?
 		   set-styles-fixed
 		   change-style split-snip
-		   scroll-to-position locked? ;lock
+		   scroll-to-position locked? lock
 		   last-position get-start-position get-end-position
 		   get-text get-snip-position
 		   get-character find-snip find-string
@@ -588,11 +588,11 @@
 	    [timer-on #f]
 	    [timer-sema (make-semaphore 1)])
 	  
-	  (rename [super-lock lock])
-	  (public
-	    [lock (lambda (x) 
-		    (fprintf mred:constants:original-output-port "lock ~a~n" x)
-		    (super-lock x))])
+	  ;(rename [super-lock lock])
+	  ;(public
+	  ;  [lock (lambda (x) 
+	;	    (fprintf mred:constants:original-output-port "lock ~a~n" x)
+	;	    (super-lock x))])
 
 	  (public
 	    [MAX-CACHE-TIME 4000]

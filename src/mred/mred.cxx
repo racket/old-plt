@@ -195,6 +195,9 @@ typedef struct Context_Manager_Hop {
   MrEdContext *context;
 } Context_Manager_Hop;
 
+static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *), 
+					 MrEdContext *tdata, int check_only);
+static void remove_q_callbacks(MrEdContext *c);
 
 MrEdContext *MrEdGetContext(wxObject *w)
 {
@@ -303,7 +306,7 @@ void wxSetThePrintSetupData(wxPrintSetupData *d)
 static int num_contexts = 0;
 
 /* Forward decl: */
-static int MrEdSameContext(void *c, void *testc);
+static int MrEdSameContext(MrEdContext *c, MrEdContext *testc);
 
 static void destroy_wxObject(wxWindow *w, void *)
 {
@@ -343,7 +346,7 @@ static void kill_eventspace(Scheme_Object *ec, void *)
     }
   }
 
-  scheme_remove_sema_callbacks(MrEdSameContext, c);
+  remove_q_callbacks(c);
 }
 
 static void CollectingContext(void *cfx, void *)
@@ -549,7 +552,7 @@ static int check_for_nested_event(Scheme_Object *cx)
 	      && c->alternate(c->alt_data)));
 }
 
-static int MrEdSameContext(void *c, void *testc)
+static int MrEdSameContext(MrEdContext *c, MrEdContext *testc)
 {
   return (c == testc);
 }
@@ -558,9 +561,10 @@ static void GoAhead(MrEdContext *c)
 {
   c->ready_to_go = 0;
 
-  if (c->sema_callback) {
-    c->sema_callback = 0;
-    (void)scheme_check_sema_callbacks(MrEdSameContext, c, 0);
+  if (c->q_callback) {
+    int hi = (c->q_callback == 2);
+    c->q_callback = 0;
+    (void)check_q_callbacks(hi, MrEdSameContext, c, 0);
   } else if (c->timer) {
     wxTimer *timer;
     timer = c->timer;
@@ -617,14 +621,17 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
   save_config = scheme_config;
   scheme_config = c->main_config;
 
-  if (scheme_check_sema_callbacks(MrEdSameContext, c, 1)) {
-    c->sema_callback = 1;
+  if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
+    c->q_callback = 2;
     DoTheEvent(c);
   } else if ((timer = TimerReady(c))) {
     timer->Dequeue();
     c->timer = timer;
     DoTheEvent(c);
   } else if (MrEdGetNextEvent(0, 1, &c->event, NULL)) {
+    DoTheEvent(c);
+  } else if (check_q_callbacks(0, MrEdSameContext, c, 1)) {
+    c->q_callback = 1;
     DoTheEvent(c);
   } else if (c != mred_main_context) {
     c->ready = 1;
@@ -674,7 +681,8 @@ void wxDoNextEvent()
 int MrEdEventReady(MrEdContext *c)
 {
   return (TimerReady(c) || MrEdGetNextEvent(1, 1, NULL, NULL)
-	  || scheme_check_sema_callbacks(MrEdSameContext, c, 1));
+	  || check_q_callbacks(1, MrEdSameContext, c, 1)
+	  || check_q_callbacks(0, MrEdSameContext, c, 1));
 }
 
 int wxEventReady()
@@ -731,7 +739,7 @@ static void on_handler_killed(Scheme_Process *p)
   c->handler_running = NULL;
   c->ready = 0;
   c->waiting_for_nested = 0;
-  c->sema_callback = 0;
+  c->q_callback = 0;
   c->timer = NULL;
   c->alternate = NULL;
   c->alt_data = NULL;
@@ -787,7 +795,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 
 static int main_loop_exited = 0;
 
-static int MrEdContextReady(void *, void *c)
+static int MrEdContextReady(MrEdContext *, MrEdContext *c)
 {
   return ((MrEdContext *)c)->ready;
 }
@@ -809,6 +817,30 @@ static void event_found(MrEdContext *c)
 							       MZCONFIG_MANAGER));
 }
 
+static int try_q_callback(Scheme_Object *do_it, int hi)
+{
+  MrEdContext *c;
+
+  if ((c = check_q_callbacks(hi, MrEdContextReady, NULL, 1))) {
+    if (!do_it)
+      return 1;
+
+    if (SCHEME_FALSEP(do_it))
+      scheme_current_process->ran_some = 1;
+
+    if (c == mred_main_context)
+      check_q_callbacks(hi, MrEdSameContext, c, 0);
+    else {
+      c->q_callback = 1 + hi;
+      event_found(c);
+    }
+
+    return 1;
+  }
+
+  return 0;
+}
+
 static int try_dispatch(Scheme_Object *do_it)
 {
   MrEdContext *c;
@@ -819,22 +851,8 @@ static int try_dispatch(Scheme_Object *do_it)
   if (main_loop_exited)
     return 1;
 
-  if ((c = (MrEdContext *)scheme_check_sema_callbacks(MrEdContextReady, NULL, 1))) {
-    if (!do_it)
-      return 1;
-
-    if (SCHEME_FALSEP(do_it))
-      scheme_current_process->ran_some = 1;
-
-    if (c == mred_main_context)
-      scheme_check_sema_callbacks(MrEdSameContext, c, 0);
-    else {
-      c->sema_callback = 1;
-      event_found(c);
-    }
-
+  if (try_q_callback(do_it, 1))
     return 1;
-  }
 
   if ((timer = TimerReady(NULL))) {
     if (!do_it)
@@ -862,22 +880,27 @@ static int try_dispatch(Scheme_Object *do_it)
 
   UnchainContextsList();
 
-  if (!got_one)
-    return 0;
+  if (got_one) {
+    if (!do_it)
+      return 1;
 
-  if (!do_it)
+    if (SCHEME_FALSEP(do_it))
+      scheme_current_process->ran_some = 1;
+    
+    if (c) {
+      memcpy(&c->event, &e, sizeof(MrEdEvent));
+      event_found(c);
+    } else
+      /* Event with unknown context: */
+      MrEdDispatchEvent(&e);
+    
     return 1;
-  if (SCHEME_FALSEP(do_it))
-    scheme_current_process->ran_some = 1;
+  }
 
-  if (c) {
-    memcpy(&c->event, &e, sizeof(MrEdEvent));
-    event_found(c);
-  } else
-    /* Event with unknown context: */
-    MrEdDispatchEvent(&e);
+  if (try_q_callback(do_it, 0))
+    return 1;
 
-  return 1;
+  return 0;
 }
 
 static void wakeup_on_dispatch(Scheme_Object *, void *fds)
@@ -1115,6 +1138,113 @@ void wxTimer::Stop(void)
   Dequeue();
 
   interval = -1;
+}
+
+/****************************************************************************/
+/*                               Callbacks                                  */
+/****************************************************************************/
+
+typedef struct Q_Callback {
+  MrEdContext *context;
+  Scheme_Object *callback;
+  struct Q_Callback *prev;
+  struct Q_Callback *next;
+} Q_Callback;
+
+typedef struct Q_Callback_Set {
+  Q_Callback *first;
+  Q_Callback *last;
+} Q_Callback_Set;
+
+static Q_Callback_Set q_callbacks[2];
+
+static void insert_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
+{
+  cb->next = NULL;
+  cb->prev = cs->last;
+  cs->last = cb;
+  if (cb->prev)
+    cb->prev->next = cb;
+  else
+    cs->first = cb;
+}
+
+static void remove_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
+{
+  if (cb->prev)
+    cb->prev->next = cb->next;
+  else
+    cs->first = cb->next;
+  if (cb->next)
+    cb->next->prev = cb->prev;
+  else
+    cs->last = cb->prev;
+
+  cb->next = NULL;
+  cb->prev = NULL;
+}
+
+static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *), 
+					 MrEdContext *tdata, int check_only)
+{
+  Q_Callback_Set *cs = q_callbacks + hi;
+  Q_Callback *cb;
+  mz_jmp_buf savebuf;
+
+  cb = cs->first;
+  while (cb) {
+    if (test(tdata, cb->context)) {
+      if (check_only)
+	return cb->context;
+	
+      remove_q_callback(cs, cb);
+      
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+      if (!scheme_setjmp(scheme_error_buf))
+	scheme_apply_multi(cb->callback, 0, NULL);
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+      
+      return cb->context;
+    }
+    cb = cb->next;
+  }
+
+  return NULL;
+}
+
+static void remove_q_callbacks(MrEdContext *c)
+{
+  Q_Callback_Set *cs;
+  Q_Callback *cb, *next;
+  int i;
+
+  for (i = 0; i < 2; i++) {
+    cs = q_callbacks + i;
+    for (cb = cs->first; cb; cb = next) {
+      next = cb->next;
+      if (cb->context == c)
+	remove_q_callback(cs, cb);
+    }
+  }
+}
+
+void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
+{
+  MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
+  Q_Callback_Set *cs;
+  Q_Callback *cb;
+  int hi;
+  
+  scheme_check_proc_arity(who, 0, 0, argc, argv);
+  hi = (argc > 1) ? SCHEME_TRUEP(argv[1]) : 1;
+  
+  cs = q_callbacks + hi;
+
+  cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
+  cb->context = c;
+  cb->callback = argv[0];
+  
+  insert_q_callback(cs, cb);
 }
 
 /****************************************************************************/
@@ -1846,7 +1976,6 @@ wxFrame *MrEdApp::OnInit(void)
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
   scheme_console_printf = MrEdSchemeMessages;
 #endif
-  scheme_get_sema_callback_context = wxGetContextForFrame;
 
   mred_eventspace_param = scheme_new_param();
   mred_event_dispatch_param = scheme_new_param();

@@ -112,7 +112,7 @@
 
 @VAR CDB_FIX
 
-@ "find-colour" : wxColour^ FindColour(string);
+@ "find-color" : wxColour^ FindColour(string);
 @ "find-name" : string FindName(wxColour%);
 @ "append" : void Append(string, wxColour!);
 

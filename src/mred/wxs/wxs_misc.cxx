@@ -1283,14 +1283,8 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(Scheme_Object *ob
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-translation in ps-setup%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-translation in ps-setup%"), "get-translation in ps-setup%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-translation in ps-setup%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-translation in ps-setup%"), "get-translation in ps-setup%");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-translation in ps-setup%"), "get-translation in ps-setup%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-translation in ps-setup%"), "get-translation in ps-setup%"", extracting boxed argument");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterTranslation(x0, x1);
@@ -1315,14 +1309,8 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, i
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-scaling in ps-setup%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-scaling in ps-setup%"), "get-scaling in ps-setup%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-scaling in ps-setup%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-scaling in ps-setup%"), "get-scaling in ps-setup%");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterScaling(x0, x1);

@@ -69,18 +69,9 @@ static Scheme_Object *os_wxMultColourGet(Scheme_Object *obj, int n,  Scheme_Obje
   float* x2 = &_x2;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get in mult-color%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in mult-color%"), "get in mult-color%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get in mult-color%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get in mult-color%"), "get in mult-color%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get in mult-color%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get in mult-color%"), "get in mult-color%");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get in mult-color%"), "get in mult-color%"", extracting boxed argument");
 
   
   ((wxMultColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);
@@ -310,18 +301,9 @@ static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Objec
   short* x2 = &_x2;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get in add-color%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in add-color%"), "get in add-color%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get in add-color%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get in add-color%"), "get in add-color%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get in add-color%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get in add-color%"), "get in add-color%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in add-color%"), "get in add-color%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get in add-color%"), "get in add-color%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get in add-color%"), "get in add-color%"", extracting boxed argument");
 
   
   ((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);

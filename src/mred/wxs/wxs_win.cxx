@@ -616,26 +616,20 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "get-text-extent in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-text-extent in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in window%"), "get-text-extent in window%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get-text-extent in window%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in window%"), "get-text-extent in window%");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in window%"), "get-text-extent in window%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in window%"), "get-text-extent in window%"", extracting boxed argument");
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-text-extent in window%"), "get-text-extent in window%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-text-extent in window%"), "get-text-extent in window%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-text-extent in window%"), "get-text-extent in window%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-text-extent in window%"), "get-text-extent in window%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
@@ -707,14 +701,8 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("screen-to-client in window%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "screen-to-client in window%"), "screen-to-client in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("screen-to-client in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "screen-to-client in window%"), "screen-to-client in window%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "screen-to-client in window%"), "screen-to-client in window%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "screen-to-client in window%"), "screen-to-client in window%"", extracting boxed argument");
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ScreenToClient(x0, x1);
@@ -739,14 +727,8 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("client-to-screen in window%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "client-to-screen in window%"), "client-to-screen in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("client-to-screen in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "client-to-screen in window%"), "client-to-screen in window%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "client-to-screen in window%"), "client-to-screen in window%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "client-to-screen in window%"), "client-to-screen in window%"", extracting boxed argument");
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ClientToScreen(x0, x1);
@@ -807,14 +789,8 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-position in window%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-position in window%"), "get-position in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-position in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-position in window%"), "get-position in window%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-position in window%"), "get-position in window%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-position in window%"), "get-position in window%"", extracting boxed argument");
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetPosition(x0, x1);
@@ -839,14 +815,8 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-client-size in window%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-client-size in window%"), "get-client-size in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-client-size in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-client-size in window%"), "get-client-size in window%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-client-size in window%"), "get-client-size in window%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-client-size in window%"), "get-client-size in window%"", extracting boxed argument");
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetClientSize(x0, x1);
@@ -871,14 +841,8 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-size in window%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-size in window%"), "get-size in window%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-size in window%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-size in window%"), "get-size in window%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-size in window%"), "get-size in window%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-size in window%"), "get-size in window%"", extracting boxed argument");
 
   
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1);

@@ -862,14 +862,8 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-item-cursor in panel%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-item-cursor in panel%"), "get-item-cursor in panel%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-item-cursor in panel%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-item-cursor in panel%"), "get-item-cursor in panel%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-item-cursor in panel%"), "get-item-cursor in panel%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-item-cursor in panel%"), "get-item-cursor in panel%"", extracting boxed argument");
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetCursor(x0, x1);

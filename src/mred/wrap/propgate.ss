@@ -104,4 +104,5 @@
  write-editor-global-footer
  write-editor-global-header
  write-resource
+ queue-callback
  yield)

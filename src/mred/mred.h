@@ -44,7 +44,7 @@ typedef struct MrEdContext {
   short ready_to_go;
 
   short ready, waiting_for_nested;
-  short sema_callback;
+  short q_callback;
   wxTimer *timer;
   MrEdEvent event;
 

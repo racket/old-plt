@@ -565,8 +565,8 @@ wxMediaBuffer::GetViewSize(x0, x1);
 
   v = scheme_apply(method, 2, p);
   
-  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box");
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box");
+  if (x0) *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -2132,10 +2132,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(Scheme_Object
   
   x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "begin-write-header-footer-to-file in editor<%>", 0);
   x1 = (string)objscheme_unbundle_string(p[1], "begin-write-header-footer-to-file in editor<%>");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("begin-write-header-footer-to-file in editor<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>"), "begin-write-header-footer-to-file in editor<%>");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>"), "begin-write-header-footer-to-file in editor<%>"", extracting boxed argument");
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BeginWriteHeaderFooterToFile(*x0, x1, x2);
@@ -2254,7 +2251,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(Scheme_Object *obj, int n,  Sc
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_bool(objscheme_unbox(p[0], "get-filename in editor<%>"), "get-filename in editor<%>");
+    *x0 = objscheme_unbundle_bool(objscheme_nullable_unbox(p[0], "get-filename in editor<%>"), "get-filename in editor<%>"", extracting boxed argument");
   } else
     x0 = NULL;
 
@@ -2591,11 +2588,11 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-view-size in editor<%>"), "get-view-size in editor<%>");
+    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>");
+    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2643,14 +2640,8 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(Scheme_Object *obj, int n,  
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("local-to-global in editor<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "local-to-global in editor<%>"), "local-to-global in editor<%>");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("local-to-global in editor<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "local-to-global in editor<%>"), "local-to-global in editor<%>");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->LocalToGlobal(x0, x1);
@@ -2675,14 +2666,8 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(Scheme_Object *obj, int n,  
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("global-to-local in editor<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "global-to-local in editor<%>"), "global-to-local in editor<%>");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("global-to-local in editor<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "global-to-local in editor<%>"), "global-to-local in editor<%>");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GlobalToLocal(x0, x1);
@@ -2823,14 +2808,14 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(Scheme_Object *obj, int n,
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-snip-location in editor<%>"), "get-snip-location in editor<%>");
+    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-snip-location in editor<%>"), "get-snip-location in editor<%>"", extracting boxed argument");
   } else
     x1 = NULL;
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-snip-location in editor<%>"), "get-snip-location in editor<%>");
+    *x2 = objscheme_unbundle_float(objscheme_nullable_unbox(p[2], "get-snip-location in editor<%>"), "get-snip-location in editor<%>"", extracting boxed argument");
   } else
     x2 = NULL;
   if (n > 3) {
@@ -3153,11 +3138,11 @@ static Scheme_Object *os_wxMediaBufferGetExtent(Scheme_Object *obj, int n,  Sche
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-extent in editor<%>"), "get-extent in editor<%>");
+    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-extent in editor<%>"), "get-extent in editor<%>");
+    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetExtent(x0, x1);
@@ -4791,14 +4776,14 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%");
+    *x0 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
   } else
     x0 = NULL;
   if (n > 1) {
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%");
+    *x1 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
   } else
     x1 = NULL;
 

@@ -50,8 +50,8 @@ typedef void *(*CAPOFunc)(void*);
 
 @CLASSID wxTYPE_MEDIA_CANVAS
 
-@ "set-edit" : void SetMedia(wxMediaBuffer^,bool=TRUE);
-@ "get-edit" : wxMediaBuffer^ GetMedia();
+@ "set-editor" : void SetMedia(wxMediaBuffer^,bool=TRUE);
+@ "get-editor" : wxMediaBuffer^ GetMedia();
 
 @ v "on-set-focus" : void OnSetFocus();
 @ v "on-kill-focus" : void OnKillFocus();
@@ -120,7 +120,7 @@ typedef void *(*CAPOFunc)(void*);
 
 @CLASSID wxTYPE_MEDIA_SNIP_ADMIN
 
-@ V "get-edit" : wxMediaBuffer^ GetMedia(); : : : rNULL
+@ V "get-editor" : wxMediaBuffer^ GetMedia(); : : : rNULL
 @ V "get-dc" : wxDC^ GetDC(); : : : rNULL
 @ V "get-view-size" : void GetViewSize(float?, float?);
 @ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);

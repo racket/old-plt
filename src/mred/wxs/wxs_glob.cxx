@@ -231,10 +231,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       scheme_wrong_count("get-resource (string case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "get-resource (string case)");
     x1 = (string)objscheme_unbundle_string(p[1], "get-resource (string case)");
-    if (XC_SCHEME_NULLP(p[2]))
-      scheme_wrong_type("get-resource (string case)", "non-" XC_NULL_STR, (2 - 0), n, p);
-    else
-      *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "get-resource (string case)"), "get-resource (string case)");
+          *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "get-resource (string case)"), "get-resource (string case)"", extracting boxed argument");
     if (n > 3) {
       x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (string case)");
     } else
@@ -259,10 +256,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       scheme_wrong_count("get-resource (number case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "get-resource (number case)");
     x1 = (string)objscheme_unbundle_string(p[1], "get-resource (number case)");
-    if (XC_SCHEME_NULLP(p[2]))
-      scheme_wrong_type("get-resource (number case)", "non-" XC_NULL_STR, (2 - 0), n, p);
-    else
-      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-resource (number case)"), "get-resource (number case)");
+          *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-resource (number case)"), "get-resource (number case)"", extracting boxed argument");
     if (n > 3) {
       x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (number case)");
     } else
@@ -308,14 +302,8 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("display-size", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "display-size"), "display-size");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("display-size", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "display-size"), "display-size");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "display-size"), "display-size"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "display-size"), "display-size"", extracting boxed argument");
 
   
   wxDisplaySize(x0, x1);

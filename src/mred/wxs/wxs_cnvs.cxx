@@ -831,14 +831,8 @@ static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Ob
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("view-start in canvas%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "view-start in canvas%"), "view-start in canvas%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("view-start in canvas%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "view-start in canvas%"), "view-start in canvas%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "view-start in canvas%"), "view-start in canvas%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "view-start in canvas%"), "view-start in canvas%"", extracting boxed argument");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->ViewStart(x0, x1);
@@ -906,14 +900,8 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-virtual-size in canvas%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-virtual-size in canvas%"), "get-virtual-size in canvas%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-virtual-size in canvas%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-virtual-size in canvas%"), "get-virtual-size in canvas%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-virtual-size in canvas%"), "get-virtual-size in canvas%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-virtual-size in canvas%"), "get-virtual-size in canvas%"", extracting boxed argument");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetVirtualSize(x0, x1);

@@ -492,8 +492,8 @@ wxMediaPasteboard::InteractiveAdjustResize(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"", extracting return value via box"), "interactive-adjust-resize in pasteboard%"", extracting return value via box");
-  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"", extracting return value via box"), "interactive-adjust-resize in pasteboard%"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"", extracting return value via box"), "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument");
+  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"", extracting return value via box"), "interactive-adjust-resize in pasteboard%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -529,8 +529,8 @@ wxMediaPasteboard::InteractiveAdjustMove(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"", extracting return value via box"), "interactive-adjust-move in pasteboard%"", extracting return value via box");
-  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"", extracting return value via box"), "interactive-adjust-move in pasteboard%"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"", extracting return value via box"), "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument");
+  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"", extracting return value via box"), "interactive-adjust-move in pasteboard%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -565,8 +565,8 @@ wxMediaPasteboard::InteractiveAdjustMouse(x0, x1);
 
   v = scheme_apply(method, 2, p);
   
-  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"", extracting return value via box"), "interactive-adjust-mouse in pasteboard%"", extracting return value via box");
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"", extracting return value via box"), "interactive-adjust-mouse in pasteboard%"", extracting return value via box");
+  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"", extracting return value via box"), "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"", extracting return value via box"), "interactive-adjust-mouse in pasteboard%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -2629,14 +2629,8 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "interactive-adjust-resize in pasteboard%", 0);
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("interactive-adjust-resize in pasteboard%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"), "interactive-adjust-resize in pasteboard%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("interactive-adjust-resize in pasteboard%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"), "interactive-adjust-resize in pasteboard%");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-resize in pasteboard%"), "interactive-adjust-resize in pasteboard%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-resize in pasteboard%"), "interactive-adjust-resize in pasteboard%"", extracting boxed argument");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2666,14 +2660,8 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "interactive-adjust-move in pasteboard%", 0);
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("interactive-adjust-move in pasteboard%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"), "interactive-adjust-move in pasteboard%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("interactive-adjust-move in pasteboard%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"), "interactive-adjust-move in pasteboard%");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-move in pasteboard%"), "interactive-adjust-move in pasteboard%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "interactive-adjust-move in pasteboard%"), "interactive-adjust-move in pasteboard%"", extracting boxed argument");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2701,14 +2689,8 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(Scheme_Object *
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("interactive-adjust-mouse in pasteboard%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"), "interactive-adjust-mouse in pasteboard%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("interactive-adjust-mouse in pasteboard%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"), "interactive-adjust-mouse in pasteboard%");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "interactive-adjust-mouse in pasteboard%"), "interactive-adjust-mouse in pasteboard%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "interactive-adjust-mouse in pasteboard%"), "interactive-adjust-mouse in pasteboard%"", extracting boxed argument");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3106,14 +3088,8 @@ static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-center in pasteboard%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-center in pasteboard%"), "get-center in pasteboard%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-center in pasteboard%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-center in pasteboard%"), "get-center in pasteboard%");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-center in pasteboard%"), "get-center in pasteboard%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-center in pasteboard%"), "get-center in pasteboard%"", extracting boxed argument");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->GetCenter(x0, x1);

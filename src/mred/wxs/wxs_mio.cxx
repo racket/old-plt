@@ -1271,10 +1271,7 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
     
     if (n != 1) 
       scheme_wrong_count(">> in editor-stream-in% (exact case)", 1, 1, n, p);
-    if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type(">> in editor-stream-in% (exact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
-    else
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], ">> in editor-stream-in% (exact case)"), ">> in editor-stream-in% (exact case)");
+          *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], ">> in editor-stream-in% (exact case)"), ">> in editor-stream-in% (exact case)"", extracting boxed argument");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->operator>>(*x0);
@@ -1290,10 +1287,7 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
     
     if (n != 1) 
       scheme_wrong_count(">> in editor-stream-in% (inexact case)", 1, 1, n, p);
-    if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type(">> in editor-stream-in% (inexact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
-    else
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], ">> in editor-stream-in% (inexact case)"), ">> in editor-stream-in% (inexact case)");
+          *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], ">> in editor-stream-in% (inexact case)"), ">> in editor-stream-in% (inexact case)"", extracting boxed argument");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->operator>>(*x0);
@@ -1351,10 +1345,7 @@ static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Sch
   long* x0 = &_x0;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-fixed in editor-stream-in%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-fixed in editor-stream-in%"), "get-fixed in editor-stream-in%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-fixed in editor-stream-in%"), "get-fixed in editor-stream-in%"", extracting boxed argument");
 
   
   r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetFixed(*x0);
@@ -1380,7 +1371,7 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-string in editor-stream-in%"), "get-string in editor-stream-in%");
+    *x0 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[0], "get-string in editor-stream-in%"), "get-string in editor-stream-in%"", extracting boxed argument");
   } else
     x0 = NULL;
 
@@ -1407,10 +1398,7 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
     
     if (n != 1) 
       scheme_wrong_count("get in editor-stream-in% (exact number case)", 1, 1, n, p);
-    if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("get in editor-stream-in% (exact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
-    else
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in editor-stream-in% (exact number case)"), "get in editor-stream-in% (exact number case)");
+          *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get in editor-stream-in% (exact number case)"), "get in editor-stream-in% (exact number case)"", extracting boxed argument");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(*x0);
@@ -1426,10 +1414,7 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
     
     if (n != 1) 
       scheme_wrong_count("get in editor-stream-in% (inexact number case)", 1, 1, n, p);
-    if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("get in editor-stream-in% (inexact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
-    else
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in editor-stream-in% (inexact number case)"), "get in editor-stream-in% (inexact number case)");
+          *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get in editor-stream-in% (inexact number case)"), "get in editor-stream-in% (inexact number case)"", extracting boxed argument");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(*x0);

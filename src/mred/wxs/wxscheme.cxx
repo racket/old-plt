@@ -981,6 +981,13 @@ static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 			     -1, PS_Setup_p, "ps-setup% instance", 0);
 }
 
+extern void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv);
+
+static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
+{
+  MrEd_add_q_callback("queue-callback", argc, argv);
+  return scheme_void;
+}
 
 static int check_sema(void *s)
 {
@@ -1294,7 +1301,7 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   
   if (!installed) {
     installed = 1;
-    scheme_add_namespace_option(scheme_intern_symbol("wx"), wxScheme_Invoke);
+    scheme_add_namespace_option(scheme_intern_symbol("mred"), wxScheme_Invoke);
     
     wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
 						 "default-application-file-handler",
@@ -1372,6 +1379,13 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						     "current-ps-setup",
 						     mred_ps_setup_param),
 			   global_env);
+
+  scheme_install_xc_global("queue-callback",
+			   scheme_make_prim_w_arity(queue_callback,
+						    "queue-callback",
+						    1, 2),
+			   global_env);
+
 
   scheme_install_xc_global("check-for-break",
 			   scheme_make_prim_w_arity(wxSchemeCheckForBreak,

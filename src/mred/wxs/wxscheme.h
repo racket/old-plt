@@ -14,4 +14,3 @@ extern char *WXSCHEME_expected;
 #undef USE_METAFILE
 #define USE_METAFILE 0
 #endif
-

@@ -109,8 +109,8 @@
 
 @CLASSID wxTYPE_MEDIA_SNIP
 
-@ "get-edit" : wxMediaBuffer^ GetThisMedia();
-@ "set-edit" : void SetMedia(wxMediaBuffer^);
+@ "get-editor" : wxMediaBuffer^ GetThisMedia();
+@ "set-editor" : void SetMedia(wxMediaBuffer^);
 
 @CONSTANT "const-editor-snip-xmargin" : int wxMSNIPBOX_XMARGIN
 @CONSTANT "const-editor-snip-ymargin" : int wxMSNIPBOX_YMARGIN

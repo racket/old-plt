@@ -728,8 +728,8 @@ wxSnip::Split(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in snip%"", extracting return value via box"), "split in snip%"", extracting return value via box", 0);
-  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in snip%"", extracting return value via box"), "split in snip%"", extracting return value via box", 0);
+  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in snip%"", extracting return value via box"), "split in snip%"", extracting return value via box"", extracting boxed argument", 0);
+  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in snip%"", extracting return value via box"), "split in snip%"", extracting return value via box"", extracting boxed argument", 0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -850,12 +850,12 @@ wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   v = scheme_apply(method, 9, p);
   
-  if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
-  if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
-  if (x5) *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
-  if (x6) *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
-  if (x7) *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
-  if (x8) *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box");
+  if (x3) *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
+  if (x4) *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
+  if (x5) *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
+  if (x6) *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
+  if (x7) *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
+  if (x8) *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in snip%"", extracting return value via box"), "get-extent in snip%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -1108,7 +1108,7 @@ static Scheme_Object *os_wxSnipAdjustCursor(Scheme_Object *obj, int n,  Scheme_O
   x4 = objscheme_unbundle_float(p[4], "adjust-cursor in snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","adjust-cursor"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","adjust-cursor"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
   else
@@ -1139,7 +1139,7 @@ static Scheme_Object *os_wxSnipOnChar(Scheme_Object *obj, int n,  Scheme_Object 
   x4 = objscheme_unbundle_float(p[4], "on-char in snip%");
   x5 = objscheme_unbundle_wxKeyEvent(p[5], "on-char in snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-char"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-char"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnChar(x0, x1, x2, x3, x4, *x5);
   else
@@ -1170,7 +1170,7 @@ static Scheme_Object *os_wxSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Object
   x4 = objscheme_unbundle_float(p[4], "on-event in snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "on-event in snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-event"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-event"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
   else
@@ -1286,14 +1286,8 @@ static Scheme_Object *os_wxSnipSplit(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   x0 = objscheme_unbundle_integer(p[0], "split in snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("split in snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in snip%"), "split in snip%", 0);
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("split in snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in snip%"), "split in snip%", 0);
+      *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in snip%"), "split in snip%"", extracting boxed argument", 0);
+      *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in snip%"), "split in snip%"", extracting boxed argument", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1338,7 +1332,7 @@ static Scheme_Object *os_wxSnipDraw(Scheme_Object *obj, int n,  Scheme_Object *p
   x8 = objscheme_unbundle_float(p[8], "draw in snip%");
   x9 = objscheme_unbundle_integer(p[9], "draw in snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","draw"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   else
@@ -1366,7 +1360,7 @@ static Scheme_Object *os_wxSnipPartialOffset(Scheme_Object *obj, int n,  Scheme_
   x2 = objscheme_unbundle_float(p[2], "partial-offset in snip%");
   x3 = objscheme_unbundle_integer(p[3], "partial-offset in snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","partial-offset"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","partial-offset"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::PartialOffset(x0, x1, x2, x3);
   else
@@ -1406,46 +1400,46 @@ static Scheme_Object *os_wxSnipGetExtent(Scheme_Object *obj, int n,  Scheme_Obje
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in snip%"), "get-extent in snip%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in snip%"), "get-extent in snip%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in snip%"), "get-extent in snip%");
+    *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in snip%"), "get-extent in snip%");
+    *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in snip%"), "get-extent in snip%");
+    *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in snip%"), "get-extent in snip%");
+    *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in snip%"), "get-extent in snip%"", extracting boxed argument");
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","get-extent"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","get-extent"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -2374,8 +2368,8 @@ wxTextSnip::Split(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in text-snip%"", extracting return value via box"), "split in text-snip%"", extracting return value via box", 0);
-  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in text-snip%"", extracting return value via box"), "split in text-snip%"", extracting return value via box", 0);
+  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in text-snip%"", extracting return value via box"), "split in text-snip%"", extracting return value via box"", extracting boxed argument", 0);
+  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in text-snip%"", extracting return value via box"), "split in text-snip%"", extracting return value via box"", extracting boxed argument", 0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -2496,12 +2490,12 @@ wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   v = scheme_apply(method, 9, p);
   
-  if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
-  if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
-  if (x5) *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
-  if (x6) *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
-  if (x7) *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
-  if (x8) *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box");
+  if (x3) *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x4) *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x5) *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x6) *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x7) *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x8) *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in text-snip%"", extracting return value via box"), "get-extent in text-snip%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -2765,7 +2759,7 @@ static Scheme_Object *os_wxTextSnipAdjustCursor(Scheme_Object *obj, int n,  Sche
   x4 = objscheme_unbundle_float(p[4], "adjust-cursor in text-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in text-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","adjust-cursor"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","adjust-cursor"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
   else
@@ -2796,7 +2790,7 @@ static Scheme_Object *os_wxTextSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   x4 = objscheme_unbundle_float(p[4], "on-char in text-snip%");
   x5 = objscheme_unbundle_wxKeyEvent(p[5], "on-char in text-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-char"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-char"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnChar(x0, x1, x2, x3, x4, *x5);
   else
@@ -2827,7 +2821,7 @@ static Scheme_Object *os_wxTextSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = objscheme_unbundle_float(p[4], "on-event in text-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "on-event in text-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-event"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-event"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
   else
@@ -2943,14 +2937,8 @@ static Scheme_Object *os_wxTextSnipSplit(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   x0 = objscheme_unbundle_integer(p[0], "split in text-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("split in text-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in text-snip%"), "split in text-snip%", 0);
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("split in text-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in text-snip%"), "split in text-snip%", 0);
+      *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in text-snip%"), "split in text-snip%"", extracting boxed argument", 0);
+      *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in text-snip%"), "split in text-snip%"", extracting boxed argument", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2995,7 +2983,7 @@ static Scheme_Object *os_wxTextSnipDraw(Scheme_Object *obj, int n,  Scheme_Objec
   x8 = objscheme_unbundle_float(p[8], "draw in text-snip%");
   x9 = objscheme_unbundle_integer(p[9], "draw in text-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","draw"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   else
@@ -3023,7 +3011,7 @@ static Scheme_Object *os_wxTextSnipPartialOffset(Scheme_Object *obj, int n,  Sch
   x2 = objscheme_unbundle_float(p[2], "partial-offset in text-snip%");
   x3 = objscheme_unbundle_integer(p[3], "partial-offset in text-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","partial-offset"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","partial-offset"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::PartialOffset(x0, x1, x2, x3);
   else
@@ -3063,46 +3051,46 @@ static Scheme_Object *os_wxTextSnipGetExtent(Scheme_Object *obj, int n,  Scheme_
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in text-snip%"), "get-extent in text-snip%");
+    *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in text-snip%"), "get-extent in text-snip%"", extracting boxed argument");
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","get-extent"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","get-extent"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -3841,8 +3829,8 @@ wxTabSnip::Split(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in tab-snip%"", extracting return value via box"), "split in tab-snip%"", extracting return value via box", 0);
-  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in tab-snip%"", extracting return value via box"), "split in tab-snip%"", extracting return value via box", 0);
+  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in tab-snip%"", extracting return value via box"), "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0);
+  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in tab-snip%"", extracting return value via box"), "split in tab-snip%"", extracting return value via box"", extracting boxed argument", 0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -3963,12 +3951,12 @@ wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   v = scheme_apply(method, 9, p);
   
-  if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
-  if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
-  if (x5) *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
-  if (x6) *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
-  if (x7) *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
-  if (x8) *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box");
+  if (x3) *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x4) *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x5) *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x6) *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x7) *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x8) *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%"", extracting return value via box"), "get-extent in tab-snip%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -4187,7 +4175,7 @@ static Scheme_Object *os_wxTabSnipAdjustCursor(Scheme_Object *obj, int n,  Schem
   x4 = objscheme_unbundle_float(p[4], "adjust-cursor in tab-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in tab-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","adjust-cursor"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","adjust-cursor"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
   else
@@ -4218,7 +4206,7 @@ static Scheme_Object *os_wxTabSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obje
   x4 = objscheme_unbundle_float(p[4], "on-char in tab-snip%");
   x5 = objscheme_unbundle_wxKeyEvent(p[5], "on-char in tab-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-char"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-char"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnChar(x0, x1, x2, x3, x4, *x5);
   else
@@ -4249,7 +4237,7 @@ static Scheme_Object *os_wxTabSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Obj
   x4 = objscheme_unbundle_float(p[4], "on-event in tab-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "on-event in tab-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-event"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-event"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
   else
@@ -4365,14 +4353,8 @@ static Scheme_Object *os_wxTabSnipSplit(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   x0 = objscheme_unbundle_integer(p[0], "split in tab-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("split in tab-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in tab-snip%"), "split in tab-snip%", 0);
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("split in tab-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in tab-snip%"), "split in tab-snip%", 0);
+      *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in tab-snip%"), "split in tab-snip%"", extracting boxed argument", 0);
+      *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in tab-snip%"), "split in tab-snip%"", extracting boxed argument", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4417,7 +4399,7 @@ static Scheme_Object *os_wxTabSnipDraw(Scheme_Object *obj, int n,  Scheme_Object
   x8 = objscheme_unbundle_float(p[8], "draw in tab-snip%");
   x9 = objscheme_unbundle_integer(p[9], "draw in tab-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","draw"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   else
@@ -4445,7 +4427,7 @@ static Scheme_Object *os_wxTabSnipPartialOffset(Scheme_Object *obj, int n,  Sche
   x2 = objscheme_unbundle_float(p[2], "partial-offset in tab-snip%");
   x3 = objscheme_unbundle_integer(p[3], "partial-offset in tab-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","partial-offset"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","partial-offset"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::PartialOffset(x0, x1, x2, x3);
   else
@@ -4485,46 +4467,46 @@ static Scheme_Object *os_wxTabSnipGetExtent(Scheme_Object *obj, int n,  Scheme_O
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in tab-snip%"), "get-extent in tab-snip%");
+    *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in tab-snip%"), "get-extent in tab-snip%"", extracting boxed argument");
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","get-extent"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","get-extent"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -5324,8 +5306,8 @@ wxImageSnip::Split(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in image-snip%"", extracting return value via box"), "split in image-snip%"", extracting return value via box", 0);
-  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in image-snip%"", extracting return value via box"), "split in image-snip%"", extracting return value via box", 0);
+  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in image-snip%"", extracting return value via box"), "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0);
+  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in image-snip%"", extracting return value via box"), "split in image-snip%"", extracting return value via box"", extracting boxed argument", 0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -5446,12 +5428,12 @@ wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   v = scheme_apply(method, 9, p);
   
-  if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
-  if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
-  if (x5) *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
-  if (x6) *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
-  if (x7) *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
-  if (x8) *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box");
+  if (x3) *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x4) *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x5) *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x6) *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x7) *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x8) *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in image-snip%"", extracting return value via box"), "get-extent in image-snip%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -5500,7 +5482,7 @@ static Scheme_Object *os_wxImageSnipSetBitmap(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxImageSnipGetFiletype(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  long r;
+  int r;
   objscheme_check_valid(obj);
 
   
@@ -5510,7 +5492,7 @@ static Scheme_Object *os_wxImageSnipGetFiletype(Scheme_Object *obj, int n,  Sche
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_bitmapType(r);
 }
 
 #pragma argsused
@@ -5526,7 +5508,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(Scheme_Object *obj, int n,  Sche
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_bool(objscheme_unbox(p[0], "get-filename in image-snip%"), "get-filename in image-snip%");
+    *x0 = objscheme_unbundle_bool(objscheme_nullable_unbox(p[0], "get-filename in image-snip%"), "get-filename in image-snip%"", extracting boxed argument");
 
   
   r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->GetFilename(x0);
@@ -5783,7 +5765,7 @@ static Scheme_Object *os_wxImageSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
   x4 = objscheme_unbundle_float(p[4], "adjust-cursor in image-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in image-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","adjust-cursor"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","adjust-cursor"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
   else
@@ -5814,7 +5796,7 @@ static Scheme_Object *os_wxImageSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = objscheme_unbundle_float(p[4], "on-char in image-snip%");
   x5 = objscheme_unbundle_wxKeyEvent(p[5], "on-char in image-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-char"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-char"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnChar(x0, x1, x2, x3, x4, *x5);
   else
@@ -5845,7 +5827,7 @@ static Scheme_Object *os_wxImageSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
   x4 = objscheme_unbundle_float(p[4], "on-event in image-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "on-event in image-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-event"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-event"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
   else
@@ -5961,14 +5943,8 @@ static Scheme_Object *os_wxImageSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   x0 = objscheme_unbundle_integer(p[0], "split in image-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("split in image-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in image-snip%"), "split in image-snip%", 0);
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("split in image-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in image-snip%"), "split in image-snip%", 0);
+      *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in image-snip%"), "split in image-snip%"", extracting boxed argument", 0);
+      *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in image-snip%"), "split in image-snip%"", extracting boxed argument", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -6013,7 +5989,7 @@ static Scheme_Object *os_wxImageSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x8 = objscheme_unbundle_float(p[8], "draw in image-snip%");
   x9 = objscheme_unbundle_integer(p[9], "draw in image-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","draw"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   else
@@ -6041,7 +6017,7 @@ static Scheme_Object *os_wxImageSnipPartialOffset(Scheme_Object *obj, int n,  Sc
   x2 = objscheme_unbundle_float(p[2], "partial-offset in image-snip%");
   x3 = objscheme_unbundle_integer(p[3], "partial-offset in image-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","partial-offset"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","partial-offset"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::PartialOffset(x0, x1, x2, x3);
   else
@@ -6081,46 +6057,46 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in image-snip%"), "get-extent in image-snip%");
+    *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in image-snip%"), "get-extent in image-snip%"", extracting boxed argument");
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","get-extent"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","get-extent"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -6882,8 +6858,8 @@ wxMediaSnip::Split(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in editor-snip%"", extracting return value via box"), "split in editor-snip%"", extracting return value via box", 0);
-  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in editor-snip%"", extracting return value via box"), "split in editor-snip%"", extracting return value via box", 0);
+  if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in editor-snip%"", extracting return value via box"), "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0);
+  if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in editor-snip%"", extracting return value via box"), "split in editor-snip%"", extracting return value via box"", extracting boxed argument", 0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -7004,12 +6980,12 @@ wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   v = scheme_apply(method, 9, p);
   
-  if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
-  if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
-  if (x5) *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
-  if (x6) *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
-  if (x7) *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
-  if (x8) *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box");
+  if (x3) *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x4) *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x5) *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x6) *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x7) *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
+  if (x8) *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%"", extracting return value via box"), "get-extent in editor-snip%"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -7031,22 +7007,10 @@ static Scheme_Object *os_wxMediaSnipGetInset(Scheme_Object *obj, int n,  Scheme_
   int* x3 = &_x3;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-inset in editor-snip%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-inset in editor-snip%"), "get-inset in editor-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-inset in editor-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-inset in editor-snip%"), "get-inset in editor-snip%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get-inset in editor-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-inset in editor-snip%"), "get-inset in editor-snip%");
-  if (XC_SCHEME_NULLP(p[3]))
-    scheme_wrong_type("get-inset in editor-snip%", "non-" XC_NULL_STR, (3 - 0), n, p);
-  else
-    *x3 = objscheme_unbundle_integer(objscheme_unbox(p[3], "get-inset in editor-snip%"), "get-inset in editor-snip%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-inset in editor-snip%"), "get-inset in editor-snip%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-inset in editor-snip%"), "get-inset in editor-snip%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-inset in editor-snip%"), "get-inset in editor-snip%"", extracting boxed argument");
+      *x3 = objscheme_unbundle_integer(objscheme_unbox(p[3], "get-inset in editor-snip%"), "get-inset in editor-snip%"", extracting boxed argument");
 
   
   ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetInset(x0, x1, x2, x3);
@@ -7103,22 +7067,10 @@ static Scheme_Object *os_wxMediaSnipGetMargin(Scheme_Object *obj, int n,  Scheme
   int* x3 = &_x3;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-margin in editor-snip%", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-margin in editor-snip%"), "get-margin in editor-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-margin in editor-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-margin in editor-snip%"), "get-margin in editor-snip%");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get-margin in editor-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-margin in editor-snip%"), "get-margin in editor-snip%");
-  if (XC_SCHEME_NULLP(p[3]))
-    scheme_wrong_type("get-margin in editor-snip%", "non-" XC_NULL_STR, (3 - 0), n, p);
-  else
-    *x3 = objscheme_unbundle_integer(objscheme_unbox(p[3], "get-margin in editor-snip%"), "get-margin in editor-snip%");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-margin in editor-snip%"), "get-margin in editor-snip%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-margin in editor-snip%"), "get-margin in editor-snip%"", extracting boxed argument");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-margin in editor-snip%"), "get-margin in editor-snip%"", extracting boxed argument");
+      *x3 = objscheme_unbundle_integer(objscheme_unbox(p[3], "get-margin in editor-snip%"), "get-margin in editor-snip%"", extracting boxed argument");
 
   
   ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetMargin(x0, x1, x2, x3);
@@ -7547,7 +7499,7 @@ static Scheme_Object *os_wxMediaSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
   x4 = objscheme_unbundle_float(p[4], "adjust-cursor in editor-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "adjust-cursor in editor-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","adjust-cursor"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","adjust-cursor"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
   else
@@ -7578,7 +7530,7 @@ static Scheme_Object *os_wxMediaSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   x4 = objscheme_unbundle_float(p[4], "on-char in editor-snip%");
   x5 = objscheme_unbundle_wxKeyEvent(p[5], "on-char in editor-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-char"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-char"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnChar(x0, x1, x2, x3, x4, *x5);
   else
@@ -7609,7 +7561,7 @@ static Scheme_Object *os_wxMediaSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
   x4 = objscheme_unbundle_float(p[4], "on-event in editor-snip%");
   x5 = objscheme_unbundle_wxMouseEvent(p[5], "on-event in editor-snip%", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","on-event"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","on-event"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
   else
@@ -7725,14 +7677,8 @@ static Scheme_Object *os_wxMediaSnipSplit(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   x0 = objscheme_unbundle_integer(p[0], "split in editor-snip%");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("split in editor-snip%", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in editor-snip%"), "split in editor-snip%", 0);
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("split in editor-snip%", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in editor-snip%"), "split in editor-snip%", 0);
+      *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "split in editor-snip%"), "split in editor-snip%"", extracting boxed argument", 0);
+      *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "split in editor-snip%"), "split in editor-snip%"", extracting boxed argument", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -7777,7 +7723,7 @@ static Scheme_Object *os_wxMediaSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x8 = objscheme_unbundle_float(p[8], "draw in editor-snip%");
   x9 = objscheme_unbundle_integer(p[9], "draw in editor-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","draw"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   else
@@ -7805,7 +7751,7 @@ static Scheme_Object *os_wxMediaSnipPartialOffset(Scheme_Object *obj, int n,  Sc
   x2 = objscheme_unbundle_float(p[2], "partial-offset in editor-snip%");
   x3 = objscheme_unbundle_integer(p[3], "partial-offset in editor-snip%");
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","partial-offset"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","partial-offset"));
   if (((Scheme_Class_Object *)obj)->primflag)
     r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::PartialOffset(x0, x1, x2, x3);
   else
@@ -7845,46 +7791,46 @@ static Scheme_Object *os_wxMediaSnipGetExtent(Scheme_Object *obj, int n,  Scheme
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
     if (XC_SCHEME_NULLP(p[5]))
     x5 = NULL;
   else
-    *x5 = objscheme_unbundle_float(objscheme_unbox(p[5], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x5 = objscheme_unbundle_float(objscheme_nullable_unbox(p[5], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x5 = NULL;
   if (n > 6) {
     if (XC_SCHEME_NULLP(p[6]))
     x6 = NULL;
   else
-    *x6 = objscheme_unbundle_float(objscheme_unbox(p[6], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x6 = objscheme_unbundle_float(objscheme_nullable_unbox(p[6], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x6 = NULL;
   if (n > 7) {
     if (XC_SCHEME_NULLP(p[7]))
     x7 = NULL;
   else
-    *x7 = objscheme_unbundle_float(objscheme_unbox(p[7], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x7 = objscheme_unbundle_float(objscheme_nullable_unbox(p[7], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x7 = NULL;
   if (n > 8) {
     if (XC_SCHEME_NULLP(p[8]))
     x8 = NULL;
   else
-    *x8 = objscheme_unbundle_float(objscheme_unbox(p[8], "get-extent in editor-snip%"), "get-extent in editor-snip%");
+    *x8 = objscheme_unbundle_float(objscheme_nullable_unbox(p[8], "get-extent in editor-snip%"), "get-extent in editor-snip%"", extracting boxed argument");
   } else
     x8 = NULL;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("snip%","get-extent"));
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","get-extent"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::GetExtent(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -7915,7 +7861,7 @@ static Scheme_Object *os_wxMediaSnipSetMedia(Scheme_Object *obj, int n,  Scheme_
   class wxMediaBuffer* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "set-edit in editor-snip%", 1);
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "set-editor in editor-snip%", 1);
 
   
   ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->SetMedia(x0);
@@ -8071,8 +8017,8 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "draw", os_wxMediaSnipDraw, 10, 10);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "partial-offset", os_wxMediaSnipPartialOffset, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-extent", os_wxMediaSnipGetExtent, 3, 9);
- scheme_add_method_w_arity(os_wxMediaSnip_class, "set-edit", os_wxMediaSnipSetMedia, 1, 1);
- scheme_add_method_w_arity(os_wxMediaSnip_class, "get-edit", os_wxMediaSnipGetThisMedia, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "set-editor", os_wxMediaSnipSetMedia, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "get-editor", os_wxMediaSnipGetThisMedia, 0, 0);
 
 
   scheme_made_class(os_wxMediaSnip_class);

@@ -628,14 +628,8 @@ static Scheme_Object *os_wxDCGetSize(Scheme_Object *obj, int n,  Scheme_Object *
   float* x1 = &_x1;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-size in dc<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-size in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1);
@@ -974,26 +968,20 @@ static Scheme_Object *os_wxDCGetTextExtent(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "get-text-extent in dc<%>");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-text-extent in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get-text-extent in dc<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
+    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
+    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
@@ -1162,22 +1150,10 @@ static Scheme_Object *os_wxDCGetClippingRegion(Scheme_Object *obj, int n,  Schem
   float* x3 = &_x3;
 
   
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
-  if (XC_SCHEME_NULLP(p[3]))
-    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (3 - 0), n, p);
-  else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
+      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
+      *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>"", extracting boxed argument");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetClippingRegion(x0, x1, x2, x3);

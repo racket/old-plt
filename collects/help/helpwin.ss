@@ -31,9 +31,12 @@
 
   (define (open-url-from-user parent goto-url)
     (letrec ([d (make-object dialog% "Open URL" parent 500)]
-	     [t (make-object text-field% "URL:" d
-			     (lambda (t e)
-			       (update-ok)))]
+	     [t
+	      (framework:keymap:call/text-keymap-initializer
+	       (lambda ()
+		 (make-object text-field% "URL:" d
+			      (lambda (t e)
+				(update-ok)))))]
 	     [p (make-object horizontal-panel% d)]
 	     [browse (make-object button% "Browse..." p
 				  (lambda (b e)
@@ -173,8 +176,11 @@
 									(send find enable 
 									      (positive? (send (send t get-editor) 
 											       last-position))))]
-							 [t (make-object text-field% "Find:" d
-									 (lambda (t e) (enable-find)))]
+							 [t
+							  (framework:keymap:call/text-keymap-initializer
+							   (lambda ()
+							     (make-object text-field% "Find:" d
+									  (lambda (t e) (enable-find)))))]
 							 [p (make-object horizontal-panel% d)]
 							 [find (make-object button% "Find" p
 									    (lambda (b e)
@@ -369,11 +375,14 @@
 	  (define results (send html-panel get-canvas))
 
 	  (define top (make-object vertical-pane% (send f get-area-container)))
-	  (define search-text (make-object text-field% "Find docs for:" top
-					   (lambda (t e)
-					     (let ([on? (positive? (send (send t get-editor) last-position))])
-					       (send search-menu enable on?)
-					       (send search enable on?)))))
+	  (define search-text
+	    (framework:keymap:call/text-keymap-initializer
+	     (lambda ()
+	       (make-object text-field% "Find docs for:" top
+			    (lambda (t e)
+			      (let ([on? (positive? (send (send t get-editor) last-position))])
+				(send search-menu enable on?)
+				(send search enable on?)))))))
 	  (define search-pane (make-object horizontal-pane% top))
 
 	  (define (lucky-search-callback)

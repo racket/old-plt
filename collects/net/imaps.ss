@@ -4,10 +4,12 @@
    imap-disconnect
    imap-force-disconnect
    imap-reselect
+   imap-status
+
    imap-get-messages
-
-   imap-flag->symbol
-   symbol->imap-flag
-
-   imap-store
-   imap-expunge))
+   imap-copy
+   imap-store imap-flag->symbol symbol->imap-flag
+   imap-expunge
+   
+   imap-mailbox-exists?
+   imap-create-mailbox))

@@ -684,7 +684,22 @@ PROCEDURES -----------------------------------------------------------
 
   This procedure is useful for polling a mailbox to see whether there
   are any new messages (by providing the currently selected mailbox as
-  the new mailbox).
+  the new mailbox), but use imap-status with the 'uidnext flag to
+  determine whether a mailbox has changed at all (e.g., via a copy
+  instead of a move).
+
+> (imap-status imap mailbox-string status-symbol-list)
+  -> list of status values
+
+  Requests information about a mailbox from the server. The
+  status-symbol-list specifies the request, and the return value
+  includes one value for each symbol in status-symbol-list. The
+  allowed status symbols are:
+    'messages - number of messages
+    'recent - number of recent messages
+    'unseen - number of unseen messages
+    'uidnext - uid for next received message
+    'uidvalidity - id that changes when all uids are changed
 
 > (imap-get-messages imap msg-num-list field-list)
   -> list of field-value lists
@@ -754,6 +769,19 @@ PROCEDURES -----------------------------------------------------------
 
   Purges every message currently marked with the '|\Deleted| flag from
   the mailbox.
+
+> (imap-copy imap msg-num-list dest-mailbox-string)
+
+  Copies the specified messages from the currently selected mailbox to
+  the specified mailbox.
+
+> (imap-mailbox-exists? imap mailbox-string)
+
+  Returns #t if the specified mailbox exists, #f otherwise.
+
+> (imap-create-mailbox imap mailbox-string)
+
+  Creates the specified mailbox. (It must not exist already.)
 
 ==========================================================================
 _mail headers_

@@ -195,6 +195,29 @@
 				   (set! init-recent (car i))])))))
 	(values init-count init-recent))))
 
+  (define (imap-status imap inbox flags)
+    (unless (and (list? flags)
+		 (andmap (lambda (s)
+			   (memq s '(messages recent uidnext uidvalidity unseen)))
+			 flags))
+      (raise-type-error 'imap-status "list of status flag symbols" flags))
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (let ([results null])
+	(check-ok (imap-send r w (format "STATUS ~a ~a" inbox flags)
+			     (lambda (i)
+			       (when (and (list? i) (= 3 (length i))
+					  (tag-eq? (car i) 'STATUS))
+				 (set! results (caddr i))))))
+	(map
+	 (lambda (f)
+	   (let loop ([l results])
+	     (cond
+	      [(or (null? l) (null? (cdr l))) #f]
+	      [(tag-eq? f (car l)) (cadr l)]
+	      [else (loop (cdr l))])))
+	 flags))))
+
   (define (imap-disconnect imap)
     (let ([r (imap-connection-r imap)]
 	  [w (imap-connection-w imap)])
@@ -264,8 +287,37 @@
 			  flags)
 		  void))))
 
+  (define (imap-copy imap msgs dest-mailbox)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (check-ok 
+       (imap-send r w
+		  (format "COPY ~a ~a"
+			  (splice msgs ",")
+			  dest-mailbox)
+		  void))))
+  
   (define (imap-expunge imap)
     (let ([r (imap-connection-r imap)]
 	  [w (imap-connection-w imap)])
-      (check-ok (imap-send r w "EXPUNGE" void)))))
+      (check-ok (imap-send r w "EXPUNGE" void))))
 
+
+  (define (imap-mailbox-exists? imap mailbox)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)]
+	  [exists? #f])
+      (check-ok (imap-send r w 
+			   (format "LIST \"\" ~s" mailbox)
+			   (lambda (i)
+			     (when (and (pair? i)
+					(tag-eq? (car i) 'LIST))
+			       (set! exists? #t)))))
+      exists?))
+
+  (define (imap-create-mailbox imap mailbox)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (check-ok 
+       (imap-send r w 
+		  (format "CREATE ~a" mailbox) void)))))

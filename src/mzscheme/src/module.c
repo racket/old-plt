@@ -67,8 +67,8 @@ static Scheme_Object *top_level_require_execute(Scheme_Object *data);
 static Scheme_Object *module_resolve(Scheme_Object *data, Resolve_Info *info);
 static Scheme_Object *top_level_require_resolve(Scheme_Object *data, Resolve_Info *info);
 
-static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void top_level_require_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void top_level_require_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
 
 static Scheme_Object *write_module(Scheme_Object *obj);
 static Scheme_Object *read_module(Scheme_Object *obj);
@@ -2308,7 +2308,7 @@ module_execute(Scheme_Object *data)
 }
 
 static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
-			    int depth, int delta, int num_toplevels)
+			    int depth, int letlimit, int delta, int num_toplevels)
 {
   Scheme_Module *m;
   Scheme_Object *l;
@@ -4373,7 +4373,7 @@ top_level_require_execute(Scheme_Object *data)
 }
 
 static void top_level_require_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
-				       int depth, int delta, int num_toplevels)
+				       int depth, int letlimit, int delta, int num_toplevels)
 {
 }
 

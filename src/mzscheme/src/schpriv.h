@@ -1352,7 +1352,7 @@ typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Res
 typedef struct CPort Mz_CPort;
 
 typedef void (*Scheme_Syntax_Validater)(Scheme_Object *data, Mz_CPort *port,
-					char *stack, int depth, int delta, int num_toplevels);
+					char *stack, int depth, int letlimit, int delta, int num_toplevels);
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
@@ -1630,7 +1630,7 @@ Scheme_Env *scheme_environment_from_dummy(Scheme_Object *dummy);
 void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth,
 			  int num_toplevels, int num_stxes);
 void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr,
-			  char *stack, int depth, int delta, int num_toplevels);
+			  char *stack, int depth, int letlimit, int delta, int num_toplevels);
 void scheme_validate_toplevel(Scheme_Object *expr, Mz_CPort *port,
 			      char *stack, int depth, int delta, int num_toplevels);
 void scheme_validate_boxenv(int pos, Mz_CPort *port,

@@ -101,13 +101,13 @@ static Scheme_Object *define_syntaxes_resolve(Scheme_Object *expr, Resolve_Info 
 static Scheme_Object *case_lambda_resolve(Scheme_Object *expr, Resolve_Info *info);
 static Scheme_Object *begin0_resolve(Scheme_Object *data, Resolve_Info *info);
 
-static void define_values_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void set_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void case_lambda_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void begin0_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
-static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int delta, int num_toplevels);
+static void define_values_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void set_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void case_lambda_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void begin0_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
+static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, char *stack, int depth, int letlimit, int delta, int num_toplevels);
 
 static Scheme_Object *named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 					Scheme_Compile_Info *rec, int drec, int depth, Scheme_Object *boundname);
@@ -622,7 +622,7 @@ define_values_execute(Scheme_Object *data)
 }
 
 static void define_values_validate(Scheme_Object *data, Mz_CPort *port, 
-				   char *stack, int depth, int delta, int num_toplevels)
+				   char *stack, int depth, int letlimit, int delta, int num_toplevels)
 {
   Scheme_Object *vars, *val;
 
@@ -639,7 +639,7 @@ static void define_values_validate(Scheme_Object *data, Mz_CPort *port,
   if (!SCHEME_NULLP(vars))
     scheme_ill_formed_code(port);
 
-  scheme_validate_expr(port, val, stack, depth, delta, num_toplevels);
+  scheme_validate_expr(port, val, stack, depth, letlimit, delta, num_toplevels);
 }
 
 static Scheme_Object *
@@ -1034,7 +1034,7 @@ set_execute (Scheme_Object *data)
 }
 
 static void set_validate(Scheme_Object *data, Mz_CPort *port, 
-			 char *stack, int depth, int delta, int num_toplevels)
+			 char *stack, int depth, int letlimit, int delta, int num_toplevels)
 {
   Scheme_Object *val, *tl;
 
@@ -1046,7 +1046,7 @@ static void set_validate(Scheme_Object *data, Mz_CPort *port,
   tl = SCHEME_CAR(data);
   val = SCHEME_CDR(data);
 
-  scheme_validate_expr(port, val, stack, depth, delta, num_toplevels);
+  scheme_validate_expr(port, val, stack, depth, letlimit, delta, num_toplevels);
   scheme_validate_toplevel(tl,  port, stack, depth, delta, num_toplevels);
 }
 
@@ -1269,13 +1269,13 @@ case_lambda_execute(Scheme_Object *expr)
 }
 
 static void case_lambda_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
-				 int depth, int delta, int num_toplevels)
+				 int depth, int letlimit, int delta, int num_toplevels)
 {
   Scheme_Case_Lambda *seq = (Scheme_Case_Lambda *)data;
   int i;
 
   for (i = 0; i < seq->count; i++) { 
-    scheme_validate_expr(port, seq->array[i], stack, depth, delta, num_toplevels);
+    scheme_validate_expr(port, seq->array[i], stack, depth, letlimit, delta, num_toplevels);
   }
 }
 
@@ -1498,14 +1498,14 @@ Scheme_Object *bangboxenv_execute(Scheme_Object *data)
 }
 
 static void bangboxenv_validate(Scheme_Object *data, Mz_CPort *port, 
-				char *stack, int depth, int delta, int num_toplevels)
+				char *stack, int depth, int letlimit, int delta, int num_toplevels)
 {
   if (!SCHEME_PAIRP(data))
     scheme_ill_formed_code(port);
     
   scheme_validate_boxenv(SCHEME_INT_VAL(SCHEME_CAR(data)), port, stack, depth, delta);
 
-  scheme_validate_expr(port, SCHEME_CDR(data), stack, depth, delta, num_toplevels);
+  scheme_validate_expr(port, SCHEME_CDR(data), stack, depth, letlimit, delta, num_toplevels);
 }
 
 
@@ -1553,7 +1553,7 @@ bangboxvalue_execute(Scheme_Object *data)
 }
 
 static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, 
-				  char *stack, int depth, int delta, int num_toplevels)
+				  char *stack, int depth, int letlimit, int delta, int num_toplevels)
 {
   if (!SCHEME_PAIRP(data)
       || !SCHEME_PAIRP(SCHEME_CDR(data))
@@ -1561,7 +1561,7 @@ static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port,
       || (SCHEME_INT_VAL(SCHEME_CADR(data)) <= SCHEME_INT_VAL(SCHEME_CAR(data))))
     scheme_ill_formed_code(port);
   
-  scheme_validate_expr(port, SCHEME_CDR(SCHEME_CDR(data)), stack, depth, delta, num_toplevels);
+  scheme_validate_expr(port, SCHEME_CDR(SCHEME_CDR(data)), stack, depth, letlimit, delta, num_toplevels);
 }
 
 /**********************************************************************/
@@ -1577,6 +1577,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   Scheme_Let_Value *lv, *last = NULL;
   Scheme_Object *first = NULL, *body;
   Scheme_Letrec *letrec;
+  mzshort *skips, skips_fast[5];
   int i, pos, opos, rpos, recbox, num_rec_procs = 0, extra_alloc;
 
   /* Special case: (let ([x E]) x) where E is lambda, case-lambda, etc. */
@@ -1643,44 +1644,81 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
     }
     if (i < 0) {
       /* Yes - build chain of Scheme_Let_Ones and we're done: */
+      int skip_count = 0, frame_size;
+      int j, k;
+
       clv = (Scheme_Compiled_Let_Value *)head->body;
 
+      j = head->num_clauses;
+      if (j <= 5)
+	skips = skips_fast; 
+      else
+	skips = MALLOC_N_ATOMIC(mzshort, j);
+
       for (i = 0; i < head->num_clauses; i++, clv = (Scheme_Compiled_Let_Value *)clv->body) {
-	Scheme_Let_One *lo;
-	int j;
+	Scheme_Object *le;
 
-	lo = MALLOC_ONE_TAGGED(Scheme_Let_One);
-	lo->type = scheme_let_one_type;
+	skips[i] = 0;
 
-	/* First `i+1' now "exist at runtime". */
+	/* First `i+1' bindings now exist "at runtime", except those skipped. */
 	/* The mapping is complicated because we now push in the order of 
 	   the variables, but it was compiled using the inverse order. */
-	linfo = scheme_resolve_info_extend(info, i + 1, head->count, i + 1, 0);
-	for (j = 0; j <= i; j++) {
-	  scheme_resolve_info_add_mapping(linfo, j, i - j, 0);
+	frame_size = i + 1 - skip_count;
+	linfo = scheme_resolve_info_extend(info, frame_size, head->count, i + 1, 0);
+	for (j = i, k = 0; j >= 0; j--) {
+	  if (skips[j])
+	    scheme_resolve_info_add_mapping(linfo, j, 
+					    ((skips[j] < 0)
+					     ? -skips[j]
+					     : (skips[j] - 1 + frame_size)), 
+					    0);
+	  else
+	    scheme_resolve_info_add_mapping(linfo, j, k++, 0);
 	}
 
-	{
-	  Scheme_Object *le;
-	  le = scheme_resolve_expr(clv->value, linfo);
-	  lo->value = le;
-	}
-	{
+	le = scheme_resolve_expr(clv->value, linfo);
+
+	if (0 && SAME_TYPE(SCHEME_TYPE(le), scheme_local_type)) {
+	  /* This binding is like (let ([x y]) ...)  where y is not
+	     global and never set!ed, so replace all uses of x with
+	     uses of y. In the skips array, if the position is
+	     outside this frame, put 1 + offset relative
+	     the start of the binding group. If this position is
+	     inside this frame, but -SCHEME_LOCAL_POS(le). */
+	  j = SCHEME_LOCAL_POS(le);
+	  if (j < frame_size)
+	    skips[i] = -j;
+	  else
+	    skips[i] = (j - frame_size) + 1;
+	  skip_count++;
+	} else {
+	  Scheme_Let_One *lo;
 	  int et;
+
+	  lo = MALLOC_ONE_TAGGED(Scheme_Let_One);
+	  lo->type = scheme_let_one_type;
+	  lo->value = le;
+
 	  et = scheme_get_eval_type(lo->value);
 	  lo->eval_type = et;
-	}
 
-	if (last)
-	  ((Scheme_Let_One *)last)->body = (Scheme_Object *)lo;
-	else
-	  first = (Scheme_Object *)lo;
-	last = (Scheme_Let_Value *)lo;
+	  if (last)
+	    ((Scheme_Let_One *)last)->body = (Scheme_Object *)lo;
+	  else
+	    first = (Scheme_Object *)lo;
+	  last = (Scheme_Let_Value *)lo;
+	}
       }
 
-      linfo = scheme_resolve_info_extend(info, head->count, head->count, head->count, 0);
-      for (i = head->count; i--; ) {
-	scheme_resolve_info_add_mapping(linfo, i, head->count - 1 - i, 0);
+      frame_size = head->count - skip_count;
+      linfo = scheme_resolve_info_extend(info, frame_size, head->count, head->count, 0);
+      for (k = 0, i = head->count; i--; ) {
+	if (skips[i])
+	  scheme_resolve_info_add_mapping(linfo, i, ((skips[i] < 0)
+						     ? -skips[i]
+						     : (skips[i] - 1 + frame_size)), 0);
+	else
+	  scheme_resolve_info_add_mapping(linfo, i, k++, 0);
       }
       
       body = scheme_resolve_expr(body, linfo);
@@ -2553,13 +2591,13 @@ begin0_execute(Scheme_Object *obj)
 }
 
 static void begin0_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
-			    int depth, int delta, int num_toplevels)
+			    int depth, int letlimit, int delta, int num_toplevels)
 {
   Scheme_Sequence *seq = (Scheme_Sequence *)data;
   int i;
 
   for (i = 0; i < seq->count; i++) { 
-    scheme_validate_expr(port, seq->array[i], stack, depth, delta, num_toplevels);
+    scheme_validate_expr(port, seq->array[i], stack, depth, letlimit, delta, num_toplevels);
   }
 }
 
@@ -2857,7 +2895,7 @@ define_syntaxes_execute(Scheme_Object *form)
 }
 
 static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, 
-				     char *stack, int depth, int delta, int num_toplevels)
+				     char *stack, int depth, int letlimit, int delta, int num_toplevels)
 {
   Resolve_Prefix *rp;
   Scheme_Object *names, *val, *base_stack_depth, *dummy;

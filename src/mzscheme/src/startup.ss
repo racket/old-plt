@@ -629,84 +629,37 @@
   (provide get-stx-info))
 
 ;;----------------------------------------------------------------------
-;; define, when, unless, let/ec, define-struct
+;; -define, when, unless, let/ec, define-struct
 
 (module #%define-et-al #%kernel
   (require-for-syntax #%kernel #%stx #%qq-and-or #%cond #%struct-info #%ds-helper)
 
-  (define-syntaxes (define define-syntax)
+  ;; No error checking here, because these macros merely help
+  ;;  us write macros before the real define and define-syntax
+  (define-syntaxes (-define -define-syntax)
     (let ([here (quote-syntax here)])
       (let ([mk-define
 	     (lambda (base)
 	       (lambda (code)
-		 (if (or (identifier? code)
-			 (not (stx-pair? (stx-cdr code))))
-		     (raise-syntax-error #f "bad syntax" code))
 		 (let ([body (stx-cdr code)])
-		   (let ([first (stx-car body)]
-			 [check-context
-			  (lambda ()
-			    (if (memq (syntax-local-context) '(expression))
-				(raise-syntax-error 
-				 #f
-				 "allowed only in definition contexts"
-				 code)))])
+		   (let ([first (stx-car body)])
 		     (cond
 		      [(identifier? first)
-		       (if (and (stx-pair? (stx-cdr body))
-				(stx-null? (stx-cdr (stx-cdr body))))
-			   (begin
-			     (check-context)
-			     (datum->syntax-object
-			      here
-			      `(,base (,first) ,@(stx->list (stx-cdr body)))
-			      code))
-			   (raise-syntax-error
-			    #f
-			    "bad syntax (zero or multiple expressions after identifier)"
-			    code))]
-		      [(stx-pair? first)
-		       (let ([bad-symbol  (lambda (s) (raise-syntax-error #f
-									  "bad identifier"
-									  code
-									  s))])
-			 (let loop ([l first])
-			   (cond
-			    [(stx-null? l) #f]
-			    [(stx-pair? l) 
-			     (if (identifier? (stx-car l))
-				 (loop (stx-cdr l))
-				 (bad-symbol (stx-car l)))]
-			    [(identifier? l) #f]
-			    [else (bad-symbol l)])))
-		       (let ([pbody (stx-cdr body)])
-			 (if (not (stx-list? pbody))
-			     (raise-syntax-error
-			      #f
-			      "bad syntax (illegal use of `.')"
-			      code))
-			 (if (stx-null? pbody)
-			     (raise-syntax-error
-			      #f
-			      "bad syntax (empty procedure body)"
-			      code))
-			 (begin
-			   (check-context)
-			   (datum->syntax-object
-			    (quote-syntax here)
-			    `(,base (,(stx-car first)) 
-				    (lambda ,(stx-cdr first) ,@(stx->list pbody)))
-			    code)))]
+		       (datum->syntax-object
+			here
+			`(,base (,first) ,@(stx->list (stx-cdr body)))
+			code)]
 		      [else
-		       (raise-syntax-error
-			#f
-			"not an identifier"
-			code
-			first)])))))])
+		       (let ([pbody (stx-cdr body)])
+			 (datum->syntax-object
+			  (quote-syntax here)
+			  `(,base (,(stx-car first)) 
+				  (lambda ,(stx-cdr first) ,@(stx->list pbody)))
+			  code))])))))])
 	(values (mk-define (quote-syntax define-values))
 		(mk-define (quote-syntax define-syntaxes))))))
 
-  (define-syntax when
+  (-define-syntax when
     (lambda (x)
       (let ([l (syntax->list x)])
 	(if (and l
@@ -724,7 +677,7 @@
 	     "bad syntax"
 	     x)))))
 
-  (define-syntax unless
+  (-define-syntax unless
     (lambda (x)
       (let ([l (syntax->list x)])
 	(if (and l
@@ -743,7 +696,7 @@
 	     "bad syntax"
 	     x)))))
 
-  (define-syntax let/ec 
+  (-define-syntax let/ec 
     (lambda (code)
       (let ([l (syntax->list code)])
 	(if (and l
@@ -900,7 +853,7 @@
 			 super-id/struct:
 			 (syntax->list field-names)))))))))
 
-  (provide define define-syntax when unless let/ec define-struct))
+  (provide -define -define-syntax when unless let/ec define-struct))
 
 ;;----------------------------------------------------------------------
 ;; #%small-scheme: assembles all basic forms we have so far
@@ -910,7 +863,7 @@
 
   (provide (all-from #%qq-and-or)
 	   (all-from #%cond)
-	   (all-from #%define-et-al)))
+	   (all-from-except #%define-et-al)))
 
 ;;----------------------------------------------------------------------
 ;; pattern-matching utilities
@@ -920,14 +873,14 @@
   (require #%stx #%small-scheme)
 
   ;; Checks whether s is "..."
-  (define (...? s)
+  (-define (...? s)
     (if (symbol? (syntax-e s))
 	(module-identifier=? s (quote-syntax ...))
 	#f))
 
   ;; memq on a list of identifiers, and
   ;;  nested identifiers
-  (define (stx-memq ssym l)
+  (-define (stx-memq ssym l)
     (ormap (lambda (p)
 	     (and (syntax? p)
 		  (bound-identifier=? ssym p)))
@@ -935,7 +888,7 @@
   
   ;; memq on a list of identifiers and
   ;;  nested identifiers, returns a position
-  (define (stx-memq-pos ssym l)
+  (-define (stx-memq-pos ssym l)
     (let loop ([p 0][l l])
       (cond
        [(null? l) #f]
@@ -946,7 +899,7 @@
 
   ;; Like stx-memq-pos, but goes into nestings to
   ;;  find identifiers.
-  (define (stx-memq*-pos ssym l)
+  (-define (stx-memq*-pos ssym l)
     (let loop ([p 0][l l])
       (cond
        [(null? l) #f]
@@ -959,13 +912,13 @@
        [else (loop (add1 p) (cdr l))])))
 
   ;; For error reporting:
-  (define (pick-specificity e de)
+  (-define (pick-specificity e de)
     (if (eq? e de)
 	(list e)
 	(list e de)))
 
 
-  (define (who->name id)
+  (-define (who->name id)
     (let ([b (identifier-binding id)])
       (if (pair? b)
 	  (list (syntax-e id)
@@ -973,7 +926,7 @@
 		(cadddr b))
 	  (syntax-e id))))
 
-  (define syntax-stxsrc '(syntax syntax mzscheme))
+  (-define syntax-stxsrc '(syntax syntax mzscheme))
 
   ;;----------------------------------------------------------------------
   ;; Input matcher
@@ -1000,8 +953,8 @@
   ;; does not contain the pattern variables as "keys", since the positions
   ;; can also be determined by the prototype.
   ;;
-  (define (make-match&env/extract-vars who top p k just-vars? phase-param?)
-    (define (m&e p local-top use-ellipses? last? id-is-rest?)
+  (-define (make-match&env/extract-vars who top p k just-vars? phase-param?)
+    (-define (m&e p local-top use-ellipses? last? id-is-rest?)
       (cond
        [(and use-ellipses? (ellipsis? p))
 	(if (stx-null? (stx-cdr (stx-cdr p)))
@@ -1226,15 +1179,15 @@
 				null))
 		 ,(app-e r))))))
 
-  (define (make-match&env who top p k phase-param?)
+  (-define (make-match&env who top p k phase-param?)
     (make-match&env/extract-vars who top p k #f phase-param?))
   
-  (define (get-match-vars who top p k)
+  (-define (get-match-vars who top p k)
     (make-match&env/extract-vars who top p k #t #f))
 
   ;; Create an S-expression that applies
   ;; rest to `e'. Optimize ((lambda (e) E) e) to E.
-  (define (app-e rest)
+  (-define (app-e rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
 	     (equal? (cadr rest) '(e)))
@@ -1243,7 +1196,7 @@
 
   ;; Create an S-expression that applies
   ;; rest to e.
-  (define (app rest e)
+  (-define (app rest e)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
 	     (equal? (cadr rest) '(e)))
@@ -1264,7 +1217,7 @@
 
   ;; Create an S-expression that appends
   ;; e1 and e2. Optimize...
-  (define (app-append e1 e2)
+  (-define (app-append e1 e2)
     (if (and (pair? e1)
 	     (eq? (car e1) 'list)
 	     (pair? (cdr e1))
@@ -1290,9 +1243,9 @@
   ;; An environment for an expander is a list*; see the note above,
   ;; under "Input Matcher", for details.
   ;;
-  (define (make-pexpand p proto-r k dest)
-    (define top p)
-    (define (expander p proto-r local-top use-ellipses? use-tail-pos hash!)
+  (-define (make-pexpand p proto-r k dest)
+    (-define top p)
+    (-define (expander p proto-r local-top use-ellipses? use-tail-pos hash!)
       (cond
        [(and use-ellipses? (ellipsis? p))
 	(let*-values ([(p-head) (stx-car p)]
@@ -1503,7 +1456,7 @@
   ;; apply-to-r creates an S-expression that applies
   ;; rest to `r', but it also optimizes ((lambda (r) E) r)
   ;; as simply E.
-  (define (apply-to-r rest)
+  (-define (apply-to-r rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
 	     (equal? (cadr rest) '(r)))
@@ -1516,7 +1469,7 @@
   ;; a quoted as the "optimization" --- one that
   ;; is necessary to preserve the syntax wraps
   ;; associated with p.
-  (define (apply-cons stx h t p)
+  (-define (apply-cons stx h t p)
     (cond
      [(syntax? stx)
       ;; Keep location information
@@ -1559,7 +1512,7 @@
   ;;  (see the note under "Input Matcher") and in that case
   ;;  use-tail-pos is a number indicating the list-tail
   ;;  position of the last element
-  (define (apply-list-ref e p use-tail-pos)
+  (-define (apply-list-ref e p use-tail-pos)
     (cond
      [(and use-tail-pos (= p use-tail-pos))
       (cond
@@ -1577,7 +1530,7 @@
 
   ;; Returns a list that nests a pattern variable as deeply as it
   ;; is ellipsed. Escaping ellipses are detected.
-  (define get-ellipsis-nestings
+  (-define get-ellipsis-nestings
     (lambda (p k)
       (let sub ([p p][use-ellipses? #t])
 	(cond 
@@ -1606,7 +1559,7 @@
   ;; entry can be unwrapped by one, it is, and the resulting
   ;; prototype is paired with #f. Otherwise, the prototype is left
   ;; alone and paired with #t.
-  (define ellipsis-sub-env
+  (-define ellipsis-sub-env
     (lambda (nesting proto-r src detail-src)
       (let ([v (ormap (lambda (proto)
 			(let ([start (if (pair? proto)
@@ -1637,7 +1590,7 @@
 		  (loop (car n)))))))
 	v)))
 
-  (define (extract-vars proto-r)
+  (-define (extract-vars proto-r)
     (map (lambda (i)
 	   (let loop ([i i])
 	     (if (syntax? i)
@@ -1648,7 +1601,7 @@
   ;; Checks that a variable is not in the prototype
   ;; environment, and specifically not an ellipsed
   ;; variable.
-  (define (check-not-pattern ssym proto-r)
+  (-define (check-not-pattern ssym proto-r)
     (for-each (lambda (p)
 		(when (pair? p)
 		  (let loop ([l (car p)])
@@ -1664,7 +1617,7 @@
 
   ;; Tests if x is an ellipsing pattern of the form
   ;;   (blah ... . blah2)
-  (define (ellipsis? x)
+  (-define (ellipsis? x)
     (and (stx-pair? x) 
 	 (let ([d (stx-cdr x)])
 	   (and (stx-pair? d) 
@@ -1673,7 +1626,7 @@
 
   ;; Takes an environment prototype and removes
   ;; the ellipsis-nesting information.
-  (define (flatten-nestings nestings filter?)
+  (-define (flatten-nestings nestings filter?)
     (let loop ([nestings nestings])
       (if (null? nestings)
 	  null
@@ -1685,7 +1638,7 @@
 		    (loop (cdr nestings)))
 	      (loop (cdr nestings))))))
 
-  (define (multiple-ellipsis-vars? proto-r)
+  (-define (multiple-ellipsis-vars? proto-r)
     (let loop ([proto-r proto-r])
       (cond
        [(null? proto-r) #f]
@@ -1698,7 +1651,7 @@
 	   [else (loop (cdr proto-r))]))]
        [else (loop (cdr proto-r))])))
 
-  (define (no-ellipses? stx)
+  (-define (no-ellipses? stx)
     (let loop ([stx stx])
       (cond
        [(stx-pair? stx)
@@ -1723,16 +1676,16 @@
   (require #%stx #%small-scheme)
   (require-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
-  (define (ellipsis-count-error sexp sloc)
+  (-define (ellipsis-count-error sexp sloc)
     (raise-syntax-error
      '(syntax syntax mzscheme)
      "incompatible ellipsis match counts for template"
      sexp
      sloc))
 
-  (define-syntax syntax-case**
+  (-define-syntax syntax-case**
     (lambda (x)
-      (define l (and (stx-list? x) (cdr (stx->list x))))
+      (-define l (and (stx-list? x) (cdr (stx->list x))))
       (unless (and (stx-list? x)
 		   (> (length l) 3))
 	(raise-syntax-error
@@ -1820,18 +1773,18 @@
 			       [fender (car fenders)]
 			       [unflat-pattern-vars (car unflat-pattern-varss)]
 			       [answer (car answers)])
-			   (define pattern-vars
+			   (-define pattern-vars
 			     (map (lambda (var)
 				    (let loop ([var var])
 				      (if (syntax? var)
 					  var
 					  (loop (car var)))))
 				  unflat-pattern-vars))
-			   (define temp-vars
+			   (-define temp-vars
 			     (map
 			      (lambda (p) (datum->syntax-object p (gensym) #f))
 			      pattern-vars))
-			   (define tail-pattern-var (sub1 (length pattern-vars)))
+			   (-define tail-pattern-var (sub1 (length pattern-vars)))
 			   ;; Here's the result expression for one match:
 			   (let* ([do-try-next (if (car fenders)
 						   (list (quote-syntax try-next))
@@ -1943,9 +1896,9 @@
 				 m))))])))
 	     x))))))
 
-  (define-syntax syntax
+  (-define-syntax syntax
     (lambda (x)
-      (define here-stx (quote-syntax here))
+      (-define here-stx (quote-syntax here))
       (unless (and (stx-pair? x)
 		   (let ([rest (stx-cdr x)])
 		     (and (stx-pair? rest)
@@ -2035,14 +1988,14 @@
   (require-for-syntax #%kernel #%stxcase)
 
   ;; Regular syntax-case
-  (define-syntax syntax-case*
+  (-define-syntax syntax-case*
     (lambda (stx)
       (syntax-case** #f #t stx () module-identifier=?
 	[(_ stxe kl id=? clause ...)
 	 (syntax (syntax-case** _ #f stxe kl id=? clause ...))])))
 
   ;; Regular syntax-case
-  (define-syntax syntax-case
+  (-define-syntax syntax-case
     (lambda (stx)
       (syntax-case** #f #t stx () module-identifier=?
 	[(_ stxe kl clause ...)
@@ -2051,7 +2004,7 @@
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the
   ;; resulting syntax object.
-  (define-syntax syntax/loc
+  (-define-syntax syntax/loc
     (lambda (stx)
       (syntax-case** #f #t stx () module-identifier=?
 	[(_ loc pattern)
@@ -2070,14 +2023,14 @@
   (require #%stx #%stxloc #%small-scheme #%stxcase)
   (require-for-syntax #%kernel #%stxcase #%stxloc #%sc #%qq-and-or #%cond)
 
-  (define (with-syntax-fail stx)
+  (-define (with-syntax-fail stx)
     (raise-syntax-error
      '(with-syntax with-syntax mzscheme)
      "binding match failed"
      stx))
 
   ;; Partly from Dybvig
-  (define-syntax with-syntax
+  (-define-syntax with-syntax
     (lambda (x)
       (syntax-case x ()
 	((_ () e1 e2 ...)
@@ -2107,7 +2060,7 @@
 		    (cond
 		     [(null? tmps)
 		      (syntax (begin e1 e2 ...))]
-		     [else `(syntax-case** #f #t ,(car tmps) () eq?
+		     [else `(syntax-case** #f #t ,(car tmps) () module-identifier=?
 			      [,(car outs) ,(loop (cdr tmps)
 						  (cdr outs))]
 			      [_else (with-syntax-fail
@@ -2118,12 +2071,12 @@
 						      (car outs))))])])))
 	      x)))))))
 
-  (define counter 0)
-  (define (append-number s)
+  (-define counter 0)
+  (-define (append-number s)
     (set! counter (add1 counter))
     (string->symbol (format "~a~s" s counter)))
 
-  (define (generate-temporaries sl)
+  (-define (generate-temporaries sl)
     (unless (stx-list? sl)
       (raise-type-error 
        'generate-temporaries
@@ -2154,7 +2107,7 @@
   (require #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
   (require-for-syntax #%kernel #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
 
-  (define (check-duplicate-identifier names)
+  (-define (check-duplicate-identifier names)
     (let/ec escape
       (let ([ht (make-hash-table)])
 	(for-each
@@ -2169,7 +2122,7 @@
 	 names)
 	#f)))
   
-  (define-syntax letrec-syntaxes
+  (-define-syntax letrec-syntaxes
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([(id ...) expr] ...) body1 body ...)
@@ -2178,7 +2131,7 @@
 				     ()
 	       body1 body ...))])))
 
-  (define-syntax letrec-syntax
+  (-define-syntax letrec-syntax
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([id expr] ...) body1 body ...)
@@ -2187,7 +2140,7 @@
 				     ()
 	       body1 body ...))])))
 
-  (define-syntax let-syntaxes
+  (-define-syntax let-syntaxes
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([(id ...) expr] ...) body1 body ...)
@@ -2203,7 +2156,7 @@
 					 ()
 		   body1 body ...))))])))
 
-  (define-syntax let-syntax
+  (-define-syntax let-syntax
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([id expr] ...) body1 body ...)
@@ -2212,7 +2165,7 @@
 	       body1 body ...))])))
 
   ;; From Dybvig, mostly:
-  (define-syntax syntax-rules
+  (-define-syntax syntax-rules
     (lambda (x)
       (syntax-case** syntax-rules #t x () module-identifier=?
 	((_ (k ...) ((keyword . pattern) template) ...)
@@ -2228,7 +2181,7 @@
 		 ((dummy . pattern) (syntax/loc x template))
 		 ...))))))))
 
-  (define-syntax syntax-id-rules
+  (-define-syntax syntax-id-rules
     (lambda (x)
       (syntax-case** syntax-id-rules #t x () module-identifier=?
 	((_ (k ...) (pattern template) ...)
@@ -2266,7 +2219,7 @@
 		#f))])
       (values f f)))
 
-  (define (check-splicing-list l)
+  (-define (check-splicing-list l)
     (unless (stx-list? l)
       (raise-type-error
        'unsyntax-splicing
@@ -2460,10 +2413,124 @@
 					   body)))]))))))
 
 ;;----------------------------------------------------------------------
+;; #%define : define and define-syntax
+
+(module #%define #%kernel
+  (require-for-syntax #%kernel #%stxcase-scheme #%stx #%qqstx)
+
+  (provide define define-syntax)
+
+  (define-syntaxes (define define-syntax)
+    (let ([mk
+	   (lambda (define-values-stx)
+	     (lambda (stx)
+	       (when (memq (syntax-local-context) '(expression))
+		 (raise-syntax-error 
+		  #f
+		  "not allowed in an expression context"
+		  stx))
+	       (syntax-case stx ()
+		 [(_ id expr)
+		  (identifier? #'id)
+		  (quasisyntax/loc stx (#,define-values-stx (id) expr))]
+		 [(_ id . rest)
+		  (identifier? #'id)
+		  (raise-syntax-error
+		   #f
+		   (syntax-case stx ()
+		     [(_ id expr ...)
+		      "bad syntax (multiple expressions after identifier)"]
+		     [(_ id)
+		      "bad syntax (zero expressions after identifier)"]
+		     [(_ id . rest)
+		      "bad syntax (illegal use of `.')"])
+		   stx)]
+		 [(_ something . rest)
+		  (not (stx-pair? #'something))
+		  (raise-syntax-error
+		   #f
+		   "bad syntax"
+		   stx
+		   #'something)]
+		 [(_ proto . body)
+		  (let-values ([(id mk-rhs)
+				(letrec ([simple-proto
+					  ;; check the args and set up a proc-maker; we return
+					  ;;  a proc maker instead of a final proc to enable
+					  ;;  left-to-right checking of the function protos
+					  (lambda (proto)
+					    (let-values ([(args mk-rhs)
+							  (syntax-case proto ()
+							    [(id arg ...)
+							     (values (syntax->list #'(arg ...))
+								     (lambda (body)
+								       (quasisyntax/loc stx (lambda (arg ...)
+											      . #,body))))]
+							    [(id arg ... . rest)
+							     (values (syntax->list #'(arg ... rest))
+								     (lambda (body)
+								       (quasisyntax/loc stx 
+									 (lambda (arg ... . rest)
+									   . #,body))))])])
+					      (for-each (lambda (a)
+							  (unless (identifier? a)
+							    (raise-syntax-error
+							     #f
+							     "not an identifier for procedure argument"
+							     stx
+							     a)))
+							args)
+					      (let ([dup (check-duplicate-identifier args)])
+						(when dup
+						  (raise-syntax-error
+						   #f
+						   "duplicate argument identifier"
+						   stx
+						   dup)))
+					      mk-rhs))]
+					 [general-proto
+					  ;; proto is guaranteed to be a stx-pair
+					  (lambda (proto)
+					    (syntax-case proto ()
+					      [(id . rest)
+					       (identifier? #'id)
+					       (values #'id
+						       (simple-proto proto))]
+					      [((something . more) . rest)
+					       ;; Here's where left-to-right checking comes in:
+					       ;;  first check the (something . more), then
+					       ;;  the rest.
+					       (let-values ([(id mk-rhs) (general-proto #'(something . more))])
+						 (let ([mk-inner (simple-proto proto)])
+						   (values id
+							   (lambda (body)
+							     (mk-rhs (list (mk-inner body)))))))]
+					      [(other . rest)
+					       (raise-syntax-error
+						#f
+						"bad syntax (not an identifier for procedure name, and not a nested procedure form)"
+						stx
+						#'other)]))])
+				  (general-proto #'proto))])
+		    (unless (stx-list? #'body)
+		      (raise-syntax-error
+		       #f
+		       "bad syntax (illegal use of `.' for procedure body)"
+		       stx))
+		    (when (stx-null? #'body)
+		      (raise-syntax-error
+		       #f
+		       "bad syntax (no expressions for procedure body)"
+		       stx))
+		    (quasisyntax/loc stx (#,define-values-stx (#,id) #,(mk-rhs #'body))))])))])
+      (values (mk #'define-values)
+	      (mk #'define-syntaxes)))))
+
+;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax
 
 (module #%more-scheme #%kernel
-  (require #%small-scheme)
+  (require #%small-scheme #%define)
   (require-for-syntax #%kernel #%stx #%stxcase-scheme)
 
   (define (check-parameter-procedure p)
@@ -2694,7 +2761,7 @@
 ;; #%misc : file utilities, etc. - remaining functions
 
 (module #%misc #%kernel
-  (require #%more-scheme #%small-scheme #%memtrace)
+  (require #%more-scheme #%small-scheme #%memtrace #%define)
   (require-for-syntax #%kernel #%stx #%stxcase-scheme)
   
   (define rationalize
@@ -3296,7 +3363,7 @@
 ;; #%stxmz-body
 
 (module #%stxmz-body #%kernel
-  (require #%stxcase-scheme)
+  (require #%stxcase-scheme #%define)
   (require-for-syntax #%kernel #%stx)
 
   ;; So that expansions print the way the MzScheme programmer expects:
@@ -3327,12 +3394,14 @@
   (require #%stx)
   (require #%stxmz-body)
   (require #%qqstx)
+  (require #%define)
 
   (provide (all-from #%more-scheme)
 	   (all-from-except #%misc make-standard-module-name-resolver)
-	   (all-from #%stxcase-scheme)
+	   (all-from-except #%stxcase-scheme -define -define-syntax)
 	   identifier? ;; from #%stx
 	   (all-from #%qqstx)
+	   (all-from #%define)
 	   (all-from-except #%kernel #%module-begin)
 	   (rename mzscheme-in-stx-module-begin #%module-begin)
 	   (rename #%module-begin #%plain-module-begin)))

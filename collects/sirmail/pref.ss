@@ -231,6 +231,14 @@
 					    (set-it v)))))
       p))
 
+  (define (make-boolean label p pref)
+    (define c
+      (make-object check-box% label p (lambda (c e)
+					(preferences:set pref (send c get-value)))))
+    (send c set-value (preferences:get pref))
+    (preferences:add-callback pref (lambda (name val)
+				     (send c set-value val))))
+
   (define (is-host-address? s)
     (regexp-match "^([-a-zA-Z0-9]+[.])*[-a-zA-Z0-9]+$" s))
 
@@ -365,6 +373,8 @@
 				  "Aliases File")
 
       (make-text-list "Self Addresses" p 'sirmail:self-addresses check-simple-user-address)
+
+      (make-boolean "Enable Compose-with-Emacs" p 'sirmail:use-extenal-composer?)
 
       p))
 

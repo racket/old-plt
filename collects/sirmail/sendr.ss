@@ -223,7 +223,7 @@
 		     (case external-composer
 		       [(xemacs)
 			(string-append "gnuclient +5 " t)]
-		       [(emacs)
+		       [(gnu-emacs)
 			(string-append "emacsclient +5 " t)]))
 
 		    (send message-editor load-file t 'guess #t)

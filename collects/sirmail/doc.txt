@@ -102,10 +102,6 @@ Internal options that still need preference-panel support:
     If this is 'on, it hilights urls in the text. Clicking on the
     urls will open a web browser, pointing it at that url.
 
-  - use-external-composer?: (union #f #t), defaults to #f
-    If true, you can select an external program for composing
-    outgoing messages.
-
 -------------------------------------------------------------------
 
 Implementation Note:

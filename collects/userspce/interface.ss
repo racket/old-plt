@@ -29,13 +29,20 @@
       (aries:make-zodiac-mark object)
       (case zodiac-phase
 	[(expander)
-	 (make-exn:zodiac-syntax string
-				 (current-continuation-marks)
-				 #f
-				 link-tag)]
+	 (if link-tag
+	     (make-exn:zodiac-syntax string
+				     (current-continuation-marks)
+				     #f
+				     link-tag)
+	     (make-exn:syntax string
+			      (current-continuation-marks)
+			      #f))
 	[(reader)
-	 (make-exn:zodiac-read
-	  string (current-continuation-marks) #f link-tag)]
+	 (if link-tag
+	     (make-exn:zodiac-read
+	      string (current-continuation-marks) #f link-tag)
+	     (make-exn:read
+	      string (current-continuation-marks) #f))]
 	[else (make-exn:user string (current-continuation-marks))]))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
@@ -46,8 +53,9 @@
 	(let ([string (apply format
 			     (if (eq? type 'internal)
 				 (string-append "Internal error: "
-						link-text
-						": "
+						(if link-text
+						    (format "~a: " link-text)
+						    "")
 						s)
 				 (string-append link-text ": " s))
 			     args)])

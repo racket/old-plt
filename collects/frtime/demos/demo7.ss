@@ -3,7 +3,10 @@
   (require
    (lib "animation.ss" "frtime")
    (lib "erl.ss" "frtime")
+   (lib "list.ss" "frtime")
    (all-except (lib "match.ss") match))
+  
+  (provide (all-defined))
   
   (define slave (new-cell (make-tid 1179 'frp-man)))
   
@@ -15,12 +18,12 @@
           [paddle1-pos (switch (make-posn 30 200)
                                (left-clicks . ==> .
                                             (lambda (dummy)
-                                              (hold (make-posn 30 200)
-                                                    ((remote-reg
-                                                      (get-value slave)
+                                              (hold ((remote-reg
+                                                      (value-now slave)
                                                       'paddle1-pos)
                                                      . ==> .
-                                                     (lambda (l) (make-posn (first l) (second l))))))))]
+                                                     (lambda (l) (make-posn (first l) (second l))))
+                                                    (make-posn 30 200)))))]
           [collide (match-lambda
                      [(_ mp p)
                       (let ([u (normalize (posn- mp p))])

@@ -4,7 +4,10 @@
            (lib "list.ss" "frtime")
            (lib "erl.ss" "frtime"))
   
-  (define master (make-tid 1178 'frp-man))
+  (provide (all-defined)
+           (all-from-except (lib "erl.ss" "frtime")))
+  
+  (define master (new-cell (make-tid 1178 'frp-man)))
   
   (define pos1
     (let* ([paddle-radius 20]
@@ -14,8 +17,8 @@
                          (left-clicks
                           . ==> .
                           (lambda (dummy)
-                            (hold (list 300 300 100 100 0 0)
-                                  (remote-reg (get-value master) 'pong)))))]
+                            (hold (remote-reg (value-now master) 'pong)
+                                  (list 300 300 100 100 0 0)))))]
            [paddle2-pos (make-posn (first pong) (second pong))]
            [pos1 (make-posn (third pong) (fourth pong))]
            [p1-score (list-ref pong 4)]

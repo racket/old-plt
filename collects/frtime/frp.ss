@@ -122,12 +122,15 @@
                      (unregister #f fn) ; clear out stale dependencies from previous apps
                      (let* ([cur-fn (value-now fn)]
                             [cur-app (safe-eval (apply cur-fn args))]
+                            [ccm (current-continuation-marks)]
                             [ret (proc->signal void fn cur-app)]
                             [thunk (lambda ()
                                      (when (not (eq? cur-fn (value-now fn)))
                                        (unregister ret cur-app)
                                        (set! cur-fn (value-now fn))
                                        (set! cur-app (safe-eval (apply cur-fn args)))
+                                       (when (signal? cur-app)
+                                         (set-signal-continuation-marks! cur-app ccm))
                                        (register ret cur-app))
                                      (value-now cur-app))])
                        (set-signal-thunk! ret thunk)
@@ -169,6 +172,20 @@
     (if (signal? v)
         (signal-depth v)
         0))
+  
+  (define proc->signal/marks
+    (opt-lambda ([thunk void]
+                 [marks (current-continuation-marks)])
+      (lambda producers
+        (let ([sig (make-signal
+                    undefined empty #f thunk
+                    (add1 (apply max 0 (map safe-signal-depth
+                                            producers)))
+                    marks)])
+          (when (cons? producers)
+            (register sig producers))
+          (set-signal-value! sig (safe-eval (thunk)))
+          sig))))
   
   (define (proc->signal thunk . producers)
     (let ([sig (make-signal
@@ -296,14 +313,18 @@
   
   (define-syntax safe-eval
     (syntax-rules ()
-      [(_ expr ...) (with-handlers ([exn?
-                                     (lambda (exn)
-                                       (cond
-                                         [(and (exn:application:type? exn)
-                                               (undefined? (exn:application-value exn)))]
-                                         [else (thread (lambda () (raise exn)))])
-                                       undefined)])
-                      expr ...)]))
+      [(_ expr ...)
+       (with-continuation-mark
+        'frtime 'safe-eval
+        (with-handlers ([exn?
+                         (lambda (exn)
+                           (cond
+                             [(and (exn:application:type? exn)
+                                   (undefined? (exn:application-value exn)))]
+                             [(man?) (iq-enqueue (list exceptions (list exn 'unknown)))]
+                             [else (thread (lambda () (fprintf (current-error-port) "exception caught outside frtime engine~n") (raise exn)))])
+                           undefined)])
+          expr ...))]))
   
   ; could use special treatment for constructors
   ; to avoid making lots of garbage (?)
@@ -348,14 +369,16 @@
       [(fn . args) (lambda () (apply fn (map value-now args)))]))
 
   (define (lift strict? fn . args)
-    (if (ormap behavior? args)
-        (apply
-         proc->signal
-         (apply (if strict? create-strict-thunk create-thunk) fn args)
-         args)
-        (if (and strict? (ormap undefined? args))
-            undefined
-            (apply fn args))))
+    (with-continuation-mark
+     'frtime 'lift-active
+     (if (ormap behavior? args)
+         (apply
+          proc->signal
+          (apply (if strict? create-strict-thunk create-thunk) fn args)
+          args)
+         (if (and strict? (ormap undefined? args))
+             undefined
+             (apply fn args)))))
   
   (define (last)
     (let ([prev #f])
@@ -730,9 +753,9 @@
        (let outer ()
          (with-handlers ([exn?
                           (lambda (exn)
-                            ;(fprintf (current-error-port) "message: ~a~n" (exn-message exn))
                             (when cur-beh
-                              (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
+                              (when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
+                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh)))
                               (iq-enqueue (list exceptions (list exn cur-beh)))
                               (when (behavior? cur-beh)
                                 (undef cur-beh)))
@@ -776,7 +799,7 @@
                       (set-rest! f+l (cons tid (rest f+l)))))
                   (loop)]
                  [('remote-evt sym val)
-                  (iq-enqueue (hash-table-get named-dependents sym (lambda () dummy)) val)
+                  (iq-enqueue (list (hash-table-get named-dependents sym (lambda () dummy)) val))
                   (loop)]
                  [msg
                   (fprintf (current-error-port)
@@ -810,6 +833,10 @@
                  (loop)))
              
              (inner)))))))
+
+  (define man?
+    (opt-lambda ([v (self)])
+      (eq? v man)))
 
   (define dummy
     (proc->signal void))
@@ -954,9 +981,6 @@
                       result))])
       (proc->signal thunk b)))
   
-  (define (man? v)
-    (eq? v man))
-
   ; new-cell : behavior[a] -> behavior[a] (cell)
   (define new-cell
     (opt-lambda ([init undefined])
@@ -1023,6 +1047,12 @@
   
   (define (set-eventspace evspc)
     (set! drs-eventspace evspc))
+  
+  (define raise-exceptions (new-cell #t))
+  (define exception-raiser
+    (exceptions . ==> . (lambda (p) (when (value-now raise-exceptions)
+                                      (thread
+                                       (lambda () (raise (car p))))))))
   
   (define value-snip-copy%
     (class string-snip%
@@ -1097,7 +1127,7 @@
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lifted lifted/nonstrict)
+             (syntax-case c (lifted lifted:nonstrict)
                [(lifted . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
@@ -1111,7 +1141,7 @@
                         (apply lift true fun-name args))
                      ...
                      (provide (rename tmp-name fun-name) ...))))]
-               [(lifted/nonstrict . ids)
+               [(lifted:nonstrict . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
                                (map (lambda (id)
@@ -1153,8 +1183,8 @@
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lifted lifted/nonstrict as-is/unchecked as-is)
-               [(lifted/nonstrict module . ids)
+             (syntax-case c (lifted lifted:nonstrict as-is:unchecked as-is)
+               [(lifted:nonstrict module . ids)
                 (with-syntax ([(fun-name ...) #'ids]
                               [(tmp-name ...) (generate-temporaries/loc stx #'ids)])
                   #'(begin
@@ -1172,7 +1202,7 @@
                       (define (fun-name . args)
                         (apply lift true tmp-name args))
                       ...))]
-               [(as-is/unchecked module id ...)
+               [(as-is:unchecked module id ...)
                 (syntax (begin clause ... (require (rename module id id) ...)))]
                [(as-is module . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]

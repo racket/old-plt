@@ -16,7 +16,7 @@
 			IntermediateDirectory="Debug"
 			ConfigurationType="2"
 			UseOfATL="1"
-			ATLMinimizesCRunTimeLibraryUsage="TRUE"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
@@ -26,20 +26,23 @@
 				MinimalRebuild="TRUE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="0"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
+				BrowseInformation="1"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"
-                                Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386
+"
 				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\..\..\mysterx\myspage\$(InputName).def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
@@ -49,12 +52,14 @@
 			<Tool
 				Name="VCMIDLTool"
 				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
+				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
 				TypeLibraryName="$(InputDir)$(InputName).tlb"
-				HeaderFileName="$(InputName).h"/>
+				HeaderFileName="$(InputName).h"
+				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-                                Description="Register $(InputName).dll"
+				Description="Register $(InputName).dll"
 				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -97,15 +102,16 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-                                Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386
+"
 				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
 				ModuleDefinitionFile="..\..\..\mysterx\myspage\$(InputName).def"
+				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -119,7 +125,7 @@
 				HeaderFileName="$(InputName).h"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-                                Description="Register $(InputName).dll"
+				Description="Register $(InputName).dll"
 				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>

@@ -16,12 +16,12 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
   
-  (provide parse-advanced parse-advanced-interactions)
+  (provide parse-advanced parse-advanced-interactions parse-advanced-method)
   ;(provide advanced-grammar)  
   
   (define parsers
     (testing-parser
-     (start CompilationUnit AdvancedInteractions)
+     (start CompilationUnit AdvancedInteractions MethodDeclaration)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
@@ -51,9 +51,10 @@
        [(CHAR_LIT) (make-literal 'char (build-src 1) $1)]
        [(STRING_LIT) (make-literal 'string 
                                    (make-src (position-line $1-start-pos)
-                                                     (position-col $1-start-pos)
-                                                     (+ (position-offset $1-start-pos) (interactions-offset))
-                                                     (- (position-offset (cadr $1)) (position-offset $1-start-pos)))
+                                             (position-col $1-start-pos)
+                                             (+ (position-offset $1-start-pos) (interactions-offset))
+                                             (- (position-offset (cadr $1)) (position-offset $1-start-pos))
+                                             (file-path))
                                    (car $1))]
        [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
       
@@ -154,7 +155,7 @@
        [(ClassDeclaration) $1]
        [(InterfaceDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
-       [(CLASS_BOX) (parse-class-box $1)]
+       [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'advanced)]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       
@@ -796,4 +797,6 @@
   ;(set! parsers (car parsers))
   
   (define parse-advanced (car parsers))
-  (define parse-advanced-interactions (cadr parsers)))
+  (define parse-advanced-interactions (cadr parsers))
+  (define parse-advanced-method (caddr parsers))
+  )

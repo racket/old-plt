@@ -17,8 +17,8 @@
                      (define-struct name fields (make-inspector)))]))
 
   
-  ;(make-src int int int)
-  (p-define-struct src (line col pos span))
+  ;(make-src int int int int loc)
+  (p-define-struct src (line col pos span file))
   
   ;;(make-package (U #f name) (list import) (list (U class-def interface-def)))
   (p-define-struct package (name imports defs))

@@ -17,12 +17,12 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
     
-  (provide parse-beginner parse-beginner-interactions)
+  (provide parse-beginner parse-beginner-interactions parse-beginner-method)
   ;(provide beginner-grammar)
   
   (define parsers
     (testing-parser
-     (start CompilationUnit BeginnerInteractions)
+     (start CompilationUnit BeginnerInteractions MethodDeclaration)
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
      (error (lambda (tok-ok name val start-pos end-pos)
@@ -51,9 +51,10 @@
        [(CHAR_LIT) (make-literal 'char (build-src 1) $1)]
        [(STRING_LIT) (make-literal 'string 
                                    (make-src (position-line $1-start-pos)
-                                                     (position-col $1-start-pos)
-                                                     (+ (position-offset $1-start-pos) (interactions-offset))
-                                                     (- (position-offset (cadr $1)) (position-offset $1-start-pos)))
+                                             (position-col $1-start-pos)
+                                             (+ (position-offset $1-start-pos) (interactions-offset))
+                                             (- (position-offset (cadr $1)) (position-offset $1-start-pos))
+                                             (file-path))
                                    (car $1))])
 ;       [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
       
@@ -113,7 +114,7 @@
       (TypeDeclaration
        [(ClassDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
-       [(CLASS_BOX) (parse-class-box $1)]
+       [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'beginner)]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       
@@ -446,4 +447,5 @@
   
   (define parse-beginner (car parsers))
   (define parse-beginner-interactions (cadr parsers))
+  (define parse-beginner-method (caddr parsers))
   )

@@ -10,7 +10,7 @@
   
   (require (lib "lex.ss" "parser-tools"))
   
-  (provide parse parse-interactions)
+  (provide parse parse-interactions parse-method)
   
   ;main parsing function
   
@@ -47,4 +47,21 @@
          (determine-error find-advanced-error-interactions)
          (parse-advanced-interactions getter))
         ((full) (parse-full-interactions getter)))))
+  
+  ;parse-method: port string symbol -> method
+  (define (parse-method is loc level)
+    (port-count-lines! is)
+    (file-path loc)
+    (let ((getter (lambda () (get-token is))))
+      (case level
+        ((beginner)
+         (determine-error find-beginner-error-method)
+         (parse-beginner-method getter))
+        ((intermediate)
+         (determine-error find-intermediate-error-method)
+         (parse-intermediate-method getter))
+        ((advanced)
+         (determine-error find-advanced-error-method)
+         (parse-advanced-method getter))
+        ((full) (parse-full-method getter)))))
   )

@@ -2,6 +2,17 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.23:
+
+ * Changed the first argument of `raise-syntax-error' and the
+   calculation of the form name for the error message and `form' and
+   `module' fields of the `exn:syntax' exception structure. Also
+   changed the type of the `module' field to allow module path
+   indices.
+
+ * Fixed `module' to properly handle definitions where the name is an
+   uninterned symbol.
+
 Version 199.22:
 
  * Changed `define-struct' so that it can cooperate with other

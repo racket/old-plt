@@ -57,7 +57,7 @@ exit 1
                 (split-path
                  (resolve-path
                   (path->complete-path (simplify-path (resolve-path this)))))])
-    (unless (string? dir) (error 'install "Bad pathname for install: ~s" this))
+    (unless (path? dir) (error 'install "Bad pathname for install: ~s" this))
     (current-directory dir)
     (current-directory ".") ; avoid a "/" suffix
     (set! plthome (current-directory))

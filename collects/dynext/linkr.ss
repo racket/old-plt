@@ -40,7 +40,7 @@
     (case (string->symbol (system-library-subpath))
       [(sparc-solaris i386-solaris) (list "-G")]
       [(sparc-sunos4) (list "-Bdynamic")]
-      [(i386-freebsd) (list "-Bshareable")]
+      [(i386-freebsd-2.x) (list "-Bshareable")]
       [(rs6k-aix) (let ([version (read (car (process* "/usr/bin/uname" "-v")))])
 		    (list "-bM:SRE"
 			  (format "-bI:~a/mzscheme.exp" include-dir)

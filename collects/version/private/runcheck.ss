@@ -127,6 +127,7 @@
 
 	(let* ([wait-dialog #f]
 	       [dialog-sem (make-semaphore 0)]
+	       [got-cancel? #f] 
 	       [timer-proc
 		(lambda ()
 		  (let loop ([n 0])
@@ -155,10 +156,12 @@
 		    (string-constant 'please-wait)
 		    (string-constant 'checking-version-server)
 		    (lambda ()
+		      (set! got-cancel? #t)
 		      (with-handlers 
 		       ([void void]) ; thread might already be dead
 		       (kill-thread timeout-thread)
-		       (close-input-port the-port)))))
+		       (when the-port	
+			     (close-input-port the-port))))))
 	     (show-wait-dialog wait-dialog)
 	     (semaphore-post dialog-sem)))
 
@@ -180,6 +183,9 @@
 				 (make-url-string
 				  (cvi-triples))))))
 
+	  (when got-cancel? ; force exn in read, below
+		(close-input-port the-port))
+
 	  (let ([responses 
 		 (let loop ()
 		   (let ([r (read the-port)])
@@ -191,7 +197,7 @@
 			 (cons r (loop)))))]
 		[curr-version (version)]
 		[needs-update #f])
-	    
+
 	    (close-input-port the-port)
 		  
 	    ; responses are a list of lists of symbol/string pairs: 
@@ -296,5 +302,3 @@
 	 (with-handlers
 	  ((void void))
 	  (go)))))))
-
-

@@ -1147,7 +1147,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 {
   int xx1, yy1, xx, yy;
   HDC dc;
-  DWORD old_background, sz;
+  DWORD old_background;
   double w, h;
   wchar_t *ustring;
   long len, alen;
@@ -1575,12 +1575,12 @@ void wxDC::SetMapMode(int mode)
   if ((__type != wxTYPE_DC_PRINTER)
       && (::SetGraphicsMode(dc, GM_ADVANCED) != 0)) {
     XFORM xform;
-    xform.eM11 = user_scale_x;
+    xform.eM11 = (FLOAT)user_scale_x;
     xform.eM21 = 0;
     xform.eM12 = 0;
-    xform.eM22 = user_scale_y;
-    xform.eDx = device_origin_x;
-    xform.eDy = device_origin_y;
+    xform.eM22 = (FLOAT)user_scale_y;
+    xform.eDx = (FLOAT)device_origin_x;
+    xform.eDy = (FLOAT)device_origin_y;
     ::SetWorldTransform(dc, &xform);
   } else {
     ::SetViewportExtEx(dc, 1000, 1000, NULL);
@@ -1705,7 +1705,7 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
                 wxBitmap *source, double xsrc, double ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
 {
-  int xdest1, ydest1, xdest2, ydest2, xsrc1, ysrc1, iw, ih;
+  int xdest1, ydest1, xsrc1, ysrc1, iw, ih;
   HDC dc, dc_src, invented_dc, mdc = NULL;
   wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
   double selxs = 1.0, selys = 1.0, mselxs = 1.0, mselys = 1.0;
@@ -1777,7 +1777,6 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
     invented = new wxBitmap(iw, ih, mono_src);
     if (invented->Ok()) {
       GC_CAN_IGNORE void *pBits = NULL; /* set with use_alpha... */
-      int mono_mask;
 
       if (mask->GetDepth() > 1) {
 	if (!tried_ab) {

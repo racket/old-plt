@@ -265,8 +265,8 @@
 
 (define namespace (make-namespace 'no-constants
 				  (if annotate?
-				      ;'hash-percent-syntax
-				      'all-syntax
+				      'hash-percent-syntax
+				      ;'all-syntax
 				      'all-syntax)))
 
 (with-parameterization parameterization

@@ -2187,11 +2187,11 @@ call_cc (int argc, Scheme_Object *argv[])
     {
       Scheme_Saved_Stack *ss;
       ss = MALLOC_ONE_RT(Scheme_Saved_Stack);
+#ifdef MZTAG_REQUIRED
+      ss->type = scheme_rt_saved_stack;
+#endif
       isaved->prev = ss;
     }
-#ifdef MZTAG_REQUIRED
-    isaved->type = scheme_rt_saved_stack;
-#endif
     isaved = isaved->prev;
     size = csaved->runstack_size - (csaved->runstack - csaved->runstack_start);
     isaved->runstack_size = size;

@@ -9,6 +9,9 @@
                                (basis:setting-name x)))
            basis:settings))
 
+  (framework:preferences:set-default 'drscheme:backtrace-window-width 400 number?)
+  (framework:preferences:set-default 'drscheme:backtrace-window-height 300 number?)
+
   (framework:preferences:set-default 
    'drscheme:keybindings-window-size
    (cons 200 400)

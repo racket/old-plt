@@ -19,9 +19,21 @@ It's single initialization is argument is a bundle-table%. It supports:
       
 bundle-pasteboard%
 
-leaf-bundle-snip%
-node-bundle-snip%
-    
+leaf-bundle-snip% = (bundle-snip-mixin ...)
+  get-bundle : -> leaf-bundle%
+
+node-bundle-snip% = (bundle-snip-mixin ...)
+  get-bundle : -> node-bundle%
+  get-bundle-snips : -> (listof bundle-snip%)
+  get-width : -> integer
+  get-height : -> integer
+  
+bundle-snip-mixins support 
+   get-tree-width   : -> exact-integer
+   get-tree-height  : -> exact-integer
+   set-tree-width   : exact-integer -> void
+   set-tree-height  : exact-integer -> void
+
 |#
 
 (unit/sig drscheme:bundle:bundle-view/control^
@@ -112,8 +124,8 @@ node-bundle-snip%
                    [else (let* ([bundle-content-snip (car bundle-snips)]
                                 [bundle-content (send bundle-content-snip get-bundle)]
                                 
-                                [tree-width (send bundle-content get-tree-width)]
-                                [tree-height (send bundle-content get-tree-width)])
+                                [tree-width (send bundle-content-snip get-tree-width)]
+                                [tree-height (send bundle-content-snip get-tree-width)])
                            (o-loop bundle-content-snip 
                                    x 
                                    (+ y interior-height-addition text-space))
@@ -337,7 +349,9 @@ node-bundle-snip%
 	   (let ([label (get-text-from-user "New Node Bundle"
 					    "Label of node bundle")])
 	     (when label
-	       (new-child (lambda () (make-object node-bundle% (string->symbol label) '()))))))]
+	       (new-child (lambda () (make-object node-bundle% 
+                                       (string->symbol label)
+                                       null))))))]
         
         [new-bundle
          (lambda ()

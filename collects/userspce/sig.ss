@@ -7,6 +7,11 @@
 (require-library "coreflats.ss")
 (require-relative-library "ricedefs.ss")
 
+(define-signature plt:prims^
+  (beginning
+   intermediate
+   advanced))
+
 (define-signature plt:beginner-extras^
   ((struct posn (x y) -setters)
    (open mzlib:core-flat^)))
@@ -112,6 +117,7 @@
    setting/unparse
    (struct setting (name
 		    vocabulary-symbol
+		    primitives
 		    macro-libraries
 		    case-sensitive?
 		    allow-set!-on-undefined?

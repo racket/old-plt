@@ -31,6 +31,7 @@
   (define-struct/parse setting (key
 				name
 				vocabulary-symbol
+				primitives
 				macro-libraries
 				case-sensitive?
 				allow-set!-on-undefined?
@@ -61,6 +62,7 @@
 	     (name "Beginning Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
+	     (primitives beginner)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #t)
@@ -87,6 +89,7 @@
 	     (name "Intermediate Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
+	     (primitives intermediate)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #t)
@@ -113,6 +116,7 @@
 	     (name "Advanced Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
+	     (primitives advanced)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #t)
@@ -138,6 +142,7 @@
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
 	     (vocabulary-symbol mzscheme-debug)
+	     (primitives all)
 	     (macro-libraries ())
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
@@ -165,6 +170,7 @@
 	     (name "Textual Full Scheme without Debugging (MzScheme)")
 	     (macro-libraries ())
 	     (vocabulary-symbol mzscheme)
+	     (primitives all)
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #f)
@@ -426,20 +432,23 @@
     (let ([cache (make-hash-table-weak)])
       (lambda ()
 	(let ([ns (current-namespace)])
-	  (hash-table-get cache ns
-			  (lambda ()
-			    (let ([kwds (parameterize ([current-namespace (current-zodiac-namespace)])
-					  (let ([l (make-global-value-list)])
-					    (mzlib:function:filter (lambda (p) (keyword-name? (car p))) l)))])
-			      (let ([friendly?
-				     (with-handlers ([void (lambda (x) #f)])
-				       (andmap
-					(lambda (n)
-					  (and (keyword-name? (car n))
-					       (eq? (global-defined-value (car n)) (cdr n))))
-					kwds))])
-				(hash-table-put! cache ns friendly?)
-				friendly?))))))))
+	  (hash-table-get
+	   cache ns
+	   (lambda ()
+	     (let ([kwds (parameterize ([current-namespace (current-zodiac-namespace)])
+			   (let ([l (make-global-value-list)])
+			     (mzlib:function:filter
+			      (lambda (p) (keyword-name? (car p)))
+			      l)))])
+	       (let ([friendly?
+		      (with-handlers ([void (lambda (x) #f)])
+			(andmap
+			 (lambda (n)
+			   (and (keyword-name? (car n))
+				(eq? (global-defined-value (car n)) (cdr n))))
+			 kwds))])
+		 (hash-table-put! cache ns friendly?)
+		 friendly?))))))))
   
   ;; process/no-zodiac : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
   (define (process/no-zodiac reader f)
@@ -641,6 +650,8 @@
 		    (equal? name "Advanced Student"))])
       ans))
 
+  (define re:mred (regexp "MrEd"))
+
   ;; initialize-parameters : custodian
   ;;                         (list-of symbols)
   ;;                         setting
@@ -648,13 +659,16 @@
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
     (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
-                                      (if (regexp-match "MrEd" name)
+				       (if (regexp-match re:mred name)
                                            (list 'mred)
                                            (list)))]
-                  [(n) (apply make-namespace
-                              (if (zodiac-vocabulary? setting)
-                                  (append (list 'hash-percent-syntax) namespace-flags)
-                                  namespace-flags))])
+                  [(namespace)
+		   (apply make-namespace
+			  (cons
+			   'no-keywords
+			   (if (zodiac-vocabulary? setting)
+			       (cons 'hash-percent-syntax namespace-flags)
+			       namespace-flags)))])
       
       (when (zodiac-vocabulary? setting)
         (use-compiled-file-kinds 'non-elaboration))
@@ -665,8 +679,8 @@
       (error-value->string-handler drscheme-error-value->string-handler)
       (current-exception-handler drscheme-exception-handler)
       (initial-exception-handler drscheme-exception-handler)
-      (current-namespace n)
-      (current-zodiac-namespace n)
+      (current-namespace namespace)
+      (current-zodiac-namespace namespace)
       (break-enabled #t)
       (read-curly-brace-as-paren #t)
       (read-square-bracket-as-paren #t)

@@ -34,7 +34,7 @@
 	   (load startup)))
        (case (system-type)
 	 [(windows macos)
-	  (mred:graphical-read-eval-print-loop)]
+	  (mred:graphical-read-eval-print-loop (mred:current-eventspace))]
 	 [else
 	  (read-eval-print-loop)]))))
 

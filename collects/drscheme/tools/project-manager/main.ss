@@ -770,7 +770,9 @@
 
 		(when loaded-open-table
 		  (set! open-table (make-hash-table))
-		  (for-each (lambda (t) (hash-table-put! open-table (car t) (make-open-info #t (cadr t))))
+		  (for-each (lambda (t)
+			      (hash-table-put!
+			       open-table (car t) (make-open-info #t (cadr t))))
 			    (function:second loaded-open-table)))
 
 		(when loaded-collection-paths
@@ -996,7 +998,6 @@
 			 (hash-table-put! open-table sym info)
 			 info)))])
 	      (set-open-info-touched?! open-info #t)
-	      (print-struct #t)
 	      (send previous open)
 	      (if (open-info-open? open-info)
 		  (send previous open)

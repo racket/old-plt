@@ -169,7 +169,8 @@
       (mzlib:function:filter (lambda (x) (not (member (car x) omit-languages)))
 			     (map (lambda (x)
 				    (list (basis:setting-name x)
-					  (basis:setting-vocabulary-symbol x)))
+					  (basis:setting-vocabulary-symbol x)
+					  x))
 				  basis:settings)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -211,8 +212,9 @@
 	      (let ([l (read)]
 		    [s (read)]
 		    [tp (read)])
-		(when (memq l (map (lambda (l) (cadr l)) language-levels))
-		  (basis:set-setting-vocabulary-symbol! setting l))
+		(let ([language (assoc l (map (lambda (l) (cdr l)) language-levels))])
+		  (when language
+		    (set! setting (cadr language))))
 		(for-each
 		 (lambda (entry)
 		   (let ([tag (car entry)]

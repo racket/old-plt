@@ -31,7 +31,7 @@
    3)
 
   (fw:application:current-app-name "DrScheme")
-  ;(fw:version:add-spec 'd 10)
+  (fw:version:add-spec 'd 1)
   
   
   ;; no more extension after this point

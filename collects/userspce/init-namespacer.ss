@@ -1,8 +1,21 @@
 (unit/sig plt:init-namespace^
   (import plt:basis-import^
 	  [init-params : plt:init-params^]
+	  [prims : plt:prims^]
 	  mzlib:function^)
-  
+
+  (define (init-namespace)
+    (teachpack-thunk)
+    (setup-primitives))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;                                               ;;;
+  ;;;                  Teachpacks                   ;;;
+  ;;;                                               ;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;; adding the teachpack also adds some language-specific defns.
+
   (define (exploded->flattened exploded)
     (let ([sig exploded])
       (let loop ([l (vector->list sig)][r null])
@@ -66,10 +79,10 @@
 		      new-unit))
 	     #f)))))
 
-  ;; build-namespace-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
+  ;; build-teachpack-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
   ;; accepts a filename and returns a thunk that invokes the corresponding teachpack and
   ;; a symbol indicating if this is a mzscheme teachpack or a mred teachpack.
-  (define (build-namespace-thunk v)
+  (define (build-teachpack-thunk v)
     (unless (and (list? v)
 		 (andmap string? v))
 	    (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
@@ -149,8 +162,66 @@
 	#t
 	#f))
 
-  (define namespace-thunk (build-namespace-thunk null))
-  (define init-namespace (lambda () (namespace-thunk)))
-
+  (define teachpack-thunk (build-teachpack-thunk null))
   (define (teachpack-changed v)
-    (set! namespace-thunk (build-namespace-thunk v))))
+    (set! teachpack-thunk (build-teachpack-thunk v)))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;                                               ;;;
+  ;;;              Clear out names                  ;;;
+  ;;;                                               ;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+  (define (make-prims-to-remove prims)
+    (let ([ht (make-hash-table)])
+      (parameterize ([current-namespace (apply
+					 make-namespace
+					 (if (defined? 'mred@)
+					     (list 'mred)
+					     null))])
+	(for-each
+	 (lambda (pr)
+	   (let ([name (car pr)]
+		 [val (cdr pr)])
+	     (when (or (struct-type? val)
+		       (procedure? val))
+	       (hash-table-put! ht name #t))))
+	 (make-global-value-list)))
+      (for-each
+       (lambda (x)
+	 (hash-table-remove! ht x)
+	 (let ([hp-x (string->symbol
+		      (string-append
+		       "#%"
+		       (symbol->string x)))])
+	   (when (hash-table-get ht hp-x (lambda () #f))
+	     (hash-table-remove! ht hp-x))))
+       prims)
+      (hash-table-map ht (lambda (x y) x))))
+
+  (define to-remove-from-beginning (make-prims-to-remove prims:beginning))
+  (define to-remove-from-intermediate (make-prims-to-remove prims:intermediate))
+  (define to-remove-from-advanced (make-prims-to-remove prims:advanced))
+
+  (define (setup-primitives)
+    (let ([to-remove
+	   (case (init-params:setting-primitives (init-params:current-setting))
+	    [(beginner)
+	     to-remove-from-beginning]
+	    [(intermediate)
+	     to-remove-from-intermediate]
+	    [(advanced)
+	     to-remove-from-advanced]
+	    [else
+	     null])])
+      (for-each undefine to-remove)
+      (for-each (lambda (x)
+		  (let ([name (car x)]
+			[str-name (symbol->string (car x))])
+		    (when (and (>= (string-length str-name) 2)
+			       (string=? (substring str-name 0 2)
+					 "#%"))
+		      (keyword-name name))))
+		(make-global-value-list)))))
+

@@ -8,6 +8,7 @@
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^])
   (link
+   [prims : plt:prims^ ((require-relative-library "prims.ss"))]
    [init-params : plt:init-params^ ((require-relative-library "init-paramr.ss")
 				    import
 				    init-namespace
@@ -21,6 +22,7 @@
    [init-namespace : plt:init-namespace^ ((require-relative-library "init-namespacer.ss")
 					  import
 					  init-params
+					  prims
 					  mzlib:function)])
   (export
    (open init-params)

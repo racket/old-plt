@@ -227,6 +227,13 @@
     (kill-backtrace-window)
     (set! current-backtrace-window 
           (make-object (class (drscheme:frame:basics-mixin (fw:frame:standard-menus-mixin fw:frame:basic%)) args
+			 (rename [super-on-size on-size])
+			 (override
+			  [on-size
+			   (lambda (x y)
+			     (fw:preferences:set 'drscheme:backtrace-window-width x)
+			     (fw:preferences:set 'drscheme:backtrace-window-height y)
+			     (super-on-size x y))])
 			 (override
 			  [file-menu:between-print-and-close
 			   (lambda (file-menu)
@@ -236,7 +243,9 @@
 			   (lambda (file-menu)
 			     (void))])
 			 (sequence (apply super-init args)))
-            "Backtrace - DrScheme" #f 400 300))
+            "Backtrace - DrScheme" #f
+	    (fw:preferences:get 'drscheme:backtrace-window-width)
+	    (fw:preferences:get 'drscheme:backtrace-window-height)))
     (letrec ([text (make-object fw:text:basic%)]
              [ec (make-object fw:canvas:wide-snip% (send current-backtrace-window get-area-container) text)]
              [di-vec (list->vector dis)]

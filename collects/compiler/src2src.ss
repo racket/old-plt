@@ -310,7 +310,7 @@
         (and (not mutated?)
              value
              (send value get-value)))
-
+      
       (define/override (sexpr)
         ;; `(==lexical== ,name ,used ,mutated? ,inited? ,(get-value))
         src-stx
@@ -323,6 +323,7 @@
       (init-field binding)
       (super-instantiate ())
       (inherit-field src-stx) ;; The identifier
+      
       
       (define/public (is-used?) (send binding is-used?))
       (define/public (is-mutated?) (send binding is-mutated?))
@@ -945,7 +946,7 @@
         (set! rhss (cdr s)))
 
       (define/override (get-result-arity) (send body get-result-arity))
-
+      
       (define/override (simplify ctx)
         (set! rhss (map (lambda (rhs vars) 
                           (send rhs simplify 

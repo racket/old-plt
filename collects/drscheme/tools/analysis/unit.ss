@@ -8,15 +8,11 @@
 
     (mred:add-version-spec 's 1)
 
-    (define filename (build-path mred:constants:plt-home-directory 
-				 "mrspidey"
-				 "drspidey.ss"))
-
     (define invoke-spidey
       (lambda (frame)
 	(mred:show-busy-cursor
 	 (lambda ()
-	   (load/use-compiled (build-path filename))
+	   (require-library "mrspidey" "drspidey.ss")
 	   (set! invoke-spidey
 		 (invoke-open-unit/sig
 		  (global-defined-value 'tool@) 
@@ -31,9 +27,7 @@
 
     (define spidey-bitmap
       (drscheme:unit:make-bitmap
-       (build-path mred:constants:plt-home-directory
-		   "icons"
-		   "mrspidey.bmp")
+       (build-path (collection-path "icons") "mrspidey.bmp")
        "Analyze"))
 
     (define spidey-frame%

@@ -137,6 +137,13 @@ executables.
   for the current platform correspond to directories.
 
 
+> (mred-launcher-add-suffix path) - Returns a path with a suitable
+  executable suffix added, if it's not present already.
+
+> (mzscheme-launcher-add-suffix path) - Like
+  `mred-launcher-add-suffix', but for MzScheme launchers.
+
+
 > (mred-launcher-put-file-extension+style+filters) - Returns three
   values suitable for use as the `extension', `style', and `filters'
   arguments to `put-file', respectively. If MrEd launchers for this

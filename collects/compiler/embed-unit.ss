@@ -25,6 +25,21 @@
 	  [(macosx) (values ".app" '(enter-packages) #f)]
 	  [else (values #f null null)]))
 
+      (define (embedding-executable-add-suffix path mred?)
+	(let* ([path (if (string? path)
+			 (string->path path)
+			 path)]
+	       [fixup (lambda (re sfx)
+			(if (regexp-match re (path->bytes path))
+			    path
+			    (path-replace-suffix path sfx)))])
+	  (case (system-type)
+	    [(windows) (fixup #rx#"[.][eE][xX][eE]$" #".exe")]
+	    [(macosx) (if mred?
+			  (fixup #rx#"[.][aA][pP][pP]$" #".app")
+			  path)]
+	    [else path])))
+      
       ;; Find executable relative to the "mzlib"
       ;; collection.
       (define (find-exe mred? variant)

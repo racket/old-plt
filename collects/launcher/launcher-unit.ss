@@ -539,6 +539,12 @@
 	  [(windows) (values ".exe" null '(("Executable" "*.exe")))]
 	  [(macosx) (values ".app" '(enter-packages) #f)]
 	  [else (values #f null null)]))
+      
+      (define (mred-launcher-add-suffix path)
+	(embedding-executable-add-suffix path #t))
+
+      (define (mzscheme-launcher-add-suffix path)
+	(embedding-executable-add-suffix path #f))
 
       (define (mred-launcher-put-file-extension+style+filters)
 	(put-file-extension+style+filters 

@@ -528,3 +528,7 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
   `style' result is suitable for use with `get-directory', and the
   `extension' result may be a string indicating a required extension
   for the directory name (e.g., ".app" for Mac OS X).
+
+
+> (embedding-executable-add-suffix path mred?) - Returns a path with a
+  suitable executable suffix added, if it's not present already.

@@ -12,7 +12,7 @@
       (cond
        [(not (eq? (system-type) 'windows))
         (printf "Warning: can't install MysterX on non-Windows machine\n")]
-       [((not (andmap file-exists? dll-paths)))
+       [(not (andmap file-exists? dll-paths))
         (printf "Warning: MysterX binaries not installed\n")]
        [(not winsys-dir)
         (printf "Warning: Can't run REGSVR32 on libraries\n")]

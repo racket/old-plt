@@ -1027,7 +1027,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   for (i = 0; i < end; i++) {
     if (format[i] == '~') {
       i++;
-      if (isspace(format[i])) {
+      if ((format[i] < 128) && isspace(format[i])) {
 	/* skip spaces... */
       } else switch (format[i]) {
       case '~':

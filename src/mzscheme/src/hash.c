@@ -268,6 +268,31 @@ Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key)
   return val;
 }
 
+int scheme_hash_table_equal(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2)
+{
+  Scheme_Object **vals, **keys, *v;
+  int i;
+
+  if ((t1->count != t2->count)
+      || (t1->make_hash_indices != t2->make_hash_indices)
+      || (t1->compare != t2->compare))
+    return 0;
+    
+  keys = t1->keys;
+  vals = t1->vals;
+  for (i = t1->size; i--; ) {
+    if (vals[i]) {
+      v = scheme_hash_get(t2, keys[i]);
+      if (!v)
+	return 0;
+      if (!scheme_equal(vals[i], v))
+	return 0;
+    }
+  }
+
+  return 1;
+}
+
 /*========================================================================*/
 /*                  old-style hash table, with buckets                    */
 /*========================================================================*/
@@ -516,6 +541,43 @@ scheme_change_in_table (Scheme_Bucket_Table *table, const char *key, void *naya)
 
   if (bucket)
     bucket->val = naya;
+}
+
+int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2)
+{
+  Scheme_Bucket **buckets, *bucket;
+  void *v;
+  const char *key;
+  int i, weak;
+
+  if ((t1->count != t2->count)
+      || (t1->weak != t2->weak)
+      || (t1->make_hash_indices != t2->make_hash_indices)
+      || (t1->compare != t2->compare))
+    return 0;
+  
+  buckets = t1->buckets;
+  weak = t1->weak;
+
+  for (i = t1->size; i--; ) {
+    bucket = buckets[i];
+    if (bucket) {
+      if (weak) {
+	key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+      } else {
+	key = bucket->key;
+      }
+      if (key) {
+	v = scheme_lookup_in_table(t2, key);
+	if (!v)
+	  return 0;
+	if (!scheme_equal((Scheme_Object *)bucket->val, (Scheme_Object *)v))
+	  return 0;
+      }
+    }
+  }
+
+  return 1;
 }
 
 /*========================================================================*/
@@ -772,6 +834,50 @@ long scheme_equal_hash_key(Scheme_Object *o)
     SCHEME_USE_FUEL(1);
     k += 1;
     o = SCHEME_BOX_VAL(o);
+  } else if (SCHEME_HASHTP(o)) {
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
+    Scheme_Object **vals, **keys;
+    int i;
+
+    k = (k << 1) + 3;
+    
+    keys = t->keys;
+    vals = t->vals;
+    for (i = t->size; i--; ) {
+      if (vals[i]) {
+	k += scheme_equal_hash_key(keys[i]);
+	k += (scheme_equal_hash_key(vals[i]) << 1);
+      }
+    }
+
+    return k;
+  } else if (SCHEME_BUCKTP(o)) {
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
+    Scheme_Bucket **buckets, *bucket;
+    const char *key;
+    int i, weak;
+  
+    buckets = t->buckets;
+    weak = t->weak;
+
+    k = (k << 1) + 7;
+
+    for (i = t->size; i--; ) {
+      bucket = buckets[i];
+      if (bucket) {
+	if (weak) {
+	  key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+	} else {
+	  key = bucket->key;
+	}
+	if (key) {
+	  k += (scheme_equal_hash_key((Scheme_Object *)bucket->val) << 1);
+	  k += scheme_equal_hash_key((Scheme_Object *)key);
+	}
+      }
+    }
+    
+    return k;
   } else
     return k + (PTR_TO_LONG(o) >> 4);
 
@@ -860,6 +966,64 @@ long scheme_equal_hash_key2(Scheme_Object *o)
   } else if (SCHEME_BOXP(o)) {
     o = SCHEME_BOX_VAL(o);
     goto top;
-  } else
+  } else if (SCHEME_HASHTP(o)) {
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
+    Scheme_Object **vals, **keys;
+    int i;
+    long k = 0;
+
+    keys = t->keys;
+    vals = t->vals;
+    for (i = t->size; i--; ) {
+      if (vals[i]) {
+	k += scheme_equal_hash_key2(keys[i]);
+	k += scheme_equal_hash_key2(vals[i]);
+      }
+    }
+
+    return k;
+  } else if (SCHEME_HASHTP(o)) {
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
+    Scheme_Object **vals, **keys;
+    int i;
+    long k = 0;
+
+    keys = t->keys;
+    vals = t->vals;
+    for (i = t->size; i--; ) {
+      if (vals[i]) {
+	k += scheme_equal_hash_key2(keys[i]);
+	k += scheme_equal_hash_key2(vals[i]);
+      }
+    }
+
+    return k;
+  } else if (SCHEME_BUCKTP(o)) {
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
+    Scheme_Bucket **buckets, *bucket;
+    const char *key;
+    int i, weak;
+    long k = 0;
+  
+    buckets = t->buckets;
+    weak = t->weak;
+
+    for (i = t->size; i--; ) {
+      bucket = buckets[i];
+      if (bucket) {
+	if (weak) {
+	  key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+	} else {
+	  key = bucket->key;
+	}
+	if (key) {
+	  k += scheme_equal_hash_key((Scheme_Object *)bucket->val);
+	  k += scheme_equal_hash_key((Scheme_Object *)key);
+	}
+      }
+    }
+    
+    return k;
+ } else
     return t;
 }

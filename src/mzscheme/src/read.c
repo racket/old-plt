@@ -61,6 +61,9 @@ static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
+#define portable_isspace(x) ((x < 128) && isspace(x))
+#define portable_isalpha(x) ((x < 128) && isalpha(x))
+
 #define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
 
 #ifdef MZ_PRECISE_GC
@@ -458,7 +461,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 
   do {
     ch = scheme_getc_special_ok(port);
-  } while (NOT_EOF_OR_SPECIAL(ch) && isspace(ch));
+  } while (NOT_EOF_OR_SPECIAL(ch) && portable_isspace(ch));
 
   line = scheme_tell_line(port);
   col = scheme_tell_column(port);
@@ -1175,7 +1178,7 @@ read_list(Scheme_Object *port,
 	       && (next = scheme_peekc_special_ok(port),
 		   ((next == EOF)
 		    || (next == SCHEME_SPECIAL)
-		    || isspace(next)
+		    || portable_isspace(next)
 		    || (next == '(')
 		    || (next == ')')
 		    || (next == '"')
@@ -1535,7 +1538,7 @@ read_number_or_symbol(Scheme_Object *port,
   ch = getc_special_ok_fun(port);
   while (NOT_EOF_OR_SPECIAL(ch)
 	 && (running_quote
-	     || (!isspace(ch)
+	     || (!portable_isspace(ch)
 		 && (ch != '(')
 		 && (ch != ')')
 		 && (ch != '"')
@@ -1714,7 +1717,7 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && isalpha(next)) {
+  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && portable_isalpha(next)) {
     char *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;
@@ -1722,7 +1725,7 @@ read_character(Scheme_Object *port,
     i = 1;
     buf = onstack;
     buf[0] = mz_portable_tolower(ch);
-    while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && isalpha(ch))) {
+    while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && portable_isalpha(ch))) {
       scheme_getc(port); /* is alpha character */
       if (i >= size) {
 	oldsize = size;
@@ -1851,7 +1854,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Obje
 
  start_over:
 
-  while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && isspace(ch))) {}
+  while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && portable_isspace(ch))) {}
 
   if (ch == ';') {
     do {

@@ -237,6 +237,12 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
     obj1 = SCHEME_BOX_VAL(obj1);
     obj2 = SCHEME_BOX_VAL(obj2);
     goto top;
+  } else if (SCHEME_HASHTP(obj1)) {
+    SCHEME_USE_FUEL(1);
+    return scheme_hash_table_equal((Scheme_Hash_Table *)obj1, (Scheme_Hash_Table *)obj2);
+  } else if (SCHEME_BUCKTP(obj1)) {
+    SCHEME_USE_FUEL(1);
+    return scheme_bucket_table_equal((Scheme_Bucket_Table *)obj1, (Scheme_Bucket_Table *)obj2);
   } else
     return 0;
 }

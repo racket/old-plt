@@ -5479,19 +5479,75 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 #define MAKE_TCP_ARG
 #endif
 
+#define REGISTER_SOCKET(s) /**/
+#define UNREGISTER_SOCKET(s) /**/
+
 #ifdef USE_UNIX_SOCKETS_TCP
 typedef struct sockaddr_in tcp_address;
 #endif
 #ifdef USE_WINSOCK_TCP
 typedef struct SOCKADDR_IN tcp_address;
+# undef REGISTER_SOCKET
+# undef UNREGISTER_SOCKET
+# define REGISTER_SOCKET(s) winsock_remember(s)
+# define UNREGISTER_SOCKET(s) winsock_forget(s)
 #endif
 
 #ifdef USE_WINSOCK_TCP
 
 /******************************* WinSock ***********************************/
 
+static int wsr_size = 0;
+static tcp_t *wsr_array;
+
+static void winsock_remember(tcp_t s)
+{
+  int i, new_size;
+  tcp_t *naya;
+
+  for (i = 0; i < wsr_size; i++)
+    if (!wsr_array[i]) {
+      wsr_array[i] = s;
+      return;
+    }
+
+  if (!wsr_size) {
+    REGISTER_SO(wsr_array);
+    new_size = 32;
+  } else
+    new_size = 2 * wsr_size;
+
+  naya = MALLOC_N(tcp_t, new_size);
+  for (i = 0; i < wsr_size; i++)
+    naya[i] = wsr_array[i];
+
+  naya[wsr_size] = s;
+
+  wsr_array = naya;
+  wsr_size = new_size;  
+}
+
+static void winsock_forget(tcp_t s)
+{
+  int i;
+
+  for (i = 0; i < wsr_size; i++)
+    if (wsr_array[i] == s) {
+      wsr_array[i] = (tcp_t)NULL;
+      return;
+    }
+}
+
 static int winsock_done(void)
 {
+  int i;
+
+  for (i = 0; i < wsr_size; i++)
+    if (wsr_array[i]) {
+      closesocket(wsr_array[i]);
+      wsr_array[i] = (tcp_t)NULL;
+    }
+
   return WSACleanup();
 }
 
@@ -6294,6 +6350,7 @@ static void tcp_close_input(Scheme_Input_Port *port)
     return;
 
 #ifdef USE_SOCKETS_TCP
+  UNREGISTER_SOCKET(data->tcp);
   closesocket(data->tcp);
 #endif
 #ifdef USE_MAC_TCP
@@ -6687,6 +6744,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  v[0] = make_named_tcp_input_port(tcp, address);
 	  v[1] = make_tcp_output_port(tcp);
 	  
+	  REGISTER_SOCKET(s);
+
 	  return scheme_values(2, v);
 	} else {
 	  closesocket(s);
@@ -6827,6 +6886,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 				       1);
 
 	  scheme_file_open_count++;
+	  REGISTER_SOCKET(s);
 
 	  return (Scheme_Object *)l;
 	}
@@ -6876,6 +6936,7 @@ static int stop_listener(Scheme_Object *o)
     if (s == INVALID_SOCKET)
       was_closed = 1;
     else {
+      UNREGISTER_SOCKET(s);
       closesocket(s);
       ((listener_t *)o)->s = INVALID_SOCKET;
       --scheme_file_open_count;
@@ -7007,6 +7068,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
     v[1] = make_tcp_output_port(tcp);
 
     scheme_file_open_count++;
+    REGISTER_SOCKET(s);
     
     return scheme_values(2, v);
   }

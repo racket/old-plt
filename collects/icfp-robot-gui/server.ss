@@ -6,7 +6,8 @@
            (lib "cmdline.ss")
            (lib "list.ss")
            (lib "mred.ss" "mred")
-           (lib "class.ss"))
+           (lib "class.ss")
+           (lib "etc.ss"))
   
   ;; ---------- Configuration -----------
   
@@ -14,8 +15,8 @@
 
   (define num-players 2)
   
-  (define board-file (build-path (collection-path "icfp-robot-gui") "map"))
-  (define package-file (build-path (collection-path "icfp-robot-gui") "packs"))
+  (define board-file (build-path (this-expression-source-directory) "map"))
+  (define package-file (build-path (this-expression-source-directory) "packs"))
   ; maps & packages available at the contest web site
   
   (define robot-capacity 100)

@@ -142,7 +142,7 @@ int wxImage::LoadXBM(char *fname, int nc)
 
   {
     void *v;
-    v =  calloc(w*h,1);
+    v =  new WXGC_ATOMIC char[w*h];
     pic = (byte *)v;
   }
   if (!pic) wxFatalError("couldn't malloc 'pic'");
@@ -257,7 +257,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		QDErr err;
 		GWorldPtr	newGWorld;
 		RGBColor	cpix;
-		int i, j;
+		unsigned int i, j;
 		unsigned char *buf;
 		long bufp;
 
@@ -293,7 +293,6 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->SetHeight(xbmImage->pHIGH);
 		bm->SetDepth(1);
 		bm->SetOk(TRUE);
-  		XpmFree (xbmImage->pic);
 		DELETE_OBJ xbmImage;
 		return TRUE;
 	}
@@ -321,7 +320,7 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	w = bm->GetWidth();
 	h = bm->GetHeight();
 	
-	pic = new byte[w * h];
+	pic = new WXGC_ATOMIC byte[w * h];
 	
 	if (!pic)
 	  return 0;

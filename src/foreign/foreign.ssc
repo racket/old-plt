@@ -1165,17 +1165,17 @@ void do_ptr_finalizer(void *p, void *finalizer)
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
-/* If no 'pointer argument is given, this is can be used with any Scheme
-/* object, and the finalizer will be called with it.  If an additional 'pointer
-/* argument of 'pointer is given, the object must be a cpointer object, the */
-/* finalizer will be invoked when the pointer itself is unreachable, and it */
-/* will get a new cpointer object that points to it.  (Only needed in cases */
-/* where pointer aliases might be created.) */
+/* If no 'pointer argument is given, this is can be used with any Scheme */
+/* object, and the finalizer will be called with it.  If an additional */
+/* 'pointer argument of 'pointer is given, the object must be a cpointer */
+/* object, the finalizer will be invoked when the pointer itself is */
+/* unreachable, and it will get a new cpointer object that points to it. */
+/* (Only needed in cases where pointer aliases might be created.) */
 /* *** Calling Scheme code while the GC is working leads to subtle bugs, so */
 /* *** this is implemented now in Scheme using will executors. */
 /*
 {:#;(defsymbols pointer):}
-{:(cdefine register-finalizer 2 3):}
+{:#;(cdefine register-finalizer 2 3):}
 {
   void *ptr, *old = NULL;
   int ptrsym = (argc == 3 && argv[2] == pointer_sym);

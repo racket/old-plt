@@ -1593,18 +1593,15 @@ void do_ptr_finalizer(void *p, void *finalizer)
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
-/* If no 'pointer argument is given, this is can be used with any Scheme
-/* object, and the finalizer will be called with it.  If an additional 'pointer
-/* argument of 'pointer is given, the object must be a cpointer object, the */
-/* finalizer will be invoked when the pointer itself is unreachable, and it */
-/* will get a new cpointer object that points to it.  (Only needed in cases */
-/* where pointer aliases might be created.) */
+/* If no 'pointer argument is given, this is can be used with any Scheme */
+/* object, and the finalizer will be called with it.  If an additional */
+/* 'pointer argument of 'pointer is given, the object must be a cpointer */
+/* object, the finalizer will be invoked when the pointer itself is */
+/* unreachable, and it will get a new cpointer object that points to it. */
+/* (Only needed in cases where pointer aliases might be created.) */
 /* *** Calling Scheme code while the GC is working leads to subtle bugs, so */
 /* *** this is implemented now in Scheme using will executors. */
 /*
-#undef MYNAME
-#define MYNAME "register-finalizer"
-static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[])
 {
   void *ptr, *old = NULL;
   int ptrsym = (argc == 3 && argv[2] == pointer_sym);
@@ -2024,8 +2021,6 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(foreign_ptr_equal_p, "ptr-equal?", 2, 2), menv);
   scheme_add_global("make-sized-byte-string",
     scheme_make_prim_w_arity(foreign_make_sized_byte_string, "make-sized-byte-string", 2, 2), menv);
-  scheme_add_global("register-finalizer",
-    scheme_make_prim_w_arity(foreign_register_finalizer, "register-finalizer", 2, 3), menv);
   scheme_add_global("ffi-call",
     scheme_make_prim_w_arity(foreign_ffi_call, "ffi-call", 3, 3), menv);
   scheme_add_global("ffi-callback",

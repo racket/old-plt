@@ -113,8 +113,9 @@ To customize the client:
          collection directory (i.e., whatever you changed
          "handin-client" to).
 
-       * For `server:port', use the hostname and port where the server
-         will be running to accept handin submissions.
+       * For `server:port', uncomment the line, and use the hostname
+         and port where the server will be running to accept handin
+         submissions.
 
       Optionally uncomment and edit the next two definitions,
       `web-menu-name' and `web-address', to add an item to the "Help"

@@ -4,6 +4,7 @@
     [(name) "MrEd Collection"]
     [(compile-prefix) '(begin
 			 (read-case-sensitive #t)
+			 (require-library "refer.ss")
 			 (require-library "wxs.ss" "system")
 			 (require-library "sig.ss" "mred")
 			 (require-library "debug.ss" "system"))]

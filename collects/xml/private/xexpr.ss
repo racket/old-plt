@@ -28,6 +28,7 @@
       
       (define xexpr-drop-empty-attributes (make-parameter #f))
 
+      #|
       ; : tst -> bool
       (define (xexpr? x)
 	(or (string? x) (symbol? x) (number? x) (pcdata? x) (comment? x)
@@ -35,6 +36,103 @@
 		 (or (and (cons? (cdr x)) (listof? xexpr-attribute? (cadr x))
 			  (listof? xexpr? (cddr x)))
 		     (listof? xexpr? (cdr x))))))
+      |#
+
+      (define (xexpr? x)
+        (correct-xexpr? x (lambda () #t) (lambda (exn) #f)))
+                                       
+
+      (define (validate-xexpr x)
+        (correct-xexpr? x (lambda () #t) (lambda (exn) (raise exn))))
+
+      ;; ;; ;; ;; ;; ;; ;
+      ;; ; xexpr? helpers
+
+      (define-struct (exn:invalid-xexpr exn) (code))
+
+      ;; correct-xexpr? : any (-> a) (exn -> a) -> a
+      (define (correct-xexpr? x true false)
+        (cond
+          ((string? x) (true))
+          ((symbol? x) (true))
+          ((number? x) (true))
+          ((comment? x) (true))
+          ((pi? x) (true))
+          ((list? x)
+           (or (null? x)
+               (if (symbol? (car x))
+                 (if (has-attribute? x)
+                   (and (attribute-pairs? (cadr x) true false)
+                        (andmap (lambda (part)
+                                  (correct-xexpr? part true false))
+                                (cddr x))
+                        (true))
+                   (andmap (lambda (part)
+                             (correct-xexpr? part true false))
+                           (cdr x)))
+                 (false (make-exn:invalid-xexpr
+                          (string->immutable-string
+                            (format
+                              "Expected a symbol as the element name, given ~a"
+                              (car x)))
+                          (current-continuation-marks)
+                          x)))))
+          (else (false
+                  (make-exn:invalid-xexpr
+                    (string->immutable-string
+                      (format
+                        (string-append
+                          "Expected a string, symbol, number, comment, "
+                          "processing instruction, or list, given ~a")
+                        x))
+                    (current-continuation-marks)
+                    x)))))
+
+      ;; has-attribute? : List -> Boolean
+      ;; True if the Xexpr provided has an attribute list.
+      (define (has-attribute? x)
+        (and (> (length x) 1)
+             (list? (cadr x))
+             (andmap (lambda (attr)
+                       (pair? attr))
+                     (cadr x))))
+
+      ;; attribute-pairs? : List (-> a) (exn -> a) -> a
+      ;; True if the list is a list of pairs.
+      (define (attribute-pairs? attrs true false)
+        (if (null? attrs)
+            (let ((attr (car attrs)))
+              (if (pair? attr)
+                (and (attribute-symbol-string? attr true false)
+                     (attribute-pairs? (cdr attrs) true false )
+                     (true))
+                (false
+                  (make-exn:invalid-xexpr
+                    (string->immutable-string
+                      (format "Expected a pair, given ~a" attr))
+                    (current-continuation-marks)
+                    attr))))))
+
+      ;; attribute-symbol-string? : List (-> a) (exn -> a) -> a
+      ;; True if the list is a list of String,Symbol pairs.
+      (define (attribute-symbol-string? attr true false)
+        (if (symbol? (car attr))
+          (if (string? (cadr attr))
+            (true)
+            (false (make-exn:invalid-xexpr
+                     (string->immutable-string
+                       (format "Expected a string, given ~a" (cadr attr)))
+                     (current-continuation-marks)
+                     (cadr attr))))
+          (false (make-exn:invalid-xexpr
+                   (string->immutable-string
+                     (format "Expected a symbol, given ~a" (car attr)))
+                   (current-continuation-marks)
+                   (cadr attr)))))
+
+      ;; ; end xexpr? helpers
+      ;; ;; ;; ;; ;; ;; ;; ;;
+
      
       ; : (a -> bool) tst -> bool
       ; To check if l is a (listof p?)

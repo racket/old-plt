@@ -19,7 +19,14 @@
      (struct entity (text))
      content?))
 
-  (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand html-empty-tags))
+  (define-signature writer^
+    (write-xml
+      display-xml
+      write-xml/content
+      display-xml/content
+      empty-tag-shorthand
+      html-empty-tags))
+
   (define-signature reader^ 
     (read-xml
      read-xml/element
@@ -27,8 +34,20 @@
      collapse-whitespace
      (struct exn:xml (locs))))
 
-  (define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string xexpr-drop-empty-attributes xexpr? xexpr-attribute? listof?))
-  (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
+  (define-signature xexpr^
+    (xml->xexpr
+      xexpr->xml
+      xexpr->string
+      xexpr-drop-empty-attributes
+      xexpr?
+      validate-xexpr
+      (struct exn:invalid-xexpr (code))
+      xexpr-attribute?
+      listof?))
+
+  (define-signature extra-xexpr^
+    ((open xexpr^) assoc-sort bcompose attribute->srep))
+
   (define-signature space^ (eliminate-whitespace))
 
   (provide xml-structs^

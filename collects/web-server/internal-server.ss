@@ -98,11 +98,10 @@
                         
                         (define (remove-from-list-mixin %)
                           (class %
-                            (rename [super-on-close on-close])
                             (define/override (on-close)
                               (set! browser-frames (remq this browser-frames))
-                              (super-on-close))
-                            (super-instantiate ())
+                              (super on-close))
+                            (super-new)
                             (set! browser-frames (cons this browser-frames))))
                         
                         (define browser-frame% 

@@ -40,7 +40,6 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
        hp)))
   (preferences:add-warnings-checkbox-panel)
   (install-help-browser-preference-panel)
-  (preferences:start-writing-timer)
   
   (define the-hd-cookie (start-help-server (lambda (x) x)))
   (unless the-hd-cookie

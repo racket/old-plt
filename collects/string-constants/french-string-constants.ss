@@ -611,6 +611,8 @@
  (show-menu-label "&Montrer")
  (show-overview "Montrer le contour") 
  (hide-overview "Cacher le contour")
+ (show-module-browser "Montrer le navigateur de modules")
+ (hide-module-browser "Cacher le navigateur de modules")
  
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
@@ -976,6 +978,7 @@
  (module-browser "Navigateur de modules") ;; frame title
  (module-browser... "Navigateur de modules...") ;; menu item title
  (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
+ (module-browser-show-lib-paths "Montrer les fichiers chargés à l'aide de chemins de fichiers du type (lib ..)")
  
  (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
  (happy-birthday-matthew "Joyeux anniversaire, Matthew !")

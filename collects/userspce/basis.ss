@@ -489,14 +489,14 @@
 		   [current-output-port port])
       (drscheme-print/void value)))
 
-    ;; initialize-parameters : (list-of symbols)
+    ;; initialize-parameters : custodian
+    ;;                         (list-of symbols)
     ;;                         setting
     ;;                         (X Y Z -> void)
     ;;                       -> void
     ;; effect: sets the parameters for drscheme and drscheme-jr
-    (define (initialize-parameters namespace-flags setting handle-invokation)
-      (let* ([custodian (make-custodian)]
-	     [n (apply make-namespace
+    (define (initialize-parameters custodian namespace-flags setting)
+      (let* ([n (apply make-namespace
 		       (if (setting-use-zodiac? setting)
 			   (append (list 'hash-percent-syntax) namespace-flags)
 			   namespace-flags))])
@@ -587,10 +587,4 @@
 	(mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
 	(mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
 	(print-graph (setting-sharing-printing? setting))
-	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
-
-	(require-library "corem.ss")
-
-	(handle-invokation <=-at-least-two-args
-			   zodiac:allow-improper-lists
-			   eq?-only-compares-symbols))))
+	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting)))))

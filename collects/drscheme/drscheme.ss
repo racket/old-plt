@@ -22,7 +22,6 @@
   (parameterize ([current-custodian drscheme-custodian])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
-      (send (make-object frame% "test") show #t)
       (start-drscheme)))
   (set! run-test (load (build-path (collection-path "tests" "drscheme") "run-test.ss")))
   (send loading-message set-label ""))

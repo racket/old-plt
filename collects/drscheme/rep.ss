@@ -356,6 +356,7 @@
       (public
 	[cleanup-evaluation
 	 (lambda (thread-to-watch)
+	   (printf "end busy cursor~n")
 	   (mred:end-busy-cursor)
 	   (cleanup-transparent-io)
 	   (send (get-top-level-window) enable-evaluation)
@@ -385,6 +386,7 @@
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
 	     (ready-non-prompt)
+	     (printf "begin busy cursor~n")
 	     (mred:begin-busy-cursor)
 	     (when should-collect-garbage?
 	       (set! should-collect-garbage? #f)
@@ -533,20 +535,23 @@
 	[init-evaluation-thread
 	 (lambda ()
 	   (printf "init-evaluation-thread.1~n")
-	   (set! user-eventspace (mred:make-eventspace))
-	   (parameterize ([mred:current-eventspace user-eventspace])
+	   (set! user-custodian (make-custodian))
+	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
+				   (mred:make-eventspace)))
+	   (parameterize ([mred:current-eventspace user-eventspace]
+			  [current-custodian user-custodian])
 	     (mred:queue-callback
 	      (lambda ()
 		(mzlib:thread:dynamic-disable-break
 		 (lambda ()
+
 		   (initialize-parameters)
 
-		   (let ([escape-handler
-			  (rec drscheme-error-escape-handler
-			       (lambda ()
-				 (error-escape-k)))])
-		     (error-escape-handler escape-handler)
-		     (basis:bottom-escape-handler escape-handler))
+		   (let ([drscheme-error-escape-handler
+			  (lambda ()
+			    (error-escape-k))])
+		     (error-escape-handler drscheme-error-escape-handler)
+		     (basis:bottom-escape-handler drscheme-error-escape-handler))
 
 		   (set! yield-count 0)
 		   (send (get-top-level-window) not-running)
@@ -863,35 +868,9 @@
 	[initialize-parameters
 	 (lambda ()
 	   (basis:initialize-parameters
+	    user-custodian
 	    (list 'mred)
-	    (fw:preferences:get 'drscheme:settings)
-	    (lambda (in-<=-at-least-two-args
-		     in-allow-improper-lists
-		     in-eq?-only-compares-symbols)
-	      (invoke-open-unit/sig
-	       (compound-unit/sig (import)
-		 (link [params : plt:userspace:params^
-			       ((unit/sig plt:userspace:params^
-				  (import)
-				  (define <=-at-least-two-args in-<=-at-least-two-args)
-				  (define allow-improper-lists in-allow-improper-lists)
-				  (define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
-		       [userspace : plt:userspace^ 
-				  ((require-library "gusrspcr.ss" "gusrspce")
-				   params)]
-		       [library : () ((unit/sig ()
-					(import plt:userspace^)
-					(when library-unit
-					  (with-handlers ([(lambda (x) #t)
-							   (lambda (x)
-							     ((error-display-handler)
-							      (format
-							       "Invalid Library:~n~a"
-							       (if (exn? x) (exn-message x) x))
-							      "Invalid Library"))])
-					    (invoke-open-unit/sig library-unit #f plt:userspace^))))
-				      userspace)])
-		 (export (open userspace))))))
+	    (fw:preferences:get 'drscheme:settings))
 
 	   (exception-reporting-rep this)
 	   (current-output-port this-out)
@@ -1536,9 +1515,10 @@
 	       (change-style consumed-delta start end)
 	       (set-resetting old-resetting))
 	     (set-prompt-position end))]
+	  [ibeam-cursor (make-object mred:cursor% 'ibeam)]
 	  [fetch-sexp
 	   (lambda ()
-	     (set-cursor (make-object mred:cursor% 'ibeam))
+	     (set-cursor ibeam-cursor)
 	     (let loop ()
 	       (let ([yield/loop? #f]
 		     [answer #f])

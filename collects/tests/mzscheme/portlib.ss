@@ -88,7 +88,7 @@
       (go 2 #t 'kill)
       (go 3 #f 'kill))))
 (test-pipe-commit make-pipe)
-(test-pipe-commit make-pipe-with-specials)
+(test-pipe-commit (lambda () (make-pipe-with-specials 10000 'special-pipe 'spec-pipe)))
 
 ;; pipe-with-specials and limit
 (let-values ([(in out) (make-pipe-with-specials 10)])

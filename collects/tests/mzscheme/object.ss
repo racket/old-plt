@@ -95,68 +95,93 @@
     (public x y)
     (define (x) 1)
     (define (y) 2)))
+(define to-augment-class%
+  (class object%
+    (pubment x y)
+    (define (x) 1)
+    (define (y) 2)))
 
-(define (test-method public object% super-ok? inner-ok?)
-  (teval #`(test #t class? (class #,object% (#,public))))
+(define (test-method basic? public object% over? aug? super-ok? inner-ok? over-ok? aug-ok?)
+  (when basic?
+    (teval #`(test #t class? (class #,object% (#,public))))
+    
+    (syntax-test #`(class #,object% (#,public . x)))
+    (syntax-test #`(class #,object% (#,public 10)))
+    (syntax-test #`(class #,object% (#,public (x))))
+    (syntax-test #`(class #,object% (#,public (x . y))))
+    (syntax-test #`(class #,object% (#,public (x 10))))
+    (syntax-test #`(class #,object% (#,public (10 x))))
+    (syntax-test #`(class #,object% (#,public x . y)))
+    (syntax-test #`(class #,object% (#,public x 10)))
+    
+    (syntax-test #`(class #,object% (#,public x x)))
+    (syntax-test #`(class #,object% (#,public x) (#,public x)))
+    (syntax-test #`(class #,object% (#,public (x y) (x y))))
+    (syntax-test #`(class #,object% (#,public (x y1) (x y))))
+    (syntax-test #`(class #,object% (#,public (x y) (x2 y)))))
 
-  (syntax-test #`(class #,object% (#,public . x)))
-  (syntax-test #`(class #,object% (#,public 10)))
-  (syntax-test #`(class #,object% (#,public (x))))
-  (syntax-test #`(class #,object% (#,public (x . y))))
-  (syntax-test #`(class #,object% (#,public (x 10))))
-  (syntax-test #`(class #,object% (#,public (10 x))))
-  (syntax-test #`(class #,object% (#,public x . y)))
-  (syntax-test #`(class #,object% (#,public x 10)))
-
-  (syntax-test #`(class #,object% (#,public x x)))
-  (syntax-test #`(class #,object% (#,public x) (#,public x)))
-  (syntax-test #`(class #,object% (#,public (x y) (x y))))
-  (syntax-test #`(class #,object% (#,public (x y1) (x y))))
-  (syntax-test #`(class #,object% (#,public (x y) (x2 y))))
   (unless (module-identifier=? public #'private)
-    (teval #`(test #t class? (class #,object% (#,public (x x)) (define (x) 1))))
-    (teval #`(test #t class? (class #,object% (#,public (x y) (y x)) (define (x) 1) (define (y) 2)))))
+    (if (and (or (not over?) over-ok?)
+	     (or (not aug?) aug-ok?))
+	(begin
+	  (teval #`(test #t class? (class #,object% (#,public (x x)) (define (x) 1))))
+	  (teval #`(test #t class? (class #,object% (#,public (x y) (y x)) (define (x) 1) (define (y) 2)))))
+	(begin
+	  (teval #`(err/rt-test (class #,object% (#,public (x x)) (define (x) 1)) exn:fail:object?))
+	  (teval #`(err/rt-test (class #,object% (#,public (x y) (y x)) (define (x) 1) (define (y) 2)) exn:fail:object?)))))
+	
 
   ;; Use of external name for super/inner is always wrong (but
   ;; maybe because super/inner isn't allowed):
   (syntax-test #`(class #,object% (#,public [x ex]) (define (x y) (super ex 12))))
   (syntax-test #`(class #,object% (#,public [x ex]) (define (x y) (inner 5 ex 12))))
 
-  (if super-ok?
-      (begin
-	(teval #`(test #t class? (class #,object% 
-				   (#,public x)
-				   (define (x y) (super x 10)))))
-	(teval #`(test #t class? (class #,object% 
-				   (#,public [ex x])
-				   (define (ex y) (super ex 10))))))
-      (syntax-test #`(class #,object% 
-		       (#,public x)
-		       (define (x y) (super x 10)))))
-  (if inner-ok?
-      (begin
-	(teval #`(test #t class? (class #,object% 
-				   (#,public x)
-				   (define (x y) (inner 5 x 10)))))
-	(teval #`(test #t class? (class #,object% 
-				   (#,public [ex x])
-				   (define (ex y) (inner 5 ex 10))))))
-      (syntax-test #`(class #,object% 
-		       (#,public x)
-		       (define (x y) (inner 5 x 10)))))
+  (let ([expr #`(class #,object% 
+		  (#,public x)
+		  (define (x y) (super x 10)))])
+    (if (and super-ok? over-ok?)
+	(begin
+	  (teval #`(test #t class? #,expr))
+	  (teval #`(test #t class? (class #,object% 
+				     (#,public [ex x])
+				     (define (ex y) (super ex 10))))))
+	(if super-ok?
+	    (teval #`(err/rt-test #,expr exn:fail:object?))
+	    (syntax-test expr))))
+  (let ([expr #`(class #,object% 
+		  (#,public x)
+		  (define (x y) (inner 5 x 10)))])
+    (if (and inner-ok? aug? aug-ok?)
+	(begin
+	  (teval #`(test #t class? #,expr))
+	  (teval #`(test #t class? (class #,object% 
+				     (#,public [ex x])
+				     (define (ex y) (inner 5 ex 10))))))
+	(if inner-ok?
+	    (if (or (and aug? (not aug-ok?))
+		    (and over? (not over-ok?)))
+		(teval #`(err/rt-test #,expr exn:fail:object?))
+		(teval #`(test #t class? #,expr)))
+	    (syntax-test expr))))
 
   'ok)
 
-(test-method #'public #'object% #f #f)
-(test-method #'public-final #'object% #f #f)
-(test-method #'pubment #'object% #f #t)
-(test-method #'override #'to-override-class% #t #f)
-(test-method #'override-final #'to-override-class% #t #f)
-(test-method #'overment #'to-override-class% #t #t)
-(test-method #'augment #'to-override-class% #f #t)
-(test-method #'augment-final #'to-override-class% #f #f)
-(test-method #'augride #'to-override-class% #f #f)
-(test-method #'private #'object% #f #f)
+(test-method #t #'public #'object% #f #f #f #f #f #f)
+(test-method #t #'public-final #'object% #f #f #f #f #f #f)
+(test-method #t #'pubment #'object% #f #f #f #t #f #f)
+(test-method #t #'override #'to-override-class% #t #f #t #f #t #f)
+(test-method #f #'override #'to-augment-class% #t #f #t #f #f #t)
+(test-method #t #'override-final #'to-override-class% #t #f #t #f #t #f)
+(test-method #f #'override-final #'to-augment-class% #t #f #t #f #f #t)
+(test-method #t #'overment #'to-override-class% #t #f #t #t #t #f)
+(test-method #f #'overment #'to-augment-class% #t #f #t #t #f #t)
+(test-method #t #'augment #'to-override-class% #f #t #f #t #t #f)
+(test-method #f #'augment #'to-augment-class% #f #t #f #t #f #t)
+(test-method #t #'augment-final #'to-override-class% #f #t #f #f #t #f)
+(test-method #f #'augment-final #'to-augment-class% #f #t #f #f #f #t)
+(test-method #t #'augride #'to-override-class% #f #t #f #f #t #f)
+(test-method #f #'augride #'to-augment-class% #f #t #f #f #f #t)
+(test-method #t #'private #'object% #f #f #f #f #f #f)
 
 (define (test-rename rename object%)
   (teval #`(test #t class? (class #,object% (#,rename))))

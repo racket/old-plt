@@ -139,26 +139,29 @@
     (define special-peeked null)
     (define special-peeked-tail #f)
     (define progress-requested? #f)
+    (define use-manager? #f)
     (define manager-th #f)
-    (define manager-ch #f)
-    (define (suspend-commit)
-      (when manager-ch
-	(channel-put manager-ch #f)))
-    (define (resume-commit)
-      (when manager-ch
-	(channel-put manager-ch #f)))
+    (define manager-ch (make-channel))
+    (define resume-ch (make-channel))
+    (define buf (make-bytes 4096))
     (define (try-again)
       (wrap-evt
        (semaphore-peek-evt lock-semaphore)
        (lambda (x) 0)))
+    (define (suspend-manager)
+      (channel-put manager-ch 'suspend))
+    (define (resume-manager)
+      (channel-put resume-ch 'resume))
+    (define (with-manager-lock thunk)
+      (thread-resume manager-th (current-thread))
+      (dynamic-wind suspend-manager thunk resume-manager))
     (define (make-progress)
       (write-byte 0 peeked-w)
       (read-byte peeked-r))
     (define (read-it-with-lock s)
-      (suspend-commit)
-      (begin0
-       (do-read-it s)
-       (resume-commit)))
+      (if use-manager?
+	  (with-manager-lock (lambda () (do-read-it s)))
+	  (do-read-it s)))
     (define (read-it s)
       (call-with-semaphore
        lock-semaphore
@@ -188,15 +191,19 @@
 		      (set! special-peeked (cdr special-peeked))
 		      (when (null? special-peeked)
 			(set! special-peeked-tail #f))))])))
+    (define (peek-it-with-lock s skip unless-evt)
+      (if use-manager?
+	  (with-manager-lock (lambda () (do-peek-it s skip unless-evt)))
+	  (do-peek-it s skip unless-evt)))
     (define (peek-it s skip unless-evt)
-      (call-with-semaphore
-       lock-semaphore
-       (lambda ()
-	 (suspend-commit)
-	 (begin0
-	  (do-peek-it s skip unless-evt)
-	  (resume-commit)))
-       try-again))
+      (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
+	(if (zero? v)
+	    (call-with-semaphore
+	     lock-semaphore
+	     peek-it-with-lock
+	     try-again
+	     s skip unless-evt)
+	    v)))
     (define (do-peek-it s skip unless-evt)
       (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
 	(if (zero? v)
@@ -208,13 +215,16 @@
 	     [(and unless-evt (sync/timeout 0 unless-evt))
 	      #f]
 	     [(null? special-peeked)
-	      ;; Empty special queue, so read through the original proc
-	      (let* ([t (make-bytes (min 4096 (+ skip (bytes-length s))))]
-		     [r (read t)])
+	      ;; Empty special queue, so read through the original proc.
+	      ;; We only only need 
+	      ;;  (- (+ skip (bytes-length s)) (pipe-content-length peeked-w))
+	      ;; bytes, but read more (up to size of buf) to help move
+	      ;; things along.
+	      (let* ([r (read buf)])
 		(cond
 		 [(number? r)
 		  ;; The nice case --- reading gave us more bytes
-		  (write-bytes t peeked-w 0 r)
+		  (write-bytes buf peeked-w 0 r)
 		  ;; Now try again
 		  (peek-bytes-avail!* s skip #f peeked-r)]
 		 [(evt? r)
@@ -277,14 +287,16 @@
 			    n)
 			  (loop (- sk len) (cdr l))))])))])
 	    v)))
+    (define (commit-it-with-lock amt unless-evt done-evt)
+      (if use-manager?
+	  (with-manager-lock (lambda () (do-commit-it amt unless-evt done-evt)))
+	  (do-commit-it amt unless-evt done-evt)))
     (define (commit-it amt unless-evt done-evt)
       (call-with-semaphore
        lock-semaphore
-       (lambda ()
-	 (suspend-commit)
-	 (begin0
-	  (do-commit-it amt unless-evt done-evt)
-	  (resume-commit)))))
+       commit-it-with-lock
+       #f
+       amt unless-evt done-evt))
     (define (do-commit-it amt unless-evt done-evt)
       (if (sync/timeout 0 unless-evt)
 	  #f
@@ -332,40 +344,56 @@
 	  (finish)
 	  ;; We need to wait, so we'll have to release the lock.
 	  ;; Send the work to a manager thread.
-	  (let ([result-ch (make-channel)])
-	    (unless manager-th
-	      (set! manager-ch (make-channel))
-	      (set! manager-th (thread manage-commits)))
-	    (thread-resume manager-th (current-thread))
+	  (let ([result-ch (make-channel)]
+		[w/manager? use-manager?])
+	    (if w/manager?
+		;; Resume manager if it was running:
+		(resume-manager)
+		;; Start manager if it wasn't running:
+		(begin
+		  (set! manager-th (thread manage-commits))
+		  (set! use-manager? #t)
+		  (thread-resume manager-th (current-thread))))
+	    ;; Sets use-manager? if the manager wasn't already running:
 	    (channel-put manager-ch (list finish unless-evt done-evt result-ch))
+	    ;; Release locks:
 	    (semaphore-post lock-semaphore)
-	    (resume-commit)
 	    (begin0
+	     ;; Wait for manager to complete commit:
 	     (sync result-ch)
+	     ;; Grab locks again, so they're released
+	     ;;  properly on exit:
 	     (semaphore-wait lock-semaphore)
-	     (suspend-commit)))))
+	     (when w/manager?
+	       (suspend-manager))))))
     (define (manage-commits)
-      (let loop ([commits null] [suspended? #t])
+      (let loop ([commits null])
 	(apply
 	 sync
 	 (handle-evt manager-ch
 		     (lambda (c)
-		       (if c
-			   ;; adding a commit
-			   (loop (cons c commits) suspended?)
-			   ;; suspend/resume request:
-			   (loop commits (not suspended?)))))
-	 (if suspended?
-	     (list never-evt)
-	     (map (lambda (c)
-		    (define (send-result v)
-		      ;; Create a new thread to send the result asynchronously:
-		      (thread-resume
-		       (thread (lambda ()
-				 (channel-put (list-ref c 3) v)))
-		       (current-thread))
-		      (loop (remq c commits) #f))
-		    ;; Choose between done and unless:
+		       (case c
+			 [(suspend)
+			  (channel-get resume-ch)
+			  (loop commits)]
+			 [else
+			  ;; adding a commit
+			  (loop (cons c commits))])))
+	 (map (lambda (c)
+		(define (send-result v)
+		  ;; Create a new thread to send the result asynchronously:
+		  (thread-resume
+		   (thread (lambda ()
+			     (channel-put (list-ref c 3) v)))
+		   (current-thread))
+		  (when (null? (cdr commits))
+		    (set! use-manager? #f))
+		  (loop (remq c commits)))
+		;; Choose between done and unless:
+		(if (sync/timeout 0 (list-ref c 1))
+		    (handle-evt always-evt
+				(lambda (x)
+				  (send-result #f)))
 		    (choice-evt
 		     (handle-evt (list-ref c 1)
 				 (lambda (x)
@@ -379,8 +407,8 @@
 				   ;; suspended, so we implicitly have the
 				   ;; lock.
 				   ((list-ref c 0))
-				   (send-result #t)))))
-		  commits)))))
+				   (send-result #t))))))
+	      commits))))
     (make-input-port
      name
      ;; Read

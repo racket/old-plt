@@ -10,6 +10,7 @@
    (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
    get-two-int-values
    non-negative-number?
+   same-dimension?
    make-item%
    button%
    check-box%

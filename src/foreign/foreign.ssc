@@ -1290,12 +1290,12 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
 /* data := {name, c-function, itypes, otype, cif} */
 {
   /* The name is not currently used */
-  /* char *name = SCHEME_BYTE_STR_VAL(((Scheme_Object**)data)[0]); */
-  void          *c_func = (void*)(((Scheme_Object**)data)[1]);
-  Scheme_Object *itypes = ((Scheme_Object**)data)[2];
-  Scheme_Object *otype  = ((Scheme_Object**)data)[3];
+  /* char *name = SCHEME_BYTE_STR_VAL(SCHEME_VEC_ELS(data)[0]); */
+  void          *c_func = (void*)(SCHEME_VEC_ELS(data)[1]);
+  Scheme_Object *itypes = SCHEME_VEC_ELS(data)[2];
+  Scheme_Object *otype  = SCHEME_VEC_ELS(data)[3];
   Scheme_Object *base;
-  ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
+  ffi_cif       *cif    = (ffi_cif*)(SCHEME_VEC_ELS(data)[4]);
   int           nargs   = cif->nargs;
   /* When the foreign function is called, we need an array (ivals) of nargs
    * ForeignAny objects to store the actual C values that are created, and we
@@ -1398,7 +1398,7 @@ void free_fficall_data(void *ignored, void *p)
   static Scheme_Object *ffi_name_prefix = NULL;
   Scheme_Object *itypes = argv[1];
   Scheme_Object *otype  = argv[2];
-  Scheme_Object *obj, **data, *p, *base;
+  Scheme_Object *obj, *data, *p, *base;
   GC_CAN_IGNORE ffi_type *rtype, **atypes;
   GC_CAN_IGNORE ffi_cif *cif;
   int i, nargs;
@@ -1427,20 +1427,20 @@ void free_fficall_data(void *ignored, void *p)
   cif = malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  data = scheme_malloc(5 * sizeof(void*));
+  data = scheme_make_vector(5, NULL);
   p = scheme_append_byte_string
         (ffi_name_prefix,
          scheme_make_byte_string_without_copying
            (SCHEME_FFIOBJP(argv[0]) ?
              ((ffi_obj_struct*)(argv[0]))->name : "proc"));
-  data[0] = p;
-  data[1] = obj;
-  data[2] = itypes;
-  data[3] = otype;
-  data[4] = (Scheme_Object*)cif;
+  SCHEME_VEC_ELS(data)[0] = p;
+  SCHEME_VEC_ELS(data)[1] = obj;
+  SCHEME_VEC_ELS(data)[2] = itypes;
+  SCHEME_VEC_ELS(data)[3] = otype;
+  SCHEME_VEC_ELS(data)[4] = (Scheme_Object*)cif;
   scheme_register_finalizer(data, free_fficall_data, cif, NULL, NULL);
   return scheme_make_closed_prim_w_arity
-           (ffi_do_call, (void*)data, SCHEME_BYTE_STR_VAL(data[0]),
+           (ffi_do_call, (void*)data, SCHEME_BYTE_STR_VAL(p),
             nargs, nargs);
 }
 

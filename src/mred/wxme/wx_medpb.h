@@ -230,7 +230,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   void DoEventResize(float eventX, float eventY);
   void DoEventMove(float eventX, float eventY);
 
-  void _Delete(wxSnip *, wxDeleteSnipRecord *del);
+  Bool _Delete(wxSnip *, wxDeleteSnipRecord *del);
 
   Bool InsertFile(const char *who, Scheme_Object *f, const char *filename, Bool clearStyles, Bool showErrors);
 

@@ -896,13 +896,14 @@ void wxMediaPasteboard::Erase()
   EndEditSequence();
 }
 
-void wxMediaPasteboard::_Delete(wxSnip *del_snip,
+Bool wxMediaPasteboard::_Delete(wxSnip *del_snip,
 				wxDeleteSnipRecord *del)
 {
   wxSnip *snip;
   wxNode *node;
   wxSnipLocation *loc;
   Bool updateCursor = FALSE;
+  Bool result = FALSE;
 
   for (snip = snips; snip; snip = snip->next) {
     if (PTREQ(snip, del_snip)) {
@@ -911,7 +912,7 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
       if (!CanDelete(del_snip)) {
 	EndEditSequence();
 	--writeLocked;
-	return;
+	return FALSE;
       }
       OnDelete(del_snip);
       --writeLocked;
@@ -956,12 +957,16 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
 
       if (!sequence)
 	UpdateNeeded();
+
+      result = TRUE;
     }
   }  
 
   if (updateCursor)
     if (admin)
       admin->UpdateCursor();
+
+  return result;
 }
 
 void wxMediaPasteboard::Delete(wxSnip *del_snip)
@@ -2030,8 +2035,15 @@ void wxMediaPasteboard::NeedsUpdate(wxSnip *snip, float localx, float localy,
   Update(x + localx, y + localy, w, h);
 }
 
-Bool wxMediaPasteboard::ReleaseSnip(wxSnip *WXUNUSED(snip))
+Bool wxMediaPasteboard::ReleaseSnip(wxSnip *snip)
 {
+  if (_Delete(snip, NULL)) {
+    if (!(snip->admin) && (snip->flags & wxSNIP_OWNED))
+      snip->flags  -= wxSNIP_OWNED;
+
+    return TRUE;
+  }
+
   return FALSE;
 }
 

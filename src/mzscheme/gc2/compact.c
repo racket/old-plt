@@ -3048,7 +3048,7 @@ static void designate_modified(void *p)
 /* PowerPC */
 void fault_handler(int sn, siginfo_t *si)
 {
-  designate_modified((void *)si->_sigfault.addr);
+  designate_modified((void *)si->_sifields._sigfault.addr);
   signal(SIGSEGV, (void (*)(int))fault_handler);
 }
 # else

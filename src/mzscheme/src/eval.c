@@ -1740,7 +1740,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     else
       return forms;
   } else if (!SCHEME_STX_PAIRP(form) /* will end in error */
-	     || SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
+	     || SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(form))) {
     if (rec)
       return compile_application(form, env, rec, drec);
     else {

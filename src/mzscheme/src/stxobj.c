@@ -642,19 +642,6 @@ Scheme_Object *scheme_new_mark()
   return mark_id;
 }
 
-Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m, long *lp)
-{
-  if (SCHEME_PAIRP(wraps) &&
-      SAME_OBJ(m, SCHEME_CAR(wraps))
-      && *lp) {
-    --(*lp);
-    return SCHEME_CDR(wraps);
-  } else {
-    (*lp)++;
-    return CONS(m, wraps);
-  }
-}
-
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
@@ -669,7 +656,16 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   else
     lp = 1;
 
-  wraps = add_remove_mark(stx->wraps, m, &lp);
+  wraps = stx->wraps;
+  if (SCHEME_PAIRP(wraps)
+      && SAME_OBJ(m, SCHEME_CAR(wraps))
+      && lp) {
+    --lp;
+    wraps = SCHEME_CDR(wraps);
+  } else {
+    lp++;
+    wraps = CONS(m, wraps);
+  }
 
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
@@ -910,7 +906,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 	if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
 	  count += ((Wrap_Chunk *)a)->len;
 	} else if (SCHEME_NUMBERP(a)) {
-	  if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+	  if ((i >= len-1) || !SAME_OBJ(a, SCHEME_CADR(l)))
 	    count++;
 	  else {
 	    /* Cancelled marks */
@@ -937,7 +933,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 	      wc->a[j++] = ((Wrap_Chunk *)a)->a[k];
 	    }
 	  }  else if (SCHEME_NUMBERP(a)) {
-	    if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+	    if ((i >= len-1) || !SAME_OBJ(a, SCHEME_CADR(l)))
 	      wc->a[j++] = a;
 	    else {
 	      /* Cancelled marks */
@@ -2257,8 +2253,10 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     }
     
     result = r;
+#ifdef STX_DEBUG
   } else if ((with_marks == 1) && SCHEME_SYMBOLP(v)) {
-    result = CONS(v, stx->wraps);
+    result = CONS(v, stx->wraps); /* wraps_to_datum(stx->wraps, rns, 0)); */
+#endif
   } else
     result = v;
 

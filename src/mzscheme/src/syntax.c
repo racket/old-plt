@@ -392,7 +392,7 @@ static Scheme_Object *
 lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *args;
-  
+
   lambda_check(form);
 
   args = SCHEME_STX_CDR(form);
@@ -1894,7 +1894,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   Scheme_Object *vars, *body, *first, *last, *name, *v, *vs, *vlist;
   Scheme_Comp_Env *use_env, *env;
   DupCheckRecord r;
-  
+
   vars = SCHEME_STX_CDR(form);
 
   named = (!multi
@@ -1996,7 +1996,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
       scheme_wrong_syntax(NULL, v, form, NULL);
 
     name = SCHEME_STX_CAR(v);
-
+  
     if (multi) {
       DupCheckRecord r2;
       Scheme_Object *names = name;

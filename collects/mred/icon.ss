@@ -38,8 +38,12 @@
 		  (set! bitmap (get-bitmap))
 		  (send mdc select-object bitmap)))])
 	(values (lambda () (fetch) mdc)
-		(lambda () (fetch) (send bitmap get-width))
-		(lambda () (fetch) (send bitmap get-height)))))
+		(lambda () (fetch) (if (send bitmap ok?)
+				       (send bitmap get-width)
+				       10))
+		(lambda () (fetch) (if (send bitmap ok?)
+				       (send bitmap get-height)
+				       10)))))
 
     (define get-gc-off-dc 
       (let ([mdc #f])

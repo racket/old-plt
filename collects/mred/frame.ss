@@ -587,11 +587,15 @@
 					  "lock-icon: setting to: ~a"
 					  locked-now?)
 		       (set! icon-currently-locked? locked-now?)
-		       (send lock-message
-			     set-label
-			     (if locked-now?
-				 (mred:icon:get-lock-bitmap)
-				 (mred:icon:get-unlock-bitmap)))))))]
+		       (let ([bitmap
+			      (if locked-now?
+				  (mred:icon:get-lock-bitmap)
+				  (mred:icon:get-unlock-bitmap))])
+			 (send lock-message
+			       set-label
+			       (if (send bitmap ok?)
+				   bitmap
+				   (if locked-now? "Locked" "Unlocked"))))))))]
 		       
 	      [edit-position-changed-offset
 	       (lambda (offset?)
@@ -649,27 +653,37 @@
 	      [anchor-message 
 	       (make-object mred:container:message%
 			    info-panel
-			    (mred:icon:get-anchor-bitmap))]
+			    (let ([b (mred:icon:get-anchor-bitmap)])
+			      (if (send b ok?)
+				  b
+				  "Anchor")))]
 	      [overwrite-message 
 	       (make-object mred:container:message%
 			    info-panel
 			    "Overwrite")]
 	      [lock-message (make-object mred:container:message%
-			      info-panel (mred:icon:get-unlock-bitmap))]
+			      info-panel 
+			      (let ([b (mred:icon:get-unlock-bitmap)])
+				(if (send b ok?)
+				    b
+				    "Unlocked")))]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%
 					    info-panel)]
 	      [time-canvas (make-object mred:canvas:one-line-canvas% 
 					info-panel)]
-	      [gc-canvas (make-object mred:container:canvas% info-panel)]
+	      [gc-canvas (make-object mred:container:canvas% info-panel
+				      -1 -1 -1 -1 wx:const-border)]
 	      [position-edit (make-object mred:edit:media-edit%)]
 	      [register-gc-blit
 	       (lambda ()
-		 (wx:register-collecting-blit gc-canvas 
-					      0 0
-					      (mred:icon:get-gc-width)
-					      (mred:icon:get-gc-height)
-					      (mred:icon:get-gc-on-dc)
-					      (mred:icon:get-gc-off-dc)))])
+		 (let ([mdc (mred:icon:get-gc-on-dc)])
+		   (when (send mdc ok?)
+		     (wx:register-collecting-blit gc-canvas 
+						  0 0
+						  (mred:icon:get-gc-width)
+						  (mred:icon:get-gc-height)
+						  (mred:icon:get-gc-on-dc)
+						  (mred:icon:get-gc-off-dc)))))])
 
 	    (sequence
 	      (unless (mred:preferences:get-preference 'mred:show-status-line)
@@ -690,7 +704,10 @@
 		  (user-min-height (+ gc-height (- gc-height (unbox bh))))
 		  (stretchable-in-x #f)
 		  (stretchable-in-y #f)))
-	      (send info-panel stretchable-in-y #f)
+	      (send* info-panel 
+		(stretchable-in-y #f)
+		(spacing 3)
+		(border 3))
 	      (send anchor-message show #f)
 	      (send overwrite-message show #f)
 	      (send* position-canvas

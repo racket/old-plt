@@ -27,6 +27,8 @@ int pen_count, brush_count, font_count, bitmap_count;
 # define COUNT_M(c) 
 #endif
 
+#pragma optimize("", off)
+
 void RegisterGDIObject(HANDLE x);
 void DeleteRegisteredGDIObject(HANDLE x);
 
@@ -89,6 +91,13 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
+static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
+				       DWORD FontType, LPARAM lParam)
+{
+  *(int *)lParam = lpelfe->elfLogFont.lfCharSet;
+  return 0;
+}
+
 HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 {
   int nHeight;
@@ -112,6 +121,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   int ff_weight = 0;
   int ff_family = 0;
   char *ff_face = NULL;
+  int charset = ANSI_CHARSET;
   
   ff_face = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
   if (!*ff_face)
@@ -137,9 +147,23 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
     break;
   case wxDEFAULT:
   default: 
-    ff_family = FF_SWISS;
+    ff_family = FF_DONTCARE;
   }
   
+  // Determine the charset:
+  {
+    LOGFONT lf;
+    lf.lfCharSet = DEFAULT_CHARSET;
+    if (strlen(ff_face) < 32)
+      strcpy(lf.lfFaceName, ff_face);
+    else {
+      memcpy(lf.lfFaceName, ff_face, 31);
+      lf.lfFaceName[32] = NULL;
+    }
+    lf.lfPitchAndFamily = 0;
+    EnumFontFamiliesEx(dc, &lf, (FONTENUMPROC)check_font_charset, (LPARAM)&charset, 0);
+  }
+
   if (style == wxITALIC || style == wxSLANT)
     ff_italic = 1;
   else
@@ -155,21 +179,21 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   Bool ff_underline = underlined;
   
   cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
-		     0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		     PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		     DEFAULT_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
   
   if (!cfont) {
     /* Try defaulting to family: */
     ff_face = wxTheFontNameDirectory->GetScreenName(family, weight, style);
     cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
-		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       PROOF_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
+		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		       DEFAULT_QUALITY, DEFAULT_PITCH | ff_family, ff_face);
   }
 
   if (!cfont)
     cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
-		       0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		       PROOF_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
+		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		       DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, NULL);
 
   RegisterGDIObject((HANDLE)cfont);
 

@@ -33,6 +33,9 @@
 	      (fail))
 	    exe)))))
 
+  (define re:compiled "^[Cc][Oo][Mm][Pp][Ii][Ll][Ee][Dd]$")
+  (define re:cvs "^[Cc][Vv][Ss]$")
+
   ;; Find all files to embed for the collection,
   ;;  and add a wrapper around each to provide it
   ;;  as a library.
@@ -59,13 +62,19 @@
 	    (when verbose?
 	      (fprintf (current-error-port)
 		       "Reading collection ~s~n" collect))
-	    (let ([dir (apply collection-path collect)])
-	      (let loop ([files (directory-list dir)])
-		(if (null? files)
-		    null
-		    (let ([full (build-path dir (car files))])
-		      ;; Is a file?
-		      (if (file-exists? full)
+	    (let collect-loop ([collect collect])
+	      (let ([dir (apply collection-path collect)])
+		(let loop ([files (directory-list dir)])
+		  (if (null? files)
+		      null
+		      (let ([full (build-path dir (car files))])
+			;; Is a file?
+			(cond
+			 [(or (regexp-match re:compiled (car files))
+			      (regexp-match re:cvs (car files)))
+			  ;; Skip it
+			  (loop (cdr files))]
+			 [(file-exists? full)
 			  ;; Has a .zo form?
 			  (let ([src (let* ([zo (build-path dir "compiled"
 							    (regexp-replace (#%regexp "\\..?.?.?$") 
@@ -82,14 +91,15 @@
 							      (with-input-from-file src
 								(lambda ()
 								  (read-string (file-size src)))))))
-			     (loop (cdr files))))
-
-			  ;; Not a file: skip it
-			  (loop (cdr files))))))))
+			     (loop (cdr files))))]
+			 [(directory-exists? full)
+			  (append (collect-loop (append collect (list (car files))))
+				  (loop (cdr files)))]
+			 [else
+			  ;; Broken soft link? Skip it
+			  (loop (cdr files))])))))))
 	  collects)))
-			   
-
-
+  
   (define (add-files files dest)
     (let ([out (open-output-file dest 'append)]
 	  [s (make-string 1024)])

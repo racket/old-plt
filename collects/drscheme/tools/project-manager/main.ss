@@ -646,7 +646,7 @@
                   (case (car file)
                     [(build-path)
                      (send pathize-button enable #t)
-                     (if (member (cadr file) (map normal-case-path (filesystem-root-list)))
+                     (if (absolute-path? (cadr file))
                          (send pathize-button set-label "Make Rel")
                          (send pathize-button set-label "Make Abs"))]
                     [(require-library)

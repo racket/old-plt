@@ -18,7 +18,7 @@ types:
    design-paint-by-numbers-canvas%))
 
 (define-signature SOLVE^
-  (solve)) ; : ((list-of (list-of nat)) (list-of (list-of nat)) -> void)
+  (solve)) ; : ((list-of (list-of nat)) (list-of (list-of nat)) (num num symbol -> void) (num -> void) -> void)
 
 (define-signature BOARD^ ())
 

@@ -667,8 +667,9 @@
 	      ;; Lightweight closure transformation
 	      ;;
 
-	      (when (or (compiler:option:use-mrspidey)
-			(compiler:option:use-mrspidey-for-units))
+	      (when (and (compiler:option:lightweight)
+			 (or (compiler:option:use-mrspidey)
+			     (compiler:option:use-mrspidey-for-units)))
 
 		    (when (compiler:option:verbose) 
 			  (printf " lightweight closure transformation~n"))

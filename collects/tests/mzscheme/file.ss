@@ -478,7 +478,7 @@
   (test #\. 
 	(lambda (s) (string-ref s (sub1 (string-length s))))
 	(parameterize ([error-print-width 40])
-		      (format "~e" #100(v))))
+	  (format "~e" (make-string 200 #\v))))
   
   (begin
     (define bads

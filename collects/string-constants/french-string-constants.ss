@@ -263,13 +263,13 @@
  (hide "Cacher")
  
  ;;; multi-file-search
- (mfs-multi-file-search-menu-item "Chercher dans les fichiers...")
- (mfs-string-match/graphics "Chaîne de caractères (y compris dans les fichiers avec graphiques)")
- (mfs-regexp-match/no-graphics "Expression régulière (fichiers texts seulement)")
+ (mfs-multi-file-search-menu-item "Rechercher dans les fichiers...")
+ (mfs-string-match/graphics "Une chaîne de caractères (y compris dans les fichiers avec graphiques)")
+ (mfs-regexp-match/no-graphics "Une expression régulière (fichiers texts seulement)")
  (mfs-searching... "Recherche en cours...")
  (mfs-configure-search "Configurer la recherche") ;; dialog title
  (mfs-files-section "Fichiers")   ;; section in config dialog
- (mfs-search-section "Chercher") ;; section in config dialog
+ (mfs-search-section "Rechercher") ;; section in config dialog
  (mfs-dir "Répertoire")
  (mfs-recur-over-subdirectories "Récursion dans les sous-répertoires")
  (mfs-regexp-filename-filter "Filtre de nom de fichiers pour les expressions régulières")

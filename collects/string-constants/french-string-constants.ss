@@ -57,7 +57,7 @@
  (bug-report-submit "Soumettre")
  (sending-bug-report "Soumission du formulaire de bogue en cours...")
  (error-sending-bug-report "Erreur durant la soumission du formulaire de bogue.")
- (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
+ (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://bugs.plt-scheme.org/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
  (bug-report-sent "Le bogue a été correctement soumis.")
  (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email à scheme@plt-scheme.org.")
  (illegal-bug-report "Formulaire de soumission de bogue incomplet.")

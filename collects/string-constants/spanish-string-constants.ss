@@ -48,7 +48,7 @@
  (bug-report-submit "Enviar")
  (sending-bug-report "Enviando reporte de problemas")
  (error-sending-bug-report "Error al enviar el reporte de problemas")
- (error-sending-bug-report-expln "Un error ocurrió mientras enviaba éste reporte de problemas.  Si tu conexión a Internet está funcionando bien, por favor visita:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\ny envía el reporte de problemas por medio de la forma de web en esea página de WEB. Sentimos mucho las molestias que esto te ocasiona.\n\nEl mensaje de error es:\n~a")
+ (error-sending-bug-report-expln "Un error ocurrió mientras enviaba éste reporte de problemas.  Si tu conexión a Internet está funcionando bien, por favor visita:\n\n    http://bugs.plt-scheme.org/\n\ny envía el reporte de problemas por medio de la forma de web en esea página de WEB. Sentimos mucho las molestias que esto te ocasiona.\n\nEl mensaje de error es:\n~a")
  (bug-report-sent "Reporte de problemas enviado")
  (bug-report-sent-detail "Gracias por el reporte. Recibirás una confirmación por correo electrónico en los siguientes 30 minutos. Si dicho mensaje no llega, envía un mensaje a scheme@plt-scheme.org.")
  (illegal-bug-report "Reporte de problemas ilegal")

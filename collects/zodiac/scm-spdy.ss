@@ -450,7 +450,7 @@
 
   (extend-parsed->raw poly-form?
     (lambda (expr p->r)
-      `(poly ,(p->r (poly-form-exp expr)))))
+      `(polymorphic ,(p->r (poly-form-exp expr)))))
 
   (extend-parsed->raw :-form?
     (lambda (expr p->r)

@@ -1532,24 +1532,47 @@ inline static void reset_nursery(void)
 
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
 # define FINALIZER_BASE owner_table[current_owner()]->finalizers
+inline static int check_preexisting_finalizers(void *p, 
+					       GC_finalization_proc f, void *data,
+					       int level, 
+					       GC_finalization_proc *oldf, 
+					       void **olddata)
+{
+  struct finalizer *fnl, *prev;
+  int i; 
+
+  for(i = 0; i < owner_table_top; i++)
+    if(owner_table[i])
+      for(fnl = owner_table[i]->finalizers, prev = NULL; fnl; 
+	  prev = fnl, fnl = fnl->next) {
+	if(fnl->p == p) {
+	  if(oldf) *oldf = fnl->f;
+	  if(olddata) *olddata = fnl->data;
+	  if(f) {
+	    fnl->f = f;
+	    fnl->data = data;
+	    fnl->eager_level = level;
+	  } else {
+	    if(prev)
+	      prev->next = fnl->next;
+	    else 
+	      FINALIZER_BASE = fnl->next;
+	  }
+	  return 1;
+	}
+      }
+  return 0;
+}
 #else
 # define FINALIZER_BASE finalizers
-#endif
-
-void GC_set_finalizer(void *p, int tagged, int level,
-                      GC_finalization_proc f, void *data,
-                      GC_finalization_proc *oldf, void **olddata) 
+inline static int check_preexisting_finalizers(void *p, 
+					       GC_finalization_proc f, void *data,
+					       int level, 
+					       GC_finalization_proc *oldf, 
+					       void **olddata)
 {
-  struct mpage *page = find_page(p);
   struct finalizer *fnl, *prev;
-
-  if(!page) {
-    /* never collected */
-    if(oldf) *oldf = NULL;
-    if(olddata) *olddata = NULL;
-    return;
-  }
-
+  
   for(fnl = FINALIZER_BASE, prev = NULL; fnl; prev = fnl, fnl = fnl->next) {
     if(fnl->p == p) {
       if(oldf) *oldf = fnl->f;
@@ -1564,9 +1587,30 @@ void GC_set_finalizer(void *p, int tagged, int level,
         else 
           FINALIZER_BASE = fnl->next;
       }
-      return;
+      return 1;
     }
   }
+  return 0;
+}
+#endif
+
+
+void GC_set_finalizer(void *p, int tagged, int level,
+                      GC_finalization_proc f, void *data,
+                      GC_finalization_proc *oldf, void **olddata) 
+{
+  struct mpage *page = find_page(p);
+  struct finalizer *fnl;
+
+  if(!page) {
+    /* never collected */
+    if(oldf) *oldf = NULL;
+    if(olddata) *olddata = NULL;
+    return;
+  }
+
+  if(check_preexisting_finalizers(p, f, data, level, oldf, olddata))
+    return;
 
   if(oldf) *oldf = NULL;
   if(olddata) *olddata = NULL;
@@ -1623,9 +1667,29 @@ inline static struct finalizer *check_finalizers(struct finalizer *fnl, int leve
 {
   struct finalizer *work = fnl, *prev = NULL;
 
-  /* yes, this is a pain, but it puts an order on the level 3 finalizers
-     which is necessary for MrEd to function */
-  if(level == 3) {
+  /* this is a little odd. When the system passes us level '3', we do the 
+     pre-level 3 marking out of the pointers, to order finalization. Level
+     '4' is where we actually do the finalization moves for level 3 items */
+  if((level < 3) || (level == 4)) {
+    if(level == 4) level = 3;
+    while(work) {
+      if((work->eager_level == level) && !marked(work->p)) {
+	struct finalizer *next = work->next;
+	/* mark the pointer; we'll need it to run */
+	GC_DEBUG("CFNL: Level %i finalizer %p on %p not marked, so marking\n",
+		 work->eager_level, work, work->p);
+	gcMARK(work->p);
+	/* remove it from the current list of finalizers */
+	if(prev) prev->next = work->next; else fnl = work->next;
+	/* and add it to the run_queue */
+	if(last_in_queue) last_in_queue = last_in_queue->next = work; else 
+	  last_in_queue = run_queue = work;
+	work->next = NULL;
+	/* and loop */
+	work = next;
+      } else { prev = work; work = work->next; }
+    }
+  } else {
     struct finalizer *temp;
     int changed = 0;
 
@@ -1642,24 +1706,6 @@ inline static struct finalizer *check_finalizers(struct finalizer *fnl, int leve
 	changed = 1;
       }
     if(changed) propogate_all_marks();
-  }
-  
-  while(work) {
-    if((work->eager_level == level) && !marked(work->p)) {
-      struct finalizer *next = work->next;
-      /* mark the pointer; we'll need it to run */
-      GC_DEBUG("CFNL: Level %i finalizer %p on %p not marked, so marking\n",
-	       work->eager_level, work, work->p);
-      gcMARK(work->p);
-      /* remove it from the current list of finalizers */
-      if(prev) prev->next = work->next; else fnl = work->next;
-      /* and add it to the run_queue */
-      if(last_in_queue) last_in_queue = last_in_queue->next = work; else 
-	last_in_queue = run_queue = work;
-      work->next = NULL;
-      /* and loop */
-      work = next;
-    } else { prev = work; work = work->next; }
   }
 
   return fnl;
@@ -2636,11 +2682,11 @@ inline static void free_and_protect_pages(void)
   collection_from_pages = NULL;
 
   /* protect the new pages */
-/*   for(i = 1; i < GENERATIONS; i++)  */
-/*     for(j = 0; j < MPAGE_TYPES; j++) */
-/*       if(j != MPAGE_ATOMIC) */
-/*         for(work = pages[i][j]; work; work = work->next) */
-/*           protect_pages(work, work->size, 0);  */
+  for(i = 1; i < GENERATIONS; i++)  
+    for(j = 0; j < MPAGE_TYPES; j++) 
+      if(j != MPAGE_ATOMIC) 
+	for(work = pages[i][j]; work; work = work->next) 
+	  protect_pages(work, work->size, 0);  
 }
 
 static void garbage_collect(int force_full) 
@@ -2648,7 +2694,6 @@ static void garbage_collect(int force_full)
   unsigned short i;
 
   force_full = force_full | SUGGEST_FORCE_FULL();
-  force_full = 1;
   if(GC_collect_start_callback) GC_collect_start_callback();
   if(force_full) collection_top = (GENERATIONS - 1); else 
     collection_top = COMPUTE_COLLECTION_TOP(collection_number);
@@ -2657,12 +2702,11 @@ static void garbage_collect(int force_full)
   INIT_DEBUG_FILE();
   GC_DEBUG("Before collection (top = %i)\n", collection_top);
   DUMP_HEAP();
-  printf("Collection #%li starting (top = %i)\n", collection_number, collection_top);
 
   prepare_pages_for_collection();
   mark_all_roots();
   propogate_all_marks();
-  for(i = 0; i < 4; i++) {
+  for(i = 0; i < 5; i++) {
     if((i == 3) && collection_full) zero_weak_finalizers(weak_finalizers);
     CHECK_FINALIZERS(i);
     propogate_all_marks();
@@ -2681,9 +2725,6 @@ static void garbage_collect(int force_full)
   if(GC_collect_start_callback)
     GC_collect_end_callback();
 
-  GC_DEBUG("After collection (top = %i)\n", collection_top);
-  DUMP_HEAP();
-  printf("After collection (top = %i\n", collection_top); fflush(stdout);
 
   /* run any queued finalizers */
   if(!running_finalizers) {
@@ -2704,8 +2745,9 @@ static void garbage_collect(int force_full)
     RUN_ACCOUNT_HOOKS();
     running_finalizers = 0;
   }
+  GC_DEBUG("After collection (top = %i)\n", collection_top);
+  DUMP_HEAP();
   CLOSE_DEBUG_FILE();
-/*   printf(" ... done\n"); fflush(stdout); */
 } 
 
 /*****************************************************************************/

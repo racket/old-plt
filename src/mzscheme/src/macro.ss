@@ -804,7 +804,9 @@
 
 > fstop load-relative load-relative-extension <
 
-(#%define-values (load/use-compiled require-library/proc require-relative-library/proc collection-path)
+(#%define-values (load/use-compiled 
+		  require-library/proc require-relative-library/proc 
+		  provide-library collection-path)
   (#%let* ([get-table current-loaded-library-table]
 	   [not-found (box 0)]
 	   [null-str (#%string #\nul)]
@@ -948,14 +950,17 @@
 				    (debug)
 				    (#%apply #%build-path file collection-path)
 				    #f)))))]
+		     [filecol->symbol
+		      (#%lambda (file collection collection-path)
+			(#%string->symbol (#%apply #%string-append 
+						   (with-null (#%list* file collection collection-path)))))]
 		     [require-library/proc
 		      (#%case-lambda
 		       [(file) (require-library/proc file "mzlib")]
 		       [(file collection . collection-path)
 			(check 'require-library file) (check-collection 'require-library collection collection-path)
 			(#%let ([table (get-table)]
-				[sym (#%string->symbol (#%apply #%string-append 
-								(with-null (#%list* file collection collection-path))))])
+				[sym (filecol->symbol file collection collection-path)])
 			       (#%let ([found (#%hash-table-get table sym (#%lambda () not-found))])
 				      (#%if (#%eq? found not-found)
 					    (#%let* ([c (find-col 'require-library collection collection-path)]
@@ -978,9 +983,36 @@
 								   #%list))])
 						    (#%hash-table-put! table sym result)
 						    (#%apply #%values result))
-					    (#%apply #%values found))))])]
+					    (#%if (#%procedure? found)
+						  (#%call-with-values 
+						   (#%lambda ()
+							     (#%parameterize ([#%current-require-relative-collection
+									       (#%cons collection collection-path)])
+							        (found)))
+						   (#%lambda found
+							     (#%hash-table-put! table sym found)
+							     (#%apply #%values found)))
+						  (#%apply #%values found)))))])]
+		     [provide-library
+		      (#%case-lambda
+		       [(vals file) (provide-library vals file "mzlib")]
+		       [(vals file collection . collection-path)
+			(#%unless (#%and (#%procedure? vals) (#%procedure-arity-includes? vals 0))
+				  (#%raise-type-error 'provide-library "procedure (arity 0)" vals))
+			(check 'provide-library file) (check-collection 'provide-library collection collection-path)
+			(#%let ([table (get-table)]
+				[sym (filecol->symbol file collection collection-path)])
+			       (#%let ([found (#%hash-table-get table sym (#%lambda () not-found))])
+				      (#%if (#%eq? found not-found)
+					    (begin
+					      (#%hash-table-put! table sym vals)
+					      #t)
+					    #f)))])]
 		     [load/use-compiled (lambda (f) (core-load/use-compiled f #f))])
-		    (#%values load/use-compiled require-library/proc require-relative-library/proc collection-path))))
+		    (#%values load/use-compiled
+			      require-library/proc require-relative-library/proc
+			      provide-library
+			      collection-path))))
 
 > fstop load/use-compiled require-library/proc require-relative-library/proc collection-path <
 

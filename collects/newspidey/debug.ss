@@ -16,7 +16,6 @@
      (let* ([fun (zodiac:app-fun term)]
             [args (zodiac:app-args term)]
             [len (length args)]
-            [interval (make-Interval len len)]
             [offset (zodiac:location-offset (zodiac:zodiac-start fun))]
             [set-var (make-Set-var (get-var offset))]
             [labels (lookup-hi-and-filter Label? set-var)])
@@ -26,7 +25,7 @@
        (for-each (lambda (label)
                    (let ([arities (lookup-ars-from-label (Label-name label))])
                      (unless (ormap (lambda (arity)
-                                      (satisfies interval len arity))
+                                      (in-interval len (Arity-req arity))) ;; has to match at least one interval
                                     arities)
                        (let ([func-term (lookup-lambda-from-label label)])
                          ;;(printf "label: ~a~n arity: ~a~n" label arities)

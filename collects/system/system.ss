@@ -57,7 +57,12 @@
 						     (<= (file-modify-seconds zo)
 							 (file-modify-seconds file)))
 						 (begin (mred:debug:printf 'load "Compiling ~a..." file)
-							(with-handlers ((void (lambda (e) #f)))
+							(with-handlers ((void 
+									 (lambda (e) 
+									   (delete-file zo)
+									   ((error-display-handler)
+									    (exn-message e))
+									   #f)))
 							  (compile-file file zo)
 							  #t)))])
 			    (if compiled?

@@ -29,4 +29,12 @@
 	    (make-object wx:bitmap% (build-path dir "paren.bmp") 
 			 wx:const-bitmap-type-bmp)
 	    (make-object wx:bitmap% (build-path dir "paren.xbm") 
+			 wx:const-bitmap-type-xbm))))    
+
+    (define reset-console-bitmap 
+      (let ([dir mred:constants:system-source-directory])
+	(if (eq? wx:platform 'windows)
+	    (make-object wx:bitmap% (build-path dir "reset.bmp") 
+			 wx:const-bitmap-type-bmp)
+	    (make-object wx:bitmap% (build-path dir "reset.xbm") 
 			 wx:const-bitmap-type-xbm))))))

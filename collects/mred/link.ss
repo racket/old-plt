@@ -64,7 +64,7 @@
 	    [console : mred:console^ 
 		     (mred:console@ debug preferences edit frame find-string
 				  exit finder handler gui-utils scheme-mode
-				  scheme-paren (core function@) (core string@) (core pretty-print@) trigger)]
+				  scheme-paren icon (core function@) (core string@) (core pretty-print@) trigger)]
 	    [scheme-mode : mred:scheme-mode^ 
 			 (mred:scheme-mode@ debug preferences application container
 					  mode match-cache paren scheme-paren icon

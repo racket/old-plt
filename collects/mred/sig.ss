@@ -203,7 +203,8 @@
 (define-signature mred:icon^
   (icon
    paren-highlight-bitmap
-   autowrap-bitmap))
+   autowrap-bitmap
+   reset-console-bitmap))
 
 (define-signature mred:keymap^
   (keyerr

@@ -129,6 +129,19 @@
     (test #t ok-result? (channel-get c2))))
 
 ;; ----------------------------------------
+;; Alarms
+
+(test #f object-wait-multiple 0.1 (make-alarm (+ (current-inexact-milliseconds) 200)))
+(test 'ok object-wait-multiple 0.1 
+      (make-wrapped-waitable
+       (make-alarm (+ (current-inexact-milliseconds) 50))
+       (lambda (x) 'ok)))
+(test 'ok object-wait-multiple 100
+      (make-wrapped-waitable
+       (make-alarm (+ (current-inexact-milliseconds) 50))
+       (lambda (x) 'ok)))
+
+;; ----------------------------------------
 ;; Waitable sets
 
 (err/rt-test (waitables->waitable-set 7))
@@ -204,6 +217,21 @@
 	    (make-wrapped-waitable sema (lambda (x)
 					  (test sema values x)
 					  77)))))))
+
+;; More alarms:
+(let ([make-delay
+       (lambda (amt)
+	 (make-guard-waitable
+	  (lambda ()
+	    (make-wrapped-waitable
+	     (make-alarm (+ (current-inexact-milliseconds) (* 1000 amt)))
+	     (lambda (v) amt)))))])
+  (test #f object-wait-multiple 0.1 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 object-wait-multiple 18 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 object-wait-multiple 18 (make-delay 0.2) (make-delay 0.15))
+  (test 0.15 object-wait-multiple 0.18 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 object-wait-multiple 18 
+	(waitables->waitable-set (make-delay 0.2) (make-delay 0.15))))
 
 ;; ----------------------------------------
 ;; Wrapped waitables

@@ -3376,17 +3376,34 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)_f;
   Scheme_Schedule_Info sinfo;
+  double sleep_end;
+
+  if (!delay)
+    sleep_end = 0.0;
+  else {
+    sleep_end = scheme_get_inexact_milliseconds();
+    sleep_end += (delay * 1000.0);    
+  }
 
   /* We make an sinfo to be polite, but we also assume
      that f will not generate any redirections! */
-  init_schedule_info(&sinfo, 0, 0.0);
+  init_schedule_info(&sinfo, 0, sleep_end);
 
   while (!(result = f((Scheme_Object *)data, &sinfo))) {
+    sleep_end = sinfo.sleep_end;
     if (sinfo.spin) {
       init_schedule_info(&sinfo, 0, 0.0);
       scheme_thread_block(0.0);
       scheme_current_thread->ran_some = 1;
     } else {
+      if (sleep_end) {
+	delay = sleep_end - scheme_get_inexact_milliseconds();
+	delay /= 1000.0;
+	if (delay < 0)
+	  delay = 0.00001;
+      } else
+	delay = 0.0;
+
       p->block_descriptor = GENERIC_BLOCKED;
       p->blocker = (Scheme_Object *)data;
       p->block_check = (Scheme_Ready_Fun)f;
@@ -4393,7 +4410,7 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 
 static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
-  int i, redirections = 0, all_semas = 1, j;
+  int i, redirections = 0, all_semas = 1, j, result = 0;
   Waitable *w;
   Scheme_Object *o;
   Scheme_Schedule_Info r_sinfo;
@@ -4402,8 +4419,12 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   int is_poll;
   double sleep_end;
 
-  if (waiting->result)
-    return 1;
+  sleep_end = waiting->sleep_end;
+
+  if (waiting->result) {
+    result = 1;
+    goto set_sleep_end_and_return;
+  }
 
   /* We must handle target redirections in the objects on which we're
      waiting. We never have to redirect the waitable_set itself, but
@@ -4413,7 +4434,6 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   waitable_set = waiting->set;
 
   is_poll = (waiting->timeout == 0.0);
-  sleep_end = waiting->sleep_end;
 
   /* Anything ready? */
   for (j = 0; j < waitable_set->argc; j++) {
@@ -4447,7 +4467,8 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	redirections++;
 	if (redirections > 10) {
 	  sinfo->potentially_false_positive = 1;
-	  return 1;
+	  result = 1;
+	  goto set_sleep_end_and_return;
 	}
       }
 
@@ -4463,10 +4484,12 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	    scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (waiting->reposts && waiting->reposts[i])
 	    scheme_post_sema(o);
-	  return 1;
+	  result = 1;
+	  goto set_sleep_end_and_return;
 	} else {
 	  sinfo->potentially_false_positive = 1;
-	  return 1;
+	  result = 1;
+	  goto set_sleep_end_and_return;
 	}
       } else if (r_sinfo.spin) {
 	sinfo->spin = 1;
@@ -4484,16 +4507,13 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
   if (waiting->timeout >= 0.0) {
     if (waiting->sleep_end <= scheme_get_inexact_milliseconds())
-      return 1;
-    if (!sinfo->sleep_end
-	|| (sinfo->sleep_end > waiting->sleep_end))
-      sinfo->sleep_end = waiting->sleep_end;
+      result = 1;
   } else if (all_semas) {
     /* Try to block in a GCable way: */
     if (sinfo->false_positive_ok) {
       /* In scheduler. Swap us in so we can suspend. */
       sinfo->potentially_false_positive = 1;
-      return 1;
+      result = 1;
     } else {
       /* Not in scheduler --- we're allowed to block via suspend,
 	 which makes the thread GCable. */
@@ -4503,11 +4523,18 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	 check for a break, because scheme_wait_semas_chs() won't: */
       scheme_check_break_now();
 
-      return 1;
+      result = 1;
     }
   }
 
-  return 0;
+ set_sleep_end_and_return:
+
+  waiting->sleep_end = sleep_end;
+  if (!sinfo->sleep_end
+      || (sinfo->sleep_end > waiting->sleep_end))
+    sinfo->sleep_end = waiting->sleep_end;
+
+  return result;
 }
 
 static void waiting_needs_wakeup(Scheme_Object *s, void *fds)

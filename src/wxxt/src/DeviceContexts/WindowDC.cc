@@ -1687,15 +1687,31 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    8364, 9002, 8747, 8992, 9134, 8993, 9118, 9119,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
-static void XlateSym(unsigned int *text, int dt, int textlen)
+static unsigned int *XlateSym(unsigned int *text, int dt, int textlen, unsigned int *buf, int buflen)
 {
   int i, v;
+  unsigned int *us;
+
+  if (text != buf) {
+    if (buflen <= textlen)
+      us = new WXGC_ATOMIC unsigned[textlen];
+    else
+      us = buf;
+    memcpy(us, text + (dt * sizeof(int)), textlen * sizeof(unsigned int));
+  } else {
+    us = text;
+    if (dt)
+      memmove(us, us + (dt * sizeof(int)), textlen * sizeof(unsigned int));
+  }
+
   for (i = 0; i < textlen; i++) {
-    v = text[dt + i];
+    v = us[i];
     if ((v < 256) && symbol_map[v])
       v = symbol_map[v];
-    text[dt + i] = v;
+    us[i] = v;
   }
+
+  return us;
 }
 
 #endif
@@ -1857,7 +1873,8 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 # ifdef WX_USE_XFT
   if (xfontinfo) {
     if ((current_font->GetFamily() == wxSYMBOL)) {
-      XlateSym(text, dt, textlen);
+      text = XlateSym(text, dt, textlen, cvt_buf, WX_CVT_BUF_SIZE);
+      dt = 0;
     }
   }
 #endif
@@ -2106,7 +2123,8 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
     int partlen, try_sub;
     
     if ((font_to_use->GetFamily() == wxSYMBOL)) {
-      XlateSym(s, dt, textlen);
+      s = XlateSym(s, dt, textlen, cvt_buf, WX_CVT_BUF_SIZE);
+      dt = 0;
     }
     try_sub = 1;
 

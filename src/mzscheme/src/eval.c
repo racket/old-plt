@@ -3952,6 +3952,8 @@ void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth, int nu
 
   int i;
 
+  depth += num_stxes + (num_toplevels ? 1 : 0);
+
   stack = scheme_malloc_atomic(depth);
   memset(stack, VALID_NOT, depth);
   
@@ -3962,7 +3964,7 @@ void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth, int nu
     stack[depth - num_stxes - 1] = VALID_TOPLEVELS;
   }
 
-  scheme_validate_expr(port, code, stack, depth, 0, num_toplevels);
+  scheme_validate_expr(port, code, stack, depth, depth - (num_stxes + (num_toplevels ? 1 : 0)), num_toplevels);
 }
 
 void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int depth, int delta, int num_toplevels)
@@ -3975,7 +3977,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
   switch (type) {
   case scheme_toplevel_type:
     {
-      int d = SCHEME_TOPLEVEL_DEPTH(expr) + delta ;
+      int d = SCHEME_TOPLEVEL_DEPTH(expr) + delta;
       int p = SCHEME_TOPLEVEL_POS(expr);
 
       if ((d < 0) || (p < 0) || (d >= depth)
@@ -4020,11 +4022,11 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       
       n = app->num_args + 1;
 
-      delta += (n - 1);
+      delta -= (n - 1);
 
       for (i = 0; i < n; i++) {
 	scheme_validate_expr(port, app->args[i], stack, depth, delta, num_toplevels);
-	memset(stack + delta, VALID_NOT, depth - delta);
+	memset(stack, VALID_NOT, delta);
       }
     }
     break;
@@ -4038,7 +4040,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	  
       for (i = 0; i < cnt - 1; i++) {
 	scheme_validate_expr(port, seq->array[i], stack, depth, delta, num_toplevels);
-	memset(stack + delta, VALID_NOT, depth - delta);
+	memset(stack, VALID_NOT, delta);
       }
 
       expr = seq->array[cnt - 1];
@@ -4050,9 +4052,9 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       Scheme_Branch_Rec *b;
       b = (Scheme_Branch_Rec *)expr;
       scheme_validate_expr(port, b->test, stack, depth, delta, num_toplevels);
-      memset(stack + delta, VALID_NOT, depth - delta);
+      memset(stack, VALID_NOT, delta);
       scheme_validate_expr(port, b->tbranch, stack, depth, delta, num_toplevels);
-      memset(stack + delta, VALID_NOT, depth - delta);
+      memset(stack, VALID_NOT, delta);
       expr = b->fbranch;
       goto top;
     }
@@ -4062,9 +4064,9 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
       
       scheme_validate_expr(port, wcm->key, stack, depth, delta, num_toplevels);
-      memset(stack + delta, VALID_NOT, depth - delta);
+      memset(stack, VALID_NOT, delta);
       scheme_validate_expr(port, wcm->val, stack, depth, delta, num_toplevels);
-      memset(stack + delta, VALID_NOT, depth - delta);
+      memset(stack, VALID_NOT, delta);
       expr = wcm->body;
       goto top;
     }
@@ -4097,7 +4099,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       int p, c, i;
 
       scheme_validate_expr(port, lv->value, stack, depth, delta, num_toplevels);
-      memset(stack + delta, VALID_NOT, depth - delta);
+      memset(stack, VALID_NOT, delta);
 
       c = lv->count;
       p = lv->position + delta;
@@ -4122,15 +4124,15 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       c = lv->count;
 
-      if ((c < 0) || (c + delta > depth))
+      if ((c < 0) || (c > delta))
 	scheme_ill_formed_code(port);
 
       if (lv->autobox) {
-	for (i = 0; i < c; i++, delta++) {
-	  stack[delta] = VALID_BOX_NOT;
+	for (i = 0; i < c; i++) {
+	  stack[--delta] = VALID_BOX_NOT;
 	}
       } else
-	delta += c;
+	delta -= c;
 
       expr = lv->body;
       goto top;
@@ -4143,7 +4145,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       c = l->count;
       
-      if ((c < 0) || (c + delta > depth))
+      if ((c < 0) || (c > delta))
 	scheme_ill_formed_code(port);
 
       for (i = 0; i < c; i++) {
@@ -4151,8 +4153,8 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	  scheme_ill_formed_code(port);
       }
 
-      for (i = 0; i < c; i++, delta++) {
-	stack[delta] = VALID_VAL;
+      for (i = 0; i < c; i++) {
+	stack[--delta] = VALID_VAL;
       }
 
       for (i = 0; i < c; i++) {
@@ -4167,8 +4169,8 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
     {
       Scheme_Let_One *lo = (Scheme_Let_One *)expr;
 
-      delta++;
-      if (delta >= depth)
+      --delta;
+      if (delta < 0)
 	scheme_ill_formed_code(port);
 
       expr = lo->value;
@@ -4218,7 +4220,6 @@ static Scheme_Object *write_application(Scheme_Object *obj)
 
 static Scheme_Object *read_application(Scheme_Object *obj)
 {
-  scheme_signal_error("app reader shouldn't be used");
   return NULL;
 }
 
@@ -4255,7 +4256,6 @@ static Scheme_Object *write_branch(Scheme_Object *obj)
 
 static Scheme_Object *read_branch(Scheme_Object *obj)
 {
-  scheme_signal_error("branch reader shouldn't be used");
   return NULL;
 }
 

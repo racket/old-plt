@@ -3337,7 +3337,6 @@ static Scheme_Object *write_let_one(Scheme_Object *obj)
 
 static Scheme_Object *read_let_one(Scheme_Object *obj)
 {
-  scheme_signal_error("let-one reader shouldn't be used");
   return NULL;
 }
 

@@ -2324,6 +2324,9 @@ static Scheme_Object *read_compact(CPort *port,
     }
   }
 
+  if (!first && !v)
+    *(long *)0x0 = 1;
+
   return first ? first : v;
 }
 
@@ -2547,12 +2550,10 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   if (SAME_TYPE(SCHEME_TYPE(result), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)result;
     
-#if 0
     scheme_validate_code(rp, top->code, 
 			 top->max_let_depth,
 			 top->prefix->num_toplevels,
 			 top->prefix->num_stxes);
-#endif
     /* If no exception, the the resulting code is ok. */
   } else
     scheme_ill_formed_code(rp);

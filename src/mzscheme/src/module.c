@@ -2077,6 +2077,24 @@ module_execute(Scheme_Object *data)
 static void module_validate(Scheme_Object *data, Mz_CPort *port, char *stack, 
 			    int depth, int delta, int num_toplevels)
 {
+  Scheme_Module *m;
+  Scheme_Object *l;
+
+  if (!SAME_TYPE(SCHEME_TYPE(data), scheme_module_type))
+    scheme_ill_formed_code(port);
+
+  m = (Scheme_Module *)data;
+
+  if (!SCHEME_SYMBOLP(m->modname))
+    scheme_ill_formed_code(port);
+
+  for (l = m->body; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    scheme_validate_code(port, SCHEME_CAR(l), m->max_let_depth,
+			 m->prefix->num_toplevels, m->prefix->num_stxes);
+  }
+  if (!SCHEME_NULLP(l))
+    scheme_ill_formed_code(port);
+
 }
 
 static Scheme_Object *

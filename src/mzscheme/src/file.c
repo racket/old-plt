@@ -65,11 +65,12 @@
 # include <fcntl.h>
 # include <grp.h>
 # include <pwd.h>
-# include <sys/time.h>
+# include <utime.h>
 #endif
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>
 # include <shlobj.h>
+# include <sys/utime.h>
 #endif
 #ifdef NO_ERRNO_GLOBAL
 # define errno -1
@@ -3658,12 +3659,10 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
     {
       while (1) {
 	if (set_time) {
-	  struct timeval ts[2];
-	  ts[0].tv_sec = mtime;
-	  ts[1].tv_sec = mtime;
-	  ts[0].tv_usec = 0;
-	  ts[1].tv_usec = 0;
-	  if (!utimes(file, ts))
+	  struct utimbuf ut;
+	  ut.actime = mtime;
+	  ut.modtime = mtime;
+	  if (!MSC_IZE(utime)(file, &ut))
 	    return scheme_void;
 	} else {
 	  if (!MSC_IZE(stat)(file, &buf))

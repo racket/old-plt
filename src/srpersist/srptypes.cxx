@@ -27,4 +27,8 @@ Scheme_Type sql_hdbc_type;
 Scheme_Type sql_hstmt_type;
 Scheme_Type sql_hdesc_type;
 Scheme_Type sql_buffer_type;
+Scheme_Type sql_indicator_type;
+Scheme_Type sql_guid_type;
 Scheme_Type sql_paramlength_type;
+
+

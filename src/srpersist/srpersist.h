@@ -5,13 +5,36 @@
 #define SRP_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
 
 #define namedConstSearch(s,array) \
-     (SRP_NAMED_DATATYPE *) \
+     (SRP_NAMED_CONSTANT *) \
      bsearch(s,array,sizeray(array),sizeof(*array), \
-	     (int (*)(const void *,const void *))keyDataTypeCmp)
+	     (int (*)(const void *,const void *))keyConstCmp)
+
+#define namedSmallConstSearch(s,array) \
+     (SRP_NAMED_SMALL_CONSTANT *) \
+     bsearch(s,array,sizeray(array),sizeof(*array), \
+	     (int (*)(const void *,const void *))keySmallConstCmp)
+
+#define namedTypedConstSearch(s,array) \
+     (SRP_NAMED_TYPED_CONSTANT *) \
+     bsearch(s,array,sizeray(array),sizeof(*array), \
+	     (int (*)(const void *,const void *))keyTypedConstCmp)
+
+#define namedBitsDictSearch(s,array,asize) \
+     (SRP_NAMED_BITS_DICT *) \
+     bsearch(s,array,asize,sizeof(*array), \
+	     (int (*)(const void *,const void *))keyBitsDictCmp)
 
 #define namedConstSort(array) \
      qsort(array,sizeray(array),sizeof(array[0]), \
-	   (int (*)(const void *,const void *))namedDataTypesCmp)
+	   (int (*)(const void *,const void *))namedConstCmp)
+
+#define namedTypedConstSort(array) \
+     qsort(array,sizeray(array),sizeof(array[0]), \
+	   (int (*)(const void *,const void *))namedTypedConstCmp)
+
+#define namedBitsDictSort(array) \
+     qsort(array,sizeray(array),sizeof(array[0]), \
+	   (int (*)(const void *,const void *))namedBitsDictCmp)
 
 typedef struct _SRP_prim_ {
   Scheme_Object *(*c_fun)(int argc,Scheme_Object **);
@@ -20,10 +43,92 @@ typedef struct _SRP_prim_ {
   short maxargs;
 } SRP_PRIM;
 
-typedef struct _named_datatype_ {
+typedef struct _named_constant_ {
   char *scheme_name;
-  int val;
-} SRP_NAMED_DATATYPE;
+  SQLUINTEGER val;
+} SRP_NAMED_CONSTANT;
+
+typedef struct _named_small_constant_ {
+  char *scheme_name;
+  SQLSMALLINT val;
+} SRP_NAMED_SMALL_CONSTANT;
+
+typedef  enum _const_type_ { 
+  sqlinteger,
+  sqlusmallint,
+  sqluinteger,
+  sqlbool,
+  namedusmallint,
+  namedinteger,
+  nameduinteger,
+  boolstring,
+  string,
+  bitmask,
+  henv,
+  hdbc,
+  hstmt,
+  hdesc
+} SRP_CONST_TYPE;
+
+typedef struct _named_typed_constant_ {
+  char *scheme_name;
+  SQLUINTEGER val;
+  SRP_CONST_TYPE type;
+} SRP_NAMED_TYPED_CONSTANT;
+
+typedef struct named_bits_dict_ {
+  char *scheme_name;
+  SRP_NAMED_CONSTANT *bits;
+  size_t numBits;
+} SRP_NAMED_BITS_DICT;
+
+// Scheme_Object *scheme_make_list(Scheme_Object *,...);
+
+// buffer procedures
+
+Scheme_Object *readCharBuffer(char *,long);
+Scheme_Object *readLongBuffer(long *,long);
+Scheme_Object *readShortBuffer(short *,long);
+Scheme_Object *readFloatBuffer(float *,long);
+Scheme_Object *readDoubleBuffer(double *,long);
+Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *,long);
+Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long);
+Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long);
+Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long);
+Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalHourBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readBinaryBuffer(char *buffer,long);
+Scheme_Object *readBitBuffer(unsigned char *buffer,long);
+Scheme_Object *readSBigIntBuffer(_int64 *buffer,long);
+Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
+Scheme_Object *readTinyIntBuffer(char *buffer,long);
+Scheme_Object *readULongBuffer(unsigned long *buffer,long);
+Scheme_Object *readUShortBuffer(unsigned short *buffer,long);
+Scheme_Object *readUTinyIntBuffer(unsigned char *buffer,long);
+Scheme_Object *readBookmarkBuffer(unsigned long *buffer,long);
+Scheme_Object *readVarBookmarkBuffer(unsigned char **buffer,long);
+Scheme_Object *readGUIDBuffer(SQLGUID *buffer,long);
+
+// utilities
+
+SRP_PRIM_DECL(srp_make_indicator);
+SRP_PRIM_DECL(srp_read_indicator);
+SRP_PRIM_DECL(srp_set_indicator);
+SRP_PRIM_DECL(srp_make_buffer);
+SRP_PRIM_DECL(srp_read_buffer);
+
+// from SQL.H
 
 SRP_PRIM_DECL(srp_SQLAllocConnect);
 SRP_PRIM_DECL(srp_SQLAllocEnv);
@@ -85,6 +190,7 @@ SRP_PRIM_DECL(srp_SQLTransact);
 
      // from SQLEXT.H)
 	
+SRP_PRIM_DECL(srp_SQLDriverConnect);
 SRP_PRIM_DECL(srp_SQLBrowseConnect);
 SRP_PRIM_DECL(srp_SQLColAttributes);
 SRP_PRIM_DECL(srp_SQLColumnPrivileges);

@@ -5,6 +5,7 @@ all : srpersist.dll
 clean :
 	-@erase srpersist.obj
 	-@erase srptypes.obj
+	-@erase srpbuffer.obj
 	-@erase srpersist.dll
 
 CPP=cl.exe
@@ -24,11 +25,14 @@ LINK32_LIBS= \
 	comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
 	uuid.lib odbc32.lib odbccp32.lib 
 LINK32_OBJS= \
-	srpersist.obj srptypes.obj
+	srpersist.obj srptypes.obj srpbuffer.obj
 
 srpersist.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) $(LINK32_FLAGS) --ld srpersist.dll $(LINK32_OBJS) $(LINK32_LIBS)
 
-srpersist.obj : srpersist.cxx srpersist.h srptypes.h
+srpersist.obj : srpersist.cxx srpersist.h srptypes.h srpprims.tbl srpconsts.tbl srpinfo.tbl
 
 srptypes.obj : srptypes.cxx srpersist.h srptypes.h
+
+srpbuffer.obj : srpbuffer.cxx srpersist.h srpbuffer.h
+

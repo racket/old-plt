@@ -5,19 +5,32 @@
            "configuration-structures.ss"
            "web-server.ss"
            "servlet-sig.ss"
+           (lib "xml.ss" "xml")
            (lib "url.ss" "net")
-           (lib "sendurl.ss" "net"))
+           (lib "sendurl.ss" "net")
+           ; more here - use contracts when they support suitable error messages
+           ;(lib "specs.ss" "framework")
+           (lib "error.ss" "htdp")
+           )
   (provide send/suspend
            send/finish
-           initial-request) 
+           initial-request)
   
   ; send/finish : response -> doesn't
   (define (send/finish page)
+    (check-arg 'send/finish (valid-response? page) "response" "1st" page)
     (output-page page)
-    ; don't kill the server since it's still outputing the page
-    ;(kill-thread (current-thread))
+    (kill-thread (current-thread))
     (set! *page-channel* #f))
-    
+  
+  ; : tst -> bool
+  (define (valid-response? page)
+    (with-handlers ([void (lambda (exn) #f)])
+      (or (response/full? page)
+          ; this could fail for dotted lists - rewrite andmap
+          (and (pair? page) (pair? (cdr page)) (andmap string? page)) 
+          (and (xexpr->xml page) #t))))
+  
   ; *page-channel* : #f | channel
   (define *page-channel* #f)
   
@@ -56,7 +69,14 @@
   ; send/suspend : (str -> page) -> (values Method Url Bindings Bindings)
   (define send/suspend
     (let ((s/s (gen-send/suspend uri invoke-id instances output-page void update-channel!)))
-      (lambda (k->page) (s/s k->page))))
+      (lambda (k->page)
+        (s/s (lambda (k-url)
+               (let ([page (k->page k-url)])
+                 (unless (valid-response? page)
+                   (error 'send/suspend "expected <~a> as ~a argument, given a function that produced: ~e"
+                          "a function that produces a response" "1st"
+                          page))
+                 page))))))
   
   (define initial-request
     (make-request 'post uri null null "127.0.0.1" "127.0.0.1"))

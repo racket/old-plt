@@ -1,5 +1,6 @@
 (define problems
-  (list (make-problem "Bug in Solver.1" '(()) '(()) '#f)
+  (list (make-problem "Bug in Gui.1" '(()) '(()) '#f)
+        (make-problem "Bug in Solver.1" '(()) '(()) '#f)
         (make-problem
           "Bug in Solver.2 (same bug 1?)"
           '(()
@@ -75,7 +76,7 @@
             (4))
           '#f)
         (make-problem
-          "John"
+          "John "
           '((15 16)
             (9 2 1 2 14)
             (6 1 2 2 1 2 12)

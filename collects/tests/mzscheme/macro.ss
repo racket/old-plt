@@ -114,16 +114,6 @@
 (syntax-test #'(lambda () (define-syntax x 10) (set! x 5)))
 (syntax-test #'(lambda () (define-syntax (x) 10) (set! x 5)))
 
-(test 7 'fluid-let-syntax
-      (fluid-let-syntax ([lambda (lambda (x) #'7)])
-	 (lambda 5)))
-
-(test 8 'fluid-let-syntax
-      (let-syntax ([y (lambda (x)
-			#'(lambda 5))])
-	(fluid-let-syntax ([lambda (lambda (x) #'8)])
-	  (y 5))))
-
 (syntax-test #'letrec-syntaxes+values)
 (syntax-test #'(letrec-syntaxes+values))
 (syntax-test #'(letrec-syntaxes+values . 1))
@@ -143,20 +133,6 @@
 (syntax-test #'(letrec-syntaxes+values () ([(x)]) 1))
 (syntax-test #'(letrec-syntaxes+values () ([(x) 1 2]) 1))
 (syntax-test #'(letrec-syntaxes+values () ([(x) 1] . y) 1))
-
-(syntax-test #'fluid-let-syntax)
-(syntax-test #'(fluid-let-syntax))
-(syntax-test #'(fluid-let-syntax . 1))
-(syntax-test #'(fluid-let-syntax))
-(syntax-test #'(fluid-let-syntax . 1))
-(syntax-test #'(fluid-let-syntax ()))
-(syntax-test #'(fluid-let-syntax () . 1))
-(syntax-test #'(fluid-let-syntax x 1))
-(syntax-test #'(fluid-let-syntax (x) 1))
-(syntax-test #'(fluid-let-syntax ([x]) 1))
-(syntax-test #'(fluid-let-syntax ([(x)]) 1))
-(syntax-test #'(fluid-let-syntax ([(x) 1 2]) 1))
-(syntax-test #'(fluid-let-syntax ([(x) 1] . y) 1))
 
 (test 7 'set!-transformer
       (let ([x 3])

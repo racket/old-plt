@@ -98,6 +98,7 @@
 
 (define (test-method public object% super-ok? inner-ok?)
   (teval #`(test #t class? (class #,object% (#,public))))
+
   (syntax-test #`(class #,object% (#,public . x)))
   (syntax-test #`(class #,object% (#,public 10)))
   (syntax-test #`(class #,object% (#,public (x))))
@@ -205,6 +206,12 @@
 (class-keyword-test #'define/overment)
 (class-keyword-test #'define/augment)
 (class-keyword-test #'define/augride)
+(class-keyword-test #'super)
+(class-keyword-test #'inner)
+(class-keyword-test #'this)
+(class-keyword-test #'super-new)
+(class-keyword-test #'super-make-object)
+(class-keyword-test #'super-instantiate)
 
 ;; ------------------------------------------------------------
 ;; Test basic functionality

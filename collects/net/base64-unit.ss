@@ -5,9 +5,8 @@
 
   (import "base64-sig.ss")
 
-  (export net:base64:unit)
-
-  (define net:base64:unit
+  (export net:base64@)
+  (define net:base64@
     (unit/sig net:base64^
       (import)
 

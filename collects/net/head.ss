@@ -1,8 +1,11 @@
 
-(require-relative-library "heads.ss")
+(module head mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (import "head-sig.ss")
+  (import "head-unit.ss")
 
-(define-values/invoke-unit/sig mzlib:head^
-  (require-relative-library "headr.ss"))
+  (define-values/invoke-unit/sig net:head^
+    net:head@)
+
+  (export-signature-elements net:head^))

@@ -3440,7 +3440,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 	    p = SCHEME_CDR(e);
 	    e = NULL;
 	  } else {
-	    p = CONS(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
+	    p = CONS(SCHEME_CAR(e), scheme_null);
 	  }
 
 	  if (last)

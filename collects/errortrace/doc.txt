@@ -218,19 +218,18 @@ the value originally provided to the expresion-maker, and
 
 The import signature contains these names:
 
-> with-mark : syntax (any -> syntax) syntax -> syntax
+> with-mark : syntax (syntax -> syntax) syntax -> syntax
 
   This procedure is called by `annotate' and `annotate-top' to wrap
   expressions with `with-continuation-mark'. The first argument is the
   source expression and the thrid argument is the expression to be
   wrapped.
 
-  The second argument is a function that takes any value V and
-  incorporates it into a syntax object. The value V typically records
-  the source lcation of the original expression. The return syntax
-  object is suitable for use as a continuation-mark value
-  expression. Use `st-mark-source' to extract V from the result of the
-  expression.
+  The second argument is a function that takes a syntax
+  object representing the source of the expression and
+  builds a new syntax object out of that for use as a
+  continuation-mark value expression. Use `st-mark-source'
+  to extract ... what?
 
 > test-coverage-enabled : (parameter boolean)
 

@@ -734,6 +734,7 @@
    (test (list 'start-sleep0 sleep0) values (list 'start-sleep0 sleep0))
    (let ([goes
 	  (lambda (sleep1 sleep2 break-thread)
+	    (test (list 'start-goes sleep1 sleep2 break-thread) values (list 'start-goes sleep1 sleep2 break-thread))
 	    (test 'external-suspend values 'external-suspend)
 	    (let ([v 10])
 	      (let ([t2 (parameterize ([current-error-port /dev/null-for-err])
@@ -769,6 +770,7 @@
 		(test 20 values v)))
 	    (let ([w-block
 		   (lambda (post wait)
+		     (test (list 'start-w-block post wait) values (list 'start-w-block post wait))
 		     ;; Child thread sleeps
 		     (let ([v 20])
 		       (let ([t2 (parameterize ([current-error-port /dev/null-for-err])

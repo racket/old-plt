@@ -92,6 +92,8 @@ static Scheme_Object *all_except_symbol;
 static Scheme_Object *prefix_all_except_symbol;
 static Scheme_Object *all_from_symbol;
 static Scheme_Object *all_from_except_symbol;
+static Scheme_Object *all_defined_symbol;
+static Scheme_Object *all_defined_except_symbol;
 static Scheme_Object *struct_symbol;
 
 static Scheme_Object *begin_stx;
@@ -410,6 +412,8 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(prefix_all_except_symbol);
   REGISTER_SO(all_from_symbol);
   REGISTER_SO(all_from_except_symbol);
+  REGISTER_SO(all_defined_symbol);
+  REGISTER_SO(all_defined_except_symbol);
   REGISTER_SO(struct_symbol);
   prefix_symbol = scheme_intern_symbol("prefix");
   rename_symbol = scheme_intern_symbol("rename");
@@ -417,6 +421,8 @@ void scheme_finish_kernel(Scheme_Env *env)
   prefix_all_except_symbol = scheme_intern_symbol("prefix-all-except");
   all_from_symbol = scheme_intern_symbol("all-from");
   all_from_except_symbol = scheme_intern_symbol("all-from-except");
+  all_defined_symbol = scheme_intern_symbol("all-defined");
+  all_defined_except_symbol = scheme_intern_symbol("all-defined-except");
   struct_symbol = scheme_intern_symbol("struct");
 }
 
@@ -2471,6 +2477,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var?) */
   Scheme_Hash_Table *provided;    /* exname -> locname */
   Scheme_Object *reprovided;      /* list of (list modidx syntax except-name ...) */
+  Scheme_Object *all_defs_out;    /* list of (stx-list except-name ...) */
   void *tables[3], *et_tables[3];
   Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false;
   int excount, exvcount, exicount;
@@ -2588,6 +2595,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   provided = scheme_make_hash_table(SCHEME_hash_ptr);
   reprovided = scheme_null;
+
+  all_defs_out = scheme_null;
 
   simplify_cache = scheme_new_stx_simplify_cache();
 
@@ -2949,7 +2958,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 					"(not a struct identifier followed by "
 					"a sequence of field identifiers)");
 		}
-		
+
 		base = SCHEME_STX_CAR(rest);
 		fields = SCHEME_STX_CDR(rest);
 		fields = SCHEME_STX_CAR(fields);
@@ -2980,6 +2989,34 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		    scheme_wrong_syntax("module", names[i], e, "identifier already provided");
 		  scheme_hash_set(provided, names[i], names[i]);
 		}
+	      }  else if (SAME_OBJ(all_defined_symbol, SCHEME_STX_VAL(fst))) {
+		/* (all-defined) */
+		if (!SCHEME_STX_NULLP(rest))
+		  scheme_wrong_syntax(NULL, a, e, "bad syntax");
+		
+		all_defs_out = scheme_make_pair(scheme_make_pair(e, scheme_null), all_defs_out);
+	      } else if (SAME_OBJ(all_defined_except_symbol, SCHEME_STX_VAL(fst))) {
+		/* (all-defined-except <id> ...) */
+		Scheme_Object *exns, *el;
+		int len;
+		
+		len = scheme_stx_proper_list_length(a);
+
+		if (len < 0)
+		  scheme_wrong_syntax(NULL, a, e, "bad syntax (" IMPROPER_LIST_FORM ")");
+		
+		exns = rest;
+		
+		/* Check all exclusions are identifiers: */
+		for (el = exns; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
+		  p = SCHEME_STX_CAR(el);
+		  if (!SCHEME_STX_SYMBOLP(p)) {
+		    scheme_wrong_syntax(NULL, p, e,
+					"bad syntax (excluded name is not an identifier)");
+		  }
+		}
+		
+		all_defs_out = scheme_make_pair(scheme_make_pair(e, exns), all_defs_out);
 	      } else {
 		scheme_wrong_syntax(NULL, a, e, NULL);
 	      }
@@ -3068,7 +3105,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  /* Compute provides for re-provides: */
+  /* Compute provides for re-provides and all-defs-out: */
   {
     int i;
     Scheme_Object *rx;
@@ -3147,6 +3184,60 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(name, srcname))
 		reprovide_kernel++;
+	    }
+	  }
+	}
+      }
+    }
+
+    /* Do all-defined provides */
+    for (; !SCHEME_NULLP(all_defs_out); all_defs_out = SCHEME_CDR(all_defs_out)) {
+      Scheme_Object *exns, *ree, *exl, *name, *a;
+	    
+      ree = SCHEME_CAR(all_defs_out);
+      exl = SCHEME_CDR(ree);
+      ree = SCHEME_CAR(ree);
+	    
+      /* Make sure each excluded name was defined: */
+      for (exns = exl; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
+	a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
+	if (!scheme_lookup_in_table(env->genv->toplevel, (const char *)a)
+	    && !scheme_lookup_in_table(env->genv->syntax, (const char *)a)) {
+	  a = SCHEME_STX_CAR(exns);
+	  scheme_wrong_syntax("module", a, ree, "excluded identifier was not defined");
+	}
+      }
+
+
+      {
+	int i, j;
+	Scheme_Bucket **bs, *b;
+	
+	for (j = 0; j < 2; j++) {
+	  if (j) {
+	    bs = env->genv->toplevel->buckets;
+	    i = env->genv->toplevel->size;
+	  } else {
+	    bs = env->genv->syntax->buckets;
+	    i = env->genv->syntax->size;
+	  }
+
+	  while(i--) {
+	    b = bs[i];
+	    if (b && b->val) {
+	      name = (Scheme_Object *)b->key;
+	      for (exns = exl; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
+		a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
+		if (SAME_OBJ(a, name))
+		  break;
+	      }
+	      if (SCHEME_STX_NULLP(exns)) {
+		/* not excluded */
+		if (scheme_hash_get(provided, name))
+		  scheme_wrong_syntax("module", name, ree, "identifier already provided");
+		
+		scheme_hash_set(provided, name, name);
+	      }
 	    }
 	  }
 	}

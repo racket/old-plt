@@ -87,6 +87,13 @@
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-from-except xxxx +))))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-from-except mzscheme no))))
 (syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-from-except mzscheme + no))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined x))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined . x))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined 1))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined-except . x))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined-except 1))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined-except x 1))))
+(syntax-test #'(module m mzscheme (define x 10) (define y 11) (provide (all-defined-except no))))
 
 (syntax-test #'(require . x))
 (syntax-test #'(require m . x))

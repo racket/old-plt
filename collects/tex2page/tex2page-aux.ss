@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-02-22")
+(define *tex2page-version* "2005-02-23")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2526,7 +2526,6 @@
   (lambda ()
     (let ((n (length *footnote-list*)))
       (unless (= n 0)
-        (do-end-para)
         (emit "<div class=footnoterule><hr></div>")
         (do-para)
         (do-end-para)
@@ -3684,6 +3683,7 @@
 (define output-colophon
   (lambda ()
     (when (or *colophon-mentions-last-mod-time?* *colophon-mentions-tex2page?*)
+      (do-para)
       (do-end-para)
       (emit "<div align=right class=colophon>")
       (emit-newline)
@@ -3766,7 +3766,6 @@
                    (or last-page?
                        (and (eq? top-or-bottom 'top)
                             last-page-not-determined?)))
-            (do-end-para)
             (emit "<div align=right class=navigation><i>[")
             (emit *navigation-sentence-begin*)
             (emit "<span")
@@ -3830,7 +3829,7 @@
                 (emit "</span>")))
             (emit *navigation-sentence-end*)
             (emit "]</i></div>")
-            (do-para))))))))
+            (emit-newline))))))))
 
 (define do-eject
   (lambda ()
@@ -3914,19 +3913,19 @@
   (lambda ()
     (set! *footnote-list* '())
     (output-html-preamble #t)
-    (output-navigation-bar 'top)))
+    (output-navigation-bar 'top)
+    (do-para)))
 
 (define do-end-page
   (lambda ()
+    (do-end-para)
     (output-footnotes)
     (output-navigation-bar 'bottom)
     (unless *html-presentation?*
-      (when (and *colophon-on-first-page?* (= *html-page-count* 0))
-        (output-colophon))
-      (do-end-para)
-      (when (and
-             (not *colophon-on-first-page?*)
-             (= *html-page-count* *last-page-number*))
+      (when (or
+             (and *colophon-on-first-page?* (= *html-page-count* 0))
+             (and (not *colophon-on-first-page?*)
+                  (= *html-page-count* *last-page-number*)))
         (output-colophon)))
     (output-html-postamble)
     (write-log #\[)
@@ -7352,12 +7351,12 @@
         (set! *js-port* (open-output-file js-file))
         (display "var toc = new Array(" *js-port*))
       (display
-        "\n              body {\n              background: white;\n              font-size: 22;\n              font-weight: bold;\n              font-family: Verdana, Arial, Lucida;\n              }\n\n              div#content {\n              position: absolute;\n              top: 10px;\n              left: 150px;\n              }\n              \n              div#title {\n              position: absolute;\n              top: 150px;\n              left: 250px;\n              }\n\n              h1 {\n              color: darkblue;\n              font-size: 1.5em;\n              padding-bottom: 20px;\n              border-bottom: thick solid blue;\n              }\n\n              div#title {\n              position: absolute;\n              "
+        "\n               body {\n               background: white;\n               font-size: 22;\n               font-weight: bold;\n               font-family: Verdana, Arial, Lucida;\n               }\n\n               div#content {\n               position: absolute;\n               top: 10px;\n               left: 150px;\n               }\n\n               div#title {\n               position: absolute;\n               top: 150px;\n               left: 250px;\n               }\n\n               h1 {\n               color: darkblue;\n               font-size: 1.5em;\n               padding-bottom: 20px;\n               border-bottom: thick solid blue;\n               }\n\n               div#title {\n               position: absolute;\n               "
         *css-port*)
       (display
         (if *title*
-          "\n                  top: 150px;\n                  left: 250px;\n                  "
-          "\n                  top: 10px;\n                  left: 150px;\n                  ")
+          "\n                     top: 150px;\n                     left: 250px;\n                     "
+          "\n                     top: 10px;\n                     left: 150px;\n                     ")
         *css-port*)
       (display "}" *css-port*)
       (newline *css-port*))))
@@ -7565,7 +7564,7 @@
     (cond
      ((string=? not-a-file "--version")
       (write-log
-        "Copyright (c) 1997-2003, Dorai Sitaram.\n\n                  Permission to distribute and use this work for any\n                  purpose is hereby granted provided this copyright\n                  notice is included in the copy.  This work is provided\n                  as is, with no warranty of any kind.\n\n                  For more information on TeX2page, please see")
+        "Copyright (c) 1997-2005, Dorai Sitaram.\n\nPermission to distribute and use this work for any\npurpose is hereby granted provided this copyright\nnotice is included in the copy.  This work is provided\nas is, with no warranty of any kind.\n\nFor more information on TeX2page, please see")
       (write-log #\newline)
       (write-log *tex2page-website*)
       (write-log #\.)
@@ -7573,7 +7572,7 @@
       (write-log #\newline))
      ((string=? not-a-file "--help")
       (write-log
-        "\n                  The command tex2page converts a (La)TeX document into\n                  Web pages.  Call tex2page with the relative or full\n                  pathname of the main (La)TeX file.  The file extension\n                  is optional if it is .tex.\n\n                  The relative pathnames of the main and any subsidiary\n                  (La)TeX files are resolved against the current working\n                  directory and the list of directories in the\n                  environment variable TIIPINPUTS, or if that does not\n                  exist, TEXINPUTS.  \n\n                  The output Web files are generated in the current\n                  directory by default.  An alternate location can be\n                  specified in  <jobname>.hdir, tex2page.hdir, or\n                  ~/tex2page.hdir, where <jobname> is the basename of the\n                  main (La)TeX file.  \n\n                  For more information on tex2page, please see")
+        "\nThe command tex2page converts a (La)TeX document into\nWeb pages.  Call tex2page with the relative or full\npathname of the main (La)TeX file.  The file extension\nis optional if it is .tex.\n\nThe relative pathnames of the main and any subsidiary\n(La)TeX files are resolved against the current working\ndirectory and the list of directories in the\nenvironment variable TIIPINPUTS, or if that does not\nexist, TEXINPUTS.  \n\nThe output Web files are generated in the current\ndirectory by default.  An alternate location can be\nspecified in  <jobname>.hdir, tex2page.hdir, or\n~/tex2page.hdir, where <jobname> is the basename of the\nmain (La)TeX file.  \n\nFor more information on tex2page, please see")
       (write-log #\newline)
       (write-log *tex2page-website*)
       (write-log #\.)

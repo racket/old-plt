@@ -1360,7 +1360,10 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
 /*========================================================================*/
 
 /* Used for marshalling syntax objects. Note that we build a reverse
-   list for wraps. (Unmarshaller will reverse it back.) */
+   list for wraps. (Unmarshaller will reverse it back.) 
+
+   The wraps->datum tools are also used to simplify syntax object (to
+   minimize the occupied space among a set of objects). */
 
 static int same_list(Scheme_Object *a, Scheme_Object *b)
 {
@@ -1503,14 +1506,19 @@ static void simplify_lex_renames(Scheme_Object *w)
 }
 
 static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, 
-				     Scheme_Hash_Table *rns)
+				     Scheme_Hash_Table *rns,
+				     int just_simplify)
 {
   Scheme_Object *stack, *a, *w = w_in;
   int did_lex_rename = 0;
 
   a = scheme_hash_get(rns, w_in);
-  if (a)
-    return SCHEME_CAR(a);
+  if (a) {
+    if (just_simplify)
+      return SCHEME_CDR(a);
+    else
+      return SCHEME_CAR(a);
+  }
 
   stack = scheme_null;
 
@@ -1522,26 +1530,32 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       /* Mark numbers get parenthesized */
       if (SCHEME_PAIRP(SCHEME_CDR(w)) && SAME_OBJ(a, SCHEME_CADR(w)))
 	w = SCHEME_CDR(w); /* delete cancelled mark */
+      else if (just_simplify)
+	stack = scheme_make_pair(a, stack);
       else
 	stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
     } else if (SCHEME_VECTORP(a)) {
       if (!did_lex_rename) {
 	if (SCHEME_VEC_SIZE(a) > 2) {
-	  Scheme_Object *local_key;
-	  
-	  local_key = scheme_hash_get(rns, a);
-	  if (local_key) {
-	    stack = scheme_make_pair(local_key, stack);
-	  } else {
-	    local_key = scheme_make_integer(rns->count);
-	    scheme_hash_set(rns, a, local_key);
-	    
-	    /* Since this is a simplified table, we can steal the first
-	       slot for local_key: */
-	    
-	    SCHEME_VEC_ELS(a)[0] = local_key;
-	    
+	  if (just_simplify) {
 	    stack = scheme_make_pair(a, stack);
+	  } else {
+	    Scheme_Object *local_key;
+	    
+	    local_key = scheme_hash_get(rns, a);
+	    if (local_key) {
+	      stack = scheme_make_pair(local_key, stack);
+	    } else {
+	      local_key = scheme_make_integer(rns->count);
+	      scheme_hash_set(rns, a, local_key);
+	      
+	      /* Since this is a simplified table, we can steal the first
+		 slot for local_key: */
+	      
+	      SCHEME_VEC_ELS(a)[0] = local_key;
+	      
+	      stack = scheme_make_pair(a, stack);
+	    }
 	  }
 	}
 	/* else empty simplified vector, which we drop */
@@ -1573,45 +1587,49 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       }
 
       if (!redundant) {
-	if (mrn->nonmodule) {
-	  stack = scheme_make_pair(((mrn->phase == 0)
-				    ? scheme_true
-				    : scheme_false), 
-				   stack);
+	if (just_simplify) {
+	  stack = scheme_make_pair((Scheme_Object *)mrn, stack);
 	} else {
-	  Scheme_Object *local_key;
-	  
-	  local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
-	  if (local_key) {
-	    stack = scheme_make_pair(local_key, stack);
+	  if (mrn->nonmodule) {
+	    stack = scheme_make_pair(((mrn->phase == 0)
+				      ? scheme_true
+				      : scheme_false), 
+				     stack);
 	  } else {
-	    /* Convert hash table to list: */
-	    int i, j, count = 0;
-	    Scheme_Object *l;
+	    Scheme_Object *local_key;
+	  
+	    local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
+	    if (local_key) {
+	      stack = scheme_make_pair(local_key, stack);
+	    } else {
+	      /* Convert hash table to list: */
+	      int i, j, count = 0;
+	      Scheme_Object *l;
 	    
-	    for (i = mrn->ht->size; i--; ) {
-	      if (mrn->ht->vals[i])
-		count++;
-	    }
-
-	    l = scheme_make_vector(count * 2, NULL);
-	    
-	    for (i = mrn->ht->size, j = 0; i--; ) {
-	      if (mrn->ht->vals[i]) {
-		SCHEME_VEC_ELS(l)[j++] = mrn->ht->keys[i];
-		SCHEME_VEC_ELS(l)[j++] = mrn->ht->vals[i];
+	      for (i = mrn->ht->size; i--; ) {
+		if (mrn->ht->vals[i])
+		  count++;
 	      }
+
+	      l = scheme_make_vector(count * 2, NULL);
+	    
+	      for (i = mrn->ht->size, j = 0; i--; ) {
+		if (mrn->ht->vals[i]) {
+		  SCHEME_VEC_ELS(l)[j++] = mrn->ht->keys[i];
+		  SCHEME_VEC_ELS(l)[j++] = mrn->ht->vals[i];
+		}
+	      }
+	    
+	      local_key = scheme_make_integer(rns->count);
+	      scheme_hash_set(rns, a, local_key);
+	    
+	      l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
+	      if (mrn->plus_kernel)
+		l = scheme_make_pair(scheme_true,l);
+	      l = scheme_make_pair(local_key, l);
+	    
+	      stack = scheme_make_pair(l, stack);
 	    }
-	    
-	    local_key = scheme_make_integer(rns->count);
-	    scheme_hash_set(rns, a, local_key);
-	    
-	    l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
-	    if (mrn->plus_kernel)
-	      l = scheme_make_pair(scheme_true,l);
-	    l = scheme_make_pair(local_key, l);
-	    
-	    stack = scheme_make_pair(l, stack);
 	  }
 	}
       }
@@ -1636,7 +1654,19 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     w = SCHEME_CDR(w);
   }
 
-  /* Double-check for equivalent list in table (after simplificiation: */
+  if (just_simplify) {
+    /* Reverse list: */
+    Scheme_Object *prev = scheme_null, *next;
+    while (SCHEME_PAIRP(stack)) {
+      next = SCHEME_CDR(stack);
+      SCHEME_CDR(stack) = prev;
+      prev = stack;
+      stack= next;
+    }
+    stack = prev;
+  }
+
+  /* Double-check for equivalent list in table (after simplificiation): */
   {
     int i;
 
@@ -1644,7 +1674,10 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       if (rns->vals[i]) {
 	if (SCHEME_PAIRP(rns->vals[i])) {
 	  if (same_list(SCHEME_CDR(rns->vals[i]), stack)) {
-	    return SCHEME_CAR(rns->vals[i]);
+	    if (just_simplify)
+	      return SCHEME_CDR(rns->vals[i]);
+	    else
+	      return SCHEME_CAR(rns->vals[i]);
 	  }
 	}
       }
@@ -1655,7 +1688,10 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
   a = scheme_make_integer(rns->count);
   scheme_hash_set(rns, w_in, scheme_make_pair(a, stack));
   
-  return scheme_make_pair(a, stack);
+  if (just_simplify)
+    return stack;
+  else
+    return scheme_make_pair(a, stack);
 }
 
 /*========================================================================*/
@@ -1724,7 +1760,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     ph = NULL;
 
   if (with_marks) {
-    /* Propagate marks: */
+    /* Propagate wraps: */
     scheme_stx_content((Scheme_Object *)stx);
   }
 
@@ -1774,7 +1810,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     result = v;
 
   if (with_marks > 1)
-    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, rns));
+    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, rns, 0));
 
   if (ph)
     SCHEME_PTR_VAL(ph) = result;
@@ -2204,25 +2240,29 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
 /*========================================================================*/
 
 #ifdef DO_STACK_CHECK
-static void simplify_syntax_inner(Scheme_Object *o, 
+static void simplify_syntax_inner(Scheme_Object *o,
+				  Scheme_Hash_Table *rns,
 				  Scheme_Hash_Table **ht);
 
 static Scheme_Object *simplify_syntax_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
-  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
+  Scheme_Hash_Table *rns = (Scheme_Hash_Table *)p->ku.k.p2;
+  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
 
-  simplify_syntax_inner(o, ht);
+  simplify_syntax_inner(o, rns, ht);
 
   return NULL;
 }
 #endif
 
 static void simplify_syntax_inner(Scheme_Object *o, 
+				  Scheme_Hash_Table *rns,
 				  Scheme_Hash_Table **ht)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
@@ -2234,7 +2274,8 @@ static void simplify_syntax_inner(Scheme_Object *o,
     {
       Scheme_Thread *p = scheme_current_thread;
       p->ku.k.p1 = (void *)o;
-      p->ku.k.p2 = (void *)ht;
+      p->ku.k.p2 = (void *)rns;
+      p->ku.k.p3 = (void *)ht;
       scheme_handle_stack_overflow(simplify_syntax_k);
       return;
     }
@@ -2253,35 +2294,41 @@ static void simplify_syntax_inner(Scheme_Object *o,
       scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)scheme_true);
   }
 
-  simplify_lex_renames(stx->wraps);
+  if (rns) {
+    /* Propagate wraps: */
+    scheme_stx_content((Scheme_Object *)stx);
+
+    v = wraps_to_datum(stx->wraps, rns, 1);
+    stx->wraps = v;
+  }
   stx->props = NULL;
 
   v = stx->val;
   
   if (SCHEME_PAIRP(v)) {
     while (SCHEME_PAIRP(v)) {
-      simplify_syntax_inner(SCHEME_CAR(v), ht);
+      simplify_syntax_inner(SCHEME_CAR(v), rns, ht);
       v = SCHEME_CDR(v);
     }
     if (!SCHEME_NULLP(v)) {
-      simplify_syntax_inner(v, ht);
+      simplify_syntax_inner(v, rns, ht);
     }
   } else if (SCHEME_BOXP(v)) {
-    simplify_syntax_inner(SCHEME_BOX_VAL(v), ht);
+    simplify_syntax_inner(SCHEME_BOX_VAL(v), rns, ht);
   } else if (SCHEME_VECTORP(v)) {
     int size = SCHEME_VEC_SIZE(v), i;
     
     for (i = 0; i < size; i++) {
-      simplify_syntax_inner(SCHEME_VEC_ELS(v)[i], ht);
+      simplify_syntax_inner(SCHEME_VEC_ELS(v)[i], rns, ht);
     }
   }
 }
 
-void scheme_simplify_stx(Scheme_Object *stx)
+void scheme_simplify_stx(Scheme_Object *stx, Scheme_Hash_Table *rns)
 {
   Scheme_Hash_Table *ht = NULL;
 
-  simplify_syntax_inner(stx, &ht);
+  simplify_syntax_inner(stx, rns, &ht);
 }
 
 /*========================================================================*/

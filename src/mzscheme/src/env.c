@@ -1235,7 +1235,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
     return NULL;
 
-  if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, modname)) {
+  /* Used to have `&& !SAME_OBJ(modidx, modname)' below, but that was a bad
+     idea, because it causesmodule instances to be preserved. */
+  if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
     return scheme_hash_module_variable(env->genv, modidx, symbol);
   }
@@ -1402,7 +1404,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
   scheme_hash_set(r->ht, symbol, scheme_true);
 }
 
-Resolve_Info *scheme_resolve_info_create()
+Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns)
 {
   Resolve_Info *naya;
 
@@ -1410,6 +1412,7 @@ Resolve_Info *scheme_resolve_info_create()
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
+  naya->simplify_rns = simplify_rns;
   naya->count = 0;
   naya->next = NULL;
 
@@ -1427,6 +1430,7 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
+  naya->simplify_rns = info->simplify_rns;
   naya->next = info;
   naya->size = size;
   naya->oldsize = oldsize;

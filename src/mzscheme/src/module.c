@@ -1943,6 +1943,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   int reprovide_kernel;
   Scheme_Compile_Info *recs;
   Scheme_Object *redef_modname;
+  Scheme_Hash_Table *simplify_rns;
 
   if (!scheme_is_module_env(env))
     scheme_wrong_syntax("#%module-begin", NULL, form, "illegal use (not a module body)");
@@ -2032,6 +2033,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   provided = scheme_make_hash_table(SCHEME_hash_ptr);
   reprovided = scheme_null;
+
+  simplify_rns = scheme_make_hash_table(SCHEME_hash_ptr);
 
   exp_body = scheme_null;
 
@@ -2169,7 +2172,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (!rec)
 	    code = scheme_expand_expr(code, eenv, -1, boundname);
 	  m = scheme_compile_expr(code, eenv, &mrec, 0);
-	  m = scheme_resolve_expr(m, scheme_resolve_info_create());
+	  m = scheme_resolve_expr(m, scheme_resolve_info_create(simplify_rns));
 
 	  /* Add code with names and lexical depth to exp-time body: */
 	  vec = scheme_make_vector(3, NULL);

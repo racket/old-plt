@@ -101,7 +101,7 @@ extern unsigned long scheme_get_stack_base()
     return (unsigned long)GC_stackbottom;
   else
 #endif
-    return GC_get_stack_base();
+    return (unsigned long)GC_get_stack_base();
 }
 
 
@@ -878,7 +878,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     tagged = tagged_while_counting;
     
     if (!no_walk)
-      smc_ht = scheme_hash_table(1000, SCHEME_hash_ptr);
+      smc_ht = scheme_make_hash_table(SCHEME_hash_ptr);
     
     if (tagged) 
       GC_for_each_element(real_tagged, count_tagged, NULL);
@@ -1106,7 +1106,7 @@ long scheme_count_closure(Scheme_Object **o, short len, Scheme_Hash_Table *ht)
 
   for (i = 0; i < len; i++) {
     if (!scheme_lookup_in_table(ht, (const char *)o[i])) {
-      scheme_add_to_table(ht, (const char *)o[i], scheme_true, 0);
+      scheme_hash_set(ht, o[i], scheme_true);
       if (GC_size(o[i]) == sizeof(Scheme_Object *)) {
 	/* May be an environment box */
 	Scheme_Object *d = *(Scheme_Object **)o[i];
@@ -1163,7 +1163,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   if (type >= _scheme_last_type_)
     return 0;
 
-  if (ht && scheme_lookup_in_table(ht, (const char *)root))
+  if (ht && scheme_hash_get(ht, root))
     return 0;
 
   home = GC_set(root);
@@ -1178,7 +1178,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
 
   if (ht)
-    scheme_add_to_table(ht, (const char *)root, scheme_true, 0);
+    scheme_hash_set(ht, root, scheme_true);
 
 #define COUNT(x) (ht ? scheme_count_memory((Scheme_Object *)x, ht) : 0)
 
@@ -1510,9 +1510,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
-  case scheme_generic_type:
-    s = 0; /* Unknown */
-    break;
   case scheme_bignum_type:
     {
       int count = SCHEME_BIGLEN(root);
@@ -1575,7 +1572,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
       Scheme_Struct_Type *st = (Scheme_Struct_Type *)root;
       s = sizeof(Scheme_Struct_Type) + st->name_pos * sizeof(Scheme_Object*);
 #if FORCE_KNOWN_SUBPARTS
-      e = COUNT(st->type_name);
+      e = COUNT(st->name);
       if (st->name_pos)
 	e += COUNT(st->parent_types[st->name_pos - 1]);
 #endif
@@ -1586,9 +1583,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_random_state_type:
     s = 130; /* wild guess */
-    break;
-  case scheme_reserved_3_type:
-    s = 0; /* Not yet used */
     break;
   case scheme_eval_waiting_type:
   case scheme_tail_call_waiting_type:

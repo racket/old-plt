@@ -2721,6 +2721,8 @@ lexical_syntax_link(Scheme_Object *obj, Link_Info *info)
 static Scheme_Object *
 lexical_syntax_resolve(Scheme_Object *obj, Resolve_Info *info)
 {
+  scheme_simplify_stx(SCHEME_CDR(obj), info->simplify_rns);
+
   return scheme_make_syntax_resolved(QUOTE_SYNTAX_EXPD, obj);
 }
 
@@ -2987,7 +2989,7 @@ do_letrec_syntaxes(const char *where, int normal,
     mrec.resolve_module_ids = 1;
     mrec.value_name = NULL;
     a = scheme_compile_expr(a, env->genv->exp_env->init, &mrec, 0);
-    a = scheme_resolve_expr(a, scheme_resolve_info_create());
+    a = scheme_resolve_expr(a, scheme_resolve_info_create(NULL));
     a = scheme_link_expr(a, NULL);
 
     if (scheme_omittable_expr(a)) {

@@ -719,6 +719,7 @@ mark_resolve_info {
  mark:
   Resolve_Info *i = (Resolve_Info *)p;
   
+  gcMARK(i->simplify_rns);
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
   gcMARK(i->flags);

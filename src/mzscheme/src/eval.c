@@ -1411,7 +1411,7 @@ static void *compile_k(void)
     form = scheme_add_rename(form, env->genv->exp_env->rename);
 
   o = scheme_compile_expr(form, env, &rec, 0);
-  o = scheme_resolve_expr(o, scheme_resolve_info_create());
+  o = scheme_resolve_expr(o, scheme_resolve_info_create(scheme_make_hash_table(SCHEME_hash_ptr)));
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
   top->type = scheme_compilation_top_type;

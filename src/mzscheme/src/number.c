@@ -2038,6 +2038,16 @@ static Scheme_Object *get_frac(char *name, int low_p,
     return n;
 }
 
+static Scheme_Object *un_exp(Scheme_Object *o)
+{
+  return exp_prim(1, &o);
+}
+
+static Scheme_Object *un_log(Scheme_Object *o)
+{
+  return log_prim(1, &o);
+}
+
 static Scheme_Object *numerator(int argc, Scheme_Object *argv[])
 {
   return get_frac("numerator", 0, argc, argv);
@@ -2077,8 +2087,8 @@ static Scheme_Object *complex_sin(Scheme_Object *c)
 
   i_c = scheme_bin_mult(c, plus_i);
   
-  return scheme_bin_div(scheme_bin_minus(complex_exp(i_c),
-					 complex_exp(scheme_bin_minus(zeroi, i_c))),
+  return scheme_bin_div(scheme_bin_minus(un_exp(i_c),
+					 un_exp(scheme_bin_minus(zeroi, i_c))),
 			scheme_bin_mult(scheme_make_integer(2), plus_i));
 }
 
@@ -2088,8 +2098,8 @@ static Scheme_Object *complex_cos(Scheme_Object *c)
 
   i_c = scheme_bin_mult(c, plus_i);
   
-  return scheme_bin_div(scheme_bin_plus(complex_exp(i_c),
-					complex_exp(scheme_bin_minus(zeroi, i_c))),
+  return scheme_bin_div(scheme_bin_plus(un_exp(i_c),
+					un_exp(scheme_bin_minus(zeroi, i_c))),
 			scheme_make_integer(2));
 }
 
@@ -2107,8 +2117,8 @@ static Scheme_Object *complex_asin(Scheme_Object *c)
   sqrt_1_minus_c_sq = scheme_sqrt(1, &one_minus_c_sq);
 
   return scheme_bin_mult(minus_i,
-			 complex_log(scheme_bin_plus(scheme_bin_mult(c, plus_i), 
-						     sqrt_1_minus_c_sq)));
+			 un_log(scheme_bin_plus(scheme_bin_mult(c, plus_i), 
+						sqrt_1_minus_c_sq)));
 }
 
 static Scheme_Object *complex_acos(Scheme_Object *c)
@@ -2120,9 +2130,9 @@ static Scheme_Object *complex_acos(Scheme_Object *c)
   sqrt_1_minus_c_sq = scheme_sqrt(1, &one_minus_c_sq);
 
   return scheme_bin_mult(minus_i,
-			 complex_log(scheme_bin_plus(c,
-						     scheme_bin_mult(plus_i,
-								     sqrt_1_minus_c_sq))));
+			 un_log(scheme_bin_plus(c,
+						scheme_bin_mult(plus_i,
+								sqrt_1_minus_c_sq))));
 }
 
 static Scheme_Object *complex_atan(Scheme_Object *c)
@@ -2132,9 +2142,9 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 
   return scheme_bin_mult(plus_i,
 			 scheme_bin_mult(scheme_make_double(0.5),
-					 complex_log(scheme_bin_div(scheme_bin_plus(plus_i, c),
-								    scheme_bin_plus(plus_i, 
-										    scheme_bin_minus(zeroi, c))))));
+					 un_log(scheme_bin_div(scheme_bin_plus(plus_i, c),
+							       scheme_bin_plus(plus_i, 
+									       scheme_bin_minus(zeroi, c))))));
 }
 
 #define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;

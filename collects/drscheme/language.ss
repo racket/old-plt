@@ -56,6 +56,7 @@
     (define check-syntax-level (car drscheme:basis:level-symbols)) 
     (define callback
       (lambda (pref)
+	(show-sharing (setting-sharing-printing? pref))
 	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))

@@ -8,6 +8,7 @@
 			hooks)]
 	[interface : drscheme:interface^
 		   ((reference-unit/sig "intrface.ss") zodiac mred)]
+	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss") (language : plt:parameters^) mred zodiac)]
 	[language : drscheme:language^

@@ -107,7 +107,7 @@ static Scheme_Object *foreign_ffi_lib(int argc, Scheme_Object *argv[])
                          MYNAME": couldn't open %V (%E)", argv[0], err);
 #else
         scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                         MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
+                         MYNAME": couldn't open %V (%s)", argv[0], dlerror());
 #endif
       }
     }

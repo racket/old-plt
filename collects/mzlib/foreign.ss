@@ -1,4 +1,4 @@
-;; FFI Scheme interface
+;; Foreign Scheme interface
 
 (module foreign mzscheme
 
@@ -31,6 +31,7 @@
     [(macosx)  "dylib"]
     [(windows) "dll"]
     [else (error 'foreign "unknown system type: ~s" (system-type))]))
+(define lib-suffix-re (regexp (string-append "\\." lib-suffix "$")))
 
 (provide (rename get-ffi-lib ffi-lib))
 (define (get-ffi-lib name . version)
@@ -40,14 +41,16 @@
        [(ffi-lib? name) name]
        [(path? name) (loop (path->string name))]
        [(not (string? name)) (raise-type-error 'ffi-lib "library-name" name)]
-       [else (let ([name  (string-append name version)]
-                   [name* (string-append name "." lib-suffix version)])
-               (or (ffi-lib name #t)         ; try unmodified name first
-                   (ffi-lib name* #t)        ; try with platform-suffix
+       [else (let ([name0 name]
+                   [name  (if (regexp-match lib-suffix-re name)
+                            (string-append name version)
+                            (string-append name "." lib-suffix version))])
+               (or (ffi-lib name #t)         ; try good name first
+                   (ffi-lib name0 #t)        ; try original
                    (and (file-exists? name)  ; try a relative path
-                        (ffi-lib (build-path 'same name) #t))
-                   (and (file-exists? name*) ; relative with suffix
-                        (ffi-lib (build-path 'same name*) #t))
+                        (ffi-lib (path->complete-path name) #t))
+                   (and (file-exists? name0) ; relative with original
+                        (ffi-lib (path->complete-path name0) #t))
                    ;; give up: call ffi-lib so it will raise an error
                    (ffi-lib name)))]))))
 

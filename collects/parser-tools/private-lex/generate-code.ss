@@ -133,13 +133,11 @@
                     finals
                     no-look))))
   
-  (require (lib "cffi.ss" "compiler"))
-
   (define (compile-table table)
-    (with-syntax ((code (build-code table)))
-      (syntax (c-lambda (scheme-object scheme-object) ;; lex-buf get-next-char
-			scheme-object 
-			code))))
+    (let ((code (build-code table)))
+      `(c-lambda (scheme-object scheme-object) ;; lex-buf get-next-char
+		 scheme-object 
+		 ,code)))
 			
   
   (define (build-code table)
@@ -161,42 +159,49 @@
 	   (string-append
 	    (format "scheme_lexer_~a:~n" current-state)
 	    (format "  char_in = scheme_apply(___arg2, 1, &___arg1);~n")
-	    (format "  switch ((char_in == scheme_eof) ? SCHEME_CHAR_VAL(SCHEME_STRING_VAL(char_in)[0]) : 256)~n  {~n")
-	    (let loop ((current-char 0))
+	    (format "  switch ((char_in != scheme_eof) ? (SCHEME_STR_VAL(char_in))[0] : 256)~n  {~n")
+	    (let loop ((current-char 0)
+		       (last-goto -1))
 	      (cond
 	       ((< current-char 257)
 		(let ((next-state 
 		       (cond
 			((< current-char 256) (vector-ref trans (+ current-char (* 256 current-state))))
 			(else (vector-ref eof current-state)))))
-		  (string-append
-                   (cond
-                     ((not next-state) "")
-                     ((vector-ref no-look next-state)
-                      (let ((act (vector-ref actions next-state)))
-                        (if act
-                            (string-append
-                             (format "  case ~a:~n" current-char)
-                             (format "    longest_match_length = length;~n")
-                             (format "    longest_match_action = ~a;~n" next-state)
-                             (format "    goto scheme_lexer_end;~n"))
-                            (string-append
-                             (format "  case ~a:~n" current-char)
-                             (format "    goto scheme_lexer_end;~n")))))
-                     (else
-                      (let ((act (vector-ref actions next-state)))
-                        (if act
-                            (string-append
-                             (format "  case ~a:~n" current-char)
-                             (format "    longest_match_length = length;~n")
-                             (format "    length = length + 1;~n")
-                             (format "    longest_match_action = ~a;~n" next-state)
-                             (format "    goto scheme_lexer_~a;~n" next-state))
-                            (string-append
-                             (format "  case ~a:~n" current-char)
-                             (format "    length = length + 1;~n")
-                             (format "    goto scheme_lexer_~a;~n" next-state))))))
-		   (loop (add1 current-char)))))
+		  (cond
+		   ((not next-state) (loop (add1 current-char) last-goto))
+		   ((vector-ref no-look next-state)
+		    (let ((act (vector-ref actions next-state)))
+		      (string-append
+		       (if act
+			   (string-append
+			    (format "  case ~a:~n" current-char)
+			    (format "    longest_match_length = length;~n")
+			    (format "    longest_match_action = ~a;~n" next-state)
+			    (format "    goto scheme_lexer_end;~n"))
+			   (string-append
+			    (format "  case ~a:~n" current-char)
+			    (format "    goto scheme_lexer_end;~n")))
+		       (loop (add1 current-char) last-goto))))
+		   ((= last-goto next-state)
+		    (string-append
+		     (format "  case ~a:~n" current-char)
+		     (loop (add1 current-char) last-goto)))
+		   (else
+		    (let ((act (vector-ref actions next-state)))
+		      (string-append
+		       (if act
+			   (string-append
+			    (format "  case ~a:~n" current-char)
+			    (format "    longest_match_length = length;~n")
+			    (format "    length = length + 1;~n")
+			    (format "    longest_match_action = ~a;~n" next-state)
+			    (format "    goto scheme_lexer_~a;~n" next-state))
+			   (string-append
+			    (format "  case ~a:~n" current-char)
+			    (format "    length = length + 1;~n")
+			    (format "    goto scheme_lexer_~a;~n" next-state)))
+		       (loop (add1 current-char) next-state)))))))
 	       (else (format ""))))
 	    (format "  default:~n")
 	    (format "    goto scheme_lexer_end;~n")
@@ -204,8 +209,8 @@
 	    (loop (add1 current-state))))
 	  (else "")))
        (format "scheme_lexer_end:~n")
-       (format "  res[1] = scheme_make_integer(longest_match_length);~n")
-       (format "  res[2] = scheme_make_integer(longest_match_action);~n")
+       (format "  res[0] = scheme_make_integer(longest_match_length);~n")
+       (format "  res[1] = scheme_make_integer(longest_match_action);~n")
        (format "  ___result = scheme_values(2, res);~n")
        )))
 

@@ -1,3 +1,20 @@
+- mred:console%'s initialization argument: `close-item?' is being ignored
+
+- mred:edit% and mred:media-canvas% do not interact well. 
+  It is okay to use a mred:wrapping-canvas%, however.
+
+This demonstrates the bug:
+
+(let ([e (make-object mred:edit%)])
+    (send (make-object mred:media-canvas% 
+           (make-object mred:horizontal-panel% 
+             (make-object mred:frame% '() "")))
+	  set-media
+	  e)
+    (send e insert "hi"))
+
+It only shows up when you insert into the buffer.
+
 - backup files don't preserve permissions
 
 - the directory line in the common-file-dialogs is confusing

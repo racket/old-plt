@@ -2,16 +2,8 @@
   generate internal error messages, even though they are bone-fide 
   user of drscheme errors.
 
-- in the language dialog box:
-  - allow set! on undefined is ignored
+- in the language dialog box, "allow set! on undefined" is ignored
 
 - in the lowest language level (define (f . x) x) is incorrectly a
   syntax error.
 
-- loading doesn't work for files saved with images (ie files in mred's format)
-
-- load should evaluate as it loads, rather than after it loads
-
-- when multiple expression are put on one line in the interactions
-  window, they are wrapped in a begin. So, instead of seeing all of
-  the results you only see the last one.

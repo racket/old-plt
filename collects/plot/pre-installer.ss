@@ -21,7 +21,7 @@
              [so-name (build-path top-dir "compiled" "native"
                                   (system-library-subpath)
                                   (append-extension-suffix libname))])
-        (printf ">>> Doing \"~a\" -> \"~a\"...\n" lib so-name)
+        (printf "plot: compiling \"~a\" -> \"~a\"...\n" lib so-name)
         (parameterize ([current-directory lib]
                        [current-extension-compiler-flags
                         (append (current-extension-compiler-flags)
@@ -29,9 +29,7 @@
                                   [(windows) '("/DHAVE_LIBPNG" "/DPLD_png")]
                                   [else '("-DHAVE_LIBPNG" "-DPLD_png")]))]
                        ;; we compile a simple .so, not an extension
-                       ;[current-standard-link-libraries '()]
-                       ; but we need the stdlib, so we will cheat for now...
-                       )
+                       [current-standard-link-libraries '()])
           (define c-files (filter (lambda (f)
                                     (regexp-match "\\.[cC]$" (path->string f)))
                                   (directory-list)))

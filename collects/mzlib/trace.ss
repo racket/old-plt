@@ -90,12 +90,12 @@
 	  (insert-prefix level first rest)
 	  (values first rest))))))
 
-(define -:trace-level -1)
+(define -:trace-level (make-parameter -1))
 
 (define -:trace-print-args
   (lambda (name args)
     (let-values (((first rest)
-		   (build-prefixes -:trace-level)))
+		   (build-prefixes (-:trace-level))))
       (parameterize ((pretty-print-print-line
 		       (lambda (n port offset width)
 			 (display
@@ -114,7 +114,7 @@
 (define -:trace-print-results
   (lambda (name results)
     (let-values (((first rest)
-		   (build-prefixes -:trace-level)))
+		   (build-prefixes (-:trace-level))))
       (parameterize ((pretty-print-print-line
 		       (lambda (n port offset width)
 			 (display
@@ -197,8 +197,8 @@
 				  (#%lambda args
 				    (#%dynamic-wind
 				      (lambda ()
-					(#%set! -:trace-level
-					  (#%add1 -:trace-level)))
+					(-:trace-level
+					  (#%add1 (-:trace-level))))
 				      (lambda ()
 					(-:trace-print-args ',id args)
 					(#%call-with-values
@@ -210,8 +210,8 @@
 					      results)
 					    (#%apply #%values results))))
 				      (lambda ()
-					(#%set! -:trace-level
-					  (#%sub1 -:trace-level)))))))
+					(-:trace-level
+					  (#%sub1 (-:trace-level))))))))
 			(#%hash-table-put! -:trace-table ',id
 			  (-:make-traced-entry ,real-value ,traced-name))
 			(#%global-defined-value ',id ,traced-name)))))))

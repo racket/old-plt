@@ -1042,9 +1042,9 @@ int scheme_fdisset(void *fd, int n)
 #endif
 }
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
+void scheme_add_fd_handle(void *h, void *fds, int repost)
 {
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
   win_extended_fd_set *efd = (win_extended_fd_set *)fds;
   OS_SEMAPHORE_TYPE *hs;
   int i, *rps;
@@ -1053,7 +1053,7 @@ static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
   hs = MALLOC_N_ATOMIC(OS_SEMAPHORE_TYPE, i + 3);
   /*                 Leave room for two more -^ */
   rps = MALLOC_N_ATOMIC(int, i + 3);
-  hs[i] = h;
+  hs[i] = (OS_SEMAPHORE_TYPE)h;
   rps[i] = repost;
   while (i--) {
     hs[i] = efd->handles[i];
@@ -1062,8 +1062,10 @@ static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
   efd->num_handles++;
   efd->handles= hs;
   efd->repost_sema = rps;
-}
+#else
+  /* Do nothing. */
 #endif
+}
 
 Scheme_Object *scheme_make_port_type(const char *name)
 {
@@ -2176,7 +2178,7 @@ static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
     RELEASE_MUTEX(tip->lock_mutex);
   }
 
-  add_fd_handle(tip->ready_sema, fds, 1);
+  add_fd_handle((void *)tip->ready_sema, fds, 1);
 }
 
 #ifdef WIN32_FD_HANDLES
@@ -4517,11 +4519,11 @@ static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
 {
 #ifdef WINDOWS_PROCESSES
 # ifndef NO_STDIO_THREADS
-  add_fd_handle((HANDLE)sci, fds, 0);
+  add_fd_handle((void *)(HANDLE)sci, fds, 0);
 # endif
 #endif
 #ifdef BEOS_PROCESSES
-  add_fd_handle(((BeOSProcess *)sci)->done_sem, fds, 1);
+  add_fd_handle((void *)((BeOSProcess *)sci)->done_sem, fds, 1);
 #endif
 }
 

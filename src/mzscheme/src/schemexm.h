@@ -266,6 +266,7 @@
 #define scheme_fdset (scheme_extension_table->scheme_fdset)
 #define scheme_fdclr (scheme_extension_table->scheme_fdclr)
 #define scheme_fdisset (scheme_extension_table->scheme_fdisset)
+#define scheme_add_fd_handle (scheme_extension_table->scheme_add_fd_handle)
 #define scheme_add_global (scheme_extension_table->scheme_add_global)
 #define scheme_add_global_constant (scheme_extension_table->scheme_add_global_constant)
 #define scheme_add_global_keyword (scheme_extension_table->scheme_add_global_keyword)

@@ -385,6 +385,7 @@ void (*scheme_fdzero)(void *fd);
 void (*scheme_fdset)(void *fd, int pos);
 void (*scheme_fdclr)(void *fd, int pos);
 int (*scheme_fdisset)(void *fd, int pos);
+void (*scheme_add_fd_handle)(void *h, void *fds, int repost);
 /* environment */
 void (*scheme_add_global)(const char *name, Scheme_Object *val, Scheme_Env *env);
 void (*scheme_add_global_constant)(const char *name, Scheme_Object *v, Scheme_Env *env);

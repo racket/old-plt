@@ -266,6 +266,7 @@
   scheme_extension_table->scheme_fdset = scheme_fdset;
   scheme_extension_table->scheme_fdclr = scheme_fdclr;
   scheme_extension_table->scheme_fdisset = scheme_fdisset;
+  scheme_extension_table->scheme_add_fd_handle = scheme_add_fd_handle;
   scheme_extension_table->scheme_add_global = scheme_add_global;
   scheme_extension_table->scheme_add_global_constant = scheme_add_global_constant;
   scheme_extension_table->scheme_add_global_keyword = scheme_add_global_keyword;

@@ -1,7 +1,7 @@
 #ifndef _HOMO_<type-name>_VECTOR_PRIMS_H
 #define _HOMO_<type-name>_VECTOR_PRIMS_H
 
-#include <stdint.h>
+#include <inttypes.h>
 
 typedef struct 
 {

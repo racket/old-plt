@@ -1,6 +1,5 @@
 #include "escheme.h"
 #include <math.h>
-#include <sys/types.h>
 
 Scheme_Type homo_<type-name>_vector_type;
 #include "homo-<type-name>-vector-prims.h"

@@ -626,6 +626,8 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   /* If `k' escapes, the escape handler will restore the stack
      pointers. */
 
+  p = scheme_current_thread; /* might have changed! */
+
   p->runstack_saved = saved->prev;
   MZ_RUNSTACK = saved->runstack;
   MZ_RUNSTACK_START = saved->runstack_start;

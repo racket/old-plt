@@ -2,7 +2,7 @@
 The Compiler
 ============
 
-To use the compiler within a Scheme program, require _compile.ss_:
+To use the compiler within a Scheme program, require _compiler.ss_:
   (require (lib "compiler.ss" "compiler"))
 The _compiler.ss_ library defines the following functions (plus a few
 signatures).  Options that control the compiler are documented in the
@@ -300,7 +300,7 @@ The signed unit requires the following imports:
 Low-level Extension Compiler and Linker
 =======================================
 
-The high-level compile.ss interface relies on low-level
+The high-level compiler.ss interface relies on low-level
 implementations of the extension compiler and linker.
 
 The _comp-unit.ss_ and _ld-unit.ss_ libraries define unit/sigs for the

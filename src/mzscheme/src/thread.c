@@ -2400,7 +2400,7 @@ static void start_child(Scheme_Thread * volatile child,
     /* !! At this point, scheme_current_thread can turn out to be a
        different thread, which invoked the original thread's
        continuation. */
-    
+
     remove_thread(scheme_current_thread);
 
     thread_ended_with_activity = 1;

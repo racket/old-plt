@@ -1092,7 +1092,8 @@
 ;; ----------------------------------------
 
 ;; Check that a terminated thread cleans up ownership
-;;  of runstack and mark stack (crashes or doesn't):
+;;  of runstack and mark stack (crashes or doesn't).
+;; Also checks that deep runstacks are ok.
 (let ()
   (define bye #f)
   (define hi #f)

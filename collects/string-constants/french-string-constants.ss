@@ -305,6 +305,7 @@
   (plt:hd:refresh-downloading... "Téléchargement de ~a...")
   (plt:hd:refresh-deleting... "Effacement de l'ancienne version de ~a...")
   (plt:hd:refresh-installing... "Installation de la nouvelle version de ~a...")
+  (plt:hd:refresh-clearing-indicies "Effacement des indices cachés")
   (plt:hd:refreshing-manuals-finished "Terminé.")  
   (plt:hd:about-help-desk "A propos de l'Aide")
   (plt:hd:help-desk-about-string

@@ -6,7 +6,6 @@
 	   (lib "xml.ss" "xml")
            (lib "contract.ss")
            "colldocs.ss"
-           "cookie.ss"
            "docpos.ss"
            "path.ss"
            "standard-urls.ss"
@@ -25,7 +24,7 @@
                     [find-doc-directory (path? . -> . (union false? path?))]
                     [find-doc-names (-> (listof (cons/p path? string?)))]
                     
-                    [goto-manual-link (hd-cookie? string? string? . -> . any?)]
+                    [goto-manual-link (any? string? string? . -> . any)]
                     [get-index-file (path? . -> . (union false? path?))])
   
   (provide find-manuals)
@@ -50,9 +49,7 @@
           (make-sec "Other" #rx"" '())))
   
   (define (goto-manual-link cookie manual index-key)
-    (let* ([hd-url (finddoc-page-anchor manual index-key)]
-	   [url (prefix-with-server cookie hd-url)])
-      (visit-url-in-browser cookie url)))
+    (error 'goto-manual-link "broken ~s ~s ~s\n" cookie manual index-key))
     
   ;; Creates a "file:" link into the indicated manual.
   ;; The link doesn't go to a particular anchor,

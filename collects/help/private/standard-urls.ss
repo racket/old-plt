@@ -1,14 +1,11 @@
 (module standard-urls mzscheme
 
   (require "../servlets/private/util.ss"
-           "cookie.ss"
-	   (lib "contract.ss"))
+           "internal-hp.ss"
+           (lib "contract.ss"))
   
   (provide home-page-url
-           prefix-with-server
-           fake-help-desk-host)
-  
-  (define fake-help-desk-host "helpdesk.plt-scheme.org")
+           prefix-with-server)
   
   (define (search-type? x)
     (member x '("keyword" "keyword-index" "keyword-index-text")))
@@ -56,17 +53,18 @@
             manual-name))
   
   (define (prefix-with-server cookie suffix)
-    (format "http://~a~a" fake-help-desk-host suffix))
+    (format "http://~a:~a~a" internal-host internal-port suffix))
   
-  (define results-url-prefix (format "http://~a/servlets/results.ss?" fake-help-desk-host))
+  (define results-url-prefix (format "http://~a:~a/servlets/results.ss?" internal-host internal-port))
   
   (define relative-results-url-prefix "/servlets/results.ss?")
 
-  (define home-page-url (format "http://~a/servlets/home.ss" fake-help-desk-host))
+  (define home-page-url (format "http://~a:~a/servlets/home.ss" internal-host internal-port))
   
   (define (make-missing-manual-url cookie coll name link)
-    (format "http://~a/servlets/missing-manual.ss?manual=~a&name=~a&link=~a"
-            fake-help-desk-host
+    (format "http://~a:~a/servlets/missing-manual.ss?manual=~a&name=~a&link=~a"
+            internal-host
+            internal-port
             coll
             (hexify-string name)
             (hexify-string link)))
@@ -120,12 +118,12 @@
                                     manuals 
                                     doc.txt?
                                     lang-name)])
-        (visit-url-in-browser cookie url))))
+        '(visit-url-in-browser cookie url))))
 
   (define (goto-hd-location cookie sym)
     ; the assq is guarded by the contract
     (let ([entry (assq sym hd-locations)])
-      (visit-url-in-browser 
+      '(visit-url-in-browser 
        cookie
        (prefix-with-server 
 	cookie

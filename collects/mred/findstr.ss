@@ -281,25 +281,31 @@
 
     (define make-searchable-frame%
       (let* ([anchor 0]
-	     [anchor-edit (let ([e (make-object mred:edit:edit%)])
-			    (send e insert "0")
-			    e)]
 	     [searching-direction 1]
+	     [old-highlight void]
+	     [get-active-embedded-edit
+	      (lambda (edit)
+		(let loop ([edit edit])
+		  (let ([snip (send edit get-focus-snip)])
+		    (if (or (null? snip)
+			    (not (is-a? snip wx:media-snip%)))
+			edit
+			(loop (send snip get-this-media))))))]
+	     [clear-highlight
+	      (lambda ()
+		(begin (old-highlight)
+		       (set! old-highlight void)))]
 	     [reset-anchor
-	      (let ([old void]
-		    [color (make-object wx:colour% "BLUE")])
+	      (let ([color (make-object wx:colour% "BLUE")])
 		(lambda (edit)
-		  (old)
+		  (old-highlight)
 		  (let ([position 
 			 (if (= 1 searching-direction)
 			     (send edit get-end-position)
 			     (send edit get-start-position))])
 		    (set! anchor position)
-		    (set! old (send edit highlight-range position
-				    (add1 position)
-				    color)))
-		  (send anchor-edit erase)
-		  (send anchor-edit insert (format "~a" anchor))))]
+		    (set! old-highlight
+			  (send edit highlight-range position position color)))))]
 	     [replace-edit (make-object mred:edit:edit%)]
 	     [find-edit
 	      (make-object
@@ -312,17 +318,15 @@
 		   [set-searching-frame
 		    (lambda (frame)
 		      (set! searching-frame frame))]
+		   [get-searching-edit
+		    (lambda ()
+		      (get-active-embedded-edit
+		       (send searching-frame get-edit-to-search)))]
 		   [search
 		    (opt-lambda ([reset-anchor? #t] [beep? #t])
 		      (when searching-frame
 			(let* ([string (get-text)]
-			       [searching-edit 
-				(let loop ([edit (send searching-frame get-edit-to-search)])
-				  (let ([snip (send edit get-focus-snip)])
-				    (if (or (null? snip)
-					    (not (is-a? snip wx:media-snip%)))
-					edit
-					(loop (send snip get-this-media)))))]
+			       [searching-edit (get-searching-edit)]
 			       [not-found
 				(lambda ()
 				  (when beep?
@@ -363,6 +367,10 @@
 				     (found found-edit pos)))]
 			      [else
 			       (found found-edit first-pos)])))))]
+		   [on-focus
+		    (lambda (on?)
+		      (when on?
+			(reset-anchor (get-searching-edit))))]
 		   [after-insert
 		    (lambda args
 		      (apply super-after-insert args)
@@ -386,6 +394,7 @@
 	  (class super% args
 	    (inherit active-edit active-canvas get-edit)
 	    (rename [super-make-root-panel make-root-panel]
+		    [super-on-activate on-activate]
 		    [super-on-close on-close])
 	    (private
 	      [super-root 'unitiaialized-super-root])
@@ -403,13 +412,21 @@
 	      (apply super-init args)
 	      (mred:debug:printf 'super-init "after searchable-frame%"))
 	    (public
+	      [on-activate
+	       (lambda (on?)
+		 (unless hidden?
+		   (if on?
+		       (reset-anchor (get-edit-to-search))
+		       (clear-highlight)))
+		 (super-on-activate on?))]
 	      [get-edit-to-search
 	       (lambda () 
 		 (get-edit))]
 	      [hide-search
 	       (lambda ()
 		 (send super-root delete-child search-panel)
-		 (unless (active-canvas)
+		 (clear-highlight)
+		 (when '(not (active-canvas))
 		   (send super-root set-focus))
 		 (set! hidden? #t))]
 	      [unhide-search
@@ -444,16 +461,14 @@
 	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
 	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
 
-	      [anchor-canvas (let ([c (make-object mred:canvas:one-line-canvas% middle-right-panel)])
-			       (send c set-media anchor-edit)
-			       c)]
 	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
 				      (lambda (dir-radio evt)
 					(let ([forward (if (= 0 (send evt get-command-int))
 							   1
 							   -1)])
-					  (set-search-direction forward)))
-				      ""
+					  (set-search-direction forward)
+					  (reset-anchor (get-edit-to-search))))
+				      null
 				      -1 -1 -1 -1
 				      (list "Forward" "Backward"))]
 	      [close-button (make-object mred:container:button% middle-right-panel

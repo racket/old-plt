@@ -1,3 +1,5 @@
+; $Id$
+
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
     (z : zodiac:scanner-parameters^)
@@ -499,31 +501,32 @@
       (lambda (expr env attributes vocab)
 	(let ((p-env (pat:match-against m&e expr env)))
 	  (if p-env
-	    (let*
-	      ((defs (pat:pexpand '(defs ...) p-env kwd))
-		(vars+exprs
-		  (map
-		    (lambda (e)
-		      (let ((out
-			      (expand-expr e env
-				attributes local-extract-vocab)))
-			out))
-		    defs))
-		(top-level? (get-top-level-status attributes)))
-	      (set-top-level-status attributes)
-	      (begin0
-		(set-macro-origin
-		  (expand-expr
-		    (structurize-syntax
-		      `(letrec*-values
-			 ,(map (lambda (vars+expr)
-				 `(,(car vars+expr) ,(cdr vars+expr)))
-			    vars+exprs)
-			 ,@(pat:pexpand expr-pattern p-env kwd))
-		      expr)
-		    env attributes vocab)
-		  (syntax-car expr))
-		(set-top-level-status attributes top-level?)))
+	    (let ((top-level? (get-top-level-status attributes)))
+	      (set-top-level-status attributes #t)
+	      (let*
+		((defs (pat:pexpand '(defs ...) p-env kwd))
+		  (vars+exprs
+		    (map
+		      (lambda (e)
+			(let ((out
+				(expand-expr e env
+				  attributes local-extract-vocab)))
+			  out))
+		      defs)))
+		(set-top-level-status attributes)
+		(begin0
+		  (set-macro-origin
+		    (expand-expr
+		      (structurize-syntax
+			`(letrec*-values
+			   ,(map (lambda (vars+expr)
+				   `(,(car vars+expr) ,(cdr vars+expr)))
+			      vars+exprs)
+			   ,@(pat:pexpand expr-pattern p-env kwd))
+			expr)
+		      env attributes vocab)
+		    (syntax-car expr))
+		  (set-top-level-status attributes top-level?))))
 	    (static-error expr "Malformed local"))))))
 
   (let* ((kwd '())

@@ -6,9 +6,8 @@
 	   read-from-string
 	   read-from-string-all
 	   expr->string
-	   newline-string
-	   string->literal-regexp-string
-	   string->literal-replace-string
+	   regexp-quote
+	   regexp-replace-quote
 	   regexp-match-exact?)
 
   (require (lib "etc.ss"))
@@ -107,10 +106,10 @@
 	(write v port)
 	s)))
   
-  (define newline-string (string #\newline))
-  
-  (define string->literal-regexp-string
+  (define regexp-quote
     (opt-lambda (s [case-sens? #t])
+      (unless (string? s)
+	(raise-type-error 'regexp-quote "string" s))
       (list->string
        (apply
 	append
@@ -125,11 +124,14 @@
 	    [else (list c)]))
 	 (string->list s))))))
 
-  (define (string->literal-replace-string s)
+  (define (regexp-replace-quote s)
+    (unless (string? s)
+      (raise-type-error 'regexp-replace-quote "string" s))
     (regexp-replace* "\\\\" s "\\\\\\\\"))
 
   (define regexp-match-exact?
     (lambda (p s)
-      (let ([m (regexp-match p s)])
+      (let ([m (regexp-match-positions p s)])
 	(and m
-	     (string=? (car m) s))))))
+	     (zero? (caar m))
+	     (= (string-length s) (cdar m)))))))

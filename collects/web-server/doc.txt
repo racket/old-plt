@@ -33,7 +33,7 @@ To use the Web server without a launcher, require web-server.ss:
   (require (lib "web-server.ss" "web-server"))
 
 This provides one main function:
-> serve : configuration [nat] [str] -> (-> void)
+> serve : configuration [nat] [str or #f] -> (-> void)
   (define (serve configuration port ip-address) ...)
   
   The serve function starts the Web server, just like the launcher does,

@@ -371,5 +371,14 @@
 
 (system- "cl.exe /MT /O2 /DMZ_PRECISE_GC /I../../mzscheme/include /c ../../mzscheme/dynsrc/mzdyn.c /Fomzdyn3m.obj")
 (system- "lib.exe -def:../../mzscheme/dynsrc/mzdyn.def -out:mzdyn3m.lib")
-(copy-file "mzdyn3m.exp" "../../../lib/msvc/mzdyn3m.exp")
-(copy-file "mzdyn3m.obj" "../../../lib/msvc/mzdyn3m.obj")
+
+(define (copy-file/diff src dest)
+  (unless (and (file-exists? dest)
+	       (string=? (with-input-from-file src (lambda () (read-string (file-size src))))
+			 (with-input-from-file dest (lambda () (read-string (file-size dest))))))
+    (printf "Updating ~a~n" dest)
+    (when (file-exists? dest) (delete-file dest))
+    (copy-file src dest)))
+
+(copy-file/diff "mzdyn3m.exp" "../../../lib/msvc/mzdyn3m.exp")
+(copy-file/diff "mzdyn3m.obj" "../../../lib/msvc/mzdyn3m.obj")

@@ -99,7 +99,7 @@
             `(FONT 
               ((FACE "monospace"))
               ; boldface keyword occurrences
-              ,@(let ([mpos (regexp-match-positions ekey label)])
+              ,@(let ([mpos (regexp-match-positions (non-regexp ekey) label)])
                   (if mpos
                       (let* ([item (car mpos)]
                              [start (car item)]
@@ -326,7 +326,7 @@
           [(or (not search-string) (= (string-length search-string) 0))
            empty-search-page]
           [else
-           (search-results 
+           (search-results
             (lucky-search? bindings)
             search-string
             (or search-type "keyword-index")

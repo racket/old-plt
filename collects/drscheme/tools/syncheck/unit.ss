@@ -282,6 +282,7 @@
 	     [cursor-arrow (make-object wx:cursor% wx:const-cursor-arrow)])
 	(class-asi (drscheme:parameters:current-definitions-edit%)
 	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position
+		   get-canvas get-frame
 		   begin-edit-sequence end-edit-sequence)
 	  (rename
 	   [super-after-insert after-insert]
@@ -341,127 +342,150 @@
 	    [syncheck:clear-arrows (lambda () (set! graphics-list null)
 				  (draw-graphics))]
 	    [syncheck:add-arrow
-	     (lambda (start-pos-left start-pos-right
-				     end-pos-left end-pos-right
-				     delta brush pen)
+	     (lambda (end-pos-left end-pos-right
+		      start-pos-left start-pos-right
+		      delta brush pen
+		      id-name rename)
 	       (add-graphic 
 		(list (list start-pos-left start-pos-right)
 		      (list end-pos-left end-pos-right))
 		(match-lambda
 		 [(((start-x . start-y) (start-left . start-top) (start-right . start-bottom))
 		   ((end-x . end-y) (end-left . end-top) (end-right . end-bottom)))
-		  (let* 
-		      ([perm-arrow-on? #f]
-		       [tmp-arrow-on? #f]
-		       [ofs-x   (- start-x end-x)]
-		       [ofs-y   (- start-y end-y)]
-		       [len     (sqrt (+ (* ofs-x ofs-x) (* ofs-y ofs-y)))]
-		       [ofs-x   (/ ofs-x len)]
-		       [ofs-y   (/ ofs-y len)]
-		       [head-x  (* ofs-x arrow-head-size)]
-		       [head-y  (* ofs-y arrow-head-size)]
-		       [end-x   (+ end-x (* ofs-x delta))]
-		       [end-y   (+ end-y (* ofs-y delta))]
-		       [pt1     (make-object wx:point% end-x end-y)]
-		       [pt2     (make-object 
-				    wx:point%
-				  (+ end-x (* cos-angle head-x) 
-				     (* sin-angle head-y))
-				  (+ end-y (- (* sin-angle head-x))
-				     (* cos-angle head-y)))]
-		       [pt3     (make-object 
-				    wx:point%
-				  (+ end-x (* cos-angle head-x)
-				     (- (* sin-angle head-y)))
-				  (+ end-y (* sin-angle head-x)
-				     (* cos-angle head-y)))]
-		       [pts (list pt1 pt2 pt3)]
-		       [draw-fn
-			(lambda (dc dx dy)
-			  (when (or tmp-arrow-on?
-				    perm-arrow-on?)
-			    (let ([old-brush (send dc get-brush)]
-				  [old-pen   (send dc get-pen)]
-				  [old-logfn (send dc get-logical-function)])
-			      (send dc set-brush brush)
-			      (send dc set-pen pen)
-			      ;; (send dc set-logical-function wx:const-or)
-			      (send dc draw-line
-				    (+ start-x dx) (+ start-y dy)
-				    (+ end-x dx) (+ end-y dy))
-			      (send dc draw-polygon pts dx dy)
-			      (send dc draw-ellipse 
-				    (- (+ start-x dx) arrow-root-radius)
-				    (- (+ start-y dy) arrow-root-radius)
-				    (* 2 arrow-root-radius)
-				    (* 2 arrow-root-radius))
-			      (send dc set-brush old-brush)
-			      (send dc set-pen old-pen)                    
-			      (send dc set-logical-function old-logfn))))]
-		       [OLD-on-head?
-			(lambda (x y)
-			  (let*
-			      ([xs (map (lambda (pt) (send pt get-x)) pts)]
-			       [ys (map (lambda (pt) (send pt get-y)) pts)]
-			       [min-x (apply min xs)]
-			       [min-y (apply min ys)]
-			       [max-x (apply max xs)]
-			       [max-y (apply max ys)])
-			    (and (>= x min-x)
-				 (<= x max-x)
-				 (>= y min-y)
-				 (<= y max-y))))]
-		       [OLD-on-root?
-			(lambda (x y)
-			  (and (>= x (- start-x arrow-root-radius))
-			       (<= x (+ start-x arrow-root-radius))
-			       (>= y (- start-y arrow-root-radius))
-			       (<= y (+ start-y arrow-root-radius))))]
-		       [on-head?
-			(lambda (x y)
-			  (and (<= start-left x start-right)
-			       (<= start-top y start-bottom)))]
-		       [on-root?
-			(lambda (x y)
-			  (and (<= end-left x end-right)
-			       (<= end-top y end-bottom)))]
-			   
-		       [color-highlight "WHITE"]
-		       [color-background "BLUE"]
-		       [event-fn
-			(let ([last (void)])
-			  (lambda (event x y)
-			    (let* ([head? (on-head? x y)]
-				   [this-time (or head? (on-root? x y))])
-			      (cond
-			       [(send event moving?)
-				(when (void? last)
-				  (set! last (not this-time)))
-				(when (or (and (not this-time) last)
-					  (and this-time (not last)))
-				  (set! tmp-arrow-on? this-time)
-				  (set-cursor (if this-time cursor-arrow null))
-				  (send brush set-colour
-					(if this-time
-					    color-highlight
-					    color-background))
-				  (invalidate-bitmap-cache)
-				  (set! last this-time))
-				#f]
-			       [(send event button-up?)
-				(when this-time
-				  (set! perm-arrow-on? (not perm-arrow-on?))
-				  (set! tmp-arrow-on? #f)
-				  (send brush set-colour
-					(if perm-arrow-on?
-					    color-background
-					    color-highlight))
-				  (invalidate-bitmap-cache)
-				  (if head?
-				      (set-position end-pos-left end-pos-right)
-				      (set-position start-pos-left start-pos-right)))
-				#f]
-			       [else #f]))))])
+		  (let* ([perm-arrow-on? #f]
+			 [tmp-arrow-on? #f]
+			 [ofs-x   (- start-x end-x)]
+			 [ofs-y   (- start-y end-y)]
+			 [len     (sqrt (+ (* ofs-x ofs-x) (* ofs-y ofs-y)))]
+			 [ofs-x   (/ ofs-x len)]
+			 [ofs-y   (/ ofs-y len)]
+			 [head-x  (* ofs-x arrow-head-size)]
+			 [head-y  (* ofs-y arrow-head-size)]
+			 [end-x   (+ end-x (* ofs-x delta))]
+			 [end-y   (+ end-y (* ofs-y delta))]
+			 [pt1     (make-object wx:point% end-x end-y)]
+			 [pt2     (make-object 
+				      wx:point%
+				    (+ end-x (* cos-angle head-x) 
+				       (* sin-angle head-y))
+				    (+ end-y (- (* sin-angle head-x))
+				       (* cos-angle head-y)))]
+			 [pt3     (make-object 
+				      wx:point%
+				    (+ end-x (* cos-angle head-x)
+				       (- (* sin-angle head-y)))
+				    (+ end-y (* sin-angle head-x)
+				       (* cos-angle head-y)))]
+			 [pts (list pt1 pt2 pt3)]
+			 [draw-fn
+			  (lambda (dc dx dy)
+			    (when (or tmp-arrow-on?
+				      perm-arrow-on?)
+			      (let ([old-brush (send dc get-brush)]
+				    [old-pen   (send dc get-pen)]
+				    [old-logfn (send dc get-logical-function)])
+				(send dc set-brush brush)
+				(send dc set-pen pen)
+				;; (send dc set-logical-function wx:const-or)
+				(send dc draw-line
+				      (+ start-x dx) (+ start-y dy)
+				      (+ end-x dx) (+ end-y dy))
+				(send dc draw-polygon pts dx dy)
+				(send dc draw-ellipse 
+				      (- (+ start-x dx) arrow-root-radius)
+				      (- (+ start-y dy) arrow-root-radius)
+				      (* 2 arrow-root-radius)
+				      (* 2 arrow-root-radius))
+				(send dc set-brush old-brush)
+				(send dc set-pen old-pen)                    
+				(send dc set-logical-function old-logfn))))]
+			 [OLD-on-head?
+			  (lambda (x y)
+			    (let*
+				([xs (map (lambda (pt) (send pt get-x)) pts)]
+				 [ys (map (lambda (pt) (send pt get-y)) pts)]
+				 [min-x (apply min xs)]
+				 [min-y (apply min ys)]
+				 [max-x (apply max xs)]
+				 [max-y (apply max ys)])
+			      (and (>= x min-x)
+				   (<= x max-x)
+				   (>= y min-y)
+				   (<= y max-y))))]
+			 [OLD-on-root?
+			  (lambda (x y)
+			    (and (>= x (- start-x arrow-root-radius))
+				 (<= x (+ start-x arrow-root-radius))
+				 (>= y (- start-y arrow-root-radius))
+				 (<= y (+ start-y arrow-root-radius))))]
+			 [on-root?
+			  (lambda (x y)
+			    (and (<= start-left x start-right)
+				 (<= start-top y start-bottom)))]
+			 [on-head?
+			  (lambda (x y)
+			    (and (<= end-left x end-right)
+				 (<= end-top y end-bottom)))]
+			 
+			 [color-highlight "WHITE"]
+			 [color-background "BLUE"]
+			 [event-fn
+			  (let ([last (void)])
+			    (lambda (event x y)
+			      (let* (;[head? (on-head? x y)]
+				     ;[this-time (or head? (on-root? x y))]   ;; alternative defn for arrows
+				     [this-time (on-root? x y)])
+				(cond
+				 [(send event moving?)
+				  (when (void? last)
+				    (set! last (not this-time)))
+				  (when (or (and (not this-time) last)
+					    (and this-time (not last)))
+				    (set! tmp-arrow-on? this-time)
+				    (set-cursor (if this-time cursor-arrow null))
+				    (send brush set-colour
+					  (if this-time
+					      color-highlight
+					      color-background))
+				    (invalidate-bitmap-cache)
+				    (set! last this-time))
+				  #f]
+				 [(send event button-down? 3)
+				  (and this-time
+				       (let* ([canvas (get-canvas)]
+					      [JUMP-ID 1]
+					      [STICK-ID 2]
+					      [RENAME-ID 3]
+					      [callback (lambda (menu evt)
+							  (let ([id (send evt get-command-int)])
+							    (cond
+							     [(= id STICK-ID)
+							      (set! perm-arrow-on? (not perm-arrow-on?))
+							      (set! tmp-arrow-on? #f)
+							      (send brush set-colour
+								    (if perm-arrow-on?
+									color-background
+									color-highlight))
+							      (invalidate-bitmap-cache)]
+							     [(= id JUMP-ID)
+							      (set-position end-pos-left end-pos-right)]
+							     [(= id RENAME-ID)
+							      (set! tmp-arrow-on? #f)
+							      (rename (mred:get-text-from-user
+								       (format "Rename ~a to:" id-name)
+								       "Rename Identifier"
+								       (format "~a" id-name)))
+							      (invalidate-bitmap-cache)])))]
+					      [menu (make-object wx:menu% null callback)])
+					 (send menu append STICK-ID (if perm-arrow-on?
+									"Untack Arrow"
+									"Tack Arrow"))
+					 (send menu append JUMP-ID "Jump")
+					 (send menu append RENAME-ID "Rename")
+					 (send canvas popup-menu menu
+					       (send event get-x)
+					       (send event get-y))))]
+				 [else #f]))))])
 		    
 		    ;; Return draw-thunk and event function
 		    (cons draw-fn event-fn))])))])
@@ -528,7 +552,7 @@
 		(lambda ()
 		  (wx:begin-busy-cursor)
 		  (send definitions-edit set-styles-fixed #f)
-		  '(send definitions-edit begin-edit-sequence #f))
+		  (send definitions-edit begin-edit-sequence #f))
 		(lambda ()
 		  (with-handlers
 		      ([void ; should be: zodiac:interface:zodiac-exn?
@@ -539,7 +563,7 @@
 			   [reader (zodiac:read thunk (zodiac:make-location 1 1 0 definitions-edit))])
 		      (color-syntax reader))))
 		(lambda ()
-		  '(send definitions-edit end-edit-sequence)
+		  (send definitions-edit end-edit-sequence)
 		  (send definitions-edit set-styles-fixed #t)
 		  (wx:end-busy-cursor)))))]
 	  [color-syntax
@@ -547,19 +571,17 @@
 	     (letrec* ([user-param (ivar interactions-edit param)]
 		       [add-arrow 
 			(let ([aa (ivar definitions-edit syncheck:add-arrow)])
-			  (lambda (start-left start-right finish-left finish-right)
-			    (let* ([start-dx 0]
-				   [start-dy 0]
-				   [end-dx 0]
-				   [end-dy 0]
-				   [delta 0]
-				   [brush (make-object wx:brush% "BLUE" wx:const-solid)]
+			  (lambda (start-left start-right finish-left finish-right id-name rename)
+			    (let* ([brush (make-object wx:brush% "BLUE" wx:const-solid)]
 				   [pen (make-object wx:pen%
 						     (make-object wx:colour% "BLUE")
 						     1 wx:const-solid)])
 			      (aa start-left start-right 
 				  finish-left finish-right
-				  delta brush pen))))]
+				  0 ; delta
+				  brush pen
+				  id-name
+				  rename))))]
 		       [find-string (ivar definitions-edit find-string)]
 		       [change-style (lambda (s x y)
 				       ((ivar definitions-edit change-style) s x y))]
@@ -592,12 +614,29 @@
 				start)))]
 		       [top-level-varrefs null]
 		       [defineds (make-hash-table)]
+		       [local-bindings (make-hash-table)]
 		       [style-list (send definitions-edit get-style-list)]
 		       [bound-style (send style-list find-named-style "mzprizm:bound variable")]
 		       [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
 		       [primitive-style (send style-list find-named-style "mzprizm:primitive")]
 		       [syntax-style (send style-list find-named-style "mzprizm:syntax")]
 		       [const-style (send style-list find-named-style "mzprizm:constant")]
+		       [rename-bindings
+			(lambda (occurrances new-name)
+			  (send definitions-edit begin-edit-sequence)
+			  (let ([sorted (mzlib:function@:quicksort
+					 occurrances
+					 (lambda (x y)
+					   (<= (zodiac:location-offset (zodiac:zodiac-start y))
+					       (zodiac:location-offset (zodiac:zodiac-start x)))))]
+				[rename-one
+				 (lambda (z)
+				   (send definitions-edit insert new-name
+					 (zodiac:location-offset (zodiac:zodiac-start z))
+					 (add1 (zodiac:location-offset (zodiac:zodiac-finish z)))))])
+			    (for-each rename-one sorted))
+			  (button-callback)
+			  (send definitions-edit end-edit-sequence))]
 		       [color-loop
 			(lambda (zodiac-ast)
 			  '(begin (mzlib:pretty-print@:pretty-print zodiac-ast)
@@ -647,10 +686,26 @@
 			      [(zodiac:bound-varref? zodiac-ast)
 			       (when source-object?
 				 (let* ([binding (zodiac:bound-varref-binding zodiac-ast)]
+					[user-name (zodiac:binding-orig-name binding)]
+					[gen-name (zodiac:varref-var zodiac-ast)]
 					[start (zodiac:location-offset (zodiac:zodiac-start binding))]
-					[finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))])
-				 (add-arrow z:start z:finish start finish)))
-			       (color bound-style)]
+					[finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))]
+					[rename (lambda (new-name)
+						  (when new-name
+						    (rename-bindings
+						     (cons binding
+							   (hash-table-get local-bindings
+									   gen-name (lambda () null)))
+						     (format "~a" (string->symbol new-name)))))])
+				   (hash-table-put!
+				    local-bindings
+				    gen-name
+				    (cons zodiac-ast
+					  (hash-table-get local-bindings
+							  gen-name (lambda () null))))
+				   (add-arrow z:start z:finish start finish user-name rename)
+				   (add-arrow start finish z:start z:finish user-name rename))
+				 (color bound-style))]
 			      
 			      [(zodiac:top-level-varref? zodiac-ast)
 			       (when source-object?
@@ -676,10 +731,7 @@
 			      [(zodiac:define-values-form? zodiac-ast)
 			       (color-syntax)
 			       (for-each 
-				(lambda (var)
-				  (hash-table-put! defineds 
-						   (zodiac:varref-var var)
-						   var))
+				(lambda (var) (hash-table-put! defineds (zodiac:varref-var var) var))
 				(zodiac:define-values-form-vars zodiac-ast))
 			       (for-each (lambda (var) 
 					   (change-style bound-style 
@@ -767,7 +819,7 @@
 		       (time (color-loop expanded))
 		       (read-loop)))))
 	       
-	       ; color and add arrows for the top-level varrefs
+	       ; color the top-level varrefs
 	       (let ([built-in?
 		      (lambda (s)
 			(with-parameterization (ivar interactions-edit param)
@@ -777,14 +829,7 @@
 			     (let ([id (zodiac:varref-var var)])
 			       (change-style
 				(cond
-				  [(hash-table-get defineds id (lambda () #f))
-				   =>
-				   (lambda (def-var)
-				     (add-arrow (zodiac:location-offset (zodiac:zodiac-start var))
-						(add1 (zodiac:location-offset (zodiac:zodiac-finish var)))
-						(zodiac:location-offset (zodiac:zodiac-start def-var))
-						(add1 (zodiac:location-offset (zodiac:zodiac-finish def-var))))
-				     bound-style)]
+				  [(hash-table-get defineds id (lambda () #f)) bound-style]
 				  [(built-in? id) primitive-style]
 				  [else unbound-style])
 				(zodiac:location-offset (zodiac:zodiac-start var))

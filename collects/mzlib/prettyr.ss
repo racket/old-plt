@@ -122,7 +122,9 @@
 		       x)))
 
    (define pretty-print-display-string-handler
-     (make-parameter display
+     (make-parameter (let ([dh (port-display-handler (open-output-string))])
+		       ; dh is primitive port display handler
+		       dh)
 		     (lambda (x)
 		       (unless (can-accept-n? 2 x)
 			       (raise-type-error 

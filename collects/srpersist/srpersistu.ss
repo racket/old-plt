@@ -5,7 +5,10 @@
   (if (defined? 'odbc-version)
 
       (let ([the-unit (load-relative-extension 
-		       "compiled/native/sparc-solaris/srpersist.so")])
+		       (string-append 
+			"compiled/native/"
+			(system-library-subpath)
+			"/srpersist.so"))])
     
 	(cond
 	 

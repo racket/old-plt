@@ -4383,12 +4383,20 @@ Scheme_Object *mx_release_type_table(void) {
   return scheme_void;
 }
 
-void mx_cleanup(void) {
-  // insert custodian walker stuff here
+void mx_exit_closer(Scheme_Object *obj,
+		    Scheme_Close_Custodian_Client *fun,void *data) {
+  if ((fun == (Scheme_Close_Custodian_Client *)
+                     scheme_release_com_object) ||
+      (fun == (Scheme_Close_Custodian_Client *)
+       scheme_release_simple_com_object)) {
+    (*fun)(obj,data);
+  }
+}
 
+void mx_cleanup(void) {
   mx_release_type_table();
 
-  // looks like CoUninitialize() gets called automatically
+  /* looks like CoUninitialize() gets called automatically */
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
@@ -4461,8 +4469,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 	    "Copyright (c) 1999-2001 PLT (Paul Steckler)\n");
   }
 
+  scheme_add_atexit_closer(mx_exit_closer);
+ 
   atexit(mx_cleanup);
-  
+
   return scheme_void;
 }
 

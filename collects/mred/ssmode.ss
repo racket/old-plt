@@ -150,10 +150,9 @@
 	    [highlight-parens
 	     (let ([clear-old-location (lambda () (void))]
 		   [color (apply make-object wx:colour% 
-				 (map (lambda (x) (* (/ (- 65535 x) 65535) 255))
-				      (if #t
-					  (list 48896 48896 48896)
-					  (list 65535 21437 18932))))])
+				 (map (lambda (x) (* (/ x 65535) 255))
+				      (begin (list 65535 21437 18932)
+					     (list 48896 48896 48896))))])
 	       (opt-lambda (edit [just-clear? #f])
 		 (if (or (not (unbox highlight-parens?-box))
 			 suspend-highlight?)

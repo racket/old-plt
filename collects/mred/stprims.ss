@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.5 1997/07/23 20:57:28 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.6 1997/07/29 15:17:23 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -18,18 +18,13 @@
   (define run-error error)
   
   ;;
-  ;; Do one action now in single/multiple thread.
+  ;; Do one action now in default thread style.
   ;;
   
   (define do-now
     (lambda (thunk-maker)
       (lambda args
-	(mred:test:run-single (list (apply thunk-maker args))))))
-  
-  (define do-now*
-    (lambda (thunk-maker)
-      (lambda args
-	(mred:test:run-multiple (list (apply thunk-maker args))))))
+	(mred:test:run (list (apply thunk-maker args))))))
   
   ;;
   ;; Return list of window's ancestors from root down to window
@@ -67,8 +62,7 @@
 		(send button command event)
 		(void))))]))))
   
-  (define button-push-now  (do-now  button-push))
-  (define button-push-now* (do-now* button-push))
+  (define button-push-now (do-now button-push))
   
   
   ;;
@@ -121,8 +115,7 @@
 	  [(send (car l) pre-on-char window event)  #f]
 	  [else  (loop (cdr l))]))))
  
-  (define keystroke-now  (do-now  keystroke))
-  (define keystroke-now* (do-now* keystroke))
+  (define keystroke-now (do-now keystroke))
   
   
   ;;
@@ -150,8 +143,7 @@
 		(send frame command item-id)
 		(void))))]))))
   
-  (define menu-select-now  (do-now  menu-select))
-  (define menu-select-now* (do-now* menu-select)) 
+  (define menu-select-now (do-now menu-select))
   
   
   ;;
@@ -204,9 +196,7 @@
 	  [(send (car l) pre-on-event window event)  #f]
 	  [else  (loop (cdr l))]))))
   
-  
-  (define mouse-click-now  (do-now  mouse-click))
-  (define mouse-click-now* (do-now* mouse-click))
+  (define mouse-click-now (do-now mouse-click))
   
   
   ;;

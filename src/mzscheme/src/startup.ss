@@ -2759,7 +2759,7 @@
 						  (string->path s)
 						  s))
 				 (if (string? sfx)
-				     (string->bytes/locale sfx #\?)
+				     (string->bytes/locale sfx (char->integer #\?))
 				     sfx))))
 
   (define (normal-case-path s)

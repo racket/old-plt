@@ -198,8 +198,6 @@
 	    [update-snip-size
 	     (lambda (s)
 	       (let* ([width (box 0)]
-		      [lefti (box 0)]
-		      [righti (box 0)]
 		      [leftm (box 0)]
 		      [rightm (box 0)]
 		      [left-edge-box (box 0)]
@@ -207,18 +205,21 @@
 		      [edit (get-media)])
 		 (send (send edit get-admin)
 		       get-view null null width null)
-		 (send s get-inset lefti (box 0) righti (box 0))
 		 (send s get-margin leftm (box 0) rightm (box 0))
 		 (send edit get-snip-position-and-location
 		       s (box 0) left-edge-box null)
 		 (let ([snip-width (- (unbox width)
 				      (unbox left-edge-box)
-				      ;(unbox lefti)
-				      ;(unbox righti)
 				      (unbox leftm)
-				      (unbox rightm))])
-		   (send s set-min-width snip-width)
-		   (send s set-max-width snip-width)
+				      (unbox rightm)
+				      
+				      ;; this two is the space that 
+				      ;; the caret needs at the right of
+				      ;; a buffer.
+				      2)])
+		   (send* s 
+		     (set-min-width snip-width)
+		     (set-max-width snip-width))
 		   (unless (null? snip-media)
 		     (send snip-media set-max-width
 			   (if autowrap-snips?

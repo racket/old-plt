@@ -21,14 +21,15 @@
         (class* (expansion-tool-definitions-text-mixin (shared-mixin dt%)) (orc<%>)
           
           ;; from the shared-mixin
-          (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler)
-          
+          (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler clear-error-canvas)
+
           ;; from the expansion-tool-definitions-text-mixin
           (inherit buffer-directory)
           (inherit-field latest-expansion)
           
+          
           ;; from DrScheme's definitions text
-          (inherit get-text get-next-settings last-position)
+          (inherit get-text get-next-settings last-position get-character)
           
           (super-new)
           
@@ -51,14 +52,24 @@
                        (let ([code (send event get-key-release-code)])
                          (or (eq? #\space code)
                              (eq? #\newline code)
+                             (eq? #\return code)
                              (eq? #\) code)
                              (eq? #\] code)
                              (eq? #\} code))))
-              ;(printf "firing after-change~n")
+              (after-change)))
+          
+          (define/override (do-paste start time)
+            (super do-paste start time)
+            (after-change))
+          
+          (define/augment (after-delete start len)
+            ;; >1 to ignore the parens matcher deleting things
+            (unless (and (= 1 len)
+                         (eq? #\) (get-character start)))
               (after-change)))
           
           (define/private (after-change)
-            (kill-autocompile-thread)
+            ;(kill-autocompile-thread)
             (set-autocompile-thread-proc!
              (lambda ()
                ;;  If we were only compiling modules, this would be the "drs-expand" code:
@@ -74,11 +85,20 @@
           
           (define/private (drs-expand)
             (define text/pos (drscheme:language:make-text/pos this
-                                                              0
-                                                              (last-position)))
+                                                                0
+                                                                (last-position)))
+            
             (define these-expansions null)
             (define (shutdown)
               (custodian-shutdown-all (current-custodian)))
+            ;; sometimes by the time we're checking, the user deleted enough
+            ;; characters to make our previous value of (last-position) invalid
+           (when #t  ; nevermind.. I think changing after-delete fixed this
+                   ; with-handlers ([exn:fail:contract?
+                   ;         (lambda (e)
+                   ;           (printf "drs-expand: exn before exanding: ~v: ~v~n"
+                   ;                   e (exn-message e))
+                   ;           (raise e))])
             (drscheme:eval:expand-program
              text/pos
              (get-next-settings)
@@ -91,6 +111,9 @@
                 (lambda (exn)
                   ;; TODO: print the exception in some status message
                  ; (printf "exn ~v: ~v~n" exn (exn-message exn))
+               ;  (time
+                  ;(kill-autocompile-thread)
+                 ;      )
                   (cond
                     [(exn:fail:syntax? exn) ;(printf "syntax error~n")
                      (begin ((make-syntax-error-handler this) exn)
@@ -107,7 +130,7 @@
                     [(exn:fail:contract? exn) (when-debugging
                                                (printf "oops, contract error ~a: ~a~n" exn (exn-message exn)))
                                               (shutdown)] 
-                    [else (begin (when-debugging
+                    [else (begin (when #t ;when-debugging
                                   (printf "oops, other error ~a: ~a~n" exn (exn-message exn)))
                                  (old-handler exn))]))))
              (lambda ()
@@ -122,12 +145,11 @@
                      (set! latest-expansion (if (= 1 (length these-expansions))
                                                 (car these-expansions)
                                                 #`(begin #,@these-expansions)))
+                     (clear-error-canvas)
                      (shutdown))
                    (begin (set! these-expansions (cons stx-obj these-expansions))
                           ;(printf "expanded more: ~v~n" (syntax-object->datum stx-obj))
-                          (continue))))))
+                          (continue)))))))
           
           )))
-  
-  
   )

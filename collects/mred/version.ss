@@ -24,4 +24,4 @@
 				(expr->string num))
 			  specs))))
     
-    (add-version-spec ': 3))
+    (add-version-spec ': 4))

@@ -554,6 +554,7 @@
 	  (set! compiler:messages null)
 	  (const:init-tables!)
 	  (compiler:init-closure-lists!)
+	  (varref:reset-module-id!)
 	  ; process the input string - try to open the input file
 	  (let-values ([(input-path c-output-path 
 				    constant-pool-output-path obj-output-path dll-output-path 
@@ -1247,7 +1248,7 @@
 		(call-with-output-file constant-pool-output-path
 		  (lambda (port)
 		    (fprintf port "(~s~n (symbols~n" compiler:setup-suffix)
-		    (vm->c:emit-symbol-list! port "")
+		    (vm->c:emit-symbol-list! port "" #f)
 		    (fprintf port "  )~n )~n")))))))
 
 	;;--------------------------------------------------------------------

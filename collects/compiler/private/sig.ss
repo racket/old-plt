@@ -71,6 +71,8 @@
      get-num-module-invokes
      is-module-invoke?
 
+     varref:reset-module-id!
+
      (struct compiler:make-closure (lambda free-vars args name))
      
      (struct binding (rec?       ; part of a letrec recursive binding set

@@ -66,6 +66,8 @@
       (define (is-module-invoke? mi num)
 	(and (varref:module-invoke? mi)
 	     (= num (varref:module-invoke-id mi))))
+
+      (define (varref:reset-module-id!) (set! mi-counter -1))
       
       ;;----------------------------------------------------------------------------
       ;; AST NODES

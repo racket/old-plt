@@ -74,7 +74,7 @@
       (define (vm->c:make-symbol-const-string sc)
 	(format "~a[~a]" (vm->c:SYMBOLS-name) (zodiac:varref-var sc)))
 
-      (define (vm->c:emit-list! port comma table counter -symbol->string)
+      (define (vm->c:emit-list! port comma comment? table counter -symbol->string)
 	(let ([v (make-vector counter)])
 	  (hash-table-for-each
 	   table
@@ -82,17 +82,18 @@
 	     (vector-set! v (string->number (symbol->string (zodiac:varref-var b))) sym)))
 	  (let loop ([i 0])
 	    (unless (= i (vector-length v))
-	      (fprintf port "  ~s~a /* ~a */~n" (-symbol->string (vector-ref v i)) comma i)
+	      (fprintf port "  ~s~a ~a~n" (-symbol->string (vector-ref v i)) comma 
+		       (if comment? (format "/* ~a */" i) ""))
 	      (loop (add1 i))))))
 
-      (define (vm->c:emit-symbol-list! port comma)
-	(vm->c:emit-list! port comma (const:get-symbol-table) (const:get-symbol-counter) symbol->string))
+      (define (vm->c:emit-symbol-list! port comma comment?)
+	(vm->c:emit-list! port comma comment? (const:get-symbol-table) (const:get-symbol-counter) symbol->string))
 
       (define (vm->c:emit-symbol-declarations! port)
 	(unless (zero? (const:get-symbol-counter))
 	  (unless (compiler:multi-o-constant-pool)
 	    (fprintf port "static const char *SYMBOL_STRS[~a] = {~n" (const:get-symbol-counter))
-	    (vm->c:emit-symbol-list! port ",")
+	    (vm->c:emit-symbol-list! port "," #t)
 	    (fprintf port "}; /* end of SYMBOL_STRS */~n~n"))
 
 	  (fprintf port "~aScheme_Object * ~a[~a];~n~n" 
@@ -100,14 +101,14 @@
 		   (vm->c:SYMBOLS-name)
 		   (const:get-symbol-counter))))
 
-      (define (vm->c:emit-inexact-list! port comma)
-	(vm->c:emit-list! port comma (const:get-inexact-table) (const:get-inexact-counter)
+      (define (vm->c:emit-inexact-list! port comma comment?)
+	(vm->c:emit-list! port comma comment? (const:get-inexact-table) (const:get-inexact-counter)
 			  (lambda (x) (string->number (symbol->string x)))))
 
       (define (vm->c:emit-inexact-declarations! port)
 	(unless (zero? (const:get-inexact-counter))
 	  (fprintf port "static const double INEXACT_NUMBERS[~a] = {~n" (const:get-inexact-counter))
-	  (vm->c:emit-inexact-list! port ",")
+	  (vm->c:emit-inexact-list! port "," #t)
 	  (fprintf port "}; /* end of INEXACT_NUMBERS */~n~n")
 	  (fprintf port "static Scheme_Object * ~a[~a];~n~n" 
 		   (vm->c:INEXACTS-name)
@@ -400,8 +401,10 @@
 	  (fprintf port "Scheme_Env *env, long phase_shift, Scheme_Object *self_modidx, void *pls)~n")
 	  (fprintf port "{~n~aScheme_Per_Invoke_~aStatics_~a *PMIS;~n" 
 		   vm->c:indent-spaces (if syntax? "Syntax_" "") id)
-	  (fprintf port "~aPMIS = scheme_malloc(sizeof(Scheme_Per_Invoke_~aStatics_~a));~n" 
-		   vm->c:indent-spaces (if syntax? "Syntax_" "") id)
+	  (let ([s (format "Scheme_Per_Invoke_~aStatics_~a"
+			   (if syntax? "Syntax_" "") id)])
+	    (fprintf port "~aPMIS = (~a *)scheme_malloc(sizeof(~a));~n" 
+		     vm->c:indent-spaces s s))
 	  (fprintf port "~amodule_~abody_~a_0(env, (Scheme_Per_Load_Statics *)pls, phase_shift, self_modidx, PMIS);~n"
 		   vm->c:indent-spaces (if syntax? "syntax_" "") id)
 	  (fprintf port "}~n~n"))
@@ -525,10 +528,10 @@
       ;; must handle structs as well as atomic types
       (define vm->c:type-definition->malloc
 	(lambda (rep)
-	  (format "scheme_malloc(sizeof(~a))"
-		  (if (rep:struct? rep)
-		      (string-append "struct " (vm->c:convert-symbol (rep:struct-name rep)))
-		      (vm->c:convert-type-definition rep)))))
+	  (let ([s (if (rep:struct? rep)
+		       (string-append "struct " (vm->c:convert-symbol (rep:struct-name rep)))
+		       (vm->c:convert-type-definition rep))])
+	  (format "(~a *)scheme_malloc(sizeof(~a))" s s))))
 
       (define vm->c:emit-local-variable-declarations!
 	(lambda (locals indent port)

@@ -13,11 +13,11 @@
 
   (require "sig.ss")
   (require (lib "file-sig.ss" "dynext")
-	  (lib "link-sig.ss" "dynext")
-	  (lib "compile-sig.ss" "dynext")
-
-	  (lib "make-sig.ss" "make")
-	  (lib "collection-sig.ss" "make"))
+	   (lib "link-sig.ss" "dynext")
+	   (lib "compile-sig.ss" "dynext")
+	   
+	   (lib "make-sig.ss" "make")
+	   (lib "collection-sig.ss" "make"))
 
   (require (lib "list.ss"))
   (require (lib "compile.ss")) ; gets compile-file

@@ -98,9 +98,9 @@
 				 [else #f]))])
 			(values L closure-label)))]
 		   
-					; This takes action based on the label associated with the closure 
-					; passed in. There is a HACK here.  The 'known' value of this lexical
-					; varref is a lambda, even though we have eliminated lambda.
+		   ;; This takes action based on the label associated with the closure 
+		   ;; passed in. There is a HACK here.  The 'known' value of this lexical
+		   ;; varref is a lambda, even though we have eliminated lambda.
 		   [with-closure
 		    (lambda (closure closure-case unknown call recur)
 		      (let-values ([(L closure-label) (closure-info closure)])
@@ -248,12 +248,12 @@
 			       (with-closure 
 				closure
 				cl-case
-					; unknown tail call site
+				;; unknown tail call site
 				(lambda (_ __ ___ ____) ast)
 				
-					; known tail call site
-					; if the environment is empty, allow the backend to
-					; eliminate the env-setting instruction
+				;; known tail call site
+				;; if the environment is empty, allow the backend to
+				;; eliminate the env-setting instruction
 				(lambda (label cl-case _ same-vehicle?)
 				  (let* ([code (get-annotation L)]
 					 [free-vars (code-free-vars code)]
@@ -267,11 +267,11 @@
 					     (not (set-empty? global-vars))))
 					ast)))
 				
-					; known tail recursion site
+				;; known tail recursion site
 				(lambda (label cl-case _ __)
 				  (if (zodiac:list-arglist? arglist)
 				      (begin
-					; Mark the case as having a continue
+					;; Mark the case as having a continue
 					(set-case-code-has-continue?! 
 					 (list-ref (procedure-code-case-codes (get-annotation L)) cl-case) 
 					 #t)
@@ -320,7 +320,7 @@
 				       cl-case
 				       (zodiac:list-arglist? arglist))
 				  
-					; known function, fixed arity
+				  ;; known function, fixed arity
 				  (if (not (satisfies-arity? (length (vm:generic-args-vals ast)) 
 							     L arglist))
 				      (begin 
@@ -337,8 +337,8 @@
 				       (vm:generic-args-closure ast)
 				       cl-case
 
-					; unknown function - could be at a level where an 
-					; optimized jump is not allowed
+				       ;; unknown function - could be at a level where an 
+				       ;; optimized jump is not allowed
 				       (lambda (_ __ ___ ____)
 					 (list (make-vm:args (zodiac:zodiac-stx ast)
 							     (if tail? 
@@ -346,7 +346,7 @@
 								 arg-type:arg)
 							     vals)))
 				       
-					; known call
+				       ;; known call
 				       (lambda (label cl-case L same-vehicle?)
 					 (list (make-vm:args (zodiac:zodiac-stx ast)
 							     (if tail?
@@ -356,9 +356,9 @@
 								 arg-type:arg)
 							     vals)))
 				       
-					; known recursion
-					; tail recursion we just optimize to 
-					; set! of local variables
+				       ;; known recursion
+				       ;; tail recursion we just optimize to 
+				       ;; set! of local variables
 				       (lambda (label cl-case L _)
 					 (if (not tail?)
 					     (list (make-vm:args (zodiac:zodiac-stx ast)
@@ -383,14 +383,14 @@
 						       (if (this-binding? val)
 							   (loop (cdr bindings) (cdr vals) #f)
 							   
-					; Check whether the binding we're about to set is needed later as a value.
-					; If so, invent a new register
+							   ;; Check whether the binding we're about to set is needed later as a value.
+							   ;; If so, invent a new register
 							   (if (and (not set-ok?)
 								    (ormap this-binding? (cdr vals)))
 							       (let* ([rep (binding-rep (get-annotation binding))]
 								      [name (gensym)]
 								      [new-binding (let ([b (zodiac:make-binding 
-											     #f #f #f
+											     #f
 											     (make-empty-box)
 											     name name)])
 										     (set-annotation! b
@@ -401,7 +401,7 @@
 										     b)]
 								      [v (make-vm:local-varref #f name new-binding)])
 								 (add-local-var! new-binding)
-					; Start over; replace uses of binding in vals with uses of new-binding
+								 ;; Start over; replace uses of binding in vals with uses of new-binding
 								 (loop (cons new-binding bindings)
 								       (list* (let ([v (make-vm:local-varref 
 											#f
@@ -419,7 +419,7 @@
 									       (cdr vals)))
 								       #t))
 							       
-					; Normal set
+							       ;; Normal set
 							       (let*-values ([(vref) 
 									      (zodiac:binding->lexical-varref binding)]
 									     [(vm _) (vm-phase vref #f #f identity #f)]
@@ -432,7 +432,7 @@
 									#f)
 								       (loop (cdr bindings) (cdr vals) #f)))))))))))))
 				  
-					; unknown or variable arity function call - always use args
+				  ;; unknown or variable arity function call - always use args
 				  (if (or (not closure-label)
 					  (and closure-label (satisfies-arity? (length vals) 
 									       L arglist)))

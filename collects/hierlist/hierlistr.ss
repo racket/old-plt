@@ -306,6 +306,8 @@
 		     (insert s)
 		     (insert #\newline))
 		   l)
+		  (unless (null? l)
+		    (delete)) ; delete last #\newline
 		  (set! children l)
 		  (end-edit-sequence)))]
 	[reflow-items

@@ -83,6 +83,7 @@ case $OS in
     ;;
   CYGWIN*)
     make --unix cygwin-dll-setup
+    make --unix starter
     make --unix $GCOPTS PERL='' LIBS='gmzwin.exp' INSTALLTARGET=cygwin-install "$@"
     ;;
   BeOS)

@@ -1,9 +1,20 @@
+/* Luancher program for Windows. */
+/* Builds a MzScheme starter if MZSTART is defined. */
+/* Builds a MrEd starter if MRSTART is defined. */
+/* If neither is defined, MZSTART is auto-defined */
+
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <process.h>
+
+#ifndef MRSTART
+# ifndef MZSTART
+#  define MZSTART
+# endif
+#endif
 
 #ifdef MRSTART
 # define GOSUBDIR "\\"
@@ -17,9 +28,14 @@
 # define WAITTILDONE 1
 #endif
 
-
-
 #define MAX_ARGS 100
+
+#if defined(_MSC_VER)
+# define MSC_IZE(x) _ ## x
+#else
+# define MSC_IZE(x) x
+# define DUPLICATE_INPUT
+#endif
 
 static char *input = "<Command Line: Replace This ************"
                      "******************************************"
@@ -149,6 +165,15 @@ void WriteStr(HANDLE h, const char *s) {
 }
 #endif
 
+#ifdef DUPLICATE_INPUT
+static char *copy_string(char *s)
+{
+  int l = strlen(s);
+  char *d = malloc(l + 1);
+  memcpy(d, s, l + 1);
+  return d;
+}
+#endif
 
 #ifdef MRSTART
 int APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, 
@@ -161,7 +186,7 @@ int main(int argc_in, char **argv_in)
   char name[1024], go[1024], plthome[1024];
   char *args[MAX_ARGS + 1];
   int count, i;
-  struct _stat st;
+  struct MSC_IZE(stat) st;
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 #ifdef MZSTART
@@ -177,6 +202,11 @@ int main(int argc_in, char **argv_in)
   while (*s != '\\')
     --s;
   *s = 0;
+
+#ifdef DUPLICATE_INPUT
+  /* gcc: input is read-only */
+  input = copy_string(input);
+#endif
 
   count = 1;
   count = parse_command_line(count, args, input, MAX_ARGS);

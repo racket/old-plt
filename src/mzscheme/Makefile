@@ -227,6 +227,11 @@ ee-app: $(MZSCHEME) $(OBJDIR)/main_ee.o
 testext.o: testext.c
 	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.o
 
+mzstart.exe: dynsrc/start.c
+	$(CC) -o mzstart.exe dynsrc/start.c
+
+starter: mzstart.exe
+
 exn:
 	$(XMAKE) src/schexn.h
 
@@ -308,3 +313,4 @@ cygwin-install:
 	rm -f ../../mzscheme.exe
 	cp $(MZSCHEME).exe ../../mzscheme.exe
 	cd dynsrc; ./gmkmzdyn.bat
+	cp mzstart.exe ../../collects/launcher/mzstart.exe

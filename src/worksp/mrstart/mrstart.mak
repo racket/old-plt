@@ -108,7 +108,7 @@ RSC_PROJ=/l 0x409 /fo"$(INTDIR)\start.res" /d "NDEBUG" /d "MRSTART"
 
 
 !IF "$(CFG)" == "MrStart - Win32 Release"
-SOURCE=.\..\starters\start.c
+SOURCE=.\..\..\mzscheme\dynsrc\start.c
 
 "$(INTDIR)\start.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
@@ -117,7 +117,7 @@ SOURCE=.\..\starters\start.c
 SOURCE=.\..\starters\start.rc
 
 "$(INTDIR)\start.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "..\starters" /d "NDEBUG" /d "MRSTART" $(SOURCE)
+	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "\Matthew\plt\src\worksp\starters" /d "NDEBUG" /d "MRSTART" $(SOURCE)
 
 
 

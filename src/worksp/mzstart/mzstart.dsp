@@ -55,7 +55,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\..\starters\start.c
+SOURCE=..\..\mzscheme\dynsrc\start.c
 # End Source File
 # Begin Source File
 

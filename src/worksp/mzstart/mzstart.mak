@@ -38,6 +38,7 @@ ALL : "$(OUTDIR)\mzstart.exe"
 CLEAN :
 	-@erase "$(INTDIR)\start.obj"
 	-@erase "$(INTDIR)\start.res"
+	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(OUTDIR)\mzstart.exe"
 
 "$(OUTDIR)" :
@@ -105,7 +106,7 @@ RSC_PROJ=/l 0x409 /fo"$(INTDIR)\start.res" /d "NDEBUG" /d "MZSTART"
 
 
 !IF "$(CFG)" == "MzStart - Win32 Release"
-SOURCE=.\..\starters\start.c
+SOURCE=..\..\mzscheme\dynsrc\start.c
 
 "$(INTDIR)\start.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
@@ -114,7 +115,7 @@ SOURCE=.\..\starters\start.c
 SOURCE=.\..\starters\start.rc
 
 "$(INTDIR)\start.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "..\starters" /d "NDEBUG" /d "MZSTART" $(SOURCE)
+	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "\Matthew\plt\src\worksp\starters" /d "NDEBUG" /d "MZSTART" $(SOURCE)
 
 
 

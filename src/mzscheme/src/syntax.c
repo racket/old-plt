@@ -1834,7 +1834,7 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 		  Scheme_Compile_Info *rec, int depth)
 {
   Scheme_Object *name, *bindings, *vars, *vals, *forms;
-  Scheme_Object *proc, *init, *letrec;
+  Scheme_Object *proc, *app, *letrec;
 
   if (!(SCHEME_PAIRP(SCHEME_CDR (form))
 	&& SCHEME_PAIRP(SCHEME_CDR(SCHEME_CDR (form)))
@@ -1851,21 +1851,21 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   forms = SCHEME_CDR (SCHEME_CDR (SCHEME_CDR (form)));
 
   proc = cons(lambda_symbol, cons(vars, forms));
-  init = cons(name, vals);
   
   letrec = cons(letrec_symbol,
 		cons(cons(cons(name, cons(proc, scheme_null)), scheme_null),
-		     cons(init,
+		     cons(name,
 			  scheme_null)));
+  app = cons(letrec, vals);
 
   if (rec)
-    return scheme_compile_expr(letrec, env, rec);
+    return scheme_compile_expr(app, env, rec);
   else {
     --depth;
     if (!depth)
-      return letrec;
+      return app;
     else
-      return scheme_expand_expr(letrec, env, depth);
+      return scheme_expand_expr(app, env, depth);
   }
 }
 

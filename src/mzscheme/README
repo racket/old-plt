@@ -64,7 +64,7 @@ To compile the `mzscheme' executable for other Unix platforms:
   3) Execute `make bin' (or just `make').
 
   [Cygwin note: either use `mzmake', or run `make cygwin-dll-setup'
-   before `make bin'.]
+   and `make starter' before `make bin'.]
 
 Install
 -------

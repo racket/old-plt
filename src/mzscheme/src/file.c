@@ -1912,8 +1912,12 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
     if (!scheme_is_relative_path(filename, ilen)) {
       /* Absolute, not complete. Fill in the disk */
       wrt = get_drive_part(wrt, wlen);
-      wlen = strlen(wrt) - 1; /* drop trailing separator */
-      skip_sep = 1;
+      wlen = strlen(wrt);
+      /* drop trailing separator */
+      if (IS_A_SEP(wrt[wlen - 1])) {
+	wlen--;
+	skip_sep = 1;
+      }
     }
 #endif
 

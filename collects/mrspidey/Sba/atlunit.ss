@@ -433,7 +433,7 @@
 		 (build-path 
 		  (get-temp-directory)
 		  (file-name-from-path za))])]
-	  [t-za (file-modify-seconds za)]
+	  [t-za (and (file-exists? za) (file-or-directory-modify-seconds za))]
 	  
 	  ;; restrict imports to prims, closed schemas, and atstructs
 	  [partial-import-list-restricted

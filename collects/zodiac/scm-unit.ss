@@ -1,3 +1,5 @@
+(require-library "include.ss")
+
 (define zodiac:scheme-units@
   (unit/sig zodiac:scheme-units^
     (import zodiac:misc^ (z : zodiac:structures^)

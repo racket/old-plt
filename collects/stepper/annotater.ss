@@ -332,7 +332,9 @@
                                         ,v)
                                       v)])
                   (values (if cheap-wrap?
-                              (expr-cheap-wrap annotated)
+                              (if (and maybe-undef? (utils:signal-undefined))
+                                  (expr-cheap-wrap annotated)
+                                  annotated)
                               (wcm-break-wrap debug-info (return-value-wrap annotated))) free-vars))]
 
                [(z:app? expr)
@@ -439,7 +441,7 @@
 	       [(z:quote-form? expr)
                 (let ([annotated `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))])
                   (values (if cheap-wrap?
-                              (expr-cheap-wrap annotated)
+                              annotated
                               (wcm-wrap (make-debug-info-normal null) annotated))
                           null))]
                
@@ -669,7 +671,7 @@
                                              #f))
                                            ,closure-temp)])
 		  (values (if cheap-wrap?
-                              (expr-cheap-wrap annotated-case-lambda)
+                              annotated-case-lambda
                               hash-wrapped)
 			  new-free-vars))]
 	       
@@ -863,6 +865,9 @@
       (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
+        (call-with-output-file "Barbican:output.ss"
+          (lambda (port)
+            (write annotated-exprs port)))
         (values annotated-exprs
                 struct-proc-names)))))
 	 

@@ -214,7 +214,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   image.pf = tstA[index++];
 
   if (image.pf & 0x80) {
-    int len = (1 << ((image.pf & 7) + 1)), i, j = 0, amt;
+    int len = (1 << ((image.pf & 7) + 1)), i, j = 0;
+    size_t amt;
     for (i = 0; i < len; i++) {
       if (j == 198)
 	j = 0;

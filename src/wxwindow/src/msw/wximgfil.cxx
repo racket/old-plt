@@ -79,10 +79,11 @@ wxGIF::wxGIF( char * path)
     fp = fopen(path,"rb");
     if (!fp)
     	return;
-    ReadHeader(fp);
-    Create(image.w, image.h, 8);
-    if (GetRawImage() != 0)
-      Extrae_imagen();
+    if (ReadHeader(fp)) {
+      Create(image.w, image.h, 8);
+      if (GetRawImage() != 0)
+	Extrae_imagen();
+    }
   }
   fclose(fp);
 }
@@ -135,7 +136,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   ushort widlow, widhigh, hgtlow, hgthi, i;
   ushort index = 0;
   
-  fread((char*)&tstA[0],13,1,fp);
+  if (fread((char*)&tstA[0],13,1,fp) != 13)
+    return FALSE;
   
   for ( i=0; i<6;i++) {
     dscgif.header[i] = tstA[index++];
@@ -160,7 +162,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
     int errcnt;
     int tp;
     rgbTable = new uchar[3*TabCol.sogct];
-    errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
+    if (!fread((char *)rgbTable,1, 3*TabCol.sogct,fp))
+      return FALSE;
     tp = 0;
     for (i = 0; i < TabCol.sogct; i++) {
       TabCol.paleta[i].r = rgbTable[tp++];
@@ -173,13 +176,18 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   single = 0;
   transparent_index = -1;
   while (1) {
-    fread((char *)&single, 1, 1, fp);
+    if (fread((char *)&single, 1, 1, fp) != 1)
+      return FALSE;
     if (single == 0x21) { /* extension */
-      fread(&eid,1,1,fp); /* function */
+      if (fread(&eid,1,1,fp) != 1) /* function */
+	return FALSE;
       while (1) {
-	fread(&single,1,1,fp); /* block size */
+	if (fread(&single,1,1,fp) != 1) /* block size */
+	  return FALSE;
 	if (single) {
-	  fread((char*)&tstA[0],single,1,fp);
+	  /* Note, single is an uchar, so it's <= 255 */
+	  if (fread((char*)&tstA[0],single,1,fp) != single)
+	    return FALSE;
 	  if ((eid == 0xF9) && (single == 4)) {
 	    /* Transparent color index? */
 	    if (tstA[0] & 0x1) {
@@ -193,7 +201,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
       break;
   }
     
-  fread((char*)&tstA[0],9,1,fp);
+  if (fread((char*)&tstA[0],9,1,fp) != 9)
+    return FALSE;
   index = 0;
   image.sep = single;
   image.l = tstA[index++];
@@ -208,13 +217,14 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 
   if (image.pf & 0x80) {
     int len = (1 << ((image.pf & 7) + 1)), i, j = 0;
+    size_t amt;
     for (i = 0; i < len; i++) {
       if (j == 198)
 	j = 0;
       if (!j) {
-	fread((char*)&tstA[0], 
-	      (len - i > 66) ? 198 : (3 * (len - i)),
-	      1, fp);
+	amt = (len - i > 66) ? 198 : (3 * (len - i));
+	if (fread((char*)&tstA[0], amt, 1, fp) != amt)
+	  return FALSE;
       }
       TabCol.paleta[i].r = tstA[j++];
       TabCol.paleta[i].g = tstA[j++];
@@ -241,25 +251,26 @@ wxGIF::wxGIF()
 /* This function initializes the decoder for reading a new image.
  */
 ushort wxGIF::init_exp(ushort size)
-	{
-	curr_size = size + 1;
-	top_slot = 1 << curr_size;
-	clear = 1 << size;
-	ending = clear + 1;
-	slot = newcodes = ending + 1;
-	navail_bytes = nbits_left = 0;
-	return(0);
-	}
+{
+  curr_size = size + 1;
+  top_slot = 1 << curr_size;
+  clear = 1 << size;
+  ending = clear + 1;
+  slot = newcodes = ending + 1;
+  navail_bytes = nbits_left = 0;
+  return(0);
+}
 
-ushort wxGIF::get_byte() {
-
-	 if (ibf>=GIFBUFTAM) {
-		fread(buf,GIFBUFTAM,1,fp);
-		ibf = 0;
-	 }
-
-	 return buf[ibf++];
+ushort wxGIF::get_byte()
+{
+  
+  if (ibf>=GIFBUFTAM) {
+    fread(buf,GIFBUFTAM,1,fp);
+    ibf = 0;
   }
+  
+  return buf[ibf++];
+}
 
 /* get_next_code()
  * - gets the next code from the GIF file.  Returns the code, or else

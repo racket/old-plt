@@ -19,6 +19,7 @@ typedef       void* wxCanvas ;
 
 class wxFrame;
 class wxBorderArea;
+class wxScrollArea;
 
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
@@ -36,6 +37,7 @@ class wxCanvas: public wxbCanvas
   Bool scrollAutomanaged;
   wxBorderArea *canvas_border;
   wxColour *bgcol;
+  wxScrollArea* cScrollArea;
 
   //=============================================================================
   // Public constructors
@@ -139,6 +141,7 @@ class wxCanvas: public wxbCanvas
   // necessary. Disable for when the scroll increment is used
   // to actually scroll a non-constant distance
   void EnableScrolling(Bool x_scrolling, Bool y_scrolling);
+  void SetResizeCorner(Bool on);
 
   virtual void WarpPointer(int x_pos, int y_pos) ;
 

@@ -473,6 +473,7 @@ static void post_scheme(atomic_timeout_t old)
 #define QUICK_UBUF_SIZE 512
 static UniChar u_buf[QUICK_UBUF_SIZE];
 static double widths_buf[QUICK_UBUF_SIZE];
+static ATSUTextLayout layout_buf[QUICK_UBUF_SIZE];
 
 #if 0
 static long time_preprocess, time_ctx, time_style, time_layout, time_measure, time_draw;
@@ -493,7 +494,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				  double pen_delta, int use_pen_delta,
 				  double start_x, double start_y, double ddx, double ddy, int with_start)
 {
-  ATSUTextLayout layout = NULL;
+  ATSUTextLayout layout = NULL, *layouts;
   UniCharCount ulen, one_ulen, delta;
   UniChar *unicode;
   double result = 0, one_res = 0;
@@ -624,10 +625,13 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     int i, all = 1, wc, di;
     atomic_timeout_t old;
 
-    if (ulen > QUICK_UBUF_SIZE)
+    if (ulen > QUICK_UBUF_SIZE) {
       widths = new WXGC_ATOMIC double[ulen];
-    else
+      layouts = (ATSUTextLayout *)(new WXGC_ATOMIC char[sizeof(ATSUTextLayout) * ulen]);
+    } else {
       widths = widths_buf;
+      layouts = layout_buf;
+    }
 
     old = pre_scheme();
 
@@ -650,13 +654,15 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	  Scheme_Object *new_key;
 	  new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
 	  scheme_hash_set(width_table, new_key, val);
+	  scheme_hash_set(old_width_table, table_key, NULL);
 	}
       }
       if (!val) {
 	all = 0;
 	widths[i] = -1;
       } else {
-	widths[i] = SCHEME_DBL_VAL(val);
+	widths[i] = SCHEME_DBL_VAL(SCHEME_CAR(val));
+	layouts[i] = *(ATSUTextLayout *)SCHEME_CDR(val);
 	r += widths[i];
       }
     }
@@ -665,8 +671,10 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
     if (all && just_meas)
       return r;
-  } else
+  } else {
     widths = NULL;
+    layouts = NULL;
+  }
 
   END_TIME(cache);
   START_TIME;
@@ -775,7 +783,19 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     if (qd_spacing) {
       if (widths[delta] >= 0) {
 	one_res = widths[delta];
+	layout = layouts[delta];
 	need_size = 0;
+
+	/* Adjust color and context in layout: */
+	if (use_cgctx) {
+	  GC_CAN_IGNORE ATSUAttributeTag ll_theTags[1];
+	  GC_CAN_IGNORE ByteCount ll_theSizes[1];
+	  ATSUAttributeValuePtr ll_theValues[1];	  
+	  ll_theTags[0] = kATSUCGContextTag;
+	  ll_theSizes[0] = sizeof(CGContextRef);
+	  ll_theValues[0] =  &cgctx;
+	  ATSUSetLayoutControls(layout, 1, ll_theTags, ll_theSizes, ll_theValues);
+	}
       } else {
 	one_res = 0;
 	need_size = 1;
@@ -788,13 +808,30 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     need_layout = (!just_meas || need_size);
     if (need_layout) {
       if (!layout) {
-	ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)(unicode XFORM_OK_PLUS delta),
+	UniCharArrayPtr uca;
+	ATSUStyle *style_array;
+	UniCharCount *ulen_array;
+
+	if (qd_spacing) {
+	  uca = (UniCharArrayPtr)malloc(one_ulen * sizeof(UniChar) + sizeof(ATSUStyle) + sizeof(UniCharCount));
+	  memcpy(uca, unicode XFORM_OK_PLUS delta, one_ulen * sizeof(UniChar));
+	  style_array = (ATSUStyle *)((char *)uca XFORM_OK_PLUS (one_ulen * sizeof(UniChar)));
+	  ulen_array = (UniCharCount *)(style_array XFORM_OK_PLUS 1);
+	  *style_array = style;
+	  *ulen_array = one_ulen;
+	} else {
+	  uca = (UniCharArrayPtr)(unicode XFORM_OK_PLUS delta);
+	  style_array = &style;
+	  ulen_array = &one_ulen;
+	}
+
+	ATSUCreateTextLayoutWithTextPtr(uca,
 					kATSUFromTextBeginning,
 					kATSUToTextEnd,
 					one_ulen,
 					1,
-					&one_ulen,
-					&style,
+					ulen_array,
+					style_array,
 					&layout);
 
 	if (qd_spacing || use_cgctx) {
@@ -843,12 +880,6 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	  r_theValues[0] = &deg_angle;
 	  ATSUSetLayoutControls(layout, 1, r_theTags, r_theSizes, r_theValues); 
 	}
-      } else {
-	ATSUSetTextPointerLocation(layout, 
-				   (UniCharArrayPtr)(unicode XFORM_OK_PLUS delta),
-				   kATSUFromTextBeginning,
-				   kATSUToTextEnd,
-				   one_ulen);
       }
     }
       
@@ -978,6 +1009,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       start_y += one_res * sin(angle);
     }
 
+    if (qd_spacing) {
+      layouts[delta] = layout;
+      layout = NULL;
+    }
+
     delta += one_ulen;
   }
 
@@ -1023,12 +1059,43 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	dj = 1;
 
       if (widths[j] >= 0) {
+	char *lp;
+
 	val = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
 	((wxKey *)SCHEME_BYTE_STR_VAL(val))->code = wc;
-	scheme_hash_set(width_table, val, scheme_make_double(widths[j]));
+
+	lp = new WXGC_ATOMIC char[sizeof(ATSUTextLayout)];
+	*(ATSUTextLayout*)lp = layouts[j];
+
+	scheme_hash_set(width_table, val, scheme_make_pair(scheme_make_double(widths[j]),
+							   (Scheme_Object *)lp));
+	
 	if (width_table->mcount >= MAX_WIDTH_MAPPINGS) {
 	  /* rotate tables, so width_table doesn't grow indefinitely,
-	     but we also don't throw away recent information completely */
+	     but we also don't throw away recent information completely.
+	     the old old_widths_table is going away, so dispose of
+	     information there. */
+	  {
+	    int i;
+	    void *ptr;
+	    Boolean is_hand;
+	    UniCharArrayOffset poffset;
+	    UniCharCount plen, total_plen;
+	    for (i = old_width_table->size; i--; ) {
+	      if (old_width_table->vals[i]) {
+		layout = *(ATSUTextLayout *)SCHEME_CDR(old_width_table->vals[i]);
+		ATSUGetTextLocation(layout,
+				    &ptr,
+				    &is_hand,
+				    &poffset,
+				    &plen,
+				    &total_plen);
+		ATSUDisposeTextLayout(layout);
+		free(ptr);
+	      }
+	    }
+	  }
+
 	  old_width_table = width_table;
 	  width_table = scheme_make_hash_table_equal();
 	}

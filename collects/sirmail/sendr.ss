@@ -341,7 +341,9 @@
 					 '(ok)))])
 		      (delete-file t)))))))
 
-	(define c (make-object editor-canvas% (send mailer-frame get-area-container)))
+	(define c (new editor-canvas% 
+		       [parent (send mailer-frame get-area-container)]
+		       [style '(auto-hscroll)]))
         (define message-editor-super%
           (color:text-mixin 
            (editor:backup-autosave-mixin

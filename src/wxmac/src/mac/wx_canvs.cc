@@ -131,7 +131,8 @@ void wxCanvas::InitDefaults(void)
     wxScrollData* scrollData;
     scrollData = new wxScrollData;
     cScroll = new wxScroll(this, scrollData);
-    new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
+    cScrollArea = new wxScrollArea(this, this, 
+				   (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL) | (cStyle & wxRESIZE_CORNER));
   }
 
   /* Make wxCONTROL_BORDER after scroll bars, so that it's outside the scrollbar */  
@@ -567,8 +568,21 @@ void wxCanvas::ScrollPercent(double x, double y)
 //-----------------------------------------------------------------------------
 void wxCanvas::EnableScrolling(Bool x_scroll, Bool y_scroll)
 {
-  hScrollingEnabled = x_scroll;
-  vScrollingEnabled = y_scroll;
+  if (cScrollArea) {
+    if ((hScrollingEnabled != x_scroll)
+	|| (vScrollingEnabled != y_scroll)) {
+      hScrollingEnabled = x_scroll;
+      vScrollingEnabled = y_scroll;
+      cScrollArea->ShowScrolls(x_scroll, y_scroll);
+    }
+  }
+}
+
+void wxCanvas::SetResizeCorner(Bool on)
+{
+  if (cScrollArea) {
+    cScrollArea->SetResizeCorner(on, hScrollingEnabled, vScrollingEnabled);
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -536,6 +536,30 @@ void wxSetBusyState(int state)
   c->busyState = state;
 }
 
+extern int MrEdGetDoubleTime(void);
+static int doubleClickThreshold = -1;
+
+int wxMrEdGetDoubleTime(void)
+{
+  if (doubleClickThreshold < 0) {
+    if (!wxGetPreference("doubleClickTime", &doubleClickThreshold)) {
+      doubleClickThreshold = MrEdGetDoubleTime();
+    }
+  }
+
+  return doubleClickThreshold;
+}
+
+#ifdef wx_xt
+/* For widgets: */
+extern "C" {
+  int wxGetMultiClickTime(Display *d)
+  {
+    return wxMrEdGetDoubleTime();
+  }
+}
+#endif
+
 Bool wxIsPrimEventspace()
 {
   return MrEdGetContext() == mred_main_context;

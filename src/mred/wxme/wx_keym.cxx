@@ -76,20 +76,11 @@ class wxKeycode
 
 /***************************************************************/
 
-static int doubleClickThreshold = -1;
-
-extern int MrEdGetDoubleTime(void);
-extern int wxGetPreference(const char *, int *);
+extern int wxMrEdGetDoubleTime(void);
 
 int wxmeGetDoubleClickThreshold()
 {
-  if (doubleClickThreshold < 0) {
-    if (!wxGetPreference("doubleClickTime", &doubleClickThreshold)) {
-      doubleClickThreshold = MrEdGetDoubleTime();
-    }
-  }
-
-  return doubleClickThreshold;
+  return wxMrEdGetDoubleTime();
 }
 
 wxKeymap::wxKeymap()

@@ -34,6 +34,11 @@ class wxScrollArea: public wxArea
 	~wxScrollArea(void);		// destructor
 
 	void ShowScrolls(Bool h, Bool v);
+	void SetResizeCorner(Bool on, Bool h, Bool v);
+
+ private:
+	void ResetHPos(Bool leave_space);
+	void ResetVPos(Bool leave_space);
 
 };
 

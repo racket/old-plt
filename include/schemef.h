@@ -515,6 +515,9 @@ MZ_EXTERN mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, in
 				       mzchar *buf, int bufsize,
 				       long *ulen, int term_size);
 
+MZ_EXTERN Scheme_Object *scheme_open_converter(const char *from_e, const char *to_e);
+MZ_EXTERN void scheme_close_converter(Scheme_Object *conv);
+
 /*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/
@@ -759,6 +762,7 @@ MZ_EXTERN int scheme_get_host_address(const char *address, int id, void *result)
 
 MZ_EXTERN void scheme_set_type_printer(Scheme_Type stype, Scheme_Type_Printer printer);
 MZ_EXTERN void scheme_print_bytes(Scheme_Print_Params *pp, const char *str, int offset, int len);
+MZ_EXTERN void scheme_print_utf8(Scheme_Print_Params *pp, const char *str, int offset, int len);
 MZ_EXTERN void scheme_print_string(Scheme_Print_Params *pp, const mzchar *str, int offset, int len);
 
 /*========================================================================*/

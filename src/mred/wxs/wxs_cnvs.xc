@@ -31,6 +31,13 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 #endif
 }
 
+static void wxSetResizeCorner(wxCanvas *c, Bool v)
+{
+#ifdef wx_mac
+  c->SetResizeCorner(v);
+#endif
+}
+
 #ifndef wx_mac
 # define wxRESIZE_CORNER 0
 #endif
@@ -66,6 +73,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @ "get-virtual-size" : void GetVirtualSize(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "set-scrollbars" : void SetScrollbars(rint[0|10000],rint[0|10000],rint[0|10000],rint[0|10000],rint[1|10000],rint[1|10000],rint[0|10000]=0,rint[0|10000]=0,bool=TRUE);  : : / PANELREDIRECT[return scheme_void]
 @ "show-scrollbars" : void EnableScrolling(bool,bool)
+@ m "set-resize-corner" : void wxSetResizeCorner(bool)
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "warp-pointer" : void WarpPointer(rint[0|10000],rint[0|10000]);  : : / PANELREDIRECT[return scheme_void]
 

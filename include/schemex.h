@@ -421,6 +421,8 @@ unsigned short *(*scheme_ucs4_to_utf16)(const mzchar *text, int start, int end,
 mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int start, int end, 
 				       mzchar *buf, int bufsize,
 				       long *ulen, int term_size);
+Scheme_Object *(*scheme_open_converter)(const char *from_e, const char *to_e);
+void (*scheme_close_converter)(Scheme_Object *conv);
 /*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/
@@ -634,6 +636,7 @@ void (*scheme_security_check_network)(const char *who, const char *host, int por
 int (*scheme_get_host_address)(const char *address, int id, void *result);
 void (*scheme_set_type_printer)(Scheme_Type stype, Scheme_Type_Printer printer);
 void (*scheme_print_bytes)(Scheme_Print_Params *pp, const char *str, int offset, int len);
+void (*scheme_print_utf8)(Scheme_Print_Params *pp, const char *str, int offset, int len);
 void (*scheme_print_string)(Scheme_Print_Params *pp, const mzchar *str, int offset, int len);
 /*========================================================================*/
 /*                        namespace/environment                           */

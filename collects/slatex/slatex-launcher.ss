@@ -13,7 +13,8 @@
      (for-each slatex (vector->list argv))]
     [(windows unix macosx)
      (when (eq? (vector) argv)
-       (error 'slatex "expected a file on the command line~n"))
+       (fprintf (current-error-port) "slatex: expected a file on the command line\n")
+       (exit 1))
      (let ([result
             (parameterize ([error-escape-handler exit])
               (slatex (vector-ref argv 0)))])

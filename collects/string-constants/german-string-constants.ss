@@ -460,6 +460,10 @@
  (search-help-desk-for "Suche im Help Desk nach \"~a\"")
  (exact-lucky-search-help-desk-for "Exakte Suche im Help Desk nach \"~a\"")
  
+ ;; collapsing and expanding sexpressions poup menu item label
+ (collapse-sexp "Schrumpfen")
+ (expand-sexp "Erweitern")
+
  ;; fraction dialog
  (enter-fraction "Eingabe Bruchzahl")
  (whole-part "Ganzzahl")

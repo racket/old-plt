@@ -64,7 +64,7 @@
 (provide* _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
           _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
           _float _double _double*
-          _bool _pointer _scheme)
+          _bool _pointer _scheme _fpointer)
 
 (define-syntax define*
   (syntax-rules ()
@@ -181,10 +181,10 @@
 (define* (_cprocedure itypes otype . wrapper)
   (let ([wrapper (and (pair? wrapper) (car wrapper))])
     (if wrapper
-      (make-ctype _fmark
+      (make-ctype _fpointer
         (lambda (x) (ffi-callback (wrapper x) itypes otype))
         (lambda (x) (wrapper (ffi-call x itypes otype))))
-      (make-ctype _fmark
+      (make-ctype _fpointer
         (lambda (x) (ffi-callback x itypes otype))
         (lambda (x) (ffi-call x itypes otype))))))
 

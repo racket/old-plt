@@ -1,4 +1,10 @@
 
+Version 205.1
+Fixed transitivity of numerical comparison for mixed
+ inexact--exact comparisons when the inexact versions
+ of the numbers are = but the exact versions are not
+
+
 Version 205, August 2003
 Extended regexp language with "(?:...)"
 Added 'addon-dir for find-system-path

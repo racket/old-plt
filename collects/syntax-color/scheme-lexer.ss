@@ -8,6 +8,8 @@
   (define-lex-abbrevs
    [any (- #\000 #\377)]
    [letter (: (- "a" "z") (- "A" "Z"))]
+   
+   ;; For case insensitivity
    [a (: "a" "A")]
    [b (: "b" "B")]
    [c (: "c" "C")]
@@ -34,9 +36,12 @@
    [x (: "x" "X")]
    [y (: "y" "Y")]
    [z (: "z" "Z")]
+
    [digit (- "0" "9")]
    [whitespace (: #\newline #\return #\tab #\space #\vtab #\page)]
    [line-comment (@ ";" (* (^ #\newline)))]
+
+   
    [character (: (@ "#\\" any)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") (- "0" "7") (- "0" "7")))]
@@ -53,7 +58,7 @@
                       (@ r u b o u t))]
    [bad-char (: (@ "#\\" any letter (* letter))
                 (@ "#\\" (- "0" "3") (? letter) (? letter))
-                (@ "#\\" (- "0" "3") (- "0" "7") any))]
+                (@ "#\\" (- "0" "3") (- "0" "7") (? any)))]
                  
                  
    [str (@ (: "" "#rx") "\"" (* string-element) "\"")]
@@ -78,9 +83,8 @@
 
    [bad-str (@ (: "" "#rx") "\"" 
              (* (: (^ "\"" "\\")
-                   (@ "\\" (: (eof) any))))
-             (? (: (eof) "\"")))]
-   
+                   (@ "\\" any)))
+             (? "\""))]
    [num2 (@ prefix2 complex2)]
    [complex2 (: real2
                 (@ real2 "@" real2)
@@ -171,10 +175,10 @@
    
    [special-numbers (: (@ n a n ".0")(@ i n f ".0"))]
    
-   [suffix2 (: "" (@ exponent-marker sign (* digit2)))]
-   [suffix8 (: "" (@ exponent-marker sign (* digit8)))]
-   [suffix10 (: "" (@ exponent-marker sign (* digit10)))]
-   [suffix16 (: "" (@ exponent-marker sign (* digit16)))]
+   [suffix2 (: "" (@ exponent-marker sign (+ digit2)))]
+   [suffix8 (: "" (@ exponent-marker sign (+ digit8)))]
+   [suffix10 (: "" (@ exponent-marker sign (+ digit10)))]
+   [suffix16 (: "" (@ exponent-marker sign (+ digit16)))]
    [exponent-marker (: e s f d l)]
    [sign (: "" "+" "-")]
    [exactness (: "" "#i" "#e" "#I" "#E")]
@@ -201,10 +205,9 @@
 
    [bad-id-start (: bad-id-escapes
                     (^ (: identifier-delims "\\" "|" "#"))
-                    "#%")]
+                    (@ "#" (^ "\\" "'" "&" "`" ",")))]
    [bad-id-escapes (: identifier-escapes
-                      (@ "\\" (eof))
-                      (@ "|" (* (^ "|")) (eof)))]
+                      (@ "|" (* (^ "|"))))]
    [bad-id (@ bad-id-start
             (* (: bad-id-escapes identifier-chars)))]
   

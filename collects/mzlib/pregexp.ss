@@ -15,7 +15,7 @@
                  pregexp-quote
                  *pregexp-comment-char*)
 
-;Configured for Scheme dialect plt by scmxlate, v 1a3,
+;Configured for Scheme dialect plt by scmxlate, v 1a6,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
@@ -373,12 +373,12 @@
       (cond ((null? s) #f) ((= k i) (car s)) (else (loop (cdr s) (+ k 1)))))))
 
 (define pregexp-match-positions-aux
-  (lambda (re s start n i)
+  (lambda (re s sn start n i)
     (let ((case-sensitive? #t))
       (let sub ((re re) (i i) (backrefs '()) (sk list) (fk (lambda () #f)))
         (cond
-         ((eqv? re ':bos) (if (= i start) (sk i backrefs) (fk)))
-         ((eqv? re ':eos) (if (>= i n) (sk i backrefs) (fk)))
+         ((eqv? re ':bos) (if (= i 0) (sk i backrefs) (fk)))
+         ((eqv? re ':eos) (if (>= i sn) (sk i backrefs) (fk)))
          ((eqv? re ':empty) (sk i backrefs))
          ((eqv? re ':wbdry)
           (if (pregexp-at-word-boundary? s i n) (sk i backrefs) (fk)))
@@ -473,8 +473,9 @@
              (let ((found-it? (sub (cadr re) i backrefs list (lambda () #f))))
                (if found-it? (fk) (sk i backrefs))))
             ((:lookbehind)
-             (let ((n-actual n))
+             (let ((n-actual n) (sn-actual sn))
                (set! n i)
+               (set! sn i)
                (let ((found-it?
                        (sub
                         (list ':seq '(:between #f 0 #f :any) (cadr re) ':eos)
@@ -483,10 +484,12 @@
                         list
                         (lambda () #f))))
                  (set! n n-actual)
+                 (set! sn sn-actual)
                  (if found-it? (sk i backrefs) (fk)))))
             ((:neg-lookbehind)
-             (let ((n-actual n))
+             (let ((n-actual n) (sn-actual sn))
                (set! n i)
+               (set! sn i)
                (let ((found-it?
                        (sub
                         (list ':seq '(:between #f 0 #f :any) (cadr re) ':eos)
@@ -495,6 +498,7 @@
                         list
                         (lambda () #f))))
                  (set! n n-actual)
+                 (set! sn sn-actual)
                  (if found-it? (fk) (sk i backrefs)))))
             ((:no-backtrack)
              (let ((found-it? (sub (cadr re) i backrefs list (lambda () #f))))
@@ -593,16 +597,18 @@
 (define pregexp-match-positions
   (lambda (pat str . opt-args)
     (let* ((pat (if (string? pat) (pregexp pat) pat))
+           (str-len (string-length str))
            (start
             (if (null? opt-args)
               0
               (let ((start (car opt-args)))
                 (set! opt-args (cdr opt-args))
                 start)))
-           (end (if (null? opt-args) (string-length str) (car opt-args))))
+           (end (if (null? opt-args) str-len (car opt-args))))
       (let loop ((i start))
         (and (<= i end)
-             (let ((vv (pregexp-match-positions-aux pat str start end i)))
+             (let ((vv
+                    (pregexp-match-positions-aux pat str str-len start end i)))
                (if vv (cadr vv) (loop (+ i 1)))))))))
 
 (define pregexp-match
@@ -648,17 +654,17 @@
           (n (string-length str))
           (ins-len (string-length ins)))
       (let loop ((i 0) (r ""))
-        (let ((pp (pregexp-match-positions pat str i n)))
-          (cond
-           (pp
-            (loop
-             (cdar pp)
-             (string-append
-               r
-               (substring str i (caar pp))
-               (pregexp-replace-aux str ins ins-len pp))))
-           ((= i 0) str)
-           (else (string-append r (substring str i n)))))))))
+        (if (>= i n)
+          r
+          (let ((pp (pregexp-match-positions pat str i n)))
+            (if (not pp)
+              (if (= i 0) str (string-append r (substring str i n)))
+              (loop
+               (cdar pp)
+               (string-append
+                 r
+                 (substring str i (caar pp))
+                 (pregexp-replace-aux str ins ins-len pp))))))))))
 
 (define pregexp-quote
   (lambda (s)

@@ -4,7 +4,7 @@
 	    [fw : framework^]
             mzlib:print-convert^
             (drscheme : drscheme:export^)
-	    drscheme:zodiac^)
+	    zodiac:system^)
     
     (define invoke-stepper
       (lambda (frame)
@@ -30,7 +30,7 @@
                     mzlib:print-convert^
                     (mred : mred^)
                     (drscheme : drscheme:export^)
-                    drscheme:zodiac^))
+                    zodiac:system^))
 	     (send f show #f)
 	     (parameterize ([mred:current-eventspace e])
 	       (mred:end-busy-cursor))

@@ -7258,14 +7258,6 @@ void initExns(void) {
     srp_exns[i].name_count = name_count;
     exnNameCount += name_count;
   }
-
-  scheme_register_extension_global(&withInfoFuns,sizeof(withInfoFuns)); 
-  scheme_register_extension_global(&noDataFuns,sizeof(noDataFuns));
-  scheme_register_extension_global(&invalidHandleFuns,sizeof(invalidHandleFuns));
-  scheme_register_extension_global(&errorFuns,sizeof(errorFuns));
-  scheme_register_extension_global(&needDataFuns,sizeof(needDataFuns));
-  scheme_register_extension_global(&stillExecutingFuns,sizeof(stillExecutingFuns));
-  scheme_register_extension_global(&notImplementedFuns,sizeof(notImplementedFuns));
 }
 
 void initStructs(void) {
@@ -7289,43 +7281,6 @@ void initStructs(void) {
     srpStructs[i].name_count = name_count;
     structNameCount += name_count;
   }
-
-  scheme_register_extension_global(&numericStructFuns,
-				   sizeof(numericStructFuns));
-  scheme_register_extension_global(&dateStructFuns,
-				   sizeof(dateStructFuns));
-  scheme_register_extension_global(&timeStructFuns,
-				   sizeof(timeStructFuns));
-  scheme_register_extension_global(&timeStampStructFuns,
-				   sizeof(timeStampStructFuns));
-  scheme_register_extension_global(&guidStructFuns,
-				   sizeof(guidStructFuns));
-  scheme_register_extension_global(&yearIntervalStructFuns,
-				   sizeof(yearIntervalStructFuns));
-  scheme_register_extension_global(&monthIntervalStructFuns,
-				   sizeof(monthIntervalStructFuns));
-  scheme_register_extension_global(&dayIntervalStructFuns,
-				   sizeof(dayIntervalStructFuns));
-  scheme_register_extension_global(&hourIntervalStructFuns,
-				   sizeof(hourIntervalStructFuns));
-  scheme_register_extension_global(&minuteIntervalStructFuns,
-				   sizeof(minuteIntervalStructFuns));
-  scheme_register_extension_global(&secondIntervalStructFuns,
-				   sizeof(secondIntervalStructFuns));
-  scheme_register_extension_global(&yearToMonthIntervalStructFuns,
-				   sizeof(yearToMonthIntervalStructFuns));
-  scheme_register_extension_global(&dayToHourIntervalStructFuns,
-				   sizeof(dayToHourIntervalStructFuns));
-  scheme_register_extension_global(&dayToMinuteIntervalStructFuns,
-				   sizeof(dayToMinuteIntervalStructFuns));
-  scheme_register_extension_global(&dayToSecondIntervalStructFuns,
-				   sizeof(dayToSecondIntervalStructFuns));
-  scheme_register_extension_global(&hourToMinuteIntervalStructFuns,
-				   sizeof(hourToMinuteIntervalStructFuns));
-  scheme_register_extension_global(&hourToSecondIntervalStructFuns,
-				   sizeof(hourToSecondIntervalStructFuns));
-  scheme_register_extension_global(&minuteToSecondIntervalStructFuns,
-				   sizeof(minuteToSecondIntervalStructFuns));
 }
 
 void sortConsts(void) {
@@ -7390,6 +7345,54 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i,j;
   Scheme_Object *srp_val;
 
+  scheme_register_extension_global(&srp_exns,sizeof(srp_exns));
+  scheme_register_extension_global(&srpStructs,sizeof(srpStructs));
+  scheme_register_extension_global(&numericStructFuns,
+				   sizeof(numericStructFuns));
+  scheme_register_extension_global(&dateStructFuns,
+				   sizeof(dateStructFuns));
+  scheme_register_extension_global(&timeStructFuns,
+				   sizeof(timeStructFuns));
+  scheme_register_extension_global(&timeStampStructFuns,
+				   sizeof(timeStampStructFuns));
+  scheme_register_extension_global(&guidStructFuns,
+				   sizeof(guidStructFuns));
+  scheme_register_extension_global(&yearIntervalStructFuns,
+				   sizeof(yearIntervalStructFuns));
+  scheme_register_extension_global(&monthIntervalStructFuns,
+				   sizeof(monthIntervalStructFuns));
+  scheme_register_extension_global(&dayIntervalStructFuns,
+				   sizeof(dayIntervalStructFuns));
+  scheme_register_extension_global(&hourIntervalStructFuns,
+				   sizeof(hourIntervalStructFuns));
+  scheme_register_extension_global(&minuteIntervalStructFuns,
+				   sizeof(minuteIntervalStructFuns));
+  scheme_register_extension_global(&secondIntervalStructFuns,
+				   sizeof(secondIntervalStructFuns));
+  scheme_register_extension_global(&yearToMonthIntervalStructFuns,
+				   sizeof(yearToMonthIntervalStructFuns));
+  scheme_register_extension_global(&dayToHourIntervalStructFuns,
+				   sizeof(dayToHourIntervalStructFuns));
+  scheme_register_extension_global(&dayToMinuteIntervalStructFuns,
+				   sizeof(dayToMinuteIntervalStructFuns));
+  scheme_register_extension_global(&dayToSecondIntervalStructFuns,
+				   sizeof(dayToSecondIntervalStructFuns));
+  scheme_register_extension_global(&hourToMinuteIntervalStructFuns,
+				   sizeof(hourToMinuteIntervalStructFuns));
+  scheme_register_extension_global(&hourToSecondIntervalStructFuns,
+				   sizeof(hourToSecondIntervalStructFuns));
+  scheme_register_extension_global(&minuteToSecondIntervalStructFuns,
+				   sizeof(minuteToSecondIntervalStructFuns));
+  scheme_register_extension_global(&srp_name,sizeof(srp_name));
+  scheme_register_extension_global(&bufferTable,sizeof(bufferTable));
+  scheme_register_extension_global(&withInfoFuns,sizeof(withInfoFuns)); 
+  scheme_register_extension_global(&noDataFuns,sizeof(noDataFuns));
+  scheme_register_extension_global(&invalidHandleFuns,sizeof(invalidHandleFuns));
+  scheme_register_extension_global(&errorFuns,sizeof(errorFuns));
+  scheme_register_extension_global(&needDataFuns,sizeof(needDataFuns));
+  scheme_register_extension_global(&stillExecutingFuns,sizeof(stillExecutingFuns));
+  scheme_register_extension_global(&notImplementedFuns,sizeof(notImplementedFuns));
+
   initTypes();
 
   initStructs();
@@ -7397,9 +7400,6 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   initExns();
 
   sortConsts();
-
-  scheme_register_extension_global(&srp_name,sizeof(srp_name));
-  scheme_register_extension_global(&bufferTable,sizeof(bufferTable));
 
   if (srp_name == NULL) {
     srp_name = scheme_intern_symbol(srp_name_string);

@@ -171,7 +171,7 @@
        bad-teachpacks)))
 
   (define (teachpack-ok? x)
-    (if (build-single-teachpack-unit x #f)
+    (if (build-single-teachpack-unit x #t)
 	#t
 	#f))
 
@@ -259,7 +259,7 @@
       '(for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
       
       ;; 2. this only make #% names and syntax names 
-      ;; be keywords (the minimum)
+      ;; be keywords (the minimum -- more freedom with ids)
       (for-each (lambda (x)
                    (let ([name (car x)]
                          [str-name (symbol->string (car x))])

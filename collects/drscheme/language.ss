@@ -41,6 +41,7 @@
 	   [f (make-object dialog% "Language" parent)]
 	   [main (make-object mred:vertical-pane% f)]
 	   [language-panel (make-object mred:horizontal-panel% main '(border))]
+           [language-choice-panel (make-object mred:vertical-pane% language-panel)]
 	   [customization-panel (make-object mred:horizontal-panel% main)]
 	   [customization-left-panel (make-object mred:vertical-pane% customization-panel)]
 	   [customization-right-panel (make-object mred:vertical-pane% customization-panel)]
@@ -70,7 +71,7 @@
 		      (if bool
 			  (list language-panel customization-panel when-message ok-panel)
 			  (list language-panel when-message ok-panel)))))]
-
+           [full-scheme-check-box (make-object mred:check-box% "Compatible with student languages?" language-choice-panel void)]
 	   [full-scheme-panel (let ([p (make-object mred:pane% language-panel)])
 				(send p stretchable-width #f)
 				(send p stretchable-height #t)
@@ -127,7 +128,7 @@
 	    (make-object mred:choice%
 	      "Language"
 	      language-choice-choices
-	      language-panel
+	      language-choice-panel
 	      (lambda (choice evt)
 		(cond
 		 [(string=? full-scheme (send choice get-string-selection))
@@ -267,8 +268,8 @@
 			      (basis:number->setting
 			       (send language-choice get-selection)))])
 			(if not-custom?
-			    (list language-choice full-scheme-panel)
-			    (list language-choice full-scheme-panel custom-message))))))]
+			    (list language-choice-panel full-scheme-panel)
+			    (list language-choice-panel full-scheme-panel custom-message))))))]
 	   [update-to
 	    (lambda (v)
 	      (let ([zodiac? (basis:zodiac-vocabulary? v)])
@@ -312,6 +313,9 @@
 		(send signal-undefined enable zodiac?)
 
 		(reset-choice)))])
+        (send language-choice-panel stretchable-width #f)
+        (send language-choice-panel stretchable-height #f)
+        (send language-choice-panel change-children reverse)
 	(send f stretchable-width #f)
 	(send f stretchable-height #f)
 	(send language-choice stretchable-width #f)

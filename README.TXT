@@ -7,14 +7,15 @@ Executables
 The following are the executables:
 
   plt\DrScheme.exe -- PLT's main Scheme development environment
-  plt\Drscheme Jr.exe -- A simple, text-based DrScheme
+  plt\DrScheme Jr.exe -- A simple text-based DrScheme
   plt\MrEd.exe -- a Scheme GUI engine
   plt\MzScheme.exe -- a text-based Scheme interpreter
   plt\mzc.exe -- the MzScheme compiler
 
-DrScheme relies on MrEd, and DrScheme Jr and mzc rely on MzScheme. You
-may not have some of these executables, depending on which
-distribution you downloaded.
+DrScheme relies on MrEd (i.e., the DrScheme executable launches
+MrEd with special startup instructions), and DrScheme Jr and mzc rely
+on MzScheme. You may not have some of these executables, depending
+on which distribution you downloaded.
 
 Compiling
 ---------

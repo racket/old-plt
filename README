@@ -10,14 +10,15 @@ Executables
 The following are the executables:
 
   plt/bin/drscheme -- PLT's main Scheme development environment
-  plt/bin/drscheme-jr -- A simple, text-based DrScheme
+  plt/bin/drscheme-jr -- A simple text-based DrScheme
   plt/bin/mred -- a Scheme GUI engine
   plt/bin/mzscheme -- a text-based Scheme interpreter
   plt/bin/mzc -- the MzScheme compiler
 
-DrScheme relies on MrEd, and mzc and Drscheme Jr rely on MzScheme. You
-may not have some of these executables, depending on which
-distribution you downloaded.
+DrScheme relies on MrEd (i.e., the DrScheme executable launches
+MrEd with special startup instructions), and DrScheme Jr and mzc rely
+on MzScheme. You may not have some of these executables, depending
+on which distribution you downloaded.
 
 The files in plt/bin are shell scripts. The actual executable binaries
 for mred and mzscheme are in plt/.bin in a platform-dependent

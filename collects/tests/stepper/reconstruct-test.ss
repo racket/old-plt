@@ -167,7 +167,6 @@
 ;(test-mz-sequence "(if 3 4)"
 ;                  `(((,highlight-placeholder) ((if 3 4)))
 ;                    ((,highlight-placeholder) (4))))
-<<<<<<< reconstruct-test.ss
 
 ; reconstruct does not handle begin0
 

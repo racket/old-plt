@@ -187,7 +187,8 @@
            (field-env (create-field-env fields env))
            (ctor-throw-env (consolidate-throws 
                             (get-constructors (class-record-methods class-record)) field-env))
-           (static-env (get-static-fields-env field-env)))
+           (static-env (get-static-fields-env field-env))
+           (setting-fields null))
       (let loop ((rest members) (statics empty-env) (fields env))
         (unless (null? rest)
           (let ((member (car rest)))
@@ -208,22 +209,34 @@
                (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
                      (name (id-string (field-name member)))
                      (type (type-spec-to-type (field-type member) type-recs)))
-                 (when (var-init? member)
-                   (check-var-init (var-init-init member)
-                                   (lambda (e) 
-                                     (check-expr e 
-                                                 (if static? statics fields)
-                                                 level type-recs c-class #f 
-                                                 static?))
-                                   type
-                                   (string->symbol name)
-                                   type-recs))
+                 (if (var-init? member)
+                     (check-var-init (var-init-init member)
+                                     (lambda (e) 
+                                       (check-expr e 
+                                                   (if static? statics fields)
+                                                   level type-recs c-class #f 
+                                                   static?))
+                                     type
+                                     (string->symbol name)
+                                     type-recs)
+                     (when (field-needs-set? member level)
+                       (set! setting-fields (cons member setting-fields))))
                  (if static?
                      (loop (cdr rest) 
                            (add-var-to-env name type #f #t #t statics) 
                            (add-var-to-env name type #f #t #t fields))
                      (loop (cdr rest) statics 
-                           (add-var-to-env name type #t #f #t fields)))))))))))
+                           (add-var-to-env name type #t #f #t fields)))))))))
+      (let ((assigns (get-assigns members level))
+            (static-assigns (get-static-assigns members level)))
+        (for-each (lambda (field)
+                    (field-set? field (if (memq 'static (map modifier-kind (field-modifiers field)))
+                                          static-assigns assigns)))
+                  setting-fields))))
+  
+  (define field-needs-set? (lambda (m l) #f))
+  (define get-static-assigns null)
+  (define field-set? null)
   
   ;create-field-env: (list field-record) env -> env
   (define (create-field-env fields env)
@@ -261,6 +274,49 @@
                       (environment-exn-env env)
                       (environment-label-env env)))
 
+  ;get-assigns: (list member) symbol -> (list assignment)
+  (define (get-assigns members level)
+    (if (eq? level 'beginner)
+        (get-beginner-assigns members)
+        (get-instance-assigns members)))
+  
+  (define (get-instance-assigns m)null)
+  
+  ;get-beginner-assigns: (list member) -> (list assign)
+  (define (get-beginner-assigns members)
+    (cond
+      ((null? members) null)
+      ((field? (car members)) (get-beginner-assigns (cdr members)))
+      ((method? (car members)) 
+       (if (eq? (method-type (car members)) 'ctor)
+           (if (block? (method-body (car members)))
+               (get-b-assigns (block-stmts (method-body (car members))))
+               null)
+           (get-beginner-assigns (cdr members))))))
+  
+  (define ... null)
+  
+  ;get-b-assigns: (list statement) -> (list assignment)
+  (define (get-b-assigns statements)
+    (cond
+      ((ifS? (car statements)) (beginner-ctor-error ...))
+      ((return? (car statements)) (beginner-ctor-error ...))
+      (else (cons (get-b-assigns-expr (car statements))
+                  (get-b-assigns (cdr statements))))))
+  
+  ;get-b-assigns-expr: Expression -> assignment
+  (define (get-b-assigns-expr body)
+    (if (assignment? body)
+        body
+        (beginner-ctor-error ...)))
+
+  (define (beginner-ctor-error class kind src)
+    (let ((exp (statement->ext-name kind)))
+      (raise-error exp
+                   (format "Constructor for ~a may only assign the fields of ~a. Found illegal statement ~a"
+                           class class exp)
+                   exp src)))
+  
   ;check-method: method env type-records (list string) boolean-> void
   (define (check-method method env level type-recs c-class static?)
     (let* ((ctor? (eq? 'ctor (type-spec-name (method-type method))))
@@ -291,7 +347,8 @@
                              ctor?
                              static?
                              #f
-                             #f)))))  
+                             #f)
+            ))))
   
   ;build-method-env: (list field) env type-records-> env
   (define (build-method-env parms env type-recs)

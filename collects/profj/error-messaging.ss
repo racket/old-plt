@@ -1,10 +1,11 @@
-(module error-messaging mzscheme
+#cs(module error-messaging mzscheme
   
   (require "ast.ss")
   (require "types.ss")
   
   (provide make-error-pass get-expected type->ext-name id->ext-name 
-           get-call-type method-name->ext-name path->ext name->path)
+           get-call-type method-name->ext-name path->ext name->path
+           statement->ext-name)
   
   ;make-error: 'a string 'a src -> void
   (define (make-error-pass parm)
@@ -87,5 +88,12 @@
   ;name->path: name -> (list string)
   (define (name->path n)
     (cons (id-string (name-id n)) (map id-string (name-path n))))
+  
+  ;statement->ext-name: statement -> symbol
+  (define (statement->ext-name s)
+    (cond
+      ((ifS? s) 'if)
+      ((return? s) 'return)
+      ((call? s) (string->symbol (id-string (call-method-name s))))))
       
   )

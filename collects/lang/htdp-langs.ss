@@ -433,21 +433,6 @@ to the original stdout of DrScheme.
               (drscheme:language:simple-module-based-language->module-based-language-mixin
                simple-htdp-language%))))))
       
-	;; technically this should move somewhere else,
-	;; but we leave it here for now.
-        (add-htdp-language
-         (instantiate htdp-language% ()
-           (one-line-summary (string-constant pretty-big-scheme-one-line-summary))
-           (sharing-printing #t)
-           (abbreviate-cons-as-list #t)
-           (allow-sharing? #t)
-           (language-numbers '(-500 6))
-           (module '(lib "htdp-full-graphics.ss" "lang"))
-           (language-position
-            (list (string-constant plt)
-                  (string-constant pretty-big-scheme)))
-           (read-accept-dot #t)))
-        
         (add-htdp-language
          (instantiate htdp-language% ()
            (one-line-summary (string-constant advanced-one-line-summary))

@@ -1,5 +1,8 @@
 
-;; Object system, same as MzScheme version 103 and earlier
+;; Object system, same as MzScheme version 103 and earlier.
+
+;; This was a fairly simple implementation until it was extended to
+;;  handle primitive classes (e.g., for MrEd). Now it's a mess.
 
 (module class mzscheme
   (require-for-syntax (lib "stx.ss""syntax"))
@@ -9,7 +12,8 @@
   (define-values (prop:object object? object-ref) (make-struct-type-property 'object))
 
   (define-struct class (name
-			object-make object-slots width method-prim-vec
+			object-make object-slot-ref object-slot-set!
+			width method-prim-vec
 			pos supers
 			interface
 			public-ht public-ids 
@@ -18,7 +22,7 @@
 			replace-indices     ;; override
 			init-new-indices    ;; inherit, override, public
 			go go-arity
-			struct:prim
+			struct:prim prop:dispatch
 			immediate-primitive?))
   ;; simplistic implementation for now:
   (define-struct interface (name supers public-ids class))
@@ -27,7 +31,7 @@
 
   (define object<%> (make-interface 'object% null null #f))
   (define object% (make-class 'object%
-			      'make-obj 'obj-slot 0 (vector)
+			      'make-obj 'slot-ref 'slot-set! 0 (vector)
 			      0 (vector #f) 
 			      object<%>
 			      (make-hash-table) 
@@ -36,21 +40,21 @@
 				(let ([object%-init (lambda () (void))])
 				  object%-init))
 			      0
-			      #f #f))
+			      #f #f #f))
   (set-interface-class! object<%> object%)
   (vector-set! (class-supers object%) 0 object%)
   (define-values (struct:obj make-obj)
     (let-values ([(struct:obj make-obj obj? obj-accessor obj-mutator)
-		  (make-struct-type 'object #f 1 0 #f (list (cons prop:object object%)) insp)])
+		  (make-struct-type 'object #f 0 0 #f (list (cons prop:object (box object%))) insp)])
       (set-class-object-make! object% make-obj)
-      (set-class-object-slots! object%
-			       (make-struct-field-accessor obj-accessor 0))
+      (set-class-object-slot-ref! object% obj-accessor)
+      (set-class-object-slot-set!! object% obj-mutator)
       (values struct:obj make-obj)))
 
   (define (obj-class o)
-    (object-ref o))
-  (define (obj-slots o)
-    ((class-object-slots (object-ref o)) o))
+    (unbox (object-ref o)))
+  (define (slot-ref o p)
+    (unbox/prim-resolve ((class-object-slot-ref (unbox (object-ref o))) o p) o))
 
   (define (make-naming-constructor type name)
     (let-values ([(struct: make- ? -accessor -mutator)
@@ -69,7 +73,7 @@
 	    (unbox b))
 	  v)))
 
-  (define (make-prim-class struct:prim dispatch-prop prim-init name super old-mnames new-mnames methods)
+  (define (make-prim-class struct:prim prop:dispatch prim-init name super old-mnames new-mnames methods)
     (compose-class name (or super object%) null
 		   null          ;; rename
 		   null          ;; inherit
@@ -84,15 +88,16 @@
 			 (unless (and (pair? args)
 				      (eq? (car args) skip))
 			   (apply prim-init this args))
-			 ;; "define" all methods with lazy tokens:
-			 (let loop ([ms lazys]
-				    [l pub-defines+pub-mutables]) ; longer than ms
-			   (unless (null? ms)
-			     (let ([m (car ms)])
-			       (set-box! (car l) m))
-			     (loop (cdr ms) (cdr l)))))))
+			 (unless (null? pub-defines+pub-mutables)
+			   ;; "define" all methods with lazy tokens:
+			   (let loop ([ms lazys]
+				      [l pub-defines+pub-mutables]) ; longer than ms
+			     (unless (null? ms)
+			       (let ([m (car ms)])
+				 (set-box! (car l) m))
+			       (loop (cdr ms) (cdr l))))))))
 		   (box 0)
-		   (cons struct:prim dispatch-prop)))
+		   (list struct:prim prop:dispatch (list->vector methods))))
 
   (define-struct (exn:object struct:exn) ())
 
@@ -183,111 +188,128 @@
 				  (for-class name)))))
 		  ids))]
 	      [width (+ (class-width super) (length new-ids))]
-	      [dispatch-prop (and primitive (cdr primitive))])
-	  (let-values ([(struct:prim object-slots)
-			(cond
-			 [primitive
-			  (let-values ([(t make p a m)
-					(make-struct-type 'prim-object
-							  (car primitive)
-							  1 0 #f
-							  null insp)])
-			    (values t
-				    (make-struct-field-accessor a 0)))]
-			 [(class-struct:prim super)
-			  (values (class-struct:prim super)
-				  (class-object-slots super))]
-			 [else (values struct:obj
-				       (class-object-slots object%))])])
-	    (let ([define-indices (get-indices (append replace-ids new-ids))]
-		  [use-pre-indices (get-indices use-pre-ids)]
-		  [use-final-indices (get-indices use-final-ids)]
-		  [replace-indices (get-indices replace-ids)]
-		  [new-indices (get-indices new-ids)]
-		  [method-prim-vec (make-vector width (and primitive #t))])
+	      [prop:dispatch (or (and primitive (cadr primitive))
+				 (class-prop:dispatch super))]
+	      [methods (and primitive (caddr primitive))])
+	  (let ([define-indices (get-indices (append replace-ids new-ids))]
+		[use-pre-indices (get-indices use-pre-ids)]
+		[use-final-indices (get-indices use-final-ids)]
+		[replace-indices (get-indices replace-ids)]
+		[new-indices (get-indices new-ids)]
+		[method-prim-vec (make-vector width (and primitive #t))])
 
-	      ;; Copy super's method prim flags:
-	      (let ([svec (class-method-prim-vec super)])
-		(let loop ([i (class-width super)])
-		  (unless (zero? i)
-		    (let ([i (sub1 i)])
-		      (vector-set! method-prim-vec i (vector-ref svec i))
-		      (loop i)))))
-	      ;; If not prim, set prim-method flag for overridings
-	      (unless primitive
-		(for-each (lambda (i)
-			    (vector-set! method-prim-vec i #f))
-			  replace-indices))
+	    ;; Copy super's method prim flags:
+	    (let ([svec (class-method-prim-vec super)])
+	      (let loop ([i (class-width super)])
+		(unless (zero? i)
+		  (let ([i (sub1 i)])
+		    (vector-set! method-prim-vec i (vector-ref svec i))
+		    (loop i)))))
+	    ;; If not prim, set prim-method flag for overridings
+	    (unless primitive
+	      (for-each (lambda (i)
+			  (vector-set! method-prim-vec i #f))
+			replace-indices))
 
-	      ;; Check here that all interface ivars are satisfied
-	      (for-each
-	       (lambda (intf)
-		 (for-each
-		  (lambda (var)
-		    (unless (hash-table-get ht var (lambda () #f))
-		      (obj-error 'class*/names 
-				 "interface-required variable missing: ~a~a~a" 
-				 var
-				 (for-class name)
-				 (for-intf (interface-name intf)))))
-		  (interface-public-ids intf)))
-	       interfaces)
-	      (let ([c (get-implement-requirement interfaces 'class*/names (for-class name))])
-		(when (and c (not (subclass? super c)))
-		  (obj-error 'class*/names 
-			     "interface-required implementation not satisfied~a~a"
-			     (for-class name)
-			     (let ([r (class-name c)])
-			       (if r
-				   (format " required class: ~a" r)
-				   "")))))
-	      ;; Make the class and its interface
-	      (let* ([class-make (if name
-				     (make-naming-constructor 
-				      struct:class 
-				      (string->symbol (format "class:~a" name)))
-				     make-class)]
-		     [interface-make (if name
-					 (make-naming-constructor 
-					  struct:interface
-					  (string->symbol (format "interface:~a" name)))
-					 make-interface)]
-		     [public-ids (append super-public-ids new-ids)]
-		     [super-interfaces (cons (class-interface super) interfaces)]
-		     [i (interface-make name super-interfaces public-ids #f)]
-		     [c (class-make name
-				    'object-make object-slots width method-prim-vec
-				    (add1 (class-pos super))
-				    (list->vector (append (vector->list (class-supers super)) (list #f)))
-				    i
-				    ht public-ids
-				    use-pre-indices ;; rename
-				    define-indices  ;; override, public
-				    replace-indices ;; override
-				    (append use-final-indices replace-indices new-indices) ;; inherit, override, public
-				    go (if (box? go-arity)
-					   (make-arity-at-least (unbox go-arity))
-					   go-arity)
-				    (or struct:prim (class-struct:prim super))
-				    (and primitive #t))]
-		     [object-make (cond
-				   [struct:prim
-				    (let-values ([(t make p a m)
-						  (make-struct-type
-						   (if name 
-						       (string->symbol (format "object:~a" name))
-						       'object)
-						   struct:prim
-						   0 0 #f
-						   (list (cons prop:object c))
-						   insp)])
-				      make)]
-				   [name
-				    (make-naming-constructor 
-				     struct:obj
-				     (string->symbol (format "object:~a" name)))]
-				   [else make-obj])])
+	    ;; Check here that all interface ivars are satisfied
+	    (for-each
+	     (lambda (intf)
+	       (for-each
+		(lambda (var)
+		  (unless (hash-table-get ht var (lambda () #f))
+		    (obj-error 'class*/names 
+			       "interface-required variable missing: ~a~a~a" 
+			       var
+			       (for-class name)
+			       (for-intf (interface-name intf)))))
+		(interface-public-ids intf)))
+	     interfaces)
+	    (let ([c (get-implement-requirement interfaces 'class*/names (for-class name))])
+	      (when (and c (not (subclass? super c)))
+		(obj-error 'class*/names 
+			   "interface-required implementation not satisfied~a~a"
+			   (for-class name)
+			   (let ([r (class-name c)])
+			     (if r
+				 (format " required class: ~a" r)
+				 "")))))
+	    ;; Make the class and its interface
+	    (let* ([class-make (if name
+				   (make-naming-constructor 
+				    struct:class 
+				    (string->symbol (format "class:~a" name)))
+				   make-class)]
+		   [interface-make (if name
+				       (make-naming-constructor 
+					struct:interface
+					(string->symbol (format "interface:~a" name)))
+				       make-interface)]
+		   [public-ids (append super-public-ids new-ids)]
+		   [super-interfaces (cons (class-interface super) interfaces)]
+		   [i (interface-make name super-interfaces public-ids #f)]
+		   [struct:prim (or (and primitive (car primitive))
+				    (class-struct:prim super))]
+		   [c (class-make name
+				  'object-make 'object-slot-ref 'object-slot-set!
+				  width method-prim-vec
+				  (add1 (class-pos super))
+				  (list->vector (append (vector->list (class-supers super)) (list #f)))
+				  i
+				  ht public-ids
+				  use-pre-indices ;; rename
+				  define-indices  ;; override, public
+				  replace-indices ;; override
+				  (append use-final-indices replace-indices new-indices) ;; inherit, override, public
+				  go (if (box? go-arity)
+					 (make-arity-at-least (unbox go-arity))
+					 go-arity)
+				  struct:prim prop:dispatch
+				  (and primitive #t))]
+		   [obj-name (if name 
+				 (string->symbol (format "object:~a" name))
+				 'object)])
+	      (let-values ([(struct:object object-make object-slot-ref object-slot-set!)
+			    (let-values ([(t make p a m)
+					  (make-struct-type obj-name
+							    (or struct:prim #f)
+							    0 ;; No init fields
+							    ;; Unless prim, add uninit fields for slots:
+							    (if primitive
+								0
+								width)
+							    'uninitialized-slot ;; anything for uninit val
+							    (if primitive
+								;; Existing backbox is the one we want to set,
+								;;  no dispatcher needed
+								null
+								(append
+								 (if struct:prim
+								     ;; Need dispatcher
+								     (list (cons prop:dispatch
+										 (lambda (ivar-name)
+										   (let ([pos (hash-table-get ht ivar-name)])
+										     (if (vector-ref method-prim-vec pos)
+											 #f
+											 (lambda (o . args)
+											   (apply (slot-ref o pos) args)))))))
+								     null)
+								 ;; Add/override backbox:
+								 (list
+								  (cons prop:object (box #f)))))
+							    insp)])
+			      (values t
+				      make
+				      (if primitive
+					  ;; No slots - selector always manufactures a value
+					  (lambda (o p)
+					    (box (lambda r (apply (vector-ref methods p) o r))))
+					  ;; Normal object slots:
+					  a)
+				      m))])
+		(set-box! (object-ref struct:object) c)
 		(set-class-object-make! c object-make)
+		(set-class-object-slot-ref! c object-slot-ref)
+		(set-class-object-slot-set!! c object-slot-set!)
 		(vector-set! (class-supers c) (class-pos c) c)
 		(set-interface-class! i c)
 		c)))))))
@@ -341,12 +363,15 @@
   (define (make-object c . args)
     (unless (class? c)
       (apply raise-type-error 'make-object "class" 0 c args))
-    (let ([v (make-vector (class-width c))])
-      (let loop ([n (class-width c)])
-	(unless (= n 0)
-	  (vector-set! v (sub1 n) (box undefined))
-	  (loop (sub1 n))))
-      (let ([this ((class-object-make c) c v)])
+    (let ([this ((class-object-make c))])
+      (let ([slot-ref (class-object-slot-ref c)]
+	    [slot-set! (class-object-slot-set! c)]
+	    [making-prim? (class-immediate-primitive? c)])
+	(unless (class-immediate-primitive? c)
+	  (let loop ([n (class-width c)])
+	    (unless (= n 0)
+	      (slot-set! this (sub1 n) (box undefined))
+	      (loop (sub1 n)))))
 	(let ([setup (let setup-class ([c c])
 		       (if (zero? (class-pos c))
 			   (lambda ()
@@ -355,18 +380,24 @@
 						    (sub1 (class-pos c)))])
 			     (let ([super-setup (setup-class super)])
 			       (let ([old-boxes (map (lambda (i)
-						       (vector-ref v i))
+						       (slot-ref this i))
 						     (class-init-old-indices c))])
 				 (for-each (lambda (i)
-					     (vector-set! v i (box undefined)))
-					   (class-replace-indices c))
+					     (slot-set! this i (box undefined)))
+					   (if making-prim?
+					       null
+					       (class-replace-indices c)))
 				 (let ([define-boxes (map (lambda (i)
-							    (vector-ref v i))
-							  (class-init-define-indices c))])
+							    (slot-ref this i))
+							  (if making-prim?
+							      null
+							      (class-init-define-indices c)))])
 				   (lambda ()
 				     (let ([new-boxes (map (lambda (i)
-							     (vector-ref v i))
-							   (class-init-new-indices c))]
+							     (slot-ref this i))
+							   (if making-prim?
+							       null
+							       (class-init-new-indices c)))]
 					   [super-init (super-setup)]
 					   [super-called? #f])
 				       (letrec ([init (apply
@@ -380,7 +411,8 @@
 							 (set! super-called? #t)
 							 (apply super-init args)
 							 ;; Force lazy method boxes that might be used directly:
-							 (unless (class-immediate-primitive? c)
+							 (when (and (class-struct:prim c)
+								    (not (class-immediate-primitive? c)))
 							   (for-each (lambda (b) (unbox/prim-resolve b this)) old-boxes)
 							   (for-each (lambda (b) (unbox/prim-resolve b this)) new-boxes)))
 						       (append
@@ -453,32 +485,21 @@
   (define (ivar/proc o n)
     (unless (object? o)
       (raise-type-error 'ivar/proc "object" 0 o n))
-    (let ([fail
-	   (lambda (c)
-	     (begin
+    (let ([c (obj-class o)])
+      (let ([p (hash-table-get
+		(class-public-ht c)
+		n
+		(lambda () #f))])
+	(if p
+	    (slot-ref o p)
+	    (begin
 	       (unless (symbol? n)
 		 (raise-type-error 'ivar/proc "symbol" 1 o n))
 	       (obj-error 'ivar 
 			  "instance variable not found: ~e~a in: ~e" 
 			  n 
 			  (for-class (class-name c))
-			  o)))])
-      (if (pobject? o)
-	  ;; Primitive object without slot table
-	  (let ([pc (prim-obj->prim-class o)])
-	    (let ([m (and (symbol? n)
-			  (prim-find-method pc n))])
-	      (if m
-		  (lambda args (apply m o args))
-		  (fail (p+obj-class o)))))
-	  ;; Normal object
-	  (let ([p (hash-table-get
-		    (class-public-ht (+obj-class o))
-		    n
-		    (lambda () #f))])
-	    (if p
-		(unbox/prim-resolve (vector-ref (obj-slots o) p) o)
-		(fail (+obj-class o)))))))
+			  o))))))
   
   (define-syntax ivar
     (lambda (stx)
@@ -517,7 +538,7 @@
 	      (lambda (o)
 		(unless (is-a? o c)
 		  (let ([name (string->symbol (format "generic~a" (for-class (class-name c))))])
-		    (if (+object? o)
+		    (if (object? o)
 			(obj-error name
 				   "object not an instance of the generic's class: ~e"
 				   o)
@@ -525,7 +546,7 @@
 			 name
 			 "object"
 			 o))))
-		(unbox/prim-resolve (vector-ref (obj-slots o) p) o))
+		(slot-ref o p))
 	      (obj-error 'make-generic 
 			 "instance variable not found: ~e~a" 
 			 n 
@@ -539,7 +560,7 @@
 	  (lambda (o)
 	    (unless (is-a? o c)
 	      (let ([name (string->symbol (format "generic~a" (for-intf (interface-name c))))])
-		(if (+object? o)
+		(if (object? o)
 		    (obj-error name
 			       "object not an instance of the generic's interface: ~e"
 			       o)
@@ -969,4 +990,4 @@
 	  object% ;; object<%>
 	  exn:object? struct:exn:object make-exn:object
 
-	  make-prim-class))
+	  prop:object make-prim-class))

@@ -84,10 +84,10 @@ test-file:
 	rm -f $(srcdir)/../../../tests/mred/tests.ss
 	$(MAKE) $(srcdir)/../../../tests/mred/tests.ss
 
-kernel.ss : $(srcdir)/../../../collects/mred/kernel.ss 
+kernel.ss : $(srcdir)/../../../collects/mred/private/kernel.ss 
 
-$(srcdir)/../../../collects/mred/kernel.ss : $(SSDESCS) $(srcdir)/khead.ss $(srcdir)/ktail.ss 
-	cat $(srcdir)/khead.ss $(SSDESCS) $(srcdir)/ktail.ss > $(srcdir)/../../../collects/mred/kernel.ss
+$(srcdir)/../../../collects/mred/private/kernel.ss : $(SSDESCS) $(srcdir)/khead.ss $(srcdir)/ktail.ss 
+	cat $(srcdir)/khead.ss $(SSDESCS) $(srcdir)/ktail.ss > $(srcdir)/../../../collects/mred/private/kernel.ss
 
 ccsources: $(SOURCES)
 

@@ -38,8 +38,6 @@
 @SYM "slant" : wxSLANT
 @ENDSYMBOLS
 
-#define USE_FONT_NAME_DIRECTORY 1
-
 /* Not used, anyway: */
 #if defined(wx_mac) || defined(wx_xt)
 # define COLORMAP_CREATE 0
@@ -71,9 +69,7 @@
 @CREATOR ();
 
 @ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
-
-@CONSTANT "the-font-list" : wxFontList! wxTheFontList
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
 
 @END
 
@@ -115,8 +111,6 @@
 @VAR CDB_FIX
 
 @ "find-color" : wxColour^ FindColour(string);
-
-@CONSTANT "the-color-database" : wxColourDatabase! wxTheColourDatabase
 
 @END
 
@@ -169,8 +163,6 @@
 
 @ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,SYM[brushStyle]); <> color%
 @ "find-or-create-brush" : wxBrush^ FindOrCreateBrush(string,SYM[brushStyle]); <> color name
-
-@CONSTANT "the-brush-list" : wxBrushList! wxTheBrushList
 
 @END
 
@@ -236,8 +228,6 @@
 
 @ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rfloat[0|255],SYM[penStyle]); <> color%
 @ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rfloat[0|255],SYM[penStyle]); <> color name
-
-@CONSTANT "the-pen-list" : wxPenList! wxThePenList
 
 @END
 
@@ -326,8 +316,6 @@ static void *RgnBoundingBox(wxRegion *r)
 @END
 
 
-#if USE_FONT_NAME_DIRECTORY
-
 static inline int Identity(wxFontNameDirectory *, int v)
 {
   return v;
@@ -349,8 +337,39 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @ "find-or-create-font-id" : int FindOrCreateFontId(cstring,SYM[family]);
 @ m "find-family-default-font-id" : int Identity(SYM[family]);
 
-@CONSTANT "the-font-name-directory" : wxFontNameDirectory! wxTheFontNameDirectory
-
 @END
 
-#endif
+static wxColourDatabase* wxGetTheColourDatabase()
+{
+ return wxTheColourDatabase;
+}
+
+static wxBrushList* wxGetTheBrushList()
+{
+ return wxTheBrushList;
+}
+
+static wxPenList* wxGetThePenList()
+{
+ return wxThePenList;
+}
+
+static wxFontList* wxGetTheFontList()
+{
+ return wxTheFontList;
+}
+
+static wxFontNameDirectory* wxGetTheFontNameDirectory()
+{
+ return wxTheFontNameDirectory;
+}
+
+@GLOBAL wxGDIGlobal 
+
+@ "get-the-color-database" : wxColourDatabase! wxGetTheColourDatabase()
+@ "get-the-brush-list" : wxBrushList! wxGetTheBrushList()
+@ "get-the-pen-list" : wxPenList! wxGetThePenList()
+@ "get-the-font-list" : wxFontList! wxGetTheFontList()
+@ "get-the-font-name-directory" : wxFontNameDirectory! wxGetTheFontNameDirectory()
+
+@END

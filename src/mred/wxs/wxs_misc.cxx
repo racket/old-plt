@@ -341,7 +341,6 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 
 
-
 class os_wxClipboard : public wxClipboard {
  public:
 
@@ -557,9 +556,6 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxClipboard_interface, "clipboard" "<%>", env));
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxClipboard(wxTheClipboard));
-  WITH_VAR_STACK(scheme_install_xc_global("the-clipboard", xcconsttmp, env));
 }
 
 int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullOK)
@@ -617,6 +613,39 @@ class wxClipboard *objscheme_unbundle_wxClipboard(Scheme_Object *obj, const char
     return (wxClipboard *)o->primdata;
 }
 
+
+static wxClipboard* wxGetTheClipboard()
+{
+  return wxTheClipboard;
+}
+
+static Scheme_Object *wxClipboardGlobalwxGetTheClipboard(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxClipboard* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheClipboard());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxClipboard(r));
+}
+
+void objscheme_setup_wxClipboardGlobal(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxClipboardGlobalwxGetTheClipboard, "get-the-clipboard", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-clipboard", functmp, env));
+}
 
 
 

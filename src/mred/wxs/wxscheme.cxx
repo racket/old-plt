@@ -1842,6 +1842,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxFont(global_env);
   objscheme_setup_wxFontList(global_env);
   objscheme_setup_wxFontNameDirectory(global_env);
+  objscheme_setup_wxGDIGlobal(global_env);
   objscheme_setup_wxItem(global_env);
   objscheme_setup_wxMessage(global_env);
   objscheme_setup_wxButton(global_env);
@@ -1894,17 +1895,20 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxMediaStreamIn(global_env);
   objscheme_setup_wxMediaStreamOut(global_env);
   objscheme_setup_wxMediaWordbreakMap(global_env);
+  objscheme_setup_wxGlobalMediaWordbreakMap(global_env);
   objscheme_setup_wxAddColour(global_env);
   objscheme_setup_wxMultColour(global_env);
   objscheme_setup_wxStyleDelta(global_env);
   objscheme_setup_wxStyle(global_env);
   objscheme_setup_wxStyleList(global_env);
+  objscheme_setup_wxGlobalStyleList(global_env);
 #if 0
   objscheme_setup_baseMetaFile(global_env);
   objscheme_setup_baseMetaFileDC(global_env);
 #endif
   objscheme_setup_wxTimer(global_env);
   objscheme_setup_wxClipboard(global_env);
+  objscheme_setup_wxClipboardGlobal(global_env);
   objscheme_setup_wxClipboardClient(global_env);
   objscheme_setup_wxPrintSetupData(global_env);
 

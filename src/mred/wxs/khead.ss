@@ -17,6 +17,8 @@
     (dynamic-require '#%mred-kernel 'primitive-class->method-vector))
   (define kernel:primitive-class->struct-type
     (dynamic-require '#%mred-kernel 'primitive-class->struct-type))
+  (define kernel:primitive-class-prepare-struct-type!
+    (dynamic-require '#%mred-kernel 'primitive-class-prepare-struct-type!))
   (define kernel:dispatcher-property
     (dynamic-require '#%mred-kernel 'dispatcher-property))
 
@@ -88,6 +90,7 @@
 			       [(new ...) (datum->syntax new #f #f)])
 		   (syntax
 		    (define name (let ([c (dynamic-require '#%mred-kernel 'name)])
+				   (kernel:primitive-class-prepare-struct-type! c prop:object)
 				   (make-prim-class
 				    (kernel:primitive-class->struct-type c)
 				    kernel:dispatcher-property

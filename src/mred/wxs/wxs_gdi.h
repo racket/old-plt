@@ -9,7 +9,6 @@ extern Scheme_Object *objscheme_bundle_wxFont(class wxFont *);
 #endif
 void objscheme_setup_wxFontList(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *);
 int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *realobj);
 class wxFontList *objscheme_unbundle_wxFontList(Scheme_Object *obj, const char *where, int nullOK);
@@ -25,7 +24,6 @@ extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 #endif
 void objscheme_setup_wxColourDatabase(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *);
 int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *realobj);
 class wxColourDatabase *objscheme_unbundle_wxColourDatabase(Scheme_Object *obj, const char *where, int nullOK);
@@ -54,7 +52,6 @@ extern Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *);
 #endif
 void objscheme_setup_wxBrushList(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *);
 int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *realobj);
 class wxBrushList *objscheme_unbundle_wxBrushList(Scheme_Object *obj, const char *where, int nullOK);
@@ -77,7 +74,6 @@ extern Scheme_Object *objscheme_bundle_wxPen(class wxPen *);
 #endif
 void objscheme_setup_wxPenList(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *);
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *realobj);
 class wxPenList *objscheme_unbundle_wxPenList(Scheme_Object *obj, const char *where, int nullOK);
@@ -101,8 +97,15 @@ class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *wher
 #endif
 void objscheme_setup_wxFontNameDirectory(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *);
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *realobj);
 class wxFontNameDirectory *objscheme_unbundle_wxFontNameDirectory(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_wxFontNameDirectory(class wxFontNameDirectory *);
+extern Scheme_Object *objscheme_bundle_wxFontList(class wxFontList *);
+extern Scheme_Object *objscheme_bundle_wxPenList(class wxPenList *);
+extern Scheme_Object *objscheme_bundle_wxBrushList(class wxBrushList *);
+extern Scheme_Object *objscheme_bundle_wxColourDatabase(class wxColourDatabase *);
+#endif
+void objscheme_setup_wxGDIGlobal(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif

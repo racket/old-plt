@@ -216,8 +216,6 @@
 @ "index-to-style" : wxStyle^ IndexToStyle(nnint);
 @ "style-to-index" : int/bNegAsFalse StyleToIndex(wxStyle!);
 
-@CONSTANT "the-style-list" : wxStyleList! wxTheStyleList
-
 static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 
 @MACRO ubCallback = (wxStyleNotifyFunc)NotifyCallbackToScheme
@@ -245,3 +243,11 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
 }
 
+static wxStyleList* wxGetTheStyleList()
+{
+  return wxTheStyleList;
+}
+
+@GLOBAL wxGlobalStyleList
+@ "get-the-style-list" : wxStyleList! wxGetTheStyleList()
+@END

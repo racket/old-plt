@@ -70,8 +70,11 @@ extern Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *);
 #endif
 void objscheme_setup_wxStyleList(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *);
 int objscheme_istype_wxStyleList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *realobj);
 class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *);
+#endif
+void objscheme_setup_wxGlobalStyleList(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif

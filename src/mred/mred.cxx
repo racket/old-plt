@@ -2642,7 +2642,7 @@ static Scheme_Env *setup_basic_env()
 
   /* Make sure ps-setup is installed in the parameterization */
   ps_ready = 1;
-  wxSetThePrintSetupData(wxGetThePrintSetupData());
+  /* wxSetThePrintSetupData(wxGetThePrintSetupData()); */
 
   MakeContext(mred_main_context, NULL);
 

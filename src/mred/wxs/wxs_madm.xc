@@ -282,7 +282,14 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 @ "set-map" : void SetMap(uchar,SYM[breakType]);
 @ "get-map" : SYM[breakType] GetMap(uchar);
 
-@CONSTANT "the-editor-wordbreak-map" : wxMediaWordbreakMap! wxTheMediaWordbreakMap
+@END
 
+static wxMediaWordbreakMap* wxGetTheMediaWordbreakMap()
+{
+  return wxTheMediaWordbreakMap;
+}
+
+@GLOBAL wxGlobalMediaWordbreakMap
+@ "get-the-editor-wordbreak-map" : wxMediaWordbreakMap! wxGetTheMediaWordbreakMap()
 @END
 

@@ -80,10 +80,16 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "set-clipboard-bitmap" : void SetClipboardBitmap(wxBitmap!,ExactLong);
 @ "get-clipboard-bitmap" : wxBitmap^ GetClipboardBitmap(ExactLong);
 
-@CONSTANT "the-clipboard" : wxClipboard^ wxTheClipboard
-
 @END
 
+static wxClipboard* wxGetTheClipboard()
+{
+  return wxTheClipboard;
+}
+
+@GLOBAL wxClipboardGlobal
+@ "get-the-clipboard" : wxClipboard^ wxGetTheClipboard()
+@END
 
 @MACRO setStringSize[cn] = if (SCHEME_STRINGP(v)) (*x<cn>) = SCHEME_STRTAG_VAL(v);
 @MACRO identity = {x}

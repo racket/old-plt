@@ -340,18 +340,23 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *prop_pred(Scheme_Object *prop, int argc, Scheme_Object **args)
 {
-  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
-    Scheme_Struct_Type *stype = ((Scheme_Structure *)args[0])->stype;
+  Scheme_Struct_Type *stype;
 
-    if (stype->props_ht) {
-      if (scheme_lookup_in_table(stype->props_ht, (char *)prop))
+  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+    stype = ((Scheme_Structure *)args[0])->stype;
+  else if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_struct_type_type))
+    stype = (Scheme_Struct_Type *)args[0];
+  else
+      return scheme_false;
+
+  if (stype->props_ht) {
+    if (scheme_lookup_in_table(stype->props_ht, (char *)prop))
+      return scheme_true;
+  } else {
+    int i;
+    for (i = stype->num_props; i--; ) {
+      if (SAME_OBJ(SCHEME_CAR(stype->props[i]), prop))
 	return scheme_true;
-    } else {
-      int i;
-      for (i = stype->num_props; i--; ) {
-	if (SAME_OBJ(SCHEME_CAR(stype->props[i]), prop))
-	  return scheme_true;
-      }
     }
   }
    
@@ -360,9 +365,16 @@ static Scheme_Object *prop_pred(Scheme_Object *prop, int argc, Scheme_Object **a
 
 static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object **args)
 {
-  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
-    Scheme_Struct_Type *stype = ((Scheme_Structure *)args[0])->stype;
+  Scheme_Struct_Type *stype;
 
+  if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+    stype = ((Scheme_Structure *)args[0])->stype;
+  else if (SAME_TYPE(SCHEME_TYPE(args[0]), scheme_struct_type_type))
+    stype = (Scheme_Struct_Type *)args[0];
+  else
+    stype = NULL;
+
+  if (stype) {
     if (stype->props_ht) {
       Scheme_Object *v;
       v = (Scheme_Object *)scheme_lookup_in_table(stype->props_ht, (char *)prop);
@@ -378,7 +390,9 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
   }
   
   if (argc < 2) /* hack; see scheme_struct_type_property_ref */
-    scheme_wrong_type("property accessor", "...", 0, argc, args);
+    scheme_wrong_type("property accessor", 
+		      "struct or struct-type with property", 
+		      0, argc, args);
   return NULL;
 }
 
@@ -571,18 +585,31 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
     pos += i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots;
   
   if (pos >= i->struct_type->num_slots) {
+    int sc;
+
     if (!who)
       who = scheme_symbol_name(i->func_name);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
-		     "%s: slot index for <%S> not in [0, %d]: %V",
-		     who,
-		     i->struct_type->type_name,
-		     (i->struct_type->name_pos
-		      ? (i->struct_type->num_slots
-			 - i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots)
-		      : i->struct_type->num_slots) - 1,
-		     args[1]);
+    sc = (i->struct_type->name_pos
+	  ? (i->struct_type->num_slots
+	     - i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots)
+	  : i->struct_type->num_slots);
+
+    if (!sc) {
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
+		       "%s: no slots in <%S>; given index: %V",
+		       who,
+		       i->struct_type->type_name,
+		       args[1]);
+    } else {
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
+		       "%s: slot index for <%S> not in [0, %d]: %V",
+		       who,
+		       i->struct_type->type_name,
+		       sc - 1,
+		       args[1]);
+    }
+
     return 0;
   }
 
@@ -1416,16 +1443,11 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       /* Add new props: */
       for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	a = SCHEME_CAR(l);
-	if (scheme_lookup_in_table(ht, (char *)SCHEME_CAR(a))) {
-	  /* Property is already in the superstruct_type */
-	  break;
-	}
 	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
       }
     } else {
       /* Make props array: */
       Scheme_Object **pa;
-      int j;
 
       i = struct_type->num_props;
       
@@ -1434,26 +1456,12 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 
       for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
 	a = SCHEME_CAR(l);
-	
-	for (j = 0; j < i; j++) {
-	  if (SAME_OBJ(SCHEME_CAR(pa[j]), SCHEME_CAR(a)))
-	    break;
-	}
-	if (j < i)
-	  break;
-
 	a = scheme_make_pair(SCHEME_CAR(a), SCHEME_CDR(a));
 	pa[i] = a;
       }
       
       struct_type->num_props += num_props;
       struct_type->props = pa;
-    }
-
-    if (!SCHEME_NULLP(l)) {
-      /* SCHEME_CAR(l) is a duplicate */
-      a = SCHEME_CAR(l);
-      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
     }
   }
 

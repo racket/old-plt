@@ -255,8 +255,6 @@ static Scheme_Object *bundle_symset_style(int v) {
 }
 
 
-#define USE_FONT_NAME_DIRECTORY 1
-
 /* Not used, anyway: */
 #if defined(wx_mac) || defined(wx_xt)
 # define COLORMAP_CREATE 0
@@ -640,7 +638,6 @@ class wxFont *objscheme_unbundle_wxFont(Scheme_Object *obj, const char *where, i
 
 
 
-
 class os_wxFontList : public wxFontList {
  public:
 
@@ -710,7 +707,6 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     
     
   } else  {
-#if  USE_FONT_NAME_DIRECTORY
     int x0;
     cstring x1 INIT_NULLED_OUT;
     int x2;
@@ -741,9 +737,6 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
 
     
     
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "find-or-create-font in font-list% (font name case)");
-#endif
   }
 
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
@@ -787,17 +780,12 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
 
   os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1));
 
-#if  USE_FONT_NAME_DIRECTORY
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font", os_wxFontListFindOrCreateFont, 4, 6));
-#endif
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));
 
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxFontList(wxTheFontList));
-  WITH_VAR_STACK(scheme_install_xc_global("the-font-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1214,7 +1202,6 @@ class wxColour *objscheme_unbundle_wxColour(Scheme_Object *obj, const char *wher
 
 
 
-
 class os_wxColourDatabase : public wxColourDatabase {
  public:
   CDB_FIX
@@ -1285,9 +1272,6 @@ void objscheme_setup_wxColourDatabase(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env));
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxColourDatabase(wxTheColourDatabase));
-  WITH_VAR_STACK(scheme_install_xc_global("the-color-database", xcconsttmp, env));
 }
 
 int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2043,7 +2027,6 @@ class wxBrush *objscheme_unbundle_wxBrush(Scheme_Object *obj, const char *where,
 
 
 
-
 class os_wxBrushList : public wxBrushList {
  public:
 
@@ -2173,9 +2156,6 @@ void objscheme_setup_wxBrushList(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxBrushList_class));
 
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxBrushList(wxTheBrushList));
-  WITH_VAR_STACK(scheme_install_xc_global("the-brush-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2906,7 +2886,6 @@ class wxPen *objscheme_unbundle_wxPen(Scheme_Object *obj, const char *where, int
 
 
 
-
 class os_wxPenList : public wxPenList {
  public:
 
@@ -3040,9 +3019,6 @@ void objscheme_setup_wxPenList(Scheme_Env *env)
   WITH_VAR_STACK(scheme_made_class(os_wxPenList_class));
 
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxPenList(wxThePenList));
-  WITH_VAR_STACK(scheme_install_xc_global("the-pen-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3959,13 +3935,10 @@ class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *wher
 
 
 
-#if USE_FONT_NAME_DIRECTORY
-
 static inline int Identity(wxFontNameDirectory *, int v)
 {
   return v;
 }
-
 
 
 
@@ -4250,9 +4223,6 @@ void objscheme_setup_wxFontNameDirectory(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env));
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxFontNameDirectory(wxTheFontNameDirectory));
-  WITH_VAR_STACK(scheme_install_xc_global("the-font-name-directory", xcconsttmp, env));
 }
 
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4311,4 +4281,142 @@ class wxFontNameDirectory *objscheme_unbundle_wxFontNameDirectory(Scheme_Object 
 }
 
 
-#endif
+static wxColourDatabase* wxGetTheColourDatabase()
+{
+ return wxTheColourDatabase;
+}
+
+static wxBrushList* wxGetTheBrushList()
+{
+ return wxTheBrushList;
+}
+
+static wxPenList* wxGetThePenList()
+{
+ return wxThePenList;
+}
+
+static wxFontList* wxGetTheFontList()
+{
+ return wxTheFontList;
+}
+
+static wxFontNameDirectory* wxGetTheFontNameDirectory()
+{
+ return wxTheFontNameDirectory;
+}
+
+
+
+static Scheme_Object *wxGDIGlobalwxGetTheFontNameDirectory(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFontNameDirectory* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheFontNameDirectory());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFontNameDirectory(r));
+}
+
+static Scheme_Object *wxGDIGlobalwxGetTheFontList(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFontList* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheFontList());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFontList(r));
+}
+
+static Scheme_Object *wxGDIGlobalwxGetThePenList(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxPenList* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetThePenList());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxPenList(r));
+}
+
+static Scheme_Object *wxGDIGlobalwxGetTheBrushList(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxBrushList* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheBrushList());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrushList(r));
+}
+
+static Scheme_Object *wxGDIGlobalwxGetTheColourDatabase(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxColourDatabase* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheColourDatabase());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColourDatabase(r));
+}
+
+void objscheme_setup_wxGDIGlobal(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheFontNameDirectory, "get-the-font-name-directory", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-font-name-directory", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheFontList, "get-the-font-list", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-font-list", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetThePenList, "get-the-pen-list", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-pen-list", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheBrushList, "get-the-brush-list", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-brush-list", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheColourDatabase, "get-the-color-database", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-color-database", functmp, env));
+}
+

@@ -12,10 +12,13 @@ extern class wxClipboardClient *objscheme_unbundle_wxClipboardClient(Scheme_Obje
 #endif
 void objscheme_setup_wxClipboard(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *);
 int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj);
 class wxClipboard *objscheme_unbundle_wxClipboard(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *);
+#endif
+void objscheme_setup_wxClipboardGlobal(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif
 void objscheme_setup_wxClipboardClient(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

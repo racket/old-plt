@@ -4531,7 +4531,6 @@ static Scheme_Object *bundle_symset_breakType(int v) {
 
 
 
-
 class os_wxMediaWordbreakMap : public wxMediaWordbreakMap {
  public:
 
@@ -4655,9 +4654,6 @@ void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaWordbreakMap, wxTYPE_WORDBREAK_MAP));
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxMediaWordbreakMap(wxTheMediaWordbreakMap));
-  WITH_VAR_STACK(scheme_install_xc_global("the-editor-wordbreak-map", xcconsttmp, env));
 }
 
 int objscheme_istype_wxMediaWordbreakMap(Scheme_Object *obj, const char *stop, int nullOK)
@@ -4713,6 +4709,40 @@ class wxMediaWordbreakMap *objscheme_unbundle_wxMediaWordbreakMap(Scheme_Object 
     return (os_wxMediaWordbreakMap *)o->primdata;
   else
     return (wxMediaWordbreakMap *)o->primdata;
+}
+
+
+static wxMediaWordbreakMap* wxGetTheMediaWordbreakMap()
+{
+  return wxTheMediaWordbreakMap;
+}
+
+static Scheme_Object *wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxMediaWordbreakMap* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheMediaWordbreakMap());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaWordbreakMap(r));
+}
+
+void objscheme_setup_wxGlobalMediaWordbreakMap(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-editor-wordbreak-map", functmp, env));
 }
 
 

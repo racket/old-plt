@@ -107,8 +107,11 @@ class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *obj, const char *wher
 #endif
 void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbreakMap *);
 int objscheme_istype_wxMediaWordbreakMap(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbreakMap *realobj);
 class wxMediaWordbreakMap *objscheme_unbundle_wxMediaWordbreakMap(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_wxMediaWordbreakMap(class wxMediaWordbreakMap *);
+#endif
+void objscheme_setup_wxGlobalMediaWordbreakMap(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif

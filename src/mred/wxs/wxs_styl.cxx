@@ -2843,7 +2843,6 @@ class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where,
 
 
 
-
 static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 
 
@@ -3218,9 +3217,6 @@ void objscheme_setup_wxStyleList(Scheme_Env *env)
 
   WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyleList, wxTYPE_STYLE_LIST));
 
-  Scheme_Object *xcconsttmp INIT_NULLED_OUT;
-  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxStyleList(wxTheStyleList));
-  WITH_VAR_STACK(scheme_install_xc_global("the-style-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxStyleList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3288,5 +3284,38 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   p[0] = s ? WITH_VAR_STACK(objscheme_bundle_wxStyle(s)) : scheme_false;
 
   WITH_VAR_STACK(scheme_apply_multi(f, 1, p));
+}
+
+static wxStyleList* wxGetTheStyleList()
+{
+  return wxTheStyleList;
+}
+
+static Scheme_Object *wxGlobalStyleListwxGetTheStyleList(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxStyleList* r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetTheStyleList());
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxStyleList(r));
+}
+
+void objscheme_setup_wxGlobalStyleList(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalStyleListwxGetTheStyleList, "get-the-style-list", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-the-style-list", functmp, env));
 }
 

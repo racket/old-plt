@@ -115,8 +115,6 @@ static void *mark_stack[MARK_STACK_MAX];
 static unsigned short mark_stack_type[MARK_STACK_MAX];
 static long mark_stack_pos = 0;
 
-static long full_mark_stack_pos = MARK_STACK_MAX;
-
 #if KEEP_BACKPOINTERS
 # undef RECORD_MARK_SRC
 # define RECORD_MARK_SRC 1
@@ -3919,6 +3917,7 @@ void *GC_resolve(void *p)
 
 void *GC_fixup_self(void *p)
 {
+  return p;
 }
 
 /******************************************************************************/

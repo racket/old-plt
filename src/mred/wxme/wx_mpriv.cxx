@@ -2254,7 +2254,7 @@ void wxMediaEdit::Redraw()
   float fy, fx;
   Bool oneline;
   wxDC *dc;
-  Bool needs_update = FALSE;
+  Bool needs_update = TRUE;
 
   if (flowLocked || !admin)
     return;

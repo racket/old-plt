@@ -1,4 +1,4 @@
-(dunit/sig framework:exn^
+(unit/sig framework:exn^
   (import)
 
   (rename [struct:-exn struct:exn]

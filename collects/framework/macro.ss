@@ -1,25 +1,5 @@
 (require-library "match.ss")
 
-(define-macro trace-methods 
-  (lambda methods
-    (let ([super 
-	   (lambda (method)
-	     (string->symbol 
-	      (string-append "super-"
-			     (symbol->string method))))])
-      `(lambda (%)
-	 (class-asi %
-	   (rename ,@(map (lambda (method)
-			    `(,(super method) ,method))
-			  methods))
-	   (public
-	     ,@(map (lambda (method)
-		      `[,method
-			(lambda args
-			  (printf "trace:: ~a~n" (list* 'send this ',method args))
-			  (apply ,(super method) args))])
-		    methods)))))))
-
 (define-macro mixin
   (lambda (from to args . clauses)
     (unless (and (list? from) (list? to))
@@ -81,26 +61,4 @@
 
 	   (class* ,super-g ,to-gs ,args
 	     ,@clauses)))))))
-
-(define-macro dunit/sig
-  (let ([debugging? #f])
-    (if debugging?
-	(begin
-	  (require-library "loader.ss" "system")
-	  (lambda (sig imports . args)
-	    (let-values ([(before-args args)
-			  (if (and (pair? args)
-				   (pair? (car args))
-				   (eq? (caar args) 'rename))
-			      (values (list (car args))
-				      (cdr args))
-			      (values null args))])
-	      
-	      `(unit/sig ,sig ,imports
-			 ,@(append before-args
-				   (list `(fprintf (current-error-port) "invoking unit with ~a signature~n" ',sig))
-				   args
-				   (list `(fprintf (current-error-port) "invoked  unit with ~a signature~n" ',sig)))))))
-	(lambda args
-	  `(unit/sig ,@args)))))
   

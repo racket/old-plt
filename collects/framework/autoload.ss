@@ -1,4 +1,4 @@
-(dunit/sig framework:autoload^
+(unit/sig framework:autoload^
   (import [preferences : framework:preferences^]
 	  [mzlib:file : mzlib:file^])
 

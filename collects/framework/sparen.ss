@@ -1,7 +1,6 @@
-
 ; Scheme parenthesis wrappers around the general routines
 
-(dunit/sig framework:scheme-paren^
+(unit/sig framework:scheme-paren^
   (import [paren : framework:paren^])
 
   ;; for now the scheme mode assumes that these are all one character long.

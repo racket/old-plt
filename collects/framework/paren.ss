@@ -2,7 +2,7 @@
 ; originally by Dan Grossman: 6/19/95
 ; rewitten by Matthew: 1/28/98
 
-(dunit/sig framework:paren^
+(unit/sig framework:paren^
   (import)
   
   (define skip-whitespace

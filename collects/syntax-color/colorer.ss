@@ -29,7 +29,7 @@
 
       ;; If the tree is completed
       (define up-to-date? #t)
-      
+      (define up-to-date-sema (make-semaphore 1))
       
       ;; ---------------------- Interactions state ----------------------------
       ;; The position to start the coloring at.
@@ -155,10 +155,13 @@
                            (split tokens (- edit-start-pos start-pos))))
                (set! invalid-tokens invalid-tree)
                (set! tokens valid-tree)
-               (set! invalid-tokens-start (+ start-pos orig-token-end change-length))
-               (set! current-pos (+ start-pos orig-token-start)))
-             (set! up-to-date? #f)
-             (colorer-callback))
+               (set! invalid-tokens-start 
+                     (cond
+                       (invalid-tree (+ start-pos orig-token-end change-length))
+                       (else +inf.0)))
+               (set! current-pos (+ start-pos orig-token-start))
+               (set! up-to-date? #f)
+               (colorer-callback)))
             ((>= edit-start-pos invalid-tokens-start)
              (let-values (((tok-start tok-end valid-tree invalid-tree)
                            (split invalid-tokens (- edit-start-pos invalid-tokens-start))))
@@ -202,10 +205,12 @@
       
       (define (colorer-callback)
         (channel-put sync #f)
-        (sleep .01)
+        (sleep .01)    ;; This is when the background thread is working.
+        (semaphore-wait up-to-date-sema)
         (unless up-to-date?
           (break-thread background-thread)
           (channel-get sync))
+        (semaphore-post up-to-date-sema)
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
@@ -236,8 +241,10 @@
                                                 end-pos))
                (break-enabled #t)
                (re-tokenize)
+               (semaphore-wait up-to-date-sema)  ;;Can't be broken inside here
                (set! up-to-date? #t)
                (set! in #f)
+               (semaphore-post up-to-date-sema)
                #t))));)
       
       

@@ -2804,7 +2804,7 @@ static Scheme_Object *
 local_module_introduce(int argc, Scheme_Object *argv[])
 {
   Scheme_Comp_Env *env;
-  Scheme_Object *s;
+  Scheme_Object *s, *v;
 
   env = scheme_current_thread->current_local_env;
   if (!env)
@@ -2815,11 +2815,15 @@ local_module_introduce(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(s))
     scheme_wrong_type("syntax-local-module-introduce", "syntax", 0, argc, argv);
 
-  if (env->genv->rename) {
-    s = scheme_add_rename(s, env->genv->rename);
-  }
-  if (env->genv->et_rename) {
-    s = scheme_add_rename(s, env->genv->et_rename);
+  if (env->genv->module) {
+    if (!SAME_OBJ(scheme_true, env->genv->module->rn_stx)) {
+      v = scheme_stx_to_rename(env->genv->module->rn_stx);
+      s = scheme_add_rename(s, v);
+    }
+    if (!SAME_OBJ(scheme_true, env->genv->module->et_rn_stx)) {
+      v = scheme_stx_to_rename(env->genv->module->et_rn_stx);
+      s = scheme_add_rename(s, v);
+    }
   }
 
   return s;

@@ -2886,6 +2886,18 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   rn = env->genv->rename;
   et_rn = env->genv->et_rename;
 
+  /* rename tables no longer needed; NULL them out */
+  env->genv->rename = NULL;
+  env->genv->et_rename = NULL;
+
+  {
+    Scheme_Object *v;
+    v = scheme_rename_to_stx(rn);
+    env->genv->module->rn_stx = v;
+    v = scheme_rename_to_stx(et_rn);
+    env->genv->module->et_rn_stx = v;
+  }
+
   tables[0] = env->genv->toplevel;
   tables[1] = required;
   tables[2] = env->genv->syntax;
@@ -3392,10 +3404,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   }
   /* first =  a list of expanded/compiled expressions */
 
-  /* rename tables no longer needed; NULL them out */
-  env->genv->rename = NULL;
-  env->genv->et_rename = NULL;
-
   if (rec) {
     scheme_merge_compile_recs(rec, drec, recs, num_to_compile);
     max_let_depth = rec[drec].max_let_depth;
@@ -3853,15 +3861,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     
     if (all_simple_renames && (env->genv->marked_names->count == 0)) {
       env->genv->module->rn_stx = scheme_true;
-    } else {
-      rn = scheme_rename_to_stx(rn);
-      env->genv->module->rn_stx = rn;
     }
     if (et_all_simple_renames) {
       env->genv->module->et_rn_stx = scheme_true;
-    } else {
-      et_rn = scheme_rename_to_stx(et_rn);
-      env->genv->module->et_rn_stx = et_rn;
     }
 
     return (Scheme_Object *)env->genv->module;

@@ -1,5 +1,7 @@
 (module libext mzscheme
-  (require "../private/headelts.ss")
+  (require (lib "servlet-helpers.ss" "web-server"))
+  (require "../private/headelts.ss"
+           "../private/util.ss")
   
   (require (lib "servlet.ss" "web-server"))
   (provide interface-version timeout start)

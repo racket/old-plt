@@ -10,23 +10,23 @@
    [fold-into-web-path ((listof string?) . -> . string?)])
   
   (provide get-pref/default
-	   get-bool-pref/default
-	   put-prefs
-	   cvs-or-nightly-build?
-	   search-height-default
-	   search-bg-default
-	   search-text-default
-	   search-link-default
-	   color-highlight
-	   color-with
-	   collection-doc-link
-	   home-page
-	   format-collection-message
-	   nl
+           get-bool-pref/default
+           put-prefs
+           cvs-or-nightly-build?
+           search-height-default
+           search-bg-default
+           search-text-default
+           search-link-default
+           color-highlight
+           color-with
+           collection-doc-link
+           home-page
+           format-collection-message
+           nl
            plt-version
-	   make-javascript
-	   redir-javascript
-	   onload-redir)
+           make-javascript
+           redir-javascript
+           onload-redir)
 
   ;; would be nice if this could use version:version from the framework.
   (define (plt-version)

@@ -1,4 +1,5 @@
 (module bugs mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "string.ss"))
   
   (require "../private/util.ss")

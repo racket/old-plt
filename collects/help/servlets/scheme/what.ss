@@ -2,6 +2,7 @@
   (require "../private/util.ss"
            "../../private/manuals.ss")
   (require "../private/headelts.ss")
+  (require (lib "servlet-helpers.ss" "web-server"))
   
   (require (lib "servlet.ss" "web-server"))
   (provide interface-version timeout start)

@@ -1,4 +1,5 @@
 (module notes mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "list.ss"))
   
   (require "../private/util.ss")

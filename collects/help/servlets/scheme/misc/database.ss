@@ -1,4 +1,5 @@
 (module database mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require "../../private/headelts.ss")
   
   (require (lib "servlet.ss" "web-server"))

@@ -1,4 +1,5 @@
 (module how mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "launcher.ss" "launcher")
            "../private/util.ss"
            "../../private/manuals.ss"

@@ -1,4 +1,5 @@
 (module langlevels mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require "../private/headelts.ss")
   (require "../../private/manuals.ss")
   

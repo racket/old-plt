@@ -1,4 +1,5 @@
 (module home mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
   (require "private/util.ss"
            "../private/manuals.ss"
 	   (lib "servlet.ss" "web-server"))

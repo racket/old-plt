@@ -31,8 +31,8 @@ plus a structure:
 >  struct:region :: (struct region (x y w h label callback))
       `x', `y', `w', `h' are coordinates on the table,
       `label' is a string to label the region or #f for no label. When the
-        region is added to a table, the label is drawn in 12-point (about
-        12-pixel) text, centered horizontally and 5 pixels down from the 
+        region is added to a table, the label is drawn in 12-pixel
+        text, centered horizontally and 5 pixels down from the 
         region's top outline. If label is #f, no label or box is drawn 
         for the region.
       `callback' is a procedure that takes a list of cards that were

@@ -136,20 +136,20 @@
                                   "/usr/share/dict/propernames"
                                   "/usr/dict/words")]
            [good-file-names (filter file-exists? possible-file-names)])
-      (unless (null? good-file-names)
-        (let ([d (make-hash-table 'equal)])
-          (for-each (lambda (word) (hash-table-put! d word #t)) extra-words)
-          (for-each 
-           (lambda (good-file-name)
-             (call-with-input-file* good-file-name
-                                    (lambda (i)
-                                      (let loop ()
-                                        (let ((word (read-line i)))
-                                          (unless (eof-object? word)
-                                            (hash-table-put! d word #t)
-                                            (loop)))))))
-           good-file-names)
-          d))))
+      (and (not (null? good-file-names))
+	   (let ([d (make-hash-table 'equal)])
+	     (for-each (lambda (word) (hash-table-put! d word #t)) extra-words)
+	     (for-each 
+	      (lambda (good-file-name)
+		(call-with-input-file* good-file-name
+				       (lambda (i)
+					 (let loop ()
+					   (let ((word (read-line i)))
+					     (unless (eof-object? word)
+						     (hash-table-put! d word #t)
+						     (loop)))))))
+	      good-file-names)
+	     d))))
   
   ;; check-word : hash-table hash-table string -> boolean
   (define (check-word dict bad-dict word)

@@ -1423,7 +1423,8 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
 
     if (len)
       tx += sizeRect.cx;
-    ty += sizeRect.cy;
+    if (sizeRect.cy > ty)
+      ty = sizeRect.cy;
 
     len -= alen;
     d += alen;

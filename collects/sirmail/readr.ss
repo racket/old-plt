@@ -2178,7 +2178,7 @@
                                    ".sirmail-queue"
                                    "SirMail Queue"))])
           (unless (directory-exists? dir)
-            (make-directory dir))
+            (make-directory* dir))
           dir))
       
       ;; enqueued-messages? : -> bool

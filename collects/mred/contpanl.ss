@@ -52,7 +52,7 @@
 	  ; time. when curr-width is #f, cache invalid.
 	  curr-width
 	  curr-height
-	  
+	  	  
 	  ; list of child-info structs corresponding to the children.  (#f
 	  ;  if no longer valid.)
 	  [children-info null])
@@ -264,6 +264,7 @@
 		      (get-two-int-values get-client-size))
 		    redraw))
 		 (begin
+		   ; moved here from force-redraw to preserve tail-recursion.
 		   (mred:debug:printf
 		    'container-panel-set-size
 		    "container-panel-set-size: calling super-set-size")
@@ -292,23 +293,25 @@
 	      'container-panel-on-size
 	      "container-panel-on-size: Current size: ~s ~s"
 	      (get-width) (get-height))
-	     (let-values ([(client-width client-height)
-			   (get-two-int-values get-client-size)])
-	       (if (and (number? curr-width)
-			(number? curr-height)
-			(= curr-width client-width)
-			(= curr-height client-height))
+	     (if (and (number? curr-width)
+		      (number? curr-height)
+		      (= curr-width new-width)
+		      (= curr-height new-height))
 		   (mred:debug:printf
 		    'container-panel-on-size
 		    (string-append
 		     "Container-panel-on-size: "
 		     "same size so not redrawing."))
 		   (begin
-		     (mred:debug:printf
-		      'container-panel-on-size
-		      "container-panel-on-size: Client size: ~s x ~s"
-		      client-width client-height)
-		     (redraw client-width client-height)))))]
+		     (set! curr-width new-width)
+		     (set! curr-height new-height)
+		     (let-values ([(client-width client-height)
+				   (get-two-int-values get-client-size)])
+		       (mred:debug:printf
+			'container-panel-on-size
+			"container-panel-on-size: Client size: ~s x ~s"
+			client-width client-height)
+		       (redraw client-width client-height)))))]
 	  
 	  ; place-children: determines where each child of panel should be
 	  ; placed.

@@ -69,8 +69,8 @@
       (serve (load-configuration (expand-path "configuration-table")) THE-PORT THE-IP))
 
   ;; It is a HTML MIME header if the Content-type header exists as a string,
-  ;; and is "text/html". In practice, it can be anything matching the regexp
-  ;; "^text/html;*.*", but not in the PLT Web server.
+  ;; and is "text/plain". In practice, it can be anything matching the regexp
+  ;; "^text/plain;*.*", but not in the PLT Web server.
   (define/contract content-type-equal?
     (string? string? . -> . boolean?)
     (lambda (header content-type)

@@ -543,6 +543,13 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #define WC_BUFFER_SIZE 1024
 static wchar_t wc_buffer[WC_BUFFER_SIZE];
 
+static int wc_strlen(wchar_t *ws)
+{
+  int l;
+  for (l =0; ws[l]; l++) { }
+  return l;
+}
+
 wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
 {
   long len, l;
@@ -569,7 +576,7 @@ char *scheme_convert_from_wchar(wchar_t *ws)
   long len, l;
   char *s;
 
-  for (l =0; ws[l]; l++) { }
+  l = wc_strlen(ws);
   len = scheme_utf8_encode(ws, 0, l,
 			   NULL, 0,
 			   1/*UTF-16*/, 0);
@@ -4324,7 +4331,7 @@ find_system_path(int argc, Scheme_Object **argv)
 	
 	  s = name;
 	
-	  i = wstrlen(s) - 1;
+	  i = wc_strlen(s) - 1;
 	
 	  while (i && (s[i] != '\\')) {
 	    --i;

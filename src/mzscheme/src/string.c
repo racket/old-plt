@@ -1379,8 +1379,8 @@ static char *locale_recase(int to_up,
   const char *s;
   int j;
   /* The "n" versions are apparently not too standard: */
-# define mz_mbsnrtowcs(t, f, fl, tl, s) mbsrtowcs(t, f, tl, s) 
-# define mz_wcsnrtombs(t, f, fl, tl, s) wcsrtombs(t, f, tl, s) 
+# define mz_mbsnrtowcs(t, f, fl, tl, s) MSC_IZE(mbsrtowcs)(t, f, tl, s) 
+# define mz_wcsnrtombs(t, f, fl, tl, s) MSC_IZE(wcsrtombs)(t, f, tl, s) 
   
   /* ----- to wide char ---- */
 

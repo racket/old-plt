@@ -243,8 +243,8 @@
 				   (let-values ([,names 
 						 (parameterize ([current-exception-handler
 								 (lambda (exn)
-								   (display (exn-message exn))
-								   (newline)
+								   ;(display (exn-message exn))
+								   ;(newline)
 								   (,inner-k #f))])
 						   ,code)])
 				     (unless (and ,@(map (lambda (vars) `(equal? ,@vars))

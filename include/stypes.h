@@ -41,9 +41,13 @@ enum {
   scheme_case_closure_type,
   scheme_cont_type,
   scheme_escaping_cont_type,
+  scheme_proc_struct_type, /* 30 */
+
+  /* structure types (overlaps with procs) */
+  scheme_structure_type,
 
   /* basic types */
-  scheme_char_type, /* 30 */
+  scheme_char_type,
   scheme_integer_type,
   scheme_bignum_type,
   scheme_rational_type,
@@ -51,9 +55,9 @@ enum {
   scheme_double_type,
   scheme_complex_izi_type,
   scheme_complex_type,
-  scheme_string_type,
+  scheme_string_type, /* 40 */
   scheme_symbol_type,
-  scheme_null_type, /* 40 */
+  scheme_null_type,
   scheme_pair_type,
   scheme_vector_type,
   scheme_inspector_type,
@@ -61,19 +65,18 @@ enum {
   scheme_output_port_type,
   scheme_eof_type,
   scheme_true_type,
-  scheme_false_type, 
+  scheme_false_type, /* 50 */
   scheme_void_type,
-  scheme_syntax_compiler_type, /* 50 */
+  scheme_syntax_compiler_type,
   scheme_macro_type,
   scheme_box_type,
   scheme_thread_type,
-  scheme_structure_type,
   scheme_stx_offset_type, 
   scheme_cont_mark_set_type, 
   scheme_sema_type,
   scheme_hash_table_type,
-  scheme_c_pointer_type,
-  scheme_weak_box_type, /* 60 */
+  scheme_c_pointer_type,/* 60 */
+  scheme_weak_box_type,
   scheme_struct_type_type,
   scheme_module_index_type,
   scheme_id_macro_type,
@@ -82,8 +85,8 @@ enum {
   scheme_config_type,
   scheme_stx_type, 
   scheme_will_executor_type,
-  scheme_custodian_type,
-  scheme_random_state_type, /* 70 */
+  scheme_custodian_type, /* 70 */
+  scheme_random_state_type,
   scheme_regexp_type,
   scheme_bucket_type,
   scheme_bucket_table_type,
@@ -92,8 +95,8 @@ enum {
   scheme_wrap_chunk_type,
   scheme_eval_waiting_type,
   scheme_tail_call_waiting_type,
-  scheme_undefined_type,
-  scheme_struct_property_type, /* 80 */
+  scheme_undefined_type, /* 80 */
+  scheme_struct_property_type,
   scheme_multiple_values_type,
   scheme_placeholder_type,
   scheme_case_lambda_sequence_type,
@@ -103,8 +106,8 @@ enum {
   scheme_svector_type,
   scheme_lazy_macro_type,
   scheme_resolve_prefix_type,
-  scheme_security_guard_type,
-  scheme_indent_type, /* 90 */
+  scheme_security_guard_type, /* 90 */
+  scheme_indent_type,
 
   scheme_reserved_3_type,
   scheme_reserved_4_type,
@@ -115,8 +118,8 @@ enum {
 
   scheme_rt_comp_env,
   scheme_rt_constant_binding,
-  scheme_rt_resolve_info,
-  scheme_rt_compile_info, /* 100 */
+  scheme_rt_resolve_info, /* 100 */
+  scheme_rt_compile_info,
   scheme_rt_cont_mark,
   scheme_rt_saved_stack,
   scheme_rt_eval_in_env,
@@ -125,8 +128,8 @@ enum {
   scheme_rt_overflow,
   scheme_rt_dyn_wind_cell,
   scheme_rt_cont_mark_chain,
-  scheme_rt_dyn_wind_info,
-  scheme_rt_dyn_wind, /* 110 */
+  scheme_rt_dyn_wind_info, /* 110 */
+  scheme_rt_dyn_wind,
   scheme_rt_dup_check,
   scheme_rt_thread_memory,
   scheme_rt_input_file,
@@ -135,8 +138,8 @@ enum {
   scheme_rt_tested_input_file,
   scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
-  scheme_rt_output_file,
-  scheme_rt_load_handler_data, /* 120 */
+  scheme_rt_output_file, /* 120 */
+  scheme_rt_load_handler_data,
   scheme_rt_load_data,
   scheme_rt_pipe,
   scheme_rt_beos_process,
@@ -145,8 +148,8 @@ enum {
   scheme_rt_write_data,
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
-  scheme_rt_param_data,
-  scheme_rt_will,             /* 130 */
+  scheme_rt_param_data,  /* 130 */
+  scheme_rt_will,
   scheme_rt_will_registration,
   scheme_rt_breakable_wait,
   scheme_rt_sema_waiter,
@@ -155,8 +158,8 @@ enum {
   scheme_rt_param_map,
   scheme_rt_finalization,
   scheme_rt_finalizations,
-  scheme_rt_cpp_object,
-  scheme_rt_cpp_array_object, /* 140 */
+  scheme_rt_cpp_object, /* 140 */
+  scheme_rt_cpp_array_object,
   scheme_rt_stack_object, 
   scheme_rt_preallocated_object,
   scheme_thread_hop_type,
@@ -165,7 +168,7 @@ enum {
   scheme_rt_waitable,
   scheme_rt_waiting,
   scheme_rt_comp_prefix,
-  scheme_rt_user_input,
+  scheme_rt_user_input,  /* 150 */
   scheme_rt_user_output,
   scheme_rt_compact_port,
   scheme_rt_read_special_dw,

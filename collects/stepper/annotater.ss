@@ -371,7 +371,7 @@
 		  [val annotated `(#%begin
                                    (#%set! ,if-temp ,annotated-test)
                                    ,(break-wrap
-                                     (if (signal-non-boolean)
+                                     (if (utils:signal-non-boolean)
                                          `(#%if (#%boolean? ,if-temp)
                                            ,inner-annotated
                                            (#%raise (,utils:make-not-boolean

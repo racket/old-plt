@@ -184,8 +184,11 @@
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
 
-  (define result-highlight-color (make-object color% 212 159 245))
-  (define redex-highlight-color (make-object color% 193 251 181))
+  (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
+  (define result-highlight-color (make-object color% 255 255 255))
+  (define redex-highlight-color (make-object color% 255 255 255))
+  (send test-dc try-color (make-object color% 212 159 245) result-highlight-color)
+  (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
              
   (define no-sexp (gensym "no-sexp-"))
   
@@ -243,7 +246,6 @@
                          
              [break 
               (lambda (mark-list all-defs current-def break-kind returned-value-list)
-                (printf "began break of kind: ~s~n" break-kind)
                 (when (case break-kind
                         [(result-break)
                          (if (not (null? returned-value-list))

@@ -989,7 +989,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 " strings to the continuation of the `write-image-to-file' call that created\n"
 	 " the image. Images are not supported on all platforms.\n"
 #endif
-         "Expressions/files are evaluated/loaded in order as provided.\n"
+         "Expressions/files/--main/etc. are evaluated/loaded in order as provided.\n"
 	 "The current-library-collection-paths is automatically set before any\n"
 	 "  expressions/files are evaluated/loaded, unless the -x or --no-lib-path\n"
 	 "  switch is used.\n"

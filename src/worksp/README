@@ -1,13 +1,17 @@
 This directory contains 
 
  - solution files and project files for building MzScheme and
-    MrEd with Microsoft Visual Studio .NET or Visual Studio Express
-    2005;
+    MrEd with Microsoft Visual Studio (which work with the .NET
+    and Express 2005 versions of Visual Studio);
+
  - mzconfig.h which is a manual version of information that is
     gathered automatically when using the "configure" script.
 
 If you have downloaded MzCOM, the directory also contains Visual
 Studio files for MzCOM.
+
+Visual Studio Express is available for free frmo Microsoft, and it is
+the recommended compiler for building PLT Scheme.
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,

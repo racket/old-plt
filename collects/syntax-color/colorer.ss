@@ -58,7 +58,10 @@
         (set! current-pos start-pos)
         (set! colors null)
         (set! in #f)
-        (set! input-port-start-pos start-pos))
+        (set! input-port-start-pos start-pos)
+        (when background-thread
+          (kill-thread background-thread)
+          (set! background-thread #f)))
       
       (define (color)
         (unless (null? colors)

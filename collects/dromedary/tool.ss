@@ -177,6 +177,8 @@
 			    firstexp)))
 		    (read-syntax input port))
 		    )))
+          (define/public (front-end/complete-program input settings) (front-end input settings))
+          (define/public (front-end/interaction input settings) (front-end input settings))
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Dromedary"))
           (define/public (get-language-name) "Dromedary")

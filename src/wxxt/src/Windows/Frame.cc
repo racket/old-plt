@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.17 1999/07/08 14:19:36 mflatt Exp $
+ * $Id: Frame.cc,v 1.18 1999/07/08 16:10:41 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -41,10 +41,57 @@
 #define  Uses_ShellWidget
 #define  Uses_BoardWidget
 #include "widgets.h"
+#include "../../contrib/xpm/lib/xpm.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+/* XPM */
+static char * plt_xpm[] = {
+"16 16 17 1",
+" 	c None",
+".	c #000000",
+"+	c #800000",
+"@	c #008000",
+"#	c #808000",
+"$	c #000080",
+"%	c #800080",
+"&	c #008080",
+"*	c #C0C0C0",
+"=	c #808080",
+"-	c #FF0000",
+";	c #00FF00",
+">	c #FFFF00",
+",	c #0000FF",
+"'	c #FF00FF",
+")	c #00FFFF",
+"!	c #FFFFFF",
+"................",
+".....,,,,,,.....",
+"...--!!,,,,,,...",
+"..-----!,,,,,,..",
+"..-----!!,,,,,..",
+".-------!,,,,,,.",
+".-------!!,,,,,.",
+".------!!!,,,,,.",
+".-----!!-!!,,,,.",
+".-----!---!,,,,.",
+".----!!---!!,,,.",
+"..---!-----!,,..",
+"..--!!-----!!,..",
+"...-!-------!...",
+".....------.....",
+"................"};
+
+#define plt_width 16
+#define plt_height 16
+static char plt_xbm[] = {
+ 0xe0,0x07,0xf8,0x1f,0xfc,0x3f,0xfe,0x7f,0xfe,0x7f,0xff,0xff,0xff,0xff,0xff,
+ 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xfe,0x7f,0xfe,0x7f,0xfc,0x3f,0xf8,0x1f,
+ 0xe0,0x07};
+
+Pixmap plt_icon, plt_mask;
 
 //-----------------------------------------------------------------------------
 // create and destroy frame
@@ -181,6 +228,25 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 
     if (wxIsBusy())
       wxXSetBusyCursor(this, wxHOURGLASS_CURSOR);
+
+    if (!plt_mask) {
+      plt_mask = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, plt_xbm, plt_width, plt_height);
+    }
+    if (!plt_icon) {
+      XpmAttributes *xpm = new XpmAttributes;
+      xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness;
+      xpm->closeness = 40000;
+      if (XpmCreatePixmapFromData(wxAPP_DISPLAY, wxAPP_ROOT,
+				  plt_xpm, &plt_icon,
+				  (Pixmap*)NULL, xpm)
+	  != XpmSuccess)
+	plt_icon = (Pixmap)NULL;
+    }
+
+    if (plt_mask && plt_icon) {
+      XtVaSetValues(X->frame, XtNiconMask, plt_mask, NULL);
+      XtVaSetValues(X->frame, XtNiconPixmap, plt_icon, NULL);
+    }
 
     return TRUE;
 }
@@ -355,8 +421,8 @@ void wxFrame::SetIcon(wxBitmap *icon, wxBitmap *mask, int kind)
       if (mask && !mask->Ok())
 	mask = NULL;
 
-      XtVaSetValues(X->frame, XtNiconMask, mask ? GETPIXMAP(mask) : NULL, NULL);
-      XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(bm), NULL);
+      XtVaSetValues(X->frame, XtNiconMask, mask ? GETPIXMAP(mask) : (Pixmap)NULL, NULL);
+      XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(bm), (Pixmap)NULL);
       
       frame_icon = bm;
       frame_mask = mask;

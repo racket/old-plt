@@ -1891,7 +1891,7 @@ HBITMAP wxBitmap::GetLabelBitmap(Bool panel_bg)
     HMODULE mod;
     mod = LoadLibrary("Msimg32.dll");
     if (mod)
-      got_alpha = !GetProcAddress(mod, "AlphaBlend");
+      got_alpha = !!GetProcAddress(mod, "AlphaBlend");
     tried_ab = 1;
   }
 

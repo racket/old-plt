@@ -1,4 +1,5 @@
 (module installer mzscheme
+  (require "process.ss")
   (provide post-installer)
   (define (post-installer mx-path)
     (define (make-dll-path . more)
@@ -19,14 +20,8 @@
        [else (parameterize ([current-directory (make-dll-path)])
                (for-each
                 (lambda (dll)
-                  (let-values ([(p pout pin perr)
-                                (subprocess
-                                 (current-output-port)
-                                 (current-input-port)
-                                 (current-error-port)
-                                 regsvr "/s" dll)])
-                    (subprocess-wait p)
-                    (if (eq? 0 (subprocess-status p))
-                      (printf "MysterX: Registered library ~a\n" dll)
-                      (printf "MysterX: Unable to register library ~a\n" dll))))
+                  (printf "MysterX: ~a library ~a\n"
+                          (if (eq? 0 (system*/exit-code exe "/RegServer"))
+                            "Registered" "Unable to register")
+                          dll))
                 dlls))]))))

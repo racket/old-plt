@@ -1,5 +1,5 @@
 (module installer mzscheme
-  (require "procss.ss")
+  (require "process.ss")
   (provide post-installer)
   (define (post-installer plt-home)
     (let ([exe "MzCOM.exe"])

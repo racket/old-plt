@@ -35,6 +35,9 @@
 #ifdef BEOS_FIND_STACK_BOUNDS
 # include <be/kernel/OS.h>
 #endif
+#ifdef OSKIT_FIXED_STACK_BOUNDS
+# include <oskit/machine/base_stack.h>
+#endif
 #include "schmach.h"
 #ifdef MACOS_STACK_LIMIT
 #include <Memory.h>
@@ -113,7 +116,9 @@ static Scheme_Object *let_symbol;
 	}
 #endif
 
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) || defined(BEOS_FIND_STACK_BOUNDS)
+#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
+    || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
+    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS)
 # ifndef MZ_REAL_THREADS
 unsigned long scheme_stack_boundary;
 # endif
@@ -1682,6 +1687,10 @@ void scheme_init_stack_check()
     get_thread_info(find_thread(NULL), &info);
     scheme_stack_boundary = (unsigned long)info.stack_base + STACK_SAFETY_MARGIN;
   }
+#endif
+
+#ifdef OSKIT_FIXED_STACK_BOUNDS
+  scheme_stack_boundary = (unsigned long)base_stack_start + STACK_SAFETY_MARGIN;
 #endif
 
 #ifdef UNIX_FIND_STACK_BOUNDS

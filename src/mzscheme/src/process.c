@@ -1612,8 +1612,12 @@ static void get_ready_for_GC()
 
       /* release unused cont mark stack segments */
       {
-	int segcount = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE), i;
-	for (i = segcount + 1; i < p->cont_mark_seg_count; i++)
+	int segcount, i;
+	if (p->cont_mark_stack)
+	  segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+	else
+	  segcount = 0;
+	for (i = segcount; i < p->cont_mark_seg_count; i++)
 	  p->cont_mark_stack_segments[i] = NULL;
 	if (segcount < p->cont_mark_seg_count)
 	  p->cont_mark_seg_count = segcount;

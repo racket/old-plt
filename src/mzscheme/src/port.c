@@ -1921,10 +1921,12 @@ osk_char_ready (Scheme_Input_Port *port)
   k = direct_cons_trygetchar();
   if (k >= 0) {
     if (k == 8) { /* Backspace */
-      direct_cons_putchar(8);
-      direct_cons_putchar(' '); /* space erases old letter */
-      direct_cons_putchar(8);
-      --osk->count;
+      if (osk->count) {
+	direct_cons_putchar(8);
+	direct_cons_putchar(' '); /* space erases old letter */
+	direct_cons_putchar(8);
+	--osk->count;
+      }
     } else {
       if (osk->count == osk->size) {
 	char *naya;

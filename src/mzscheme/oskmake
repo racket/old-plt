@@ -26,7 +26,7 @@ else
  exit -1
 fi
 
-LANG="-DNO_TCP_SUPPORT"
+LANG=""
 
 # Use Linux FS drivers?
 if [ "yes" ] ; then

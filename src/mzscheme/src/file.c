@@ -2756,7 +2756,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     last = elem;
 
     counter++;
-    if (!(counter & 0x15))
+    if (!(counter & 0xF))
       scheme_process_block(0);
   }
   

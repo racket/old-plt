@@ -638,10 +638,12 @@ int scheme_check_float(const char *where, float v, const char *dest);
 
 unsigned long scheme_get_deeper_address(void);
 
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) || defined(BEOS_FIND_STACK_BOUNDS)
-#ifndef MZ_REAL_THREADS
+#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
+    || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
+    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS)
+# ifndef MZ_REAL_THREADS
 extern unsigned long scheme_stack_boundary;
-#endif
+# endif
 #endif
 
 #ifdef MEMORY_COUNTING_ON

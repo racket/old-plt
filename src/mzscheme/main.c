@@ -393,7 +393,15 @@ void start_clock()
   set_system_clock(clock);
 }
 
+int gethostname(char *s, int len)
+{
+  strncpy(s, "mzscheme-machine", len);
+  return 0;
+}
+
+/*    *********** OSKIT filesystem START *****************    */
 # ifdef OSK_LINUX_FILESYSTEMS
+
 #  include <oskit/dev/dev.h>
 #  include <oskit/fs/filesystem.h> 
 #  include <oskit/fs/dir.h> 
@@ -401,7 +409,22 @@ void start_clock()
 #  include <oskit/fs/linux.h> 
 #  include <oskit/dev/linux.h> 
 #  include <oskit/principal.h>
+
 static oskit_principal_t *cur_principal;
+static oskit_filesystem_t *main_fs;
+static oskit_dir_t *main_fs_root;
+
+static void unmount(void)
+{
+  if (main_fs_root) {
+    fflush(NULL);
+    oskit_dir_release(main_fs_root);
+    oskit_filesystem_sync(main_fs, 1);
+    oskit_filesystem_release(main_fs);
+    main_fs_root = NULL;
+  }
+}
+
 int start_linux_fs(char *diskname, char *partname)
 {
   int err;
@@ -452,6 +475,10 @@ int start_linux_fs(char *diskname, char *partname)
 
   fs_init(root);
 
+  main_fs = fs;
+  main_fs_root = root;
+  atexit(unmount);
+
   return 1;
 }
 
@@ -467,7 +494,9 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
   *out_if = 0;
   return OSKIT_E_NOINTERFACE;
 }
+
 # endif
+/*    *********** OSKIT filesystem END *****************    */
 
 #endif /* OSKIT */
 /**************** OSKIT stuff END **********************/
@@ -501,7 +530,7 @@ int main(int argc, char **argv)
   oskit_init_libc();
 
 # ifdef OSK_LINUX_FILESYSTEMS
-  if (main) { start_linux_fs("hda", "a"); } else
+  if (main) { start_linux_fs("hda", "f"); } else
 
   if (argc > 1) {
     start_linux_fs(argv[1], argv[2]);

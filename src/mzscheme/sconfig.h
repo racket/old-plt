@@ -67,6 +67,14 @@
 # define SYSTEM_TYPE_NAME "oskit"
 
 # define STACK_GROWS_DOWN
+# define DO_STACK_CHECK
+# ifndef OSKIT_TEST
+#  define OSKIT_FIXED_STACK_BOUNDS
+# else
+#  define ASSUME_FIXED_STACK_SIZE
+#  define FIXED_STACK_SIZE 65500
+# endif
+# define STACK_SAFETY_MARGIN 10000
 
 # define UNIX_FILE_SYSTEM
 # define NO_UNIX_USERS
@@ -92,10 +100,6 @@
 # define NO_USLEEP
 # define NO_SLEEP
 # define USER_TIME_IS_CLOCK
-
-     /* # define DO_STACK_CHECK */
-     /* # define UNIX_FIND_STACK_BOUNDS */
-# define STACK_SAFETY_MARGIN 50000
 
 # define SIGSET_IS_SIGNAL
 
@@ -1117,6 +1121,9 @@ int scheme_pthread_semaphore_try_down(void *);
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory
      (with GC flag HEURISTIC2?). */
+
+ /* OSKIT_FIXED_STACK_BOUNDS uses base_stack_start to get the hottest
+     stack location */
 
   /***********************/
  /*   Dynamic Loading   */

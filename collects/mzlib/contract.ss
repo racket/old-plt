@@ -678,7 +678,8 @@ add struct contracts for immutable structs?
                  (string-append one-line " ")
                  (let ([sp (open-output-string)])
                    (newline sp)
-                   (pretty-print contract-sexp sp)
+                   (parameterize ([pretty-print-print-line print-contract-liner])
+                     (pretty-print contract-sexp sp))
                    (get-output-string sp))))]
 	  [specific-blame
 	   (let ([datum (syntax-object->datum src-info)])
@@ -704,6 +705,15 @@ add struct contracts for immutable structs?
                    (syntax-position src-info)
                    (syntax-span src-info)))
             '())))))
+  
+  (define print-contract-liner
+    (let ([default (pretty-print-print-line)])
+      (λ (line port ol cols)
+        (+ (default line port ol cols)
+           (if line
+               (begin (display "  " port)
+                      2)
+               0)))))
   
   ;; src-info-as-string : (union syntax #f) -> string
   (define (src-info-as-string src-info)

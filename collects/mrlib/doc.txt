@@ -408,21 +408,70 @@ the _cache-image-snip%_ class. It provides these methods:
     Returns a pixel array for this image or #f if it has not
     been computed yet.
 
-The library defines a new type, argb, that represents a
-bitmap, but with alpha values.
+  > (send a-cache-image-snip get-argb-proc) -> argb number number -> void
 
-In addition, the librari provides these functions:
+    Returns a procedure that fills in an argb with the contents of this image
+    at the given offset
+
+  > (send a-cache-image-snip get-dc-proc) -> 
+       (union #f ((is-a?/c dc<%>) int[dx] int[dy] -> void))
+
+    Either returns false, or a procedure that draws the
+    contents of this snip into a dc.
+
+The library also provides _a cache-image-snip snipclass_
+used for saved cache image snips.
+
+The library defines a new type, argb, that represents a
+bitmap, but with alpha values. It has a maker, two
+selectors, and a predicate:
+
+> (make-argb (vectorof rational[between 0 & 255]) int) -> argb
+
+  Constructs a new argb value. The vector has four entires
+  for each pixel, an alpha, red, green, and blue value. The
+  int specifies the width of the image; the height is the
+  size of the vector, divided by 4, divided by the width.
+
+> (argb-vector argb) -> (vectorof rational[between 0 & 255])
+
+  extras the vector from an argb
+
+> (argb-width argb) -> number
+
+  extracts the width from an argb.
+
+> (argb? any) -> boolean
+
+   tests if a value is an argb.
+
+In addition, the library provides these functions:
 
 > (overlay-bitmap argb dx dy color-bitmap mask-bitmap) -> argb
   builds a new argb after overlaying color-bitmap (with masking
   based on mask-bitmap) onto argb at (dx, dy) from the top-left.
 
-> build-bitmap
-> flatten-bitmap
+> (build-bitmap draw w h) -> bitmap
+    draw : (dc -> void)
+    w: number 
+    h: number
+
+  builds a bitmap with width w and height h, based on 
+
+> (flatten-bitmap bitmap) -> bitmap
+
+   builds a new bitmap that flattens the original bitmap
+   with its mask, producing a bitmap that has no mask, and
+   looks the way that bitmap would draw (when drawn with the
+   mask).
            
-> argb->cache-image-snip
-> argb->bitmap
+> (argb->cache-image-snip argb number number) -> cache-image-snip% object
+
+  Builds a new cache-image-snip based on the contents of
+  argb, using the two numbers as the pinhole.
+
+> (argb->bitmap argb) -> bitmap
+
+  Builds a bitmap that draws the same way as argb; the alpha
+  pixels are put into the bitmap's get-loaded-mask bitmap.
            
-> make-argb 
-> argb-vector
-> argb-width

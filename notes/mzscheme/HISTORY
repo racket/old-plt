@@ -62,10 +62,14 @@ Unix images: removed constraint against using stdio before
  dumps, but images are disabled by default. Also added
  read-image-from-file procedure
 MzLib functio.ss: added remv*, remq*, remove*, filter,
- assf, and memf
+ assf, memf, empty, and empty?
 MzLib file.ss: added remove-directory/files
 MzLib constan.ss: added constant-signature-content macro
-MzLib pconver.ss: added whole/fractional-exact-numbers
+MzLib pconver.ss: added whole/fractional-exact-numbers and
+ empty-list-name
+MzLib pretty.ss: added pretty-print-show-inexactness
+Removed begin-expansion-time
+Moved begin-elaboration-time from MzLib into MzScheme
 Added MzLib library traceld.ss
 MacOS: MzScheme always prompts for extra arguments, even if
   a file is dragged onto the application or a launcher program
@@ -76,7 +80,7 @@ MacOS: Fixed problems with inexact arithmetic: inexact->exact
 Windows: CYGWIN32 gcc compiler now supported
 Inside MzScheme: scheme_setjmp and scheme_longjmp now
  work on values of type mz_jmp_buf instead of jmp_buf
-Upgraded to gc 4.12
+Upgraded to gc 4.13alpha1
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,

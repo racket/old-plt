@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.23 1999/02/27 04:38:45 mflatt Exp $
+ * $Id: Window.cc,v 1.24 1999/03/09 14:17:52 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -788,6 +788,11 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   return TRUE;
 }
 
+void wxWindow::GetRefreshSize(int *w, int *h)
+{
+  GetSize(w, h);
+}
+
 void wxWindow::Refresh(void)
 {
     if (!X->handle) // forbid, if no widget associated
@@ -796,7 +801,7 @@ void wxWindow::Refresh(void)
     XExposeEvent  dummyEvent;
     int           width, height;
 
-    GetSize(&width, &height);
+    GetRefreshSize(&width, &height);
 
     dummyEvent.type	  = Expose;
     dummyEvent.display	  = XtDisplay(X->handle);
@@ -1323,37 +1328,40 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   } else {
     // sinfo->gx and sinfo->gy are set by the ScrolledWindow widget
     XtMoveWidget(win->X->handle, sinfo->gx, sinfo->gy);
+    win->Refresh();
   }
   
-  wxevent.eventHandle = (char*)p_XfwfScrollInfo;
-  WXSCROLLORIENT(wxevent) = wxHORIZONTAL;
-  switch (sinfo->reason) {
-  case XfwfSUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEUP;
-    break;
-  case XfwfSDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSRight:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEDOWN;
-    break;
-  case XfwfSPageUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSPageLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEUP;
-    break;
-  case XfwfSPageDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSPageRight:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEDOWN;
-    break;
-  case XfwfSTop:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSLeftSide:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_TOP;
-    break;
-  case XfwfSBottom:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-  case XfwfSRightSide:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_BOTTOM;
-    break;
-  case XfwfSDrag:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_THUMBTRACK;
-  default:
-    break;
+  if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
+    wxevent.eventHandle = (char*)p_XfwfScrollInfo;
+    WXSCROLLORIENT(wxevent) = wxHORIZONTAL;
+    switch (sinfo->reason) {
+    case XfwfSUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEUP;
+      break;
+    case XfwfSDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSRight:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEDOWN;
+      break;
+    case XfwfSPageUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSPageLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEUP;
+      break;
+    case XfwfSPageDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSPageRight:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+      break;
+    case XfwfSTop:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSLeftSide:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_TOP;
+      break;
+    case XfwfSBottom:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
+    case XfwfSRightSide:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_BOTTOM;
+      break;
+    case XfwfSDrag:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+    default:
+      break;
+    }
+
+    win->GetEventHandler()->OnScroll(wxevent);
+
+    wxevent.eventHandle = NULL;
   }
-
-  win->GetEventHandler()->OnScroll(wxevent);
-
-  wxevent.eventHandle = NULL; /* MATTHEW: [5] */
 }
 
 void wxWindow::WindowEventHandler(Widget w,

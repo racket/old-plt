@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
+ * $Id: Canvas.h,v 1.2 1998/12/06 05:06:17 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -58,6 +58,8 @@ public:
     Bool Create(wxWindow *parent,
 		int x=-1, int y=-1, int width=-1, int height=-1,
 		int style=0, char *name="canvas");
+
+    virtual void GetRefreshSize(int *w, int *h);
 
     void GetScrollUnitsPerPage(int *x, int *y)
 	{ *x = h_units; *y = v_units; };

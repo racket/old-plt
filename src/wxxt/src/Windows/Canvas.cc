@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.6 1998/12/06 05:06:17 mflatt Exp $
+ * $Id: Canvas.cc,v 1.7 1998/12/06 17:44:47 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -139,6 +139,11 @@ void wxCanvas::GetVirtualSize(int *x, int *y)
     Dimension ww, hh;
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     *x = ww; *y = hh;
+}
+
+void wxCanvas::GetRefreshSize(int *w, int *h)
+{
+  GetVirtualSize(w, h);
 }
 
 void wxCanvas::Scroll(int x_pos, int y_pos)

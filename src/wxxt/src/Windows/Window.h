@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.5 1998/09/06 01:54:04 mflatt Exp $
+ * $Id: Window.h,v 1.6 1998/10/16 15:55:56 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -88,6 +88,7 @@ public:
     virtual void  GetClientSize(int *width, int *height);
     virtual void  GetPosition(int *x, int *y);
     virtual void  GetSize(int *width, int *height);
+    virtual void  GetRefreshSize(int *w, int *h);
     virtual void  Move(int x, int y)
 	{ SetSize(x, y, -1, -1, wxSIZE_USE_EXISTING); }
     virtual void  ScreenToClient(int *x, int *y);

@@ -16,7 +16,7 @@
 #include "wx_stdev.h"
 #include "wx_area.h"
 #include "wx_frame.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Windows.h>
 #endif
 
@@ -382,7 +382,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
   dX = bounds.left - SetOriginX;
   dY = bounds.top - SetOriginY;
 
-#ifndef OS_X
+#ifndef WX_CARBON
   Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
   if (hideToPreventFlicker) ::HideControl(cMacControl);
 #endif
@@ -401,7 +401,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
       ::MoveControl(cMacControl, SetOriginX, SetOriginY);
     }
 
-#ifndef OS_X
+#ifndef WX_CARBON
   if (hideToPreventFlicker) ::ShowControl(cMacControl);
 
   if (!cHidden && (dW || dH || dX || dY))

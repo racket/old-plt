@@ -22,7 +22,7 @@
 
 #define INTERLACEMASK 0x40
 
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <palettes.h>
 #endif
 

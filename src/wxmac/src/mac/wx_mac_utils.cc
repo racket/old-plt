@@ -16,7 +16,7 @@
 #include "wx_dialg.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Memory.h>
 # include <QuickDraw.h>
 # include <ToolUtils.h>

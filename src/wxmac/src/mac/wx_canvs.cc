@@ -14,7 +14,7 @@
 #include "wx_sbar.h"
 #include "wxScroll.h"
 #include "wx_frame.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 #endif 
 #include "wxScrollArea.h"

@@ -49,7 +49,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#ifndef OS_X
+#ifndef WX_CARBON
 extern int   errno;             /* this SHOULD be in errno.h */
 extern char *sys_errlist[];     /* this SHOULD be in errno.h */
 #endif

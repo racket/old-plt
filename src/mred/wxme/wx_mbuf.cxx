@@ -2399,7 +2399,7 @@ Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, float x, float y)
 
 #ifdef wx_mac
 
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Files.h>
 #endif
 

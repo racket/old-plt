@@ -362,7 +362,7 @@ wxInitializeStockObjects (void)
   wxREGGLOB(wxTheFontList);
   wxTheFontList = new wxFontList;
 
-#ifdef OS_X
+#ifdef WX_CARBON
 # define BIG_FONT_SIZE 13
 # define SMALL_FONT_SIZE 11
 #else

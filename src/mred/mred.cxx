@@ -70,7 +70,7 @@
 
 #ifdef wx_mac
 # include <unistd.h>
-# ifndef OS_X
+# ifndef WX_CARBON
 #  include <Events.h>
 # endif
 extern int wx_in_terminal;

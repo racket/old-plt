@@ -13,7 +13,7 @@
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_main.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Strings.h>
 # include <Balloons.h>	
 #endif
@@ -272,7 +272,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     *s = 0;
     s = t;
-#ifdef OS_X
+#ifdef WX_CARBON
     helpflg = 0;
 #else
     helpflg = strncmp("Help", s, 4) ? 0 : 1;
@@ -637,7 +637,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
   }
   ::InsertMenu(appleMenuHandle, 0);
 
-#ifndef OS_X
+#ifndef WX_CARBON
   // this is just a futile attempt to get rid of the help menu anyway.	
   HMGetHelpMenuHandle(&wxHelpMenu);
   if (!wxNumHelpItems) {

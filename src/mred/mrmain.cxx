@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 
 #ifdef wx_mac
   /* initialize Mac stuff */
-#ifdef OS_X
+#ifdef WX_CARBON
   ::MoreMasterPointers(4);
 #else
   ::MaxApplZone();

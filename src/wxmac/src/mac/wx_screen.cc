@@ -10,7 +10,7 @@
 #include "wx_screen.h"
 #include "wx_area.h"
 #include "wx_utils.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 #endif
 

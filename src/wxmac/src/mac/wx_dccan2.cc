@@ -10,7 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QDOffscreen.h>
 #endif
 #include "wx_dccan.h"

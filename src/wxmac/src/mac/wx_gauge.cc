@@ -86,7 +86,7 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     
     valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
     valueRect.bottom = KGAUGEH;
-#ifdef OS_X // for horizontal gauges, use the native control
+#ifdef WX_CARBON // for horizontal gauges, use the native control
     OSErr err;
     Rect bounds = valueRect;
     

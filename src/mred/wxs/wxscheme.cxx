@@ -53,7 +53,7 @@
 #include <ctype.h>
 
 #ifdef wx_mac
- #ifdef OS_X
+ #ifdef WX_CARBON
   #include <Quicktime/Movies.h>
  #else
   #include <Gestalt.h>
@@ -441,7 +441,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   return scheme_false;
 #endif
 #ifdef wx_mac
-# ifdef OS_X  
+# ifdef WX_CARBON
   struct ColorPickerInfo cpInfo;
   struct PMColor pmColor;
   

@@ -27,7 +27,7 @@
 */
 
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
-#ifdef OS_X
+#ifdef WX_CARBON
 # define KSCROLLH   27 // _includes_ PAD_TOP & PAD_BOTTOM
 # define PAD_X 2 // these are all assuming a horizontal configuration.
 # define PAD_TOP 3
@@ -162,7 +162,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     
   Rect r = controlRect;    
   OffsetRect(&r,SetOriginX,SetOriginY);
-#ifdef OS_X    
+#ifdef WX_CARBON    
   InsetSliderRect(&r);
 #endif    
   cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &r, NULL,

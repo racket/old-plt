@@ -28,7 +28,7 @@
 #include "wx_mac_utils.h"
 #include "wxMacDC.h"
 #include "wx_stdev.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Controls.h>
 #endif
 
@@ -78,7 +78,7 @@
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 #define VSLOP 3
 #define HSLOP 4
-#ifdef OS_X
+#ifdef WX_CARBON
 #define PAD_Y 4
 #define PAD_X 2
 #else
@@ -190,7 +190,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     ::SetMenuItemText(hDynMenu, n + 1,temp);
   }
   no_strings = N;
-#ifdef OS_X
+#ifdef WX_CARBON
   // First, create the control with a bogus rectangle;
   OSErr err;
   Rect r = {0,0,0,0};
@@ -252,7 +252,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 #endif        
   //DrawChoice(TRUE);
 
-#ifdef OS_X
+#ifdef WX_CARBON
   r = ValueRect;
   ::OffsetRect(&r,SetOriginX+padLeft,SetOriginY+padTop);
   r.left += padLeft;
@@ -276,7 +276,7 @@ int wxChoice::Number(void)
 
 wxChoice::~wxChoice (void)
 {
-#ifndef OS_X
+#ifndef WX_CARBON
   if (hDynMenu)
     ::DisposeMenu(hDynMenu);
   hDynMenu = NULL;
@@ -291,7 +291,7 @@ void wxChoice::ReCalcRect(void)
   int maxdflth = 12;
   int w,h;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   Rect r = {0,0,0,0};
   SInt16 baselineOffset; // ignored
   ::GetBestControlRect(cMacControl,&r,&baselineOffset);
@@ -358,7 +358,7 @@ void wxChoice::DrawChoice(Bool active)
     //::DrawString(sTitle);
   }
   
-#ifdef OS_X
+#ifdef WX_CARBON
   ::Draw1Control(cMacControl);
 #else        
   Rect r = ValueRect;
@@ -496,7 +496,7 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
       SetCurrentDC();
       
       int	newsel;
-#ifdef OS_X
+#ifdef WX_CARBON
       int startH, startV;
       event->Position(&startH, &startV); // client c.s.
 
@@ -559,7 +559,7 @@ void wxChoice::Append (char *Item)
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   ::SetMenuItemText(hDynMenu, no_strings + 1, s);
   no_strings++;
-#if OS_X
+#if WX_CARBON
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
 #endif
@@ -574,7 +574,7 @@ void wxChoice::Clear (void)
     ::DeleteMenuItem(hDynMenu, 1);
   no_strings = 0;
   selection = 0;
-#ifdef OS_X
+#ifdef WX_CARBON
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
 #endif
@@ -592,7 +592,7 @@ void wxChoice::SetSelection (int n)
   if ((n < 0) || (n >= no_strings))
     return;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   ::SetControlValue(cMacControl,n+1);
 #else
 # ifdef Checkem
@@ -612,7 +612,7 @@ int wxChoice::FindString (char *s)
   CopyCStringToPascal(s,temp);
   for (i = 0; i < no_strings; i++) {
     ::GetMenuItemText(hDynMenu, i+1, ps);
-#ifdef OS_X
+#ifdef WX_CARBON
     if (!CompareString(ps,temp,NULL))
       return i;
 #else                        

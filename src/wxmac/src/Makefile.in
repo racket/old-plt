@@ -341,7 +341,7 @@ wrffri.o : $(XPMDIR)/wrffri.cpp
 ########################################
 
 ALISTDIR = $(srcdir)/../../a-list/a-list-1.1.9
-ALISTCCFLAGS = $(CFLAGS) -MMD -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
+ALISTCCFLAGS = $(CFLAGS) -MMD -DWX_CARBON -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
 ALISTDEPS = $(ALISTDIR)/AListInternal.h
 
 ALBirthDeath.o : $(ALISTDEPS) $(ALISTDIR)/ALBirthDeath.c

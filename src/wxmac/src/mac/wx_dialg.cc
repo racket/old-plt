@@ -18,7 +18,7 @@
 #include "wx_main.h"
 #include "wx_buttn.h"
 #include "wx_macevents.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <StandardFile.h>
 # include <TextUtils.h>
 # include <Strings.h>
@@ -28,7 +28,7 @@
 # define USE_NAVIGATION
 
 #ifdef USE_NAVIGATION
-# ifndef OS_X
+# ifndef WX_CARBON
 #  include <Navigation.h>
 # endif
 #endif
@@ -255,7 +255,7 @@ extern "C" {
 
 static int navinited = 0;
 
-#ifndef OS_X
+#ifndef WX_CARBON
 extern void QueueMrEdEvent(EventRecord *e);
 #endif
 
@@ -263,7 +263,7 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
                                NavCBRecPtr callBackParms, 
                                void *callBackUD)
 {
-#ifndef OS_X
+#ifndef WX_CARBON
   /* Essentially copied from Inside Macintosh: */
   switch (callBackSelector)
     {
@@ -312,7 +312,7 @@ char *wxFileSelector(char *message, char *default_path,
 
     NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
     
-#ifdef OS_X // Use Navigation Services 3.0
+#ifdef WX_CARBON // Use Navigation Services 3.0
     static CFStringRef clientName = CFSTR("MrEd");
 
     NavDialogCreationOptions dialogOptions;
@@ -565,7 +565,7 @@ char *wxFileSelector(char *message, char *default_path,
 #endif       
   } else {
 #endif
-#ifdef OS_X
+#ifdef WX_CARBON
     wxFatalError("Navigation Services Unavailable.","");
     return NULL;
 #else

@@ -16,7 +16,7 @@
 #include "wx_area.h"
 #include "wxBorderArea.h"
 #include "wxLabelArea.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 # include <TextEdit.h>
 #endif

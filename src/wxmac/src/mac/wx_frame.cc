@@ -21,7 +21,7 @@
 #include "wx_main.h"
 #include "wx_messg.h"
 #include "wx_utils.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 #include <QuickDraw.h>
 #include <TextEdit.h>
 #include <Menus.h>
@@ -115,7 +115,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   
   cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
 
-#ifndef OS_X
+#ifndef WX_CARBON
   WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;
   (*wstatedata)->stdState.right -= 80;
   //(*wstatedata)->stdState.top = GetMBarHeight() + 5;
@@ -124,7 +124,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   // Calculate the platformArea size
   Rect theStrucRect;
   Rect theContRect;
-#ifdef OS_X  
+#ifdef WX_CARBON  
   GetWindowBounds(theMacWindow,kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(theMacWindow,kWindowContentRgn,&theContRect);
 #else        
@@ -414,7 +414,7 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
   Rect theStrucRect;
   Rect theContRect;
-#ifdef OS_X
+#ifdef WX_CARBON
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
 #else        
@@ -652,7 +652,7 @@ Bool wxFrame::IsVisible(void)
     return FALSE;
 }
 
-#ifndef OS_X
+#ifndef WX_CARBON
 
 //-----------------------------------------------------------------------------
 void wxFrame::wxMacStartDrawing(CGrafPtr * oldPort, GDHandle * oldGD)
@@ -737,7 +737,7 @@ Rect wxFrame::wxMacGetStrucRect(void)
   return theStrucRect; // screen window c.s.
 }
 
-#endif // OS_X
+#endif // WX_CARBON
 
 //-----------------------------------------------------------------------------
 void wxFrame::MacUpdateWindow(void)
@@ -748,7 +748,7 @@ void wxFrame::MacUpdateWindow(void)
 
     Paint();
 
-#ifndef OS_X
+#ifndef WX_CARBON
     // Draw the grow box
     if (!(cStyle & wxNO_RESIZE_BORDER))
       MacDrawGrowIcon();
@@ -761,7 +761,7 @@ void wxFrame::MacUpdateWindow(void)
 //-----------------------------------------------------------------------------
 void wxFrame::MacDrawGrowIcon(void)
 {
-#ifndef OS_X
+#ifndef WX_CARBON
 # if (__powerc) || defined(__ppc__)
   if (! wxTheApp->MacOS85WindowManagerPresent) {
 # endif
@@ -912,12 +912,12 @@ void wxFrame::Paint(void)
 {
   if (SetCurrentDC()) {
     RgnHandle rgn, subrgn;
-#ifndef OS_X
+#ifndef WX_CARBON
     RgnHandle borderRgn = NULL;
 #endif
     if ((rgn = NewRgn())) {
       if ((subrgn = NewRgn())) {
-#ifndef OS_X
+#ifndef WX_CARBON
 	if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
 	  if (borderRgn) {
 	    int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
@@ -929,7 +929,7 @@ void wxFrame::Paint(void)
 	  SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
 	  AddWhiteRgn(subrgn);
 	  DiffRgn(rgn, subrgn, rgn);
-#ifndef OS_X
+#ifndef WX_CARBON
 	  if (borderRgn)
 	    DiffRgn(rgn, borderRgn, rgn);
 #endif
@@ -937,13 +937,13 @@ void wxFrame::Paint(void)
 	  RGBColor save;
 	  GetForeColor(&save);
 	  ForeColor(whiteColor);
-#ifndef OS_X
+#ifndef WX_CARBON
 	  if (borderRgn)
 	    DiffRgn(subrgn, borderRgn, subrgn);
 #endif
 	  PaintRgn(subrgn);
 	  RGBForeColor(&save);
-#ifndef OS_X
+#ifndef WX_CARBON
 	  if (borderRgn)
 	    DisposeRgn(borderRgn);
 	}

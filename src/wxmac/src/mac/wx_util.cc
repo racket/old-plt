@@ -4,11 +4,11 @@
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef OS_X
+#ifdef WX_CARBON
 #include <sys/types.h>
 #endif
 #include <unistd.h>
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Strings.h>
 # include <Gestalt.h>
 # include <Files.h>
@@ -20,7 +20,7 @@ extern "C" int atoi(char *);
 #endif
 
 extern "C" {
-#ifdef OS_X
+#ifdef WX_CARBON
 # include <sys/stat.h>
 #else
 # include <stat.h>
@@ -255,7 +255,7 @@ Bool wxGetHostName(char *buf, int maxSize)
 
 // Get user ID e.g. jacs
 Bool wxGetUserId(char *buf, int maxSize)
-#ifdef OS_X
+#ifdef WX_CARBON
 {
   CFStringRef username;
   
@@ -268,7 +268,7 @@ Bool wxGetUserId(char *buf, int maxSize)
 
 // Get user name e.g. Julian Smart
 Bool wxGetUserName(char *buf, int maxSize)
-#ifdef OS_X
+#ifdef WX_CARBON
 {
   CFStringRef username;
   
@@ -292,7 +292,7 @@ Bool wxGetUserName(char *buf, int maxSize)
 
 #endif
 
-#ifdef OS_X
+#ifdef WX_CARBON
 
 /* wxFSRefToPath converts an FSRef to a path.  This code is copied from 
  * scheme_mac_spec_to_path in MzScheme, but I don't want to widen the 

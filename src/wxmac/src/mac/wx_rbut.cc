@@ -14,7 +14,7 @@
 #include "wx_stdev.h"
 #include "wx_panel.h"
 #include "wx_area.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 #endif
 
@@ -340,7 +340,7 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
   if (!cMacControl) return;
 
   SetCurrentDC();
-#ifndef OS_X
+#ifndef WX_CARBON
   Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
   if (hideToPreventFlicker) ::HideControl(cMacControl);
 #endif
@@ -357,7 +357,7 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
       SetCurrentDC(); // put new origin at (SetOriginX,SetOriginY)
       ::MoveControl(cMacControl, SetOriginX, SetOriginY);
     }
-#ifndef OS_X
+#ifndef WX_CARBON
   if (hideToPreventFlicker) ::ShowControl(cMacControl);
 #endif
   if (!cHidden && (dW || dH || dX || dY))

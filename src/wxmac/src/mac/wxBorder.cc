@@ -11,7 +11,7 @@
 #include "wxMacDC.h"
 #include "wx_area.h"
 #include "wx_gdi.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Windows.h>
 # include "wxBorderArea.h"
 #endif
@@ -69,7 +69,7 @@ void wxBorder::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxBorder::ShowAsActive(Bool flag) // mac platform only
 {
-#ifndef OS_X
+#ifndef WX_CARBON
   if (flag && (! cHidden)) {
     // The following is a kludge, to paint border before subsequent 
     // update event

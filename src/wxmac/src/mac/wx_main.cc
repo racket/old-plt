@@ -7,7 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Windows.h>
 # include <Folders.h>
 #endif
@@ -59,7 +59,7 @@ int wxEntry(int argc, char* argv[])
   SInt16 vRefNum;
   SInt32 dirID;
   const Str255 fileName = "\p";
-#ifdef OS_X
+#ifdef WX_CARBON
   static char path_divider = '/';
 #else
   static char path_divider = ':';

@@ -14,7 +14,7 @@
 #include "wx_stdev.h"
 #include "wx_area.h"
 #include "wx_panel.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 #endif
 
@@ -68,7 +68,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   
   label = wxItemStripLabel(label);
 
-#ifdef OS_X
+#ifdef WX_CARBON
   SetCurrentMacDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
   Rect boundsRect = {0, 0, 0, 0};
@@ -255,7 +255,7 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
   
   SetCurrentDC();
 
-#ifndef OS_X
+#ifndef WX_CARBON
   Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
   if (hideToPreventFlicker) ::HideControl(cMacControl);
 #endif
@@ -272,7 +272,7 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
       MaybeMoveControls();
     }
 
-#ifndef OS_X
+#ifndef WX_CARBON
   if (hideToPreventFlicker) ::ShowControl(cMacControl);
 #endif
   if (!cHidden && (dW || dH || dX || dY))

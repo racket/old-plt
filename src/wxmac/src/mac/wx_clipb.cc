@@ -23,7 +23,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_list.h"
 #include "wx_main.h"
 #include "wx_utils.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Scrap.h>
 # include <TextEdit.h>
 #endif
@@ -67,7 +67,7 @@ Bool wxCloseClipboard(void)
 
 Bool wxEmptyClipboard(void)
 {
-#ifdef OS_X
+#ifdef WX_CARBON
   ClearCurrentScrap();
   return true;
 #else
@@ -85,7 +85,7 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return FALSE;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   ScrapFlavorFlags dontcare;
@@ -114,7 +114,7 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     length = (long)width * height;
   }
   
-#ifdef OS_X
+#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   
@@ -140,7 +140,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return NULL;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   
@@ -207,7 +207,7 @@ int  wxEnumClipboardFormats(int dataFormat)
   for (; node; node = node->Next()) {
     cf = (ClipboardFormat *)node->Data();
     memcpy(&format, cf->name, 4);
-#ifdef OS_X
+#ifdef WX_CARBON
     ScrapRef scrap;
     OSErr err;
     ScrapFlavorFlags dontcare;

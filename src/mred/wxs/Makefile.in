@@ -35,7 +35,7 @@ LDFLAGS = $(XLIB)
 ###########################
 
 LOCALFLAGS_wx_xt =
-LOCALFLAGS_wx_mac = -MMD
+LOCALFLAGS_wx_mac = -MMD _DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 WXSCFLAGS = $(CFLAGS)

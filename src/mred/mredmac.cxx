@@ -29,7 +29,7 @@ static int last_was_front;
 
 #include "mred.h"
 
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Events.h>
 # include <Processes.h>
 # include <Sound.h>
@@ -163,7 +163,7 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-#ifdef OS_X	  
+#ifdef WX_CARBON
         RgnHandle updateRegionHandle = NewRgn();
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
         UnionRgn(updateRegionHandle, q->rgn, q->rgn);
@@ -199,7 +199,7 @@ static int QueueTransferredEvent(EventRecord *e)
     if (e->what == updateEvt) {
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
-#ifdef OS_X
+#ifdef WX_CARBON
       RgnHandle updateRegion = NewRgn();
       GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
       CopyRgn(updateRegion,q->rgn);
@@ -221,7 +221,7 @@ static int QueueTransferredEvent(EventRecord *e)
       int we_are_front = e->message & resumeFlag;
       WindowPtr front = FrontWindow();
 
-# ifndef OS_X
+# ifndef WX_CARBON
       if (we_are_front) {     
 	TEFromScrap();
 	resume_ticks = TickCount();
@@ -712,7 +712,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   if (we_are_front != last_was_front) {
     last_was_front = we_are_front;
 
-# ifndef OS_X
+# ifndef WX_CARBON
     if (we_are_front) {     
       TEFromScrap();
       resume_ticks = TickCount();
@@ -898,7 +898,7 @@ void MrEdDispatchEvent(EventRecord *e)
       }
     }
     
-# ifdef OS_X
+# ifdef WX_CARBON
     {
       Rect windowBounds;
       GetWindowBounds(w, kWindowContentRgn, &windowBounds);
@@ -1097,7 +1097,7 @@ void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
     }
 #else 
     /* No way to know when fds are ready: */
-    secs = 0;
+    secs = 0.1;
 #endif
 
     if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))

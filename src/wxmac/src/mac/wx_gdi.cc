@@ -12,7 +12,7 @@
 #include "wx_utils.h"
 #include "wx_gdi.h"
 #include "wx_dcmem.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Strings.h>
 # include <Resources.h>
 # include <QDOffscreen.h>

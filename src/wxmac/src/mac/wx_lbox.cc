@@ -252,7 +252,7 @@ void wxListBox::Paint(void)
   SetCurrentDC();
   RgnHandle visibleRgn = NewRgn();
   if (visibleRgn) {
-#ifdef OS_X
+#ifdef WX_CARBON
     GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
 #else
     CopyRgn(cMacDC->macGrafPort()->visRgn,visibleRgn);

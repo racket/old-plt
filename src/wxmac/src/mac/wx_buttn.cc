@@ -16,13 +16,13 @@
 #include "wx_area.h"
 #include "wxBorderArea.h"
 #include "wb_gdi.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 #include <Windows.h>
 #endif
 #include "wxButtonBorder.h"
 
 # define MIN_BUTTON_WIDTH 58
-# ifdef OS_X
+# ifdef WX_CARBON
 // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
 #  define PAD_X 5
 #  define PAD_Y 5
@@ -89,7 +89,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   SetCurrentMacDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
-#ifdef OS_X
+#ifdef WX_CARBON
   // First, create the control with a bogus rectangle;
   OSErr err;
   Rect boundsRect = {0,0,0,0};
@@ -229,7 +229,7 @@ wxButton::~wxButton(void)
 //-----------------------------------------------------------------------------
 void wxButton::ChangeColour(void)
 {
-#ifndef OS_X
+#ifndef WX_CARBON
   // all the other controls have null defns for ChangeColour, I don't see why
   // buttons can't, as well.  Particularly because Custom Color tables aren't 
   // supported for Carbon.
@@ -340,7 +340,7 @@ void wxButton::SetDefault(Bool flag) // WCH : modification of original (see belo
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 { // WCH: the panel should invoke the default button to distinguish itself
-#ifdef OS_X
+#ifdef WX_CARBON
   if (cMacControl) {
     char byteFlag = (char)flag;
     SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
@@ -362,7 +362,7 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 			       cWindowWidth - 8, cWindowHeight - 8,
 			       cWindowX + 4, cWindowY + 4);
       }
-#ifdef OS_X
+#ifdef WX_CARBON
   }
 #endif
 }

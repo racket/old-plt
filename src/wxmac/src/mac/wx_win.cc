@@ -24,7 +24,7 @@
 #include "wx_menu.h"
 #include "wxTimeScale.h"
 #include "wx_macevents.h"
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <QuickDraw.h>
 #endif
 
@@ -741,7 +741,7 @@ int wxWindow::SetCurrentDC(void) // mac platform only
       wxWindow *parent = GetParent();
       int dx, dy;
       GetPosition(&dx, &dy);
-#ifndef OS_X // under OS_X, you don't need to mask out the resize rect, the OS does it for you.
+#ifndef WX_CARBON // under WX_CARBON, you don't need to mask out the resize rect, the OS does it for you.
       if (parent) {
 	rgn = parent->GetCoveredRegion(dx + theClipRect.left, dy + theClipRect.top,
 				       theClipRect.right - theClipRect.left,

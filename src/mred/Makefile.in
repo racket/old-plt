@@ -54,7 +54,7 @@ GUILIBS_wx_mac = @LIBS@
 MREDLDLIBS = ../mzscheme/libmzscheme.@LIBSFX@ ../mzscheme/libmzgc.@LIBSFX@ $(@WXLIBS@) $(GUILIBS_@WXVARIANT@)
 
 LOCALFLAGS_wx_xt =
-LOCALFLAGS_wx_mac = -I$(srcdir)/../mac/mzscheme -MMD
+LOCALFLAGS_wx_mac = -I$(srcdir)/../mac/mzscheme -MMD -DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 MREDOBJECTS = mrmain.o

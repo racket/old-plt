@@ -7,7 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Events.h>
 # include <AppleEvents.h>
 # include <DiskInit.h>
@@ -640,7 +640,7 @@ void wxApp::doMacUpdateEvt(void)
 //-----------------------------------------------------------------------------
 void wxApp::doMacDiskEvt(void)
 { // based on "Programming for System 7" by Gary Little and Tim Swihart
-#ifndef OS_X
+#ifndef WX_CARBON
   // OS X doesn't support the diskEvt event. Yay!
   if ((cCurrentEvent.message >> 16) != noErr)
     {
@@ -687,7 +687,7 @@ void wxApp::doMacResumeEvent(void)
   wxFrame* theMacWxFrame = findMacWxFrame(::FrontWindow());
   if (theMacWxFrame)
     {
-#ifndef OS_X
+#ifndef WX_CARBON
       if (cCurrentEvent.message & convertClipboardFlag)
 	::TEFromScrap();
 #endif                        
@@ -702,7 +702,7 @@ void wxApp::doMacSuspendEvent(void)
   wxFrame* theMacWxFrame = findMacWxFrame(::FrontWindow());
   if (theMacWxFrame)
     {
-#ifdef OS_X
+#ifdef WX_CARBON
       ClearCurrentScrap();
 #else                
       ::ZeroScrap();
@@ -728,7 +728,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     return FALSE;
   if (macMenuId == 128) {
     if (macMenuItemNum != 1) {			// if not the "About" entry (or the separator)
-#ifndef OS_X
+#ifndef WX_CARBON
       // these (apparently) don't happen under OS X                
       Str255		daName;
       GetMenuItemText(GetMenuHandle(128), macMenuItemNum, daName);

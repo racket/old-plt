@@ -9,7 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef OS_X
+#ifndef WX_CARBON
 # include <Printing.h>
 # include <QuickDraw.h>
 #endif
@@ -33,7 +33,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   cPrintData = printData;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   if (PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat) != noErr) {
     ok = false;
     return;
@@ -70,7 +70,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   min_x = 0; min_y = 0;
   max_x = 0; max_y = 0;
 
-#ifdef OS_X
+#ifdef WX_CARBON
   PMRect pageRect;
   
   PMGetAdjustedPageRect(cPrintData->cPageFormat,&pageRect);
@@ -130,7 +130,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 wxPrinterDC::~wxPrinterDC(void)
 {
   if (ok) {
-#ifdef OS_X
+#ifdef WX_CARBON
     PMSessionEndDocument(cPrintData->cPrintSession);
 #else    
     PrCloseDoc(prPort);
@@ -150,7 +150,7 @@ void wxPrinterDC::EndDoc(void) { }
 //-----------------------------------------------------------------------------
 void wxPrinterDC::StartPage(void)
 {
-#ifdef OS_X
+#ifdef WX_CARBON
   if (cPrintContext)
     PMSessionBeginPage(cPrintData->cPrintSession,
 		       cPrintData->cPageFormat,
@@ -164,7 +164,7 @@ void wxPrinterDC::StartPage(void)
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndPage(void)
 {
-#ifdef OS_X
+#ifdef WX_CARBON
   if (cPrintContext)
     PMSessionEndPage(cPrintData->cPrintSession);
 #else

@@ -74,6 +74,7 @@ static int mzerrno = 0;
 # define NOT_WINSOCK(x) x
 # define SOCK_ERRNO() errno
 # define WAS_EAGAIN(e) ((e == EWOULDBLOCK) || (e == EAGAIN) || (errid == EINPROGRESS) || (errid == EALREADY))
+# define mz_AFNOSUPPORT EAFNOSUPPORT
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -88,6 +89,7 @@ struct SOCKADDR_IN {
 # define NOT_WINSOCK(x) 0
 # define SOCK_ERRNO() WSAGetLastError()
 # define WAS_EAGAIN(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
+# define mz_AFNOSUPPORT WSAEAFNOSUPPORT
 extern int scheme_stupid_windows_machine;
 #endif
 
@@ -292,9 +294,9 @@ void scheme_init_network(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  scheme_add_global_constant("open-udp-socket", 
+  scheme_add_global_constant("udp-open-socket", 
 			     scheme_make_prim_w_arity(make_udp,
-						      "open-udp-socket", 
+						      "udp-open-socket", 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("udp-close", 
@@ -2687,9 +2689,9 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   Scheme_UDP *udp;
   tcp_t s;
 
-  TCP_INIT("open-udp-socket");
+  TCP_INIT("udp-open-socket");
 
-  scheme_security_check_network("open-udp-socket", NULL, -1, 1);
+  scheme_security_check_network("udp-open-socket", NULL, -1, 1);
 
   s = socket(PF_INET, SOCK_DGRAM, 0);
 
@@ -2697,7 +2699,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
     int errid;
     errid = SOCK_ERRNO();
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "open-udp-socket: creation failed (%E)", errid);
+		     "udp-open-socket: creation failed (%E)", errid);
     return NULL;
   }
 
@@ -2804,6 +2806,15 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 
   scheme_security_check_network(name, address, origid, !do_bind);
 
+  if (udp->s == INVALID_SOCKET) {
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "%s: udp socket was already closed: %V",
+		     name,
+		     udp);
+    return NULL;
+  }
+
+
   if (do_bind && udp->bound) {
     scheme_raise_exn(MZEXN_I_O_UDP,
 		     "%s: udp socket is already bound: %V",
@@ -2831,7 +2842,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
       else
 	errid = 0;
 
-      if (!ok && (errid == EAFNOSUPPORT) && !origid) {
+      if (!ok && (errid == mz_AFNOSUPPORT) && !origid) {
 	/* It's ok. We were trying to dicsonnect */
 	ok = 1;
       }

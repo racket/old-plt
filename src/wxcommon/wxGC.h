@@ -131,7 +131,7 @@ inline void *gc::operator new(size_t size, GCPlacement gcp)
     return GC_malloc(size);
 }
 
-inline void gc::operator delete(void */*obj*/) 
+inline void gc::operator delete(void * /*obj*/) 
 {
 }
 

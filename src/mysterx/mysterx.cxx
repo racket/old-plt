@@ -57,6 +57,8 @@ static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
 
+Scheme_Object *scheme_date_type;
+
 static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
 
 MYSSINK_TABLE myssink_table;
@@ -90,6 +92,17 @@ static MX_PRIM mxPrims[] = {
 
   { mx_com_get_object_type,"com-object-type",1,1 },
   { mx_com_is_a,"com-is-a?",2,2 },
+  { mx_cy_pred_ex,"com-currency?",1,1 },
+  { mx_date_pred_ex,"com-date?",1,1 },
+  { mx_date_to_scheme_date,"com-date->date",1,1 },
+  { scheme_date_to_mx_date,"date->com-date",1,1 },
+  { mx_scode_pred_ex,"com-scode?",1,1 },
+  { mx_scode_to_scheme_number,"com-scode->number",1,1 },
+  { scheme_number_to_mx_scode,"number->com-scode",1,1 },
+  { mx_currency_to_scheme_number,"com-currency->number",1,1 },
+  { scheme_number_to_mx_currency,"number->com-currency",1,1 },
+  { mx_comobj_pred_ex,"com-object?",1,1 },
+  { mx_iunknown_pred_ex,"com-iunknown?",1,1 },
   
   // COM events
   
@@ -111,7 +124,6 @@ static MX_PRIM mxPrims[] = {
   { mx_progid,"progid",1,1 },
   { mx_set_coclass,"set-coclass!",2,2 },
   { mx_set_coclass_from_progid,"set-coclass-from-progid!",2,2 },
-  { mx_com_object_pred,"com-object?",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
   { mx_com_release_object,"com-release-object",1,1 },  
@@ -3687,10 +3699,6 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-Scheme_Object *mx_com_object_pred(int argc,Scheme_Object **argv) {
-  return MX_COM_OBJP(argv[0]) ? scheme_true : scheme_false;
-}
-  
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   HRESULT hr;  
   IHTMLDocument2 *pDocument;
@@ -4294,10 +4302,14 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
 
+  scheme_date_type = scheme_lookup_global(scheme_intern_symbol("struct:date"),
+					  env);
+
   // globals in mysterx.cxx
 
   scheme_register_extension_global(&mx_unit,sizeof(mx_unit));
   scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
+  scheme_register_extension_global(&scheme_date_type,sizeof(scheme_date_type));
 
   mx_com_object_type = scheme_make_type("<com-object>");
   mx_com_type_type = scheme_make_type("<com-type>");
@@ -4307,12 +4319,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_event_type = scheme_make_type("<mx-event>");
   mx_com_cy_type = scheme_make_type("<com-currency>");
   mx_com_date_type = scheme_make_type("<com-date>");
-  mx_com_boolean_type = scheme_make_type("<com-bool>");
   mx_com_scode_type = scheme_make_type("<com-scode>");
-  mx_com_variant_type = scheme_make_type("<com-variant>");
   mx_com_iunknown_type = scheme_make_type("<com-iunknown>");
-  mx_com_pointer_type = scheme_make_type("<com-pointer>");
-  mx_com_array_type = scheme_make_type("<com-array>");
   mx_com_omit_type = scheme_make_type("<com-omit>");
   mx_com_typedesc_type = scheme_make_type("<com-typedesc>");
 

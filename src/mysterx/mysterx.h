@@ -203,6 +203,8 @@ typedef struct _managed_obj_ {
 
 extern const CLSID emptyClsId;
 
+extern Scheme_Object *scheme_date_type;
+
 extern Scheme_Type mx_com_object_type; 
 extern Scheme_Type mx_com_type_type; 
 extern Scheme_Type mx_browser_type;
@@ -211,13 +213,8 @@ extern Scheme_Type mx_element_type;
 extern Scheme_Type mx_event_type;
 extern Scheme_Type mx_com_cy_type;
 extern Scheme_Type mx_com_date_type;
-extern Scheme_Type mx_com_boolean_type;
 extern Scheme_Type mx_com_scode_type;
-extern Scheme_Type mx_com_variant_type;
-extern Scheme_Type mx_com_hresult_type;
 extern Scheme_Type mx_com_iunknown_type;
-extern Scheme_Type mx_com_pointer_type;
-extern Scheme_Type mx_com_array_type;
 extern Scheme_Type mx_com_omit_type;
 extern Scheme_Type mx_com_typedesc_type;
 
@@ -305,6 +302,20 @@ MX_PRIM_DECL(mx_com_register_event_handler);
 MX_PRIM_DECL(mx_com_unregister_event_handler);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_coclasses);
+
+// COM types
+
+MX_PRIM_DECL(mx_cy_pred_ex);
+MX_PRIM_DECL(mx_currency_to_scheme_number);
+MX_PRIM_DECL(scheme_number_to_mx_currency);
+MX_PRIM_DECL(mx_date_pred_ex);
+MX_PRIM_DECL(mx_date_to_scheme_date);
+MX_PRIM_DECL(scheme_date_to_mx_date);
+MX_PRIM_DECL(mx_scode_pred_ex);
+MX_PRIM_DECL(mx_scode_to_scheme_number);
+MX_PRIM_DECL(scheme_number_to_mx_scode);
+MX_PRIM_DECL(mx_comobj_pred_ex);
+MX_PRIM_DECL(mx_iunknown_pred_ex);
 
 // elements
 

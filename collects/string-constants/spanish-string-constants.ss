@@ -141,7 +141,12 @@
  (logging-to "Guardando bitácora en: ")
  (erase-log-directory-contents "¿Borrar el contenido del directorio de bitácoras: ~a?")
  (error-erasing-log-directory "Error al borrar el contenido del directorio de bitácoras.\n\n~a\n")
- 
+
+  ;; modes
+ (mode-submenu-label "Modos")
+ (scheme-mode "Modo Scheme")
+ (text-mode "Modo Texto")
+
  (url "URL")
  (url: "URL:")
  (open-url... "Abre URL...")
@@ -346,6 +351,10 @@
  (font-name "Nombre de fuente")
  (font-size "Tamaño de fuente")
  (set-font "Ver Fuente...")
+ (font-smoothing-label  "Suavisar Fuente")
+ (font-smoothing-none "Nada")
+ (font-smoothing-some "Algo")
+ (font-smoothing-all "Todo")
  (select-font-name "Selecciona un nombre de Fuente")
  (example-text "Texto de ejemplo:")
  (only-warn-once "Sólo advierte una vez cuando las ejecución e interacciones no están sincronizadas")
@@ -780,6 +789,7 @@
  (no-debugging-or-profiling "No depurando o delineando")
  (debugging "Depurando")
  (debugging-and-profiling "Depurando y delineando")
+ (test-coverage "Paquete de prueba de cobertura sintáctica") ;; FIXME: Syntactic test suite coverage
  (whole/fractional-exact-numbers-label "Imprimir números como fracciones")
  (booleans-as-true/false-label "Imprimir valores booleanos usando true y false")
  (show-details-button-label "Mostrar Detalles")
@@ -857,6 +867,9 @@
  (profiling-no-information-available "No hay información de delineado disponible. Por favor, asegúrate que la opción de delineado está activada para el lenguaje y de haber ejecutado su programa.")
  (profiling-clear? "Cambiar la ventana de definiciones invalida la información de delineado. ¿Continuar?")
  
+ ;; test coverage
+ (test-coverage-clear? "El cambiar la ventana de definiciones invalida la información de pruebas de cobertura. ¿Continuar?")
+
  ;;; repl stuff
  (evaluation-terminated "Evaluación Terminada")
  (evaluation-terminated-explanation

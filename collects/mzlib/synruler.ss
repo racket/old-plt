@@ -153,16 +153,16 @@
 				   'unquote-splicing
 				   "takes exactly one expression"
 				   (list 'quasiquote (hyg:untag-no-tags form al)))
-				  (list (list 'unquote-splicing
+				  (cons (list 'unquote-splicing
 					      (if (zero? level)
 						  (hyg:untag (car rest) al tmps)
 						  (qq (car rest) (sub1 level))))
 					(qq (cdr x) level))))
-			    (cons (cons car-first
-					(qq (cdr first) level))
+			    (cons (qq (car x) level)
 				  (qq (cdr x) level))))]
 		     [else
-		      (cons first (qq (cdr x) level))]))]
+		      (cons (qq (car x) level)
+			    (qq (cdr x) level))]))]
 		 [(vector? x)
 		  (list->vector
 		   (qq (vector->list x) level))]

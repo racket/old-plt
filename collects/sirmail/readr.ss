@@ -1154,7 +1154,7 @@
       
       (define sorting-list%
         (class hierarchical-list%
-          (inherit get-editor)
+          (inherit get-editor selectable)
           
           (define/private (find-sorting-key evt)
             (let loop ([editor (get-editor)])
@@ -1180,7 +1180,8 @@
                    [(from) (sort-by-sender)]
                    [(subject) (sort-by-subject)]
                    [(uid) (sort-by-order-received)]))]))
-          (super-instantiate ())))
+          (super-instantiate ())
+	(selectable #f)))
            
       (define sm-frame (make-object sm-frame% mailbox-name #f 
                          (get-pref 'sirmail:frame-width)

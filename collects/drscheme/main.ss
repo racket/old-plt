@@ -20,7 +20,10 @@
   (drscheme:get/extend:get-interactions-edit%)
   (drscheme:get/extend:get-definitions-edit%)
   
-
+  (wx:application-file-handler
+   (lambda (filename)
+     (drscheme:unit:open-as-unit filename)))
+  
   '(define (make-basic)
     (send (drscheme:compound-unit:make-compound-unit #f)
 	  create-frame))

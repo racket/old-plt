@@ -1606,7 +1606,7 @@
                   (cond
                     ((var-access-static? vaccess)
                      (set-h (build-identifier (build-static-name (build-var-name field)
-                                                                 (build-identifier (var-access-class access))))))
+                                                                 (build-identifier (var-access-class vaccess))))))
                     ((not obj) (set-h (translate-id (build-var-name field) field-src)))
                     (else
                      (let ((setter (create-set-name field (var-access-class vaccess)))

@@ -32,6 +32,8 @@
 
   (define-struct/parse setting (name
 				vocabulary-symbol
+				extra-definitions-unit
+				macro-libraries
 				case-sensitive?
 				allow-set!-on-undefined?
 				unmatched-cond/case-is-error?
@@ -53,6 +55,8 @@
   (define settings
     (list (make-setting/parse
 	   `((name "Beginner")
+	     (extra-definitions-unit ,(require-library "beginner.ss" "userspce"))
+	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
@@ -72,6 +76,8 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Intermediate")
+	     (extra-definitions-unit ,(require-library "intermediate.ss" "userspce"))
+	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
@@ -91,6 +97,8 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
+	     (extra-definitions-unit ,(require-library "advanced.ss" "userspce"))
+	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)
 	     (allow-set!-on-undefined? #f)
@@ -110,6 +118,8 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "MzScheme")
+	     (extra-definitions-unit #f)
+	     (macro-libraries ())
 	     (vocabulary-symbol mzscheme)
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
@@ -130,6 +140,8 @@
 	  (make-setting/parse
 	   `((name "MzScheme Debug")
 	     (vocabulary-symbol mzscheme-debug)
+	     (extra-definitions-unit #f)
+	     (macro-libraries ())
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #f)
@@ -145,7 +157,30 @@
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #f)
 	     (printing r4rs-style)
-	     (define-argv? #t)))))
+	     (define-argv? #t)))
+	  (make-setting/parse
+	   (let ([drscheme? (defined? 'mred^)])
+	     `((name "Everything")
+	       (vocabulary-symbol
+		,(if drscheme? 'mred-debug 'mzscheme-debug))
+	       (extra-definitions-unit ,(require-library "everything.ss" "userspce"))
+	       (macro-libraries (("macro.ss") ("turtlm.ss" "graphics")))
+	       (case-sensitive? #f)
+	       (allow-set!-on-undefined? #f)
+	       (unmatched-cond/case-is-error? #t)
+	       (allow-improper-lists? #t)
+	       (allow-reader-quasiquote? #t)
+	       (sharing-printing? #f)
+	       (abbreviate-cons-as-list? #t)
+	       (signal-undefined #t)
+	       (signal-not-boolean #f)
+	       (eq?-only-compares-symbols? #f)
+	       (<=-at-least-two-args #f)
+	       (disallow-untagged-inexact-numbers #f)
+	       (print-tagged-inexact-numbers #t)
+	       (whole/fractional-exact-numbers #f)
+	       (printing constructor-style)
+	       (define-argv? #t))))))
 
   (define (snoc x y) (append y (list x)))
 
@@ -509,10 +544,10 @@
     ;;                       -> void
     ;; effect: sets the parameters for drscheme and drscheme-jr
     (define (initialize-parameters custodian namespace-flags setting)
-      (let* ([n (apply make-namespace
-		       (if (zodiac-vocabulary? setting)
-			   (append (list 'hash-percent-syntax) namespace-flags)
-			   namespace-flags))])
+      (let-values ([(n) (apply make-namespace
+			       (if (zodiac-vocabulary? setting)
+				   (append (list 'hash-percent-syntax) namespace-flags)
+				   namespace-flags))])
 	(when (zodiac-vocabulary? setting)
 	  (use-compiled-file-kinds 'non-elaboration))
 	(current-setting setting)
@@ -521,7 +556,8 @@
 	(current-custodian custodian)
 	(error-value->string-handler drscheme-error-value->string-handler)
 	(debug-info-handler (let ([drscheme-debug-info-handler
-				   (lambda () (let ([x (current-continuation-marks aries:w-c-m-key)])
+				   (lambda () (let ([x (current-continuation-marks
+							aries:w-c-m-key)])
 						(if (null? x)
 						    #f ; no debugging info available
 						    (car x))))])
@@ -605,4 +641,7 @@
 	(mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
 	(mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
 	(print-graph (setting-sharing-printing? setting))
-	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting)))))
+	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
+
+	(invoke-open-unit/sig (setting-extra-definitions-unit setting))
+	(for-each (lambda (l) (apply require-library/proc l)) (setting-macro-libraries setting)))))

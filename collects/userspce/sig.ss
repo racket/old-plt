@@ -78,6 +78,8 @@
    number->setting
    (struct setting (name
 		    vocabulary-symbol
+		    extra-definitions-unit
+		    macro-libraries
 		    case-sensitive?
 		    allow-set!-on-undefined?
 		    unmatched-cond/case-is-error?

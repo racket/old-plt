@@ -3,7 +3,7 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
-CHANGE: added support for custom input-ports that return non-character data (via (special) and (special-comment)).
+CHANGE: added support for custom input-ports that return non-character data (via (special), (special-comment) and (special-error)).
 
 CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
 
@@ -86,19 +86,34 @@ This gives you the following syntactic forms:
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
 
-The lexer treats the rules ((special) action) and ((special-comment)
-action) specially.  In addition to returning characters and
-eof-objects, custom input ports can return arbitrary values (specials)
-or raise an exception to indicate a non-textual comment
-(special-comments).  A special or special-comment can never be part of
-a lexeme with surrounding characters.  When the lexer is invoked with
-a special or special-comment as the next item in the input port the
-specified action if performed.  Instead of binding the identifier
-"lexeme" in the action, the variable "special" is bound in the case of
-a special.  No variable is bound in the case of a special-comment.  If
-no rule for special is given, the lexer returns void when a special is
-found.  If no rule for special-comment is given, the lexer skips the
-special-comment.
+   The lexer treats the rules ((special) action), ((special-comment)
+   action) and ((special-error) action specially.  In addition to
+   returning characters and eof-objects, custom input ports can return
+   arbitrary values (specials), raise an exception to indicate a
+   non-textual comment (special-comments) or raise an exception to
+   indicate a malformed special (special-error).  Specials,
+   special-comments and special-errors can never be part of a lexeme
+   with surrounding characters.
+
+   The special rule is matched when the input port returns a value
+   other than a character or eof-object.  The identifier "special" is
+   bound to this value in the corresponding action, instead of the
+   identifier "lexeme".  If no special rule is present, the lexer
+   returns void.
+
+   The special-comment rule is matched when the input port raises a
+   special-comment exception instead of returning a value.  If no
+   special-comment rule is present, the lexer automatically tries to
+   return the next token from the input port.
+
+   The special-error rule is matched when the input port raises an
+   exception (other than a special-comment or break exception) while
+   trying to read a special value.  This indicates that the special
+   value is internally malformed (such as an embedded XML editor with
+   malformed syntax).  The identifier "exception" is bound to the
+   raised exception in the action.  If no special-error rule is
+   present, the exception is raised by the lexer itself.
+
 
 > (lexer-src-pos (re action) ...) like a lexer, but the return of each
    match is (list action-result start-pos end-pos) instead of simply

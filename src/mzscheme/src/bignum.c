@@ -56,8 +56,6 @@
 
 /* Used by gmp: */
 void scheme_bignum_use_fuel(long n);
-static Scheme_Object *do_power(const Scheme_Object *a, unsigned long b);
-static Scheme_Object *do_big_power(const Scheme_Object *a, const Scheme_Object *b, const Scheme_Object *two);
 
 
 #if defined(SIXTY_FOUR_BIT_INTEGERS)
@@ -608,92 +606,53 @@ Scheme_Object *scheme_bignum_multiply(const Scheme_Object *a, const Scheme_Objec
   return bignum_multiply(a, b, 1);
 }
 
+static Scheme_Object *do_power(const Scheme_Object *a, unsigned long b)
+{
+  Scheme_Object *result;
 
-// Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b)
-// {
-//   Scheme_Object *a_acc, *b_acc, *result, *two;
-// 
-//   a_acc = bignum_copy(a, 0);
-//   b_acc = bignum_copy(b, 0);
-//   result = scheme_make_bignum(1);
-//   two = scheme_make_bignum(2);
-// 
-//   while (SCHEME_BIGLEN(b_acc) > 0)
-//   {
-//     if (SCHEME_BIGDIG(b_acc)[0] & 0x1) /* if (odd?) */
-//       result = bignum_multiply(a_acc, result, 0);
-//     a_acc = bignum_multiply(a_acc, a_acc, 0);
-//     scheme_bignum_divide(b_acc, two, &b_acc, NULL, 0);
-//   }
-//   return scheme_bignum_normalize(result);
-// }
+  if (b == 0) {
+    return scheme_make_integer(1);
+  } else {
+    result = do_power(a, b >> 1);
+    result = scheme_bin_mult(result, result);
+    if (b & 0x1)  /* odd? */
+      return scheme_bin_mult(a, result);
+    else
+      return result;
+  }
+}
+
+Scheme_Object *do_big_power(const Scheme_Object *a, const Scheme_Object *b)
+{
+  /* This is really a fancy way of sleeping, because it's only used
+     when b is a bignum, which means that we have no chance of actually
+     reaching the result. But just in case... */
+  Scheme_Object *a_acc, *b_acc, *result, *two;
+
+  a_acc = bignum_copy(a, 0);
+  b_acc = bignum_copy(b, 0);
+  result = scheme_make_bignum(1);
+  two = scheme_make_bignum(2);
+
+  while (SCHEME_BIGLEN(b_acc) > 0)
+  {
+    if (SCHEME_BIGDIG(b_acc)[0] & 0x1) /* if (odd?) */
+      result = bignum_multiply(a_acc, result, 0);
+    a_acc = bignum_multiply(a_acc, a_acc, 0);
+    scheme_bignum_divide(b_acc, two, &b_acc, NULL, 0);
+  }
+  return scheme_bignum_normalize(result);
+}
 
 
 Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b)
 {
   unsigned long exponent;
-  if (scheme_bignum_get_unsigned_int_val(b, &exponent))
+  if (scheme_get_unsigned_int_val((Scheme_Object *)b, &exponent))
     return scheme_bignum_normalize(do_power(a, exponent));
   else
-    return scheme_bignum_normalize(do_big_power(a, b, scheme_make_bignum(2)));
+    return scheme_bignum_normalize(do_big_power(a, b));
 }
-
-static Scheme_Object* do_power(const Scheme_Object *a, unsigned long b)
-{
-  Scheme_Object *result;
-
-  if (b == 0)
-  {
-    if (!bignum_one) {
-      REGISTER_SO(bignum_one);
-      bignum_one = scheme_make_bignum(1);
-    }
-    return bignum_one;
-  }
-  else
-  {
-    result = do_power(a, b >> 1);
-    result = bignum_multiply(result, result, 0);
-    if (b & 0x1)  /* odd? */
-    {
-      return bignum_multiply(a, result, 0);
-    }
-    else
-    {
-      return result;
-    }
-  }
-}
-
-static Scheme_Object* do_big_power(const Scheme_Object *a, const Scheme_Object *b, const Scheme_Object *two)
-{
-  Scheme_Object *result;
-
-  if (SCHEME_BIGLEN(b) == 0)
-  {
-    if (!bignum_one) {
-      REGISTER_SO(bignum_one);
-      bignum_one = scheme_make_bignum(1);
-    }
-    return bignum_one;
-  }
-  else
-  {
-    int odd = SCHEME_BIGDIG(b)[0] & 0x1;
-    scheme_bignum_divide(b, two, &b, NULL, 0);
-    result = do_big_power(a, b, two);
-    result = bignum_multiply(result, result, 0);
-    if (odd)  /* odd? */
-    {
-      return bignum_multiply(a, result, 0);
-    }
-    else
-    {
-      return result;
-    }
-  }
-}
-
 
 Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b)
 {

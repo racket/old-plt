@@ -1637,7 +1637,7 @@ static Scheme_Object *fixnum_expt(int x, int y)
   else
   {
     long result = 1;
-    int odd_result = x < 0 && y & 0x1;
+    int odd_result = (x < 0) && (y & 0x1);
 
     if (x < 0)
       x = -x;
@@ -1645,13 +1645,13 @@ static Scheme_Object *fixnum_expt(int x, int y)
     {
       /* x^y*result is invariant and result <= x */
       if (x > 46339 && y > 1) /* x * x won't fit in 31 bits */
-        return scheme_bignum_power(scheme_make_bignum(orig_x), scheme_make_bignum(orig_y));
+        return scheme_bignum_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
 
       if (y & 0x1) /* if (odd?) */
       {
         long next_result = x * result;
         if (y == 1 && x > 46339 && !(next_result / x == result))
-          return scheme_bignum_power(scheme_make_bignum(orig_x), scheme_make_bignum(orig_y));
+          return scheme_bignum_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
         else
           result = next_result;
       }

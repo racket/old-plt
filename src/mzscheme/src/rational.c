@@ -37,8 +37,9 @@ static Scheme_Object *make_rational(const Scheme_Object *n, const Scheme_Object 
   r->num = (Scheme_Object *)n;
   r->denom = (Scheme_Object *)d;
   
-  return normalize ? scheme_rational_normalize((Scheme_Object *)r) 
-    : (Scheme_Object *)r;
+  return (normalize 
+	  ? scheme_rational_normalize((Scheme_Object *)r) 
+	  : (Scheme_Object *)r);
 }
 
 Scheme_Object *scheme_make_rational(const Scheme_Object *n, const Scheme_Object *d)
@@ -344,8 +345,14 @@ Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object
 {
   double b, e, v;
 
-  if (((Scheme_Rational *)p)->denom == one)
-    return scheme_generic_integer_power(o, ((Scheme_Rational *)p)->num);
+  if (((Scheme_Rational *)p)->denom == one) {
+    Scheme_Object *a[2], *n;
+    a[0] = ((Scheme_Rational *)o)->num;
+    a[1] = ((Scheme_Rational *)p)->num;
+    n = scheme_expt(2, a);
+    a[0] = ((Scheme_Rational *)o)->denom;
+    return make_rational(n, scheme_expt(2, a), 0);
+  }
 
   if (scheme_is_rational_positive(o)) {
     b = scheme_rational_to_double(o);

@@ -319,7 +319,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
-  { mx_process_win_events,"process-win-events",1,1},
+  { mx_process_win_events,"process-win-events",0,0},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -3404,6 +3404,41 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   ShowWindow(pDoc->hwnd,
 	     argv[1] == scheme_false ? SW_HIDE : SW_SHOW);
   
+  return scheme_void;
+}
+
+static BOOL win_event_available(void *) {
+  MSG msg;
+
+  return PeekMessage(&msg,NULL,0,0,PM_NOREMOVE);
+}
+
+static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
+  static HANDLE dummySem;
+  
+  if (!dummySem) {
+    dummySem = CreateSemaphore(NULL,0,1,NULL); 
+    if (!dummySem) {
+      scheme_signal_error("Error creating Windows event semaphore");
+    }
+  }
+
+  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
+  scheme_add_fd_handle(dummySem,fds,TRUE); 
+}
+
+Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
+  MSG msg;
+
+  scheme_block_until((int (*)(Scheme_Object *))win_event_available,
+  		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
+  		     NULL,0.0F);
+
+  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
+
   return scheme_void;
 }
 

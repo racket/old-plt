@@ -48,48 +48,6 @@ Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-static BOOL win_event_available(void *) {
-  MSG msg;
-
-  return PeekMessage(&msg,NULL,0,0,PM_NOREMOVE);
-}
-
-static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
-  static HANDLE dummySem;
-  
-  if (!dummySem) {
-    dummySem = CreateSemaphore(NULL,0,1,NULL); 
-    if (!dummySem) {
-      scheme_signal_error("Error creating Windows event semaphore");
-    }
-  }
-
-  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
-  scheme_add_fd_handle(dummySem,fds,TRUE); 
-}
-
-Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
-  MX_Document_Object *doc;
-  MSG msg;
-
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("process-win-events","mx-document",0,argc,argv) ;
-  }
-
-  doc = (MX_Document_Object *)argv[0];
-
-  scheme_block_until((int (*)(Scheme_Object *))win_event_available,
-  		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
-  		     NULL,0.0F);
-
-  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  }
-
-  return scheme_void;
-}
-
 void initEventNames(void) {
   eventNames[click] = L"click";
   eventNames[dblclick] = L"dblclick";

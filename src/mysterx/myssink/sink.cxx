@@ -94,13 +94,17 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
 }
 
 // different than the same-named function in mysterx.cxx
-// *here* we're coercing VARIANT's to be arguments to
-// Scheme procedures; *there*, we're coercing a VARIANTARG
+// *here* we're coercing VARIANTARG's to be arguments to
+// Scheme procedures; *there*, we're coercing a VARIANT
 // return value to be the value of a method call, and 
-// VARIANTARG's, unlike VARIANT's, cannot have VT_BYREF bit
+// VARIANT's, unlike VARIANTARG's, cannot have VT_BYREF bit
 
 Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
-
+  /*
+  char buff[256];
+  _itoa((int)pVariantArg->vt,buff,16);
+  MessageBox(NULL,buff,"pVariantArg->vt",0);
+  */
   switch(pVariantArg->vt) {
 
   case VT_NULL :

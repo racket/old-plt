@@ -11,7 +11,7 @@
 	  [doc-position : help:doc-position^])
   (link [browser : browser^ ((require-library "browserr.ss" "browser")
 			     function string file url plt-installer
-			     mred framework)]
+			     mred)]
 	[search : help:search^ ((require-relative-library "search.ss")
 				doc-position function)]
 	[help : help:help-window^

@@ -183,6 +183,8 @@
  (forward-in-browser-history "Avancer")
  (home "Maison")
  (browser "Navigateur")
+ (choose-browser "Choisissez un navigateur")
+ (no-browser "Aucun")
  (cannot-display-url "Impossible de montrer l'URL ~s : ~a")
  (install? "Installer ?")  ;; if a .plt file is found (title of dialog)
  ; package => paquetage, pas tres clair...

@@ -176,23 +176,27 @@
                [(string=? s ".") 'same]
                [else s]))))
       (lambda (index offset)
-        (let ((simple-index (simplify-path index)))
-          (let-values ([(base name dir?)
-                        (split-path simple-index)])
-            (build-path
-             (if (or dir?
-                     (directory-exists? simple-index))
-                 simple-index
-                 (if (eq? base 'relative)
-                     'same
-                     base))
-             (let loop ((str offset))
-               (let ((m (regexp-match path-segment-regexp str)))
-                 (cond
-                   [(not m) str]
-                   [else
-                    (build-path (translate-dir (cadr m))
-                                (loop (caddr m)))])))))))))
+	(let*-values ([(simple-index) (simplify-path index)]
+		      [(base name dir?)
+		        (split-path simple-index)])
+	  (if (string=? "" offset)
+	    (build-path base name)
+	    (build-path
+	      (if (or dir?
+		    (directory-exists? simple-index))
+		simple-index
+		(if (eq? base 'relative)
+		  'same
+		  base))
+	      (let loop ((str offset))
+		(let ((m (regexp-match path-segment-regexp str)))
+		  (cond
+		    [(not m) str]
+		    [else
+		      (if (string=? "" (caddr m))
+			(translate-dir (cadr m))
+			(build-path (translate-dir (cadr m))
+			  (loop (caddr m))))])))))))))
   
   ;; combine-url/relative : url x str -> url
   (define combine-url/relative

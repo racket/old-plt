@@ -2,6 +2,7 @@
   (require (lib "mred.ss" "mred")
 	   (lib "class.ss")
            (lib "unit.ss")
+           (lib "etc.ss")
            (lib "list.ss"))
   
   (provide make-world
@@ -27,12 +28,8 @@
   (define (rnde v)
     (inexact->exact (round v)))
 
-  ;;(define wait-for-vertical-retrace
-  ;;  (with-handlers ([not-break-exn? (lambda (x) void)])
-  ;;    (dynamic-require '(lib "vr.ss" "ollie-world") 'wait-for-vertical-retrace)))
-  
   (define (icon-file f)
-    (build-path (collection-path "ollie-world") "icons" f))
+    (build-path (this-expression-source-directory) "icons" f))
 
   (define static-object-snip%
     (class image-snip%

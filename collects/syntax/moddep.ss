@@ -15,6 +15,14 @@
 		   (read-accept-quasiquote #t))
       (thunk)))
 
+  (define (raise-wrong-module-name filename expected-name name)
+    (raise
+     (make-exn:module
+      (format
+       "load-handler: expected a `module' declaration for `~a' in ~s, found: ~a"
+       expected-name filename name)
+      (current-continuation-marks))))
+  
   (define (check-module-form exp expected-module filename)
     (cond
      [(compiled-module-expression? (syntax-e exp))
@@ -24,17 +32,18 @@
 	  exp
 	  ;; Wrong name:
 	  (and filename
-	       (error 'load-handler
-		      "file ~s declares wrong module name: ~a"
-		      filename (module-compiled-name (syntax-e exp)))))]
+	       (raise-wrong-module-name filename expected-module 
+                                        (module-compiled-name (syntax-e exp)))))]
      [(and (syntax? exp)
 	   (syntax-case exp ()
 	     [(mod nm . _)
 	      (and (eq? (syntax-e (syntax mod)) 'module)
-		   (eq? (syntax-e (syntax nm)) expected-module))]
+		   (identifier? (syntax nm)))]
 	     [_else #f]))
       ;; It's ok; need to install a specific `module' binding:
       (with-syntax ([(mod nm . _) exp])
+        (unless (eq? (syntax-e (syntax nm)) expected-module)
+          (raise-wrong-module-name filename expected-module (syntax-e (syntax nm))))
 	(datum->syntax-object exp
 			      (cons (syntax module)
 				    (cdr (syntax-e exp)))
@@ -42,9 +51,12 @@
 			      exp))]
      [else
       (and filename
-	   (error 'load-handler 
-		  "file ~s does not contain a module declaration as expected"
-		  filename))]))
+            (raise
+             (make-exn:module
+              (format
+               "load-handler: expected a `module' declaration for `~a' in ~s, but found something else"
+               expected-module filename)
+              (current-continuation-marks))))]))
   
   (define re:suffix (regexp "\\..?.?.?$"))
 	  

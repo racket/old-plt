@@ -25,6 +25,7 @@ public:
     void  Delete(int);
     void  SetLabel(int, char *);
     void  Set(int n, char **choices);
+    int   ButtonFocus(int);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -40,6 +41,7 @@ void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
 void wxTabChoice::SetLabel(int which, char *lbl) { }
 void wxTabChoice::Set(int n, char **choices) { }
+int wxTabChoice::ButtonFocus(int n) { return 0; }
 
 class wxGroupBox : public wxItem {
 public:
@@ -90,6 +92,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 @ "set-label" : void SetLabel(int,string); : : /RANGE[0]
 
 @ "set" : void Set(-int=0,string[]=NULL/bList/ubList/cStringList///push) : : /glueListSet[string.0.1.0.METHODNAME("tab-group","set")]/glueCleanup[1]
+
+@ "button-focus" : int ButtonFocus(int);
 
 @END
 

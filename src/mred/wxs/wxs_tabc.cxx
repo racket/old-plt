@@ -46,6 +46,7 @@ public:
     void  Delete(int);
     void  SetLabel(int, char *);
     void  Set(int n, char **choices);
+    int   ButtonFocus(int);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -61,6 +62,7 @@ void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
 void wxTabChoice::SetLabel(int which, char *lbl) { }
 void wxTabChoice::Set(int n, char **choices) { }
+int wxTabChoice::ButtonFocus(int n) { return 0; }
 
 class wxGroupBox : public wxItem {
 public:
@@ -255,6 +257,7 @@ static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {
 #define RANGECLASS wxTabChoice
 
 #define THISOBJECT ((RANGECLASS *)((Scheme_Class_Object *)THEOBJ)->primdata)
+
 
 
 
@@ -534,6 +537,29 @@ void os_wxTabChoice::OnKillFocus()
   
      READY_TO_RETURN;
   }
+}
+
+static Scheme_Object *os_wxTabChoiceButtonFocus(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxTabChoice_class, "button-focus in tab-group%", n, p);
+  int x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "button-focus in tab-group%"));
+
+  
+  r = WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->ButtonFocus(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
 }
 
 static Scheme_Object *os_wxTabChoiceSet(int n,  Scheme_Object *p[])
@@ -935,8 +961,9 @@ void objscheme_setup_wxTabChoice(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabChoice_class);
 
-  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 14));
+  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 15));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "button-focus" " method", (Scheme_Method_Prim *)os_wxTabChoiceButtonFocus, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "set" " method", (Scheme_Method_Prim *)os_wxTabChoiceSet, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "set-label" " method", (Scheme_Method_Prim *)os_wxTabChoiceSetLabel, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "delete" " method", (Scheme_Method_Prim *)os_wxTabChoiceDelete, 1, 1));

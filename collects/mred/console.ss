@@ -609,7 +609,7 @@
 			   (lambda ()
 			     (let ([start (last-position)]
 				   [c-locked? locked?])
-			       (fprintf mred:constants:original-output-port "handling insertion ~s~n" s)
+			       '(fprintf mred:constants:original-output-port "handling insertion ~s~n" s)
 			       (begin-edit-sequence)
 			       (lock #f)
 			       (insert (if (is-a? s wx:snip%)

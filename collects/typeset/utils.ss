@@ -176,10 +176,10 @@
 ;; bracket : snip -> snip
 ;; adds double square brackets around the snip
 (define (double-bracket snip)
-  (make-object double-bracket-snip% snip))
+  (make-object double-bracket-snip% (snipize snip)))
 
 (define (single-bracket snip)
-  (make-object single-bracket-snip% snip))
+  (make-object single-bracket-snip% (snipize snip)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                     ;;;
@@ -721,6 +721,11 @@
   (lambda (snips)
     (make-object position-snip% position-snipclass calc-positions calc-size snips)))
 
+(define (snipize obj)
+  (if (is-a? obj snip%)
+      obj
+      (make-string-snip obj)))
+
 (define (make-string-snip obj)
   (let* ([str (format "~a" obj)]
 	 [sn (make-object string-snip% (string-length str))])
@@ -753,8 +758,8 @@
 	  "robby:sup")])
     (lambda (base pow)
       (make-sup
-       (list (if (is-a? base snip%) (send base copy) (make-string-snip base))
-	     (if (is-a? pow snip%) (send pow copy) (make-string-snip pow)))))))
+       (list (snipize base)
+	     (snipize pow))))))
 
 (define sub
   (let ([make-sub
@@ -781,6 +786,6 @@
 	  "robby:sub")])
     (lambda (base sub)
       (make-sub
-       (list (if (is-a? base snip%) (send base copy) (make-string-snip base))
-	     (if (is-a? sub snip%) (send sub copy) (make-string-snip sub)))))))
+       (list (snipize base)
+	     (snipize sub))))))
 )

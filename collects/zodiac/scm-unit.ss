@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.56 1998/03/14 21:03:25 mflatt Exp $
+; $Id: scm-unit.ss,v 1.57 1998/03/14 21:28:02 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -121,7 +121,7 @@
     (lambda (attributes id varref)
       (let ((new-value (make-unresolved id varref))
 	    (current (get-attribute attributes 'unresolved-unit-vars
-		       (lambda () '(()))))) ; List of lists to accomodate
+		       (lambda () '())))) ; List of lists to accomodate
 					; nested units
 	(unless (null? current)
 	  (put-attribute attributes 'unresolved-unit-vars

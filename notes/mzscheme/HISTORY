@@ -2,6 +2,20 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.13
+Added protect sub-form of provide
+Added current-code-inspector
+Added certification of contexts for unexported identifiers
+Unix and Mac OS X: path expansion removes redundant slashes
+Added optional port name arguments to make-pipe
+ and open-{input,output}-{string,bytes}
+Added syntax-recertify, syntax-recertify-constrained?,
+ and syntax-extend-certificate-context
+namespace-unprotect-module
+Changed module->namespace and module re-definition so
+ that they're controlled by the code inspector, not
+ the modules attach state
+
 Version 299.12
 Added hash-table-count
 

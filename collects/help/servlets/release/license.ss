@@ -79,5 +79,13 @@
                  "Copyright (c) 1997-2000 Kyle Hammond."
                  "All rights reserved.")
                 ("Independent JPEG Group library"
-                 "Copyright (c) 1991-1998, Thomas G. Lane."
-                 "All rights reserved.")))))))
+                 "Copyright (c) 1991-1998 Thomas G. Lane."
+                 "All rights reserved.")
+                ("libpng"
+		 "Copyright (c) 2000-2002 Glenn Randers-Pehrson"
+                 "All rights reserved.")
+		("zlib"
+		 "Copyright (c) 1995-2002 Jean-loup Gailly and Mark Adler"
+		 "All rights reserved.")
+		("GNU Classpath"
+		 "Gnu Public Licence with special exception")))))))

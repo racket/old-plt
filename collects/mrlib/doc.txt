@@ -247,8 +247,8 @@ the previously alloted width and height.
 > (send an-aligned-pasteboard set-aligned-min-sizes)
 
 Calculates the minimum width and height of the of the
-pasteboard based on childrens min-sizes and stores it for
-later retrival via the getters.
+pasteboard based on children's min-sizes and stores it for
+later retrieval via the getters.
 
 > (send an-aligned-pasteboard get-aligned-min-width)
 
@@ -264,7 +264,7 @@ fit the heights of all of its children.
 
 The _aligned-editor-snip%_ and aligned-editor-canvas%_
 classes are derived from editor-snip% and editor-canvas%
-respectivly and implement aligned-pasteboard-parent<%>.
+respectively and implement aligned-pasteboard-parent<%>.
 
 Both classes also send the realign method to their editor
 when they are resized.
@@ -296,10 +296,10 @@ The minimum height that the snip can be resized to
 
 > (send an-aligned-snip stretchable-width)
 
-Whether or not the snip can be stretched in the X dimention
+Whether or not the snip can be stretched in the X dimension
 
 > (send an-aligned-snip stretchable-height)
 
-Whether or not the snip can be stretched in the Y dimention
+Whether or not the snip can be stretched in the Y dimension
 
 ============================================================

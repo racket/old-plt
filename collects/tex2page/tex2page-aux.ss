@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-05")
+(define *tex2page-version* "2005-03-06")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -106,8 +106,6 @@
 (define *imgdef-file-suffix* "D-")
 
 (define *index-file-suffix* "--h")
-
-(define *js-file-suffix* "-Z-J.js")
 
 (define *label-file-suffix* "-Z-L")
 
@@ -330,8 +328,6 @@
 
 (define *jobname* "texput")
 
-(define *js-port* #f)
-
 (define *label-port* #f)
 
 (define *label-source* #f)
@@ -492,8 +488,6 @@
 (define *write-log-index* 0)
 
 (define *write-log-possible-break?* #f)
-
-(define *zeroth-html-page* #f)
 
 (define strftime-like
   (lambda (ignore-format d)
@@ -3178,9 +3172,6 @@
         (write-log 'separation-newline)))
       (when (memv 'metapost *missing-pieces*)
         (write-log "MetaPost output not included")
-        (write-log 'separation-newline))
-      (when (memv 'slideshow *missing-pieces*)
-        (write-log "Slideshow setup not finished")
         (write-log 'separation-newline)))))
 
 (define do-pageref
@@ -3708,7 +3699,7 @@
            (last-page? (= *html-page-count* *last-page-number*))
            (toc-page? (and *toc-page* (= *html-page-count* *toc-page*)))
            (index-page? (and *index-page* (= *html-page-count* *index-page*)))
-           (first-page *zeroth-html-page*)
+           (first-page (string-append *jobname* *output-extension*))
            (prev-page
              (cond
               (first-page? #f)
@@ -3855,18 +3846,10 @@
     (unless (= *html-page-count* 0) (emit "no"))
     (emit "index,follow\">")
     (emit-newline)
-    (when *html-slideshow?*
-      (emit "<script language=\"javascript\" src=\"")
-      (emit *jobname*)
-      (emit *js-file-suffix*)
-      (emit "\"></script>")
-      (emit-newline))
     (for-each emit *html-head*)
     (emit "</head>")
     (emit-newline)
-    (emit "<body")
-    (when *html-slideshow?* (emit " onload=\"init_all();\""))
-    (emit ">")
+    (emit "<body>")
     (emit-newline)
     (emit "<div id=")
     (emit (if (= *html-page-count* 0) "title" "content"))
@@ -3910,7 +3893,6 @@
   (lambda ()
     (when *aux-port* (close-output-port *aux-port*))
     (when *css-port* (close-output-port *css-port*))
-    (when *js-port* (close-output-port *js-port*))
     (when *index-port* (close-output-port *index-port*))
     (when *label-port* (close-output-port *label-port*))
     (when *bib-aux-port* (close-output-port *bib-aux-port*))
@@ -3930,7 +3912,8 @@
       (let ((num-pages (+ *html-page-count* 1)))
         (write-log "Output written on ")
         (write-log *aux-dir/*)
-        (write-log *zeroth-html-page*)
+        (write-log *jobname*)
+        (write-log *output-extension*)
         (when (> num-pages 1) (write-log ", ..."))
         (write-log " (")
         (write-log num-pages)
@@ -5184,11 +5167,27 @@
 (define actual-tex-filename
   (lambda (f check-timestamp?)
     (let ((doing-main-file? (not *main-tex-file*)) (f2 (find-tex-file f)))
-      (when (and doing-main-file? f2)
-        (set! *jobname* (file-stem-name f2))
-        (make-target-dir)
-        (initialize-global-texframe))
-      (when doing-main-file? (load-aux-file))
+      (when doing-main-file?
+        (when f2
+          (set! *jobname* (file-stem-name f2))
+          (make-target-dir)
+          (let ((zeroth-html-page
+                  (string-append *aux-dir/* *jobname* *output-extension*)))
+            (when (string=? zeroth-html-page f2)
+              (let ((f2-save (string-append f2 "_save")))
+                (write-log 'separation-newline)
+                (write-log "Copying weirdly named TeX source file ")
+                (write-log f2)
+                (write-log " to ")
+                (write-log f2-save)
+                (write-log 'separation-newline)
+                (case *operating-system*
+                  ((unix) (system (string-append "cp -pf " f2 " " f2-save)))
+                  ((windows)
+                   (system (string-append "copy/y " f2 " " f2-save))))
+                (set! f2 f2-save))))
+          (initialize-global-texframe))
+        (load-aux-file))
       (when (and f2 check-timestamp?) (update-last-modification-time f2))
       f2)))
 
@@ -6988,13 +6987,13 @@
                     "supp-pdf.tex")))
             #f)
            ((ormap (lambda (z) (string=? f z)) '("texinfo" "texinfo.tex"))
-            (let ((txi2p (actual-tex-filename "texinfo2p" #f)))
+            (let ((txi2p (actual-tex-filename "texi2p" #f)))
               (if txi2p
                 (begin
                   (tex2page-file txi2p)
                   (tex2page-file *current-source-file*)
                   ':encountered-endinput)
-                (terror 'do-input "File texinfo2p.tex not found"))))
+                (terror 'do-input "File texi2p.tex not found"))))
            ((actual-tex-filename f (check-input-file-timestamp? f))
             =>
             tex2page-file)
@@ -7253,17 +7252,9 @@
     (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
       (ensure-file-deleted css-file)
       (set! *css-port* (open-output-file css-file))
-      (when #t
-        (display
-          "\n                 body {\n                 color: black;\n                 /*   background-color: #e5e5e5;*/\n                 background-color: #ffffff;\n                 /*background-color: beige;*/\n                 margin-top: 2em;\n                 margin-left: 8%;\n                 margin-right: 8%;\n                 }\n\n                 h1,h2,h3,h4,h5,h6 {\n                 margin-top: .5em;\n                 }\n\n                 .title {\n                 font-size: 200%;\n                 font-weight: normal;\n                 margin-top: 2.8em;\n                 text-align: center;\n                 }\n\n                 .partheading {\n                 font-size: 100%;\n                 }\n\n                 .chapterheading {\n                 font-size: 100%;\n                 }\n\n                 .beginsection {\n                 font-size: 110%;\n                 }\n\n                 .tiny {\n                 font-size: 40%;\n                 }\n\n                 .scriptsize {\n                 font-size: 60%;\n                 }\n\n                 .footnotesize {\n                 font-size: 75%;\n                 }\n\n                 .small {\n                 font-size: 90%;\n                 }\n\n                 .normalsize {\n                 font-size: 100%;\n                 }\n\n                 .large {\n                 font-size: 120%;\n                 }\n\n                 .largecap {\n                 font-size: 150%;\n                 }\n\n                 .largeup {\n                 font-size: 200%;\n                 }\n\n                 .huge {\n                 font-size: 300%;\n                 }\n\n                 .hugecap {\n                 font-size: 350%;\n                 }\n\n                 pre {\n                 margin-left: 2em;\n                 }\n\n                 blockquote {\n                 margin-left: 2em;\n                 }\n\n                 ol {\n                 list-style-type: decimal;\n                 }\n\n                 ol ol {\n                 list-style-type: lower-alpha;\n                 }\n\n                 ol ol ol {\n                 list-style-type: lower-roman;\n                 }\n\n                 ol ol ol ol {\n                 list-style-type: upper-alpha;\n                 }\n\n                 tt i {\n                 font-family: serif;\n                 }\n\n                 .verbatim em {\n                 font-family: serif;\n                 }\n\n                 /*\n                 .verbatim {\n                 color: #4d0000;\n                 }\n                 */\n\n                 .scheme em {\n                 color: black;\n                 font-family: serif;\n                 }\n\n                 .scheme {\n                 color: brown;\n                 }\n\n                 .scheme .keyword {\n                 color: #990000;\n                 font-weight: bold;\n                 }\n\n                 .scheme .builtin {\n                 color: #990000;\n                 }\n\n                 .scheme .variable {\n                 color: navy;\n                 }\n\n                 .scheme .global {\n                 color: purple;\n                 }\n\n                 .scheme .selfeval {\n                 color: green;\n                 }\n\n                 .scheme .comment {\n                 color:  teal;\n                 }\n\n                 .schemeresponse {\n                 color: green;\n                 }\n\n                 .navigation {\n                 color: red;\n                 text-align: right;\n                 font-size: medium;\n                 font-style: italic;\n                 }\n\n                 .disable {\n                 /* color: #e5e5e5; */\n                 color: gray;\n                 }\n\n                 .smallcaps {\n                 font-size: 75%;\n                 }\n\n                 .smallprint {\n                 color: gray;\n                 font-size: 75%;\n                 text-align: right;\n                 }\n\n                 /*\n                 .smallprint hr {\n                 text-align: left;\n                 width: 40%;\n                 }\n                 */\n\n                 .footnoterule {\n                 text-align: left;\n                 width: 40%;\n                 }\n\n                 .colophon {\n                 color: gray;\n                 font-size: 80%;\n                 font-style: italic;\n                 text-align: right;\n                 }\n\n                 .colophon a {\n                 color: gray;\n                 }\n                 "
-          *css-port*)))))
-
-(define start-js-file
-  (lambda ()
-    (unless *js-port*
-      (let ((js-file (string-append *aux-dir/* *jobname* *js-file-suffix*)))
-        (ensure-file-deleted js-file)
-        (set! *js-port* (open-output-file js-file))))))
+      (display
+        "\n               body {\n               color: black;\n               /*   background-color: #e5e5e5;*/\n               background-color: #ffffff;\n               /*background-color: beige;*/\n               margin-top: 2em;\n               margin-left: 8%;\n               margin-right: 8%;\n               }\n\n               h1,h2,h3,h4,h5,h6 {\n               margin-top: .5em;\n               }\n\n               .title {\n               font-size: 200%;\n               font-weight: normal;\n               margin-top: 2.8em;\n               text-align: center;\n               }\n\n               .partheading {\n               font-size: 100%;\n               }\n\n               .chapterheading {\n               font-size: 100%;\n               }\n\n               .beginsection {\n               font-size: 110%;\n               }\n\n               .tiny {\n               font-size: 40%;\n               }\n\n               .scriptsize {\n               font-size: 60%;\n               }\n\n               .footnotesize {\n               font-size: 75%;\n               }\n\n               .small {\n               font-size: 90%;\n               }\n\n               .normalsize {\n               font-size: 100%;\n               }\n\n               .large {\n               font-size: 120%;\n               }\n\n               .largecap {\n               font-size: 150%;\n               }\n\n               .largeup {\n               font-size: 200%;\n               }\n\n               .huge {\n               font-size: 300%;\n               }\n\n               .hugecap {\n               font-size: 350%;\n               }\n\n               pre {\n               margin-left: 2em;\n               }\n\n               blockquote {\n               margin-left: 2em;\n               }\n\n               ol {\n               list-style-type: decimal;\n               }\n\n               ol ol {\n               list-style-type: lower-alpha;\n               }\n\n               ol ol ol {\n               list-style-type: lower-roman;\n               }\n\n               ol ol ol ol {\n               list-style-type: upper-alpha;\n               }\n\n               tt i {\n               font-family: serif;\n               }\n\n               .verbatim em {\n               font-family: serif;\n               }\n\n               /*\n               .verbatim {\n               color: #4d0000;\n               }\n               */\n\n               .scheme em {\n               color: black;\n               font-family: serif;\n               }\n\n               .scheme {\n               color: brown;\n               }\n\n               .scheme .keyword {\n               color: #990000;\n               font-weight: bold;\n               }\n\n               .scheme .builtin {\n               color: #990000;\n               }\n\n               .scheme .variable {\n               color: navy;\n               }\n\n               .scheme .global {\n               color: purple;\n               }\n\n               .scheme .selfeval {\n               color: green;\n               }\n\n               .scheme .comment {\n               color:  teal;\n               }\n\n               .schemeresponse {\n               color: green;\n               }\n\n               .navigation {\n               color: red;\n               text-align: right;\n               font-size: medium;\n               font-style: italic;\n               }\n\n               .disable {\n               /* color: #e5e5e5; */\n               color: gray;\n               }\n\n               .smallcaps {\n               font-size: 75%;\n               }\n\n               .smallprint {\n               color: gray;\n               font-size: 75%;\n               text-align: right;\n               }\n\n               /*\n               .smallprint hr {\n               text-align: left;\n               width: 40%;\n               }\n               */\n\n               .footnoterule {\n               text-align: left;\n               width: 40%;\n               }\n\n               .colophon {\n               color: gray;\n               font-size: 80%;\n               font-style: italic;\n               text-align: right;\n               }\n\n               .colophon a {\n               color: gray;\n               }\n               "
+        *css-port*))))
 
 (define load-aux-file
   (lambda ()
@@ -7315,36 +7306,6 @@
         (set! already-noted? #t)
         (!definitely-latex)
         (write-aux `(!definitely-latex))))))
-
-(define html-slideshow
-  (lambda ()
-    (let ((go-ahead? #t))
-      (unless (and *html-slideshow?* (>= *last-page-number* 0))
-        (set! go-ahead? #f)
-        (flag-missing-piece 'slideshow))
-      (!html-slideshow)
-      (write-aux `(!html-slideshow))
-      (when go-ahead?
-        (start-js-file)
-        (display "var toc = new Array(" *js-port*)
-        (let loop ((i 0))
-          (unless (> i *last-page-number*)
-            (unless (= i 0) (display #\, *js-port*))
-            (newline *js-port*)
-            (display "     " *js-port*)
-            (display #\' *js-port*)
-            (display *jobname* *js-port*)
-            (unless (= i 0)
-              (display *html-page-suffix* *js-port*)
-              (display i *js-port*))
-            (display *output-extension* *js-port*)
-            (display #\' *js-port*)
-            (loop (+ i 1))))
-        (newline *js-port*)
-        (display ");" *js-port*)
-        (newline *js-port*)
-        (get-token)
-        (dump-groupoid *js-port*)))))
 
 (define !toc-page (lambda (p) (set! *toc-page* p)))
 
@@ -9184,8 +9145,7 @@
        (*verb-visible-space?* #f)
        (*verb-written-files* '())
        (*write-log-index* 0)
-       (*write-log-possible-break?* #f)
-       (*zeroth-html-page* #f))
+       (*write-log-possible-break?* #f))
       (when *use-advanced-html-entities?* (html-advanced-entities))
       (set! *main-tex-file*
         (actual-tex-filename tex-file (check-input-file-timestamp? tex-file)))
@@ -9202,16 +9162,8 @@
       (cond
        (*main-tex-file*
         (set! *subjobname* *jobname*)
-        (set! *zeroth-html-page*
-          (let ((ext (file-extension *main-tex-file*)))
-            (string-append
-              *jobname*
-              (if (and ext
-                       (string-ci=? ext *output-extension*)
-                       (not *aux-dir*))
-                (string-append *html-page-suffix* "0" *output-extension*)
-                *output-extension*))))
-        (set! *html-page* (string-append *aux-dir/* *zeroth-html-page*))
+        (set! *html-page*
+          (string-append *aux-dir/* *jobname* *output-extension*))
         (ensure-file-deleted *html-page*)
         (set! *html* (open-output-file *html-page*))
         (do-start)

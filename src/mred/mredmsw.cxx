@@ -410,6 +410,7 @@ static void clean_up_gdi_objects(int v)
 void RegisterGDIObject(HANDLE x)
 {
   if (!gdi_objects) {
+    wxREGGLOB(gdi_objects);
     gdi_objects = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     orig_exit = scheme_exit;
     scheme_exit = clean_up_gdi_objects;

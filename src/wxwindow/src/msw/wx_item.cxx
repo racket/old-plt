@@ -4,22 +4,10 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.13 1998/12/22 23:51:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* static const char sccsid[] = "%W% %G%"; */
-
-#if defined(_MSC_VER)
-# include "wx.h"
-#else
-
-#include "wx_panel.h"
-#include "wx_privt.h"
-#include "wx_itemp.h"
-#include "wx_txt.h"
-
-#endif
+#include "wx.h"
 
 // The MakeProcInstance version of the function
 FARPROC wxGenericControlSubClassProc = 0;
@@ -39,8 +27,10 @@ long NewId(wxItem *item)
 {
   WORD id;
 
-  if (!wxItemIdList)
+  if (!wxItemIdList) {
+    wxREGGLOB(wxItemIdList);
     wxItemIdList = new wxNonlockingHashTable;
+  }
 
   do {
     id = (WORD)rand();
@@ -56,8 +46,6 @@ void DoneIds(wxItem *item)
   if (wxItemIdList)
     wxItemIdList->DeleteObject(item);
 }
-
-IMPLEMENT_ABSTRACT_CLASS(wxItem, wxWindow)
 
 // Item members
 wxItem::wxItem(void)
@@ -487,24 +475,15 @@ wxItem *wxFindControlFromHandle(HWND hWnd)
 {
   if (!wxControlHandleList)
     return NULL;
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxNode *node = wxControlHandleList->Find((long)hWnd);
-  if (!node)
-    return NULL;
-  return (wxItem *)node->Data();
-#else
+
   return (wxItem *)wxControlHandleList->Find((long)hWnd);
-#endif
 }
 
 void wxAddControlHandle(HWND hWnd, wxItem *item)
 {
   if (!wxControlHandleList) {
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-    wxControlHandleList = new wxList(wxKEY_INTEGER);
-#else
+    wxREGGLOB(wxControlHandleList);
     wxControlHandleList = new wxNonlockingHashTable;
-#endif
   }
   wxControlHandleList->Append((long)hWnd, item);
 }

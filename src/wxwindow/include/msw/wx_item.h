@@ -29,7 +29,7 @@ class wxItem: public wxbItem
  protected:
    Bool isFafa ;      // because we can mix Fafa/non-Fafa controls
  public:
-   wxList subControls; // For controls like radiobuttons which are really composite
+   wxList *subControls; // For controls like radiobuttons which are really composite
    FARPROC oldWndProc; // For subclassed controls
    wxBrush *backBrush ;
    int mswLastXPos, mswLastYPos;

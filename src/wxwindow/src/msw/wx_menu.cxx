@@ -52,7 +52,7 @@ wxMenu::~wxMenu(void)
 	 wxwmDestroyMenu((HMENU)ms_handle);
   ms_handle = NULL;
 
-  wxNode *node = menuItems.First();
+  wxNode *node = menuItems->First();
   while (node) {
     wxMenuItem *item = (wxMenuItem *)node->Data();
     item->menuBar = NULL;
@@ -103,7 +103,7 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 
   item->menuId = menuId;
 
-  menuItems.Append(item);
+  menuItems->Append(item);
 
   int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
   mustBeBreaked = FALSE;
@@ -137,7 +137,7 @@ void wxMenu::AppendSeparator(void)
   wxMenuItem *item = new wxMenuItem;
   item->checkable = FALSE;
   item->itemId = -1;
-  menuItems.Append(item);
+  menuItems->Append(item);
   no_items++;
 }
 
@@ -158,7 +158,7 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
     item->helpString = copystring(helpString);
   item->subMenu = SubMenu;
 
-  menuItems.Append(item);
+  menuItems->Append(item);
 
   int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
   mustBeBreaked = FALSE;
@@ -180,7 +180,7 @@ Bool wxMenu::DeleteItem(long Id, int Pos)
   int pos;
   HMENU menu;
 
-  for (pos = 0, node = menuItems.First(); node && Pos--; node = node->Next(), pos++) {
+  for (pos = 0, node = menuItems->First(); node && Pos--; node = node->Next(), pos++) {
     item = (wxMenuItem *)node->Data();
     if ((Pos < 0) && (item->itemId == Id))
       break;
@@ -201,7 +201,7 @@ Bool wxMenu::DeleteItem(long Id, int Pos)
   } else
     DeleteMenu(menu, (UINT)pos, MF_BYPOSITION);
   
-  menuItems.DeleteNode(node);
+  menuItems->DeleteNode(node);
   delete item;
 
   --no_items;
@@ -429,7 +429,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 wxMenuItem *wxMenu::FindItemForMenuId(WORD menuId)
 {
   wxNode *node;
-  for (node = menuItems.First(); node; node = node->Next()) {
+  for (node = menuItems->First(); node; node = node->Next()) {
     wxMenuItem *item = (wxMenuItem *)node->Data();
     
     if (item->menuId == menuId)

@@ -200,6 +200,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   radioWidth = new int[N];
   radioHeight = new int[N];
 
+  subControls = new wxList();
+
   buttonEnabled = new Bool[N];
   int i;
   for (i = 0; i < N; i++) {
@@ -218,7 +220,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       SendMessage((HWND)radioButtons[i],WM_SETFONT,
                   (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
     ReleaseDC((HWND)radioButtons[i],the_dc) ;
-    subControls.Append((wxObject *)newId);
+    subControls->Append((wxObject *)newId);
   }
   //  (void)NewId() ;
   // Create a dummy radio control to end the group.
@@ -315,6 +317,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   radioWidth = new int[N] ;
   radioHeight = new int[N] ;
 
+  subControls = new wxList();
+
   buttonEnabled = new Bool[N];
   isFafa = TRUE;
   int i;
@@ -357,7 +361,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       SendMessage((HWND)radioButtons[i],WM_SETFONT,
                   (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
     ReleaseDC((HWND)radioButtons[i],the_dc) ;
-    subControls.Append((wxObject *)newId);
+    subControls->Append((wxObject *)newId);
   }
 
   // Create a dummy radio control to end the group.

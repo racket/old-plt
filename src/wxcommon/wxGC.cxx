@@ -57,8 +57,14 @@ void gc_cleanup::install_cleanup(void)
 #   define ALLOW_NON_BASE 0
 #   define CHECK_BASE 0
 #  else
-#   define ALLOW_NON_BASE 1
-#   define CHECK_BASE 0
+#   ifdef WIN32
+#    define ALLOW_NON_BASE 0
+#    define CHECK_BASE 1
+#    define CRASH_ON_NONBASE 1
+#   else
+#    define ALLOW_NON_BASE 1
+#    define CHECK_BASE 0
+#   endif
 #  endif
 # endif
 
@@ -67,8 +73,12 @@ void gc_cleanup::install_cleanup(void)
 #  if ALLOW_NON_BASE
     return;
 #  else
+#   ifdef CRASH_ON_NONBASE
+    *(long *)0x0 = 1;
+#   else
     printf("Clean-up object is not the base object\n");
     abort();
+#   endif
 #  endif
   }
 # endif
@@ -79,8 +89,12 @@ void gc_cleanup::install_cleanup(void)
 
 # if CHECK_BASE
   if (old_fn) {
+#  ifdef CRASH_ON_NONBASE
+	*(long *)0x0 = 1;
+#  else
     printf("Object already has a clean-up\n");
     abort();
+#  endif
   }
 # endif
 }

@@ -80,7 +80,8 @@ wxWindow *wxWindow::FindItem(int id)
         return item;
       else {
 	// In case it's a 'virtual' control (e.g. radiobox)
-	if (item->subControls.Member((wxObject *)id))
+	if (item->subControls
+	    && item->subControls->Member((wxObject *)id))
           return item;
       }
     }

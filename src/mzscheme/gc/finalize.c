@@ -1009,5 +1009,4 @@ void GC_register_fnl_statics(void)
   REG(GC_fo_entries);
   REG(dl_head);
   REG(fo_head);
-  REG(late_dl);
 }

@@ -197,7 +197,7 @@ class wxbPen: public wxObject
   int nb_dash ;
   wxDash *dash ;
 
-  wxColour colour;
+  wxColour *colour;
 
   wxbPen(void);
   wxbPen(wxColour *col, float width, int style);
@@ -225,7 +225,7 @@ class wxbPen: public wxObject
   wxBitmap *GetStipple(void);
 
   inline Bool IsMutable(void) { return !locked; }
-  inline void Lock(int d) { locked += d; colour.Lock(d); }
+  inline void Lock(int d) { locked += d; }
 };
 
 // Brush
@@ -237,7 +237,7 @@ class wxbBrush: public wxObject
   short style;
   wxBitmap *stipple ;
  public:
-  wxColour colour;
+  wxColour *colour;
   wxbBrush(void);
   wxbBrush(wxColour *col, int style);
   wxbBrush(char *col, int style);
@@ -254,7 +254,7 @@ class wxbBrush: public wxObject
   wxBitmap *GetStipple(void);
 
   inline Bool IsMutable(void) { return !locked; }
-  inline void Lock(int d) { locked += d; colour.Lock(d); }
+  inline void Lock(int d) { locked += d; }
 };
 
 /*

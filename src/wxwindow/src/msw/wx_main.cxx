@@ -245,13 +245,19 @@ static int parse_command_line(int count, char **command, char *buf, int maxargs)
 }
 
 extern "C" int main(int, char**);
+extern void wxCreateApp(void);
+extern "C" int GC_use_registered_statics;
 
 extern "C" int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
 				LPSTR m_lpCmdLine, int nCmdShow )
 {
+  GC_use_registered_statics = 1;
+
   wxhInstance = hInstance;
 
   wxInitialize(hInstance);
+
+  wxCreateApp();
 
   // Split command line into tokens, as in usual main(argc, argv)
   char **command = new char*[50];
@@ -342,7 +348,7 @@ int wxEntry(int argc, char **argv)
   return 0;
 }
 
-wxApp::wxApp(wxlanguage_t language):wxbApp(language)
+wxApp::wxApp() : wxbApp()
 {
   wxREGGLOB(wxTheApp);
   wxTheApp = this;

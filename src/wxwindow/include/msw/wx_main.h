@@ -40,7 +40,7 @@ class wxApp: public wxbApp
   // passed to the WinMain function.
   int nCmdShow;
 
-  wxApp(wxlanguage_t language = wxLANGUAGE_ENGLISH);
+  wxApp();
   ~wxApp(void);
 
   virtual int MainLoop(void);

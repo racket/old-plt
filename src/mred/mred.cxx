@@ -170,12 +170,7 @@ public:
   int OnExit(void);
 };
 
-#if !defined(wx_msw)
 MrEdApp *TheMrEdApp;
-#else
-MrEdApp _TheMrEdApp;
-# define TheMrEdApp (&_TheMrEdApp)
-#endif
 
 #ifdef LIBGPP_REGEX_HACK
 /* Fixes weirdness with libg++ and the compiler: it tries to
@@ -2608,6 +2603,14 @@ extern long wxMediaCreatorId;
 
 extern int wxEntry(int, char **);
 
+void wxCreateApp(void)
+{
+  if (!TheMrEdApp) {
+    wxREGGLOB(TheMrEdApp);
+    TheMrEdApp = new MrEdApp;
+  }  
+}
+
 int actual_main(int argc, char **argv)
 {
   int r;
@@ -2615,10 +2618,7 @@ int actual_main(int argc, char **argv)
   wxREGGLOB(orig_ps_setup);
   wxREGGLOB(q_callbacks);
 
-#ifndef wx_msw
-  wxREGGLOB(TheMrEdApp);
-  TheMrEdApp = new MrEdApp;
-#endif
+  wxCreateApp();
 
   r = wxEntry(argc, argv);
 

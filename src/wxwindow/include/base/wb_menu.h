@@ -36,7 +36,7 @@ class wxbMenu: public wxItem
   char *title;
   wxMenu *top_level_menu;
   wxMenuBar *menu_bar;
-  wxList menuItems;
+  wxList *menuItems;
 
   wxbMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxbMenu(void);

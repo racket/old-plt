@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_main.h	1.2 5/9/94" */
-
 #ifndef wxb_mainh
 #define wxb_mainh
 
@@ -57,7 +55,7 @@ class wxbApp: public wxObject
   int printMode; // wxPRINT_WINDOWS, wxPRINT_POSTSCRIPT
   void (*work_proc)(wxApp*app) ; // work procedure
 
-  wxbApp(wxlanguage_t language = wxLANGUAGE_DEFAULT);
+  wxbApp();
   ~wxbApp(void);
   virtual wxFrame *OnInit(void);
   virtual int OnExit(void);

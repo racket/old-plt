@@ -566,22 +566,22 @@ int wxbPen::GetDashes (wxDash ** ptr)
 
 wxColour *wxbPen::GetColour (void)
 {
-  return &colour;
+  return colour;
 }
 
 void wxbPen::SetColour (wxColour *col)
 {
-  colour.CopyFrom(col);
+  colour->CopyFrom(col);
 }
 
 void wxbPen::SetColour (const char *col)
 {
-  colour = col;
+  colour->CopyFrom(col);
 }
 
 void wxbPen::SetColour (char red, char green, char blue)
 {
- colour.Set(red, green, blue);
+ colour->Set(red, green, blue);
 }
 
 void wxbPen::SetWidth (float Width)
@@ -659,22 +659,22 @@ wxBitmap *wxbBrush::GetStipple (void)
 
 wxColour *wxbBrush::GetColour (void)
 {
-  return &colour;
+  return colour;
 }
 
 void wxbBrush::SetColour (wxColour *col)
 {
-  colour.CopyFrom(col);
+  colour->CopyFrom(col);
 }
 
 void wxbBrush::SetColour (const char *col)
 {
-  colour = col;
+  colour->CopyFrom(col);
 }
 
 void wxbBrush::SetColour (char red, char green, char blue)
 {
-  colour.Set(red, green, blue);
+  colour->Set(red, green, blue);
 }
 
 void wxbBrush::SetStyle (int Style)

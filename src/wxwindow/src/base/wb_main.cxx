@@ -15,7 +15,7 @@ extern char *wxBuffer;
 
 wxApp *wxTheApp = NULL;
 
-wxbApp::wxbApp(wxlanguage_t )
+wxbApp::wxbApp()
 {
   __type = wxTYPE_APP;
   wx_class = NULL;

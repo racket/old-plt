@@ -175,6 +175,7 @@ wxbMenu::wxbMenu (char *Title, wxFunction WXUNUSED(func))
     title = copystring (Title);
   else
     title = NULL;
+  menuItems = new wxList();
 }
 
 // The wxWindow destructor will take care of deleting the submenus.
@@ -189,7 +190,7 @@ wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
   int i = 0;
   if (itemMenu)
     *itemMenu = NULL;
-  for (wxNode * node = menuItems.First (); node; node = node->Next (), i++) {
+  for (wxNode * node = menuItems->First (); node; node = node->Next (), i++) {
     wxMenuItem *item = (wxMenuItem *) node->Data ();
 
     if (item->itemId == itemId) {

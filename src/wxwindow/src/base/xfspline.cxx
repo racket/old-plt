@@ -4,12 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: xfspline.cxx,v 1.2 1999/10/05 15:42:43 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-// Must be a comment as this file is #include\'d by wb_dc.cc
-/* static const char sccsid[] = "@(#)xfspline.cc	1.3 5/9/94"; */
 
 /*
  * FIG : Facility for Interactive Generation of figures
@@ -20,10 +16,16 @@
 
 void wxbDC::DrawSpline(int n, wxPoint pts[])
 {
-    wxList list;
-    for (int i=0; i<n; ++i)
-	list.Append((wxObject*)&pts[i]);
-    DrawSpline(&list);
+    wxList *list;
+	int i;
+    
+    list = new wxList();
+
+    for (i = 0; i < n; i++)
+      list->Append((wxObject*)&pts[i]);
+    DrawSpline(list);
+
+    delete list;
 }
 
 // defines and static declarations for DrawSpline
@@ -42,13 +44,18 @@ static void wx_spline_push(float x1, float y1, float x2, float y2,
 static Bool wx_spline_add_point(float x, float y);
 static void wx_spline_draw_point_array(wxbDC *dc);
 
-static wxList wx_spline_point_list;
+static wxList *wx_spline_point_list;
 
 void wxbDC::DrawSpline(wxList *pts)
 {
     wxPoint *p;
     float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
     float  x1,  y1,  x2 , y2;
+
+    if (!wx_spline_point_list) {
+      wxREGGLOB(wx_spline_point_list);
+      wx_spline_point_list = new wxList();
+    }
 
     wxNode *node = pts->First();
     p = (wxPoint*)node->Data();
@@ -181,19 +188,19 @@ static Bool wx_spline_add_point(float x, float y)
     wxPoint *point = new wxPoint ;
     point->x = x;
     point->y = y;
-    wx_spline_point_list.Append((wxObject*)point);
+    wx_spline_point_list->Append((wxObject*)point);
     return TRUE;
 }
 
 static void wx_spline_draw_point_array(wxbDC *dc)
 {
-    dc->DrawLines(&wx_spline_point_list, 0.0, 0.0);
-    wxNode *node = wx_spline_point_list.First();
+    dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
+    wxNode *node = wx_spline_point_list->First();
     while (node) {
 	wxPoint *point = (wxPoint *)node->Data();
 	delete point;
-	wx_spline_point_list.DeleteNode(node);
-	node = wx_spline_point_list.First();
+	wx_spline_point_list->DeleteNode(node);
+	node = wx_spline_point_list->First();
     }
 }
 

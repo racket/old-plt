@@ -246,10 +246,10 @@ Bool wxColourMap::GetRGB(const int index, unsigned char *red, unsigned char *gre
 
 // Pens
 
-IMPLEMENT_DYNAMIC_CLASS(wxPen, wxObject)
-
 wxPen::wxPen(void)
 {
+  wxColour *c;
+
   COUNT_P(pen_count);
 
   stipple = NULL;
@@ -269,6 +269,10 @@ wxPen::wxPen(void)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+
+  c = new wxColour(wxBLACK);
+  c->Lock(1);
+  colour = c;
 }
 
 wxPen::~wxPen()
@@ -283,9 +287,14 @@ wxPen::~wxPen()
 
 wxPen::wxPen(wxColour *col, float Width, int Style)
 {
+  wxColour *c;
+
   COUNT_P(pen_count);
 
-  colour.CopyFrom(col);
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+
   stipple = NULL;
   width = Width;
   style = Style;
@@ -309,9 +318,14 @@ wxPen::wxPen(wxColour *col, float Width, int Style)
 
 wxPen::wxPen(const char *col, float Width, int Style)
 {
+  wxColour *c;
+
   COUNT_P(pen_count);
 
-  colour = col;
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+
   stipple = NULL;
   width = Width;
   style = Style;
@@ -341,7 +355,7 @@ void wxPen::ChangePen(void)
 
   COLORREF ms_colour = 0;
 
-  ms_colour = colour.pixel;
+  ms_colour = colour->pixel;
 
   if (cpen==NULL)
     must_change = TRUE;
@@ -517,8 +531,14 @@ int wx2msPenStyle(int wx_style)
 
 wxBrush::wxBrush(void)
 {
+  wxColour *c;
+
   COUNT_P(brush_count);
   
+  c = new wxColour(wxBLACK);
+  c->Lock(1);
+  colour = c;
+
   style = wxSOLID;
   stipple = NULL;
   cbrush = NULL;
@@ -539,9 +559,14 @@ wxBrush::~wxBrush()
 
 wxBrush::wxBrush(wxColour *col, int Style)
 {
+  wxColour *c;
+
   COUNT_P(brush_count);
 
-  colour.CopyFrom(col);
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+
   style = Style;
   stipple = NULL;
   cbrush = NULL;
@@ -561,7 +586,7 @@ void wxBrush::ChangeBrush(void)
 
   COLORREF ms_colour = 0;
 
-  ms_colour = colour.pixel;
+  ms_colour = colour->pixel;
 
   if (cbrush==NULL)
     must_change = TRUE;
@@ -638,9 +663,14 @@ HBRUSH wxBrush::SelectBrush(HDC dc)
 
 wxBrush::wxBrush(const char *col, int Style)
 {
+  wxColour *c;
+
   COUNT_P(brush_count);
 
-  colour = col;
+  c = new wxColour(col);
+  c->Lock(1);
+  colour = c;
+
   style = Style;
   stipple = NULL;
   cbrush = NULL;

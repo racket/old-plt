@@ -25,16 +25,15 @@
   (define sys-link-color
     (get-pref/default 'sys-link sys-link-default))
 
-  (define (make-search-link url label frame)
-    `(A ((HREF ,url)
-	 (TARGET ,frame))
-	,(color-with search-link-color label)))
+  (define (make-make-link color)
+    (lambda (url label frame)
+      `(A ((HREF ,url)
+	   (TARGET ,frame))
+	  ,(color-with color
+		       `(FONT ((SIZE "-1")) ,label)))))
 
-  (define (make-sys-link url label frame)
-    `(A ((HREF ,url)
-	 (TARGET ,frame))
-	,(color-with sys-link-color
-		     `(FONT ((SIZE "-1")) ,label))))
+  (define make-search-link (make-make-link search-link-color))
+  (define make-sys-link (make-make-link sys-link-color))
 
   (define (default-option? opt)
     (and (= 3 (length opt))

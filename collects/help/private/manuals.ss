@@ -21,11 +21,11 @@
                     [finddoc-page (string? string? . -> . string?)]
                     [get-doc-name (path? . -> . string?)]
                     [find-doc-directories (-> (listof path?))]
-                    [find-doc-directory (path? . -> . (union false? path?))]
+                    [find-doc-directory (path? . -> . (union false/c path?))]
                     [find-doc-names (-> (listof (cons/c path? string?)))]
                     
-                    [goto-manual-link (any? string? string? . -> . any)]
-                    [get-index-file (path? . -> . (union false? path?))])
+                    [goto-manual-link (any/c string? string? . -> . any)]
+                    [get-index-file (path? . -> . (union false/c path?))])
   
   (provide find-manuals)
 

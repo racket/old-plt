@@ -4,7 +4,7 @@
 
   (provide/contract
    [standard-html-doc-position (path? . -> . number?)]
-   [user-defined-doc-position (path? . -> . (union false? number?))]
+   [user-defined-doc-position (path? . -> . (union false/c number?))]
    [known-docs (listof (cons/c path? string?))]
    [set-doc-position! (path? number? . -> . void?)]
    [reset-doc-positions! (-> void?)])

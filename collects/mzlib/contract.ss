@@ -301,7 +301,7 @@ add struct contracts for immutable structs?
                                               #f))
                                         mutator-ids
                                         field-contract-ids))]
-                           [predicate-code (code-for-one-id stx predicate-id (syntax (-> any? boolean?)) #f)]
+                           [predicate-code (code-for-one-id stx predicate-id (syntax (-> any/c boolean?)) #f)]
                            [constructor-code (code-for-one-id
                                               stx
                                               constructor-id
@@ -1002,17 +1002,17 @@ add struct contracts for immutable structs?
                         (cons mtd-args args-stxs)))]))]
           [(opt->* (req-contracts ...) (opt-contracts ...) (res-contracts ...))
            (values
-            (obj-opt->*/proc (syntax (opt->* (any? req-contracts ...) (opt-contracts ...) (res-contracts ...))))
+            (obj-opt->*/proc (syntax (opt->* (any/c req-contracts ...) (opt-contracts ...) (res-contracts ...))))
             (generate-opt->vars (syntax (req-contracts ...))
                                 (syntax (opt-contracts ...))))]
           [(opt->* (req-contracts ...) (opt-contracts ...) any)
            (values
-            (obj-opt->*/proc (syntax (opt->* (any? req-contracts ...) (opt-contracts ...) any)))
+            (obj-opt->*/proc (syntax (opt->* (any/c req-contracts ...) (opt-contracts ...) any)))
             (generate-opt->vars (syntax (req-contracts ...))
                                 (syntax (opt-contracts ...))))]
           [(opt-> (req-contracts ...) (opt-contracts ...) res-contract) 
            (values
-            (obj-opt->/proc (syntax (opt-> (any? req-contracts ...) (opt-contracts ...) res-contract)))
+            (obj-opt->/proc (syntax (opt-> (any/c req-contracts ...) (opt-contracts ...) res-contract)))
             (generate-opt->vars (syntax (req-contracts ...))
                                 (syntax (opt-contracts ...))))]
           [else (let-values ([(x y z) (expand-mtd-arrow mtd-stx)])
@@ -1037,20 +1037,20 @@ add struct contracts for immutable structs?
           [(-> args ...)
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (args ...)))])
              (values obj->/proc
-                     (syntax (-> any? args ...))
+                     (syntax (-> any/c args ...))
                      (syntax ((arg-vars ...)))))]
           [(->* (doms ...) (rngs ...))
            (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
                          [(this-var) (generate-temporaries (syntax (this-var)))])
              (values obj->*/proc
-                     (syntax (->* (any? doms ...) (rngs ...)))
+                     (syntax (->* (any/c doms ...) (rngs ...)))
                      (syntax ((this-var args-vars ...)))))]
           [(->* (doms ...) rst (rngs ...))
            (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
                          [(rst-var) (generate-temporaries (syntax (rst)))]
                          [(this-var) (generate-temporaries (syntax (this-var)))])
              (values obj->*/proc
-                     (syntax (->* (any? doms ...) rst (rngs ...)))
+                     (syntax (->* (any/c doms ...) rst (rngs ...)))
                      (syntax ((this-var args-vars ... . rst-var)))))]
           [(->* x ...)
            (raise-syntax-error 'object-contract "malformed ->*" stx mtd-stx)]
@@ -1062,7 +1062,7 @@ add struct contracts for immutable structs?
               (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
                             [arity-count (length doms-val)])
                 (syntax 
-                 (->d any? doms ... 
+                 (->d any/c doms ... 
                       (let ([f rng-proc])
                         (unless (procedure? f)
                           (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
@@ -1081,7 +1081,7 @@ add struct contracts for immutable structs?
             (let ([doms-val (syntax->list (syntax (doms ...)))])
               (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
                             [arity-count (length doms-val)])
-                (syntax (->d* (any? doms ...)
+                (syntax (->d* (any/c doms ...)
                               (let ([f rng-proc])
                                 (unless (procedure? f)
                                   (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
@@ -1102,7 +1102,7 @@ add struct contracts for immutable structs?
               (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
                             [(rest-var) (generate-temporaries (syntax (rst-ctc)))]
                             [arity-count (length doms-val)])
-                (syntax (->d* (any? doms ...)
+                (syntax (->d* (any/c doms ...)
                               rst-ctc
                               (let ([f rng-proc])
                                 (unless (procedure? f)
@@ -1126,7 +1126,7 @@ add struct contracts for immutable structs?
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
              (values
               obj->r/proc
-              (syntax (->r ([_this any?] [x dom] ...) rng))
+              (syntax (->r ([_this any/c] [x dom] ...) rng))
               (syntax ((_this arg-vars ...)))))]
           [(->r ([x dom] ...) rng)
            (andmap identifier? (syntax->list (syntax (x ...))))
@@ -1149,7 +1149,7 @@ add struct contracts for immutable structs?
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (x ...)))])
              (values
               obj->r/proc
-              (syntax (->r ([_this any?] [x dom] ...) rest-x rest-dom rng))
+              (syntax (->r ([_this any/c] [x dom] ...) rest-x rest-dom rng))
               (syntax ((_this arg-vars ... . rest-var)))))]
           [(->r ([x dom] ...) rest-x rest-dom rng)
            (and (identifier? (syntax rest-x))
@@ -2443,7 +2443,7 @@ add struct contracts for immutable structs?
 
   
   
-  (provide any?
+  (provide any/c
            anaphoric-contracts
            flat-rec-contract
            flat-murec-contract
@@ -2452,11 +2452,12 @@ add struct contracts for immutable structs?
 	   not/c
            =/c >=/c <=/c </c >/c 
            integer-in
+           exact-integer-in
 	   real-in
-           natural-number?
+           natural-number/c
 	   string/len
-           false?
-	   printable?
+           false/c
+	   printable/c
            symbols
 	   is-a?/c subclass?/c implementation?/c
            listof list-immutableof 
@@ -2590,14 +2591,14 @@ add struct contracts for immutable structs?
             (lambda (x)
               (ormap (lambda (pred) (pred x)) predicates)))]))))
   
-  (define false?
+  (define false/c
     (flat-named-contract
-     'false?
+     'false/c
      (lambda (x) (not x))))
   
-  (define any?
+  (define any/c
     (make-flat-contract
-     'any?
+     'any/c
      (lambda (pos neg src-info orig-str) (lambda (val) val))
      (lambda (x) #t)))
 
@@ -2621,9 +2622,9 @@ add struct contracts for immutable structs?
      (lambda (x)
        (memq x ss))))
   
-  (define printable?
+  (define printable/c
     (flat-named-contract
-     'printable?
+     'printable/c
      (lambda (x)
        (let printable? ([x x])
 	 (or (symbol? x)
@@ -2663,9 +2664,9 @@ add struct contracts for immutable structs?
      `(>/c ,x)
      (lambda (y) (and (number? y) (> y x)))))
 
-  (define natural-number?
+  (define natural-number/c
     (flat-named-contract
-     'natural-number?
+     'natural-number/c
      (lambda (x)
        (and (number? x)
 	    (integer? x)
@@ -2679,6 +2680,19 @@ add struct contracts for immutable structs?
      `(integer-in ,start ,end)
      (lambda (x)
        (and (integer? x)
+            (<= start x end)))))
+  
+  (define (exact-integer-in start end)
+    (unless (and (integer? start)
+                 (exact? start)
+                 (integer? end)
+                 (exact? end))
+      (error 'integer-in "expected two exact integers as arguments, got ~e and ~e" start end))
+    (flat-named-contract 
+     `(exact-integer-in ,start ,end)
+     (lambda (x)
+       (and (integer? x)
+            (exact? x)
             (<= start x end)))))
 
   (define (real-in start end)
@@ -2700,7 +2714,7 @@ add struct contracts for immutable structs?
          (error 'and/c "expected procedures of arity 1 or <contract>s, given: ~e" x)))
      fs)
     (cond
-      [(null? fs) any?]
+      [(null? fs) any/c]
       [(andmap flat-contract/predicate? fs)
        (let* ([to-predicate
 	       (lambda (x)

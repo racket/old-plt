@@ -25,7 +25,7 @@
   (define-values/invoke-unit/sig gui^ help-desk@ #f setup:plt-installer^ mred^ net:tcp^)
   
   (provide/contract 
-   (set-bug-report-info! any?)
+   (set-bug-report-info! any/c)
    (find-doc-names (-> (listof (cons/c path? string?))))
    (goto-manual-link (string? string? . -> . any))
    
@@ -36,16 +36,16 @@
    (search-for-docs (string?
                      search-type?
                      search-how?
-                     any?
+                     any/c
                      (listof path?) ;; manual names
                      . -> .
                      any))
-   (find-help-desk-frame (-> (union false? (is-a?/c help-desk-frame<%>))))
+   (find-help-desk-frame (-> (union false/c (is-a?/c help-desk-frame<%>))))
    (search-for-docs/in-frame ((is-a?/c help-desk-frame<%>)
                               string?
                               search-type?
                               search-how?
-                              any?
+                              any/c
                               (listof path?) ;; manual names
                               . -> .
                               any))))

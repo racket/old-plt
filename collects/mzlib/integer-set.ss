@@ -422,10 +422,10 @@
                     (split (integer-set? integer-set? . -> . (values integer-set? integer-set? integer-set?)))
                     (complement (((s integer-set?) (min int) (max (and/c int (>=/c min)))) . ->r . integer-set?))
                     (member? (int integer-set? . -> . any))
-                    (get-integer (integer-set? . -> . (union false? int)))
-                    (rename is-foldr foldr (any? any? integer-set? . -> . any))
+                    (get-integer (integer-set? . -> . (union false/c int)))
+                    (rename is-foldr foldr (any/c any/c integer-set? . -> . any))
                     (partition ((listof integer-set?) . -> . (listof integer-set?)))
-                    (card (integer-set? . -> . natural-number?))
+                    (card (integer-set? . -> . natural-number/c))
                     (subset? (integer-set? integer-set? . -> . any)))
 
   ) 

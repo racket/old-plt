@@ -78,7 +78,7 @@
           (define program-expander
             (contract
              (-> (-> void?) ; init
-                 (-> (union eof-object? syntax? (cons/p string? any?)) (-> void?) void?) ; iter
+                 (-> (union eof-object? syntax? (cons/p string? any/c)) (-> void?) void?) ; iter
                  void?)
              (lambda (init iter)
                (let* ([lang-settings 

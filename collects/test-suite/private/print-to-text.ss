@@ -8,7 +8,7 @@
    (lib "mred.ss" "mred"))
   
   (provide/contract
-   (print-to-text ((is-a?/c text%) (listof any?) . -> . void)))
+   (print-to-text ((is-a?/c text%) (listof any/c) . -> . void)))
   
   ;; Using the current languages print operations, print the list of values to the text
   (define (print-to-text atext vals)

@@ -18,15 +18,15 @@
    (make-relative-results-url (string? 
                                search-type? 
                                search-how?
-                               any? 
+                               any/c 
                                (listof path?)
-                               any?
-                               (union false? string?) . -> . string?))
+                               any/c
+                               (union false/c string?) . -> . string?))
    (make-results-url (string?
-                      search-type? search-how? any? 
+                      search-type? search-how? any/c 
                       (listof path?) 
-                      any?
-                      (union false? string?)
+                      any/c
+                      (union false/c string?)
                       . -> .
                       string?))
    (make-missing-manual-url (string? string? string? . -> . string?))

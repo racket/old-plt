@@ -80,7 +80,7 @@
           
           (provide (rename mk-identifier-mapping make-identifier-mapping))
           (provide/contract
-           [identifier-mapping? (any? . -> . boolean?)]
+           [identifier-mapping? (any/c . -> . boolean?)]
            [identifier-mapping-get (opt->*
                                     (identifier-mapping?
                                      identifier?)
@@ -88,17 +88,17 @@
                                     any)]
            [identifier-mapping-put! (identifier-mapping?
                                      identifier?
-                                     any?
+                                     any/c
                                      . -> .
                                      void?)]
            [identifier-mapping-for-each (identifier-mapping?
-                                         (identifier? any? . -> . any)
+                                         (identifier? any/c . -> . any)
                                          . -> .
                                          void?)]
            [identifier-mapping-map (identifier-mapping?
-                                    (identifier? any? . -> . any)
+                                    (identifier? any/c . -> . any)
                                     . -> .
-                                    (listof any?))])))]))
+                                    (listof any/c))])))]))
   
   ;; ht : hash-table[symbol(key) -> (listof (cons syntax[identifier] any))]
   ;; the entries in the hash-table narrow the mapping to 

@@ -16,13 +16,13 @@
      (export (open U))))
 
   (provide/contract
-   (struct url ([scheme (union false? string?)]
-                [user (union false? string?)]
-                [host (union false? string?)]
-                [port (union false? number?)]
+   (struct url ([scheme (union false/c string?)]
+                [user (union false/c string?)]
+                [host (union false/c string?)]
+                [port (union false/c number?)]
                 [path (listof (union string? path/param?))]
                 [query (listof (cons/c symbol? string?))]
-                [fragment (union false? string?)]))
+                [fragment (union false/c string?)]))
    (struct path/param ([path string?]
                        [param string?]))
    (string->url ((union bytes? string?) . -> . url?))
@@ -41,8 +41,8 @@
 			   ((listof string?))
 			   any))
    (combine-url/relative (url? string? . -> . url?))
-   (url-exception? (any? . -> . boolean?))
+   (url-exception? (any/c . -> . boolean?))
    (current-proxy-servers
-    (case-> ((union false? (listof (list/c string? string? number?))) . -> . void?)
-            (-> (union false? (listof (list/c string? string? number?))))))))
+    (case-> ((union false/c (listof (list/c string? string? number?))) . -> . void?)
+            (-> (union false/c (listof (list/c string? string? number?))))))))
 

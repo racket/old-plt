@@ -8,7 +8,6 @@
 (require-library "synrulec.ss")
 
 (require-library "spideyc.ss")
-(require-library "triggerc.ss")
 (require-library "zmathc.ss")
 (require-library "pconverc.ss")
 (require-library "datec.ss")

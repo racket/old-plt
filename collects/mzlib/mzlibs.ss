@@ -1,7 +1,6 @@
 
 (begin-elaboration-time
  (require-library "cores.ss")
- (require-library "triggers.ss")
  (require-library "zmaths.ss")
  (require-library "pconvers.ss")
  (require-library "dates.ss")
@@ -11,7 +10,6 @@
 
 (define-signature mzlib^
   ((open mzlib:core^)
-   (unit trigger@ : mzlib:trigger^)
    (unit zmath@ : mzlib:zmath^)
    (unit print-convert@ : mzlib:print-convert^)
    (unit date@ : mzlib:date^)

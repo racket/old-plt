@@ -9,4 +9,5 @@
    file-name-from-path
    path-only
    delete-directory/files
+   make-temporary-file
    find-library))

@@ -3,7 +3,6 @@
 
 (require-library "core.ss")
 
-(require-library "trigger.ss")
 (require-library "zmath.ss")
 (require-library "pconvert.ss")
 (require-library "date.ss")

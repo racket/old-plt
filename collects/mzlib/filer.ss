@@ -180,6 +180,17 @@
 		   "encountered ~a, neither a file nor a directory"
 		   path)]))
 
+   (define make-temporary-file
+     (case-lambda
+      [(template)
+       (let ([tmpdir (find-system-path 'temp-dir)])
+	 (let loop ()
+	   (let ([name (build-path tmpdir (format template (random 1000)))])
+	     (with-handlers ([exn:i/o:filesystem:file-exists? (lambda (x) (loop))])
+	       (close-output-port (open-output-file name))
+	       name))))]
+      [() (make-temporary-file "mztmp~a")]))
+   
    (define find-library
      (case-lambda 
       [(name) (find-library name "mzlib")]

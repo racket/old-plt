@@ -333,6 +333,12 @@
        ;; symbols
        (symbol->string (sym -> str))
        (string->symbol (str -> sym))
+       (symbol=?       (sym sym -> bool))
+
+       ;; booleans
+       (true           true)
+       (false          false)
+       (boolean=?      (bool bool -> bool))
 
        ;; numbers
        (complex?       (_ -> bool)       (predicate* (#t num) _))

@@ -196,12 +196,10 @@
 			 "  PLTHOME=~a" newline
 			 "  export PLTHOME" newline
 			 "fi" newline
-			 newline
-			 "SYS=`${PLTHOME}/bin/archsys`" newline
 			 newline)
 			kind plthome)]
 	       [exec (format
-		      "exec ${PLTHOME}/.bin/${SYS}/~a ~a"
+		      "exec ${PLTHOME}/bin/~a ~a"
 		      kind pre-str)]
 	       [args (format
 		      " ~a ${1+\"$@\"}~n"

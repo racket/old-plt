@@ -1,6 +1,7 @@
 (load-relative "loadtest.ss")
 (require (lib "contract.ss")
-	 (lib "class.ss"))
+	 (lib "class.ss")
+         (lib "etc.ss"))
   
 (SECTION 'contract)
 
@@ -948,7 +949,198 @@
           3
           4)
    7)
-
+  
+  (test/spec-failed
+   'object-contract-opt->*1
+   '(contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+              (new (class object%
+                     (define/public m
+                       (opt-lambda (x [y 'a])
+                         x))
+                     (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract-opt->*2
+   '(contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+              (new (class object%
+                     (define/public m
+                       (opt-lambda (x y [z #t])
+                         x))
+                     (super-new)))
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-passed
+   'object-contract-opt->*3
+   '(contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+              (new (class object%
+                     (define/public m
+                       (opt-lambda (x [y 'a] [z #t])
+                         x))
+                     (super-new)))
+              'pos
+              'neg))
+  
+  (test/spec-passed/result
+   'object-contract-opt->*4
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          1)
+   1)
+  
+  (test/spec-passed/result
+   'object-contract-opt->*5
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          2
+          'z)
+   2)
+  
+  (test/spec-passed/result
+   'object-contract-opt->*7
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          3
+          'z
+          #f)
+   3)
+  
+  (test/spec-failed
+   'object-contract-opt->*8
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          #f)
+   "neg")
+  
+  (test/spec-failed
+   'object-contract-opt->*9
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          2
+          4)
+   "neg")
+  
+  (test/spec-failed
+   'object-contract-opt->*10
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          3
+          'z
+          'y)
+   "neg")
+  
+  (test/spec-failed
+   'object-contract-opt->*11
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               'x))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          3
+          'z
+          #f)
+   "pos")
+  
+  (test/spec-passed/result
+   'object-contract-opt->*12
+   '(let-values ([(x y)
+                  (send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number? symbol?))))
+                                  (new (class object%
+                                         (define/public m
+                                           (opt-lambda (x [y 'a] [z #t])
+                                             (values 1 'x)))
+                                         (super-new)))
+                                  'pos
+                                  'neg)
+                        m
+                        3
+                        'z
+                        #f)])
+      (cons x y))
+   (cons 1 'x))
+  
+  (test/spec-failed
+   'object-contract-opt->*13
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number? symbol?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               (values 'x 'x)))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          3
+          'z
+          #f)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract-opt->*14
+   '(send (contract (object-contract (m (opt->* (integer?) (symbol? boolean?) (number? symbol?))))
+                    (new (class object%
+                           (define/public m
+                             (opt-lambda (x [y 'a] [z #t])
+                               (values 1 1)))
+                           (super-new)))
+                    'pos
+                    'neg)
+          m
+          3
+          'z
+          #f)
+   "pos")
+   
   
 ;                                                                     
 ;                                                                     
@@ -1481,6 +1673,8 @@
              (object-contract (m (case-> 
                                   (-> integer? integer? integer?)
                                   (-> integer? (values integer? integer?))))))
+  (test-name "(object-contract (m (case-> (-> integer? (values symbol?)) (-> integer? boolean? (values symbol?)) (-> integer? boolean? number? (values symbol?)))))"
+             (object-contract (m (opt->* (integer?) (boolean? number?) (symbol?)))))
   
   ))
 (report-errs)

@@ -39,7 +39,6 @@
                                (new (colorer mode:surrogate-text%)
 				    (get-token get-syntax-token)
                                     (prefix "Java"))
-                               ;#f
                                (lambda (text prompt-position) 
                                  (let ((is-if? #f)
                                        (is-string? #f)

@@ -349,6 +349,10 @@
      ;; 3.5
      ((: (eof) #\032) (values 'eof "eof" start-pos end-pos))
      
+     ((special) (syn-val 'error #f start-pos end-pos))
+     
+     ((special-comment) (syn-val 'comment #f start-pos end-pos))
+     
      ((- #\000 #\377) (syn-val 'error lexeme start-pos end-pos))
      ))
   )

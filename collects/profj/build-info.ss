@@ -101,8 +101,8 @@
                 (process-field prog '("scheme-interactions") type-recs level)))))
 
   
-  ;add-def-info: def (list string) type-records loc bool symbol -> void
-  (define (add-def-info def pname type-recs current-loc look-in-table level)
+  ;add-def-info: def (list string) type-records loc bool symbol . (list syntax)-> void
+  (define (add-def-info def pname type-recs current-loc look-in-table level . inner-req)
     (let* ((name (id-string (def-name def)))
            (defname (cons name pname))
            (native-name (cons (string-append name "-native-methods") pname))
@@ -110,23 +110,24 @@
       (unless (memq 'private (map modifier-kind (header-modifiers (def-header def))))
         (send type-recs add-to-env name pname current-loc)
         (when (execution?) (send type-recs add-to-env name pname 'interactions)))
-      (send type-recs add-class-req defname #f current-loc)
-      (send type-recs add-require-syntax defname (build-require-syntax name pname dir #t))
-      (send type-recs add-class-req native-name #f current-loc)
-      (send type-recs add-require-syntax native-name 
-            (build-require-syntax (car native-name) pname dir #f))
-      (send type-recs add-to-records defname
-            (lambda () (process-class/iface def pname type-recs look-in-table level)))
+      (let ((req-syn (if (null? inner-req) (build-require-syntax name pname dir #t) (car inner-req))))
+        (send type-recs add-class-req defname #f current-loc)
+        (send type-recs add-require-syntax defname req-syn)
+        (send type-recs add-class-req native-name #f current-loc)
+        (send type-recs add-require-syntax native-name 
+              (build-require-syntax (car native-name) pname dir #f))
+        (send type-recs add-to-records defname
+              (lambda () (process-class/iface def pname type-recs look-in-table level)))
       
-      ;;get info for Inner member classes
-      (let ([prefix (format "~a." name)])
-	(for-each (lambda (member)
-		    (when (class-def? member)
-		      ;; Adjust id to attach the prefix:
-		      (let ([id (def-name member)])
-			(set-id-string! id (string-append prefix (id-string id))))
-		      (add-def-info member pname type-recs current-loc #f (def-level def))))
-		  (def-members def)))))
+        ;;get info for Inner member classes
+        (let ([prefix (format "~a." name)])
+          (for-each (lambda (member)
+                      (when (class-def? member)
+                        ;; Adjust id to attach the prefix:
+                        (let ([id (def-name member)])
+                          (set-id-string! id (string-append prefix (id-string id))))
+                        (add-def-info member pname type-recs current-loc #f (def-level def) req-syn)))
+                    (def-members def))))))
   
   ;build-anon-info: def (list string) symbol type-records loc bool -> void
   (define (build-inner-info def pname level type-recs current-loc look-in-table?)
@@ -816,8 +817,14 @@
            (over? (overrides? name parms inherited-methods)))
       
       (when (eq? ret 'ctor)
-        (unless (equal? name (car cname))
-          (not-ctor-error name (car cname) (id-src (method-name method)))))
+        (if (regexp-match "\\." (car cname))
+            (begin
+              (unless (equal? name (filename-extension (car cname)))
+                (not-ctor-error name (car cname) (id-src (method-name method))))
+              (set! name (car cname))
+              (set-id-string! (method-name method) (car cname)))
+            (unless (equal? name (car cname))
+              (not-ctor-error name (car cname) (id-src (method-name method))))))
             
       (check-parm-names (method-parms method) name cname)
       

@@ -201,7 +201,7 @@
         (hash-table-put! records key thunk))
 
       ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
-      (define/public get-class-record 
+      (define old-get-class-record 
         (opt-lambda (ctype [container #f] [fail (lambda () null)]) 
           (let* ((key (cond
                         ((eq? ctype 'string) `("String" "java" "lang"))
@@ -229,6 +229,51 @@
                                      fail))))
               (else (hash-table-get records (if (null? (cdr key)) (cons (car key) (lookup-path (car key) fail)) key)
                                     fail))))))
+      
+      ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
+      (define/public get-class-record
+        (opt-lambda (ctype [container #f] [fail (lambda () null)])
+          (let*-values (((key key-path) (normalize-key ctype))
+                        ((key-inner) (when (cons? container) (string-append (car container) "." key)))
+                        ((outer-record) (when (cons? container) (get-class-record container)))
+                        ((path) (if (null? key-path) (lookup-path key (lambda () null)) key-path))
+                        ((inner-path) (if (null? key-path) (lookup-path key-inner (lambda () null)) key-path))
+                        ((new-search)
+                         (lambda ()
+                           (if (null? path) 
+                               (fail)
+                               (let ((back-path (reverse path)))
+                                 (search-for-record key (car back-path) (reverse (cdr back-path)) (lambda () #f) fail))))))
+            (cond
+              ((and container 
+                    (not (null? outer-record))
+                    (not (eq? outer-record 'in-progress))
+                    (member key (map inner-record-name (class-record-inners (get-record outer-record this)))))
+               (hash-table-get records (cons key-inner (cdr container)) fail))
+              ((and container (not (null? outer-record)) (eq? outer-record 'in-progress))
+               (let ((res (hash-table-get records (cons key-inner inner-path) (lambda () #f))))
+                 (or res
+                     (hash-table-get records (cons key path) new-search))))
+              (else
+               (hash-table-get records (cons key path) new-search))))))
+
+      ;normalize-key: (U 'strung ref-type (list string)) -> (values string (list string))
+      (define (normalize-key ctype)
+        (cond
+          ((eq? ctype 'string) (values "String" `("java" "lang")))
+          ((ref-type? ctype) (values (ref-type-class/iface ctype) (ref-type-path ctype)))
+          ((cons? ctype) (values (car ctype) (cdr ctype)))
+          (else ctype)))
+      
+      ;search-for-record string string (list string) (-> #f) (-> 'a) -> class-record
+      (define (search-for-record class-name new-prefix path test-fail fail)
+        (let* ((new-class-name (string-append new-prefix "." class-name))
+               (rec? (hash-table-get records (cons new-class-name path) test-fail))
+               (back-path (reverse path)))
+          (cond
+            (rec? rec?)
+            ((null? path) (fail))
+            (else (search-for-record new-class-name (car back-path) (reverse (cdr back-path)) test-fail fail)))))                  
       
       ;add-package-contents: (list string) (list string) -> void
       (define/public (add-package-contents package classes)

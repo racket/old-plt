@@ -1740,9 +1740,9 @@
       (let* ((const (if (memq level `(full advanced))
                         (resolve-overloading methods 
                                              args
-                                             (lambda () (ctor-overload-error 'number name args src))
-                                             (lambda () (ctor-overload-error 'conflict name args src))
-                                             (lambda () (ctor-overload-error 'no-match name args src))
+                                             (lambda () (ctor-overload-error 'number type args src))
+                                             (lambda () (ctor-overload-error 'conflict type args src))
+                                             (lambda () (ctor-overload-error 'no-match type args src))
                                              type-recs)
                         (when (check-ctor-args args (method-record-atypes (car methods)) type src level type-recs)
                           (car methods))))

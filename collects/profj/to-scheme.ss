@@ -195,7 +195,7 @@
       (if (null? reqs)
           syn
           (make-syntax #f
-                       `(begin (require ,@(translate-interact-require reqs type-recs))
+                       `(begin (require ,@(remove-dup-syntax (translate-interact-require reqs type-recs)))
                                ,syn)
                        #f))))
   
@@ -362,7 +362,7 @@
                   (cons (make-syntax #f `(module ,(module-name) mzscheme
                                            (require (lib "class.ss")
                                                     (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
-                                                    ,@(translate-require reqs type-recs))
+                                                    ,@(remove-dup-syntax (translate-require reqs type-recs)))
                                            ,@(map car translated-defs))
                                      #f)
                         (map cadr translated-defs))
@@ -373,9 +373,10 @@
                                         mzscheme
                                         (require (lib "class.ss")
                                                  (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
-                                                 ,@(translate-require (map (lambda (r) (list (def-file (car defs)) r))
-                                                                           (def-uses (car defs)))
-                                                                      type-recs))
+                                                 ,@(remove-dup-syntax
+                                                    (translate-require (map (lambda (r) (list (def-file (car defs)) r))
+                                                                            (def-uses (car defs)))
+                                                                       type-recs)))
                                         ,(car (car translated-defs)))
                                      #f)))
               (filter (lambda (req) (not (member req reqs)))
@@ -403,6 +404,25 @@
          (or (equal? (cadr req) (cadr (car reqs)))
              (req-member req (cdr reqs)))))
   
+  ;remove-dup-syntax: (list syntax) -> (list syntax)
+  (define (remove-dup-syntax syn)
+    (letrec ((remove 
+              (lambda (duped syn)
+                (if (null? syn)
+                    null
+                    (if (eq? duped (car syn))
+                        (remove duped (cdr syn))
+                        (cons (car syn) (remove duped (cdr syn)))))))
+             (remove-dups
+              (lambda (syn)
+                (if (null? syn)
+                    null
+                    (if (memq (car syn) (cdr syn))
+                        (cons (car syn) (remove-dups (remove (car syn) (cdr syn))))
+                        (cons (car syn) (remove-dups (cdr syn))))))))
+      (remove-dups syn)))
+  
+  ;translate-interact-require: (list reg) type-record -> (list syntax)
   (define (translate-interact-require reqs type-recs)
     (if (null? reqs)
         null

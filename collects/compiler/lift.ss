@@ -213,7 +213,13 @@
 				
 			       (let ([v (extract-varref-known-val (car l))])
 				 (if (zodiac:case-lambda-form? v)
-				     (let ([vl (get-liftable! v)])
+				     (let ([vl (let ([l (get-liftable! v)])
+						 ;; lifted in a previous phase?
+						 (if (top-level-varref/bind-from-lift? l)
+						     (if (top-level-varref/bind-from-lift-pls? l)
+							 'pls
+							 'static)
+						     l))])
 				       (if vl
 					   (loop (cdr l)
 						 (or pls? (eq? vl 'pls) (eq? vl 'pls-cycle))
@@ -236,7 +242,7 @@
 	  (procedure-code-liftable code))))
 
   (define (set-liftable! lambda)
-    (when (eq? (procedure-code-liftable (get-annotation lambda)) 'unknown-liftable)
+    (unless (top-level-varref/bind-from-lift? (procedure-code-liftable (get-annotation lambda)))
       (let ([v (get-liftable! lambda)])
 	(when v
 	  (let ([pls? (or (eq? v 'pls) (eq? v 'pls-cycle))])

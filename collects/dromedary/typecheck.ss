@@ -112,22 +112,23 @@
 			   (raise-syntax-error #f "Not all same types" #f)))]
 
 		    [($ ast:pexp_ident name)
+		     (pretty-print (format "Looking up pexp_ident: ~a" (unlongident name)))
 		     (let ([type (get-type (unlongident name) context)])
-		       (begin ;(pretty-print (format "pexp_ident type: ~a" type))
+		       (begin (pretty-print (format "pexp_ident type: ~a" type))
 		       (if type
 			   (let ([itype (instantiate type)])
 			     itype)
 			   (let ([rtype (lookup-ident name (at desc src))])
-			     (begin ;(pretty-print (format "pexp_ident rtype: ~a" rtype))
+			     (begin (pretty-print (format "pexp_ident rtype: ~a" rtype))
 			     (if rtype
 				 (let ([fres (car (convert-tvars rtype null))])
 				   (begin
-				     ;(pretty-print (format "pexp_ident fres: ~a" fres))
+				     (pretty-print (format "pexp_ident fres: ~a" fres))
 				     fres))
 				 (raise-syntax-error #f (format "No type found for ~a" name) (at name src)))
 			     )
-))
-		       )
+)
+			   ))
  )]
 
 
@@ -326,7 +327,17 @@
 
 	   (define (typecheck-match pelist testt context)
 	     (let* ([patenvs (map patcheck (repeat context (length pelist)) (repeat testt (length pelist)) (map car pelist))]
-		    [expts (map typecheck-ml (map cdr pelist) patenvs)])
+		    [bar (pretty-print (format "map cdr pelist in typecheck-match: ~a" (map cdr pelist)))]
+		    [expts (letrec ([typecheckem (lambda (exp envs)
+						   (if (null? exp)
+						       null
+						       (begin
+							 (pretty-print (format "About to typecheck-ml: ~a" exp))
+						       (cons (let ([result (typecheck-ml (car exp) (car envs))])
+							       (begin (pretty-print (format "typecheck-ml results: ~a" result)) result))
+							     (typecheckem (cdr exp) (cdr envs))))))])
+			     (typecheckem (map cdr pelist) patenvs))]
+		    [foo (pretty-print (format "expts in typecheck-match: ~a" expts))])
 	       (if (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
 		   (car expts)
@@ -664,6 +675,7 @@
 
 	     
 	   (define (same-types? tlist synlist)
+	     (pretty-print (format "same-types?: ~a" tlist))
 	     (if (= (length tlist) 1)
 		 #t
 		 (let ([tocompare (cdr tlist)])
@@ -696,8 +708,10 @@
 				      (unsolved (unbox r))))]
 	      [(option? type) (unsolved (option-type type))]
 	      [(ref? type) (unsolved (ref-type type))]
-	      [(usertype? type) (foldl (lambda (ut sl)
-					 (union (unsolved ut) sl)) (unsolved (car (usertype-params type))) (cdr (usertype-params type)))]
+	      [(usertype? type) (if (null? (usertype-params type))
+				    null
+				    (foldl (lambda (ut sl)
+					     (union (unsolved ut) sl)) (unsolved (car (usertype-params type))) (cdr (usertype-params type))))]
 	      [else (raise-syntax-error #f (format "Bad type: ~a" type))]))
 
 	   (define (env-unsolved r)
@@ -730,6 +744,7 @@
 						(instVar (tvar-tbox t) tm)
 						(inst (unbox (tvar-tbox t))))]
 				 [(option? t) (make-option (inst (option-type t)))]
+				 [(usertype? t) (make-usertype (usertype-name t) (map inst (usertype-params t)))]
 				 [(ref? t) (make-ref (inst (ref-type t)))]))])
 		 (inst type))))
 		 
@@ -795,12 +810,12 @@
 	      [(usertype? t1)
 	       (cond
 		[(usertype? t2) (if (equal? (usertype-name t1) (usertype-name t2))
-				    (if (= (length (usertype-params t1) (usertype-params t2)))
-					(andmap unify (usertype-params t1) (usertype-params t2))
+				    (if (= (length (usertype-params t1)) (length (usertype-params t2)))
+					(andmap unify (usertype-params t1) (usertype-params t2) (repeat syn (length (usertype-params t1))))
 					(raise-syntax-error #f (format "Expected ~a with ~a parameters but found it with ~a parameters" (usertype-name t1) (length (usertype-params t1)) (length (usertype-params t2))) syn))
-				    (raise-syntax-error #f (format "Expected ~a(~a) but found ~a(~a)" (usertype-name t1) (length (usertype-params t1)) (usertype-name t2) (length (usertype-params t2)))))]
-		 [(tvar? t1) (unify-var t1 (tvar-tbox t2) syn)]
-		 [else (raise-syntax-error #f (format "Expected ~a(~a)" (usertype-name t1) (length (usertype-params t1))))])]
+				    (raise-syntax-error #f (format "Expected ~a(~a) but found ~a(~a)" (usertype-name t1) (length (usertype-params t1)) (usertype-name t2) (length (usertype-params t2))) syn))]
+		 [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		 [else (raise-syntax-error #f (format "Expected ~a(~a) but found ~a" (usertype-name t1) (length (usertype-params t1)) t2) syn)])]
 	      [else (raise-syntax-error #f (format "Bad type to unify ~a" t1) syn)]))
 
 	   (define (unify-var type tbox syn)

@@ -30,6 +30,29 @@
 (define zodiac:see
   (opt-lambda ((show-raw? #t))
     (zodiac:invoke-system)
+    (let ([peval (current-eval)])
+      (parameterize ([current-prompt-read
+		       (lambda ()
+			 (display "e> ")
+			 (flush-output)
+			 (let ([read ((zodiac:read))])
+			   (if (zodiac:eof? read)
+			     eof
+			     read)))]
+		      [current-eval
+			(if show-raw?
+			  (lambda (in)
+			    (zodiac:parsed->raw
+			      (car
+				(zodiac:scheme-expand-program
+				  (list in))))
+			    (zodiac:scheme-expand-program
+			      (list in))))])
+	(read-eval-print-loop)))))
+
+(define zodiac:old-see
+  (opt-lambda ((show-raw? #t))
+    (zodiac:invoke-system)
     (let loop ()
       (printf "e> ")
       (flush-output)
@@ -41,28 +64,5 @@
 	    (pretty-print
 	      (let ((e (car (zodiac:scheme-expand-program (list r)))))
 		(if show-raw? (zodiac:parsed->raw e) e)))
-	    (newline)
-	    (loop)))))))
-
-(define zodiac:test
-  (lambda ()
-    (zodiac:invoke-system)
-    (let loop ()
-      (printf "e> ")
-      (flush-output)
-      (let ((r ((zodiac:read))))
-	(if (zodiac:eof? r)
-	  (newline)
-	  (begin
-	    (newline)
-	    (pretty-print
-	      (let ((e (zodiac:scheme-expand r
-			 (let ([p (make-parameterization)])
-			   (with-parameterization p
-			     (lambda ()
-			       (current-namespace
-				 (make-namespace 'hash-percent-syntax))))
-			   p))))
-		(zodiac:parsed->raw e)))
 	    (newline)
 	    (loop)))))))

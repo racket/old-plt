@@ -11,7 +11,7 @@
 	(mzlib:core@))
       (URL : mzlib:url^
 	((require-library-unit/sig "urlr.ss" "net")
-	  (MZLIB-CORE file@)))
+	  (MZLIB-CORE file)))
       (INTERFACE : quasiquote:graphical-interface^
 	(quasiquote:graphical-interface@))
       (QUOTESTER : quasiquote:quotester^
@@ -19,4 +19,4 @@
     (export
       (open QUOTESTER))))
 
-(invoke-open-unit/sig quasiquote:program@)
+(define-values/invoke-unit/sig quasiquote:quotester^ quasiquote:program@)

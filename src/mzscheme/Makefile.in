@@ -226,9 +226,7 @@ WBUILDINFO=$(WLIBIDIR)/buildinfo
 cygwin-install:
 	rm -f $(srcdir)/../../mzscheme.exe
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
-	# Use cat to make sure CRLF is right for command.com
-	cd $(srcdir)/dynsrc/; cat < gmkmzdyn.bat > gmmd2.bat
-	cd $(srcdir)/dynsrc/; command.com /C gmmd2.bat
+	cd $(srcdir)/dynsrc/; command.com /C  gmkmzdyn.bat
 	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
 	cp libgc.a $(WLIBDIR)/libgc.a
 	cp libmzscheme.a $(WLIBDIR)/libmzscheme.a

@@ -2746,11 +2746,11 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x1 = 0;
     if (n > 2) {
-      x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in cursor% (cursor name case)");
+      x2 = objscheme_unbundle_integer_in(p[2], 0, 10000, "initialization in cursor% (cursor name case)");
     } else
       x2 = 0;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer_in(p[3], 1, 10000, "initialization in cursor% (cursor name case)");
+      x3 = objscheme_unbundle_integer_in(p[3], 0, 10000, "initialization in cursor% (cursor name case)");
     } else
       x3 = 0;
 

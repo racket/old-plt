@@ -84,6 +84,7 @@ class wxRadioBox: public wxbRadioBox
 
   void ChangeColour(void) ;
 
+  int ButtonFocus(int i);
 };
 
 #endif // IN_CPROTO

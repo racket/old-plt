@@ -949,3 +949,23 @@ void wxRadioBox::Show (int item, Bool show)
   //No way...
 #endif
 }
+
+
+int wxRadioBox::ButtonFocus(int which)
+{
+  if (which >= no_items) return -1;
+
+  if (which < 0) {
+    Widget fw = XmGetFocusWidget((Widget)handle);
+    int i;
+    for (i = no_items; i--; )
+      if (radioButtons[i] == fw)
+	return i;
+    return -1;
+  } else {
+    XmProcessTraversal(radioButtons[which], XmTRAVERSE_CURRENT);
+    XmProcessTraversal(radioButtons[which], XmTRAVERSE_CURRENT);
+
+    return -1;
+  }
+}

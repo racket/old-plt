@@ -274,6 +274,7 @@ static Scheme_Object *bundle_symset_bias(int v) {
 }
 
 
+
 static Scheme_Object *editOp_wxEDIT_UNDO_sym = NULL;
 static Scheme_Object *editOp_wxEDIT_REDO_sym = NULL;
 static Scheme_Object *editOp_wxEDIT_CLEAR_sym = NULL;

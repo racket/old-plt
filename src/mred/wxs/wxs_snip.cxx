@@ -337,6 +337,88 @@ static Scheme_Object *bundle_symset_flags(int v) {
 
 
 
+static Scheme_Object *editOp_wxEDIT_UNDO_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_REDO_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_CLEAR_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_CUT_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_COPY_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_PASTE_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_KILL_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_INSERT_TEXT_BOX_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_INSERT_IMAGE_sym = NULL;
+static Scheme_Object *editOp_wxEDIT_SELECT_ALL_sym = NULL;
+
+static void init_symset_editOp(void) {
+  editOp_wxEDIT_UNDO_sym = scheme_intern_symbol("undo");
+  editOp_wxEDIT_REDO_sym = scheme_intern_symbol("redo");
+  editOp_wxEDIT_CLEAR_sym = scheme_intern_symbol("clear");
+  editOp_wxEDIT_CUT_sym = scheme_intern_symbol("cut");
+  editOp_wxEDIT_COPY_sym = scheme_intern_symbol("copy");
+  editOp_wxEDIT_PASTE_sym = scheme_intern_symbol("paste");
+  editOp_wxEDIT_KILL_sym = scheme_intern_symbol("kill");
+  editOp_wxEDIT_INSERT_TEXT_BOX_sym = scheme_intern_symbol("insert-text-box");
+  editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym = scheme_intern_symbol("insert-pasteboard-box");
+  editOp_wxEDIT_INSERT_IMAGE_sym = scheme_intern_symbol("insert-image");
+  editOp_wxEDIT_SELECT_ALL_sym = scheme_intern_symbol("select-all");
+}
+
+static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
+  if (!editOp_wxEDIT_SELECT_ALL_sym) init_symset_editOp();
+  if (0) { }
+  else if (v == editOp_wxEDIT_UNDO_sym) { return wxEDIT_UNDO; }
+  else if (v == editOp_wxEDIT_REDO_sym) { return wxEDIT_REDO; }
+  else if (v == editOp_wxEDIT_CLEAR_sym) { return wxEDIT_CLEAR; }
+  else if (v == editOp_wxEDIT_CUT_sym) { return wxEDIT_CUT; }
+  else if (v == editOp_wxEDIT_COPY_sym) { return wxEDIT_COPY; }
+  else if (v == editOp_wxEDIT_PASTE_sym) { return wxEDIT_PASTE; }
+  else if (v == editOp_wxEDIT_KILL_sym) { return wxEDIT_KILL; }
+  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { return wxEDIT_INSERT_TEXT_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return wxEDIT_INSERT_GRAPHIC_BOX; }
+  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return wxEDIT_INSERT_IMAGE; }
+  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return wxEDIT_SELECT_ALL; }
+  if (where) scheme_wrong_type(where, "editOp symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_editOp(Scheme_Object *v, const char *where) {
+  if (!editOp_wxEDIT_SELECT_ALL_sym) init_symset_editOp();
+  if (0) { }
+  else if (v == editOp_wxEDIT_UNDO_sym) { return 1; }
+  else if (v == editOp_wxEDIT_REDO_sym) { return 1; }
+  else if (v == editOp_wxEDIT_CLEAR_sym) { return 1; }
+  else if (v == editOp_wxEDIT_CUT_sym) { return 1; }
+  else if (v == editOp_wxEDIT_COPY_sym) { return 1; }
+  else if (v == editOp_wxEDIT_PASTE_sym) { return 1; }
+  else if (v == editOp_wxEDIT_KILL_sym) { return 1; }
+  else if (v == editOp_wxEDIT_INSERT_TEXT_BOX_sym) { return 1; }
+  else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return 1; }
+  else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return 1; }
+  else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "editOp symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_editOp(int v) {
+  if (!editOp_wxEDIT_SELECT_ALL_sym) init_symset_editOp();
+  switch (v) {
+  case wxEDIT_UNDO: return editOp_wxEDIT_UNDO_sym;
+  case wxEDIT_REDO: return editOp_wxEDIT_REDO_sym;
+  case wxEDIT_CLEAR: return editOp_wxEDIT_CLEAR_sym;
+  case wxEDIT_CUT: return editOp_wxEDIT_CUT_sym;
+  case wxEDIT_COPY: return editOp_wxEDIT_COPY_sym;
+  case wxEDIT_PASTE: return editOp_wxEDIT_PASTE_sym;
+  case wxEDIT_KILL: return editOp_wxEDIT_KILL_sym;
+  case wxEDIT_INSERT_TEXT_BOX: return editOp_wxEDIT_INSERT_TEXT_BOX_sym;
+  case wxEDIT_INSERT_GRAPHIC_BOX: return editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym;
+  case wxEDIT_INSERT_IMAGE: return editOp_wxEDIT_INSERT_IMAGE_sym;
+  case wxEDIT_SELECT_ALL: return editOp_wxEDIT_SELECT_ALL_sym;
+  default: return NULL;
+  }
+}
+
+
+
 
 
 
@@ -655,7 +737,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
 wxSnip::DoEdit(x0, x1, x2);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_editOp(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
   
@@ -1345,7 +1427,7 @@ static Scheme_Object *os_wxSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object 
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in snip%");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in snip%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in snip%");
   } else
@@ -2404,7 +2486,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
 wxTextSnip::DoEdit(x0, x1, x2);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_editOp(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
   
@@ -3105,7 +3187,7 @@ static Scheme_Object *os_wxTextSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obj
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in string-snip%");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in string-snip%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in string-snip%");
   } else
@@ -3974,7 +4056,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
 wxTabSnip::DoEdit(x0, x1, x2);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_editOp(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
   
@@ -4630,7 +4712,7 @@ static Scheme_Object *os_wxTabSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obje
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in tab-snip%");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in tab-snip%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in tab-snip%");
   } else
@@ -5560,7 +5642,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
 wxImageSnip::DoEdit(x0, x1, x2);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_editOp(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
   
@@ -6332,7 +6414,7 @@ static Scheme_Object *os_wxImageSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in image-snip%");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in image-snip%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in image-snip%");
   } else
@@ -6921,7 +7003,6 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 
-
 class os_wxMediaSnip : public wxMediaSnip {
  public:
 
@@ -7223,7 +7304,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
 wxMediaSnip::DoEdit(x0, x1, x2);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = bundle_symset_editOp(x0);
   p[1] = (x1 ? scheme_true : scheme_false);
   p[2] = scheme_make_integer(x2);
   
@@ -8174,7 +8255,7 @@ static Scheme_Object *os_wxMediaSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in editor-snip%");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in editor-snip%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in editor-snip%");
   } else

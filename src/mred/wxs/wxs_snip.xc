@@ -24,6 +24,8 @@
 @SYM "uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
 @ENDSYMBOLS
 
+@INCLUDE wxs_eop.xci
+
 @CLASSBASE wxSnip "snip":"object"
 
 @CREATOR ();
@@ -103,7 +105,6 @@
 @ "set-offset" : void SetOffset(float, float);
 
 @END
-
 
 @CLASSBASE wxMediaSnip "editor-snip" : "snip"
 

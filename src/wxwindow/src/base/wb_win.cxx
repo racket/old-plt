@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cxx,v 1.1.1.1 1997/12/22 16:11:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_win.cxx,v 1.2 1998/04/11 13:58:19 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -688,4 +688,9 @@ void wxbWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
   }
 
   foreach((wxWindow *)this, data);
+}
+
+Bool wxbWindow::GetsFocus()
+{
+  return TRUE;
 }

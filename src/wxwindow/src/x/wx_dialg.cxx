@@ -4,11 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.8 1998/08/21 00:31:40 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.9 1998/09/23 01:11:14 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_dialg.cxx,v $
+// Revision 1.9  1998/09/23 01:11:14  mflatt
+// .
+//
 // Revision 1.8  1998/08/21 00:31:40  mflatt
 // .
 //
@@ -203,9 +206,9 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   if (y < 0) y = wxDIALOG_DEFAULT_Y;
 
   if (width == -1)
-    width = 600;
+    width = 10;
   if (height == -1)
-    height = 600;
+    height = 10;
 
   invisibleResize = TRUE;
 

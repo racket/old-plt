@@ -116,7 +116,8 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
 						 xmPushButtonWidgetClass, formWidget,
 #endif
 						 XmNlabelString, text,
-						 // XmNdefaultButtonShadowThickness, 1, // See comment for wxButton::SetDefault
+						 XmNdefaultButtonShadowThickness, style ? 1 : 0,
+						 XmNshowAsDefault, style ? True : False,
 						 XmNtopAttachment, XmATTACH_FORM,
 						 XmNleftAttachment, XmATTACH_FORM,
 						 XmNbottomAttachment, XmATTACH_FORM,

@@ -1414,8 +1414,11 @@ wxSnip *wxMediaPasteboard::FindNextSelectedSnip(wxSnip *start)
 
   if (!start)
     snip = snips;
-  else
+  else {
+    loc = SnipLoc(start);
+    if (!loc) return NULL; /* Not in this pasteboard */
     snip = start->next;
+  }
 
   for (; snip; snip = snip->next) {
     loc = SnipLoc(snip);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.10 1998/09/23 01:11:11 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.11 1998/10/12 03:27:56 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,15 +29,15 @@
 
 #endif
 
+#ifdef wx_x
+# define UseXtRegions
+#endif
+
 #include "wx_rgn.h"
 
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
-
-#ifdef wx_xview
-extern Xv_Server xview_server;
-#endif
 
 IMPLEMENT_DYNAMIC_CLASS(wxColour, wxObject)
 IMPLEMENT_CLASS(wxColourDatabase, wxList)
@@ -325,85 +325,74 @@ void wxColourDatabase::Initialize (void)
 
   wxColour *tmpc;
 #define APPEND_C(name, c) tmpc = c; tmpc->Lock(1); APPEND_TO_DB(name, tmpc);
-  APPEND_C ("AQUAMARINE", new wxColour (112, 219, 147));
-  APPEND_C ("BLACK", new wxColour (0, 0, 0));
-  APPEND_C ("BLUE", new wxColour (0, 0, 255));
-  APPEND_C ("BLUE VIOLET", new wxColour (159, 95, 159));
-  APPEND_C ("BROWN", new wxColour (165, 42, 42));
-  APPEND_C ("CADET BLUE", new wxColour (95, 159, 159));
-  APPEND_C ("CORAL", new wxColour (255, 127, 0));
-  APPEND_C ("CORNFLOWER BLUE", new wxColour (66, 66, 111));
-  APPEND_C ("CYAN", new wxColour (0, 255, 255));
-  APPEND_C ("DARK GREY", new wxColour (47, 47, 47));	// ?
-
-  APPEND_C ("DARK GREEN", new wxColour (47, 79, 47));
-  APPEND_C ("DARK OLIVE GREEN", new wxColour (79, 79, 47));
-  APPEND_C ("DARK ORCHID", new wxColour (153, 50, 204));
-  APPEND_C ("DARK SLATE BLUE", new wxColour (107, 35, 142));
-  APPEND_C ("DARK SLATE GREY", new wxColour (47, 79, 79));
-  APPEND_C ("DARK TURQUOISE", new wxColour (112, 147, 219));
-  APPEND_C ("DIM GREY", new wxColour (84, 84, 84));
-  APPEND_C ("FIREBRICK", new wxColour (142, 35, 35));
-  APPEND_C ("FOREST GREEN", new wxColour (35, 142, 35));
-  APPEND_C ("GOLD", new wxColour (204, 127, 50));
-  APPEND_C ("GOLDENROD", new wxColour (219, 219, 112));
-#ifdef wx_msw
-  APPEND_C ("GREY", new wxColour (128, 128, 128));
-#else
-  APPEND_C ("GREY", new wxColour (192, 192, 192));
-#endif
-  APPEND_C ("GREEN", new wxColour (0, 255, 0));
-  APPEND_C ("GREEN YELLOW", new wxColour (147, 219, 112));
-  APPEND_C ("INDIAN RED", new wxColour (79, 47, 47));
-  APPEND_C ("KHAKI", new wxColour (159, 159, 95));
-  APPEND_C ("LIGHT BLUE", new wxColour (191, 216, 216));
-#ifdef wx_msw
-  APPEND_C ("LIGHT GREY", new wxColour (192, 192, 192));
-#else
-  APPEND_C ("LIGHT GREY", new wxColour (168, 168, 168));
-#endif
-  APPEND_C ("LIGHT STEEL BLUE", new wxColour (143, 143, 188));
-  APPEND_C ("LIME GREEN", new wxColour (50, 204, 50));
-  APPEND_C ("LIGHT MAGENTA", new wxColour (255, 0, 255));
-  APPEND_C ("MAGENTA", new wxColour (255, 0, 255));
-  APPEND_C ("MAROON", new wxColour (142, 35, 107));
-  APPEND_C ("MEDIUM AQUAMARINE", new wxColour (50, 204, 153));
-  APPEND_C ("MEDIUM GREY", new wxColour (100, 100, 100));
-  APPEND_C ("MEDIUM BLUE", new wxColour (50, 50, 204));
-  APPEND_C ("MEDIUM FOREST GREEN", new wxColour (107, 142, 35));
-  APPEND_C ("MEDIUM GOLDENROD", new wxColour (234, 234, 173));
-  APPEND_C ("MEDIUM ORCHID", new wxColour (147, 112, 219));
-  APPEND_C ("MEDIUM SEA GREEN", new wxColour (66, 111, 66));
-  APPEND_C ("MEDIUM SLATE BLUE", new wxColour (127, 0, 255));
-  APPEND_C ("MEDIUM SPRING GREEN", new wxColour (127, 255, 0));
-  APPEND_C ("MEDIUM TURQUOISE", new wxColour (112, 219, 219));
-  APPEND_C ("MEDIUM VIOLET RED", new wxColour (219, 112, 147));
-  APPEND_C ("MIDNIGHT BLUE", new wxColour (47, 47, 79));
-  APPEND_C ("NAVY", new wxColour (35, 35, 142));
-  APPEND_C ("ORANGE", new wxColour (204, 165, 0));
-  APPEND_C ("ORANGE RED", new wxColour (255, 127, 0));
-  APPEND_C ("ORCHID", new wxColour (219, 112, 219));
-  APPEND_C ("PALE GREEN", new wxColour (143, 188, 143));
-  APPEND_C ("PINK", new wxColour (188, 143, 234));
-  APPEND_C ("PLUM", new wxColour (234, 173, 234));
-  APPEND_C ("PURPLE", new wxColour (176, 0, 255));
-  APPEND_C ("RED", new wxColour (255, 0, 0));
-  APPEND_C ("SALMON", new wxColour (111, 66, 66));
-  APPEND_C ("SEA GREEN", new wxColour (35, 142, 107));
-  APPEND_C ("SIENNA", new wxColour (142, 107, 35));
-  APPEND_C ("SKY BLUE", new wxColour (50, 153, 204));
-  APPEND_C ("SLATE BLUE", new wxColour (0, 127, 255));
-  APPEND_C ("SPRING GREEN", new wxColour (0, 255, 127));
-  APPEND_C ("STEEL BLUE", new wxColour (35, 107, 142));
-  APPEND_C ("TAN", new wxColour (219, 147, 112));
-  APPEND_C ("THISTLE", new wxColour (216, 191, 216));
-  APPEND_C ("TURQUOISE", new wxColour (173, 234, 234));
-  APPEND_C ("VIOLET", new wxColour (79, 47, 79));
-  APPEND_C ("VIOLET RED", new wxColour (204, 50, 153));
-  APPEND_C ("WHEAT", new wxColour (216, 216, 191));
-  APPEND_C ("WHITE", new wxColour (255, 255, 255));
-  APPEND_C ("YELLOW", new wxColour (255, 255, 0));
-  APPEND_C ("YELLOW GREEN", new wxColour (153, 204, 50));
+  APPEND_C("AQUAMARINE", new wxColour(112, 216, 144));
+  APPEND_C("BLACK", new wxColour(0, 0, 0));
+  APPEND_C("BLUE", new wxColour(80, 80, 248));
+  APPEND_C("BLUE VIOLET", new wxColour(138, 43, 226));
+  APPEND_C("BROWN", new wxColour(132, 60, 36));
+  APPEND_C("CADET BLUE", new wxColour(96, 160, 160));
+  APPEND_C("CORAL", new wxColour(255, 127, 80));
+  APPEND_C("CORNFLOWER BLUE", new wxColour(68, 64, 108));
+  APPEND_C("CYAN", new wxColour(0, 255, 255));
+  APPEND_C("DARK GREY", new wxColour(169, 169, 169));
+  APPEND_C("DARK GREEN", new wxColour(0, 100, 0));
+  APPEND_C("DARK OLIVE GREEN", new wxColour(85, 107, 47));
+  APPEND_C("DARK ORCHID", new wxColour(153, 50, 204));
+  APPEND_C("DARK SLATE BLUE", new wxColour(72, 61, 139));
+  APPEND_C("DARK SLATE GREY", new wxColour(47, 79, 79));
+  APPEND_C("DARK TURQUOISE", new wxColour(0, 206, 209));
+  APPEND_C("DIM GREY", new wxColour(105, 105, 105));
+  APPEND_C("FIREBRICK", new wxColour(178, 34, 34));
+  APPEND_C("FOREST GREEN", new wxColour(34, 139, 34));
+  APPEND_C("GOLD", new wxColour(255, 215, 0));
+  APPEND_C("GOLDENROD", new wxColour(218, 165, 32));
+  APPEND_C("GREY", new wxColour(190, 190, 190));
+  APPEND_C("GREEN", new wxColour(60, 248, 52));
+  APPEND_C("GREEN YELLOW", new wxColour(173, 255, 47));
+  APPEND_C("INDIAN RED", new wxColour(205, 92, 92));
+  APPEND_C("KHAKI", new wxColour(240, 230, 140));
+  APPEND_C("LIGHT BLUE", new wxColour(173, 216, 230));
+  APPEND_C("LIGHT GREY", new wxColour(211, 211, 211));
+  APPEND_C("LIGHT STEEL BLUE", new wxColour(176, 196, 222));
+  APPEND_C("LIME GREEN", new wxColour(50, 205, 50));
+  APPEND_C("MAGENTA", new wxColour(255, 0, 255));
+  APPEND_C("MAROON", new wxColour(176, 48, 96));
+  APPEND_C("MEDIUM AQUAMARINE", new wxColour(102, 205, 170));
+  APPEND_C("MEDIUM BLUE", new wxColour(0, 0, 205));
+  APPEND_C("MEDIUM FOREST GREEN", new wxColour(107, 142, 35));
+  APPEND_C("MEDIUM GOLDENROD", new wxColour(234, 234, 173));
+  APPEND_C("MEDIUM ORCHID", new wxColour(186, 85, 211));
+  APPEND_C("MEDIUM SEA GREEN", new wxColour(60, 179, 113));
+  APPEND_C("MEDIUM SLATE BLUE", new wxColour(123, 104, 238));
+  APPEND_C("MEDIUM SPRING GREEN", new wxColour(0, 250, 154));
+  APPEND_C("MEDIUM TURQUOISE", new wxColour(72, 209, 204));
+  APPEND_C("MEDIUM VIOLET RED", new wxColour(199, 21, 133));
+  APPEND_C("MIDNIGHT BLUE", new wxColour(25, 25, 112));
+  APPEND_C("NAVY", new wxColour(36, 36, 140));
+  APPEND_C("ORANGE", new wxColour(255, 165, 0));
+  APPEND_C("ORANGE RED", new wxColour(255, 69, 0));
+  APPEND_C("ORCHID", new wxColour(218, 112, 214));
+  APPEND_C("PALE GREEN", new wxColour(152, 251, 152));
+  APPEND_C("PINK", new wxColour(255, 192, 203));
+  APPEND_C("PLUM", new wxColour(221, 160, 221));
+  APPEND_C("PURPLE", new wxColour(160, 32, 240));
+  APPEND_C("RED", new wxColour(248, 20, 64));
+  APPEND_C("SALMON", new wxColour(250, 128, 114));
+  APPEND_C("SEA GREEN", new wxColour(46, 139, 87));
+  APPEND_C("SIENNA", new wxColour(160, 82, 45));
+  APPEND_C("SKY BLUE", new wxColour(135, 206, 235));
+  APPEND_C("SLATE BLUE", new wxColour(106, 90, 205));
+  APPEND_C("SPRING GREEN", new wxColour(0, 255, 127));
+  APPEND_C("STEEL BLUE", new wxColour(70, 130, 180));
+  APPEND_C("TAN", new wxColour(210, 180, 140));
+  APPEND_C("THISTLE", new wxColour(216, 191, 216));
+  APPEND_C("TURQUOISE", new wxColour(64, 224, 208));
+  APPEND_C("VIOLET", new wxColour(238, 130, 238));
+  APPEND_C("VIOLET RED", new wxColour(208, 32, 144));
+  APPEND_C("WHEAT", new wxColour(245, 222, 179));
+  APPEND_C("WHITE", new wxColour(255, 255, 255));
+  APPEND_C("YELLOW", new wxColour(255, 255, 0));
+  APPEND_C("YELLOW GREEN", new wxColour(154, 205, 50));
 }
 
 /*

@@ -110,7 +110,7 @@ $(OBJDIR)/wxstring.$(OBJSUFF):	wxstring.$(SRCSUFF) $(WXBASEINC)/wxstring.h
 $(OBJDIR)/wb_hash.$(OBJSUFF):      wb_hash.$(SRCSUFF) $(WXBASEINC)/wx_list.h $(WXBASEINC)/wx_hash.h
 	$(CC) -c $(CPPFLAGS) -o $@ wb_hash.$(SRCSUFF)
 
-$(OBJDIR)/wb_gdi.$(OBJSUFF):	wb_gdi.$(SRCSUFF) $(WXINC)/wx_gdi.h $(WXBASEINC)/wx_list.h
+$(OBJDIR)/wb_gdi.$(OBJSUFF):	wb_gdi.$(SRCSUFF) wb_rgn.$(SRCSUFF) $(WXINC)/wx_gdi.h $(WXBASEINC)/wx_list.h
 	$(CC) -c $(CPPFLAGS) -o $@ wb_gdi.$(SRCSUFF)
 
 $(OBJDIR)/wb_ipc.$(OBJSUFF):	wb_ipc.$(SRCSUFF) $(WXINC)/wx_ipc.h $(WXBASEINC)/wx_obj.h

@@ -71,10 +71,10 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
 #ifdef wx_x
   rgn = XCreateRegion();
   XRectangle r;
-  r.x = x;
-  r.y = y;
-  r.width = width;
-  r.height = height;
+  r.x = (short)x;
+  r.y = (short)y;
+  r.width = (short)width;
+  r.height = (short)height;
   XUnionRectWithRegion(&r, rgn, rgn);
 #endif
 #ifdef wx_mac
@@ -134,6 +134,7 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   }
 #endif
 
+#ifndef wx_x
   x = dc->LogicalToDeviceX(x);
   y = dc->LogicalToDeviceY(y);
   width = dc->LogicalToDeviceXRel(width);
@@ -141,16 +142,17 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   int xradius = dc->LogicalToDeviceXRel(radius);
   int yradius = dc->LogicalToDeviceYRel(radius);
 
-#ifdef wx_msw
+# ifdef wx_msw
   rgn = CreateRoundRectRgn(x, y, x + width, y + height, xradius, yradius);
-#endif
-#ifdef wx_mac
+# endif
+# ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r;
   SetRect(&r, x, y, x + width, y + height);
   FrameRoundRect(&r, xradius, yradius);
   CloseRgn(rgn);
+# endif
 #endif
 }
 
@@ -182,20 +184,20 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   float w2 = (x_extent - 1) * (x_extent - 1);
   XPoint *p = new XPoint[(4 * x_extent) - (2 * is_odd)];
 
-  dx = x + width / 2;
-  dy = y + height / 2;
+  dx = (int)(x + width / 2);
+  dy = (int)(y + height / 2);
 
   for (i = 0; i < x_extent; i++) {
-    float y = (height / width) * sqrt(w2 - (i * i));
+    double y = ((height / width) * sqrt(w2 - (i * i)));
     p[i].x = i + dx;
-    p[i].y = y + dy;
+    p[i].y = (int)(y + dy);
     p[2 * x_extent - i - 1].x = i + dx;
-    p[2 * x_extent - i - 1].y = -y + dy;
+    p[2 * x_extent - i - 1].y = (int)(-y + dy);
     p[2 * x_extent + i - is_odd].x = -i + dx;
-    p[2 * x_extent + i - is_odd].y = -y + dy;
+    p[2 * x_extent + i - is_odd].y = (int)(-y + dy);
     if (i || !is_odd) {
       p[4 * x_extent - i - 1 - 2 * is_odd].x = -i + dx;
-      p[4 * x_extent - i - 1 - 2 * is_odd].y = y + dy;
+      p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)(y + dy);
     }
   }
   rgn = XPolygonRegion(p, 4 * x_extent, WindingRule);
@@ -205,6 +207,8 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
 {
   Cleanup();
+
+  if (n < 2) return;
 
 #ifdef wx_x
 # define POINT XPoint
@@ -537,7 +541,7 @@ wxRegion& wxRegion::operator<<(const char *s)
 wxRegion& wxRegion::operator<<(double d)
 {
   char s[100];
-  sprintf(s, "%lf", d);
+  sprintf(s, "%f", d);
   return *this << s;
 }
 

@@ -293,6 +293,8 @@ class wxbWindow: public wxEvtHandler
   void SetShown(Bool s);
 
   void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
+
+  Bool GetsFocus();
 };
 
 #if 0

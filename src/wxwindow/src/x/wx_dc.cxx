@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.3 1998/09/18 23:09:51 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.4 1998/09/23 01:11:14 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -22,8 +22,6 @@ static const char sccsid[] = "@(#)wx_dc.cc	1.2 5/9/94";
    Since pens are used more than brushes, the autoSetting flag
    is used to indicate that a brush was recently used, and SetPen
    must be called to reinstall the current pen's parameters.
-   If autoSetting includes 0x2, then the pens color may need
-   to be set based on XOR.
 
    There is, unfortunately, some confusion between setting the
    current pen/brush and actually installing the brush/pen parameters.
@@ -38,6 +36,7 @@ static const char sccsid[] = "@(#)wx_dc.cc	1.2 5/9/94";
 #pragma implementation "wx_dcmem.h"
 #endif
 
+#define UseXtRegions
 #include "wx_rgn.h"
 
 /* Moved here to avoid platform-detection hacks include conflicts */
@@ -344,7 +343,7 @@ void wxCanvasDC::DoFreeGetPixelCache(void)
   }
 }
 
-void wxCanvasDC:: SetCanvasClipping (void)
+void wxCanvasDC::SetCanvasClipping(void)
 {
   if (current_reg)
     XDestroyRegion (current_reg);
@@ -355,37 +354,16 @@ void wxCanvasDC:: SetCanvasClipping (void)
     current_reg = NULL;
 
   if (onpaint_reg && clipping)
-    XIntersectRegion (onpaint_reg, clipping->rgn, current_reg);
+    XIntersectRegion(onpaint_reg, clipping->rgn, current_reg);
   else if (clipping)
     XIntersectRegion (clipping->rgn, clipping->rgn, current_reg);
   else if (onpaint_reg)
     XIntersectRegion (onpaint_reg, onpaint_reg, current_reg);
 
   if (current_reg)
-    {
-      XSetRegion (display, gc, current_reg);
-    }
+    XSetRegion (display, gc, current_reg);
   else
-    {
-      XSetClipMask (display, gc, None);
-    }
-
-}
-
-void wxCanvasDC:: GetClippingBox (float *x, float *y, float *w, float *h)
-{
-  /* MATTHEW: [8] Remove WX_GC_CF */
-  if (current_reg)
-    {
-      XRectangle r;
-      XClipBox (current_reg, &r);
-      *x = XDEV2LOG (r.x);
-      *y = YDEV2LOG (r.y);
-      *w = XDEV2LOGREL (r.width);
-      *h = YDEV2LOGREL (r.height);
-    }
-  else
-    *x = *y = *w = *h = 0;
+    XSetClipMask (display, gc, None);
 }
 
 void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
@@ -419,7 +397,7 @@ void wxCanvasDC::GetSize(float *w, float *h)
   }
 }
 
-void wxCanvasDC:: Clear (void)
+void wxCanvasDC:: Clear(void)
 {
   int w, h;
   float fw, fh;
@@ -442,8 +420,8 @@ void wxCanvasDC:: Clear (void)
   /* MATTHEW: [13] Implement GetPixel */
   FreeGetPixelCache();
 
-  SetBrush(wxTheBrushList->FindOrCreateBrush(current_background_color, wxSOLID));
-  XFillRectangle (display, pixmap, gc, 0, 0, w, h);
+  SetBrush(wxTheBrushList->FindOrCreateBrush(&current_background_color, wxSOLID));
+  XFillRectangle(display, pixmap, gc, 0, 0, w, h);
 
   /* MATTHEW: [9] restore */
   current_brush = save_brush;
@@ -461,10 +439,8 @@ void wxCanvasDC:: CrossHair (float x, float y)
   int yy = YLOG2DEV (y);
   float ww, hh;
   GetSize(&ww, &hh);
-  XDrawLine (display, pixmap, gc, 0, yy,
-	     ww, yy);
-  XDrawLine (display, pixmap, gc, xx, 0,
-	     xx, hh);
+  XDrawLine (display, pixmap, gc, 0, yy, (int)ww, yy);
+  XDrawLine (display, pixmap, gc, xx, 0, xx, (int)hh);
 }
 
 void wxCanvasDC:: FloodFill (float x, float y, wxColour * col, int style)
@@ -699,75 +675,34 @@ void wxCanvasDC:: DrawLine (float x1, float y1, float x2, float y2)
   CalcBoundingBox(x2, y2);
 }
 
-void wxCanvasDC:: DrawArc (float x1, float y1, float x2, float y2, float xc, float yc)
+void wxCanvasDC:: DrawArc (float x, float y, float w, float h, float start, float end)
 {
   /* MATTHEW: [7] Implement GetPixel */
   FreeGetPixelCache();
-
-  int xx1 = XLOG2DEV (x1);
-  int yy1 = YLOG2DEV (y1);
-  int xx2 = XLOG2DEV (x2);
-  int yy2 = YLOG2DEV (y2);
-  int xxc = XLOG2DEV (xc);
-  int yyc = YLOG2DEV (yc);
-
-  double dx = xx1 - xxc;
-  double dy = yy1 - yyc;
-  double radius = sqrt (dx * dx + dy * dy);
-  int r = (int) radius;
-
-  double radius1, radius2;
-
-  if (xx1 == xx2 && yy1 == yy2)
-    {
-      radius1 = 0.0;
-      radius2 = 360.0;
-    }
-  else if (radius == 0.0)
-    radius1 = radius2 = 0.0;
-  else
-    {
-      if (xx1 - xxc == 0)
-	if (yy1 - yyc < 0)
-	  radius1 = 90.0;
-	else
-	  radius1 = -90.0;
-      else
-	radius1 = -atan2 ((double) (yy1 - yyc), (double) (xx1 - xxc)) * 360.0 / (2 * M_PI);
-
-      if (xx2 - xxc == 0)
-	if (yy2 - yyc < 0)
-	  radius2 = 90.0;
-	else
-	  radius2 = -90.0;
-      else
-	radius2 = -atan2 ((double) (yy2 - yyc), (double) (xx2 - xxc)) * 360.0 / (2 * M_PI);
-    }
-  radius1 *= 64.0;
-  radius2 *= 64.0;
-  int alpha1 = (int) radius1;
-  int alpha2 = (int) (radius2 - radius1);
+    
+  int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
+  int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
+  double degrees1, degrees2;
+  degrees1 = start * 360.0 / (2 * M_PI);
+  degrees2 = end * 360.0 / (2 * M_PI);
+  int alpha1 = int(degrees1 * 64.0);
+  int alpha2 = int((degrees2 - degrees1) * 64.0);
   while (alpha2 <= 0)
-    alpha2 += 360 * 64;
-  while (alpha2 > 360 * 64)
-    alpha2 -= 360 * 64;
+    alpha2 += 360*64;
+  while (alpha1 > 360*64)
+    alpha1 -= 360*64;
+  
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    SetBrush(current_brush);
+    XFillArc(display, pixmap, gc, xx, yy, ww, hh, alpha1, alpha2);
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    if (autoSetting) SetPen (current_pen);
+    XDrawArc(display, pixmap, gc, xx, yy, ww, hh, alpha1, alpha2);
+  }
 
-  if (current_brush && current_brush->GetStyle () != wxTRANSPARENT)
-    {
-      SetBrush (current_brush);
-      XFillArc (display, pixmap, gc,
-		xxc - r, yyc - r, 2 * r, 2 * r, alpha1, alpha2);
-    }
-
-  if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
-    {
-      if (autoSetting)
-	SetPen (current_pen);
-      XDrawArc (display, pixmap, gc,
-		xxc - r, yyc - r, 2 * r, 2 * r, alpha1, alpha2);
-    }
-  CalcBoundingBox (x1, y1);
-  CalcBoundingBox (x2, y2);
+  CalcBoundingBox(x, y);
+  CalcBoundingBox(x + w, y + h);
 }
 
 void wxCanvasDC:: DrawPoint (float x, float y)
@@ -1010,102 +945,12 @@ void wxCanvasDC:: DrawEllipse (float x, float y, float width, float height)
   CalcBoundingBox (x + width, y + height);
 }
 
-/* Matthew Flatt: Used when copying between drawables on different displays.
-   Not very fast, but better than giving up. */
-#ifdef wx_motif
-static void XCopyRemote(Display *srcdisplay, Display *destdisplay,
-			Drawable src, Drawable dest,
-			GC destgc,
-			int srcx, int srcy,
-			unsigned int w, unsigned int h,
-			int destx, int desty,
-			Bool more, XImage **cache)
-{
-  XImage *image, *destimage;
-  Colormap destcm, srccm;
-#define CACHE_SIZE 256
-  unsigned int i, j;
-  unsigned long cachesrc[CACHE_SIZE], cachedest[CACHE_SIZE];
-  int k, cache_pos, all_cache;
-
-  if (!cache || !*cache)
-    image = XGetImage(srcdisplay, src, srcx, srcy, w, h, AllPlanes, ZPixmap);
-  else
-    image = *cache;
-
-  destimage = XGetImage(destdisplay, dest, destx, desty, w, h, AllPlanes, ZPixmap);
-
-  srccm = wxGetMainColormap(srcdisplay);
-  destcm = wxGetMainColormap(destdisplay);
-
-  cache_pos = 0;
-  all_cache = FALSE;
-
-  for (i = 0; i < w; i++)
-    for (j = 0; j < h; j++) {
-      unsigned long pixel;
-      XColor xcol;
-
-      pixel = XGetPixel(image, i, j);
-      for (k = cache_pos; k--; )
-	if (cachesrc[k] == pixel) {
-	  pixel = cachedest[k];
-	  goto install;
-	}
-      if (all_cache)
-	for (k = CACHE_SIZE; k-- > cache_pos; )
-	  if (cachesrc[k] == pixel) {
-	    pixel = cachedest[k];
-	    goto install;
-	  }
-      
-      cachesrc[cache_pos] = xcol.pixel = pixel;
-      XQueryColor(srcdisplay, srccm, &xcol);
-      if (!AllocDCColor(destdisplay, destcm, &xcol, 1, 1))
-	xcol.pixel = 0;
-      cachedest[cache_pos] = pixel = xcol.pixel;
-      
-      if (++cache_pos >= CACHE_SIZE) {
-	cache_pos = 0;
-	all_cache = TRUE;
-      }
-
-    install:
-      XPutPixel(destimage, i, j, pixel);
-    }
-
-  XPutImage(destdisplay, dest, destgc, destimage, 0, 0, destx, desty, w, h);
-  XDestroyImage(destimage);
-
-  if (more)
-    *cache = image;
-  else
-    XDestroyImage(image);
-}
-#endif
-
 void wxCanvasDC:: SetFont (wxFont * the_font)
 {
   font = the_font;
   if (!font)
     return;
-#ifdef wx_xview
-  // Set the font according to the current scaling
-//  int scaled_size = (int) (user_scale_y * font->GetPointSize () + 0.5);
 
-  /* MATTHEW: Provide display, use fontid, x10 */
-  int scaled_size = (int) (10 * ((int)(user_scale_y * font->GetPointSize () + 0.5)));
-  Xv_Font xfont = wxFontPool->FindNearestFont (font->GetFontId(), font->GetStyle (),
-	     font->GetWeight (), scaled_size, font->GetUnderlined (), 0, 0,
-					       display);
-  font->x_font = xfont;
-  Font theFont = (Font) xv_get (xfont, XV_XID);
-#endif
-#ifdef wx_motif
-/*
-   int res_x = (int)(DisplayWidth(dpy, screen)/(DisplayWidthMM(dpy, screen)/25.4));
-   int res_y = (int)(DisplayHeight(dpy, screen)/(DisplayHeightMM(dpy, screen)/25.4));
- */
   int res_x = 100;
   int res_y = 100;
 
@@ -1121,7 +966,7 @@ void wxCanvasDC:: SetFont (wxFont * the_font)
   xfont = fontStruct; /* MATTHEW: xfont */
 
   Font theFont = fontStruct->fid;
-#endif
+
   if (gc)
     XSetFont(display, gc, theFont);
 }
@@ -1167,7 +1012,7 @@ static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
     return 0;
 }
 
-void wxCanvasDC::SetPen (wxPen * pen)
+void wxCanvasDC::SetPen(wxPen * pen)
 {
   wxBitmap *old_stipple = current_stipple;
   int old_style = current_style;
@@ -1186,287 +1031,227 @@ void wxCanvasDC::SetPen (wxPen * pen)
   if (!pen)
     return;
 
+  if (pen->GetStyle() == wxTRANSPARENT)
+    return; /* handled at drawing sites */
+
   wxColour old_pen_colour = current_colour;
-  current_colour = pen->GetColour ();
-  current_style = pen->GetStyle ();
-  current_fill = pen->GetStyle ();
-  current_pen_width = pen->GetWidth ();
-  current_pen_join = pen->GetJoin ();
-  current_pen_cap = pen->GetCap ();
+  current_colour = pen->GetColour();
+  current_style = pen->GetStyle();
+  current_fill = pen->GetStyle();
+  current_pen_width = pen->GetWidth();
+  current_pen_join = pen->GetJoin();
+  current_pen_cap = pen->GetCap();
   current_pen_nb_dash = pen->nb_dash;
   current_pen_dash = pen->dash;
-  if ((current_style == wxSTIPPLE) || (current_style == wxOPAQUE_STIPPLE)) {
-    current_stipple = pen->GetStipple();
+  current_stipple = pen->GetStipple();
+  if (current_stipple) {
     if (current_stipple->Ok()) {
-      int depth = current_stipple->GetDepth();
-      if (depth == 1)
+      if (current_stipple->GetDepth() == 1)
 	is_bitmap = 1;
+      else if (!color)
+	current_stipple = NULL;
     } else
       current_stipple = NULL;
-  } else
-    current_stipple = NULL;
+  }
 
-  Bool same_style = (old_style == current_style &&
-		     old_fill == current_fill &&
-		     old_pen_join == current_pen_join &&
-		     old_pen_cap == current_pen_cap &&
-		     old_pen_nb_dash == current_pen_nb_dash &&
-		     old_pen_dash == current_pen_dash &&
-		     old_pen_width == current_pen_width);
+  Bool same_style = (old_style == current_style
+		     && old_fill == current_fill
+		     && old_pen_join == current_pen_join
+		     && old_pen_cap == current_pen_cap
+		     && old_pen_nb_dash == current_pen_nb_dash
+		     && old_pen_dash == current_pen_dash
+		     && old_pen_width == current_pen_width
+		     && (!!old_stipple) == (!!current_stipple));
 
-  Bool same_colour = ((!!current_stipple == !!old_stipple)
-		      && (current_stipple
-			  || (old_pen_colour.Ok () &&
-			      (old_pen_colour.Red () == current_colour.Red ()) &&
-			      (old_pen_colour.Blue () == current_colour.Blue ()) &&
-			      (old_pen_colour.Green () == current_colour.Green ()) &&
-			      (old_pen_colour.pixel == current_colour.pixel))));
+  int style = current_style;
+  int xor = 0, old_xor = 0;
+  switch (style) {
+  case wxXOR:
+    xor = 1;
+    break;
+  case wxXOR_DOT:
+  case wxXOR_SHORT_DASH:
+  case wxXOR_LONG_DASH:
+  case wxXOR_DOT_DASH:
+    xor = 1;
+    style -= (wxXOR_DOT - wxDOT);
+    break;
+  }
+  switch (old_style) {
+  case wxXOR:
+  case wxXOR_DOT:
+  case wxXOR_SHORT_DASH:
+  case wxXOR_LONG_DASH:
+  case wxXOR_DOT_DASH:
+    old_xor = 1;
+    break;
+  }
 
-  if (!same_style || !dcOptimize)
-    {
-      int scaled_width = (int) XLOG2DEVREL (pen->GetWidth ());
-      if (scaled_width < 0)
-	scaled_width = 0;
+  Bool same_colour = (old_xor == xor
+		      && !!current_stipple == !!old_stipple
+		      && ((current_stipple && !is_bitmap)
+			  || (old_pen_colour.Red() == current_colour.Red()
+			      && old_pen_colour.Blue() == current_colour.Blue()
+			      && old_pen_colour.Green() == current_colour.Green()
+			      && old_pen_colour.pixel == current_colour.pixel)));
 
-      int style;
-      int join;
-      int cap;
-      static char dotted[] =
-      {2, 5};
-      static char short_dashed[] =
-      {4, 4};
-      static char long_dashed[] =
-      {4, 8};
-      static char dotted_dashed[] =
-      {6, 6, 2, 6};
+  if (!same_style || !dcOptimize) {
+    int scaled_width = (int)XLOG2DEVREL(pen->GetWidth());
 
-      // We express dash pattern in pen width unit, so we are
-      // independent of zoom factor and so on...
-      int req_nb_dash;
-      char *req_dash;
+    if (scaled_width < 0)
+      scaled_width = 0;
+    
+    int join;
+    int cap;
+    static char dotted[] = {2, 5};
+    static char short_dashed[] = {4, 4};
+    static char long_dashed[] = {4, 8};
+    static char dotted_dashed[] = {6, 6, 2, 6};
 
-      switch (pen->GetStyle ())
-	{
-	case wxUSER_DASH:
-	  req_nb_dash = current_pen_nb_dash;
-	  req_dash = current_pen_dash;
-	  style = LineOnOffDash;
-	  break;
-	case wxDOT:
-	  req_nb_dash = 2;
-	  req_dash = dotted;
-	  style = LineOnOffDash;
-	  break;
-	case wxSHORT_DASH:
-	  req_nb_dash = 2;
-	  req_dash = short_dashed;
-	  style = LineOnOffDash;
-	  break;
-	case wxLONG_DASH:
-	  req_nb_dash = 2;
-	  req_dash = long_dashed;
-	  style = LineOnOffDash;
-	  break;
-	case wxDOT_DASH:
-	  req_nb_dash = 4;
-	  req_dash = dotted_dashed;
-	  style = LineOnOffDash;
-	  break;
-	case wxSTIPPLE:
-	case wxOPAQUE_STIPPLE:
-	case wxSOLID:
-	case wxTRANSPARENT:
-	default:
-	  style = LineSolid;
-	  req_dash = NULL;
-	  req_nb_dash = 0;
+    // We express dash pattern in pen width unit, so we are
+    // independent of zoom factor and so on...
+    int req_nb_dash;
+    char *req_dash;
+
+    if (current_stipple)
+      style = wxSOLID;
+     
+    switch (style) {
+      case wxUSER_DASH:
+	req_nb_dash = current_pen_nb_dash;
+	req_dash = current_pen_dash;
+	style = LineOnOffDash;
+	break;
+      case wxDOT:
+	req_nb_dash = 2;
+	req_dash = dotted;
+	style = LineOnOffDash;
+	break;
+      case wxSHORT_DASH:
+	req_nb_dash = 2;
+	req_dash = short_dashed;
+	style = LineOnOffDash;
+	break;
+      case wxLONG_DASH:
+	req_nb_dash = 2;
+	req_dash = long_dashed;
+	style = LineOnOffDash;
+	break;
+      case wxDOT_DASH:
+	req_nb_dash = 4;
+	req_dash = dotted_dashed;
+	style = LineOnOffDash;
+	break;
+      default:
+	style = LineSolid;
+	req_dash = NULL;
+	req_nb_dash = 0;
+      }
+
+      if (req_dash && req_nb_dash) {
+	char *real_req_dash = new char[req_nb_dash];
+	if (real_req_dash) {
+	  int factor = scaled_width == 0 ? 1 : scaled_width;
+	  for (int i = 0; i < req_nb_dash; i++)
+	    real_req_dash[i] = req_dash[i] * factor;
+	  XSetDashes (display, gc, 0, real_req_dash, req_nb_dash);
+	  delete[]real_req_dash;
+	} else {
+	  // No Memory. We use non-scaled dash pattern...
+	  XSetDashes (display, gc, 0, req_dash, req_nb_dash);
 	}
+      }
 
-      if (req_dash && req_nb_dash)
-	{
-	  char *real_req_dash = new char[req_nb_dash];
-	  if (real_req_dash)
-	    {
-	      int factor = scaled_width == 0 ? 1 : scaled_width;
-	      for (int i = 0; i < req_nb_dash; i++)
-		real_req_dash[i] = req_dash[i] * factor;
-	      XSetDashes (display, gc, 0, real_req_dash, req_nb_dash);
-	      delete[]real_req_dash;
-	    }
-	  else
-	    {
-	      // No Memory. We use non-scaled dash pattern...
-	      XSetDashes (display, gc, 0, req_dash, req_nb_dash);
-	    }
+      switch (pen->GetCap()) {
+      case wxCAP_PROJECTING:
+	cap = CapProjecting;
+	break;
+      case wxCAP_BUTT:
+	cap = CapButt;
+	break;
+      case wxCAP_ROUND:
+      default:
+	cap = CapRound;
+	break;
+      }
+
+      switch (pen->GetJoin()) {
+      case wxJOIN_BEVEL:
+	join = JoinBevel;
+	break;
+      case wxJOIN_MITER:
+	join = JoinMiter;
+	break;
+      case wxJOIN_ROUND:
+      default:
+	join = JoinRound;
+	break;
+      }
+      
+      XSetLineAttributes(display, gc, scaled_width, style, cap, join);
+
+      if (current_stipple && ((current_stipple != old_stipple) || !dcOptimize)) {
+	if (is_bitmap) {
+	  XSetStipple(display, gc, current_stipple->x_pixmap);
+	  XSetFillStyle(display, gc, (style == wxSOLID) ? FillStippled : FillOpaqueStippled);
+	} else { 
+	  XSetTile(display, gc, current_stipple->x_pixmap);
+	  XSetFillStyle(display, gc, FillTiled);
 	}
+      } else {
+	XSetFillStyle(display, gc, FillSolid);
+      }
 
-      switch (pen->GetCap ())
-	{
-	case wxCAP_PROJECTING:
-	  cap = CapProjecting;
-	  break;
-	case wxCAP_BUTT:
-	  cap = CapButt;
-	  break;
-	case wxCAP_ROUND:
-	default:
-	  cap = CapRound;
-	  break;
-	}
+      XSetFunction(display, gc, xor ? GXxor : GXcopy);
+  }
 
-      switch (pen->GetJoin ())
-	{
-	case wxJOIN_BEVEL:
-	  join = JoinBevel;
-	  break;
-	case wxJOIN_MITER:
-	  join = JoinMiter;
-	  break;
-	case wxJOIN_ROUND:
-	default:
-	  join = JoinRound;
-	  break;
-	}
-
-      XSetLineAttributes (display, gc, scaled_width, style, cap, join);
-    }
-
-  if (IS_HATCH(current_fill) && ((current_fill != old_fill) || !dcOptimize))
-    {
-      Pixmap my_stipple;
-
-      old_stipple = NULL;	// For later reset!!
-
-      switch (current_fill)
-	{
-	case wxBDIAGONAL_HATCH:
-	  if (bdiag == (Pixmap) 0)
-	    bdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     bdiag_bits, bdiag_width, bdiag_height);
-	  my_stipple = bdiag;
-	  break;
-	case wxFDIAGONAL_HATCH:
-	  if (fdiag == (Pixmap) 0)
-	    fdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     fdiag_bits, fdiag_width, fdiag_height);
-	  my_stipple = fdiag;
-	  break;
-	case wxCROSS_HATCH:
-	  if (cross == (Pixmap) 0)
-	    cross = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     cross_bits, cross_width, cross_height);
-	  my_stipple = cross;
-	  break;
-	case wxHORIZONTAL_HATCH:
-	  if (horiz == (Pixmap) 0)
-	    horiz = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     horiz_bits, horiz_width, horiz_height);
-	  my_stipple = horiz;
-	  break;
-	case wxVERTICAL_HATCH:
-	  if (verti == (Pixmap) 0)
-	    verti = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     verti_bits, verti_width, verti_height);
-	  my_stipple = verti;
-	  break;
-	case wxCROSSDIAG_HATCH:
-	default:
-	  if (cdiag == (Pixmap) 0)
-	    cdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     cdiag_bits, cdiag_width, cdiag_height);
-	  my_stipple = cdiag;
-	  break;
-	}
-      XSetStipple (display, gc, my_stipple);
-    }
-  else if (current_stipple
-	   && ((current_stipple != old_stipple) || !dcOptimize))
-    {
-      if (is_bitmap) {
-	XSetStipple (display, gc, current_stipple->x_pixmap);
-      } else if (color) {
-	XSetTile(display, gc, current_stipple->x_pixmap);
+  if (!same_colour || !dcOptimize) {
+    int pixel = -1;
+    if (pen->GetStyle() == wxTRANSPARENT)
+      pixel = background_pixel;
+    else if (current_stipple && !is_bitmap)
+      pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
+    else {
+      if (Colour && (pen->GetColour ().pixel != -1))
+	pixel = pen->GetColour ().pixel;
+      else {
+	XColor exact_def;
+	exact_def.red = (unsigned short) (((long) pen->GetColour ().Red ()) << SHIFT);
+	exact_def.green = (unsigned short) (((long) pen->GetColour ().Green ()) << SHIFT);
+	exact_def.blue = (unsigned short) (((long) pen->GetColour ().Blue ()) << SHIFT);
+	exact_def.flags = DoRed | DoGreen | DoBlue;
+	
+	Colormap cmap = wxGetMainColormap(display);
+	if (!AllocDCColor (display, cmap, &exact_def, 1, color)
+	    && !alloc_close_color(display, cmap, &exact_def)) {
+	  ColourFailed();
+	  pixel = wxGetBestMatchingPixel(display,cmap,&exact_def);
+	} else
+	  pixel = (int) exact_def.pixel;
+	current_colour.pixel = pixel;
+	if (Colour)
+	  pen->GetColour().pixel = pixel;
       }
     }
 
-  if ((current_fill != old_fill) || !dcOptimize)
-    {
-      int fill_style;
-
-      if (current_fill == wxSTIPPLE)
-	fill_style = (is_bitmap ? FillStippled : FillTiled);
-      else if (current_fill == wxOPAQUE_STIPPLE)
-	fill_style = (is_bitmap ? FillOpaqueStippled : FillTiled);
-      else if (IS_HATCH (current_fill))
-	fill_style = FillStippled;
-      else
-	fill_style = FillSolid;
-      XSetFillStyle (display, gc, fill_style);
+    // Finally, set the GC to the required colour
+    if (pixel > -1) {
+      if (xor) {
+	XGCValues values;
+	XGetGCValues (display, gc, GCBackground, &values);
+	XSetForeground (display, gc, pixel ^ values.background);
+      } else {
+	XSetForeground (display, gc, pixel);
+      }
     }
-
-  if (!same_colour || !dcOptimize)
-    {
-      int pixel = -1;
-      if (pen->GetStyle () == wxTRANSPARENT)
-	pixel = background_pixel;
-      else if (current_stipple)
-	pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
-      else
-	{
-	  if (Colour && (pen->GetColour ().pixel != -1))
-	    pixel = pen->GetColour ().pixel;
-	  else
-	    {
-	      XColor exact_def;
-	      exact_def.red = (unsigned short) (((long) pen->GetColour ().Red ()) << SHIFT);
-	      exact_def.green = (unsigned short) (((long) pen->GetColour ().Green ()) << SHIFT);
-	      exact_def.blue = (unsigned short) (((long) pen->GetColour ().Blue ()) << SHIFT);
-	      exact_def.flags = DoRed | DoGreen | DoBlue;
-
-	      Colormap cmap = wxGetMainColormap(display);
-	      if (!AllocDCColor (display, cmap, &exact_def, 1, color)
-		  && !alloc_close_color(display, cmap, &exact_def))
-		{
-		  ColourFailed();
-                  pixel = wxGetBestMatchingPixel(display,cmap,&exact_def);
-		}
-	      else
-		pixel = (int) exact_def.pixel;
-	      current_colour.pixel = pixel;
-	      if (Colour)
-		pen->GetColour().pixel = pixel;
-	    }
-	}
-
-      // Finally, set the GC to the required colour
-      if (pixel > -1)
-	{
-	  if (pen->GetStyle() == wxXOR)
-	    {
-	      XGCValues values;
-	      XGetGCValues (display, gc, GCBackground, &values);
-	      XSetForeground (display, gc, pixel ^ values.background);
-	    }
-	  else
-	    {
-	      XSetForeground (display, gc, pixel);
-	    }
-	}
-    }
-  else
+  } else
     pen->GetColour().pixel = old_pen_colour.pixel;
-
-  /* MATTTHEW: [9] No longer need setting: */
+  
+  /* No longer need setting: */
   autoSetting = 0;
 }
 
-void wxCanvasDC:: SetBrush (wxBrush * brush)
+void wxCanvasDC::SetBrush(wxBrush * brush)
 {
   int old_fill = current_fill;
   wxBitmap *old_stipple = current_stipple;
@@ -1476,177 +1261,142 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
   current_brush = brush;
   if (current_brush) current_brush->Lock(1);
 
-  if (!brush || brush->GetStyle () == wxTRANSPARENT)
+  if (!brush || brush->GetStyle() == wxTRANSPARENT)
     return;
 
-  /* MATTHEW: [9] Pen must be reset */
+  /* Pen must be reset */
   autoSetting |= 0x1;
 
-  current_fill = current_brush->GetStyle ();
-  if ((current_fill == wxSTIPPLE) || (current_fill == wxOPAQUE_STIPPLE)) {
-    current_stipple = current_brush->GetStipple();
+  current_stipple = brush->GetStipple();
+  if (current_stipple) {
     if (current_stipple->Ok()) {
-      int depth = current_stipple->GetDepth();
-      if (depth == 1)
+      if (current_stipple->GetDepth() == 1)
 	is_bitmap = 1;
+      else if (!color)
+	current_stipple = NULL;
     } else
       current_stipple = NULL;
-  } else
-    current_stipple = NULL;
+  }
+
+  current_fill = brush->GetStyle();
 
   wxColour old_brush_colour(current_colour);
-  current_colour = brush->GetColour ();
-  Bool same_colour = ((!!current_stipple == !!old_stipple)
-		      && (current_stipple
-			  || (old_brush_colour.Ok () &&
-			      (old_brush_colour.Red () == current_colour.Red ()) &&
-			      (old_brush_colour.Blue () == current_colour.Blue ()) &&
-			      (old_brush_colour.Green () == current_colour.Green ()) &&
-			      (old_brush_colour.pixel == current_colour.pixel))));
-
-  if ((old_fill != brush->GetStyle ()) || !dcOptimize)
-    {
-      switch (brush->GetStyle ())
-	{
-	case wxTRANSPARENT:
-	  break;
-	case wxBDIAGONAL_HATCH:
-	case wxCROSSDIAG_HATCH:
-	case wxFDIAGONAL_HATCH:
-	case wxCROSS_HATCH:
-	case wxHORIZONTAL_HATCH:
-	case wxVERTICAL_HATCH:
-	  XSetFillStyle (display, gc, FillStippled);
-	  break;
-	case wxSTIPPLE:
-	  XSetFillStyle (display, gc, is_bitmap ? FillStippled : FillTiled);
-	  break;
-	case wxOPAQUE_STIPPLE:
-	  XSetFillStyle (display, gc, is_bitmap ? FillOpaqueStippled : FillTiled);
-	  break;
-	case wxSOLID:
-	default:
-	  XSetFillStyle (display, gc, FillSolid);
-	}
-    }
-
-  if (IS_HATCH(current_fill) && ((current_fill != old_fill) || !dcOptimize))
-    {
-      Pixmap my_stipple;
-
-      old_stipple = NULL;	// For later reset!!
-
-      switch (current_fill)
-	{
-	case wxBDIAGONAL_HATCH:
-	  if (bdiag == (Pixmap) 0)
-	    bdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     bdiag_bits, bdiag_width, bdiag_height);
-	  my_stipple = bdiag;
-	  break;
-	case wxFDIAGONAL_HATCH:
-	  if (fdiag == (Pixmap) 0)
-	    fdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     fdiag_bits, fdiag_width, fdiag_height);
-	  my_stipple = fdiag;
-	  break;
-	case wxCROSS_HATCH:
-	  if (cross == (Pixmap) 0)
-	    cross = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     cross_bits, cross_width, cross_height);
-	  my_stipple = cross;
-	  break;
-	case wxHORIZONTAL_HATCH:
-	  if (horiz == (Pixmap) 0)
-	    horiz = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     horiz_bits, horiz_width, horiz_height);
-	  my_stipple = horiz;
-	  break;
-	case wxVERTICAL_HATCH:
-	  if (verti == (Pixmap) 0)
-	    verti = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     verti_bits, verti_width, verti_height);
-	  my_stipple = verti;
-	  break;
-	case wxCROSSDIAG_HATCH:
-	default:
-	  if (cdiag == (Pixmap) 0)
-	    cdiag = XCreateBitmapFromData (display,
-			      RootWindow (display, DefaultScreen (display)),
-				     cdiag_bits, cdiag_width, cdiag_height);
-	  my_stipple = cdiag;
-	  break;
-	}
-      XSetStipple (display, gc, my_stipple);
-    }
-  // X can forget the stipple value when resizing a window (apparently)
-  // so always set the stipple.
-  else if (current_stipple) // && current_stipple != old_stipple)
-    {
+  current_colour = brush->GetColour();
+  Bool same_colour = (!!current_stipple == !!old_stipple
+		      && (old_fill == wxXOR) == (current_fill == wxXOR)
+		      && ((current_stipple && !is_bitmap)
+			  || ((!old_stipple || (old_stipple->GetDepth() == 1))
+			      && old_brush_colour.Red() == current_colour.Red()
+			      && old_brush_colour.Blue() == current_colour.Blue()
+			      && old_brush_colour.Green() == current_colour.Green()
+			      && old_brush_colour.pixel == current_colour.pixel)));
+  
+  if ((old_fill != current_fill) || (current_stipple != old_stipple) || !dcOptimize) {
+    if (current_stipple) {
       if (is_bitmap) {
-	XSetStipple (display, gc, current_stipple->x_pixmap);
-      } else if (color) {
+	XSetStipple(display, gc, current_stipple->x_pixmap);
+	XSetFillStyle(display, gc, (current_fill == wxSOLID) ? FillStippled : FillOpaqueStippled);
+      } else { 
 	XSetTile(display, gc, current_stipple->x_pixmap);
+	XSetFillStyle(display, gc, FillTiled);
+      }
+    } else {
+      Pixmap my_stipple = 0;
+
+      switch (current_fill) {
+      case wxBDIAGONAL_HATCH:
+	if (bdiag == (Pixmap) 0)
+	  bdiag = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 bdiag_bits, bdiag_width, bdiag_height);
+	my_stipple = bdiag;
+	break;
+      case wxFDIAGONAL_HATCH:
+	if (fdiag == (Pixmap) 0)
+	  fdiag = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 fdiag_bits, fdiag_width, fdiag_height);
+	my_stipple = fdiag;
+	break;
+      case wxCROSS_HATCH:
+	if (cross == (Pixmap) 0)
+	  cross = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 cross_bits, cross_width, cross_height);
+	my_stipple = cross;
+	break;
+      case wxHORIZONTAL_HATCH:
+	if (horiz == (Pixmap) 0)
+	  horiz = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 horiz_bits, horiz_width, horiz_height);
+	my_stipple = horiz;
+	break;
+      case wxVERTICAL_HATCH:
+	if (verti == (Pixmap) 0)
+	  verti = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 verti_bits, verti_width, verti_height);
+	my_stipple = verti;
+	break;
+      case wxCROSSDIAG_HATCH:
+	if (cdiag == (Pixmap) 0)
+	  cdiag = XCreateBitmapFromData (display,
+					 RootWindow (display, DefaultScreen (display)),
+					 cdiag_bits, cdiag_width, cdiag_height);
+	my_stipple = cdiag;
+	break;
+      default:
+	break;
+      }
+
+      if (my_stipple) XSetStipple (display, gc, my_stipple);
+      XSetFillStyle(display, gc, my_stipple ? FillStippled : FillSolid);
+    }
+
+    XSetFunction(display, gc, (current_fill == wxXOR) ? GXxor : GXcopy);
+  }
+
+  if (!same_colour || !dcOptimize) {
+    int pixel = -1;
+    if (current_stipple && !is_bitmap)
+      pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
+    else if (brush->GetStyle () != wxTRANSPARENT) {
+      if (Colour && (brush->GetColour ().pixel > -1))
+	pixel = brush->GetColour ().pixel;
+      else {
+	XColor exact_def;
+	exact_def.red = (unsigned short) (((long) brush->GetColour ().Red ()) << SHIFT);
+	exact_def.green = (unsigned short) (((long) brush->GetColour ().Green ()) << SHIFT);
+	exact_def.blue = (unsigned short) (((long) brush->GetColour ().Blue ()) << SHIFT);
+	exact_def.flags = DoRed | DoGreen | DoBlue;
+	
+	Colormap cmap = wxGetMainColormap(display);
+	if (!AllocDCColor (display, cmap, &exact_def, 1, color)
+	    && !alloc_close_color(display, cmap, &exact_def)) {
+	  ColourFailed();
+	  pixel = wxGetBestMatchingPixel(display,cmap,&exact_def);
+	} else
+	  pixel = (int) exact_def.pixel;
+	current_colour.pixel = pixel;
+	if (Colour)
+	  brush->GetColour().pixel = pixel;
+      }
+    } 
+
+    if (pixel > -1) {
+      // Finally, set the GC to the required colour
+      if (current_fill == wxXOR) {
+	XGCValues values;
+	XGetGCValues(display, gc, GCBackground, &values);
+	XSetForeground(display, gc, pixel ^ values.background);
+      } else {
+	XSetForeground(display, gc, pixel);
       }
     }
-
-  if (!same_colour || !dcOptimize)
-    {
-      int pixel = -1;
-      if (current_stipple)
-	pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
-      else if (brush->GetStyle () != wxTRANSPARENT)
-	{
-	  if (Colour && (brush->GetColour ().pixel > -1))
-	    pixel = brush->GetColour ().pixel;
-	  else
-	    {
-	      XColor exact_def;
-	      exact_def.red = (unsigned short) (((long) brush->GetColour ().Red ()) << SHIFT);
-	      exact_def.green = (unsigned short) (((long) brush->GetColour ().Green ()) << SHIFT);
-	      exact_def.blue = (unsigned short) (((long) brush->GetColour ().Blue ()) << SHIFT);
-	      exact_def.flags = DoRed | DoGreen | DoBlue;
-
-	      Colormap cmap = wxGetMainColormap(display);
-	      if (!AllocDCColor (display, cmap, &exact_def, 1, color)
-		  && !alloc_close_color(display, cmap, &exact_def))
-		{
-//		  pixel = (int) BlackPixel (display, DefaultScreen (display));
-		  ColourFailed();
-                  pixel = wxGetBestMatchingPixel(display,cmap,&exact_def);
-		}
-	      else
-		pixel = (int) exact_def.pixel;
-	      current_colour.pixel = pixel;
-	      if (Colour)
-		brush->GetColour().pixel = pixel;
-	    }
-	}
-      if (pixel > -1)
-	{
-	  // Finally, set the GC to the required colour
-	  if (brush->GetStyle() == wxXOR)
-	    {
-	      XGCValues values;
-	      XGetGCValues (display, gc, GCBackground, &values);
-	      XSetForeground (display, gc, pixel ^ values.background);
-	    }
-	  else
-	    {
-	      XSetForeground (display, gc, pixel);
-	    }
-	}
-    }
-  else
+  } else
     brush->GetColour().pixel = old_brush_colour.pixel;
-  //current_colour.pixel = brush->colour-pixel = old_brush_colour.pixel ;
 }
-
 
 /* MATTHEW */
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
@@ -1710,12 +1460,7 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 
   if (font)
     {
-#ifdef wx_xview
-      XFontStruct *font_info = (XFontStruct *) xv_get (font->x_font, FONT_INFO);
-#endif
-#ifdef wx_motif
       XFontStruct *font_info = xfont; /* MATTHEW: [4] xfont */
-#endif
       int direction, descent;
       XCharStruct overall_return;
       /* MATTHEW: [2] handle 16-bit mode */
@@ -1854,113 +1599,40 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
   autoSetting = 1;
 }
 
-void wxCanvasDC:: SetBackground (wxBrush * brush)
+void wxCanvasDC::SetBackground(wxColor * c)
 {
   int pixel;
 
-  if (current_background_brush) current_background_brush->Lock(-1);
-  current_background_brush = brush;
-  if (current_background_brush) current_background_brush->Lock(1);
+  current_background_color = *c;
 
-  if (!canvas)
-    return;
+  autoSetting = 0x1;
 
-  if (!brush)
-    return;
+  if (Colour && (current_background_color.pixel > -1))
+    pixel = current_background_color.pixel;
+  else {
+    XColor exact_def;
+    exact_def.red = (unsigned short) (((long) current_background_color.Red ()) << SHIFT);
+    exact_def.green = (unsigned short) (((long) current_background_color.Green()) << SHIFT);
+    exact_def.blue = (unsigned short) (((long)  current_background_color.Blue()) << SHIFT);
+    exact_def.flags = DoRed | DoGreen | DoBlue;
+    
+    Colormap cmap = wxGetMainColormap(display);
+    if (!AllocDCColor (display, cmap, &exact_def, 0, color)
+	&& !alloc_close_color(display, cmap, &exact_def)) {
+      pixel = (int) WhitePixel (display, DefaultScreen (display));
+      ColourFailed();
+    } else
+      pixel = (int) exact_def.pixel;
 
-  pixel = brush->GetColour ().pixel;
+    if (Colour)
+      current_background_color.pixel = pixel;
+  }
 
-  if (current_background_brush)
-    {
-      if (Colour && (current_background_brush->GetColour ().pixel > -1))
-	pixel = current_background_brush->GetColour ().pixel;
-      else
-	{
-	  XColor exact_def;
-	  exact_def.red = (unsigned short) (((long) brush->GetColour ().Red ()) << SHIFT);
-	  exact_def.green = (unsigned short) (((long) brush->GetColour ().Green ()) << SHIFT);
-	  exact_def.blue = (unsigned short) (((long) brush->GetColour ().Blue ()) << SHIFT);
-	  exact_def.flags = DoRed | DoGreen | DoBlue;
+  if (canvas) XSetWindowBackground(display, pixmap, pixel);
 
-	  Colormap cmap = wxGetMainColormap(display);
-	  if (!AllocDCColor (display, cmap, &exact_def, 0, color)
-	      && !alloc_close_color(display, cmap, &exact_def))
-	    {
-	      pixel = (int) WhitePixel (display, DefaultScreen (display));
-	      ColourFailed();
-	    }
-	  else
-	    pixel = (int) exact_def.pixel;
-	  if (Colour)
-	    current_background_brush->GetColour().pixel = pixel;
-	}
-
-      XSetWindowBackground (display, pixmap, pixel);
-
-      // Necessary for ::DrawIcon, which use fg/bg pixel or the GC.
-      // And Blit,... (Any fct that use XCopyPlane, in fact.)
-      XSetBackground (display, gc, pixel);
-    }
-}
-
-void wxCanvasDC:: SetLogicalFunction (int function)
-{
-  int x_function;
-
-  switch (function)
-    {
-    case wxCLEAR:
-      x_function = GXclear;
-      break;
-    case wxXOR:
-      x_function = GXxor;
-      break;
-    case wxINVERT:
-      x_function = GXinvert;
-      break;
-    case wxOR_REVERSE:
-      x_function = GXorReverse;
-      break;
-    case wxAND_REVERSE:
-      x_function = GXandReverse;
-      break;
-    case wxAND:
-      x_function = GXand;
-      break;
-    case wxOR:
-      x_function = GXor;
-      break;
-    case wxAND_INVERT:
-      x_function = GXandInverted;
-      break;
-    case wxNO_OP:
-      x_function = GXnoop;
-      break;
-    case wxNOR:
-      x_function = GXnor;
-      break;
-    case wxEQUIV:
-      x_function = GXequiv;
-      break;
-    case wxSRC_INVERT:
-      x_function = GXcopyInverted;
-      break;
-    case wxOR_INVERT:
-      x_function = GXorInverted;
-      break;
-    case wxNAND:
-      x_function = GXnand;
-      break;
-    case wxSET:
-      x_function = GXset;
-      break;
-    case wxCOPY:
-    default:
-      x_function = GXcopy;
-      break;
-    }
-
-  XSetFunction(display, gc, x_function);
+  // Necessary for ::DrawIcon, which use fg/bg pixel or the GC.
+  // And Blit,... (Any fct that use XCopyPlane, in fact.)
+  XSetBackground (display, gc, pixel);
 }
 
 Bool wxCanvasDC:: StartDoc (char *)
@@ -1982,13 +1654,6 @@ void wxCanvasDC:: EndPage (void)
 
 float wxCanvasDC:: GetCharHeight (void)
 {
-#ifdef wx_xview
-  if (!(font && font->x_font))
-    return YDEV2LOGREL (12);
-
-  return YDEV2LOGREL ((int) xv_get ((Xv_opaque) NULL, font->x_font, FONT_DEFAULT_CHAR_HEIGHT));
-#endif
-#ifdef wx_motif
   if (!xfont)
     return XDEV2LOGREL (12);
 
@@ -1996,20 +1661,12 @@ float wxCanvasDC:: GetCharHeight (void)
   XCharStruct overall;
   XTextExtents (xfont, "x", 1, &direction, &ascent,
 		&descent, &overall);
-//  return XDEV2LOGREL(overall.ascent + overall.descent);
+
   return XDEV2LOGREL(ascent + descent);
-#endif
 }
 
 float wxCanvasDC:: GetCharWidth (void)
 {
-#ifdef wx_xview
-  if (!(font && font->x_font))
-    return XDEV2LOGREL (16);
-
-  return XDEV2LOGREL ((int) xv_get ((Xv_opaque) NULL, font->x_font, FONT_DEFAULT_CHAR_WIDTH));
-#endif
-#ifdef wx_motif
   if (!xfont)
     return XDEV2LOGREL (16);
 
@@ -2018,7 +1675,6 @@ float wxCanvasDC:: GetCharWidth (void)
   XTextExtents (xfont, "x", 1, &direction, &ascent,
 		&descent, &overall);
   return XDEV2LOGREL(overall.width);
-#endif
 }
 
 /* MATTHEW: This was broken, since it assumed that theFont has been setup to
@@ -2028,45 +1684,26 @@ void wxCanvasDC:: GetTextExtent (const char *string, float *x, float *y,
 	       float *descent, float *externalLeading, wxFont *theFont,
 				 Bool use16Bit)
 {
-#ifdef wx_xview
-   wxFont *fontToUse = theFont;
-  if (!fontToUse)
-    fontToUse = font;
-#endif
-#ifdef wx_motif
    wxFont *oldfont;
    XFontStruct *oldxfont;
-#endif
-  
-#ifdef wx_motif
+
    oldfont = font;
    oldxfont = xfont;
    if (theFont)
      SetFont(theFont);
-#endif
 
-#ifdef wx_motif
-  if (!xfont)
-#endif
-#ifdef wx_xview
-    if (!(fontToUse && fontToUse->x_font))
-#endif
-      {
-	cerr << "Warning: set a font before calling GetTextExtent!\n";
-	*x = -1;
-	*y = -1;
-#ifdef wx_motif
-	font = oldfont;
-	xfont = oldxfont;
-#endif
-	return;
-      }
-#ifdef wx_motif
+  if (!xfont) {
+    cerr << "Warning: set a font before calling GetTextExtent!\n";
+    *x = -1;
+    *y = -1;
+
+    font = oldfont;
+    xfont = oldxfont;
+
+    return;
+  }
+
   XFontStruct *fontStruct = xfont;
-#endif
-#ifdef wx_xview
-  XFontStruct *fontStruct = (XFontStruct *) xv_get (fontToUse->x_font, FONT_INFO);
-#endif
   int direction, ascent, descent2;
   XCharStruct overall;
   int slen;
@@ -2100,14 +1737,9 @@ void wxCanvasDC:: SetMapMode (int mode)
   // First, calculate how to scale from mm to pixels.
   // Then we just need to find the scaling factor from ? to mm and multiply
   // by the first scaling factor.
-#ifdef wx_xview
-  Display *dpy = wxGetDisplay();
-#endif
-#ifdef wx_motif
   Display *dpy = display;
   if (!dpy && wxTheApp->wx_frame)
       dpy = wxGetDisplay();
-#endif
 
   int screen_no = DefaultScreen (dpy);
   pixel_width = DisplayWidth (dpy, screen_no);
@@ -2208,82 +1840,67 @@ int wxCanvasDC:: LogicalToDeviceYRel (float y)
   return YLOG2DEVREL (y);
 }
 
-Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
-                        wxBitmap * source, float xsrc, float ysrc, int rop)
+Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
+		      wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c)
 {
-  /* MATTHEW: [7] Implement GetPixel */
   FreeGetPixelCache();
 
   Bool retval = FALSE;
-  Bool resetPen;
-  wxPen *savePen;
-  wxBrush *saveBrush;
+  wxColor bg;
+  wxPen *save_pen = current_pen;
+  
+  bg = current_background_color;
+  if (!c) c = wxBLACK;
 
-  saveBrush = current_background_brush;
-  SetBackground(wxWHITE_BRUSH);
+  if (source->GetDepth() > 1)
+    c = wxBLACK;
 
-  if (rop == wxCOLOR) {
-    // Be sure that foreground pixels (1) of
-    // the Icon will be painted with pen colour. [current_pen->SetColour()]
-    // Background pixels (0) will be painted with 
-    // last selected background color. [::SetBackground]
-    if (current_pen && autoSetting)
-      SetPen(current_pen);
-    savePen = NULL;
-    resetPen = FALSE;
-    rop = wxCOPY;
-  } else {
-    savePen = current_pen;
-    SetPen(wxBLACK_PEN);
-    resetPen = TRUE;
-  }
+  if (rop != wxSTIPPLE)
+    SetBackground(wxWHITE);
 
-  if (pixmap && source->Ok())
-    {
-      SetLogicalFunction (rop);
+  int scaled_width
+    = source->GetWidth()  < XLOG2DEVREL(width) ? source->GetWidth()  : XLOG2DEVREL(width);
+  int scaled_height
+    = source->GetHeight() < YLOG2DEVREL(height) ? source->GetHeight() : YLOG2DEVREL(height);
 
-      /* MATTHEW: [9] Need to use the current pen: */
-      if (current_pen && autoSetting)
-	SetPen(current_pen);
-
-      if (display != source->display)
-      {
-	XImage *cache = NULL;
-
-	XCopyRemote(source->display, display, source->x_pixmap, pixmap, gc,
-		    xsrc, ysrc, width, height,
-		    XLOG2DEV (xdest), YLOG2DEV (ydest), 
-		    FALSE, &cache);
-      } else {
-	// Check if we're copying from a mono bitmap
-	if (!color || (source->GetDepth () == 1)) {
-	  XCopyPlane (display, source->x_pixmap, pixmap, gc,
-		      xsrc, ysrc, width, height,
-		      XLOG2DEV (xdest), YLOG2DEV (ydest), 1);
-	} else {
-	  XCopyArea (display, source->x_pixmap, pixmap, gc,
-		     xsrc, ysrc, width, height,
-		     XLOG2DEV (xdest), YLOG2DEV (ydest));
-
-	}
-      } /* Remote/local display */
-      
-      CalcBoundingBox (xdest, ydest);
-      CalcBoundingBox (xdest + width, ydest + height);
+  if (pixmap && source->Ok()) {
+    SetPen(wxThePenList->FindOrCreatePen(c, 0, rop));
+    save_pen->Lock(1); /* We're going to mash save_pen back into current_pen */
     
-      /* MATTHEW: [9] */
-      SetLogicalFunction(orig);
-
-      retval = TRUE;
+    if (!color || (source->GetDepth() == 1)) {
+      if ((source->GetDepth() == 1) && ((rop == wxSOLID) || (rop == wxXOR))) {
+	/* Seems like the easiest way to implement transparent backgrounds is to
+	   use a stipple. */
+	XGCValues values;
+	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	values.stipple = source->x_pixmap;
+	values.fill_style = FillStippled;
+	values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % source->GetWidth());
+	values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % source->GetHeight());
+	current_stipple = source;
+	XChangeGC(display, gc, mask, &values);
+	XFillRectangle(display, pixmap, gc, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
+      } else {
+	XCopyPlane (display, source->x_pixmap, pixmap, gc,
+		    (long)xsrc, (long)ysrc, scaled_width, scaled_height,
+		    XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+      }
+    } else {
+      XCopyArea (display, source->x_pixmap, pixmap, gc,
+		 (long)xsrc, (long)ysrc, scaled_width, scaled_height,
+		 XLOG2DEV(xdest), YLOG2DEV(ydest));
+      
     }
+      
+    CalcBoundingBox(xdest, ydest);
+    CalcBoundingBox(xdest + width, ydest + height);
 
-  SetBackground(saveBrush);
-  if (resetPen) {
-    current_pen->Lock(-1);
-    current_pen = savePen;
-    current_pen->Lock(1);
-    autoSetting = 1;
+    retval = TRUE;
   }
+
+  SetBackground(&bg);
+  autoSetting = 0x1;
+  current_pen = save_pen;
 
   return retval;
 }
@@ -2343,7 +1960,7 @@ wxMemoryDC::wxMemoryDC (Bool ro)
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
+  current_background_color = *wxWHITE;
   current_text_foreground = *wxBLACK;
 //  current_text_background = NULL;
 

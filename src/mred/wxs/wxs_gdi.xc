@@ -264,7 +264,7 @@
 
 @CLASSBASE wxCursor "cursor" : "object"
 
-@CREATOR (string,SYM[bitmapType]=0,rint[1|10000]=0,rint[1|10000]=0); <> cursor name
+@CREATOR (string,SYM[bitmapType]=0,rint[0|10000]=0,rint[0|10000]=0); <> cursor name
 @CREATOR (SYM[cursor]); <> cursor id
 
 @ "ok?" : bool Ok();

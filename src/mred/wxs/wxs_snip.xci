@@ -16,7 +16,7 @@
 @ s "own-caret" : void OwnCaret(bool); 
 @ s "blink-caret" : void BlinkCaret(wxDC!,float,float); 
 
-@ s "do-edit-operation" : void DoEdit(int,bool=TRUE,long=0);
+@ s "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
 @ s "match?" : bool Match(wxSnip!);
 
 @ s "write" : void Write(wxMediaStreamOut%);

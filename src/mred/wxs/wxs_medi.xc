@@ -51,19 +51,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @INCLUDE wxs_fcs.xci
 
-@BEGINSYMBOLS editOp > ONE
-@SYM "undo" : wxEDIT_UNDO
-@SYM "redo" : wxEDIT_REDO
-@SYM "clear" : wxEDIT_CLEAR
-@SYM "cut" : wxEDIT_CUT
-@SYM "copy" : wxEDIT_COPY
-@SYM "paste" : wxEDIT_PASTE
-@SYM "kill" : wxEDIT_KILL
-@SYM "insert-text-box" : wxEDIT_INSERT_TEXT_BOX
-@SYM "insert-pasteboard-box" : wxEDIT_INSERT_GRAPHIC_BOX
-@SYM "insert-image" : wxEDIT_INSERT_IMAGE
-@SYM "select-all" : wxEDIT_SELECT_ALL
-@ENDSYMBOLS
+@INCLUDE wxs_eop.xci
 
 @BEGINSYMBOLS printMethod > ONE
 @SYM "standard" : 0

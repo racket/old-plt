@@ -349,7 +349,7 @@ scheme_init_eval (Scheme_Env *env)
 			     env);
   scheme_add_global_constant("expand-syntax-once", 
 			     scheme_make_prim_w_arity(expand_stx_once, 
-						      "expand-once", 
+						      "expand-syntax-once", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("expand-to-top-form", 

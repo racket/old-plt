@@ -1179,6 +1179,8 @@
 (arity-test udp->send-waitable 1 1)
 (arity-test udp->receive-waitable 1 1)
 
+(section 'file-after-udp)
+
 ;;----------------------------------------------------------------------
 ;; Security guards:
 

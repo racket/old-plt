@@ -171,7 +171,7 @@ scheme_init_list (Scheme_Env *env)
 			      env);
   scheme_add_global_constant ("list-immutable",
 			      scheme_make_prim_w_arity(list_immutable_prim,
-						       "list-immultable",
+						       "list-immutable",
 						       0, -1),
 			      env);
   scheme_add_global_constant ("list*",

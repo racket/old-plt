@@ -23,9 +23,12 @@
 (err/rt-test (eval 'lambda (scheme-report-environment 5)) exn:syntax?)
 (err/rt-test (eval 'lambda (null-environment 5)) exn:syntax?)
 
-; FIXME: this is a useful test, but we have no make-global-value-list...
 ; Test primitive-name
-'(let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
+(let ([gvl (parameterize ([current-namespace (make-namespace)]) 
+	     (map (lambda (s)
+		    (cons s (with-handlers ([not-break-exn? (lambda (x) #f)])
+			      (namespace-variable-value s))))
+		  (namespace-mapped-symbols)))]
       [aliases (list (cons "call/cc" "call-with-current-continuation")
 		     (cons "call/ec" "call-with-escape-continuation")
 		     (cons "interaction-environment" "current-namespace"))])
@@ -43,29 +46,66 @@
 			      (if m
 				  (cdr m)
 				  sr))])
-		   (or (equal? st (primitive-name value))
+		   (or (equal? st (symbol->string (object-name value)))
 		       (and (fprintf (current-error-port)
-				     "different: ~a ~a~n" st (primitive-name value))
+				     "different: ~s ~s~n" st (object-name value))
 			    #f))))))
 	 gvl)))
 
-;;FIXME
-#|
 (define (test-empty . flags)
-  (let ([e (apply make-namespace flags)])
+  (let ([e (apply make-namespace flags)]
+	[orig (current-namespace)])
     (parameterize ([current-namespace e])
-      (test null make-global-value-list)
+      (test null namespace-mapped-symbols)
       (test 'unbound 'empty-namespace
 	    (with-handlers ([void (lambda (exn) 'unbound)])
-			   (eval 'car)))
+	      (eval 'car)))
       (test 'unbound 'empty-namespace
 	    (with-handlers ([void (lambda (exn) 'unbound)])
-			   (eval '#%car)))
-      (global-defined-value 'hello 5)
+	      (eval '#%car)))
+      (namespace-set-variable-value! 'hello 5)
+      (namespace-attach-module orig 'mzscheme)
+      (namespace-require '(rename mzscheme #%top #%top))
       (test 5 'empty-namespace (eval 'hello))
-      (test '((hello . 5)) make-global-value-list))))
+      (test #t 'top+hello (let ([s (namespace-mapped-symbols)])
+			    (or (equal? s '(#%top hello))
+				(equal? s '(hello #%top))))))))
 (test-empty 'empty)
-(apply test-empty (append '(empty) (map car flag-map) (map cadr flag-map)))
-|#
+
+(arity-test namespace-mapped-symbols 0 1)
+(arity-test namespace-variable-value 1 4)
+(arity-test namespace-set-variable-value! 2 4)
+(arity-test namespace-undefine-variable! 1 2)
+
+(define n (make-namespace))
+(test #t 'same-with-arg-and-param
+      ((lambda (a b)
+	 (and (andmap (lambda (ai) (memq ai b)) a)
+	      (andmap (lambda (bi) (memq bi a)) b)
+	      #t))
+       (parameterize ([current-namespace n])
+	 (namespace-mapped-symbols))
+       (namespace-mapped-symbols n)))
+
+(test (void) namespace-set-variable-value! 'foo 17 #t n)
+(test 17 namespace-variable-value 'foo #t #f n)
+(test (void) namespace-set-variable-value! 'lambda 18 #t n)
+(test 18 namespace-variable-value 'lambda #t #f n)
+(test (void) namespace-set-variable-value! 'define 19 #f n)
+(test 19 namespace-variable-value 'define #f #f n)
+(test 20 namespace-variable-value 'define #t (lambda () 20) n)
+(test 21 'stx-err (with-handlers ([exn:syntax? (lambda (x) 21)])
+		    (namespace-variable-value 'define #t #f n)))
+(test 22 'stx-err (with-handlers ([exn:variable? (lambda (x) 22)])
+		    (namespace-variable-value 'not-ever-defined #t #f n)))
+(test 23 'stx-err (with-handlers ([exn:variable? (lambda (x) 23)])
+		    (namespace-variable-value 'define-values #f #f n)))
+(test (void) namespace-undefine-variable! 'foo n)
+(test 25 namespace-variable-value 'foo #t (lambda () 25) n)
+(parameterize ([current-namespace n])
+  (test (void) namespace-set-variable-value! 'bar 27)
+  (test 27 namespace-variable-value 'bar)
+  (test (void) namespace-undefine-variable! 'bar)
+  (test 28 namespace-variable-value 'bar #t (lambda () 28)))
 
 (report-errs)

@@ -93,7 +93,7 @@ scheme_init_vector (Scheme_Env *env)
 			     env);
   scheme_add_global_constant("vector->immutable-vector", 
 			     scheme_make_prim_w_arity(vector_to_immutable, 
-						      "vector->immutabe-vector", 
+						      "vector->immutable-vector", 
 						      1, 1), 
 			     env);
 }

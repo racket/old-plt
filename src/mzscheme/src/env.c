@@ -392,7 +392,7 @@ static void make_init_env(void)
 
   scheme_add_global_constant("namespace-symbol->identifier",
 			     scheme_make_prim_w_arity(namespace_identifier,
-						      "namespace-identifier",
+						      "namespace-symbol->identifier",
 						      1, 2),
 			     env);
 

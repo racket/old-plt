@@ -512,6 +512,8 @@
  (error-autosaving "Error autosaving \"~a\".")
  (autosaving-turned-off "Autosaving is turned off\nuntil the file is saved.")
  (recover-autosave-files-frame-title "Recover Autosaved Files")
+ (autosave-details "Details")
+ (autosave-recover "Recover")
  
  ;;; file modified warning
  (file-has-been-modified

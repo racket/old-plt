@@ -24,10 +24,14 @@
 
       (define (check-expected-result line expected)
 	(when expected
-	  (unless (string=? expected (substring line 0 3))
+	  (unless (ormap (lambda (expected)
+			   (string=? expected (substring line 0 3)))
+			 (if (string? expected)
+			     (list expected)
+			     expected))
 	    (error 'ftp "exected result code ~a, got ~a" expected line))))
       
-      ;; ftp-check-response : input-port string-or-#f (string any -> any) (string any -> any) any -> any
+      ;; ftp-check-response : input-port string-or-stringlist-or-#f (string any -> any) any -> any
       ;;
       ;;  Checks a standard-format response, checking for the given
       ;;  expected 3-digit result code if expected is not #f. 
@@ -131,9 +135,13 @@
 	(let-values ([(tcpin tcpout) (tcp-connect server-address server-port)])
 	  (ftp-check-response tcpin "220" print-msg (void))
 	  (fprintf tcpout (string-append "USER " username "~n"))
-	  (ftp-check-response tcpin "331" void (void))
-	  (fprintf tcpout (string-append "PASS " password "~n"))
-	  (ftp-check-response tcpin "230" void (void))
+	  (let ([no-password? (ftp-check-response tcpin (list "331" "230") 
+						    (lambda (line 230?)
+						      (or 230? (regexp-match "^230" line)))
+						    #f)])
+	    (unless no-password?
+	      (fprintf tcpout (string-append "PASS " password "~n"))
+	      (ftp-check-response tcpin "230" void (void))))
 	  (make-tcp-connection tcpin tcpout)))
 
       (define (ftp-close-connection tcp-ports)

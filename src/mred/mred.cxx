@@ -1684,6 +1684,7 @@ static void MrEdSchemeMessages(char *, ...);
 static int have_stdio = 0;
 static int stdio_kills_prog = 0;
 static Bool RecordInput(void *media, wxEvent *event, void *data);
+static void break_console_reading_threads();
 
 class IOFrame : public wxFrame
 {
@@ -1763,8 +1764,10 @@ public:
 	mred_clean_up_gdi_objects();
 #endif	
 	exit(exit_val);
-      } else
+      } else {
+	break_console_reading_threads();
 	have_stdio = 0;
+      }
       return TRUE; 
     }
 
@@ -1964,18 +1967,68 @@ static void MrEdSchemeMessagesOutput(char *s, long l)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 
+static Scheme_Object *console_reading;
+
+static void add_console_reading()
+{
+  if (!console_reading) {
+    wxREGGLOB(console_reading);
+    console_reading = scheme_null;
+  }
+
+  console_reading = scheme_make_pair((Scheme_Object *)scheme_current_process,
+				     console_reading);
+}
+
+static void remove_console_reading()
+{
+  Scheme_Object *p, *prev = NULL;
+
+  p = console_reading;
+  while (SCHEME_PAIRP(p)) {
+    if (SAME_OBJ(SCHEME_CAR(p), (Scheme_Object *)scheme_current_process)) {
+      if (prev)
+	SCHEME_CDR(prev) = SCHEME_CDR(p);
+      else
+	console_reading = SCHEME_CDR(p);
+      return;
+    }
+    prev = p;
+    p = SCHEME_CDR(p);
+  }
+}
+
+static void break_console_reading_threads()
+{
+  Scheme_Object *p;
+
+  for (p = console_reading; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
+    scheme_break_thread((Scheme_Process *)SCHEME_CAR(p));
+  }
+}
+
 static int mrconsole_getc(Scheme_Input_Port *ip)
 {
+  int result;
   Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
   MrEdSchemeMessages("");
-  return scheme_getc(pipe);
+
+  add_console_reading();
+  result = scheme_getc(pipe);
+  remove_console_reading();
+  return result;
 }
 
 static int mrconsole_peekc(Scheme_Input_Port *ip)
 {
+  int result;
   Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
   MrEdSchemeMessages("");
-  return scheme_peekc(pipe);
+
+  add_console_reading();
+  result = scheme_peekc(pipe);
+  remove_console_reading();
+  return result;
 }
 
 static int mrconsole_char_ready(Scheme_Input_Port *ip)

@@ -15,7 +15,10 @@
 	   [second cadr]
 	   [second-name 'cadr]
 	   [third caddr]
-	   [defn (expand-defmacro `(define-struct ,str ,fields))]
+	   [defn (expand-defmacro `(#%define-struct ,str ,fields))]
+	   [_ (unless (and (cons? defn)
+			   (eq? (car defn) '#%define-values))
+		(error 'define-struct/parse "expand-defmacro didn't return expected value: ~s~n" defn))]
 	   [bindings (second defn)]
 	   [exp (third defn)]
 	   [make-parse (string->symbol (string-append "make-" (symbol->string str) "/parse"))]

@@ -35,7 +35,7 @@
   (define (base64-decode-stream in out)
     (let loop ([waiting 0][waiting-bits 0])
       (if (>= waiting-bits 8)
-	  (begin0
+	  (begin
 	   (display (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
 		    out)
 	   (let ([waiting-bits (- waiting-bits 8)])

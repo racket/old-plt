@@ -744,78 +744,83 @@
 								   zodiac-ast))
 							  "Unrecognized Syntax")
 				       (void))])))])
-		     (dynamic-wind
-		      (lambda ()
-			(wx:begin-busy-cursor)
-			(send definitions-edit set-styles-fixed #f)
-			(send definitions-edit begin-edit-sequence #f))
-		      (lambda ()
-			; reset all of the buffer to the default style
-			; and clear out arrows
-			(let* ([list (send definitions-edit get-style-list)]
-			       [style (send list find-named-style "Standard")])
-			  (send* definitions-edit
-			    (syncheck:clear-arrows)
-			    (syncheck:init-arrows))
-			  (if (null? style)
-			      (printf "Warning: couldn't find Standard style~n")
-			      (change-style style 0 (send definitions-edit last-position))))
+			    (let ([mod-flag void]) ; buffer modified before check-syntax run
+			      (dynamic-wind
+			       (lambda ()
+				 (wx:begin-busy-cursor)
+				 (set! mod-flag
+				       (send definitions-edit modified?))
+				 (send definitions-edit set-styles-fixed #f)
+				 (send definitions-edit begin-edit-sequence #f))
+			       (lambda ()
+				 ; reset all of the buffer to the default style
+				 ; and clear out arrows
+				 (let* ([list (send definitions-edit get-style-list)]
+					[style (send list find-named-style "Standard")])
+				   (send* definitions-edit
+					  (syncheck:clear-arrows)
+					  (syncheck:init-arrows))
+				   (if (null? style)
+				       (printf "Warning: couldn't find Standard style~n")
+				       (change-style style 0 (send definitions-edit last-position))))
 			
-			;; color each exp
-			(drscheme:rep:process-edit/zodiac
-			 definitions-edit
-			 (lambda (expr recur)
-			   (cond
-			     [(drscheme:basis:process-finish? expr)
-			      (when (drscheme:basis:process-finish-error? expr)
-				(send interactions-edit insert-prompt))]
-			     [else
-			      (color-loop expr)
-			      (recur)]))
-			 0
-			 (send definitions-edit last-position)
-			 #f)
-			; color the top-level varrefs
-			(let ([built-in?
-			       (lambda (s)
-				 ;; this should look a list of names in the basis and color those...
-				 (built-in-name s))])
-			  (for-each (lambda (var)
-				      (let ([id (zodiac:varref-var var)])
-					(change-style
-					 (cond
-					   [(hash-table-get defineds id (lambda () #f))
-					    => 
-					    (lambda (defn-vars)
-					      (let* ([defn-var (car defn-vars)]
-						     [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
-						     [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
-						     [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
-						     [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
-						     [rename (lambda (new-name)
-							       (when new-name
-								 (rename-bindings
-								  (mzlib:function@:foldl
-								   (lambda (test-var l)
-								     (if (eq? (zodiac:varref-var test-var)
-									      (zodiac:varref-var defn-var))
-									 (cons test-var l)
-									 l))
-								   defn-vars
-								   top-level-varrefs)
-								  new-name)))])
-						(add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
-							   (zodiac:varref-var defn-var) rename)
-						bound-style))]
-					   [(built-in? id) primitive-style]
-					   [else unbound-style])
-					 (zodiac:location-offset (zodiac:zodiac-start var))
-					 (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
-				    top-level-varrefs)))
-		      (lambda ()
-			(send definitions-edit end-edit-sequence)
-			(send definitions-edit set-styles-fixed #t)
-			(wx:end-busy-cursor)))))))])
+				 ;; color each exp
+				 (drscheme:rep:process-edit/zodiac
+				  definitions-edit
+				  (lambda (expr recur)
+				    (cond
+				     [(drscheme:basis:process-finish? expr)
+				      (when (drscheme:basis:process-finish-error? expr)
+					    (send interactions-edit insert-prompt))]
+				     [else
+				      (color-loop expr)
+				      (recur)]))
+				  0
+				  (send definitions-edit last-position)
+				  #f)
+				 ; color the top-level varrefs
+				 (let ([built-in?
+					(lambda (s)
+					  ;; this should look a list of names in the basis and color those...
+					  (built-in-name s))])
+				   (for-each (lambda (var)
+					       (let ([id (zodiac:varref-var var)])
+						 (change-style
+						  (cond
+						   [(hash-table-get defineds id (lambda () #f))
+						    => 
+						    (lambda (defn-vars)
+						      (let* ([defn-var (car defn-vars)]
+							     [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
+							     [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
+							     [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
+							     [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
+							     [rename (lambda (new-name)
+								       (when new-name
+									     (rename-bindings
+									      (mzlib:function@:foldl
+									       (lambda (test-var l)
+										 (if (eq? (zodiac:varref-var test-var)
+											  (zodiac:varref-var defn-var))
+										     (cons test-var l)
+										     l))
+									       defn-vars
+									       top-level-varrefs)
+									      new-name)))])
+							(add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
+								   (zodiac:varref-var defn-var) rename)
+							bound-style))]
+						   [(built-in? id) primitive-style]
+						   [else unbound-style])
+						  (zodiac:location-offset (zodiac:zodiac-start var))
+						  (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
+					     top-level-varrefs)))
+			       (lambda () ; post part of dynamic wind
+				 (send definitions-edit end-edit-sequence)
+				 (unless mod-flag
+				    (send definitions-edit set-modified #f))
+				 (send definitions-edit set-styles-fixed #t)
+				 (wx:end-busy-cursor))))))))])
 	  (public
 	    [check-syntax-button
 	     (make-object mred:button% button-panel

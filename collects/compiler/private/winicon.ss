@@ -11,9 +11,14 @@
     (integer-byte-string->integer (read-string 2 p) #f #f))
   (define (dword->integer p)
     (integer-byte-string->integer (read-string 4 p) #f #f))
+  
+  ;; The 0 added in the alpha position apparently means "ignore the alpha
+  ;;  and use the mask, instead"
   (define (3/2word->integer p)
     (integer-byte-string->integer (string-append (read-string 3 p) "\0") #f #f))
 
+  (define (integer->word i p)
+    (display (integer->integer-byte-string i 2 #f #f) p))
   (define (integer->dword i p)
     (display (integer->integer-byte-string i 4 #f #f) p))
 
@@ -599,6 +604,38 @@
 	   (get-icons p #t)))
        (lambda () (close-input-port p)))))
 
+  (require (lib "mred.ss" "mred")
+           (lib "class.ss"))
+  (define (bitmap%->icon bm)
+    (let ([w (send bm get-width)]
+          [h (send bm get-height)]
+          [o (open-output-string)])
+      (integer->dword 40 o) ; size
+      (integer->dword w o)  ; width
+      (integer->dword h o)  ; height
+      (integer->word 1 o)   ; planes
+      (integer->word 32 o)  ; bitcount
+      (integer->dword 0 o)  ; compression
+      (integer->dword 0 o)  ; size image
+      (integer->dword 0 o)  ; x pixels per meter
+      (integer->dword 0 o)  ; y pixels per meter
+      (integer->dword 0 o)  ; used
+      (integer->dword 0 o)  ; important
+      (let ([s (make-string (* w h 4))]
+            [mdc (make-object bitmap-dc% bm)])
+        (send mdc get-argb-pixels 0 0 w h s)
+        (send mdc set-bitmap #f)
+        ;; Got ARGB, need RGBA, alphas are all 255
+        (let ([rgba (string-append (substring s 1) "\377")])
+          ;; Get mask (inverse alpha), if any:
+          (let ([ms (make-string (* w h 4) #\0)]
+                [mbm (send bm get-loaded-mask)])
+            (when mbm
+              (send mdc set-bitmap mbm)
+              (send mdc get-argb-pixels 0 0 w h ms)
+              (send mdc set-bitmap #f))
+            
+            
   ;; ------------------------------
   ;;  Image conversion
   ;; ------------------------------

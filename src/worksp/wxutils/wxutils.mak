@@ -55,35 +55,35 @@ ALL : "$(OUTDIR)\wxutils.lib"
 CLEAN : 
 	-@erase ".\Release\vc40.pdb"
 	-@erase ".\Release\wxutils.lib"
+	-@erase ".\Release\Cont.obj"
+	-@erase ".\Release\Dialog.obj"
+	-@erase ".\Release\Dumfafa.obj"
+	-@erase ".\Release\Crbuffri.obj"
+	-@erase ".\Release\Wrffrp.obj"
+	-@erase ".\Release\Simx.obj"
+	-@erase ".\Release\Parse.obj"
+	-@erase ".\Release\Draw.obj"
+	-@erase ".\Release\Check.obj"
+	-@erase ".\Release\wximgxbm.obj"
+	-@erase ".\Release\Scan.obj"
+	-@erase ".\Release\Zyz3d.obj"
+	-@erase ".\Release\DIB.obj"
+	-@erase ".\Release\Misc.obj"
+	-@erase ".\Release\Wrffrdat.obj"
+	-@erase ".\Release\Crifrdat.obj"
+	-@erase ".\Release\Data.obj"
+	-@erase ".\Release\Button.obj"
+	-@erase ".\Release\Fafa.obj"
+	-@erase ".\Release\Rdftodat.obj"
+	-@erase ".\Release\Wrffri.obj"
+	-@erase ".\Release\Hashtab.obj"
+	-@erase ".\Release\Zyzgauge.obj"
 	-@erase ".\Release\Static.obj"
 	-@erase ".\Release\Rdftoi.obj"
-	-@erase ".\Release\Rgb.obj"
-	-@erase ".\Release\DIB.obj"
 	-@erase ".\Release\Create.obj"
-	-@erase ".\Release\Dialog.obj"
-	-@erase ".\Release\Button.obj"
-	-@erase ".\Release\Rdftodat.obj"
-	-@erase ".\Release\Simx.obj"
-	-@erase ".\Release\Draw.obj"
-	-@erase ".\Release\wximgxbm.obj"
-	-@erase ".\Release\Wrffrp.obj"
-	-@erase ".\Release\Zyzgauge.obj"
-	-@erase ".\Release\Hashtab.obj"
-	-@erase ".\Release\Crifrdat.obj"
-	-@erase ".\Release\Misc.obj"
+	-@erase ".\Release\Rgb.obj"
 	-@erase ".\Release\Crifrbuf.obj"
 	-@erase ".\Release\Crdatfri.obj"
-	-@erase ".\Release\Parse.obj"
-	-@erase ".\Release\Cont.obj"
-	-@erase ".\Release\Check.obj"
-	-@erase ".\Release\Zyz3d.obj"
-	-@erase ".\Release\Data.obj"
-	-@erase ".\Release\Fafa.obj"
-	-@erase ".\Release\Crbuffri.obj"
-	-@erase ".\Release\Dumfafa.obj"
-	-@erase ".\Release\Wrffri.obj"
-	-@erase ".\Release\Scan.obj"
-	-@erase ".\Release\Wrffrdat.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -109,35 +109,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/Rdftoi.obj" \
-	"$(INTDIR)/Rgb.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Create.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Rdftodat.obj" \
-	"$(INTDIR)/Simx.obj" \
-	"$(INTDIR)/Draw.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Crifrbuf.obj" \
-	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Check.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
-	"$(INTDIR)/Wrffri.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Wrffrdat.obj"
+	".\Release\Cont.obj" \
+	".\Release\Dialog.obj" \
+	".\Release\Dumfafa.obj" \
+	".\Release\Crbuffri.obj" \
+	".\Release\Wrffrp.obj" \
+	".\Release\Simx.obj" \
+	".\Release\Parse.obj" \
+	".\Release\Draw.obj" \
+	".\Release\Check.obj" \
+	".\Release\wximgxbm.obj" \
+	".\Release\Scan.obj" \
+	".\Release\Zyz3d.obj" \
+	".\Release\DIB.obj" \
+	".\Release\Misc.obj" \
+	".\Release\Wrffrdat.obj" \
+	".\Release\Crifrdat.obj" \
+	".\Release\Data.obj" \
+	".\Release\Button.obj" \
+	".\Release\Fafa.obj" \
+	".\Release\Rdftodat.obj" \
+	".\Release\Wrffri.obj" \
+	".\Release\Hashtab.obj" \
+	".\Release\Zyzgauge.obj" \
+	".\Release\Static.obj" \
+	".\Release\Rdftoi.obj" \
+	".\Release\Create.obj" \
+	".\Release\Rgb.obj" \
+	".\Release\Crifrbuf.obj" \
+	".\Release\Crdatfri.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -163,35 +163,35 @@ ALL : "$(OUTDIR)\wxutils.lib"
 
 CLEAN : 
 	-@erase ".\Debug\wxutils.lib"
+	-@erase ".\Debug\Dumfafa.obj"
+	-@erase ".\Debug\Draw.obj"
+	-@erase ".\Debug\Crbuffri.obj"
+	-@erase ".\Debug\Wrffri.obj"
+	-@erase ".\Debug\Misc.obj"
+	-@erase ".\Debug\Check.obj"
+	-@erase ".\Debug\Rdftoi.obj"
+	-@erase ".\Debug\DIB.obj"
+	-@erase ".\Debug\Cont.obj"
+	-@erase ".\Debug\Wrffrdat.obj"
+	-@erase ".\Debug\Dialog.obj"
+	-@erase ".\Debug\Data.obj"
+	-@erase ".\Debug\Button.obj"
+	-@erase ".\Debug\Fafa.obj"
+	-@erase ".\Debug\Wrffrp.obj"
+	-@erase ".\Debug\Simx.obj"
+	-@erase ".\Debug\Rdftodat.obj"
+	-@erase ".\Debug\Static.obj"
+	-@erase ".\Debug\wximgxbm.obj"
+	-@erase ".\Debug\Create.obj"
+	-@erase ".\Debug\Scan.obj"
+	-@erase ".\Debug\Hashtab.obj"
+	-@erase ".\Debug\Parse.obj"
+	-@erase ".\Debug\Zyzgauge.obj"
+	-@erase ".\Debug\Rgb.obj"
 	-@erase ".\Debug\Crifrdat.obj"
 	-@erase ".\Debug\Crifrbuf.obj"
-	-@erase ".\Debug\Hashtab.obj"
-	-@erase ".\Debug\Cont.obj"
-	-@erase ".\Debug\Wrffri.obj"
-	-@erase ".\Debug\Rdftodat.obj"
-	-@erase ".\Debug\Crbuffri.obj"
-	-@erase ".\Debug\Static.obj"
-	-@erase ".\Debug\Rdftoi.obj"
-	-@erase ".\Debug\Simx.obj"
-	-@erase ".\Debug\Draw.obj"
-	-@erase ".\Debug\Zyzgauge.obj"
-	-@erase ".\Debug\Dumfafa.obj"
-	-@erase ".\Debug\Parse.obj"
-	-@erase ".\Debug\Scan.obj"
-	-@erase ".\Debug\Dialog.obj"
-	-@erase ".\Debug\Misc.obj"
-	-@erase ".\Debug\Crdatfri.obj"
-	-@erase ".\Debug\Wrffrdat.obj"
 	-@erase ".\Debug\Zyz3d.obj"
-	-@erase ".\Debug\Button.obj"
-	-@erase ".\Debug\Rgb.obj"
-	-@erase ".\Debug\DIB.obj"
-	-@erase ".\Debug\Wrffrp.obj"
-	-@erase ".\Debug\Data.obj"
-	-@erase ".\Debug\Create.obj"
-	-@erase ".\Debug\Fafa.obj"
-	-@erase ".\Debug\wximgxbm.obj"
-	-@erase ".\Debug\Check.obj"
+	-@erase ".\Debug\Crdatfri.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -217,35 +217,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Crifrbuf.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Wrffri.obj" \
-	"$(INTDIR)/Rdftodat.obj" \
-	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/Rdftoi.obj" \
-	"$(INTDIR)/Simx.obj" \
-	"$(INTDIR)/Draw.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Wrffrdat.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Rgb.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
-	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/Create.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Check.obj"
+	".\Debug\Dumfafa.obj" \
+	".\Debug\Draw.obj" \
+	".\Debug\Crbuffri.obj" \
+	".\Debug\Wrffri.obj" \
+	".\Debug\Misc.obj" \
+	".\Debug\Check.obj" \
+	".\Debug\Rdftoi.obj" \
+	".\Debug\DIB.obj" \
+	".\Debug\Cont.obj" \
+	".\Debug\Wrffrdat.obj" \
+	".\Debug\Dialog.obj" \
+	".\Debug\Data.obj" \
+	".\Debug\Button.obj" \
+	".\Debug\Fafa.obj" \
+	".\Debug\Wrffrp.obj" \
+	".\Debug\Simx.obj" \
+	".\Debug\Rdftodat.obj" \
+	".\Debug\Static.obj" \
+	".\Debug\wximgxbm.obj" \
+	".\Debug\Create.obj" \
+	".\Debug\Scan.obj" \
+	".\Debug\Hashtab.obj" \
+	".\Debug\Parse.obj" \
+	".\Debug\Zyzgauge.obj" \
+	".\Debug\Rgb.obj" \
+	".\Debug\Crifrdat.obj" \
+	".\Debug\Crifrbuf.obj" \
+	".\Debug\Zyz3d.obj" \
+	".\Debug\Crdatfri.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -272,35 +272,35 @@ ALL : "$(OUTDIR)\wxutils.lib"
 CLEAN : 
 	-@erase ".\SGC\vc40.pdb"
 	-@erase ".\SGC\wxutils.lib"
-	-@erase ".\SGC\Rdftodat.obj"
-	-@erase ".\SGC\Crbuffri.obj"
-	-@erase ".\SGC\Zyzgauge.obj"
 	-@erase ".\SGC\Cont.obj"
-	-@erase ".\SGC\Wrffri.obj"
-	-@erase ".\SGC\Crdatfri.obj"
-	-@erase ".\SGC\Wrffrdat.obj"
-	-@erase ".\SGC\Rdftoi.obj"
-	-@erase ".\SGC\Hashtab.obj"
-	-@erase ".\SGC\Simx.obj"
-	-@erase ".\SGC\Draw.obj"
-	-@erase ".\SGC\DIB.obj"
-	-@erase ".\SGC\Dialog.obj"
-	-@erase ".\SGC\Scan.obj"
-	-@erase ".\SGC\Button.obj"
-	-@erase ".\SGC\Misc.obj"
-	-@erase ".\SGC\wximgxbm.obj"
-	-@erase ".\SGC\Wrffrp.obj"
 	-@erase ".\SGC\Dumfafa.obj"
 	-@erase ".\SGC\Static.obj"
-	-@erase ".\SGC\Crifrdat.obj"
-	-@erase ".\SGC\Crifrbuf.obj"
+	-@erase ".\SGC\Rdftoi.obj"
 	-@erase ".\SGC\Create.obj"
-	-@erase ".\SGC\Data.obj"
+	-@erase ".\SGC\Zyzgauge.obj"
 	-@erase ".\SGC\Parse.obj"
-	-@erase ".\SGC\Fafa.obj"
+	-@erase ".\SGC\Crdatfri.obj"
+	-@erase ".\SGC\Wrffrdat.obj"
+	-@erase ".\SGC\Dialog.obj"
+	-@erase ".\SGC\Simx.obj"
+	-@erase ".\SGC\Draw.obj"
+	-@erase ".\SGC\Scan.obj"
+	-@erase ".\SGC\Wrffrp.obj"
+	-@erase ".\SGC\Crbuffri.obj"
+	-@erase ".\SGC\Misc.obj"
+	-@erase ".\SGC\wximgxbm.obj"
 	-@erase ".\SGC\Check.obj"
 	-@erase ".\SGC\Zyz3d.obj"
+	-@erase ".\SGC\Data.obj"
+	-@erase ".\SGC\Hashtab.obj"
+	-@erase ".\SGC\Crifrdat.obj"
+	-@erase ".\SGC\Fafa.obj"
+	-@erase ".\SGC\Crifrbuf.obj"
 	-@erase ".\SGC\Rgb.obj"
+	-@erase ".\SGC\DIB.obj"
+	-@erase ".\SGC\Button.obj"
+	-@erase ".\SGC\Wrffri.obj"
+	-@erase ".\SGC\Rdftodat.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -327,35 +327,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Rdftodat.obj" \
-	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Wrffri.obj" \
-	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Wrffrdat.obj" \
-	"$(INTDIR)/Rdftoi.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/Simx.obj" \
-	"$(INTDIR)/Draw.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
-	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Crifrbuf.obj" \
-	"$(INTDIR)/Create.obj" \
-	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/Check.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/Rgb.obj"
+	".\SGC\Cont.obj" \
+	".\SGC\Dumfafa.obj" \
+	".\SGC\Static.obj" \
+	".\SGC\Rdftoi.obj" \
+	".\SGC\Create.obj" \
+	".\SGC\Zyzgauge.obj" \
+	".\SGC\Parse.obj" \
+	".\SGC\Crdatfri.obj" \
+	".\SGC\Wrffrdat.obj" \
+	".\SGC\Dialog.obj" \
+	".\SGC\Simx.obj" \
+	".\SGC\Draw.obj" \
+	".\SGC\Scan.obj" \
+	".\SGC\Wrffrp.obj" \
+	".\SGC\Crbuffri.obj" \
+	".\SGC\Misc.obj" \
+	".\SGC\wximgxbm.obj" \
+	".\SGC\Check.obj" \
+	".\SGC\Zyz3d.obj" \
+	".\SGC\Data.obj" \
+	".\SGC\Hashtab.obj" \
+	".\SGC\Crifrdat.obj" \
+	".\SGC\Fafa.obj" \
+	".\SGC\Crifrbuf.obj" \
+	".\SGC\Rgb.obj" \
+	".\SGC\DIB.obj" \
+	".\SGC\Button.obj" \
+	".\SGC\Wrffri.obj" \
+	".\SGC\Rdftodat.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -401,14 +401,14 @@ LIB32_OBJS= \
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Wrffrp.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_WRFFR=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Wrffrp.obj" : $(SOURCE) $(DEP_CPP_WRFFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -416,6 +416,11 @@ DEP_CPP_WRFFR=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_WRFFR=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Wrffrp.obj" : $(SOURCE) $(DEP_CPP_WRFFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -423,6 +428,9 @@ DEP_CPP_WRFFR=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_WRFFR=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Wrffrp.obj" : $(SOURCE) $(DEP_CPP_WRFFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -435,14 +443,14 @@ DEP_CPP_WRFFR=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Crdatfri.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_CRDAT=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Crdatfri.obj" : $(SOURCE) $(DEP_CPP_CRDAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -450,6 +458,11 @@ DEP_CPP_CRDAT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_CRDAT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Crdatfri.obj" : $(SOURCE) $(DEP_CPP_CRDAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -457,6 +470,9 @@ DEP_CPP_CRDAT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_CRDAT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Crdatfri.obj" : $(SOURCE) $(DEP_CPP_CRDAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -469,14 +485,14 @@ DEP_CPP_CRDAT=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Create.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_CREAT=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Create.obj" : $(SOURCE) $(DEP_CPP_CREAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -484,6 +500,11 @@ DEP_CPP_CREAT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_CREAT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Create.obj" : $(SOURCE) $(DEP_CPP_CREAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -491,6 +512,9 @@ DEP_CPP_CREAT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_CREAT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Create.obj" : $(SOURCE) $(DEP_CPP_CREAT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -503,14 +527,14 @@ DEP_CPP_CREAT=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Crifrbuf.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_CRIFR=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Crifrbuf.obj" : $(SOURCE) $(DEP_CPP_CRIFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -518,6 +542,11 @@ DEP_CPP_CRIFR=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_CRIFR=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Crifrbuf.obj" : $(SOURCE) $(DEP_CPP_CRIFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -525,6 +554,9 @@ DEP_CPP_CRIFR=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_CRIFR=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Crifrbuf.obj" : $(SOURCE) $(DEP_CPP_CRIFR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -537,14 +569,14 @@ DEP_CPP_CRIFR=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Crifrdat.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_CRIFRD=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Crifrdat.obj" : $(SOURCE) $(DEP_CPP_CRIFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -552,6 +584,11 @@ DEP_CPP_CRIFRD=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_CRIFRD=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Crifrdat.obj" : $(SOURCE) $(DEP_CPP_CRIFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -559,6 +596,9 @@ DEP_CPP_CRIFRD=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_CRIFRD=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Crifrdat.obj" : $(SOURCE) $(DEP_CPP_CRIFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -571,6 +611,9 @@ DEP_CPP_CRIFRD=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Data.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_DATA_=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -579,15 +622,19 @@ DEP_CPP_DATA_=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
 
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
-
 "$(INTDIR)\Data.obj" : $(SOURCE) $(DEP_CPP_DATA_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_DATA_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Data.obj" : $(SOURCE) $(DEP_CPP_DATA_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -595,6 +642,11 @@ DEP_CPP_DATA_=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_DATA_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	
 
 "$(INTDIR)\Data.obj" : $(SOURCE) $(DEP_CPP_DATA_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -607,14 +659,14 @@ DEP_CPP_DATA_=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Hashtab.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_HASHT=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Hashtab.obj" : $(SOURCE) $(DEP_CPP_HASHT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -622,6 +674,11 @@ DEP_CPP_HASHT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_HASHT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Hashtab.obj" : $(SOURCE) $(DEP_CPP_HASHT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -629,6 +686,9 @@ DEP_CPP_HASHT=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_HASHT=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Hashtab.obj" : $(SOURCE) $(DEP_CPP_HASHT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -641,6 +701,9 @@ DEP_CPP_HASHT=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Misc.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_MISC_=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -649,15 +712,19 @@ DEP_CPP_MISC_=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
 
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
-
 "$(INTDIR)\Misc.obj" : $(SOURCE) $(DEP_CPP_MISC_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_MISC_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Misc.obj" : $(SOURCE) $(DEP_CPP_MISC_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -665,6 +732,11 @@ DEP_CPP_MISC_=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_MISC_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	{$(INCLUDE)}"\sys\STAT.H"\
+	
 
 "$(INTDIR)\Misc.obj" : $(SOURCE) $(DEP_CPP_MISC_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -677,14 +749,14 @@ DEP_CPP_MISC_=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Parse.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_PARSE=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Parse.obj" : $(SOURCE) $(DEP_CPP_PARSE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -692,6 +764,11 @@ DEP_CPP_PARSE=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_PARSE=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Parse.obj" : $(SOURCE) $(DEP_CPP_PARSE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -699,6 +776,9 @@ DEP_CPP_PARSE=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_PARSE=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Parse.obj" : $(SOURCE) $(DEP_CPP_PARSE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -711,14 +791,14 @@ DEP_CPP_PARSE=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Rdftodat.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_RDFTO=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Rdftodat.obj" : $(SOURCE) $(DEP_CPP_RDFTO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -726,6 +806,11 @@ DEP_CPP_RDFTO=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_RDFTO=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Rdftodat.obj" : $(SOURCE) $(DEP_CPP_RDFTO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -733,6 +818,9 @@ DEP_CPP_RDFTO=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_RDFTO=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Rdftodat.obj" : $(SOURCE) $(DEP_CPP_RDFTO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -745,14 +833,14 @@ DEP_CPP_RDFTO=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Rdftoi.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_RDFTOI=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Rdftoi.obj" : $(SOURCE) $(DEP_CPP_RDFTOI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -760,6 +848,11 @@ DEP_CPP_RDFTOI=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_RDFTOI=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Rdftoi.obj" : $(SOURCE) $(DEP_CPP_RDFTOI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -767,6 +860,9 @@ DEP_CPP_RDFTOI=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_RDFTOI=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Rdftoi.obj" : $(SOURCE) $(DEP_CPP_RDFTOI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -779,6 +875,9 @@ DEP_CPP_RDFTOI=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Rgb.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_RGB_C=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\rgbtab.h"\
@@ -786,15 +885,18 @@ DEP_CPP_RGB_C=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
 
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
-
 "$(INTDIR)\Rgb.obj" : $(SOURCE) $(DEP_CPP_RGB_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_RGB_C=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\rgbtab.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Rgb.obj" : $(SOURCE) $(DEP_CPP_RGB_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -802,6 +904,10 @@ DEP_CPP_RGB_C=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_RGB_C=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\rgbtab.h"\
+	
 
 "$(INTDIR)\Rgb.obj" : $(SOURCE) $(DEP_CPP_RGB_C) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -814,14 +920,14 @@ DEP_CPP_RGB_C=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Scan.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_SCAN_=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Scan.obj" : $(SOURCE) $(DEP_CPP_SCAN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -829,6 +935,11 @@ DEP_CPP_SCAN_=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_SCAN_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Scan.obj" : $(SOURCE) $(DEP_CPP_SCAN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -836,6 +947,9 @@ DEP_CPP_SCAN_=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_SCAN_=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Scan.obj" : $(SOURCE) $(DEP_CPP_SCAN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -882,14 +996,14 @@ DEP_CPP_SIMX_=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Wrffrdat.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_WRFFRD=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Wrffrdat.obj" : $(SOURCE) $(DEP_CPP_WRFFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -897,6 +1011,11 @@ DEP_CPP_WRFFRD=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_WRFFRD=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Wrffrdat.obj" : $(SOURCE) $(DEP_CPP_WRFFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -904,6 +1023,9 @@ DEP_CPP_WRFFRD=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_WRFFRD=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Wrffrdat.obj" : $(SOURCE) $(DEP_CPP_WRFFRD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -916,14 +1038,14 @@ DEP_CPP_WRFFRD=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Wrffri.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_WRFFRI=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Wrffri.obj" : $(SOURCE) $(DEP_CPP_WRFFRI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -931,6 +1053,11 @@ DEP_CPP_WRFFRI=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_WRFFRI=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Wrffri.obj" : $(SOURCE) $(DEP_CPP_WRFFRI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -938,6 +1065,9 @@ DEP_CPP_WRFFRI=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_WRFFRI=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Wrffri.obj" : $(SOURCE) $(DEP_CPP_WRFFRI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -950,14 +1080,14 @@ DEP_CPP_WRFFRI=\
 # Begin Source File
 
 SOURCE=..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\Crbuffri.c
+
+!IF  "$(CFG)" == "wxwin - Win32 Release"
+
 DEP_CPP_CRBUF=\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
 	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
 	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
 	
-
-!IF  "$(CFG)" == "wxwin - Win32 Release"
-
 
 "$(INTDIR)\Crbuffri.obj" : $(SOURCE) $(DEP_CPP_CRBUF) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -965,6 +1095,11 @@ DEP_CPP_CRBUF=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 Debug"
 
+DEP_CPP_CRBUF=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	".\..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib\xpm34.h"\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\simx.h"\
+	
 
 "$(INTDIR)\Crbuffri.obj" : $(SOURCE) $(DEP_CPP_CRBUF) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -972,6 +1107,9 @@ DEP_CPP_CRBUF=\
 
 !ELSEIF  "$(CFG)" == "wxwin - Win32 SGC"
 
+DEP_CPP_CRBUF=\
+	".\..\..\Wxwindow\Contrib\Wxxpm\Libxpm.34b\Lib\xpm34p.h"\
+	
 
 "$(INTDIR)\Crbuffri.obj" : $(SOURCE) $(DEP_CPP_CRBUF) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -996,7 +1134,7 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
-	"..\..\mzscheme\gc\gc.h"\
+	".\..\..\mzscheme\gc\gc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"
@@ -1015,7 +1153,7 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
-	"..\..\mzscheme\gc\gc.h"\
+	".\..\..\mzscheme\gc\gc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"
@@ -1034,7 +1172,7 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
-	"..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"

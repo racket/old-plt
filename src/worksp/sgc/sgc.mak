@@ -45,15 +45,15 @@ CPP=cl.exe
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
-OUTDIR=Release
-INTDIR=Release
+OUTDIR=.\Release
+INTDIR=.\Release
 
 ALL : "$(OUTDIR)\sgc.lib"
 
 CLEAN : 
-	-@erase "Release\sgc.lib"
-	-@erase "Release\SGC.OBJ"
-	-@erase "Release\vc40.pdb"
+	-@erase ".\Release\vc40.pdb"
+	-@erase ".\Release\sgc.lib"
+	-@erase ".\Release\SGC.OBJ"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -63,7 +63,7 @@ CLEAN :
 CPP_PROJ=/nologo /ML /W3 /GX /Zi /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
  SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)/sgc.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/"\
  /c 
-CPP_OBJS=Release/
+CPP_OBJS=.\Release/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -75,7 +75,7 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/sgc.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/SGC.OBJ"
+	".\Release\SGC.OBJ"
 
 "$(OUTDIR)\sgc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -94,15 +94,15 @@ LIB32_OBJS= \
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
-OUTDIR=Debug
-INTDIR=Debug
+OUTDIR=.\Debug
+INTDIR=.\Debug
 
 ALL : "$(OUTDIR)\sgc.lib"
 
 CLEAN : 
-	-@erase "Debug\sgc.lib"
-	-@erase "Debug\SGC.OBJ"
-	-@erase "Debug\vc40.pdb"
+	-@erase ".\Debug\vc40.pdb"
+	-@erase ".\Debug\sgc.lib"
+	-@erase ".\Debug\SGC.OBJ"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -112,7 +112,7 @@ CLEAN :
 CPP_PROJ=/nologo /MLd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D\
  SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)/sgc.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/"\
  /c 
-CPP_OBJS=Debug/
+CPP_OBJS=.\Debug/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -124,7 +124,7 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/sgc.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/SGC.OBJ"
+	".\Debug\SGC.OBJ"
 
 "$(OUTDIR)\sgc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -171,6 +171,9 @@ DEP_CPP_SGC_C=\
 	".\..\..\MZSCHEME\sconfig.h"\
 	".\..\..\MZSCHEME\SGC\sgc.h"\
 	".\..\..\MZSCHEME\uconfig.h"\
+	
+NODEP_CPP_SGC_C=\
+	"..\..\MZSCHEME\SGC\collect.inc"\
 	
 
 "$(INTDIR)\SGC.OBJ" : $(SOURCE) $(DEP_CPP_SGC_C) "$(INTDIR)"

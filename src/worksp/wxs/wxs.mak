@@ -55,35 +55,35 @@ ALL : "$(OUTDIR)\wxs.lib"
 CLEAN : 
 	-@erase ".\Release\vc40.pdb"
 	-@erase ".\Release\wxs.lib"
-	-@erase ".\Release\WXS_CNVS.obj"
 	-@erase ".\Release\WXS_MEDI.obj"
 	-@erase ".\Release\WXS_EVNT.obj"
 	-@erase ".\Release\WXS_SNIP.obj"
-	-@erase ".\Release\WXS_MPB.obj"
-	-@erase ".\Release\WXS_MIO.obj"
+	-@erase ".\Release\WXS_OBJ.obj"
+	-@erase ".\Release\WXS_MADM.obj"
+	-@erase ".\Release\WXS_CKBX.obj"
+	-@erase ".\Release\WXS_PANL.obj"
 	-@erase ".\Release\WXS_GAGE.obj"
-	-@erase ".\Release\WXS_SLID.obj"
 	-@erase ".\Release\WXS_BUTN.obj"
+	-@erase ".\Release\WXS_TEXT.obj"
 	-@erase ".\Release\WXS_ITEM.obj"
 	-@erase ".\Release\WXS_LBOX.obj"
-	-@erase ".\Release\WXS_WIN.obj"
-	-@erase ".\Release\WXS_RADO.obj"
-	-@erase ".\Release\WXS_GDI.obj"
-	-@erase ".\Release\WXSCHEME.obj"
-	-@erase ".\Release\WXS_MENU.obj"
-	-@erase ".\Release\WXS_MISC.obj"
-	-@erase ".\Release\WXS_DC.obj"
-	-@erase ".\Release\WXS_MADM.obj"
-	-@erase ".\Release\WXS_BMAP.obj"
-	-@erase ".\Release\WXS_CKBX.obj"
-	-@erase ".\Release\WXS_OBJ.obj"
-	-@erase ".\Release\WXS_PANL.obj"
-	-@erase ".\Release\WXS_FRAM.obj"
-	-@erase ".\Release\WXS_TEXT.obj"
 	-@erase ".\Release\WXS_GLOB.obj"
-	-@erase ".\Release\WXS_MEDE.obj"
 	-@erase ".\Release\WXS_CHCE.obj"
+	-@erase ".\Release\WXS_CNVS.obj"
+	-@erase ".\Release\WXS_RADO.obj"
+	-@erase ".\Release\WXS_MPB.obj"
+	-@erase ".\Release\WXS_MENU.obj"
+	-@erase ".\Release\WXS_MIO.obj"
+	-@erase ".\Release\WXS_MISC.obj"
+	-@erase ".\Release\WXS_BMAP.obj"
+	-@erase ".\Release\WXS_SLID.obj"
+	-@erase ".\Release\WXS_WIN.obj"
+	-@erase ".\Release\WXS_FRAM.obj"
+	-@erase ".\Release\WXS_GDI.obj"
+	-@erase ".\Release\WXS_MEDE.obj"
 	-@erase ".\Release\WXS_STYL.obj"
+	-@erase ".\Release\WXSCHEME.obj"
+	-@erase ".\Release\WXS_DC.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -109,35 +109,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxs.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WXS_CNVS.obj" \
-	"$(INTDIR)/WXS_MEDI.obj" \
-	"$(INTDIR)/WXS_EVNT.obj" \
-	"$(INTDIR)/WXS_SNIP.obj" \
-	"$(INTDIR)/WXS_MPB.obj" \
-	"$(INTDIR)/WXS_MIO.obj" \
-	"$(INTDIR)/WXS_GAGE.obj" \
-	"$(INTDIR)/WXS_SLID.obj" \
-	"$(INTDIR)/WXS_BUTN.obj" \
-	"$(INTDIR)/WXS_ITEM.obj" \
-	"$(INTDIR)/WXS_LBOX.obj" \
-	"$(INTDIR)/WXS_WIN.obj" \
-	"$(INTDIR)/WXS_RADO.obj" \
-	"$(INTDIR)/WXS_GDI.obj" \
-	"$(INTDIR)/WXSCHEME.obj" \
-	"$(INTDIR)/WXS_MENU.obj" \
-	"$(INTDIR)/WXS_MISC.obj" \
-	"$(INTDIR)/WXS_DC.obj" \
-	"$(INTDIR)/WXS_MADM.obj" \
-	"$(INTDIR)/WXS_BMAP.obj" \
-	"$(INTDIR)/WXS_CKBX.obj" \
-	"$(INTDIR)/WXS_OBJ.obj" \
-	"$(INTDIR)/WXS_PANL.obj" \
-	"$(INTDIR)/WXS_FRAM.obj" \
-	"$(INTDIR)/WXS_TEXT.obj" \
-	"$(INTDIR)/WXS_GLOB.obj" \
-	"$(INTDIR)/WXS_MEDE.obj" \
-	"$(INTDIR)/WXS_CHCE.obj" \
-	"$(INTDIR)/WXS_STYL.obj"
+	".\Release\WXS_MEDI.obj" \
+	".\Release\WXS_EVNT.obj" \
+	".\Release\WXS_SNIP.obj" \
+	".\Release\WXS_OBJ.obj" \
+	".\Release\WXS_MADM.obj" \
+	".\Release\WXS_CKBX.obj" \
+	".\Release\WXS_PANL.obj" \
+	".\Release\WXS_GAGE.obj" \
+	".\Release\WXS_BUTN.obj" \
+	".\Release\WXS_TEXT.obj" \
+	".\Release\WXS_ITEM.obj" \
+	".\Release\WXS_LBOX.obj" \
+	".\Release\WXS_GLOB.obj" \
+	".\Release\WXS_CHCE.obj" \
+	".\Release\WXS_CNVS.obj" \
+	".\Release\WXS_RADO.obj" \
+	".\Release\WXS_MPB.obj" \
+	".\Release\WXS_MENU.obj" \
+	".\Release\WXS_MIO.obj" \
+	".\Release\WXS_MISC.obj" \
+	".\Release\WXS_BMAP.obj" \
+	".\Release\WXS_SLID.obj" \
+	".\Release\WXS_WIN.obj" \
+	".\Release\WXS_FRAM.obj" \
+	".\Release\WXS_GDI.obj" \
+	".\Release\WXS_MEDE.obj" \
+	".\Release\WXS_STYL.obj" \
+	".\Release\WXSCHEME.obj" \
+	".\Release\WXS_DC.obj"
 
 "$(OUTDIR)\wxs.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -165,35 +165,35 @@ CLEAN :
 	-@erase ".\Debug\vc40.pdb"
 	-@erase ".\Debug\vc40.idb"
 	-@erase ".\Debug\wxs.lib"
-	-@erase ".\Debug\WXS_MENU.obj"
-	-@erase ".\Debug\WXS_MISC.obj"
-	-@erase ".\Debug\WXS_MIO.obj"
-	-@erase ".\Debug\WXS_MADM.obj"
-	-@erase ".\Debug\WXS_BMAP.obj"
-	-@erase ".\Debug\WXS_CKBX.obj"
-	-@erase ".\Debug\WXS_PANL.obj"
-	-@erase ".\Debug\WXS_WIN.obj"
-	-@erase ".\Debug\WXS_DC.obj"
 	-@erase ".\Debug\WXS_GDI.obj"
+	-@erase ".\Debug\WXS_GAGE.obj"
+	-@erase ".\Debug\WXS_BUTN.obj"
 	-@erase ".\Debug\WXS_TEXT.obj"
+	-@erase ".\Debug\WXS_ITEM.obj"
+	-@erase ".\Debug\WXS_LBOX.obj"
 	-@erase ".\Debug\WXS_GLOB.obj"
-	-@erase ".\Debug\WXS_MEDE.obj"
+	-@erase ".\Debug\WXS_DC.obj"
 	-@erase ".\Debug\WXS_CHCE.obj"
-	-@erase ".\Debug\WXS_STYL.obj"
 	-@erase ".\Debug\WXS_CNVS.obj"
 	-@erase ".\Debug\WXS_RADO.obj"
+	-@erase ".\Debug\WXS_MENU.obj"
+	-@erase ".\Debug\WXS_MISC.obj"
+	-@erase ".\Debug\WXS_MADM.obj"
+	-@erase ".\Debug\WXS_BMAP.obj"
+	-@erase ".\Debug\WXS_SLID.obj"
+	-@erase ".\Debug\WXS_FRAM.obj"
+	-@erase ".\Debug\WXS_MPB.obj"
+	-@erase ".\Debug\WXS_MEDE.obj"
+	-@erase ".\Debug\WXS_STYL.obj"
+	-@erase ".\Debug\WXSCHEME.obj"
+	-@erase ".\Debug\WXS_MIO.obj"
 	-@erase ".\Debug\WXS_MEDI.obj"
 	-@erase ".\Debug\WXS_EVNT.obj"
 	-@erase ".\Debug\WXS_SNIP.obj"
 	-@erase ".\Debug\WXS_OBJ.obj"
-	-@erase ".\Debug\WXS_GAGE.obj"
-	-@erase ".\Debug\WXS_SLID.obj"
-	-@erase ".\Debug\WXS_BUTN.obj"
-	-@erase ".\Debug\WXS_ITEM.obj"
-	-@erase ".\Debug\WXS_FRAM.obj"
-	-@erase ".\Debug\WXS_LBOX.obj"
-	-@erase ".\Debug\WXS_MPB.obj"
-	-@erase ".\Debug\WXSCHEME.obj"
+	-@erase ".\Debug\WXS_WIN.obj"
+	-@erase ".\Debug\WXS_CKBX.obj"
+	-@erase ".\Debug\WXS_PANL.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -219,35 +219,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxs.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WXS_MENU.obj" \
-	"$(INTDIR)/WXS_MISC.obj" \
-	"$(INTDIR)/WXS_MIO.obj" \
-	"$(INTDIR)/WXS_MADM.obj" \
-	"$(INTDIR)/WXS_BMAP.obj" \
-	"$(INTDIR)/WXS_CKBX.obj" \
-	"$(INTDIR)/WXS_PANL.obj" \
-	"$(INTDIR)/WXS_WIN.obj" \
-	"$(INTDIR)/WXS_DC.obj" \
-	"$(INTDIR)/WXS_GDI.obj" \
-	"$(INTDIR)/WXS_TEXT.obj" \
-	"$(INTDIR)/WXS_GLOB.obj" \
-	"$(INTDIR)/WXS_MEDE.obj" \
-	"$(INTDIR)/WXS_CHCE.obj" \
-	"$(INTDIR)/WXS_STYL.obj" \
-	"$(INTDIR)/WXS_CNVS.obj" \
-	"$(INTDIR)/WXS_RADO.obj" \
-	"$(INTDIR)/WXS_MEDI.obj" \
-	"$(INTDIR)/WXS_EVNT.obj" \
-	"$(INTDIR)/WXS_SNIP.obj" \
-	"$(INTDIR)/WXS_OBJ.obj" \
-	"$(INTDIR)/WXS_GAGE.obj" \
-	"$(INTDIR)/WXS_SLID.obj" \
-	"$(INTDIR)/WXS_BUTN.obj" \
-	"$(INTDIR)/WXS_ITEM.obj" \
-	"$(INTDIR)/WXS_FRAM.obj" \
-	"$(INTDIR)/WXS_LBOX.obj" \
-	"$(INTDIR)/WXS_MPB.obj" \
-	"$(INTDIR)/WXSCHEME.obj"
+	".\Debug\WXS_GDI.obj" \
+	".\Debug\WXS_GAGE.obj" \
+	".\Debug\WXS_BUTN.obj" \
+	".\Debug\WXS_TEXT.obj" \
+	".\Debug\WXS_ITEM.obj" \
+	".\Debug\WXS_LBOX.obj" \
+	".\Debug\WXS_GLOB.obj" \
+	".\Debug\WXS_DC.obj" \
+	".\Debug\WXS_CHCE.obj" \
+	".\Debug\WXS_CNVS.obj" \
+	".\Debug\WXS_RADO.obj" \
+	".\Debug\WXS_MENU.obj" \
+	".\Debug\WXS_MISC.obj" \
+	".\Debug\WXS_MADM.obj" \
+	".\Debug\WXS_BMAP.obj" \
+	".\Debug\WXS_SLID.obj" \
+	".\Debug\WXS_FRAM.obj" \
+	".\Debug\WXS_MPB.obj" \
+	".\Debug\WXS_MEDE.obj" \
+	".\Debug\WXS_STYL.obj" \
+	".\Debug\WXSCHEME.obj" \
+	".\Debug\WXS_MIO.obj" \
+	".\Debug\WXS_MEDI.obj" \
+	".\Debug\WXS_EVNT.obj" \
+	".\Debug\WXS_SNIP.obj" \
+	".\Debug\WXS_OBJ.obj" \
+	".\Debug\WXS_WIN.obj" \
+	".\Debug\WXS_CKBX.obj" \
+	".\Debug\WXS_PANL.obj"
 
 "$(OUTDIR)\wxs.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -275,35 +275,35 @@ CLEAN :
 	-@erase ".\SGC\vc40.pdb"
 	-@erase ".\SGC\vc40.idb"
 	-@erase ".\SGC\wxs.lib"
-	-@erase ".\SGC\WXS_MENU.obj"
-	-@erase ".\SGC\WXS_MISC.obj"
-	-@erase ".\SGC\WXS_MADM.obj"
-	-@erase ".\SGC\WXS_BMAP.obj"
+	-@erase ".\SGC\WXS_CKBX.obj"
 	-@erase ".\SGC\WXS_PANL.obj"
-	-@erase ".\SGC\WXS_FRAM.obj"
 	-@erase ".\SGC\WXS_TEXT.obj"
 	-@erase ".\SGC\WXS_GLOB.obj"
+	-@erase ".\SGC\WXS_GDI.obj"
 	-@erase ".\SGC\WXS_MEDE.obj"
 	-@erase ".\SGC\WXS_CHCE.obj"
 	-@erase ".\SGC\WXS_STYL.obj"
 	-@erase ".\SGC\WXS_CNVS.obj"
+	-@erase ".\SGC\WXS_MPB.obj"
 	-@erase ".\SGC\WXS_MEDI.obj"
 	-@erase ".\SGC\WXS_EVNT.obj"
 	-@erase ".\SGC\WXS_SNIP.obj"
-	-@erase ".\SGC\WXS_MPB.obj"
 	-@erase ".\SGC\WXS_MIO.obj"
-	-@erase ".\SGC\WXS_CKBX.obj"
-	-@erase ".\SGC\WXS_DC.obj"
 	-@erase ".\SGC\WXS_OBJ.obj"
+	-@erase ".\SGC\WXS_WIN.obj"
 	-@erase ".\SGC\WXS_GAGE.obj"
 	-@erase ".\SGC\WXS_SLID.obj"
 	-@erase ".\SGC\WXS_BUTN.obj"
+	-@erase ".\SGC\WXS_DC.obj"
 	-@erase ".\SGC\WXS_ITEM.obj"
+	-@erase ".\SGC\WXS_FRAM.obj"
 	-@erase ".\SGC\WXS_LBOX.obj"
-	-@erase ".\SGC\WXS_WIN.obj"
-	-@erase ".\SGC\WXS_GDI.obj"
 	-@erase ".\SGC\WXS_RADO.obj"
 	-@erase ".\SGC\WXSCHEME.obj"
+	-@erase ".\SGC\WXS_MENU.obj"
+	-@erase ".\SGC\WXS_MISC.obj"
+	-@erase ".\SGC\WXS_MADM.obj"
+	-@erase ".\SGC\WXS_BMAP.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -329,35 +329,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxs.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WXS_MENU.obj" \
-	"$(INTDIR)/WXS_MISC.obj" \
-	"$(INTDIR)/WXS_MADM.obj" \
-	"$(INTDIR)/WXS_BMAP.obj" \
-	"$(INTDIR)/WXS_PANL.obj" \
-	"$(INTDIR)/WXS_FRAM.obj" \
-	"$(INTDIR)/WXS_TEXT.obj" \
-	"$(INTDIR)/WXS_GLOB.obj" \
-	"$(INTDIR)/WXS_MEDE.obj" \
-	"$(INTDIR)/WXS_CHCE.obj" \
-	"$(INTDIR)/WXS_STYL.obj" \
-	"$(INTDIR)/WXS_CNVS.obj" \
-	"$(INTDIR)/WXS_MEDI.obj" \
-	"$(INTDIR)/WXS_EVNT.obj" \
-	"$(INTDIR)/WXS_SNIP.obj" \
-	"$(INTDIR)/WXS_MPB.obj" \
-	"$(INTDIR)/WXS_MIO.obj" \
-	"$(INTDIR)/WXS_CKBX.obj" \
-	"$(INTDIR)/WXS_DC.obj" \
-	"$(INTDIR)/WXS_OBJ.obj" \
-	"$(INTDIR)/WXS_GAGE.obj" \
-	"$(INTDIR)/WXS_SLID.obj" \
-	"$(INTDIR)/WXS_BUTN.obj" \
-	"$(INTDIR)/WXS_ITEM.obj" \
-	"$(INTDIR)/WXS_LBOX.obj" \
-	"$(INTDIR)/WXS_WIN.obj" \
-	"$(INTDIR)/WXS_GDI.obj" \
-	"$(INTDIR)/WXS_RADO.obj" \
-	"$(INTDIR)/WXSCHEME.obj"
+	".\SGC\WXS_CKBX.obj" \
+	".\SGC\WXS_PANL.obj" \
+	".\SGC\WXS_TEXT.obj" \
+	".\SGC\WXS_GLOB.obj" \
+	".\SGC\WXS_GDI.obj" \
+	".\SGC\WXS_MEDE.obj" \
+	".\SGC\WXS_CHCE.obj" \
+	".\SGC\WXS_STYL.obj" \
+	".\SGC\WXS_CNVS.obj" \
+	".\SGC\WXS_MPB.obj" \
+	".\SGC\WXS_MEDI.obj" \
+	".\SGC\WXS_EVNT.obj" \
+	".\SGC\WXS_SNIP.obj" \
+	".\SGC\WXS_MIO.obj" \
+	".\SGC\WXS_OBJ.obj" \
+	".\SGC\WXS_WIN.obj" \
+	".\SGC\WXS_GAGE.obj" \
+	".\SGC\WXS_SLID.obj" \
+	".\SGC\WXS_BUTN.obj" \
+	".\SGC\WXS_DC.obj" \
+	".\SGC\WXS_ITEM.obj" \
+	".\SGC\WXS_FRAM.obj" \
+	".\SGC\WXS_LBOX.obj" \
+	".\SGC\WXS_RADO.obj" \
+	".\SGC\WXSCHEME.obj" \
+	".\SGC\WXS_MENU.obj" \
+	".\SGC\WXS_MISC.obj" \
+	".\SGC\WXS_MADM.obj" \
+	".\SGC\WXS_BMAP.obj"
 
 "$(OUTDIR)\wxs.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -501,6 +501,7 @@ DEP_CPP_WXS_D=\
 	
 NODEP_CPP_WXS_D=\
 	".\..\..\mred\Wxs\wx_dcpr.h"\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -600,9 +601,23 @@ DEP_CPP_WXS_D=\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_D=\
 	".\..\..\mred\Wxs\wx_dcpr.h"\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_DC.obj" : $(SOURCE) $(DEP_CPP_WXS_D) "$(INTDIR)"
@@ -820,6 +835,7 @@ DEP_CPP_WXS_B=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_B=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -917,6 +933,22 @@ DEP_CPP_WXS_B=\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_WXS_B=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_BUTN.obj" : $(SOURCE) $(DEP_CPP_WXS_B) "$(INTDIR)"
@@ -1131,6 +1163,7 @@ DEP_CPP_WXS_C=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_C=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -1228,6 +1261,22 @@ DEP_CPP_WXS_C=\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_WXS_C=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_CHCE.obj" : $(SOURCE) $(DEP_CPP_WXS_C) "$(INTDIR)"
@@ -1442,6 +1491,7 @@ DEP_CPP_WXS_CK=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_CK=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -1539,6 +1589,22 @@ DEP_CPP_WXS_CK=\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_WXS_CK=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_CKBX.obj" : $(SOURCE) $(DEP_CPP_WXS_CK) "$(INTDIR)"
@@ -1753,6 +1819,7 @@ DEP_CPP_WXS_CN=\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 NODEP_CPP_WXS_CN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -1849,7 +1916,23 @@ DEP_CPP_WXS_CN=\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
+	
+NODEP_CPP_WXS_CN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_CNVS.obj" : $(SOURCE) $(DEP_CPP_WXS_CN) "$(INTDIR)"
@@ -1975,7 +2058,6 @@ SOURCE=..\..\mred\Wxs\WXS_BMAP.cxx
 DEP_CPP_WXS_BM=\
 	".\..\..\wxwindow\include\base\wx.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_bmap.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -2065,6 +2147,7 @@ DEP_CPP_WXS_BM=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_BM=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -2082,7 +2165,6 @@ NODEP_CPP_WXS_BM=\
 DEP_CPP_WXS_BM=\
 	".\..\..\wxwindow\include\base\wx.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_bmap.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -2163,6 +2245,22 @@ DEP_CPP_WXS_BM=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_WXS_BM=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_BMAP.obj" : $(SOURCE) $(DEP_CPP_WXS_BM) "$(INTDIR)"
@@ -2174,7 +2272,6 @@ DEP_CPP_WXS_BM=\
 DEP_CPP_WXS_BM=\
 	".\..\..\wxwindow\include\base\wx.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_bmap.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -2378,6 +2475,7 @@ DEP_CPP_WXS_E=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_E=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -2475,6 +2573,22 @@ DEP_CPP_WXS_E=\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
+	".\..\..\mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_WXS_E=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
+	".\..\..\mzscheme\include\sconfig.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\WXS_EVNT.obj" : $(SOURCE) $(DEP_CPP_WXS_E) "$(INTDIR)"
@@ -2689,6 +2803,7 @@ DEP_CPP_WXS_F=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_F=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -2795,6 +2910,7 @@ DEP_CPP_WXS_F=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_F=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3015,6 +3131,7 @@ DEP_CPP_WXS_G=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_G=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3121,6 +3238,7 @@ DEP_CPP_WXS_G=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_G=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3255,7 +3373,6 @@ DEP_CPP_WXS_GD=\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_gdi.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -3342,6 +3459,7 @@ DEP_CPP_WXS_GD=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_GD=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3362,7 +3480,6 @@ DEP_CPP_WXS_GD=\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_gdi.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -3449,6 +3566,7 @@ DEP_CPP_WXS_GD=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_GD=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3469,7 +3587,6 @@ DEP_CPP_WXS_GD=\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\mred\Wxs\wxs_bmt.h"\
 	".\..\..\mred\Wxs\wxscheme.h"\
 	".\..\..\mred\Wxs\wxs_gdi.h"\
 	".\..\..\mred\Wxs\wxscomon.h"\
@@ -3676,6 +3793,7 @@ DEP_CPP_WXS_GL=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_GL=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -3788,6 +3906,7 @@ DEP_CPP_WXS_GL=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_GL=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4014,6 +4133,7 @@ DEP_CPP_WXS_I=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_I=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4120,6 +4240,7 @@ DEP_CPP_WXS_I=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_I=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4340,6 +4461,7 @@ DEP_CPP_WXS_L=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_L=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4446,6 +4568,7 @@ DEP_CPP_WXS_L=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_L=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4677,6 +4800,7 @@ DEP_CPP_WXS_M=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_M=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -4794,6 +4918,7 @@ DEP_CPP_WXS_M=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_M=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5035,6 +5160,7 @@ DEP_CPP_WXS_ME=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ME=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5151,6 +5277,7 @@ DEP_CPP_WXS_ME=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ME=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5245,6 +5372,8 @@ DEP_CPP_WXS_ME=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mred\wxme\wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -5265,8 +5394,6 @@ DEP_CPP_WXS_ME=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ME=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5391,6 +5518,7 @@ DEP_CPP_WXS_MED=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MED=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5507,6 +5635,7 @@ DEP_CPP_WXS_MED=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MED=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5601,6 +5730,8 @@ DEP_CPP_WXS_MED=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mred\wxme\wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -5621,8 +5752,6 @@ DEP_CPP_WXS_MED=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MED=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5737,6 +5866,7 @@ DEP_CPP_WXS_MEN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MEN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5843,6 +5973,7 @@ DEP_CPP_WXS_MEN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MEN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -5933,6 +6064,8 @@ DEP_CPP_WXS_MEN=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
@@ -5947,8 +6080,6 @@ DEP_CPP_WXS_MEN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MEN=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6064,6 +6195,7 @@ DEP_CPP_WXS_MI=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MI=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6171,6 +6303,7 @@ DEP_CPP_WXS_MI=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MI=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6263,6 +6396,8 @@ DEP_CPP_WXS_MI=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
@@ -6276,8 +6411,6 @@ DEP_CPP_WXS_MI=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MI=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6398,6 +6531,7 @@ DEP_CPP_WXS_MIS=\
 	".\..\..\wxwindow\include\base\wb_mf.h"\
 	
 NODEP_CPP_WXS_MIS=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6510,6 +6644,7 @@ DEP_CPP_WXS_MIS=\
 	".\..\..\wxwindow\include\base\wb_mf.h"\
 	
 NODEP_CPP_WXS_MIS=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6600,6 +6735,8 @@ DEP_CPP_WXS_MIS=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
@@ -6620,8 +6757,6 @@ DEP_CPP_WXS_MIS=\
 	".\..\..\wxwindow\include\base\wb_mf.h"\
 	
 NODEP_CPP_WXS_MIS=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6746,6 +6881,7 @@ DEP_CPP_WXS_MP=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MP=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6862,6 +6998,7 @@ DEP_CPP_WXS_MP=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MP=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -6956,6 +7093,8 @@ DEP_CPP_WXS_MP=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mred\wxme\wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -6976,8 +7115,6 @@ DEP_CPP_WXS_MP=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_MP=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7092,6 +7229,7 @@ DEP_CPP_WXS_O=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_O=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7198,6 +7336,7 @@ DEP_CPP_WXS_O=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_O=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7289,6 +7428,8 @@ DEP_CPP_WXS_O=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
@@ -7302,8 +7443,6 @@ DEP_CPP_WXS_O=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_O=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7419,6 +7558,7 @@ DEP_CPP_WXS_P=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_P=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7526,6 +7666,7 @@ DEP_CPP_WXS_P=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_P=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7617,6 +7758,8 @@ DEP_CPP_WXS_P=\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
@@ -7631,8 +7774,6 @@ DEP_CPP_WXS_P=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_P=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7748,6 +7889,7 @@ DEP_CPP_WXS_R=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_R=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7855,6 +7997,7 @@ DEP_CPP_WXS_R=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_R=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -7948,6 +8091,8 @@ DEP_CPP_WXS_R=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_rbox.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
@@ -7960,8 +8105,6 @@ DEP_CPP_WXS_R=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_R=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8076,6 +8219,7 @@ DEP_CPP_WXS_S=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_S=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8182,6 +8326,7 @@ DEP_CPP_WXS_S=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_S=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8274,6 +8419,8 @@ DEP_CPP_WXS_S=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_slidr.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
@@ -8286,8 +8433,6 @@ DEP_CPP_WXS_S=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_S=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8412,6 +8557,7 @@ DEP_CPP_WXS_SN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_SN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8528,6 +8674,7 @@ DEP_CPP_WXS_SN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_SN=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8622,6 +8769,8 @@ DEP_CPP_WXS_SN=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mred\wxme\wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -8642,8 +8791,6 @@ DEP_CPP_WXS_SN=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_SN=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8760,6 +8907,7 @@ DEP_CPP_WXS_ST=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ST=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8868,6 +9016,7 @@ DEP_CPP_WXS_ST=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ST=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -8963,6 +9112,8 @@ DEP_CPP_WXS_ST=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
 	".\..\..\mzscheme\sconfig.h"\
@@ -8974,8 +9125,6 @@ DEP_CPP_WXS_ST=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_ST=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9090,6 +9239,7 @@ DEP_CPP_WXS_T=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_T=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9196,6 +9346,7 @@ DEP_CPP_WXS_T=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_T=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9285,6 +9436,8 @@ DEP_CPP_WXS_T=\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wb_txt.h"\
 	".\..\..\wxwindow\include\base\wb_mtxt.h"\
@@ -9300,8 +9453,6 @@ DEP_CPP_WXS_T=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_T=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9416,6 +9567,7 @@ DEP_CPP_WXS_W=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_W=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9522,6 +9674,7 @@ DEP_CPP_WXS_W=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_W=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9613,6 +9766,8 @@ DEP_CPP_WXS_W=\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
@@ -9626,8 +9781,6 @@ DEP_CPP_WXS_W=\
 	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_WXS_W=\
-	".\..\..\wxwindow\include\msw\fafa.h"\
-	".\..\..\wxwindow\include\msw\fafapriv.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9785,6 +9938,7 @@ DEP_CPP_WXSCH=\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	
 NODEP_CPP_WXSCH=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9934,6 +10088,7 @@ DEP_CPP_WXSCH=\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	
 NODEP_CPP_WXSCH=\
+	"..\..\mzscheme\gc\libgc_globals.h"\
 	".\..\..\mzscheme\include\sconfig.h"\
 	".\..\..\mzscheme\include\stypes.h"\
 	".\..\..\mzscheme\include\schexn.h"\
@@ -9949,6 +10104,7 @@ NODEP_CPP_WXSCH=\
 !ELSEIF  "$(CFG)" == "wxs - Win32 SGC"
 
 DEP_CPP_WXSCH=\
+	".\..\..\wxwindow\include\base\wx.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\mred\wxme\wx_media.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
@@ -9990,10 +10146,75 @@ DEP_CPP_WXSCH=\
 	".\..\..\mred\Wxs\wxs_dc.h"\
 	".\..\..\mred\Wxs\wxs_cnvs.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\base\wx_mem.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\contrib\fafa\fafa.h"\
+	".\..\..\wxwindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\mred\wxme\wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -10002,26 +10223,6 @@ DEP_CPP_WXSCH=\
 	".\..\..\mred\wxme\wx_cgrec.h"\
 	".\..\..\mred\wxme\wx_medad.h"\
 	".\..\..\mred\wxme\wx_medpb.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\mzscheme\sgc\gc_cpp.h"\
-	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\wxme\wx_madm.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\

@@ -55,14 +55,14 @@ RSC=rc.exe
 OUTDIR=.\..\..\..
 INTDIR=.\Release
 
-ALL : "$(OUTDIR)\mzscheme.exe"
+ALL : "$(OUTDIR)\MzScheme.exe"
 
 CLEAN : 
 	-@erase ".\Release\vc40.pdb"
-	-@erase "..\..\..\mzscheme.exe"
+	-@erase "..\..\..\MzScheme.exe"
 	-@erase ".\Release\Main.obj"
-	-@erase ".\Release\mzscheme.res"
-	-@erase "..\..\..\mzscheme.pdb"
+	-@erase ".\Release\MzScheme.res"
+	-@erase "..\..\..\MzScheme.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -73,32 +73,32 @@ CLEAN :
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
 # ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D\
- "NDEBUG" /D "_CONSOLE" /Fp"$(INTDIR)/mzscheme.pch" /YX /Fo"$(INTDIR)/"\
+ "NDEBUG" /D "_CONSOLE" /Fp"$(INTDIR)/MzScheme.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
 CPP_SBRS=
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/mzscheme.res" /d "NDEBUG" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MzScheme.res" /d "NDEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mzscheme.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MzScheme.bsc" 
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
 # ADD LINK32 ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
-# SUBTRACT LINK32 /pdb:none /incremental:yes
+# SUBTRACT LINK32 /pdb:none
 LINK32_FLAGS=..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib\
  user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo\
- /subsystem:console /incremental:no /pdb:"$(OUTDIR)/mzscheme.pdb" /debug\
- /machine:I386 /out:"$(OUTDIR)/mzscheme.exe" 
+ /subsystem:console /incremental:no /pdb:"$(OUTDIR)/MzScheme.pdb" /debug\
+ /machine:I386 /out:"$(OUTDIR)/MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)/Main.obj" \
-	"$(INTDIR)/mzscheme.res"
+	"$(INTDIR)/MzScheme.res"
 
-"$(OUTDIR)\mzscheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -118,16 +118,16 @@ LINK32_OBJS= \
 OUTDIR=.\..\..\..
 INTDIR=.\Debug
 
-ALL : "$(OUTDIR)\mzscheme.exe"
+ALL : "$(OUTDIR)\MzScheme.exe"
 
 CLEAN : 
 	-@erase ".\Debug\vc40.pdb"
 	-@erase ".\Debug\vc40.idb"
-	-@erase "..\..\..\mzscheme.exe"
+	-@erase "..\..\..\MzScheme.exe"
 	-@erase ".\Debug\Main.obj"
-	-@erase ".\Debug\mzscheme.res"
-	-@erase "..\..\..\mzscheme.ilk"
-	-@erase "..\..\..\mzscheme.pdb"
+	-@erase ".\Debug\MzScheme.res"
+	-@erase "..\..\..\MzScheme.ilk"
+	-@erase "..\..\..\MzScheme.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -138,17 +138,17 @@ CLEAN :
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
 # ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D\
- "WIN32" /D "_DEBUG" /D "_CONSOLE" /Fp"$(INTDIR)/mzscheme.pch" /YX\
+ "WIN32" /D "_DEBUG" /D "_CONSOLE" /Fp"$(INTDIR)/MzScheme.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Debug/
 CPP_SBRS=
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/mzscheme.res" /d "_DEBUG" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MzScheme.res" /d "_DEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mzscheme.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MzScheme.bsc" 
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
@@ -157,13 +157,13 @@ LINK32=link.exe
 LINK32_FLAGS=..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib\
  user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo\
- /subsystem:console /incremental:yes /pdb:"$(OUTDIR)/mzscheme.pdb" /debug\
- /machine:I386 /out:"$(OUTDIR)/mzscheme.exe" 
+ /subsystem:console /incremental:yes /pdb:"$(OUTDIR)/MzScheme.pdb" /debug\
+ /machine:I386 /out:"$(OUTDIR)/MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)/Main.obj" \
-	"$(INTDIR)/mzscheme.res"
+	"$(INTDIR)/MzScheme.res"
 
-"$(OUTDIR)\mzscheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -183,15 +183,15 @@ LINK32_OBJS= \
 OUTDIR=.\..\..\..
 INTDIR=.\SGC
 
-ALL : "$(OUTDIR)\mzscheme.exe"
+ALL : "$(OUTDIR)\MzScheme.exe"
 
 CLEAN : 
 	-@erase ".\SGC\vc40.pdb"
 	-@erase ".\SGC\vc40.idb"
-	-@erase "..\..\..\mzscheme.exe"
+	-@erase "..\..\..\MzScheme.exe"
 	-@erase ".\SGC\Main.obj"
-	-@erase ".\SGC\mzscheme.res"
-	-@erase "..\..\..\mzscheme.pdb"
+	-@erase ".\SGC\MzScheme.res"
+	-@erase "..\..\..\MzScheme.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -203,16 +203,16 @@ CLEAN :
 # ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D SGC_STD_DEBUGGING=1 /YX /c
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D\
  "WIN32" /D "_DEBUG" /D "_CONSOLE" /D SGC_STD_DEBUGGING=1\
- /Fp"$(INTDIR)/mzscheme.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Fp"$(INTDIR)/MzScheme.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\SGC/
 CPP_SBRS=
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/mzscheme.res" /d "_DEBUG" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MzScheme.res" /d "_DEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mzscheme.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MzScheme.bsc" 
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386
@@ -222,13 +222,13 @@ LINK32=link.exe
 LINK32_FLAGS=..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib\
  user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo\
- /subsystem:console /incremental:no /pdb:"$(OUTDIR)/mzscheme.pdb" /debug\
- /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/mzscheme.exe" 
+ /subsystem:console /incremental:no /pdb:"$(OUTDIR)/MzScheme.pdb" /debug\
+ /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)/Main.obj" \
-	"$(INTDIR)/mzscheme.res"
+	"$(INTDIR)/MzScheme.res"
 
-"$(OUTDIR)\mzscheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -248,14 +248,14 @@ LINK32_OBJS= \
 OUTDIR=.\..\..\..
 INTDIR=.\Threads
 
-ALL : "$(OUTDIR)\mzscheme.exe"
+ALL : "$(OUTDIR)\MzScheme.exe"
 
 CLEAN : 
 	-@erase ".\Threads\vc40.pdb"
-	-@erase "..\..\..\mzscheme.exe"
+	-@erase "..\..\..\MzScheme.exe"
 	-@erase ".\Threads\Main.obj"
-	-@erase ".\Threads\mzscheme.res"
-	-@erase "..\..\..\mzscheme.pdb"
+	-@erase ".\Threads\MzScheme.res"
+	-@erase "..\..\..\MzScheme.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -266,17 +266,17 @@ CLEAN :
 # ADD BASE CPP /nologo /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
 # ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "WIN32_THREADS" /YX /c
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D\
- "NDEBUG" /D "_CONSOLE" /D "WIN32_THREADS" /Fp"$(INTDIR)/mzscheme.pch" /YX\
+ "NDEBUG" /D "_CONSOLE" /D "WIN32_THREADS" /Fp"$(INTDIR)/MzScheme.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Threads/
 CPP_SBRS=
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/mzscheme.res" /d "NDEBUG" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MzScheme.res" /d "NDEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mzscheme.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MzScheme.bsc" 
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /machine:I386
@@ -286,13 +286,13 @@ LINK32=link.exe
 LINK32_FLAGS=..\mzsrc\Threads\mzsrc.lib ..\gc\Threads\gc.lib kernel32.lib\
  user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo\
- /subsystem:console /incremental:no /pdb:"$(OUTDIR)/mzscheme.pdb" /debug\
- /machine:I386 /out:"$(OUTDIR)/mzscheme.exe" 
+ /subsystem:console /incremental:no /pdb:"$(OUTDIR)/MzScheme.pdb" /debug\
+ /machine:I386 /out:"$(OUTDIR)/MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)/Main.obj" \
-	"$(INTDIR)/mzscheme.res"
+	"$(INTDIR)/MzScheme.res"
 
-"$(OUTDIR)\mzscheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -339,6 +339,9 @@ LINK32_OBJS= \
 # Begin Source File
 
 SOURCE=..\..\Mzscheme\Main.c
+
+!IF  "$(CFG)" == "mzscheme - Win32 Release"
+
 DEP_CPP_MAIN_=\
 	".\..\..\mzscheme\include\scheme.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -359,15 +362,31 @@ NODEP_CPP_MAIN_=\
 	".\..\..\mzscheme\include\schemexm.h"\
 	
 
-!IF  "$(CFG)" == "mzscheme - Win32 Release"
-
-
 "$(INTDIR)\Main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
+DEP_CPP_MAIN_=\
+	".\..\..\mzscheme\include\scheme.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	".\..\..\Mzscheme\sconfig.h"\
+	".\..\..\mzscheme\src\stypes.h"\
+	".\..\..\mzscheme\src\schexn.h"\
+	".\..\..\mzscheme\src\schemef.h"\
+	".\..\..\mzscheme\src\schemex.h"\
+	".\..\..\mzscheme\src\schemexm.h"\
+	".\..\..\mzscheme\uconfig.h"\
+	
+NODEP_CPP_MAIN_=\
+	".\..\..\Mzscheme\simpledrop.h"\
+	".\..\..\mzscheme\include\stypes.h"\
+	".\..\..\mzscheme\include\schexn.h"\
+	".\..\..\mzscheme\include\schemef.h"\
+	".\..\..\mzscheme\include\schemex.h"\
+	".\..\..\mzscheme\include\schemexm.h"\
+	
 
 "$(INTDIR)\Main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -375,6 +394,13 @@ NODEP_CPP_MAIN_=\
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 SGC"
 
+DEP_CPP_MAIN_=\
+	".\..\..\mzscheme\include\scheme.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_MAIN_=\
+	".\..\..\Mzscheme\simpledrop.h"\
+	
 
 "$(INTDIR)\Main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -382,6 +408,13 @@ NODEP_CPP_MAIN_=\
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Threads"
 
+DEP_CPP_MAIN_=\
+	".\..\..\mzscheme\include\scheme.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_MAIN_=\
+	".\..\..\Mzscheme\simpledrop.h"\
+	
 
 "$(INTDIR)\Main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -401,28 +434,28 @@ DEP_RSC_MZSCH=\
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 
-"$(INTDIR)\mzscheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
+"$(INTDIR)\MzScheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 
-"$(INTDIR)\mzscheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
+"$(INTDIR)\MzScheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 SGC"
 
 
-"$(INTDIR)\mzscheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
+"$(INTDIR)\MzScheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Threads"
 
 
-"$(INTDIR)\mzscheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
+"$(INTDIR)\MzScheme.res" : $(SOURCE) $(DEP_RSC_MZSCH) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 

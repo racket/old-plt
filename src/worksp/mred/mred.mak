@@ -52,30 +52,30 @@ MTL=mktyplib.exe
 OUTDIR=.\..\..\..
 INTDIR=.\Release
 
-ALL : "$(OUTDIR)\mred.exe"
+ALL : "$(OUTDIR)\MrEd.exe"
 
 CLEAN : 
 	-@erase ".\Release\vc40.pdb"
-	-@erase "..\..\..\mred.exe"
-	-@erase ".\Release\WX_MEDIO.obj"
-	-@erase ".\Release\WX_MPBRD.obj"
-	-@erase ".\Release\xcglue.obj"
-	-@erase ".\Release\WX_MEDIA.obj"
-	-@erase ".\Release\mredgcpp.obj"
-	-@erase ".\Release\EDJR.obj"
+	-@erase "..\..\..\MrEd.exe"
 	-@erase ".\Release\WX_MPRIV.obj"
 	-@erase ".\Release\WX_CGREC.obj"
 	-@erase ".\Release\WX_STYLE.obj"
 	-@erase ".\Release\WX_MEDAD.obj"
-	-@erase ".\Release\WX_SNIP.obj"
-	-@erase ".\Release\WX_KEYM.obj"
+	-@erase ".\Release\xcglue.obj"
 	-@erase ".\Release\MRED.obj"
+	-@erase ".\Release\WX_MLINE.obj"
+	-@erase ".\Release\WX_SNIP.obj"
+	-@erase ".\Release\WX_MSNIP.obj"
+	-@erase ".\Release\EDJR.obj"
+	-@erase ".\Release\WX_MEDIO.obj"
+	-@erase ".\Release\WX_MPBRD.obj"
+	-@erase ".\Release\WX_KEYM.obj"
 	-@erase ".\Release\WX_MBUF.obj"
 	-@erase ".\Release\MREDMSW.obj"
-	-@erase ".\Release\WX_MLINE.obj"
-	-@erase ".\Release\WX_MSNIP.obj"
-	-@erase ".\Release\Mred.res"
-	-@erase "..\..\..\mred.pdb"
+	-@erase ".\Release\WX_MEDIA.obj"
+	-@erase ".\Release\mredgcpp.obj"
+	-@erase ".\Release\MrEd.res"
+	-@erase "..\..\..\MrEd.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -89,7 +89,7 @@ CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I\
  "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I\
  "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D\
  "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES"\
- /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /Fp"$(INTDIR)/mred.pch" /YX\
+ /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /Fp"$(INTDIR)/MrEd.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
 CPP_SBRS=
@@ -98,12 +98,12 @@ CPP_SBRS=
 MTL_PROJ=/nologo /D "NDEBUG" /win32 
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "NDEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/Mred.res" /i "..\..\wxwindow\include\msw" /i\
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MrEd.res" /i "..\..\wxwindow\include\msw" /i\
  "..\..\wxwindow\contrib\fafa" /d "NDEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mred.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MrEd.bsc" 
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
@@ -113,29 +113,29 @@ LINK32_FLAGS=..\wxs\Release\wxs.lib ..\wxutils\Release\wxutils.lib\
  ..\wxwin\Release\wxwin.lib ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib\
  kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib\
  shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib\
- winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/mred.pdb"\
- /debug /machine:I386 /nodefaultlib:"libc.lib" /out:"$(OUTDIR)/mred.exe" 
+ winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/MrEd.pdb"\
+ /debug /machine:I386 /nodefaultlib:"libc.lib" /out:"$(OUTDIR)/MrEd.exe" 
 LINK32_OBJS= \
-	"$(INTDIR)/WX_MEDIO.obj" \
-	"$(INTDIR)/WX_MPBRD.obj" \
-	"$(INTDIR)/xcglue.obj" \
-	"$(INTDIR)/WX_MEDIA.obj" \
-	"$(INTDIR)/mredgcpp.obj" \
-	"$(INTDIR)/EDJR.obj" \
 	"$(INTDIR)/WX_MPRIV.obj" \
 	"$(INTDIR)/WX_CGREC.obj" \
 	"$(INTDIR)/WX_STYLE.obj" \
 	"$(INTDIR)/WX_MEDAD.obj" \
-	"$(INTDIR)/WX_SNIP.obj" \
-	"$(INTDIR)/WX_KEYM.obj" \
+	"$(INTDIR)/xcglue.obj" \
 	"$(INTDIR)/MRED.obj" \
+	"$(INTDIR)/WX_MLINE.obj" \
+	"$(INTDIR)/WX_SNIP.obj" \
+	"$(INTDIR)/WX_MSNIP.obj" \
+	"$(INTDIR)/EDJR.obj" \
+	"$(INTDIR)/WX_MEDIO.obj" \
+	"$(INTDIR)/WX_MPBRD.obj" \
+	"$(INTDIR)/WX_KEYM.obj" \
 	"$(INTDIR)/WX_MBUF.obj" \
 	"$(INTDIR)/MREDMSW.obj" \
-	"$(INTDIR)/WX_MLINE.obj" \
-	"$(INTDIR)/WX_MSNIP.obj" \
-	"$(INTDIR)/Mred.res"
+	"$(INTDIR)/WX_MEDIA.obj" \
+	"$(INTDIR)/mredgcpp.obj" \
+	"$(INTDIR)/MrEd.res"
 
-"$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MrEd.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -155,49 +155,49 @@ LINK32_OBJS= \
 OUTDIR=.\..\..\..
 INTDIR=.\Debug
 
-ALL : "$(OUTDIR)\mred.exe" "$(OUTDIR)\mred.bsc"
+ALL : "$(OUTDIR)\MrEd.exe" "$(OUTDIR)\MrEd.bsc"
 
 CLEAN : 
 	-@erase ".\Debug\vc40.pdb"
 	-@erase ".\Debug\vc40.idb"
-	-@erase "..\..\..\mred.bsc"
+	-@erase "..\..\..\MrEd.bsc"
+	-@erase ".\Debug\WX_KEYM.sbr"
+	-@erase ".\Debug\WX_MBUF.sbr"
+	-@erase ".\Debug\WX_MLINE.sbr"
+	-@erase ".\Debug\MREDMSW.sbr"
+	-@erase ".\Debug\MRED.sbr"
+	-@erase ".\Debug\WX_MSNIP.sbr"
+	-@erase ".\Debug\WX_MEDIO.sbr"
+	-@erase ".\Debug\WX_MEDIA.sbr"
 	-@erase ".\Debug\EDJR.sbr"
 	-@erase ".\Debug\mredgcpp.sbr"
 	-@erase ".\Debug\WX_MPRIV.sbr"
-	-@erase ".\Debug\WX_MPBRD.sbr"
-	-@erase ".\Debug\MRED.sbr"
 	-@erase ".\Debug\xcglue.sbr"
+	-@erase ".\Debug\WX_MPBRD.sbr"
 	-@erase ".\Debug\WX_CGREC.sbr"
 	-@erase ".\Debug\WX_STYLE.sbr"
 	-@erase ".\Debug\WX_MEDAD.sbr"
 	-@erase ".\Debug\WX_SNIP.sbr"
-	-@erase ".\Debug\WX_KEYM.sbr"
-	-@erase ".\Debug\WX_MLINE.sbr"
-	-@erase ".\Debug\WX_MBUF.sbr"
-	-@erase ".\Debug\MREDMSW.sbr"
-	-@erase ".\Debug\WX_MSNIP.sbr"
-	-@erase ".\Debug\WX_MEDIO.sbr"
-	-@erase ".\Debug\WX_MEDIA.sbr"
-	-@erase "..\..\..\mred.exe"
-	-@erase ".\Debug\WX_MLINE.obj"
+	-@erase "..\..\..\MrEd.exe"
+	-@erase ".\Debug\WX_CGREC.obj"
+	-@erase ".\Debug\WX_STYLE.obj"
+	-@erase ".\Debug\WX_MEDAD.obj"
+	-@erase ".\Debug\WX_SNIP.obj"
+	-@erase ".\Debug\WX_KEYM.obj"
 	-@erase ".\Debug\WX_MBUF.obj"
+	-@erase ".\Debug\WX_MLINE.obj"
 	-@erase ".\Debug\MREDMSW.obj"
+	-@erase ".\Debug\MRED.obj"
 	-@erase ".\Debug\WX_MSNIP.obj"
 	-@erase ".\Debug\WX_MEDIO.obj"
 	-@erase ".\Debug\WX_MEDIA.obj"
 	-@erase ".\Debug\EDJR.obj"
 	-@erase ".\Debug\mredgcpp.obj"
 	-@erase ".\Debug\WX_MPRIV.obj"
-	-@erase ".\Debug\WX_MPBRD.obj"
-	-@erase ".\Debug\MRED.obj"
 	-@erase ".\Debug\xcglue.obj"
-	-@erase ".\Debug\WX_CGREC.obj"
-	-@erase ".\Debug\WX_STYLE.obj"
-	-@erase ".\Debug\WX_MEDAD.obj"
-	-@erase ".\Debug\WX_SNIP.obj"
-	-@erase ".\Debug\WX_KEYM.obj"
-	-@erase ".\Debug\Mred.res"
-	-@erase "..\..\..\mred.pdb"
+	-@erase ".\Debug\WX_MPBRD.obj"
+	-@erase ".\Debug\MrEd.res"
+	-@erase "..\..\..\MrEd.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -212,7 +212,7 @@ CPP_PROJ=/nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mzscheme\gc" /I\
  "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D\
  "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES"\
  /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /FR"$(INTDIR)/"\
- /Fp"$(INTDIR)/mred.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Fp"$(INTDIR)/MrEd.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Debug/
 CPP_SBRS=.\Debug/
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
@@ -220,32 +220,32 @@ CPP_SBRS=.\Debug/
 MTL_PROJ=/nologo /D "_DEBUG" /win32 
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/Mred.res" /i "..\..\wxwindow\include\msw" /i\
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MrEd.res" /i "..\..\wxwindow\include\msw" /i\
  "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mred.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MrEd.bsc" 
 BSC32_SBRS= \
+	"$(INTDIR)/WX_KEYM.sbr" \
+	"$(INTDIR)/WX_MBUF.sbr" \
+	"$(INTDIR)/WX_MLINE.sbr" \
+	"$(INTDIR)/MREDMSW.sbr" \
+	"$(INTDIR)/MRED.sbr" \
+	"$(INTDIR)/WX_MSNIP.sbr" \
+	"$(INTDIR)/WX_MEDIO.sbr" \
+	"$(INTDIR)/WX_MEDIA.sbr" \
 	"$(INTDIR)/EDJR.sbr" \
 	"$(INTDIR)/mredgcpp.sbr" \
 	"$(INTDIR)/WX_MPRIV.sbr" \
-	"$(INTDIR)/WX_MPBRD.sbr" \
-	"$(INTDIR)/MRED.sbr" \
 	"$(INTDIR)/xcglue.sbr" \
+	"$(INTDIR)/WX_MPBRD.sbr" \
 	"$(INTDIR)/WX_CGREC.sbr" \
 	"$(INTDIR)/WX_STYLE.sbr" \
 	"$(INTDIR)/WX_MEDAD.sbr" \
-	"$(INTDIR)/WX_SNIP.sbr" \
-	"$(INTDIR)/WX_KEYM.sbr" \
-	"$(INTDIR)/WX_MLINE.sbr" \
-	"$(INTDIR)/WX_MBUF.sbr" \
-	"$(INTDIR)/MREDMSW.sbr" \
-	"$(INTDIR)/WX_MSNIP.sbr" \
-	"$(INTDIR)/WX_MEDIO.sbr" \
-	"$(INTDIR)/WX_MEDIA.sbr"
+	"$(INTDIR)/WX_SNIP.sbr"
 
-"$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+"$(OUTDIR)\MrEd.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
   $(BSC32_FLAGS) $(BSC32_SBRS)
 <<
@@ -258,29 +258,29 @@ LINK32_FLAGS=libc.lib ..\wxs\Debug\wxs.lib ..\wxutils\Debug\wxutils.lib\
  ..\wxwin\Debug\wxwin.lib ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib\
  kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib\
  shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib\
- winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/mred.pdb"\
- /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/mred.exe" 
+ winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/MrEd.pdb"\
+ /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/MrEd.exe" 
 LINK32_OBJS= \
-	"$(INTDIR)/WX_MLINE.obj" \
+	"$(INTDIR)/WX_CGREC.obj" \
+	"$(INTDIR)/WX_STYLE.obj" \
+	"$(INTDIR)/WX_MEDAD.obj" \
+	"$(INTDIR)/WX_SNIP.obj" \
+	"$(INTDIR)/WX_KEYM.obj" \
 	"$(INTDIR)/WX_MBUF.obj" \
+	"$(INTDIR)/WX_MLINE.obj" \
 	"$(INTDIR)/MREDMSW.obj" \
+	"$(INTDIR)/MRED.obj" \
 	"$(INTDIR)/WX_MSNIP.obj" \
 	"$(INTDIR)/WX_MEDIO.obj" \
 	"$(INTDIR)/WX_MEDIA.obj" \
 	"$(INTDIR)/EDJR.obj" \
 	"$(INTDIR)/mredgcpp.obj" \
 	"$(INTDIR)/WX_MPRIV.obj" \
-	"$(INTDIR)/WX_MPBRD.obj" \
-	"$(INTDIR)/MRED.obj" \
 	"$(INTDIR)/xcglue.obj" \
-	"$(INTDIR)/WX_CGREC.obj" \
-	"$(INTDIR)/WX_STYLE.obj" \
-	"$(INTDIR)/WX_MEDAD.obj" \
-	"$(INTDIR)/WX_SNIP.obj" \
-	"$(INTDIR)/WX_KEYM.obj" \
-	"$(INTDIR)/Mred.res"
+	"$(INTDIR)/WX_MPBRD.obj" \
+	"$(INTDIR)/MrEd.res"
 
-"$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MrEd.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -300,49 +300,49 @@ LINK32_OBJS= \
 OUTDIR=.\..\..\..
 INTDIR=.\SGC
 
-ALL : "$(OUTDIR)\mred.exe" "$(OUTDIR)\mred.bsc"
+ALL : "$(OUTDIR)\MrEd.exe" "$(OUTDIR)\MrEd.bsc"
 
 CLEAN : 
 	-@erase ".\SGC\vc40.pdb"
 	-@erase ".\SGC\vc40.idb"
-	-@erase "..\..\..\mred.bsc"
-	-@erase ".\SGC\WX_CGREC.sbr"
-	-@erase ".\SGC\WX_KEYM.sbr"
-	-@erase ".\SGC\WX_MBUF.sbr"
-	-@erase ".\SGC\MREDMSW.sbr"
-	-@erase ".\SGC\mredgcpp.sbr"
-	-@erase ".\SGC\xcglue.sbr"
-	-@erase ".\SGC\EDJR.sbr"
+	-@erase "..\..\..\MrEd.bsc"
 	-@erase ".\SGC\WX_STYLE.sbr"
 	-@erase ".\SGC\WX_MEDAD.sbr"
 	-@erase ".\SGC\MRED.sbr"
 	-@erase ".\SGC\WX_MLINE.sbr"
+	-@erase ".\SGC\xcglue.sbr"
 	-@erase ".\SGC\WX_MSNIP.sbr"
 	-@erase ".\SGC\WX_MPRIV.sbr"
 	-@erase ".\SGC\WX_MEDIO.sbr"
 	-@erase ".\SGC\WX_MPBRD.sbr"
 	-@erase ".\SGC\WX_MEDIA.sbr"
+	-@erase ".\SGC\WX_CGREC.sbr"
+	-@erase ".\SGC\mredgcpp.sbr"
 	-@erase ".\SGC\WX_SNIP.sbr"
-	-@erase "..\..\..\mred.exe"
-	-@erase ".\SGC\WX_MSNIP.obj"
-	-@erase ".\SGC\WX_MPRIV.obj"
-	-@erase ".\SGC\WX_MEDIO.obj"
-	-@erase ".\SGC\WX_MPBRD.obj"
-	-@erase ".\SGC\WX_MEDIA.obj"
+	-@erase ".\SGC\WX_KEYM.sbr"
+	-@erase ".\SGC\WX_MBUF.sbr"
+	-@erase ".\SGC\MREDMSW.sbr"
+	-@erase ".\SGC\EDJR.sbr"
+	-@erase "..\..\..\MrEd.exe"
+	-@erase ".\SGC\mredgcpp.obj"
 	-@erase ".\SGC\WX_SNIP.obj"
-	-@erase ".\SGC\WX_CGREC.obj"
 	-@erase ".\SGC\WX_KEYM.obj"
 	-@erase ".\SGC\WX_MBUF.obj"
 	-@erase ".\SGC\MREDMSW.obj"
-	-@erase ".\SGC\mredgcpp.obj"
-	-@erase ".\SGC\xcglue.obj"
 	-@erase ".\SGC\EDJR.obj"
 	-@erase ".\SGC\WX_STYLE.obj"
 	-@erase ".\SGC\WX_MEDAD.obj"
 	-@erase ".\SGC\MRED.obj"
 	-@erase ".\SGC\WX_MLINE.obj"
-	-@erase ".\SGC\Mred.res"
-	-@erase "..\..\..\mred.pdb"
+	-@erase ".\SGC\xcglue.obj"
+	-@erase ".\SGC\WX_MSNIP.obj"
+	-@erase ".\SGC\WX_MPRIV.obj"
+	-@erase ".\SGC\WX_MEDIO.obj"
+	-@erase ".\SGC\WX_MPBRD.obj"
+	-@erase ".\SGC\WX_MEDIA.obj"
+	-@erase ".\SGC\WX_CGREC.obj"
+	-@erase ".\SGC\MrEd.res"
+	-@erase "..\..\..\MrEd.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -358,7 +358,7 @@ CPP_PROJ=/nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mred\mzscheme\sgc" /I\
  "..\..\mred\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS"\
  /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED"\
  /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNTER" /FR"$(INTDIR)/"\
- /Fp"$(INTDIR)/mred.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Fp"$(INTDIR)/MrEd.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\SGC/
 CPP_SBRS=.\SGC/
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
@@ -366,32 +366,32 @@ CPP_SBRS=.\SGC/
 MTL_PROJ=/nologo /D "_DEBUG" /win32 
 # ADD BASE RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG"
 # ADD RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG"
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)/Mred.res" /i "..\..\wxwindow\include\msw" /i\
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)/MrEd.res" /i "..\..\wxwindow\include\msw" /i\
  "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-BSC32_FLAGS=/nologo /o"$(OUTDIR)/mred.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)/MrEd.bsc" 
 BSC32_SBRS= \
-	"$(INTDIR)/WX_CGREC.sbr" \
-	"$(INTDIR)/WX_KEYM.sbr" \
-	"$(INTDIR)/WX_MBUF.sbr" \
-	"$(INTDIR)/MREDMSW.sbr" \
-	"$(INTDIR)/mredgcpp.sbr" \
-	"$(INTDIR)/xcglue.sbr" \
-	"$(INTDIR)/EDJR.sbr" \
 	"$(INTDIR)/WX_STYLE.sbr" \
 	"$(INTDIR)/WX_MEDAD.sbr" \
 	"$(INTDIR)/MRED.sbr" \
 	"$(INTDIR)/WX_MLINE.sbr" \
+	"$(INTDIR)/xcglue.sbr" \
 	"$(INTDIR)/WX_MSNIP.sbr" \
 	"$(INTDIR)/WX_MPRIV.sbr" \
 	"$(INTDIR)/WX_MEDIO.sbr" \
 	"$(INTDIR)/WX_MPBRD.sbr" \
 	"$(INTDIR)/WX_MEDIA.sbr" \
-	"$(INTDIR)/WX_SNIP.sbr"
+	"$(INTDIR)/WX_CGREC.sbr" \
+	"$(INTDIR)/mredgcpp.sbr" \
+	"$(INTDIR)/WX_SNIP.sbr" \
+	"$(INTDIR)/WX_KEYM.sbr" \
+	"$(INTDIR)/WX_MBUF.sbr" \
+	"$(INTDIR)/MREDMSW.sbr" \
+	"$(INTDIR)/EDJR.sbr"
 
-"$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+"$(OUTDIR)\MrEd.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
   $(BSC32_FLAGS) $(BSC32_SBRS)
 <<
@@ -405,29 +405,29 @@ LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib\
  ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib\
  user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib\
  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib\
- libc.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/mred.pdb"\
- /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/mred.exe" 
+ libc.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/MrEd.pdb"\
+ /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)/MrEd.exe" 
 LINK32_OBJS= \
-	"$(INTDIR)/WX_MSNIP.obj" \
-	"$(INTDIR)/WX_MPRIV.obj" \
-	"$(INTDIR)/WX_MEDIO.obj" \
-	"$(INTDIR)/WX_MPBRD.obj" \
-	"$(INTDIR)/WX_MEDIA.obj" \
+	"$(INTDIR)/mredgcpp.obj" \
 	"$(INTDIR)/WX_SNIP.obj" \
-	"$(INTDIR)/WX_CGREC.obj" \
 	"$(INTDIR)/WX_KEYM.obj" \
 	"$(INTDIR)/WX_MBUF.obj" \
 	"$(INTDIR)/MREDMSW.obj" \
-	"$(INTDIR)/mredgcpp.obj" \
-	"$(INTDIR)/xcglue.obj" \
 	"$(INTDIR)/EDJR.obj" \
 	"$(INTDIR)/WX_STYLE.obj" \
 	"$(INTDIR)/WX_MEDAD.obj" \
 	"$(INTDIR)/MRED.obj" \
 	"$(INTDIR)/WX_MLINE.obj" \
-	"$(INTDIR)/Mred.res"
+	"$(INTDIR)/xcglue.obj" \
+	"$(INTDIR)/WX_MSNIP.obj" \
+	"$(INTDIR)/WX_MPRIV.obj" \
+	"$(INTDIR)/WX_MEDIO.obj" \
+	"$(INTDIR)/WX_MPBRD.obj" \
+	"$(INTDIR)/WX_MEDIA.obj" \
+	"$(INTDIR)/WX_CGREC.obj" \
+	"$(INTDIR)/MrEd.res"
 
-"$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\MrEd.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -490,15 +490,15 @@ DEP_CPP_EDJR_=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
@@ -557,86 +557,15 @@ DEP_CPP_EDJR_=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_mnuit.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
-	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
-	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\mred\Wxme\Wx_keym.h"\
-	".\..\..\mred\wxme\wx_medio.h"\
-	".\..\..\mred\wxme\wx_style.h"\
-	".\..\..\mred\wxme\wx_mtype.h"\
-	".\..\..\mred\Wxme\Wx_snip.h"\
-	".\..\..\mred\Wxme\Wx_cgrec.h"\
-	".\..\..\mred\Wxme\Wx_medad.h"\
-	".\..\..\mred\Wxme\Wx_medpb.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
-	".\..\..\mred\Wxme\wx_madm.h"\
-	
-
-BuildCmds= \
-	$(CPP) $(CPP_PROJ) $(SOURCE) \
-	
-
-"$(INTDIR)\EDJR.obj" : $(SOURCE) $(DEP_CPP_EDJR_) "$(INTDIR)"
-   $(BuildCmds)
-
-"$(INTDIR)\EDJR.sbr" : $(SOURCE) $(DEP_CPP_EDJR_) "$(INTDIR)"
-   $(BuildCmds)
-
-!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
-
-DEP_CPP_EDJR_=\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_main.h"\
-	".\..\..\wxwindow\include\msw\wx_menu.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
-	".\..\..\wxwindow\include\msw\wx_dialg.h"\
-	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
-	".\..\..\mred\wxme\wx_media.h"\
-	".\..\..\mred\wxme\edjr.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\common.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wx_setup.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
@@ -673,7 +602,76 @@ DEP_CPP_EDJR_=\
 	".\..\..\mred\Wxme\wx_madm.h"\
 	
 NODEP_CPP_EDJR_=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
+	
+
+BuildCmds= \
+	$(CPP) $(CPP_PROJ) $(SOURCE) \
+	
+
+"$(INTDIR)\EDJR.obj" : $(SOURCE) $(DEP_CPP_EDJR_) "$(INTDIR)"
+   $(BuildCmds)
+
+"$(INTDIR)\EDJR.sbr" : $(SOURCE) $(DEP_CPP_EDJR_) "$(INTDIR)"
+   $(BuildCmds)
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+DEP_CPP_EDJR_=\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\mred\wxme\wx_media.h"\
+	".\..\..\mred\wxme\edjr.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\common.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\base\wx_setup.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\mred\Wxme\Wx_keym.h"\
+	".\..\..\mred\wxme\wx_medio.h"\
+	".\..\..\mred\wxme\wx_style.h"\
+	".\..\..\mred\wxme\wx_mtype.h"\
+	".\..\..\mred\Wxme\Wx_snip.h"\
+	".\..\..\mred\Wxme\Wx_cgrec.h"\
+	".\..\..\mred\Wxme\Wx_medad.h"\
+	".\..\..\mred\Wxme\Wx_medpb.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\mred\Wxme\wx_madm.h"\
 	
 
 BuildCmds= \
@@ -717,22 +715,22 @@ DEP_CPP_WX_CG=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
@@ -765,25 +763,28 @@ DEP_CPP_WX_CG=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
+	
+NODEP_CPP_WX_CG=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -819,26 +820,23 @@ DEP_CPP_WX_CG=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
-	
-NODEP_CPP_WX_CG=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -880,8 +878,6 @@ DEP_CPP_WX_KE=\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
 	
 
 "$(INTDIR)\WX_KEYM.obj" : $(SOURCE) $(DEP_CPP_WX_KE) "$(INTDIR)"
@@ -911,6 +907,9 @@ DEP_CPP_WX_KE=\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
+	
+NODEP_CPP_WX_KE=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -942,6 +941,8 @@ DEP_CPP_WX_KE=\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	
 NODEP_CPP_WX_KE=\
 	".\..\..\wxwindow\include\base\gc_cpp.h"\
@@ -982,18 +983,13 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\msw\wx_clipb.h"\
 	".\..\..\mred\Wxme\wx_gclip.h"\
 	".\..\..\mred\Wxme\wx_ptreq.h"\
-	".\..\..\wxwindow\include\base\wx_setup.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\common.h"\
-	".\..\..\mzscheme\gc\gc_cpp.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\common.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_setup.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\mzscheme\gc\gc_cpp.h"\
+	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
@@ -1003,10 +999,15 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
@@ -1023,10 +1024,9 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\msw\wx_choic.h"\
 	".\..\..\wxwindow\include\msw\wx_txt.h"\
 	".\..\..\wxwindow\include\base\wx_lay.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
 	".\..\..\wxwindow\include\base\wb_txt.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
 	".\..\..\mred\Wxme\Wx_keym.h"\
 	".\..\..\mred\wxme\wx_medio.h"\
 	".\..\..\mred\wxme\wx_style.h"\
@@ -1035,6 +1035,7 @@ DEP_CPP_WX_MB=\
 	".\..\..\mred\Wxme\Wx_cgrec.h"\
 	".\..\..\mred\Wxme\Wx_medad.h"\
 	".\..\..\mred\Wxme\Wx_medpb.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
 	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
@@ -1069,10 +1070,6 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
@@ -1082,93 +1079,14 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_mnuit.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
-	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
-	".\..\..\wxwindow\include\base\wb_buttn.h"\
-	".\..\..\wxwindow\include\base\wb_rbox.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
-	".\..\..\wxwindow\include\msw\wx_choic.h"\
-	".\..\..\wxwindow\include\msw\wx_txt.h"\
-	".\..\..\wxwindow\include\base\wx_lay.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\wxwindow\include\base\wb_choic.h"\
-	".\..\..\wxwindow\include\base\wb_txt.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
-	".\..\..\mred\Wxme\Wx_keym.h"\
-	".\..\..\mred\wxme\wx_medio.h"\
-	".\..\..\mred\wxme\wx_style.h"\
-	".\..\..\mred\wxme\wx_mtype.h"\
-	".\..\..\mred\Wxme\Wx_snip.h"\
-	".\..\..\mred\Wxme\Wx_cgrec.h"\
-	".\..\..\mred\Wxme\Wx_medad.h"\
-	".\..\..\mred\Wxme\Wx_medpb.h"\
-	".\..\..\mred\Wxme\wx_madm.h"\
-	".\..\..\wxwindow\include\msw\wx_text.h"\
-	".\..\..\wxwindow\include\base\wb_text.h"\
-	
-
-BuildCmds= \
-	$(CPP) $(CPP_PROJ) $(SOURCE) \
-	
-
-"$(INTDIR)\WX_MBUF.obj" : $(SOURCE) $(DEP_CPP_WX_MB) "$(INTDIR)"
-   $(BuildCmds)
-
-"$(INTDIR)\WX_MBUF.sbr" : $(SOURCE) $(DEP_CPP_WX_MB) "$(INTDIR)"
-   $(BuildCmds)
-
-!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
-
-DEP_CPP_WX_MB=\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\msw\wx_menu.h"\
-	".\..\..\wxwindow\include\msw\wx_dialg.h"\
-	".\..\..\wxwindow\include\msw\wx_buttn.h"\
-	".\..\..\wxwindow\include\msw\wx_rbox.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\base\wx_dcps.h"\
-	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
-	".\..\..\wxwindow\include\base\wx_print.h"\
-	".\..\..\mred\wxme\wx_media.h"\
-	".\..\..\wxwindow\include\msw\wx_clipb.h"\
-	".\..\..\mred\Wxme\wx_gclip.h"\
-	".\..\..\mred\Wxme\wx_ptreq.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\common.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_setup.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
@@ -1202,7 +1120,88 @@ DEP_CPP_WX_MB=\
 	".\..\..\wxwindow\include\base\wb_text.h"\
 	
 NODEP_CPP_WX_MB=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
+	
+
+BuildCmds= \
+	$(CPP) $(CPP_PROJ) $(SOURCE) \
+	
+
+"$(INTDIR)\WX_MBUF.obj" : $(SOURCE) $(DEP_CPP_WX_MB) "$(INTDIR)"
+   $(BuildCmds)
+
+"$(INTDIR)\WX_MBUF.sbr" : $(SOURCE) $(DEP_CPP_WX_MB) "$(INTDIR)"
+   $(BuildCmds)
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+DEP_CPP_WX_MB=\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_print.h"\
+	".\..\..\mred\wxme\wx_media.h"\
+	".\..\..\wxwindow\include\msw\wx_clipb.h"\
+	".\..\..\mred\Wxme\wx_gclip.h"\
+	".\..\..\mred\Wxme\wx_ptreq.h"\
+	".\..\..\wxwindow\include\base\wx_setup.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\base\common.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\mred\Wxme\Wx_keym.h"\
+	".\..\..\mred\wxme\wx_medio.h"\
+	".\..\..\mred\wxme\wx_style.h"\
+	".\..\..\mred\wxme\wx_mtype.h"\
+	".\..\..\mred\Wxme\Wx_snip.h"\
+	".\..\..\mred\Wxme\Wx_cgrec.h"\
+	".\..\..\mred\Wxme\Wx_medad.h"\
+	".\..\..\mred\Wxme\Wx_medpb.h"\
+	".\..\..\mred\Wxme\wx_madm.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	
 
 BuildCmds= \
@@ -1232,6 +1231,7 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_gcrct.h"\
 	".\..\..\mred\Wxme\wx_ptreq.h"\
 	".\..\..\wxwindow\include\msw\wx_timer.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1244,10 +1244,10 @@ DEP_CPP_WX_ME=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1269,6 +1269,8 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_madm.h"\
 	".\..\..\wxwindow\include\base\wb_timer.h"\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	
 
 "$(INTDIR)\WX_MEDAD.obj" : $(SOURCE) $(DEP_CPP_WX_ME) "$(INTDIR)"
@@ -1284,6 +1286,7 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_gcrct.h"\
 	".\..\..\mred\Wxme\wx_ptreq.h"\
 	".\..\..\wxwindow\include\msw\wx_timer.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1296,10 +1299,10 @@ DEP_CPP_WX_ME=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1321,6 +1324,11 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_madm.h"\
 	".\..\..\wxwindow\include\base\wb_timer.h"\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	
+NODEP_CPP_WX_ME=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -1342,6 +1350,7 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_gcrct.h"\
 	".\..\..\mred\Wxme\wx_ptreq.h"\
 	".\..\..\wxwindow\include\msw\wx_timer.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1354,8 +1363,8 @@ DEP_CPP_WX_ME=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1377,9 +1386,8 @@ DEP_CPP_WX_ME=\
 	".\..\..\mred\Wxme\wx_madm.h"\
 	".\..\..\wxwindow\include\base\wb_timer.h"\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
-	
-NODEP_CPP_WX_ME=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	
 
 BuildCmds= \
@@ -1424,7 +1432,6 @@ DEP_CPP_WX_MED=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1434,6 +1441,7 @@ DEP_CPP_WX_MED=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1493,7 +1501,6 @@ DEP_CPP_WX_MED=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1503,79 +1510,7 @@ DEP_CPP_WX_MED=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
-	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\mred\Wxme\Wx_keym.h"\
-	".\..\..\mred\wxme\wx_medio.h"\
-	".\..\..\mred\wxme\wx_style.h"\
-	".\..\..\mred\wxme\wx_mtype.h"\
-	".\..\..\mred\Wxme\Wx_snip.h"\
-	".\..\..\mred\Wxme\Wx_cgrec.h"\
-	".\..\..\mred\Wxme\Wx_medad.h"\
-	".\..\..\mred\Wxme\Wx_medpb.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\mred\Wxme\wx_madm.h"\
-	".\..\..\mred\Wxme\wx_mline.h"\
-	".\..\..\wxwindow\include\msw\wx_timer.h"\
-	".\..\..\wxwindow\include\msw\wx_clipb.h"\
-	".\..\..\mred\Wxme\wx_gclip.h"\
-	".\..\..\mred\Wxme\wx_ptreq.h"\
-	".\..\..\wxwindow\include\base\wb_timer.h"\
-	{$(INCLUDE)}"\sys\TIMEB.H"\
-	".\..\..\wxwindow\include\msw\wx_text.h"\
-	".\..\..\wxwindow\include\base\wb_text.h"\
-	
-
-BuildCmds= \
-	$(CPP) $(CPP_PROJ) $(SOURCE) \
-	
-
-"$(INTDIR)\WX_MEDIA.obj" : $(SOURCE) $(DEP_CPP_WX_MED) "$(INTDIR)"
-   $(BuildCmds)
-
-"$(INTDIR)\WX_MEDIA.sbr" : $(SOURCE) $(DEP_CPP_WX_MED) "$(INTDIR)"
-   $(BuildCmds)
-
-!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
-
-DEP_CPP_WX_MED=\
-	".\..\..\wxwindow\include\msw\wx_dialg.h"\
-	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
-	".\..\..\mred\wxme\wx_media.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\mred\Wxme\wx_mpriv.h"\
-	".\..\..\wxwindow\include\base\common.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
-	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wx_setup.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1607,7 +1542,80 @@ DEP_CPP_WX_MED=\
 	".\..\..\wxwindow\include\base\wb_text.h"\
 	
 NODEP_CPP_WX_MED=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
+	
+
+BuildCmds= \
+	$(CPP) $(CPP_PROJ) $(SOURCE) \
+	
+
+"$(INTDIR)\WX_MEDIA.obj" : $(SOURCE) $(DEP_CPP_WX_MED) "$(INTDIR)"
+   $(BuildCmds)
+
+"$(INTDIR)\WX_MEDIA.sbr" : $(SOURCE) $(DEP_CPP_WX_MED) "$(INTDIR)"
+   $(BuildCmds)
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+DEP_CPP_WX_MED=\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\mred\wxme\wx_media.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\mred\Wxme\wx_mpriv.h"\
+	".\..\..\wxwindow\include\base\common.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_setup.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\mred\Wxme\Wx_keym.h"\
+	".\..\..\mred\wxme\wx_medio.h"\
+	".\..\..\mred\wxme\wx_style.h"\
+	".\..\..\mred\wxme\wx_mtype.h"\
+	".\..\..\mred\Wxme\Wx_snip.h"\
+	".\..\..\mred\Wxme\Wx_cgrec.h"\
+	".\..\..\mred\Wxme\Wx_medad.h"\
+	".\..\..\mred\Wxme\Wx_medpb.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\mred\Wxme\wx_madm.h"\
+	".\..\..\mred\Wxme\wx_mline.h"\
+	".\..\..\wxwindow\include\msw\wx_timer.h"\
+	".\..\..\wxwindow\include\msw\wx_clipb.h"\
+	".\..\..\mred\Wxme\wx_gclip.h"\
+	".\..\..\mred\Wxme\wx_ptreq.h"\
+	".\..\..\wxwindow\include\base\wb_timer.h"\
+	{$(INCLUDE)}"\sys\TIMEB.H"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	
 
 BuildCmds= \
@@ -1649,7 +1657,6 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1659,6 +1666,7 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1696,7 +1704,6 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1706,6 +1713,7 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1716,6 +1724,9 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	
+NODEP_CPP_WX_MEDI=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -1749,7 +1760,6 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
@@ -1757,6 +1767,7 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -1767,9 +1778,6 @@ DEP_CPP_WX_MEDI=\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
-	
-NODEP_CPP_WX_MEDI=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -1814,22 +1822,22 @@ DEP_CPP_WX_ML=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
@@ -1863,25 +1871,28 @@ DEP_CPP_WX_ML=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
+	
+NODEP_CPP_WX_ML=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -1918,26 +1929,23 @@ DEP_CPP_WX_ML=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
-	
-NODEP_CPP_WX_ML=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -1982,7 +1990,6 @@ DEP_CPP_WX_MP=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -1992,6 +1999,7 @@ DEP_CPP_WX_MP=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2043,7 +2051,6 @@ DEP_CPP_WX_MP=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -2053,6 +2060,7 @@ DEP_CPP_WX_MP=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2074,6 +2082,9 @@ DEP_CPP_WX_MP=\
 	".\..\..\mred\Wxme\Wx_medpb.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
+	
+NODEP_CPP_WX_MP=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -2105,26 +2116,26 @@ DEP_CPP_WX_MP=\
 	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
@@ -2139,9 +2150,6 @@ DEP_CPP_WX_MP=\
 	".\..\..\mred\Wxme\Wx_medpb.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
-	
-NODEP_CPP_WX_MP=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -2188,7 +2196,6 @@ DEP_CPP_WX_MPR=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -2198,6 +2205,7 @@ DEP_CPP_WX_MPR=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2259,7 +2267,6 @@ DEP_CPP_WX_MPR=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -2269,6 +2276,7 @@ DEP_CPP_WX_MPR=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2298,6 +2306,9 @@ DEP_CPP_WX_MPR=\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
 	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
+	
+NODEP_CPP_WX_MPR=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -2331,24 +2342,24 @@ DEP_CPP_WX_MPR=\
 	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
@@ -2373,9 +2384,6 @@ DEP_CPP_WX_MPR=\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
 	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
-	
-NODEP_CPP_WX_MPR=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -2420,22 +2428,22 @@ DEP_CPP_WX_MS=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
@@ -2478,22 +2486,22 @@ DEP_CPP_WX_MS=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
@@ -2506,6 +2514,9 @@ DEP_CPP_WX_MS=\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
 	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
+	
+NODEP_CPP_WX_MS=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -2542,20 +2553,20 @@ DEP_CPP_WX_MS=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
@@ -2568,9 +2579,6 @@ DEP_CPP_WX_MS=\
 	{$(INCLUDE)}"\sys\TIMEB.H"\
 	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
-	
-NODEP_CPP_WX_MS=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -2615,7 +2623,6 @@ DEP_CPP_WX_SN=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -2625,6 +2632,7 @@ DEP_CPP_WX_SN=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2676,7 +2684,6 @@ DEP_CPP_WX_SN=\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
@@ -2686,6 +2693,7 @@ DEP_CPP_WX_SN=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -2707,6 +2715,9 @@ DEP_CPP_WX_SN=\
 	".\..\..\mred\Wxme\Wx_medpb.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
+	
+NODEP_CPP_WX_SN=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -2738,26 +2749,26 @@ DEP_CPP_WX_SN=\
 	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
@@ -2772,9 +2783,6 @@ DEP_CPP_WX_SN=\
 	".\..\..\mred\Wxme\Wx_medpb.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
-	
-NODEP_CPP_WX_SN=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -2898,6 +2906,9 @@ DEP_CPP_WX_ST=\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	
+NODEP_CPP_WX_ST=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
+	
 
 BuildCmds= \
 	$(CPP) $(CPP_PROJ) $(SOURCE) \
@@ -2956,9 +2967,6 @@ DEP_CPP_WX_ST=\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	
-NODEP_CPP_WX_ST=\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
-	
 
 BuildCmds= \
 	$(CPP) $(CPP_PROJ) $(SOURCE) \
@@ -3006,13 +3014,12 @@ DEP_CPP_MRED_=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
@@ -3022,6 +3029,7 @@ DEP_CPP_MRED_=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
@@ -3049,27 +3057,13 @@ DEP_CPP_MRED_=\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\include\scheme.h"\
-	".\..\..\mzscheme\sconfig.h"\
-	".\..\..\mzscheme\src\stypes.h"\
-	".\..\..\mzscheme\src\schexn.h"\
-	".\..\..\mzscheme\src\schemef.h"\
-	".\..\..\mzscheme\src\schemex.h"\
-	".\..\..\mzscheme\src\schemexm.h"\
-	".\..\..\mzscheme\uconfig.h"\
 	
 NODEP_CPP_MRED_=\
 	".\..\..\mred\simpledrop.h"\
-	".\..\..\mred\boundary.h"\
 	".\..\..\mred\wxscheme.h"\
 	".\..\..\mred\wxsmred.h"\
 	".\..\..\mred\wxs_fram.h"\
 	".\..\..\mred\wxs_obj.h"\
-	".\..\..\mzscheme\include\sconfig.h"\
-	".\..\..\mzscheme\include\stypes.h"\
-	".\..\..\mzscheme\include\schexn.h"\
-	".\..\..\mzscheme\include\schemef.h"\
-	".\..\..\mzscheme\include\schemex.h"\
-	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\MRED.obj" : $(SOURCE) $(DEP_CPP_MRED_) "$(INTDIR)"
@@ -3104,13 +3098,13 @@ DEP_CPP_MRED_=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
@@ -3157,7 +3151,6 @@ DEP_CPP_MRED_=\
 	
 NODEP_CPP_MRED_=\
 	".\..\..\mred\simpledrop.h"\
-	".\..\..\mred\boundary.h"\
 	".\..\..\mred\wxscheme.h"\
 	".\..\..\mred\wxsmred.h"\
 	".\..\..\mred\wxs_fram.h"\
@@ -3208,11 +3201,11 @@ DEP_CPP_MRED_=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
@@ -3251,12 +3244,10 @@ DEP_CPP_MRED_=\
 	
 NODEP_CPP_MRED_=\
 	".\..\..\mred\simpledrop.h"\
-	".\..\..\mred\boundary.h"\
 	".\..\..\mred\wxscheme.h"\
 	".\..\..\mred\wxsmred.h"\
 	".\..\..\mred\wxs_fram.h"\
 	".\..\..\mred\wxs_obj.h"\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	".\..\..\MRED\WXS\xcglue.h"\
 	".\..\..\MZSCHEME\UTILS\scheme.h"\
 	
@@ -3327,13 +3318,6 @@ DEP_CPP_MREDM=\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\mred\Wxme\wx_madm.h"\
-	".\..\..\mzscheme\sconfig.h"\
-	".\..\..\mzscheme\src\stypes.h"\
-	".\..\..\mzscheme\src\schexn.h"\
-	".\..\..\mzscheme\src\schemef.h"\
-	".\..\..\mzscheme\src\schemex.h"\
-	".\..\..\mzscheme\src\schemexm.h"\
-	".\..\..\mzscheme\uconfig.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\msw\wx_check.h"\
 	".\..\..\wxwindow\include\msw\wx_messg.h"\
@@ -3343,14 +3327,6 @@ DEP_CPP_MREDM=\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
-	
-NODEP_CPP_MREDM=\
-	".\..\..\mzscheme\include\sconfig.h"\
-	".\..\..\mzscheme\include\stypes.h"\
-	".\..\..\mzscheme\include\schexn.h"\
-	".\..\..\mzscheme\include\schemef.h"\
-	".\..\..\mzscheme\include\schemex.h"\
-	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\MREDMSW.obj" : $(SOURCE) $(DEP_CPP_MREDM) "$(INTDIR)"
@@ -3498,7 +3474,6 @@ DEP_CPP_MREDM=\
 	
 NODEP_CPP_MREDM=\
 	".\..\..\mred\scheme.h"\
-	".\..\..\wxwindow\include\base\gc_cpp.h"\
 	
 
 BuildCmds= \
@@ -3526,6 +3501,9 @@ DEP_CPP_MREDG=\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	
+NODEP_CPP_MREDG=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
+	
 
 "$(INTDIR)\mredgcpp.obj" : $(SOURCE) $(DEP_CPP_MREDG) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
@@ -3537,6 +3515,9 @@ DEP_CPP_MREDG=\
 	".\..\..\mzscheme\gc\gc_cpp.cc"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
 	".\..\..\mzscheme\gc\gc.h"\
+	
+NODEP_CPP_MREDG=\
+	".\..\..\mzscheme\gc\libgc_globals.h"\
 	
 
 BuildCmds= \
@@ -3580,21 +3561,21 @@ DEP_RSC_MRED_R=\
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 
-"$(INTDIR)\Mred.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
+"$(INTDIR)\MrEd.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 
-"$(INTDIR)\Mred.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
+"$(INTDIR)\MrEd.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 
-"$(INTDIR)\Mred.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
+"$(INTDIR)\MrEd.res" : $(SOURCE) $(DEP_RSC_MRED_R) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
@@ -3612,21 +3593,6 @@ DEP_CPP_XCGLU=\
 	".\..\..\mzscheme\utils\xcglue.h"\
 	".\..\..\mzscheme\gc\gc.h"\
 	".\..\..\mzscheme\include\scheme.h"\
-	".\..\..\mzscheme\sconfig.h"\
-	".\..\..\mzscheme\src\stypes.h"\
-	".\..\..\mzscheme\src\schexn.h"\
-	".\..\..\mzscheme\src\schemef.h"\
-	".\..\..\mzscheme\src\schemex.h"\
-	".\..\..\mzscheme\src\schemexm.h"\
-	".\..\..\mzscheme\uconfig.h"\
-	
-NODEP_CPP_XCGLU=\
-	".\..\..\mzscheme\include\sconfig.h"\
-	".\..\..\mzscheme\include\stypes.h"\
-	".\..\..\mzscheme\include\schexn.h"\
-	".\..\..\mzscheme\include\schemef.h"\
-	".\..\..\mzscheme\include\schemex.h"\
-	".\..\..\mzscheme\include\schemexm.h"\
 	
 
 "$(INTDIR)\xcglue.obj" : $(SOURCE) $(DEP_CPP_XCGLU) "$(INTDIR)"

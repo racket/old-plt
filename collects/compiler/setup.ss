@@ -502,7 +502,7 @@
 						   (procedure-arity-includes? p 1))
 					      (error "result is not a procedure of arity 1"))))])
 		  (with-handlers ([void (lambda (x)
-					  (warning "Warning: error running installer: ~a"
+					  (warning "Warning: error running installer: ~a~n"
 						   x))])
 		     (t plthome))))
 	      collections-to-compile)))

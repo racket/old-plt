@@ -1064,7 +1064,7 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
       --m->count;
 
       if (cf) {
-	cf(o);
+	cf(o, f, data);
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(o), scheme_process_hop_type)) {
 #ifndef NO_SCHEME_THREADS
@@ -2162,7 +2162,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
       p = p->next;
       if (!p) {
 	printf("error: tried to switch to bad thread\n");
-	exit(-1);
+	exit(1);
       }
     }
   }
@@ -2262,9 +2262,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 }
 
 #ifndef MZ_REAL_THREADS
-void scheme_start_atomic(void);
-void scheme_end_atomic(void);
-
 void scheme_start_atomic(void)
 {
   if (!do_atomic)
@@ -3377,7 +3374,7 @@ void *scheme_pthread_init_threads(void)
 {
   if (pthread_key_create(&cp_key, NULL)) {
     printf("init failed\n");
-    exit(-1);
+    exit(1);
   }
 
   MZ_SIGSET(SIGMZTHREAD, do_nothing);
@@ -3626,7 +3623,7 @@ void *scheme_solaris_init_threads(void)
 {
   if (thr_keycreate(&cp_key, NULL)) {
     printf("init failed\n");
-    exit(-1);
+    exit(1);
   }
 
   MZ_SIGSET(SIGMZTHREAD, do_nothing);
@@ -3989,7 +3986,7 @@ void *scheme_sproc_init_threads(void)
 {
   if (thr_keycreate(&cp_key, NULL)) {
     printf("init failed\n");
-    exit(-1);
+    exit(1);
   }
 
   return (void *)getpid(); /* retrurn the main thread (= current thread) */

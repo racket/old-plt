@@ -1700,7 +1700,7 @@ void scheme_init_stack_check()
       scheme_console_printf("Stack grows DOWN, not UP.\n");
     else
       printf("Stack grows DOWN, not UP.\n");
-    exit(-1);
+    exit(1);
   }
 #endif
 #ifdef STACK_GROWS_DOWN
@@ -1709,7 +1709,7 @@ void scheme_init_stack_check()
       scheme_console_printf("Stack grows UP, not DOWN.\n");
     else
       printf("Stack grows UP, not DOWN.\n");
-    exit(-1);
+    exit(1);
   }
 #endif
 

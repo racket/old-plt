@@ -3581,7 +3581,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   return (Scheme_Object *)op;  
 }
 
-static void flush_each_output_file(Scheme_Object *o)
+static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)o;
@@ -3914,7 +3914,9 @@ make_fd_output_port(int fd, int regfile)
 						  1);
 }
 
-static void flush_if_output_fds(Scheme_Object *o)
+extern void scheme_start_atomic(void);
+
+static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)o;
@@ -4638,7 +4640,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	/* If we get here it failed; give up */
 
 	if (as_child || !def_exit_on)
-	  _exit(err ? err : -1);
+	  _exit(err ? err : 1);
 	else
 	  return scheme_void;
       }

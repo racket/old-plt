@@ -256,19 +256,19 @@ START_XFORM_SKIP;
 static int bad_trav_SIZE(void *p)
 {
   printf("Shouldn't get here.\n");
-  exit(-1);
+  exit(1);
 }
 
 static int bad_trav_MARK(void *p)
 {
   printf("Shouldn't get here.\n");
-  exit(-1);
+  exit(1);
 }
 
 static int bad_trav_FIXUP(void *p)
 {
   printf("Shouldn't get here.\n");
-  exit(-1);
+  exit(1);
 }
 
 static void MARK_cjs(Scheme_Continuation_Jump_State *cjs)

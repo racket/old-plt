@@ -219,7 +219,7 @@ void *scheme_malloc_eternal(size_t n)
 	scheme_console_printf("out of memory\n");
       else
 	printf("out of memory\n");
-      exit(-1);
+      exit(1);
     }
   }
 	

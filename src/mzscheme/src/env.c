@@ -453,7 +453,7 @@ static void make_init_env(void)
     printf("Primitive count %d doesn't match expected count %d\n"
 	   "Turn off USE_COMPILED_MACROS in src/schminc.h\n",
 	   builtin_ref_counter, EXPECTED_PRIM_COUNT);
-    exit(-1);
+    exit(1);
   }
 #endif
    

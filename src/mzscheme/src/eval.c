@@ -2272,13 +2272,12 @@ void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
   MZ_CONT_MARK_STACK = d->cont_mark_stack;
 }
 
-
 void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Cont_Mark *cm = NULL;
   long findpos;
-  
+
   findpos = (long)MZ_CONT_MARK_STACK;
   while (findpos--) {
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
@@ -2299,7 +2298,7 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
       }
     }
   }
-  
+
   if (!cm) {
     /* Allocate a new mark record: */
     long segpos = ((long)MZ_CONT_MARK_STACK) >> SCHEME_LOG_MARK_SEGMENT_SIZE;

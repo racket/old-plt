@@ -4,6 +4,8 @@
 	
   (define score (make-parameter 0))
 
+  (define home-list (make-parameter null))  
+
   (define board-height (make-parameter 0))
   (define board-width (make-parameter 0))
   (define board (make-parameter #f))
@@ -18,6 +20,7 @@
   
   (define (init-parameters)
     (score 0)
+    (home-list null)
     (board-height 0)
     (board-width 0)
     (board #f)

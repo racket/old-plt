@@ -9,7 +9,6 @@
 
   (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
            get-spot set-spot get-player-x get-player-y
-           home-list
            (struct command (bid command arg))
            (struct package (id x y weight))
            (struct robot (id x y))
@@ -21,7 +20,6 @@
   ;; wall = 2
   ;; home = 3
   
-  (define home-list (make-parameter null))
   
   (define-syntax get-type
     (syntax-rules ()
@@ -337,7 +335,7 @@
           (let ((s (make-string (board-width))))
             (let loop ((j 1))
               (cond
-                ((> j (board-width)) (void))
+                ((> j (board-width)) s)
                 (else
                  (string-set! s 
                               (sub1 j)
@@ -388,15 +386,15 @@
                [py (get-player-y)])
            (begin
              (home-list (remove-home px py (home-list)))
-             (set-spot (board) (get-player-x) (get-player-y) (set-empty spot)))))))
-  )
-      
-    (define (remove-home x y hl)
-      (if (null? hl)
-          hl
-          (if (and (= x (caar hl))
-                   (= y (cdar hl)))
-              (cdr hl)
-              (cons (car hl) (remove-home (cdr hl))))))
+             (set-spot (board) px py (set-empty spot))))))))
+  
+  (define (remove-home x y hl)
+    (cond
+     ((null? hl) hl)
+     ((and (= x (caar hl))
+	   (= y (cdar hl)))
+      (cdr hl))
+     (else
+      (cons (car hl) (remove-home x y (cdr hl))))))
   
   )

@@ -399,19 +399,23 @@
 	  (reset-hierlist)
 	  (show/hide-rep #t)
 	  (send rep reset-console)
-	  (send rep run-in-evaluation-thread
-		(lambda ()
-                  (let ([collection-paths (get-collection-paths)])
-                    (when collection-paths
-                      (current-library-collection-paths collection-paths)))
-		  
-		  (let ([ol (current-load)])
-		    (current-load
-		     (lambda (l)
-		       (dynamic-wind
-			(lambda () (push-file l))
-			(lambda () (ol l))
-			(lambda () (pop-file))))))))
+
+	  (let ([sema (make-semaphore 0)])
+	    (send rep run-in-evaluation-thread
+		  (lambda ()
+		    (let ([collection-paths (get-collection-paths)])
+		      (when collection-paths
+			(current-library-collection-paths collection-paths)))
+		    
+		    (let ([ol (current-load)])
+		      (current-load
+		       (lambda (l)
+			 (dynamic-wind
+			  (lambda () (push-file l))
+			  (lambda () (ol l))
+			  (lambda () (pop-file))))))
+		    (semaphore-post sema)))
+	    (semaphore-wait sema))
 
 	  (send rep do-many-evals
 		(lambda (single-iteration)
@@ -422,8 +426,8 @@
 			(call-with-values
 			 (lambda ()
 			   (cond
-			    [(string? file) (load file)]
-			    [else (apply require-library/proc file)]))
+			    [(string? file) (eval `(load ,file))]
+			    [else (eval `(require-library ,@file))]))
 			 (lambda x
 			   (send rep display-results x))))))
 		   files)))

@@ -32,7 +32,11 @@
        (let ([startup "~/.mzschemerc"])
 	 (when (file-exists? startup)
 	   (load startup)))
-       (read-eval-print-loop))))
+       (case (system-type)
+	 [(windows macos)
+	  (mred:graphical-read-eval-print-loop)]
+	 [else
+	  (read-eval-print-loop)]))))
 
   (define (run-test-suite filename)
     (test-thread

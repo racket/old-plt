@@ -539,11 +539,12 @@
 	      (current-continuation-marks)
 	      filename
 	      'string)))
-    (let ([zo-file? (regexp-match re:zo filename)])
+    (let ([zo-file? (regexp-match re:zo filename)]
+	  [zodiac? (use-zodiac?)])
       (cond
         [zo-file?
 	 (primitive-load filename)]
-        [(use-zodiac?)
+        [zodiac?
          (let* ([process-sexps
                  (let ([last (list (void))])
                    (lambda (sexp recur)

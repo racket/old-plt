@@ -44,7 +44,7 @@ node-bundle-snip%
       [define interchild-space 4]
       
       [define (calculate-tree-size)
-        (let o-loop ([contents-snip get-contents-snip])
+        (let o-loop ([contents-snip (get-contents-snip)])
           (let ([contents (send contents-snip get-bundle)])
             (cond
               [(is-a? contents-snip leaf-bundle-snip%)

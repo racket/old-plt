@@ -66,7 +66,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   [(i386-linux)
    (add-flags current-extension-linker-flags
 	      (list "--whole-archive"
-		    "/home/mflatt/proj/readline-2.1/linux/libreadline.a"))]
+		    "-L/home/mflatt/proj/readline-2.1/linux/"
+		    "-lreadline"))]
   [else (add-flags current-extension-linker-flags 
 		   (list (if readline-in-/usr/local/gnu?
 			     "-L/usr/local/gnu/lib"

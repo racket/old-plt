@@ -629,8 +629,6 @@
         (global-defined-value 'argv #())
         (global-defined-value 'program this-program))
       
-      (mzlib:print-convert:empty-list-name 'empty)
-      
       (global-port-print-handler drscheme-port-print-handler)
       
       (case (setting-printing setting)

@@ -9,7 +9,6 @@
    quasi-read-style-printing
    abbreviate-cons-as-list
    whole/fractional-exact-numbers
-   empty-list-name
 
    print-convert
    print-convert-expr

@@ -18,7 +18,6 @@
     (define quasi-read-style-printing (make-parameter #t boolean-filter))
     (define abbreviate-cons-as-list (make-parameter #t boolean-filter))
     (define whole/fractional-exact-numbers (make-parameter #t boolean-filter))
-    (define empty-list-name (make-parameter 'null))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; share-hash is the hash-table containing info on what cons cells
@@ -256,7 +255,7 @@
 			     expr
 			     (lambda (expr)
 			       (cond
-				[(null? expr) (guard (lambda () (empty-list-name)))]
+				[(null? expr) (guard (lambda () 'empty))]
 				[(and (list? expr)
 				      (abbreviate-cons-as-list)
 				      (or (and first-time

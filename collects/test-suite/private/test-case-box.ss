@@ -230,10 +230,10 @@
            [pb (new aligned-pasteboard% (align 'horizontal))]
            [left (new vertical-alignment%
                       (parent pb)
-                      (show? (not collapsed?)))]
+                      #;(show? (not collapsed?)))]
            [right (new vertical-alignment%
                        (parent pb)
-                       (show? (not collapsed?)))]
+                       #;(show? (not collapsed?)))]
            [button-pane (new vertical-alignment% (parent pb))]
            [to-test-pane (new vertical-alignment% (parent left))]
            [expected-pane (new vertical-alignment% (parent right))]
@@ -317,7 +317,7 @@
       (send (get-the-snip-class-list) add tcb-sc)
       ))
 
-  ;; ((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
+  #;((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
   ;; a snip which acts as a toggle button for rolling a window up and down
   (define turn-button-snip%
     (class toggle-button-snip%
@@ -348,14 +348,6 @@
       
       (super-new)
       (update status)))
-  
-  ;; a text field fit to be in a test-case (no borders or margins etc.)
-  ;; STATUS: this should really return an stretchable-snip<%> not an
-  ;; editor-snip% of fixed size.
-  (define text-field
-    (opt-lambda (text (snipclass editor-snip%))
-      (new (stretchable-editor-snip-mixin snipclass)
-           (editor text))))
   
   (define (icon str)
     (build-path (collection-path "icons") str))

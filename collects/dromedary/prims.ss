@@ -39,6 +39,9 @@
 	(define-struct option (type))
 	(define-struct <user-type> () (make-inspector))
 
+	(define-struct |Some| (data) (make-inspector))
+	(define-struct |None| (dummy) (make-inspector))
+
 	(define <library-names> (make-hash-table 'equal))
 
 	;; The list functions
@@ -347,7 +350,7 @@
 	(hash-table-put! <constructors> "bool" (cons "bool" "some error"))
 	(hash-table-put! <constructors> "string" (cons "string" "some error"))
 	(hash-table-put! <constructors> "char" (cons "char" "some error"))
-	(hash-table-put! <constructors> "None" (cons (make-option (make-tvar "'a")) (make-option (make-<voidstruct> #f))))
+	(hash-table-put! <constructors> "None" (cons (make-tconstructor null (make-option (make-tvar "'a"))) make-option))
 	(hash-table-put! <constructors> "Some" (cons (make-tconstructor (make-tvar "'a") (make-option (make-tvar "'a"))) make-option))
 	
 	

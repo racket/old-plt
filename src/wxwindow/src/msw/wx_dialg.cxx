@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.11 1999/05/24 11:58:35 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.12 1999/07/22 12:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -212,11 +212,11 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   wxDialogWnd *wnd;
   if (!(style & wxNO_CAPTION)) {
     wnd = new wxDialogWnd(cparent, this, x, y, width, height,
-                          "wxCaptionDialog");
+                          (style & wxMAXIMIZE) ? "wxCaptionResizeDialog" : "wxCaptionDialog");
   }
   else{
     wnd = new wxDialogWnd(cparent, this, x, y, width, height,
-                          "wxNoCaptionDialog");
+                          (style & wxMAXIMIZE) ? "wxNoCaptionResizeDialog" : "wxNoCaptionDialog");
   }
 
   handle = (char *)wnd;

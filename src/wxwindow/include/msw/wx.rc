@@ -43,11 +43,24 @@ BEGIN
 	LTEXT "" -1,0,0,1,1   //necessary for __WATCOMC__
 END
 
+wxCaptionResizeDialog DIALOG DISCARDABLE  34, 22, 144, 75
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Dummy dialog"
+BEGIN
+	LTEXT "" -1,0,0,1,1   //necessary for __WATCOMC__
+END
+
 //
 // Dummy dialog for dialog boxes without caption & with thin frame
 //
 wxNoCaptionDialog DIALOG 34, 22, 144, 75
 STYLE WS_POPUP
+BEGIN
+	LTEXT "" -1,0,0,1,1   //necessary for __WATCOMC__
+END
+
+wxNoCaptionResizeDialog DIALOG 34, 22, 144, 75
+STYLE WS_POPUP | WS_THICKFRAME
 BEGIN
 	LTEXT "" -1,0,0,1,1   //necessary for __WATCOMC__
 END

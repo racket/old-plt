@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.146 1998/03/13 21:52:31 shriram Exp $
+; $Id: scm-main.ss,v 1.147 1998/03/14 22:57:50 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -234,7 +234,7 @@
   (define internal-define-vocab-delta
     (create-vocabulary 'internal-define-vocab-delta))
 
-  (add-sym-micro internal-define-vocab-delta
+  '(add-sym-micro internal-define-vocab-delta
     (lambda (expr env attributes vocab)
       expr))
 
@@ -288,8 +288,9 @@
 		      (((internal-define-vocab)
 			 (append-vocabulary internal-define-vocab-delta
 			   vocab 'internal-define-vocab))
-			((definitions terms)
-			  (let loop ((seen '()) (rest bodies))
+			((definitions parsed-first-term rest-terms bindings)
+			  (let loop ((seen null) (rest bodies) (bindings null)
+				      (vars-seen null))
 			    (if (null? rest)
 			      (static-error expr
 				(if (null? seen)
@@ -301,32 +302,59 @@
 					  attributes
 					  internal-define-vocab)))
 				  (if (internal-definition? e-first)
-				    (loop (cons e-first seen)
-				      (cdr rest))
+				    (let ((def-vars (internal-definition-vars e-first)))
+				      (let* ((new-vars+marks
+					       (map create-lexical-binding+marks
+						 def-vars)))
+					(for-each
+					  (lambda (v)
+					    (when (memq (z:read-object v)
+						    vars-seen)
+					      (static-error v
+						"Duplicate internally defined identifier ~a"
+						(z:read-object v))))
+					  def-vars)
+					(extend-env new-vars+marks env)
+					(loop (cons e-first seen)
+					  (cdr rest)
+					  (cons new-vars+marks bindings)
+					  (append vars-seen
+					    (map z:read-object def-vars)))))
 				    (values (reverse seen)
-				      rest))))))))
+				      e-first
+				      (cdr rest)
+				      bindings))))))))
 		      (if (null? definitions)
-			(if (null? (cdr terms))
-			  (expand-expr (car terms) env attributes vocab)
+			(if (null? rest-terms)
+			  parsed-first-term
 			  (create-begin-form
-			    (map (lambda (e)
-				   (expand-expr e env attributes
-				     vocab))
-			      terms)
+			    (cons parsed-first-term
+			      (map (lambda (e)
+				     (expand-expr e env attributes
+				       vocab))
+				rest-terms))
 			    expr))
-			(expand-expr
-			  (structurize-syntax
-			    `(letrec*-values
-			       ,(map (lambda (def)
-				       (list
-					 (internal-definition-vars
-					   def)
-					 (internal-definition-val
-					   def)))
-				  definitions)
-			       ,@terms)
+			(begin0
+			  (create-letrec*-values-form
+			    (reverse (map (lambda (vars+marks)
+					    (map car vars+marks))
+				       bindings))
+			    (map (lambda (def)
+				   (expand-expr (internal-definition-val def)
+				     env attributes vocab))
+			      definitions)
+			    (if (null? rest-terms)
+			      parsed-first-term
+			      (create-begin-form
+				(cons parsed-first-term
+				  (map (lambda (e)
+					 (expand-expr e env attributes vocab))
+				    rest-terms))
+				expr))
 			    expr)
-			  env attributes vocab)))))))
+			  (for-each (lambda (new-vars+marks)
+				      (retract-env (map car new-vars+marks) env))
+			    bindings))))))))
 	    (else
 	      (static-error expr "Malformed begin")))))))
 
@@ -349,12 +377,14 @@
 		    (((internal-define-vocab)
 		       (append-vocabulary internal-define-vocab-delta
 			 vocab 'internal-define-vocab))
-		      ((first-body) (car bodies))
-		      ((definitions terms)
-			(let loop ((seen '()) (rest (cdr bodies)))
+		      ((parsed-return-value-term)
+			(expand-expr (car bodies) env attributes vocab))
+		      ((definitions parsed-first-term rest-terms bindings)
+			(let loop ((seen null) (rest (cdr bodies))
+				    (bindings null) (vars-seen null))
 			  (if (null? rest)
 			    (if (null? seen)
-			      (values '() '())
+			      (values null #f null null)
 			      (static-error expr
 				"Internal definitions not followed by expression"))
 			    (let ((first (car rest)))
@@ -363,36 +393,64 @@
 					attributes
 					internal-define-vocab)))
 				(if (internal-definition? e-first)
-				  (loop (cons e-first seen)
-				    (cdr rest))
+				  (let ((def-vars (internal-definition-vars e-first)))
+				    (let* ((new-vars+marks
+					     (map create-lexical-binding+marks
+					       def-vars)))
+				      (for-each
+					(lambda (v)
+					  (when (memq (z:read-object v)
+						  vars-seen)
+					    (static-error v
+					      "Duplicate internally defined identifier ~a"
+					      (z:read-object v))))
+					def-vars)
+				      (extend-env new-vars+marks env)
+				      (loop (cons e-first seen)
+					(cdr rest)
+					(cons new-vars+marks bindings)
+					(append vars-seen
+					  (map z:read-object def-vars)))))
 				  (values (reverse seen)
-				    rest))))))))
-		    (begin0
+				    e-first
+				    (cdr rest)
+				    bindings))))))))
+		    (if parsed-first-term
 		      (if (null? definitions)
 			(create-begin0-form
-			  (map (lambda (e)
-				 (expand-expr e env attributes
-				   vocab))
-			    bodies)
+			  (cons parsed-return-value-term
+			    (cons parsed-first-term
+			      (map (lambda (e)
+				     (expand-expr e env attributes vocab))
+				rest-terms)))
 			  expr)
-			(expand-expr
-			  (structurize-syntax
-			    `(begin0
-			       ,first-body
-			       (letrec*-values
-				 ,(map
-				    (lambda (def)
-				      (list
-					(internal-definition-vars
-					  def)
-					(internal-definition-val
-					  def)))
-				    definitions)
-				 ,@terms))
+			(begin0
+			  (create-begin0-form
+			    (list parsed-return-value-term
+			      (create-letrec*-values-form
+				(reverse (map (lambda (vars+marks)
+						(map car vars+marks))
+					   bindings))
+				(map (lambda (def)
+				       (expand-expr (internal-definition-val def)
+					 env attributes vocab))
+				  definitions)
+				(if (null? rest-terms)
+				  parsed-first-term
+				  (create-begin-form
+				    (cons parsed-first-term
+				      (map (lambda (e)
+					     (expand-expr e env attributes vocab))
+					rest-terms))
+				    expr))
+				expr))
 			    expr)
-			  env attributes vocab))
-		      (set-top-level-status attributes
-			top-level?))))))
+			  (set-top-level-status attributes
+			    top-level?)
+			  (for-each (lambda (new-vars+marks)
+				      (retract-env (map car new-vars+marks) env))
+			    bindings)))
+		      parsed-return-value-term)))))
 	    (else
 	      (static-error expr "Malformed begin0")))))))
 
@@ -500,7 +558,7 @@
 				    `(set! ,var ,new-name))
 			       vars new-names)
 			   (#%void))
-			expr)
+			expr '(-1))
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed set!-values")))))))
@@ -542,7 +600,7 @@
 				     `(,(car vars+expr) ,(cdr vars+expr)))
 				vars+exprs)
 			     ,@(pat:pexpand expr-pattern p-env kwd))
-			  expr)
+			  expr '(-1))
 			env attributes vocab)
 		      (syntax-car expr))
 		    (set-top-level-status attributes top-level?))))
@@ -724,7 +782,7 @@
 	      (expand-expr
 		(structurize-syntax
 		  `(define-values ,names ,struct-expr)
-		  expr)
+		  expr '(-1))
 		env attributes vocab))))
 	(add-primitivized-micro-form 'define-struct local-extract-vocab
 	  (ds-core
@@ -774,7 +832,7 @@
 			 ((,(generate-struct-names type fields expr)
 			    (struct ,type-spec ,fields)))
 			 ,@body)
-		      expr)
+		      expr '(-1))
 		    env attributes vocab)))))))))
 
   ; ----------------------------------------------------------------------
@@ -1243,7 +1301,7 @@
 				  `(if ,(cond-clause-question first)
 				     ,(cond-clause-answer first)
 				     ,(loop rest)))))))
-			expr)
+			expr '(-1))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed cond"))))))
@@ -1437,7 +1495,7 @@
 					(begin ,@body
 					  (loop ,@steps))))))
 			   (loop ,@inits))
-			expr))))))
+			expr '(-1)))))))
 	    (else
 	      (static-error expr "Malformed do")))))))
 
@@ -1472,7 +1530,7 @@
 				 ,@(map (lambda (var tmp)
 					  `(set! ,var ,tmp))
 				     vars new-vars)))))
-			expr)
+			expr '(-1))
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed fluid-let")))))))
@@ -1645,7 +1703,7 @@
 				    env attributes vocab)
 				  parsed->raw
 				  kwd-symbol))
-			      expr)
+			      expr '(-1))
 			    env attributes vocab))))
 		    (else
 		      (static-error expr
@@ -1681,7 +1739,7 @@
 		    (expand-expr
 		      (structurize-syntax
 			`(#%load/use-compiled ,(quote-form-expr f))
-			expr)
+			expr '(-1))
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))
 	  (else
@@ -1728,7 +1786,7 @@
 			  `(#%void)
 			  `(#%require-library ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs)))
-			expr)
+			expr '(-1))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed reference-library"))))))
@@ -1774,7 +1832,7 @@
 			  `(#%void)
 			  `(#%require-relative-library ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs)))
-			expr)
+			expr '(-1))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed reference-relative-library"))))))

@@ -1,4 +1,4 @@
-; $Id$
+; $Id: qq.ss,v 1.13 1997/07/22 18:09:24 shriram Exp $
 
 (define qq-base-level 0)
 
@@ -31,7 +31,7 @@
 		  (expand-expr
 		    (structurize-syntax
 		      (list 'quote template)
-		      expr)
+		      expr '(-1))
 		    env attributes vocab))))))
 	(else
 	  (static-error expr "Malformed quasiquote"))))))
@@ -62,7 +62,7 @@
 				  (list 'quote
 				    (qq-seq-entry-orig first))))
 			  (loop (cdr result))))))
-		  expr)
+		  expr '(-1))
 		(structurize-syntax
 		  (uq@-finalizer expr result
 		    (let loop ((result (reverse result)))
@@ -79,7 +79,7 @@
 			    (list '#%cons
 			      (list 'quote (qq-seq-entry-orig first))
 			      (loop (cdr result))))))))
-		  expr)))
+		  expr '(-1))))
 	    expr)
 	  (begin
 	    (put-attribute attributes 'qq-changed? #f)
@@ -149,7 +149,7 @@
 		(put-attribute attributes 'qq-level (sub1 new-qq-level))
 		(structurize-syntax
 		  (list '#%list ''quasiquote result)
-		  expr)))))
+		  expr '(-1))))))
 	(else
 	  (static-error expr "Malformed quasiquote"))))))
 
@@ -166,7 +166,7 @@
 	      (structurize-syntax
 		(list '#%list ''quote
 		  (expand-expr body env attributes vocab))
-		expr))))
+		expr '(-1)))))
 	(else
 	  (static-error expr "Malformed unquote"))))))
 

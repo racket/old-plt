@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.44 1998/03/13 21:20:43 shriram Exp $
+; $Id: scm-hanc.ss,v 1.45 1998/03/14 14:49:38 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -597,7 +597,7 @@
 			  (signature-exploded
 			    (lookup-signature name attributes)))))
 		  (expand-expr
-		    (structurize-syntax `(,'quote ,elements) expr)
+		    (structurize-syntax `(,'quote ,elements) expr '(-1))
 		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed signature->symbols")))))))
@@ -622,7 +622,7 @@
 			  (expand-expr sig env attributes sig-vocab))))
 		  (add-signature name attributes elements))
 		(expand-expr
-		  (structurize-syntax '(#%void) expr)
+		  (structurize-syntax '(#%void) expr '(-1))
 		  env attributes vocab))))
 	  (else
 	    (static-error expr "Malformed define-signature")))))))
@@ -785,9 +785,15 @@
 			(sign-unit:exports (expand-expr in:signature env
 					     attributes u/s-sign-exports-vocab)))
 		  (expand-expr
+		    ;; We don't use '(-1) as the third argument to structurize-syntax
+		    ;; since the prim-unit:{imports,exports} are raw sexp's which get
+		    ;; undesirably marked in the process, leading to imports not
+		    ;; matching against uses in the body.  This should be remedied by
+		    ;; making these values structurized, so that the remainder can
+		    ;; also be structurized with impunity and '(-1) can be used.
 		    (structurize-syntax
 		      `(#%make-unit-with-signature
-			 (unit
+			 (#%unit
 			   (import ,@prim-unit:imports)
 			   (export ,@prim-unit:exports)
 			   ,@prim-unit:clauses)
@@ -1806,7 +1812,7 @@
 		    (expand-expr
 		      (structurize-syntax
 			output
-			expr)
+			expr '(-1))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed compound-unit/sig")))))))
@@ -1918,7 +1924,7 @@
 			 (invoke-unit
 			   (#%unit-with-signature-unit unit)
 			   ,@proc:imports))
-		      expr)
+		      expr '(-1))
 		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed invoke-unit/sig")))))))
@@ -1969,7 +1975,7 @@
 			   (#%unit-with-signature-unit unit)
 			   ,in:name-spec
 			   ,@proc:imports))
-		      expr)
+		      expr '(-1))
 		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed invoke-open-unit/sig")))))))
@@ -2004,7 +2010,7 @@
 			  (let ((proc:s
 				 (expand-expr out-sig env attributes sig-vocab)))
 			   (signature-exploded proc:s))))
-		    expr)
+		    expr '(-1))
 		  env attributes vocab))))
 	  (else
 	    (static-error expr "Malformed unit->unit/sig")))))))

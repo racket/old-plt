@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.59 1998/03/14 22:57:51 shriram Exp $
+; $Id: scm-unit.ss,v 1.60 1998/03/15 00:08:16 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1043,7 +1043,7 @@
 				       ((debug-info-handler))
 				       result)))
 				 result)
-			      expr)
+			      expr '(-1))
 			    env attributes vocab)
 			  (static-error filename
 			    "Does not yield a filename"))))))
@@ -1115,7 +1115,7 @@
 				       ((#%debug-info-handler))
 				       result)))
 				 result)
-			      expr)
+			      expr '(-1))
 			    env attributes vocab))))))
 		(else
 		  (static-error expr

@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.31 1997/07/21 15:51:43 shriram Exp $
+; $Id: scm-obj.ss,v 1.32 1997/09/19 02:35:34 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -645,7 +645,7 @@
 		  (expand-expr
 		    (structurize-syntax
 		      `(#%uq-ivar ,object (quote ,name))
-		      expr)
+		      expr '(-1))
 		    env attributes vocab))))
 	    (else
 	      (static-error expr "Malformed ivar")))))))

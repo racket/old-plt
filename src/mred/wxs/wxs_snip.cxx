@@ -7232,7 +7232,7 @@ static Scheme_Object *os_wxImageSnipSetBitmap(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-bitmap in image-snip%", 0));
   if (n > (POFFSET+1)) {
-    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "set-bitmap in image-snip%", 0));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "set-bitmap in image-snip%", 1));
   } else
     x1 = NULL;
 
@@ -8117,7 +8117,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in image-snip% (bitmap case)", 0));
     if (n > (POFFSET+1)) {
-      x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in image-snip% (bitmap case)", 0));
+      x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in image-snip% (bitmap case)", 1));
     } else
       x1 = NULL;
 

@@ -3,7 +3,7 @@
            "../gui.ss"
            "../subst.ss")
   
-  (reduction-steps-cutoff 100)
+  (reduction-steps-cutoff 10)
   
   (define lang
     (language (e (e e)
@@ -35,4 +35,4 @@
       (subterm '() x)]))
       
   
-  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x)))))
+  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x (x x))))))

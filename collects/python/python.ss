@@ -12,7 +12,7 @@
            )
   
   
-  (provide python
+  (provide python load-ps
            ;read-python
            ;python-to-scheme
            ;compile-python

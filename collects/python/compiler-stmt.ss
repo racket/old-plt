@@ -421,10 +421,10 @@
                                                     (car import))]
                                           [name (if (cadr import)
                                                     (send (cadr import) to-scheme)
-                                                    (send (car (car import)) to-scheme))])
-                                      `(;,(->lex-so namespace-set-variable-value! empty-context)
-                                         ,(if (top?) 'define 'set!)
-                                        ,name
+                                                    (send (car (car import)) to-scheme))]
+                                          [at-top? (top?)])
+                                      `(,(if at-top? 'namespace-set-variable-value! 'set!)
+                                        ,(if at-top? (car `(',name)) name)
                                         (call-with-values
                                          (lambda ()
                                            (python-load-module (list ,@ids)))

@@ -42,6 +42,9 @@
 #    def m(this, x):
 #        return C.some_static_field + x
 
+def f(pos_arg1, pos_arg2, def_arg=1, *rest, **kw_args):
+  return 1
+
 def f(x):
     return x
 
@@ -50,6 +53,8 @@ f.__call__
 a = 3
 
 def g(x):
+    def h(y):
+        return y
     return x + 2
 
 class C:
@@ -65,13 +70,14 @@ print c.m()
 print c.x
 print c.y
 
-P = pstring.PString
-p = P(4)
-
-p
-woot = P("woot")
-woot
-woot.upper()
+############ test the PyString C module ######
+#P = pstring.PString
+#p = P(4)
+#p
+#woot = P("woot")
+#woot
+#woot.upper()
+##############################################
 
 #x = 3
 #while x > 0: print x; x-= 1

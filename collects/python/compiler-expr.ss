@@ -185,8 +185,8 @@
                        (reverse key))])
         (->orig-so (cond
                      [(and seq dict)
-                      (begin (printf "identifier binding for seq: ~a~n" (identifier-binding (send seq to-scheme)))
-                             (printf "identifier binding for runtime things: ~a~n" (identifier-binding (->orig-so 'test)))
+                      (begin ;(printf "identifier binding for seq: ~a~n" (identifier-binding (send seq to-scheme)))
+                             ;(printf "identifier binding for runtime things: ~a~n" (identifier-binding (->orig-so 'test)))
                        `(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme)))]
                      [seq `(,@Ps ,@Ks . ,(send seq to-scheme))]
                      [dict `(,(send dict to-scheme) ,@Ps ,@Ks)]

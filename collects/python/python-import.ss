@@ -42,7 +42,6 @@
                           (let* ([absolute-id-list (reverse (cons (car id-list)
                                                                   (reverse parent-id-list)))]
                                  [ns (make-python-namespace)])
-                            (eval-python (parse-module (module-path->string path)) ns)
                             (let ([module (make-loaded-module ns
                                                               (string->symbol
                                                                (foldr (lambda (a b)
@@ -54,6 +53,7 @@
                                                                            absolute-id-list)))
                                                           path)])
                               (*add-loaded-module* module)
+                            (eval-python (parse-module (module-path->string path)) ns)
                               ;;;; now that we loaded the "a" part of "a.b.c.d", load "b" inside "a", and so on
                               (unless (null? (cdr id-list))
                                 (parameterize ([current-namespace ns]
@@ -92,6 +92,7 @@
   ; build-module-path: (U string (listof symbol)) -> module-path
   ; creates a module-path object from a list of symbols or a path to a file
   (define (build-module-path spec)
+;    (printf "build-module-path: spec is ~a~n" spec)
     (let ([relative-path
            (cond
              [(string? spec) spec]
@@ -105,6 +106,7 @@
              (if (directory-exists? relative-path)
                  (module-path->string (build-module-path (build-path relative-path "__init__.py")))
                  (let ([fn (if (string? spec) spec (string-append relative-path ".py"))])
+;                   (printf "build-module-path: fn is ~a~n" fn)
                    (if (file-exists? fn)
                        fn
                        (ormap (lambda (library-path)
@@ -116,7 +118,7 @@
                                              path)))))
                               (current-python-library-paths)))))])
         (unless file-path
-          (error "Python module ~a does not exist" relative-path))
+          (error (format "Python module ~a does not exist." relative-path)))
         (make-module-path (string->symbol (normalize-path file-path))))))
   
   (define copy-namespace-bindings

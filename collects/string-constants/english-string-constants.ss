@@ -173,7 +173,7 @@ please adhere to these guidelines:
  (cs-bold "Bold")
  (cs-underline "Underline")
  (cs-change-color "Change Color")
- (cs-tack/untack-arrow "Tack/Untack Arrow")
+ (cs-tack/untack-arrow "Tack/Untack Arrow(s)")
  (cs-jump "Jump")
  (cs-error-message "Error Message")
  (cs-open-file "Open ~a")

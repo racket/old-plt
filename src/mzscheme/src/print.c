@@ -302,6 +302,8 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
 {
   Scheme_Type t;
 
+ top:
+
   t = SCHEME_TYPE(obj);
 
 #ifdef DO_STACK_CHECK
@@ -339,8 +341,10 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
     return 0;
 
   if (SCHEME_PAIRP(obj)) {
-    if (check_cycles(SCHEME_CAR(obj), p, ht) || check_cycles(SCHEME_CDR(obj), p, ht))
+    if (check_cycles(SCHEME_CAR(obj), p, ht))
       return 1;
+    obj = SCHEME_CDR(obj);
+    goto top;
   } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
     if (check_cycles(SCHEME_BOX_VAL(obj), p, ht))
       return 1;

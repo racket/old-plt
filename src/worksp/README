@@ -1,0 +1,40 @@
+This directory contains makefiles and projects files for building
+MzScheme and MrEd with Microsoft Visual C++ (MSVC). MzScheme also
+compiles with Cygwin32 gcc (a free compiler from GNU and Cygnus
+Solutions); to compile with gcc, follow the Unix instructions in
+plt\src\mzscheme\README.
+
+The source code for MzScheme and MrEd is split into several
+projects. To make the project named `X', either open the file
+worksp\X\X.mdp with MSVC, or go into worksp\X and run
+`nmake -f X.mak' (assuimg the MSVC programs are in your
+path).
+
+To build MzScheme, make these projects in order:
+   gc - makes plt\src\worksp\gc\Release\gc.lib
+   mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
+   mzscheme - makes plt\mzscheme.exe
+
+To build MrEd, make these projects in order:
+   gc - makes plt\src\worksp\gc\Release\gc.lib
+   mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
+   wxutils - makes ... well, you get the idea
+   wxwin
+   wxs
+   mred - makes plt\mred.exe
+
+If you're building from scratch, you'll also want the starter
+programs used by the launcher collection to make drscheme.exe
+and mzc.exe:
+   mzstart - makes plt\collects\launcher\mzstart.exe
+   mrstart - makes plt\collects\launcher\mrstart.exe
+
+As always, submit bug reports using
+  http://www.cs.rice.edu/CS/PLT/Bugs/
+or (as a last resort) send mail to
+  plt-bugs@cs.rice.edu
+
+-Matthew Flatt
+ Rice University PLT
+ mflatt@cs.rice.edu
+ http://www.cs.rice.edu/~mflatt/

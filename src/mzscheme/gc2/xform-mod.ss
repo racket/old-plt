@@ -1295,6 +1295,23 @@
 		(seq-close body-v)
 		(list->seq (process-top-level (seq->list (seq-in body-v)) where can-drop-vars?))))
 	     (cdddr e))]
+
+     ;; process 'namespace X' blocks; currently, we assume that namespace
+     ;;  content is distinct
+     [(and (>= (length e) 3)
+	   (eq? (tok-n (car e)) 'namespace)
+	   (symbol? (tok-n (cadr e)))
+	   (braces? (caddr e)))
+      (list* (car e)
+	     (cadr e)
+	     (let ([body-v (caddr e)])
+	       (make-braces
+		(tok-n body-v)
+		(tok-line body-v)
+		(tok-file body-v)
+		(seq-close body-v)
+		(list->seq (process-top-level (seq->list (seq-in body-v)) where can-drop-vars?))))
+	     (cdddr e))]
      
      [(typedef? e)
       (when show-info?

@@ -92,6 +92,7 @@ class wxCanvasDC: public wxbCanvasDC
   void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
   void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0,
   					int fillStyle=wxODDEVEN_RULE);
+  void DrawPath(wxPath *p, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
   void DrawRectangle(double x, double y, double width, double height);
   void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20);
   void DrawEllipse(double x, double y, double width, double height);

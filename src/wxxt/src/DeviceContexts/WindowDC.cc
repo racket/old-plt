@@ -1638,7 +1638,7 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 {
   double **ptss;
-  int *lens, cnt, i, total_cnt, j, k;
+  int *lens, cnt, i, total_cnt, j, k, ix, iy;
   XPoint *xpts;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
@@ -1692,12 +1692,16 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 
   for (i = 0, k = 0; i < cnt; i++) {
     for (j = 0; j < lens[i]; j += 2) {
-      xpts[k].x = XLOG2DEV(ptss[i][j]+xoff);
-      xpts[k].y = YLOG2DEV(ptss[i][j+1]+yoff);
+      ix = XLOG2DEV(ptss[i][j]+xoff);
+      iy = YLOG2DEV(ptss[i][j+1]+yoff);
+      xpts[k].x = ix;
+      xpts[k].y = iy;
       k++;
     }
-    xpts[k].x = XLOG2DEV(ptss[i][0]+xoff);
-    xpts[k].y = YLOG2DEV(ptss[i][1]+yoff);
+    ix = XLOG2DEV(ptss[i][0]+xoff);
+    iy = YLOG2DEV(ptss[i][1]+yoff);
+    xpts[k].x = ix;
+    xpts[k].y = iy;
     k++;
   }
 
@@ -1710,7 +1714,7 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 
       for (i = 0, k = 0; i < cnt; i++) {
 	j = (lens[i] / 2) + 1;
-	rgn1 = XPolygonRegion(xpts + k, j, fill_rule[fill]);
+	rgn1 = XPolygonRegion(xpts XFORM_OK_PLUS k, j, fill_rule[fill]);
 	if (rgn) {
 	  /* Xoring implements the even-odd rule */
 	  XXorRegion(rgn, rgn1, rgn);
@@ -1740,7 +1744,7 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
       j = (lens[i] / 2) + 1;
       if ((i + 1 == cnt) && p->IsOpen())
 	--j;
-      XDrawLines(DPY, DRAWABLE, PEN_GC, xpts + k, j, 0);
+      XDrawLines(DPY, DRAWABLE, PEN_GC, xpts XFORM_OK_PLUS k, j, 0);
       k += j;
     }
   }

@@ -24,6 +24,7 @@
 #include "wx_main.h"
 #include "wx_gdi.h"
 #include "wx_image.h"
+#include "wx_dcps.h"
 
 #include "FontDirectory.cxx"
 

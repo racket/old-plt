@@ -604,8 +604,6 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
 
   if (!Ok() || !cMacDC) return;
   
-  if (n <= 0) return;
-
   if (anti_alias) {
     CGContextRef cg;
     CGMutablePathRef path;
@@ -627,7 +625,7 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
     }
     
     path = CGPathCreateMutable();
-    p->Install((long)path);
+    p->Install((long)path, xoffset, yoffset);
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
@@ -676,26 +674,26 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
       total_cnt++;
   }
   
-  pts = new WXGC_ATOMIC XPoint[total_cnt];
+  pts = new WXGC_ATOMIC Point[total_cnt];
 
   for (i = 0, k = 0; i < cnt; i++) {
     for (j = 0; j < lens[i]; j += 2) {
-      pts[k].x = XLOG2DEV(ptss[i][j]+xoff);
-      pts[k].y = YLOG2DEV(ptss[i][j+1]+yoff);
+      pts[k].h = XLOG2DEV(ptss[i][j]+xoffset);
+      pts[k].v = YLOG2DEV(ptss[i][j+1]+yoffset);
       k++;
     }
     if ((i + 1 < cnt) || !p->IsOpen()) {
-      pts[k].x = XLOG2DEV(ptss[i][0]+xoff);
-      pts[k].y = YLOG2DEV(ptss[i][1]+yoff);
+      pts[k].h = XLOG2DEV(ptss[i][0]+xoffset);
+      pts[k].v = YLOG2DEV(ptss[i][1]+yoffset);
       k++;
     }
   }
 
   if (cnt == 1) {
     thePolygon = OpenPoly();
-    MoveTo(xpoints1[0].h + SetOriginX, xpoints1[0].v + SetOriginY);
+    MoveTo(pts[0].h + SetOriginX, pts[0].v + SetOriginY);
     for (j = 1; j <= total_cnt; j++) {
-      LineTo(xpoints1[j].h + SetOriginX, xpoints1[j].v + SetOriginY);
+      LineTo(pts[j].h + SetOriginX, pts[j].v + SetOriginY);
     }
     ClosePoly();
   }
@@ -732,10 +730,10 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
 	  j++;
 	
 	thePolygon = OpenPoly();
-	MoveTo(xpoints1[k].h + SetOriginX, xpoints1[k].v + SetOriginY);
+	MoveTo(pts[k].h + SetOriginX, pts[k].v + SetOriginY);
 	k++;
 	for (m = 0; m < j; m++) {
-	  LineTo(xpoints1[k].h + SetOriginX, xpoints1[k].v + SetOriginY);
+	  LineTo(pts[k].h + SetOriginX, pts[k].v + SetOriginY);
 	  k++;
 	}
 	ClosePoly();

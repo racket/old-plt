@@ -1555,6 +1555,9 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse)
 
     if (t->npaths + 1 >= t->apaths) {
       PathTargetPath_t *naya;
+# ifdef wx_mac
+      Bool *naya_oes;
+# endif
       int n = (t->apaths + 5) * 2;
       
       naya = new WXGC_ATOMIC PathTargetPath_t[n];

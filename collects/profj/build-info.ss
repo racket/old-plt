@@ -1,3 +1,4 @@
+#cs
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
@@ -173,16 +174,20 @@
           (import-class name path (find-directory path err) file type-recs level (import-src imp) #t))))
   
   ;import-class: string (list string) (list string) location type-records symbol src bool-> void
-  (define (import-class class path dir loc type-recs level caller-src add-to-env)
-    (let ((class-name (cons class path))
-          (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-          (file-path (build-path (apply build-path dir) class))
-          (new-level (box level)))
+  (define (import-class class path in-dir loc type-recs level caller-src add-to-env)
+    (let* ((dir (if (and (equal? "scheme" (car in-dir)) (scheme-ok?)) (cdr in-dir) in-dir))
+           (class-name (cons class path))
+           (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
+           (file-path (build-path (apply build-path dir) class))
+           (new-level (box level)))
       (cond
         ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
         ((send type-recs get-class-record class-name #f (lambda () #f)) void)
         ((file-exists? type-path) 
          (send type-recs add-class-record (read-record type-path))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
+        ((and (scheme-ok?) (not (eq? dir in-dir)) (check-scheme-file-exists? file-path))
+         (send type-recs add-to-records class-name (lambda () (create-scheme-type-rec class (cdr path))))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
         ((check-file-exists? file-path new-level)
          (send type-recs add-to-records 
@@ -219,6 +224,12 @@
       ((file-exists? (string-append path ".ajava")) (set-box! level 'advanced))
       (else #f)))
     
+  ;check-scheme-file-exists? string-> bool
+  (define (check-scheme-file-exists? path)
+    (or (file-exists? (string-append path ".ss"))
+        (file-exists? (string-append path ".scm"))))
+  
+  (define (create-scheme-type-rec mod-name req-path) 'scheme-types)
     
   ;add-my-package: type-records (list string) (list defs) loc symbol-> void
   (define (add-my-package type-recs package defs loc level)

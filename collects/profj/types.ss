@@ -139,6 +139,25 @@
     (send type-recs get-class-record (cons name path) container-class
           ((get-importer type-recs) (cons name path) type-recs level src)))
   
+
+  
+;                                                                                                          
+;                                                                                                          
+;                                                                                                          
+;            ;;;                                                                                 ;         
+;     ;;;;     ;                                    ;;;;;                                        ;         
+;    ;    ;    ;                                    ;    ;;                                      ;         
+;   ;;         ;                                    ;     ;                                      ;         
+;   ;          ;     ;;;;    ;;;;    ;;;;           ;     ;  ;;;;     ;;;    ;;;;    ; ;;;   ;;; ;   ;;;;  
+;   ;          ;         ;  ;    ;  ;    ;          ;    ;;  ;  ;;   ;   ;  ;;  ;;   ;;     ;;  ;;  ;    ; 
+;   ;          ;     ;;;;;  ;;      ;;              ;;;;;;  ;    ;  ;       ;    ;   ;      ;    ;  ;;     
+;   ;          ;    ;;   ;   ;;;;    ;;;;           ;    ;  ;;;;;;  ;       ;    ;   ;      ;    ;   ;;;;  
+;   ;;         ;    ;    ;       ;       ;          ;     ; ;       ;       ;    ;   ;      ;    ;       ; 
+;    ;    ;    ;    ;   ;;  ;    ;  ;    ;          ;     ;  ;   ;   ;   ;  ;;  ;;   ;      ;;  ;;  ;    ; 
+;     ;;;;   ;;;;;   ;;; ;   ;;;;    ;;;;           ;      ;  ;;;     ;;;    ;;;;    ;       ;;; ;   ;;;;  
+;                                                                                                          
+;                                                                                                          
+;                                                                                                          
   
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
   ;;                    (list method-records) (list inner-record) (list (list strings)) (list (list strings)))
@@ -152,10 +171,19 @@
   (define-struct field-record (name modifiers init? class type))
   
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
-  (define-struct method-record (name modifiers rtype atypes throws override class) (make-inspector))
+  (define-struct method-record (name modifiers rtype atypes throws override class))
 
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?))
+
+  ;;(make-scheme-record (list scheme-val))
+  (define-struct scheme-record (provides))
+  
+  ;;(make-scheme-val symbol bool (U #f type function-type))
+  (define-struct scheme-val (name dynamic? contract))
+  
+  ;;(make-function-type type (list type))
+  (define-struct function-type (rtype atypes))
   
 ;                                                                                      
 ;                                                                            ;;        

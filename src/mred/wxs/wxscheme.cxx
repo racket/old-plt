@@ -2626,11 +2626,15 @@ int wxGetPreference(const char *name, char *res, long len)
     l = strlen(home);
     ends_in_slash = (home[l] == '/');
     
-    s = new char[l + 20];
+    s = new char[l + 30];
     memcpy(s, home, l);
     if (!ends_in_slash)
       s[l++] = '/';
+# ifdef wx_mac
+    memcpy(s + l, "org.plt-scheme.prefs.ss", 24);
+# else
     memcpy(s + l, "plt-prefs.ss", 13);
+# endif
 #endif
 
     /*************** Windows ***************/
@@ -2670,11 +2674,11 @@ int wxGetPreference(const char *name, char *res, long len)
       l = strlen(home);
       ends_in_slash = (home[l] == ':');
   
-      s = new char[l + 20];
+      s = new char[l + 30];
       memcpy(s, home, l);
       if (!ends_in_slash)
 	s[l++] = ':';
-      memcpy(s + l, "plt-prefs.ss", 13);
+      memcpy(s + l, "org.plt-scheme.prefs.ss", 24);
     }
 #endif
 

@@ -262,6 +262,9 @@ scheme_init_syntax (Scheme_Env *env)
   scheme_add_global_keyword("lambda", 
 			    scheme_lambda_syntax,
 			    env);
+  scheme_add_global_keyword("\316\273", 
+			    scheme_lambda_syntax,
+			    env);
   scheme_add_global_keyword("define-values", scheme_define_values_syntax, env);
   scheme_add_global_keyword("quote", 
 			    scheme_make_compiled_syntax(quote_syntax,
@@ -492,6 +495,9 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *ere
   fn = SCHEME_STX_CAR(form);
 
   scheme_rec_add_certs(erec, drec, form);
+
+  if (!SAME_OBJ(SCHEME_STX_VAL(fn), lambda_symbol))
+    fn = scheme_datum_to_syntax(lambda_symbol, scheme_false, scheme_sys_wraps(env), 0, 0);
 
   return scheme_datum_to_syntax(icons(fn,
 				      icons(args,

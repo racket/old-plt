@@ -503,6 +503,20 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			     );
 
+  if (SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stdout_port)->sub_type, file_output_port_type)
+#ifdef MZ_FDS
+      || SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stdout_port)->sub_type, fd_output_port_type)
+#endif
+      ) {
+    Scheme_Object *t, *a[2];
+    a[0] = scheme_orig_stdout_port;
+    t = scheme_terminal_port_p(1, a);
+    if (SCHEME_FALSEP(t)) {
+      a[1] = block_symbol;
+      scheme_file_buffer(2, a);
+    }
+  }
+
   scheme_orig_stderr_port = (scheme_make_stderr
 			     ? scheme_make_stderr()
 #ifdef MZ_FDS
@@ -516,6 +530,18 @@ scheme_init_port (Scheme_Env *env)
 			     : scheme_make_file_output_port(stderr)
 #endif
 			     );
+  
+  if (SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stderr_port)->sub_type, file_output_port_type)
+#ifdef MZ_FDS
+      || SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stderr_port)->sub_type, fd_output_port_type)
+#endif
+      ) {
+    Scheme_Object *a[2];
+    a[0] = scheme_orig_stderr_port;
+    a[1] = none_symbol;
+    scheme_file_buffer(2, a);
+  }
+
 #ifdef MZ_FDS
   scheme_add_atexit_closer(flush_if_output_fds);
 #endif

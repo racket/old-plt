@@ -4485,8 +4485,13 @@ find_system_path(int argc, Scheme_Object **argv)
     
     if (which == id_init_file)
       return append_path(home, scheme_make_path("/.mzschemerc" + ends_in_slash));
-    if (which == id_pref_file)
+    if (which == id_pref_file) {
+#if defined(OS_X) && !defined(XONX)
+      return append_path(home, scheme_make_path("/org.plt-scheme.prefs.ss" + ends_in_slash));
+#else      
       return append_path(home, scheme_make_path("/plt-prefs.ss" + ends_in_slash));
+#endif
+    }
   }
 #endif
 
@@ -4702,7 +4707,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (which == id_init_file)
       return append_path(home, scheme_make_path(":mzschemerc.ss" + ends_in_colon));
     if (which == id_pref_file)
-      return append_path(home, scheme_make_path(":plt-prefs.ss" + ends_in_colon));
+      return append_path(home, scheme_make_path(":org.plt-scheme.prefs.ss" + ends_in_colon));
 
     return home;
   }

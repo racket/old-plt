@@ -5,11 +5,6 @@
 ; to be imported:
 ; child-info
 
-  (let-macro PRINTF
-    ; Swap commenting of the next two lines to enable/disbale debugging
-    ; (lambda args (list* 'mred:debug:printf args))
-    void
-
     (unit/sig mred:container-frames^
       (import [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
@@ -88,12 +83,12 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	     (lambda (new-panel)
-	       (PRINTF 'container-frame-insert-panel
+	       (mred:debug:printf 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "Entering insert-panel, frame ~s")
 				  object-ID)
-	       (PRINTF 'container-frame-insert-panel
+	       (mred:debug:printf 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "Argument: ~s; panel ID ~s")
@@ -110,7 +105,7 @@
 			"Added panel ~s to a frame (~s) not its parent"
 			new-panel this))
 	       (set! panel new-panel)
-	       (PRINTF 'container-frame-insert-panel
+	       (mred:debug:printf 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "sizing panel, forcing redraw, "
@@ -152,7 +147,7 @@
 		   (set! pending-redraws? #t)))]
 	    [force-redraw
 	     (lambda ()
-	       (PRINTF 'container-frame-force-redraw
+	       (mred:debug:printf 'container-frame-force-redraw
 		       (string-append
 			"container-frame-force-redraw: "
 			"Entering force-redraw; frame ~s")
@@ -181,13 +176,13 @@
 	    
 	    [set-size
 	     (lambda (x y width height)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-frame-set-size
 		"Container-frame-set-size: entering; args ~s ~s ~s ~s"
 		x y width height)
 	       (let-values ([(correct-w correct-h)
 			     (correct-size width height)])
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-frame-set-size
 		  "container-frame-set-size: correct size ~s ~s"
 		  correct-w correct-h)
@@ -202,7 +197,7 @@
 				     (get-two-int-values get-client-size)])
 			 (let ([panel-w (- f-client-w (* 2 WX-BORDER-SIZE))]
 			       [panel-h (- f-client-h (* 2 WX-BORDER-SIZE))])
-			   (PRINTF
+			   (mred:debug:printf
 			    'container-frame-set-size
 			    (string-append
 			     "container-frame-set-size: "
@@ -212,7 +207,7 @@
 				 WX-BORDER-SIZE WX-BORDER-SIZE
 				 panel-w panel-h))))
 		     (begin
-		       (PRINTF
+		       (mred:debug:printf
 			'container-frame-set-size
 			(string-append
 			 "Container-frame-set-size: passing correct size to "
@@ -266,7 +261,7 @@
 	    ;            independently.
 	    [on-size
 	     (opt-lambda (new-width new-height [force? #f])
-	       (PRINTF 'container-frame-on-size
+	       (mred:debug:printf 'container-frame-on-size
 				  (string-append
 				   "container-frame-on-size: "
 				   "Entered frame's on-size; args ~s ~s")
@@ -276,7 +271,7 @@
 		     [new-height (get-height)])
 		 (let-values ([(correct-w correct-h)
 			       (correct-size new-width new-height)])
-		   (PRINTF 'container-frame-on-size
+		   (mred:debug:printf 'container-frame-on-size
 			   (string-append
 			    "container-frame-on-size: "
 			    "Correct size ~s ~s")
@@ -284,13 +279,13 @@
 		   (unless (and (= new-width correct-w)
 				(= new-height correct-h)
 				(not force?))
-		     (PRINTF 
+		     (mred:debug:printf 
 		      'container-frame-on-size
 		      (string-append
 		       "container-frame-on-size: "
 		       "resizing frame to correct size"))
 		     (set-size -1 -1 correct-w correct-h))
-		   (PRINTF 
+		   (mred:debug:printf         
 		    'container-frame-on-size
 		    (string-append
 		     "container-frame-on-size: "
@@ -353,4 +348,4 @@
 		   (super-init parent title modal x y w h
 			       (bitwise-ior style wx:const-allow-auto-resize)
 			       name))
-		 args))))))
+		 args)))))

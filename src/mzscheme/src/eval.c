@@ -4707,8 +4707,10 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack,
       b = (Scheme_Branch_Rec *)expr;
       scheme_validate_expr(port, b->test, stack, depth, letlimit, delta, num_toplevels);
       /* This is where letlimit is useful. It prevents let-assignment in the
-	 "then" branch that could affect the "else" branch. */
-      scheme_validate_expr(port, b->tbranch, stack, depth, delta, delta, num_toplevels);
+	 "then" branch that could permit bad code in the "else" branch (or the
+	 same thing with either branch affecting later code in a sequence). */
+      letlimit = delta;
+      scheme_validate_expr(port, b->tbranch, stack, depth, letlimit, delta, num_toplevels);
       expr = b->fbranch;
       goto top;
     }

@@ -168,7 +168,10 @@ void scheme_init_error_config(void);
 #ifndef NO_SCHEME_EXNS
 void scheme_init_exn_config(void);
 #endif
-
+#ifdef WINDOWS_PROCESSES
+void scheme_init_thread_memory(void);
+#endif
+    
 void scheme_finish_kernel(Scheme_Env *env);
 
 Scheme_Object *scheme_make_initial_inspectors(void);

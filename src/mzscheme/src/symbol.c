@@ -300,6 +300,9 @@ scheme_intern_exact_symbol(const char *name, int len)
 
   sym = symbol_bucket(scheme_symbol_table, name, len, NULL);
 
+  if (sym && !SCHEME_TYPE(sym))
+    *(long *)0x0 = 1;
+
   if (!sym) {
     sym = make_a_symbol(name, len);
     symbol_bucket(scheme_symbol_table, name, len, sym);

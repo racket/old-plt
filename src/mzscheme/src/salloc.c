@@ -61,6 +61,7 @@ static int use_registered_statics;
 #if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
 extern void GC_init();
 extern void GC_push_finalizer_structures(void);
+extern void GC_push_stubborn_structures(void);
 extern unsigned long GC_get_stack_base();
 extern void (*GC_push_other_roots)();
 static void (*orig_GC_push_other_roots)();
@@ -70,6 +71,7 @@ static void push_roots()
   if (orig_GC_push_other_roots)
     orig_GC_push_other_roots();
   GC_push_finalizer_structures();
+  GC_push_stubborn_structures();
 }
 #endif
 

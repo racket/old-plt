@@ -294,10 +294,6 @@ scheme_init_port (Scheme_Env *env)
   register_traversers();
 #endif
 
-#ifdef WINDOWS_PROCESSES
-  init_thread_memory();
-#endif
-    
   REGISTER_SO(text_symbol);
   REGISTER_SO(binary_symbol);
   REGISTER_SO(append_symbol); 
@@ -724,7 +720,7 @@ Scheme_Thread_Memory *tm_start, *tm_next;
 extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
 
-static void init_thread_memory()
+void scheme_init_thread_memory()
 {
   REGISTER_SO(tm_start);
   REGISTER_SO(tm_next);

@@ -235,6 +235,11 @@ Scheme_Env *scheme_basic_env()
   printf("pre-process @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
+#ifdef WINDOWS_PROCESSES
+  /* Must be called before first scheme_make_thread() */
+  scheme_init_thread_memory();
+#endif
+    
   scheme_make_thread();
 
 #ifdef TIME_STARTUP_PROCESS

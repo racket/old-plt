@@ -289,6 +289,12 @@ void GC_clean_changing_list()
 #   endif
 }
 
+/* PLTSCHEME: push stubborns */
+void GC_push_stubborn_structures()
+{
+    GC_push_all((ptr_t)(&GC_changing_list_start), (ptr_t)(&GC_changing_list_start) + sizeof(word));
+}
+
 #else /* !STUBBORN_ALLOC */
 
 # ifdef __STDC__

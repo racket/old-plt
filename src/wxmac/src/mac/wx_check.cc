@@ -381,3 +381,11 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
     }
   }
 }
+
+void wxCheckBox::ChangeToGray(Bool gray)
+{
+  wxbCheckBox::ChangeToGray(gray);
+  if (buttonBitmap)
+    Refresh();
+}
+

@@ -1200,6 +1200,7 @@ void wxBitmap::DrawMac(int x, int y, int mode)
     const BitMap *srcbm;
     const BitMap *dstbm;
     Rect sbounds, dbounds;
+    ThemeDrawingState s;
 
     ::SetRect(&sbounds, 0, 0, width, height);
     ::SetRect(&dbounds, x, y, width+x, height+y);
@@ -1210,6 +1211,17 @@ void wxBitmap::DrawMac(int x, int y, int mode)
     srcbm = GetPortBitMapForCopyBits(x_pixmap);
     dstbm = GetPortBitMapForCopyBits(portNow);
 
-    ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, mode, NULL);
+    if (mode != patOr) {
+      /* forecolor has been set, but maybe not backcolor */
+      GetThemeDrawingState(&s);
+      BackColor(whiteColor);
+      BackPat(GetWhitePattern());
+    }
+
+    ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, patCopy, NULL);
+
+    if (mode != patOr) {
+      SetThemeDrawingState(s, TRUE);
+    }
   }
 }

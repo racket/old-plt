@@ -27,8 +27,8 @@
 #define PAD_X 5
 #define PAD_Y 5
 
-#define IB_MARGIN_X 3
-#define IB_MARGIN_Y 3
+#define IB_MARGIN_X 5
+#define IB_MARGIN_Y 5
 
 //=============================================================================
 // Public constructors
@@ -75,7 +75,6 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   CGrafPtr theMacGrafPort;
 
   buttonBitmap = NULL;
-  cColorTable = NULL;
 
   padLeft = padRight = PAD_X;
   padTop = padBottom = PAD_Y;
@@ -135,8 +134,6 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 {
   CGrafPtr theMacGrafPort;
   Rect bounds;
-
- cColorTable = NULL;
 
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;
@@ -297,82 +294,19 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
   }
 }
 
-static wxColour *dark, *darker, *lite;
-
 //-----------------------------------------------------------------------------
-static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool isgray, 
-                              int cColour)
+static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool isgray)
 {
-  wxColour *back, *bright, *dim;
-  Rect rr;
-
-  if (!dark) {
-    wxColour *norm;
-    int nr, ng, nb;
-    norm = wxCONTROL_BACKGROUND_BRUSH->GetColour();
-    
-#   define DARK_SCALE(x) (x - (x >> 2))
-#   define DARKER_SCALE(x) (x >> 1)
-#   define LITE_SCALE(x) 0xFF
-
-    wxREGGLOB(dark);
-    wxREGGLOB(darker);
-    wxREGGLOB(lite);
-
-    nr = norm->Red();
-    ng = norm->Green();
-    nb = norm->Blue();
-
-    dark = new wxColour(DARK_SCALE(nr), DARK_SCALE(ng), DARK_SCALE(nb));
-    darker = new wxColour(DARKER_SCALE(nr), DARKER_SCALE(ng), DARKER_SCALE(nb));
-    lite = new wxColour(LITE_SCALE(nr), LITE_SCALE(ng), LITE_SCALE(nb));
-  }
-
-  if (pressed) {
-    back = dark;
-    dim = wxCONTROL_BACKGROUND_BRUSH->GetColour();
-    bright = darker;
-  } else {
-    back = wxCONTROL_BACKGROUND_BRUSH->GetColour();
-    dim = darker;
-    bright = lite;
-  }
-
-  rr = *r;
-  InsetRect(&rr, 1, 1);
+  ThemeButtonDrawInfo state;
   
-  if (cColour)
-    RGBBackColor(&back->pixel);
-  ::EraseRect(&rr);
-
-  if (isgray && cColour)
-    RGBForeColor(&dark->pixel);
-  else
-    ForeColor(blackColor);
-  FrameRoundRect(r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y);
+  state.state = (pressed
+		 ? kThemeStatePressed
+		 : (!isgray ? kThemeStateActive : kThemeStateInactive));
+  state.value = kThemeButtonOff;
+  state.adornment = kThemeAdornmentNone;
+  DrawThemeButton(r, kThemeRoundedBevelButton, &state, NULL, NULL /* erase */, NULL, NULL);
   
-  if (cColour) {
-    RGBForeColor(&bright->pixel);  
-    MoveTo(rr.left + 1, rr.top);
-    LineTo(rr.right - 2, rr.top);
-    
-    MoveTo(rr.left, rr.top + 1);
-    LineTo(rr.left, rr.bottom - 2);
-
-    RGBForeColor(&dim->pixel);  
-    MoveTo(rr.left + 1, rr.bottom - 1);
-    LineTo(rr.right - 2, rr.bottom - 1);
-    
-    MoveTo(rr.right - 1, rr.top + 1);
-    LineTo(rr.right - 1, rr.bottom - 2);
-    
-    // Reset color for blit
-    if (isgray && cColour)
-      RGBForeColor(&dark->pixel);
-    else
-      ForeColor(blackColor);
-  }
-  buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y);
+  buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y, patOr);
 }
 
 void wxButton::Paint(void)
@@ -383,7 +317,7 @@ void wxButton::Paint(void)
       Rect r;
       ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
       OffsetRect(&r,SetOriginX,SetOriginY);
-      PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
+      PaintBitmapButton(&r, buttonBitmap, trackstate, IsGray() || !cActive);
     }
     wxWindow::Paint();
   }
@@ -409,11 +343,8 @@ void wxButton::DoShow(Bool show)
 void wxButton::Highlight(Bool flag) // mac platform only
 {
   if (buttonBitmap) {
-    if (SetCurrentDC()) {
-      Rect bounds;
-      ::SetRect(&bounds, 0, 0, cWindowWidth, cWindowHeight);
-      PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
-    }
+    trackstate = flag;
+    Refresh();
   } else if (cMacControl) {
     if (cEnable) {
       ::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
@@ -452,6 +383,13 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
       ProcessCommand(commandEvent);
     }
   }
+}
+
+void wxButton::ChangeToGray(Bool gray)
+{
+  wxbButton::ChangeToGray(gray);
+  if (buttonBitmap)
+    Refresh();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

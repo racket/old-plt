@@ -119,6 +119,8 @@ protected:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual void Paint(void);
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
+ protected:
+   void ChangeToGray(Bool Gray);
 };
 
 #endif // IN_CPROTO

@@ -27,8 +27,8 @@ class wxButton: public wxbButton
 {
  private:
   // For window area
-  	wxArea* cBorderArea; // mac platform only
-	CCTabHandle cColorTable; // mac platform only
+  wxArea* cBorderArea; // mac platform only
+  int trackstate;
 
  public:
 	wxBitmap* buttonBitmap;
@@ -110,6 +110,8 @@ public:
 
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
  	virtual void Highlight(Bool flag); // mac platform only, to make items look "pressed".
+ protected:
+   void ChangeToGray(Bool Gray);
 };
 
 #endif // IN_CPROTO

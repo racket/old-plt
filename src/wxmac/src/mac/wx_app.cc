@@ -724,9 +724,10 @@ void wxApp::doMacKeyUpDown(Bool down)
 	key = cCurrentEvent.message & charCodeMask;
 
       if ((key > 127) && (key < 256)) {
-	/* Translate to Latin-1 */
+	/* Translate to Unicode */
 	ByteCount ubytes, converted;
-	unsigned char unicode[2], str[1];
+	unsigned char str[1];
+	UniChar unicode[1];
 	
 	if (!t2u_ready) {
 	  CreateTextToUnicodeInfoByEncoding(kTextEncodingMacRoman, &t2uinfo);
@@ -741,8 +742,7 @@ void wxApp::doMacKeyUpDown(Bool down)
 				 2, &converted, &ubytes,
 				 (UniCharArrayPtr)unicode);
 	
-	/* Sleazy conversion from UCS16 to Latin-1: drop high byte */
-	key = unicode[1];
+	key = unicode[0];
       }
     } // end switch
   }

@@ -308,7 +308,9 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subdirs_all="$ac_subdirs_all $subbuilds"
+ac_subdirs_all="$ac_subdirs_all foreign/gcc/libffi"
+ac_subdirs_all="$ac_subdirs_all wxcommon/jpeg"
+ac_subdirs_all="$ac_subdirs_all wxxt/src/x/wbuild"
 ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS LTO subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
@@ -865,6 +867,7 @@ Optional Features:
   --enable-libjpeg        use libjpeg instead of building (enabled by default)
   --enable-shared         create shared libraries
   --enable-dynlib         same as --enable-shared
+  --enable-foreign        compile foreign support (enabled by default)
   --enable-sgc            use Senora GC instead of the Boehm GC
   --enable-sgcdebug       use Senora GC for debugging
   --enable-account        3m: use memory-accounting GC (enabled by default)
@@ -1350,6 +1353,14 @@ if test "${enable_dynlib+set}" = set; then
 
 fi;
 
+# Check whether --enable-foreign or --disable-foreign was given.
+if test "${enable_foreign+set}" = set; then
+  enableval="$enable_foreign"
+
+else
+  enable_foreign=yes
+fi;
+
 # Check whether --enable-sgc or --disable-sgc was given.
 if test "${enable_sgc+set}" = set; then
   enableval="$enable_sgc"
@@ -1490,7 +1501,7 @@ if test "${enable_perl}" = "" ; then
 fi
 
 if test "${prefix}" = "NONE" ; then
-  prefix="${srcdir}/.."
+  prefix=`cd "${srcdir}/.." && pwd`
   MAKE_FINISH=inplace-finish
 else
   # Check whether ${prefix} is redundant, because
@@ -7233,7 +7244,37 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
-subbuilds=
+if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
+  ac_aux_dir=
+for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
+  if test -f $ac_dir/install-sh; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/install-sh -c"
+    break
+  elif test -f $ac_dir/install.sh; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f $ac_dir/shtool; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
+    break
+  fi
+done
+if test -z "$ac_aux_dir"; then
+  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
+echo "$as_me: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"
+ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
+
+
+
+subdirs="$subdirs foreign/gcc/libffi "
+
+fi
 
 if test "${enable_mred}" = "yes" ; then
   if test "${enable_quartz}" = "yes" ; then
@@ -7264,13 +7305,15 @@ if test "${enable_mred}" = "yes" ; then
   fi
 
   if test "${enable_libjpeg}" = "no" ; then
-    subbuilds="$subbuilds wxcommon/jpeg"
+
+
+subdirs="$subdirs wxcommon/jpeg "
+
   fi
 fi
 
 if test "${enable_wbuild}" = "yes" ; then
- subbuilds="$subbuilds wxxt/src/x/wbuild"
- ac_aux_dir=
+  ac_aux_dir=
 for ac_dir in wxxt/src/x/wbuild  $srcdir/wxxt/src/x/wbuild ; do
   if test -f $ac_dir/install-sh; then
     ac_aux_dir=$ac_dir
@@ -7295,12 +7338,11 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"
 ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
+
+
+subdirs="$subdirs wxxt/src/x/wbuild "
+
 fi
-
-
-
-subdirs="$subdirs $subbuilds "
-
 
           ac_config_files="$ac_config_files $makefiles"
 cat >confcache <<\_ACEOF

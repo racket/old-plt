@@ -1,5 +1,5 @@
 ;;
-;; $Id: stdrs.ss,v 1.1 1997/07/06 20:16:53 krentel Exp krentel $
+;; $Id: stdrs.ss,v 1.2 1997/07/11 20:10:34 krentel Exp krentel $
 ;;
 ;; Helper functions for finding pieces of DrScheme console,
 ;; at least how I think it's put together.
@@ -15,7 +15,6 @@
   
   (import 
     [wx : mred:wx^]
-    [mred:test : mred:test:struct^]
     [mred:test : mred:test:globals^])
   
   (define drs-error error)

@@ -4,8 +4,21 @@ The "Algol 60" language for DrScheme implements the language define by
 the "Revised Report on the Algorithmic Language Algol 60", edited by
 Peter Naur.
 
-The implementation departs from the specification in the following
-minor ways:
+
+The "algol.ss" library provides an `include-algol' form for including
+an Algol 60 program as an expression in a Scheme program:
+
+>  (include-algol file-path-string)
+
+The included Algol 60 program is closed (i.e., it doesn't see any
+bindings in the included context), and the result is always void.
+
+
+Language
+--------
+
+The DrScheme/`include-algol' implementation departs from the
+specification in the following minor ways:
 
   * strings are not permitted to contain nested quotes;
 

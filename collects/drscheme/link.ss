@@ -44,7 +44,12 @@
 	    (drscheme:frame@ mred mzlib setup project tool)]
 	  [aries : drscheme:aries^ (drscheme:aries@ mred mzlib zodiac interface edit frame)]
 	  [project : drscheme:project^ (drscheme:project@ mred mzlib aries edit spawn)])
-    (export (open project))))
+    (export (open setup)
+	    (open tool)
+	    (open spawn)
+	    (open frame)
+	    (open aries)
+	    (open project))))
 
 (define drscheme:userspace@
   (unit/sig->unit
@@ -80,5 +85,5 @@
        (export (open mred)
 	       (open mzlib)
 	       (open print-convert)
-	       (open (drscheme : drscheme:export^))
+	       (unit drscheme)
 	       (open zodiac))))))

@@ -177,9 +177,8 @@
 	      (show #t)
 	      (send (get-canvas) set-focus))))))
 
-    (define editor-frame% (make-editor-frame%
-			   (mred:find-string:make-searchable-frame%
-			    mred:frame:info-frame%)))
+    (define editor-frame% (make-editor-frame% 
+			   mred:frame:info-frame%))
 
     (define make-pasteboard-frame%
       (lambda (super%)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.68 1997/07/11 20:10:08 krentel Exp robby $
+;; $Id: sig.ss,v 1.69 1997/07/11 21:33:09 robby Exp robby $
 ;;
 
 (begin-elaboration-time
@@ -213,8 +213,7 @@
 (define-signature mred:find-string^
   (make-find-frame%
    find-frame%
-   find-string
-   make-searchable-frame%))
+   find-string))
 
 (define-signature mred:edit^
   (make-std-buffer%
@@ -263,12 +262,14 @@
    make-simple-frame%
    make-menu-frame%
    make-standard-menus-frame%
+   make-searchable-frame%
    make-info-frame%
 
    empty-frame%
    menu-frame%
    standard-menus-frame%
    simple-menu-frame%
+   searchable-frame%
    info-frame%))
 
 (define-signature mred:editor-frame^

@@ -234,8 +234,7 @@
 	    (show #t)))))
 
     (define hyper-basic-frame% (make-hyper-basic-frame% 
-				(mred:find-string:make-searchable-frame%
-				 mred:frame:simple-menu-frame%)))
+				mred:frame:searchable-frame%))
 
     (define make-hyper-view-frame% (lambda (x) x))
 

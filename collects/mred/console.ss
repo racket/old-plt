@@ -1023,7 +1023,6 @@
 	  (thread (lambda () 
 		    (read-eval-print-loop)
 		    (mred:exit:exit))))))
-    (define console-frame%
-      (make-console-frame%
-       (mred:find-string:make-searchable-frame%
-	mred:frame:info-frame%))))
+
+    (define console-frame% (make-console-frame% 
+			    mred:frame:info-frame%)))

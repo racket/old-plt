@@ -1,5 +1,5 @@
 ;;
-;; $Id: link.ss,v 1.37 1997/07/10 20:17:52 robby Exp krentel $
+;; $Id: link.ss,v 1.38 1997/07/11 20:10:01 krentel Exp robby $
 ;;
 
   (compound-unit/sig
@@ -101,7 +101,7 @@
 		  constants
 		  preferences edit container canvas icon
 		  menu group finder find-string hyper-frame
-		  handler exit autosave
+		  handler keymap exit autosave
 		  panel gui-utils application
 		  (core function@) (core file@)
 		  date)]

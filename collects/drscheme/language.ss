@@ -362,9 +362,10 @@
 		    (mred:message-box "DrScheme Teachpacks"
 				      (format "Already added ~a Teachpack"
 					      new-item))
-		    (fw:preferences:set
-		     'drscheme:teachpack-file
-		     (append old-pref (list lib-file))))))
+		    (when (basis:teachpack-ok? lib-file)
+		      (fw:preferences:set
+		       'drscheme:teachpack-file
+		       (append old-pref (list lib-file)))))))
 	    (set! teachpack-directory (path-only lib-file))))))
     (make-object mred:menu-item%
       "Clear All Teachpacks"

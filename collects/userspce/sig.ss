@@ -142,6 +142,7 @@
 
 (define-signature plt:init-namespace^
   (init-namespace
+   teachpack-ok?
    teachpack-changed))
 
 (define-signature plt:basis^

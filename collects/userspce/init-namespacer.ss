@@ -74,68 +74,79 @@
 	    (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
     (let* ([tagn 0]
 	   [link-clauses
-	    (let loop ([units v])
+	    (let loop ([units v]
+		       [link-clauses null])
 	      (cond
-	       [(null? units) null]
+	       [(null? units) (reverse link-clauses)]
 	       [else
 		(let ([unit (build-single-teachpack-unit (car units))])
 		  (if unit
 		      (begin
 			(set! tagn (+ tagn 1))
-			(cons `[,(string->symbol (format "teachpack~a" tagn)) : () (,unit userspace)]
-			      (loop (cdr units))))
-		      (loop (cdr units))))]))]
-
+			(loop (cdr units)
+			      (cons
+			       `[,(string->symbol (format "teachpack~a" tagn)) : ()
+				 (,unit userspace)]
+			       link-clauses)))
+		      (loop (cdr units)
+			    link-clauses)))]))]
 	   [cu
 	    (eval
 	     `(compound-unit/sig
 		(import)
-		(link ,@(list*
-			 `[userspace : plt:userspace^ 
-				     (,(if (defined? 'mred@)
-					   `(compound-unit/sig
+		(link
+		 ,@(list*
+		    `[userspace
+		      : plt:userspace^ 
+		      (,(if (defined? 'mred@)
+			    `(compound-unit/sig
+			       (import)
+			       (link [core : mzlib:core-flat^ (,core-flat@)]
+				     [mred : mred^ (,(global-defined-value 'mred@))]
+				     [turtles : turtle^ ((require-library "turtler.ss" "graphics")
+							 (core : mzlib:function^))]
+				     [posn : ((struct posn (x y)))
+					   ((unit/sig ((struct posn (x y)))
 					      (import)
-					      (link [core : mzlib:core-flat^ (,core-flat@)]
-						    [mred : mred^ (,(global-defined-value 'mred@))]
-						    [turtles : turtle^ ((require-library "turtler.ss" "graphics")
-									(core : mzlib:function^))]
-						    [posn : ((struct posn (x y)))
-							  ((unit/sig ((struct posn (x y)))
-							     (import)
-							     (define-struct posn (x y))))])
-					      (export (open core)
-						      (open mred)
-						      (open posn)
-						      (open turtles)))
-					   `(compound-unit/sig 
+					      (define-struct posn (x y))))])
+			       (export (open core)
+				       (open mred)
+				       (open posn)
+				       (open turtles)))
+			    `(compound-unit/sig 
+			       (import)
+			       (link [core : mzlib:core-flat^ (,core-flat@)]
+				     [posn : ((struct posn (x y)))
+					   ((unit/sig ((struct posn (x y)))
 					      (import)
-					      (link [core : mzlib:core-flat^ (,core-flat@)]
-						    [posn : ((struct posn (x y)))
-							  ((unit/sig ((struct posn (x y)))
-							     (import)
-							     (define-struct posn (x y))))])
-					      (export (open core)
-						      (open posn)))))]
-			 `[language-specific-additions
-			   : ()
-			   ((unit/sig ()
-			     (import plt:userspace^)
+					      (define-struct posn (x y))))])
+			       (export (open core)
+				       (open posn)))))]
+		    `[language-specific-additions
+		      : ()
+		      ((unit/sig ()
+			 (import plt:userspace^)
 
-			     (cond
-			      [(,init-params:beginner-language? (,init-params:current-setting))
-			       ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
-			      [(,init-params:intermediate-language? (,init-params:current-setting))
-			       ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
-			      [(,init-params:advanced-language? (,init-params:current-setting))
-			       ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
-			      [(,init-params:full-language? (,init-params:current-setting)) (void)]))
-			    userspace)]
+			 (cond
+			  [(,init-params:beginner-language? (,init-params:current-setting))
+			   ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
+			  [(,init-params:intermediate-language? (,init-params:current-setting))
+			   ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
+			  [(,init-params:advanced-language? (,init-params:current-setting))
+			   ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
+			  [(,init-params:full-language? (,init-params:current-setting)) (void)]))
+		       userspace)]
 
-			 link-clauses))
+		    link-clauses))
 		(export)))])
       (lambda ()
 	(invoke-unit/sig
 	 cu))))
+
+  (define (teachpack-ok? x)
+    (if (build-single-teachpack-unit x)
+	#t
+	#f))
 
   (define namespace-thunk void)
   (define init-namespace (lambda () (namespace-thunk)))

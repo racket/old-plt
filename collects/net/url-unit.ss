@@ -220,10 +220,10 @@
          [(url) (get-pure-port url '())]
          [(url strings) (getpost-pure-port #t url #f strings)]))
 
-      ;; post-pure-port : url [x list (str)] -> in-port
+      ;; post-pure-port : url str [x list (str)] -> in-port
       (define post-pure-port
         (case-lambda
-         [(url post-data) (post-pure-port url '())]
+         [(url post-data) (post-pure-port url post-data '())]
          [(url post-data strings) (getpost-pure-port #f url post-data strings)]))
 
       ;; display-pure-port : in-port -> ()

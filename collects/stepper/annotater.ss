@@ -207,16 +207,25 @@
   ; annotate takes an expression to annotate and a `break' function which will be inserted in
   ; the code.  It returns an annotated expression, ready for evaluation.
   
-  (define (annotate expr break)
+  (define (annotate text break)
     (local
 	
-	; debug-key: this key will be used to register the source expr with reconstructr.ss
-	; and as a key for the continuation marks.
+	; exprs : the result of doing zodiac's read on the text
 	
-	((define debug-key (gensym "debug-key-"))
+	((define exprs
+	   (let ([reader (z:read text)])
+	     (let read-loop ([new-expr (reader)])
+	       (if (z:eof? new-expr)
+		   ()
+		   (cons new-expr (read-loop (reader)))))))
+	 
+	 ; debug-key: this key will be used to register the source expr with reconstructr.ss
+	 ; and as a key for the continuation marks.
+	 
+	 (define debug-key (gensym "debug-key-"))
 	 
 	 ; wrap creates the w-c-m expression.
-      
+	 
 	 (define (wrap debug-info expr)
 	   (let ([with-break `(#%begin (,break) ,expr)])
 	     `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
@@ -225,7 +234,7 @@
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
 	 ; an annotated expression, and a list of the bound variables which occur free.
 	 
-	 (define (annotate expr on-spine?)
+	 (define (annotate/inner expr on-spine?)
 	   
 	   (let ([translate-varref
 		  (lambda (maybe-undef?)
@@ -271,7 +280,7 @@
 		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
 		  [val pile-of-values
 		       (map (lambda (expr bound) 
-			      (let-values ([(annotated free) (annotate expr #f)])
+			      (let-values ([(annotated free) (annotate/inner expr #f)])
 				(list annotated free)))
 			    sub-exprs)]
 		  [val annotated-sub-exprs (map car pile-of-values)]
@@ -291,7 +300,7 @@
 		      [raw-fields (map read->raw (z:struct-form-fields expr))])
 		  (if super-expr
 		      (let+ ([val (values annotated-super-expr free-vars-super-expr) 
-				  (annotate super-expr on-spine?)]
+				  (annotate/inner super-expr on-spine?)]
 			     [val annotated
 				  `(#%struct 
 				    ,(list raw-type annotated-super-expr)
@@ -302,11 +311,11 @@
 	       [(z:if-form? expr) 
 		(let+
 		 ([val (values annotated-test free-vars-test) 
-		       (annotate (z:if-form-test expr) #f)]
+		       (annotate/inner (z:if-form-test expr) #f)]
 		  [val (values annotated-then free-vars-then) 
-		       (annotate (z:if-form-then expr) on-spine?)]
+		       (annotate/inner (z:if-form-then expr) on-spine?)]
 		  [val (values annotated-else free-vars-else) 
-		       (annotate (z:if-form-else expr) on-spine?)]
+		       (annotate/inner (z:if-form-else expr) on-spine?)]
 		  ; in beginner-mode, we must insert the boolean-test
 		  [val annotated `(#%let (,if-temp ,annotated-test)
 				   (#%if (#%boolean? ,if-temp)
@@ -335,7 +344,7 @@
 		       [val _ (map check-for-keyword vars)]
 		       [val var-names (map z:varref-var vars)]
 		       [val (values annotated-val free-vars-val)
-			    (annotate (z:define-values-form-val expr) on-spine?)]
+			    (annotate/inner (z:define-values-form-val expr) on-spine?)]
 		       [val free-vars (remq* var-names free-vars-val)]
 		       [val annotated `(#%define-values ,var-names ,annotated-val)])
 		      (values annotated free-vars))]
@@ -347,7 +356,7 @@
 			(lambda (arglist body)
 			  (let ([var-list (z:arglist-vars arglist)])
 			    (let-values ([(annotated free-vars)
-					  (annotate body #t)])
+					  (annotate/inner body #t)])
 			      (let ([new-free-vars (remq* var-list free-vars)]
 				    [new-annotated (list (arglist->ilist arglist) annotated)])
 				(list new-annotated new-free-vars)))))]
@@ -374,11 +383,11 @@
 		(print-struct #t)
 		(e:internal-error
 		 expr
-		 (format "stepper:annotate: unknown object to annotate, ~a~n" expr))]))))
+		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))]))))
       
       ; body of local
       
-      (register 
-	 
+      (register debug-key exprs)
+      (map (lambda (expr) (annotate/inner expr #t)) exprs)))
 	 
   

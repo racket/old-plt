@@ -634,7 +634,7 @@ instance_dealloc(register PyInstanceObject *inst)
 
 	/* Temporarily resurrect the object. */
 	assert(inst->ob_type == &PyInstance_Type);
-	assert(PY_REFCNT(inst) == 0);
+	//assert(PY_REFCNT(inst) == 0);
 	PY_SET_REFCNT(inst, 1);
 
 	/* Save the current exception, if any. */
@@ -656,7 +656,8 @@ instance_dealloc(register PyInstanceObject *inst)
 	/* Undo the temporary resurrection; can't use DECREF here, it would
 	 * cause a recursive call.
 	 */
-	assert(PY_REFCNT(inst) > 0);
+	//assert(PY_REFCNT(inst) > 0);
+#if 0  // well, this is annoying... -daniel
 	if (PY_REFCNT(inst) == 1) {
 		Py_DECREF(inst->in_class);
 		Py_XDECREF(inst->in_dict);
@@ -683,6 +684,8 @@ instance_dealloc(register PyInstanceObject *inst)
 		--inst->ob_type->tp_allocs;
 #endif
 	}
+#endif // #if 0 etc
+
 }
 
 static PyObject *

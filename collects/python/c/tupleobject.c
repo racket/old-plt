@@ -5,6 +5,7 @@
 
 // no cached tuples on Spy yet
 #define MAXSAVESIZE 0
+#define MAXSAVEDTUPLES 0
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef MAXSAVESIZE
@@ -120,7 +121,7 @@ PyTuple_SetItem(register PyObject *op, register int i, PyObject *newitem)
 {
 	register PyObject *olditem;
 	register PyObject **p;
-	if (!PyTuple_Check(op) || PY_REFCNT(op) != 1) {
+	if (!PyTuple_Check(op) /*|| PY_REFCNT(op) != 1*/) {
 		Py_XDECREF(newitem);
 		PyErr_BadInternalCall();
 		return -1;
@@ -676,7 +677,7 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 
 	v = (PyTupleObject *) *pv;
 	if (v == NULL || v->ob_type != &PyTuple_Type ||
-	    (v->ob_size != 0 && PY_REFCNT(v) != 1)) {
+	    (v->ob_size != 0 /*&& PY_REFCNT(v) != 1*/)) {
 		*pv = 0;
 		Py_XDECREF(v);
 		PyErr_BadInternalCall();

@@ -4,6 +4,7 @@
            (lib "etc.ss")
            (lib "string.ss")
            ;"compile-python.ss"
+           "c-bindings.ss"
            )
   (provide python-import-from-module
            python-load-module
@@ -85,7 +86,10 @@
   (define (set-python-namespace-name! ns name)
     (parameterize ([current-namespace ns])
        (eval (datum->syntax-object (eval '(current-toplevel-context))
-                                   `(namespace-set-variable-value! '__name__ ,((eval 'symbol->py-string%) name))))))
+                                   `(namespace-set-variable-value! '__name__
+                                                                   ,(make-py-string
+                                                                     (symbol->string name)))))))
+;                                                                   ,((eval 'symbol->py-string%) name))))))
 
 
 ;  (require (lib "date.ss"))

@@ -1,25 +1,80 @@
 (module runtime-support mzscheme
   (require (lib "list.ss")
            (lib "etc.ss")
-           "primitives.ss"
+           ;"primitives.ss"
            "python-import.ss"
+           "c-bindings.ss"
            )
 ;  (require-for-syntax "compiler.ss") ;; get the compiler context
-  (provide (all-defined))
+  (provide get-py-string ;; from C bindings
+           get-py-number
+           get-py-list
+           get-py-tuple
+           get-py-dict
+           cpy-object
+           cpy-str
+           cpy-list
+           make-py-list
+           make-py-string
+           make-py-symbol
+           make-py-tuple
+           make-py-number
+           make-py-code
+           make-py-function
+           py-object->py-string
+           (rename spy-cpython-apply py-apply)
+           py-is-a? ;(rename spy-cpython-instanceof py-is-a?)
+           (rename cpy-none py-none)
+           py-number?
+           (rename spy-cpython-getattr/obj py-get-attr/obj)
+           (rename spy-cpython-getattr/sym py-get-attr/sym)
+           (rename spy-cpython-getattr/str py-get-attr/str)
+           ;;;;; pure Scheme
+           ==
+           py>
+           py<
+           py-compare
+           py-print
+           py-if
+           py-not
+           current-runtime-support-context
+           current-toplevel-context)
+           
   
   ;;;;;;;;;; Python Runtime Support by Daniel ;;;;;;;;;
+  
+  (define py-number%->number get-py-number)
+  (define py-string%->string get-py-string)
+  (define py-list%->list get-py-list)
+  (define py-file%->port get-py-file)
+  (define py-is-a? spy-cpython-instanceof)
+  (define py-number? spy-cpython-number?)
+  (define py-string? spy-cpython-string?)
+  (define py-list? spy-cpython-list?)
+  (define python-get-type-name spy-cpython-get-type-name)
+  
+  
+  
+  (define (py-object%->string x)
+    (get-py-string (py-object->py-string x)))
+  
+  (define (bool->py-number% b)
+    (make-py-number (if b 1 0)))
+  
+  (define (py-object%->bool obj)
+    (py-if obj true false))
   
   ;; ==: X X -> bool
   (define(== a b)
     ;(printf "equal equal~n")
     (cond
-      [(py-is-a? a py-number%) (and (py-is-a? b py-number%)
+      [(py-number? a) (and (py-number? b)
                                     (= (py-number%->number a)
                                        (py-number%->number b)))]
-      [(py-is-a? a py-string%) (and (py-is-a? b py-string%)
+      [(py-string? a) (and (py-string? b)
                                     (string=? (py-string%->string a)
                                               (py-string%->string b)))]
-      [(py-is-a? a py-list%) (and (py-is-a? b py-list%)
+      [(py-list? a) (and (py-list? b)
                                   (andmap ==
                                           (py-list%->list a)
                                           (py-list%->list b)))]
@@ -33,10 +88,10 @@
     (printf "py>: is ~a greater than ~a ? " (py-object%->string a) (py-object%->string b))
     (let ([res 
     (cond
-      [(py-is-a? a py-number%) (and (py-is-a? b py-number%)
+      [(py-number? a) (and (py-number? b)
                                     (scheme> (py-number%->number a)
                                              (py-number%->number b)))]
-      [(py-is-a? a py-string%) (and (py-is-a? b py-string%)
+      [(py-string? a) (and (py-string? b)
                                     (string>? (py-string%->string a)
                                               (py-string%->string b)))]
       [else (error (format "No runtime support to compare ~a and ~a yet") ;(scheme> a b)]))
@@ -68,9 +123,10 @@
                                             (py-file%->port file)
                                             (current-output-port))])
       (for-each (lambda (x)
-                  (display (py-string%->string (if (py-is-a? x py-string%)
+                  (display (py-string%->string (if (py-string? x)
                                                    x
-                                                   (py-call py-repr (list x))))) (display #\space))
+                                                   (py-object->py-string x))))
+                  (display #\space))
                 lst)
       (newline)))
   

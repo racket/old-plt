@@ -413,6 +413,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	obj = type->tp_new(type, args, kwds);
 	if (obj != NULL) {
+		SPY_INIT_OBJ(obj, obj->ob_type); // added by daniel
 		/* Ugly exception: when the call was type(something),
 		   don't call tp_init on the result. */
 		if (type == &PyType_Type &&
@@ -605,7 +606,7 @@ subtype_dealloc(PyObject *self)
 		/* Maybe call finalizer; exit early if resurrected */
 		if (type->tp_del) {
 			type->tp_del(self);
-			if (PY_REFCNT(self) > 0)
+			/*if (PY_REFCNT(self) > 0) JUST DIE! */
 				return;
 		}
 
@@ -655,7 +656,7 @@ subtype_dealloc(PyObject *self)
 	/* Maybe call finalizer; exit early if resurrected */
 	if (type->tp_del) {
 		type->tp_del(self);
-		if (PY_REFCNT(self) > 0)
+		/*if (PY_REFCNT(self) > 0)  stop this refcnt nonsense :P */
 			goto endlabel;
 	}
 
@@ -3094,6 +3095,9 @@ PyType_Ready(PyTypeObject *type)
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
 
+// spliced in by daniel
+SPY_INIT_SCHEME_HEADER(type);
+
 #ifdef Py_TRACE_REFS
 	/* PyType_Ready is the closest thing we have to a choke point
 	 * for type objects, so is the best place I can think of to try
@@ -3140,7 +3144,7 @@ PyType_Ready(PyTypeObject *type)
 			goto error;
 		type->tp_dict = dict;
 	}
-
+//assert(type != NULL);
 	/* Add type-specific descriptors to tp_dict */
 	if (add_operators(type) < 0)
 		goto error;
@@ -3854,6 +3858,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 		return NULL;
 	res = type->tp_new(subtype, args, kwds);
 	Py_DECREF(args);
+	SPY_INIT_OBJ(res, res->ob_type);
 	return res;
 }
 
@@ -4707,7 +4712,7 @@ slot_tp_del(PyObject *self)
 	PyObject *error_type, *error_value, *error_traceback;
 
 	/* Temporarily resurrect the object. */
-	assert(PY_REFCNT(self) == 0);
+	//assert(PY_REFCNT(self) == 0);
 	PY_SET_REFCNT(self, 1);
 
 	/* Save the current exception, if any. */
@@ -4730,6 +4735,8 @@ slot_tp_del(PyObject *self)
 	/* Undo the temporary resurrection; can't use DECREF here, it would
 	 * cause a recursive call.
 	 */
+	/* BYE! -d*/ return;
+	
 	assert(PY_REFCNT(self) > 0);
 	if (PY_REFCNT(self) == 1)
 		return;	/* this is the normal path out */
@@ -5187,13 +5194,25 @@ init_slotdefs(void)
 	if (initialized)
 		return;
 	for (p = slotdefs; p->name; p++) {
+PRINTF("init_slotdefs: slot %d named %s\n", (p - slotdefs), p->name);
 		p->name_strobj = PyString_InternFromString(p->name);
+assert(p->name_strobj != NULL);
+assert(p->name_strobj->ob_type != NULL);
+assert(PyString_Check(p->name_strobj));
 		if (!p->name_strobj)
 			Py_FatalError("Out of memory interning slotdef names");
 	}
 	qsort((void *)slotdefs, (size_t)(p-slotdefs), sizeof(slotdef),
 	      slotdef_cmp);
 	initialized = 1;
+
+        for (p = slotdefs; p->name; p++) {
+PRINTF("init_slotdefs: sorted slot %d named %s\n", (p - slotdefs), p->name);
+assert(p->name_strobj != NULL);
+assert(p->name_strobj->ob_type != NULL);
+assert(PyString_Check(p->name_strobj));
+	}
+	
 }
 
 /* Update the slots after assignment to a class (type) attribute. */
@@ -5333,7 +5352,7 @@ add_operators(PyTypeObject *type)
 	slotdef *p;
 	PyObject *descr;
 	void **ptr;
-
+assert(dict != NULL);
 	init_slotdefs();
 	for (p = slotdefs; p->name; p++) {
 		if (p->wrapper == NULL)
@@ -5341,6 +5360,11 @@ add_operators(PyTypeObject *type)
 		ptr = slotptr(type, p->offset);
 		if (!ptr || !*ptr)
 			continue;
+PRINTF("add_operators: slot %d named %s\n", (p - slotdefs), p->name);
+assert(p != NULL);
+assert(p->name_strobj != NULL);
+assert(p->name_strobj->ob_type != NULL);
+assert(PyString_Check(p->name_strobj));
 		if (PyDict_GetItem(dict, p->name_strobj))
 			continue;
 		descr = PyDescr_NewWrapper(type, p, *ptr);
@@ -5559,6 +5583,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		new->type = su->type;
 		new->obj = obj;
 		new->obj_type = obj_type;
+		SPY_INIT_OBJ(new, new->ob_type);
 		return (PyObject *)new;
 	}
 }

@@ -667,17 +667,17 @@
                            (if insert-void-return? ; functions that have no return must return None
                                (append statements `(,(py-so 'py-none)))
                                statements))]
-                 [body-with-let (cond
-                                  [(or lambda-suite? def-suite?)
-                                   (generate-function-bindings (send scope get-parms) bodies scope)]
-                                  [(= 1 (length bodies)) (first bodies)]
-                                  [else `(begin ,@bodies)])])
+                 [bodies-with-let (if (or lambda-suite? def-suite?)
+                                      (generate-function-bindings (send scope get-parms) bodies scope)
+                                      bodies)])
             (->orig-so (if (and escape-continuation-symbol
                                 (needs-escape-continuation? escape-continuation-symbol))
                            `(call-with-escape-continuation
                              (lambda (,escape-continuation-symbol)
-                               ,body-with-let))
-                           body-with-let)))))
+                               ,@bodies-with-let))
+                           (if (= 1 (length bodies-with-let))
+                               (first bodies-with-let)
+                               `(begin ,@bodies-with-let)))))))
 
          
       (super-instantiate ())))
@@ -790,14 +790,16 @@
       (define/override (to-scheme)
         (let* ([loop (gensym 'loop)])
           (set! continue-symbol loop)
-          (->orig-so `(begin
-                        (call-with-escape-continuation
-                         (lambda (,break-symbol)
-                           (let ,continue-symbol ()
-                             (,(py-so 'py-if) ,(send test to-scheme)
-                               (begin ,(send body to-scheme continue-symbol)
-                                       (,continue-symbol))))))
-                         ,(if else (send else to-scheme))))))
+          (->orig-so (let ([normal-body
+                            `(call-with-escape-continuation
+                              (lambda (,break-symbol)
+                                (let ,continue-symbol ()
+                                  (,(py-so 'py-if) ,(send test to-scheme)
+                                    (begin ,(send body to-scheme continue-symbol)
+                                           (,continue-symbol))))))])
+                       (if else
+                           `(begin ,normal-body ,(send else to-scheme))
+                           normal-body)))))
       
       
       (super-instantiate ())))
@@ -1130,13 +1132,16 @@
        
        
        ;;daniel
-       (inherit ->orig-so)
+       (inherit ->orig-so ->lex-so)
        (define/override (to-scheme)
          (->orig-so (let ([proc-name (send name to-scheme)])
-                      `(namespace-set-variable-value! #cs',proc-name
+                      `(define ,proc-name ;(send name get-symbol)
+                         ;namespace-set-variable-value! #cs',proc-name
                          ,(generate-py-lambda proc-name
                                               parms
-                                              (send body to-scheme return-symbol #t #t))))))
+                                              (send body to-scheme return-symbol #t #t))))
+                ;   (current-toplevel-context)
+                   ))
 ;                         (,(py-so 'procedure->py-function%)
 ;                          ;; this is where the outer "let" for default values should
 ;                          ;; be placed; I'll do that after I finish the rest of the def/call code.

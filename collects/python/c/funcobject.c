@@ -509,6 +509,7 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 
 	argdefs = PyFunction_GET_DEFAULTS(func);
 	if (argdefs != NULL && PyTuple_Check(argdefs)) {
+    /*** note that this is dependent on a specific implementation of PyTuple! -d ***/
 		d = &PyTuple_GET_ITEM((PyTupleObject *)argdefs, 0);
 		nd = PyTuple_Size(argdefs);
 	}

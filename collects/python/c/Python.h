@@ -17,6 +17,12 @@
 #undef Py_USING_UNICODE
 #endif
 
+#define SPY_GLOBALS_SCHEME_STRUCT() _spy_g_scheme_struct
+#define SPY_GLOBALS_PYTHON_NODE() _spy_g_python_node
+// cache SCHEME_STRUCT and PYTHON-NODE (for spy_init_obj, etc)
+extern Scheme_Type _spy_g_scheme_struct;
+extern Scheme_Object* _spy_g_python_node;
+
 //struct PyTypeObject;
 struct _typeobject;
 #define PYTYPEOBJECT struct _typeobject
@@ -26,10 +32,10 @@ struct _typeobject;
 	MZ_HASH_KEY_EX \
 	void* stype; \
         PYTYPEOBJECT * ob_type; \
-        Scheme_Object* the_py_dict; \
-        Scheme_Object* is_mutable;
+        Scheme_Object* is_mutable; \
+        int ob_refcnt/*Scheme_Object* the_py_dict*/;
 
-        //Scheme_Object* slots[3];
+        //Scheme_Object* slots[/*3*/2];
 
 #define SPY_SCHEME_TYPE(s_o) (s_o)->scheme_type
 #define SCHEME_SET_TYPE(s_o, t) ((s_o)->scheme_type = (t))
@@ -90,29 +96,62 @@ typedef dScheme_Structure PyObject;
 
 // Kludge
 
+static int _____spy___zero___ = 0x0;
+
 #define KABOOM() (fprintf(stderr, "undefined fn in file %s at line %d\n", __FILE__, __LINE__), exit(1), 0)
+#define KABOOM_SEGFAULT() do{fprintf(stderr, "Spy: Error in file %s at line %d\n", __FILE__, __LINE__); ((PyObject*)_____spy___zero___)->ob_type = ((PyObject*)_____spy___zero___)->ob_refcnt; exit(1);}while(0)
+//#define KABOOM_SEGFAULT() fprintf(stderr, "Spy: Error in file %s at line %d\n", __FILE__, __LINE__)
 
 // FIXME!!
 
 // uhh... fake this for now
-#define PyCodec_Decode(str, encoding, errors) (str)
-#define PyCodec_Encode(str, encoding, errors) (str)
+//#define PyCodec_Decode(str, encoding, errors) (str)
+//#define PyCodec_Encode(str, encoding, errors) (str)
 
 
-#define PY_GET_TYPE(obj) (sapply1("python-node-type", (PyObject*) obj))
-#define PY_SET_TYPE(obj, t) (sapply2("set-python-node-type!", (PyObject*) obj, t))
+#define PY_GET_TYPE(obj) ((PyObject*) obj)->ob_type
+	//(sapply1("python-node-type", (PyObject*) obj))
+#define PY_SET_TYPE(obj, t) (((PyObject*)obj)->ob_type = (t))
+//(sapply2("set-python-node-type!", (PyObject*) obj, t))
 
-#define PY_TYPE_STR_FN(type) generic_repr
+#define SPY_SET_MUTABLE(obj, flag) (((PyObject*)obj)->is_mutable = (flag))
 
-#define PY_NUMBER_OCT_FN(n) py_number_to_octal_py_string
-#define PY_TYPE_AS_NUMBER(t) (t)
-#define PY_TYPE_AS_MAPPING(t) (t)
-#define PY_NUMBER_HEX_FN(n) py_number_to_hex_py_string
+//#define SPY_SET_DICT(obj, d) (((PyObject*) obj)->the_py_dict = (d))
+#define SPY_SET_DICT(obj, d) (((PyObject*) obj)->ob_refcnt = (int) (d))
+
+
+//#define PY_TYPE_STR_FN(type) generic_repr
+
+//#define PY_NUMBER_OCT_FN(n) py_number_to_octal_py_string
+//#define PY_TYPE_AS_NUMBER(t) (t)
+//#define PY_TYPE_AS_MAPPING(t) (t)
+//#define PY_NUMBER_HEX_FN(n) py_number_to_hex_py_string
 
 #define PY_TYPE_METHODS(t) ((t)->tp_methods)
 
-PyObject* py_number_to_octal_py_string(PyObject* num);
-PyObject* py_number_to_hex_py_string(PyObject* num);
+//PyObject* py_number_to_octal_py_string(PyObject* num);
+//PyObject* py_number_to_hex_py_string(PyObject* num);
+
+#define SPY_INIT_SCHEME_HEADER(obj) \
+  ( SCHEME_SET_TYPE((PyObject*) (obj), SPY_GLOBALS_SCHEME_STRUCT()), /* STRUCT */ \
+    (((PyObject*) obj)->stype = SPY_GLOBALS_PYTHON_NODE()), /* PYTHON-NODE */ \
+    (obj) )
+
+static __inline PyObject* SPY_INIT_OBJ(PyObject* obj, PYTYPEOBJECT* type) {
+  SPY_INIT_SCHEME_HEADER(obj);
+  PY_SET_TYPE(obj, type);
+  SPY_SET_MUTABLE(obj, scheme_true);
+  return obj;
+}
+
+#if 0  // what if obj is some expression??
+#define SPY_INIT_OBJ(obj, type) \
+  ( SPY_INIT_SCHEME_HEADER(obj),
+    PY_SET_TYPE(obj, type), \
+    SPY_SET_MUTABLE(obj, scheme_true), \
+    /*SPY_SET_DICT(obj, seval("(make-hash-table)")),*/ \
+    (obj) )
+#endif
 
 
 /* Convert a possibly signed character to a nonnegative int */
@@ -125,10 +164,12 @@ PyObject* py_number_to_hex_py_string(PyObject* num);
 
 
 // scheme_free?
-#define PY_FREE(obj)
+//#define PY_FREE(obj) 0
 
-#define PY_TYPE_GET_NAME(type_obj) (sapply1("python-get-name", (PyObject*) type_obj))
-#define PY_TYPE_GET_ALLOC_FN(type_obj) alloc_py_type
+#define PY_TYPE_GET_NAME(type_obj) ((PyTypeObject*) type_obj)->tp_name
+  //(sapply1("python-get-name", (PyObject*) type_obj))
+#define PY_TYPE_GET_ALLOC_FN(type_obj) ((PyTypeObject*) type_obj)->tp_alloc
+   //alloc_py_type
 
 PyObject* alloc_py_type(PYTYPEOBJECT * type, int size);
 PyObject* generic_repr(PyObject* obj);
@@ -141,9 +182,11 @@ PyObject* generic_repr(PyObject* obj);
 
 
 #define Py_GCC_ATTRIBUTE(stuff)
-#define Py_INCREF(thing)
-#define Py_DECREF(thing)
-#define Py_XDECREF(thing)
+#define Py_INCREF(thing) ((PyObject*) thing)->ob_refcnt++
+#define Py_DECREF(thing) ((PyObject*) thing)->ob_refcnt++
+//#define Py_XDECREF(thing) ((PyObject*) thing)->ob_refcnt--
+#define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
+#define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
 
 // fake selector
@@ -201,12 +244,23 @@ void Py_FatalError (const char * message);
 
 
 //#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
-#define PyMem_Malloc(count) (scheme_malloc(count))
+static __inline void* PyMem_Malloc(int count) {
+  if (count >= sizeof(PyObject))
+     {
+     PyObject* ptr = (PyObject*) scheme_malloc(count);
+     return SPY_INIT_SCHEME_HEADER(ptr);
+     }
+  else
+     return scheme_malloc(count);
+}
+//#define PyMem_Malloc(count) (scheme_malloc(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
-#define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count))
+#define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count * sizeof(type)))
+// TODO: OPTIMIZE: make this a void macro for speed.
 void PyMem_Free(void* obj);
 //#define PyMem_Free(obj)
-#define PyMem_FREE(obj) PyMem_Free(obj)
+#define PyMem_FREE(obj) 0
+//#define PyMem_FREE(obj) PyMem_Free(obj)
 // fixme
 #define PyMem_REALLOC(p, n)   PyMem_Realloc(p,n)
 //  realloc((p), (n) ? (n) : 1)
@@ -215,8 +269,9 @@ void PyMem_Free(void* obj);
 //#define PyObject_Free PyMem_Free
 
 
-PyObject * PyList_New (int size);
+//PyObject * PyList_New (int size);
 
+/*  Now declared in their respective CPython headers
 #define DECLARE_CHECKER(name) int Py##name##_Check (PyObject * thing)
 
 DECLARE_CHECKER (Float);
@@ -241,21 +296,24 @@ PyObject* PyTuple_GET_ITEM (PyObject * tuple, int index);
 
 int PySequence_Size (PyObject * sequence);
 PyObject * PySequence_GetItem (PyObject * sequence, int index);
+*/
 
 PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict);
 
+/*
 int PyString_Size (PyObject * string);
 int PyString_GET_SIZE (PyObject * string);
 // use this only when py strings are structs with a PyObject_VAR_HEAD
 #define PyString_SET_SIZE(s, size) ((s)->ob_size = size)
 //void PyString_SET_SIZE (PyObject * string, int);
 char * PyString_AS_STRING (PyObject * string);
+*/
 
 #define PyOS_snprintf snprintf
 
 // special pscm.c functions
-void SPY_SET_ATTR(PyObject* obj, const char* attr, PyObject* value);
-PyObject* SPY_GET_ATTR(PyObject* obj, const char* attr);
+//void SPY_SET_ATTR(PyObject* obj, const char* attr, PyObject* value);
+//PyObject* SPY_GET_ATTR(PyObject* obj, const char* attr);
 
 
 
@@ -272,25 +330,29 @@ PyObject* SPY_GET_ATTR(PyObject* obj, const char* attr);
 
 
 // this should be in some form of stringobject.h
+/*
 #define PY_STRING_SET_S_HASH(s, hash) ((s)->ob_shash = (hash))
 #define PY_STRING_GET_S_HASH(s) ((s)->ob_shash)
 #define PY_STRING_SET_S_STATE(s, state) ((s)->ob_sstate = (state))
+*/
 //#define PY_STRING_SET_S_HASH(s, hash) SPY_SET_ATTR(s, "shash", hash)
 //#define PY_STRING_GET_S_HASH(s) SPY_GET_ATTR(s, "shash")
 //#define PY_STRING_SET_S_STATE(s, state) SPY_SET_ATTR(s, "state", state)
 
 
 // this should be in object.h
-#define Py_PRINT_RAW 1
-PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
-#define Py_NotImplemented (&_Py_NotImplementedStruct)
+//#define Py_PRINT_RAW 1
+//PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
+//#define Py_NotImplemented (&_Py_NotImplementedStruct)
 /* Rich comparison opcodes */
+/*
 #define Py_LT 0
 #define Py_LE 1
 #define Py_EQ 2
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+*/
 
 //#define PyObject_Repr generic_repr
 
@@ -397,9 +459,10 @@ typedef struct {
 /* Don't use these directly */
 //PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 /* Use these macros */
+/*
 #define Py_False ((PyObject *) &_Py_ZeroStruct)
 #define Py_True ((PyObject *) &_Py_TrueStruct)
-
+*/
 
 
 // this should be in longobject.h
@@ -472,6 +535,11 @@ typedef int             Py_intptr_t;
 #include <errno.h>
 #include <stdlib.h>
 
+/// you will never be FREE!
+#define free(ptr) 0
+
+/// stop trying to get around it
+#define malloc(size) PyMem_MALLOC(size)
 
 #include <object.h>
 PyObject* spy_ext_new_instance(PyTypeObject* type);
@@ -517,9 +585,22 @@ PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <compile.h> // PyCodeObject
 #include <funcobject.h>
 
+#include <fileobject.h>
 
 #define _PyObject_GC_Malloc PyMem_Malloc
 #define PyOS_strtol strtol
 #define PyOS_strtoul strtoul
+
+
+#undef assert
+#define assert(b) if (!(b)) {KABOOM_SEGFAULT();}
+
+#define DEBUG_SPY
+
+#ifdef DEBUG_SPY
+ #define PRINTF(fmt, args...) printf(fmt, ##args)
+#else
+ #define PRINTF(fmt, args...)
+#endif
 
 #endif

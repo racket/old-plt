@@ -1403,7 +1403,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 	}
 
 	assert(size_v >= size_w && size_w > 1); /* Assert checks by div() */
-	assert(PY_REFCNT(v) == 1); /* Since v will be used as accumulator! */
+	//assert(PY_REFCNT(v) == 1); /* Since v will be used as accumulator! */
 	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
 
 	size_v = ABS(v->ob_size);

@@ -74,6 +74,9 @@ fill_free_list(void)
 	return p + N_INTOBJECTS - 1;
 }
 
+#define NSMALLPOSINTS 0
+#define NSMALLNEGINTS 0
+
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS		100
 #endif
@@ -96,10 +99,13 @@ PyObject *
 PyInt_FromLong(long ival)
 {
 	register PyIntObject *v;
-        //printf("PyInt_FromLong: entry\n");
+        printf("PyInt_FromLong: entry\n");
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 		v = small_ints[ival + NSMALLNEGINTS];
+    // added by Daniel
+    printf("PyInt_FromLong: check the small int %d at index %d\n", ival, ival + NSMALLNEGINTS);
+    PyNumber_Check(v);
 		Py_INCREF(v);
 #ifdef COUNT_ALLOCS
 		if (ival >= 0)
@@ -107,14 +113,14 @@ PyInt_FromLong(long ival)
 		else
 			quick_neg_int_allocs++;
 #endif
-                //printf("PyInt_FromLong: exit point 1 (v is at %x)\n", v);
+                printf("PyInt_FromLong: exit point 1 (v is at %x)\n", v);
 		return (PyObject *) v;
 	}
 #endif
 	if (free_list == NULL) {
 		if ((free_list = fill_free_list()) == NULL)
                         {
-                        //printf("PyInt_FromLong: exit point 2 (returning null)\n");
+                        printf("PyInt_FromLong: exit point 2 (returning null)\n");
 			return NULL;
                         }
 	}
@@ -123,7 +129,7 @@ PyInt_FromLong(long ival)
 	free_list = (PyIntObject *)v->ob_type;
 	PyObject_INIT(v, &PyInt_Type);
 	v->ob_ival = ival;
-        //printf("PyInt_FromLong: exit point 3 (v is at %x)\n", v);
+        printf("PyInt_FromLong: exit point 3 (v is at %x)\n", v);
 	return (PyObject *) v;
 }
 
@@ -1091,7 +1097,11 @@ _PyInt_Init(void)
 		free_list = (PyIntObject *)v->ob_type;
 		PyObject_INIT(v, &PyInt_Type);
 		v->ob_ival = ival;
+    // added by Daniel
+    PyNumber_Check(v);
 		small_ints[ival + NSMALLNEGINTS] = v;
+    // added by Daniel
+    PyNumber_Check(small_ints[ival + NSMALLNEGINTS]);
 	}
 #endif
 	return 1;
@@ -1128,7 +1138,7 @@ PyInt_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_INTOBJECTS;
 		     i++, p++) {
-			if (PyInt_CheckExact(p) && PY_REFCNT(p) != 0)
+			if (PyInt_CheckExact(p) /*&& PY_REFCNT(p) != 0*/)
 				irem++;
 		}
 		next = list->next;
@@ -1138,8 +1148,8 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (!PyInt_CheckExact(p) ||
-				    PY_REFCNT(p) == 0) {
+				if (!PyInt_CheckExact(p) /*||
+				    PY_REFCNT(p) == 0*/) {
 					p->ob_type = (struct _typeobject *)
 						free_list;
 					free_list = p;
@@ -1181,7 +1191,7 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (PyInt_CheckExact(p) && PY_REFCNT(p) != 0)
+				if (PyInt_CheckExact(p) /*&& PY_REFCNT(p) != 0*/)
 					fprintf(stderr,
 				"#   <int at %p, refcnt=%d, val=%ld>\n",
 						p, PY_REFCNT(p), p->ob_ival);

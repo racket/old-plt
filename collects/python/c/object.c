@@ -228,10 +228,10 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 		fprintf(fp, "<nil>");
 	}
 	else {
-		if (PY_REFCNT(op) <= 0)
+		/*if (PY_REFCNT(op) <= 0)
 			fprintf(fp, "<refcnt %u at %p>",
 				PY_REFCNT(op), op);
-		else if (op->ob_type->tp_print == NULL) {
+		else*/ if (op->ob_type->tp_print == NULL) {
 			PyObject *s;
 			if (flags & Py_PRINT_RAW)
 				s = PyObject_Str(op);
@@ -486,7 +486,10 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 {
 	richcmpfunc f;
 	PyObject *res;
-
+assert(v != NULL);
+assert(w != NULL);
+assert(v->ob_type != NULL);
+assert(w->ob_type != NULL);
 	if (v->ob_type != w->ob_type &&
 	    PyType_IsSubtype(w->ob_type, v->ob_type) &&
 	    (f = RICHCOMPARE(w->ob_type)) != NULL) {
@@ -977,7 +980,7 @@ PyObject *
 PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 {
 	PyObject *res;
-
+assert(v != NULL);
 	assert(Py_LT <= op && op <= Py_GE);
 
 	compare_nesting++;
@@ -1220,7 +1223,7 @@ PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	PyTypeObject *tp = v->ob_type;
-
+assert(tp != NULL);
 	if (!PyString_Check(name)) {
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
@@ -1240,9 +1243,17 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 		}
 	}
 	if (tp->tp_getattro != NULL)
+{
+PRINTF("PyObject_GetAttr: using getattro\n");
+//assert(0);
 		return (*tp->tp_getattro)(v, name);
+}
 	if (tp->tp_getattr != NULL)
+{
+PRINTF("PyObject_GetAttr: using getattr\n");
+//assert(0);
 		return (*tp->tp_getattr)(v, PyString_AS_STRING(name));
+}
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
 		     tp->tp_name, PyString_AS_STRING(name));
@@ -1364,7 +1375,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	descrgetfunc f;
 	long dictoffset;
 	PyObject **dictptr;
-
+assert(tp != NULL);
 	if (!PyString_Check(name)){
 #ifdef Py_USING_UNICODE
 		/* The Unicode to string conversion is done here because the
@@ -1429,6 +1440,8 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	/* Inline _PyObject_GetDictPtr */
 	dictoffset = tp->tp_dictoffset;
 	if (dictoffset != 0) {
+PRINTF("PyObject_GenericGetAttr: using a dict offset?!?! oh no!\n");
+assert(0);
 		PyObject *dict;
 		if (dictoffset < 0) {
 			int tsize;
@@ -1906,7 +1919,8 @@ none_dealloc(PyObject* ignore)
 }
 
 
-static PyTypeObject PyNone_Type = {
+// removed static --daniel
+/*static*/ PyTypeObject PyNone_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"NoneType",
@@ -1937,7 +1951,8 @@ NotImplemented_repr(PyObject *op)
 	return PyString_FromString("NotImplemented");
 }
 
-static PyTypeObject PyNotImplemented_Type = {
+// removed static --daniel
+/*static*/ PyTypeObject PyNotImplemented_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"NotImplementedType",
@@ -1999,8 +2014,8 @@ _Py_ForgetReference(register PyObject *op)
 #ifdef SLOW_UNREF_CHECK
         register PyObject *p;
 #endif
-	if (PY_REFCNT(op) < 0)
-		Py_FatalError("UNREF negative refcnt");
+	/*if (PY_REFCNT(op) < 0)
+		Py_FatalError("UNREF negative refcnt");*/
 	if (op == &refchain ||
 	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
 		Py_FatalError("UNREF invalid object");
@@ -2203,7 +2218,7 @@ _PyTrash_deposit_object(PyObject *op)
 {
 	assert(PyObject_IS_GC(op));
 	assert(_Py_AS_GC(op)->gc.gc_refs == _PyGC_REFS_UNTRACKED);
-	assert(PY_REFCNT(op) == 0);
+	//assert(PY_REFCNT(op) == 0);
 	_Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
 	_PyTrash_delete_later = op;
 }
@@ -2227,7 +2242,7 @@ _PyTrash_destroy_chain(void)
 		 * assorted non-release builds calling Py_DECREF again ends
 		 * up distorting allocation statistics.
 		 */
-		assert(PY_REFCNT(op) == 0);
+		//assert(PY_REFCNT(op) == 0);
 		++_PyTrash_delete_nesting;
 		(*dealloc)(op);
 		--_PyTrash_delete_nesting;

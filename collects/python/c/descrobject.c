@@ -387,7 +387,8 @@ descr_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
-static PyTypeObject PyMethodDescr_Type = {
+// removed static --daniel
+/*static*/ PyTypeObject PyMethodDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"method_descriptor",
@@ -425,8 +426,9 @@ static PyTypeObject PyMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
+// removed static --daniel
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
-static PyTypeObject PyClassMethodDescr_Type = {
+/*static*/ PyTypeObject PyClassMethodDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"classmethod_descriptor",
@@ -464,7 +466,8 @@ static PyTypeObject PyClassMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
-static PyTypeObject PyMemberDescr_Type = {
+//removed static --daniel
+/*static*/ PyTypeObject PyMemberDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"member_descriptor",
@@ -502,7 +505,8 @@ static PyTypeObject PyMemberDescr_Type = {
 	(descrsetfunc)member_set,		/* tp_descr_set */
 };
 
-static PyTypeObject PyGetSetDescr_Type = {
+// removed static --daniel
+/*static*/ PyTypeObject PyGetSetDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"getset_descriptor",
@@ -833,7 +837,8 @@ proxy_richcompare(proxyobject *v, PyObject *w, int op)
 	return PyObject_RichCompare(v->dict, w, op);
 }
 
-static PyTypeObject proxytype = {
+// removed static --daniel
+/*static*/ PyTypeObject proxytype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"dictproxy",				/* tp_name */
@@ -978,7 +983,8 @@ wrapper_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
-static PyTypeObject wrappertype = {
+// removed static --daniel
+/*static*/ PyTypeObject wrappertype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"method-wrapper",			/* tp_name */

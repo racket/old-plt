@@ -29,8 +29,17 @@ int PyArg_ParseTuple(PyObject* arg_tuple, char* format, ...)
   return 1;  // success
 }
 
+
 PyObject* Py_BuildValue(char* format, ...)
 {
+        va_list va;
+        PyObject* retval;
+        va_start(va, format);
+        retval = Py_VaBuildValue(format, va);
+        va_end(va);
+        return retval;
+
+#if 0
   int i;
   int format_len = strlen(format);
   va_list va;
@@ -70,6 +79,8 @@ PyObject* Py_BuildValue(char* format, ...)
     va_end(va);
     return tuple;
     }
+#endif
+
 }
 
 

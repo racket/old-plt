@@ -81,6 +81,7 @@ PyList_New(int size)
 		return PyErr_NoMemory();
 	}
 	op = PyObject_GC_New(PyListObject, &PyList_Type);
+	assert(PyObject_TypeCheck(op, &PyList_Type));
 	if (op == NULL) {
 		return NULL;
 	}

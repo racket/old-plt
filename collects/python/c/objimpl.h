@@ -128,7 +128,10 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
    PyMem "release memory" functions have to invoke the object allocator's
    free() function.  When pymalloc isn't enabled, that leaves us using
    the platform free(). */
-#define PyObject_FREE		free
+//#define PyObject_FREE		free
+//#define PyObject_FREE PY_FREE
+// No.
+#define PyObject_FREE(x) 0
 
 #endif	/* WITH_PYMALLOC */
 

@@ -54,8 +54,8 @@ PyAPI_DATA(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) PyObject_TypeCheck(op, &PyString_Type)
 
-#define PyString_CheckExact(op) ((PyTypeObject *) PY_GET_TYPE(op) == &PyString_Type)
-//#define PyString_CheckExact(op) ((op)->ob_type == &PyString_Type)
+//#define PyString_CheckExact(op) ((PyTypeObject *) PY_GET_TYPE(op) == &PyString_Type)
+#define PyString_CheckExact(op) ((op)->ob_type == &PyString_Type)
 
 PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, int);
 PyAPI_FUNC(PyObject *) PyString_FromString(const char *);

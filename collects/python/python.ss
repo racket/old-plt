@@ -4,7 +4,7 @@
            (lib "etc.ss")
           ; "compiler.ss"
            "python-node.ss"
-           "primitives.ss" ;; need py-object%->string
+          ; "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
            "python-import.ss"
@@ -14,7 +14,7 @@
            )
 
 
-  (provide python load-ps py-eval py-gen ssd ssd* python-ns
+  (provide python load-ps py-eval py-gen ssd ssd* ;python-ns
            ;read-python
            ;python-to-scheme
            ;compile-python
@@ -32,13 +32,14 @@
   (define (ssd* lst) (map ssd lst))
   
   (define (convert-value value)
-   ; (py-object%->string value))
-    (namespace-require '(lib "primitives.ss" "python"))
-    ((namespace-variable-value 'py-object%->string) value))
+    ;(namespace-require '(lib "primitives.ss" "python"))
+    ;((namespace-variable-value 'py-object%->string) value))
+    (get-py-string (py-object->py-string value)))
    ; ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
 
   (define (none? py-value)
-    ((dynamic-require '(lib "primitives.ss" "python") 'py-none?) py-value))
+    py-none)
+;    ((dynamic-require '(lib "primitives.ss" "python") 'py-none?) py-value))
 
   (define (render-python-value/format value port port-write)
     (render-python-value value port port-write))
@@ -58,7 +59,7 @@
   (define pns (make-python-namespace))
   (set-python-namespace-name! pns '__main__)
 
-  (set-pyns! pns)
+ ; (set-pyns! pns)
   
   (define (python-ns)
     pns)
@@ -69,24 +70,22 @@
                                   "c" "stringobject.so")))
     (copy-namespace-bindings pns (current-namespace) #f #f))
 
-  (define (py-eval str)
-    (let ([is (open-input-string str)])
-      (begin0 (map convert-value
-                   (eval-python&copy (py-gen str)
-                                     pns))
-              (close-input-port is))))
+  (define py-eval
+    (opt-lambda (str [ns pns])
+      (map convert-value
+           (eval-python (py-gen str) ns))))
   
   (define (py-gen str)
     (let ([is (open-input-string str)])
       (begin0 (parameterize ([current-runtime-support-context #'here]
-                             [current-toplevel-context base-importing-stx])
+                             [current-toplevel-context #f]);base-importing-stx])
                 (compile-python (parse-python-port is "input string")))
               (close-input-port is))))
     
   
   (define (python path)
     (let ([results (eval-python&copy (parameterize ([current-runtime-support-context #'here]
-                                                    [current-toplevel-context base-importing-stx])
+                                                    [current-toplevel-context #f]);base-importing-stx])
                                        (python-to-scheme path)) pns)])
       ;(let ([port (current-output-port)])
       ;  (for-each (lambda (value)

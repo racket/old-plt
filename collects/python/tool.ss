@@ -13,11 +13,12 @@
            ;"base.ss"
            "get-base.ss"
            "runtime-support.ss"
-           "primitives.ss"
+           ;"primitives.ss"
+           ;"c-bindings.ss"
            "python-import.ss")
 
   (provide tool@)
-
+     
 ;  (my-dynamic-require (current-namespace) '(lib "base.ss" "python"))
 ;  (my-dynamic-require (current-namespace) '(lib "runtime-support.ss" "python"))
 ;  (my-dynamic-require (current-namespace) '(lib "python-import.ss" "python"))
@@ -121,11 +122,14 @@
 
               (let ([ast-list (parse-python-port port name)])
                 (lambda ()
+                  (on-execute settings (lambda (thunk) (thunk)))
                   (if (null? ast-list)
                       eof
                       (begin0 (parameterize ([current-runtime-support-context #'here]
-                                             [current-toplevel-context base-importing-stx])
-                                (compile-python-ast (car ast-list)))
+                                             [current-toplevel-context ;base-importing-stx])
+                                                                       #f])
+                                                                       ;my-toplevel-context])
+                                (syntax-as-top (compile-python-ast (car ast-list))))
                               (set! ast-list (cdr ast-list))))))))
 
           (define/public (front-end/complete-program input settings teachpack-cache)
@@ -133,6 +137,11 @@
 
           (define/public (front-end/interaction input settings teachpack-cache)
             (front-end input settings))
+
+          (define/private (syntax-as-top s)
+            (if (syntax? s)
+                (namespace-syntax-introduce s)
+                s))
 
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
@@ -142,13 +151,23 @@
             (list 1000 10))
           (define/public (get-teachpack-names) null)
 
+          (define my-toplevel-context 'foo)
 
           (define/public (on-execute settings run-in-user-thread)
             (dynamic-require '(lib "base.ss" "python") #f)
-            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+            (let ([base-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
                   [outer-namespace (current-namespace)])
+              ;(with-handlers ([void (lambda (e)
+               ;                       (printf "on-execute: outer-namespace: ~a~n"
+               ;                               (exn-message e)))])
+                ;(load-c-spy outer-namespace)
+            ;(dynamic-require '(lib "base.ss" "python") #f)
+               ; (namespace-attach-module outer-namespace path)
+               ; (namespace-transformer-require path)
+               ; (namespace-require path))
               (run-in-user-thread
                (lambda ()
+                 (set! my-toplevel-context #'here)
                  (error-display-handler
                   (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                  (current-eval
@@ -157,20 +176,34 @@
                         (add-annotation e)
                         e)))
                  (drscheme:debug:test-coverage-enabled (python-settings-test-coverage? settings))
-                 (with-handlers ([void (lambda (x)
-                                         (printf "~a~n"
-                                                 (exn-message x)))])
-                   (namespace-attach-module outer-namespace path)
-                   (namespace-transformer-require path)
-                   (namespace-require path)
+                 (with-handlers ([void (lambda (e)
+                                         (printf (string-append "on-execute: in user thread: "
+                                                                (exn-message e)
+                                                                "~n")))])
+                   (let ();[path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)])
+                   ;(load-c-spy (current-namespace))
+                 ;(dynamic-require '(lib "base.ss" "python") #f)
+                   (namespace-attach-module outer-namespace base-path)
+                     ;(namespace-require 'mzscheme)
+                   ;(namespace-transformer-require base-path)
+                   (namespace-require base-path)
 ;                   (load-extension (build-path (this-expression-source-directory)
 ;                                               "c" "stringobject.so"))
-                   )
+                   ))
                  ))))
+          
+          (define (render value port)
+            (let ([to-render (if (python-node? value)
+                                 (get-py-string (py-object->py-string value))
+                                 value)])
+              (display to-render port)))
+            
           (define/public (render-value value settings port port-write)
-            (render-python-value value port port-write))
+            (render value port))
+            ;(render-python-value value port port-write))
           (define/public (render-value/format value settings port port-write width)
-            (render-python-value/format value port port-write))
+            (render value port))
+            ;(render-python-value/format value port port-write))
 
           ;; default implementation provided by Robby
           (define/public (order-manuals x) (values x #t))

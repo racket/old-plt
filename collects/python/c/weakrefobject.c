@@ -706,7 +706,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
     if (object == NULL
         || !PyType_SUPPORTS_WEAKREFS(object->ob_type)
-        || PY_REFCNT(object) != 0) {
+        /*|| PY_REFCNT(object) != 0*/) {
         PyErr_BadInternalCall();
         return;
     }

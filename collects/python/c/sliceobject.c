@@ -22,7 +22,8 @@ ellipsis_repr(PyObject *op)
 	return PyString_FromString("Ellipsis");
 }
 
-static PyTypeObject PyEllipsis_Type = {
+// removed static --daniel
+/*static*/ PyTypeObject PyEllipsis_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"ellipsis",				/* tp_name */

@@ -5,7 +5,7 @@
 	   "compiler.ss"
 	   "compiler-target.ss"
          ;  "empty-context.ss")
-           "primitives.ss"
+          ; "primitives.ss"
 	   "runtime-support.ss"
            "runtime-context.ss"
            )
@@ -48,11 +48,12 @@
       (send target get-start-pos)
       (send target get-end-pos)))
 
-  ;; generate-function-bindings: parameters% syntax-object (or false bindings-mixin%) -> sexp
+  ;; generate-function-bindings: parameters% (listof syntax-object) (or false bindings-mixin%) -> (listof sexp)
   ;; generate the enclosing LET bindings for a function
   ;; if scope is not #f, its bindings are defined here (as void)
   (define (generate-function-bindings parms body-so scope)
-    #`(let #,(append (normalize-assoc-list
+    (let ([bindings
+           (append (normalize-assoc-list
                     (flatten1
                      (map (lambda (tuple)
                             (unpack tuple
@@ -61,7 +62,7 @@
                    (let ([seq (send parms get-seq)])
                      (if seq
                          (let ([seq (send seq to-scheme)])
-                           #`([,seq (list->py-tuple% #,seq)]))
+                           `([,seq (list->py-tuple% ,seq)]))
                          empty))
                    ;(let ([dict (send parms get-dict)])
                    ;  (if dict
@@ -71,28 +72,48 @@
                    ;      empty))
                    (if scope
                        (map (lambda (b)
-                              #`[#,(send b to-scheme) (void)])
+                              `[,(send b to-scheme) (void)])
                             (send scope get-bindings))
-                       empty))
-       #,@body-so))
+                       empty))]
+          ;[body-src (syntax-e body-so)]
+          )
+      (if (empty? bindings)
+          body-so
+          `((let ,bindings ,@body-so)))))
   
   ;; generate-lambda: parameters% syntax-object -> sexp
   ;; generate a lambda.
   (define (generate-lambda parms body-so)
-    (let* ([parms-so (send parms to-scheme)]
+    #|(let* ([parms-so (send parms to-scheme)]
            [parms-src (syntax-e parms-so)])
       (if (or (null? parms-src)
               (null? (last-pair parms-src)))
           `(lambda ,parms-so ,body-so)
-          `(opt-lambda ,parms-so ,body-so))))
-;    `(opt-lambda ,(send parms to-scheme)
-;         ,body-so))
+          `(opt-lambda ,parms-so ,body-so))))|#
+    `(lambda ,(send parms to-scheme)
+         ,body-so))
 
   ;; generate-py-lambda: symbol parameters% syntax-object -> sexp
   ;; generate a scheme-lambda->python-lambda wrapper (and the lambda)
   (define (generate-py-lambda name parms body-so)
     (let ([seq (send parms get-seq)]
-          [dict (send parms get-dict)])
+          [dict (send parms get-dict)]
+          [key (send parms get-key)])
+      (let ([code-sxp `(make-py-code ',name
+                                     ,(generate-lambda parms body-so)
+                                     ,(length (send parms get-pos))
+                                     ,(cond
+                                        [(and seq dict) '(var-args kw-args)]
+                                        [seq '(var-args)]
+                                        [dict '(kw-args)]
+                                        [else null]))])
+        (if (and key (not (empty? key)))
+            `(make-py-function ,code-sxp
+                               ,(map (lambda (k)
+                                       (send (cdr k) to-scheme))
+                                     key))
+            `(make-py-function ,code-sxp)))))
+#|                                       
       `(procedure->py-function% ,(generate-lambda parms body-so)
                                 ',name
                                 ,(generate-list (map (lambda (p)
@@ -104,7 +125,7 @@
                                                      (send parms get-key)))
                                 ,(and seq (car `(',(send seq to-scheme))))
                                 ,(and dict (car `(',(send dict to-scheme)))))))
-
+|#
 
   (define (generate-list exprs)
     (if (empty? exprs)
@@ -194,15 +215,21 @@
                            (send (first-atom p) to-scheme))
                        (reverse pos))]
               [Ks (map (lambda (k)
-                         `[,(send (car k) to-scheme) ,(send (cdr k) to-scheme)])
+                         ;;`[,(send (car k) to-scheme) ,(send (cdr k) to-scheme)])
+                         ;; no longer using opt-lambda
+                         (send (first-atom k) to-scheme))
                        (reverse key))])
         (->orig-so (cond
                      [(and seq dict)
                       (begin ;(printf "identifier binding for seq: ~a~n" (identifier-binding (send seq to-scheme)))
                              ;(printf "identifier binding for runtime things: ~a~n" (identifier-binding (->orig-so 'test)))
-                       `(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme)))]
-                     [seq `(,@Ps ,@Ks . ,(send seq to-scheme))]
-                     [dict `(,(send dict to-scheme) ,@Ps ,@Ks)]
+                       ;;`(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme)))]
+                       ;; using the same format as CPython now
+                        `(,@Ps ,@Ks ,(send seq to-scheme) ,(send dict to-scheme)))]
+                     [seq ;;`(,@Ps ,@Ks . ,(send seq to-scheme))]
+                          `(,@Ps ,@Ks ,(send seq to-scheme))]
+                     [dict ;;`(,(send dict to-scheme) ,@Ps ,@Ks)]
+                           `(,@Ps ,@Ks ,(send dict to-scheme))]
                      [else `(,@Ps ,@Ks)]))))
                        
                            
@@ -256,13 +283,18 @@
       ;; value: (or/f string? number?)
       (init-field value)
       
+      (define/public (get-value) value)
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (list (if (string? value)
+        (->orig-so #|(list (if (string? value)
                              (py-so 'string->py-string%)
                              (py-so 'number->py-number%))
-                         value)))
+                         value)))|#
+                   (if (string? value)
+                       `(make-py-string ,value)
+                       `(make-py-number ,value))))
       
       (super-instantiate ())))
   
@@ -284,9 +316,10 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'list->py-tuple%) ,(generate-list (map (lambda (e)
-                                                                      (send e to-scheme))
-                                                                    expressions)))))
+        (->orig-so `(make-py-tuple ;;,(py-so 'list->py-tuple%)
+                      ,(generate-list (map (lambda (e)
+                                             (send e to-scheme))
+                                           expressions)))))
       
       (super-instantiate ())))
   
@@ -307,9 +340,9 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'list->py-list%)
-                                         ,(generate-list (map (lambda (e) (send e to-scheme))
-                                                              expressions)))))
+        (->orig-so `(make-py-list ;;,(py-so 'list->py-list%)
+                     ,(generate-list (map (lambda (e) (send e to-scheme))
+                                          expressions)))))
       
       (super-instantiate ())))
   
@@ -333,7 +366,8 @@
         (->orig-so (let ([result (gensym 'result)])
                      `(let ([,result null])
                         ,(send for to-scheme (send expr to-scheme) result)
-                        (,(py-so 'list->py-list%) ,result)))))
+                        (make-py-list ;;,(py-so 'list->py-list%)
+                          ,result)))))
       
       (super-instantiate ())))
   
@@ -384,7 +418,8 @@
 ;                                         ,body)
 ;                                       (,(py-so 'py-sequence%->list) ,item))))]
 ;                                [else (error "bad target for a list comprehension")])
-                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme))))))
+                              (get-py-list ;;,(py-so 'py-sequence%->list)
+                                ,(send vals to-scheme))))))
       
       
       (super-instantiate ())))
@@ -472,7 +507,7 @@
       (define/override (to-scheme)
         (let ([expr (send expression to-scheme)]
               [id (send identifier to-scheme)])
-          (->orig-so `(,(py-so 'python-get-attribute) ,expr ',id))))
+          (->orig-so `(py-get-attr/obj ,expr (make-py-symbol ',id)))))
                      ;`(if (namespace-variable-value ',expr #t (lambda () #f))
                      ;     (,(py-so 'python-get-member) ,expr ',id)
                      ;     ,(string->symbol (string-append (symbol->string (syntax-e expr))
@@ -597,7 +632,7 @@
                                           (send e to-scheme))
                                         (reverse pos))]
                          [key-args (map (lambda (e)
-                                          `(list ,(car `(',(send (car e) to-scheme)))
+                                          `(list (quote ,(send (car e) to-scheme))
                                                  ,(send (cdr e) to-scheme)))
                                         (reverse key))])
                      (if (is-a? expression attribute-ref%)
@@ -608,9 +643,13 @@
                                               to-scheme)
                                  ,(generate-list pos-args)
                                  ,(generate-list key-args))
+                         #|
                          `(,(py-so 'py-call) ,(send expression to-scheme)
                                              ,(generate-list pos-args)
-                                             ,(generate-list key-args))))))
+                                             ,(generate-list key-args))))))|#
+                         (if (empty? key-args)
+                             `(py-apply ,(send expression to-scheme) ,@pos-args)
+                             `(py-apply-kw ,(send expression to-scheme) ,key-args ,@pos-args))))))
       
       (super-instantiate ())))
   
@@ -632,7 +671,7 @@
       (define/override (to-scheme)
         (if (eq? op 'and)
             (->orig-so `(py-if ,(send lhs to-scheme) ,(send rhs to-scheme) py-none))
-            (->orig-so (list (py-so 'python-method-call) (send lhs to-scheme)
+            #|(->orig-so (list (py-so 'python-method-call) (send lhs to-scheme)
                              (case op
                                [(+) ''__add__]
                                [(-) ''__sub__]
@@ -640,7 +679,16 @@
                                [(/) ''__div__]
                                [else (raise (format "binary% op unsupported: ~a" 
                                                     op))])
-                             `(list ,(send rhs to-scheme))))))
+                             `(list ,(send rhs to-scheme))))))|#
+            (->orig-so (let ([lhs-so (send lhs to-scheme)]
+                             [rhs-so (send rhs to-scheme)])
+                         (case op
+                           [(+) `(spy-cpython-add ,lhs-so ,rhs-so)]
+                           [(-) `(spy-cpython-sub ,lhs-so ,rhs-so)]
+                           [(*) `(spy-cpython-mul ,lhs-so ,rhs-so)]
+                           [(/) `(spy-cpython-div ,lhs-so ,rhs-so)]
+                           [else (raise (format "binary% op unsupported: ~a" 
+                                                    op))])))))
       
       (super-instantiate ())))
   
@@ -661,8 +709,12 @@
           (case op
             [(+) s-rhs]
             [(not) (->orig-so `(,(py-so 'py-not) ,s-rhs))]
-            [(-) (->orig-so (list (py-so 'python-method-call) s-rhs
-                                  ''__neg__))]
+            [(-) (->orig-so (if (and (is-a? rhs literal%)
+                                     (number? (send rhs get-value)))
+                                `(make-py-number ,(- (send rhs get-value)))
+                                `(spy-cpython-neg ,s-rhs)))]
+                    ;;(list (py-so 'python-method-call) s-rhs
+                      ;;            ''__neg__))]
             [(~) (raise "bitwise operation ~ not implemented yet")]
             [else (raise (format "unary op unsupported: ~a" op))])))
       

@@ -21,9 +21,6 @@
   (dprintf "1~n")
 
 
-     (load-extension (build-path (this-expression-source-directory)
-                                 "c"
-                                 "listobject.so"))
      
   (define-struct (exn:not-found exn) () (make-inspector))
   (define-struct (exn:python exn) (type value) (make-inspector))

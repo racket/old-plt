@@ -98,6 +98,12 @@ are documented in the next section.
          expressions (e.g., macros) that are not intended to be local
          to the file, then the file should be included in this list.
 
+       `compile-subcollections' - a list of sub-collection sub-paths,
+         where each sub-path is a list of strings; each full sub-collection
+         path is formed by appending the sub-path to the path of the
+         collection being compiled. `compile-collection-extension' is 
+         applied to each of the sub-collections.
+
       The compilation process is driven by the `make-collection'
       function in the "collection.ss" library of the "make"
       collection.

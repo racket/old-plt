@@ -171,23 +171,29 @@
 	       compiler:option^
 	       compiler^)])
        (let ([dir (apply collection-path cp)]
-	     [orig (current-directory)])
+	     [orig (current-directory)]
+	     [info (apply require-library "info.ss" cp)])
 	 (dynamic-wind
 	  (lambda () (current-directory dir))
 	  (lambda ()
 	    (parameterize ([current-load-relative-directory dir])
-	       (let ([info (apply require-library "info.ss" cp)])
-		 (let ([sses (filter
-			      (lambda (s)
-				(regexp-match "\\.(ss|scm)$" s))
-			      (directory-list))])
-		   (f (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
-		      (info 'compile-prefix (lambda () '(void)))
-		      (remove*
-		       (info 'compile-omit-files (lambda () null))
-		       sses)
-		      (if zos? #("zo") #()))))))
-	  (lambda () (current-directory orig)))))))
+	      (let ([sses (filter
+			   (lambda (s)
+			     (regexp-match "\\.(ss|scm)$" s))
+			   (directory-list))])
+		(f (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
+		   (info 'compile-prefix (lambda () '(void)))
+		   (remove*
+		    (info 'compile-omit-files (lambda () null))
+		    sses)
+		   (if zos? #("zo") #())))))
+	  (lambda () (current-directory orig)))
+	 (for-each
+	  (lambda (s)
+	    (unless (and (pair? s) (list? s) (andmap string? s))
+	      (error 'compile-collection "bad sub-collection path: ~a" s))
+	    (compile-collection (append cp s) zos?))
+	  (info 'compile-subcollections (lambda () null)))))))
 
  (define (compile-collection-extension collection . cp)
   (compile-collection (cons collection cp) #f))

@@ -188,7 +188,7 @@
 					      "o" "&Open" "...")
 				(make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
 					      '(lambda () (mred:handler:open-url))
-					      #f "&Open Url" "...")
+					      #f "Open &Url" "...")
 				(make-between 'file-menu 'between-open-and-save #f)
 				(make-an-item 'file-menu:revert 
 					      "Revert this file to the copy on disk"

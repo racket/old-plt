@@ -162,51 +162,52 @@
 				     [(intname ...) internal-names])
 			 ;; Change all definitions to set!s. Convert evars to set-box!,
 			 ;; because set! on exported variables is not allowed.
-			 (with-syntax ([(defn&expr ...) (let ([elocs (syntax->list (syntax (eloc ...)))])
-							  (map (lambda (defn-or-expr)
-								 (syntax-case defn-or-expr (define-values)
-								   [(define-values ids expr)
-								    (let* ([ids (syntax->list (syntax ids))])
-								      (if (null? ids)
-									  (syntax/loc defn-or-expr (set!-values ids expr))
-									  (let ([do-one
-										 (lambda (id tmp name)
-										   (let loop ([evars exported-names]
-											      [elocs elocs])
-										     (cond
-										      [(null? evars)
-										       ;; not an exported id
-										       (with-syntax ([id id][tmp tmp])
-											 (syntax/loc
-											  defn-or-expr
-											  (set! id tmp)))]
-										      [(bound-identifier=? (car evars) id)
-										       ;; set! exported id:
-										       (with-syntax ([loc (car elocs)]
-												     [tmp 
-												      (if name
-													  (with-syntax ([tmp tmp]
-															[name name])
-													    (syntax (let ([name tmp])
-														      name)))
-													  tmp)])
-											 (syntax/loc
-											  defn-or-expr
-											  (set-box! loc tmp)))]
-										      [else (loop (cdr evars) (cdr elocs))])))])
-									    (if (null? (cdr ids))
-										(do-one (car ids) (syntax expr) (car ids))
-										(let ([tmps (generate-temporaries ids)])
-										  (with-syntax ([(tmp ...) tmps]
-												[(set ...) (map (lambda (id tmp)
-														  (do-one id tmp #f))
-														ids tmps)])
-										    (syntax/loc
-										     defn-or-expr
-										     (let-values ([(tmp ...) expr])
-										       set ...))))))))]
-								   [else defn-or-expr]))
-							       all-expanded))])
+			 (with-syntax ([(defn&expr ...) 
+					(let ([elocs (syntax->list (syntax (eloc ...)))])
+					  (map (lambda (defn-or-expr)
+						 (syntax-case defn-or-expr (define-values)
+						   [(define-values ids expr)
+						    (let* ([ids (syntax->list (syntax ids))])
+						      (if (null? ids)
+							  (syntax/loc defn-or-expr (set!-values ids expr))
+							  (let ([do-one
+								 (lambda (id tmp name)
+								   (let loop ([evars exported-names]
+									      [elocs elocs])
+								     (cond
+								      [(null? evars)
+								       ;; not an exported id
+								       (with-syntax ([id id][tmp tmp])
+									 (syntax/loc
+									  defn-or-expr
+									  (set! id tmp)))]
+								      [(bound-identifier=? (car evars) id)
+								       ;; set! exported id:
+								       (with-syntax ([loc (car elocs)]
+										     [tmp 
+										      (if name
+											  (with-syntax ([tmp tmp]
+													[name name])
+											    (syntax (let ([name tmp])
+												      name)))
+											  tmp)])
+									 (syntax/loc
+									  defn-or-expr
+									  (set-box! loc tmp)))]
+								      [else (loop (cdr evars) (cdr elocs))])))])
+							    (if (null? (cdr ids))
+								(do-one (car ids) (syntax expr) (car ids))
+								(let ([tmps (generate-temporaries ids)])
+								  (with-syntax ([(tmp ...) tmps]
+										[(set ...) (map (lambda (id tmp)
+												  (do-one id tmp #f))
+												ids tmps)])
+								    (syntax/loc
+								     defn-or-expr
+								     (let-values ([(tmp ...) expr])
+								       set ...))))))))]
+						   [else defn-or-expr]))
+					       all-expanded))])
 			   ;; Build up set! redirection chain:
 			   (with-syntax ([redirected
 					  (let loop ([l (syntax->list (syntax ((ivar iloc) ... 
@@ -219,16 +220,17 @@
 						(with-syntax ([rest (loop (cdr l))]
 							      [(var loc) (car l)])
 						  (syntax
-						   ((letrec-syntax ([var (set!-expander
-									  (lambda (sstx)
-									    (syntax-case sstx (set!)
-									      [vr (identifier? (syntax vr)) (syntax (unbox loc))]
-									      [(set! vr val)
-									       (raise-syntax-error
-										'unit
-										"cannot set! imported or exported variables"
-										sstx)]
-									      [(vr . args) (syntax ((unbox loc) . args))])))])
+						   ((letrec-syntax ([var 
+								     (set!-expander
+								      (lambda (sstx)
+									(syntax-case sstx (set!)
+									  [vr (identifier? (syntax vr)) (syntax (unbox loc))]
+									  [(set! vr val)
+									   (raise-syntax-error
+									    'unit
+									    "cannot set! imported or exported variables"
+									    sstx)]
+									  [(vr . args) (syntax ((unbox loc) . args))])))])
 						      .  rest))))))]
 					 [num-imports (datum->syntax (length (syntax->list (syntax (iloc ...))))
 								     #f (quote-syntax here))])
@@ -342,7 +344,8 @@
 					    [else
 					     (raise-syntax-error
 					      'compound-unit
-					      (format "ill-formed export with tag ~a" (syntax-e (syntax tag)))
+					      (format "ill-formed export with tag ~a" 
+						      (syntax-e (syntax tag)))
 					      stx
 					      e)]))
 					(syntax->list (syntax (ex ...)))))]

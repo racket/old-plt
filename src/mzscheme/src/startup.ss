@@ -155,7 +155,7 @@
 		    (if (stx-pair? x)
 			(let-values
 			    (((first) (stx-car x)))
-			  (if (if (free-identifier=? first (quote-syntax unquote))
+			  (if (if (module-identifier=? first (quote-syntax unquote))
 				  (stx-list? x)
 				  #f)
 			      (let-values
@@ -170,11 +170,11 @@
 				(if (zero? level)
 				    (stx-car rest)
 				    (qq-list x (sub1 level))))
-			      (if (if (free-identifier=? first (quote-syntax quasiquote))
+			      (if (if (module-identifier=? first (quote-syntax quasiquote))
 				      (stx-list? x)
 				      #f)
 				  (qq-list x (add1 level))
-				  (if (if (free-identifier=? first (quote-syntax unquote-splicing))
+				  (if (if (module-identifier=? first (quote-syntax unquote-splicing))
 					  (stx-list? x)
 					  #f)
 				      (raise-syntax-error
@@ -182,8 +182,8 @@
 				       "invalid context within quasiquote"
 				       in-form)
 				      (if (if (stx-pair? first)
-					      (if (free-identifier=? (stx-car first)
-								     (quote-syntax unquote-splicing))
+					      (if (module-identifier=? (stx-car first)
+								       (quote-syntax unquote-splicing))
 						  (stx-list? first)
 						  #f)
 					      #f)
@@ -336,11 +336,11 @@
 			  line)
 			 (let* ([test (stx-car line)]
 				[value (stx-cdr line)]
-				[else? (free-identifier=? test (quote-syntax else))])
+				[else? (module-identifier=? test (quote-syntax else))])
 			   (if (and else? (stx-pair? rest))
 			       (serror "bad syntax (`else' clause must be last)" line))
 			   (if (and (stx-pair? value)
-				    (free-identifier=? (stx-car value) (quote-syntax =>)))
+				    (module-identifier=? (stx-car value) (quote-syntax =>)))
 			       (if (and (stx-pair? (stx-cdr value))
 					(stx-null? (stx-cdr (stx-cdr value))))
 				   (let ([test (if else?
@@ -559,7 +559,7 @@
   (define (stx-memq ssym l)
     (ormap (lambda (p)
 	     (and (syntax? P)
-		  (free-identifier=? ssym p)))
+		  (module-identifier=? ssym p)))
 	   l))
   
   ;; memq on a list of identifiers and
@@ -569,7 +569,7 @@
       (cond
        [(null? l) #f]
        [(and (syntax? (car l))
-	     (free-identifier=? ssym (car l)))
+	     (module-identifier=? ssym (car l)))
 	p]
        [else (loop (add1 p) (cdr l))])))
 
@@ -579,11 +579,11 @@
     (let loop ([p 0][l l])
       (cond
        [(null? l) #f]
-       [(free-identifier=? ssym 
-			   (let loop ([i (car l)])
-			     (if (syntax? i)
-				 i
-				 (loop (car i)))))
+       [(module-identifier=? ssym 
+			     (let loop ([i (car l)])
+			       (if (syntax? i)
+				   i
+				   (loop (car i)))))
 	p]
        [else (loop (add1 p) (cdr l))])))
 
@@ -687,7 +687,7 @@
 		null
 		`(lambda (e esc)
 		   (if (identifier? e)
-		       (if (free-identifier=? e (quote-syntax ,p))
+		       (if (module-identifier=? e (quote-syntax ,p))
 			   null
 			   (esc #f))
 		       (esc #f))))
@@ -719,7 +719,7 @@
 	      (cond
 	       [(syntax? r)
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
-		  (when (ormap (lambda (i) (free-identifier=? i r)) l)
+		  (when (ormap (lambda (i) (module-identifier=? i r)) l)
 		    (raise-syntax-error 
 		     'syntax
 		     "variable used twice"
@@ -896,8 +896,7 @@
 				   (raise-syntax-error
 				    'syntax
 				    "incompatible ellipsis match counts"
-				    ; (quote-syntax ,p) ;; << embedding syntax is expensive
-				    ))))))
+				    (quote-syntax ,p)))))))
 			   (lambda ()
 			     (let ([v ,main])
 			       (lambda () v)))
@@ -910,7 +909,7 @@
 	      (cond
 	       [(syntax? r)
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
-		  (unless (ormap (lambda (i) (free-identifier=? i r)) l)
+		  (unless (ormap (lambda (i) (module-identifier=? i r)) l)
 		    (hash-table-put! ht (syntax-e r) (cons r l))))]
 	       [(pair? r)
 		(loop (car r))
@@ -994,7 +993,7 @@
 				[(and (pair? c) (pair? n))
 				 (loop (car c) (car n))]
 				[(and (syntax? c) (syntax? n))
-				 (if (free-identifier=? c n)
+				 (if (module-identifier=? c n)
 				     (car proto)
 				     #f)]
 				[else #f]))))
@@ -1021,7 +1020,7 @@
 		  (let loop ([l (car p)])
 		    (cond
 		     [(syntax? l)
-		      (when (free-identifier=? l ssym)
+		      (when (module-identifier=? l ssym)
 			(raise-syntax-error 
 			 'syntax
 			 "missing ellipses with pattern variable"
@@ -1939,9 +1938,15 @@
 		   (not (list? s)))
 	       #f]
 	      [(eq? (car s) 'lib)
-	       (and (> (length s) 2)
-		    (let ([p (apply -find-col 'standard-module-name-resolver (cddr s))])
-		      (string-append p (cadr s))))]
+	       (let ([cols (let ([len (length s)])
+			     (if (= len 2)
+				 (list "mzlib")
+				 (if (> len 2)
+				     (cddr s)
+				     #f)))])
+		 (and cols
+		      (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
+			(build-path p (cadr s)))))]
 	      [(eq? (car s) 'file)
 	       (and (= (length s) 2)
 		    (let ([p (cadr s)])
@@ -1973,11 +1978,12 @@
 			   (let ([ht (make-hash-table)])
 			     (hash-table-put! -module-hash-table-table
 					      (current-namespace)
-					      ht))))])
+					      ht)
+			     ht)))])
 		;; unless it has been loaded already...
 		(unless (hash-table-get ht modname (lambda () #f))
 		  (hash-table-put! ht modname #t)
-		  (let ([prefix (string->symbol (format "~a." base))])
+		  (let ([prefix (string->symbol base)])
 		    (parameterize ([current-module-name-prefix prefix])
 		      (load filename))))
 		;; Result is the module name:

@@ -554,6 +554,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
   Scheme_Object *result, *mresult = scheme_false;
   Scheme_Object *modidx_shift_to = NULL, *modidx_shift_from = NULL;
   int is_in_module = 0;
+  long orig_phase = phase;
 
   if (home)
     *home = NULL;
@@ -602,7 +603,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
 	modidx_shift_to = SCHEME_VEC_ELS(vec)[3];
       modidx_shift_from = SCHEME_VEC_ELS(vec)[2];
 
-      if (phase == 1) {
+      if ((phase == 1) || ((phase == 0) && (orig_phase == 1))) {
 	/* If we resolve the id before another phase shift, then the
 	   id was phase 1 in its original source.  Since the phase 1
 	   boundary is where the global space of instantiated modules
@@ -613,8 +614,10 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
 	*home = SCHEME_VEC_ELS(vec)[1];
 	if (SCHEME_FALSEP(*home))
 	  scheme_signal_error("broken compiled code: bad variable home");
+	if (!phase)
+	  *home = (Scheme_Object *)((Scheme_Env *)*home)->val_env;
       } else
-	*home = NULL;
+	 *home = NULL;
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
@@ -729,6 +732,11 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   a = scheme_module_resolve(a);
   b = scheme_module_resolve(b);
 
+  if (!HOME_MAP(ahome))
+    bhome = NULL;
+  if (!HOME_MAP(bhome))
+    ahome = NULL;
+
   /* Same binding environment? */
   return (SAME_OBJ(a, b) && SAME_OBJ(HOME_MAP(ahome), HOME_MAP(bhome)));
 }
@@ -761,6 +769,11 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 
   a = scheme_module_resolve(a);
   b = scheme_module_resolve(b);
+
+  if (!HOME_MAP(ahome))
+    bhome = NULL;
+  if (!HOME_MAP(bhome))
+    ahome = NULL;
 
   /* Same binding environment? */
   return (SAME_OBJ(a, b) && SAME_OBJ(HOME_MAP(ahome), HOME_MAP(bhome)));

@@ -1049,7 +1049,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
       if (!genv) {
 	scheme_wrong_syntax("import", NULL, srcsym, 
-			    "broken compiled code (stat-dist): cannot find module");
+			    "broken compiled code (stat-dist, phase %d): cannot find module %S %V",
+			    env->genv->phase, modname,
+			    scheme_syntax_to_datum(srcsym, 1, NULL));
 	return NULL;
       }
     }
@@ -1060,9 +1062,14 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
     /* Try syntax table: */
-    if (modname)
-      val = scheme_module_syntax(modname, home_env ? home_env : env->genv, SCHEME_STX_SYM(symbol));
-    else {
+    if (modname) {
+      Scheme_Env *hm;
+      if (home_env && home_env->module_syntax)
+	hm = home_env;
+      else
+	hm = NULL;
+      val = scheme_module_syntax(modname, hm ? hm : env->genv, SCHEME_STX_SYM(symbol));
+    } else {
       /* Only try syntax table if there's not an explicit (later)
 	 variable mapping: */
       if (genv->shadowed_syntax 

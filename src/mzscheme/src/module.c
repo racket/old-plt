@@ -522,7 +522,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     if (syntax)
       return;
   }
-    
+
   menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
   if (!menv || restart) {
     if (!menv) {
@@ -1283,7 +1283,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    if (scheme_stx_proper_list_length(a) < 0)
 	      scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
 
-	    midx = scheme_make_modidx(scheme_syntax_to_datum(SCHEME_STX_CAR(a), 0, NULL),
+	    midx = scheme_make_modidx(scheme_syntax_to_datum(SCHEME_STX_CADR(a), 0, NULL),
 				      scheme_false);
 	    exns = SCHEME_STX_CDR(SCHEME_STX_CDR(a));
 	    

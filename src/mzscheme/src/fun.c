@@ -686,8 +686,12 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
       if (cstx->src && SCHEME_STRINGP(cstx->src)) {
 	if (SCHEME_STRLEN_VAL(cstx->src) < 20)
 	  memcpy(src, SCHEME_STR_VAL(cstx->src), SCHEME_STRLEN_VAL(cstx->src) + 1);
-	else
+	else {
 	  memcpy(src, SCHEME_STR_VAL(cstx->src) + SCHEME_STRLEN_VAL(cstx->src) - 19, 20);
+	  src[0] = '.';
+	  src[1] = '.';
+	  src[2] = '.';
+	}
       }
 
       sprintf(buf, "%s%s%ld.%ld", 

@@ -935,7 +935,7 @@ struct_link(Scheme_Object *expr, Link_Info *info)
     return (Scheme_Object *)osinfo;
 
   nsinfo = MALLOC_ONE_TAGGED(Struct_Info);
-  memcpy(osinfo, nsinfo, sizeof(Struct_Info));
+  memcpy(nsinfo, osinfo, sizeof(Struct_Info));
   nsinfo->parent_type_expr = e;
 
   return scheme_make_syntax_linked(STRUCT_EXPD, (Scheme_Object *)nsinfo);

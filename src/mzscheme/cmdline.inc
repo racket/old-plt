@@ -50,7 +50,7 @@ static char *make_require_lib(const char *file, const char *coll)
   char *s;
   
   s = (char *)malloc(strlen(file) + strlen(coll) + 31);
-  strcpy(s, "(require-library \"");
+  strcpy(s, "(load-library \"");
   strcat(s, file);
   strcat(s, "\" \"");
   strcat(s, coll);
@@ -633,8 +633,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -d <file> : Load/cds <file> after " PROGRAM " starts.\n"
 	 "  -F : Loads all remaining arguments after " PROGRAM " starts.\n"
 	 "  -D : Load/cds all remaining arguments after " PROGRAM " starts.\n"
-	 "  -l <file> : Same as -e '(require-library \"<file>\")'.\n"
-	 "  -L <file> <coll> : Same as -e '(require-library \"<file>\" \"<coll>\")'.\n"
+	 "  -l <file> : Same as -e '(load-library \"<file>\")'.\n"
+	 "  -L <file> <coll> : Same as -e '(load-library \"<file>\" \"<coll>\")'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 # ifdef CMDLINE_STDIO_FLAG

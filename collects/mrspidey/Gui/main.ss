@@ -182,9 +182,9 @@
            (if frame
                (send frame focus-def (zodiac:location-offset loc))
                (message-box
-                (format "File ~s is not loaded" (file-name-from-path file))
                 "Error"
-                (bitwise-ior 'ok)))))]
+                (format "File ~s is not loaded" (file-name-from-path file))
+                '(ok)))))]
 
       ;; ------------------------------
 

@@ -59,8 +59,8 @@
                 (zodiac:location-column loc))))]
         [(message)
           (mred:message-box
-            (format "~a~n" message)
-            "MrSpidey Error")
+	   "MrSpidey Error"
+            (format "~a~n" message))
           (raise 'mrspidey-raise)]))
     ))
 
@@ -91,8 +91,8 @@
 		(parameterize ([current-load-relative-directory dir])
 		  (send spidey run-mrspidey filename)))))
           (message-box
-	   "MrSpidey can only process programs that are saved to a file"
-	   "MrSpidey Error"))))))
+	   "MrSpidey Error"
+	   "MrSpidey can only process programs that are saved to a file"))))))
 
 ;; ----------------------------------------------------------------------
 

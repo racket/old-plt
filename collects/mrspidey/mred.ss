@@ -106,10 +106,9 @@
                 (zodiac:location-column loc))))]
         [(message)
           (mred:message-box
-            (format "~a~n" message)
-            "MrSpidey Error")
-          (raise 'mrspidey-raise)]))
-    ))
+	   "MrSpidey Error"
+            (format "~a~n" message))
+          (raise 'mrspidey-raise)]))))
 
 
 (define mred:mrspidey@

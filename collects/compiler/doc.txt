@@ -400,14 +400,20 @@ executable.
   the class library required into the top-level namespace, literal
   `require's for thoselibraries should be included at the start.
 
-   The optional `aux' argument specifies a path to use in finding
-   auxilliary, platform-specific configuration for the executable,
-   such as an icon. The `aux' path is used by adding a suffix to the
-   path, such as ".icns", and checking whether such a file exists. If
-   it does, it is used in a platform- and extension-specific way. The
-   currently supported extensions are as follows:
+   The optional `aux' argument is an association list for
+   platform-specific options (i.e., it is a list of pairs where the
+   first element of the pair is a key symbol and the second element is
+   the value for that key). The currently supported keys are as
+   follows:
 
-      _.icns_ (Mac OS X) - an icons for the executable
+      _'icns_ (Mac OS X) - an icon file path (suffix ".icns") to
+              use for the executable's desktop icon
+
+      _'ico_ (Windows) - an icon file path (suffix ".ico") to
+              use for the executable's desktop icon
+
+   See also `build-aux-from-path' in the "launcher" collection. The
+   default `aux' is `null'.
 
    If `launcher?' is #t, then no `modules' should be null,
    `literal-file-list' should be null, `literal-sexp' should be #f,

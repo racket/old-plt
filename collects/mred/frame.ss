@@ -275,8 +275,8 @@
 	  (public
 	    [on-close
 	     (lambda ()
-	       (and (super-on-close)
-		    (send (get-edit) on-close)))])
+	       (and (send (get-edit) on-close)
+		    (super-on-close)))])
 
 	  (public
 	    [get-panel%  (lambda () mred:panel:vertical-edit-panel%)]

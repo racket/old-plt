@@ -28,6 +28,9 @@
 		(loop a (cdr b) (cons (car b) l))]))
 	    (sub1 c))))))
 
+  (define ANIMATION-STEPS 5)
+  (define ANIMATION-TIME 0.3)
+
   (define-struct region (x y w h label callback hilite? decided-start? can-select?))
 
   (define create-region
@@ -506,7 +509,7 @@
 	   (send pb end-edit-sequence))]
 	[add-card
 	 (lambda (card x y)
-	   (send pb insert card x y))]
+	   (position-cards (list card) x y (lambda (p) (values 0 0)) add-cards-callback))]
 	[add-cards
 	 (opt-lambda (cards x y [offset (lambda (p) (values 0 0))])
 	   (position-cards cards x y offset add-cards-callback))]
@@ -515,10 +518,10 @@
 	   (position-cards-in-region cards region add-cards-callback))]
 	[move-card
 	 (lambda (card x y)
-	   (send pb move-to card x y))]
+	   (position-cards (list card) x y (lambda (p) (values 0 0)) move-cards-callback))]
 	[move-cards
 	 (opt-lambda (cards x y  [offset (lambda (p) (values 0 0))])
-	   (position-cards cards x y offset (ivar pb move-to)))]
+	   (position-cards cards x y offset move-cards-callback))]
 	[move-cards-to-region
 	 (lambda (cards region)
 	   (position-cards-in-region cards region (ivar pb move-to)))]
@@ -561,15 +564,60 @@
 	[add-cards-callback
 	 (lambda (card x y)
 	   (send pb insert card null x y))]
+        [move-cards-callback
+	 (lambda (card x y)
+	   (send pb move-to card x y))]
+	[animate? #t]
         [position-cards
 	 (lambda (cards x y offset set)
-	   (send pb begin-edit-sequence)
-	   (let loop ([l cards][n 0])
-	     (unless (null? l)
-	       (let-values ([(dx dy) (offset n)])
-		 (set (car l) (+ x dx) (+ y dy)))
-	       (loop (cdr l) (add1 n))))
-	   (send pb end-edit-sequence))]
+	   (let ([positions (let loop ([l cards][n 0])
+			      (if (null? l)
+				  null
+				  (let-values ([(dx dy) (offset n)])
+				    (cons (cons (+ x dx) (+ y dy))
+					  (loop (cdr l) (add1 n))))))])
+	     (if (or (not animate?) (eq? set add-cards-callback))
+		 (begin
+		   (begin-card-sequence)
+		   (for-each (lambda (c p) (set c (car p) (cdr p))) cards positions)
+		   (end-card-sequence))
+		 (let-values ([(moving-cards
+				source-xs
+				source-ys
+				dest-xs
+				dest-ys)
+			       (let loop ([cl cards][pl positions])
+				 (if (null? cl)
+				     (values null null null null null)
+				     (let-values ([(mcl sxl syl dxl dyl) (loop (cdr cl) (cdr pl))]
+						  [(card) (car cl)]
+						  [(x y) (values (caar pl) (cdar pl))])
+				       (let ([xb (box 0)][yb (box 0)])
+					 (send pb get-snip-location card xb yb)
+					 (let ([sx (unbox xb)][sy (unbox yb)])
+					   (if (and (= x sx) (= y sy))
+					       (values mcl sxl syl dxl dyl)
+					       (values (cons card mcl)
+						       (cons sx sxl)
+						       (cons sy syl)
+						       (cons x dxl)
+						       (cons y dyl))))))))])
+		   (let loop ([n 1])
+		     (unless (> n ANIMATION-STEPS)
+		       (let ([start (current-milliseconds)]
+			     [scale (lambda (s d)
+				      (+ s (* n (/ (- d s) ANIMATION-STEPS))))])
+			 (begin-card-sequence)
+			 (for-each
+			  (lambda (c sx sy dx dy)
+			    (set c (scale sx dx) (scale sy dy)))
+			  moving-cards
+			  source-xs source-ys
+			  dest-xs dest-ys)
+			 (end-card-sequence)
+			 (pause (max 0 (- (/ ANIMATION-TIME ANIMATION-STEPS)
+					  (/ (- (current-milliseconds) start) 1000))))
+			 (loop (add1 n)))))))))]
 	[position-cards-in-region
 	 (lambda (cards r set)
 	   (let-values ([(x y w h) (send pb get-region-box r)]

@@ -24,6 +24,7 @@
 
 
 
+
 #include "wxscheme.h"
 #include "wxs_madm.h"
 #include "wxscomon.h"
@@ -384,12 +385,12 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnChar(x0);
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -405,12 +406,12 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnEvent(x0);
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -426,11 +427,11 @@ void os_wxMediaCanvas::OnPaint()
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnPaint();
   } else {
-  
-  
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 0, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -446,12 +447,12 @@ void os_wxMediaCanvas::OnDropFile(pathname x0)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnDropFile(x0);
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_pathname((char *)x0);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -467,13 +468,13 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     return FALSE;
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
   v = scheme_apply(method, 2, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return objscheme_unbundle_bool(v, "pre-on-event in editor-canvas%"", extracting return value");
   }
@@ -490,13 +491,13 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     return FALSE;
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
   v = scheme_apply(method, 2, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return objscheme_unbundle_bool(v, "pre-on-char in editor-canvas%"", extracting return value");
   }
@@ -535,11 +536,11 @@ void os_wxMediaCanvas::OnSetFocus()
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnSetFocus();
   } else {
-  
-  
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 0, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -555,11 +556,11 @@ void os_wxMediaCanvas::OnKillFocus()
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxMediaCanvas::OnKillFocus();
   } else {
-  
-  
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 0, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }

@@ -22,6 +22,7 @@
 
 
 
+
 #include "wxscheme.h"
 #include "wxs_chce.h"
 #include "wxscomon.h"
@@ -212,12 +213,12 @@ void os_wxChoice::OnDropFile(pathname x0)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxChoice::OnDropFile(x0);
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_pathname((char *)x0);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -233,13 +234,13 @@ Bool os_wxChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     return FALSE;
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxMouseEvent(x1);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
   v = scheme_apply(method, 2, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return objscheme_unbundle_bool(v, "pre-on-event in choice%"", extracting return value");
   }
@@ -256,13 +257,13 @@ Bool os_wxChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     return FALSE;
   } else {
-  
+  mz_jmp_buf savebuf;
   p[0] = objscheme_bundle_wxWindow(x0);
   p[1] = objscheme_bundle_wxKeyEvent(x1);
-  
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
 
   v = scheme_apply(method, 2, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return objscheme_unbundle_bool(v, "pre-on-char in choice%"", extracting return value");
   }
@@ -301,11 +302,11 @@ void os_wxChoice::OnSetFocus()
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxChoice::OnSetFocus();
   } else {
-  
-  
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 0, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -321,11 +322,11 @@ void os_wxChoice::OnKillFocus()
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     wxChoice::OnKillFocus();
   } else {
-  
-  
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 0, p);
-  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
@@ -766,6 +767,7 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
 {
   Scheme_Object *p[2];
   Scheme_Class_Object *obj;
+  mz_jmp_buf savebuf;
 
   obj = (Scheme_Class_Object *)realobj->__gc_external;
 
@@ -777,5 +779,10 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   p[0] = (Scheme_Object *)obj;
   p[1] = objscheme_bundle_wxCommandEvent(&event);
 
-  scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
+  COPY_JMPBUF(savebuf, scheme_error_buf);
+
+  if (!scheme_setjmp(scheme_error_buf))
+    scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
+
+  COPY_JMPBUF(scheme_error_buf, savebuf);
 }

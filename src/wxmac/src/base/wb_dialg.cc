@@ -30,7 +30,6 @@
 #include "wx_mtxt.h"
 #include "wx_slidr.h"
 #include "wx_lbox.h"
-#include "wx_mgstr.h"
 
 #include <stdio.h>
 

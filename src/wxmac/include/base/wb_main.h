@@ -20,7 +20,6 @@
 
 #include "common.h"
 #include "wx_obj.h"
-#include "wx_mgstr.h"
 
 // Here's a macro you can use if your compiler
 // really, really wants main() to be in your main program

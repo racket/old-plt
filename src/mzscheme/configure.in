@@ -385,10 +385,12 @@ fi
 
 MROPTIONS=
 WXVARIANT="wx_xt"
+INCLUDEDEP="#"
 
 if test "${enable_quartz}" = "yes" ; then
   MROPTIONS="$MROPTIONS -cpp-precomp -fpascal-strings"
   WXVARIANT="wx_mac"
+  INCLUDEDEP="-include"
 fi
 
 if test "${enable_mred}" = "yes" ; then
@@ -551,6 +553,8 @@ AC_SUBST(MAKE_MREDINSTALL3M)
 AC_SUBST(MAKE_WBUILD)
 AC_SUBST(MAKE_COPYTREE)
 AC_SUBST(MAKE_FINISH)
+
+AC_SUBST(INCLUDEDEP)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)

@@ -34,7 +34,7 @@ LDFLAGS = $(XLIB)
 
 XPMDIR = $(srcdir)/../contrib/wxxpm/libxpm.34b/lib
 
-WXMAC_CXXFLAGS = $(CXXFLAGS) -I$(XPMDIR) -I$(PLTSRCDIR)/a-list/c-headers/ -I$(srcdir)/../utils/image/src
+WXMAC_CXXFLAGS = $(CXXFLAGS) -MMD -I$(XPMDIR) -I$(PLTSRCDIR)/a-list/c-headers/ -I$(srcdir)/../utils/image/src
 
 
 OBJS = \
@@ -43,7 +43,7 @@ OBJS = \
    wb_timer.o \
    wb_frame.o \
    wb_list.o \
-   wb_ps.o \
+   PSDC.o \
    wb_types.o \
    wb_canvs.o \
    wb_gdi.o \
@@ -160,8 +160,8 @@ wb_frame.o : $(srcdir)/base/wb_frame.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_frame.o -c $(srcdir)/base/wb_frame.cc
 wb_list.o : $(srcdir)/../../wxcommon/wb_list.cxx
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_list.o -c $(srcdir)/../../wxcommon/wb_list.cxx
-wb_ps.o : $(srcdir)/../../wxcommon/PSDC.cxx
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_ps.o -c $(srcdir)/../../wxcommon/PSDC.cxx
+PSDC.o : $(srcdir)/../../wxcommon/PSDC.cxx
+	$(CXX) $(WXMAC_CXXFLAGS) -o PSDC.o -c $(srcdir)/../../wxcommon/PSDC.cxx
 wb_types.o : $(srcdir)/base/wb_types.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_types.o -c $(srcdir)/base/wb_types.cc
 wb_canvs.o : $(srcdir)/base/wb_canvs.cc
@@ -341,7 +341,7 @@ wrffri.o : $(XPMDIR)/wrffri.cpp
 ########################################
 
 ALISTDIR = $(srcdir)/../../a-list/a-list-1.1.9
-ALISTCCFLAGS = $(CFLAGS) -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
+ALISTCCFLAGS = $(CFLAGS) -MMD -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
 ALISTDEPS = $(ALISTDIR)/AListInternal.h
 
 ALBirthDeath.o : $(ALISTDEPS) $(ALISTDIR)/ALBirthDeath.c
@@ -375,3 +375,108 @@ ALHeirarchical.o : $(ALISTDEPS) $(ALISTDIR)/ALHeirarchical.c
 ALSelectors.o : $(ALISTDEPS) $(ALISTDIR)/ALSelectors.c
 	$(CC) $(ALISTCCFLAGS) -o ALSelectors.o -c $(ALISTDIR)/ALSelectors.c
 
+########################################
+#             Make Depends             #
+########################################
+
+@INCLUDEDEP@ wb_item.d
+@INCLUDEDEP@ wb_panel.d
+@INCLUDEDEP@ wb_timer.d
+@INCLUDEDEP@ wb_frame.d
+@INCLUDEDEP@ wb_list.d
+@INCLUDEDEP@ PSDC.d
+@INCLUDEDEP@ wb_types.d
+@INCLUDEDEP@ wb_canvs.d
+@INCLUDEDEP@ wb_gdi.d
+@INCLUDEDEP@ wb_main.d
+@INCLUDEDEP@ wb_utils.d
+@INCLUDEDEP@ wb_data.d
+@INCLUDEDEP@ wb_hash.d
+@INCLUDEDEP@ wb_stdev.d
+@INCLUDEDEP@ wb_win.d
+@INCLUDEDEP@ wb_dc.d
+@INCLUDEDEP@ wb_sysev.d
+@INCLUDEDEP@ wb_dialg.d
+@INCLUDEDEP@ wb_obj.d
+@INCLUDEDEP@ xfspline.d
+@INCLUDEDEP@ wx_choic.d
+@INCLUDEDEP@ wx_main.d
+@INCLUDEDEP@ wx_clipb.d
+@INCLUDEDEP@ wx_menu.d
+@INCLUDEDEP@ wx_comparestrings.d
+@INCLUDEDEP@ wx_messg.d
+@INCLUDEDEP@ wxBorder.d
+@INCLUDEDEP@ wx_dc.d
+@INCLUDEDEP@ wxBorderArea.d
+@INCLUDEDEP@ wx_dccan1.d
+@INCLUDEDEP@ wx_mnuit.d
+@INCLUDEDEP@ wxButtonBorder.d
+@INCLUDEDEP@ wx_dccan2.d
+@INCLUDEDEP@ wx_dccan3.d
+@INCLUDEDEP@ wx_panel.d
+@INCLUDEDEP@ wxLabelArea.d
+@INCLUDEDEP@ wx_dcmem.d
+@INCLUDEDEP@ wx_print.d
+@INCLUDEDEP@ wxMacDC.d
+@INCLUDEDEP@ wxMacObj.d
+@INCLUDEDEP@ wx_dcpr1.d
+@INCLUDEDEP@ wx_rbox.d
+@INCLUDEDEP@ wx_rbut.d
+@INCLUDEDEP@ wx_sbar.d
+@INCLUDEDEP@ wxMargin.d
+@INCLUDEDEP@ wx_dialg.d
+@INCLUDEDEP@ wx_screen.d
+@INCLUDEDEP@ wxRectBorder.d
+@INCLUDEDEP@ wx_slidr.d
+@INCLUDEDEP@ wxScroll.d
+@INCLUDEDEP@ wx_frame.d
+@INCLUDEDEP@ wxScrollArea.d
+@INCLUDEDEP@ wx_gauge.d
+@INCLUDEDEP@ wxScrollData.d
+@INCLUDEDEP@ wx_gdi.d
+@INCLUDEDEP@ wx_app.d
+@INCLUDEDEP@ wx_util.d
+@INCLUDEDEP@ wx_area.d
+@INCLUDEDEP@ wx_win.d
+@INCLUDEDEP@ wx_buttn.d
+@INCLUDEDEP@ wx_item.d
+@INCLUDEDEP@ wximgfil.d
+@INCLUDEDEP@ wx_canvs.d
+@INCLUDEDEP@ wx_lbox.d
+@INCLUDEDEP@ wx_check.d
+@INCLUDEDEP@ wx_mac_utils.d
+@INCLUDEDEP@ wx_bmp.d
+@INCLUDEDEP@ wx_24to8.d
+@INCLUDEDEP@ wx_image.d
+@INCLUDEDEP@ wx_xbm.d
+@INCLUDEDEP@ crbuffri.d
+@INCLUDEDEP@ crdatfri.d
+@INCLUDEDEP@ create.d
+@INCLUDEDEP@ crifrbuf.d
+@INCLUDEDEP@ crifrdat.d
+@INCLUDEDEP@ data.d
+@INCLUDEDEP@ hashtab.d
+@INCLUDEDEP@ miscellaneous.d
+@INCLUDEDEP@ parse.d
+@INCLUDEDEP@ rdftodat.d
+@INCLUDEDEP@ rdftoi.d
+@INCLUDEDEP@ rgb.d
+@INCLUDEDEP@ scan.d
+@INCLUDEDEP@ simx.d
+@INCLUDEDEP@ wrffrdat.d
+@INCLUDEDEP@ wrffri.d
+@INCLUDEDEP@ ALBirthDeath.d
+@INCLUDEDEP@ ALKeyboard.d
+@INCLUDEDEP@ ALUserPane.d
+@INCLUDEDEP@ LongControls.d
+@INCLUDEDEP@ ALCellData.d
+@INCLUDEDEP@ ALMouse.d
+@INCLUDEDEP@ ALUtilities.d
+@INCLUDEDEP@ ALDrawing.d
+@INCLUDEDEP@ ALScrolling.d
+@INCLUDEDEP@ LongCoords.d
+@INCLUDEDEP@ ALEditing.d
+@INCLUDEDEP@ ALSelecting.d
+@INCLUDEDEP@ QDDrawingState.d
+@INCLUDEDEP@ ALHeirarchical.d
+@INCLUDEDEP@ ALSelectors.d

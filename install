@@ -12,7 +12,7 @@ if [ ! \( \( -x install \) -a \( -d collects \) \) ] ; then
   exit 1
 fi
 
-exec ./bin/mzscheme -r "$0" ${1+"$@"}
+exec ./bin/mzscheme -qr "$0" ${1+"$@"}
 echo Couldn't start MzScheme --- install incomplete!
 exit
 
@@ -70,10 +70,11 @@ exit
   (let ([r (read-line)])
     (not (regexp-match "^[nN]" r))))
 
-(define in-rpm? (getenv "RPM_INSTALL_PREFIX"))
+(define in-rpm-install? (getenv "RPM_INSTALL_PREFIX"))
+(define in-rpm-build? (and (getenv "RPM_OPT_FLAGS") (not in-rpm-install?)))
 
 (define check-version?
-  (if in-rpm?
+  (if (or in-rpm-install? in-rpm-build?)
       #f
       (begin
 	(printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
@@ -83,13 +84,14 @@ exit
       (check-version))
 
 (define zo?
-  (or in-rpm?
-      (begin
-	(printf "PLT software starts up much faster with .zo files, but creating .zo~n")
-	(printf "files now takes a few minutes and requires about 5MB of additional~n")
-	(printf "disk space. Create .zo files later by running plt/bin/setup-plt.~n")
-	(printf "  Create .zo files now (y/n)? [y] ")
-	(get-y-n))))
+  (or in-rpm-install?
+      (and (not in-rpm-build?)
+	   (begin
+	    (printf "PLT software starts up much faster with .zo files, but creating .zo~n")
+	    (printf "files now takes a few minutes and requires about 5MB of additional~n")
+	    (printf "disk space. Create .zo files later by running plt/bin/setup-plt.~n")
+	    (printf "  Create .zo files now (y/n)? [y] ")
+	    (get-y-n)))))
 
 (when zo?
   (dynamic-require '(lib "setup.ss" "setup") #f))

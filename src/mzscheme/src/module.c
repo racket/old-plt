@@ -52,6 +52,8 @@ static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *module_export_protected_p(int argc, Scheme_Object **argv);
+
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *module_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec);
 static Scheme_Object *module_begin_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -335,7 +337,13 @@ void scheme_init_module(Scheme_Env *env)
 						      2, 2),
 			     env);
 
-  scheme_add_global_constant("module->namespace",
+  scheme_add_global_constant("module-provide-protected?", 
+			     scheme_make_prim_w_arity(module_export_protected_p,
+						      "module-provide-protected?",
+						      2, 2),
+			     env);
+
+    scheme_add_global_constant("module->namespace",
 			     scheme_make_prim_w_arity(module_to_namespace,
 						      "module->namespace",
 						      1, 1),
@@ -1558,6 +1566,49 @@ static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[])
   }
 
   return scheme_make_modidx(argv[0], argv[1], scheme_false);
+}
+
+static Scheme_Object *module_export_protected_p(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+  Scheme_Object *modname, *mv, *name;
+  Scheme_Module *m;
+  int i, count;
+
+  if (!SCHEME_SYMBOLP(argv[0])
+      && !SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_module_index_type))
+    scheme_wrong_type("module-provide-protected?", "symbol or module-path-index", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[1]))
+    scheme_wrong_type("module-provide-protected?", "symbol", 1, argc, argv);
+
+  modname = scheme_module_resolve(argv[0]);
+  name = argv[1];
+
+  env = scheme_get_env(NULL);
+  if (SAME_OBJ(modname, kernel_symbol))
+    mv = (Scheme_Object *)kernel;
+  else
+    mv = scheme_hash_get(env->module_registry, modname);
+  if (!mv) {
+    scheme_arg_mismatch("module-provide-protected?",
+			"unknown module (in the source namespace): ",
+			modname);
+    return NULL;
+  }
+
+  m = (Scheme_Module *)mv;
+
+  count = m->num_provides;
+  for (i = 0; i < count; i++) {
+    if (SAME_OBJ(name, m->provides[i])) {
+      if (m->provide_protects && m->provide_protects[i])
+	return scheme_true;
+      else
+	return scheme_false;
+    }
+  }
+
+  return scheme_true;
 }
 
 /**********************************************************************/

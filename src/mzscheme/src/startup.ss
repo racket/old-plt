@@ -823,8 +823,8 @@
 						 (make-core name (and inspector 'inspector) super-id/struct: field-names))])
 				   (if inspector
 				       `(let ([inspector ,inspector])
-					  (if (not (inspector? inspector))
-					      (raise-type-error 'define-struct "inspector" inspector))
+					  (if (if inspector (not (inspector? inspector)) #f)
+					      (raise-type-error 'define-struct "inspector or #f" inspector))
 					  ,core)
 				       core)))
 			      (define-syntaxes (,name) ,(if delay?

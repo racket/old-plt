@@ -4013,10 +4013,6 @@ int mark_read_params_SIZE(void *p) {
 int mark_read_params_MARK(void *p) {
   ReadParams *rp = (ReadParams *)p;
   gcMARK(rp->table);
-  gcMARK(rp->port);
-  gcMARK(rp->src);
-  gcMARK(rp->indentation);
-  gcMARK(rp->ht);
   return
   gcBYTES_TO_WORDS(sizeof(ReadParams));
 }
@@ -4024,10 +4020,6 @@ int mark_read_params_MARK(void *p) {
 int mark_read_params_FIXUP(void *p) {
   ReadParams *rp = (ReadParams *)p;
   gcFIXUP(rp->table);
-  gcFIXUP(rp->port);
-  gcFIXUP(rp->src);
-  gcFIXUP(rp->indentation);
-  gcFIXUP(rp->ht);
   return
   gcBYTES_TO_WORDS(sizeof(ReadParams));
 }

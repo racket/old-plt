@@ -1616,10 +1616,6 @@ mark_read_params {
  mark:
   ReadParams *rp = (ReadParams *)p;
   gcMARK(rp->table);
-  gcMARK(rp->port);
-  gcMARK(rp->src);
-  gcMARK(rp->indentation);
-  gcMARK(rp->ht);
  size:
   gcBYTES_TO_WORDS(sizeof(ReadParams));
 }

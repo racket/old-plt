@@ -2428,10 +2428,10 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 
       if (argc > 6) {
 	if (SCHEME_FALSEP(argv[6]))
-	  inspector = NULL;
+	  inspector = scheme_false;
 	else {
 	  if (!SAME_TYPE(SCHEME_TYPE(argv[6]), scheme_inspector_type))
-	    scheme_wrong_type("make-struct-type", "inspector", 6, argc, argv);
+	    scheme_wrong_type("make-struct-type", "inspector or #f", 6, argc, argv);
 	  
 	  inspector = argv[6];
 	}

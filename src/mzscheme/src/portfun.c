@@ -44,9 +44,13 @@ static Scheme_Object *call_with_input_file (int, Scheme_Object *[]);
 static Scheme_Object *with_input_from_file (int, Scheme_Object *[]);
 static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
+static Scheme_Object *read_recur_f (int, Scheme_Object *[]);
 static Scheme_Object *read_honu_f (int, Scheme_Object *[]);
+static Scheme_Object *read_honu_recur_f (int, Scheme_Object *[]);
 static Scheme_Object *read_syntax_f (int, Scheme_Object *[]);
+static Scheme_Object *read_syntax_recur_f (int, Scheme_Object *[]);
 static Scheme_Object *read_honu_syntax_f (int, Scheme_Object *[]);
+static Scheme_Object *read_honu_syntax_recur_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_byte (int, Scheme_Object *[]);
@@ -355,9 +359,19 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "read",
 						      0, 1),
 			     env);
+  scheme_add_global_constant("read/recursive",
+			     scheme_make_prim_w_arity(read_recur_f,
+						      "read/recursive",
+						      0, 1),
+			     env);
   scheme_add_global_constant("read-syntax",
 			     scheme_make_prim_w_arity(read_syntax_f,
 						      "read-syntax",
+						      0, 3),
+			     env);
+  scheme_add_global_constant("read-syntax/recursive",
+			     scheme_make_prim_w_arity(read_syntax_recur_f,
+						      "read-syntax/recursive",
 						      0, 3),
 			     env);
   scheme_add_global_constant("read-honu",
@@ -365,9 +379,19 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "read-honu",
 						      0, 1),
 			     env);
+  scheme_add_global_constant("read-honu/recursive",
+			     scheme_make_prim_w_arity(read_honu_recur_f,
+						      "read-honu/recursive",
+						      0, 1),
+			     env);
   scheme_add_global_constant("read-honu-syntax",
 			     scheme_make_prim_w_arity(read_honu_syntax_f,
 						      "read-honu-syntax",
+						      0, 3),
+			     env);
+  scheme_add_global_constant("read-honu-syntax/recursive",
+			     scheme_make_prim_w_arity(read_honu_syntax_recur_f,
+						      "read-honu-syntax/recursive",
 						      0, 3),
 			     env);
   scheme_add_global_constant("read-char",
@@ -2671,10 +2695,10 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
   else
     src = NULL;
 
-  return scheme_internal_read(argv[0], src, -1, 0, 0);
+  return scheme_internal_read(argv[0], src, -1, 0, 0, 0);
 }
 
-static Scheme_Object *do_read_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode)
+static Scheme_Object *do_read_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode, int recur)
 {
   Scheme_Object *port;
 
@@ -2686,7 +2710,7 @@ static Scheme_Object *do_read_f(const char *who, int argc, Scheme_Object *argv[]
   else
     port = CURRENT_INPUT_PORT(scheme_current_config());
 
-  if (((Scheme_Input_Port *)port)->read_handler && !honu_mode) {
+  if (((Scheme_Input_Port *)port)->read_handler && !honu_mode && !recur) {
     Scheme_Object *o[1];
     o[0] = port;
     return _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 1, o);
@@ -2694,21 +2718,39 @@ static Scheme_Object *do_read_f(const char *who, int argc, Scheme_Object *argv[]
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, NULL, -1, 0, honu_mode);
+    return scheme_internal_read(port, NULL, -1, 0, honu_mode, recur);
   }
 }
 
 static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 {
-  return do_read_f("read", argc, argv, 0);
+  return do_read_f("read", argc, argv, 0, 0);
+}
+
+static Scheme_Object *read_recur_f(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+  v = do_read_f("read/recusrive", argc, argv, 0, 1);
+  if (!v)
+    scheme_raise_exn(MZEXN_FAIL, "read/recursive: no read in progress");
+  return v;
 }
 
 static Scheme_Object *read_honu_f(int argc, Scheme_Object *argv[])
 {
-  return do_read_f("read-honu", argc, argv, 1);
+  return do_read_f("read-honu", argc, argv, 1, 0);
 }
 
-static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode)
+static Scheme_Object *read_honu_recur_f(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+  v = do_read_f("read-honu/recursive", argc, argv, 1, 1);
+  if (!v)
+    scheme_raise_exn(MZEXN_FAIL, "read-honu/recursive: no read in progress");
+  return v;
+}
+
+static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode, int recur)
 {
   Scheme_Object *port;
   Scheme_Object *delta = scheme_false;
@@ -2760,18 +2802,36 @@ static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object 
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, src, -1, 0, honu_mode);
+    return scheme_internal_read(port, src, -1, 0, honu_mode, recur);
   }
 }
 
 static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 {
-  return do_read_syntax_f("read-syntax", argc, argv, 0);
+  return do_read_syntax_f("read-syntax", argc, argv, 0, 0);
+}
+
+static Scheme_Object *read_syntax_recur_f(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+  v = do_read_syntax_f("read-syntax/recursive", argc, argv, 0, 1);
+  if (!v)
+    scheme_raise_exn(MZEXN_FAIL, "read-syntax/recursive: no syntax read in progress");
+  return v;
 }
 
 static Scheme_Object *read_honu_syntax_f(int argc, Scheme_Object *argv[])
 {
-  return do_read_syntax_f("read-honu-syntax", argc, argv, 1);
+  return do_read_syntax_f("read-honu-syntax", argc, argv, 1, 0);
+}
+
+static Scheme_Object *read_honu_syntax_recur_f(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+  v = do_read_syntax_f("read-honu-syntax/recursive", argc, argv, 1, 1);
+  if (!v)
+    scheme_raise_exn(MZEXN_FAIL, "read-honu-syntax/recursive: no syntax read in progress");
+  return v;
 }
 
 static Scheme_Object *
@@ -3900,7 +3960,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Env *genv;
   int save_count = 0, got_one = 0;
 
-  while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0))
+  while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0, 0))
 	 && !SCHEME_EOFP(obj)) {
     save_array = NULL;
     got_one = 1;
@@ -3973,7 +4033,7 @@ static Scheme_Object *do_load_handler(void *data)
       }
 
       /* Check no more expressions: */
-      d = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0);
+      d = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0, 0);
       if (!SCHEME_EOFP(d)) {
 	scheme_raise_exn(MZEXN_FAIL,
 			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %V",

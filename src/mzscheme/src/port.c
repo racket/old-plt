@@ -2599,6 +2599,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 				  Scheme_Object *src, long line, long col, long pos,
 				  int peek)
 {
+  int cnt;
   Scheme_Object *a[4], *special;
   Scheme_Input_Port *ip;
 
@@ -2649,12 +2650,18 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
       pos++;
   }
 
-  a[0] = (src ? src : scheme_false);
-  a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
-  a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
-  a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+  a[0] = special;
+  if (!src && scheme_check_proc_arity(NULL, 2, 0, 1, a))
+    cnt = 0;
+  else {
+    cnt = 4;
+    a[0] = (src ? src : scheme_false);
+    a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
+    a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
+    a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+  }
   
-  return _scheme_apply(special, 4, a);
+  return _scheme_apply(special, cnt, a);
 }
 
 Scheme_Object *scheme_get_ready_special(Scheme_Object *port, 

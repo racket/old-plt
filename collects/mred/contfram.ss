@@ -47,6 +47,7 @@
 	    
 	    ; pointer to panel in the frame for use in on-size
 	    [panel null])
+
 	  (public
 	    
 	    ; a unique ID for the object for debugging purposes.
@@ -61,10 +62,10 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	      (lambda (new-panel)
-		(mred:debug:printf 'container-insert-panel
-		  "Entering insert-panel, frame ~s" object-ID)
-		(mred:debug:printf 'container-insert-panel
-		  "Argument: ~s; panel ID ~s" new-panel
+		(mred:debug:printf 'container-frame-insert-panel
+		  "container-frame-insert-panel: Entering insert-panel, frame ~s" object-ID)
+		(mred:debug:printf 'container-frame-insert-panel
+		  "container-frame-insert-panel: Argument: ~s; panel ID ~s" new-panel
 		  (ivar new-panel object-ID))
 		(unless (null? panel)
 		  (error 'insert-panel
@@ -78,6 +79,8 @@
 		    "Added panel ~s to a frame (~s) not its parent"
 		    new-panel this))
 		(set! panel new-panel)
+		(mred:debug:printf 'container-frame-insert-panel
+		  "container-frame-insert-panel: sizing panel, forcing redraw, and quitting.")
 		(let-values ([(client-w client-h)
 			      (get-two-int-values get-client-size)])
 		  (send panel set-size 0 0 client-w client-h))
@@ -89,8 +92,11 @@
 
 	    [force-redraw
 	      (lambda ()
-		(mred:debug:printf 'container-force-redraw
-		  "Entering force-redraw; frame ~s" object-ID)
+		(mred:debug:printf 'container-frame-force-redraw
+		  "container-frame-force-redraw: Entering force-redraw; frame ~s" object-ID)
+		(mred:debug:printf 'container-frame-force-redraw
+		  "container-frame-force-redraw: calling on-size with ~s ~s and quitting"
+		  (get-width) (get-height))
 		(on-size (get-width) (get-height)))]
 	    
 	    ; on-size: ensures that size of frame matches size of content
@@ -104,12 +110,11 @@
 	    ;            independantly.
 	    [on-size
 	      (lambda (new-width new-height)
-		(mred:debug:printf 'container-on-size
-		  "FRAME: Entered frame's on-size; args ~s ~s"
+		(mred:debug:printf 'container-frame-on-size
+		  "container-frame-on-size: Entered frame's on-size; args ~s ~s"
 		  new-width new-height)
-		(mred:debug:printf 'container-on-size
-		  "Calling super-class's on-size")
-		(super-on-size new-width new-height)
+		(mred:debug:printf 'container-frame-on-size
+		  "container-frame-on-size: Calling super-class's on-size")
 		(unless (null? panel)
 		  (let ([p-x (box 0)]
 			[p-y (box 0)])
@@ -159,35 +164,35 @@
 			   ; quantities.
 			   [f-width (+ new-w delta-w)]
 			   [f-height (+ new-h delta-h)])
-		      (mred:debug:printf 'container-on-size
-			"FRAME: panel client ~s x ~s"
+		      (mred:debug:printf 'container-frame-on-size
+			"container-frame-on-size: panel client ~s x ~s"
 			p-client-width p-client-height)
-		      (mred:debug:printf 'container-on-size
-			"FRAME: size differences: ~s, ~s"
+		      (mred:debug:printf 'container-frame-on-size
+			"container-frame-on-size: size differences: ~s, ~s"
 			delta-w delta-h)
-		      (mred:debug:printf 'container-on-size
-			"FRAME: New size: ~s x ~s"
+		      (mred:debug:printf 'container-frame-on-size
+			"container-frame-on-size: New size: ~s x ~s"
 			new-w new-h)
 		      (begin
-			(mred:debug:printf 'container-on-size
-			  "Resizing panel to ~s x ~s"
+			(mred:debug:printf 'container-frame-on-size
+			  "container-frame-on-size: Resizing panel to ~s x ~s"
 			  (+ (- f-width delta-w) p-delta-w)
 			  (+ (- f-height delta-h) p-delta-h))
 			(send panel set-size const-default-posn
 			  const-default-posn
 			  (+ (- f-width delta-w) p-delta-w)
 			  (+ (- f-height delta-h) p-delta-h))
-			(mred:debug:printf 'container-on-size
-			  "Resized panel"))
+			(mred:debug:printf 'container-frame-on-size
+			  "container-frame-on-size: Resized panel"))
 		      (unless (and (= new-width f-width)
 				(= new-height f-height))
-			(mred:debug:printf 'container-on-size
-			  "FRAME: Resizing to ~s x ~s"
+			(mred:debug:printf 'container-frame-on-size
+			  "container-frame-on-size: Resizing to ~s x ~s"
 			  f-width f-height)
 			(set-size const-default-posn const-default-posn
 			  f-width f-height)))))
-		(mred:debug:printf 'container-on-size
-		  "FRAME: Leaving onsize at the end."))])
+		(mred:debug:printf 'container-frame-on-size
+		  "container-frame-on-size: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)

@@ -80,6 +80,7 @@
 	(aries:signal-not-boolean (setting-signal-not-boolean pref))
 	(show-sharing (setting-sharing-printing? pref))
 	(set-printer-style/get-number (setting-printing pref))
+	(read-case-sensitive (setting-case-sensitive? pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))

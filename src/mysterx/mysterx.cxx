@@ -4324,7 +4324,7 @@ static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
     }
   }
 
-  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
+  scheme_add_fd_eventmask(fds,QS_ALLINPUT);
   scheme_add_fd_handle(dummySem,fds,TRUE); 
 }
 

@@ -28,7 +28,7 @@ static BOOL html_event_available(MX_Browser_Object *browser) {
 }
 
 static void html_event_sem_fun(MX_Browser_Object *browser,void *fds) {
-  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
+  scheme_add_fd_eventmask(fds,QS_ALLINPUT);
   scheme_add_fd_handle(browser->readSem,fds,TRUE); 
 }
 

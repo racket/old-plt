@@ -16,7 +16,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r5a")
+(define *tex2page-version* "4r5b")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -131,6 +131,10 @@
 (define *html-dagger* "&plusmn;")
 
 (define *html-dagger-2* "&plusmn;&plusmn;")
+
+(define *html-iexcl* "&iexcl;")
+
+(define *html-iquest* "&iquest;")
 
 (define *html-ldquo* "``")
 
@@ -1733,9 +1737,9 @@
     (cond
      ((find-chardef-in-top-frame c) => (lambda (y) (set!cdef.active y #t)))
      (else
-      (let ((d (ensure-cdef c (top-texframe)))) (y (find-chardef c)))
-      (when y (copy-cdef d y))
-      (set!cdef.active d #t)))))
+      (let* ((y (find-chardef c)) (d (ensure-cdef c (top-texframe))))
+        (when y (copy-cdef d y))
+        (set!cdef.active d #t))))))
 
 (define deactivate-cdef
   (lambda (c)
@@ -2008,108 +2012,6 @@
                 (loop i+3 (+ i+3 3) (+ k 1)))
                (else #f)))))
          (else #f)))))))
-
-'(define do-heading
-   (lambda (seclvl)
-     (let ((unnumbered?
-             (let ((secnumdepth (get-gcount "\\secnumdepth"))
-                   (c (snoop-actual-char)))
-               (cond
-                ((char=? c #\*) (get-actual-char) #t)
-                ((< secnumdepth -1) #f)
-                ((> seclvl secnumdepth) #t)
-                (else #f)))))
-       (if (<= seclvl 0) (do-eject))
-       (increment-section-counter seclvl unnumbered?)
-       (let* ((htmlnum
-                (max 1 (min 6 (if *using-chapters?* (+ seclvl 1) seclvl))))
-              (header (get-group))
-              (lbl-val
-                (if unnumbered? "IGNORE" (section-counter-value seclvl)))
-              (lbl
-               (string-append
-                 *html-node-prefix*
-                 (case seclvl ((-1) "part") ((0) "chap") (else "sec"))
-                 "_"
-                 (if unnumbered? (gen-temp-string) lbl-val))))
-         (unless unnumbered?
-           (tex-def-toks "\\TIIPrecentlabelname" lbl #f)
-           (tex-def-toks "\\TIIPrecentlabelvalue" lbl-val #f))
-         (do-end-para)
-         (emit-anchor lbl)
-         (emit-newline)
-         (ignore-all-whitespace)
-         (emit "<h")
-         (emit htmlnum)
-         (case seclvl
-           ((-1) (emit " class=part align=center"))
-           ((0) (emit " class=chapter")))
-         (emit ">")
-         (let ((write-to-toc?
-                 (and *toc-page*
-                      (not
-                       (and (eqv? *tex-format* 'latex)
-                            (string=? header "{Contents}"))))))
-           (case seclvl
-             ((-1)
-              (emit "<div class=partheading>")
-              (if unnumbered?
-                (emit-nbsp 1)
-                (begin
-                  (when write-to-toc?
-                    (emit-page-node-link-start
-                      *toc-page*
-                      (string-append *html-node-prefix* "toc_" lbl)))
-                  (emit "Part ")
-                  (emit lbl-val)
-                  (when write-to-toc? (emit-link-stop))))
-              (emit "</div><br>")
-              (emit-newline))
-             ((0)
-              (emit-newline)
-              (emit "<div class=chapterheading>")
-              (if unnumbered?
-                (emit-nbsp 1)
-                (begin
-                  (when write-to-toc?
-                    (emit-page-node-link-start
-                      *toc-page*
-                      (string-append *html-node-prefix* "toc_" lbl)))
-                  (tex2page-string
-                    (if *inside-appendix?* "\\appendixname" "\\chaptername"))
-                  (emit lbl-val)
-                  (when write-to-toc? (emit-link-stop))))
-              (emit "</div><br>")
-              (emit-newline)))
-           (when write-to-toc?
-             (emit-page-node-link-start
-               *toc-page*
-               (string-append *html-node-prefix* "toc_" lbl)))
-           (unless (or (<= seclvl 0) unnumbered?) (emit lbl-val) (emit-nbsp 2))
-           (fluid-let
-             ((*tabular-stack* (list 'header)))
-             (tex2page-string header))
-           (when write-to-toc? (emit-link-stop))
-           (emit "</h")
-           (emit htmlnum)
-           (emit ">")
-           (do-para)
-           (let ((tocdepth (get-gcount "\\tocdepth")))
-             (when (and
-                    write-to-toc?
-                    (or (< tocdepth -1) (<= seclvl tocdepth)))
-               (write-aux
-                 `(!toc-entry
-                    ,(if (= seclvl -1)
-                       -1
-                       (if *using-chapters?* seclvl (- seclvl 1)))
-                    ,lbl-val
-                    ,*html-page-count*
-                    ,lbl
-                    ,header)))))
-         (when *recent-node-name*
-           (do-label-aux *recent-node-name*)
-           (set! *recent-node-name* #f))))))
 
 (define do-heading
   (lambda (seclvl)
@@ -2939,6 +2841,24 @@
         (if (and (char? c) (char=? c #\-))
           (begin (get-actual-char) (do-ndash))
           (emit #\-)))))))
+
+(define do-iexcl
+  (lambda ()
+    (if (or *math-mode?* (not *ligatures?*))
+      (emit #\!)
+      (let ((c (snoop-actual-char)))
+        (if (and (char? c) (char=? c #\`))
+          (begin (get-actual-char) (emit *html-iexcl*))
+          (emit #\!))))))
+
+(define do-iquest
+  (lambda ()
+    (if (or *math-mode?* (not *ligatures?*))
+      (emit #\?)
+      (let ((c (snoop-actual-char)))
+        (if (and (char? c) (char=? c #\`))
+          (begin (get-actual-char) (emit *html-iquest*))
+          (emit #\?))))))
 
 (define do-ndash
   (lambda ()
@@ -6857,6 +6777,8 @@
      ((char=? c #\`) (do-lsquo))
      ((char=? c #\') (do-rsquo))
      ((char=? c #\~) (emit-nbsp 1))
+     ((char=? c #\!) (do-iexcl))
+     ((char=? c #\?) (do-iquest))
      ((or (char=? c #\<) (char=? c #\>) (char=? c #\")) (emit-html-char c))
      ((char=? c #\&)
       (cond

@@ -35,6 +35,20 @@
 		(memq* a (cdr l)))
 	    #f))
 
+      (define (extend-font font size style weight)
+	(if (send font get-face)
+	    (send the-font-list find-or-create-font
+		  size 
+		  (send font get-face)
+		  (send font get-family)
+		  style
+		  weight)
+	    (send the-font-list find-or-create-font
+		  size 
+		  (send font get-family)
+		  style
+		  weight)))
+
       (define text
 	(case-lambda
 	 [(string) (text string '() 12)]
@@ -66,17 +80,15 @@
 			   [style (car style)])
 		       (cond
 			[(eq? style 'bold)
-			 (send the-font-list find-or-create-font
-			       (send font get-point-size)
-			       (send font get-family)
-			       (send font get-style)
-			       'bold)]
+			 (extend-font font
+				      (send font get-point-size)
+				      (send font get-style)
+				      'bold)]
 			[(eq? style 'italic)
-			 (send the-font-list find-or-create-font
-			       (send font get-point-size)
-			       (send font get-family)
-			       'italic
-			       (send font get-weight))]
+			 (extend-font font
+				      (send font get-point-size)
+				      'italic
+				      (send font get-weight))]
 			[else font]))]
 		    [else (raise-type-error 'text
 					    "style"
@@ -84,11 +96,10 @@
 		[sub? (memq* 'subscript orig-style)]
 		[sup? (memq* 'superscript orig-style)])
 	    (let ([s-font (if (or sub? sup?)
-			      (send the-font-list find-or-create-font
-				    (floor (* 1/2 (send font get-point-size)))
-				    (send font get-family)
-				    (send font get-style)
-				    (send font get-weight))
+			      (extend-font font
+					   (floor (* 1/2 (send font get-point-size)))
+					   (send font get-style)
+					   (send font get-weight))
 			      font)]
 		  [dc (dc-for-text-size)])
 	      (unless dc

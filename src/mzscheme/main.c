@@ -82,7 +82,7 @@
 
 #ifdef WIN32_THREADS
 /* Only set up for Boehm GC that thinks it's a DLL: */
-#include <windows.h>
+# include <windows.h>
 # define GC_THINKS_ITS_A_DLL_BUT_ISNT
 #endif
 #ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT

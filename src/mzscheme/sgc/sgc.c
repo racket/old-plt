@@ -60,7 +60,7 @@ typedef jmpbuf jmp_buf[1];
 #endif
 
 #ifndef SGC_AUTO_ROOTS
-# define SGC_AUTO_ROOTS 1
+# define SGC_AUTO_ROOTS 0
 #endif
 
 /****************************************************************************/

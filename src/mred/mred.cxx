@@ -2761,8 +2761,9 @@ int main(int argc, char *argv[])
     int dummy;
     GC_set_stack_base(&dummy);
   }
-
-  fprintf(stderr, "Starting MrEd sgc\n");
+# ifdef SGC_STD_DEBUGGING
+  fprintf(stderr, "Starting MrEd with sgc for debugging\n");
+# endif
 #endif
 
 #ifdef wx_mac

@@ -1,22 +1,22 @@
 This directory contains makefiles and projects files for building
 MzScheme and MrEd with Microsoft Visual C++ (MSVC) version 6. 
 If you have downloaded MzCOM, the directory also contains an 
-MSVC makefile and project file for MzCOM.  MzScheme (but not MzCOM 
-and MrEd) also compiles with Cygwin gcc (a free compiler from GNU 
-and Cygnus Solutions); to compile with gcc, follow the instructions 
-in plt\src\mzscheme\README (there is a short Windows-specific section 
-in that file.)
+MSVC makefile and project file for MzCOM. 
 
-As always, submit bug reports 
+MzScheme (but not MzCOM and MrEd) also compiles with Cygwin gcc (a
+free compiler from GNU and Cygnus Solutions); to compile with gcc,
+follow the instructions in plt\src\README (there is a short
+Windows-specific section in that file.)
 
-- using DrScheme Help Desk (preferred), 
-- or using the Web form at http://www.cs.rice.edu/CS/PLT/Bugs/, 
-- or (as a last resort) send mail to plt-bugs@cs.rice.edu
+
+As always, please report bugs via one of the following:
+  - Help Desk's "submit bug report" link  (preferred)
+  - http://www.cs.rice.edu/CS/PLT/Bugs/
+  - plt-bugs@cs.rice.edu                  (last resort)
 
 -Matthew Flatt
- University of Utah PLT
+ PLT
  mflatt@cs.utah.edu
- http://www.cs.utah.edu/~mflatt/
 
 ----------------------------------------------------------------------
 Building MzScheme, MzCOM, and MrEd

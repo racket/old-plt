@@ -30,6 +30,14 @@ if test "${enable_oskit}" = "yes" ; then
   enable_mred=no
 fi
 
+if test "${enable_osthreads}" = "yes" ; then
+  enable_mred=no
+fi
+
+if test "${enable_mred}" = "no" ; then
+  enable_wbuild=no
+fi
+
 ###### Make sure MrEd is really there ######
 
 if test "${enable_mred}" = "yes" ; then
@@ -47,7 +55,6 @@ fi
 OPTIONS=
 
 # GC Directory
-# sgc for SenoraGC
 GCDIR=gc
 
 MZBINTARGET=normal-bin
@@ -210,7 +217,7 @@ case $OS in
     EXTRALIBS="$LIBS gmzwin.exp"
     ;;
   BeOS)
-    if test "${enable_sgc_debug}" = "yes" ; then
+    if test "${enable_sgcdebug}" = "yes" ; then
       dummyvar=""
     else
       enable_sgc=yes
@@ -228,7 +235,7 @@ if test "${enable_sgc}" = "yes" ; then
   OPTIONS="$OPTIONS -DUSE_SENORA_GC"
 fi
 
-if test "${enable_sgc_debug}" = "yes" ; then
+if test "${enable_sgcdebug}" = "yes" ; then
   GCDIR=sgc
   OPTIONS="$OPTIONS -DSGC_STD_DEBUGGING=1"
 fi

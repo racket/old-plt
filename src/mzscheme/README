@@ -66,17 +66,14 @@ By default, MzScheme is compiled:
 
  * without support for single-precision floating point numbers.
 
-------------------------------------------------------------------------
+The conservative garbage collector distributed with MzScheme (in the
+gc directory) has been modified slightly from Boehm's standard
+distribution.
 
 If you modify MzScheme and change any primitive syntax or the
 collection of built-in identifers, be sure to turn off
 USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start.
 See schminc.h for details.
-
-------------------------------------------------------------------------
-
-The conservative garbage collector distributed with MzScheme has been
-modified slightly from Boehm's standard distribution.
 
 ========================================================================
  Miscellaneous
@@ -86,13 +83,3 @@ See plt/collects/mzscheme/examples/ for some example extensions.
 
 `make libguile' produces a libguile.a library that implements the
 high-level guile interface. See libguile/README.
-
-========================================================================
- Bug Reports
-========================================================================
-
-Please report bugs using
-  http://www.cs.rice.edu/CS/PLT/Bugs/
-or (as a last resort) send mail to
-  plt-bugs@cs.rice.edu
-

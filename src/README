@@ -9,13 +9,19 @@ available at
   http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
   http://www.cs.rice.edu/CS/PLT/packages/mred/
 
-The source code should compile and execute with little or no
-modification if you have an ANSI C/C++ compiler and a platform
-supported by Boehm's conservative garbage collector. If you want to
-compile MrEd (needed for DrScheme) on a Unix platform, you will also
-need GNU's make.
+The MzScheme source code should compile and execute with little or no
+modification on any Windows, MacOS, Unix (Linux), or BeOS platform.
+
+Compiling MrEd, needed for DrScheme, on a Unix platform requires GNU's
+make. (Linux's make is GNU's make.) MrEd will *not* compile using
+Cygwin for Windows, or on BeOS.
 
 Per-platform instructions are below.
+
+Please report bugs via one of the following:
+  - Help Desk's "submit bug report" link  (preferred)
+  - http://www.cs.rice.edu/CS/PLT/Bugs/
+  - plt-bugs@cs.rice.edu                  (last resort)
 
 -Matthew Flatt
  PLT
@@ -38,7 +44,7 @@ Unpack the Compactor archive plt:src:cw.cpt to plt:src:cw and then
 see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
 
 ========================================================================
- Compiling for Unix (including Linux) or Cygwin or BeOS
+ Compiling for Unix (including Linux), Cygwin, or BeOS
 ========================================================================
 
  1. Run the script `configure', which is in the same directory as
@@ -63,7 +69,7 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
 
               Windows
               MacOS (PPC and 68k)
-              Linux (x86 and PPC)
+              Linux (x86, PPC, and 68k)
               Cygwin b20
               BeOS
               Solaris (x86 and Sparc) [see note below]
@@ -76,6 +82,10 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
               OpenBSD
               OSF1 (Alpha)
               SCO Unix (x86)
+
+    If your platfrom is not supported by the Boehm garbage collector
+    (distributed with PLT source), provide the `--enable-sgc' flag to
+    `configure'. (For BeOS, this flag is inferred automatically.)
 
     [Solaris Note: To ensure that dynamic extensions work right, make
     sure your compiler uses the native Solaris `ld' rather than GNU's
@@ -94,8 +104,8 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
     `gnumake' or `gmake'. With Cygwin, use `make --unix' to build
     either MzScheme or MrEd.
 
-    Did you get a "no targets" make error when building MrEd? In that
-    case, are you using GNU's make, which reads "GNUmakefile"?
+      Did you get a "no targets" make error when building MrEd? In that
+      case, are you using GNU's make, which reads "GNUmakefile"?
 
     Binaries and libraries are placed in subdirectories of the build
     directory. For example, the `mzscheme' binary appears in the
@@ -121,12 +131,3 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
     the .zo files, too, but add -n to the end of the command to skip
     the .zo-compiling step. Afterwards, `plt/Setup PLT.exe' and
     `plt/mzc.exe' work.
-
-========================================================================
- Bug Reports
-========================================================================
-
-Please report bugs using
-  http://www.cs.rice.edu/CS/PLT/Bugs/
-or (as a last resort) send mail to
-  plt-bugs@cs.rice.edu

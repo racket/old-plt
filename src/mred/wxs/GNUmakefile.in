@@ -102,7 +102,7 @@ $(srcdir)/wxs_mede.cxx : $(srcdir)/wxs_mede.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/
 	$(XCTOCXX) $(srcdir)/wxs_mede.xc
 $(srcdir)/wxs_menu.cxx : $(srcdir)/wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_menu.xc
-$(srcdir)/wxs_mio.cxx : $(srcdir)/wxs_mio.xc  $(XCDEPEND)
+$(srcdir)/wxs_mio.cxx : $(srcdir)/wxs_mio.xc  $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_mio.xc
 $(srcdir)/wxs_misc.cxx : $(srcdir)/wxs_misc.xc  $(srcdir)/wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) $(srcdir)/wxs_misc.xc

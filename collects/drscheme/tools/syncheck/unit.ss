@@ -276,10 +276,10 @@
 		   find-position begin-edit-sequence end-edit-sequence)
 	  
 	  (rename
-	    [super-after-insert after-insert]
-	    [super-after-delete after-delete]
-	    [super-on-paint on-paint]
-	    [super-on-local-event on-local-event])
+	   [super-after-insert after-insert]
+	   [super-after-delete after-delete]
+	   [super-on-paint on-paint]
+	   [super-on-local-event on-local-event])
 	  (private
 	    [arrow-vector #f]
 	    [tacked-hash-table (make-hash-table)]
@@ -332,6 +332,7 @@
 			     (loop (add1 p)))))])
 		 (add-to-range start-pos-left start-pos-right)
 		 (add-to-range end-pos-left end-pos-right)))])
+	  (inherit get-top-level-window)
 	  (override
 	   [after-delete
 	    (lambda (start len)
@@ -367,17 +368,17 @@
 				[end-y   (+ end-y (* ofs-y delta))]
 				[pt1     (make-object mred:point% end-x end-y)]
 				[pt2     (make-object 
-					  mred:point%
-					  (+ end-x (* cos-angle head-x) 
-					     (* sin-angle head-y))
-					  (+ end-y (- (* sin-angle head-x))
-					     (* cos-angle head-y)))]
+					     mred:point%
+					   (+ end-x (* cos-angle head-x) 
+					      (* sin-angle head-y))
+					   (+ end-y (- (* sin-angle head-x))
+					      (* cos-angle head-y)))]
 				[pt3     (make-object 
-					  mred:point%
-					  (+ end-x (* cos-angle head-x)
-					     (- (* sin-angle head-y)))
-					  (+ end-y (* sin-angle head-x)
-					     (* cos-angle head-y)))]
+					     mred:point%
+					   (+ end-x (* cos-angle head-x)
+					      (- (* sin-angle head-y)))
+					   (+ end-y (* sin-angle head-x)
+					      (* cos-angle head-y)))]
 				[pts (list pt1 pt2 pt3)])
 			   (send dc draw-line
 				 (+ start-x dx) (+ start-y dy)
@@ -412,56 +413,58 @@
 	      (lambda (event)
 		(if arrow-vector
 		    (cond
-		      [(send event moving?)
-		       (let ([pos (get-pos event)])
-			 (unless (and cursor-location
-				      (= pos cursor-location))
-			   (set! cursor-location pos)
-			   (for-each update-poss (vector-ref arrow-vector cursor-location))
-			   (invalidate-bitmap-cache))
-			 (super-on-local-event event))]
-		      [(send event button-down? 'right)
-		       (let* ([pos (get-pos event)]
-			      [arrows (vector-ref arrow-vector pos)])
-			 (if (null? arrows)
-			     (super-on-local-event event)
-			     (let* ([menu (make-object mred:popup-menu% #f)]
-				    [stick-item
-				     (make-object mred:menu-item%
-						  "Tack/Untack Arrow"
-						  menu
-						  (lambda (item evt)
-						    (for-each 
-						     (lambda (arrow)
-						       (hash-table-put! tacked-hash-table 
-									arrow 
-									(not (hash-table-get
-									      tacked-hash-table
-									      arrow
-									      (lambda () #f)))))
-						     arrows)
-						    (invalidate-bitmap-cache)))]
-				    [jump-item
-				     (make-object mred:menu-item%
-						  "Jump"
-						  menu
-						  (lambda (item evt)
-						    (unless (null? arrows)
-						      (let* ([arrow (car arrows)]
-							     [start-pos-left (arrow-start-pos-left arrow)]
-							     [start-pos-right (arrow-start-pos-right arrow)]
-							     [end-pos-left (arrow-end-pos-left arrow)]
-							     [end-pos-right (arrow-end-pos-right arrow)])
-							(if (<= start-pos-left pos start-pos-right)
-							    (set-position end-pos-left end-pos-right)
-							    (set-position start-pos-left start-pos-right))))))]
-				    [rename-item
+		     [(send event moving?)
+		      (let ([pos (get-pos event)])
+			(unless (and cursor-location
+				     (= pos cursor-location))
+			  (set! cursor-location pos)
+			  (for-each update-poss (vector-ref arrow-vector cursor-location))
+			  (invalidate-bitmap-cache))
+			(super-on-local-event event))]
+		     [(send event button-down? 'right)
+		      (let* ([pos (get-pos event)]
+			     [arrows (vector-ref arrow-vector pos)])
+			(if (null? arrows)
+			    (super-on-local-event event)
+			    (let* ([menu (make-object mred:popup-menu% #f)]
+				   [stick-item
+				    (make-object mred:menu-item%
+				      "Tack/Untack Arrow"
+				      menu
+				      (lambda (item evt)
+					(for-each 
+					 (lambda (arrow)
+					   (hash-table-put! tacked-hash-table 
+							    arrow 
+							    (not (hash-table-get
+								  tacked-hash-table
+								  arrow
+								  (lambda () #f)))))
+					 arrows)
+					(invalidate-bitmap-cache)))]
+				   [jump-item
+				    (make-object mred:menu-item%
+				      "Jump"
+				      menu
+				      (lambda (item evt)
+					(unless (null? arrows)
+					  (let* ([arrow (car arrows)]
+						 [start-pos-left (arrow-start-pos-left arrow)]
+						 [start-pos-right (arrow-start-pos-right arrow)]
+						 [end-pos-left (arrow-end-pos-left arrow)]
+						 [end-pos-right (arrow-end-pos-right arrow)])
+					    (if (<= start-pos-left pos start-pos-right)
+						(set-position end-pos-left end-pos-right)
+						(set-position start-pos-left start-pos-right))))))]
+				   [rename-item
 				     (make-object mred:menu-item%
 						  "Rename"
 						  menu
 						  (lambda (item evt)
 						    (unless (null? arrows)
-						      (let* ([arrow (car arrows)]
+						      (send (get-top-level-window)
+							    syncheck:button-callback)
+						      '(let* ([arrow (car arrows)]
 							     [id-name (arrow-id-name arrow)]
 							     [new-id 
 							      (mred:get-text-from-user
@@ -470,7 +473,7 @@
 							       #f
 							       (format "~a" id-name))])
 							((arrow-rename arrow) new-id))
-						      (invalidate-bitmap-cache))))])
+						      '(invalidate-bitmap-cache))))])
 			       (send (get-canvas) popup-menu menu
 				     (inexact->exact (floor (send event get-x)))
 				     (inexact->exact (floor (send event get-y)))))))]
@@ -520,367 +523,390 @@
 	       (send check-syntax-button show on?)))])
 	
 	(public
-	  [source-object?
+	  [syncheck:source-object?
 	   (lambda (zodiac-ast)
 	     (let ([who (zodiac:origin-who
 			 (zodiac:zodiac-origin zodiac-ast))])
 	       (or (eq? who 'source) (eq? who 'reader))))]
-	  [button-callback
+	  [syncheck:button-callback
 	   (lambda ()
-	     (if (ivar interactions-text user-thread)
-		 (letrec ([add-arrow (ivar definitions-text syncheck:add-arrow)]
-			  [find-string (ivar definitions-text find-string)]
-			  [change-style (lambda (s x y)
-					  ((ivar definitions-text change-style) s x y))]
-			  [get-char (ivar definitions-text get-character)]
-			  [find-next-whitespace
-			   (lambda (start)
-			     (let* ([find (lambda (s)
-					    (let ([ans (find-string s 'forward start)])
-					       ans))]
-				    [mymin
-				     (lambda (args)
-				       (let loop ([a args]
-						  [min #f])
-					 (cond
-					  [(null? a) min]
-					  [else (if (or (not min)
-							(and (car a) (< (car a) min)))
-						    (loop (cdr a) (car a))
-						    (loop (cdr a) min))])))])
-			       (mymin (map find (list " " "(" "[" "{"
-						      (string #\newline)
-						      (string #\tab))))))]
-			  [find-next-non-whitespace
-			   (lambda (start)
-			     (let ([char (get-char start)])
-			       (if (member char (list #\newline #\tab #\space))
-				   (find-next-non-whitespace (add1 start))
-				   start)))]
-			  [top-level-varrefs null]
-			  [defineds (make-hash-table)]
-			  [local-bindings (make-hash-table)]
-			  [style-list (send definitions-text get-style-list)]
-			  [bound-style (send style-list find-named-style "mzprizm:bound variable")]
-			  [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
-			  [primitive-style (send style-list find-named-style "mzprizm:primitive")]
-			  [syntax-style (send style-list find-named-style "mzprizm:syntax")]
-			  [const-style (send style-list find-named-style "mzprizm:constant")]
-			  [rename-bindings
-			   (lambda (occurrances input-name)
-			     (dynamic-wind
-			      (lambda ()
-				(send definitions-text begin-edit-sequence))
-			      (lambda ()
-				(let* ([new-name (format "~a" (string->symbol input-name))]
-				       [sorted (mzlib:function:quicksort
-						occurrances
-						(lambda (x y)
-						  (<= (zodiac:location-offset (zodiac:zodiac-start y))
-						      (zodiac:location-offset (zodiac:zodiac-start x)))))]
-				       [rename-one
-					(lambda (z)
-					  (begin0
-					   (send definitions-text insert new-name
-						 (zodiac:location-offset (zodiac:zodiac-start z))
-						 (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
-				  (for-each rename-one sorted))
-				(button-callback))
-			      (lambda ()
-				(send definitions-text end-edit-sequence))))]
-			  [color-loop
-			   (lambda (zodiac-ast)
-			     (let* ([z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
-				    [z:finish (+ 1
-						 (zodiac:location-offset
-						  (zodiac:zodiac-finish zodiac-ast)))]
-				    [search-for-orig-syntax
-				     (lambda (zobj)
-				       (let loop ([zobj zobj])
-					 (or (source-object? zobj)
-					     (let* ([origin (zodiac:zodiac-origin zobj)]
-						    [who (zodiac:origin-who origin)])
-					       (cond
-						[(or (eq? who 'macro) 
-						     (eq? who 'micro))
-						 (loop (zodiac:origin-how origin))]
-						[else #f])))))]
-				    [color-syntax
-				     (lambda ()
-				       (when (search-for-orig-syntax zodiac-ast)
-					 (let* ([start (find-next-non-whitespace (add1 z:start))]
-						[finish (find-next-whitespace start)])
-					   (when (and finish start)
-					     (change-style syntax-style start finish)))))]
-				    
-				    [color
-				     (lambda (delta)
-				       (when (and (source-object? zodiac-ast) z:finish z:start)
-					 (change-style delta z:start z:finish)))])
+	     (letrec ([built-in?
+		       (let* ([producer-sem (make-semaphore 0)]
+			      [consumer-sem (make-semaphore 0)]
+			      [shutdown? #f]
+			      [input 'uninit]
+			      [output 'uninit]
+			      [thr (thread (lambda ()
+					     (drscheme:basis:initialize-parameters
+					      (current-custodian)
+					      (ivar interactions-text user-setting))
+					     (let loop ()
+					       (semaphore-wait producer-sem)
+					       (unless shutdown?
+						 (set! output (defined? input))
+						 (semaphore-post consumer-sem)
+						 (loop)))))])
+			 (case-lambda
+			  [(s)
+			   (set! input s)
+			   (semaphore-post producer-sem)
+			   (semaphore-wait consumer-sem)
+			   output]
+			  [() (set! shutdown? #t)
+			   (semaphore-post producer-sem)]))]
+		      [add-arrow (ivar definitions-text syncheck:add-arrow)]
+		      [find-string (ivar definitions-text find-string)]
+		      [change-style (lambda (s x y)
+				      ((ivar definitions-text change-style) s x y))]
+		      [get-char (ivar definitions-text get-character)]
+		      [find-next-whitespace
+		       (lambda (start)
+			 (let* ([find (lambda (s)
+					(let ([ans (find-string s 'forward start)])
+					  ans))]
+				[mymin
+				 (lambda (args)
+				   (let loop ([a args]
+					      [min #f])
+				     (cond
+				      [(null? a) min]
+				      [else (if (or (not min)
+						    (and (car a) (< (car a) min)))
+						(loop (cdr a) (car a))
+						(loop (cdr a) min))])))])
+			   (mymin (map find (list " " "(" "[" "{"
+						  (string #\newline)
+						  (string #\tab))))))]
+		      [find-next-non-whitespace
+		       (lambda (start)
+			 (let ([char (get-char start)])
+			   (if (member char (list #\newline #\tab #\space))
+			       (find-next-non-whitespace (add1 start))
+			       start)))]
+		      [top-level-varrefs null]
+		      [defineds (make-hash-table)]
+		      [local-bindings (make-hash-table)]
+		      [style-list (send definitions-text get-style-list)]
+		      [bound-style (send style-list find-named-style "mzprizm:bound variable")]
+		      [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
+		      [primitive-style (send style-list find-named-style "mzprizm:primitive")]
+		      [syntax-style (send style-list find-named-style "mzprizm:syntax")]
+		      [const-style (send style-list find-named-style "mzprizm:constant")]
+		      [rename-bindings
+		       (lambda (occurrances input-name)
+			 (send definitions-text begin-edit-sequence)
+			 (let* ([new-name (format "~a" (string->symbol input-name))]
+				[sorted (mzlib:function:quicksort
+					 occurrances
+					 (lambda (x y)
+					   (<= (zodiac:location-offset
+						(zodiac:zodiac-start y))
+					       (zodiac:location-offset
+						(zodiac:zodiac-start x)))))]
+				[rename-one
+				 (lambda (z)
+				   (send definitions-text insert new-name
+					 (zodiac:location-offset (zodiac:zodiac-start z))
+					 (add1 (zodiac:location-offset
+						(zodiac:zodiac-finish z)))))])
+			   (for-each rename-one sorted))
+			 (send definitions-text end-edit-sequence))]
+		      [color-loop
+		       (lambda (zodiac-ast)
+			 (let* ([z:start (zodiac:location-offset
+					  (zodiac:zodiac-start zodiac-ast))]
+				[z:finish (+ 1
+					     (zodiac:location-offset
+					      (zodiac:zodiac-finish zodiac-ast)))]
+				[search-for-orig-syntax
+				 (lambda (zobj)
+				   (let loop ([zobj zobj])
+				     (or (syncheck:source-object? zobj)
+					 (let* ([origin (zodiac:zodiac-origin zobj)]
+						[who (zodiac:origin-who origin)])
+					   (cond
+					    [(or (eq? who 'macro) 
+						 (eq? who 'micro))
+					     (loop (zodiac:origin-how origin))]
+					    [else #f])))))]
+				[color-syntax
+				 (lambda ()
+				   (when (search-for-orig-syntax zodiac-ast)
+				     (let* ([start (find-next-non-whitespace (add1 z:start))]
+					    [finish (find-next-whitespace start)])
+				       (when (and finish start)
+					 (change-style syntax-style start finish)))))]
+				
+				[color
+				 (lambda (delta)
+				   (when (and (syncheck:source-object? zodiac-ast)
+					      z:finish z:start)
+				     (change-style delta z:start z:finish)))])
+					; No matter what this expression is,
+					; if it's not direct from the
+					; source, it might be a macro or micro expansion.
+			   (unless (syncheck:source-object? zodiac-ast)
+			     (color-syntax))
 
-			       ; No matter what this exporession is, if it's not direct from the
-			       ;  source, it might be a macro or micro expansion.
-			       (unless (source-object? zodiac-ast)
-				 (color-syntax))
+			   (cond
+			    [(zodiac:quote-form? zodiac-ast)
+			     (color const-style)]
+			    [(zodiac:binding? zodiac-ast) (color bound-style)]
+			    [(zodiac:bound-varref? zodiac-ast)
+			     (when (syncheck:source-object? zodiac-ast)
+			       (let* ([binding (zodiac:bound-varref-binding zodiac-ast)])
+				 (when (syncheck:source-object? binding)
+				   (let* ([user-name (zodiac:binding-orig-name binding)]
+					  [gen-name (zodiac:varref-var zodiac-ast)]
+					  [start (zodiac:location-offset
+						  (zodiac:zodiac-start binding))]
+					  [finish (add1 (zodiac:location-offset
+							 (zodiac:zodiac-finish binding)))]
+					  [rename (lambda (new-name)
+						    (when new-name
+						      (rename-bindings
+						       (cons binding
+							     (hash-table-get
+							      local-bindings
+							      gen-name (lambda () null)))
+						       new-name)))])
+				     (hash-table-put!
+				      local-bindings
+				      gen-name
+				      (cons zodiac-ast
+					    (hash-table-get local-bindings
+							    gen-name (lambda () null))))
+				     (add-arrow z:start z:finish start finish user-name rename))))
+			       (color bound-style))]
+			    
+			    [(zodiac:top-level-varref? zodiac-ast)
+			     (when (syncheck:source-object? zodiac-ast)
+			       (set! top-level-varrefs (cons zodiac-ast top-level-varrefs)))]
+			    
+			    [(or (zodiac:list? zodiac-ast)
+				 (zodiac:improper-list? zodiac-ast)
+				 (zodiac:vector? zodiac-ast))
+			     (improper-for-each (lambda (x) (color-loop x))
+						(zodiac:read-object zodiac-ast))]
+			    
+			    [(zodiac:if-form? zodiac-ast)
+			     (color-syntax)
+			     (color-loop (zodiac:if-form-test zodiac-ast))
+			     (color-loop (zodiac:if-form-then zodiac-ast))
+			     (color-loop (zodiac:if-form-else zodiac-ast))]
+			    
+			    [(zodiac:set!-form? zodiac-ast)
+			     (color-syntax)
+			     (color-loop (zodiac:set!-form-var zodiac-ast))
+			     (color-loop (zodiac:set!-form-val zodiac-ast))]
+			    
+			    [(zodiac:define-values-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each 
+			      (lambda (var) 
+				(hash-table-put! 
+				 defineds (zodiac:varref-var var)
+				 (cons var
+				       (hash-table-get defineds 
+						       (zodiac:varref-var var)
+						       (lambda () null)))))
+			      (zodiac:define-values-form-vars zodiac-ast))
+			     (for-each (lambda (var)
+					 (when (syncheck:source-object? var)
+					   (change-style bound-style 
+							 (zodiac:location-offset (zodiac:zodiac-start var))
+							 (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
+				       (zodiac:define-values-form-vars zodiac-ast))
+			     (color-loop (zodiac:define-values-form-val zodiac-ast))]
+			    
+			    [(zodiac:begin-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each color-loop (zodiac:begin-form-bodies zodiac-ast))]
+			    [(zodiac:begin0-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each color-loop (zodiac:begin0-form-bodies zodiac-ast))]
+			    
+			    [(zodiac:case-lambda-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each (lambda (x) (for-each color-loop (zodiac:arglist-vars x)))
+				       (zodiac:case-lambda-form-args zodiac-ast))
+			     (for-each color-loop (zodiac:case-lambda-form-bodies zodiac-ast))]
+			    
+			    [(zodiac:letrec*-values-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each (lambda (x) (for-each color-loop x))
+				       (zodiac:letrec*-values-form-vars zodiac-ast))
+			     (for-each color-loop
+				       (zodiac:letrec*-values-form-vals zodiac-ast))
+			     (color-loop (zodiac:letrec*-values-form-body zodiac-ast))]
+			    
+			    [(zodiac:let-values-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each (lambda (x) (for-each color-loop x))
+				       (zodiac:let-values-form-vars zodiac-ast))
+			     (for-each color-loop
+				       (zodiac:let-values-form-vals zodiac-ast))
+			     (color-loop (zodiac:let-values-form-body zodiac-ast))]
+			    
+			    [(zodiac:app? zodiac-ast)
+			     (color-loop (zodiac:app-fun zodiac-ast))
+			     (for-each color-loop
+				       (zodiac:app-args zodiac-ast))]
+			    
+			    ;; little grossness here to make life easier.
+			    [(zodiac:symbol? zodiac-ast) (color bound-style)]
+			    
+			    [(zodiac:unit-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each color-loop (zodiac:unit-form-imports zodiac-ast))
+			     (for-each color-loop (map car (zodiac:unit-form-exports zodiac-ast)))
+			     (for-each color-loop (zodiac:unit-form-clauses zodiac-ast))]
+			    [(zodiac:compound-unit-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each color-loop (map cadr (zodiac:compound-unit-form-links zodiac-ast)))]
+			    [(zodiac:invoke-unit-form? zodiac-ast)
+			     (color-syntax)
+			     (color-loop (zodiac:invoke-unit-form-unit zodiac-ast))
+			     (for-each color-loop (zodiac:invoke-unit-form-variables zodiac-ast))]
+			    
+			    [(zodiac:interface-form? zodiac-ast)
+			     (color-syntax)
+			     (for-each color-loop (zodiac:interface-form-super-exprs zodiac-ast))]
+			    [(zodiac:class*/names-form? zodiac-ast)
+			     (color-syntax)
+			     (color-loop (zodiac:class*/names-form-this zodiac-ast))
+			     (color-loop (zodiac:class*/names-form-super-init zodiac-ast))
+			     (color-loop (zodiac:class*/names-form-super-expr zodiac-ast))
+			     (for-each color-loop (zodiac:class*/names-form-interfaces zodiac-ast))
+			     (for-each color-loop
+				       (zodiac:paroptarglist-vars (zodiac:class*/names-form-init-vars zodiac-ast)))
+			     (for-each
+			      (lambda (clause)
+				(cond
+				 ((zodiac:public-clause? clause)
+				  (for-each color-loop (zodiac:public-clause-internals clause))
+				  (for-each color-loop (zodiac:public-clause-exprs clause)))
+				 ((zodiac:override-clause? clause)
+				  (for-each color-loop (zodiac:override-clause-internals clause))
+				  (for-each color-loop (zodiac:override-clause-exprs clause)))
+				 ((zodiac:private-clause? clause)
+				  (for-each color-loop (zodiac:private-clause-internals clause))
+				  (for-each color-loop (zodiac:private-clause-exprs clause)))
+				 ((zodiac:inherit-clause? clause)
+				  (for-each color-loop (zodiac:inherit-clause-internals clause)))
+				 ((zodiac:rename-clause? clause)
+				  (for-each color-loop (zodiac:rename-clause-internals clause)))
+				 ((zodiac:sequence-clause? clause)
+				  (for-each color-loop (zodiac:sequence-clause-exprs clause)))))
+			      (zodiac:class*/names-form-inst-clauses zodiac-ast))]
 
-			       (cond
-				[(zodiac:quote-form? zodiac-ast)
-				 (color const-style)]
-				[(zodiac:binding? zodiac-ast) (color bound-style)]
-				[(zodiac:bound-varref? zodiac-ast)
-				 (when (source-object? zodiac-ast)
-				   (let* ([binding (zodiac:bound-varref-binding zodiac-ast)])
-				     (when (source-object? binding)
-				       (let* ([user-name (zodiac:binding-orig-name binding)]
-					      [gen-name (zodiac:varref-var zodiac-ast)]
-					      [start (zodiac:location-offset (zodiac:zodiac-start binding))]
-					      [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish binding)))]
-					      [rename (lambda (new-name)
-							(when new-name
-							  (rename-bindings
-							   (cons binding
-								 (hash-table-get local-bindings
-										 gen-name (lambda () null)))
-							   new-name)))])
-					 (hash-table-put!
-					  local-bindings
-					  gen-name
-					  (cons zodiac-ast
-						(hash-table-get local-bindings
-								gen-name (lambda () null))))
-					 (add-arrow z:start z:finish start finish user-name rename))))
-				   (color bound-style))]
-				
-				[(zodiac:top-level-varref? zodiac-ast)
-				 (when (source-object? zodiac-ast)
-				   (set! top-level-varrefs (cons zodiac-ast top-level-varrefs)))]
-				
-				[(or (zodiac:list? zodiac-ast)
-				     (zodiac:improper-list? zodiac-ast)
-				     (zodiac:vector? zodiac-ast))
-				 (improper-for-each (lambda (x) (color-loop x))
-						    (zodiac:read-object zodiac-ast))]
-				
-				[(zodiac:if-form? zodiac-ast)
-				 (color-syntax)
-				 (color-loop (zodiac:if-form-test zodiac-ast))
-				 (color-loop (zodiac:if-form-then zodiac-ast))
-				 (color-loop (zodiac:if-form-else zodiac-ast))]
-				
-				[(zodiac:set!-form? zodiac-ast)
-				 (color-syntax)
-				 (color-loop (zodiac:set!-form-var zodiac-ast))
-				 (color-loop (zodiac:set!-form-val zodiac-ast))]
-				
-				[(zodiac:define-values-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each 
-				  (lambda (var) 
-				    (hash-table-put! 
-				     defineds (zodiac:varref-var var)
-				     (cons var
-					   (hash-table-get defineds 
-							   (zodiac:varref-var var)
-							   (lambda () null)))))
-				  (zodiac:define-values-form-vars zodiac-ast))
-				 (for-each (lambda (var)
-					     (when (source-object? var)
-					       (change-style bound-style 
-							     (zodiac:location-offset (zodiac:zodiac-start var))
-							     (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
-					   (zodiac:define-values-form-vars zodiac-ast))
-				 (color-loop (zodiac:define-values-form-val zodiac-ast))]
-				
-				[(zodiac:begin-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each color-loop (zodiac:begin-form-bodies zodiac-ast))]
-				[(zodiac:begin0-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each color-loop (zodiac:begin0-form-bodies zodiac-ast))]
-				
-				[(zodiac:case-lambda-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each (lambda (x) (for-each color-loop (zodiac:arglist-vars x)))
-					   (zodiac:case-lambda-form-args zodiac-ast))
-				 (for-each color-loop (zodiac:case-lambda-form-bodies zodiac-ast))]
-				
-				[(zodiac:letrec*-values-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each (lambda (x) (for-each color-loop x))
-					   (zodiac:letrec*-values-form-vars zodiac-ast))
-				 (for-each color-loop
-					   (zodiac:letrec*-values-form-vals zodiac-ast))
-				 (color-loop (zodiac:letrec*-values-form-body zodiac-ast))]
-				
-				[(zodiac:let-values-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each (lambda (x) (for-each color-loop x))
-					   (zodiac:let-values-form-vars zodiac-ast))
-				 (for-each color-loop
-					   (zodiac:let-values-form-vals zodiac-ast))
-				 (color-loop (zodiac:let-values-form-body zodiac-ast))]
-				
-				[(zodiac:app? zodiac-ast)
-				 (color-loop (zodiac:app-fun zodiac-ast))
-				 (for-each color-loop
-					   (zodiac:app-args zodiac-ast))]
-				
-				;; little grossness here to make life easier.
-				[(zodiac:symbol? zodiac-ast) (color bound-style)]
-				
-				[(zodiac:unit-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each color-loop (zodiac:unit-form-imports zodiac-ast))
-				 (for-each color-loop (map car (zodiac:unit-form-exports zodiac-ast)))
-				 (for-each color-loop (zodiac:unit-form-clauses zodiac-ast))]
-				[(zodiac:compound-unit-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each color-loop (map cadr (zodiac:compound-unit-form-links zodiac-ast)))]
-				[(zodiac:invoke-unit-form? zodiac-ast)
-				 (color-syntax)
-				 (color-loop (zodiac:invoke-unit-form-unit zodiac-ast))
-				 (for-each color-loop (zodiac:invoke-unit-form-variables zodiac-ast))]
-				
-				[(zodiac:interface-form? zodiac-ast)
-				 (color-syntax)
-				 (for-each color-loop (zodiac:interface-form-super-exprs zodiac-ast))]
-				[(zodiac:class*/names-form? zodiac-ast)
-				 (color-syntax)
-				 (color-loop (zodiac:class*/names-form-this zodiac-ast))
-				 (color-loop (zodiac:class*/names-form-super-init zodiac-ast))
-				 (color-loop (zodiac:class*/names-form-super-expr zodiac-ast))
-				 (for-each color-loop (zodiac:class*/names-form-interfaces zodiac-ast))
-				 (for-each color-loop
-					   (zodiac:paroptarglist-vars (zodiac:class*/names-form-init-vars zodiac-ast)))
-				 (for-each
-				  (lambda (clause)
-				    (cond
-				     ((zodiac:public-clause? clause)
-				      (for-each color-loop (zodiac:public-clause-internals clause))
-				      (for-each color-loop (zodiac:public-clause-exprs clause)))
-				     ((zodiac:override-clause? clause)
-				      (for-each color-loop (zodiac:override-clause-internals clause))
-				      (for-each color-loop (zodiac:override-clause-exprs clause)))
-				     ((zodiac:private-clause? clause)
-				      (for-each color-loop (zodiac:private-clause-internals clause))
-				      (for-each color-loop (zodiac:private-clause-exprs clause)))
-				     ((zodiac:inherit-clause? clause)
-				      (for-each color-loop (zodiac:inherit-clause-internals clause)))
-				     ((zodiac:rename-clause? clause)
-				      (for-each color-loop (zodiac:rename-clause-internals clause)))
-				     ((zodiac:sequence-clause? clause)
-				      (for-each color-loop (zodiac:sequence-clause-exprs clause)))))
-				  (zodiac:class*/names-form-inst-clauses zodiac-ast))]
-
-				[(zodiac:struct-form? zodiac-ast)
-				 (color-syntax)
-				 (color-loop (zodiac:struct-form-type zodiac-ast))
-				 (when (zodiac:struct-form-super zodiac-ast)
-				   (color-loop (zodiac:struct-form-super zodiac-ast)))
-				 (for-each color-loop
-					   (zodiac:struct-form-fields zodiac-ast))]
-				
-				[else (void)])))])
-		   (let ([mod-flag void]) ; buffer modified before check-syntax run
-		     (dynamic-wind
-		      (lambda ()
-			(mred:begin-busy-cursor)
-			(set! mod-flag
-			      (send definitions-text is-modified?))
-			(send definitions-text set-styles-fixed #f)
-			(send definitions-text begin-edit-sequence #f))
-		      (lambda ()
-			; reset all of the buffer to the default style
-			; and clear out arrows
-			(syncheck:clear-highlighting)
-			
-			;; color each exp
-			(let ([semaphore (make-semaphore 0)]
-			      [output-port (current-output-port)]
-			      [error-raised? #f]
-			      [error #f]
-			      [debug #f]
-			      [msg #f])
-			  (send interactions-text
-				run-in-evaluation-thread
-				(rec check-syntax-in-evaluation-thread
-				     (lambda ()
-				       (let/ec k
-					 (parameterize ([current-output-port output-port]
-							[drscheme:basis:error-display/debug-handler
-							 (lambda (m d x)
-							   (set! msg m)
-							   (set! debug d)
-							   (set! error x)
-							   (set! error-raised? #t)
-							   (semaphore-post semaphore))]
-							[error-escape-handler k])
-					   (drscheme:rep:process-text/zodiac
-					    definitions-text
-					    (lambda (expr recur)
-					      (cond
-					       [(drscheme:basis:process-finish? expr)
-						(when (drscheme:basis:process-finish-error? expr)
-						  (send interactions-text insert-prompt))
-						(semaphore-post semaphore)]
-					       [(not (zodiac:zodiac? expr))
-						(recur)]
-					       [else
-						(color-loop expr)
-						(recur)]))
-					    0
-					    (send definitions-text last-position)
-					    #f))))))
-			  (semaphore-wait semaphore)
-			  (when error-raised?
-				(send interactions-text report-located-error msg debug error)))
-			
-			; color the top-level varrefs
-			(let ([built-in?
-			       (lambda (s)
-				 ;; this should look a list of names in the basis and color those...
-				 (built-in-name s))])
-			  (for-each (lambda (var)
-				      (let ([id (zodiac:varref-var var)])
-					(change-style
-					 (cond
-					  [(hash-table-get defineds id (lambda () #f))
-					   => 
-					   (lambda (defn-vars)
-					     (when (source-object? (car defn-vars))
-					       (let* ([defn-var (car defn-vars)]
-						      [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
-						      [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
-						      [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
-						      [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
-						      [rename (lambda (new-name)
-								(when new-name
-								  (rename-bindings
-								   (mzlib:function:foldl
-								    (lambda (test-var l)
-								      (if (eq? (zodiac:varref-var test-var)
-									       (zodiac:varref-var defn-var))
-									  (cons test-var l)
-									  l))
-								    defn-vars
-								    top-level-varrefs)
-								   new-name)))])
-						 (add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
-							    (zodiac:varref-var defn-var) rename)))
-					     bound-style)]
-					  [(built-in? id) primitive-style]
-					  [else unbound-style])
-					 (zodiac:location-offset (zodiac:zodiac-start var))
-					 (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
-				    top-level-varrefs)))
-		      (lambda () ; post part of dynamic wind
-			(send definitions-text end-edit-sequence)
-			(unless mod-flag
-			  (send definitions-text set-modified #f))
-			(send definitions-text set-styles-fixed #t)
-			(mred:end-busy-cursor)))))
-		 (mred:message-box "Check Syntax"
-				   "Cannot check syntax until REPL is active. Click Execute")))])
+			    [(zodiac:struct-form? zodiac-ast)
+			     (color-syntax)
+			     (color-loop (zodiac:struct-form-type zodiac-ast))
+			     (when (zodiac:struct-form-super zodiac-ast)
+			       (color-loop (zodiac:struct-form-super zodiac-ast)))
+			     (for-each color-loop
+				       (zodiac:struct-form-fields zodiac-ast))]
+			    
+			    [else (void)])))])
+	       (let ([mod-flag (void)]) ; buffer modified before check-syntax run
+		 (dynamic-wind
+		     (lambda ()
+		       (mred:begin-busy-cursor)
+		       (set! mod-flag
+			     (send definitions-text is-modified?))
+		       (send definitions-text set-styles-fixed #f)
+		       (send definitions-text begin-edit-sequence #f))
+		     (lambda ()
+					; reset all of the buffer to the default style
+					; and clear out arrows
+		       (syncheck:clear-highlighting)
+		       
+		       ;; color each exp
+		       (let ([semaphore (make-semaphore 0)]
+			     [output-port (current-output-port)]
+			     [error-raised? #f]
+			     [error #f]
+			     [debug #f]
+			     [msg #f])
+			 (printf "running in evaluation thread~n")
+			 (send interactions-text run-in-evaluation-thread
+			       (lambda ()
+				 (mred:message-box "" "in evaluation thread")
+				 (let/ec k
+				   (parameterize ([current-output-port output-port]
+						  [drscheme:basis:error-display/debug-handler
+						   (lambda (m d x)
+						     (set! msg m)
+						     (set! debug d)
+						     (set! error x)
+						     (set! error-raised? #t)
+						     (semaphore-post semaphore))]
+						  [error-escape-handler k])
+				     (drscheme:rep:process-text/zodiac
+				      definitions-text
+				      (lambda (expr recur)
+					(cond
+					 [(drscheme:basis:process-finish? expr)
+					  (when (drscheme:basis:process-finish-error? expr)
+					    (send interactions-text insert-prompt))
+					  (semaphore-post semaphore)]
+					 [(not (zodiac:zodiac? expr))
+					  (recur)]
+					 [else
+					  (color-loop expr)
+					  (recur)]))
+				      0
+				      (send definitions-text last-position)
+				      #f)))))
+			 (printf "waiting for semaphore~n")
+			 (semaphore-wait semaphore)
+			 (printf "got semaphore~n")
+			 (when error-raised?
+			   (send interactions-text report-located-error msg debug error)))
+		       
+					; color the top-level varrefs
+		       (for-each
+			(lambda (var)
+			  (let ([id (zodiac:varref-var var)])
+			    (change-style
+			     (cond
+			      [(hash-table-get defineds id (lambda () #f))
+			       => 
+			       (lambda (defn-vars)
+				 (when (syncheck:source-object? (car defn-vars))
+				   (let* ([defn-var (car defn-vars)]
+					  [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
+					  [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
+					  [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
+					  [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
+					  [rename (lambda (new-name)
+						    (when new-name
+						      (rename-bindings
+						       (mzlib:function:foldl
+							(lambda (test-var l)
+							  (if (eq? (zodiac:varref-var test-var)
+								   (zodiac:varref-var defn-var))
+							      (cons test-var l)
+							      l))
+							defn-vars
+							top-level-varrefs)
+						       new-name)))])
+				     (add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
+						(zodiac:varref-var defn-var) rename)))
+				 bound-style)]
+			      [(built-in? id) primitive-style]
+			      [else unbound-style])
+			     (zodiac:location-offset (zodiac:zodiac-start var))
+			     (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
+				 top-level-varrefs))
+		     (lambda () ; post part of dynamic wind
+		       (send definitions-text end-edit-sequence)
+		       (unless mod-flag
+			 (send definitions-text set-modified #f))
+		       (send definitions-text set-styles-fixed #t)
+		       (built-in?) ;; kills the thread created for built-in?
+		       (mred:end-busy-cursor))))))])
 	(sequence (apply super-init args))
 	
 	(public
@@ -888,7 +914,7 @@
 	   (make-object mred:button%
 			(syncheck-bitmap this)
 			button-panel
-			(lambda (button evt) (button-callback)))])
+			(lambda (button evt) (syncheck:button-callback)))])
 	(sequence
 	  (send definitions-text set-styles-fixed #t)
 	  (send check-syntax-button show button-visible?)

@@ -531,20 +531,25 @@
     ;;                         setting
     ;;                       -> void
     ;; effect: sets the parameters for drscheme and drscheme-jr
-    (define (initialize-parameters custodian namespace-flags setting)
-      (let-values ([(extra-definitions)
-		    (let ([name (setting-extra-definitions-unit-name setting)])
-		      (let loop ([l name])
-			(cond
-			 [(string? l) (require-library/proc l "userspce")]
-			 [(pair? l) (if (defined? (caar l))
-					(loop (cadar l))
-					(loop (cdr l)))]
-			 [else #f])))]
-		   [(n) (apply make-namespace
-			       (if (zodiac-vocabulary? setting)
-				   (append (list 'hash-percent-syntax) namespace-flags)
-				   namespace-flags))])
+    (define (initialize-parameters custodian setting)
+      (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
+					 (if (or (string=? "MrEd" name)
+						 (string=? "MrEd Debug" name))
+					     (list 'mred)
+					     (list)))]
+		    [(extra-definitions)
+		     (let ([name (setting-extra-definitions-unit-name setting)])
+		       (let loop ([l name])
+			 (cond
+			  [(string? l) (require-library/proc l "userspce")]
+			  [(pair? l) (if (defined? (caar l))
+					 (loop (cadar l))
+					 (loop (cdr l)))]
+			  [else #f])))]
+		    [(n) (apply make-namespace
+				(if (zodiac-vocabulary? setting)
+				    (append (list 'hash-percent-syntax) namespace-flags)
+				    namespace-flags))])
 	(when (zodiac-vocabulary? setting)
 	  (use-compiled-file-kinds 'non-elaboration))
 	(current-setting setting)

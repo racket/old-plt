@@ -169,11 +169,9 @@ class PSStream : public wxObject {
 
 void PSStream::Out(float n)
 {
-  if (int_width > 0) {
-    if ((float)(long)n == n) {
-      Out((long)n);
-      return;
-    }
+  if ((float)(long)n == n) {
+    Out((long)n);
+    return;
   }
   fprintf(f, "%f", n);
 }
@@ -182,7 +180,7 @@ void PSStream::Out(long l)
 {
   if (int_width > 0) {
     char buffer[50];
-    sprintf(buffer, "%%+%d.%dld", int_width, int_width);
+    sprintf(buffer, "%% %d.%dld", int_width, int_width);
     fprintf(f, buffer, l);
     int_width = 0;
   } else
@@ -942,9 +940,10 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   if (!name)
     name = "Times-Roman";
 
-  pstream->Out("/"); pstream->Out(name); pstream->Out(" findfont\n");
   size = current_font->GetPointSize();
-  pstream->Out(YSCALEREL(size)); pstream->Out(" scalefont setfont\n");
+
+  next_font_name = name;
+  next_font_size = YSCALEREL(size);
 }
 
 static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
@@ -1260,6 +1259,19 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     }
   }
   
+  if (next_font_name) {
+    if (!current_font_name
+	|| (next_font_size != current_font_size)
+	|| strcmp(next_font_name, current_font_name)) {
+      pstream->Out("/"); pstream->Out(next_font_name); pstream->Out(" findfont\n");
+      pstream->Out(next_font_size); pstream->Out(" scalefont setfont\n");
+
+      current_font_size = next_font_size;
+      current_font_name = next_font_name;
+    }
+    next_font_name = NULL;
+  }
+
   size = 10;
   if (current_font)
     size = current_font->GetPointSize();

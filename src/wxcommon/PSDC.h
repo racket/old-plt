@@ -62,6 +62,9 @@ class wxPostScriptDC: public wxDC
   /* MATTHEW: [8] */
   float clipx, clipy, clipw, cliph;
 
+  char *current_font_name, *next_font_name;
+  double current_font_size, next_font_size;
+
   float paper_x, paper_y, paper_w, paper_h, paper_x_scale, paper_y_scale;
   float paper_margin_x, paper_margin_y;
   Bool landscape, resetFont, level2ok;

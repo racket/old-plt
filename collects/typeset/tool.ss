@@ -120,7 +120,7 @@
                    [snip (make-object constant-snip% (if (member family '(symbol roman modern))
                                                          family
                                                          'modern))])
-              (send (send snip get-editor) read-from-file stream-in)
+              (send (send snip get-editor) read-from-file stream-in #f)
               snip))
           (super-instantiate ())))
       (define constant-snipclass (make-object constant-snipclass%))
@@ -164,7 +164,7 @@
           (define/override (read stream-in)
             (let* ([snip (make-object evaluated-snip%)]
                    [editor (send snip get-editor)])
-              (send editor read-from-file stream-in)
+              (send editor read-from-file stream-in #f)
               snip))
           (super-instantiate ())))
       

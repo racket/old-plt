@@ -333,7 +333,7 @@
         (lambda (p)
           (let* ([bs (make-object % (make-object snip%))]
                  [t (send bs get-editor)])
-            (send t read-from-file p))))
+            (send t read-from-file p #f))))
       (super-instantiate ())))
   
   (define single-bracket-snipclass (make-object bracket-snipclass% single-bracket-snip%))

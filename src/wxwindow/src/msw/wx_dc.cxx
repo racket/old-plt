@@ -32,8 +32,6 @@ static wxMemoryDC *blit_dc, *blit_mdc;
 static HANDLE null_brush;
 static HANDLE null_pen;
 
-static StringFormat *the_fmt;
-
 void RegisterGDIObject(HANDLE x);
 
 extern Bool wx_gdi_plus;
@@ -50,13 +48,6 @@ void wxGDIShutdown(void)
 {
   if (wx_gdi_plus)
     wxGShutdown();
-}
-
-static void init_the_format()
-{
-  if (!the_fmt) {
-    the_fmt = wxGNewStringFormat(0);
-  }
 }
 
 static is_nt()
@@ -1569,7 +1560,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     /* UCS-4 -> UTF-16 conversion */
     for (i = 0, extra = 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
-      if (is_sym && (v < 256))
+      if (is_sym && (v < 256) && symbol_map[v])
 	v = symbol_map[v];
       if (v > 0xFFFF) {
 	v -= 0x10000;
@@ -1597,7 +1588,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
       int i, v;
       for (i = 0; i < ulen; i++) {
 	v = ((wchar_t *)unicode)[i];
-	if (v < 256) {
+	if ((v < 256) && symbol_map[v]) {
 	  v = symbol_map[v];
 	  ((wchar_t *)unicode)[i] = v;
 	}
@@ -1609,23 +1600,59 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   return unicode;
 }
 
+static int substitute_font(wchar_t *ustring, int d, int alen, wxFont *font, HDC dc, Bool screen_font, double angle, int *reset)
+{
+  int v, i;
+
+  if (*reset) {
+    HFONT cfont;
+    *reset = 0;
+    cfont = font->BuildInternalFont(dc, screen_font, angle);
+    if (cfont) {
+      ::SelectObject(dc, cfont);
+    }
+  }
+
+  v = ustring[d];
+  if (!font->GlyphAvailableNow(v, dc, screen_font)) {
+    wxFont *sub;
+    sub = font->Substitute(v, dc, screen_font);
+    if (sub) {
+      HFONT cfont;
+      font = sub;
+      cfont = font->BuildInternalFont(dc, screen_font, angle);
+      if (cfont) {
+	::SelectObject(dc, cfont);
+      }
+    }
+  }
+  for (i = 1; i < alen; i++) {
+    v = ustring[d+i];
+    if (!font->GlyphAvailableNow(v, dc, screen_font)) {
+      return i;
+    }
+  }
+
+  return alen;
+}
+
 void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
   HDC dc;
   DWORD old_background;
-  COLORREF col;
   double w;
   wchar_t *ustring;
   long len, alen;
   SIZE sizeRect;
   double oox, ooy;
-  int fam;
-  Font *g_f;
+  int fam, reset = 0;
 
   dc = ThisDC();
 
   if (!dc) return;
 
+  ReleaseGraphics(dc);
+  
   if (font) {
     HFONT cfont;
     cfont = font->BuildInternalFont(dc, screen_font, angle);
@@ -1636,37 +1663,24 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
         old_font = f;
     }
     fam = font->GetFamily();
-    g_f = wxGFontNew(dc);
   } else {
     fam = wxDEFAULT;
-    g_f = NULL;
   }
   
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
 
-  if (wx_gdi_plus) {
-    InitGraphics(dc);
-    init_the_format();
-    if (current_text_foreground->Ok())
-      col = current_text_foreground->pixel;
-    else
-      col = 0;
-  } else {
-    ReleaseGraphics(dc);
-    if (current_text_foreground->Ok())
-      SetTextColor(dc, current_text_foreground->pixel);
-    if (current_text_background->Ok()) {
-      old_background = SetBkColor(dc, current_text_background->pixel);
-    }
-  
-    SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
-		    || (angle != 0.0))
-		   ? TRANSPARENT
-		   : OPAQUE));
-    SetRop(dc, wxSOLID);
-    col  = 0;
-    SetScaleMode(wxWINDOWS_SCALE, dc);
+  if (current_text_foreground->Ok())
+    SetTextColor(dc, current_text_foreground->pixel);
+  if (current_text_background->Ok()) {
+    old_background = SetBkColor(dc, current_text_background->pixel);
   }
+  
+  SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
+		  || (angle != 0.0))
+		 ? TRANSPARENT
+		 : OPAQUE));
+  SetRop(dc, wxSOLID);
+  SetScaleMode(wxWINDOWS_SCALE, dc);
   
   w = 0;
   d = 0;
@@ -1679,31 +1693,21 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
       alen = len;
     else
       alen = 1;
+    
+    alen = substitute_font(ustring, d, alen, font, dc, screen_font, angle, &reset);
+    
+    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
 
-    if (wx_gdi_plus) {
-      PointF p;
-      RectF r;
-      p.X = p.Y = 0;
-      wxGResetTransform(g);
-      wxGTranslate(g, MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
-      wxGScale(g, user_scale_x*logical_scale_x, user_scale_y*logical_scale_y);
-      wxGDrawString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, col);
-      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, &r);
-      w += r.Width;
+    (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
+    
+    if (alen == 1) {
+      ABCFLOAT cw;
+      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+      w += cw.abcfA + cw.abcfB + cw.abcfC;
     } else {
-      SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
-
-      (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
-
-      if (alen == 1) {
-	ABCFLOAT cw;
-	GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-	w += cw.abcfA + cw.abcfB + cw.abcfC;
-      } else {
-	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-
-	w += sizeRect.cx;
-      }
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      
+      w += sizeRect.cx;
     }
 
     len -= alen;
@@ -1712,12 +1716,13 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
   SetDeviceOrigin(oox, ooy);
 
-  if (!wx_gdi_plus) {
-    if (current_text_background->Ok())
-      (void)SetBkColor(dc, old_background);
-  }
+  if (current_text_background->Ok())
+    (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
+
+  if (reset)
+    SetFont(font);
 }
 
 void wxDC::SetBackground(wxColour *c)
@@ -1959,23 +1964,20 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   long len, alen;
   double tx, ty;
   wchar_t *ustring;
-  int once = 1, fam;
-  Font *g_f;
+  int once = 1, fam, reset = 0;
 
   if (theFont) {
     oldFont = font;
     SetFont(theFont);
   } else {
+    theFont = font;
     SetFont(font);
   }
   fam = font->GetFamily();
 
   dc = ThisDC();
 
-  if (wx_gdi_plus)
-    g_f = wxGFontNew(dc);
-  else
-    g_f = NULL;
+  ReleaseGraphics(dc);
 
   if (!dc) {
     *x = 5;
@@ -1987,13 +1989,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
   ustring = convert_to_drawable_format(string, d, ucs4, &len, fam == wxSYMBOL);
   
-  if (wx_gdi_plus) {
-    InitGraphics(dc);
-    init_the_format();
-  } else {
-    ReleaseGraphics(dc);
-    SetScaleMode(wxWINDOWS_SCALE, dc);  
-  }
+  SetScaleMode(wxWINDOWS_SCALE, dc);  
 
   d = 0;
   tx = 0;
@@ -2007,28 +2003,20 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     else
       alen = 1;
 
-    if (wx_gdi_plus) {
-      PointF p;
-      RectF r;
-      p.X = p.Y = 0;
-      wxGMeasureString(g, ustring XFORM_OK_PLUS d, alen, g_f, &p, the_fmt, &r);
-      tx += r.Width;
-      if (r.Height > ty)
-	ty = r.Height;
+    alen = substitute_font(ustring, d, alen, theFont, dc, screen_font, 0.0, &reset);
+
+    if (alen == 1) {
+      ABCFLOAT cw;
+      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+      tx += cw.abcfA + cw.abcfB + cw.abcfC;
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
     } else {
-      if (alen == 1) {
-	ABCFLOAT cw;
-	GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-	tx += cw.abcfA + cw.abcfB + cw.abcfC;
-	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-      } else {
-	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-	if (len)
-	  tx += sizeRect.cx;
-      }
-      if (sizeRect.cy > ty)
-	ty = sizeRect.cy;
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      if (len)
+	tx += sizeRect.cx;
     }
+    if (sizeRect.cy > ty)
+      ty = sizeRect.cy;
 
     len -= alen;
     d += alen;
@@ -2047,6 +2035,8 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   
   if (oldFont)
     SetFont(oldFont);
+  else if (reset)
+    SetFont(font);
 }
 
 void wxDC::ResetMapMode(HDC given_dc)

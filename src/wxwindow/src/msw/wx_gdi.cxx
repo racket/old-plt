@@ -114,6 +114,18 @@ wxFont::~wxFont()
     DELETE_OBJ rotated_font;
   }
 
+  if (substitute_font) {
+    wxNode *node;
+    wxFont *rot;
+    node = substitute_font->First();
+    while (node) {
+      rot = (wxFont*)node->Data();
+      DELETE_OBJ rot;
+      node = node->Next();
+    }
+    DELETE_OBJ substitute_font;
+  }
+
   COUNT_M(font_count);
 }
 
@@ -171,6 +183,7 @@ static int glyph_exists_in_selected_font(HDC hdc, int c)
 typedef struct {
   HDC hdc;
   int c;
+  wchar_t *face;
 } GlyphFindData;
 
 #include "wx_bitfield.inc"
@@ -209,6 +222,10 @@ static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf,
       ::SelectObject(gfd->hdc, old);
       
       DeleteObject(cfont);
+
+      if (gfd->face) {
+	memcpy(gfd->face, lpelf->elfLogFont.lfFaceName, LF_FACESIZE * sizeof(wchar_t));
+      }
       
       if (ok)
 	return 0;
@@ -223,8 +240,14 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
 
   gfd.hdc = hdc;
   gfd.c = c;
+  gfd.face = NULL;
 
   return !EnumFontFamiliesW(hdc, NULL, (FONTENUMPROCW)glyph_exists, (LPARAM)&gfd);
+}
+
+Bool wxFont::GlyphAvailableNow(int c, HDC hdc, int screen_font)
+{
+  return glyph_exists_in_selected_font(hdc, c);
 }
 
 Bool wxFont::ScreenGlyphAvailable(int c)
@@ -239,6 +262,46 @@ Bool wxFont::ScreenGlyphAvailable(int c)
   ReleaseDC(NULL, hdc);
 
   return r;
+}
+
+wxFont *wxFont::Substitute(int c, HDC dc, Bool screen_font)
+{
+  wxFont *sub;
+  wxNode *node;
+
+  if (screen_font) {
+    if (!substitute_font) {
+      substitute_font = new wxList(wxKEY_INTEGER);
+    }
+    node = substitute_font->Find(c);
+  } else
+    node = NULL;
+
+  if (node)
+    sub = (wxFont *)node->Data();
+  else {
+    GlyphFindData gfd;
+    wchar_t facebuf[LF_FACESIZE];
+    
+    gfd.hdc = dc;
+    gfd.c = c;
+    gfd.face = facebuf;
+
+    if (!EnumFontFamiliesW(dc, NULL, (FONTENUMPROCW)glyph_exists, (LPARAM)&gfd)) {
+      /* Found substitute font */
+      int sid;
+      sid = wxTheFontNameDirectory->FindOrCreateFontId(wxNARROW_STRING(facebuf), family);
+      sub = new wxFont(point_size, sid, style, weight,
+		       underlined, smoothing, size_in_pixels, rotation);
+    } else {
+      sub = this;
+    }
+     
+    if (screen_font)
+      substitute_font->Append(c, (wxObject*)sub);
+  }
+
+  return sub;
 }
 
 static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
@@ -320,7 +383,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, double angle)
     ff_family = FF_DONTCARE;
   }
   
-  // Determine the charset:
+  /* Determine whether the face exists. */
   {
     LOGFONT lf;
     lf.lfCharSet = DEFAULT_CHARSET;

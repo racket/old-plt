@@ -23,6 +23,7 @@ class wxFont: public wxbFont
   HFONT screen_cfont;
   HFONT general_cfont;
   wxList *rotated_font;
+  wxList *substitute_font;
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
@@ -37,6 +38,9 @@ class wxFont: public wxbFont
 
   Bool ScreenGlyphAvailable(int c);
   Bool GlyphAvailable(int c, HDC hdc, int screen_font);
+
+  Bool GlyphAvailableNow(int c, HDC hdc, int screen_font);
+  wxFont *Substitute(int c, HDC hdc, int screen_font);
 };
 
 class wxColourMap: public wxObject

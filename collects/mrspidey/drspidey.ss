@@ -19,7 +19,7 @@
 
 ;; The code to be loaded from DrScheme
 
-(printf "loading drspidey.ss (cd ~s)~n" (current-directory))
+;; (printf "loading drspidey.ss (cd ~s)~n" (current-directory))
 
 (require-relative-library "pltrc-co.ss")
 (require-relative-library "macros.ss")
@@ -188,14 +188,9 @@
 		MRED FRAMEWORK GUI)])
    (export)))
 
-(printf "tool@ defined~n")
+;; (printf "tool@ defined~n")
 
 ;; ----------------------------------------------------------------------
-
-
-
-
-
 
 
 

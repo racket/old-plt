@@ -84,7 +84,7 @@ LINKRESULT_wx_mac = MrEd.app/Contents/MacOS/MrEd
 LINKRESULT = $(LINKRESULT_@WXVARIANT@)
 
 EXTRASETUP_wx_xt =
-EXTRASETUP_wx_mac = MrEd.app
+EXTRASETUP_wx_mac = MrEd.app Starter.app/Contents/MacOS/Starter
 
 mred : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB) $(EXTRASETUP_@WXVARIANT@)
 	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
@@ -94,6 +94,10 @@ libmred.@LIBSFX@: $(WXLIBSNORM)
 
 MrEd.app:
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
+
+Starter.app/Contents/MacOS/Starter: $(srcdir)/../mac/starter/X-starter.cpp
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -framework Carbon $(srcdir)/../mac/starter/X-starter.cpp -o Starter.app/Contents/MacOS/Starter
+
 
 ee-app: mred mred_ee.o
 	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
@@ -187,11 +191,20 @@ install-no-lib:
 install-lib:
 	cd ..; $(ICP) mred/libmred.@LIBSFX@ $(prefix)/lib/
 
-install:
+install_wx_xt:
 	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
 	cd ..; rm -f $(prefix)/bin/mred
 	cd ..; $(ICP) mred/mred $(prefix)/bin/
 	$(MAKE) @MRLIBINSTALL@
+
+install_wx_mac:
+	cd ..; rm -rf $(prefix)/MrEd.app
+	cd ..; rm -rf $(prefix)/collects/launcher/Starter.app
+	cd ..; $(ICP) -r mred/MrEd.app $(prefix)/.
+	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
+
+install:
+	$(MAKE) install_@WXVARIANT@
 
 3m:
 	$(MAKE) all

@@ -18,6 +18,7 @@ static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, AL
 {	ALPtr	pAL;
 	RgnHandle	saveClip, auxRgn;
 	GrafPtr	savePort;
+	GDHandle saveDev;
 #if ALIST_HAVE_CELLDATA
 	Boolean	saveDataLock;
 #else
@@ -29,7 +30,7 @@ static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, AL
 	pAL = *hAL;
 
 	// Set up the port.
-	GetPort(&savePort);
+	GetGWorld(&savePort, &saveDev);
 	SetPortWindowPort(pAL->winRef);
 
 	// Create auxiliary regions.
@@ -70,7 +71,7 @@ static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, AL
 	DisposeRgn(auxRgn);
 
 	// restore the port
-	SetPort(savePort);
+	SetGWorld(savePort, saveDev);
 } // local_ALHiliteCell
 
 void _ALHiliteSelected(ALHandle hAL)
@@ -353,6 +354,7 @@ ALIST_API RgnHandle ALGetCellHiliteRgn(const ALCellPtr theCell, ALHandle hAL)
 	RgnHandle		hiliteRgn;
 	Rect			selRect;
 	GrafPtr		savePort;
+        GDHandle        saveDev;
 	Boolean		saveALLock, saveSLLock;
 	ALSelectionPtr	sPtr;
 	unsigned long	offset;
@@ -368,7 +370,7 @@ ALIST_API RgnHandle ALGetCellHiliteRgn(const ALCellPtr theCell, ALHandle hAL)
 	sPtr = *pAL->hSelected;
 
 	// Set up the port.
-	GetPort(&savePort);
+	GetGWorld(&savePort, &saveDev);
 	SetPortWindowPort(pAL->winRef);
 
 	// Open a region: rects to be hilited will be accumulated in this.
@@ -387,7 +389,7 @@ ALIST_API RgnHandle ALGetCellHiliteRgn(const ALCellPtr theCell, ALHandle hAL)
 	SectRgn(hiliteRgn, pAL->viewRgn, hiliteRgn);
 
 	// restore the port
-	SetPort(savePort);
+	SetGWorld(savePort, saveDev);
 
 	// unlock the AL record
 	_ALSetHandleLock((Handle)hAL, saveALLock);
@@ -430,6 +432,7 @@ ALIST_API RgnHandle ALGetSelectedHiliteRgn(ALHandle hAL)
 	RgnHandle		hiliteRgn;
 	Rect			selRect;
 	GrafPtr		savePort;
+        GDHandle        saveDev;
 	Boolean		saveALLock, saveSLLock;
 	ALCell		theCell;
 	ALSelectionPtr	sPtr;
@@ -446,7 +449,7 @@ ALIST_API RgnHandle ALGetSelectedHiliteRgn(ALHandle hAL)
 	sPtr = *pAL->hSelected;
 
 	// Set up the port.
-	GetPort(&savePort);
+	GetGWorld(&savePort, &saveDev);
 	SetPortWindowPort(pAL->winRef);
 
 	// Open a region: rects to be hilited will be accumulated in this.
@@ -472,7 +475,7 @@ ALIST_API RgnHandle ALGetSelectedHiliteRgn(ALHandle hAL)
 	SectRgn(hiliteRgn, pAL->viewRgn, hiliteRgn);
 
 	// restore the port
-	SetPort(savePort);
+	SetGWorld(savePort, saveDev);
 
 	// unlock the AL record
 	_ALSetHandleLock((Handle) hAL, saveALLock);

@@ -830,6 +830,10 @@ Boolean	_ALBlockCmp(const void *block1, const void *block2, long blockSize);
 void		_ALReorder(long *a, long *b);
 OSErr	_ALAllocate(long blockSize, short allocFlags, Handle *h);
 
+extern GDHandle alist_GetGDHandle(void);
+#define SetPortWindowPort(p) SetGWorld(GetWindowPort(p), alist_GetGDHandle())
+#define SetPort(p) SetGWorld(p, alist_GetGDHandle())
+
 
 #if (ALIST_SHARED_LIBRARY == 1)
 #pragma internal reset

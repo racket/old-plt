@@ -148,6 +148,7 @@ ALIST_API void ALScrollPixels(long hOffset, long vOffset, ALHandle hAL)
 {	ALPtr	pAL;
 	Rect		viewRect;
 	GrafPtr	savePort;
+	GDHandle saveDev;
 	Boolean	hideOutline, saveALLock;
 
 	// Do nothing if both scroll offsets are zero
@@ -159,7 +160,7 @@ ALIST_API void ALScrollPixels(long hOffset, long vOffset, ALHandle hAL)
 	pAL = *hAL;
 	
 	// set up the port
-	GetPort(&savePort);
+	GetGWorld(&savePort, &saveDev);
 	SetPortWindowPort(pAL->winRef);
 
 	// get view rect in short coordinates
@@ -207,7 +208,7 @@ ALIST_API void ALScrollPixels(long hOffset, long vOffset, ALHandle hAL)
 	}
 
 	// restore the port
-	SetPort(savePort);
+	SetGWorld(savePort, saveDev);
 
 	// unlock the AL record
 	_ALSetHandleLock((Handle) hAL, saveALLock);

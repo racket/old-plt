@@ -31,7 +31,20 @@ AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistic
 
 AC_ARG_ENABLE(noopt, ""  feature: noopt          drop -O C flags)
 
-AC_ARG_ENABLE(quartz,""  feature: quartz         compile quartz (Mac OS X) version of MrEd)
+AC_ARG_ENABLE(xonx,""  feature: xonx           compile X11 (not Quartz) MrEd for Mac OS X)
+
+###### Get OS Type #######
+
+if test -x "/bin/uname" ; then
+  UNAME=/bin/uname
+elif test -x "/usr/bin/uname" ; then
+  UNAME=/usr/bin/uname
+else
+  echo configure: cannot find uname
+  exit 1
+fi
+
+OS=`$UNAME -s`
 
 ###### Some flags imply other flags #######
 
@@ -45,6 +58,15 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+fi
+
+enable_quartz=no
+if test "${enable_xonx}" = "yes" ; then
+  enable_quartz=no
+else
+  if test "$OS" = "Darwin" ; then
+    enable_quartz=yes
+  fi
 fi
 
 # Hack for the implementor:
@@ -211,22 +233,12 @@ fi
 
 ############## platform tests ################
 
-if test -x "/bin/uname" ; then
-  UNAME=/bin/uname
-elif test -x "/usr/bin/uname" ; then
-  UNAME=/usr/bin/uname
-else
-  echo configure: cannot find uname
-  exit 1
-fi
-
 # for flags we don't want to use in config tests:
 EXTRALIBS=
 
 # for gmp assembly:
 EXTRA_GMP_OBJ=
 
-OS=`$UNAME -s`
 case $OS in
   SunOS)
     case `$UNAME -r` in
@@ -409,6 +421,8 @@ if test "${enable_mred}" = "yes" ; then
     AC_MSG_RESULT($addperm) 
   fi
 
+  if test "$enable_quartz" = "no" ; then
+
   # Can we make auto-repeat detectable?
 [ msg="whether X11/XKBlib.h is available"   ]
   AC_MSG_CHECKING($msg)
@@ -422,6 +436,9 @@ if test "${enable_mred}" = "yes" ; then
     MROPTIONS="$MROPTIONS -DNO_XKB_LIB_PRESENT"
   fi
   AC_MSG_RESULT($xkbavail)
+
+ fi # non-quartz
+
 fi
 
 ############## drop optimization flags ################

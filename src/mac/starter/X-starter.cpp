@@ -125,6 +125,6 @@ int main(int argc, char *argv[], char *envp[])
 
   execve(executablePath, storedArgs, envp);
 
-  fprintf(stderr,"error executing: %d\n",errno);
+  fprintf(stderr,"error executing %s: %d\n", executablePath, errno);
   return 1;
 }

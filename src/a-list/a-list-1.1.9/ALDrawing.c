@@ -626,6 +626,7 @@ ALIST_API void ALDrawCell(const ALCellPtr theCell, ALHandle hAL)
 	Rect				entireCellRect, dataPortionCellRect;
 	Rect				box;
 	GrafPtr			savePort;
+	GDHandle saveDev;
 	RgnHandle			saveClip;
 	QDDrawingState	saveDrawingState;
 
@@ -638,7 +639,7 @@ ALIST_API void ALDrawCell(const ALCellPtr theCell, ALHandle hAL)
 		_ALCalcCellRect(&entireCellRect, theCell, true, hAL);
 		_ALCalcCellRect(&dataPortionCellRect, theCell, false, hAL);
 
-		GetPort(&savePort);
+		GetGWorld(&savePort, &saveDev);
 		SetPortWindowPort((*hAL)->winRef);
 
 		// save the clip region
@@ -724,7 +725,7 @@ ALIST_API void ALDrawCell(const ALCellPtr theCell, ALHandle hAL)
 		SetClip(saveClip);
 		DisposeRgn(saveClip);
 
-		SetPort( savePort );
+		SetGWorld( savePort, saveDev );
 	}
 } // ALDrawCell
 

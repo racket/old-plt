@@ -33,6 +33,8 @@ class wxGroupBox : public wxItem
 
   virtual void SetPhantomSize(int w, int h);
 
+  virtual void OnEvent(wxMouseEvent *event);
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);

@@ -206,3 +206,9 @@ void wxGroupBox::SetLabel(char *label)
   }
 }
 
+void wxGroupBox::OnEvent(wxMouseEvent *event)
+{
+  if (MaybeMetalDrag(event)) 
+    return;
+  wxItem::OnEvent(event);
+}

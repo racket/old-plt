@@ -31,6 +31,11 @@ Functions
        reads in an XML document from the given or current input port
        XML documents contain exactly one element.  It throws an xml-read:error
        if there isn't any element or if there are more than one element.
+       
+       Malformed xml is reported with source locations in
+       the form `l.c/o', where l is the line number, c is
+       the column number and o is the number of characters
+       from the beginning of the file.
 
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently

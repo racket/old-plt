@@ -126,6 +126,8 @@ static void init_iconv() { }
 # define mzLOCALE_IS_UTF_8(s) !iconv_open
 #endif
 
+#define mz_iconv_nl_langinfo() ""
+
 #define mzICONV_KIND 0
 #define mzUTF8_KIND 1
 
@@ -2147,9 +2149,9 @@ static char *do_convert(iconv_t cd,
     if (!iconv_ready) init_iconv();
     if (iconv_open) {
       if (!from_e)
-	from_e = nl_langinfo(CODESET);
+	from_e = mz_iconv_nl_langinfo();
       if (!to_e)
-	to_e = nl_langinfo(CODESET);
+	to_e = mz_iconv_nl_langinfo();
       cd = iconv_open(to_e, from_e);
       close_it = 1;
     } else if (to_from_utf8) {
@@ -2321,9 +2323,9 @@ static char *string_to_from_locale(int to_bytes,
   if (!iconv_ready) init_iconv();
 
   if (to_bytes)
-    cd = iconv_open(nl_langinfo(CODESET), MZ_UCS4_NAME);
+    cd = iconv_open(mz_iconv_nl_langinfo(), MZ_UCS4_NAME);
   else
-    cd = iconv_open(MZ_UCS4_NAME, nl_langinfo(CODESET));
+    cd = iconv_open(MZ_UCS4_NAME, mz_iconv_nl_langinfo());
   if (cd == (iconv_t)-1)
     return NULL;
 
@@ -3180,9 +3182,9 @@ Scheme_Object *scheme_open_converter(const char *from_e, const char *to_e)
       reset_locale();
 
     if (!*from_e)
-      from_e = nl_langinfo(CODESET);
+      from_e = mz_iconv_nl_langinfo();
     if (!*to_e)
-      to_e = nl_langinfo(CODESET);
+      to_e = mz_iconv_nl_langinfo();
     cd = iconv_open(to_e, from_e);
 
     if (cd == (iconv_t)-1)

@@ -211,6 +211,7 @@
       (define/public (start prefix- get-token- pairs-)
         (set! stopped? #f)
         (reset-tokens)
+        (highlight-parens #t)
         (set! prefix prefix-)
         (set! get-token get-token-)
         (set! pairs pairs-)
@@ -290,9 +291,13 @@
             (end-edit-sequence)
             (set! in-match-parens? #f))))
       
-      
+      (rename (super-highlight-parens highlight-parens))
       (define/override highlight-parens
-        (lambda x (void)))
+        (lambda x
+          (when (null? pairs)
+            (cond
+              ((null? x) (super-highlight-parens))
+              (else (super-highlight-parens (car x)))))))
       
       ;; ------------------------- Callbacks to Override ----------------------
       

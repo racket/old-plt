@@ -266,7 +266,8 @@
 	   (lambda ()
 	     (with-handlers ([void void])
 	       (disconnect))
-	     (imap-force-disconnect connection)
+	     (with-handlers ([void void])
+	       (imap-force-disconnect connection))
 	     (set! connection #f)))))
       
       (define (check-validity v cleanup)

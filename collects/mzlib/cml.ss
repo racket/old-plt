@@ -43,7 +43,8 @@
        (let ([s (make-semaphore)])
 	 (thread-resume (thread/suspend-to-kill
 			 (lambda ()
-			   (sleep (max 0 (- t (current-seconds))))
+			   (object-wait-multiple (max 0 (- t (current-seconds)))
+						 nack)
 			   (semaphore-post s)))
 			(current-thread))
 	 (make-wrapped-waitable s void)))))

@@ -7,7 +7,15 @@
 
 ; the browser with the calendar
 
-(define calwb (make-object mx-browser% "Calendar control" 350 400 100 100 '(scrollbars)))
+(define calwb (instantiate mx-browser% 
+			   () ; no by-position initializers
+			   (label "Calendar control")
+			   (height 400)
+			   (width 350)
+			   (y 100)
+			   (x 100)
+			   (style-options '(scrollbars))))
+
 (define caldoc (send calwb current-document))
 
 (send caldoc insert-html 

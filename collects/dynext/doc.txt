@@ -14,7 +14,7 @@ and Unix:
    current-extension-compiler - compiler executable pathname or
      #f. The default is set by searching for an executable using
      the PATH environment variable. Under windows, the search
-     looks for gcc.exe and then cl.exe. Under Unix, it looks for 
+     looks for cl.exe and then gcc.exe. Under Unix, it looks for 
      gcc and then cc. #f indicates that no compiler could be
      found.
 
@@ -66,7 +66,7 @@ Linking parameters:
    current-extension-linker - linker executable pathname or #f. 
      The default is set by searching for an executable using
      the PATH environment variable. Under Windows, it looks for 
-     ld.exe and then cl.exe. Under Unix except AIX, it looks for 
+     cl.exe and then ld.exe. Under Unix except AIX, it looks for 
      ld. Under AIX, it looks for cc. #f indicates that no linker
      could be found.
 

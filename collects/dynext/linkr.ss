@@ -3,8 +3,8 @@
   (define include-dir (collection-path "mzscheme" "include"))
 
   (define (get-windows-linker)
-    (or (find-executable-path "ld.exe" "ld.exe")
-	(find-executable-path "cl.exe" "cl.exe")))
+    (or (find-executable-path "cl.exe" "cl.exe")
+	(find-executable-path "ld.exe" "ld.exe")))
 
   (define (get-unix-linker)
     (let ([s (case (string->symbol (system-library-subpath))
@@ -107,11 +107,9 @@
 	  (map file (list "mzdyn.exp"
 			  "mzdyn.o"
 			  "init.o"
-			  "fixup.o"
-			  "gmzwin.a"))
+			  "fixup.o"))
 	  (map file (list "mzdyn.exp"
-			  "mzdyn.obj"
-			  "mzscheme.lib")))))
+			  "mzdyn.obj")))))
   
   (define (get-unix/macos-link-libraries)
     (list (build-path std-library-dir "mzdyn.o")))

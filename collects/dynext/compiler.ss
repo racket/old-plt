@@ -8,8 +8,8 @@
 	(find-executable-path "cc" "cc")))
   
   (define (get-windows-compile)
-    (or (find-executable-path "gcc.exe" "gcc.exe")
-	(find-executable-path "cl.exe" "cl.exe")))
+    (or (find-executable-path "cl.exe" "cl.exe")
+	(find-executable-path "gcc.exe" "gcc.exe")))
   
   (define current-extension-compiler 
     (make-parameter 

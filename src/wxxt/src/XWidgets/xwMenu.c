@@ -1003,7 +1003,9 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 			 ? mw->menu.highlight_GC
 			 : mw->menu.erase_GC)
 		      : ((item->enabled || item->type==MENU_TEXT) 
-			 ? mw->menu.normal_GC 
+			 ? (on
+			    ? mw->menu.erase_GC 
+			    : mw->menu.normal_GC)
 			 : mw->menu.inactive_GC)),
 		     x+ms->wLeft+extra_x,
 		     y+mw->menu.shadow_width+VMARGIN+wx_ASCENT(mw->menu.font,

@@ -764,22 +764,42 @@ static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
     }
     
     if (name) {
-      XftPattern *pat;
-      XftResult res;
+      while (1) {
+	XftPattern *pat;
+	XftResult res;
+	
+	pat = XftNameParse(name XFORM_OK_PLUS 1);
+	if (!pat) {
+	  fs = NULL;
+	  break;
+	}
+	
+	pat = XftPatternBuild(pat,
+			      (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
+			      XFT_WEIGHT, XftTypeInteger, wt,
+			      XFT_SLANT, XftTypeInteger, sl,
+			      ex_tags[0], ex_types[0], ex_vals[0],
+			      ex_tags[1], ex_types[1], ex_vals[1],
+			      NULL);
+	
+	if (pat) {
+	  pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
+	  
+	  if (pat)
+	    fs = XftFontOpenPattern(wxAPP_DISPLAY, pat);
+	  else
+	    fs = NULL;
 
-      pat = XftNameParse(name XFORM_OK_PLUS 1);
-
-      pat = XftPatternBuild(pat,
-			    (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
-			    XFT_WEIGHT, XftTypeInteger, wt,
-			    XFT_SLANT, XftTypeInteger, sl,
-			    ex_tags[0], ex_types[0], ex_vals[0],
-			    ex_tags[1], ex_types[1], ex_vals[1],
-			    NULL);
-
-      pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
-
-      fs = XftFontOpenPattern(wxAPP_DISPLAY, pat);
+	  break;
+	} else {
+	  if (ex_pos && (ex_tags[ex_pos - 1] == XFT_MATRIX)) {
+	    /* Perhaps the matrix transform isn't be supported... */
+	    ex_tags[ex_pos - 1] = NULL;
+	    point_size = (int)(point_size * scale_y);
+	  } else
+	    break;
+	}
+      }
     } else
       fs = NULL;
 

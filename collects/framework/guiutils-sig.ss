@@ -1,5 +1,5 @@
-(module gui-utils-sig mzscheme
-  (require (list "unitsig.ss"))
+(module guiutils-sig mzscheme
+  (require (lib "unitsig.ss"))
 
   (provide framework:gui-utils^)
   

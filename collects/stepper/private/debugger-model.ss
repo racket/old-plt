@@ -54,6 +54,7 @@
              (let ([mark-list (extract-mark-list (current-continuation-marks))])
                (queue-result (make-normal-breakpoint-info mark-list 'debugger-break null))
                (queue-result (make-breakpoint-halt))
+               (printf (
                (semaphore-wait go-semaphore)))
 
            
@@ -70,8 +71,6 @@
            
            (define (err-display-handler message exn)
              (queue-result (make-error-breakpoint-info message))))
-        
-        (fprintf debugger-debugger-error-port "about to call expand-program.\n")
 
         (parameterize ([current-custodian user-custodian])
           (program-expander

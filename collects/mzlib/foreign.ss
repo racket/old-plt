@@ -121,14 +121,14 @@
 ;; ----------------------------------------------------------------------------
 ;; Function type
 
-;; internal, used by _fun
-(define (ffi-fun itypes otype . wrapper)
+;; Creates a simple function type that can be used for callouts and callbacks,
+;; optionally applying a wrapper function to modify the result primitive
+;; (callouts) or the input procedure (callbacks).
+(define* (_cprocedure itypes otype . wrapper)
   (let ([wrapper (and (pair? wrapper) (car wrapper))])
     (if wrapper
       (make-ctype _fmark
-        (lambda (x)
-          ;; (ffi-callback (wrapper x) itypes otype)
-          (error 'ffi-fun "cannot use wrappers for callback functions (yet)"))
+        (lambda (x) (ffi-callback (wrapper x) itypes otype))
         (lambda (x) (wrapper (ffi-call x itypes otype))))
       (make-ctype _fmark
         (lambda (x) (ffi-callback x itypes otype))
@@ -349,9 +349,9 @@
                            body 'inferred-name
                            (string->symbol (string-append "ffi-wrapper:" n)))
                           body))])
-           #`(ffi-fun (list #,@(filtmap car inputs)) #,(car output)
+           #`(_cprocedure (list #,@(filtmap car inputs)) #,(car output)
                (lambda (ffi) #,body)))
-         #`(ffi-fun (list #,@(filtmap car inputs)) #,(car output))))]))
+         #`(_cprocedure (list #,@(filtmap car inputs)) #,(car output))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; String types

@@ -26,6 +26,7 @@
   
   (define f (make-object frame% title #f 500 300))
   (define l (make-object hierarchical-list% f))
+  (define spacer (make-object grow-box-spacer-pane% f))
 
   ;; Some styles (style deltas, actually):
   (define bold (make-object style-delta% 'change-bold))
@@ -142,6 +143,8 @@
 	      (add-text! a (cadr q&a) normal))))
 	items)))
    steps)
+
+  (send (send l get-editor) scroll-to-position 0)
 
   (lambda () (send f show #t)))
 

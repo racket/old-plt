@@ -399,6 +399,10 @@
 		   (send main-buffer insert #\newline 2)
 		   (send main-buffer insert whitespace 3)
 		   (send main-buffer insert content-snip 4)))
+	     (send main-buffer scroll-to-position 0
+		   #f
+		   (send main-buffer last-position)
+		   'start)
 	     (send main-buffer end-edit-sequence)))]
 	[handle-close
 	 (lambda (update-arrow?)

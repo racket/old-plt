@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mred -mvaqgL run.ss countdwn

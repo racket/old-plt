@@ -196,17 +196,7 @@
 					   [(right) (if (send e get-meta-down)
 							(send html-panel forward)
 							(super-on-subwindow-char w e))]
-					   [else (if (and (eq? #\tab (send e get-key-code))
-							  (eq? w results))
-						     ; Override normal behavior, which is to pass the tab on to
-						     ; the edit
-						     (if (send e get-shift-down)
-							 (send before-results focus)
-							 (let ([e (send search-text get-editor)])
-							   (send search-text focus)
-							   (send e set-position 0 (send e last-position)
-								 #f #t 'local)))
-						     (super-on-subwindow-char w e))]))])
+					   [else (super-on-subwindow-char w e)]))])
 				    (sequence (apply super-init args))))
 				 (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 60)))))
 
@@ -300,16 +290,6 @@
 					    (sequence (super-init #t (send f get-area-container))))))
 	  (define results (send html-panel get-canvas))
 
-	  (define before-results
-	    (let loop ([l (send html-panel get-children)])
-	      (cond
-	       [(null? (cdr l)) results]
-	       [(eq? (cadr l) results) (let loop ([v (car l)])
-					 (if (is-a? v area-container<%>)
-					     (loop (car (last-pair (send v get-children))))
-					     v))]
-	       [else (loop (cdr l))])))
-
 	  (define top (make-object vertical-pane% (send f get-area-container)))
 	  (define search-text (make-object text-field% "Find docs for:" top
 					   (lambda (t e)
@@ -348,6 +328,8 @@
 	  (send stop show #f)
 
 	  (send top stretchable-height #f)
+
+	  (send results allow-tab-exit #t)
 
 	  (send search-text focus)
 

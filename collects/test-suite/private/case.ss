@@ -28,7 +28,8 @@
         (class* aligned-editor-snip% (test-suite:item<%>)
           (inherit get-editor next set-snipclass)
           (init-field
-           [call (instantiate test:text% ())]
+           [call (instantiate test:text% ()
+                   (parent this))]
            [expected (instantiate test:text% ())]
            [test (let ([tmp-text (instantiate test:text% ())])
                    (send tmp-text insert "equal?")

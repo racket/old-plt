@@ -32,10 +32,12 @@
       (let ([keymap (get-keymap)])
         (send keymap add-function "skip-ahead"
               (lambda (ignored event)
-                (message-box "Event" "Tab pressed")))
+                ;(message-box "Event" "Tab pressed")
+              ))
         (send keymap add-function "skip-back"
               (lambda (ignored event)
-                (message-box "Event" "Shift tab pressed")))
+                ;(message-box "Event" "Shift tab pressed")
+              ))
         (send keymap map-function "tab" "skip-ahead")
         (send keymap map-function "s:tab" "skip-back")
         (set-keymap keymap))

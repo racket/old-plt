@@ -501,6 +501,7 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals,
     g = scheme_current_thread->ku.multiple.count;
     if (i == g) {
       values = scheme_current_thread->ku.multiple.array;
+      scheme_current_thread->ku.multiple.array = NULL;
       for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
 	b = (Scheme_Bucket *)SCHEME_CAR(vars);
 	if (defmacro) {
@@ -548,7 +549,9 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals,
   
   {
     const char *symname;
+
     symname = (show_any ? scheme_symbol_name(name) : "");
+
     scheme_wrong_return_arity(defmacro ? "define-syntaxes" : "define-values",
 			      i, g,
 			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
@@ -2483,6 +2486,8 @@ begin0_execute(Scheme_Object *obj)
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
     mv = p->ku.multiple.array;
     mc = p->ku.multiple.count;
+    if (SAME_OBJ(mv, p->values_buffer))
+      p->values_buffer = NULL;
   } else {
     mv = NULL;
     mc = 0; /* makes compilers happy */
@@ -3081,6 +3086,7 @@ do_letrec_syntaxes(const char *where, int normal,
       } else
 	name = NULL;
       symname = (name ? scheme_symbol_name(name) : "");
+
       scheme_wrong_return_arity(where,
 				nc, vc,
 				(vc == 1) ? (Scheme_Object **)a : scheme_current_thread->ku.multiple.array,
@@ -3091,6 +3097,7 @@ do_letrec_syntaxes(const char *where, int normal,
     }
 
     results = scheme_current_thread->ku.multiple.array;
+    scheme_current_thread->ku.multiple.array = NULL;
 
     for (j = 0, l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l), j++) {
       Scheme_Object *name;

@@ -1217,7 +1217,13 @@ call_with_output_file (int argc, Scheme_Object *argv[])
   v = _scheme_apply_multi(argv[1], 1, &port);
 
   m = p->ku.multiple.array;
+  if (v == SCHEME_MULTIPLE_VALUES) {
+    if (SAME_OBJ(m, p->values_buffer))
+      p->values_buffer = NULL;
+  }
+
   scheme_close_output_port(port);
+
   p->ku.multiple.array = m;
 
   return v;
@@ -1236,7 +1242,13 @@ call_with_input_file(int argc, Scheme_Object *argv[])
   v = _scheme_apply_multi(argv[1], 1, &port);
   
   m = p->ku.multiple.array;
+  if (v == SCHEME_MULTIPLE_VALUES) {
+    if (SAME_OBJ(m, p->values_buffer))
+      p->values_buffer = NULL;
+  }
+
   scheme_close_input_port(port);
+
   p->ku.multiple.array = m;
 
   return v;
@@ -2149,6 +2161,9 @@ static Scheme_Object *do_load_handler(void *data)
     if (last_val == SCHEME_MULTIPLE_VALUES) {
       save_array = p->ku.multiple.array;
       save_count = p->ku.multiple.count;
+
+      if (SAME_OBJ(save_array, p->values_buffer))
+	p->values_buffer = NULL;
     }
   }
 

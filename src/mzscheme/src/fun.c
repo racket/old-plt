@@ -1689,7 +1689,9 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 
   v = _scheme_apply_multi(argv[0], 0, NULL);
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
-    /* Careful - get the ordering right! */
+    if (SAME_OBJ(p->ku.multiple.array, p->values_buffer))
+      p->values_buffer = NULL;
+    /* Careful - get the ordering right, because the fields overlap! */
     p->ku.apply.tail_num_rands = p->ku.multiple.count;
     p->ku.apply.tail_rands = p->ku.multiple.array;
   } else {
@@ -1714,10 +1716,14 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
 
   p = scheme_current_thread;
   p->ku.multiple.count = argc;
-  if (argc)
+  if (p->values_buffer && (p->values_buffer_size >= argc))
+    a = p->values_buffer;
+  else {
     a = MALLOC_N(Scheme_Object *, argc);
-  else
-    a = NULL;
+    p->values_buffer = a;
+    p->values_buffer_size = argc;
+  }
+
   p->ku.multiple.array = a;
   
   for (i = 0; i < argc; i++) {
@@ -2260,6 +2266,8 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     save_count = p->ku.multiple.count;
     save_values = p->ku.multiple.array;
     p->ku.multiple.array = NULL;
+    if (SAME_OBJ(save_values, p->values_buffer))
+      p->values_buffer = NULL;
   } else {
     save_count = 0;
     save_values = NULL;
@@ -2639,6 +2647,8 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 
   if (v == SCHEME_MULTIPLE_VALUES) {
     Scheme_Thread *cp = scheme_current_thread;
+    if (SAME_OBJ(cp->ku.multiple.array, cp->values_buffer))
+      cp->values_buffer = NULL;
     v = scheme_build_list(cp->ku.multiple.count,
 			  cp->ku.multiple.array);
   } else

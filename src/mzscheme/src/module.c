@@ -1536,6 +1536,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
       Scheme_Object **values;
 
       values = scheme_current_thread->ku.multiple.array;
+      scheme_current_thread->ku.multiple.array = NULL;
       for (i = 0; i < g; i++, names = SCHEME_CDR(names)) {
 	name = SCHEME_CAR(names);
 
@@ -1568,7 +1569,9 @@ static void eval_defmacro(Scheme_Object *names, int count,
   
   {
     const char *symname;
+
     symname = (name ? scheme_symbol_name(name) : "");
+
     scheme_wrong_return_arity("define-syntaxes",
 			      count, g,
 			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,

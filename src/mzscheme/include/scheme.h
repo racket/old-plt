@@ -659,6 +659,9 @@ typedef struct Scheme_Thread {
   Scheme_Object **tail_buffer;
   int tail_buffer_size;
 
+  Scheme_Object **values_buffer;
+  int values_buffer_size;
+
   union {
     struct {
       Scheme_Object *wait_expr;

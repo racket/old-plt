@@ -249,7 +249,14 @@
 	  [in-break? #f]
 	  [ask-about-kill? #f])
 	(public
-	  [do-eval (lambda (start end) (do-many-buffer-evals this start end))]
+	  [do-eval 
+	   (let ([count 0])
+	     (lambda (start end)
+	       (set! count (add1 count))
+	       (when (<= 5 count)
+		 (collect-garbage)
+		 (set! count 0))
+	       (do-many-buffer-evals this start end)))]
 	  [cleanup-evaluation
 	   (opt-lambda ()
 	     (mred:debug:printf 'console-threading "cleanup-evaluation: waiting in-evaluation")
@@ -472,6 +479,7 @@
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
 	       (custodian-shutdown-all user-custodian)
+	       (collect-garbage)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
 	       (let ([p (build-parameterization user-custodian)])

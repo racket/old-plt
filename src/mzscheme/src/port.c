@@ -503,20 +503,6 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			     );
 
-  if (SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stdout_port)->sub_type, file_output_port_type)
-#ifdef MZ_FDS
-      || SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stdout_port)->sub_type, fd_output_port_type)
-#endif
-      ) {
-    Scheme_Object *t, *a[2];
-    a[0] = scheme_orig_stdout_port;
-    t = scheme_terminal_port_p(1, a);
-    if (SCHEME_FALSEP(t)) {
-      a[1] = block_symbol;
-      scheme_file_buffer(2, a);
-    }
-  }
-
   scheme_orig_stderr_port = (scheme_make_stderr
 			     ? scheme_make_stderr()
 #ifdef MZ_FDS
@@ -530,17 +516,6 @@ scheme_init_port (Scheme_Env *env)
 			     : scheme_make_file_output_port(stderr)
 #endif
 			     );
-  
-  if (SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stderr_port)->sub_type, file_output_port_type)
-#ifdef MZ_FDS
-      || SAME_OBJ(((Scheme_Output_Port *)scheme_orig_stderr_port)->sub_type, fd_output_port_type)
-#endif
-      ) {
-    Scheme_Object *a[2];
-    a[0] = scheme_orig_stderr_port;
-    a[1] = none_symbol;
-    scheme_file_buffer(2, a);
-  }
 
 #ifdef MZ_FDS
   scheme_add_atexit_closer(flush_if_output_fds);
@@ -3172,6 +3147,18 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[])
   return scheme_get_fd_identity(p, fd);
 }
 
+static int is_fd_terminal(int fd)
+{
+#if defined(WIN32_FD_HANDLES)
+  if (GetFileType((HANDLE)fd) == FILE_TYPE_CHAR)
+    return 1;
+  else
+    return 0;
+#else
+  return isatty(fd);
+#endif
+}
+
 Scheme_Object *scheme_terminal_port_p(int argc, Scheme_Object *argv[])
 {
   long fd = 0;
@@ -3217,14 +3204,7 @@ Scheme_Object *scheme_terminal_port_p(int argc, Scheme_Object *argv[])
   if (!fd_ok)
     return scheme_false;
 
-#if defined(WIN32_FD_HANDLES)
-  if (GetFileType((HANDLE)fd) == FILE_TYPE_CHAR)
-    return scheme_true;
-  else
-    return scheme_false;
-#else
-  return isatty(fd) ? scheme_true : scheme_false;
-#endif
+  return is_fd_terminal(fd) ? scheme_true : scheme_false;
 }
 
 static void filename_exn(char *name, char *msg, char *filename, int err)
@@ -5918,8 +5898,16 @@ make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, 
   fop->regfile = regfile;
   fop->textmode = win_textmode;
 
-  /* No buffering for stderr: */
-  fop->flush = ((fd == 2) ? MZ_FLUSH_ALWAYS : MZ_FLUSH_BY_LINE);
+  if (fd == 2) {
+    /* No buffering for stderr: */
+    fop->flush = MZ_FLUSH_ALWAYS;
+  } else if (is_fd_terminal(fd)) {
+    /* Line-buffering for terminal: */
+    fop->flush = MZ_FLUSH_BY_LINE;
+  } else {
+    /* Block-buffering for everything else: */
+    fop->flush = MZ_FLUSH_NEVER;
+  }
 
   the_port = (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						      fop,

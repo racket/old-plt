@@ -1490,22 +1490,26 @@ void wxDC::SetFont(wxFont *the_font)
 
 void wxDC::SetPen(wxPen *pen)
 {
-  if (current_pen) current_pen->Lock(-1);
-  current_pen = pen;
-  if (current_pen) current_pen->Lock(1);
-
-  if (pen)
-    pen->ChangePen();
+  if (pen != current_pen) {
+    if (current_pen) current_pen->Lock(-1);
+    current_pen = pen;
+    if (current_pen) current_pen->Lock(1);
+    
+    if (pen)
+      pen->ChangePen();
+  }
 }
 
 void wxDC::SetBrush(wxBrush *brush)
 {
-  if (current_brush) current_brush->Lock(-1);
-  current_brush = brush;
-  if (current_brush) current_brush->Lock(1);
-
-  if (brush)
-    brush->ChangeBrush();
+  if (brush != current_brush) {
+    if (current_brush) current_brush->Lock(-1);
+    current_brush = brush;
+    if (current_brush) current_brush->Lock(1);
+    
+    if (brush)
+      brush->ChangeBrush();
+  }
 }
 
 static int ucs4_strlen(const unsigned int *c)

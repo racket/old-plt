@@ -1177,7 +1177,10 @@ long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
   
   rec->f = f;
   rec->data = data;
-  WXGC_IGNORE(rec->data);
+  if (weak)
+    scheme_weak_reference((void **)&rec->data);
+  else
+    WXGC_IGNORE(rec->data);
 #ifndef WXME_FOR_MRED
   rec->id = nextNotifyId++;
 #else

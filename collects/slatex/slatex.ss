@@ -9,7 +9,7 @@
     (error 'filename->latex-filename "~e does not exist" input-file)]))
 
 (define (latex input-file)
-  (let ([file (filename->latex-filename input-file)])
+  (let ([file (filename->latex-filename (normalize-path input-file))])
     (case (system-type)
       [(macos)
        (system "OTEX")
@@ -23,7 +23,7 @@
 	 (when (file-exists? oztex-location)
 	   (with-handlers ([void void]) ;; mzscheme cannot handle result
 	     (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))
-       
+       (printf "file: ~s~n" file)
        (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
       [(windows unix) ;; is this also okay for beos?
        (system (format "latex ~a" file))]

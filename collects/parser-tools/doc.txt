@@ -224,8 +224,6 @@ lexer:
 parser:
 If the error token can be shifted, but parsing is unable to resume, throw an
 error instead of infinite looping.
-The parser wants to read one token beyond the end token, which is ok
-if the end token comes from an eof in the port, but not otherwise.
 
 both:
 raise-read-error arguments

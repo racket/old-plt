@@ -31,7 +31,7 @@
       (string-append
        "version "
        (mred:version:version)
-       ", Copyright (c) 1995-1997 PLT, Rice University"))
+       ", Copyright (c) 1995-1997 PLT, Rice University (Matthew Flatt and Robert Bruce Findler)"))
 
     (define credits-proc
       (lambda (indent-string)
@@ -351,6 +351,7 @@
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
+		    (cleanup-transparent-io)
 		    (generic-write s
 				   (lambda (start end)
 				     (change-style error-delta 

@@ -56,6 +56,18 @@ TYPES ----------------------------------------------------------------
   an instance of the path/params struct. Otherwise, it is
   just represented as a string.
 
+  The strings inside the fields user, path, query, and
+  fragment are represented directly as Scheme strings, ie
+  there is no url-syntax-specific quoting in there. The
+  procedures string->url and url->string take to translate
+  things like %20 into spaces and back again.
+
+  An empty string at the end of the list of params
+  corresponds to a url that ends in a slash. For example,
+  this url: http://www.drscheme.org/a/ has a path field 
+  '("a" "") and this url http://www.drscheme.org/a
+  has a path field '("a").
+
 > path/params
 
   A pair of strings, accessible with _path/params-path_ and
@@ -86,10 +98,6 @@ PROCEDURES -----------------------------------------------------------
   scheme "file", the portion of the string past "file:" must respond
   to either absolute-path? or relative-path?.  It is then inserted
   verbatim into the url structure.
-
-  If the string contains encoded characters of the for "%xx" (for hex
-  digits "x"), they are *not* decoded in the resulting url structure.
-  See `url-decode-some-parts' for help decoding.
 
 > (combine-url/relative url string) -> url
 

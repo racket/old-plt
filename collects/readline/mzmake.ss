@@ -43,8 +43,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 (make-print-checking #f)
 
 ;; Used as make dependencies:
-(define header (build-path (collection-path "mzscheme" "include") "scheme.h"))
-(define version-header (build-path (collection-path "mzscheme" "include") "schvers.h"))
+(define header (build-path (collection-path "mzscheme") 'up 'up "include" "scheme.h"))
+(define version-header (build-path (collection-path "mzscheme") 'up 'up "include" "schvers.h"))
 
 (define dir (build-path "compiled" "native" (system-library-subpath)))
 (define mzrl.so (build-path dir (append-extension-suffix "mzrl")))

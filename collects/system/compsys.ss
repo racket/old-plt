@@ -25,10 +25,9 @@
 			 [mzlib?
 			  (lambda (x)
 			    (let ([explode (explode-path x)])
-			      (and (>= (length explode) 4)
-				   (string=? (cadr explode) "standard")
+			      (and (>= (length explode) 3)
+				   (string=? (cadr explode) "mzlib")
 				   (string=? (caddr explode) "collects")
-				   (string=? (cadddr explode) "mzscheme")
 				   (printf "~amzlib; skip: ~a~n" indent-string x))))])
 		    (printf "~aLoading ~a...~n" indent-string file)
 		    (let* ([indent

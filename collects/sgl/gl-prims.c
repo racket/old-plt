@@ -2140,12 +2140,41 @@ static Scheme_Object *scm_DrawPixels(void *p, int c, Scheme_Object **v)
 {
   GLsizei width = arg_GLsizei(0);
   GLsizei height = arg_GLsizei(1);
+  GLenum f = arg_GLenum(2);
   GLenum t = arg_GLenum(3);
+  GLsizei w1;
+  GLint align; 
+  GLsizei w2;
+  
+  if (t == GL_BITMAP)
+  {
+    w1 = width >> 3 + ((width & 0x7 == 0) ? 0 : 1);
+  }
+  else
+  {
+    switch (f)
+    {  
+    case GL_RGBA:
+      w1 = width * 4;
+      break;
+    case GL_RGB:
+      w1 = width * 3;
+      break;
+    case GL_LUMINANCE_ALPHA:
+      w1 = width * 2;
+      break;
+    default:
+      w1 = width;
+      break;
+    }
+  }
+  glGetIntegerv(GL_UNPACK_ALIGNMENT, &align);
+  w2 = w1 + ((w1 % align == 0) ? 0 : align - (w1 % align));
   glDrawPixels(width,
 	       height,
-	       arg_GLenum(2),
+	       f,
 	       t,
-	       arg_GLvoidv(4, width * height, t));
+	       arg_GLvoidv(4, w2 * height, t));
   return scheme_void;
 }
 
@@ -2205,13 +2234,19 @@ static Scheme_Object *scm_Bitmap(void *p, int c, Scheme_Object **v)
 {
   GLsizei w = arg_GLsizei(0);
   GLsizei h = arg_GLsizei(1);
+  GLsizei w1 = w >> 3 + ((w & 0x7 == 0) ? 0 : 1);
+  GLint align; 
+  GLsizei w2;
+  
+  glGetIntegerv(GL_UNPACK_ALIGNMENT, &align);
+  w2 = w1 + ((w1 % align == 0) ? 0 : align - (w1 % align));
   glBitmap(w,
 	   h,
 	   arg_GLfloat(2),
 	   arg_GLfloat(3),
 	   arg_GLfloat(4),
 	   arg_GLfloat(5),
-	   arg_GLubytev(6, w * h));
+	   arg_GLubytev(6, w2 * h));
   return scheme_void;
 }
 

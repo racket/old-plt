@@ -1,5 +1,5 @@
 (unit/sig drscheme:main^
-  (import [I : (program argv)]
+  (import [i : (program argv)]
 	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
@@ -66,7 +66,7 @@
 	    (send (ivar frame interactions-canvas) focus))))
       (send frame show #t)))
 
-  (let ([files-to-open (reverse (vector->list I:argv))])
+  (let ([files-to-open (reverse (vector->list i:argv))])
     (if (null? files-to-open)
 	(make-basic)
 	(for-each (lambda (x)

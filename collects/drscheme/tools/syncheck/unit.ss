@@ -256,9 +256,9 @@
 				       start-x start-y end-x end-y
 				       id-name rename))
   
-  (define TACKED-BRUSH (send mred:the-brush-list find-or-create-brush "BLUE" 'solid))
-  (define UNTACKED-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
-  (define PEN (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
+  (define tacked-brush (send mred:the-brush-list find-or-create-brush "BLUE" 'solid))
+  (define untacked-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
+  (define the-pen (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
   
   (define make-graphics:media-edit%
     (lambda (super%)
@@ -390,13 +390,13 @@
 				 (* 2 arrow-root-radius))))])
 		  (let ([old-brush (send dc get-brush)]
 			[old-pen   (send dc get-pen)])
-		    (send dc set-pen PEN)
-		    (send dc set-brush TACKED-BRUSH)
+		    (send dc set-pen the-pen)
+		    (send dc set-brush tacked-brush)
 		    (hash-table-for-each tacked-hash-table
 					 (lambda (arrow v) 
 					   (when v 
 					     (draw-arrow arrow))))
-		    (send dc set-brush UNTACKED-BRUSH)
+		    (send dc set-brush untacked-brush)
 		    (for-each draw-arrow (vector-ref arrow-vector cursor-location))
 		    (send dc set-brush old-brush)
 		    (send dc set-pen old-pen)))))]

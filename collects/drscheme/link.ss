@@ -1,4 +1,4 @@
-(compound-unit/sig (import [I : (program argv)])
+(compound-unit/sig (import [i : (program argv)])
   (link [mred : mred-interfaces^ (mred-interfaces@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
@@ -57,7 +57,7 @@
 			      mzlib
 			      framework)]
 	[main : drscheme:main^ ((require-relative-library "main.ss")
-				I
+				i
 				framework
 				(mzlib pretty-print)
 				print-convert

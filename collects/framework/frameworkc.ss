@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.7 1999/02/16 03:31:53 robby Exp $
+;; $Id: frameworkc.ss,v 1.8 1999/02/23 15:34:13 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -54,7 +54,8 @@
 
 	[group : framework:group^ 
 	       ((require-relative-library "group.ss")
-		mred frame
+		mred
+		application frame
 		core:function core:file)]
 
 	[canvas : framework:canvas^ ((require-relative-library "canvas.ss")

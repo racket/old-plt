@@ -7,8 +7,8 @@
 	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:face : drscheme:face^])
   
-  (define BLACK-PEN (send mred:the-pen-list find-or-create-pen "BLACK" 0 'solid))
-  (define WHITE-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
+  (define black-pen (send mred:the-pen-list find-or-create-pen "BLACK" 0 'solid))
+  (define white-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
   
   (define project-pasteboard%
     (class drscheme:graph:graph-pasteboard% (unit . args)
@@ -178,8 +178,8 @@
 	   (let ([space 2]
 		 [old-pen (send dc get-pen)]
 		 [old-brush (send dc get-brush)])
-	     (send dc set-pen BLACK-PEN)
-	     (send dc set-brush WHITE-BRUSH)
+	     (send dc set-pen black-pen)
+	     (send dc set-brush white-brush)
 	     (send dc draw-rectangle x y width height)
 	     (send dc set-pen old-pen)
 	     (send dc set-brush old-brush)

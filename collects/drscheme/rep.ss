@@ -13,6 +13,10 @@
 	  [basis : userspace:basis^]
 	  [drscheme:edit : drscheme:edit^])
   
+  ;; note: the parameter basis:current-setting contains the setting
+  ;; currently in use in the repl. The preference drscheme:setting,
+  ;; however, contains the current settings in the language dialog.
+
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
   (define (system thunk)
@@ -173,7 +177,7 @@
 				"BLUE" 0 'solid)]
 		[body-brush (send mred:the-brush-list find-or-create-brush
 				  "BLUE" 'solid)])
-	   (lambda (dc x y left top right bottom dx dy drawCaret)
+	   (lambda (dc x y left top right bottom dx dy draw-caret)
 	     (let ([orig-pen (send dc get-pen)]
 		   [orig-brush (send dc get-brush)])
 	       (send dc set-pen body-pen)
@@ -357,34 +361,29 @@
 	  (send output-delta set-delta-foreground (make-object mred:color% 150 0 150)))
 
 	(public
-	  [MAX-CACHE-TIME 4000]
-	  [MIN-CACHE-TIME 100]
-	  [CACHE-TIME MIN-CACHE-TIME]
-	  [TIME-FACTOR 10]
 	  [generic-write
-	   (let ([time-of-last-call (current-milliseconds)])
-	     (lambda (edit s style-func)
-	       (when prompt-mode?
-		 (insert (string #\newline) (last-position) (last-position) #f)
-		 (set-prompt-mode #f))
+	   (lambda (edit s style-func)
+	     (when prompt-mode?
+	       (insert (string #\newline) (last-position) (last-position) #f)
+	       (set-prompt-mode #f))
 
-	       (let* ([start (send edit last-position)]
-		      [c-locked? (send edit locked?)])
-		 (send edit begin-edit-sequence)
-		 (send edit lock #f)
-		 (send edit insert
-		       (if (is-a? s mred:snip%)
-			   (send s copy)
-			   s)
-		       start
-		       start
-		       #f)
-		 (let ([end (send edit last-position)])
-		   ;(send edit change-style null start end) ; wx
-		   (send edit set-prompt-position end)
-		   (style-func start end))
-		 (send edit lock c-locked?)
-		 (send edit end-edit-sequence))))]
+	     (let* ([start (send edit last-position)]
+		    [c-locked? (send edit locked?)])
+	       (send edit begin-edit-sequence)
+	       (send edit lock #f)
+	       (send edit insert
+		     (if (is-a? s mred:snip%)
+			 (send s copy)
+			 s)
+		     start
+		     start
+		     #f)
+	       (let ([end (send edit last-position)])
+					;(send edit change-style null start end) ; wx
+		 (send edit set-prompt-position end)
+		 (style-func start end))
+	       (send edit lock c-locked?)
+	       (send edit end-edit-sequence)))]
 	  [generic-close (lambda () (void))]
 	  
 	  [queue/skip-after-execute
@@ -500,7 +499,7 @@
 	   (for-each 
 	    (lambda (v)
 	      (unless (void? v)
-		(let ([v (if (basis:r4rs-style-printing? user-setting)
+		(let ([v (if (basis:r4rs-style-printing? (basis:current-setting))
 			     v
 			     (print-convert:print-convert v))])
 		  (parameterize ([mzlib:pretty-print:pretty-print-size-hook
@@ -678,25 +677,27 @@
 		   (protect-user-evaluation
 		    cleanup-evaluation
 		    (lambda ()
-		      (process-edit edit
-				    (lambda (expr recur)
-				      (cond
-				       [(basis:process-finish? expr)
-					(void)]
-				       [else
-					(let ([answers (call-with-values
-							(lambda ()
-							  (mzlib:thread:dynamic-enable-break
-							   (lambda ()
-							     (if (basis:zodiac-vocabulary? (basis:current-setting))
-								 (basis:syntax-checking-primitive-eval expr)
-								 (basis:primitive-eval expr)))))
-							(lambda x x))])
-					  (display-results answers)
-					  (recur))]))
-				    start
-				    end
-				    #t)))))))]))])
+		      (process-edit
+		       edit
+		       (lambda (expr recur)
+			 (cond
+			  [(basis:process-finish? expr)
+			   (void)]
+			  [else
+			   (let ([answers
+				  (call-with-values
+				      (lambda ()
+					(mzlib:thread:dynamic-enable-break
+					 (lambda ()
+					   (if (basis:zodiac-vocabulary? (basis:current-setting))
+					       (basis:syntax-checking-primitive-eval expr)
+					       (basis:primitive-eval expr)))))
+				    (lambda x x))])
+			     (display-results answers)
+			     (recur))]))
+		       start
+		       end
+		       #t)))))))]))])
       (private
 	[shutdown-user-custodian
 	 (lambda ()
@@ -922,6 +923,7 @@
 	[initialize-parameters
 	 (lambda ()
 	   (let ([setting (fw:preferences:get 'drscheme:settings)])
+
 	     (basis:initialize-parameters
 	      user-custodian
 	      (if (setting-has-mred? setting)
@@ -1076,6 +1078,8 @@
 	   (set! in-evaluation? #f)
 	   (conditionally-turn-running-off)
 
+	   (set! user-setting (fw:preferences:get 'drscheme:settings))
+
 	   (begin-edit-sequence)
 	   (set-resetting #t)
 	   (delete (paragraph-start-position 1) (last-position))
@@ -1083,20 +1087,16 @@
 	   (set-resetting #f)
 	   (set-position (last-position) (last-position))
 	   (insert-delta "Language: " welcome-delta)
-	   (let ([setting (fw:preferences:get 'drscheme:settings)])
-	     (insert-delta (basis:setting-name setting) red-delta)
-	     (unless (equal? (basis:find-setting-named
-			      (basis:setting-name setting))
-			     setting)
-		     (insert-delta " Custom" red-delta)))
+	   (insert-delta (basis:setting-name user-setting) red-delta)
+	   (unless (equal? (basis:find-setting-named (basis:setting-name user-setting))
+			   user-setting)
+	     (insert-delta " Custom" red-delta))
 	   (insert-delta (format ".~n") welcome-delta)
 	   (set! repl-initially-active? #t)
 	   (end-edit-sequence)
 
-	   (set! user-setting (fw:preferences:get 'drscheme:settings))
-
 	   (init-evaluation-thread)
-
+	   
 	   (super-reset-console))]
 	[initialize-console
 	 (lambda ()

@@ -563,11 +563,10 @@
 
  ;;; version checker
 
- (check-question "Check for updates of all PLT software over the Internet?")
+ (please-wait "Please wait")
+ (checking-version-server "Checking PLT version server")
  (network-timeout "Network timeout") 
  (cannot-connect  "Can't connect to PLT version server")
- (collections-not-installed  "These collections are not installed:")
- (collections-missing-version "These collections have missing or incomplete version information:")
  (update-check "PLT update check")
  (network-failure "Network failure")
  (old-binaries "Installed binaries for DrScheme (or MzScheme) are not up-to-date")
@@ -578,4 +577,6 @@
  (latest-binary-information-format "Latest released version: ~a (iteration ~a)")
  (connecting-version-server "Connecting to PLT version server")
  (update-dialog-title "PLT update status")
+ (need-update-string "One or more install PLT software packages needs updating")
+ (no-update-string "All installed PLT software packages are up-to-date")
  )

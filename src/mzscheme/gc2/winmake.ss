@@ -103,7 +103,7 @@
 (compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "")
 (compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
 
-(define exe "mz2k.exe")
+(define exe "mzpgc.exe")
 
 (define libs "kernel32.lib user32.lib wsock32.lib")
 

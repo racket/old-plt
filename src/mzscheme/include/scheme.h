@@ -641,6 +641,7 @@ typedef struct Scheme_Thread {
   char quick_can_read_box;
   char quick_can_read_graph;
   char quick_can_read_dot;
+  char quick_can_read_quasi;
   char quick_case_sens;
   char quick_square_brackets_are_parens;
   char quick_curly_braces_are_parens;
@@ -761,6 +762,7 @@ enum {
   MZCONFIG_CAN_READ_BOX,
   MZCONFIG_CAN_READ_PIPE_QUOTE,
   MZCONFIG_CAN_READ_DOT,
+  MZCONFIG_CAN_READ_QUASI,
   MZCONFIG_READ_DECIMAL_INEXACT,
 
   MZCONFIG_PRINT_GRAPH,

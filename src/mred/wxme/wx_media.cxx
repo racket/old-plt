@@ -872,14 +872,17 @@ Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, long end, int bias)
   return ScrollToPosition(start, ateol, TRUE, end, bias);
 }
 
-void wxMediaEdit::GetVisiblePositionRange(long *start, long *end)
+void wxMediaEdit::GetVisiblePositionRange(long *start, long *end, Bool all)
 {
   float x, y, h, w;
 
   if (!CheckRecalc(TRUE, FALSE))
     return;
 
-  admin->GetMaxView(&x, &y, &w, &h);
+  if (all)
+    admin->GetMaxView(&x, &y, &w, &h);
+  else
+    admin->GetView(&x, &y, &w, &h);
   if (start) {
     long s;
     s = FindPosition(x, y);
@@ -892,14 +895,17 @@ void wxMediaEdit::GetVisiblePositionRange(long *start, long *end)
   }
 }
 
-void wxMediaEdit::GetVisibleLineRange(long *start, long *end)
+void wxMediaEdit::GetVisibleLineRange(long *start, long *end, Bool all)
 {  
   float x, y, h, w;
 
   if (!CheckRecalc(TRUE, FALSE))
     return;
 
-  admin->GetMaxView(&x, &y, &w, &h);
+  if (all)
+    admin->GetMaxView(&x, &y, &w, &h);
+  else
+    admin->GetView(&x, &y, &w, &h);
   if (start) {
     long s;
     s = FindLine(y);
@@ -1060,7 +1066,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 	float vy, ty;
 	long newtop, top;
 
-	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
+	admin->GetView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
 
 	/* Top line should be completely visible as bottom line after
 	   scrolling. */
@@ -1134,7 +1140,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 	float vy;
 	long newtop;
 
-	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
+	admin->GetView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
 
 	/* Last fully-visible line is the new top line */
 	newtop = FindScrollLine(vy + scrollHeight);

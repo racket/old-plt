@@ -90,18 +90,18 @@ scheme_init_string (Scheme_Env *env)
   REGISTER_SO(platform_path);
 #ifdef MZ_PRECISE_GC
 # ifdef UNIX_FILE_SYSTEM
-#  define MZ2K_SUBDIR "/2k"
+#  define MZPGC_SUBDIR "/pgc"
 # else
 #  ifdef DOS_FILE_SYSTEM
-#   define MZ2K_SUBDIR "\\2k"
+#   define MZPGC_SUBDIR "\\pgc"
 #  else
-#   define MZ2K_SUBDIR ":2k"
+#   define MZPGC_SUBDIR ":pgc"
 #  endif
 # endif
 #else
-# define MZ2K_SUBDIR /* empty */
+# define MZPGC_SUBDIR /* empty */
 #endif
-  platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZ2K_SUBDIR);
+  platform_path = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH MZPGC_SUBDIR);
 
   REGISTER_SO(putenv_str_table);
 
@@ -1242,7 +1242,7 @@ char *scheme_banner(void)
   else
     return "Welcome to MzScheme" 
 #ifdef MZ_PRECISE_GC
-      "2k"
+      "PGC"
 #endif      
       " version " MZSCHEME_VERSION VERSION_SUFFIX
       ", Copyright (c) 1995-2001 PLT\n";

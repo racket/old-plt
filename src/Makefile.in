@@ -3,7 +3,7 @@
 
 all: mz @MAKE_MRED@
 
-2k: mz2k @MAKE_MRED2K@
+pgc: mzpgc @MAKE_MREDPGC@
 
 install: mzinstall @MAKE_MREDINSTALL@
 
@@ -14,14 +14,14 @@ clean:
 mz:
 	cd mzscheme; $(MAKE)
 
-mz2k:
-	cd mzscheme; $(MAKE) 2k
+mzpgc:
+	cd mzscheme; $(MAKE) pgc
 
 mr:
 	cd mred; $(MAKE)
 
-mr2k:
-	cd mred; $(MAKE) 2k
+mrpgc:
+	cd mred; $(MAKE) pgc
 
 mzinstall:
 	cd mzscheme; $(MAKE) install

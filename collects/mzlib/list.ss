@@ -271,13 +271,20 @@
 			    (format "list with ~a or more items" npos) 
 			    x)]))))
 
-  (define second (polymorphic (lget 'second 2)))
-  (define third (polymorphic (lget 'third 3)))
-  (define fourth (polymorphic (lget 'fourth 4)))
-  (define fifth (polymorphic (lget 'fifth 5)))
-  (define sixth (polymorphic (lget 'sixth 6)))
-  (define seventh (polymorphic (lget 'seventh 7)))
-  (define eighth (polymorphic (lget 'eighth 8)))
+  ;; Gives the function a name:
+  (define-syntax (mk-lget stx)
+    (syntax-case stx ()
+      [(_ name pos)
+       (syntax (polymorphic (let ([g (lget 'name pos)])
+			      (lambda (x) (g x)))))]))
+
+  (define second (mk-lget second 2))
+  (define third (mk-lget third 3))
+  (define fourth (mk-lget fourth 4))
+  (define fifth (mk-lget fifth 5))
+  (define sixth (mk-lget sixth 6))
+  (define seventh (mk-lget seventh 7))
+  (define eighth (mk-lget eighth 8))
   
   (define rest (polymorphic (lambda (x) 
                               (unless (pair? x)

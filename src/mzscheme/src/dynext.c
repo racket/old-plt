@@ -106,7 +106,7 @@ static Scheme_Hash_Table *fullpath_loaded_extensions; /* hash on full path name 
 #endif
 
 #ifdef MZ_PRECISE_GC 
-# define VERSION_AND_VARIANT MZSCHEME_VERSION "@2k"
+# define VERSION_AND_VARIANT MZSCHEME_VERSION "@PGC"
 #else
 # define VERSION_AND_VARIANT MZSCHEME_VERSION
 #endif

@@ -185,8 +185,8 @@ class wxMediaEdit : public wxMediaBuffer
 
   Bool ScrollToPosition(long start, Bool ateol = FALSE, 
 			long end = -1, int bias = 0);
-  void GetVisiblePositionRange(long *start, long *end);
-  void GetVisibleLineRange(long *start, long *end);
+  void GetVisiblePositionRange(long *start, long *end, Bool all = TRUE);
+  void GetVisibleLineRange(long *start, long *end, Bool all = TRUE);
 
   /* Hilite a region without changing the selection position: */
   void FlashOn(long start, long end, Bool ateol = FALSE, 

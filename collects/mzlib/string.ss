@@ -8,6 +8,7 @@
 	   expr->string
 	   newline-string
 	   string->literal-regexp-string
+	   string->literal-replace-string
 	   regexp-match-exact?)
 
   (require (lib "etc.ss"))
@@ -123,6 +124,9 @@
 	     (list #\[ (char-upcase c) (char-downcase c) #\])]
 	    [else (list c)]))
 	 (string->list s))))))
+
+  (define (string->literal-replace-string s)
+    (regexp-replace* "\\\\" s "\\\\\\\\"))
 
   (define regexp-match-exact?
     (lambda (p s)

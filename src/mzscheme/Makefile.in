@@ -173,14 +173,14 @@ zo:
 	rm -f ../collects/mzlib/compiled/*/*.so
 	$(MZSCHEME) -qf mkmzlib.ss -e '(make-zo)' -e '(exit)'
 
-2k:
+pgc:
 	$(MAKE) bin
 	cd gc2; $(MAKE) all
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynlib2k
-	cd gc2; $(MAKE) ../mzscheme2k
+	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynlibpgc
+	cd gc2; $(MAKE) ../mzscheme-pgc
 
 palmos:
-#	$(MAKE) bin
+	$(MAKE) bin
 	cd palm; $(MAKE) all
 
 clean:

@@ -52,6 +52,7 @@ static Scheme_Object *read_accept_box(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_pipe_quote(int, Scheme_Object *[]);
 static Scheme_Object *read_decimal_as_inexact(int, Scheme_Object *[]);
 static Scheme_Object *read_dot_as_symbol(int, Scheme_Object *[]);
+static Scheme_Object *read_accept_quasi(int, Scheme_Object *[]);
 static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
@@ -127,6 +128,7 @@ static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc);
 #define local_curly_braces_are_parens (THREAD_FOR_LOCALS->quick_curly_braces_are_parens)
 #define local_read_decimal_inexact (THREAD_FOR_LOCALS->quick_read_decimal_inexact)
 #define local_can_read_dot (THREAD_FOR_LOCALS->quick_can_read_dot)
+#define local_can_read_quasi (THREAD_FOR_LOCALS->quick_can_read_quasi)
 
 #define local_list_stack (THREAD_FOR_LOCALS->list_stack)
 #define local_list_stack_pos (THREAD_FOR_LOCALS->list_stack_pos)
@@ -232,6 +234,11 @@ void scheme_init_read(Scheme_Env *env)
 						       "read-dot-as-symbol",
 						       MZCONFIG_CAN_READ_DOT), 
 			     env);
+  scheme_add_global_constant("read-accept-quasiquote",
+			     scheme_register_parameter(read_accept_quasi,
+						       "read-accept-quasiquote",
+						       MZCONFIG_CAN_READ_QUASI), 
+			     env);
   scheme_add_global_constant("print-graph", 
 			     scheme_register_parameter(print_graph, 
 						       "print-graph",
@@ -325,6 +332,12 @@ static Scheme_Object *
 read_dot_as_symbol(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("read-dot-as-symbol", MZCONFIG_CAN_READ_DOT);
+}
+
+static Scheme_Object *
+read_accept_quasi(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("read-accept-quasiquote", MZCONFIG_CAN_READ_QUASI);
 }
 
 static Scheme_Object *
@@ -450,13 +463,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
     case '"': return read_string(port, stxsrc, line, col, pos CURRENTPROCARG);
     case '\'': return read_quote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
     case '`': 
-      if (local_can_read_dot) {
+      if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 0, "read: illegal use of backquote");
 	return NULL;
       } else
 	return read_quasiquote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
     case ',':
-      if (local_can_read_dot) {
+      if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 0, "read: illegal use of `,'");
 	return NULL;
       } else {
@@ -851,6 +864,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
   local_read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
   local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
+  local_can_read_quasi = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_QUASI));
 
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);

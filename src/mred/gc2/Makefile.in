@@ -32,7 +32,7 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-XFORM = ../../mzscheme/mzscheme2k -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
+XFORM = ../../mzscheme/mzscheme-pgc -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
@@ -804,11 +804,11 @@ XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
 
 xform: $(XSRCS) xcglue.c
 
-../mred2k: $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o
-	$(LINKER) $(MREDLDFLAGS) -o ../mred2k $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
+../mred-pgc: $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o
+	$(LINKER) $(MREDLDFLAGS) -o ../mred-pgc $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
 
 xsrc:
 	mkdir xsrc
 
-2k: xsrc
-	$(MAKE) ../mred2k
+pgc: xsrc
+	$(MAKE) ../mred-pgc

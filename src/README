@@ -197,12 +197,12 @@ Precise GC
 MzScheme and MrEd can be compiled to an experimental form that uses
 precise garbage collection (as opposed to "conservation garbage
 collection") on some Unix platforms, including Linux, FreeBSD, and
-Solaris. The precisely-collected forms are called MzScheme2k and
-MrEd2k, repsectively.
+Solaris. The precisely-collected forms are called MzScheme PGC and
+MrEd PGC, repsectively.
 
-To build MzScheme2k and MrEd2k, run `make 2k'. Building MzScheme2k and
-MrEd2k first builds the normal MzScheme and MrEd executables, then
-uses them to build the 2k versions.
+To build MzScheme PGC and MrEd PGC, run `make pgc'. Building MzScheme
+PGC and MrEd PGC first builds the normal MzScheme and MrEd
+executables, then uses them to build the PGC versions.
 
 Configuration Options
 ---------------------

@@ -10,7 +10,6 @@ AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme
 
 AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boehm GC)
 AC_ARG_ENABLE(sgcdebug, ""  feature: sgcdebug       use Senora GC for debugging)
-AC_ARG_ENABLE(osthreads, ""  feature: osthreads      use OS threads to implement MzScheme threads)
 
 AC_ARG_ENABLE(float, ""  feature: float          include support for single-precision floats)
 AC_ARG_ENABLE(floatinstead, ""  feature: floatinstead   compile to use single-precision by default)
@@ -19,6 +18,7 @@ AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme ke
 AC_ARG_ENABLE(smalloskit, ""  feature: smalloskit     compile small OSKit-based MzScheme kernel)
 
 AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w sources)
+AC_ARG_ENABLE(perl, ""  feature: perl           use perl to regenerate sources)
 
 AC_ARG_ENABLE(gprof, ""  feature: gprof          compile for profiling with gprof (gcc only))
 AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc only))
@@ -41,6 +41,13 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+fi
+
+# Hack for the implementor:
+if test "${enable_perl}" = "" ; then
+  if test "$USER" = "mflatt" ; then
+    enable_perl=yes
+  fi
 fi
 
 ###### Make sure MrEd is really there ######
@@ -136,21 +143,21 @@ if test "$CC" = "gcc" ; then
   CFLAGS="$CFLAGS -Wall"
 fi
 
-if test "$PERL" = ":" ; then
-  PERL=""
-else
+if test "${enable_perl}" = "yes" ; then
   AC_PATH_PROG(PERL,perl)
+else
+  PERL=""
 fi
 
 if test "${enable_mred}" = "yes" ; then
   AC_PATH_XTRA
 
   MAKE_MRED=mr
-  MAKE_MRED2K=mr2k
+  MAKE_MREDPGC=mrpgc
   MAKE_MREDINSTALL=mrinstall
 else
   MAKE_MRED=
-  MAKE_MRED2K=
+  MAKE_MREDPGC=
   MAKE_MREDINSTALL=
 fi
 
@@ -234,6 +241,16 @@ case $OS in
       LIBS="$LIBS -lpthread"
     fi
     LIBS="$LIBS -rdynamic"
+    # PPC: X11 librares are not found
+    case `$UNAME -m` in
+      ppc)
+       if test -d /usr/X11R6/lib ; then
+         X_LIBS="$X_LIBS -L/usr/X11R6/lib"
+       fi
+       ;;
+      *)
+       ;;
+    esac
     ;;
   OSF1)
     if test "$CC" = "cc" ; then 
@@ -385,7 +402,7 @@ AC_SUBST(MZBINTARGET)
 AC_SUBST(MZINSTALLTARGET)
 
 AC_SUBST(MAKE_MRED)
-AC_SUBST(MAKE_MRED2K)
+AC_SUBST(MAKE_MREDPGC)
 AC_SUBST(MAKE_MREDINSTALL)
 AC_SUBST(MAKE_WBUILD)
 

@@ -13,8 +13,8 @@ CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src
 dynlib:
 	$(MAKE) ../mzdyn.o
 
-dynlib2k:
-	$(MAKE) ../mzdyn2k.o
+dynlibpgc:
+	$(MAKE) ../mzdynpgc.o
 
 dynexample:
 	$(MAKE) ../dynexmpl.so
@@ -30,8 +30,8 @@ MZDYNDEP = ../mzdyn.o $(srcdir)/../include/ext.exp $(srcdir)/../include/mzscheme
 ../mzdyn.o: $(srcdir)/mzdyn.c $(srcdir)/../src/schvers.h  $(HEADERS)
 	$(CC) $(CFLAGS) -c $(srcdir)/mzdyn.c -o ../mzdyn.o
 
-../mzdyn2k.o: $(srcdir)/mzdyn.c $(srcdir)/../src/schvers.h  $(HEADERS)
-	$(CC) $(CFLAGS) -DMZ_PRECISE_GC -c $(srcdir)/mzdyn.c -o ../mzdyn2k.o
+../mzdynpgc.o: $(srcdir)/mzdyn.c $(srcdir)/../src/schvers.h  $(HEADERS)
+	$(CC) $(CFLAGS) -DMZ_PRECISE_GC -c $(srcdir)/mzdyn.c -o ../mzdynpgc.o
 
 ../dynexmpl.so: dynexmpl.o $(MZDYNDEP)
 	$(DYNLINK) ../dynexmpl.so dynexmpl.o

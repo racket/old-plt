@@ -101,8 +101,8 @@
 @ "set-position-bias-scroll" : void SetPositionBiasScroll(SYM[Bias],nnlong,nnls[same]=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
 @ "move-position" :  void MovePosition(SYM[moveCode],bool=FALSE,SYM[move]=wxMOVE_SIMPLE);
 @ "scroll-to-position" : bool ScrollToPosition(nnlong,bool=FALSE,nnls[same]=-1,SYM[bias]=0);
-@ "get-visible-position-range" : void GetVisiblePositionRange(nnlong?,nnlong?);
-@ "get-visible-line-range" : void GetVisibleLineRange(nnlong?,nnlong?);
+@ "get-visible-position-range" : void GetVisiblePositionRange(nnlong?,nnlong?,bool=TRUE);
+@ "get-visible-line-range" : void GetVisibleLineRange(nnlong?,nnlong?,bool=TRUE);
 
 @ v "set-anchor" : void SetAnchor(bool);
 @ "get-anchor" : bool GetAnchor();

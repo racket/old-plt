@@ -4241,7 +4241,7 @@ void GC_dump(void)
 	fprintf(stderr, "\n");
       } else {
 	fprintf(stderr, "Tag counts and sizes:\n");
-	fprintf(stderr, "Begin MzScheme2k\n");
+	fprintf(stderr, "Begin MzSchemePGC\n");
 	for (i = 0; i < _num_tags_; i++) {
 	  if (dump_info_array[i]) {
 	    char *tn, buf[256];
@@ -4261,7 +4261,7 @@ void GC_dump(void)
 	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
 	  }
 	}
-	fprintf(stderr, "End MzScheme2k\n");
+	fprintf(stderr, "End MzSchemePGC\n");
       }
 
       {

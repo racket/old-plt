@@ -5873,6 +5873,7 @@ static Scheme_Object *os_wxMediaEditGetVisibleLineRange(int n,  Scheme_Object *p
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Bool x2;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -5887,9 +5888,13 @@ static Scheme_Object *os_wxMediaEditGetVisibleLineRange(int n,  Scheme_Object *p
     x1 = NULL;
   else
     *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-visible-line-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-line-range in text%"", extracting boxed argument")));
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "get-visible-line-range in text%"));
+  } else
+    x2 = TRUE;
 
   
-  WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetVisibleLineRange(x0, x1));
+  WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetVisibleLineRange(x0, x1, x2));
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
@@ -5909,6 +5914,7 @@ static Scheme_Object *os_wxMediaEditGetVisiblePositionRange(int n,  Scheme_Objec
   nnlong* x0 = &_x0;
   nnlong _x1;
   nnlong* x1 = &_x1;
+  Bool x2;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -5923,9 +5929,13 @@ static Scheme_Object *os_wxMediaEditGetVisiblePositionRange(int n,  Scheme_Objec
     x1 = NULL;
   else
     *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-visible-position-range in text%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(sbox_tmp, "get-visible-position-range in text%"", extracting boxed argument")));
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "get-visible-position-range in text%"));
+  } else
+    x2 = TRUE;
 
   
-  WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetVisiblePositionRange(x0, x1));
+  WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetVisiblePositionRange(x0, x1, x2));
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
@@ -7507,8 +7517,8 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-on", os_wxMediaEditFlashOn, 2, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-anchor", os_wxMediaEditGetAnchor, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-anchor", os_wxMediaEditSetAnchor, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-line-range", os_wxMediaEditGetVisibleLineRange, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-position-range", os_wxMediaEditGetVisiblePositionRange, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-line-range", os_wxMediaEditGetVisibleLineRange, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-position-range", os_wxMediaEditGetVisiblePositionRange, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to-position", os_wxMediaEditScrollToPosition, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "move-position", os_wxMediaEditMovePosition, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-position-bias-scroll", os_wxMediaEditSetPositionBiasScroll, 2, 6));

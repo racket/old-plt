@@ -1393,7 +1393,7 @@
 
   (define (do-make-object class by-pos-args named-args)
     (unless (class? class)
-      (raise-type-error 'make-object "class" class))
+      (raise-type-error 'instantiate "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
       (let loop ([c class][by-pos-args by-pos-args][named-args named-args][explict-named-args? #t])
@@ -1403,7 +1403,7 @@
 	    (unless (null? named-args)
 	      (if explict-named-args?
 		  (obj-error 
-		   'make-object
+		   'instantiate
 		   "class has only by-position initializers, but given by-name arguments:~a~a" 
 		   (make-named-arg-string named-args)
 		   (for-class (class-name c)))
@@ -1430,7 +1430,7 @@
 					 (append (map (lambda (x) (cons #f x)) al)
 						 named-args)]
 					[else
-					 (obj-error 'make-object 
+					 (obj-error 'instantiate 
 						    "too many initialization arguments:~a~a" 
 						    (make-pos-arg-string by-pos-args)
 						    (for-class (class-name c)))]))]
@@ -1457,7 +1457,7 @@
 	       ;; ----- This is the super-init function -----
 	       (lambda (ignore-false by-pos-args new-named-args)
 		 (when inited?
-		   (obj-error 'make-object "superclass already initialized by class initialization~a"
+		   (obj-error 'instantiate "superclass already initialized by class initialization~a"
 			      (for-class (class-name c))))
 		 (set! inited? #t)
 		 (let ([named-args (if (eq? 'list (class-init-mode c))
@@ -1473,7 +1473,7 @@
 			 (pair? new-named-args))))
 	       named-args)
 	      (unless inited?
-		(obj-error 'make-object "superclass initialization not invoked by initialization~a"
+		(obj-error 'instantiate "superclass initialization not invoked by initialization~a"
 			   (for-class (class-name c))))))))
       o))
 
@@ -1490,7 +1490,7 @@
 	 [(< name (length arguments))
 	  (cdr (list-ref arguments name))]
 	 [default (default)]
-	 [else (obj-error 'make-object "too few initialization arguments")])))
+	 [else (obj-error 'instantiate "too few initialization arguments")])))
 
   (define (extract-rest-args skip arguments)
     (if (< skip (length arguments))
@@ -1517,12 +1517,12 @@
 
   (define (unused-args-error this args)
     (let ([arg-string (make-named-arg-string args)])
-      (obj-error 'make-object "unused initialization arguments:~a~a" 
+      (obj-error 'instantiate "unused initialization arguments:~a~a" 
 		 arg-string
 		 (for-class/which "instantiated" (class-name (object-ref this))))))
 
   (define (missing-argument-error class-name name)
-    (obj-error 'make-object "no argument for required init variable: ~a~a"
+    (obj-error 'instantiate "no argument for required init variable: ~a~a"
 	       name
 	       (if class-name (format " in class: ~a" class-name) "")))
 

@@ -10,8 +10,6 @@
   
   (define kernel:initialize-primitive-object
     (dynamic-require '#%mred-kernel 'initialize-primitive-object))
-  (define kernel:find-in-primitive-class
-    (dynamic-require '#%mred-kernel 'find-in-primitive-class))
   (define kernel:primitive-class-find-method
     (dynamic-require '#%mred-kernel 'primitive-class-find-method))
   (define kernel:primitive-class-prepare-struct-type!

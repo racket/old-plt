@@ -6,11 +6,10 @@
 (plt:require-library "sparams.ss")
 (plt:require-library "turtles.ss")
 
-(define-signature drscheme:userspace^
+(define-signature plt:userspace^
   ((open mzlib:function^)
    (open mzlib:compat^)
    (open mzlib:string^)
    (open ricedefs^)
    (open graphics^)
    (open turtle^)))
-

@@ -60,6 +60,7 @@
 				  -1 -1 -1 -1
 				  (list "Functional Scheme"
 					"Functional Scheme Plus Structures"
+					"Side-Effecting Scheme Plus Structures"
 					"R4RS Scheme Plus Structures"))])
 	 (send choice set-selection 
 	       (case (mred:get-preference 'drscheme:scheme-level)

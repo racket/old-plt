@@ -33,7 +33,8 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copy files to final location"
-				CommandLine="copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
+				CommandLine="mkdir ..\..\..\lib\msvc
+copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
 copy /y $(OutDir)\$(ProjectName)xxxxxxx.lib ..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib
 "
 				Outputs="..\..\..\$(ProjectName)xxxxxxx.dll,..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib"/>
@@ -89,7 +90,8 @@ copy /y $(OutDir)\$(ProjectName)xxxxxxx.lib ..\..\..\lib\msvc\$(ProjectName)xxxx
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copy files to final location"
-				CommandLine="copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
+				CommandLine="mkdir ..\..\..\lib\msvc
+copy /y $(OutDir)\$(ProjectName)xxxxxxx.dll ..\..\..\$(ProjectName)xxxxxxx.dll
 copy /y $(OutDir)\$(ProjectName)xxxxxxx.lib ..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib
 "
 				Outputs="..\..\..\$(ProjectName)xxxxxxx.dll,..\..\..\lib\msvc\$(ProjectName)xxxxxxx.lib"/>

@@ -17,6 +17,8 @@
 
 (load-relative "classd.ss")
 
+(load-relative "shared.ss")
+
 ; Last - so macros are not present by accident
 (load-relative "macrolib.ss")
 

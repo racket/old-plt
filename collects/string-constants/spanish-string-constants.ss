@@ -454,6 +454,10 @@
  (search-help-desk-for "Busca en el Módulo de Ayuda \"~a\"")
  (exact-lucky-search-help-desk-for "Búsqueda precisa y con suerte en el Módulo de Ayuda \"~a\"") ;; FIXME:  Exact lucky search in Help Desk for
  
+ ;; collapse and expand popup menus
+ (collapse-sexp "Colapsar expresión-s")
+ (expand-sexp "Expandir expresión-s")
+
  ;;; fraction dialog
  (enter-fraction "Introducir Fracción")
  (whole-part "Parte entera")

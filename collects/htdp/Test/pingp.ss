@@ -1,4 +1,4 @@
-(require-library "core.ss")
+; (require-library "core.ss")
 ;; TeachPack: pingp.ss
 ;; Language:  Full
 

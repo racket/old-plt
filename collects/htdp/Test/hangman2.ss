@@ -43,11 +43,9 @@ credit: John Clements
 
 ;(start 200 400)
 ;(hangman-list reveal-list draw-next-part)
-
+;
 (test-error (hangman-list reveal-list))
 (test-error (hangman-list reveal-list 1))
 (test-error (hangman-list 1 reveal-list))
 (test-error (hangman-list cons first))
-(test-error (hangman-list (lambda (x y z) x) first))
-(test-error (hangman-list (lambda (x y z) x) list))
 

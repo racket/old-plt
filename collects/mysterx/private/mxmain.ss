@@ -288,6 +288,7 @@
    com-omit)
 
   (define mx-version #f)
+  (define block-while-browsers #f)
   (define com-invoke #f)
   (define com-set-property! #f)
   (define com-get-property #f)

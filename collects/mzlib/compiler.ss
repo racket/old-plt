@@ -268,7 +268,7 @@
 							 #t
 							 (let ([fullname (find-library collection name)])
 							   (hash-table-put! required key #t)
-							   (do-load s #f #t)
+							   (do-load (list (car s) fullname) #f #t)
 							   #t)))
 						   (parameterize ([current-namespace namespace])
 								 (eval `(require-library/proc ,name

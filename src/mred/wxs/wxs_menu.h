@@ -1,4 +1,5 @@
 #ifndef WXS_SETUP_ONLY
+extern class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxFont(class wxFont *);
 extern int objscheme_istype_wxMenu(Scheme_Object *, const char *, int);
 extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);

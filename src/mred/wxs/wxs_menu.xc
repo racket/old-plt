@@ -7,16 +7,24 @@
 
 @INCLUDE wxs.xci
 
-#ifdef wx_msw
-# define XTMAC_UNUSED(x) x
+#ifdef wx_mac
+# define MAC_UNUSED(x) /**/
 #else
-# define XTMAC_UNUSED(x) /**/
+# define MAC_UNUSED(x) x
+#endif
+#ifdef wx_xt
+# define WINMAC_UNUSED(x) x
+#else
+# define WINMAC_UNUSED(x) /**/
 #endif
 
-static void menuSelect(wxMenu *XTMAC_UNUSED(m))
+static void menuSelect(wxMenu *MAC_UNUSED(m), wxMenuBar *WINMAC_UNUSED(mb))
 {
 #ifdef wx_msw
   m->SelectMenu();
+#endif
+#ifdef wx_xt
+  mb->SelectAMenu(m);
 #endif
 }
 
@@ -56,7 +64,7 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 
 @ "get-font" : wxFont! GetFont();
 
-@ m "select" : void menuSelect();
+@ m "select" : void menuSelect(wxMenuBar^);
 
 @END
 

@@ -1017,7 +1017,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		     label, strlen(label), NULL,
 		     mw->menu.font, wxEXT_FONT(mw->menu.xft_font), 
 		     (on ? -1 : (item->enabled || item->type==MENU_TEXT)), 
-		     0, NULL);
+		     1, NULL);
     }
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
@@ -1063,7 +1063,7 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 							       mw->menu.xft_font),
 		     key, strlen(key), NULL, mw->menu.font, 
 		     wxEXT_FONT(mw->menu.xft_font),
-		     (on ? -1 : item->enabled), 0, NULL);
+		     (on ? -1 : item->enabled), 1, NULL);
     }
 }
 

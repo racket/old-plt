@@ -501,11 +501,11 @@ int wxMenuBar::InProgress(void)
   return xwMenuIsPoppedUp(X->handle);
 }
 
-void wxMenuBar::SelectAMenu()
+void wxMenuBar::SelectAMenu(wxMenu *at_menu)
 {
   GC_CAN_IGNORE XEvent xevent;
   Position x, y;
-  int new_root_x, new_root_y;
+  int new_root_x, new_root_y, dx = 0;
   Window child;
 
   if (xwMenuIsPoppedUp(X->handle)) {
@@ -514,6 +514,16 @@ void wxMenuBar::SelectAMenu()
   }
 
   Stop();
+
+  if (at_menu) {
+    menu_item *i;
+    for (i = (menu_item *)top; i; i = i->next) {
+      if (EXTRACT_TOP_MENU(i) == at_menu) {
+	dx = i->start;
+	break;
+      }
+    }
+  }
 
   /* Get the menu started: */
   XtVaGetValues(X->handle, XtNx, &x, XtNy, &y, NULL);
@@ -529,8 +539,8 @@ void wxMenuBar::SelectAMenu()
 			  &new_root_x, &new_root_y, &child);
   }
 
-  xevent.xmotion.x_root = new_root_x + 5;
-  xevent.xmotion.x = 5;
+  xevent.xmotion.x_root = new_root_x + 5 + dx;
+  xevent.xmotion.x = 5 + dx;
   xevent.xmotion.y_root = new_root_y + 5;
   xevent.xmotion.y = 5;
   

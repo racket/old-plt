@@ -63,7 +63,7 @@ public:
     int   FindMenuItem(char *menu, char *label);
     void Stop();
     int InProgress();
-    void SelectAMenu();
+    void SelectAMenu(wxMenu *m = NULL);
 private:
     // search for internal data by id
     wxMenuItem  *FindItemForId(long id, wxMenu **menu=NULL);

@@ -33,16 +33,24 @@ START_XFORM_SKIP;
 
 
 
-#ifdef wx_msw
-# define XTMAC_UNUSED(x) x
+#ifdef wx_mac
+# define MAC_UNUSED(x) /**/
 #else
-# define XTMAC_UNUSED(x) /**/
+# define MAC_UNUSED(x) x
+#endif
+#ifdef wx_xt
+# define WINMAC_UNUSED(x) x
+#else
+# define WINMAC_UNUSED(x) /**/
 #endif
 
-static void menuSelect(wxMenu *XTMAC_UNUSED(m))
+static void menuSelect(wxMenu *MAC_UNUSED(m), wxMenuBar *WINMAC_UNUSED(mb))
 {
 #ifdef wx_msw
   m->SelectMenu();
+#endif
+#ifdef wx_xt
+  mb->SelectAMenu(m);
 #endif
 }
 
@@ -130,14 +138,17 @@ static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMenu_class, "select in menu%", n, p);
+  class wxMenuBar* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(1);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
   
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenuBar(p[POFFSET+0], "select in menu%", 1));
 
   
-  WITH_VAR_STACK(menuSelect(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)));
+  WITH_VAR_STACK(menuSelect(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata), x0));
 
   
   
@@ -547,7 +558,7 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
 
   os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 14));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "get-font" " method", (Scheme_Method_Prim *)os_wxMenuGetFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-width" " method", (Scheme_Method_Prim *)os_wxMenuSetWidth, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", (Scheme_Method_Prim *)os_wxMenuSetTitle, 1, 1));

@@ -2886,9 +2886,6 @@ make_introducer(int argc, Scheme_Object *argv[])
   Scheme_Object *mark;
 
   mark = scheme_new_mark();
-  if (argc || SCHEME_TRUEP(argv[0])) {
-    mark = scheme_sub1(1, &mark);
-  }
 
   return scheme_make_closed_prim_w_arity(introducer_proc, mark,
 					 "syntax-introducer", 1, 1);

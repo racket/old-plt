@@ -594,4 +594,93 @@
 
 ;;missing translations
 
+ (accept-and-exit "Ja und Beende")
+ (accept-and-quit "Ja und Beende")
+
+   (advanced-one-line-summary "Intermediate plus lambda und mutation")
+   (are-you-sure-revert "Sind Sie sicher, daß sie die letzte Version der Datei
+neu laden wollen und damit alle ihre Änderungen im Speicher verwerfen? Diese
+Änderung kann nicht rückgängig gemacht werden.")
+   (are-you-sure-revert-title "Neu laden?")
+   (beginning-one-line-summary "define, cond, structs, Konstanten und
+Primitive")
+   (beginning/abbrev-one-line-summary "Anfänger, mit list style printing in
+der REPL")
+   (create-executable-menu-item-label "Erzeuge EXE...")
+   (create-executable-title "Erzeuge ausführbare Datei")
+   (debugging "Debuggen")
+   (definitions-not-saved "Das Definitionsfenster wurde nicht gesichert. Die
+ausführbare Datei wird die letzte gesicherte Version des Definitionsfensters
+verwenden. Weiter?")
+   (dock "Dock")
+   (drscheme-homepage "DrScheme")
+   (dynamic-properties "Dynamische Eigenschaften")
+   (error-finding-docs "Kann Dokumentation nicht finden.\n\n~a")
+   (error-saving "Sicherungsfehler")
+   (error-saving-file/name "Fehler beim Sichern von ~a.")
+   (full-language "Vollversion")
+   (help-menu-check-for-updates "Prüfe Updates...")
+   (how-to-use-scheme "How to Use Scheme")
+   (htdp-full-one-line-summary "Fortgeschritten, plus PLT Erweiterungen und
+GUI Bibliothek")
+   (http-proxy "HTTP Proxy")
+   (inline-saved-program-in-executable? "Inline the saved program in the
+executable? If yes, you can copy the executable to another ~a computer but the
+executable will be quite large. If not, you cannot copy the executable to
+another computer, but it will be much smaller. Additionally, if not, the
+executable will load the latest version of the program.")
+   (intermediate-one-line-summary "Anfänger plus lexikalischer Umgebung")
+   (intermediate-student/lambda "Intermediate Student mit lambda")
+   (intermediate/lambda-one-line-summary "Intermediate plus Funktionen höherer
+Ordnung")
+   (language-docs-button-label "Sprachdokumentation")
+   (mfs-case-sensitive-label "Groß/Kleinschreibung exakt")
+   (mfs-configure-search "Konfiguriere Suche")
+   (mfs-dir "Verzeichnis")
+   (mfs-drscheme-multi-file-search "DrScheme - Multidatei Suche")
+   (mfs-files-section "Dateien")
+   (mfs-no-matches-found "Keine Treffer gefunden.")
+   (mfs-not-a-dir "\"~a\" ist kein Verzeichnis")
+   (mfs-open-file "Öffne Datei")
+   (mfs-recur-over-subdirectories "Auch Unterverzeichnisse")
+   (mfs-regexp-filename-filter "Regex Dateiname Filter")
+   (mfs-regexp-match/no-graphics "Regulärer Ausdruck (nur RAW Textdateien)")
+   (mfs-search-interrupted "Suche abgebrochen.")
+   (mfs-search-section "Suche")
+   (mfs-search-string "Suche Zeichenkette")
+   (mfs-searching... "Suche...")
+   (mfs-stop-search "Beende Suche")
+   (mfs-string-match/graphics "Zeichensuche (auch Binärdateien)")
+   (module-language-one-line-summary "Sprachversion mit Modulen als einzige
+Erweiterung")
+   (mred-one-line-summary "PLT Scheme plus die GUI Bibliothek")
+   (must-save-before-executable "Sie müssen Ihr Programm zuerst abspeichern,
+bevor Sie eine ausführbare Datei erzeugen können.")
+   (mzscheme-one-line-summary "PLT Scheme ohne GUI Bibliothek")
+   (open-recent-info "Liste der zuletzt geöffneten Dateien")
+   (pls-fill-in-either-description-or-reproduce "Bitte füllen Sie das
+Beschreibungsfeld aus oder die Schritte zur Nachvollziehbarkeit aus.")
+   (plt-homepage "PLT")
+   (pref-lock-not-gone "Voreinstellungs-Sperrdatei:\n\n   ~a\n\nverhundert das
+Speichern der Voreinstellungen. Versichern Sie sich, daß kein PLT Programm
+mehr rennt und löschen Sie ggf. diese Sperrdatei.")
+   (proxy-bad-host "Ungültiger Proxy Host")
+   (proxy-direct-connection "Direkte Internetverbindung")
+   (proxy-host "Host")
+   (proxy-port "Port")
+   (proxy-use-proxy "Verwende Proxy:")
+   (r5rs-one-line-summary "Pures R5RS, ohne Zusatzschmäh's")
+   (save-an-executable "Sichere EXE")
+   (still-locked-exit-anyway? "Die Voreinstellungen konnten nicht gesichert
+werden. Trotzdem beenden?")
+   (teachscheme!-homepage "TeachScheme!")
+   (undock "Undock")
+   (use-mred-binary? "Verwende mred als Vorlage für die ausführbare
+Datei?\n\nWenn ja, kann Ihr Programm die Bibliothek (lib \"mred.ss\" \"mred\")
+verwenden. Wenn nein, wird DrScheme mzscheme als Vorlage für die ausführbare
+Datei verwenden und Sie können diese Bibiliothek nicht verwenden.\n\nIm
+Zweifel antworten Sie mit Ja.")
+   (waiting-for-pref-lock "Warte auf die Voreinstellungs-Sperrdatei...")
+   (web-materials "Verwandte Internet Seiten")
+
  )

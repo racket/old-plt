@@ -27,6 +27,9 @@
 	      [frame% unit-frame%]))))
     (send frame-group set-empty-callback mred:exit)
     
+    (define interactions-canvas%
+      (mred:make-console-canvas% mred:wrapping-canvas%))
+
     (define frame%
       (class mred:simple-menu-frame% (name snip [arg-group frame-group])
 	(rename [super-make-root-panel make-root-panel]
@@ -143,7 +146,7 @@
 	(public
 	  [get-canvas% 
 	   (let ([%
-		  (class mred:wrapping-canvas% args
+		  (class mred:frame-title-canvas% args
 		    (inherit get-media)
 		    (rename [super-edit-modified edit-modified])
 		    (public
@@ -299,13 +302,12 @@
 	       
 	       (for-each 
 		(lambda (x)
-		  (let* ([id #f]
-			 [callback
-			  (lambda ()
-			    (unless mred:debug:on?
-			      (send tools-menu enable id #f))
-			    (drscheme:tool:load/invoke-tool x))])
-		    (set! id (send tools-menu append-item (drscheme:tool:tool-name x) callback))))
+		  (letrec* ([id #f])
+		    (set! id (send tools-menu append-item
+				   (drscheme:tool:tool-name x)
+				   (let ([c (drscheme:tool:tool-callback x)])
+				     (lambda ()
+				       (c this)))))))
 		drscheme:tool:tools)
 
 	       (send* scheme-menu
@@ -369,7 +371,7 @@
 	     (let* ([definitions-edit definitions-edit]
 		    [interactions-edit interactions-edit])
 	       (send interactions-edit reset-console)
-	       (send interactions-edit do-many-aries-evals
+	       (send interactions-edit do-many-buffer-evals
 		     definitions-edit
 		     0 (send definitions-edit last-position)
 		     (lambda () (void))
@@ -392,7 +394,7 @@
 	(public
 	  [definitions-canvas (get-canvas)]
 	  [definitions-edit (get-edit)]
-	  [interactions-canvas (make-object mred:console-canvas% panel)]
+	  [interactions-canvas (make-object interactions-canvas% panel)]
 	  [interactions-edit (make-object drscheme:rep:edit%)])
 	
 	(sequence
@@ -416,7 +418,8 @@
 			     (lambda args
 			       (let* ([edit definitions-edit])
 				 (unless (or (null? edit) (not edit))
-				   (send edit save-file))))
+				   (send edit save-file)
+				   (send definitions-canvas set-focus))))
 			     "Save")))
 	(private 
 	  [make-library-name-msg

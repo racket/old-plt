@@ -122,11 +122,10 @@
          list-control<%>
          menu-item<%>
          separator-menu-item%
-         shortcut-menu-item<%>
+         selectable-menu-item<%>
          labelled-menu-item<%>
          menu-item%
          checkable-menu-item%
-         submenu-item<%>
          menu-item-container<%>
          menu%
          menu-bar%

@@ -150,6 +150,9 @@ The html-eval-ok parameter controls the evaluation of
 >   remove-tag :: (send o remove-tag name)
      Removes a tag.
 
+>   post-url :: (send o post-url string[url] post-data)
+     Follows the link in the string. post-data defaults to #f
+
 >   add-link :: (send o add-link start end url-string)
      Installs a hyperlink.
 

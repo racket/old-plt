@@ -659,6 +659,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   unsigned char r, g, b;
   unsigned char *ands, *xors;
   wxColour *c;
+  wxMemoryDC *mask_dc;
 
   __type = wxTYPE_CURSOR;
   destroyCursor = FALSE;
@@ -685,17 +686,22 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   /* Might fail, so we double-check: */
   if (!temp_mdc->GetObject())
     return;
-  temp_mask_mdc->SelectObject(mask);
-  if (!temp_mask_mdc->GetObject()) {
-    temp_mdc->SelectObject(NULL);
-    return;
+  if (mask == bm) {
+    mask_dc = temp_mdc;
+  } else {
+    temp_mask_mdc->SelectObject(mask);
+    if (!temp_mask_mdc->GetObject()) {
+      temp_mdc->SelectObject(NULL);
+      return;
+    }
+    mask_dc = temp_mask_mdc;
   }
 
   c = new wxColour();
 
   s = (w * h) >> 3;
-  ands = new char[s];
-  xors = new char[s];
+  ands = new unsigned char[s];
+  xors = new unsigned char[s];
 
   /* Init arrays to a value that means "the screen" */
   for (i = 0; i < s; i++) {
@@ -703,34 +709,34 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
     xors[i] = 0;
   }
 
-  bit = 1;
+  bit = 128;
   delta = 0;
   for (j = 0; j < bh; j++) {
     for (i = 0; i < w; i++) {
       if (i < bw) {
-	temp_mask_mdc->GetPixel(i, j, &c);
+	mask_dc->GetPixel(i, j, c);
 	c->Get(&r, &g, &b);
 	
 	/* black bit in mask? */
 	if (!r && !g && !b) {
-	  temp_mdc->GetPixel(i, j, &c);
+	  temp_mdc->GetPixel(i, j, c);
 	  c->Get(&r, &g, &b);
 	  
 	  if (!r && !g && !b) {
+	    /* black bit for cursor */
+	    ands[delta] -= bit;
+	  } else {
 	    /* white bit for cursor */
 	    ands[delta] -= bit;	    
 	    xors[delta] |= bit;	    
-	  } else {
-	    /* black bit for cursor */
-	    ands[delta] -= bit;
 	  }
 	} /* otherwise, leave as screen */
       }
 
-      bit = bit << 1;
-      if (bit > 128) {
+      bit = bit >> 1;
+      if (!bit) {
 	delta++;
-	bit = 1;
+	bit = 128;
       }
     }
   }

@@ -107,7 +107,7 @@ CCOBJS =\
  Windows/Panel.o\
  Windows/RadioBox.o\
  Windows/Slider.o\
- Windows/Window.o\
+ Windows/Window.o
 
 COBJS =\
  XWidgets/xwTabString.o\
@@ -117,7 +117,7 @@ COBJS =\
  XWidgets/xwMenu.o\
 \
  XWidgets/xwMultiList.o\
- XWidgets/xwScrollText.o\
+ XWidgets/xwScrollText.o
 
 WOBJS =\
  XWidgets/xwCommon.o\
@@ -138,7 +138,7 @@ WOBJS =\
  XWidgets/xwVScrollb.o\
  XWidgets/xwScrollbar.o\
 \
- XWidgets/xwScrollWin.o\
+ XWidgets/xwScrollWin.o
 
 OBJS = $(COBJS) $(WOBJS) $(CCOBJS)
 

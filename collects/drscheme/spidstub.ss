@@ -1,4 +1,9 @@
-(define tool@
+(load-recent
+ (build-path mred:plt-home-directory
+	     "mrspidey"
+	     "drspidey.ss"))
+
+'(define tool@
   (unit/sig ()
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]

@@ -78,7 +78,9 @@ typedef unsigned short OffsetTy;
 
 typedef struct MPage {
   unsigned short type;
+  short alloc_boundary;
   short compact_boundary;
+  short age, refs_age, compact_to_age;
   union {
     OffsetTy *offsets;
     long size;
@@ -89,7 +91,6 @@ typedef struct MPage {
   } o;
   void *block_start;
   struct MPage *next, *prev;
-  short age, refs_age, compact_to_age;
 
   OffsetTy gray_start, gray_end;
   struct MPage *gray_next;
@@ -98,8 +99,6 @@ typedef struct MPage {
 static MPage *first, *last;
 
 static MPage *gray_first;
-
-#define skip_end compact_boundary
 
 MPage **mpage_maps;
 
@@ -915,7 +914,7 @@ static void init_tagged_mpage(void **p, MPage *page)
   offsets = page->u.offsets;
   top = p + MPAGE_WORDS;
 
-  page->skip_end = 0;
+  page->alloc_boundary = MPAGE_WORDS;
   
   while (p < top) {
     Type_Tag tag;
@@ -925,8 +924,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
     if (tag == TAGGED_EOM) {
       /* Remember empty space for prop and compact:  */
-      page->skip_end = MPAGE_WORDS - offset;
-      /* FIXME: mark/fixup pointer in skip_end region */
+      page->alloc_boundary = offset;
       break;
     }
 
@@ -976,7 +974,7 @@ static void init_untagged_mpage(void **p, MPage *page)
 
   page->type = (page->type & TYPE_MASK);
   offsets = page->u.offsets;
-  page->skip_end = 0;
+  page->alloc_boundary = MPAGE_WORDS;
 
   top = p + MPAGE_WORDS;
 
@@ -987,7 +985,7 @@ static void init_untagged_mpage(void **p, MPage *page)
 
     if (size == UNTAGGED_EOM) {
       /* Remember empty space for prop:  */
-      page->skip_end = MPAGE_WORDS - offset;
+      page->alloc_boundary = offset;
       
       break;
     }
@@ -1067,7 +1065,7 @@ static void init_all_mpages(int young)
       gray_first = page;
       
       page->gray_start = 0;
-      page->gray_end = MPAGE_WORDS - page->skip_end - 2;
+      page->gray_end = page->alloc_boundary - 2;
 
       if (!(page->type & MTYPE_MODIFIED)) {
 	if (page->type & MTYPE_BIGBLOCK)
@@ -1144,14 +1142,12 @@ void GC_mark(void *p)
 	  page->type |= MTYPE_INITED;
 	}
 
-#if SAFETY
-	if (offset >= MPAGE_WORDS - page->skip_end) {
-	  CRASH();
+	offset = ((long)p & MPAGE_MASK) >> 2;
+
+	if (offset >= page->alloc_boundary) {
+	  /* Past allocation region. */
 	  return;
 	}
-#endif
-
-	offset = ((long)p & MPAGE_MASK) >> 2;
 
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
@@ -1579,10 +1575,10 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
   offsets = page->u.offsets;
 
-  top = p + MPAGE_WORDS - page->skip_end;
+  top = p + page->alloc_boundary;
 
   /* First, we zap object sizes into the offsets array */
-  zoffset = MPAGE_WORDS - page->skip_end;
+  zoffset = page->alloc_boundary;
   while (zoffset) {
     OffsetTy zs = zoffset;
 
@@ -1890,6 +1886,11 @@ void GC_fixup(void *pp)
 	long offset = ((long)p & MPAGE_MASK) >> 2;
 	OffsetTy v;
 	void *r;
+
+	if (offset >= page->alloc_boundary) {
+	  /* Past allocation region. */
+	  return;
+	}
 	
 	v = page->u.offsets[offset] & OFFSET_MASK;
 	if (offset < page->compact_boundary)

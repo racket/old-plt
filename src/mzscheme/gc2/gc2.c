@@ -1,6 +1,6 @@
 
-/* We have two experimental GC implementations right now: a simple
-   two-space copying collector, and a compacting collector. */
+/* We have two experimental GC implementations, but the copying
+   version is currently out-of-date. */
 
 #define USE_COPYING 0
 

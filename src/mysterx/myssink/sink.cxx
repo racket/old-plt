@@ -385,7 +385,7 @@ HRESULT CSink::InternalQueryInterface(void *pThis,
   // these seem to be requested by VB and VC++/ATL event sources
   // the sink doesn't implement those, and doesn't need to
 
-  if (riid != IID_IUnknown && riid != IID_ISink) {
+  if (riid != IID_IUnknown && riid != IID_IDispatch && riid != IID_ISink) {
     LPOLESTR str;
     BOOL isSystemIID;
 

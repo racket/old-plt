@@ -1,13 +1,8 @@
 (module homo-vectors mzscheme
   (require (lib "contract.ss")
+           (lib "file.ss" "dynext")
            "tests.ss")
   
-  (define (test desired proc . args)
-    (let ([result (apply proc args)])
-    (unless (equal? test result)
-      (printf "test failed.  Expected: ~v\nGot: ~v\nAs a result of this test: ~v\n"
-              desired result (cons proc args)))))
- 
   (define (vector-fn-bundle filename)
     (let-values (((prim:vector->homo-vector prim:homo-vector->vector prim:homo-vector-length prim:homo-vector-ref
                                             prim:homo-vector-set! prim:homo-vector? prim:homo-vector+ prim:homo-vector- 
@@ -144,7 +139,7 @@
              (raise-type-error 'homo-vector->length "homo-vector" 0 v))))))
   
   (define (make-filename type-symbol)
-    (format "homo-~a-vector-prims.so" (symbol->string type-symbol)))
+    (append-extension-suffix (format "homo-~a-vector-prims" (symbol->string type-symbol))))
   
   (define (real-vec? v)
     (and (vector? v)

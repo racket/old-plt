@@ -4307,11 +4307,16 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+/*
+
+blocking on Win events doesn't seem to work 
+any longer
+
 static BOOL win_event_available(void *) {
   MSG msg;
 
   return (PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE) ||
-  	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
+	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
 }
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
@@ -4327,13 +4332,17 @@ static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
   scheme_add_fd_eventmask(fds,QS_ALLINPUT);
   scheme_add_fd_handle(dummySem,fds,TRUE); 
 }
+*/
 
 Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   MSG msg;
 
-  scheme_block_until((int (*)(Scheme_Object *))win_event_available,
-  		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
-  		     NULL,0.0F);
+  /* this used to work, sort of 
+
+    scheme_block_until((int (*)(Scheme_Object *))win_event_available,
+		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
+		     NULL,0.0F);
+  */
 
   while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE) ||
 	 PeekMessage(&msg,NULL,0x113,0x113,PM_REMOVE)) {
@@ -4553,7 +4562,7 @@ void browserHwndMsgLoop(LPVOID p) {
       }
     }
 
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    while (GetMessage(&msg,NULL,0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }

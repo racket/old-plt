@@ -1227,7 +1227,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 	return scheme_compile_expr(form, env, rec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
-	find_name = scheme_stx_cert(find_name, scheme_false, menv, find_name);
+	find_name = scheme_stx_cert(find_name, scheme_false, menv, find_name, NULL);
 	SCHEME_USE_FUEL(1);
 	menv = NULL;
       } else
@@ -1316,7 +1316,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, 
 	Scheme_Object *new_name;
 	new_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	new_name = scheme_stx_track(new_name, find_name, find_name);
-	new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name);
+	new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name, NULL);
 	find_name = new_name;
 	menv = NULL;
       } else
@@ -3075,7 +3075,7 @@ do_define_syntaxes_execute(Scheme_Object *form, Scheme_Env *dm_env, int for_stx)
 
   dm_env = scheme_environment_from_dummy(dummy);
 
-  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL, dm_env->link_midx);
+  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL, dm_env, dm_env->link_midx);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), for_stx ? 2 : 1, rp, dm_env);
 }
 
@@ -3345,7 +3345,7 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
     /* short cut */
     a = _scheme_eval_linked_expr_multi(a);
   } else {
-    scheme_on_next_top(rhs_env, NULL, scheme_false, certs, rhs_env->genv->link_midx);
+    scheme_on_next_top(rhs_env, NULL, scheme_false, certs, rhs_env->genv, rhs_env->genv->link_midx);
     a = scheme_eval_linked_expr_multi(a);
   }
 

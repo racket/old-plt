@@ -6498,7 +6498,7 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 	  {
 	    int ssz;
 	    if (t == scheme_current_thread) {
-	      ssz = (scheme_current_runstack_start + t->runstack_size) - scheme_current_runstack;
+	      ssz = (MZ_RUNSTACK_START + t->runstack_size) - MZ_RUNSTACK;
 	    } else {
 	      ssz = (t->runstack_start + t->runstack_size) - t->runstack;
 	    }

@@ -555,6 +555,7 @@ thread_val {
   gcMARK(pr->current_local_name);
   gcMARK(pr->current_local_certs);
   gcMARK(pr->current_local_modidx);
+  gcMARK(pr->current_local_menv);
   
   gcMARK(pr->overflow_reply);
 
@@ -1679,6 +1680,7 @@ mark_cert {
   gcMARK(c->mark);
   gcMARK(c->modidx);
   gcMARK(c->insp);
+  gcMARK(c->key);
   gcMARK(c->next);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Cert));

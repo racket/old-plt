@@ -220,7 +220,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_special_comment_type, "<special-comment>");
 
   set_name(scheme_certifications_type, "<certifications>");
-  set_name(scheme_cert_context_type, "<certification-context>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
@@ -491,8 +490,6 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_set_macro_type, small_object);
   GC_REG_TRAV(scheme_id_macro_type, small_object);
-
-  GC_REG_TRAV(scheme_cert_context_type, small_object);
 
   GC_REG_TRAV(scheme_stx_type, stx_val);
   GC_REG_TRAV(scheme_stx_offset_type, stx_off_val);

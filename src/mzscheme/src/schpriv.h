@@ -231,6 +231,7 @@ extern Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_pro
 extern Scheme_Object *scheme_date;
 #endif
 
+extern Scheme_Object *scheme_module_stx;
 extern Scheme_Object *scheme_begin_stx;
 extern Scheme_Object *scheme_define_values_stx;
 extern Scheme_Object *scheme_define_syntaxes_stx;
@@ -609,7 +610,8 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code);
 
 #define STX_SRCTAG scheme_false
 
-Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env *menv, Scheme_Object *plus_stx);
+Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env *menv, Scheme_Object *plus_stx, 
+			       Scheme_Object *mkey);
 int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_Object *modidx, Scheme_Object *home_insp);
 int scheme_module_protected_wrt(Scheme_Object *home_insp, Scheme_Object *insp);
 
@@ -778,7 +780,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_thread(k, eb, p) scheme_top_level_do(k, eb)
 
 void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, 
-			Scheme_Object *name, Scheme_Object *certs, Scheme_Object *in_modidx);
+			Scheme_Object *name, Scheme_Object *certs, 
+			Scheme_Env *menv, Scheme_Object *in_modidx);
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 

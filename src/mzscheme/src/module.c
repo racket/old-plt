@@ -109,6 +109,7 @@ static Scheme_Object *all_defined_except_symbol;
 static Scheme_Object *struct_symbol;
 static Scheme_Object *protect_symbol;
 
+Scheme_Object *scheme_module_stx;
 Scheme_Object *scheme_begin_stx;
 Scheme_Object *scheme_define_values_stx;
 Scheme_Object *scheme_define_syntaxes_stx;
@@ -419,6 +420,7 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   scheme_sys_wraps(NULL);
 
+  REGISTER_SO(scheme_module_stx);
   REGISTER_SO(scheme_begin_stx);
   REGISTER_SO(scheme_define_values_stx);
   REGISTER_SO(scheme_define_syntaxes_stx);
@@ -442,6 +444,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(fluid_let_syntax_stx);
 
   w = scheme_sys_wraps0;
+  scheme_module_stx = scheme_datum_to_syntax(scheme_intern_symbol("module"), scheme_false, w, 0, 0);
   scheme_begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
   scheme_define_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-values"), scheme_false, w, 0, 0);
   scheme_define_syntaxes_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntaxes"), scheme_false, w, 0, 0);
@@ -2625,7 +2628,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
 				     1, genv->phase);
 	
   scheme_on_next_top(comp_env, NULL, scheme_false, certs, 
-		     (genv->link_midx ? genv->link_midx : genv->module->src_modidx));
+		     genv, (genv->link_midx ? genv->link_midx : genv->module->src_modidx));
   vals = scheme_eval_linked_expr_multi(expr);
 
   scheme_pop_prefix(save_runstack);

@@ -1418,6 +1418,7 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->current_local_name);
   gcMARK(pr->current_local_certs);
   gcMARK(pr->current_local_modidx);
+  gcMARK(pr->current_local_menv);
   
   gcMARK(pr->overflow_reply);
 
@@ -1502,6 +1503,7 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->current_local_name);
   gcFIXUP(pr->current_local_certs);
   gcFIXUP(pr->current_local_modidx);
+  gcFIXUP(pr->current_local_menv);
   
   gcFIXUP(pr->overflow_reply);
 
@@ -4156,6 +4158,7 @@ int mark_cert_MARK(void *p) {
   gcMARK(c->mark);
   gcMARK(c->modidx);
   gcMARK(c->insp);
+  gcMARK(c->key);
   gcMARK(c->next);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Cert));
@@ -4166,6 +4169,7 @@ int mark_cert_FIXUP(void *p) {
   gcFIXUP(c->mark);
   gcFIXUP(c->modidx);
   gcFIXUP(c->insp);
+  gcFIXUP(c->key);
   gcFIXUP(c->next);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Cert));

@@ -73,6 +73,7 @@ static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_module_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_get_shadower(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_certify(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
@@ -200,7 +201,7 @@ Scheme_Env *scheme_basic_env()
 #endif
 
 #ifdef TIME_STARTUP_PROCESS
-   printf("#if 0\nbasic @ %ld\n", scheme_get_process_milliseconds());
+  printf("#if 0\nbasic @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
   scheme_init_stack_check();
@@ -471,6 +472,11 @@ static void make_init_env(void)
 			     scheme_make_prim_w_arity(make_introducer,
 						      "make-syntax-introducer",
 						      0, 1),
+			     env);
+  scheme_add_global_constant("syntax-local-certify", 
+			     scheme_make_prim_w_arity(local_certify,
+						      "syntax-local-certify",
+						      1, 2),
 			     env);
 
   scheme_add_global_constant("make-set!-transformer", 
@@ -2817,7 +2823,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     v = SCHEME_PTR_VAL(v);
     if (SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
       sym = SCHEME_PTR1_VAL(v);
-      sym = scheme_stx_cert(sym, scheme_false, menv, sym);
+      sym = scheme_stx_cert(sym, scheme_false, menv, sym, NULL);
       renamed = 1;
       menv = NULL;
       SCHEME_USE_FUEL(1);
@@ -3019,6 +3025,28 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 
     return scheme_add_rename(result, rn);
   }
+}
+
+static Scheme_Object *
+local_certify(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s;
+
+  if (!scheme_current_thread->current_local_env)
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, 
+		     "syntax-local-certify: not currently transforming");
+
+  s = argv[0];
+  if (!SCHEME_STXP(s))
+    scheme_wrong_type("syntax-local-certify", "syntax", 0, argc, argv);
+  
+  if (scheme_current_thread->current_local_menv) {
+    Scheme_Env *menv = scheme_current_thread->current_local_menv;
+    if (menv->module)
+      s = scheme_stx_cert(s, scheme_false, menv, NULL, (argc > 1) ? argv[1] : NULL);
+  }
+
+  return s;
 }
 
 static Scheme_Object *

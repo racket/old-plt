@@ -1589,6 +1589,36 @@ static Scheme_Object *call_compile_handler(Scheme_Object *form, int immediate_ev
   return o;
 }
 
+
+static Scheme_Object *add_renames_unless_module(Scheme_Object *form, Scheme_Env *genv)
+{
+  if (genv->rename) {
+    if (SCHEME_STX_PAIRP(form)) {
+      Scheme_Object *a, *d;
+      
+      a = SCHEME_STX_CAR(form);
+      if (SCHEME_STX_SYMBOLP(a)) {
+	a = scheme_add_rename(a, genv->rename);
+	if (scheme_stx_module_eq(a, scheme_module_stx, 0)) {
+	  /* Don't add renames to the whole module; let the 
+	     module's language take over. */
+	  d = SCHEME_STX_CDR(form);
+	  a = scheme_make_immutable_pair(a, d);
+	  form = scheme_datum_to_syntax(a, form, form, 1, 0);
+	  return form;
+	}
+      }
+    }
+  }
+
+  if (genv->rename)
+    form = scheme_add_rename(form, genv->rename);
+  if (genv->exp_env && genv->exp_env->rename)
+    form = scheme_add_rename(form, genv->exp_env->rename);
+
+  return form;
+}
+
 static void *compile_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
@@ -1618,10 +1648,7 @@ static void *compile_k(void)
 
   /* Renamings for requires: */
   if (rename) {
-    if (genv->rename)
-      form = scheme_add_rename(form, genv->rename);
-    if (genv->exp_env && genv->exp_env->rename)
-      form = scheme_add_rename(form, genv->exp_env->rename);
+    form = add_renames_unless_module(form, genv);
     if (genv->module) {
       form = scheme_stx_phase_shift(form, 0, 
 				    genv->module->src_modidx, 
@@ -1785,7 +1812,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
 	name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(val));
-	name = scheme_stx_cert(name, scheme_false, menv, name);	
+	name = scheme_stx_cert(name, scheme_false, menv, name, NULL);
 	menv = NULL;
 	SCHEME_USE_FUEL(1);
       } else {
@@ -1946,7 +1973,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (!rec[drec].comp) {
 	    new_name = scheme_stx_track(new_name, find_name, find_name);
 	  }
-	  new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name);
+	  new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name, NULL);
 	  find_name = new_name;
 	  SCHEME_USE_FUEL(1);
 	  menv = NULL;
@@ -2030,7 +2057,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (!rec[drec].comp) {
 	    new_name = scheme_stx_track(new_name, find_name, find_name);
 	  }
-	  new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name);
+	  new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name, NULL);
 	  find_name = new_name;
 	  SCHEME_USE_FUEL(1);
 	  menv = NULL;
@@ -2103,7 +2130,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (!rec[drec].comp) {
 	  new_name = scheme_stx_track(new_name, find_name, find_name);
 	}
-	new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name);
+	new_name = scheme_stx_cert(new_name, scheme_false, menv, find_name, NULL);
 	find_name = new_name;
 	SCHEME_USE_FUEL(1);
 	menv = NULL;
@@ -4193,10 +4220,7 @@ static void *expand_k(void)
 
   if (rename > 0) {
     /* Renamings for requires: */
-    if (env->genv->rename)
-      obj = scheme_add_rename(obj, env->genv->rename);
-    if (env->genv->exp_env && env->genv->exp_env->rename)
-      obj = scheme_add_rename(obj, env->genv->exp_env->rename);
+    obj = add_renames_unless_module(obj, env->genv);
   }
 
   erec1.comp = 0;
@@ -4302,10 +4326,7 @@ eval(int argc, Scheme_Object *argv[])
       && !SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
     Scheme_Env *genv;
     genv = scheme_get_env(NULL);
-    if (genv->rename)
-      form = scheme_add_rename(form, genv->rename);
-    if (genv->exp_env && genv->exp_env->rename)
-      form = scheme_add_rename(form, genv->exp_env->rename);
+    form = add_renames_unless_module(form, genv);
   }
 
   a[0] = form;
@@ -4374,10 +4395,7 @@ top_introduce_stx(int argc, Scheme_Object **argv)
   if (!SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
     Scheme_Env *genv;
     genv = (Scheme_Env *)scheme_get_param(scheme_current_config(), MZCONFIG_ENV);
-    if (genv->rename)
-      form = scheme_add_rename(form, genv->rename);
-    if (genv->exp_env && genv->exp_env->rename)
-      form = scheme_add_rename(form, genv->exp_env->rename);
+    form = add_renames_unless_module(form, genv);
   }
 
   return form;
@@ -4393,10 +4411,7 @@ compile(int argc, Scheme_Object *argv[])
     form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
 
   genv = scheme_get_env(NULL);
-  if (genv->rename)
-    form = scheme_add_rename(form, genv->rename);
-  if (genv->exp_env && genv->exp_env->rename)
-    form = scheme_add_rename(form, genv->exp_env->rename);
+  form = add_renames_unless_module(form, genv);
 
   return call_compile_handler(form, 0);
 }

@@ -129,6 +129,7 @@ static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
 static Scheme_Object *top_next_certs;
 static Scheme_Object *top_next_modidx;
+static Scheme_Env *top_next_menv;
 static int top_next_use_thread_cc_ok;
 
 static Scheme_Object *is_method_symbol;
@@ -847,7 +848,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
 void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, 
 			Scheme_Object *name, 
-			Scheme_Object *certs, Scheme_Object *modidx)
+			Scheme_Object *certs, 
+			Scheme_Env *menv,
+			Scheme_Object *modidx)
      /* Set back-door arguments for scheme_top_level_do */
 {
   if (!top_next_registered) {
@@ -857,6 +860,7 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark,
     REGISTER_SO(top_next_name);
     REGISTER_SO(top_next_certs);
     REGISTER_SO(top_next_modidx);
+    REGISTER_SO(top_next_menv);
   }
 
   top_next_env = env;
@@ -864,6 +868,7 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark,
   top_next_name = name;
   top_next_certs = certs;
   top_next_modidx = modidx;
+  top_next_menv = menv;
 }
 
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
@@ -881,6 +886,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
   Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_certs, * volatile save_modidx;
+  Scheme_Env * volatile save_menv;
   Scheme_Simple_Object * volatile save_list_stack;
   Scheme_Thread * volatile p = scheme_current_thread;
   volatile int save_suspend_break;
@@ -933,6 +939,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   save_name = p->current_local_name;
   save_certs = p->current_local_certs;
   save_modidx = p->current_local_modidx;
+  save_menv = p->current_local_menv;
   save_list_stack = p->list_stack;
   save_list_stack_pos = p->list_stack_pos;
   save_suspend_break = p->suspend_break;
@@ -943,11 +950,13 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->current_local_name = top_next_name;
     p->current_local_certs = top_next_certs;
     p->current_local_modidx = top_next_modidx;
+    p->current_local_menv = top_next_menv;
     top_next_env = NULL;
     top_next_mark = NULL;
     top_next_name = NULL;
     top_next_certs = NULL;
     top_next_modidx = NULL;
+    top_next_menv = NULL;
   }
 
   /* We set up an overflow handler at the lowest point possible
@@ -1052,6 +1061,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->current_local_name = save_name;
     p->current_local_certs = save_certs;
     p->current_local_modidx = save_modidx;
+    p->current_local_menv = save_menv;
     p->list_stack = save_list_stack;
     p->list_stack_pos = save_list_stack_pos;
     p->suspend_break = save_suspend_break;
@@ -1067,6 +1077,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   p->current_local_name = save_name;
   p->current_local_certs = save_certs;
   p->current_local_modidx = save_modidx;
+  p->current_local_menv = save_menv;
 
   p->error_buf = save;
 
@@ -1334,7 +1345,7 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
   if (SCHEME_STXP(code)) {
     prop = scheme_stx_property(code, certify_mode_symbol, NULL);
     if (SAME_OBJ(prop, opaque_symbol)) {
-      return scheme_stx_cert(code, mark, menv, orig_code);
+      return scheme_stx_cert(code, mark, menv, orig_code, NULL);
     } else if (SAME_OBJ(prop, transparent_symbol)) {
       /* fall through */
     } else {
@@ -1353,7 +1364,7 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
       }
       
       if (!trans)
-	return scheme_stx_cert(code, mark, menv, orig_code);
+	return scheme_stx_cert(code, mark, menv, orig_code, NULL);
     }
   }
 
@@ -1374,7 +1385,7 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
   } else if (SCHEME_STX_NULLP(code))
     return code;
 
-  return scheme_stx_cert(code, mark, menv, orig_code);
+  return scheme_stx_cert(code, mark, menv, orig_code, NULL);
 }
 
 Scheme_Object *
@@ -1427,7 +1438,8 @@ scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
    mark = scheme_new_mark();
    code = scheme_add_remove_mark(code, mark);
 
-   scheme_on_next_top(env, mark, boundname, certs, menv ? menv->link_midx : env->genv->link_midx);
+   scheme_on_next_top(env, mark, boundname, certs, 
+		      menv, menv ? menv->link_midx : env->genv->link_midx);
 
    rands_vec[0] = code;
    code = scheme_apply(rator, 1, rands_vec);

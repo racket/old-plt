@@ -835,6 +835,7 @@ typedef struct Scheme_Thread {
   Scheme_Object *current_local_name;
   Scheme_Object *current_local_certs;
   Scheme_Object *current_local_modidx;
+  Scheme_Env *current_local_menv;
 
   char skip_error;
 

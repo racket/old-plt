@@ -72,6 +72,7 @@ static int mzerrno = 0;
 #  define WIN32_FD_HANDLES
 #  include <process.h>
 #  include <signal.h>
+#  include <io.h>
 #  define OS_SEMAPHORE_TYPE HANDLE
 #  define OS_MUTEX_TYPE CRITICAL_SECTION
 #  define OS_THREAD_TYPE HANDLE
@@ -84,10 +85,6 @@ static int mzerrno = 0;
 typedef struct { int32 v; sem_id s; } mutex_id;
 # define OS_MUTEX_TYPE mutex_id
 # define OS_THREAD_TYPE thread_id
-#endif
-
-#ifdef WIN32_FD_HANDLES
-static Scheme_Object *all_tested_ports;
 #endif
 
 typedef struct Scheme_Indexed_String {
@@ -1850,7 +1847,10 @@ make_fd_input_port(int fd, const char *filename)
 
 #endif
 
-/* Win32/BeOS input ports that could block on reads */
+/* Win32/BeOS input ports that could block on reads. The BeOS
+   contortions are resonable, and they'll probably fix select()
+   in the future so this code is unneeded. The Win32 contortions
+   are insane, inefficient, and apparently unavoidable. */
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 
 #define TIF_BUFFER 500
@@ -1860,11 +1860,15 @@ typedef struct {
   OS_THREAD_TYPE th;             /* worker thread */
   OS_SEMAPHORE_TYPE try_sema;    /* hit when a char is wanted */
   OS_SEMAPHORE_TYPE ready_sema;  /* hit when a char is ready */
+#ifdef WIN32_FD_HANDLES
+  int type; /* console or pipe? */
+  OS_SEMAPHORE_TYPE interrupt;  /* hit when a char is ready */
+#endif
   int need_wait;                 /* 1 => use ready_sema */
   OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
   int trying;          /* indicates that it's already trying to read */
   int ready;           /* indicates that a character is ready */
-  int eof;             /* indicates end-of-file reached */
+  int err_no;          /* indicates an error */
   int c[TIF_BUFFER];   /* ready character */
 } Tested_Input_File;
 
@@ -1902,7 +1906,7 @@ static int tested_file_char_ready(Scheme_Input_Port *p)
 
   tip = (Tested_Input_File *)p->port_data;
 
-  if (tip->ready || tip->eof)
+  if (tip->ready || tip->err_no)
     return 1;
  
   if (!tip->trying) {
@@ -1941,8 +1945,14 @@ static int tested_file_getc(Scheme_Input_Port *p)
     --tip->ready;
     RELEASE_MUTEX(tip->lock_mutex);
     return c;
-  } else /* must be EOF */
+  } else {
+    /* must be an error */
+    scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		     p,
+		     "error reading from file port (%d)",
+		     tip->err_no);
     return EOF;
+  }
 }
 
 static void tested_file_close_input(Scheme_Input_Port *p)
@@ -1951,42 +1961,36 @@ static void tested_file_close_input(Scheme_Input_Port *p)
 
   tip = (Tested_Input_File *)p->port_data;
 
-  /* send EOF to reader thread */
+  tip->err_no = 1;
+
 #ifdef WIN32_FD_HANDLES
-  CloseHandle((HANDLE)_get_osfhandle(_fileno(tip->fp)));
-#else
-  fclose(tip->fp); 
+  /* Tell reader thread to stop */
+  RELEASE_SEMAPHORE(tip->interrupt);
 #endif
+
+  fclose(tip->fp); /* BeOS: sends eof to reader thread */
 
   --scheme_file_open_count;
 
-  tip->eof = 1;
   RELEASE_SEMAPHORE(tip->try_sema);
 
-  WAIT_THREAD(tip->th);
-
 #ifdef WIN32_FD_HANDLES
+  if (WaitForSingleObject(tip->th, 5000) == WAIT_TIMEOUT) {
+    /* kill it if it's still there; according to the docs, we
+       shouldn't do this, but my experience is that if something
+       goes wrong, killing the thread makes my NT machine less
+       likely to hang. */
+    printf("have to kill reader thread\n");
+    TerminateThread(tip->th, -1);
+  }
   CloseHandle(tip->th);
+#else
+  WAIT_THREAD(tip->th);
 #endif
 
   FREE_SEMAPHORE(tip->ready_sema);
   FREE_SEMAPHORE(tip->try_sema);
   FREE_MUTEX(tip->lock_mutex);
-
-#ifdef WIN32_FD_HANDLES
-  {
-    Scheme_Object *v, *prev = NULL;
-    for (v = all_tested_ports; SCHEME_PAIRP(v); prev = v, v = SCHEME_CDR(v)) {
-      if (SCHEME_CAR(v) == (Scheme_Object *)p) {
-	if (prev)
-	  SCHEME_CDR(prev) = SCHEME_CDR(v);
-	else
-	  all_tested_ports = SCHEME_CDR(v);
-	break;
-      }
-    }
-  }
-#endif
 }
 
 static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
@@ -2010,13 +2014,28 @@ static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
 }
 
 #ifdef WIN32_FD_HANDLES
-void close_all_tested_ports(void)
+
+static int was_break;
+static BOOL CALLBACK that_was_a_break(DWORD x)
 {
-  while (!SCHEME_NULLP(all_tested_ports)) {
-    Scheme_Object *p = SCHEME_CAR(all_tested_ports);
-    tested_file_close_input((Scheme_Input_Port *)p);
+  if (x != CTRL_C_EVENT)
+    return FALSE;
+
+  was_break = 1;
+
+  {
+    Scheme_Process *p = scheme_main_process;
+    if (!p->external_break)
+      scheme_break_thread(p);
   }
+
+  /* Unreliabale hack: */
+  Sleep(100); /* Give broken port time to notice it's a break */
+  was_break = 0;
+
+  return TRUE;
 }
+
 #endif
 
 static long read_for_tested_file(void *data)
@@ -2029,16 +2048,61 @@ static long read_for_tested_file(void *data)
   RELEASE_SEMAPHORE(got_started);
 #endif
 
+#ifdef WIN32_FD_HANDLES
+  /* Try to make ctl-c work. */
+  SetConsoleCtrlHandler(that_was_a_break, TRUE);
+#endif
+
   tip = (Tested_Input_File *)data;
 
-  while (!tip->eof) {
+  while (!tip->err_no) {
     WAIT_SEMAPHORE(tip->try_sema);
-    for (i = tip->trying; !tip->eof && i--; ) {
+    for (i = tip->trying; !tip->err_no && i--; ) {
+    try_again:
+#ifdef WIN32_FD_HANDLES
+      if (!tip->fp->_cnt) {
+	HANDLE file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
+	if (tip->type == FILE_TYPE_CHAR) {
+	  /* Console */
+	  HANDLE h[2];
+	  h[0] = file;
+	  h[1] = tip->interrupt;
+	  WaitForMultipleObjectsEx(2, h, FALSE, INFINITE, TRUE);
+	} else {
+	  /* Pipe */
+	  /* Is there really no better solution than polling?! */
+	  /* We can't use ReadFileEx because the pipe isn't necessarily
+	     created as overlayed. */
+	  while (!tip->err_no) {
+	    DWORD avail;
+	    if (!PeekNamedPipe(file, NULL, 0, NULL, &avail, NULL))
+	      break; /* let fgetc handle error */
+	    if (avail)
+	      break;
+	    Sleep(100); /* Yuck Yuck Yuck Yuck */
+	  }
+	}
+	if (tip->err_no)
+	  break;
+      }
+#endif
       c = fgetc(tip->fp);
       tip->c[i] = c;
-      if (!tip->eof && (c == EOF))
-	tip->eof = feof(tip->fp);
-      if (!tip->eof) {
+      if (c == EOF) {
+	if (!feof(tip->fp)) {
+	  tip->err_no = errno;
+	  if (!tip->err_no)
+	    tip->err_no = 1;
+	} else {
+#ifdef WIN32_FD_HANDLES
+	  /* Unreliabale hack: */
+	  Sleep(100); /* Give the break thread time, if it's there */
+	  if (was_break)
+	    goto try_again;
+#endif
+	}
+      }
+      if (!tip->err_no) {
 	ACQUIRE_MUTEX(tip->lock_mutex);
 	tip->ready++;
 	if (tip->need_wait > 0) {
@@ -2046,7 +2110,8 @@ static long read_for_tested_file(void *data)
 	  tip->need_wait = -1;
 	}
 	RELEASE_MUTEX(tip->lock_mutex);
-      }
+      } else /* was error */
+	RELEASE_SEMAPHORE(tip->ready_sema);
     }
   }
 
@@ -2067,14 +2132,22 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 
   tip->ready = 0;
   tip->trying = 0;
-  tip->eof = 0;
+  tip->err_no = 0;
   tip->ready_sema = MAKE_SEMAPHORE();
   tip->try_sema = MAKE_SEMAPHORE();
+#ifdef WIN32_FD_HANDLES
+  tip->type = GetFileType((HANDLE)_get_osfhandle(_fileno(tip->fp)));
+  tip->interrupt = MAKE_SEMAPHORE();
+#endif
   MAKE_MUTEX(tip->lock_mutex);
 
 #ifdef WIN32_FD_HANDLES
+  /* Remap stdin, so system and process* don't get hung up. */
+  if (!_fileno(fp))
+    tip->fp = _fdopen(_dup(0), "rt");
+
 # ifdef NO_NEED_FOR_BEGINTHREAD
-# define _beginthreadex CreateThread
+#  define _beginthreadex CreateThread
 # endif
   {
     DWORD id;
@@ -2123,15 +2196,6 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 			       1);
 
   ip->name = scheme_strdup(name);
-
-#ifdef WIN32_FD_HANDLES
-  if (!all_tested_ports) {
-    REGISTER_SO(all_tested_ports);
-    all_tested_ports = scheme_null;
-    atexit(close_all_tested_ports);
-  }
-  all_tested_ports = scheme_make_pair((Scheme_Object *)ip, all_tested_ports);
-#endif
 
   return (Scheme_Object *)ip;
 }
@@ -4539,7 +4603,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   }
 
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+# if defined(BEOS_PROCESSES)
   fflush(NULL);
+# else
+  /* Windows: quasi-stdin is locked, and we'll say it doesn't matter */
+  fflush(stdin);
+  fflush(stdout);
+  fflush(stderr);
+# endif
 
   if (shell)
     spawn_status = system(command);

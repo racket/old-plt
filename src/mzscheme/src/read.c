@@ -151,7 +151,6 @@ typedef struct {
 # define USE_LISTSTACK(x) x
 #endif
 
-static Scheme_Object *symbol_symbol;
 static Scheme_Object *quote_symbol;
 static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
@@ -169,14 +168,12 @@ void scheme_init_read(Scheme_Env *env)
 {
   REGISTER_SO(variable_references);
 
-  REGISTER_SO(symbol_symbol);
   REGISTER_SO(quote_symbol);
   REGISTER_SO(quasiquote_symbol);
   REGISTER_SO(unquote_symbol);
   REGISTER_SO(unquote_splicing_symbol);
   REGISTER_SO(syntax_symbol);
     
-  symbol_symbol = scheme_intern_symbol("symbol");
   quote_symbol = scheme_intern_symbol("quote");
   quasiquote_symbol = scheme_intern_symbol("quasiquote");
   unquote_symbol = scheme_intern_symbol("unquote");
@@ -322,21 +319,10 @@ read_decimal_as_inexact(int argc, Scheme_Object *argv[])
   DO_CHAR_PARAM("read-decimal-as-inexact", MZCONFIG_READ_DECIMAL_INEXACT);
 }
 
-static Scheme_Object *read_dot_config_p(int argc, Scheme_Object **argv)
-{
-  if (SAME_OBJ(argv[0], symbol_symbol))
-    return symbol_symbol;
-  else
-    return (SCHEME_TRUEP(argv[0]) ? scheme_true : scheme_false);
-}
-
 static Scheme_Object *
 read_accept_dot(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("read-dot-as-symbol",
-			     scheme_make_integer(MZCONFIG_CAN_READ_DOT), 
-			     argc, argv, 
-			     -1, read_dot_config_p, "anything", 1);
+  DO_CHAR_PARAM("read-accept-dot", MZCONFIG_CAN_READ_DOT);
 }
 
 static Scheme_Object *
@@ -909,8 +895,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
   local_read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
   local_can_read_quasi = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_QUASI));
-  v = scheme_get_param(config, MZCONFIG_CAN_READ_DOT);
-  local_can_read_dot = (SCHEME_SYMBOLP(v) ? -1 : (SCHEME_TRUEP(v) ? 1 : 0));
+  local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
   
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
@@ -1050,7 +1035,7 @@ read_list(Scheme_Object *port,
       return (stxsrc
 	      ? scheme_make_stx_w_offset(list, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG)
 	      : list);
-    } else if ((local_can_read_dot > 0)
+    } else if (local_can_read_dot
 	       && (ch == '.')
 	       && (next = scheme_peekc_special_ok(port),
 		   ((next == EOF)
@@ -1450,7 +1435,7 @@ read_number_or_symbol(Scheme_Object *port,
 
   buf[i] = '\0';
 
-  if (!quoted_ever && (i == 1) && (buf[0] == '.') && (local_can_read_dot >= 0)) {
+  if (!quoted_ever && (i == 1) && (buf[0] == '.')) {
     scheme_read_err(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port), 
 		    scheme_tell(port), 1, 0,
 		    "read: illegal use of \".\"");

@@ -375,10 +375,8 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 		   || (s[0] == '+') || (s[0] == '-'));
     if (s[0] == '#' && (len == 1 || s[1] != '%'))
       has_special = 1;
-    if (s[0] == '.' && len == 1) {
-      if (!SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_DOT)))
-	has_special = 1;
-    }
+    if (s[0] == '.' && len == 1)
+      has_special = 1;
   } else {
     digit_start = 0;
     has_space = 1;

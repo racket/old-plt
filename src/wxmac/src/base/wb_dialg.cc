@@ -42,7 +42,7 @@ wxDefaultFileSelector(Bool load, const char *what, char *extension, char *defaul
   char *prompt;
   char wild[60];
 
-  prompt = (load ? "Get File" : "Save File");
+  prompt = (char *)(load ? "Get File" : "Save File");
   
   sprintf(wild, "*.%s", extension);
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild, load ? wxOPEN : wxSAVE);

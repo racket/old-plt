@@ -18,7 +18,6 @@ string                             match its sequence of characters
 				    be used as a character here)
 (^ char_or_range ...1)             match any character not listed
 (the null concatenation `(@) means epsilon)
-Support for more usual re's should come soon.
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntatic forms:
@@ -123,7 +122,7 @@ This module provides the following syntactic forms:
   the left hand side in a parser.
 
 The result of a parser expression is a function, f, that takes one
-argument.  This argument must be a thunk (zero argument function), t,
+argument.  This argument must be a zero argument function, t,
 that produces successive tokens of the input each time it is called.
 If desired, the t may return symbols instead of tokens.  The parser
 will treat symbols as tokens of the corresponding name (with #f as a
@@ -222,7 +221,7 @@ lexer:
 Default lex abbrevs
 
 parser:
-Increase speed of parser generator
+Document/improve parser error handling.
 
 both:
 debugging
@@ -234,12 +233,15 @@ POSIX style regular expressions
 User definition of lex operators
 
 parser:
+Increase speed of parser generator
 Fisher-Burke error recovery
 Possibly change the $1 style to something like SML/NJ YACC uses
 LALR table compression
 Error checking for useless productions
 Error check for use of an end token in a production
+Error check the use of error productions
 
 both:
-More automatic line number handling
+Automatic position information handling between the lexer and parser
 Code documentation
+Increase runtime speed.

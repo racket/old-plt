@@ -8,10 +8,6 @@
 
 * Unix: Clipboard client is invoked in the wrong thread/eventspace
 
-* Need to penalize the current thread more (i.e., swap it out sooner)
-  after certain primitive operations that can take a long time (e.g.,
-  loading a bitmap or saving a file)
-
 * Windows: System menu navigation in a menuless MDI window leads to a
   crash
 

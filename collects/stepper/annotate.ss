@@ -3,7 +3,6 @@
            "marks.ss"
            (prefix s: "model.ss")
            "shared.ss"
-           "client-procs.ss"
 	   (lib "list.ss")
            "2vals.ss")
 
@@ -148,7 +147,7 @@
                                  (append advance-warning kept-bindings))]
            [lifter-syms (map get-lifted-sym let-bindings)]
            [quoted-lifter-syms (map (lambda (b) 
-                                      (d->so #f `(syntax-quote ,b)) lifter-syms)]
+                                      (d->so #f `(syntax-quote ,b))) lifter-syms)]
            [let-clauses (map list lifter-syms quoted-lifter-syms)])
       (make-full-mark source label (append var-clauses (if lifting? let-clauses null)))))
   
@@ -413,9 +412,10 @@
                   ;     e3)))
                   ;
                   ; note that this elaboration looks exactly like the one for letrec, and that's
-                  ; okay, becuase zodiac guarantees that every lexical binding has a unique name.
-                  ; that is, it's not possible that one of the RHS expressions will contain a variable
-                  ; whose name is the same as one of the LHS ones.
+                  ; okay, becuase expand guarantees that reordering them will not cause capture.
+                  ; this is because a bound variable answers is considered bound by a binding only when
+                  ; the pair answers true to bound-identifier=?, which is determined during (the first)
+                  ; expand.
                   
                   ; another irritating point: the mark and the break that must go immediately 
                   ; around the body.  Irritating because they will be instantly replaced by

@@ -321,7 +321,13 @@ wxMediaStreamIn::~wxMediaStreamIn()
 {
 }
 
-void wxMediaStreamIn::Typecheck(char v)
+#ifdef TYPESAFE
+# define WX_TYPESAFE_USED(x) x
+#else
+# define WX_TYPESAFE_USED(x) WXUNUSED(x)
+#endif
+
+void wxMediaStreamIn::Typecheck(char WX_TYPESAFE_USED(v))
 {
   if (bad)
     return;
@@ -647,7 +653,7 @@ wxMediaStreamOut::wxMediaStreamOut(wxMediaStreamOutBase *s)
   bad = FALSE;
 }
 
-void wxMediaStreamOut::Typeset(char v)
+void wxMediaStreamOut::Typeset(char WX_TYPESAFE_USED(v))
 {
   if (bad)
     return;

@@ -299,7 +299,7 @@ static void FIXUP_stack_state(Scheme_Stack_State *ss)
   Scheme_Object **old = ss->runstack_start;
 
   gcFIXUP(ss->runstack_saved);
-  gcFIXUP(ss->runstack_start);
+  gcFIXUP_TYPED_NOW(Scheme_Object **, ss->runstack_start);
   ss->runstack = ss->runstack_start + (ss->runstack - old);
 }
 
@@ -318,7 +318,7 @@ static void MARK_jmpup(Scheme_Jumpup_Buf *buf)
 
 static void FIXUP_jmpup(Scheme_Jumpup_Buf *buf)
 {
-  gcFIXUP(buf->stack_copy);
+  gcFIXUP_TYPED_NOW(void *, buf->stack_copy);
   gcFIXUP(buf->cont);
   gcFIXUP(buf->external_stack);
 

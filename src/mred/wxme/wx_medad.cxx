@@ -547,7 +547,7 @@ void wxMediaCanvas::UpdateCursorNow(void)
     media->SetAdmin(oldadmin);
 }
 
-wxMenu *wxMediaCanvas::PopupForMedia(wxMediaBuffer *b, void *m)
+wxMenu *wxMediaCanvas::PopupForMedia(wxMediaBuffer *WXUNUSED(b), void *WXUNUSED(m))
 {
   return NULL;
 }

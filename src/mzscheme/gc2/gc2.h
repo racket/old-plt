@@ -183,13 +183,19 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, Fixup_Pro
    happens where an instance of the tag as been allocated. */
 
 /* #define gcMARK(x) ... see below ... */
+/* #define gcMARK_TYPED(t, x) ... see below ... */
+/* #define gcMARK_TYPED_NOW(t, x) ... see below ... */
 /* #define gcFIXUP(x) ... see below ... */
 /* #define gcFIXUP_TYPED(t, x) ... see below ... */
+/* #define gcFIXUP_TYPED_NOW(t, x) ... see below ... */
 /* Macros that, given an l-value and optional type, marks the
    referenced memory as live and updates the pointer as necessary
    (i.e., if it's GCable memory that is moving). The `x' argument can
    appear in the macro's output multiple times, and the output can be
-   a statement rather than a expression. */
+   a statement rather than a expression. 
+
+   The NOW versions force the mark or fixup to happen immediately. The
+   other forms can queue the mark or fixup to happen later. */
 
 /* #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2) */
 /*
@@ -211,8 +217,8 @@ void GC_fixup(void *p);
 /*
    Used in the expansion of gcMARK and gcFIXUP. 
  
-   These procedures are internal to the current implementation, and
-   are *not* part of the "official" interface. */
+   These procedures and variables are internal to the current
+   implementation, and are *not* part of the "official" interface. */
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
@@ -241,10 +247,12 @@ void GC_fixup_variable_stack(void **var_stack,
 
 #endif
 
-/* Macros: */
+/* Macros (implementation-specific): */
 #define gcMARK(x) GC_mark(x)
 #define gcMARK_TYPED(t, x) gcMARK(x)
-#define gcFIXUP_TYPED(t, x) GC_fixup(&(x))
+#define gcMARK_TYPED_NOW(t, x) gcMARK(x)
+#define gcFIXUP_TYPED_NOW(t, x) GC_fixup(&(x))
+#define gcFIXUP_TYPED(t, x) gcFIXUP_TYPED_NOW(void*, x)
 #define gcFIXUP(x) gcFIXUP_TYPED(void*, x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 #define gcWORDS_TO_BYTES(x) (x << 2)

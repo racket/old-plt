@@ -299,9 +299,9 @@ bignum_obj {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
  mark:
-  if (!b->allocated_inline)
+  if (!b->allocated_inline) {
     gcMARK(b->digits);
-  else
+  } else
     b->digits = ((Small_Bignum *)b)->v;
 
  size:
@@ -461,7 +461,7 @@ process_val {
 
   {
     Scheme_Object **rs = pr->runstack_start;
-    gcMARK(pr->runstack_start);
+    gcFIXUP_TYPED_NOW(Scheme_Object **, pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcMARK(pr->runstack_saved);
@@ -654,7 +654,7 @@ mark_saved_stack {
   Scheme_Object **old = saved->runstack_start;
   
   gcMARK(saved->prev);
-  gcMARK(saved->runstack_start);
+  gcFIXUP_TYPED_NOW(Scheme_Object **, saved->runstack_start);
   saved->runstack = saved->runstack_start + (saved->runstack - old);
 
  size:
@@ -755,7 +755,7 @@ mark_object_val {
  mark:
   int i;
   
-  gcMARK(obj->o.sclass);
+  gcFIXUP_TYPED_NOW(Scheme_Object *, obj->o.sclass);
   sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
   
   for (i = sclass->num_slots; i--; ) {
@@ -1342,7 +1342,7 @@ mark_struct_val {
  mark:
   int i;
 
-  gcMARK(s->stype);
+  gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
   stype = s->stype; /* In case we just moved it */
 
   for(i = stype->num_slots; i--; )

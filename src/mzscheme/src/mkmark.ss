@@ -44,7 +44,9 @@
 
       (printf "int ~a_MARK(void *p) {~n" name)
       (print-lines prefix)
-      (print-lines mark)
+      (print-lines (map (lambda (s)
+			  (regexp-replace* "FIXUP_TYPED_NOW[(][^,]*," s "MARK("))
+			mark))
       (printf "  return~n")
       (print-lines size)
       (printf "}~n~n")

@@ -724,9 +724,9 @@ int bignum_obj_SIZE(void *p) {
 int bignum_obj_MARK(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  if (!b->allocated_inline)
+  if (!b->allocated_inline) {
     gcMARK(b->digits);
-  else
+  } else
     b->digits = ((Small_Bignum *)b)->v;
 
   return
@@ -740,9 +740,9 @@ int bignum_obj_MARK(void *p) {
 int bignum_obj_FIXUP(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  if (!b->allocated_inline)
+  if (!b->allocated_inline) {
     gcFIXUP(b->digits);
-  else
+  } else
     b->digits = ((Small_Bignum *)b)->v;
 
   return
@@ -1099,7 +1099,7 @@ int process_val_MARK(void *p) {
 
   {
     Scheme_Object **rs = pr->runstack_start;
-    gcMARK(pr->runstack_start);
+    gcMARK( pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcMARK(pr->runstack_saved);
@@ -1164,7 +1164,7 @@ int process_val_FIXUP(void *p) {
 
   {
     Scheme_Object **rs = pr->runstack_start;
-    gcFIXUP(pr->runstack_start);
+    gcFIXUP_TYPED_NOW(Scheme_Object **, pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcFIXUP(pr->runstack_saved);
@@ -1527,7 +1527,7 @@ int mark_saved_stack_MARK(void *p) {
   Scheme_Object **old = saved->runstack_start;
   
   gcMARK(saved->prev);
-  gcMARK(saved->runstack_start);
+  gcMARK( saved->runstack_start);
   saved->runstack = saved->runstack_start + (saved->runstack - old);
 
   return
@@ -1539,7 +1539,7 @@ int mark_saved_stack_FIXUP(void *p) {
   Scheme_Object **old = saved->runstack_start;
   
   gcFIXUP(saved->prev);
-  gcFIXUP(saved->runstack_start);
+  gcFIXUP_TYPED_NOW(Scheme_Object **, saved->runstack_start);
   saved->runstack = saved->runstack_start + (saved->runstack - old);
 
   return
@@ -1742,7 +1742,7 @@ int mark_object_val_MARK(void *p) {
   
   int i;
   
-  gcMARK(obj->o.sclass);
+  gcMARK( obj->o.sclass);
   sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
   
   for (i = sclass->num_slots; i--; ) {
@@ -1760,7 +1760,7 @@ int mark_object_val_FIXUP(void *p) {
   
   int i;
   
-  gcFIXUP(obj->o.sclass);
+  gcFIXUP_TYPED_NOW(Scheme_Object *, obj->o.sclass);
   sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
   
   for (i = sclass->num_slots; i--; ) {
@@ -3030,7 +3030,7 @@ int mark_struct_val_MARK(void *p) {
 
   int i;
 
-  gcMARK(s->stype);
+  gcMARK( s->stype);
   stype = s->stype; /* In case we just moved it */
 
   for(i = stype->num_slots; i--; )
@@ -3047,7 +3047,7 @@ int mark_struct_val_FIXUP(void *p) {
 
   int i;
 
-  gcFIXUP(s->stype);
+  gcFIXUP_TYPED_NOW(Scheme_Struct_Type *, s->stype);
   stype = s->stype; /* In case we just moved it */
 
   for(i = stype->num_slots; i--; )

@@ -989,7 +989,7 @@ char *strip_trailing_spaces(const char *s, int len)
   return (char *)s;
 }
 
-/* Watch out for special device names: */
+/* Watch out for special device names. Could we do better than hardwiring this list? */
 static unsigned char *special_filenames[] = { "NUL", "CON", "PRN", "AUX", "CLOCK$",
 					      "COM1", "COM2", "COM3", "COM4", "COM5", 
 					      "COM6", "COM7", "COM8", "COM9",
@@ -1021,7 +1021,7 @@ static int is_special_filename(const char *_f, int not_nul)
       if (toupper(f[delta + j]) != sf[j])
 	break;
     }
-    if (!sf[j]) {
+    if (j && !sf[j]) {
       j += delta;
       f = strip_trailing_spaces(f, -1);
 

@@ -544,7 +544,7 @@ void GC_add_roots(void *start, void *end)
   nothing_new = 0;
 }
 
-void GC_register_thread(void *p)
+void GC_register_thread(void *p, void *c)
 {
 }
 

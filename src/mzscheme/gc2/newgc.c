@@ -296,7 +296,7 @@ static void DUMP_HEAP()
 
 /* owner set functions */
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-inline static int current_owner();
+inline static int current_owner(Scheme_Custodian *);
 inline static void account_memory(int, int);
 #endif
 #if defined(NEWGC_PRECISE_ACCOUNT)
@@ -572,10 +572,9 @@ inline static int lookup_cache_result(int set1, int set2)
 }
 #endif
 
-inline static int current_owner()
+inline static int current_owner(Scheme_Custodian *c)
 {
   static int has_gotten_root_custodian = 0;
-  Scheme_Custodian *c;
 
   if(!owner_table) {
     owner_table =malloc(OWNER_TABLE_GROW_AMT*sizeof(struct owner_table_entry*));
@@ -588,7 +587,8 @@ inline static int current_owner()
   if(!scheme_current_thread || !scheme_current_thread->config)
     return 0;
 
-  c = (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+  if(!c)
+    c = (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
   if(!has_gotten_root_custodian) {
     has_gotten_root_custodian = 1;
     owner_table[0]->originator = c;
@@ -957,7 +957,7 @@ inline static int get_current_manual_owner(void)
 /*****************************************************************************/
 
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-# define ROOTS_BASE owner_table[current_owner()]->roots
+# define ROOTS_BASE owner_table[current_owner(NULL)]->roots
 #else 
 # define ROOTS_BASE roots
 #endif
@@ -1237,7 +1237,7 @@ inline static void repair_thread_list(void)
 }
 #endif
 
-void GC_register_thread(void *t) 
+void GC_register_thread(void *t, void *c) 
 {
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
   struct thread *work;
@@ -1245,10 +1245,10 @@ void GC_register_thread(void *t)
   /* see if this is an owner reset */
   for(work = threads; work; work = work->next)
     if(work->thread == t) 
-      { work->owner = current_owner(); return; }
+      { work->owner = current_owner((Scheme_Custodian *)c); return; }
   /* nope. add the new thread */
   work = (struct thread *)malloc(sizeof(struct thread));
-  work->owner = current_owner(); work->thread = t; work->next = threads;
+  work->owner = current_owner((Scheme_Custodian *)c); work->thread = t; work->next = threads;
   work->prev = NULL;
   if(threads) threads->prev = work;
   threads = work;
@@ -1437,7 +1437,7 @@ inline static void reset_nursery(void)
 /*****************************************************************************/
 
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-# define FINALIZER_BASE owner_table[current_owner()]->finalizers
+# define FINALIZER_BASE owner_table[current_owner(NULL)]->finalizers
 inline static int check_preexisting_finalizers(void *p, 
 					       GC_finalization_proc f, void *data,
 					       int level, 
@@ -1759,7 +1759,7 @@ static int repair_weak_array(void *p)
 /*****************************************************************************/
 
 #if defined(NEWGC_PRECISE_ACCOUNT) || defined(NEWGC_BTC_ACCOUNT)
-# define IMMOBILES_BASE owner_table[current_owner()]->immobile_boxes
+# define IMMOBILES_BASE owner_table[current_owner(NULL)]->immobile_boxes
 #else
 # define IMMOBILES_BASE immobile_boxes
 #endif
@@ -2398,7 +2398,7 @@ inline static void mark_all_roots(void)
       mark_roots(owner_table[i]->roots);
       mark_immobiles(owner_table[i]->immobile_boxes);
     }
-  current_mark_owner = current_owner();
+  current_mark_owner = current_owner(NULL);
   GC_mark_variable_stack(GC_variable_stack, 0,
 			 (void*)(GC_get_thread_stack_base
 				 ? GC_get_thread_stack_base()
@@ -2440,7 +2440,7 @@ inline static void repair_all_roots(void)
 #if defined(NEWGC_BTC_ACCOUNT)
 inline static void mark_all_roots(void)
 {
-  Scheme_Custodian *cur = owner_table[current_owner()]->originator;
+  Scheme_Custodian *cur = owner_table[current_owner(NULL)]->originator;
   Scheme_Custodian_Reference *box = cur->global_next;
   int i, j;
 
@@ -2472,7 +2472,7 @@ inline static void mark_all_roots(void)
       mark_finalizers(owner_table[owner]->finalizers, 0);
     mark_roots(owner_table[owner]->roots);
     mark_immobiles(owner_table[owner]->immobile_boxes);
-    if(owner == current_owner())
+    if(owner == current_owner(NULL))
       GC_mark_variable_stack(GC_variable_stack, 0,
 			     (void*)(GC_get_thread_stack_base
 				     ? GC_get_thread_stack_base()
@@ -2489,7 +2489,7 @@ inline static void mark_all_roots(void)
 
 inline static void CHECK_FINALIZERS(int level)
 {
-  Scheme_Custodian *cur = owner_table[current_owner()]->originator;
+  Scheme_Custodian *cur = owner_table[current_owner(NULL)]->originator;
   Scheme_Custodian_Reference *box = cur->global_next;
 
   /* push through to the end of this list */

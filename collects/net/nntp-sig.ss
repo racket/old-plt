@@ -7,7 +7,7 @@
   (define-signature net:nntp^
     ((struct communicator (sender receiver server port))
      connect-to-server connect-to-server* disconnect-from-server
-     open-news-group
+     authenticate-user open-news-group
      head-of-message body-of-message
      newnews-since generic-message-command
      make-desired-header extract-desired-headers
@@ -20,6 +20,7 @@
      (struct non-existent-group (group))
      (struct article-not-in-group (article))
      (struct no-group-selected ())
-     (struct article-not-found (article)))))
+     (struct article-not-found (article))
+     (struct authentication-rejected ()))))
 
 

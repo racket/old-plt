@@ -932,7 +932,7 @@
      (lambda (level)
        (case level
          ((beginner) '(public final))
-         ((intermediate) '(private))
+         ((intermediate) '(public))
          ((advanced) '(public protected private static))
          ((full) `(public protected private static final transient volatile))))
      (lambda (x) 'invalid-field)))  

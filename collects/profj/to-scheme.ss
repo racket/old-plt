@@ -468,8 +468,8 @@
                                                                    (accesses-package methods) 
                                                                    (accesses-protected methods))
                                                            type-recs))
-               (restricted-methods (make-method-names (append (accesses-package methods)
-                                                              (accesses-protected methods))
+               (restricted-methods (make-method-names ;(append (accesses-package methods)
+                                                              (accesses-protected methods);)
                                                       overridden-methods
                                                       type-recs))
                (static-method-names (make-static-method-names (accesses-static methods) type-recs))
@@ -482,17 +482,17 @@
                                                                          (accesses-package fields)
                                                                          (accesses-protected fields))))
                (provides `(provide ,(build-identifier (class-name))
-                                   ,@restricted-methods
+;                                   ,@restricted-methods
                                    ,@(map build-identifier static-method-names)
                                    ,@(map build-identifier static-field-names)
                                    ,@static-field-setters
                                    ,@field-getters/setters)))
           
           (list `(begin ,provides
-                        ,(create-local-names (append (make-method-names (accesses-private methods)
-                                                                        (get-statics (accesses-private methods))
-                                                                        type-recs)
-                                                     restricted-methods))
+ ;                       ,(create-local-names (append (make-method-names (accesses-private methods)
+ ;                                                                       (get-statics (accesses-private methods))
+ ;                                                                       type-recs)
+ ;                                                    restricted-methods))
                         (define ,class 
                           (,class* ,(translate-id parent parent-src) ,(translate-implements (header-implements header))
                            

@@ -506,6 +506,8 @@
             (method-error (if (memq 'abstract mods) 'abstract 'native)
                           sym-name (id-src name)))
           (begin
+            (when (not body)
+              (method-error 'no-body sym-name (id-src name)))
             (when (and (not (eq? return 'void))
                        (or (not (memq 'abstract mods))
                            (not (memq 'native mods)))
@@ -613,7 +615,8 @@
                                    method))
                           (line2 "Either a ';'should come after the header, or the method should not be abstract"))
                       (format "~a~n~a" line1 line2)))
-                   ((native) (format "native method ~a has an implementation which is not allowed" method)))
+                   ((native) (format "native method ~a has an implementation which is not allowed" method))
+                   ((no-body) (format "method ~a has no implementation and is not abstract" method)))
                  method src))
   
   ;var-init-error: symbol type src -> void

@@ -826,7 +826,8 @@
   (define (parse-ctor-body pre cur-tok getter)
     (case (get-token-name (get-tok cur-tok))
       ((EOF C_BRACE) cur-tok)
-      ((super this) (parse-ctor-call cur-tok (getter) 'start getter))
+      ((super this) 
+       (parse-method-body pre (parse-ctor-call cur-tok (getter) 'start getter) getter))
       (else (parse-method-body pre cur-tok getter))))
   
   ;Intermediate
@@ -1193,9 +1194,9 @@
                 ((o-paren? next-tok) (parse-expression cur-tok next 'class-args-start getter))
                 ((open-separator? next-tok) 
                  (parse-error (format "Expected ( to begin constructor arguments, found ~a" (get-token-name next-tok))
-                              (get-start next-tok) (get-end next-tok)))
+                              (get-start next) (get-end next)))
                 (else (parse-error (format "Expected constructor arguments in parens, found ~a" (output-format next-tok))
-                                   (get-start next-tok) (get-end next-tok))))))
+                                   (get-start next) (get-end next))))))
            ((keyword? tok) (parse-error (format "Expected a class name, reserved word ~a is not a class" kind) start end))
            (else (parse-error (format "Expected a class name, found ~a" out) start end))))
         ((class-args-start)

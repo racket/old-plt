@@ -345,7 +345,7 @@
         (letrec ((string (send str get-mzscheme-string))
                  (find-diff-chars
                   (lambda (i)
-                    (if (>= i (length text))
+                    (if (>= i (length))
                         (error 'comparetostring "Opps, internal error")
                         (if (not (equal? (string-ref text i) (string-ref string i)))
                             (values (char->integer (string-ref text i)) (char->integer (string-ref string i)))

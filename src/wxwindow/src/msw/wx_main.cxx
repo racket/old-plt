@@ -18,6 +18,10 @@
 
 #include "..\..\contrib\gauge\zyzgauge.h"
 
+#if defined(MZ_PRECISE_GC)
+# include "scheme.h"
+#endif
+
 HINSTANCE wxhInstance = 0;
 
 extern wxNonlockingHashTable *wxWinHandleList;
@@ -290,7 +294,7 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
   mzscheme_stack_start = (void *)&mzscheme_stack_start;
 
 #if defined(MZ_PRECISE_GC)
-  stack_start = (void *)&__gc_var_stack__;
+  mzscheme_stack_start = (void *)&__gc_var_stack__;
   GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
 

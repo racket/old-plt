@@ -140,8 +140,12 @@
 	 (map (lambda (f) (build-path "../../mzscheme/gc2/" f))
 	      '("gc2.c"
 		"compact.c"
-		"vm_win.c"))
-	 "/D GC2_AS_EXPORT")
+		"newgc.c"
+		"vm_win.c"
+		"sighand.c"))
+	 (string-append
+	  "/D GC2_AS_EXPORT /D NEWGC_BTC_ACCOUNT "
+	  mz-inc))
 (compile "../../mzscheme/src/mzsj86.c" "xsrc/mzsj86.obj" '() mz-inc)
 
 (define dll "../../../libmzsch3mxxxxxxx.dll")

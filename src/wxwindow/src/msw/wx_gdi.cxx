@@ -1229,10 +1229,16 @@ Bool wxBitmap::Create(int w, int h, int d)
 void *wxBitmap::ChangeToDIBSection(Bool copy_old)
 {
   /* Called only when the bitmap is not selected! */
-  BITMAPINFO bmp = { { sizeof(BITMAPINFOHEADER), width, height, 1, 32 } };
+  BITMAPINFO bmp;
   HBITMAP bm;
   void *pBits;
   
+  bmp.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bmp.bmiHeader.biWidth = width;
+  bmp.bmiHeader.biHeight = height;
+  bmp.bmiHeader.biPlanes = 1;
+  bmp.bmiHeader.biBitCount = 32;
+
   bm = CreateDIBSection(NULL, &bmp, DIB_RGB_COLORS, &pBits, NULL, NULL);
   
   if (bm) {
@@ -1601,3 +1607,61 @@ Bool wxBitmap::SaveFile(char *filename, int typ, int quality, wxColourMap *cmap)
   return FALSE;
 }
 
+/****************************************/
+
+
+Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal)
+{
+  HBITMAP hBitmap;
+  HPALETTE hPalette;
+
+  Bool success;
+
+  success = ReadDIB(filename, &hBitmap, &hPalette);
+
+  if (!success)
+  {
+    DeleteObject(hPalette);
+    return FALSE;
+  }
+
+  if (hPalette)
+  {
+    if (pal)
+    {
+      *pal = new wxColourMap;
+      (*pal)->ms_palette = hPalette;
+    }
+    else
+      DeleteObject(hPalette);
+  }
+  else if (pal)
+    *pal = NULL;
+
+  if (hBitmap)
+  {
+    BITMAP bm;
+    GetObject(hBitmap, sizeof(bm), (LPSTR)&bm);
+
+    bitmap->ms_bitmap = hBitmap;
+    bitmap->SetWidth(bm.bmWidth);
+    bitmap->SetHeight(bm.bmHeight);
+    bitmap->SetDepth(bm.bmPlanes * bm.bmBitsPixel);
+    bitmap->SetOk(TRUE);
+    return TRUE;
+  }
+  else return FALSE;
+}
+
+wxBitmap *wxLoadBitmap(char *filename, wxColourMap **pal)
+{
+  wxBitmap *bitmap;
+  bitmap = new wxBitmap;
+  if (wxLoadIntoBitmap(filename, bitmap, pal))
+    return bitmap;
+  else
+  {
+    delete bitmap;
+    return NULL;
+  }
+}

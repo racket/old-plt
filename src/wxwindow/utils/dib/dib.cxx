@@ -786,59 +786,6 @@ HPALETTE PASCAL NEAR MakeDIBPalette(LPBITMAPINFOHEADER lpInfo)
 	return((HPALETTE)GetStockObject(DEFAULT_PALETTE));
 }
 
-Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal)
-{
-  HBITMAP hBitmap;
-  HPALETTE hPalette;
-
-  Bool success = ReadDIB(filename, &hBitmap, &hPalette);
-
-  if (!success)
-  {
-    DeleteObject(hPalette);
-    return FALSE;
-  }
-
-  if (hPalette)
-  {
-    if (pal)
-    {
-      *pal = new wxColourMap;
-      (*pal)->ms_palette = hPalette;
-    }
-    else
-      DeleteObject(hPalette);
-  }
-  else if (pal)
-    *pal = NULL;
-
-  if (hBitmap)
-  {
-    BITMAP bm;
-    GetObject(hBitmap, sizeof(bm), (LPSTR)&bm);
-
-    bitmap->ms_bitmap = hBitmap;
-    bitmap->SetWidth(bm.bmWidth);
-    bitmap->SetHeight(bm.bmHeight);
-    bitmap->SetDepth(bm.bmPlanes * bm.bmBitsPixel);
-    bitmap->SetOk(TRUE);
-    return TRUE;
-  }
-  else return FALSE;
-}
-
-wxBitmap *wxLoadBitmap(char *filename, wxColourMap **pal)
-{
-  wxBitmap *bitmap = new wxBitmap;
-  if (wxLoadIntoBitmap(filename, bitmap, pal))
-    return bitmap;
-  else
-  {
-    delete bitmap;
-    return NULL;
-  }
-}
-
 //---------------------------------------------------------------------
 //
 // Function:   InitBitmapInfoHeader

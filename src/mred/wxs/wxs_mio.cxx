@@ -519,7 +519,7 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(int n,  Scheme_Obje
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in-base%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in-base%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaStreamInBase CONSTRUCTOR_ARGS(()));
@@ -889,7 +889,7 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(int n,  Scheme_Obj
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out-base%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out-base%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaStreamOutBase CONSTRUCTOR_ARGS(()));
@@ -1033,7 +1033,7 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(int n,  Schem
 
   
   if (n != (POFFSET+1)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in-string-base%", POFFSET+1, POFFSET+1, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in-string-base%", POFFSET+1, POFFSET+1, n, p, 1));
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in editor-stream-in-string-base%"));
 
   x1 = SCHEME_STRTAG_VAL(p[POFFSET+0]);
@@ -1193,7 +1193,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(int n,  Sche
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out-string-base%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out-string-base%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaStreamOutStringBase CONSTRUCTOR_ARGS(()));
@@ -1480,7 +1480,7 @@ static Scheme_Object *os_wxMediaStreamInGET(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m(">> in editor-stream-in% (exact case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m(">> in editor-stream-in% (exact case)", POFFSET+1, POFFSET+1, n, p, 1));
           *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], ">> in editor-stream-in% (exact case)")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, ">> in editor-stream-in% (exact case)"", extracting boxed argument")));
 
     
@@ -1501,7 +1501,7 @@ static Scheme_Object *os_wxMediaStreamInGET(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m(">> in editor-stream-in% (inexact case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m(">> in editor-stream-in% (inexact case)", POFFSET+1, POFFSET+1, n, p, 1));
           *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], ">> in editor-stream-in% (inexact case)")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, ">> in editor-stream-in% (inexact case)"", extracting boxed argument")));
 
     
@@ -1635,7 +1635,7 @@ static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("get in editor-stream-in% (exact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("get in editor-stream-in% (exact number case)", POFFSET+1, POFFSET+1, n, p, 1));
           *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get in editor-stream-in% (exact number case)")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get in editor-stream-in% (exact number case)"", extracting boxed argument")));
 
     
@@ -1656,7 +1656,7 @@ static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("get in editor-stream-in% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("get in editor-stream-in% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 1));
           *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get in editor-stream-in% (inexact number case)")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in editor-stream-in% (inexact number case)"", extracting boxed argument")));
 
     
@@ -1686,7 +1686,7 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(int n,  Scheme_Object *
 
   
   if (n != (POFFSET+1)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in%", POFFSET+1, POFFSET+1, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-in%", POFFSET+1, POFFSET+1, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamInBase(p[POFFSET+0], "initialization in editor-stream-in%", 0));
 
   
@@ -1907,7 +1907,7 @@ static Scheme_Object *os_wxMediaStreamOutPUT(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (string case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (string case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "<< in editor-stream-out% (string case)"));
 
     
@@ -1924,7 +1924,7 @@ static Scheme_Object *os_wxMediaStreamOutPUT(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "<< in editor-stream-out% (inexact number case)"));
 
     
@@ -1941,7 +1941,7 @@ static Scheme_Object *os_wxMediaStreamOutPUT(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (exact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("<< in editor-stream-out% (exact number case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "<< in editor-stream-out% (exact number case)"));
 
     
@@ -1994,7 +1994,7 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (string without length case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (string without length case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "put in editor-stream-out% (string without length case)"));
 
     
@@ -2013,7 +2013,7 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (length and string case)", POFFSET+2, POFFSET+2, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (length and string case)", POFFSET+2, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "put in editor-stream-out% (length and string case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "put in editor-stream-out% (length and string case)"));
 
@@ -2031,7 +2031,7 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (exact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (exact number case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "put in editor-stream-out% (exact number case)"));
 
     
@@ -2048,7 +2048,7 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (inexact number case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "put in editor-stream-out% (inexact number case)"));
 
     
@@ -2076,7 +2076,7 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(int n,  Scheme_Object 
 
   
   if (n != (POFFSET+1)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out%", POFFSET+1, POFFSET+1, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-stream-out%", POFFSET+1, POFFSET+1, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOutBase(p[POFFSET+0], "initialization in editor-stream-out%", 0));
 
   

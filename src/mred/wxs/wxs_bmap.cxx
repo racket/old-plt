@@ -360,7 +360,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 10000, "initialization in bitmap% (width/height case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (width/height case)"));
     if (n > (POFFSET+2)) {
@@ -388,7 +388,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in bitmap% (datastring case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (datastring case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 1, 10000, "initialization in bitmap% (datastring case)"));
@@ -412,7 +412,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+2, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+2, n, p, 1));
     x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "initialization in bitmap% (pathname case)"));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in bitmap% (pathname case)"));

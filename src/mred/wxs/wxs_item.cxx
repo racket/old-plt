@@ -491,7 +491,7 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("set-label in message% (bitmap label case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-label in message% (bitmap label case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-label in message% (bitmap label case)", 0));
 
     { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
@@ -508,7 +508,7 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("set-label in message% (string label case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-label in message% (string label case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in message% (string label case)"));
 
     
@@ -697,7 +697,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (bitmap label case)", POFFSET+2, POFFSET+6, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (bitmap label case)", POFFSET+2, POFFSET+6, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (bitmap label case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in message% (bitmap label case)", 0));
     if (n > (POFFSET+2)) {
@@ -742,7 +742,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (string label case)", POFFSET+2, POFFSET+6, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (string label case)", POFFSET+2, POFFSET+6, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (string label case)", 0));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in message% (string label case)"));
     if (n > (POFFSET+2)) {

@@ -233,7 +233,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     if ((n < (0+3)) || (n > (0+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("write-resource (string case)", 0+3, 0+4, n, p, 1));
+      WITH_VAR_STACK(scheme_wrong_count_m("write-resource (string case)", 0+3, 0+4, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+0], "write-resource (string case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "write-resource (string case)"));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+2], "write-resource (string case)"));
@@ -261,7 +261,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     if ((n < (0+3)) || (n > (0+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("write-resource (number case)", 0+3, 0+4, n, p, 1));
+      WITH_VAR_STACK(scheme_wrong_count_m("write-resource (number case)", 0+3, 0+4, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+0], "write-resource (number case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "write-resource (number case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0+2], "write-resource (number case)"));
@@ -303,7 +303,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if ((n < (0+3)) || (n > (0+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("get-resource (string case)", 0+3, 0+4, n, p, 1));
+      WITH_VAR_STACK(scheme_wrong_count_m("get-resource (string case)", 0+3, 0+4, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+0], "get-resource (string case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "get-resource (string case)"));
           *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+2], "get-resource (string case)")), (string)WITH_VAR_STACK(objscheme_unbundle_string(sbox_tmp, "get-resource (string case)"", extracting boxed argument")));
@@ -335,7 +335,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if ((n < (0+3)) || (n > (0+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("get-resource (number case)", 0+3, 0+4, n, p, 1));
+      WITH_VAR_STACK(scheme_wrong_count_m("get-resource (number case)", 0+3, 0+4, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+0], "get-resource (number case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "get-resource (number case)"));
           *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+2], "get-resource (number case)")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-resource (number case)"", extracting boxed argument")));

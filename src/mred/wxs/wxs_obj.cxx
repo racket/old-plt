@@ -77,7 +77,7 @@ static Scheme_Object *os_wxObject_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in object%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in object%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxObject CONSTRUCTOR_ARGS(()));

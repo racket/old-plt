@@ -2067,7 +2067,7 @@ static Scheme_Object *os_wxSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnip CONSTRUCTOR_ARGS(()));
@@ -3839,7 +3839,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial string case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial string case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in string-snip% (initial string case)"));
 
     x1 = SCHEME_STRLEN_VAL(p[POFFSET]);
@@ -3859,7 +3859,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial size case)", POFFSET+POFFSET, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial size case)", POFFSET+POFFSET, POFFSET+1, n, p, 1));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "initialization in string-snip% (initial size case)"));
     } else
@@ -5558,7 +5558,7 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-snip%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-snip%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxTabSnip CONSTRUCTOR_ARGS(()));
@@ -7468,7 +7468,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in image-snip% (bitmap case)", 0));
 
     { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
@@ -7492,7 +7492,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p, 1));
     if (n > (POFFSET+0)) {
       x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in image-snip% (filename case)"));
     } else
@@ -9688,7 +9688,7 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n > (POFFSET+14))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-snip%", POFFSET+POFFSET, POFFSET+14, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-snip%", POFFSET+POFFSET, POFFSET+14, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(p[POFFSET+0], "initialization in editor-snip%", 1));
   } else
@@ -10018,7 +10018,7 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(int n,  Scheme_Object
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data-class%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data-class%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxBufferDataClass CONSTRUCTOR_ARGS(()));
@@ -10528,7 +10528,7 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxBufferData CONSTRUCTOR_ARGS(()));

@@ -602,7 +602,7 @@ static Scheme_Object *os_wxRadioBoxEnable(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("enable in radio-box% (single-button case)", POFFSET+2, POFFSET+2, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("enable in radio-box% (single-button case)", POFFSET+2, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "enable in radio-box% (single-button case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "enable in radio-box% (single-button case)"));
 
@@ -619,7 +619,7 @@ static Scheme_Object *os_wxRadioBoxEnable(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("enable in radio-box% (all-buttons case)", POFFSET+1, POFFSET+1, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("enable in radio-box% (all-buttons case)", POFFSET+1, POFFSET+1, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "enable in radio-box% (all-buttons case)"));
 
     
@@ -963,7 +963,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+8)) || (n > (POFFSET+11))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in radio-box% (bitmap list case)", POFFSET+8, POFFSET+11, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in radio-box% (bitmap list case)", POFFSET+8, POFFSET+11, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in radio-box% (bitmap list case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in radio-box% (bitmap list case)"));
@@ -1017,7 +1017,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+11))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in radio-box% (string list case)", POFFSET+3, POFFSET+11, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in radio-box% (string list case)", POFFSET+3, POFFSET+11, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in radio-box% (string list case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in radio-box% (string list case)"));

@@ -181,7 +181,7 @@ static Scheme_Object *os_wxEvent_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n > (POFFSET+1))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in event%", POFFSET+POFFSET, POFFSET+1, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in event%", POFFSET+POFFSET, POFFSET+1, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "initialization in event%"));
   } else
@@ -438,7 +438,7 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(int n,  Scheme_Object *p
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in control-event%", POFFSET+1, POFFSET+2, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in control-event%", POFFSET+1, POFFSET+2, n, p, 1));
   x0 = WITH_VAR_STACK(unbundle_symset_actionType(p[POFFSET+0], "initialization in control-event%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "initialization in control-event%"));
@@ -616,7 +616,7 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in popup-event%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in popup-event%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxPopupEvent CONSTRUCTOR_ARGS(()));
@@ -946,7 +946,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[
 
   
   if ((n > (POFFSET+4))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in scroll-event%", POFFSET+POFFSET, POFFSET+4, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in scroll-event%", POFFSET+POFFSET, POFFSET+4, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(unbundle_symset_scrollMoveType(p[POFFSET+0], "initialization in scroll-event%"));
   } else
@@ -1706,7 +1706,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n > (POFFSET+8))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in key-event%", POFFSET+POFFSET, POFFSET+8, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in key-event%", POFFSET+POFFSET, POFFSET+8, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(unbundle_symset_keyCode(p[POFFSET+0], "initialization in key-event%"));
   } else
@@ -2482,7 +2482,7 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+11))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in mouse-event%", POFFSET+1, POFFSET+11, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in mouse-event%", POFFSET+1, POFFSET+11, n, p, 1));
   x0 = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[POFFSET+0], "initialization in mouse-event%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "initialization in mouse-event%"));

@@ -1105,7 +1105,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-canvas%", POFFSET+1, POFFSET+9, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-canvas%", POFFSET+1, POFFSET+9, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in editor-canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in editor-canvas%"));
@@ -2040,7 +2040,7 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-admin%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-admin%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaAdmin CONSTRUCTOR_ARGS(()));
@@ -3139,7 +3139,7 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip-admin%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip-admin%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnipAdmin CONSTRUCTOR_ARGS(()));
@@ -3561,7 +3561,7 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip-class%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip-class%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnipClass CONSTRUCTOR_ARGS(()));
@@ -4375,7 +4375,7 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in keymap%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in keymap%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxKeymap CONSTRUCTOR_ARGS(()));
@@ -4694,7 +4694,7 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Obje
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-wordbreak-map%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-wordbreak-map%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(()));

@@ -805,7 +805,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (panel parent case)", POFFSET+1, POFFSET+7, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (panel parent case)", POFFSET+1, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in panel% (panel parent case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (panel parent case)"));
@@ -857,7 +857,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (dialog case)", POFFSET+1, POFFSET+7, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (dialog case)", POFFSET+1, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxDialogBox(p[POFFSET+0], "initialization in panel% (dialog case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (dialog case)"));
@@ -909,7 +909,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (frame case)", POFFSET+1, POFFSET+7, n, p, 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in panel% (frame case)", POFFSET+1, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxFrame(p[POFFSET+0], "initialization in panel% (frame case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (frame case)"));
@@ -1687,7 +1687,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+2)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in dialog%", POFFSET+2, POFFSET+9, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in dialog%", POFFSET+2, POFFSET+9, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "initialization in dialog%", 1));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in dialog%"));
   if (n > (POFFSET+2)) {

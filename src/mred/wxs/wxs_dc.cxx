@@ -1759,7 +1759,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap-dc%", POFFSET+0, POFFSET+0, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap-dc%", POFFSET+0, POFFSET+0, n, p, 1));
 
   
   realobj = WITH_VAR_STACK(new os_wxMemoryDC CONSTRUCTOR_ARGS(()));
@@ -1906,7 +1906,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
 
   
   if ((n > (POFFSET+3))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in post-script-dc%", POFFSET+POFFSET, POFFSET+3, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in post-script-dc%", POFFSET+POFFSET, POFFSET+3, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "initialization in post-script-dc%"));
   } else
@@ -2099,7 +2099,7 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[
 
   
   if ((n > (POFFSET+1))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in printer-dc%", POFFSET+POFFSET, POFFSET+1, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in printer-dc%", POFFSET+POFFSET, POFFSET+1, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "initialization in printer-dc%", 1));
   } else

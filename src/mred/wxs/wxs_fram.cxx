@@ -1038,7 +1038,7 @@ static Scheme_Object *os_wxFrame_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+2)) || (n > (POFFSET+8))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in frame%", POFFSET+2, POFFSET+8, n, p, 0));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in frame%", POFFSET+2, POFFSET+8, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxFrame(p[POFFSET+0], "initialization in frame%", 1));
   x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in frame%"));
   if (n > (POFFSET+2)) {

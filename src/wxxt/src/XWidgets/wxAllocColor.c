@@ -101,7 +101,7 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
     return OK;
   }
 
-  /* Do things the difficult way... */
+  /* Not TrueColor. Do things the difficult way... */
 
   /* Check for black: */
   if (!c->red && !c->green && !c->blue) {

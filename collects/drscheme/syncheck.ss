@@ -1,5 +1,30 @@
 #|
 
+Check Syntax separates four classes of identifiers:
+
+  - bound by a macro whose definition is in this file
+     
+     Found in origin fields; identifier-binding
+     returns #f for these
+  
+  - bound by a macro whose definition comes from `require'
+
+     Found in origin fields; identifier-binding
+     identifies the incoming module
+  
+  - regular variable whose definition is in this file
+  
+    variables in fully expanded text where
+    identifier-binding returns #f
+  
+  - regular variable whose definition comes from `require'
+
+    variables in fully expanded text where
+    identifier-binding identifies the input module.
+    
+ In addition, the syntax property 'bound-in-source
+ specifies additional members of the 3rd category.
+  
   TODO:
        
      - write test suite for arrows and menus
@@ -62,12 +87,69 @@
       
             
       ;; all strings naming styles
+<<<<<<< syncheck.ss
+      (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
+      (define constant-style-str (prefix-style/check 'constant))
+
+      (define lexically-bound-variable-style-str (prefix-style/check 'lexically-bound-variable))
+      (define lexically-bound-syntax-style-str (prefix-style/check 'lexically-bound-syntax))
+      (define imported-syntax-style-str (prefix-style/check 'imported-syntax))
+      (define imported-variable-style-str (prefix-style/check 'imported-variable))
+      
+      (let ([set-default
+             (lambda (default)
+               (let* ([sym (car default)]
+                      [code-style (cadr default)]
+                      [color (code-style-color code-style)])
+                 (fw:preferences:set-default
+                  sym
+                  (let ([s (make-object style-delta%)])
+                    (send s set-delta-foreground (if (string? color)
+                                                     color
+                                                     (make-object color%
+                                                       (car color)
+                                                       (cadr color)
+                                                       (caddr color))))
+                    (when (code-style-bold? code-style)
+                      (send s set-delta 'change-bold))
+                    (when (code-style-underline? code-style)
+                      (send s set-delta 'change-underline #t))
+                    (when (code-style-slant? code-style)
+                      (send s set-delta 'change-italic))
+                    s)
+                  (lambda (x)
+                    (is-a? x style-delta%)))))])
+        (for-each set-default prefixed-code-styles))
+      
+      (for-each 
+       (lambda (s) 
+         (fw:preferences:set-un/marshall s marshall-style unmarshall-style))
+       delta-symbols)
+      
+      ; a symbol naming the style  and a delta to set it to
+      (define set-slatex-style
+        (lambda (sym delta)
+          (let* ([style-list (fw:editor:get-standard-style-list)]
+                 [name (symbol->string sym)]
+                 [style (send style-list find-named-style name)])
+            (if style
+                (send style set-delta delta)
+                (send style-list new-named-style name
+                      (send style-list find-or-create-style
+                            (send style-list find-named-style "Standard")
+                            delta))))))
+      
+      (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
+
+#|
+Scott's addition:
       (define keyword-style-str (prefix-style 'keyword))
       (define unbound-variable-style-str (prefix-style 'unbound-variable))
       (define bound-variable-style-str (prefix-style 'bound-variable))
       (define constant-style-str (prefix-style 'constant))
       (define string-style-str (prefix-style 'string))
       (define base-style-str (prefix-style 'base))
+|#
       
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
@@ -1015,11 +1097,15 @@
                       (clear-annotations)
                       (reset-offer-kill)
                       (send definitions-text syncheck:init-arrows)
+
+		      ;; use the base colors only when the online color
+		      ;; is disabled (do I really want this?)
                       (unless (send definitions-text coloring-active?)
                         (color-range definitions-text
                                      0
                                      (send definitions-text last-position)
                                      base-style-str))
+
                       (drscheme:eval:expand-program
                        (drscheme:language:make-text/pos definitions-text
                                                         0
@@ -1358,7 +1444,7 @@
                       (let ([req/tag (car req/tag/f)])
                         (set-req/tag-used?! req/tag #t)
                         (when (syntax-original? varref)
-                          (color varref bound-variable-style-str)
+                          (color varref imported-variable-style-str) ;; what about imported syntax?
                           (when (syntax-original? (req/tag-req-stx req/tag))
                             (connect-syntaxes (req/tag-req-stx req/tag) varref)
                             (add-jump-to-definition 
@@ -1386,8 +1472,6 @@
                    mod-path))))
       
       ;; annotate-variables : namespace (listof syntax) (listof syntax) (listof syntax) (listof syntax) -> void
-      ;; colors the variables, free are turned unbound color, bound are turned
-      ;; bound color and all binders are turned bound color.
       ;; vars-ht maps from the name of an identifier to all of the ids that
       ;;         have that name. Filter the result for
       ;;         access to variables that are all module-identifier=?
@@ -1400,7 +1484,6 @@
           (for-each (add-var vars-ht) tops)
           (for-each (add-var vars-ht) binders)
           (for-each (add-var binders-ht) binders)
-
 
           (for-each (annotate-binder vars-ht) binders)
           (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #f)
@@ -1450,8 +1533,8 @@
                   binders)
                  (color varref
                         (if keyword?
-                            keyword-style-str
-                            bound-variable-style-str))])))))
+                            lexically-bound-styntax-style-str
+                            lexically-bound-variable-style-str))])))))
       
       ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
       (define (handle-no-binders/top user-namespace)
@@ -1459,8 +1542,9 @@
           (let ([defined-in-user-namespace?
                  (parameterize ([current-namespace user-namespace])
                    (namespace-variable-value (syntax-e varref) #t (lambda () #f)))])
+            ;; namespace-variable-value doesn't tell enough.
             (if defined-in-user-namespace?
-                (color varref bound-variable-style-str)
+                (color varref lexically-bound-varible-style-str)
                 (color varref unbound-variable-style-str)))))
       
       ;; handle-no-binders/lexical : boolean -> syntax[original] -> void
@@ -1471,7 +1555,9 @@
               [(not binding)
                (color varref unbound-variable-style-str)]
               [(pair? binding)
-               (color varref (if keyword? keyword-style-str bound-variable-style-str))]
+               (color varref (if keyword? 
+                                 keyword-style-str
+                                 bound-variable-style-str))]
               [else (void)]))))
       
       ;; connect-syntaxes : syntax[original] syntax[original] -> void
@@ -1670,11 +1756,13 @@
                 [(quote datum)
                  (begin 
                    (annotate-raw-keyword sexp)
-                   (color-internal-structure (syntax datum) constant-style-str))]
+                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   )]
                 [(quote-syntax datum)
                  (begin 
                    (annotate-raw-keyword sexp)
-                   (color-internal-structure (syntax datum) constant-style-str))]
+                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   )]
                 [(with-continuation-mark a b c)
                  (begin
                    (annotate-raw-keyword sexp)
@@ -1687,7 +1775,9 @@
                    (annotate-raw-keyword sexp)
                    (for-each loop (syntax->list (syntax (pieces ...)))))]
                 [(#%datum . datum)
-                 (color-internal-structure (syntax datum) constant-style-str)]
+                 ;(color-internal-structure (syntax datum) constant-style-str)
+                 (void)
+                 ]
                 [(#%top . var)
                  (begin
                    (set! tops (cons (syntax var) tops)))]
@@ -1777,10 +1867,6 @@
            tail-ht
            orig-stx
            (lambda () null)))))
-      
-      ;; paren? : character -> boolean
-      (define (paren? char)
-        (memq char '(#\( #\[ #\{ #\} #\] #\))))
       
       ;; annotate-bound-in-sources : (listof (cons syntax[orig] syntax[orig])) -> void
       ;; adds arrows and colors between pairs found in the 'bound-in-source syntax property.

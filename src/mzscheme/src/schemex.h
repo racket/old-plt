@@ -436,6 +436,8 @@ Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
 					   int argc,
 					   Scheme_Object **argv);
 int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
+Scheme_Object *(*scheme_struct_ref)(Scheme_Object *s, int pos);
+void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
 #ifndef NO_OBJECT_SYSTEM
 /* Objects */
 int (*scheme_is_subclass)(Scheme_Object *sub, Scheme_Object *parent);

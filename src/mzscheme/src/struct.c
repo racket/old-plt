@@ -278,11 +278,26 @@ static void wrong_struct_type(Scheme_Object *name,
 
 int scheme_is_struct_instance(Scheme_Object *type, Scheme_Object *v)
 {
-  Scheme_Struct_Type *stype =  (Scheme_Struct_Type *)type;
+  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)type;
   Scheme_Structure *s = (Scheme_Structure *)v;
 
   return STRUCT_TYPEP(stype, s);
 }
+
+Scheme_Object *scheme_struct_ref(Scheme_Object *sv, int pos)
+{
+  Scheme_Structure *s = (Scheme_Structure *)sv;
+  
+  return s->slots[pos];
+}
+
+void scheme_struct_set(Scheme_Object *sv, int pos, Scheme_Object *v)
+{
+  Scheme_Structure *s = (Scheme_Structure *)sv;  
+ 
+  s->slots[pos] = v;
+}
+
 
 Scheme_Object *
 scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **args)

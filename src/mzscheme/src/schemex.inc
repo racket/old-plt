@@ -303,6 +303,8 @@
   scheme_extension_table->scheme_make_struct_type = scheme_make_struct_type;
   scheme_extension_table->scheme_make_struct_instance = scheme_make_struct_instance;
   scheme_extension_table->scheme_is_struct_instance = scheme_is_struct_instance;
+  scheme_extension_table->scheme_struct_ref = scheme_struct_ref;
+  scheme_extension_table->scheme_struct_set = scheme_struct_set;
 #ifndef NO_OBJECT_SYSTEM
   scheme_extension_table->scheme_is_subclass = scheme_is_subclass;
   scheme_extension_table->scheme_is_implementation = scheme_is_implementation;

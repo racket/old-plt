@@ -188,8 +188,19 @@ int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
 
   a = SCHEME_BIGDIG(o);
 
-  if (a[1] > 0x1)
+  if (a[1] > 0x1) {
+    if (!SCHEME_BIGPOS(o)) {
+      if ((a[1] == 0x2) && !a[0]) {
+	/* Special case: the one negative number whose negation
+	   doesn't fit in a long: */
+	unsigned long m;
+	m = 0x2 << LOG_BIG_RADIX;
+	*v = m;
+	return 1;
+      }
+    }
     return 0;
+  }
 
   n = (a[1] << LOG_BIG_RADIX) | a[0];
   if (!SCHEME_BIGPOS(o))

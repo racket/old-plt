@@ -1165,6 +1165,7 @@ mark_print_params {
   PrintParams *pp = (PrintParams *)p;
   gcMARK(pp->inspector);
   gcMARK(pp->print_port);
+  gcMARK(pp->print_buffer);
  size:
   gcBYTES_TO_WORDS(sizeof(PrintParams));
 }

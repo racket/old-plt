@@ -2927,6 +2927,7 @@ int mark_print_params_MARK(void *p) {
   PrintParams *pp = (PrintParams *)p;
   gcMARK(pp->inspector);
   gcMARK(pp->print_port);
+  gcMARK(pp->print_buffer);
   return
   gcBYTES_TO_WORDS(sizeof(PrintParams));
 }
@@ -2935,6 +2936,7 @@ int mark_print_params_FIXUP(void *p) {
   PrintParams *pp = (PrintParams *)p;
   gcFIXUP(pp->inspector);
   gcFIXUP(pp->print_port);
+  gcFIXUP(pp->print_buffer);
   return
   gcBYTES_TO_WORDS(sizeof(PrintParams));
 }

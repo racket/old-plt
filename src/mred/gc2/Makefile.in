@@ -1301,6 +1301,7 @@ MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/thread.o \
 	../../mzscheme/gc2/type.o \
 	../../mzscheme/gc2/vector.o \
+	../../mzscheme/gc2/foreign.o \
 	../../mzscheme/gc2/gc2.o
 
 wx_xt_PLAIN_OBJS = \
@@ -1368,8 +1369,10 @@ wx_mac_LIBS = -framework Carbon -framework QuickTime -framework AGL -framework O
 
 MREDLINKER = @MREDLINKER@
 
-../mred3m@NOT_OSX@: $(XOBJS) mrmain.o $(MZOBJS) $(@WXVARIANT@_PLAIN_OBJS) ../../mzscheme/src/gmp.o
-	$(MREDLINKER) $(MREDLDFLAGS) -o ../mred3m mrmain.o $(XOBJS) $(MZOBJS) $(@WXVARIANT@_PLAIN_OBJS) ../../mzscheme/src/gmp.o $(@WXVARIANT@_LIBS)
+EXTRA_MZ_OBJS = ../../mzscheme/src/gmp.o ../../foreign/unpack/*.o
+
+../mred3m@NOT_OSX@: $(XOBJS) mrmain.o $(MZOBJS) $(@WXVARIANT@_PLAIN_OBJS) $(EXTRA_MZ_OBJS)
+	$(MREDLINKER) $(MREDLDFLAGS) -o ../mred3m mrmain.o $(XOBJS) $(MZOBJS) $(@WXVARIANT@_PLAIN_OBJS) $(EXTRA_MZ_OBJS) $(@WXVARIANT@_LIBS)
 
 @INCLUDEDEP@ @srcdir@/../../mac/version.mak
 

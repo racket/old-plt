@@ -584,10 +584,13 @@ please adhere to these guidelines:
  (keybindings-sort-by-name "Sort by Name")
  (keybindings-sort-by-key "Sort by Key")
 
+ ;; menu items in the "special" menu
  (insert-text-box-item "Insert Text Box")
  (insert-pb-box-item "Insert Pasteboard Box")
  (insert-image-item "Insert Image...")
  (insert-comment-box-menu-item-label "Insert Comment Box")
+ (insert-lambda "Insert &Lambda")
+
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Windows")

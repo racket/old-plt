@@ -32,7 +32,8 @@
 	      (for-each
 	       (lambda (dll) 
 		 (system
-		  (format "~a\\REGSVR32 /s compiled\\native\\~a" winsys-dir dll)))
+		  (format "~a\\REGSVR32 /c ~a\\compiled\\native\\~a" 
+			  winsys-dir (current-directory) dll)))
 	       '(myspage.dll myssink.dll))
 	      (fprintf (current-error-port) 
 		       "Warning: Can't run REGSVR32 on libraries~n"))))]

@@ -514,6 +514,7 @@
  (recover-autosave-files-frame-title "Recover Autosaved Files")
  (autosave-details "Details")
  (autosave-recover "Recover")
+ (autosave-unknown-filename "<<unknown>>")
  
  ;;; file modified warning
  (file-has-been-modified

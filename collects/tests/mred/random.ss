@@ -283,10 +283,7 @@
   post-script-dc%
 
   printer-dc%
-  meta-file-dc%
   
-  meta-file<%>
-
   (menu-item-container<%> menu% menu-bar% popup-menu%)
 
   menu%
@@ -697,10 +694,7 @@
 (send post-script-dc%-example-list add (make-object post-script-dc% #f))
 
 (with-handlers ([void void])
-  (send printer-dc%-example-list add (make-object printer-dc%))
-  (let ([mfdc (make-object meta-file-dc%)])
-    (send meta-file-dc%-example-list add mfdc)
-    (send meta-file%-example-list add (send mfdc close))))
+  (send printer-dc%-example-list add (make-object printer-dc%)))
 
 (define mb (make-object menu-bar% f))
 (send menu-bar%-example-list add mb)

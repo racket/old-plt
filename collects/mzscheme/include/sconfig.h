@@ -76,7 +76,6 @@
 /* Solaris */
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-solaris"
 #  define DIRENT_NO_NAMLEN
-#  define RAND_NOT_RANDOM
 #  define NO_USLEEP
 #  define USE_ULIMIT
 #  define USE_FCNTL_O_NONBLOCK
@@ -253,7 +252,6 @@ int scheme_solaris_semaphore_try_down(void *);
 # define DIRENT_NO_NAMLEN
 
 # define BSTRING_INCLUDE
-# define RAND_NOT_RANDOM
 
 # define POW_HANDLES_INF_CORRECTLY
 
@@ -329,8 +327,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 # define STACK_GROWS_DOWN
 
-# define RAND_NOT_RANDOM
-
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
 
@@ -347,8 +343,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # include "uconfig.h"
 
 # define STACK_GROWS_DOWN
-
-# define RAND_NOT_RANDOM
 
 # define SIXTY_FOUR_BIT_INTEGERS
 
@@ -476,7 +470,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # endif
 
 # define IO_INCLUDE
-# define RAND_NOT_RANDOM
 # define NO_SLEEP
 # define DONT_IGNORE_PIPE_SIGNAL
 
@@ -599,7 +592,6 @@ int scheme_win32_semaphore_try_down(void *);
 # define DIR_FUNCTION
 # define TIME_TYPE_IS_UNSIGNED
 
-# define RAND_NOT_RANDOM
 # define NO_SYS_INCLUDE_SUBDIR
 # define NO_USLEEP
 # define UNISTD_INCLUDE
@@ -648,7 +640,6 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define DIR_INCLUDE
 # define IO_INCLUDE
-# define RAND_NOT_RANDOM
 # define NO_SLEEP
 # define DONT_IGNORE_PIPE_SIGNAL
 
@@ -1026,12 +1017,8 @@ int scheme_win32_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
-#define RAND_NOT_RANDOM
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
-
- /* RAND_NOT_RANDOM uses the function rand() instead of random()
-     for random numbers. Some systems don't have random(). */
 
  /* NO_USER_BREAK_HANDLER turns off handling of INT signal in main.c */
 

@@ -81,10 +81,10 @@ enum {
   scheme_will_executor_type,
   scheme_interface_type,
   scheme_manager_type,
+  scheme_random_state_type, /* 70 */
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_1_type, /* 70 */
   scheme_reserved_2_type,
   scheme_reserved_3_type,
 

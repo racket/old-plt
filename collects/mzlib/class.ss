@@ -682,6 +682,8 @@
 			struct:object  ; structure type for instances
 			object?        ; predicate
 			make-object    ; constructor
+			field-ref      ; accessor
+			field-set!     ; mutator
 
 			init-args      ; list of symbols in order; #f => only by position
 
@@ -724,7 +726,7 @@
 	  [no-new-methods? (null? public-names)]
 	  [no-method-changes? (and (null? public-names)
 				   (null? override-names))]
-	  [no-new-fields? (zero? num-fields)]
+	  [no-new-fields? (null? public-field-names)]
 	  [xappend (lambda (a b) (if (null? b) a (append a b)))])
 
       ;; -- Check interfaces ---
@@ -759,7 +761,7 @@
 	      (hash-table-put! field-ht (car ids) (hash-table-get super-field-ht (car ids)))
 	      (loop (cdr ids)))))
 
-	;; Put new ids in table, with pos (replace field pos with accessor later)
+	;; Put new ids in table, with pos (replace field pos with accessor info later)
 	(unless no-new-methods?
 	  (let loop ([ids public-names][p (class-method-width super)])
 	    (unless (null? ids)
@@ -850,7 +852,7 @@
 				  method-width method-ht method-names
 				  methods prim-flags
 				  field-width field-ht field-names
-				  'struct:object 'object? 'make-object
+				  'struct:object 'object? 'make-object 'field-ref 'field-set!
 				  init-args
 				  'init
 				  (and make-struct:prim #t))]
@@ -903,6 +905,8 @@
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
 		(set-class-make-object! c tagged-object-make)
+		(set-class-field-ref! c object-field-ref)
+		(set-class-field-set!! c object-field-set!)
 
 		;; --- Build field accessors and mutators ---
 		;;  Use public field names to name the accessors and mutators
@@ -930,12 +934,12 @@
 				  (values
 				   (mk make-struct-field-accessor object-field-ref)
 				   (mk make-struct-field-mutator object-field-set!))))])
-		  ;; -- Reset field table to register accessors and mutators --
+		  ;; -- Reset field table to register accessor and mutator info --
 		  ;;  There are more accessors and mutators than public fields...
-		  (let loop ([ids public-field-names][accessors accessors][mutators mutators])
+		  (let loop ([ids public-field-names][pos 0])
 		    (unless (null? ids)
-		      (hash-table-put! field-ht (car ids) (cons (car accessors) (car mutators)))
-		      (loop (cdr ids) (cdr accessors) (cdr mutators))))
+		      (hash-table-put! field-ht (car ids) (cons c pos))
+		      (loop (cdr ids) (add1 pos))))
 
 		  ;; -- Extract superclass methods ---
 		  (let ([renames (map (lambda (index)
@@ -1101,6 +1105,7 @@
 			      0 (make-hash-table) null
 			      
 			      'struct:object object? 'make-object
+			      'field-ref-not-needed 'field-set!-not-needed
 
 			      null
 
@@ -1285,22 +1290,27 @@
 		     (for-class (class-name c))))))
 
 
-  (define (class-field-X who which class name)
+  (define (class-field-X who which cwhich class name)
     (unless (class? class)
       (raise-type-error who "class" class))
     (unless (symbol? name)
       (raise-type-error who "symbol" name))
-    (which (hash-table-get (class-field-ht class) name
-			   (lambda ()
-			     (obj-error who "no such field: ~a~a"
-					name
-					(for-class (class-name class)))))))
+    (let ([p (hash-table-get (class-field-ht class) name
+			     (lambda ()
+			       (obj-error who "no such field: ~a~a"
+					  name
+					  (for-class (class-name class)))))])
+      (which (cwhich (car p)) (cdr p))))
   
   (define (make-class-field-accessor class name)
-    (class-field-X 'make-class-field-accessor car class name))
+    (class-field-X 'make-class-field-accessor
+		   make-struct-field-accessor class-field-ref
+		   class name))
   
   (define (make-class-field-mutator class name)
-    (class-field-X 'make-class-field-mutator cdr class name))
+    (class-field-X 'make-class-field-mutator 
+		   make-struct-field-mutator class-field-set!
+		   class name))
 
 
   (define-struct generic (applicable))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.7 1997/07/30 20:50:50 krentel Exp $
+;; $Id: stprims.ss,v 1.8 1997/08/08 20:38:06 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -8,8 +8,9 @@
 (unit/sig mred:test:primitives^
   
   (import 
-    [wx : mred:wx^]
-    [mred : mred:testable-window^]
+    [wx        : mred:wx^]
+    [mred      : mred:testable-window^]
+    [mred      : mred:keymap^]
     [mred:test : mred:test:struct^]
     [mred:test : mred:test:globals^]
     [mred:test : mred:test:run^])
@@ -17,6 +18,8 @@
   (define arg-error error)
   (define run-error error)
   
+  (define time-stamp current-milliseconds)
+    
   ;;
   ;; Do one action now in default thread style.
   ;;
@@ -39,7 +42,32 @@
 	    l
 	    (loop (send w get-parent) (cons w l))))))
   
+  ;;
+  ;; Returns #t if window is in active-frame, else #f.
+  ;; get-parent returns () for no parent.
+  ;;
   
+  (define in-active-frame?
+    (lambda (window)
+      (let ([frame  (mred:test:get-active-frame)])
+	(let loop ([window  window])
+	  (cond [(null? window)      #f]
+		[(eq? window frame)  #t]
+		[else  (loop (send window get-parent))])))))
+  
+  ;;
+  ;; Verify modifier list.
+  ;; l, valid : lists of symbols.
+  ;; returns first item in l *not* in valid, or else #f.
+  ;;
+  
+  (define verify-list
+    (lambda (l  valid)
+      (cond [(null? l)  #f]
+	    [(member (car l) valid)  (verify-list (cdr l) valid)]
+	    [else  (car l)])))
+    
+    
   ;;
   ;; BUTTONS are pushed by
   ;; (send <button> command <wx:command-event>)
@@ -71,50 +99,107 @@
   ;; Give ancestors (from root down) option of handling key event
   ;; with pre-on-char.  If none want it, then send to focused window
   ;; with (send <window> on-char <wx:key-event>).
-  ;; key: char or integer
   ;;
-  ;; MAYBE WANT TO CHECK WINDOW IS IN ACTIVE FRAME.
-  ;; NEED TO ADD MODIFIER KEYS: CONTROL, META, ALT, SHIFT.
+  ;; key: char or integer.
+  ;; optional modifiers: 'alt, 'control, 'meta, 'shift, 
+  ;;   'noalt, 'nocontrol, 'nometa, 'noshift.
   ;;
+  ;; Keystrokes apply to window with keyboard focus (testable classes).
+  ;; Window must be shown, in active frame, and either the window has
+  ;; on-char, or else some ancestor must grab key with pre-on-char.
+  ;;
+  
+  (define key-tag 'mred:test:keystroke)
+  (define legal-keystroke-modifiers
+    (list 'alt 'control 'meta 'shift 'noalt 'nocontrol 'nometa 'noshift))
   
   (define keystroke
-    (let ([tag  'mred:test:keystroke])
-      (lambda (key)
-	(cond
-	  [(not (or (char? key) (integer? key)))
-	   (arg-error tag "key not char or integer")]
-	  [else
-	   (mred:test:make-event
-	    (lambda ()
-	      (let
-		  ([window  (mred:test:get-focused-window)]
-		   [event   (make-key-event key)])
-		(cond
-		  [(not window)
-		   (run-error tag "no focused window")]
-		  [(not (ivar-in-class? 'on-char (object-class window)))
-		   (run-error tag "focused window does not have on-char")]
-		  [(not (send window is-shown?))
-		   (run-error tag "focused window is not shown")]
-		  [else
-		   (send-key-event window event)
-		   (void)]))))]))))
-
-  (define make-key-event
-    (lambda (key)
-      (let ([event  (make-object wx:key-event% wx:const-event-type-char)]
-	    [num    (if (integer? key) key (char->integer key))])
-	(send event set-key-code num)
-	event)))
+    (lambda (key . modifier-list)
+      (cond
+	[(not (or (char? key) (integer? key)))
+	 (arg-error key-tag "key must be char or integer, given: ~s" key)]
+	[(verify-list  modifier-list  legal-keystroke-modifiers)
+	 => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
+	[else
+	 (mred:test:make-event
+	  (lambda ()
+	    (let*
+		([window  (mred:test:get-focused-window)]
+		 [event   (make-key-event key window modifier-list)])
+	      (cond
+		[(not window)
+		 (run-error key-tag "no focused window")]
+		[(not (send window is-shown?))
+		 (run-error key-tag "focused window is not shown")]
+		[(not (in-active-frame? window))
+		 (run-error key-tag "focused window is not in active frame")]
+		[else
+		 (send-key-event window event)
+		 (void)]))))])))
   
+  ;; delay test for on-char until all ancestors decline pre-on-char.
+
   (define send-key-event
     (lambda (window event)
       (let loop ([l  (ancestor-list window)])
-	(cond
-	  [(null? l)  (send window on-char event)]
-	  [(send (car l) pre-on-char window event)  #f]
-	  [else  (loop (cdr l))]))))
- 
+	(cond [(null? l) 
+	       (if (ivar-in-class? 'on-char (object-class window))
+		   (send window on-char event)
+		   (run-error key-tag "focused window does not have on-char"))]
+	      [(send (car l) pre-on-char window event)  #f]
+	      [else  (loop (cdr l))]))))
+  
+  ;; Make full wx:key-event% object.
+  ;; Shift is determined implicitly from key-code.
+  ;; Alt, Meta, Control come from modifier-list.
+  ;; get-alt-down, etc are #f unless explicitly set to #t.
+  ;; WILL WANT TO ADD SET-POSITION WHEN THAT GETS IMPLEMENTED.
+  
+  (define make-key-event
+    (lambda (key window modifier-list)
+      (let ([event  (make-object wx:key-event% wx:const-event-type-char)]
+	    [int    (if (integer? key) key (char->integer key))])
+	(send event set-key-code int)
+	(send event set-event-object window)
+	(send event set-time-stamp (time-stamp))
+	(set-key-modifiers event int modifier-list)
+	event)))
+  
+  (define set-key-modifiers
+    (lambda (event int modifier-list)
+      (when (shifted? int) (send event set-shift-down #t))
+      (let loop ([l  modifier-list])
+	(unless (null? l)
+	  (let ([mod  (car l)])
+	    (cond
+	      [(eq? mod 'alt)        (send event set-alt-down     #t)]
+	      [(eq? mod 'control)    (send event set-control-down #t)]
+	      [(eq? mod 'meta)       (send event set-meta-down    #t)]
+	      [(eq? mod 'shift)      (send event set-shift-down   #t)]
+	      [(eq? mod 'noalt)      (send event set-alt-down     #f)]
+	      [(eq? mod 'nocontrol)  (send event set-control-down #f)]
+	      [(eq? mod 'nometa)     (send event set-meta-down    #f)]
+	      [(eq? mod 'noshift)    (send event set-shift-down   #f)]
+	      [else  (run-error key-tag "unknown key modifier: ~s" mod)])
+	    (loop (cdr l)))))))
+  
+  ;; A-Z and mred:shifted-key-list are implicitly shifted.
+  ;; mred:shifted-key-list is list of strings of length 1.
+  ;; vector-ref is faster than member.
+  
+  (define shifted?
+    (let* 
+	([ascii-size  256]
+	 [keys     (make-vector ascii-size #f)]
+	 [letters  (list  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
+			  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")]
+	 [set-shifted
+	  (lambda (str) 
+	    (vector-set! keys (char->integer (string-ref str 0)) #t))])
+      (for-each set-shifted letters)
+      (for-each set-shifted mred:shifted-key-list)
+      (lambda (int) (and (< 0 int ascii-size) (vector-ref keys int)))))
+  
   (define keystroke-now (do-now keystroke))
   
   
@@ -237,9 +322,6 @@
   (define new-window-now (do-now new-window))
   
   
-  ;;
-  ;; You're getting sleeepy, very sleeeepy, you want to install freebsd
-  ;; on top of your windows partition .... windows bad .... freebsd good.
   ;;
   ;; The units for mred:test:sleep are seconds (same as real sleep),
   ;; but the units for wx:timer% are milliseconds, so we convert.

@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <X11/Xcms.h>
 
 typedef struct {
   unsigned short red_in, green_in, blue_in;
@@ -63,6 +64,10 @@ static unsigned short n_bits(unsigned short value, int nb)
     return value;
 }
 
+static Visual *tc;
+
+static int tc_known;
+
 Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 {
   int i;
@@ -72,22 +77,28 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
   int p, w, o;
   unsigned long pixel;
   Status status;
-  Visual *vi;
 
   /* If we have a weird colormap, essentially give up (no
      deallocation). */
   if (cm != DefaultColormapOfScreen(wxAPP_SCREEN))
     return XAllocColor(d, cm, c);
 
-  /* If the screen is TrueColor, do it fast. (Does the default
-     colormap always use the default visual?) */
-  vi = DefaultVisualOfScreen(wxAPP_SCREEN);
-  if (vi->class == TrueColor) {
+  /* Is the default colormap TrueColor? */
+
+  if (!tc_known) {
+    tc = XcmsVisualOfCCC(XcmsCCCOfColormap(DisplayOfScreen(wxAPP_SCREEN),
+					   cm));
+    if (tc->class != TrueColor)
+      tc = NULL;
+    tc_known = 1;
+  }
+  
+  if (tc) {
     unsigned int r_length, g_length, b_length;
 
-    r_length = mask_length(vi->red_mask);
-    g_length = mask_length(vi->green_mask);
-    b_length = mask_length(vi->blue_mask);
+    r_length = mask_length(tc->red_mask);
+    g_length = mask_length(tc->green_mask);
+    b_length = mask_length(tc->blue_mask);
 
     c->red = n_bits(c->red, r_length);
     c->green = n_bits(c->green, g_length);

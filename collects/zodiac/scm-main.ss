@@ -1394,9 +1394,7 @@
       (lambda (expr env)
 	(static-error expr "Unquote-splicing outside quasiquote")))
 
-    (add-macro-form
-      'quasiquote
-      scheme-vocabulary
+    '(add-macro-form 'quasiquote scheme-vocabulary
       (let* ((kwd '(quote))
 	      (m&e-1 (pat:make-match&env '(quote x) kwd))
 	      (kwd-2 '(quote list))
@@ -1430,197 +1428,146 @@
 	  (letrec
 	    ((gen-cons
 	       (lambda (x y)
-		 (let ((kwd '(quote)))
-		   (cond
-		     ((pat:match-against m&e-1 x env)
-		       =>
-		       (lambda (p-env-1)
-			 (let ((kwd-2 '(quote list)))
-			   (cond
-			     ((pat:match-against
-				m&e-2
-				y env)
-			       =>
-			       (lambda (p-env-2)
-				 (pat:pexpand '(quote (x . y))
-				   (pat:penv-merge p-env-2 p-env-1)
-				   kwd-2)))
-			     ((pat:match-against
-				m&e-3
-				y env)
-			       =>
-			       (lambda (p-env-2)
-				 (pat:pexpand '(list (quote x) y ...)
-				   (pat:penv-merge p-env-2 p-env-1)
-				   kwd-2)))
-			     ((pat:match-against
-				m&e-4
-				y env)
-			       =>
-			       (lambda (p-env-2)
-				 (pat:pexpand '(#%cons (quote x) y)
-				   (pat:penv-merge p-env-2 p-env-1)
-				   kwd-2)))
-			     (else
-			       (internal-error y "1st case in gen-cons"))))))
-		     ((pat:match-against
-			m&e-5
-			x env)
-		       =>
-		       (lambda (p-env-1)
-			 (let ((kwd-2 '(quote list)))
-			   (cond
-			     ((pat:match-against
-				m&e-6
-				y env)
-			       (pat:pexpand '(list x) p-env-1 kwd-2))
-			     ((pat:match-against
-				m&e-7
-				y env)
-			       =>
-			       (lambda (p-env-2)
-				 (pat:pexpand '(list x y ...)
-				   (pat:penv-merge p-env-2 p-env-1)
-				   kwd-2)))
-			     ((pat:match-against
-				m&e-8
-				y env)
-			       =>
-			       (lambda (p-env-2)
-				 (pat:pexpand '(#%cons x y)
-				   (pat:penv-merge p-env-2 p-env-1)
-				   kwd-2)))
-			     (else
-			       (internal-error y "2nd case in gen-cons"))))))
-		     (else
-		       (internal-error x "Invalid in gen-cons"))))))
+		 (cond
+		   ((pat:match-against m&e-1 x env)
+		     =>
+		     (lambda (p-env-1)
+		       (cond
+			 ((pat:match-against m&e-2 y env)
+			   =>
+			   (lambda (p-env-2)
+			     (pat:pexpand '(quote (x . y))
+			       (pat:penv-merge p-env-2 p-env-1) kwd-2)))
+			 ((pat:match-against m&e-3 y env)
+			   =>
+			   (lambda (p-env-2)
+			     (pat:pexpand '(list (quote x) y ...)
+			       (pat:penv-merge p-env-2 p-env-1) kwd-2)))
+			 ((pat:match-against m&e-4 y env)
+			   =>
+			   (lambda (p-env-2)
+			     (pat:pexpand '(#%cons (quote x) y)
+			       (pat:penv-merge p-env-2 p-env-1) kwd-2)))
+			 (else
+			   (internal-error y "1st case in gen-cons")))))
+		   ((pat:match-against m&e-5 x env)
+		     =>
+		     (lambda (p-env-1)
+		       (cond
+			 ((pat:match-against m&e-6 y env)
+			   (pat:pexpand '(list x) p-env-1 kwd-2))
+			 ((pat:match-against m&e-7 y env)
+			   =>
+			   (lambda (p-env-2)
+			     (pat:pexpand '(list x y ...)
+			       (pat:penv-merge p-env-2 p-env-1) kwd-2)))
+			 ((pat:match-against m&e-8 y env)
+			   =>
+			   (lambda (p-env-2)
+			     (pat:pexpand '(#%cons x y)
+			       (pat:penv-merge p-env-2 p-env-1) kwd-2)))
+			 (else
+			   (internal-error y "2nd case in gen-cons")))))
+		   (else
+		     (internal-error x "Invalid in gen-cons")))))
 
 	      (gen-append
 		(lambda (x y)
-		  (let ((kwd '(quote list cons)))
-		    (cond
-		      ((pat:match-against
-			 m&e-9
-			 x env)
-			=>
-			(lambda (p-env-1)
-			  (let ((kwd-2 '(quote)))
-			    (cond
-			      ((pat:match-against
-				 m&e-10
-				 y env)
-				=>
-				(lambda (p-env-2)
-				  (pat:pexpand '(quote (x1 x2 ... . y))
-				    (pat:penv-merge p-env-2 p-env-1)
-				    kwd-2)))
-			      ((pat:match-against
-				 m&e-11
-				 y env)
-				=>
-				(lambda (p-env-2)
-				  (pat:pexpand '(#%append (quote (x1 x2 ...) y))
-				    (pat:penv-merge p-env-2 p-env-1)
-				    kwd-2)))
-			      (else
-				(internal-error y "1st case in gen-append"))))))
-		      ((pat:match-against
-			 m&e-12
-			 x env)
-			y)
-		      ((pat:match-against
-			 m&e-13
-			 x env)
-			=>
-			(lambda (p-env)
-			  (gen-cons
-			    (pat:pexpand 'x1 p-env kwd)
-			    (gen-append
-			      (pat:pexpand '(list x2 ...) p-env kwd)
-			      y))))
-		      ((pat:match-against
-			 m&e-14
-			 x env)
-			=>
-			(lambda (p-env-1)
-			  (let ((kwd-2 '(quote list)))
-			    (cond
-			      ((pat:match-against
-				 m&e-15
-				 y env)
-				x)
-			      ((pat:match-against
-				 m&e-16
-				 y env)
-				=>
-				(lambda (p-env-2)
-				  (pat:pexpand '(#%append x y)
-				    (pat:penv-merge p-env-2 p-env-1)
-				    kwd-2)))
-			      (else
-				(internal-error y "4th case in gen-append"))))))
-		      (else
-			(internal-error x "Invalid in gen-append"))))))
+		  (cond
+		    ((pat:match-against m&e-9 x env)
+		      =>
+		      (lambda (p-env-1)
+			(cond
+			  ((pat:match-against m&e-10 y env)
+			    =>
+			    (lambda (p-env-2)
+			      (pat:pexpand '(quote (x1 x2 ... . y))
+				(pat:penv-merge p-env-2 p-env-1)
+				kwd-2)))
+			  ((pat:match-against m&e-11 y env)
+			    =>
+			    (lambda (p-env-2)
+			      (pat:pexpand
+				'(#%append (quote (x1 x2 ...) y))
+				(pat:penv-merge p-env-2 p-env-1)
+				kwd-2)))
+			  (else
+			    (internal-error y
+			      "1st case in gen-append")))))
+		    ((pat:match-against m&e-12 x env) y)
+		    ((pat:match-against m&e-13 x env)
+		      =>
+		      (lambda (p-env)
+			(gen-cons
+			  (pat:pexpand 'x1 p-env kwd)
+			  (gen-append (pat:pexpand '(list x2 ...) p-env kwd)
+			    y))))
+		    ((pat:match-against m&e-14 x env)
+		      =>
+		      (lambda (p-env-1)
+			(cond
+			  ((pat:match-against m&e-15 y env) x)
+			  ((pat:match-against m&e-16 y env)
+			    =>
+			    (lambda (p-env-2)
+			      (pat:pexpand '(#%append x y)
+				(pat:penv-merge p-env-2 p-env-1)
+				kwd-2)))
+			  (else
+			    (internal-error y
+			      "4th case in gen-append")))))
+		    (else
+		      (internal-error x "Invalid in gen-append")))))
 
 	      (gen
 		(lambda (p level)
 		  (printf "gen at ~a:~n" level)
 		  (pretty-print (sexp->raw p)) (newline)
-		  (let ((kwd '(unquote unquote-splicing quasiquote)))
-		    (cond
-		      ((pat:match-against
-			 m&e-17
-			 p env)
-			=>
-			(lambda (p-env)
-			  (if (= level 0)
-			    (pat:pexpand 'p p-env kwd)
-			    (gen-cons
-			      (pat:pexpand '(quote unquote) p-env kwd)
-			      (gen (pat:pexpand '(p) p-env kwd)
-				(- level 1))))))
-		      ((pat:match-against
-			 m&e-18
-			 p env)
-			=>
-			(lambda (p-env)
-			  (if (= level 0)
-			    (gen-append
-			      (pat:pexpand 'p p-env kwd)
-			      (gen (pat:pexpand 'q p-env kwd) level))
-			    (gen-cons
-			      (gen-cons
-				(pat:pexpand '(quote unquote-splicing) p-env kwd)
-				(gen (pat:pexpand 'p p-env kwd)
-				  (- level 1)))
-			      (gen (pat:pexpand 'q p-env kwd) level)))))
-		      ((pat:match-against
-			 m&e-19
-			 p env)
-			=>
-			(lambda (p-env)
-			  (gen-cons (pat:pexpand '(quote quasiquote) p-env kwd)
-			    (gen (pat:pexpand '(p) p-env kwd)
-			      (+ level 1)))))
-		      ((pat:match-against
-			 m&e-20
-			 p env)
-			=>
-			(lambda (p-env)
+		  (cond
+		    ((pat:match-against m&e-17 p env)
+		      =>
+		      (lambda (p-env)
+			(if (= level 0)
+			  (pat:pexpand 'p p-env kwd)
 			  (gen-cons
-			    (gen (pat:pexpand 'p p-env kwd) level)
-			    (gen (pat:pexpand 'q p-env kwd) level))))
-		      (else		; pattern `p'
-			(pat:match-and-rewrite p m&e-21
-			  '(quote p) kwd env)))))))
+			    (pat:pexpand '(quote unquote) p-env kwd)
+			    (gen (pat:pexpand '(p) p-env kwd)
+			      (- level 1))))))
+		    ((pat:match-against m&e-18 p env)
+		      =>
+		      (lambda (p-env)
+			(if (= level 0)
+			  (gen-append
+			    (pat:pexpand 'p p-env kwd)
+			    (gen (pat:pexpand 'q p-env kwd) level))
+			  (gen-cons
+			    (gen-cons
+			      (pat:pexpand '(quote unquote-splicing)
+				p-env kwd)
+			      (gen (pat:pexpand 'p p-env kwd) (- level 1)))
+			    (gen (pat:pexpand 'q p-env kwd) level)))))
+		    ((pat:match-against m&e-19 p env)
+		      =>
+		      (lambda (p-env)
+			(gen-cons (pat:pexpand '(quote quasiquote) p-env kwd)
+			  (gen (pat:pexpand '(p) p-env kwd) (+ level 1)))))
+		    ((pat:match-against m&e-20 p env)
+		      =>
+		      (lambda (p-env)
+			(gen-cons
+			  (gen (pat:pexpand 'p p-env kwd) level)
+			  (gen (pat:pexpand 'q p-env kwd) level))))
+		    (else		; pattern `p'
+		      (pat:match-and-rewrite p m&e-21
+			'(quote p) kwd env))))))
 
-	    (pat:match-and-rewrite x
-	      m&e-22
-	      'x '(quasiquote)
+	    (pat:match-and-rewrite x m&e-22 'x '(quasiquote)
 	      (lambda (e) (gen e 0))
 	      (lambda ()
 		(static-error x "Malformed quasiquote"))
 	      env)))))
+
+;    (include "qq.ss")
 
     (set! local-parse-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)

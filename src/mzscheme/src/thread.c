@@ -2668,10 +2668,19 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   p->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 
+  if (!p->runstack_owner) {
+    Scheme_Thread **owner;
+    owner = MALLOC_N(Scheme_Thread *, 1);
+    p->runstack_owner = owner;
+    *owner = p;
+  }
+
   np->runstack = p->runstack;
   np->runstack_start = p->runstack_start;
   np->runstack_size = p->runstack_size;
   np->runstack_saved = p->runstack_saved;
+  np->runstack_owner = p->runstack_owner;
+  *np->runstack_owner = np;
   np->stack_start = p->stack_start;
   np->engine_weight = p->engine_weight;
   {
@@ -2806,6 +2815,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   unschedule_in_set((Scheme_Object *)np, np->t_set_parent);
 
   np->running = 0;
+
+  *p->runstack_owner = p;
 
   p->external_break = np->external_break;
   p->nestee = NULL;

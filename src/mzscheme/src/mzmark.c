@@ -838,6 +838,7 @@ int cont_proc_MARK(void *p) {
   gcMARK(c->runstack_owner);
   gcMARK(c->cont_mark_stack_copied);
   gcMARK(c->cont_mark_stack_owner);
+  gcMARK(c->init_config);
   
   MARK_jmpup(&c->buf);
   MARK_cjs(&c->cjs);
@@ -859,6 +860,7 @@ int cont_proc_FIXUP(void *p) {
   gcFIXUP(c->runstack_owner);
   gcFIXUP(c->cont_mark_stack_copied);
   gcFIXUP(c->cont_mark_stack_owner);
+  gcFIXUP(c->init_config);
   
   FIXUP_jmpup(&c->buf);
   FIXUP_cjs(&c->cjs);

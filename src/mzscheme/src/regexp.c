@@ -2582,7 +2582,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
     r = (regexp *)argv[0];
 
   was_non_byte = 0;
-  orig_offset = 0;
+  orig_offset = 0; /* extra offset */
   if (!iport) {
     if (SCHEME_BYTE_STRINGP(argv[1]))
       full_s = SCHEME_BYTE_STR_VAL(argv[1]);
@@ -2603,7 +2603,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	was_non_byte = 1;
       else {
 	/* Convert orig_offset into encoded bytes */
-	orig_offset = scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[1]), 0, offset,
+	orig_offset = scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[1]), 0, orig_offset,
 					 NULL, 0,
 					 0);
       }

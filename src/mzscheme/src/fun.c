@@ -2293,6 +2293,7 @@ call_cc (int argc, Scheme_Object *argv[])
   memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_thread(cont->ss, p);
+  cont->init_config = p->init_config;
 
   {
     Scheme_Overflow *overflow;
@@ -2349,6 +2350,7 @@ call_cc (int argc, Scheme_Object *argv[])
     memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
 
     p->stack_start = cont->stack_start;
+    p->init_config = cont->init_config;
 
     /* For dynamic-winds after the "common" intersection
        (see eval.c), execute the pre thunks. Make a list

@@ -1,4 +1,5 @@
-(
+
+(module english-string-constants "string-constant-lang.ss"
  ;;; when translating this constant, substitute name of actual langauge for `English'
  (is-this-your-native-language "Is English Your Native Language?")
 
@@ -352,6 +353,9 @@
  ; ~a is filled with the filename
  (error-saving "Error Saving") ;; title of error message dialog
  (error-saving-file/name "There was an error saving ~a.")
+ (error-loading "Error Loading")
+ (error-loading-file/name "There was an error loading ~a.")
+ (unknown-filename "<< unknown >>")
 
  ;;; finder dialog
  (must-specify-a-filename "You must specify a file name")
@@ -602,6 +606,12 @@
  (filename "Filename: ")
  (create "Create")
  (please-choose-an-executable-filename "Please choose a filename to save the executable.")
+ (windows-executables-must-end-with-exe
+  "The filename\n\n  ~a\n\nis illegal. Under Windows, executables must end with .exe.")
+ (macosx-executables-must-end-with-app
+  "The filename\n\n  ~a\n\nis illegal. Under MacOS X, executables must end with .app.")
+ (warning-directory-will-be-replaced
+  "WARNING: the directory:\n\n  ~a\n\nwill be replaced. Proceed?")
  
  (create-servlet "Create Servlet...")
   
@@ -653,6 +663,7 @@
  (constructor-printing-style "Constructor")
  (quasiquote-printing-style "Quasiquote")
  (write-printing-style "write")
+ (print-printing-style "current-print")
  (sharing-printing-label "Show sharing in values")
  (use-pretty-printer-label "Insert newlines in printed values")
  (input-syntax "Input Syntax")
@@ -845,5 +856,4 @@
  (wizard-next "Next")
  (wizard-back "Back")
  (wizard-finish "Finish")
-
  )

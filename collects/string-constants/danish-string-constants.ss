@@ -1,4 +1,4 @@
-(
+(module danish-string-constants "string-constant-lang.ss"
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Foretrækker du dansk?")
 

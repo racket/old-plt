@@ -518,7 +518,7 @@
  ""
  "Defaultly binds C-x;o to a function that switches"
  "the focus between the definitions and interactions"
- "windows. Also binds f5 to Execute.")
+ "windows. Also binds f5 to Execute and f1 to Help Desk.")
 
 (drscheme:rep:current-rep
   (-> (is-a?/c drscheme:rep:text%))
@@ -1095,7 +1095,7 @@
 (drscheme:language:simple-settings-printing-style
  (drscheme:language:simple-settings?
   . -> .
-  (symbols 'constructor 'quasiquote 'write))
+  (symbols 'constructor 'quasiquote 'write 'current-print))
  (simple-settings)
 
 "Extracts the printing-style setting from a simple-settings.")
@@ -1143,7 +1143,7 @@
 
 (drscheme:language:make-simple-settings
  (boolean?
-  (symbols 'constructor 'quasiquote 'write)
+  (symbols 'constructor 'quasiquote 'write 'current-print)
   (symbols 'mixed-fraction 'mixed-fraction-e 'repeating-decimal 'repeating-decimal-e)
   boolean?
   boolean?

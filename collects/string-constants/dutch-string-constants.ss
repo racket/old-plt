@@ -1,4 +1,4 @@
-(
+(module dutch-string-constants "string-constant-lang.ss"
 
  ;;; when translating this constant, substitute name of actual langauge for `English'
  (is-this-your-native-language "Is uw moedertaal Nederlands?")
@@ -65,7 +65,8 @@
  (illegal-bug-report "Ongeldige defectmelding")
  (pls-fill-in-field "Gelieve het \"~a\"-veld in te vullen")
  (malformed-email-address "Onmogelijk emailadres")
- (pls-fill-in-either-description-or-reproduce "Gelieve hetzij het omschrijvings-, hetzij het "hoe te veroorzaken"-veld in te vullen.")
+ (pls-fill-in-either-description-or-reproduce 
+  "Gelieve hetzij het omschrijvings-, hetzij het \"hoe te veroorzaken\"-veld in te vullen.")
 
  ;;; check syntax
  (check-syntax "Controleer Syntaxis")

@@ -1,10 +1,9 @@
 
-
 ; first question: what character set shall we use? how to represent 6 umlauted vowels and sharp s (s-zed)
 ; the ones that Reini has translated look wrong on my PC. hmmm, copied and pasted from Mac. maybe my one fault.
 ; (Latin-1 or better iso-8859-15 for the euro symbol: reini urban)
 ;
-(
+(module german-string-constants "string-constant-lang.ss"
 ;;; when translating this constant, substitue name of actual langauge for `English'
 (is-this-your-native-language
   "Ist Deutsch Ihre Muttersprache?")

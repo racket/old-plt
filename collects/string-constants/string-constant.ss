@@ -1,7 +1,13 @@
 
 (module string-constant mzscheme
   (require-for-syntax (lib "etc.ss")
-		      (lib "list.ss"))
+		      (lib "list.ss")
+                      (prefix english: "english-string-constants.ss")
+                      (prefix spanish: "spanish-string-constants.ss")
+                      (prefix german: "german-string-constants.ss")
+                      (prefix french: "french-string-constants.ss")
+                      (prefix dutch: "dutch-string-constants.ss")
+                      (prefix danish: "danish-string-constants.ss"))
   (require (lib "file.ss"))
 
   (provide string-constant string-constants this-language all-languages set-language-pref)
@@ -18,49 +24,14 @@
       ;; type sc = (make-sc symbol (listof (list symbol string)))
       (define-struct sc (language-name constants))
       
-      ;; string-constants-file-cache : (box (listof (list sym (listof (list sym string)))))
-      ;; first listof is the list of languages, second listof is the list of string-constants
-      (define string-constants-file-cache #&())
-
-      ;; get-string-constants : string -> (listof (list sym string))
-      (define (get-string-constants filename)
-        (let* ([key (string->symbol filename)]
-               [res (assq key (unbox string-constants-file-cache))])
-          (if res
-              (cadr res)
-              (let* ([filename (build-path (this-expression-source-directory) filename)]
-                     [sexp (call-with-input-file filename read 'text)])
-                (unless (and (list? sexp)
-                             (andmap (lambda (x) 
-                                       (and (list? x)
-                                            (= 2 (length x))
-                                            (symbol? (car x))
-                                            (string? (cadr x))))
-                                     sexp))
-                  (raise-syntax-error 'string-constant
-                                      (format "expected `((<symbol> <string>) ...), got: ~s" sexp)))
-                (let ([ht (make-hash-table)])
-                  (for-each (lambda (x) 
-                              (when (hash-table-get ht (car x) (lambda () #f))
-                                (raise-syntax-error
-                                 'string-constants 
-                                 (format "found duplicate for ~a in ~a"
-                                         (car x) filename)))
-                              (hash-table-put! ht (car x) (cadr x)))
-                            sexp))
-                (set-box! string-constants-file-cache
-                          (cons (list key sexp) 
-                                (unbox string-constants-file-cache)))
-                sexp))))
-      
       (define available-string-constant-sets
         (list 
-         (make-sc 'english (get-string-constants "english-string-constants.ss"))
-         (make-sc 'spanish (get-string-constants "spanish-string-constants.ss"))
-         (make-sc 'french (get-string-constants "french-string-constants.ss"))
-         (make-sc 'german (get-string-constants "german-string-constants.ss"))
-         ;(make-sc 'dutch (get-string-constants "dutch-string-constants.ss"))
-         (make-sc 'danish (get-string-constants "danish-string-constants.ss"))))
+         (make-sc 'english english:string-constants)
+         (make-sc 'spanish spanish:string-constants)
+         (make-sc 'french french:string-constants)
+         (make-sc 'german german:string-constants)
+         ;(make-sc 'dutch dutch:string-constants)
+         (make-sc 'danish danish:string-constants)))
       
       (define first-string-constant-set (car available-string-constant-sets))
       

@@ -10,7 +10,7 @@
   (define (test/spec-passed name expression)
     (test 'passed
           eval
-	  `(begin ,expression 'passed)))
+	  `(let () ,expression 'passed)))
   
   ;; test/spec-failed : symbol sexp string -> void
   ;; tests a failing specification with blame assigned to `blame'
@@ -221,13 +221,15 @@
   
   (test/spec-passed
    'contract-arrow-star-d2
-   '((contract (->d* (integer?) (lambda (arg) 
-                                  (values (lambda (res) (= arg res)) 
-                                          (lambda (res) (= arg res)))))
-               (lambda (x) (values x x))
-               'pos
-               'neg)
-     1))
+   '(let-values ([(a b)
+                  ((contract (->d* (integer?) (lambda (arg) 
+                                                (values (lambda (res) (= arg res)) 
+                                                        (lambda (res) (= arg res)))))
+                             (lambda (x) (values x x))
+                             'pos
+                             'neg)
+                   1)])
+      1))
   
   (test/spec-failed
    'contract-arrow-star-d3

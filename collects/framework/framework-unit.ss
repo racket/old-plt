@@ -67,7 +67,7 @@
 	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 
 		   (frame@ mred group preferences icon handler application panel
-			   exit finder keymap text pasteboard editor canvas menu scheme)]
+                           finder keymap text pasteboard editor canvas menu scheme exit)]
 	    [handler : framework:handler^
 		     (handler@ mred finder group text preferences frame)]
 

@@ -189,7 +189,8 @@ to the original stdout of DrScheme.
                    (case (drscheme:language:simple-settings-printing-style settings)
                      [(constructor) 0]
                      [(quasiquote) 1]
-                     [(write) 2]))
+                     [(write) 2]
+                     [(print) 2]))
              (send fraction-style set-selection
                    (case (drscheme:language:simple-settings-fraction-style settings)
                      [(mixed-fraction) 0]

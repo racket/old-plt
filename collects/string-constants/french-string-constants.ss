@@ -1,4 +1,4 @@
-(
+(module french-string-constants "string-constant-lang.ss"
  ; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
  ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
  ; francaise (http://www-rocq.inria.fr/qui/Philippe.Deschamp/RETIF/) a quelques longueures de

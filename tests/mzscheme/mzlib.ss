@@ -18,6 +18,8 @@
 
 (load-relative "shared.ss")
 
+(load-relative "contracts.ss")
+
 ; Last - so macros are not present by accident
 (load-relative "macrolib.ss")
 

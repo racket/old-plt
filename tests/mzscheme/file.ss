@@ -170,7 +170,8 @@
 (error-test '(open-output-file (build-path (current-directory) "baddir" "x"))
 	    exn:i/o:filesystem:file?)
 
-(delete-file "tmp4")
+(when (file-exists? "tmp4")
+  (delete-file "tmp4"))
 (close-output-port (open-output-file "tmp4"))
 (error-test '(let ([c (make-custodian)])
 	       (let ([p (parameterize ([current-custodian c])

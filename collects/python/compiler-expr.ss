@@ -611,15 +611,17 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (list (py-so 'python-method-call) (send lhs to-scheme)
-                                                     (case op
-                                                       [(+) ''__add__]
-                                                       [(-) ''__sub__]
-                                                       [(*) ''__mul__]
-                                                       [(/) ''__div__]
-                                                       [else (raise (format "binary% op unsupported: ~a" 
-                                                                             op))])
-                                                     `(list ,(send rhs to-scheme)))))
+        (if (eq? op 'and)
+            (->orig-so `(py-if ,(send lhs to-scheme) ,(send rhs to-scheme) py-none))
+            (->orig-so (list (py-so 'python-method-call) (send lhs to-scheme)
+                             (case op
+                               [(+) ''__add__]
+                               [(-) ''__sub__]
+                               [(*) ''__mul__]
+                               [(/) ''__div__]
+                               [else (raise (format "binary% op unsupported: ~a" 
+                                                    op))])
+                             `(list ,(send rhs to-scheme))))))
       
       (super-instantiate ())))
   

@@ -1,4 +1,4 @@
-(module primitives mzscheme
+#cs(module primitives mzscheme
   (require (lib "list.ss")
            (lib "etc.ss")
            "python-node.ss"
@@ -281,6 +281,9 @@
     (let ([sm (python-new-static-method py-static-method%)])
       (py-static-method%-init sm fn)
       sm))
+     
+  (define (py-static-method%->py-function% sm)
+    (python-get-member sm 'static-method-function #f))
 
   (define (py-classmethod%-new class)
     (unless (or (py-is? class py-classmethod%)
@@ -315,9 +318,11 @@
                                      (apply (py-function%->procedure this)
                                             args)))))
 
-  (python-set-member! py-object% '__new__ (py-function%->py-static-method%
+     (define py-object%-new (py-function%->py-static-method%
                                            (procedure->py-function% python-new-object
                                                                     '__new__)))
+     
+  (python-set-member! py-object% '__new__ py-object%-new)
 
   (dprintf "3~n")
 
@@ -401,15 +406,22 @@
 
   ;; create instance object
   (define (python-create-object class . init-args)
-    (dprintf "DEBUG: python-create-object~n")
-    (let ([obj (py-call (begin0
-                          (python-get-member class '__new__) ;; static methods become functions when wrapped
-                          (dprintf "DEBUG: python-create-object found __new__~n"))
-                        (list class))])
-      (dprintf "DEBUG: python-create-object allocated~n")
-      (py-call (python-get-member class '__init__ #f)
-               (cons obj init-args))
-      (dprintf "DEBUG: python-create-object initialized~n")
+   ; (printf "DEBUG: python-create-object~n")
+    (let* ([alloc (begin0 (python-get-member class '__new__ #f)
+                       ;   (printf "DEBUG: python-create-object found __new__~n")
+                          )]
+           [obj (if (eq? alloc py-object%-new)
+                    (begin ;(printf "DEBUG: python-create-object calling object.__new__: ~a~n"
+                           ;        (py-object%->string alloc))
+                      (py-call (py-static-method%->py-function% alloc)
+                             (list class)))
+                    (py-call alloc (cons class init-args)))])
+      ;(printf "DEBUG: python-create-object allocated~n")
+      (when (py-is-a? obj class)
+        (py-call (python-get-member class '__init__ #f)
+                 (cons obj init-args))
+        ;(printf "DEBUG: python-create-object initialized~n")
+        )
       obj))
 
   ;; create a new type
@@ -480,15 +492,21 @@
                        ""
                        (hash-table-map ht
                                        (lambda (key value)
-                                         ;;;; the key is either a number or a symbol
-                                         (string-append (if (number? key)
-                                                            (number->string key)
-                                                            (string-append "'"
-                                                                           (symbol->string key)
-                                                                           "'"))
-                                                        ; (py-object%->string key)
-                                                        ": "
-                                                        (py-object%->string value))))))])
+                                         (if (and (symbol? key) ;; special internal Spy value
+                                                  (not (python-node? value)))
+                                             (string-append "<internal Spy key "
+                                                            (symbol->string key)
+                                                            ">: "
+                                                            (format "~a" value))
+                                             ;;;; the key is either a number or a symbol
+                                             (string-append (if (number? key)
+                                                                (number->string key)
+                                                                (string-append "'"
+                                                                               (symbol->string key)
+                                                                               "'"))
+                                                            ; (py-object%->string key)
+                                                            ": "
+                                                            (py-object%->string value)))))))])
          (string-append "{"
                         (dict-items-repr (py-dict%->hash-table x))
                         "}"))]
@@ -513,7 +531,14 @@
       [(py-is-a? x py-module%) (format "<module '~a' from '~a'>"
                                        (py-string%->string (python-get-name x))
                                        (py-string%->string (python-get-member x '__file__ #f)))]
-      [else (format "<~a object>" (py-string%->string (python-get-type-name (python-node-type x))))]))
+      [else (format "<~a object~a>" (py-string%->string (python-get-type-name (python-node-type x)))
+                    (if (spy-ext-object? x)
+                        (string-append ": " ((eval 'spy-ext-object->string) x))
+                        ""))]))
+     
+     (define (spy-ext-object? obj)
+       (hash-table-get (python-node-dict (python-node-type obj)) 'spy-ext-type (lambda () #f)))
+     
 
   (define (python-get-attribute obj attr-sym)
    ; (printf "python-get-attribute is looking for ~a~n" attr-sym)
@@ -523,6 +548,7 @@
 ;                        (python-get-member (python-node-type obj) '__getattribute__)
 ;                        (list (symbol->py-string% attr-sym))))
 
+     ;; python-set-attribute: py-object% symbol py-object% -> void
   (define (python-set-attribute! obj attr-sym value)
     (py-call (python-get-member (python-node-type obj) '__setattr__)
              (cons obj (list (symbol->py-string% attr-sym)
@@ -674,7 +700,11 @@
                       `((__new__ ,(py-function%->py-static-method%
                                    (procedure->py-function% python-new-static-method
                                                             'python-new-static-method)))
-                        (__init__ ,py-static-method%-init)))
+                        (__init__ ,py-static-method%-init)
+                        (__call__ ,(procedure->py-function% (lambda (this . args)
+                                                              (py-call (py-static-method%->py-function% this)
+                                                                       args))
+                                                            '__call__))))
 
   (python-add-members py-classmethod%
                       `((__new__ ,(py-function%->py-static-method%
@@ -685,12 +715,13 @@
   (dprintf "6~n")
 
   (python-add-members py-object%
-                      `((__init__ ,(procedure->py-function% (lambda (this) (void))
+                      `((__init__ ,(procedure->py-function% (lambda (this . args) (void))
                                                             '__init__))
                         (__repr__ ,py-repr)
+                        (__str__ ,py-repr)
                         (__getattribute__ ,(py-lambda '__getattribute__ (this key)
                                                (python-get-member this (py-string%->symbol key))))
-                        (__setattr__ ,(py-lambda '__setattribute__ (this key value)
+                        (__setattr__ ,(py-lambda '__setattr__ (this key value)
                                                 (python-set-member! this (py-string%->symbol key) value)))))
 
 ;  (python-add-members py-type%
@@ -879,7 +910,8 @@
                          (python-method-call value '__len__))])
          (error "I refuse to assign to slices right now, try again later"))]
       [else (error "Invalid key for __setitem__")])
-    (printf "SIMPLE-SET-ITEM finished, sequence is now: ~a~n" (py-object%->string this)))
+    ;(printf "SIMPLE-SET-ITEM finished, sequence is now: ~a~n" (py-object%->string this))
+    )
 
   (define (simple-get-item this key list-to-sequence sequence-to-list)
     (cond
@@ -936,6 +968,7 @@
                                              (namespace-set-variable-value! (py-string%->symbol key)
                                                                             value))))))
 
+  ; namespace->py-module% namespace [string] [string] -> py-module%
   ; turn a scheme namespace into a python module
   (define namespace->py-module%
     (opt-lambda (namespace [name ""] [path ""])
@@ -963,12 +996,24 @@
                                                     (error "Invalid input: "
                                                            (py-object%->string bases)
                                                            " is not a tuple."))))
-                        (for-each (lambda (wrapped-key&value)
-                                    (let ([key&value (wrapped-key&value this)])
-                                      (python-set-member! this
-                                                          (first key&value)
-                                                          (second key&value))))
-                                  defs)))
+                        (if (list? defs)
+                            (for-each (lambda (wrapped-key&value)
+                                        (let ([key&value (wrapped-key&value this)])
+                                          (python-set-member! this
+                                                              (first key&value)
+                                                              (second key&value))))
+                                      defs)
+                            (hash-table-for-each (py-dict%->hash-table defs)
+                                                 (lambda (key val)
+                                                   (python-set-member! this
+                                                                       (cond
+                                                                         [(symbol? key) key]
+                                                                         [(string? key) (string->symbol key)]
+                                                                         [(py-is-a? key py-string%) (string->symbol (py-string%->string key))]
+                                                                         [(python-node? key)
+                                                                          (error (format "py-type%::__init__: Sorry, this value is not yet supported as a valid dictionary key: ~a" (py-object%->string key)))]
+                                                                         [else (error "py-type%::__init__: invalid key: ~a" key)])
+                                                                       val))))))
   (python-set-member! py-type% '__call__
                       (case-lambda
                         [(this obj) (python-node-type obj)]
@@ -1033,16 +1078,72 @@
                                                   arg-list))))
     (printf "python-add-extension-method: added ~a~n" method-name))
 
-  ;; py-ext-init-module: string -> py-module%
+  ;; py-ext-init-module: symbol -> py-module%
   ;; create a new python module, put it in the current namespace, and return it
   (define (py-ext-init-module name)
-    (let ([mod (namespace->py-module% (make-python-namespace) name)])
-      (namespace-set-variable-value! #cs(string->symbol name)
+    (let ([mod (namespace->py-module% (make-python-namespace) (symbol->string name))])
+      (namespace-set-variable-value! name
                                      mod)
       mod))
 
+  ;; py-ext-module-add-object: py-module% symbol py-object% -> void
   (define (py-ext-module-add-object pymod name obj)
-    (parameterize ([current-namespace (py-module%->namespace pymod)])
-      (namespace-set-variable-value! #cs(string->symbol name) obj)))
+;    (write "Adding an extension object...") (newline)
+    #cs(parameterize ([current-namespace (py-module%->namespace pymod)])
+      (namespace-set-variable-value! #csname obj))
+    (if (py-type? obj)
+        (begin 
+ ;         (printf "obj is a type object.~n")
+          (python-set-member! obj 'spy-ext-type #t)
+          ((eval 'init-spy-ext-method-table) pymod name obj))
+        (printf "obj is not a type object~n")))
 
+  ;; python-wrap-ext-function: cptr symbol -> py-function%
+  (define (python-wrap-ext-function fn-ptr name)
+    (procedure->py-function%
+     (lambda args
+       (apply (eval 'spy-ext-call-fn)
+              (cons fn-ptr args)))
+     name))
+
+  ;; python-wrap-ext-method: cptr symbol -> py-function%
+  (define (python-wrap-ext-method-varargs fn-ptr name)
+;    (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
+    (procedure->py-function% (lambda (self . args)
+                               (apply (eval 'spy-ext-call-bound-varargs)
+                                      (cons fn-ptr (cons self args))))
+                             name))
+
+  ;; python-wrap-ext-method: cptr symbol -> py-function%
+  (define (python-wrap-ext-method-noargs fn-ptr name)
+ ;   (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
+    (procedure->py-function% (lambda (self)
+                               (apply (eval 'spy-ext-call-bound-noargs)
+                                      (cons fn-ptr (cons self null))))
+                             name))
+  
+  ;; TODO: add support for keyword args (applying kw-args funcs as varargs fns now)
+  ;; python-wrap-ext-method: cptr symbol -> py-function%
+  (define (python-wrap-ext-method-kwargs fn-ptr name)
+  ;  (printf "PYTHON WRAP EXT METHOD: ~a~n" name)
+    (procedure->py-function% (lambda (self . args)
+                               (apply (eval 'spy-ext-call-bound-kwargs)
+                                      (cons fn-ptr
+                                            (cons self
+                                                  (cons (assoc-list->py-dict% '())
+                                                        args)))))
+                             name))
+  
+     
+     
+  ;; hash-table -> hash-table
+  ;; duplicate a hash table
+  (define (copy-hash-table ht)
+    (let ([new-ht (make-hash-table)])
+      (hash-table-for-each ht
+                           (lambda (key val)
+                             (hash-table-put! new-ht key val)))
+      new-ht))
+
+  
   )

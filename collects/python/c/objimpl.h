@@ -159,10 +159,13 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
    Note that these macros expect non-NULL object pointers.*/
 /*#define PyObject_INIT(op, typeobj) \
 	( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) ) */
+
 #define PyObject_INIT(op, typeobj) \
-	( PY_SET_TYPE((op), (typeobj)), _Py_NewReference((PyObject *)(op)), (op) )
+   ( spy_init_obj(op, typeobj) )
+/*   ( (op) = spy_ext_new_instance(typeobj) ) */
+/*	( PY_SET_TYPE((op), (typeobj)), _Py_NewReference((PyObject *)(op)), (op) ) */
 #define PyObject_INIT_VAR(op, typeobj, size) \
-	( (op)->ob_size = (size), PyObject_INIT((op), (typeobj)) )
+	( PyObject_INIT((op), (typeobj)), (op)->ob_size = (size) )
 
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
 

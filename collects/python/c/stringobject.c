@@ -79,13 +79,16 @@ PyString_FromStringAndSize(const char *str, int size)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
+	printf("PyString_FromStringAndSize: initialized new string\n");
 	op->ob_shash = -1;
 	op->ob_sstate = SSTATE_NOT_INTERNED;
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
+	printf("PyString_FromStringAndSize: copied buffer\n");
 	/* share short strings */
-	if (size == 0) {
+/**** TODO: HACK: DSEDIT: DISABLED BY DANIEL ****/
+/*	if (size == 0) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
 		op = (PyStringObject *)t;
@@ -97,7 +100,8 @@ PyString_FromStringAndSize(const char *str, int size)
 		op = (PyStringObject *)t;
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
-	}
+	} */
+	printf("PyString_FromStringAndSize: returning...\n");
 	return (PyObject *) op;
 }
 
@@ -869,14 +873,18 @@ string_repr(PyObject *op)
 static PyObject *
 string_str(PyObject *s)
 {
+  printf("string_str: entered function\n");
 	assert(PyString_Check(s));
+  printf("string_str: s is a PyString\n");
 	if (PyString_CheckExact(s)) {
+  printf("string_str: s is _exactly_ a PyString\n");
 		Py_INCREF(s);
 		return s;
 	}
 	else {
 		/* Subtype -- return genuine string with the same value. */
 		PyStringObject *t = (PyStringObject *) s;
+  printf("string_str: s is an instance of a subtype of PyString\n");
 		return PyString_FromStringAndSize(t->ob_sval, PyString_GET_SIZE((PyObject*) t));
 	}
 }
@@ -1862,6 +1870,7 @@ string_upper(PyStringObject *self)
 	PyObject *new;
 
 	new = PyString_FromStringAndSize(NULL, n);
+	printf("string_upper: made a new string\n");
 	if (new == NULL)
 		return NULL;
 	s_new = PyString_AsString(new);
@@ -3110,10 +3119,12 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *x = NULL;
 	static char *kwlist[] = {"object", 0};
 
+	printf("string_new: entered function\n");
 	if (type != &PyString_Type)
 		return str_subtype_new(type, args, kwds);
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str", kwlist, &x))
 		return NULL;
+	printf("string_new: parsed arguments (x %s null)\n", x == NULL ? "is" : "is not");
 	if (x == NULL)
 		return PyString_FromString("");
 	return PyObject_Str(x);

@@ -13,17 +13,69 @@
 
 #include "escheme.h"
 
+#ifdef Py_USING_UNICODE
+#undef Py_USING_UNICODE
+#endif
 
+  // these two should probably be something like SCHEME_HEAD
+  #define PyObject_HEAD Scheme_Type type; \
+	MZ_HASH_KEY_EX \
+	void* stype; \
+	Scheme_Object* slots[3];
+/*
+#define PyObject_HEAD   Scheme_Type type; \
+  short keyex; \
+  int u; */
+/*  union \
+    { \
+      struct { char *string_val; int tag_val; } str_val; \
+      struct { void *ptr1, *ptr2; } two_ptr_val; \
+      struct { int int1; int int2; } two_int_val; \
+      struct { void *ptr; int pint; } ptr_int_val; \
+      struct { void *ptr; long pint; } ptr_long_val; \
+      struct { struct Scheme_Object *car, *cdr; } pair_val; \
+      struct { mzshort len; mzshort *vec; } svector_val;\
+    } u;
+*/
 
-typedef Scheme_Object PyObject;
-typedef Scheme_Object PyVarObject;
+#ifdef MZ_PRECISE_GC
+  #define MZ_HASH_KEY_EX_INIT 0,
+#else
+  #define MZ_HASH_KEY_EX_INIT
+#endif
+
+#define PyObject_VAR_HEAD \
+		PyObject_HEAD \
+		int ob_size;
+
+#define PyObject_HEAD_INIT(type) 0, MZ_HASH_KEY_EX_INIT 0, {0, 0, 0},
+
+typedef struct dScheme_Structure
+{
+  PyObject_HEAD
+} dScheme_Structure;
+
+typedef struct PyVarObject
+{
+  PyObject_VAR_HEAD
+} PyVarObject;
+
+//typedef Scheme_Object PyObject;
+typedef dScheme_Structure PyObject;
+//typedef Scheme_Object PyVarObject;
 //typedef Scheme_Object PyTypeObject;
-typedef Scheme_Object PyIntObject;
-typedef Scheme_Object PySliceObject;
+
+//typedef Scheme_Object PyIntObject;
+//typedef Scheme_Object PySliceObject;
+typedef PyObject PyIntObject;
+typedef PyObject PySliceObject;
+
 //typedef Scheme_Object PyStringObject;
 
 struct _typeobject;
 #define PYTYPEOBJECT struct _typeobject
+
+
 
 // Kludge
 
@@ -37,7 +89,7 @@ struct _typeobject;
 
 
 #define PY_GET_TYPE(obj) (sapply1("python-node-type", (PyObject*) obj))
-#define PY_SET_TYPE(obj, t) (sapply2("python-node-set-type!", (PyObject*) obj, t))
+#define PY_SET_TYPE(obj, t) (sapply2("set-python-node-type!", (PyObject*) obj, t))
 
 #define PY_TYPE_STR_FN(type) generic_repr
 
@@ -45,6 +97,8 @@ struct _typeobject;
 #define PY_TYPE_AS_NUMBER(t) (t)
 #define PY_TYPE_AS_MAPPING(t) (t)
 #define PY_NUMBER_HEX_FN(n) py_number_to_hex_py_string
+
+#define PY_TYPE_METHODS(t) ((t)->tp_methods)
 
 PyObject* py_number_to_octal_py_string(PyObject* num);
 PyObject* py_number_to_hex_py_string(PyObject* num);
@@ -72,27 +126,6 @@ PyObject* generic_repr(PyObject* obj);
 
 
 
-  // these two should probably be something like SCHEME_HEAD
-#define PyObject_HEAD   Scheme_Type type; \
-  short keyex; \
-  int u;
-/*  union \
-    { \
-      struct { char *string_val; int tag_val; } str_val; \
-      struct { void *ptr1, *ptr2; } two_ptr_val; \
-      struct { int int1; int int2; } two_int_val; \
-      struct { void *ptr; int pint; } ptr_int_val; \
-      struct { void *ptr; long pint; } ptr_long_val; \
-      struct { struct Scheme_Object *car, *cdr; } pair_val; \
-      struct { mzshort len; mzshort *vec; } svector_val;\
-    } u;
-*/
-
-#define PyObject_VAR_HEAD \
-		PyObject_HEAD \
-		int ob_size;
-
-#define PyObject_HEAD_INIT(type) 0, 0, 0,
 
 
 #define Py_GCC_ATTRIBUTE(stuff)
@@ -107,7 +140,7 @@ PyObject* generic_repr(PyObject* obj);
 
 #define DL_IMPORT(type) type
 
-#define Py_None (scheme_eval_string ("py-none", scheme_get_env (scheme_config)))
+#define Py_None (slookup("py-none"))
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 #define PyAPI_DATA(RTYPE) extern RTYPE
@@ -120,8 +153,8 @@ PyObject* generic_repr(PyObject* obj);
 
 void Py_FatalError (char * message);
 
-#define PyMem_NEW(type, count) ((type *)GC_malloc_atomic(count))
-#define PyMem_Malloc(count) (GC_malloc_atomic(count))
+#define PyMem_NEW(type, count) ((type *)scheme_malloc_eternal(count))
+#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
 void PyMem_Free(void* obj);
 //#define PyMem_Free(obj)
@@ -321,12 +354,12 @@ PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 
 
 // this should be in longobject.h
-#define PyLong_Check(item) (sapply2("py-is-a?", item, seval("py-number%")) != scheme_false)
+#define PyLong_Check(item) (sapply2("py-is-a?", item, slookup("py-number%")) != scheme_false)
 #define PyLong_AsLong PyInt_AsLong
 
 
 // this should be in sliceobject.h
-#define PySlice_Check(obj) sapply2("py-is-a?", item, seval("py-slice%"))
+#define PySlice_Check(obj) sapply2("py-is-a?", item, slookup("py-slice%"))
 #define PySlice_GetIndicesEx(a, b, c, d, e, f) 0
 
 // SCHEME HELPER FUNCTIONS
@@ -346,19 +379,35 @@ PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
   var[3] = (arg4);
 
 
+extern Scheme_Env* spy_global_env;
+
 #define sapply scheme_apply
 #define cons scheme_make_pair
-#define seval(str) scheme_eval_string((str), scheme_get_env(scheme_config))
-#define slookup(str) scheme_lookup_global(scheme_intern_symbol(str), scheme_get_env(scheme_config))
-#define sym(str) scheme_intern_symbol(str)
+#define seval(str) scheme_eval_string((str), spy_global_env)
+#define sym(str) scheme_intern_exact_symbol(str, strlen(str))
+//#define slookup(str) scheme_lookup_global(scheme_intern_symbol(str), scheme_get_env(scheme_config))
+#define slookup(str) scheme_eval(sym(str), spy_global_env)
+//#define slookup(str) seval(str)
 
 PyObject* sapply1(const char* func_name, PyObject* arg);
+
+#define ASSERT_PN(obj) \
+  if ( !obj || SCHEME_FALSEP(sapply1("python-node?", obj)) ) \
+    { \
+    fprintf(stderr, "%s:%d: not a python node\n", __FILE__, __LINE__); \
+	exit(1); \
+	}
+
 
 
 #define WITHOUT_COMPLEX
 
 
+
 #include <object.h>
+PyObject* spy_ext_new_instance(PyTypeObject* type);
+// called by PyObject_INIT
+void spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <abstract.h>
 #include <objimpl.h>
 #include <dictobject.h>

@@ -1,10 +1,10 @@
 (module python mzscheme
   (require (lib "class.ss")
           ; (lib "list.ss")
-          ; (lib "etc.ss")
+           (lib "etc.ss")
           ; "compiler.ss"
            "python-node.ss"
-         ;  "primitives.ss" ;; need py-object%->string
+           "primitives.ss" ;; need py-object%->string
           ; "read-python.ss"
            "compile-python.ss"
            "python-import.ss"
@@ -46,9 +46,16 @@
             (port-write to-render)
             (display to-render port)))))
   
+  (define pns (make-python-namespace))
+  
+  (define (load-ps)
+    (parameterize ([current-namespace pns])
+      (load-extension (build-path (this-expression-source-directory)
+                                  "c" "stringobject.so")))
+    (copy-namespace-bindings pns (current-namespace) #f #f))
     
   (define (python path)
-    (let ([results (eval-python&copy (python-to-scheme path) (make-python-namespace))])
+    (let ([results (eval-python&copy (python-to-scheme path) pns)])
       ;(let ([port (current-output-port)])
       ;  (for-each (lambda (value)
       ;              (render-python-value value port printf))

@@ -9,7 +9,7 @@
   ;;  gensym scheme-value
   
   
-  (define-struct python-node (type dict mutable?) );(make-inspector))
+  (define-struct python-node (type dict mutable?) (make-inspector))
   
   
   ;; these are hidden keys in built-in data types to hold their actual scheme values

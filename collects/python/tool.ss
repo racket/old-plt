@@ -1,4 +1,4 @@
-(module tool mzscheme
+#cs(module tool mzscheme
   (require  (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
@@ -17,7 +17,7 @@
            "python-import.ss")
 
   (provide tool@)
-  
+
 ;  (my-dynamic-require (current-namespace) '(lib "base.ss" "python"))
 ;  (my-dynamic-require (current-namespace) '(lib "runtime-support.ss" "python"))
 ;  (my-dynamic-require (current-namespace) '(lib "python-import.ss" "python"))
@@ -29,23 +29,23 @@
     ;(set-python-cache-namespace! (current-namespace))
     (make-python-namespace)
     (print "done creating the python cache namespace"))
-  
+
   (define cpcn create-python-cache-namespace)
-  
+
   (define outer-namespace (current-namespace))
   (define pn (make-python-namespace))
-    
+
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
-      
+
       (define (phase1) (void))
-      (define (phase2) 
+      (define (phase2)
 ;            (drscheme:get/extend:extend-interactions-text
 ;                  (lambda (super%)
 ;                    (class super%
 ;                      (rename [super-display-results display-results])
-;                      
+;
 ;                      (define/override display-results
 ;                        (opt-lambda (results)
 ;                          (super-display-results (map (lambda (result)
@@ -53,25 +53,59 @@
 ;                                                            (py-object%->string result)
 ;                                                            result))
 ;                                                      results))))
-;                      
+;
 ;                      (super-instantiate ()))))
         (drscheme:language-configuration:add-language
          (make-object (override-mrflow-methods
-                       ((drscheme:language:get-default-mixin) 
+                       ((drscheme:language:get-default-mixin)
                         lang%)))))
-      
+
+
+
       (define (override-mrflow-methods %)
         %) ;; TODO: MRFLOW PRIMITIVES
 
 
+      (define-struct python-settings (test-coverage?))
+
+
       (define lang%
         (class* object% (drscheme:language:language<%>)
+
           (define/public (config-panel parent)
-            (case-lambda
-              [() null]
-              [(x) (void)]))
-          (define/public (default-settings) null)
-          (define/public (default-settings? x) #t)
+
+            (let* ([prefs-panel (make-object vertical-panel% parent)]
+                   [features-groupbox (make-object group-box-panel% "Features" prefs-panel)]
+                   [test-coverage?-checkbox (make-object check-box%
+                                              "Enable test coverage highlighting?"
+                                              features-groupbox
+                                              (lambda (cbox event)
+                                                (when (eq? (send event get-event-type) 'check)
+                                                  (send cbox set-value (not (send cbox get-value))))))])
+              ;(send prefs-panel show #t))
+              (case-lambda
+                [() (make-python-settings (send test-coverage?-checkbox get-value))]
+                [(s) (send test-coverage?-checkbox set-value (python-settings-test-coverage? s))])))
+
+          (define/public (default-settings)
+            (make-python-settings #f))
+
+          (define/public (default-settings? s)
+            (let ([def (default-settings)])
+              (eq? (python-settings-test-coverage? s)
+                   (python-settings-test-coverage? def))))
+
+          (define/public (marshall-settings s)
+            (list (python-settings-test-coverage? s)))
+
+          (define/public (unmarshall-settings s)
+            (if (and (list? s)
+                     (= 1 (length s))
+                     (boolean? (car s)))
+                (make-python-settings (car s))
+                #f))
+
+
           (define/public (front-end input settings)
             (let-values ([(port name)
                           (if (string? input)
@@ -96,10 +130,10 @@
 
           (define/public (front-end/complete-program input settings teachpack-cache)
             (front-end input settings))
-          
+
           (define/public (front-end/interaction input settings teachpack-cache)
             (front-end input settings))
-          
+
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
           (define/public (get-language-name) "Python")
@@ -107,73 +141,38 @@
           (define/public (get-language-numbers)
             (list 1000 10))
           (define/public (get-teachpack-names) null)
-          (define/public (marshall-settings x) x)
+
+
           (define/public (on-execute settings run-in-user-thread)
-            ;(run-in-user-thread
-            ; (lambda ()
-            ;   (toggle-python-cache-namespace! #t)
-            ;   (set-python-cache-namespace! (current-namespace))))
             (dynamic-require '(lib "base.ss" "python") #f)
             (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
                   [outer-namespace (current-namespace)])
               (run-in-user-thread
                (lambda ()
-                 (error-display-handler 
+                 (error-display-handler
                   (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-                 (current-eval 
-                  ;(add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
-                  (drscheme:debug:make-debug-eval-handler (current-eval)))
-                                                          ;(let ([pn pn];(make-python-namespace)]
-                                                          ;      [outer outer-namespace]);(current-namespace)])
-                                                          ;  (lambda (x)
-                                                          ;    (parameterize ([current-namespace pn])
-                                                          ;      (namespace-attach-module outer 'mzscheme)
-                                                          ;      (namespace-require 'mzscheme)
-                                                          ;      ((current-eval) x))))))
-                 ;(drscheme:debug:test-coverage-enabled #t)
-                 ;(current-namespace (make-python-namespace))
-;                 (namespace-attach-module outer-namespace 'mzscheme)
-;                 (namespace-transformer-require 'mzscheme)
-;                 (namespace-require 'mzscheme)
-               ;  (dynamic-require-for-syntax 'mzscheme #f)
-               ;  (dynamic-require 'mzscheme #f)
-                 ;(eval '(map (lambda (x) x) (list 1 2 3)))
+                 (current-eval
+                  (let ([e (drscheme:debug:make-debug-eval-handler (current-eval))])
+                    (if (python-settings-test-coverage? settings)
+                        (add-annotation e)
+                        e)))
+                 (drscheme:debug:test-coverage-enabled (python-settings-test-coverage? settings))
                  (with-handlers ([void (lambda (x)
                                          (printf "~a~n"
                                                  (exn-message x)))])
                    (namespace-attach-module outer-namespace path)
                    (namespace-transformer-require path)
-                   (namespace-require path))
-                 ;(parameterize ([current-namespace outer-namespace])
-                 ;  (init-python-namespace (current-namespace)))
+                   (namespace-require path)
+                   (load-extension (build-path (this-expression-source-directory)
+                                               "c" "stringobject.so"))
+                   )
                  ))))
-;            (dynamic-require '(lib "base.ss" "python") #f)
-;            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
-;                  [n (current-namespace)])
-;              (run-in-user-thread
-;               (lambda ()
-;		 (error-display-handler 
-;		  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-;		 (current-eval 
-;		  (drscheme:debug:make-debug-eval-handler (current-eval)))
-;                 
-;                 
-;                 (with-handlers ([void (lambda (x)
-;                                         (printf "~a~n"
-;                                                 (exn-message x)))])
-;                   (namespace-attach-module n path)
-;                   (namespace-require path))))))
           (define/public (render-value value settings port port-write)
             (render-python-value value port port-write))
-;            (let ([to-render (if (python-node? value)
-;                                (format "~a~n" (py-object%->string value))
-;                                value)])
-;              (if port-write
-;                  (port-write to-render)
-;                  (write to-render port))))
           (define/public (render-value/format value settings port port-write width)
             (render-python-value/format value port port-write))
-          (define/public (unmarshall-settings x) x)
+
+
 	  (define/public (create-executable settings parent src-file)
 	    (let ([dst-file (drscheme:language:put-executable
 			     parent src-file #f #f
@@ -191,62 +190,18 @@
 					      `(module m (lib "base.ss" "python")
 						 ,code))
 					     (list "-mvqe" "(require m)"))))))
+
 	  (define/public (get-one-line-summary) "The Python language (www.python.org)")
 
-          
-          
-          
           (super-instantiate ())))
 
 
-      
-      
-      
+
       ;; cm-key : symbol
       ;; the key used to put information on the continuation
-      (define cm-key (gensym 'teaching-languages-continuation-mark-key))
-      
-      ;; add-error-display : (string (union TST exn) -> void) -> string exn -> void
-      ;; adds in the bug icon, if there are contexts to display
-      (define (teaching-languages-error-display-handler msg exn)
-        (let ([rep (drscheme:rep:current-rep)])
-          (if (exn? exn)
-              (display (exn-message exn) (current-error-port))
-              (fprintf (current-error-port) "uncaught exception: ~e" exn))
-          (fprintf (current-error-port) "\n")
-          (send rep wait-for-io-to-complete/user)
-          (cond
-            [(exn:syntax? exn) 
-             (let ([obj (exn:syntax-expr exn)])
-               (when (syntax? obj)
-                 (let ([src (syntax-source obj)]
-                       [pos (syntax-position obj)]
-                       [span (syntax-span obj)])
-                   (when (and (is-a? src text:basic<%>)
-                              (number? pos)
-                              (number? span))
-                     (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
-            [(exn:read? exn) 
-             (let ([src (exn:read-source exn)]
-                   [pos (exn:read-position exn)]
-                   [span (exn:read-span exn)])
-               (when (and (is-a? src text:basic<%>)
-                          (number? pos)
-                          (number? span))
-                 (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
-            [(drscheme:rep:exn:locs? exn)
-             (let ([locs (drscheme:rep:exn:locs-locs exn)])
-               (send rep highlight-errors locs))]
-            [(exn? exn) 
-             (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
-               (when (and cms (not (null? cms)))
-                 (let* ([first-cms (st-mark-source (car cms))]
-                        [src (car first-cms)]
-                        [start-position (cadr first-cms)]
-                        [end-position (+ start-position (cddr first-cms))])
-                   (send rep highlight-error src start-position end-position))))]
-            [else (void)])))
-      
+      (define cm-key (gensym 'python-continuation-mark-key))
+
+
       ;; with-mark : syntax (any -> syntax) syntax -> syntax
       ;; a member of stacktrace-imports^
       ;; guarantees that the continuation marks associated with cm-key are
@@ -261,39 +216,36 @@
               (with-syntax ([expr expr]
                             [mark (make-st-mark `(,source ,(- start-position 1) . ,span))]
                             [cm-key cm-key])
-                #`(with-continuation-mark
-                   'cm-key
-                   mark
-                  expr))
+                #`(with-continuation-mark 'cm-key mark expr))
               expr)))
 
-      
-      
+
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
       ;;  profiling infrastructure. Not used.
       ;;
-      
+
       (define profile-key (gensym))
       (define (profiling-enabled) #f)
       (define (initialize-profile-point . x) (void))
       (define (register-profile-start . x) #f)
       (define (register-profile-done . x) (void))
-      
-      
-      
+
+
+
       ;;
       ;;  test coverage
       ;;
-      
+
       (define test-coverage-enabled (make-parameter #t))
       (define current-test-coverage-info (make-parameter #f))
-      
+
       (define (initialize-test-coverage-point key expr)
         (unless (current-test-coverage-info)
 	  (let ([ht (make-hash-table)])
 	    (current-test-coverage-info ht)
-            (when (drscheme:rep:current-rep) 
+            (when (drscheme:rep:current-rep)
               (send (drscheme:rep:current-rep) set-test-coverage-info
                     ht
                     (let ([s (make-object style-delta%)])
@@ -304,25 +256,25 @@
                       s)
                     #f))))
         (hash-table-put! (current-test-coverage-info) key (list #f expr)))
-      
+
       (define (test-covered key)
         (let ([v (hash-table-get (current-test-coverage-info) key)])
           (set-car! v #t)))
-      
+
       (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
-      
+
       ;; add-annotation : (sexp -> value) -> sexp -> value
       ;; adds debugging and test coverage information to `sexp' and calls `oe'
       (define (add-annotation oe)
         (let ([teaching-language-eval-handler
                (lambda (exp)
                  (let ([annotated
-                        (if (compiled-expression? 
+                        (if (compiled-expression?
                              (if (syntax? exp) (syntax-e exp) exp))
                             exp
                             (annotate-top (expand exp) #f))])
                    (oe annotated)))])
           teaching-language-eval-handler))
-      
+
 
       )))

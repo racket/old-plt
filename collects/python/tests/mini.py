@@ -55,7 +55,7 @@ def g(x):
 class C:
     def m(this):
         return 8
-    
+
     x = 2
     y = 3
     y = 4
@@ -65,6 +65,13 @@ print c.m()
 print c.x
 print c.y
 
+P = pstring.PString
+p = P(4)
+
+p
+woot = P("woot")
+woot
+woot.upper()
 
 #x = 3
 #while x > 0: print x; x-= 1
@@ -102,7 +109,7 @@ print c.y
 #    print "x:",x,"y:",y
 #else:
 #    print "else..."
-    
+
 #try:
 #    print "before raising"
 #    raise TypeError
@@ -112,7 +119,7 @@ print c.y
 #else:
 #    print "else..."
 #print "outside"
-    
+
 ############### this fails!
 #x = 2
 #loop = 2
@@ -136,7 +143,7 @@ print c.y
 #y = z = x
 #(a, b, (c,d), z) = (x, y, (x,y), x)
 #print "a:",a,"b:",b,"c:",c,"d:",d,"x:",x,"y:",y,"z:",z
-    
+
 #def f():
 #    x = 7
 #    y = z = x
@@ -164,7 +171,7 @@ print c.y
 #def pr(name, val):
 #    print name,val
 #    return val
-    
+
 #g = lambda x, y: 3 #, z = 4: pr("x:",x) + pr("y:",y) + pr("z:",z)
 
 #g(  0, z = 1, y = 2 )
@@ -279,8 +286,8 @@ print c.y
 #    (x, h, z) = (1, i, 3)
 #    print "second call"
 #    g()
-    
-    
+
+
 
 #y = {'a': 3, 'y': 2}
 #y['a']

@@ -7,7 +7,7 @@
            "python-import.ss"
            "built-in.ss"
            "compile-python.ss"
-        ;   "built-in-exceptions.ss")
+           "built-in-exceptions.ss"
            ;"built-in-os.ss")
            )
 ;
@@ -25,7 +25,7 @@
            (all-from "python-import.ss")
            (all-from "compile-python.ss")
            (all-from "built-in.ss")
-          ; (all-from "built-in-exceptions.ss")
+           (all-from "built-in-exceptions.ss")
           ; (all-from "built-in-os.ss")
            )
   

@@ -32,11 +32,16 @@ functions should be applied to nil objects.
    interning of any string.
    Together, these sped the interpreter by up to 20%. */
 
+   #define FIVE_INTS(name) struct { int a; int b; int c; int d; int e; } name;
+
+   #define DANIELS_BIG_GAP FIVE_INTS(a) FIVE_INTS(b) FIVE_INTS(c) FIVE_INTS(d) FIVE_INTS(e)
+
 typedef struct {
     PyObject_VAR_HEAD
+	/*DANIELS_BIG_GAP */
     long ob_shash;
     int ob_sstate;
-    char* ob_sval;//[1];
+    char ob_sval[1];
 } PyStringObject;
 
 
@@ -83,8 +88,8 @@ PyAPI_FUNC(void) _Py_ReleaseInternedStrings(void);
 /* Macro, trading safety for speed */
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
 
-#define PyString_GET_SIZE(op)  (strlen(PyString_AsString(op)))
-//#define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
+//#define PyString_GET_SIZE(op)  (strlen(PyString_AsString(op)))
+#define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
 
 /* _PyString_Join(sep, x) is like sep.join(x).  sep must be PyStringObject*,
    x must be an iterable object. */

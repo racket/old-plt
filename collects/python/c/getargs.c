@@ -135,6 +135,17 @@ PyArg_UnpackTuple(PyObject *args, char *name, int min, int max, ...)
 // fixme...
 int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, char *format, char *keywords[], ...)
 {
+  if ( !strcmp(format, "|O:str") )
+  {
+  va_list va;
+  va_start(va, keywords);
+      {
+      PyObject** dest = va_arg(va, PyObject**);
+      *dest = PyTuple_GET_ITEM(args, 0);
+	  }
+  va_end(va);
+  }
+
  return 1;
 }
 

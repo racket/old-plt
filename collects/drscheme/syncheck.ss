@@ -961,106 +961,122 @@ If the namespace does not, they are colored the unbound color.
               [() (syncheck:button-callback #f)]
               [(jump-to-id)
                (when (send check-syntax-button is-enabled?)
-                 (open-status-line 'drscheme:check-syntax)
-                 (update-status-line 'drscheme:check-syntax status-init)
-                 (let-values ([(expanded-expression expansion-completed) (make-traversal)]
-                              [(old-break-thread old-custodian) (get-breakables)])
-                   (let* ([definitions-text (get-definitions-text)]
-                          [drs-eventspace (current-eventspace)]
-                          [user-namespace #f]
-                          [user-directory #f]
-                          [user-custodian #f]
-                          [normal-termination? #f]
-                          [cleanup
-                           (lambda () ; =drs=
-                             (set-breakables old-break-thread old-custodian)
-                             (enable-evaluation)
-                             (send definitions-text end-edit-sequence)
-                             (close-status-line 'drscheme:check-syntax))]
-                          [kill-termination
-                           (lambda ()
-                             (unless normal-termination?
+                 (unless (is-profj-language?)
+                   (open-status-line 'drscheme:check-syntax)
+                   (update-status-line 'drscheme:check-syntax status-init)
+                   (let-values ([(expanded-expression expansion-completed) (make-traversal)]
+                                [(old-break-thread old-custodian) (get-breakables)])
+                     (let* ([definitions-text (get-definitions-text)]
+                            [drs-eventspace (current-eventspace)]
+                            [user-namespace #f]
+                            [user-directory #f]
+                            [user-custodian #f]
+                            [normal-termination? #f]
+                            [cleanup
+                             (lambda () ; =drs=
+                               (set-breakables old-break-thread old-custodian)
+                               (enable-evaluation)
+                               (send definitions-text end-edit-sequence)
+                               (close-status-line 'drscheme:check-syntax))]
+                            [kill-termination
+                             (lambda ()
+                               (unless normal-termination?
+                                 (parameterize ([current-eventspace drs-eventspace])
+                                   (queue-callback
+                                    (lambda ()
+                                      (syncheck:clear-highlighting)
+                                      (cleanup)
+                                      (custodian-shutdown-all user-custodian))))))]
+                            [error-display-semaphore (make-semaphore 0)]
+                            [uncaught-exception-raised
+                             (lambda () ;; =user=
+                               (set! normal-termination? #t)
                                (parameterize ([current-eventspace drs-eventspace])
                                  (queue-callback
-                                  (lambda ()
+                                  (lambda () ;;  =drs=
+                                    (yield error-display-semaphore) ;; let error display go first
                                     (syncheck:clear-highlighting)
                                     (cleanup)
-                                    (custodian-shutdown-all user-custodian))))))]
-                          [error-display-semaphore (make-semaphore 0)]
-                          [uncaught-exception-raised
-                           (lambda () ;; =user=
-                             (set! normal-termination? #t)
-                             (parameterize ([current-eventspace drs-eventspace])
-                               (queue-callback
-                                (lambda () ;;  =drs=
-                                  (yield error-display-semaphore) ;; let error display go first
-                                  (syncheck:clear-highlighting)
-                                  (cleanup)
-                                  (custodian-shutdown-all user-custodian)))))]
-                          [init-proc
-                           (lambda () ; =user=
-                             (set-breakables (current-thread) (current-custodian))
-                             (set-directory definitions-text)
-                             (error-display-handler (lambda (msg exn) ;; =user=
-                                                      (parameterize ([current-eventspace drs-eventspace])
-                                                        (queue-callback
-                                                         (lambda () ;; =drs=
-                                                           (report-error msg exn)
-                                                           ;; tell uncaught-expception-raised to cleanup
-                                                           (semaphore-post error-display-semaphore))))))
-                             (error-print-source-location #f) ; need to build code to render error first
-                             (current-exception-handler
-                              (let ([oh (current-exception-handler)])
-                                (lambda (exn)
-                                  (uncaught-exception-raised)
-                                  (oh exn))))
-                             (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                             (set! user-custodian (current-custodian))
-                             (set! user-directory (current-directory)) ;; set by set-directory above
-                             (set! user-namespace (current-namespace)))])
-                     (disable-evaluation) ;; this locks the editor, so must be outside.
-                     (send definitions-text begin-edit-sequence #f)
-                     (with-lock/edit-sequence
-                      (lambda ()
-                        (clear-annotations)
-                        (reset-offer-kill)
-                        (send definitions-text syncheck:init-arrows)
-                        
-                        (drscheme:eval:expand-program
-                         (drscheme:language:make-text/pos definitions-text
-                                                          0
-                                                          (send definitions-text last-position))
-                         (send definitions-text get-next-settings)
-                         #t
-                         init-proc
-                         kill-termination
-                         (lambda (sexp loop) ; =user=
-                           (cond
-                             [(eof-object? sexp)
-                              (set! normal-termination? #t)
-                              (parameterize ([current-eventspace drs-eventspace])
-                                (queue-callback
-                                 (lambda () ; =drs=
-                                   (with-lock/edit-sequence
-                                    (lambda ()
-                                      (expansion-completed user-namespace user-directory)
-                                      (send definitions-text syncheck:sort-bindings-table)))
-                                   (cleanup)
-                                   (custodian-shutdown-all user-custodian))))]
-                             [else
-                              (update-status-line 'drscheme:check-syntax status-eval-compile-time)
-                              (eval-compile-time-part-of-top-level sexp)
-                              (parameterize ([current-eventspace drs-eventspace])
-                                (queue-callback
-                                 (lambda () ; =drs=
-                                   (with-lock/edit-sequence
-                                    (lambda ()
-                                      (open-status-line 'drscheme:check-syntax)
-                                      (update-status-line 'drscheme:check-syntax status-coloring-program)
-                                      (expanded-expression user-namespace user-directory sexp jump-to-id)
-                                      (close-status-line 'drscheme:check-syntax))))))
-                              (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                              (loop)]))))))))]))
+                                    (custodian-shutdown-all user-custodian)))))]
+                            [init-proc
+                             (lambda () ; =user=
+                               (set-breakables (current-thread) (current-custodian))
+                               (set-directory definitions-text)
+                               (error-display-handler (lambda (msg exn) ;; =user=
+                                                        (parameterize ([current-eventspace drs-eventspace])
+                                                          (queue-callback
+                                                           (lambda () ;; =drs=
+                                                             (report-error msg exn)
+                                                             ;; tell uncaught-expception-raised to cleanup
+                                                             (semaphore-post error-display-semaphore))))))
+                               (error-print-source-location #f) ; need to build code to render error first
+                               (current-exception-handler
+                                (let ([oh (current-exception-handler)])
+                                  (lambda (exn)
+                                    (uncaught-exception-raised)
+                                    (oh exn))))
+                               (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                               (set! user-custodian (current-custodian))
+                               (set! user-directory (current-directory)) ;; set by set-directory above
+                               (set! user-namespace (current-namespace)))])
+                       (disable-evaluation) ;; this locks the editor, so must be outside.
+                       (send definitions-text begin-edit-sequence #f)
+                       (with-lock/edit-sequence
+                        (lambda ()
+                          (clear-annotations)
+                          (reset-offer-kill)
+                          (send definitions-text syncheck:init-arrows)
+                          
+                          (drscheme:eval:expand-program
+                           (drscheme:language:make-text/pos definitions-text
+                                                            0
+                                                            (send definitions-text last-position))
+                           (send definitions-text get-next-settings)
+                           #t
+                           init-proc
+                           kill-termination
+                           (lambda (sexp loop) ; =user=
+                             (cond
+                               [(eof-object? sexp)
+                                (set! normal-termination? #t)
+                                (parameterize ([current-eventspace drs-eventspace])
+                                  (queue-callback
+                                   (lambda () ; =drs=
+                                     (with-lock/edit-sequence
+                                      (lambda ()
+                                        (expansion-completed user-namespace user-directory)
+                                        (send definitions-text syncheck:sort-bindings-table)))
+                                     (cleanup)
+                                     (custodian-shutdown-all user-custodian))))]
+                               [else
+                                (update-status-line 'drscheme:check-syntax status-eval-compile-time)
+                                (eval-compile-time-part-of-top-level sexp)
+                                (parameterize ([current-eventspace drs-eventspace])
+                                  (queue-callback
+                                   (lambda () ; =drs=
+                                     (with-lock/edit-sequence
+                                      (lambda ()
+                                        (open-status-line 'drscheme:check-syntax)
+                                        (update-status-line 'drscheme:check-syntax status-coloring-program)
+                                        (expanded-expression user-namespace user-directory sexp jump-to-id)
+                                        (close-status-line 'drscheme:check-syntax))))))
+                                (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                                (loop)])))))))))]))
+          
+          (define/private (is-profj-language?)
+            (let* ([definitions-text (get-definitions-text)]
+                   [settings (send definitions-text get-next-settings)]
+                   [lang (drscheme:language-configuration:language-settings-language settings)]
+                   [names (send lang get-language-position)])
+              (cond
+                [(ormap (lambda (x) (regexp-match #rx"ProfessorJ" x))
+                        names)
+                 (message-box (string-constant drscheme)
+                              "Check Syntax is not available for the ProfessorJ languages"
+                              this
+                              '(ok stop))
+                 #t]
+                [else #f])))
 
           ;; set-directory : text -> void
           ;; sets the current-directory and current-load-relative-directory

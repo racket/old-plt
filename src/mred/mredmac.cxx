@@ -268,6 +268,24 @@ static int WeAreFront()
 }
 #endif
 
+static int GetMods(void)
+{
+  KeyMap km;
+  int mods = 0;
+	  
+  GetKeys(km);
+  if (km[1] & 32768)
+    mods |= cmdKey;
+  if (km[1] & 1)
+    mods |= shiftKey;
+  if (km[1] & 4)
+    mods |= optionKey;
+  if (km[1] & 8)
+    mods |= controlKey;
+  
+  return mods;
+}
+
 static MrEdContext *cont_event_context;
 static WindowPtr cont_event_context_window;
 static Point last_mouse;
@@ -632,27 +650,14 @@ int MrEdGetNextEvent(int check_only, int current_only,
         event->when = TickCount();
         if (cont_event_context && StillDown()) {
 	  /* Dragging... */
-	  KeyMap km;
-	  int mods = btnState;
-	  
-	  GetKeys(km);
-	  if (km[1] & 32768)
-	    mods |= cmdKey;
-	  if (km[1] & 1)
-	    mods |= shiftKey;
-	  if (km[1] & 4)
-	    mods |= optionKey;
-	  if (km[1] & 8)
-	    mods |= controlKey;
-	    
-	  event->modifiers = mods;
+	  event->modifiers = GetMods() | btnState;
 	  event->message = 1;
 #ifdef RECORD_HISTORY
 	  fprintf(history, "drag\n");
   	  fflush(history);
 #endif
         } else {
-          event->modifiers = 0;
+          event->modifiers = (keyOk ? GetMods() : 0);
 	  event->message = (keyOk ? 1 : 0);
 #ifdef RECORD_HISTORY
 	  fprintf(history, "move\n");

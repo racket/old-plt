@@ -143,14 +143,12 @@ wxColourMap *wxGIF::getColorMap()
 
 BOOL wxGIF::ReadHeader( FILE *fp)
 {
-	unsigned char tstA[256];
-	unsigned char *rgbTable, single;
-	ushort widlow, widhigh, hgtlow, hgthi, i;
-
+  unsigned char tstA[256];
+  unsigned char *rgbTable, single;
+  ushort widlow, widhigh, hgtlow, hgthi, i;
+  
   fread((char*)&tstA[0],13,1,fp);
-
-// what a standard, numbers need to be read in backwards ????
-//  fread((char*)&dscgif,sizeof(dscgif),1,f); // not portable
+  
   ushort index = 0;
   for ( i=0; i<6;i++)
     dscgif.header[i] = tstA[index++];
@@ -167,45 +165,40 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   if (strncmp(dscgif.header,"GIF8",3)!=0)
     return FALSE;
 
-  TabCol.sogct = 1<<((dscgif.pflds & 0x0007) + 0x0001);
-  TabCol.colres = (dscgif.pflds>>6) & 7 + 1;
-  rgbTable = new unsigned char[3*TabCol.sogct];
-  int errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
-  unsigned char *tp = rgbTable;
-  for ( i=0 ; i<TabCol.sogct; i++) {
-    TabCol.paleta[i].r = *tp++;
-    TabCol.paleta[i].g = *tp++;
-    TabCol.paleta[i].b = *tp++;
+  TabCol.sogct = 1 << ((dscgif.pflds & 7) + 1);
+  TabCol.colres = (dscgif.pflds >> 6) & 7 + 1;
+  
+  if (dscgif.pflds & 0x80) {
+    rgbTable = new unsigned char[3*TabCol.sogct];
+    int errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
+    unsigned char *tp = rgbTable;
+    for (i = 0; i < TabCol.sogct; i++) {
+      TabCol.paleta[i].r = *tp++;
+      TabCol.paleta[i].g = *tp++;
+      TabCol.paleta[i].b = *tp++;
+    }
+    delete [] rgbTable;
   }
-  delete [] rgbTable;
 
   single = 0;
   while (1) {
     fread((char *)&single, 1, 1, fp);
-	if (single == 0x21) { /* extension */
-	  fread(&single,1,1,fp); /* function */
-	  while (1) {
+    if (single == 0x21) { /* extension */
+      fread(&single,1,1,fp); /* function */
+      while (1) {
         fread(&single,1,1,fp); /* block size */
-		if (single)
+	if (single)
           fread((char*)&tstA[0],single,1,fp);
-		else
-		  break;
-	  }
-	} else
+	else
 	  break;
+      }
+    } else
+      break;
   }
-
-//	 fread((char*)&image,sizeof(image),1,f); // not portable to other compilers
+    
   fread((char*)&tstA[0],9,1,fp);
   index = 0;
   image.sep = single;
-  /* CJC MW7 68K fails
-  image.l = tstA[index++] + (256 * tstA[index++]);
-  image.t = tstA[index++] + (256 * tstA[index++]);
-  image.w = tstA[index++] + (256 * tstA[index++]);
-  image.h = tstA[index++] + (256 * tstA[index++]);
-  image.pf = tstA[index++];
-  */
   image.l = tstA[index++];
   image.l += (256 * tstA[index++]);
   image.t = tstA[index++];
@@ -215,6 +208,22 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   image.h = tstA[index++];
   image.h += (256 * tstA[index++]);
   image.pf = tstA[index++];
+
+  if (image.pf & 0x80) {
+    int len = (1 << ((image.pf & 7) + 1)), i, j = 0;
+    for (i = 0; i < len; i++) {
+      if (j == 198)
+	j = 0;
+      if (!j) {
+	fread((char*)&tstA[0], 
+	      (len - i > 66) ? 198 : (3 * (len - i)),
+	      1, fp);
+      }
+      TabCol.paleta[i].r = tstA[j++];
+      TabCol.paleta[i].g = tstA[j++];
+      TabCol.paleta[i].b = tstA[j++];
+    }
+  }
 
   return TRUE;
 }

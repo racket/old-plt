@@ -270,8 +270,8 @@
 
 @CLASSBASE wxCursor "cursor" : "object"
 
-@CREATOR (string,SYM[bitmapType]=0,rint[0|10000]=0,rint[0|10000]=0); <> cursor name
-@CREATOR (SYM[cursor]); <> cursor id
+@CREATOR (string,SYM[bitmapType]=0,rint[0|10000]=0,rint[0|10000]=0); <> pathname
+@CREATOR (SYM[cursor]); <> symbolic name
 
 @ "ok?" : bool Ok();
 

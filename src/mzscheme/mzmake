@@ -40,6 +40,9 @@ case $OS in
   FreeBSD)
     gmake 'CC=gcc' $GCOPTS "$@"
     ;;
+  OpenBSD)
+    make 'PERL=' 'CC=gcc' $GCOPTS "$@"
+    ;;
   IRIX)
     if [ "${USEIRIXSPROC}" = "yes" ] ; then
       IRIXTFLAGS="THREADFLAGS='-DIRIX_SPROCS'"

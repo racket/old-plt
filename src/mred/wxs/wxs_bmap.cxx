@@ -335,10 +335,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 3) 
-      scheme_wrong_count("initialization in bitmap% (string case)", 3, 3, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "initialization in bitmap% (string case)");
-    x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (string case)");
-    x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (string case)");
+      scheme_wrong_count("initialization in bitmap% (datastring case)", 3, 3, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "initialization in bitmap% (datastring case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (datastring case)");
+    x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (datastring case)");
 
     if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]);
     realobj = new os_wxBitmap(obj, x0, x1, x2);

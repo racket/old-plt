@@ -2740,8 +2740,8 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 1) 
-      scheme_wrong_count("initialization in cursor% (cursor id case)", 1, 1, n, p);
-    x0 = unbundle_symset_cursor(p[0], "initialization in cursor% (cursor id case)");
+      scheme_wrong_count("initialization in cursor% (symbolic name case)", 1, 1, n, p);
+    x0 = unbundle_symset_cursor(p[0], "initialization in cursor% (symbolic name case)");
 
     
     realobj = new os_wxCursor(obj, x0);
@@ -2755,18 +2755,18 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if ((n < 1) ||(n > 4)) 
-      scheme_wrong_count("initialization in cursor% (cursor name case)", 1, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "initialization in cursor% (cursor name case)");
+      scheme_wrong_count("initialization in cursor% (pathname case)", 1, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "initialization in cursor% (pathname case)");
     if (n > 1) {
-      x1 = unbundle_symset_bitmapType(p[1], "initialization in cursor% (cursor name case)");
+      x1 = unbundle_symset_bitmapType(p[1], "initialization in cursor% (pathname case)");
     } else
       x1 = 0;
     if (n > 2) {
-      x2 = objscheme_unbundle_integer_in(p[2], 0, 10000, "initialization in cursor% (cursor name case)");
+      x2 = objscheme_unbundle_integer_in(p[2], 0, 10000, "initialization in cursor% (pathname case)");
     } else
       x2 = 0;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer_in(p[3], 0, 10000, "initialization in cursor% (cursor name case)");
+      x3 = objscheme_unbundle_integer_in(p[3], 0, 10000, "initialization in cursor% (pathname case)");
     } else
       x3 = 0;
 

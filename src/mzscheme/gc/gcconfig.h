@@ -38,6 +38,12 @@
 #    define HP
 #    define mach_type_known
 # endif
+/* MATTHEW: OpenBSD from Bengt Kleberg */
+# if defined(__OpenBSD__) && defined(m68k)
+#    define M68K
+#    define OPENBSD
+#    define mach_type_known
+# endif
 # if defined(__NetBSD__) && defined(m68k)
 #    define M68K
 #    define NETBSD
@@ -171,6 +177,12 @@
 # if defined(NeXT) && defined(i386)
 #   define I386
 #   define NEXT
+#   define mach_type_known
+# endif
+/* MATTHEW: OpenBSD from Bengt Kleberg */
+# if defined(__OpenBSD__) && defined(i386)
+#   define I386
+#   define OPENBSD
 #   define mach_type_known
 # endif
 # if defined(__FreeBSD__) && defined(i386)
@@ -377,6 +389,13 @@
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
+/* MATTHEW: OpenBSD from Bengt Kleberg */
+#   ifdef OPENBSD
+#	define OS_TYPE "OPENBSD"
+#	define HEURISTIC2
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
 #	define HEURISTIC2
@@ -732,6 +751,10 @@
                                                      + _stklen))
 		/* This may not be right.  */
 #   endif
+/* MATTHEW: OpenBSD from Bengt Kleberg */
+#   ifdef OPENBSD
+#	define OS_TYPE "OPENBSD"
+#   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
 #	define MPROTECT_VDB
@@ -745,7 +768,8 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-#   if defined(FREEBSD) || defined(NETBSD) \
+/* MATTHEW: OpenBSD from Bengt Kleberg */
+#   if defined(OPENBSD) || defined(FREEBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;

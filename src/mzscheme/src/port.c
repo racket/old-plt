@@ -5841,8 +5841,21 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 /******************** Main sleep function  *****************/
 /* The simple select() stuff is buried in Windows complexity. */
 
+/* This sleep function is not allowed to allocate in OS X, because it
+   is called in a non-main thread. */
+
+#ifdef OS_X
+# ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+# endif
+#endif
+
 static void default_sleep(float v, void *fds)
 {
+  /* REMEMBER: don't allocate in this function (at least not GCable
+     memory) for OS X. Not that FD setups are ok, because they use
+     eternal mallocs. */
+
 #ifdef USE_OSKIT_CONSOLE
   /* Don't really sleep; keep polling the keyboard: */
   if (!v || (v > 0.01))
@@ -6085,6 +6098,12 @@ static void default_sleep(float v, void *fds)
   }
 #endif
 }
+
+#ifdef OS_X
+# ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+# endif
+#endif
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;

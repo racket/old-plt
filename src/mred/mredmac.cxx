@@ -1096,6 +1096,10 @@ static int watch_done_read_fd, watch_done_write_fd;
 static int cb_socket_ready;
 static int ready_sock, write_ready_sock;
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void *do_watch(void *fds)
 {
   while (1) {
@@ -1120,6 +1124,10 @@ static void *do_watch(void *fds)
 
   return NULL;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *fds)
 {

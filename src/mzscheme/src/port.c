@@ -34,8 +34,11 @@
 # ifdef SELECT_INCLUDE
 #  include <sys/select.h>
 # endif
+# ifdef USE_BEOS_SOCKET_INCLUDE
+#  include <be/net/socket.h>
+# endif
 #endif
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
 # include <signal.h>
 # include <sys/types.h>
 # include <sys/wait.h>
@@ -46,6 +49,9 @@
 #endif
 #ifdef USE_BEOS_SNOOZE
 # include <be/kernel/OS.h>
+#endif
+#ifdef BEOS_PROCESSES
+# include <be/kernel/image.h>
 #endif
 #ifdef NO_ERRNO_GLOBAL
 static int mzerrno = 0;
@@ -185,7 +191,7 @@ typedef struct Scheme_Tcp {
 
 #endif
 
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
 /* For process & system: */
 typedef struct System_Child {
   pid_t id;
@@ -254,7 +260,7 @@ static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
 #endif
 
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
 System_Child *scheme_system_children;
 #endif
 
@@ -355,6 +361,23 @@ static Scheme_Object *default_print_handler;
 
 #include "schwinfd.h"
 
+#if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
+static status_t kill_my_team(void *t)
+{
+  thread_info info;
+  status_t v;
+
+  MZ_SIGSET(SIGINT, SIG_IGN);
+
+  get_thread_info((thread_id)t, &info);
+  wait_for_thread((thread_id)t, &v);
+
+  kill_team(info.team);
+
+  return 0;
+}
+#endif
+
 void 
 scheme_init_port (Scheme_Env *env)
 {
@@ -400,12 +423,17 @@ scheme_init_port (Scheme_Env *env)
     REGISTER_SO(tcp_send_buffers);
 #endif
 
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
     REGISTER_SO(scheme_system_children);
 #endif
 
 #ifndef DONT_IGNORE_PIPE_SIGNAL
     MZ_SIGSET(SIGPIPE, SIG_IGN);
+#endif
+
+#if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
+    resume_thread(spawn_thread(kill_my_team, "killer",
+			       B_NORMAL_PRIORITY, (void*)find_thread(NULL)));
 #endif
 
     if (!scheme_sleep)
@@ -1560,6 +1588,11 @@ file_char_ready (Scheme_Input_Port *port)
   if (fp->_r > 0)
     return 1;
 #endif
+#ifdef HAS_BEOS_IOB  
+  /* Not actually useful since BeOS doesn't have file descriptors... */
+  if (fp->buffer_pos)
+    return 1;
+#endif
 
   if (feof(fp) || ferror(fp))
     return 1;
@@ -1832,7 +1865,7 @@ typedef struct {
 # define TRY_WAIT_SEMAPHORE(sem) (acquire_sem_etc(sem, 1, B_TIMEOUT, 0) == B_NO_ERROR)
 # define WAIT_SEMAPHORE(sem) while (acquire_sem(sem) != B_NO_ERROR) {}
 static status_t mz_thread_status;
-# define WAIT_THREAD(th) while (wait_for_thread(th, &mz_thread_status) != B_NO_ERROR) {}
+# define WAIT_THREAD(th) wait_for_thread(th, &mz_thread_status)
 # define MAKE_SEMAPHORE() create_sem(0, NULL)
 # define FREE_SEMAPHORE(sem) delete_sem(sem)
 
@@ -4048,13 +4081,13 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 # ifdef USE_CREATE_PIPE
 #  define _EXTRA_PIPE_ARGS
 static int pipe(int *ph) {
-	HANDLE r, w;
-	if (CreatePipe(&r, &w, NULL, 0)) {
-		ph[0] = (int)r;
-		ph[1] = (int)w;
-		return 0;
-	} else
-		return 1;
+  HANDLE r, w;
+  if (CreatePipe(&r, &w, NULL, 0)) {
+    ph[0] = (int)r;
+    ph[1] = (int)w;
+    return 0;
+  } else
+    return 1;
 }
 # else
 #  include <Process.h>
@@ -4067,7 +4100,7 @@ static int pipe(int *ph) {
 
 #endif
 
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
 
 # define WAITANY(s) waitpid((pid_t)-1, s, WNOHANG)
 
@@ -4113,11 +4146,20 @@ static void child_done(int ingored)
 
 #endif
 
-#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+
+#ifdef BEOS_PROCESSES
+typedef struct {
+  thread_id t;
+  status_t result;
+  int done;
+  sem_id done_sem;
+} BeOSProcess;
+#endif
 
 static int subp_done(Scheme_Object *sci)
 {
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
   System_Child *sc = (System_Child *)sci;
   return sc->done;
 #endif
@@ -4126,10 +4168,21 @@ static int subp_done(Scheme_Object *sci)
   if (sci) {
     if (GetExitCodeProcess((HANDLE)sci, &w))
       return w != STILL_ACTIVE;
-	else
-	  return 1;
+    else
+      return 1;
   } else
     return 1;
+#endif
+#ifdef BEOS_PROCESSES
+  BeOSProcess *p = (BeOSProcess *)sci;
+  if (p->done) {
+    if (p->done_sem) {
+      delete_sem(p->done_sem);
+      p->done_sem = 0;
+    }
+    return 1;
+  } else
+    return 0;
 #endif
 }
 
@@ -4140,12 +4193,15 @@ static void subp_needs_wakeup(Scheme_Object *sci, void *fds)
   add_fd_handle((HANDLE)sci, fds, 0);
 # endif
 #endif
+#ifdef BEOS_PROCESSES
+  add_fd_handle(((BeOSProcess *)sci)->done_sem, fds, 1);
+#endif
 }
 
 static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **argv)
 {
   if (SAME_OBJ(argv[0], scheme_intern_symbol("status"))) {
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
     System_Child *sc = (System_Child *)sci;
     
     if (sc->done) {
@@ -4169,6 +4225,18 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
       else
 	return scheme_intern_symbol("done-ok");
     }
+# endif
+# ifdef BEOS_PROCESSES
+    BeOSProcess *p = (BeOSProcess *)sci;
+    if (!p)
+      return scheme_intern_symbol("done-error");
+    if (p->done) {
+      if (!p->result)
+	return scheme_intern_symbol("done-ok");
+      else
+	return scheme_intern_symbol("done-error");
+    } else
+      return scheme_intern_symbol("running");
 # endif
     return scheme_intern_symbol("unknown");
 #endif
@@ -4232,6 +4300,73 @@ static char *cmdline_protect(char *s)
 }
 #endif /* WINDOWS_PROCESSES */
 
+#ifdef BEOS_PROCESSES
+extern char **environ;
+static status_t wait_process(void *_p)
+{
+  BeOSProcess *p = (BeOSProcess *)_p;
+  status_t r;
+
+  signal(SIGINT, SIG_IGN);
+  RELEASE_SEMAPHORE(got_started);
+
+  if (wait_for_thread(p->t, &r) == B_NO_ERROR)
+    p->result = r;
+  else
+    p->result = -1;
+
+  p->done = 1;
+
+  release_sem(p->done_sem);
+
+  return 0;
+}
+
+static void delete_done_sem(void *_p)
+{
+  BeOSProcess *p = (BeOSProcess *)_p;
+  if (p->done_sem)
+    delete_sem(p->done_sem);
+}
+
+static long spawnv(int type, char *command, const char *  const *argv)
+{
+  BeOSProcess *p = MALLOC_ONE(BeOSProcess);
+  sigset_t sigs;
+  int i;
+
+  for (i = 0; argv[i]; i++);
+
+  p->t = load_image(i, (char **)argv, NULL /* environ */);
+  
+  if (p->t <= 0)
+    return -1;
+
+  p->done = 0;
+  p->result = -1;
+  p->done_sem = create_sem(0, NULL);
+
+  scheme_register_finalizer(p, delete_done_sem, NULL, NULL, NULL);
+
+  if (!got_started)
+    got_started = create_sem(0, NULL);
+  
+  /* Disable SIGINT until the child starts ignoring it */
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGINT);
+  sigprocmask(SIG_BLOCK, &sigs, NULL);
+  
+  resume_thread(spawn_thread(wait_process, "process waiter",
+			     B_NORMAL_PRIORITY, p));
+
+  WAIT_SEMAPHORE(got_started);
+    
+  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+  return (long)p;
+}
+#endif
+
 static Scheme_Object *process(int c, Scheme_Object *args[], 
 			      char *name, int shell, int synchonous, 
 			      int as_child)
@@ -4243,12 +4378,12 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   int def_exit_on;
   char **argv;
   Scheme_Object *in, *out, *subpid, *err, *thunk;
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
   System_Child *sc;
 #else
   void *sc = 0;
 #endif
-#ifdef WINDOWS_PROCESSES
+#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;
 
   /* Don't know how to do these, yet */
@@ -4306,7 +4441,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     }
   }
 
-#ifdef WINDOWS_PROCESSES
+#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   fflush(NULL);
 
   if (shell)
@@ -4314,6 +4449,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   else {
     int type;
     int save0, save1, save2;
+
+#ifdef BEOS_PROCESSES
+# define _P_NOWAIT 0
+# define _P_OVERLAY 1
+#endif
 
     if (!synchonous)
       type = _P_NOWAIT;
@@ -4334,9 +4474,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(err_subprocess[1], 2);
     }
 
+#ifdef WINDOWS_PROCESSES
     /* spawnv is too stupid to protect spaces, etc. in the arguments: */
     for (i = 0; i < c; i++)
       argv[i] = cmdline_protect(argv[i]);
+#endif
 
     /* Set real CWD - and hope no other thread changes it! */
     scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
@@ -4354,16 +4496,22 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       if (spawn_status != -1)
         sc = (void *)pid;
     } else if ((spawn_status != -1) && !as_child) {
-      DWORD w;
-
       sc = (void *)spawn_status;
 
       scheme_block_until(subp_done, subp_needs_wakeup, (void *)sc, (float)0.0);
 
-      if (GetExitCodeProcess((HANDLE)sc, &w))
-	spawn_status = w;
-      else
-	spawn_status = -1;
+#ifdef WINDOWS_PROCESSES
+      {
+	DWORD w;
+	if (GetExitCodeProcess((HANDLE)sc, &w))
+	  spawn_status = w;
+	else
+	  spawn_status = -1;
+      }
+#endif
+#ifdef BEOS_PROCESSES
+      spawn_status = (((BeOSProcess *)sc)->result ? -1 : 0);
+#endif
 
       pid = 0;
     }
@@ -4501,10 +4649,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   } else {
     int status;
 
-#ifdef WINDOWS_PROCESSES
+#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
     status = spawn_status;
 #else
-#ifdef UNIX_PROCESSES
+#if defined(UNIX_PROCESSES)
     if (!as_child) {
       /* exec Sucess => (exit) */
       /* exec Failure => (void) */

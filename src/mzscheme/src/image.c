@@ -109,7 +109,7 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 		       "write-image-to-file: a file, process, or TCP port is open (%d)",
 		       scheme_file_open_count);
       return NULL;
-#ifdef UNIX_FILE_SYSTEM
+#ifdef UNIX_PROCESSES
     } else if (scheme_system_children) {
       scheme_raise_exn(MZEXN_MISC_IMAGE,
 		       scheme_make_string(filename),

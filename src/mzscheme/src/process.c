@@ -40,6 +40,9 @@
 # ifdef SELECT_INCLUDE
 #  include <sys/select.h>
 # endif
+# ifdef USE_BEOS_SOCKET_INCLUDE
+#  include <be/net/socket.h>
+# endif
 #endif
 #ifdef USE_WINSOCK_TCP
 # ifdef USE_TCP

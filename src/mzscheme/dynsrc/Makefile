@@ -3,7 +3,7 @@
 #
 
 # dynlink is a script that uses the right set of link commands
-DYNLINK = mzc -v --ld 
+DYNLINK = mzc --ld 
 
 CFLAGS_NODBG = $(OPT) $(WARN) $(OPTIONS) $(DYNOPTIONS) -I../include
 CFLAGS = $(CFLAGS_NODBG) $(DEBUGFLAGS)

@@ -271,8 +271,10 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # undef HAS_STANDARD_IOB
 # undef FILES_HAVE_FDS
-
 # define USE_BEOS_PORT_THREADS
+
+# undef UNIX_PROCESSES
+# define BEOS_PROCESSES
 
 # define USE_FCNTL_O_NONBLOCK
 # define PF_INET AF_INET

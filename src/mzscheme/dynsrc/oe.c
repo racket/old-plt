@@ -411,6 +411,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *global_env)
     v = (void *)scheme_make_class_assembly("tclass", /* name */
 					   1, /* 1 interface */
 					   6, pnames,
+					   0, NULL,
 					   2, inames,
 					   0, NULL, /* renameds */
 					   2, 2,

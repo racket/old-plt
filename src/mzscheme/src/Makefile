@@ -122,7 +122,9 @@ schemex.inc : schemef.h makex
 schexn.h : exnsrc.ss makeexn
 	./makeexn < exnsrc.ss > schexn.h
 
-$(OBJDIR)/schsys.h : sysname objects $(OBJDIR)
+$(OBJDIR)/schsys.h : sysname
+	make objects
+	make $(OBJDIR)
 	echo -n "#define SCHEME_PLATFORM_LIBRARY_SUBPATH " > $(OBJDIR)/schsys.h
 	./sysname >> $(OBJDIR)/schsys.h
 

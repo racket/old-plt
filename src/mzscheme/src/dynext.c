@@ -330,6 +330,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     char *(*f)(SSI_ARG_TYPES), *vers;
   
     image = load_add_on(filename);
+    printf("loaded\n");
     if (image <= 0)
       scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,
 		       scheme_make_string(filename),

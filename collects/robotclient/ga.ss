@@ -8,8 +8,8 @@
   (define LOWEST-POSSIBLE-INTEGER -10000)
 
   (define capacity-amount 10000)
-  (define print-every-n-generations 2)
-  (define run-n-generations 10)
+  (define print-every-n-generations 1)
+  (define run-n-generations 1)
   (define output-port (current-output-port))
   (define boards '((3 "board1" "packages1" 100)
                    (3 "board2" "packages1" 100)

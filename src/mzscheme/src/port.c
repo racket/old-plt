@@ -441,6 +441,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 
 #if defined(FILES_HAVE_FDS)
+# ifndef USE_OSKIT_CONSOLE
     /* Set up a pipe for signalling external events: */
     {
       int fds[2];
@@ -451,6 +452,7 @@ scheme_init_port (Scheme_Env *env)
 	fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
       }
     }
+# endif
 #endif
 
     scheme_init_port_config();
@@ -5164,19 +5166,22 @@ static void default_sleep(float v, void *fds)
     /* Nothing to block on - just sleep for some amount of time. */
 #if defined(FILES_HAVE_FDS)
     /* Sleep by selecting on the external event fd */
-    DECL_FDSET(readfds, 1);
     struct timeval time;
-
-    INIT_DECL_FDSET(readfds, 1);
 
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
 
-    MZ_FD_ZERO(readfds);
-    if (external_event_fd)
-      MZ_FD_SET(external_event_fd, readfds);
+    if (external_event_fd) {
+      DECL_FDSET(readfds, 1);
 
-    select(external_event_fd + 1, readfds, NULL, NULL, &time);
+      INIT_DECL_FDSET(readfds, 1);
+
+      MZ_FD_ZERO(readfds);
+      MZ_FD_SET(external_event_fd, readfds);
+      select(external_event_fd + 1, readfds, NULL, NULL, &time);
+    } else {
+      select(0, NULL, NULL, NULL, &time);
+    }
 #else
 # ifndef NO_SLEEP
 #  ifdef USE_BEOS_SNOOZE
@@ -5361,7 +5366,7 @@ static void default_sleep(float v, void *fds)
 
 #if defined(FILES_HAVE_FDS)
   /* Clear external event flag */
-  {
+  if (external_event_fd) {
     char buf[10];
     event_fd_set = 1;
     read(external_event_fd, buf, 10);

@@ -5597,7 +5597,7 @@ static int tcp_check_accept(Scheme_Object *listener)
 
 static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
 {
-#ifdef USE_UNIX_SOCKETS_TCP
+#ifdef USE_SOCKETS_TCP
   tcp_t s = ((listener_t *)listener)->s;
   void *fds2;
 
@@ -6126,6 +6126,9 @@ static void tcp_close_output(Scheme_Output_Port *port)
 
 #ifdef USE_UNIX_SOCKETS_TCP
   close(data->tcp);
+#endif
+#ifdef USE_WINSOCK_TCP
+  shutdown(data->tcp, 2);
 #endif
 #ifdef USE_MAC_TCP
   mac_tcp_close(data);
@@ -6911,7 +6914,9 @@ static void default_sleep(float v, void *fds)
       int count, *rps, just_two_rps[2];
       int fd_added;
 
-      fd_added = ((win_extended_fd_set *)fds)->added;
+      fd_added = (((win_extended_fd_set *)rd)->added
+		  || ((win_extended_fd_set *)wr)->added
+		  || ((win_extended_fd_set *)ex)->added);
       count = ((win_extended_fd_set *)fds)->num_handles;
       array = ((win_extended_fd_set *)fds)->handles;
       rps = ((win_extended_fd_set *)fds)->repost_sema;

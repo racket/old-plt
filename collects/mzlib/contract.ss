@@ -32,7 +32,8 @@ improve method arity mismatch contract violation error messages?
                       (lib "name.ss" "syntax"))
   
   (require "private/class-sneaky.ss"
-           "etc.ss")
+           "etc.ss"
+           "list.ss")
   
   (require (lib "contract-helpers.scm" "mzlib" "private"))
   (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
@@ -706,20 +707,29 @@ improve method arity mismatch contract violation error messages?
                       [(null? opt-vs) (list req-vs)]
                       [else (cons (append req-vs (reverse opt-vs))
                                   (loop (cdr opt-vs)))])))])
-           (with-syntax ([((double-res-vs ...) ...) (map (lambda (x) res-vs) cses)]
-                         [(res-vs ...) res-vs]
+           (with-syntax ([(res-vs ...) res-vs]
                          [(req-vs ...) req-vs]
                          [(opt-vs ...) opt-vs]
                          [((case-doms ...) ...) cses])
-             (with-syntax ([expanded-case->
-                            (make-case->/proc
-                             method-proc?
-                             (syntax (case-> (-> case-doms ... (values double-res-vs ...)) ...)))])
-               (syntax/loc stx
-                 (let ([res-vs ress] ...
-                       [req-vs reqs] ...
-                       [opt-vs opts] ...)
-                   expanded-case->)))))]))
+             (with-syntax ([(single-case-result ...)
+                            (let* ([ress-lst (syntax->list (syntax (ress ...)))]
+                                   [only-one?
+                                    (and (pair? ress-lst)
+                                         (null? (cdr ress-lst)))])
+                              (map
+                               (if only-one?
+                                   (lambda (x) (car (syntax->list (syntax (res-vs ...)))))
+                                   (lambda (x) (syntax (values res-vs ...))))
+                               cses))])
+               (with-syntax ([expanded-case->
+                              (make-case->/proc
+                               method-proc?
+                               (syntax (case-> (-> case-doms ... single-case-result) ...)))])
+                 (syntax/loc stx
+                   (let ([res-vs ress] ...
+                         [req-vs reqs] ...
+                         [opt-vs opts] ...)
+                     expanded-case->))))))]))
 
     ;; exactract-argument-lists : syntax -> (listof syntax)
     (define (extract-argument-lists stx)
@@ -911,13 +921,22 @@ improve method arity mismatch contract violation error messages?
              (values obj->/proc
                      (syntax (-> any? args ...))
                      (syntax ((arg-vars ...)))))]
-          #|
           [(->* (doms ...) (rngs ...))
-           (syntax (->* (this-ctc doms ...) (rngs ...)))]
+           (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
+                         [(this-var) (generate-temporaries (syntax (this-var)))])
+             (values obj->*/proc
+                     (syntax (->* (any? doms ...) (rngs ...)))
+                     (syntax ((this-var args-vars ...)))))]
           [(->* (doms ...) rst (rngs ...))
-           (syntax (->* (this-ctc doms ...) rst (rngs ...)))]
+           (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
+                         [(rst-var) (generate-temporaries (syntax (rst)))]
+                         [(this-var) (generate-temporaries (syntax (this-var)))])
+             (values obj->*/proc
+                     (syntax (->* (any? doms ...) rst (rngs ...)))
+                     (syntax ((this-var args-vars ... . rst-var)))))]
           [(->* x ...)
            (raise-syntax-error 'object-object "malformed ->*" stx mtd-stx)]
+          #|
           [(->d) (raise-syntax-error 'object-contract "->d must have arguments" stx mtd-stx)]
           [(->d args ...)
            (let* ([args-list (syntax->list (syntax (args ...)))]
@@ -982,14 +1001,45 @@ improve method arity mismatch contract violation error messages?
             [else (let ([arg-spec-stxs (car arg-spec-stxss)])
                     (with-syntax ([(cases ...)
                                    (map (lambda (arg-spec-stx)
-                                          (with-syntax ([(this rest-ids ...) arg-spec-stx]
-                                                        [i i])
-                                            (syntax ((this rest-ids ...) 
-                                                     ((field-ref this i) (wrapper-object-wrapped this) rest-ids ...)))))
+                                          (with-syntax ([i i])
+                                            (syntax-case arg-spec-stx ()
+                                              [(this rest-ids ...)
+                                               (syntax
+                                                ((this rest-ids ...) 
+                                                 ((field-ref this i) (wrapper-object-wrapped this) rest-ids ...)))]
+                                              [else
+                                               (let-values ([(this rest-ids last-var)
+                                                             (let ([lst (syntax->improper-list arg-spec-stx)])
+                                                               (values (car lst)
+                                                                       (all-but-last (cdr lst))
+                                                                       (cdr (last-pair lst))))])
+                                                 (with-syntax ([this this]
+                                                               [(rest-ids ...) rest-ids]
+                                                               [last-var last-var])
+                                                   (syntax
+                                                    ((this rest-ids ... . last-var) 
+                                                     (apply (field-ref this i)
+                                                            (wrapper-object-wrapped this)
+                                                            rest-ids ...
+                                                            last-var)))))])))
                                         (syntax->list arg-spec-stxs))])
                       (cons (syntax (lambda (field-ref) (case-lambda cases ...)))
                             (loop (cdr arg-spec-stxss)
                                   (+ i 1)))))])))
+      
+      (define (syntax->improper-list stx)
+        (define (se->il se)
+          (cond
+            [(pair? se) (sp->il se)]
+            [else se]))
+        (define (stx->il stx)
+          (se->il (syntax-e stx)))
+        (define (sp->il p)
+          (cond
+            [(null? (cdr p)) p]
+            [(pair? (cdr p)) (cons (car p) (sp->il (cdr p)))]
+            [(syntax? (cdr p)) p]))
+        (stx->il stx))
       
       (syntax-case stx ()
         [(_ field/mtd-specs ...)
@@ -1524,13 +1574,15 @@ improve method arity mismatch contract violation error messages?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (procedure? val)
+                 (unless (and (procedure? val)
+                              (procedure-accepts-and-more? val dom-length))
                    (raise-contract-error
                     src-info
                     pos-blame
                     neg-blame
                     orig-str
-                    "expected a procedure that accepts ~a arguments, given: ~e"
+                    "expected a procedure that accepts ~a arguments and any number of arguments larger than ~a, given: ~e"
+                    dom-length
                     dom-length
                     val)))))
             (lambda (outer-args)
@@ -1856,13 +1908,16 @@ improve method arity mismatch contract violation error messages?
           [else to-be-named])))
     
     ;; (cons X (listof X)) -> (listof X)
-    ;; returns the elements of `l', minus the last
-    ;; element
+    ;; returns the elements of `l', minus the last element
+    ;; special case: if l is an improper list, it leaves off
+    ;; the contents of the last cdr (ie, making a proper list
+    ;; out of the input), so (all-but-last '(1 2 . 3)) = '(1 2)
     (define (all-but-last l)
       (cond
         [(null? l) (error 'all-but-last "bad input")]
         [(null? (cdr l)) null]
-        [else (cons (car l) (all-but-last (cdr l)))]))
+        [(pair? (cdr l)) (cons (car l) (all-but-last (cdr l)))]
+        [else (list (car l))]))
     
     ;; generate-indicies : syntax[list] -> (cons number (listof number))
     ;; given a syntax list of length `n', returns a list containing
@@ -1876,6 +1931,65 @@ improve method arity mismatch contract violation error messages?
                   [else (cons (- n i)
                               (loop (- i 1)))]))))))
 
+  ;; procedure-accepts-and-more? : procedure number -> boolean
+  ;; returns #t if val accepts dom-length arguments and
+  ;; any number of arguments more than dom-length. 
+  ;; returns #f otherwise.
+  (define (procedure-accepts-and-more? val dom-length)
+    (let ([arity (procedure-arity val)])
+      (cond
+        [(number? arity) #f]
+        [(arity-at-least? arity)
+         (<= (arity-at-least-value arity) dom-length)]
+        [else
+         (let ([min-at-least (let loop ([ars arity]
+                                        [acc #f])
+                               (cond
+                                 [(null? ars) acc]
+                                 [else (let ([ar (car ars)])
+                                         (cond
+                                           [(arity-at-least? ar)
+                                            (if (and acc
+                                                     (< acc (arity-at-least-value ar)))
+                                                (loop (cdr ars) acc)
+                                                (loop (cdr ars) (arity-at-least-value ar)))]
+                                           [(number? ar)
+                                            (loop (cdr ars) acc)]))]))])
+           (and min-at-least
+                (begin
+                  (let loop ([counts (quicksort (filter number? arity) >=)])
+                    (unless (null? counts)
+                      (let ([count (car counts)])
+                        (cond
+                          [(= (+ count 1) min-at-least)
+                           (set! min-at-least count)
+                           (loop (cdr counts))]
+                          [(< count min-at-least)
+                           (void)]
+                          [else (loop (cdr counts))]))))
+                  (<= min-at-least dom-length))))])))
+                                                
+  #|
+
+  test cases for procedure-accepts-and-more?
+
+  (and (procedure-accepts-and-more? (lambda (x . y) 1) 3)
+       (procedure-accepts-and-more? (lambda (x . y) 1) 2)
+       (procedure-accepts-and-more? (lambda (x . y) 1) 1)
+       (not (procedure-accepts-and-more? (lambda (x . y) 1) 0))
+       
+       (procedure-accepts-and-more? (case-lambda [(x . y) 1] [(y) 1]) 3)
+       (procedure-accepts-and-more? (case-lambda [(x . y) 1] [(y) 1]) 2)
+       (procedure-accepts-and-more? (case-lambda [(x . y) 1] [(y) 1]) 1)
+       (not (procedure-accepts-and-more? (case-lambda [(x . y) 1] [(y) 1]) 0))
+       
+       (procedure-accepts-and-more? (case-lambda [(x y . z) 1] [(x) 1]) 2)
+       (procedure-accepts-and-more? (case-lambda [(x y . z) 1] [(x) 1]) 1)
+       (not (procedure-accepts-and-more? (case-lambda [(x y . z) 1] [(x) 1]) 0)))
+  
+  |#
+    
+    
   ;; coerce/select-contract : id (union contract? procedure-arity-1) -> contract-proc
   ;; contract-proc = sym sym stx -> alpha -> alpha
   ;; returns the procedure for the contract after extracting it from the

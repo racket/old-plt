@@ -14,8 +14,8 @@
                                              (t-min -5) (t-max 5))
       
       (let*
-          ((t-min (if (eq? mapping 'polar) t-min x-min))
-           (t-max (if (eq? mapping 'polar) t-max x-max))  ; maybe let-values?
+          ((t-min (if (or (eq? mapping 'polar) (eq? mode 'parametric)) t-min x-min))
+           (t-max (if (or (eq? mapping 'polar)(eq? mode 'parametric))  t-max x-max))  ; maybe let-values?
            (points
             (case mode
               ((standard) (map (lambda (x) (vector x (func x))) 

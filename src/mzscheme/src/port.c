@@ -5584,9 +5584,16 @@ static void default_sleep(float v, void *fds)
 #if defined(FILES_HAVE_FDS)
     /* Sleep by selecting on the external event fd */
     struct timeval time;
+    long secs = (long)v;
+    long usecs = (long)(fmod(v, 1.0) * 1000000);
 
-    time.tv_sec = (long)v;
-    time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
+    if (v && (v > 100000))
+      secs = 100000;
+    if (usecs < 0)
+      usecs = 0;
+
+    time.tv_sec = secs;
+    time.tv_usec = usecs;
 
     if (external_event_fd) {
       DECL_FDSET(readfds, 1);
@@ -5630,8 +5637,18 @@ static void default_sleep(float v, void *fds)
     }
 #endif
 
-    time.tv_sec = (long)v;
-    time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
+    {
+      long secs = (long)v;
+      long usecs = (long)(fmod(v, 1.0) * 1000000);
+      
+      if (v && (v > 100000))
+	secs = 100000;
+      if (usecs < 0)
+	usecs = 0;
+      
+      time.tv_sec = secs;
+      time.tv_usec = usecs;
+    }
 
 # ifdef USE_WINSOCK_TCP
     limit = 0;

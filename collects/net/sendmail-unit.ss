@@ -16,7 +16,8 @@
 	'("/usr/lib" "/usr/sbin"))
 
       (define sendmail-program-file
-	(if (eq? (system-type) 'unix)
+	(if (or (eq? (system-type) 'unix)
+                (eq? (system-type) 'macosx))
 	    (let loop ((paths sendmail-search-path))
 	      (if (null? paths)
 		  (raise (make-exn:misc:unsupported

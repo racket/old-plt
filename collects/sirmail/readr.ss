@@ -2552,9 +2552,7 @@
                              [header (get-header uid)]
                              [key 
                               (string->symbol
-                               (format "~a ~a" 
-                                       (extract-field "X-Mailer" header)
-                                       (extract-field "From" header)))]
+                               (format "~a" (extract-field "X-Mailer" header)))]
                              [uptime-str (extract-field "X-Uptime" header)])
                         (when uptime-str
                           (let ([uptime (parse-uptime uptime-str)])
@@ -2618,8 +2616,7 @@
         (define canvas (new canvas%
                             (paint-callback
                              (lambda (c dc)
-                               (let-values ([(w h) (send c get-client-size)])
-                                 (draw-graph dc w h text))))
+                               (draw-graph dc text)))
                             (parent (send frame get-area-container))))
         (define text (new text%))
         (define editor-canvas (new editor-canvas% 
@@ -2646,9 +2643,10 @@
         
         (define original-colors colors)
 
-        (define (draw-graph dc w h text)
+        (define (draw-graph dc text)
           (let ([max-x 0]
-                [max-y 0])
+                [max-y 0]
+                [left-scale 0])
             (for-each
              (lambda (key-pairs)
                (for-each
@@ -2657,6 +2655,25 @@
                   (set! max-y (max (cdr pair) max-y)))
                 (cadr key-pairs)))
              info)
+
+            (let-values ([(cw ch) (send canvas get-client-size)])
+              (let* ([text-height (let-values ([(w h _1 _2) (send dc get-text-extent "9")])
+                                    h)]
+                     [draw-y-label
+                      (lambda (frac)
+                        (let ([str (format "~a" (quotient (* frac max-y) (* 1024 1024)))]
+                              [y (max (* ch (- 1 frac)) text-height)])
+                          (let-values ([(w h _1 _2) (send dc get-text-extent str)])
+                            (set! left-scale (max left-scale w))
+                            (send dc draw-line 0 (+ y (floor (/ h 2))) cw (+ y (floor (/ h 2))))
+                            (send dc draw-text str 0 y))))])
+                (draw-y-label 1)
+                (draw-y-label 3/4)
+                (draw-y-label 1/2)
+                (draw-y-label 1/4)
+                (draw-y-label 0)
+                (send dc draw-line left-scale 0 left-scale ch)))
+              
             (set! colors original-colors)
             (for-each
              (lambda (key-pairs)
@@ -2667,14 +2684,17 @@
                  (send dc set-brush (send the-brush-list find-or-create-brush (car colors) 'solid))
                  (for-each
                   (lambda (pair)
-                    (plot-pair dc (car pair) (cdr pair) w h max-x max-y))
+                    (plot-pair dc (car pair) (cdr pair) left-scale max-x max-y))
                   pairs)))
              info)))
         
-        (define (plot-pair dc x y w h max-x max-y)
-          (let ([dc-x (* x (/ w max-x))]
-                [dc-y (* y (/ h max-y))])
-            (send dc draw-rectangle dc-x dc-y 3 3)))
+        (define (plot-pair dc x y left-scale max-x max-y)
+          (let-values ([(cw ch) (send canvas get-client-size)])
+            (let* ([w (- cw left-scale)]
+                   [h ch]
+                   [dc-x (+ left-scale (* x (/ w max-x)))]
+                   [dc-y (- ch (* y (/ h max-y)))])
+              (send dc draw-rectangle dc-x dc-y 3 3))))
         
         (send text begin-edit-sequence)
         (for-each (lambda (key-pairs)

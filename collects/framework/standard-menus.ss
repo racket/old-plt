@@ -441,7 +441,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:new
+            (let
+             ((file-menu:new (lambda (item evt) (file-menu:new item evt))))
+             file-menu:new)
             (if (preferences:get 'framework:menu-bindings) #\n #f)
             (file-menu:new-help-string)))))
    (sequence (file-menu:between-new-and-open (get-file-menu)))
@@ -464,7 +466,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:open
+            (let
+             ((file-menu:open (lambda (item evt) (file-menu:open item evt))))
+             file-menu:open)
             (if (preferences:get 'framework:menu-bindings) #\o #f)
             (file-menu:open-help-string)))))
    (sequence (file-menu:between-open-and-revert (get-file-menu)))
@@ -487,7 +491,10 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:revert
+            (let
+             ((file-menu:revert
+                (lambda (item evt) (file-menu:revert item evt))))
+             file-menu:revert)
             (if (preferences:get 'framework:menu-bindings) #f #f)
             (file-menu:revert-help-string)))))
    (sequence (file-menu:between-revert-and-save (get-file-menu)))
@@ -510,7 +517,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:save
+            (let
+             ((file-menu:save (lambda (item evt) (file-menu:save item evt))))
+             file-menu:save)
             (if (preferences:get 'framework:menu-bindings) #\s #f)
             (file-menu:save-help-string)))))
    (private
@@ -534,7 +543,10 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:save-as
+            (let
+             ((file-menu:save-as
+                (lambda (item evt) (file-menu:save-as item evt))))
+             file-menu:save-as)
             (if (preferences:get 'framework:menu-bindings) #f #f)
             (file-menu:save-as-help-string)))))
    (sequence (file-menu:between-save-as-and-print (get-file-menu)))
@@ -559,7 +571,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:print
+            (let
+             ((file-menu:print (lambda (item evt) (file-menu:print item evt))))
+             file-menu:print)
             (if (preferences:get 'framework:menu-bindings) #\p #f)
             (file-menu:print-help-string)))))
    (sequence (file-menu:between-print-and-close (get-file-menu)))
@@ -582,7 +596,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:close
+            (let
+             ((file-menu:close (lambda (item evt) (file-menu:close item evt))))
+             file-menu:close)
             (if (preferences:get 'framework:menu-bindings) #\w #f)
             (file-menu:close-help-string)))))
    (sequence (file-menu:between-close-and-quit (get-file-menu)))
@@ -607,7 +623,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-file-menu)
-            file-menu:quit
+            (let
+             ((file-menu:quit (lambda (item evt) (file-menu:quit item evt))))
+             file-menu:quit)
             (if (preferences:get 'framework:menu-bindings) #\q #f)
             (file-menu:quit-help-string)))))
    (sequence (file-menu:after-quit (get-file-menu)))
@@ -630,7 +648,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:undo
+            (let
+             ((edit-menu:undo (lambda (item evt) (edit-menu:undo item evt))))
+             edit-menu:undo)
             (if (preferences:get 'framework:menu-bindings) #\z #f)
             (edit-menu:undo-help-string)))))
    (private
@@ -652,7 +672,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:redo
+            (let
+             ((edit-menu:redo (lambda (item evt) (edit-menu:redo item evt))))
+             edit-menu:redo)
             (if (preferences:get 'framework:menu-bindings) #\y #f)
             (edit-menu:redo-help-string)))))
    (sequence (edit-menu:between-redo-and-cut (get-edit-menu)))
@@ -673,7 +695,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:cut
+            (let
+             ((edit-menu:cut (lambda (item evt) (edit-menu:cut item evt))))
+             edit-menu:cut)
             (if (preferences:get 'framework:menu-bindings) #\x #f)
             (edit-menu:cut-help-string)))))
    (sequence (edit-menu:between-cut-and-copy (get-edit-menu)))
@@ -696,7 +720,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:copy
+            (let
+             ((edit-menu:copy (lambda (item evt) (edit-menu:copy item evt))))
+             edit-menu:copy)
             (if (preferences:get 'framework:menu-bindings) #\c #f)
             (edit-menu:copy-help-string)))))
    (sequence (edit-menu:between-copy-and-paste (get-edit-menu)))
@@ -719,7 +745,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:paste
+            (let
+             ((edit-menu:paste (lambda (item evt) (edit-menu:paste item evt))))
+             edit-menu:paste)
             (if (preferences:get 'framework:menu-bindings) #\v #f)
             (edit-menu:paste-help-string)))))
    (sequence (edit-menu:between-paste-and-clear (get-edit-menu)))
@@ -744,7 +772,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:clear
+            (let
+             ((edit-menu:clear (lambda (item evt) (edit-menu:clear item evt))))
+             edit-menu:clear)
             (if (preferences:get 'framework:menu-bindings) #f #f)
             (edit-menu:clear-help-string)))))
    (sequence (edit-menu:between-clear-and-select-all (get-edit-menu)))
@@ -769,7 +799,10 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:select-all
+            (let
+             ((edit-menu:select-all
+                (lambda (item evt) (edit-menu:select-all item evt))))
+             edit-menu:select-all)
             (if (preferences:get 'framework:menu-bindings) #\a #f)
             (edit-menu:select-all-help-string)))))
    (sequence (edit-menu:between-select-all-and-find (get-edit-menu)))
@@ -792,7 +825,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:find
+            (let
+             ((edit-menu:find (lambda (item evt) (edit-menu:find item evt))))
+             edit-menu:find)
             (if (preferences:get 'framework:menu-bindings) #\f #f)
             (edit-menu:find-help-string)))))
    (private
@@ -816,7 +851,10 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:find-again
+            (let
+             ((edit-menu:find-again
+                (lambda (item evt) (edit-menu:find-again item evt))))
+             edit-menu:find-again)
             (if (preferences:get 'framework:menu-bindings) #\g #f)
             (edit-menu:find-again-help-string)))))
    (private
@@ -840,7 +878,11 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:replace-and-find-again
+            (let
+             ((edit-menu:replace-and-find-again
+                (lambda (item evt)
+                  (edit-menu:replace-and-find-again item evt))))
+             edit-menu:replace-and-find-again)
             (if (preferences:get 'framework:menu-bindings) #\h #f)
             (edit-menu:replace-and-find-again-help-string)))))
    (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
@@ -865,7 +907,10 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-edit-menu)
-            edit-menu:preferences
+            (let
+             ((edit-menu:preferences
+                (lambda (item evt) (edit-menu:preferences item evt))))
+             edit-menu:preferences)
             (if (preferences:get 'framework:menu-bindings) #f #f)
             (edit-menu:preferences-help-string)))))
    (sequence (edit-menu:after-preferences (get-edit-menu)))
@@ -891,7 +936,9 @@
                (string-append base suffix)
                (string-append base " " special suffix)))
             (get-help-menu)
-            help-menu:about
+            (let
+             ((help-menu:about (lambda (item evt) (help-menu:about item evt))))
+             help-menu:about)
             (if (preferences:get 'framework:menu-bindings) #f #f)
             (help-menu:about-help-string)))))
    (sequence (help-menu:after-about (get-help-menu)))

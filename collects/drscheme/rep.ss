@@ -15,6 +15,13 @@
   
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
+  (define (priviledged thunk)
+    (parameterize ([current-output-port drscheme:init:original-output-port]
+		   [current-error-port drscheme:init:original-error-port]
+		   [current-custodian drscheme:init:system-custodian]
+		   [current-eventspace drscheme:init:system-eventspace])
+      (thunk)))
+  
   ;; keymap stuff that now must be here
 ;    (define setup-global-scheme-interaction-mode-keymap
 ;      (lambda (keymap)

@@ -218,9 +218,9 @@
 	  `(,(parse-quasipattern (syntax p)) ,(syntax-e (syntax ..k)))]
 	 [(i . rest)
 	  (identifier? (syntax i))
-	  `(,(syntax-object->datum (syntax i)) ,@(parse-quasipattern (syntax rest)))]
+	  (cons (syntax-object->datum (syntax i)) (parse-quasipattern (syntax rest)))]
          [(qp . rest)
-	  `(,(parse-quasipattern (syntax qp)) ,@(parse-quasipattern (syntax rest)))]
+	  (cons (parse-quasipattern (syntax qp)) (parse-quasipattern (syntax rest)))]
 	 [_else
 	  (let ([s (syntax-e p)])
 	    (cond

@@ -10,7 +10,7 @@ clean :
 	-@erase mysterx.dll
 
 CPP=cl.exe
-CPP_FLAGS=/I"$(PLTHOME)/src/mzscheme/include" /I"./myspage" /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
+CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 

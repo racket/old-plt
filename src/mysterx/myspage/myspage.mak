@@ -1,7 +1,7 @@
 # myspage.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"$(PLTHOME)/src/mzscheme/include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
+CPP_FLAGS=/I"../mzscheme/include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<

@@ -2629,16 +2629,12 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
     col = dc->GetTextBackground();
     bg = new wxColour(col);
 
-#ifndef NO_GET_CLIPPING_REGION
     rgn = dc->GetClippingRegion();
     dc->SetClippingRect(left - x, top - y, width, height);
-#endif
 
     Redraw(dc, top, bottom, left, right, -y, -x, show_caret, show_xsel, bgColor);
 
-#ifndef NO_GET_CLIPPING_REGION
     dc->SetClippingRegion(rgn);
-#endif
 
     dc->SetBrush(brush);
     dc->SetPen(pen);

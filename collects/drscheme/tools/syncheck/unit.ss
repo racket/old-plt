@@ -887,7 +887,7 @@
 						     (set! error-raised? #t)
 						     (semaphore-post semaphore))]
 						  [error-escape-handler k])
-				     (drscheme:rep:process-text/zodiac
+				     (drscheme:load-handler:process-text/zodiac
 				      definitions-text
 				      (lambda (expr recur)
 					(cond

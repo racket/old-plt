@@ -22,6 +22,7 @@
 	  [basis : userspace:basis^]
 	  [drscheme:text : drscheme:text^]
           [drscheme:teachpack : drscheme:teachpack^]
+	  [drscheme:load-handler : drscheme:load-handler^]
           [help : help:drscheme-interface^])
   
   ;; Max length of output queue (user's thread blocks if the
@@ -976,7 +977,7 @@
 	  (lambda (text start end)
 	    (do-many-evals
 	     (lambda (single-loop-eval)
-	       (process-text
+	       (drscheme:load-handler:process-text
                 ; BUG: is it possible that a macro turns on breaking?
 		text
 		(lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
@@ -1286,7 +1287,7 @@
 			      (basic-convert expr))])
 		 ans)))
 	    
-	    (current-load drscheme-load-handler)
+	    (current-load drscheme:load-handler:drscheme-load-handler)
 	    
 	    
 	    (basis:error-display/debug-handler

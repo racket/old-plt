@@ -71,11 +71,15 @@
 			      (lambda x x)))
 		       (recur)])))])
 	    (apply values 
-		   (let ([text (make-object drscheme:text:text%)])
-		     (parameterize ([mred:current-eventspace
-				     ;; to get the right snipclasses
-				     drscheme:init:system-eventspace])
-		       (send text load-file filename))
+		   (let ([text (make-object
+				   mred:text%
+				   ;;drscheme:text:text%
+				 )])
+		     ;;(parameterize ([mred:current-eventspace
+		     ;; to get the right snipclasses
+		     ;;drscheme:init:system-eventspace])
+		       (send text load-file filename)
+		       ;;)
 		     (begin0
 		      (process-text text process-sexps
 				    0 

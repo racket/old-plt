@@ -38,13 +38,15 @@
 		(mzlib function))]
 
         [load-handler : drscheme:load-handler^
-                      ((require-library "load-handler.ss" "drscheme") mred zodiac basis)]
+                      ((require-library "load-handler.ss" "drscheme")
+		       mred zodiac basis 
+		       (framework gui-utils))]
 
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
 	      interface init snip language app frame unit
-	      basis text teachpack
+	      basis text teachpack load-handler
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")

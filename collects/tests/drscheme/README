@@ -34,6 +34,10 @@ the function, all tests will be run.
    This tests the various graphic elements that can appear
    in programs.
 
+|# launcher.ss #|
+
+   This tests the launcher feature of drscheme.
+
 ----------------------------------
 --------  MANUAL TESTS  ----------
 ----------------------------------

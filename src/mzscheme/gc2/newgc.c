@@ -34,14 +34,6 @@
      NEWGC_HEAP_DEBUGGING (FIXME: NOT IMPLEMENTED YET)
 */
 
-#ifdef USE_PRECISE_ACCT_3M_GC
-# define NEWGC_PRECISE_ACCOUNT
-#endif
-
-#ifdef USE_ACCT_3M_GC
-# define NEWGC_BTC_ACCOUNT
-#endif
-
 /*****************************************************************************/
 /* Constant declarations. These can maybe be changed without destroying the  */
 /* system, but I wouldn't bet on it. So change AYOR.                         */
@@ -2313,6 +2305,7 @@ inline static void mark_older_pointers(void)
             case MPAGE_XTAGGED: mark_xtagged_page(page); break;
             case MPAGE_BIG: mark_big_page(page); break;
           }
+	  page->previous_size = page->size;
         }
 }
 
@@ -2617,8 +2610,8 @@ static void garbage_collect(int force_full)
   INIT_DEBUG_FILE();
   GC_DEBUG("Before collection (top = %i)\n", collection_top);
   DUMP_HEAP();
-  printf("Collection #%li starting (top = %i)", collection_number, collection_top); 
-  fflush(stdout);
+/*   printf("Collection #%li starting (top = %i)", collection_number, collection_top);  */
+/*   fflush(stdout); */
 
   prepare_pages_for_collection();
   mark_all_roots();
@@ -2665,7 +2658,7 @@ static void garbage_collect(int force_full)
     running_finalizers = 0;
   }
   CLOSE_DEBUG_FILE();
-  printf(" ... done\n"); fflush(stdout);
+/*   printf(" ... done\n"); fflush(stdout); */
 } 
 
 /*****************************************************************************/

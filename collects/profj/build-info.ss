@@ -489,7 +489,7 @@
         (and (method-conflicts? (car methods) 
                                 (apply append (map class-record-methods records)))
              (raise-error (list from (car methods)) 'inherited-method-conflict))
-        (check-inherited-method (cdr methods) records from)))
+        (check-inherited-method (cdr methods) records from level)))
   
   (define (method-conflicts? method methods level)
     (and (not (null? methods))

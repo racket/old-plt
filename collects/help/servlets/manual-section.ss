@@ -1,5 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
+         (lib "servlet-helpers.ss" "web-server")
 	 (lib "help-desk-mz.ss" "help"))
 
 (require "private/hd-css.ss")
@@ -17,4 +18,3 @@
 	 [page (finddoc-page-anchor manual section)])
     (send/finish
      (redirect-to page))))
-

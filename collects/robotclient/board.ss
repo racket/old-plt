@@ -324,11 +324,16 @@
                          (robot-indexes))))
         (cond
           ((gui)
-           (send (gui) set-robots (map (lambda (robot)
-                                               (list (robot-id robot)
-                                                     (robot-x robot)
-                                                     (robot-y robot)))
-                                             robots))))
+           (send (gui) set-robots 
+                 (map (lambda (robot)
+                        (list (robot-id robot)
+                              (robot-x robot)
+                              (robot-y robot)))
+                      robots)
+                 (player-id)
+                 (player-money)
+                 (score)
+                 (packages-held))))
         robots)))
   
   (define (read-good-char in)

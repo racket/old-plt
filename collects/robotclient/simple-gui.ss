@@ -3,7 +3,7 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss")
            (lib "framework.ss" "framework")
-           "client-parameters.ss")
+           "board.ss")
 
   (provide gui% parse-input)
   
@@ -67,22 +67,25 @@
     (instantiate gui% () (board board) (width width) (height height)))
 
   (define (update-gui gui acc)
-    (send gui set-robots acc))
+    (send gui set-robots acc 0 0 0 null))
 
   (define gui%
     (class object%
       
       (init-field board width height)
 
-      (define f (instantiate frame% ("Simple Gui" #f 400 400)))
-      (define p (make-object panel:vertical-dragable% f))
+      (define f (instantiate frame% ("Simple Gui" #f 800 800)))
+      (define q (make-object panel:horizontal-dragable% f))
+      (define p (make-object panel:vertical-dragable% q))
+      (define pack-text (instantiate text% ()))
+      (send (instantiate editor-canvas% (q)) set-editor pack-text)
       (define map-text (instantiate text% ()))
       (send (instantiate editor-canvas% (p)) set-editor map-text)
       (define log-text (instantiate text% ()))
       (send (instantiate editor-canvas% (p)) set-editor log-text)
       (send f show #t)
 
-      (define (display-board b)
+      (define (display-board b money score packages-held)
         (let* ((snips (map (lambda (b) (make-object string-snip% b)) b)))
           (send map-text begin-edit-sequence)
           (send map-text select-all)
@@ -97,17 +100,27 @@
             (send d set-face "-misc-fixed")
             (send map-text change-style d))
           (send map-text set-position (send map-text get-end-position) 'same)
-          (send map-text insert (format "money: ~a~n" (player-money)))
-          (send map-text insert (format "score: ~a~n" (score)))
-          (send map-text end-edit-sequence)))
-      
+          (send map-text insert (format "money: ~a~n" money))
+          (send map-text insert (format "score: ~a~n" score))
+          (send map-text end-edit-sequence)
+          (send pack-text begin-edit-sequence)
+          (send pack-text select-all)
+          (send pack-text delete)
+          (for-each (lambda (p)
+                      (send pack-text insert
+                            (format "holding package: ~a - dest (~a, ~a) - weight ~a~n"
+                                    (package-id p) (package-x p) (package-y p)
+                                    (package-weight p))))
+                    packages-held)
+          (send pack-text end-edit-sequence)))
+
       (define/public (end) (send f show #t))
       
       (define/public (log text)
         (send log-text insert text)
         (send log-text insert #\newline))
       
-      (define/public (set-robots l)
+      (define/public (set-robots l id money score packages-held)
         (sleep/yield .05)
         (let ((b (list->vector (map string-copy board))))
           (for-each
@@ -115,11 +128,11 @@
              (string-set! (vector-ref b (sub1 (caddr robot)))
                           (sub1 (cadr robot))
                           (cond
-                            ((= (car robot) (player-id)) #\u)
+                            ((= (car robot) id) #\u)
                             (else #\r))))
                           
            l)
-          (display-board (reverse (vector->list b)))))
+          (display-board (reverse (vector->list b)) money score packages-held)))
       (super-instantiate ())))
 
   )

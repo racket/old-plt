@@ -1,7 +1,7 @@
 (module ga mzscheme
   (require (lib "list.ss" "mzlib"))
   (require "heuristics.ss")
-  
+	  
   (define GREATEST-POSSIBLE-INTEGER 10000)
   (define LOWEST-POSSIBLE-INTEGER  -10000)
   
@@ -15,12 +15,14 @@
                    (4 "board4" "packages3")
                    (4 "board5" "packages4")))
   (define initial-set
-    `((-10 -100 -20 -200 -1000 -500 100 2000 200 10 500 10 1 -10000 -10000 100 -10 75 50
-           25 1000 750 500 250 5 200 2000 0.6 1 0.7 0.1 0.75 0.2 1 -1)
-      (10 10 10 100 -1000 50 10 2000 10 50 2000 50 1 -10000 -10000 100 -1 50 25 10 900 
-          500 250 100 1 150 1800 0.8 1 0.9 0.5 1 0.6 3 -0.5)
-      (-100 -1000 -500 -500 -3000 -1000 500 5000 200 -10 0 -10 1 -10000 -10000 200 -50 
-            150 100 50 1500 1000 500 300 8 250 2500 1 1 1 0 1 1 5 -0.75)))
+    `((-10 -100 -20 -200 -1000 -500 100 2000 200 10 500 10 1 -10000 -10000 
+	   100 -10 75 50 25 1000 750 500 250 5 200 2000 0.6 1 0.7 0.1 0.75 0.2 
+	   1 -1)
+      (10 10 10 100 -1000 50 10 2000 10 50 2000 50 1 -10000 -10000 100 -1 
+	  50 25 10 900 500 250 100 1 150 1800 0.8 1 0.9 0.5 1 0.6 3 -0.5)
+      (-100 -1000 -500 -500 -3000 -1000 500 5000 200 -10 0 -10 1 -10000 
+	    -10000 200 -50 150 100 50 1500 1000 500 300 8 250 2500 1 1 1 0 1 1 
+	    5 -0.75)))
   
   (define parameter-list
     (list wall-threat-value 
@@ -75,10 +77,14 @@
         [(< num 85) 1]
         [(< num 95) 10]
         [else 100])))
+
+  ;; roundify : number -> number
+  (define (roundify num)
+    (exact->inexact (/ (round (* num 10000)) 10000)))
   
   ;; breed : gene-seq gene-seq -> gene-seq
   (define (breed gs1 gs2)
-    (let ([base (map (lambda (x y) (/ (+ x y) 2)) gs1 gs2)])
+    (let ([base (map (lambda (x y) (roundify (/ (+ x y) 2))) gs1 gs2)])
       (map (lambda (x)
              (let* ([mutation (* (- (random 21) 10) (mutation-factor))]
                     [newval (+ x mutation)])
@@ -101,7 +107,8 @@
           [(null? (cdr ls)) (append bestls acc)]
           [else (loop (cdr ls)
                       (append (map (lambda (x) (breed (car x) (cdr x)))
-                                   (map (lambda (x) (cons (car ls) x)) (cdr ls)))
+                                   (map (lambda (x) (cons (car ls) x)) 
+					(cdr ls)))
                               acc))]))))
   
   ;; play-board : vector(num) string string vector(gene-seq) num -> void
@@ -109,18 +116,20 @@
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
       (let-values ([(subproc stdout stdin stderr) 
-                    (subprocess #f #f #f "./Simulator" (format "-p 4000 -m ~a -k ~a"
-                                                               board packages))])
+                    (subprocess #f #f #f "./Simulator"
+				(format "-p 4000 -m ~a -k ~a -n ~a"
+					board packages (length players)))])
         (let ([threads (map (lambda (player-num)
                               (let ([genes (vector-ref player-vec player-num)])
                                 (thread (lambda ()
                                           (set-parameter-values! genes)
                                           (let ([score (start-client #f #f 
-                                                                     "localhost" 4000)])
+                                                         "localhost" 4000)])
                                             (vector-set! scoreboard player-num 
-                                                         (+ (vector-ref scoreboard
-                                                                        player-num)
-                                                            score))))))) players)])
+                                              (+ (vector-ref scoreboard
+							     player-num)
+						 score)))))))
+			    players)])
           (for-each thread-wait threads)
           (close-input-port stdout)
           (close-input-port stderr)
@@ -176,7 +185,7 @@
     (let loop ((i 0) (group (spawn-next-generation initial-set)))
       (cond
         [(= i endat)
-         (fprintf output-port "---------------FINAL--------------------------~n")
+         (fprintf output-port "--------------FINAL---------------------~n")
          (run-generation group output-port)]
         [(= (modulo i modnum) 0)
          (fprintf output-port "----------Generation ~a------------------~n" i)
@@ -190,6 +199,6 @@
    print-every-n-generations
    run-n-generations)
   
-  )
+)
 
 (require ga)

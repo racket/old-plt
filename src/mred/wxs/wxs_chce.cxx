@@ -520,27 +520,6 @@ static Scheme_Object *os_wxChoiceSetSelection(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxChoiceGetStringSelection(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(os_wxChoice_class, "get-string-selection in choice%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxChoice *)((Scheme_Class_Object *)p[0])->primdata)->GetStringSelection());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
-}
-
 static Scheme_Object *os_wxChoiceGetSelection(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -868,10 +847,9 @@ void objscheme_setup_wxChoice(Scheme_Env *env)
 
   wxREGGLOB(os_wxChoice_class);
 
-  os_wxChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "choice%", "item%", (Scheme_Method_Prim *)os_wxChoice_ConstructScheme, 12));
+  os_wxChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "choice%", "item%", (Scheme_Method_Prim *)os_wxChoice_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-selection" " method", (Scheme_Method_Prim *)os_wxChoiceSetSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string-selection" " method", (Scheme_Method_Prim *)os_wxChoiceGetStringSelection, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-selection" " method", (Scheme_Method_Prim *)os_wxChoiceGetSelection, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "number" " method", (Scheme_Method_Prim *)os_wxChoiceNumber, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "clear" " method", (Scheme_Method_Prim *)os_wxChoiceClear, 0, 0));

@@ -35,7 +35,6 @@
 @ "clear" : void Clear();
 @ "number" : int Number()
 @ "get-selection" : int GetSelection();
-@ "get-string-selection" : nstring GetStringSelection();
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
 
 @END

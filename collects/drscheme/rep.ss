@@ -320,9 +320,18 @@
 		      [chars (list (read-char p) (read-char p) (read-char p) (read-char p))])
 		 (close-input-port p)
 		 (let ([loc (zodiac:make-location 0 0 0 filename)]
-		       [re-p (void)])
+		       [re-p (void)]
+		       [old-load-relative-directory
+			(with-parameterization param
+			  current-load-relative-directory)])
 		   (dynamic-wind
 		    (lambda ()
+		      (let-values ([(base name must-be-dir?)
+				    (split-path
+				     (mzlib:file@:normalize-path filename))])
+			(with-parameterization param
+			  (lambda ()
+			    (current-load-relative-directory base))))
 		      (set! re-p
 			    (if (equal? chars (list #\W #\X #\M #\E))
 				(let ([edit (make-object drscheme:edit:edit%)])
@@ -348,7 +357,10 @@
 					  (loop next-exp (reader)))])))))
 		    (lambda ()
 		      (when (input-port? re-p)
-			(close-input-port re-p)))))))])
+			(close-input-port re-p))
+		      (with-parameterization param
+			(lambda ()
+			  (current-load-relative-directory old-load-relative-directory))))))))])
 	  (public
 	    [takeover void]
 	    [reset-console

@@ -48,10 +48,9 @@
    (define (expand-value x)
      (cond [(string? x)
 	    `(string ,x)]
-	   [(boolean? x)
-	    (if x
-		'(true)
-		'(false))]
+	   [(or (equal? x '(true))
+		(equal? x '(false)))
+	    x]
 	   [(and (eq? (car x) 'integer)
 		 (expand-integer x))
 	    => 
@@ -138,8 +137,7 @@
    (define (collapse-value value)
      (case (car value)
        [(string) (cadr value)]
-       [(true) #t]
-       [(false) #f]
+       [(true false) value]
        [(integer real) (list (car value) (string->number (cadr value)))]
        [(dict) (collapse-dict value)]
        [(array) (collapse-array value)]))
@@ -169,7 +167,7 @@
 			"just a string
                          with some whitespace in it")
 	    (assoc-pair "second-key"
-			#f)
+			(false))
 	    (assoc-pair "third-key"
 			(dict ))
 	    (assoc-pair "fourth-key"
@@ -177,7 +175,8 @@
 					  (real 3.432))))
 	    (assoc-pair "fifth-key"
 			(array (integer 14)
-			       "another string"))
+			       "another string"
+			       (true)))
 	    (assoc-pair "sixth-key"
 			(array))))
 

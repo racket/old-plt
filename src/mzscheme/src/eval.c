@@ -867,9 +867,9 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					 + SCHEME_ENV_CONSTANTS_OK);
 	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
 		|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_compiler_type)) {
-	      scheme_wrong_syntax("define-values (in unit or embedded)",
+	      scheme_wrong_syntax("define-values (in unit or internal)",
 				  binding, orig,
-				  "unit/embedded binding cannot shadow syntax or macro names");
+				  "unit/internal binding cannot shadow syntax or macro names");
 	      return NULL;
 	    }
 	  }
@@ -1153,17 +1153,10 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (SCHEME_PAIRP(body)) {
 	    int pl = scheme_proper_list_length(args);
 	    if (pl >= 0) {
-	      Scheme_Object *bindings = NULL, *last = NULL;
+	      Scheme_Object *bindings = scheme_null, *last = NULL;
 	      int al = scheme_proper_list_length(rest);
 	      
 	      if (al == pl) {	      
-		if (!al) {
-		  if (scheme_is_toplevel(env))
-		    env = scheme_no_defines(env);
-		  return scheme_compile_expand_expr(cons(begin_symbol, body), 
-						    env, rec, depth, 0);
-		}
-		
 		while (!SCHEME_NULLP(args)) {
 		  Scheme_Object *v, *n;
 		  
@@ -1222,9 +1215,9 @@ static Scheme_Object *
 scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env, 
 			    Scheme_Compile_Info *rec, int depth)
 /* This ugly code parses a block of code, transforming embedded
-  define-values and define-macro into letrec and let-macro.
-  It is espcailly ugly because we have to expand macros
-  before deciding what we have. */
+   define-values and define-macro into letrec and let-macro.
+   It is espcailly ugly because we have to expand macros
+   before deciding what we have. */
 {
   Scheme_Object *first;
   Scheme_Compile_Info recs[2];
@@ -1238,6 +1231,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     return scheme_null;
   }
 
+ try_again:
+
   first = SCHEME_CAR(forms);
 
   if (SCHEME_PAIRP(first)) {
@@ -1250,7 +1245,17 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     first = scheme_check_immediate_macro(first, env, rec, depth, &gval);
 
     name = SCHEME_PAIRP(first) ? SCHEME_CAR(first) : scheme_void;
-    if (SAME_OBJ(gval, scheme_define_values_syntax)) {
+    if (SAME_OBJ(gval, scheme_begin_syntax)) {
+      /* Inline content */
+      Scheme_Object *content = SCHEME_CDR(first);
+
+      if (scheme_proper_list_length(content) < 0)
+	scheme_wrong_syntax("begin", NULL, first, 
+			    "bad syntax (" IMPROPER_LIST_FORM ")");
+
+      forms = scheme_append(content, SCHEME_CDR(forms));
+      goto try_again;
+    } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
       /* Turn defines into a letrec-values: */
       Scheme_Object *var, *vars, *v, *link, *l = scheme_null, *start = NULL;
       
@@ -1258,7 +1263,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	v = SCHEME_CDR(first);
 	
 	if (!SCHEME_PAIRP(v))
-	  scheme_wrong_syntax("define-values (embedded)", NULL, forms, 
+	  scheme_wrong_syntax("define-values (internal)", NULL, forms, 
 			      "bad syntax (" IMPROPER_LIST_FORM ")");
 
 	var = NULL;
@@ -1266,7 +1271,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	while (SCHEME_PAIRP(vars)) {
 	  var = SCHEME_CAR(vars);
 	  if (!SCHEME_SYMBOLP(var))
-	    scheme_wrong_syntax("define-values (embedded)", var, forms, 
+	    scheme_wrong_syntax("define-values (internal)", var, forms, 
 				"name must be an identifier");
 	  vars = SCHEME_CDR(vars);
 	}
@@ -1279,19 +1284,32 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	l = link;
 	result = SCHEME_CDR(result);
 	if (!SCHEME_LISTP(result))
-	  scheme_wrong_syntax("define-values (embedded)", NULL, forms, NULL);
+	  scheme_wrong_syntax("define-values (internal)", NULL, forms, NULL);
 
 	/* Special case: (define-values #%define-values x) */
 	if (SAME_OBJ(define_values_symbol, var))
 	  break;
 
 	if (!SCHEME_NULLP(result)) {
+	define_try_again:
 	  first = SCHEME_CAR(result);
 	  if (SCHEME_PAIRP(first)) {
 	    first = scheme_check_immediate_macro(first, env, rec, depth, &gval);
 	    name = SCHEME_CAR(first);
-	    if (NOT_SAME_OBJ(gval, scheme_define_values_syntax))
-	      break;
+	    if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)) {
+	      if (SAME_OBJ(gval, scheme_begin_syntax)) {
+		/* Inline content */
+		Scheme_Object *content = SCHEME_CDR(first);
+		
+		if (scheme_proper_list_length(content) < 0)
+		  scheme_wrong_syntax("begin", NULL, first, 
+				      "bad syntax (" IMPROPER_LIST_FORM ")");
+		
+		result = scheme_append(content, SCHEME_CDR(result));
+		goto define_try_again;
+	      } else
+		break;
+	    }
 	  } else
 	    break;
 	} else
@@ -1305,7 +1323,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       } else {
 	/* Empty body: illegal. */
 	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
-			    "no expression after a sequence of embedded definitions");
+			    "no expression after a sequence of internal definitions");
       }
     } else if (SAME_OBJ(gval, scheme_defmacro_syntax)
 	       || SAME_OBJ(gval, scheme_def_id_macro_syntax)
@@ -1315,13 +1333,13 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       char *where;
       
       if (SAME_OBJ(gval, scheme_defmacro_syntax)) {
-	where = "define-macro (embedded)";
+	where = "define-macro (internal)";
 	let = letmacro_symbol;
       } else if (SAME_OBJ(gval, scheme_def_id_macro_syntax)) {
-	where = "define-id-macro (embedded)";
+	where = "define-id-macro (internal)";
 	let = let_id_macro_symbol;
       } else {
-	where = "define-non-value (embedded)";
+	where = "define-non-value (internal)";
 	let = let_exp_time_symbol;
       }
       

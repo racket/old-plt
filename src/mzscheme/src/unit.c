@@ -519,7 +519,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       /* Check for macro expansion, which could mask the real define-values */
       expr = scheme_check_immediate_macro(expr, expand_env, rec, depth, &gval);
 
-      if (SAME_OBJ(gval, scheme_begin_syntax) && SCHEME_PAIRP(SCHEME_CDR(expr))) {
+      if (SAME_OBJ(gval, scheme_begin_syntax)) {
 	Scheme_Object *cl;
 
 	/* Flatten it out. */

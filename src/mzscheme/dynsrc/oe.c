@@ -1,13 +1,15 @@
 
+/* This serves as a vague test of MzScheme's FFI, so it shows how to
+   do especially stange things, such as defining Scheme classes and
+   interfaces from C. It's somewhat annotated, but it's not good
+   example code in general. */
+
 #include "escheme.h"
 
-/* Perhaps we should register these globals for GC. Turns out
-   to not matter since they're guranteed to be registered
-   via another path. */
+/* Note that all these are regsitered with the GC in scheme_initialize: */
 static Scheme_Object *one_const, *two_const;
 static Scheme_Bucket *zerop_g, *minus_g, *plus_g, *le_g;
 static Scheme_Bucket *odd_g, *even_g, *fib_g, *mod_g, *eq_g;
-
 static Scheme_Prim *le_f, *minus_f, *plus_f;
 
 #define SCHEME_GLOBAL(b) b->val
@@ -19,15 +21,29 @@ Scheme_Object *odd(int argc, Scheme_Object *argv[])
   if (argc != 1)
     scheme_wrong_count("odd", 1, 1, argc, argv);
 
+  /* The following checks whether the argument is zero. If we accepted
+     only exact integeres, a simpler test would be:
+     (SCHEME_INTP(argv[0]) && !SCHEME_INT_VAL(argv[0])). */
+
+  /* We could look up `zero?' with
+     scheme_lookup_global(scheme_intern_symbol("zero?"), scheme_env)
+     but scheme_initialize below has already resolved `zero?' to a
+     specific global variable "bucket". We just need to extract the
+     procedure from the bucket: */
   p = SCHEME_GLOBAL(zerop_g);
-  if (!p)
+  if (!p) /* unlikely */
     scheme_signal_error("odd: zero? undefined");
   array[0] = argv[0];
+  /* Apply `zero?' to the argument. Note the leading "_" in
+     "_scheme_apply"; that allows exceptions and full continuations to
+     work. It's also a lot faster than "scheme_apply". */
   v = _scheme_apply(p, 1, array);
 
   if (SCHEME_TRUEP(v)) {
+    /* If the argument was zero, then it wasn't odd. */
     return scheme_false;
   } else {
+    /* Another application... */
     p = SCHEME_GLOBAL(minus_g);
     if (!p)
       scheme_signal_error("odd: - undefined");
@@ -44,6 +60,7 @@ Scheme_Object *odd(int argc, Scheme_Object *argv[])
   }
 }
 
+/* Practically the same as odd. */
 Scheme_Object *even(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *p, *array[2];
@@ -135,6 +152,11 @@ Scheme_Object *fib2(int argc, Scheme_Object *argv[])
   if (argc != 1)
     scheme_wrong_count("fib", 1, 1, argc, argv);
 
+  /* In this case, scheme_initialize has resolved `<' even further
+     than getting a global variable bucket. It has extracted the
+     low-level implementation so it can call the function directly.
+     You don't usually want to do that, as it may not be clear whether
+     `<' is bound to the primitive implementation or not. */
   array[0] = argv[0];
   array[1] = one_const;
   v = le_f(2, array);
@@ -257,6 +279,7 @@ static Scheme_Object *catch_eval_error(int argc, Scheme_Object **argv)
 
 /*********************************************************************/
 
+/* Test Scheme class FFI */
 
 static Scheme_Object *create_tclass(void *a, int argc, Scheme_Object **argv)
 {
@@ -332,11 +355,31 @@ int compare_numbers(void *v1, void *v2)
   return SCHEME_FALSEP(_scheme_apply(SCHEME_GLOBAL(eq_g), 2, args));
 }
 
+/*********************************************************************/
 
 Scheme_Object *scheme_initialize(Scheme_Env *global_env)
 {
   Scheme_Object *mv[2];
   Scheme_Hash_Table *table;
+
+  /* Conservative GC automatically sees local variables, but it
+     doesn't see static variables in an extension. They have to be
+     explicitly registered. */
+#define REGISTER_GLOBAL(x) scheme_register_extension_global((void *)&x, sizeof(x));
+  REGISTER_GLOBAL(one_const);
+  REGISTER_GLOBAL(two_const);
+  REGISTER_GLOBAL(zerop_g);
+  REGISTER_GLOBAL(minus_g);
+  REGISTER_GLOBAL(plus_g);
+  REGISTER_GLOBAL(le_g);
+  REGISTER_GLOBAL(odd_g);
+  REGISTER_GLOBAL(even_g);
+  REGISTER_GLOBAL(fib_g);
+  REGISTER_GLOBAL(mod_g);
+  REGISTER_GLOBAL(eq_g);
+  REGISTER_GLOBAL(le_f);
+  REGISTER_GLOBAL(minus_f);
+  REGISTER_GLOBAL(plus_f);
 
   scheme_eval_string("(printf \"loading from~s~n\" "
 		     " (current-load-relative-directory))",

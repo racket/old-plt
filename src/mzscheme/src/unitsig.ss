@@ -513,8 +513,7 @@
 			       (cons line body)
 			       (append names vars)))]
 		      [(eq? line-kind '#%begin)
-		       (unless (and (pair? (cdr line))
-				    (list? (cdr line)))
+		       (unless (list? (cdr line))
 			       (syntax-error unit/sig expr 
 					     "improper `begin' clause form"
 					     line))

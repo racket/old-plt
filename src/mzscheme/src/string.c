@@ -1123,7 +1123,7 @@ char *scheme_banner(void)
     return embedding_banner;
   else
     return "Welcome to MzScheme version " VERSION VERSION_SUFFIX
-      ", Copyright (c) 1995-98 PLT (Matthew Flatt)\n";
+      ", Copyright (c) 1995-99 PLT (Matthew Flatt)\n";
 }
 
 void scheme_set_banner(char *s)

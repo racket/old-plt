@@ -1870,10 +1870,30 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 				       Scheme_Comp_Env *env, 
 				       Scheme_Compile_Info *rec)
 {
-  if (SCHEME_PAIRP(forms) && SCHEME_NULLP(SCHEME_CDR(forms)))
-    return scheme_compile_expr(SCHEME_CAR(forms), env, rec);
-  else
-    return scheme_compile_expr(cons(begin_symbol, forms), env, rec);
+  if (SCHEME_PAIRP(forms) && SCHEME_NULLP(SCHEME_CDR(forms))) {
+    /* If it's a begin, we have to check some more... */
+    Scheme_Object *first = SCHEME_CAR(forms), *val;
+
+    if (SCHEME_PAIRP(first)) {
+      first = scheme_check_immediate_macro(first, env, rec, -1, &val);
+      
+      if (SAME_OBJ(val, scheme_begin_syntax)) {
+	if (scheme_proper_list_length(SCHEME_CDR(first)) > 0)
+	  return scheme_compile_sequence(SCHEME_CDR(first), env, rec);
+      }
+    }
+
+    return scheme_compile_expr(first, env, rec);
+  } else {
+    if (scheme_proper_list_length(forms) < 0) {
+      scheme_wrong_syntax("begin", NULL, cons(begin_symbol, forms), 
+			  "bad syntax (" IMPROPER_LIST_FORM ")");
+      return NULL;
+    } else {
+      Scheme_Object *body = scheme_compile_block(forms, env, rec);
+      return scheme_make_sequence_compilation(body, rec->can_optimize_constants, 1);
+    }
+  }
 }
 
 Scheme_Object *scheme_compiled_void(int can_be_value)
@@ -1939,6 +1959,8 @@ do_begin_syntax (char *name,
   forms = SCHEME_CDR (form);
   
   if (SCHEME_NULLP(forms)) {
+    if (!zero && scheme_is_toplevel(env))
+      return scheme_compiled_void(rec->can_optimize_constants);
     scheme_wrong_syntax(name, NULL, form, "bad syntax (empty form)");
     return NULL;
   }
@@ -1971,7 +1993,7 @@ do_begin_syntax (char *name,
 
       body = cons(first, rest);
     } else 
-      body = scheme_compile_block(forms, env, rec);
+      body = scheme_compile_list(forms, env, rec);
   } else
     /* Top level */
     body = scheme_compile_list(forms, env, rec);
@@ -2009,6 +2031,8 @@ do_begin_expand(char *name, Scheme_Object *form_name,
   rest = SCHEME_CDR(form);
 
   if (SCHEME_NULLP(rest)) {
+    if (!zero && scheme_is_toplevel(env))
+      return cons(form_name, scheme_null);
     scheme_wrong_syntax(name, NULL, form, "bad syntax (empty form)");
     return NULL;
   }
@@ -2022,7 +2046,7 @@ do_begin_expand(char *name, Scheme_Object *form_name,
       form = cons(scheme_expand_expr(SCHEME_CAR(rest), env, depth),
 		  scheme_expand_block(SCHEME_CDR(rest), env, depth));
     } else {
-      form = scheme_expand_block(rest, env, depth);
+      form = scheme_expand_list(rest, env, depth);
 #if 0
       if (SCHEME_NULLP(SCHEME_CDR(form)))
 	return SCHEME_CAR(form);

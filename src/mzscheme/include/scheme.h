@@ -929,6 +929,10 @@ void scheme_set_banner(char *s);
 /* Initialization */
 Scheme_Env *scheme_basic_env(void);
 
+#ifdef USE_MSVC_MD_LIBRARY
+void GC_pre_init(void);
+#endif
+
 void scheme_check_threads(void);
 void scheme_wake_up(void);
 

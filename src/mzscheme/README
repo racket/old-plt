@@ -6,11 +6,11 @@ Compiled binaries, documentation, and up-to-date information about
 MzScheme are at:
  http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
 
-MzScheme should compile and execute with little or no modification if
-you have an ANSI C compiler on any platform supported by the
-conservative garbage collector. Some flags may need adjustment in the
-Makefile and "sconfig.h".  Special per-platform instructions are
-below, followed by some general notes on compilation and changing
+MzScheme should compile and execute with little or no modification
+using an ANSI C compiler on any platform supported by the conservative
+garbage collector. You may have to adjust some flags in the Makefile
+and "sconfig.h".  Special per-platform instructions are below,
+followed by some general notes on compilation and changing
 MzScheme. (Please read the general notes if you plan on changing
 MzScheme or the default compilation flags.)
 
@@ -20,7 +20,7 @@ MzScheme or the default compilation flags.)
  http://www.cs.rice.edu/~mflatt/
 
 ========================================================================
- Compiling for Unix or BeOS
+ Compiling for Unix (or BeOS or Cygwin)
 ========================================================================
 
 To compile the `mzscheme' executable for these platforms:
@@ -31,7 +31,7 @@ To compile the `mzscheme' executable for these platforms:
   i386 FreeBSD
   i386 Linux
   i386 Solaris [see note below]
-  i386 Win32 with Cygwin beta 20
+  i386 Win32 with Cygwin [beta 20]
   PPC Linux
   RS6000 AIX
   SGI IRIX
@@ -42,39 +42,37 @@ run the `mzmake' script.
 [Solaris Note: To ensure that dynamic extensions work right, use the
  native Solaris `ld' rather than GNU's `ld'.]
 
-Or, to compile the `mzscheme' executable for other Unix platforms:
+To compile the `mzscheme' executable for other Unix platforms:
 
   1) Edit the Makefile if necessary. Common changes include the 
      C compiler, compiler flags, ranlib processor (if your
      machine does not have `ranlib', set RANLIB to ':'), and
-     libraries
+     libraries.
 
-  2) Edit "sconfig.h" to set platform-specific flags if necessary
+  2) Edit "sconfig.h" to set platform-specific flags if necessary.
 
-  3) Execute `make bin' (or just `make')
+  3) Execute `make bin' (or just `make').
 
-  [Cygwin note: either use `mzmake', or `make cygwin-dll-setup' before
-   `make bin'.]
+  [Cygwin note: either use `mzmake', or run `make cygwin-dll-setup'
+   before `make bin'.]
 
 After compiling MzScheme, `[mz]make install' copies the binary and
-libraries into their normal places in the plt tree. (For example,
-mzscheme is copied to to ../../.bin/<platform-id>/mzscheme.) After
-running `[mz]make install', then run ./install in the plt directory
-(two directotires up from here). At that point, plt/bin/setup-plt and
-plt/bin/mzc will work. (If you move the plt tree, re-run plt/install.)
+libraries into their normal places in the plt tree relative to the
+source directory. (For example, mzscheme is copied to to
+../../.bin/<platform-id>/mzscheme.) After running `[mz]make install',
+run ./install in the plt directory (two directories up from here). At
+that point, plt/bin/setup-plt and plt/bin/mzc will work. If you move
+the plt tree, re-run plt/install.
 
 To compile parts of MzScheme for embedding or extending:
 
   * `[mz]make mzschemelib' (or `mzmake mzschemelib') compiles 
      libmzscheme.a and libgc.a and puts them in lib/sys
 
-  * `[mz]make mzschemelib++' is like `make lib', but the GC C++
-     tools are included in libgc.a
-
   * `[mz]make libguile' creates lib/sys/libguile.a; this is
      libmzscheme.a + libgc.a + compatibility routines to support
      GNU's emerging GUILE high-level interface specification
-     (still experimental)
+     (still experimental, and with a dim future)
 
   * `[mz]make dynlib' compiles mzdyn.o (for linking
      dynamically-loaded extensions to MzScheme) and puts

@@ -1426,6 +1426,8 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       
       return scheme_make_sized_string(result, total, 0);
     }
+
+    SCHEME_USE_FUEL(1);
   }
 }
 

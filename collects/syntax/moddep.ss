@@ -248,7 +248,10 @@
 			(if (= len 2)
 			    (list "mzlib")
 			    (cddr s)))])
-	    `(lib ,(build-path (apply build-path 'same (cdr cols)) (cadr s))
+	    `(lib ,(build-path (if (null? (cdr cols))
+				   'same
+				   (apply build-path 'same (cdr cols)))
+			       (cadr s))
 		  ,(car cols)))]
 	 [(eq? (car s) 'file)
 	  (let ([p (cadr s)])

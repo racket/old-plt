@@ -3858,7 +3858,7 @@ static long flush_fd(Scheme_Output_Port *op,
       int errsaved, full_write_buffer;
 
 #ifdef WINDOWS_FILE_HANDLES
-      DWORD wrote;
+      DWORD winwrote;
 
       full_write_buffer = 0;
 
@@ -3902,9 +3902,9 @@ static long flush_fd(Scheme_Output_Port *op,
 	} else
 	  orig_len = 0; /* not used */
 
-	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL)) {
+	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &winwrote, NULL)) {
 	  if (fop->textmode) {
-	    if (wrote != buflen) {
+	    if (winwrote != buflen) {
 	      /* Trouble! This shouldn't happen. We pick an random error msg. */
 	      errsaved = ERROR_NEGATIVE_SEEK;
 	      len = -1;
@@ -3913,7 +3913,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	      buflen = orig_len; /* so we don't loop! */
 	    }
 	  } else
-	    len = wrote;
+	    len = winwrote;
 	} else {
 	  errsaved = GetLastError();
 	  len = -1;
@@ -3968,16 +3968,16 @@ static long flush_fd(Scheme_Output_Port *op,
 	         is not partial writes, but giving up entirely when
 	         the other end isn't being read. In other words, if we
 	         try to write too much and nothing is being pulled
-	         from the pipe, wrote will be set to 0. Account for
+	         from the pipe, winwrote will be set to 0. Account for
 	         this by trying to write less each iteration when the
 	         write fails. (Yuck.) */
 	      while (1) {
 		GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
 		SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
-		ok = WriteFile((HANDLE)fop->fd, bufstr + offset, towrite, &wrote, NULL);
+		ok = WriteFile((HANDLE)fop->fd, bufstr + offset, towrite, &winwrote, NULL);
 		SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
 
-		if (ok && !wrote) {
+		if (ok && !winwrote) {
 		  towrite = towrite >> 1;
 		  if (!towrite) {
 		    break;
@@ -3988,14 +3988,14 @@ static long flush_fd(Scheme_Output_Port *op,
 	    } else {
 	      /* Don't try to write while flushing. */
 	      ok = 1;
-	      wrote = 0;
+	      winwrote = 0;
 	    }
 
 	    if (ok) {
-	      if (!wrote) {
+	      if (!winwrote) {
 		full_write_buffer = 1;
 	      } else {
-		len = wrote;
+		len = winwrote;
 	      }
 	    } else {
 	      errsaved = GetLastError();
@@ -4090,29 +4090,29 @@ static long flush_fd(Scheme_Output_Port *op,
 	      topp = oth->bufstart;
 	    }
 
-	    wrote = topp - oth->bufend;
-	    if (wrote > buflen - offset)
-	      wrote = buflen - offset;
+	    winwrote = topp - oth->bufend;
+	    if (winwrote > buflen - offset)
+	      winwrote = buflen - offset;
 
-	    memcpy(oth->buffer + oth->bufend, bufstr + offset, wrote);
-	    oth->buflen += wrote;
-	    len = wrote;
+	    memcpy(oth->buffer + oth->bufend, bufstr + offset, winwrote);
+	    oth->buflen += winwrote;
+	    len = winwrote;
 
-	    oth->bufend += wrote;
+	    oth->bufend += winwrote;
 	    if (oth->bufend == MZPORT_FD_BUFFSIZE)
 	      oth->bufend = 0;
 	    
 	    if (was_pre) {
-	      if (wrote < buflen - offset) {
+	      if (winwrote < buflen - offset) {
 		/* Try continuing with a wrap-around: */
-		wrote = oth->bufstart - oth->bufend;
-		if (wrote > buflen - offset - len)
-		  wrote = buflen - offset - len;
+		winwrote = oth->bufstart - oth->bufend;
+		if (winwrote > buflen - offset - len)
+		  winwrote = buflen - offset - len;
 		
-		memcpy(oth->buffer + oth->bufend, bufstr + offset + len, wrote);
-		oth->buflen += wrote;
-		oth->bufend += wrote;
-		len += wrote;
+		memcpy(oth->buffer + oth->bufend, bufstr + offset + len, winwrote);
+		oth->buflen += winwrote;
+		oth->bufend += winwrote;
+		len += winwrote;
 	      }
 	    }
 	    /* Let the other thread know that it should start trying

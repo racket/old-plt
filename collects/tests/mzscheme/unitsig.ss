@@ -146,6 +146,10 @@
 (test #t unit/sig? (compound-unit/sig (import)
 		      (link [compound-unit : () ((unit/sig () (import) 10))])
 		      (export)))
+(test #t unit/sig? (compound-unit/sig 
+		    (import)
+		    (link [export : () ((unit/sig () (import) 10))])
+		    (export)))
 
 ; Include:
 

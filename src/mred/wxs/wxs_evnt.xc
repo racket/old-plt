@@ -213,6 +213,8 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, fl
 @SYM "f24" : WXK_F24
 @SYM "numlock" : WXK_NUMLOCK
 @SYM "scroll" : WXK_SCROLL
+@SYM "wheel-up" : WXK_WHEEL_UP
+@SYM "wheel-down" : WXK_WHEEL_DOWN
 @ENDSYMBOLS
 
 @CLASSBASE wxKeyEvent=wxKeyEvent_ext "key-event":"event" / nofnl

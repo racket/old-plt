@@ -1121,6 +1121,8 @@ static Scheme_Object *keyCode_WXK_F23_sym = NULL;
 static Scheme_Object *keyCode_WXK_F24_sym = NULL;
 static Scheme_Object *keyCode_WXK_NUMLOCK_sym = NULL;
 static Scheme_Object *keyCode_WXK_SCROLL_sym = NULL;
+static Scheme_Object *keyCode_WXK_WHEEL_UP_sym = NULL;
+static Scheme_Object *keyCode_WXK_WHEEL_DOWN_sym = NULL;
 
 static void init_symset_keyCode(void) {
   REMEMBER_VAR_STACK();
@@ -1256,12 +1258,16 @@ static void init_symset_keyCode(void) {
   keyCode_WXK_NUMLOCK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("numlock"));
   wxREGGLOB(keyCode_WXK_SCROLL_sym);
   keyCode_WXK_SCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("scroll"));
+  wxREGGLOB(keyCode_WXK_WHEEL_UP_sym);
+  keyCode_WXK_WHEEL_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("wheel-up"));
+  wxREGGLOB(keyCode_WXK_WHEEL_DOWN_sym);
+  keyCode_WXK_WHEEL_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("wheel-down"));
 }
 
 static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!keyCode_WXK_SCROLL_sym) WITH_VAR_STACK(init_symset_keyCode());
+  if (!keyCode_WXK_WHEEL_DOWN_sym) WITH_VAR_STACK(init_symset_keyCode());
   if (0) { }
   else if (SCHEME_CHARP(v)) { return SCHEME_CHAR_VAL(v); }
   else if (v == keyCode_WXK_ESCAPE_sym) { return WXK_ESCAPE; }
@@ -1330,12 +1336,14 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_F24_sym) { return WXK_F24; }
   else if (v == keyCode_WXK_NUMLOCK_sym) { return WXK_NUMLOCK; }
   else if (v == keyCode_WXK_SCROLL_sym) { return WXK_SCROLL; }
+  else if (v == keyCode_WXK_WHEEL_UP_sym) { return WXK_WHEEL_UP; }
+  else if (v == keyCode_WXK_WHEEL_DOWN_sym) { return WXK_WHEEL_DOWN; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "keyCode symbol", -1, 0, &v));
   return 0;
 }
 
 static Scheme_Object *bundle_symset_keyCode(int v) {
-  if (!keyCode_WXK_SCROLL_sym) init_symset_keyCode();
+  if (!keyCode_WXK_WHEEL_DOWN_sym) init_symset_keyCode();
   switch (v) {
   case WXK_ESCAPE: return keyCode_WXK_ESCAPE_sym;
   case WXK_START: return keyCode_WXK_START_sym;
@@ -1403,6 +1411,8 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
   case WXK_F24: return keyCode_WXK_F24_sym;
   case WXK_NUMLOCK: return keyCode_WXK_NUMLOCK_sym;
   case WXK_SCROLL: return keyCode_WXK_SCROLL_sym;
+  case WXK_WHEEL_UP: return keyCode_WXK_WHEEL_UP_sym;
+  case WXK_WHEEL_DOWN: return keyCode_WXK_WHEEL_DOWN_sym;
   default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);
   }
 }

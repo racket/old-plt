@@ -803,6 +803,7 @@ void wxImage::CreateXImage()
   }
 
 
+  if (numcols)
   switch (dispDEEP) 
     {
     case 8:

@@ -284,7 +284,7 @@
 		 #`((match-lambda #,@tests) #,totest))]
 
 	      [($ ast:pexp_tuple xlist)
-	       #`(make-<tuple> (list #,@(compile-exps xlist context)))]
+	       #`(make-<tuple> (#,list #,@(compile-exps xlist context)))]
 
 	      [($ ast:pexp_try tryexp pelist)
 	       (let ([matches (compile-match pelist)]

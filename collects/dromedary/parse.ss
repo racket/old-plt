@@ -188,13 +188,13 @@
      (hash-table-put! keyword-table "when" token-WHEN)
      (hash-table-put! keyword-table "while" token-WHILE)
      (hash-table-put! keyword-table "with" token-WITH)
-     (hash-table-put! keyword-table "mod" '(token-INFIXOP3 mod))
-     (hash-table-put! keyword-table "land" '(token-INFIXOP3 land))
-     (hash-table-put! keyword-table "lor" '(token-INFIXOP3 lor))
-     (hash-table-put! keyword-table "lxor" '(token-INFIXOP3 lxor))
-     (hash-table-put! keyword-table "lsl" '(token-INFIXOP4 lsl))
-     (hash-table-put! keyword-table "lsr" '(token-INFIXOP4 lsr))
-     (hash-table-put! keyword-table "asr" '(token-INFIXOP4 asr))
+     (hash-table-put! keyword-table "mod" (cons token-INFIXOP3 'mod))
+     (hash-table-put! keyword-table "land" (cons token-INFIXOP3 'land))
+     (hash-table-put! keyword-table "lor" (cons token-INFIXOP3 'lor))
+     (hash-table-put! keyword-table "lxor" (cons token-INFIXOP3 'lxor))
+     (hash-table-put! keyword-table "lsl" (cons token-INFIXOP4 'lsl))
+     (hash-table-put! keyword-table "lsr" (cons token-INFIXOP4 'lsr))
+     (hash-table-put! keyword-table "asr" (cons token-INFIXOP4 'asr))
 
      (define (lex source-name)
        (lexer-src-pos
@@ -224,8 +224,8 @@
 							 (position-offset start-pos)
 							 (- (position-offset end-pos)
 							    (position-offset start-pos)))])
-						   (if (list? result)
-						       ((eval (car result)) (datum->syntax-object #f (cdr result) stx-list stx-for-original-property))
+						   (if (pair? result)
+						       ((car result) (datum->syntax-object #f (cdr result) stx-list stx-for-original-property))
 						       (result (datum->syntax-object #f lexeme stx-list stx-for-original-property)))))
 					       (token LIDENT s)))]
 	

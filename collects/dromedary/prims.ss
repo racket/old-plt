@@ -18,7 +18,7 @@
 		 (struct mlexn (name types))
 		 (struct value-set (name type))
 		 (struct <user-type> ())
-		 != <lt> <gt> <le> <ge> <or> <and> <>
+		 != <lt> <gt> <le> <ge> <or> <and> <> <list>
 		 float? any?
 		 array-get
 		 (all-from (lib "match.ss")))
@@ -42,15 +42,28 @@
 	(define <library-names> (make-hash-table 'equal))
 
 	;; The list functions
+	(define (<append> a)
+	  (lambda (b)
+	    (append a b)))
+
+	(define (<map> a)
+	  (lambda (b)
+	    (map a b)))
+
+	(define (<filter> a)
+	  (lambda (b)
+	    (filter a b)))
+
 	(define <list-funcs> (make-hash-table 'equal))
 	(hash-table-put! <list-funcs> "hd" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tvar "'a")) car))
 	(hash-table-put! <list-funcs> "tl" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) cdr))
 	(hash-table-put! <list-funcs> "rev" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) reverse))
 	(hash-table-put! <list-funcs> "map" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) (make-tvar "'b"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'b"))))  map))
-	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) (make-tlist (make-tvar "'a"))) filter))
-	(hash-table-put! <list-funcs> "append" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
+	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-arrow (list (make-tvar "'a")) "bool")) (make-tlist (make-tvar "'a")))) filter))
+	(hash-table-put! <list-funcs> "append" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <append>))
 
 
+	(define <list> list)
 
 	(define (array-get arr)
 	  (lambda (pos)
@@ -116,6 +129,40 @@
 	;; Fill up all the libraries
 	(hash-table-put! <library-names> "List" <list-funcs>)
 	(hash-table-put! <library-names> "Array" <array-funcs>)
+
+	;; Curried primitives
+	(define (<+> a)
+	  (lambda (b)
+	    (+ a b)))
+
+	(define (<*> a)
+	  (lambda (b)
+	    (* a b)))
+
+	(define (<-> a)
+	  (lambda (b)
+	    (- a b)))
+	
+	(define (<quotient> a)
+	  (lambda (b)
+	    (quotient a b)))
+
+	(define (</> a)
+	  (lambda (b)
+	    (/ a b)))
+
+	(define (<equal?> a)
+	  (lambda (b)
+	    (equal? a b)))
+
+
+	(define (<string-append> a)
+	  (lambda (b)
+	    (string-append a b)))
+
+	(define (<expt> a)
+	  (lambda (b)
+	    (expt a b)))
 
 	(define (!= a)
 	  (lambda (b)
@@ -238,32 +285,32 @@
 	
 	
 	(define built-in-and-user-funcs (make-hash-table 'equal))
-	(hash-table-put! built-in-and-user-funcs "+" (cons (make-arrow (list "int" "int") "int") +))
-	(hash-table-put! built-in-and-user-funcs "+." (cons (make-arrow (list "float" "float") "float") +))
-	(hash-table-put! built-in-and-user-funcs "-" (cons (make-arrow (list "int" "int") "int") -))
-	(hash-table-put! built-in-and-user-funcs "-." (cons (make-arrow (list "float" "float") "float") -))
-	(hash-table-put! built-in-and-user-funcs "*" (cons (make-arrow (list "int" "int") "int") *))
-	(hash-table-put! built-in-and-user-funcs "*." (cons (make-arrow (list "float" "float") "float") *))
-	(hash-table-put! built-in-and-user-funcs "/" (cons (make-arrow (list "int" "int") "int") quotient))
-	(hash-table-put! built-in-and-user-funcs "/." (cons (make-arrow (list "float" "float") "float") /))
-	(hash-table-put! built-in-and-user-funcs "=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") equal?))
-	(hash-table-put! built-in-and-user-funcs "==" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") equal?))
+	(hash-table-put! built-in-and-user-funcs "+" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <+>))
+	(hash-table-put! built-in-and-user-funcs "+." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <+>))
+	(hash-table-put! built-in-and-user-funcs "-" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <->))
+	(hash-table-put! built-in-and-user-funcs "-." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <->))
+	(hash-table-put! built-in-and-user-funcs "*" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <*>))
+	(hash-table-put! built-in-and-user-funcs "*." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <*>))
+	(hash-table-put! built-in-and-user-funcs "/" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <quotient>))
+	(hash-table-put! built-in-and-user-funcs "/." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) </>))
+	(hash-table-put! built-in-and-user-funcs "=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) <equal?>))
+	(hash-table-put! built-in-and-user-funcs "==" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) <equal?>))
 	(hash-table-put! built-in-and-user-funcs "<" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <lt>))
-	(hash-table-put! built-in-and-user-funcs "<=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <le>))
-	(hash-table-put! built-in-and-user-funcs ">" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <gt>))
-	(hash-table-put! built-in-and-user-funcs ">=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <ge>))
-	(hash-table-put! built-in-and-user-funcs "or" (cons (make-arrow (list "bool" "bool") "bool") <or>))
-	(hash-table-put! built-in-and-user-funcs "||" (cons (make-arrow (list "bool" "bool") "bool") <or>))
-	(hash-table-put! built-in-and-user-funcs "&&" (cons (make-arrow (list "bool" "bool") "bool") <and>))
-	(hash-table-put! built-in-and-user-funcs "!=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") !=))
+	(hash-table-put! built-in-and-user-funcs "<=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <le>))
+	(hash-table-put! built-in-and-user-funcs ">" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <gt>))
+	(hash-table-put! built-in-and-user-funcs ">=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <ge>))
+	(hash-table-put! built-in-and-user-funcs "or" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
+	(hash-table-put! built-in-and-user-funcs "||" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <or>))
+	(hash-table-put! built-in-and-user-funcs "&&" (cons (make-arrow (list "bool") (make-arrow (list "bool") "bool")) <and>))
+	(hash-table-put! built-in-and-user-funcs "!=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) !=))
 	(hash-table-put! built-in-and-user-funcs "not" (cons (make-arrow (list "bool") "bool") not))
 	(hash-table-put! built-in-and-user-funcs "~-" (cons (make-arrow (list "int") "int") -))
-	(hash-table-put! built-in-and-user-funcs "**" (cons (make-arrow (list "float" "float") "float") expt))
+	(hash-table-put! built-in-and-user-funcs "**" (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <expt>))
 	(hash-table-put! built-in-and-user-funcs "float" (cons (make-arrow (list "int") "float") (lambda (x) x)))
-	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
-	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string" "string") "string") string-append))
+	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <append>))
+	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string") (make-arrow (list "string") "string")) <string-append>))
 	(hash-table-put! built-in-and-user-funcs "raise" (cons (make-arrow (list "exception") (make-tvar "'a")) raise))
-	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
+	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-arrow (list (make-tvar "'a")) "unit")) <set-box!>))
 	(hash-table-put! built-in-and-user-funcs "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
 	(hash-table-put! built-in-and-user-funcs "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
 	(hash-table-put! built-in-and-user-funcs "print_int" (cons (make-arrow (list "int") "unit") print_int))

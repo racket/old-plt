@@ -14,7 +14,6 @@
 
 #ifdef _WIN32
 # include <windows.h>
-static int generations_available = 1;
 # define bzero(m, s) memset(m, 0, s)
 # define inline _inline
 #endif
@@ -32,10 +31,6 @@ static int generations_available = 1;
 /* This turns on memory tracing */
 /* #define NEWGC_MEMORY_TRACE */
 
-/* This turns on a split generation 0, which might improve performance but
-   may not (FIXME: NOT IMPLEMENTED YET) */
-/* #define NEWGC_SPLIT_GEN0 */
-
 /* This turns on support for heap debugging (FIXME: NOT IMPLEMENTED YET) */
 /* #define NEWGC_HEAP_DEBUGGING */
 
@@ -43,16 +38,16 @@ static int generations_available = 1;
    don't care about performance and you're hacking the collector */
 /* #define NEWGC_INTERNAL_DEBUGGING */
 
-/* These set the maximum and minimum size of generation 0. The size is fixed
-   upon startup, and set to the closest power of 2 to 1/16th the available
-   heap size without going over. Higher values tend to perform better, but
-   they do force a fixed, potentially large, memory consumption. */
-#define MIN_GEN0_SIZE (8 * 1024 * 1024)
-#define MAX_GEN0_SIZE (32 * 1024 * 1024)
+/* The initial size of generation 0. This will grow and shrink a bit as time
+   goes on */
+#define INIT_GEN0_SIZE (1 * 1024 * 1024)
+#define GEN0_GROW_FACTOR 2
+#define GEN0_GROW_ADDITION (1 * 1024 * 1024)
+#define MAX_GEN0_SIZE (128 * 1024 * 1024)
 
 /* This computes the top generation collected given a collection number (which
    is zero-based). The collector has 3 generations numbered 0, 1 and 2. */
-#define COMPUTE_GCTOP(x) ((x % 100)==0) ? 2 : (((x % 15)==0) ? 1 : 0)
+#define COMPUTE_GCTOP(x) ((x % 30)==0) ? 2 : (((x % 15)==0) ? 1 : 0)
 
 /* This is the log base 2 of the size of one word, given in bytes */
 #define LOG_WORD_SIZE 2
@@ -199,6 +194,7 @@ static char *zero_sized[4]; /* all 0-sized allocs get this */
 static int gc_top = 0;
 static Mark_Proc mark_table[NUMBER_OF_TAGS];
 static Fixup_Proc fixup_table[NUMBER_OF_TAGS];
+static unsigned long memory_in_use = 0;
 
 #define modify_page_map(page, val) {                                  \
     long size_left = page->big_page ? page->size : PAGE_SIZE;         \
@@ -233,11 +229,13 @@ static void *allocate_big(size_t sizeb, int type)
 
   sizew = gcBYTES_TO_WORDS(sizeb) + HEADER_SIZEW + 1;
   sizeb = gcWORDS_TO_BYTES(sizew);
-  gen0_bigpages_size += sizeb;
-  if(gen0_bigpages_size > gen0_size) {
+  gen0_bigpages_size += sizeb; 
+  if((gen0_bigpages_size + (NUM(gen0_alloc_current) - NUM(gen0_alloc_region))) 
+     > gen0_size) {
     garbage_collect(0);
     gen0_bigpages_size = sizeb;
   }
+  memory_in_use += sizeb;
 
   bpage = malloc_pages(sizeb, PAGE_SIZE);
   bpage->size = sizeb;
@@ -287,7 +285,16 @@ void GC_free(void *p) {}
 inline static void reset_nursery(void)
 {
   gen0_bigpages_size = 0;
-  bzero(gen0_alloc_region, NUM(gen0_alloc_current) - NUM(gen0_alloc_region));
+  free_pages(gen0_alloc_region, gen0_size); flush_freed_pages();
+  gen0_size = (GEN0_GROW_FACTOR * memory_in_use) + GEN0_GROW_ADDITION;
+  if(gen0_size > MAX_GEN0_SIZE)
+    gen0_size = MAX_GEN0_SIZE;
+  gen0_alloc_region = PPTR(malloc_pages(gen0_size, PAGE_SIZE));
+  gen0_alloc_end = PPTR(NUM(gen0_alloc_region) + gen0_size);
+  ((struct mpage *)gen0_alloc_region)->size = gen0_size;
+  ((struct mpage *)gen0_alloc_region)->big_page = 1;
+  pagemap_add((struct mpage *)gen0_alloc_region);
+  ((struct mpage *)gen0_alloc_region)->big_page = 0;
   gen0_alloc_current = gen0_alloc_region + HEADER_SIZEW;
 }
 
@@ -358,12 +365,14 @@ static void dump_heap(void)
 # define INIT_DEBUG_FILE() init_debug_file()
 # define CLOSE_DEBUG_FILE() close_debug_file()
 # define DUMP_HEAP() dump_heap()
-# define GC_DEBUG(args) { GCPRINT args; GCFLUSHOUT(); }
+# define GC_DEBUG(args...) { fprintf(dump, args); fflush(dump); }
 #else
 # define INIT_DEBUG_FILE() /* */
 # define CLOSE_DEBUG_FILE() /* */
 # define DUMP_HEAP() /* */
-# define GC_DEBUG(args) /* */
+#include <stdarg.h>
+#include <ctype.h>
+inline static void GC_DEBUG(const char *c, ...) { }
 #endif
 
 #define GCWARN(args) { GCPRINT args; GCFLUSHOUT(); }
@@ -658,8 +667,8 @@ inline static void check_finalizers(int level)
     if((work->eager_level == level) && !marked(work->p)) {
       struct finalizer *next = work->next;
 
-      GC_DEBUG((GCOUTF, "CFNL: Level %i finalizer %p on %p queued for finalization.\n",
-		work->eager_level, work, work->p));
+      GC_DEBUG("CFNL: Level %i finalizer %p on %p queued for finalization.\n",
+	       work->eager_level, work, work->p);
       gcMARK(work->p);
       if(prev) prev->next = next;
       if(!prev) finalizers = next;
@@ -678,7 +687,7 @@ inline static void do_ordered_level3(void)
 
   for(temp = finalizers; temp; temp = temp->next)
     if(!marked(temp->p)) {
-      GC_DEBUG((GCOUTF, "LVL3: %p is not marked. Marking payload (%p)\n", temp, temp->p));
+      GC_DEBUG("LVL3: %p is not marked. Marking payload (%p)\n", temp, temp->p);
       if(temp->tagged) mark_table[*(unsigned short*)temp->p](temp->p);
       if(!temp->tagged) GC_mark_xtagged(temp->p);
     }
@@ -1188,7 +1197,7 @@ inline static void clear_old_owner_data(void)
 
 inline static void mark_for_accounting(struct mpage *page, void *ptr)
 {
-  GC_DEBUG((GCOUTF, "btc_account: %p/%p\n", page, ptr));
+  GC_DEBUG("btc_account: %p/%p\n", page, ptr);
   if(page->big_page) {
     struct objhead *info = (struct objhead *)((char*)page + HEADER_SIZEB);
     
@@ -1401,6 +1410,8 @@ int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2)
 /* administration / initialization                                           */
 /*****************************************************************************/
 
+static int generations_available = 1;
+
 void designate_modified(void *p)
 {
   struct mpage *page = find_page(p);
@@ -1419,17 +1430,12 @@ void GC_init_type_tags(int count, int weakbox)
 
   weak_box_tag = weakbox;
   if(!initialized) {
-    size_t wanted_gen0_size;
-
     initialized = 1;
     max_heap_size = determine_max_heap_size();
     pages_in_heap = max_heap_size / PAGE_SIZE;
     max_used_pages = pages_in_heap / 2;
     
-    gen0_size = MIN_GEN0_SIZE; wanted_gen0_size = max_heap_size >> 4;
-    while((gen0_size < wanted_gen0_size) && (gen0_size < MAX_GEN0_SIZE))
-      gen0_size *= 2;
-    
+    gen0_size = INIT_GEN0_SIZE;
     gen0_alloc_region = PPTR(malloc_pages(gen0_size, PAGE_SIZE));
     gen0_alloc_end = PPTR(NUM(gen0_alloc_region) + gen0_size);
     ((struct mpage *)gen0_alloc_region)->size = gen0_size;
@@ -1656,8 +1662,8 @@ inline static void mark_normal_object(struct mpage *page, void *p)
     while(size--) *(dest++) = *(src++);
    *(void**)p = PTR(NUM(newplace) + WORD_SIZE);
     ohead->mark = 1;
-    GC_DEBUG((GCOUTF, "Marked/copid %i bytes from obj %p to %p\n", ohead->size,
-	      p, PTR(NUM(newplace) + WORD_SIZE)));
+    GC_DEBUG("Marked/copid %i bytes from obj %p to %p\n", ohead->size,
+	     p, PTR(NUM(newplace) + WORD_SIZE));
   }
 }
 
@@ -1791,8 +1797,11 @@ static void prepare_pages_for_collection(void)
 	from_pages[i][j] = pages[i][j];
 	pages[i][j] = NULL;
 
-	for(work = from_pages[i][j]; work; work = work->next)
-	  protect_pages(work, work->size, 1);
+	for(work = from_pages[i][j]; work; work = work->next) {
+	  memory_in_use -= work->size;
+	  if(generations_available)
+	    protect_pages(work, work->size, 1);
+	}
       }
     } else from_pages[i][j] = NULL;
 
@@ -1806,7 +1815,9 @@ static void prepare_pages_for_collection(void)
 	if(work->back_pointers || ((j != PAGE_BIG) && (work->size < CUTOFF))) {
 	  struct mpage *next = work->next;
 
-	  protect_pages(work, work->size, 1);
+	  memory_in_use -= work->size;
+	  if(generations_available)
+	    protect_pages(work, work->size, 1);
 
 	  if(work->prev) work->prev->next = work->next;
 	  if(!work->prev) pages[i][j] = work->next;
@@ -1863,6 +1874,7 @@ static void repair_heap(void)
 	struct mpage *next = work->next;
 
 	repair_page(work);
+	memory_in_use += work->size;
 	if(work->big_page) work->big_page = 1;
 	work->next = pages[i][j]; work->prev = NULL;
 	if(work->next) work->next->prev = work;
@@ -1892,12 +1904,13 @@ static void protect_older_pages(void)
   struct mpage *work;
   int i, j;
 
-  for(i = 1; i < GENERATIONS; i++)
-    for(j = 0; j < PAGE_TYPES; j++)
-      if(j != PAGE_ATOMIC)
-	for(work = pages[i][j]; work; work = work->next)
-	  if(work->page_type != PAGE_ATOMIC)
-	    protect_pages(work, work->size, 0);
+  if(generations_available)
+    for(i = 1; i < GENERATIONS; i++)
+      for(j = 0; j < PAGE_TYPES; j++)
+	if(j != PAGE_ATOMIC)
+	  for(work = pages[i][j]; work; work = work->next)
+	    if(work->page_type != PAGE_ATOMIC)
+	      protect_pages(work, work->size, 0);
 }
 
 static void garbage_collect(int force_full)
@@ -1905,7 +1918,7 @@ static void garbage_collect(int force_full)
   static unsigned long number = 0;
   static unsigned int running_finalizers = 0;
 
-  if(force_full)
+  if(force_full || !generations_available)
     gc_top = (GENERATIONS - 1);
   else
     gc_top = COMPUTE_GCTOP(number);
@@ -1959,8 +1972,8 @@ static void garbage_collect(int force_full)
       f = run_queue; run_queue = run_queue->next;
       if(!run_queue) last_in_queue = NULL;
 
-      GC_DEBUG((GCOUTF, "Running finalizers %p for pointer %p (lvl %i)\n",
-		f, f->p, f->eager_level));
+      GC_DEBUG("Running finalizers %p for pointer %p (lvl %i)\n",
+		f, f->p, f->eager_level);
       gcs = GC_variable_stack;
       f->f(f->p, f->data);
       GC_variable_stack = gcs;

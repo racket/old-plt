@@ -233,6 +233,9 @@ int scheme_solaris_semaphore_try_down(void *);
 # if defined(__mc68000__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "m68k-linux"
 # endif
+# if defined(__alpha)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-linux"
+# endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
 # endif
@@ -248,6 +251,10 @@ int scheme_solaris_semaphore_try_down(void *);
 # define HAS_LINUX_IOB
 
 # define STACK_GROWS_DOWN
+
+# if defined(__alpha)
+#  define SIXTY_FOUR_BIT_INTEGERS
+# endif
 
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
@@ -490,7 +497,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-#if defined(__alpha)
+#if defined(__digital__) && defined(__unix__)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 

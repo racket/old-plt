@@ -442,100 +442,104 @@
       ;; scheme_eval_compiled_stx_string() expects the "syntax" vector
       ;; to have a module index path (the "self" path) as its last
       ;; element.
+      ;; Returns a max-arity.
       (define (const:finish-syntax-constants!)
-	(unless (null? syntax-constants)
-	  (let* ([s (open-output-string)]
-		 [uninterned-symbol-info (get-new-uninterned-symbols!)]
-		 [c (compile `(quote-syntax ,(list->vector 
-					      (let ([l (map cdr syntax-constants)]
-						    [mi (varref:current-invoke-module)])
-						(append 
-						 l 
-						 (map car uninterned-symbol-info) ; car gets the syms
-						 (if mi
-						     (list (varref:module-invoke-context-path-index mi))
-						     null))))))])
-	    (display c s)
-	    (let ([syntax-string (get-output-string s)])
-	      (let* ([strvar (compiler:add-syntax-string! 
-			      syntax-string
-			      (varref:current-invoke-module)
-			      (map cdr uninterned-symbol-info) ; cdr gets positions
-			      (length syntax-constants))] ; starting place for symbols
-		     [vecvar (gensym 'conststxvec)]
-		     [sv (zodiac:make-top-level-varref
-			  #f
-			  (make-empty-box) 
-			  vecvar
-			  #f
-			  (box '())
-			  #f
-			  #f)])
-
-		(set-annotation! sv (varref:empty-attributes))
-		(varref:add-attribute! sv varref:static)
-		(varref:add-attribute! sv (or (varref:current-invoke-module)
-					      varref:per-load-static))
-		(if (varref:current-invoke-module)
-		    (set! compiler:per-invoke-static-list
-			  (cons (cons vecvar (varref:current-invoke-module))
-				compiler:per-invoke-static-list))
-		    (set! compiler:per-load-static-list
-			  (cons vecvar compiler:per-load-static-list)))
-
-		((if (varref:current-invoke-module)
-		     compiler:add-local-per-invoke-define-list!
-		     compiler:add-local-per-load-define-list!)
-		 (let ([def
-			(zodiac:make-define-values-form 
-			 #f
-			 (make-empty-box) (list sv)
-			 (compiler:re-quote 
-			  (zodiac:make-zread
-			   (datum->syntax-object
+	(if (null? syntax-constants)
+	    0
+	    (let* ([s (open-output-string)]
+		   [uninterned-symbol-info (get-new-uninterned-symbols!)]
+		   [c (compile `(quote-syntax ,(list->vector 
+						(let ([l (map cdr syntax-constants)]
+						      [mi (varref:current-invoke-module)])
+						  (append 
+						   l 
+						   (map car uninterned-symbol-info) ; car gets the syms
+						   (if mi
+						       (list (varref:module-invoke-context-path-index mi))
+						       null))))))])
+	      (display c s)
+	      (let ([syntax-string (get-output-string s)])
+		(let* ([strvar (compiler:add-syntax-string! 
+				syntax-string
+				(varref:current-invoke-module)
+				(map cdr uninterned-symbol-info) ; cdr gets positions
+				(length syntax-constants))] ; starting place for symbols
+		       [vecvar (gensym 'conststxvec)]
+		       [sv (zodiac:make-top-level-varref
 			    #f
-			    strvar ;; <------ HACK! See "HACK!" in vm2c.ss
-			    #f))))])
-		   (if (varref:current-invoke-module)
-		       (wrap-module-definition def (varref:current-invoke-module))
-		       def)))
+			    (make-empty-box) 
+			    vecvar
+			    #f
+			    (box '())
+			    #f
+			    #f)])
 
-		;; Create construction code for each
-		;;  syntax variable:
-		(let loop ([l syntax-constants]
-			   [pos 0])
-		  (unless (null? l)
-		    (let ([app (zodiac:make-app
-				(cdar l)
-				(make-empty-box) 
-				(zodiac:make-top-level-varref
+		  (set-annotation! sv (varref:empty-attributes))
+		  (varref:add-attribute! sv varref:static)
+		  (varref:add-attribute! sv (or (varref:current-invoke-module)
+						varref:per-load-static))
+		  (if (varref:current-invoke-module)
+		      (set! compiler:per-invoke-static-list
+			    (cons (cons vecvar (varref:current-invoke-module))
+				  compiler:per-invoke-static-list))
+		      (set! compiler:per-load-static-list
+			    (cons vecvar compiler:per-load-static-list)))
+
+		  ((if (varref:current-invoke-module)
+		       compiler:add-local-per-invoke-define-list!
+		       compiler:add-local-per-load-define-list!)
+		   (let ([def
+			  (zodiac:make-define-values-form 
+			   #f
+			   (make-empty-box) (list sv)
+			   (compiler:re-quote 
+			    (zodiac:make-zread
+			     (datum->syntax-object
+			      #f
+			      strvar ;; <------ HACK! See "HACK!" in vm2c.ss
+			      #f))))])
+		     (if (varref:current-invoke-module)
+			 (wrap-module-definition def (varref:current-invoke-module))
+			 def)))
+
+		  ;; Create construction code for each
+		  ;;  syntax variable:
+		  (let loop ([l syntax-constants]
+			     [pos 0])
+		    (unless (null? l)
+		      (let ([app (zodiac:make-app
+				  (cdar l)
+				  (make-empty-box) 
+				  (zodiac:make-top-level-varref
+				   (cdar l)
+				   (make-empty-box) 
+				   'vector-ref
+				   '#%kernel
+				   (box '())
+				   #f
+				   #f)
+				  (list
+				   sv
+				   (compiler:re-quote
+				    (zodiac:make-zread
+				     (datum->syntax-object
+				      #f
+				      pos
+				      (cdar l))))))])
+			(set-annotation! app (make-app #f #t 'vector-ref))
+			((if (varref:current-invoke-module)
+			     compiler:add-local-per-invoke-define-list!
+			     compiler:add-local-per-load-define-list!)
+			 (let ([def
+				(zodiac:make-define-values-form 
 				 (cdar l)
-				 (make-empty-box) 
-				 'vector-ref
-				 '#%kernel
-				 (box '())
-				 #f
-				 #f)
-				(list
-				 sv
-				 (compiler:re-quote
-				  (zodiac:make-zread
-				   (datum->syntax-object
-				    #f
-				    pos
-				    (cdar l))))))])
-		      (set-annotation! app (make-app #f #t 'vector-ref))
-		      ((if (varref:current-invoke-module)
-			   compiler:add-local-per-invoke-define-list!
-			   compiler:add-local-per-load-define-list!)
-		       (let ([def
-			      (zodiac:make-define-values-form 
-			       (cdar l)
-			       (make-empty-box) (list (caar l))
-			       app)])
-			 (if (varref:current-invoke-module)
-			     (wrap-module-definition def (varref:current-invoke-module))
-			     def)))
-		      (loop (cdr l) (add1 pos))))))))
-	  (set! syntax-constants null))))))
+				 (make-empty-box) (list (caar l))
+				 app)])
+			   (if (varref:current-invoke-module)
+			       (wrap-module-definition def (varref:current-invoke-module))
+			       def)))
+			(loop (cdr l) (add1 pos)))))))
+	      (set! syntax-constants null)
+	      ;; We make an application with 2 arguments
+	      2))))))
 

@@ -62,11 +62,13 @@
 (module driver mzscheme
   (require (lib "unitsig.ss")
 	   (lib "list.ss")
+	   (lib "file.ss")
 	   (lib "etc.ss")
 	   (lib "pretty.ss")
 	   (prefix src2src: "../src2src.ss"))
   
   (require (lib "zodiac-sig.ss" "syntax")
+	   (lib "toplevel.ss" "syntax")
 	   (lib "compile-sig.ss" "dynext")
 	   (lib "link-sig.ss" "dynext")
 	   (lib "file-sig.ss" "dynext"))
@@ -125,7 +127,18 @@
       (define s:process-filenames
 	(lambda (input-name dest-dir from-c? tmp-c? tmp-o?)
 	  (let-values ([(basedir file dir?) (split-path input-name)])
-	    (let* ([sbase (extract-base-filename/ss file (if from-c? #f 'mzc))]
+	    (let* ([dest-dir (if (eq? dest-dir 'auto)
+				 (let ([d (build-path (if (eq? basedir 'relative)
+							  'same
+							  basedir)
+						      "compiled"
+						      "native"
+						      (system-library-subpath))])
+				   (unless (directory-exists? d)
+				     (make-directory* d))
+				   d)
+				 dest-dir)]
+		   [sbase (extract-base-filename/ss file (if from-c? #f 'mzc))]
 		   [cbase (extract-base-filename/c file (if from-c? 'mzc #f))]
 		   [base (or sbase cbase)]
 		   [c-dir (if tmp-c?
@@ -215,16 +228,26 @@
 			  '(with-output-to-file "/tmp/l.ss"
 			    (lambda () (pretty-print (syntax-object->datum p)))
 			    'replace)
-			  (expand p)))))
+			  (let ([opt-expanded (expand p)])
+			    (when has-prefix?
+			      (eval-compile-time-part-of-top-level opt-expanded))
+			    opt-expanded)))))
 		   exprs)))))
 
       (define elaborate-namespace (make-namespace))
 	   
+      (define has-prefix? #f)
+
       (define (eval-compile-prefix prefix)
+	(set! has-prefix? (and prefix #t))
 	(with-handlers ([void top-level-exn-handler])
 	  (with-handlers ([void prefix-exn-handler])
 	    (parameterize ([current-namespace elaborate-namespace])
-	      (eval prefix)))))
+	      (eval (or prefix
+			;; Need MzScheme and cffi:
+			'(begin
+			   (require (lib "cffi.ss" "compiler"))
+			   (require-for-syntax mzscheme))))))))
 
       ;;----------------------------------------------------------------------
       ;; Misc utils
@@ -330,28 +353,31 @@
 				     children new-max-arity multi)
 				(analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
 
-		    ;; Adds to const, per-load-const, per-invoke-const lists:
-		    (when (or (null? (cdr sexps))
-			      (not (zodiac:module-form? (car sexps)))
-			      (not (zodiac:module-form? (cadr sexps)))
-			      (let ([a1 (get-annotation (car sexps))]
-				    [a2 (get-annotation (cadr sexps))])
-				(not (and (eq? (module-info-part a1)
-					       (module-info-part a2))
-					  (eq? (module-info-invoke a1)
-					       (module-info-invoke a2))))))
-		      (compiler:finish-syntax-constants!))
+		    
+		    (let ([sc-max-arity
+			   ;; Adds to const, per-load-const, per-invoke-const lists:
+			   (if (or (null? (cdr sexps))
+				   (not (zodiac:module-form? (car sexps)))
+				   (not (zodiac:module-form? (cadr sexps)))
+				   (let ([a1 (get-annotation (car sexps))]
+					 [a2 (get-annotation (cadr sexps))])
+				     (not (and (eq? (module-info-part a1)
+						    (module-info-part a2))
+					       (eq? (module-info-invoke a1)
+						    (module-info-invoke a2))))))
+			       (compiler:finish-syntax-constants!)
+			       0)])
 
-		    (varref:current-invoke-module #f)
-
-		    (loop (cdr sexps) 
-			  (cons exp source-acc) 
-			  (cons local-vars locals-acc)
-			  (cons global-vars globals-acc)
-			  (cons used-vars used-acc)
-			  (cons captured-vars captured-acc)
-			  (cons children children-acc)
-			  (max max-arity new-max-arity))))))))
+		      (varref:current-invoke-module #f)
+		      
+		      (loop (cdr sexps) 
+			    (cons exp source-acc) 
+			    (cons local-vars locals-acc)
+			    (cons global-vars globals-acc)
+			    (cons used-vars used-acc)
+			    (cons captured-vars captured-acc)
+			    (cons children children-acc)
+			    (max max-arity new-max-arity sc-max-arity)))))))))
 
       ;; Lift static procedures
       (define s:lift

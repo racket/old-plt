@@ -73,11 +73,15 @@ next section.
 >  ((compile-zos expr) scheme-file-list dest-dir)
 
       `(compile-zos expr)' returns a compiler that is initialized with
-      the elaboration-time expression `expr'.  The compiler takes a list
-      of Scheme files and compiles each of them to a .zo file, placing
-      the resulting .zo files in the directory specified by `dest-dir'.
-      If `dest-dir' is #f, each .zo file is placed in the same directory
-      as its source file.
+      the elaboration-time expression `expr'; if `expr' is #f, then no
+      compilation namespace is created, otherwise a namespace is
+      created for evaluating the expression and compiling files.
+
+      The returned compiler takes a list of Scheme files and compiles
+      each of them to a .zo file, placing the resulting .zo files in
+      the directory specified by `dest-dir'.  If `dest-dir' is #f,
+      each .zo file is placed in the same directory as its source
+      file.
  
  Collection compilation
  ----------------------

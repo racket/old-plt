@@ -216,23 +216,25 @@
 	(set! compiler:local-per-load-define-list null)
 	(set! compiler:local-per-invoke-define-list null)
 
-	(const:finish-syntax-constants!)
+	(begin0
+	 ;; Return this result - it's a number
+	 (const:finish-syntax-constants!)
 
-	(unless (and (null? compiler:local-per-load-define-list)
-		     (null? compiler:local-per-invoke-define-list))
-	  (set! compiler:define-list
-		(append! compiler:define-list 
-			 (reverse! compiler:local-define-list)))
-	  (set! compiler:per-load-define-list
-		(append! compiler:per-load-define-list 
-			 (reverse! compiler:local-per-load-define-list)))
-	  (set! compiler:per-invoke-define-list
-		(append! compiler:per-invoke-define-list 
-			 (reverse! compiler:local-per-invoke-define-list)))
+	 (unless (and (null? compiler:local-per-load-define-list)
+		      (null? compiler:local-per-invoke-define-list))
+	   (set! compiler:define-list
+		 (append! compiler:define-list 
+			  (reverse! compiler:local-define-list)))
+	   (set! compiler:per-load-define-list
+		 (append! compiler:per-load-define-list 
+			  (reverse! compiler:local-per-load-define-list)))
+	   (set! compiler:per-invoke-define-list
+		 (append! compiler:per-invoke-define-list 
+			  (reverse! compiler:local-per-invoke-define-list)))
 
-	  (set! compiler:local-define-list null)
-	  (set! compiler:local-per-load-define-list null)
-	  (set! compiler:local-per-invoke-define-list null)))
+	   (set! compiler:local-define-list null)
+	   (set! compiler:local-per-load-define-list null)
+	   (set! compiler:local-per-invoke-define-list null))))
       
       ;; Temporary structure used in building up case-lambda info
       (define-struct case-info 

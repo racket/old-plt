@@ -17,11 +17,14 @@
 	   (lib "compile-sig.ss" "dynext")
 	   
 	   (lib "make-sig.ss" "make")
-	   (lib "collection-sig.ss" "make"))
+	   (lib "collection-sig.ss" "make")
 
-  (require (lib "list.ss"))
-  (require (lib "compile.ss")) ; gets compile-file
-  (require (lib "getinfo.ss" "setup"))
+	   (lib "toplevel.ss" "syntax"))
+
+  (require (lib "list.ss")
+	   (lib "file.ss")
+	   (lib "compile.ss") ; gets compile-file
+	   (lib "getinfo.ss" "setup"))
 
   (provide compiler@)
 
@@ -33,7 +36,6 @@
 	      dynext:link^
 	      dynext:file^)
 
-      
       (define (make-extension-compiler mode prefix)
 	(let ([u (dynamic-require `(lib "base.ss" "compiler" "private")
 				  'base@)]
@@ -125,26 +127,44 @@
       (define (glue-extension-parts source-files destination-directory)
 	(link/glue-extension-parts #f source-files destination-directory))
 
-      (define (compile-to-zo src dest)
-	(compile-file src dest)
+      (define (compile-to-zo src dest namespace eval?)
+	(parameterize ([current-namespace namespace])
+	  (compile-file src dest
+			(if eval?
+			    (lambda (expr)
+			      (let ([e (expand expr)])
+				(eval-compile-time-part-of-top-level e)
+				e))
+			    values)))
 	(printf " [output to \"~a\"]~n" dest))
 
       (define (compile-zos prefix)
-	(eval prefix) ;; <--------EVAL--------
-	(lambda (source-files destination-directory)
-	  (let ([file-bases (map
-			     (lambda (file)
-			       (let ([f (extract-base-filename/ss file 'mzc)])
-				 (if destination-directory
-				     (let-values ([(base file dir?) (split-path f)])
-				       (build-path destination-directory file))
-				     f)))
-			     source-files)])
-	    (for-each
-	     (lambda (f b)
-	       (let ([zo (append-zo-suffix b)])
-		 (compile-to-zo f zo)))
-	     source-files file-bases))))
+	(let ([n (if prefix (make-namespace) (current-namespace))])
+	  (when prefix
+	    (eval prefix n))
+	  (lambda (source-files destination-directory)
+	    (let ([file-bases (map
+			       (lambda (file)
+				 (let ([f (extract-base-filename/ss file 'mzc)])
+				   (if destination-directory
+				       (let-values ([(base file dir?) (split-path f)])
+					 (build-path (if (eq? destination-directory 'auto)
+							 (let ([d (build-path (if (eq? base 'relative)
+										  'same
+										  base)
+									      "compiled")])
+							   (unless (directory-exists? d)
+							     (make-directory* d))
+							   d)
+							 destination-directory)
+						     file))
+				       f)))
+			       source-files)])
+	      (for-each
+	       (lambda (f b)
+		 (let ([zo (append-zo-suffix b)])
+		   (compile-to-zo f zo n prefix)))
+	       source-files file-bases)))))
 
       (define (compile-collection cp zos?)
 	(let ([make (dynamic-require '(lib "make-unit.ss" "make") 'make@)]
@@ -183,7 +203,6 @@
 				    (directory-list)))])
 			(make-collection
 			 (info 'name (lambda () (error 'compile-collection "info did not provide a name")))
-			 '(void)
 			 (remove*
 			  (map normal-case-path
 			       (info 

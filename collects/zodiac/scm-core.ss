@@ -124,7 +124,7 @@
     '("refer.ss" "refer" "spidey.ss" "spidey"))
 
   (define scheme-vocabulary
-    (create-vocabulary 'scheme-vocabulary #f "Invalid expression"))
+    (create-vocabulary 'scheme-vocabulary #f))
 
   (add-sym-micro scheme-vocabulary
     (lambda (expr env attributes vocab)
@@ -352,6 +352,9 @@
 
   (define optarglist-decl-entry-parser-vocab
     (create-vocabulary 'optarglist-decl-entry-parser-vocab #f
+      "Invalid argument list entry"
+      "Invalid argument list entry"
+      "Invalid argument list entry"
       "Invalid argument list entry"))
 
   (add-sym-micro optarglist-decl-entry-parser-vocab
@@ -401,6 +404,9 @@
 
   (define optarglist-decls-vocab
     (create-vocabulary 'optarglist-decls-vocab #f
+      "Invalid argument list entry"
+      "Invalid argument list entry"
+      "Invalid argument list entry"
       "Invalid argument list entry"))
 
   (add-sym-micro optarglist-decls-vocab
@@ -506,6 +512,9 @@
 
   (define paroptarglist-decl-entry-parser-vocab
     (create-vocabulary 'paroptarglist-decl-entry-parser-vocab #f
+      "Invalid argument list entry"
+      "Invalid argument list entry"
+      "Invalid argument list entry"
       "Invalid argument list entry"))
 
   (add-sym-micro paroptarglist-decl-entry-parser-vocab
@@ -555,6 +564,9 @@
 
   (define paroptarglist-decls-vocab
     (create-vocabulary 'paroptarglist-decls-vocab #f
+      "Invalid argument list entry"
+      "Invalid argument list entry"
+      "Invalid argument list entry"
       "Invalid argument list entry"))
 
   (add-sym-micro paroptarglist-decls-vocab
@@ -659,6 +671,9 @@
 
   (define arglist-decls-vocab
     (create-vocabulary 'arglist-decls-vocab #f
+      "Invalid argument list entry"
+      "Invalid argument list entry"
+      "Invalid argument list entry"
       "Invalid argument list entry"))
 
   (add-sym-micro arglist-decls-vocab

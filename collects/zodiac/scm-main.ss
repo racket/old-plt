@@ -480,6 +480,9 @@
 
   (define local-extract-vocab
     (create-vocabulary 'local-extract-vocab #f
+      "Invalid expression for local clause"
+      "Invalid expression for local clause"
+      "Invalid expression for local clause"
       "Invalid expression for local clause"))
 
   (add-primitivized-micro-form 'local scheme-vocabulary

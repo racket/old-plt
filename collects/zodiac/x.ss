@@ -14,14 +14,21 @@
 
   ; ----------------------------------------------------------------------
 
-  (define-struct vocabulary-record (name this rest error-message))
+  (define-struct vocabulary-record (name this rest
+				     symbol-error literal-error
+				     list-error ilist-error))
 
   (define get-vocabulary-name vocabulary-record-name)
 
   (define create-vocabulary
-    (opt-lambda (name (root #f) (message "Invalid body"))
+    (opt-lambda (name (root #f)
+		  (symbol-error "Invalid symbol syntax")
+		  (literal-error "Invalid literal syntax")
+		  (list-error "Invalid list syntax")
+		  (ilist-error "Invalid improper-list syntax"))
       (let ((h (make-hash-table)))
-	(make-vocabulary-record name h root message))))
+	(make-vocabulary-record name h root
+	  symbol-error literal-error list-error ilist-error))))
 
   (define append-vocabulary
     (opt-lambda (new old (name #f))
@@ -33,7 +40,10 @@
 	    (if (vocabulary-record-rest this)
 	      (loop (vocabulary-record-rest this) #f)
 	      old)
-	    (vocabulary-record-error-message this))))))
+	    (vocabulary-record-symbol-error this)
+	    (vocabulary-record-literal-error this)
+	    (vocabulary-record-list-error this)
+	    (vocabulary-record-ilist-error this))))))
 
   (define add-micro/macro-form
     (lambda (constructor)
@@ -123,7 +133,8 @@
 	      (sym-expander
 		(internal-error expr "Invalid sym expander ~s" sym-expander))
 	      (else
-		(static-error expr "Invalid symbol syntax")))))
+		(static-error expr
+		  (vocabulary-record-symbol-error vocab))))))
 	((or (z:scalar? expr)		; "literals" = scalars - symbols
 	   (z:vector? expr))
 	  (let ((lit-expander (get-lit-micro vocab)))
@@ -135,7 +146,8 @@
 		(internal-error expr
 		  "Invalid lit expander ~s" lit-expander))
 	      (else
-		(static-error expr "Invalid scalar/vector syntax")))))
+		(static-error expr
+		  (vocabulary-record-literal-error vocab))))))
 	((z:list? expr)
 	  (let ((invoke-list-expander
 		  (lambda ()
@@ -148,7 +160,8 @@
 			  (internal-error expr
 			    "Invalid list expander ~s" list-expander))
 			(else
-			  (static-error expr "Invalid list syntax"))))))
+			  (static-error expr
+			    (vocabulary-record-list-error vocab)))))))
 		 (contents (expose-list expr)))
 	    (if (null? contents)
 	      (invoke-list-expander)
@@ -191,10 +204,11 @@
 		(internal-error expr
 		  "Invalid ilist expander ~s" ilist-expander))
 	      (else
-		(static-error expr "Invalid improper-list syntax")))))
+		(static-error expr
+		  (vocabulary-record-ilist-error vocab))))))
 	(else
 	  (static-error expr
-	    (vocabulary-record-error-message vocab))))))
+	    "Invalid body")))))
 
   (define zodiac-user-parameterization (current-parameterization))
 

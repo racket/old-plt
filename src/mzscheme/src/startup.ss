@@ -2656,23 +2656,35 @@
 	[(_ ([pred handler] ...) expr1 expr ...)
 	 (syntax/loc
 	  stx
-	  ((call/ec 
-	    (lambda (k)
-	      (let ([l (list (cons pred handler) ...)])
-		(parameterize ([current-exception-handler
-				(lambda (e)
-				  (k
-				   (lambda ()
-				     (let loop ([l l])
-				       (cond
-					[(null? l)
-					 (raise e)]
-					[((caar l) e)
-					 ((cdar l) e)]
-					[else
-					 (loop (cdr l))])))))])
-		  (call-with-values (lambda () expr1 expr ...)
-		    (lambda args (lambda () (apply values args))))))))))])))
+	  (let ([l (list (cons pred handler) ...)]
+		[body (lambda () expr1 expr ...)])
+	    ;; Capture current parameterization, so we can use it to
+	    ;;  evaluate the body
+	    (let ([pz (current-parameterization)])
+	      ;; Disable breaks here, so that when the exception handler jumps
+	      ;;  to run a handler, breaks are disabled for the handler
+	      (parameterize ([break-enabled #f])
+		((call/ec 
+		  (lambda (k)
+		    ;; Restore the captured parameterization for
+		    ;;  evaluating the `with-handlers' body
+		    (with-continuation-mark 
+			parameterization-key
+			pz
+		      (parameterize ([current-exception-handler
+				      (lambda (e)
+					(k
+					 (lambda ()
+					   (let loop ([l l])
+					     (cond
+					      [(null? l)
+					       (raise e)]
+					      [((caar l) e)
+					       ((cdar l) e)]
+					      [else
+					       (loop (cdr l))])))))])
+			(call-with-values body
+			  (lambda args (lambda () (apply values args)))))))))))))])))
 
   (define-syntax set!-values
     (lambda (stx)

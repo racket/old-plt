@@ -1514,6 +1514,24 @@ scheme_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
   return scheme_inner_compile_list(form, env, rec, drec, 0);
 }
 
+static Scheme_Object *call_compile_handler(Scheme_Object *form, int immediate_eval)
+{
+  Scheme_Object *argv[2], *o;
+
+  argv[0] = form;
+  argv[1] = (immediate_eval ? scheme_true : scheme_false);
+  o = scheme_get_param(scheme_current_config(), MZCONFIG_COMPILE_HANDLER);
+  o = scheme_apply(o, 2, argv);
+  
+  if (!SAME_TYPE(SCHEME_TYPE(o), scheme_compilation_top_type)) {
+    argv[0] = o;
+    scheme_wrong_type("compile-handler", "compiled code", 0, -1, argv);
+    return NULL;
+  }
+
+  return o;
+}
+
 static void *compile_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
@@ -1524,7 +1542,7 @@ static void *compile_k(void)
   Scheme_Object *o, *tl_queue;
   Scheme_Compilation_Top *top;
   Resolve_Prefix *rp;
-  Scheme_Object *gval, *argv[1];
+  Scheme_Object *gval;
   Scheme_Comp_Env *cenv;
 
   form = (Scheme_Object *)p->ku.k.p1;
@@ -1588,14 +1606,7 @@ static void *compile_k(void)
     }
 
     if (for_eval) {
-      argv[0] = form;
-      o = scheme_apply(scheme_get_param(scheme_current_config(), MZCONFIG_COMPILE_HANDLER),
-		       1, argv);
-      if (!SAME_TYPE(SCHEME_TYPE(o), scheme_compilation_top_type)) {
-	argv[0] = o;
-	scheme_wrong_type("compile-handler", "compiled code", 0, -1, argv);
-	return NULL;
-      }
+      o = call_compile_handler(form, 1);
       top = (Scheme_Compilation_Top *)o;
     } else {
       o = scheme_compile_expr(form, cenv, &rec, 0);
@@ -4119,7 +4130,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 static Scheme_Object *
 do_default_compile_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 {
-  return _compile(argv[0], env, 0, 0, 0, 0);
+  return _compile(argv[0], env, SCHEME_FALSEP(argv[0]), 0, 0, 0);
 }
 
 /* local functions */
@@ -4162,7 +4173,7 @@ eval(int argc, Scheme_Object *argv[])
   if (SCHEME_STXP(form)
       && !SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type)) {
     Scheme_Env *genv;
-    genv = (Scheme_Env *)scheme_get_param(scheme_current_config(), MZCONFIG_ENV);
+    genv = scheme_get_env(NULL);
     if (genv->rename)
       form = scheme_add_rename(form, genv->rename);
     if (genv->exp_env && genv->exp_env->rename)
@@ -4217,7 +4228,7 @@ current_compile(int argc, Scheme_Object **argv)
   return scheme_param_config("current-compile", 
 			     scheme_make_integer(MZCONFIG_COMPILE_HANDLER),
 			     argc, argv,
-			     1, NULL, NULL, 0);
+			     2, NULL, NULL, 0);
 }
 
 static Scheme_Object *
@@ -4247,7 +4258,19 @@ top_introduce_stx(int argc, Scheme_Object **argv)
 static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
-  return _compile(argv[0], scheme_get_env(NULL), 1, 0, 0, 1);
+  Scheme_Object *form = argv[0];
+  Scheme_Env *genv;
+
+  if (!SCHEME_STXP(form))
+    form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
+
+  genv = scheme_get_env(NULL);
+  if (genv->rename)
+    form = scheme_add_rename(form, genv->rename);
+  if (genv->exp_env && genv->exp_env->rename)
+    form = scheme_add_rename(form, genv->exp_env->rename);
+
+  return call_compile_handler(form, 0);
 }
 
 static Scheme_Object *
@@ -4256,7 +4279,7 @@ compile_stx(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("compile-syntax", "syntax", 0, argc, argv);
 
-  return _compile(argv[0], scheme_get_env(NULL), 1, 0, 0, 0);
+  return call_compile_handler(argv[0], 0);
 }
 
 static Scheme_Object *

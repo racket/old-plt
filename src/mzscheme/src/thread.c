@@ -568,7 +568,7 @@ void scheme_init_thread(Scheme_Env *env)
 			     env);
   scheme_add_global_constant("parameterization?", 
 			     scheme_make_prim_w_arity(parameterization_p,
-						      "parameteration?", 
+						      "parameterization?", 
 						      1, 1), 
 			     env);
 
@@ -5496,10 +5496,9 @@ static void make_initial_config(Scheme_Thread *p)
   
   {
     Scheme_Object *eh;
-    eh = scheme_make_prim_w_arity2(scheme_default_compile_handler,
-				   "default-compile-handler",
-				   1, 1,
-				   0, -1);
+    eh = scheme_make_prim_w_arity(scheme_default_compile_handler,
+				  "default-compile-handler",
+				  2, 2);
     init_param(cells, paramz, MZCONFIG_COMPILE_HANDLER, eh);
   }
   

@@ -27,7 +27,7 @@
 
     (define newline-string (string #\newline))
 
-    (define copyright-string
+    (define (copyright-string)
       (string-append
        "version "
        (mred:version:version)
@@ -47,7 +47,7 @@
 		"wxWindows/Xt (c) 1995, GNU (Markus Holzem).")
 	       "")
 	   newline-indent-string
-	   "MzScheme (c) 1995 Matthew Flatt."
+	   "MzScheme (c) 1995-97 Matthew Flatt."
 	   newline-indent-string
 	   "libscheme (c) 1994 Brent Benson."
 	   newline-indent-string
@@ -59,9 +59,9 @@
 	   " (c) 1994 Xerox Corp."
 	   newline-string))))
 
-    (define welcome-message
+    (define (welcome-message)
       (string-append
-       "Welcome to " copyright-string
+       "Welcome to " (copyright-string)
        newline-string
        "Based on the following: "
        newline-string
@@ -674,6 +674,7 @@
 		 (send color-mult set 0 0 0)
 		 (send color-add set 127 127 127)
 		 (lambda ()
+		   (cleanup-transparent-io)
 		   (when (number? prompt-position)
 		     (set! reset-console-end-position prompt-position))
 		   (set-resetting #t)
@@ -1007,7 +1008,7 @@
 			       (lambda (edit start end)
 				 (credits))))
 		       (insert-delta " " message-delta)
-		       (insert-delta copyright-string message-delta)
+		       (insert-delta (copyright-string) message-delta)
 		       (insert-delta "." message-delta)
 		       (insert-delta #\newline message-delta)
 		       (send edit change-style message-delta 0 last))

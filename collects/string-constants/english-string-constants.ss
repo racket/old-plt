@@ -529,7 +529,7 @@
  (interactions-menu-item-help-string "Show/Hide the interactions window")
  
  ;;; file menu
- (save-definitions-as "Save Definitions As...")
+ (save-definitions-as "Save Definitions &As...")
  (save-definitions "Save Definitions")
  (print-definitions "Print Definitions...")
  (about-drscheme "About DrScheme")

@@ -3864,7 +3864,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   }
 
   if (waiting->timeout >= 0.0) {
-    long d;
+    double d;
     d = (scheme_get_inexact_milliseconds() - waiting->start_time);
     if (d >= (waiting->timeout * 1000.0))
       return 1;

@@ -111,14 +111,9 @@ typedef short Type_Tag;
 
 /**************** Stack for mark phase ****************/
 #define MARK_STACK_MAX 4096
-static void *tagged_mark_stack[MARK_STACK_MAX];
-static long tagged_mark_stack_pos = 0;
-static void *xtagged_mark_stack[MARK_STACK_MAX];
-static long xtagged_mark_stack_pos = 0;
-static void *array_mark_stack[MARK_STACK_MAX];
-static long array_mark_stack_pos = 0;
-
-static long full_mark_stack_pos = MARK_STACK_MAX;
+static void *mark_stack[MARK_STACK_MAX];
+static unsigned short mark_stack_type[MARK_STACK_MAX];
+static long mark_stack_pos = 0;
 
 #if KEEP_BACKPOINTERS
 # undef RECORD_MARK_SRC
@@ -204,6 +199,8 @@ typedef struct MPage {
   } o;
   void *block_start;       /* start of memory in this page */
   struct MPage *next, *prev; /* for linked list of pages */
+
+  OffsetTy marked_start, marked_end; 
 
   /* For mark-stack overflow, or slowing mark categories: */
   OffsetTy gray_start, gray_end; 
@@ -1219,13 +1216,6 @@ void GC_mark(const void *p)
 	p = BYTEPTR(p) - WORD_SIZE;
 	
 	if (!(OBJ_HEAD(p) & OBJ_COLOR_MASK)) {
-	  void **mark_stack;
-	  long *_mark_stack_pos, mark_stack_pos;
-# if RECORD_MARK_SRC
-	  void **mark_src_stack;
-	  int *mark_src_type;
-#endif
-
 #if MARK_STATS
 	  mark_colors++;
 #endif
@@ -1248,78 +1238,51 @@ void GC_mark(const void *p)
 	      }
 	    }
 #endif
-	    mark_stack = tagged_mark_stack;
-	    _mark_stack_pos = &tagged_mark_stack_pos;
-# if RECORD_MARK_SRC
-	    mark_src_stack = tagged_mark_src_stack;
-	    mark_src_type = tagged_mark_src_type;
-# endif
-	    break;
 	  case MTYPE_XTAGGED:
-	    mark_stack = xtagged_mark_stack;
-	    _mark_stack_pos = &xtagged_mark_stack_pos;
-# if RECORD_MARK_SRC
-	    mark_src_stack = xtagged_mark_src_stack;
-	    mark_src_type = xtagged_mark_src_type;
-# endif
-	    break;
 	  case MTYPE_ARRAY:
-	    mark_stack = array_mark_stack;
-	    _mark_stack_pos = &array_mark_stack_pos;
-# if RECORD_MARK_SRC
-	    mark_src_stack = array_mark_src_stack;
-	    mark_src_type = array_mark_src_type;
-# endif
-	    break;
-	  default:
-	    mark_stack = tagged_mark_stack;
-	    _mark_stack_pos = &full_mark_stack_pos; /* So it won't get used */
-# if RECORD_MARK_SRC
-	    mark_src_stack = tagged_mark_src_stack;
-	    mark_src_type = tagged_mark_src_type;
-# endif
-	    break;
-	  }
-
-	  mark_stack_pos = *_mark_stack_pos;
-	  if (mark_stack_pos < MARK_STACK_MAX) {
-	    page->flags = (flags | MFLAG_BLACK);
-	    SET_OBJ_HEAD(p, OBJ_HEAD(p) | OBJ_BLACK);
+	    if (mark_stack_pos < MARK_STACK_MAX) {
+	      page->flags = (flags | MFLAG_BLACK);
+	      SET_OBJ_HEAD(p, OBJ_HEAD(p) | OBJ_BLACK); /* black can mean on stack */
 # if RECORD_MARK_SRC
 #  if CHECKS
-	    if ((long)mark_src & 0x1) CRASH(12);
+	      if ((long)mark_src & 0x1) CRASH(12);
 #  endif
-	    mark_src_stack[mark_stack_pos] = mark_src;
-	    mark_src_type[mark_stack_pos] = mark_type;
+	      mark_src_stack[mark_stack_pos] = mark_src;
+	      mark_src_type[mark_stack_pos] = mark_type;
 # endif
-	    mark_stack[mark_stack_pos] = (void *)p;
-	    *_mark_stack_pos = mark_stack_pos + 1;
+	      mark_stack[mark_stack_pos] = (void *)p;
+	      mark_stack_type[mark_stack_pos++] = type;
 #if KEEP_BACKPOINTERS
-	    page->backpointer_page[OBJ_OFFSET(p)] = mark_src;
+	      page->backpointer_page[offset] = mark_src;
 #endif
-	  } else {
-	    long offset;
-	    SET_OBJ_HEAD(p, OBJ_HEAD(p) | OBJ_GRAY);
-	    offset = OBJ_OFFSET(p);
+	      break;
+	    }
+	  default: /* ^^^ fallthrough */
+	    {
+	      OffsetTy offset;
+
+	      SET_OBJ_HEAD(p, OBJ_HEAD(p) | OBJ_GRAY);
+	      offset = OBJ_OFFSET(p);
 #if TIME
-	    mark_stackoflw++;
+	      mark_stackoflw++;
 #endif
 #if KEEP_BACKPOINTERS
-	    page->backpointer_page[offset] = mark_src;
+	      page->backpointer_page[offset] = mark_src;
 #endif
-	    if (!(flags & MFLAG_GRAY)) {
-	      page->flags = (flags | MFLAG_GRAY);
-	      
-	      page->gray_next = gray_first;
-	      gray_first = page;
-	      
-	      page->gray_start = offset;
-	      page->gray_end = offset;
-	    } else {
-	      if (page->gray_start > offset)
+	      if (!(flags & MFLAG_GRAY)) {
+		page->flags = (flags | MFLAG_GRAY);
+		
+		page->gray_next = gray_first;
+		gray_first = page;
+		
 		page->gray_start = offset;
-	      if (page->gray_end < offset)
 		page->gray_end = offset;
+	      } else {
+		if (page->gray_start > offset)
+		  page->gray_start = offset;
+		if (page->gray_end < offset)
+		  page->gray_end = offset;
+	      }
 	    }
 	  }
 	} else {
@@ -1730,86 +1693,76 @@ static void do_bigblock(void **p, MPage *page, int fixup)
   }
 }
 
-static int old_tag;
-static void *old_p;
-
 static void propagate_all_mpages()
 {
   MPage *page;
   void *p;
 
-  while (gray_first 
-	 || tagged_mark_stack_pos 
-	 || xtagged_mark_stack_pos 
-	 || array_mark_stack_pos) {
+  while (gray_first || mark_stack_pos) {
+    
     iterations++;
 
-    while (tagged_mark_stack_pos) {
-      Type_Tag tag;
+    while (mark_stack_pos) {
+      mtype_t type;
       
-      p = tagged_mark_stack[--tagged_mark_stack_pos];
+      p = mark_stack[--mark_stack_pos];
+      type = mark_stack_type[mark_stack_pos];
 # if RECORD_MARK_SRC
-      current_mark_src = tagged_mark_src_stack[tagged_mark_stack_pos];
-      current_mark_type = tagged_mark_src_type[tagged_mark_stack_pos];
+      current_mark_src = mark_src_stack[mark_stack_pos];
+      current_mark_type = mark_src_type[mark_stack_pos];
 # endif
 
-      tag = *(Type_Tag *)(p + WORD_SIZE);
+      switch (type) {
+      case MTYPE_TAGGED:
+	{
+	  Type_Tag tag;
+	  tag = *(Type_Tag *)(p + WORD_SIZE);
 	
 #if ALIGN_DOUBLES
-      if (tag != SKIP) {
+	  if (tag != SKIP) {
 #endif
 	  
 #if CHECKS
-	if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	  CRASH(18);
-	}
+	    if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
+	      CRASH(18);
+	    }
 #endif
 #if RECORD_MARK_SRC
-	mark_src = p;
-	mark_type = MTYPE_TAGGED;
+	    mark_src = p;
+	    mark_type = MTYPE_TAGGED;
 #endif
 
-	old_tag = tag;
-	old_p = p;
-	mark_table[tag](p + WORD_SIZE);
-	
+	    mark_table[tag](p + WORD_SIZE);
+	  
 #if ALIGN_DOUBLES
-      }
+	  }
 #endif
-    }
+	}
+	break;
 
-    while (xtagged_mark_stack_pos) {
-      p = xtagged_mark_stack[--xtagged_mark_stack_pos];
-# if RECORD_MARK_SRC
-      current_mark_src = xtagged_mark_src_stack[xtagged_mark_stack_pos];
-      current_mark_type = xtagged_mark_src_type[xtagged_mark_stack_pos];
-# endif
-
+      case MTYPE_XTAGGED:
 #if RECORD_MARK_SRC
-      mark_src = (void **)p + 1;
-      mark_type = MTYPE_XTAGGED;
+	mark_src = (void **)p + 1;
+	mark_type = MTYPE_XTAGGED;
 #endif
-      GC_mark_xtagged((void **)p + 1);
-    }
+	GC_mark_xtagged((void **)p + 1);
+	break;
 
-    while (array_mark_stack_pos) {
-      long size, i;
-      
-      p = array_mark_stack[--array_mark_stack_pos];
-# if RECORD_MARK_SRC
-      current_mark_src = array_mark_src_stack[array_mark_stack_pos];
-      current_mark_type = array_mark_src_type[array_mark_stack_pos];
-# endif
-    
-      size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
+      default: /* MTYPE_ARRAY */
+	{
+	  long size, i;
+	  
+	  size = (OBJ_HEAD(p) & OBJ_SIZE_MASK);
 	  
 #if RECORD_MARK_SRC
-      mark_src = (void **)p + 1;
-      mark_type = MTYPE_ARRAY;
+	  mark_src = (void **)p + 1;
+	  mark_type = MTYPE_ARRAY;
 #endif
 
-      for (i = 1; i < size; i++) {
-	gcMARK(((void **)p)[i]);
+	  for (i = 1; i <= size; i++) {
+	    gcMARK(((void **)p)[i]);
+	  }
+	}
       }
     }
 
@@ -1869,7 +1822,7 @@ static void retarget_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
   OffsetTy offset = 0, dest_offset, orig_dest_offset;
-  void **dest, **orig_dest, **startp, **top;
+  void **dest, **orig_dest, **startp, **top, **first_p = NULL, **last_p = NULL;
   MSet *set;
 
   startp = p;
@@ -1978,13 +1931,17 @@ static void retarget_mpage(void **p, MPage *page)
 
       SET_OBJ_HEAD(p, (head & ~OBJ_OFFSET_MASK) | (dest_offset << OBJ_OFFSET_SHIFT));
 
+      if (!first_p)
+	first_p = p;
+      last_p = p;
+ 
       offset += size;
       dest_offset += size;
 
 #if CHECKS
       prev_ptr = p;
 #endif
- 
+
       p += size;
     } else {
 #if CHECKS
@@ -1993,6 +1950,13 @@ static void retarget_mpage(void **p, MPage *page)
       p += size;
       offset += size;
     }
+  }
+
+  if (last_p) {
+    page->marked_start = OBJ_OFFSET(first_p);
+    page->marked_end = OBJ_OFFSET(last_p) + 1;
+  } else {
+    page->marked_start = page->marked_end = 0;
   }
 
   if ((dest == orig_dest) && (dest_offset == orig_dest_offset)) {
@@ -2047,15 +2011,14 @@ static void retarget_all_mpages()
 static void compact_mpage(void **p, MPage *page)
 {
   int to_near = 0;
-  OffsetTy offset = 0, dest_offset, boundary;
-  void **dest, **startp, **top;
+  OffsetTy offset, dest_offset, boundary;
+  void **dest, **top;
   void **after_last_dest_set = NULL, **after_this_dest_set = NULL;
 
-  startp = p;
-
   boundary = page->compact_boundary;
-
-  top = p + page->alloc_boundary;
+  top = p + page->marked_end;
+  p = p + page->marked_start;
+  offset = page->marked_start;
 
   while (p < top) {
     long size;
@@ -2115,7 +2078,7 @@ static void compact_mpage(void **p, MPage *page)
     /* Nothing left in here. Reset color to white: */
     page->flags = (page->flags & NONCOLOR_MASK);
 #if NOISY
-    GCPRINT(GCOUTF, "u: %lx -> %lx [all]\n", (long)startp, (long)dest);
+    GCPRINT(GCOUTF, "u: %lx -> %lx [all]\n", (long)page->marked_start, (long)dest);
 #endif
   }
 }
@@ -2346,7 +2309,12 @@ static void fixup_tagged_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + page->alloc_boundary;
+  if (all)
+    top = p + page->alloc_boundary;
+  else {
+    top = p + page->marked_end;
+    p = p + page->marked_start;
+  }
 
   while (p < top) {
     Type_Tag tag;
@@ -2384,7 +2352,12 @@ static void fixup_array_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + page->alloc_boundary;
+  if (all)
+    top = p + page->alloc_boundary;
+  else {
+    top = p + page->marked_end;
+    p = p + page->marked_start;
+  }
 
   while (p < top) {
     long size;
@@ -2417,7 +2390,12 @@ static void fixup_tagged_array_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + page->alloc_boundary;
+  if (all)
+    top = p + page->alloc_boundary;
+  else {
+    top = p + page->marked_end;
+    p = p + page->marked_start;
+  }
 
   while (p < top) {
     long size;
@@ -2455,7 +2433,12 @@ static void fixup_xtagged_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + page->alloc_boundary;
+  if (all) {
+    top = p + page->alloc_boundary;
+  } else {
+    top = p + page->marked_end;
+    p = p + page->marked_start;
+  }
 
   while (p < top) {
     long size;
@@ -3045,8 +3028,8 @@ static void gcollect(int full)
   void *stack_limit;
 
   INITTIME();
-  PRINTTIME((STDERR, "gc: << start with %ld [%d]: %ld\n", 
-	     memory_in_use, cycle_count, GETTIMEREL()));
+  PRINTTIME((STDERR, "gc: << start with %ld [%d,%d]: %ld\n", 
+	     memory_in_use, cycle_count, full, GETTIMEREL()));
 
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
@@ -3081,16 +3064,8 @@ static void gcollect(int full)
 
   if (full)
     young = 15;
-  else if ((cycle_count & 0xF) == 0xF)
-    young = 15;
-  else if ((cycle_count & 0x7) == 0x7)
-    young = 7;
-  else if ((cycle_count & 0x3) == 0x3)
-    young = 3;
-  else if ((cycle_count & 0x1) == 0x1)
-    young = 1;
   else
-    young = 0;
+    young = cycle_count;
 
 #if !GENERATIONS
   young = 15;
@@ -3476,7 +3451,7 @@ static void gcollect(int full)
 #endif
 
   PRINTTIME((STDERR, "gc: %s [%ld/%ld faults]: %ld\n", 
-	     compact ? "compact" : "freelist",
+	     compact ? "retarget" : "freelist",
 	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
@@ -3575,6 +3550,15 @@ static void gcollect(int full)
   if (compact)
     compact_all_mpages();
 
+#if TIME
+    getrusage(RUSAGE_SELF, &post);
+#endif
+    
+  PRINTTIME((STDERR, "gc: compact [%ld/%ld faults]: %ld\n", 
+	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
+	     GETTIMEREL()));
+
+  
   /********************** clean up ********************************/
   
   skipped_pages = scanned_pages = 0;
@@ -3606,9 +3590,10 @@ static void gcollect(int full)
   memory_use_growth += (memory_in_use - prev_memory_in_use);
   prev_memory_in_use = memory_in_use;
 
-  PRINTTIME((STDERR, "gc: done with %ld delta=%ld (free:%d cheap:%d) [%ld/%ld faults]: %ld >>\n",
+  PRINTTIME((STDERR, "gc: done with %ld delta=%ld (free:%d cheap:%d) [%ld/%ld faults] {%s}: %ld >>\n",
 	     memory_in_use, memory_use_growth, skipped_pages, scanned_pages,
 	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
+	     ((memory_use_growth > INCREMENT_CYCLE_COUNT_GROWTH) ? "next" : "stay"),
 	     GETTIMEREL()));
 
   during_gc = 0;
@@ -3617,9 +3602,10 @@ static void gcollect(int full)
     cycle_count = 0;
     memory_use_growth = 0;
   } else {
-    if ((cycle_count & 0x1) 
-	|| (memory_use_growth > INCREMENT_CYCLE_COUNT_GROWTH))
-      cycle_count++;
+    if (memory_use_growth > INCREMENT_CYCLE_COUNT_GROWTH)
+      cycle_count = (cycle_count * 2) + 1;
+    else
+      cycle_count = (cycle_count >> 1);
   }
   gc_count++;
 
@@ -4059,7 +4045,7 @@ static void *found_objects[MAX_FOUND_OBJECTS];
 
 static long scan_tagged_mpage(void **p, MPage *page)
 {
-  void **top, **bottom = p;
+  void **top;
 
   top = p + page->alloc_boundary;
   
@@ -4106,7 +4092,7 @@ static long scan_tagged_mpage(void **p, MPage *page)
 
 static long scan_untagged_mpage(void **p, MPage *page)
 {
-  void **top, **bottom = p;
+  void **top;
 
   top = p + page->alloc_boundary;
 

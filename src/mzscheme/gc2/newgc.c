@@ -2102,6 +2102,11 @@ void *GC_resolve(void *p)
     return p;
 }
 
+void *GC_fixup_self(void *p)
+{
+  return p;
+}
+
 void GC_fixup(void *pp)
 {
   struct mpage *page;

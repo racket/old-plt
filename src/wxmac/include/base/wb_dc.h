@@ -42,6 +42,8 @@ class wxRegion;
 class wxCanvas;
 class wxCanvasDC;
 class wxDC;
+class wxPath;
+
 class wxbDC: public wxObject
 {
  public:
@@ -125,6 +127,7 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
   virtual void DrawSpline(int n, wxPoint points[]);
 #endif
+  virtual void DrawPath(wxPath *p, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE) = 0;
   virtual void DrawText(const char *text, double x, double y, Bool combine = FALSE, 
 			Bool use16 = FALSE, int d = 0, double angle = 0.0) = 0;
   virtual void Clear(void) = 0;

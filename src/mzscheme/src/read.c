@@ -125,7 +125,7 @@ static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 				Scheme_Hash_Table **ht,
 				Scheme_Object *indentation,
 				ReadParams *params);
-static Scheme_Object *read_string(int is_byte,
+static Scheme_Object *read_string(int is_byte, int is_honu_char,
 				  Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  Scheme_Object *indentation,
@@ -214,6 +214,7 @@ typedef struct {
   char closer;      /* expected close parent, bracket, etc. */
   char suspicious_closer; /* expected closer when suspicious line found */
   char multiline;   /* set to 1 if the match attempt spans a line */
+  char quote_for_char; /* 1 => suspicious_quote refers to Honu char */
   long start_line;  /* opener's line */
   long last_line;   /* current line, already checked the identation */
   long suspicious_line; /* non-0 => first suspicious line since opener */
@@ -233,7 +234,7 @@ static Scheme_Object *unsyntax_symbol;
 static Scheme_Object *unsyntax_splicing_symbol;
 static Scheme_Object *quasisyntax_symbol;
 
-static Scheme_Object *honu_comma, *honu_semicolon, *honu_backquote;
+static Scheme_Object *honu_comma, *honu_semicolon;
 static Scheme_Object *honu_parens, *honu_braces, *honu_brackets;
 
 /* For recoginizing unresolved hash tables and commented-out graph introductions: */
@@ -281,14 +282,12 @@ void scheme_init_read(Scheme_Env *env)
 
   REGISTER_SO(honu_comma);
   REGISTER_SO(honu_semicolon);
-  REGISTER_SO(honu_backquote);
   REGISTER_SO(honu_parens);
   REGISTER_SO(honu_braces);
   REGISTER_SO(honu_brackets);
 
   honu_comma = scheme_intern_symbol(",");
   honu_semicolon = scheme_intern_symbol(";");
-  honu_backquote = scheme_intern_symbol("`");
   honu_parens = scheme_intern_symbol("#%parens");
   honu_braces = scheme_intern_symbol("#%braces");
   honu_brackets = scheme_intern_symbol("#%brackets");
@@ -711,19 +710,17 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', mz_shape_cons, 0, ht, indentation, params);
     case '"':
-      return read_string(0, port, stxsrc, line, col, pos,indentation, params);
+      return read_string(0, 0, port, stxsrc, line, col, pos,indentation, params);
     case '\'':
       if (params->honu_mode) {
-	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+	return read_string(0, 1, port, stxsrc, line, col, pos, indentation, params);
       } else {
 	return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation, params);
       }
     case '`':
       if (params->honu_mode) {
-	if (stxsrc)
-	  return scheme_make_stx_w_offset(honu_backquote, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-	else
-	  return honu_backquote;
+	/* Raises illegal-char error: */
+	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
       } else if (!params->can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: illegal use of backquote");
 	return NULL;
@@ -1049,7 +1046,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		/* Skip #rx[#]: */
 		scheme_tell_all(port, &line, &col, &pos);
 
-		str = read_string(is_byte, port, stxsrc, line, col, pos, indentation, params);
+		str = read_string(is_byte, 0, port, stxsrc, line, col, pos, indentation, params);
 
 		if (stxsrc)
 		  str = SCHEME_STX_VAL(str);
@@ -1209,7 +1206,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  break;
 	case '"':
 	  if (!params->honu_mode) {
-	    return read_string(1, port, stxsrc, line, col, pos,indentation, params);
+	    return read_string(1, 0, port, stxsrc, line, col, pos,indentation, params);
 	  }
 	  break;
 	case '<':
@@ -1959,26 +1956,29 @@ honu_add_module_wrapper(Scheme_Object *list, Scheme_Object *stxsrc, Scheme_Objec
 
 /* '"' has already been read */
 static Scheme_Object *
-read_string(int is_byte, Scheme_Object *port,
+read_string(int is_byte, int is_honu_char, Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
 	    Scheme_Object *indentation, ReadParams *params)
 {
   mzchar *buf, *oldbuf, onstack[32];
-  int i, j, n, n1, ch;
+  int i, j, n, n1, ch, closer = (is_honu_char ? '\'' : '"');
   long size = 31, oldsize;
   Scheme_Object *result;
 
   i = 0;
   buf = onstack;
-  while ((ch = scheme_getc_special_ok(port)) != '"') {
-    if (ch == EOF) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
-		      "read: expected a closing '\"'");
+  while ((ch = scheme_getc_special_ok(port)) != closer) {
+    if ((ch == EOF) || (is_honu_char && (i > 0))) {
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
+		      "read: expected a closing %s%s",
+		      is_honu_char ? "'" : "'\"'",
+		      (ch == EOF) ? "" : " after one character");
       return NULL;
     } else if (ch == SCHEME_SPECIAL) {
       scheme_get_ready_special(port, stxsrc, 0);
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
-		      "read: found non-character while reading a string");
+		      "read: found non-character while reading a %s",
+		      is_honu_char ? "character constant" : "string");
       return NULL;
     }
     /* Note: errors will tend to leave junk on the port, with an open \". */
@@ -1987,12 +1987,14 @@ read_string(int is_byte, Scheme_Object *port,
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
-			"read: expected a closing '\"'");
+			"read: expected a closing %s",
+			is_honu_char ? "'" : "'\"'");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_ready_special(port, stxsrc, 0);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation,
-			"read: found non-character while reading a string");
+			"read: found non-character while reading a %s",
+			is_honu_char ? "character constant" : "string");
 	return NULL;
       }
       switch ( ch ) {
@@ -2025,7 +2027,8 @@ read_string(int is_byte, Scheme_Object *port,
 	  if (ch == SCHEME_SPECIAL)
 	    scheme_get_ready_special(port, stxsrc, 0);
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
-			  "read: no hex digit following \\x in string");
+			  "read: no hex digit following \\x in %s",
+			  is_honu_char ? "character constant" : "string");
 	  return NULL;
 	}
 	break;
@@ -2057,8 +2060,9 @@ read_string(int is_byte, Scheme_Object *port,
 	    if (ch == SCHEME_SPECIAL)
 	      scheme_get_ready_special(port, stxsrc, 0);
 	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
-			    "read: no hex digit following \\%c in string",
-			    ((maxc == 4) ? 'u' : 'U'));
+			    "read: no hex digit following \\%c in %s",
+			    ((maxc == 4) ? 'u' : 'U'),
+			    is_honu_char ? "character constant" : "string");
 	    return NULL;
 	  }
 	  break;
@@ -2069,7 +2073,8 @@ read_string(int is_byte, Scheme_Object *port,
 	    n1 = 8*n + ch - '0';
 	    if (n1 > 255) {
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
-			      "read: escape sequence \\%o out of range in string", n1);
+			      "read: escape sequence \\%o out of range in %s", n1,
+			      is_honu_char ? "character constant" : "string");
 	      return NULL;
 	    }
 	    n = n1;
@@ -2085,8 +2090,9 @@ read_string(int is_byte, Scheme_Object *port,
 	  ch = n;
 	} else {
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
-			  "read: unknown escape sequence \\%c in %sstring", ch,
-			  is_byte ? "byte " : "");
+			  "read: unknown escape sequence \\%c in %s%s", ch,
+			  is_byte ? "byte " : "",
+			  is_honu_char ? "character constant" : "string");
 	  return NULL;
 	}
 	break;
@@ -2098,16 +2104,19 @@ read_string(int is_byte, Scheme_Object *port,
 	  Scheme_Indent *indt;
 	  indt = (Scheme_Indent *)SCHEME_CAR(indentation);
 	  /* Only remember if there's no earlier suspcious string line: */
-	  if (!indt->suspicious_quote)
+	  if (!indt->suspicious_quote) {
 	    indt->suspicious_quote = line;
+	    indt->quote_for_char = is_honu_char;
+	  }
 	}
       }
     }
 
     if (ch < 0) {
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
-		      "read: out-of-range character in %sstring",
-		      is_byte ? "byte " : "");
+		      "read: out-of-range character in %s%s",
+		      is_byte ? "byte " : "",
+		      is_honu_char ? "character constant" : "string");
       return NULL;
     }
 
@@ -2123,7 +2132,15 @@ read_string(int is_byte, Scheme_Object *port,
   }
   buf[i] = '\0';
 
-  if (!is_byte)
+  if (is_honu_char) {
+    if (i)
+      result = scheme_make_character(buf[0]);
+    else {
+      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
+		      "read: expected one character before closing '");
+      return NULL;
+    }
+  } else if (!is_byte)
     result = scheme_make_immutable_sized_char_string(buf, i, i <= 31);
   else {
     /* buf is not UTF-8 encoded; all of the chars are less than 256.
@@ -2221,6 +2238,7 @@ read_here_string(Scheme_Object *port, Scheme_Object *stxsrc,
 char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)
 {
   long suspicious_quote = 0;
+  int is_honu_char = 0;
   char *suspicions = "";
 
   /* search back through indentation records to find the
@@ -2229,14 +2247,18 @@ char *scheme_extract_indentation_suggestions(Scheme_Object *indentation)
     Scheme_Indent *indt;
     indt = (Scheme_Indent *)SCHEME_CAR(indentation);
     indentation = SCHEME_CDR(indentation);
-    if (indt->suspicious_quote)
+    if (indt->suspicious_quote) {
       suspicious_quote = indt->suspicious_quote;
+      is_honu_char = indt->quote_for_char;
+    }
   }
 
   if (suspicious_quote) {
     suspicions = (char *)scheme_malloc_atomic(64);
     sprintf(suspicions,
-	    "; newline within string suggests a missing '\"' on line %ld",
+	    "; newline within %s suggests a missing %s on line %ld",
+	    is_honu_char ? "character" : "string",
+	    is_honu_char ? "'" : "'\"'",
 	    suspicious_quote);
   }
 
@@ -3087,6 +3109,7 @@ static void pop_indentation(Scheme_Object *indentation)
       if (!old_indt->suspicious_quote) {
 	if (indt->suspicious_quote) {
 	  old_indt->suspicious_quote = indt->suspicious_quote;
+	  old_indt->quote_for_char = indt->quote_for_char;
 	}
       }
     }

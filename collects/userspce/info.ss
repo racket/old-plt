@@ -11,7 +11,7 @@
 	       (require-library "params.ss" "userspce")
 	       (require-library "simple-draws.ss" "userspce")
 	       (require-library "sig.ss" "userspce"))]
-	   [(compile-omit-files) (list "simple-draws.ss" "userspcs.ss" "sig.ss" "errors.ss"  "ricedefs.ss")]
+	   [(compile-omit-files) (list "simple-draws.ss" "userspcs.ss" "sig.ss" "errors.ss" "params.ss" "ricedefs.ss")]
 	   [(compile-elaboration-zos) (list)]
 	   [else (failure)]))])
   userspace-info)

@@ -87,8 +87,6 @@ Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
     DispatchMessage(&msg);
   }
 
-  //  doc->pIEventQueue->ProcessWinEvents();
-
   return scheme_void;
 }
 

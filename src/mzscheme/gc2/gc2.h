@@ -98,13 +98,6 @@ GC2_EXTERN long GC_get_memory_use(void *c);
    Returns the number of currently-allocated bytes (speficilly for
    custodian c, as much as the GC's accounting makes possible). */
 
-#define MZACCT_REQUIRE		0
-#define MZACCT_LIMIT		1
-GC2_EXTERN int GC_set_account_hook(int type, void *c1, unsigned long b, void *c2);
-/*
-  Set a memory-accounting property. Returns 0 for failure (i.e., not
-  supported). */
-
 GC2_EXTERN void GC_gcollect(void);
 /*
    Performs an immediate (full) collection. */
@@ -204,6 +197,8 @@ GC2_EXTERN void GC_finalization_weak_ptr(void **p, int offset);
 /***************************************************************************/
 /* Cooperative GC                                                          */
 /***************************************************************************/
+
+GC2_EXTERN void scheme_init_gc_extensions(void *env);
 
 GC2_EXTERN void **GC_variable_stack;
 /*

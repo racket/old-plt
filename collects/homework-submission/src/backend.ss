@@ -32,6 +32,7 @@
     (can-submit? (number? number? . -> . boolean?))
     (id/username (string? . -> . number?))
     (partnership-full? (number? number? . -> . boolean?))
+    (assignments/due (number? symbol? . -> . (listof assignment?)))
     )
 
   (provide *connection*)
@@ -103,38 +104,27 @@
 
   ;; The courses in which this user is enrolled.
   (define (courses username)
-    (let ((q (send *connection* query
-                   (format
-                     (string-append
-                       "SELECT c.id, c.name, c.number, "
-                       "c_p.position, pt.can_submit, "
-                       "count(pt.partner_id) >= c.default_partnership_size "
-                       "FROM courses c "
-                       "JOIN course_people c_p ON c.id = c_p.course_id "
-                       "JOIN people p ON p.id = c_p.person_id "
-                       "LEFT JOIN partners pt ON pt.student_id = p.id "
-                       "WHERE pt.partner_id = "
-                       "(SELECT pt2.partner_id FROM partners pt2 "
-                       "JOIN people p2 ON p2.id = pt2.student_id "
-                       "WHERE p2.username = '~a' AND pt2.ended IS NULL)"
-                       "OR pt.partner_id IS NULL "
-                       "AND pt.ended IS NULL "
-                       "AND p.username = '~a' "
-                       "GROUP BY c.id, c.name, "
-                       "c.number, c_p.position, pt.can_submit, "
-                       "c.default_partnership_size")
-                     username username))))
-      (cond
-        ( (RecordSet? q)
-          (map row->course (RecordSet-rows q)) )
-        ( (ErrorResult? q)
-          (raise (make-exn:fail (string->immutable-string
-                                  (format "An error occured: ~s~n"
-                                          (ErrorResult-message q)))
-                                (current-continuation-marks))) )
-        ( else (raise (make-exn:fail (string->immutable-string
-                                       (format "Unknown error: ~s~n" q))
-                                     (current-continuation-marks))) ))))
+    (select-structure
+      (format
+        (string-append
+          "SELECT c.id, c.name, c.number, "
+          "c_p.position, pt.can_submit, "
+          "count(pt.partner_id) >= c.default_partnership_size "
+          "FROM courses c "
+          "JOIN course_people c_p ON c.id = c_p.course_id "
+          "JOIN people p ON p.id = c_p.person_id "
+          "LEFT JOIN partners pt ON pt.student_id = p.id "
+          "WHERE pt.partner_id = "
+          "(SELECT pt2.partner_id FROM partners pt2 "
+          "JOIN people p2 ON p2.id = pt2.student_id "
+          "WHERE p2.username = '~a' AND pt2.ended IS NULL)"
+          "OR pt.partner_id IS NULL "
+          "AND pt.ended IS NULL "
+          "AND p.username = '~a' "
+          "GROUP BY c.id, c.name, c.number, c_p.position, pt.can_submit, "
+          "c.default_partnership_size")
+        username username)
+      row->course))
 
   ;; The ID for a given username.
   (define (id/username username)
@@ -247,7 +237,36 @@
                  "HAVING count(pt.partner_id) >= c.default_partnership_size")
                sid cid)))
 
+  ;; Assignments for a course where the due date has or has not yet exipred.
+  (define (assignments/due cid cmp)
+    (select-structure
+      (format
+        (string-append
+          "SELECT a.id, a.name, a.due, a.description, a.description_url, "
+          "       a.grade_type, a.grade_misc "
+          "FROM assignments a "
+          "WHERE a.due ~a now() "
+          "AND a.course_id = ~a")
+        cmp cid)
+      row->assignment))
+
   ;; ******************************************************************
+
+  ;; Assignments for a student in a course where the due date has not yet
+  ;; exipred.
+  (define (select-structure sql vector->struct)
+    (let ((q (send *connection* query sql)))
+      (cond
+        ( (RecordSet? q)
+          (map vector->struct (RecordSet-rows q)) )
+        ( (ErrorResult? q)
+          (raise (make-exn:fail (string->immutable-string
+                                  (format "An error occured: ~s~n"
+                                          (ErrorResult-message q)))
+                                (current-continuation-marks))) )
+        ( else (raise (make-exn:fail (string->immutable-string
+                                       (format "Unknown error: ~s~n" q))
+                                     (current-continuation-marks))) ))))
 
   ;; Convert a row represented as a vector into a course.
   (define (row->course r)
@@ -257,6 +276,18 @@
                  (string->symbol (bytes->string/utf-8 (vector-ref r 3)))
                  (let ((v (vector-ref r 4))) (if (sql-null? v) #f v))
                  (vector-ref r 5)))
+
+  ;; Convert a row represented as a vector into an assignment.
+  (define (row->assignment r)
+    (make-assignment (vector-ref r 0)
+                     (bytes->string/utf-8 (vector-ref r 1))
+                     (bytes->string/utf-8 (vector-ref r 2))
+                     (let ((v (vector-ref r 3)))
+                           (if (sql-null? v) "" (bytes->string/utf-8 v)))
+                     (let ((v (vector-ref r 4)))
+                           (if (sql-null? v) "" (bytes->string/utf-8 v)))
+                     (string->symbol (bytes->string/utf-8 (vector-ref r 5)))
+                     (bytes->string/utf-8 (vector-ref r 6))))
 
   ;; exists? : String String -> Boolean
   ;; Is something known and existant in the database?

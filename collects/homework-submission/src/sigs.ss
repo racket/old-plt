@@ -12,6 +12,7 @@
      page-student-main
      page-student-partners
      page-non-student-main
+     page-student-assignments
      ))
 
   (define-signature transitions^
@@ -28,6 +29,8 @@
      transition-create-a-user
      transition-courses
      transition-add-partner
+     transition-view-description
+     transition-student-assignments
      ))
 
   )

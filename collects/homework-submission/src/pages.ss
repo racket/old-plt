@@ -7,6 +7,7 @@
 (module pages mzscheme
   (require (lib "unitsig.ss")
            (lib "etc.ss")
+           (lib "list.ss")
            "widgets.ss"
            "sigs.ss"
            "data.ss")
@@ -31,6 +32,7 @@
       (define page-student-main
         (page (session)
           "You Are Logged In As A Student"
+          (p (hyperlink (transition-student-assignments session) "Assignments"))
           (p (hyperlink (transition-student-partners session) "Partners"))
           (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
@@ -78,7 +80,7 @@
                       (list "Name" "Number" "Position")
                       (map
                         (lambda (c)
-                          `(tr (td ,(hyperlink
+                          `(tr (th ,(hyperlink
                                       (transition-main 
                                         (make-session 
                                           (session-id session)
@@ -107,6 +109,36 @@
           '(h2 "Current Partners")
           `(ul ,@(map (lambda (p) `(li ,p)) partners))
           (p (hyperlink (transition-courses session) "Courses"))
+          (p (hyperlink (transition-student-assignments session) "Assignments"))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Assignments which are either due or past-due for the student.
+      (define page-student-assignments
+        (page (session upcoming past-due)
+          "Assignments"
+          '(h2 "Upcoming")
+          (html-table
+            "Assignments which are not yet due"
+            (list "Name" "Due")
+            (map
+              (lambda (a)
+                `(tr (th (hyperlink (transition-view-description a)
+                                    (assignment-name a)))
+                     (td (assignment-due a))))
+              (sort-due-date-assignments < assignment-due upcoming)))
+          '(h2 "Past Due")
+          (html-table
+            "Assignments which are past their due date"
+            (list "Name" "Due")
+            (map
+              (lambda (a)
+                `(tr (th (hyperlink (transition-view-description a)
+                                    (assignment-name a)))
+                     (td (assignment-due a))))
+              (sort-due-date-assignments > assignment-due past-due)))
+          (p (hyperlink (transition-student-partners session) "Partners"))
+          (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
 
@@ -114,6 +146,11 @@
 
 
       ;; ************************************************************
+
+      ;; Schwartzian-transform on a structure.
+      (define (sort-due-date-assignments op field as)
+        (map car (quicksort (map (lambda (a) (cons a (field a))) as)
+                            (lambda (a b) (if (op (cdr a) (cdr b)) a b)))))
 
       ;; page : (Symbol? ...) String? Xexpr ... ->
       ;;         ((Alpha ... [String]) -> Xexpr)

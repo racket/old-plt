@@ -225,34 +225,26 @@ exec mzscheme -r "$0" "$@"
       ;; cleanup
       (backend:update-password! "person five" "password"))
 
-    (let ((reset-partner
-            (lambda ()
-              (send backend:*connection* exec 
-                    (string-append
-                      "UPDATE partners SET partner_id = "
-                      " (SELECT max(partner_id) + 1  FROM partners) "
-                      "WHERE student_id = "
-                      " (SELECT id FROM people WHERE name = 'person one')")))))
-      (make-test-case
-        (string-append
-          "A user logs in, selects a course in which he or she is a student, "
-          "goes to the partnership management page, adds a partner, logs out.")
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "person three")
-                            (cons 'password "password")))
-                (list (hyperlink->k-url "The Test Course") '())
-                (list (hyperlink->k-url "Partners") '())
-                (list form->k-url
-                      (list (cons 'username "person four")
-                            (cons 'password "password")))
-                (list (hyperlink->k-url "Logout") '()))
-          (login-page))
-        ;; setup: person one has no partners
-        (reset-partner)
-        ;; cleanup: person one has no partners
-        (reset-partner)))
+    (make-test-case
+      (string-append
+        "A user logs in, selects a course in which he or she is a student, "
+        "goes to the partnership management page, adds a partner, logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "person three")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Partners") '())
+              (list form->k-url
+                    (list (cons 'username "person four")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      ;; setup: person one has no partners
+      (reset-partner)
+      ;; cleanup: person one has no partners
+      (reset-partner))
 
     (make-test-case
       (string-append
@@ -266,11 +258,72 @@ exec mzscheme -r "$0" "$@"
               (list (hyperlink->k-url "The Test Course") '())
               (list (hyperlink->k-url "Partners") '())
               (list (hyperlink->k-url "Logout") '()))
-        (login-page)
-        ))
+        (login-page)))
 
-    ))
+    (make-test-case
+      (string-append
+        "A user logs in, selects a course in which he or she is a student, "
+        "already has the correct number of partners, goes to the assignments "
+        "page, logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "person one")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Assignments") '())
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page)))
 
+    (make-test-case
+      (string-append
+        "A user logs in, selects a course in which he or she is a student, "
+        "forms a partnership, views assignments, logs out.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "person three")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "The Test Course") '())
+              (list (hyperlink->k-url "Partners") '())
+              (list form->k-url
+                    (list (cons 'username "person four")
+                          (cons 'password "password")))
+              (list (hyperlink->k-url "Assignments") '())
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      (reset-partner)
+      (reset-partner))
+
+     ))
+
+;; reset-partner : ->
+;; Clear the partnership between person three and person four, if any.
+(define (reset-partner)
+  (db-do
+    (string-append
+      "UPDATE partners SET ended = now() "
+      "WHERE ended IS NULL "
+      "AND student_id = "
+      "(SELECT id FROM people WHERE username = 'person four') "
+      "OR student_id = "
+      "(SELECT id FROM people WHERE username = 'person three')"))
+  (db-do
+    (format
+      (string-append
+        "INSERT INTO partners "
+        "(student_id, partner_id, course_id, created, can_submit) "
+        "VALUES ((SELECT id FROM people WHERE username = 'person three'),"
+        "(SELECT max(partner_id) + 1 FROM partners), ~a, now(), 'f')")
+      cid))
+  (db-do
+    (format
+      (string-append
+        "INSERT INTO partners "
+        "(student_id, partner_id, course_id, created, can_submit) "
+        "VALUES ((SELECT id FROM people WHERE username = 'person four'),"
+        "(SELECT max(partner_id) + 1 FROM partners), ~a, now(), 'f')")
+      cid)))
 
 ;; login-page : [string] -> xexpr/callback
 ;; The login page, with an optional error message.

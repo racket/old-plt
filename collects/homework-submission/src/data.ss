@@ -14,7 +14,20 @@
     (id name number position can-submit? partnership-full?)
     (make-inspector))
 
+  ;; An Assignment is a
+  ;; (make-assignment Number String String String String Symbol String)
+  (define-struct assignment
+    (id name due description description-url grade-type grade-misc)
+    (make-inspector))
+
   (provide/contract
+    (struct assignment ((id number?)
+                        (name string?)
+                        (due string?)
+                        (description string?)
+                        (description-url string?)
+                        (grade-type symbol?)
+                        (grade-misc string?)))
     (struct course ((id number?)
                     (name string?)
                     (number string?)

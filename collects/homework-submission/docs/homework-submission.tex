@@ -9,22 +9,22 @@
 
 \maketitle
 
-Revision 5.
+Revision 6.
 
 \section{Overview}\label{sec:overview}
 
 The homework submission servlet is a tool for students to electronically submit
 homework assignments. It supports username and password authentication,
 changing passwords, logging out, account creation, and courses, a separation of
-students from non-students, and partnerships. Future goals are file submission,
-task assignment, and online grading.
+students from non-students, partnerships, and assignments. Future goals are
+file submission, task assignment, and online grading.
 
 \section{Use Cases}\label{sec:usecases}
 
 The servlet currently supports users logging in with a valid username and
 password, changing their password, selecting a course, adding a partner if
-possible, and logging out. They can also create an account if they have not
-already done so.
+possible, viewing assignments, and logging out. They can also create an account
+if they have not already done so.
 
 \subsection{Supported Use Cases}\label{subsec:detailed-usecases}
 
@@ -48,12 +48,15 @@ then logs out.}
   the partnership page, adds a partner, logs out.}
 \item{A user logs in, selects a course in which he or she is a student, goes to
   the partnership page, sees existing partners, logs out.}
+\item{A user logs in, selects a course in which he or she is a student, has a
+  partner, views the assignments page, logs out.}
 \item{The Web server is restarted by the TA or instructor.}
 \end{itemize}
 
 \subsubsection{New Use Cases}\label{subsubsec:newusecases}
 \begin{itemize}
-\item{A user creates an account, then logs out.}
+\item{A user logs in, selects a course in which he or she is a student, has a
+  partner, views the assignments page, logs out.}
 \end{itemize}
 
 \section{Goals}\label{sec:goals}
@@ -61,7 +64,7 @@ then logs out.}
 The feature goals of this iteration are:
 
 \begin{itemize}
-\item{Partnership management on the student side.}
+\item{Assignment viewing for students.}
 \end{itemize}
 
 \section{Architecture}\label{sec:arch}
@@ -171,6 +174,11 @@ page-student-partners : (page? session? (listof String))
 The partnerships to which the user belongs, and the ability to add a partner if
 the course partnership size allows it.
 
+\begin{verbatim}
+page-student-assignments : (page? session? (listof assignment?))
+\end{verbatim}
+The assignments which the student either has due or had due.
+
 \subsubsection{Transitions}\label{subsubsec:transitions}
 
 A transition is a procedure used to move between pages. There are two categories
@@ -241,6 +249,16 @@ Direct transition to the main page for a non-student.
 transition-student-partners : (session? . -> . transition?)
 \end{verbatim}
 Direct transition to the partnership management page for students.
+
+\begin{verbatim}
+transition-student-assignments : (session? . -> transition?)
+\end{verbatim}
+Direct transition to the student assignments page.
+
+\begin{verbatim}
+transition-view-description : (string? symbol? . -> . transition?)
+\end{verbatim}
+Direct transition to the description for an assignment.
 
 \begin{verbatim}
 transition-log-in : transition?

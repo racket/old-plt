@@ -63,25 +63,17 @@
       (define-transition (transition-non-student-main session)
         (main session "Congrats, you've logged in as a non-student."))
 
-      ;; update-course-partnership?/session : (session? . -> . session?)
-      ;; Update the can-submit? and partnership-full? fields of a course in a
-      ;; session. This is a common action.
-      (define (update-course-partnership?/session session)
-        (let ((c (session-course session)))
-          (make-session
-            (session-id session)
-            (session-username session)
-            (make-course
-              (course-id c)
-              (course-name c)
-              (course-number c)
-              (course-position c)
-              (schedule (lambda () (backend-can-submit?
-                                     (session-id session)
-                                     (course-id c))))
-              (schedule (lambda () (backend-partnership-full?
-                                     (session-id session)
-                                     (course-id c))))))))
+      ;; Direct transition to the student's assignment page.
+      (define-transition (transition-student-assignments session)
+        (send/suspend/callback
+          (page-student-assignments
+            session
+            (schedule (lambda ()
+                        (backend-assignments/due
+                          (course-id (session-course session)) '>)))
+            (schedule (lambda ()
+                        (backend-assignments/due
+                          (course-id (session-course session)) '<))))))
 
       ;; Direct transition to the partnership management page for students.
       (define-transition (transition-student-partners session)
@@ -92,6 +84,12 @@
                         (backend-partners
                           (session-id session)
                           (course-id (session-course session))))))))
+
+      ;; Direct transition to the description of an assignment.
+      (define-transition (transition-view-description a)
+        (if (assignment-description-url a)
+          (redirect-to (assignment-description-url a))
+          (send/suspend/callback (assignment-description a))))
 
       ;; Action transition to the logged-in page.
       ;; ACTION: check that the username and password pair are correct.
@@ -241,6 +239,7 @@
                           username)))) )))
 
       ;; **** Helpers ****
+
       ;; Go to the main page for the position.
       (define (main session message)
         (let ((c (session-course session)))
@@ -260,6 +259,26 @@
               ( else 
                 (send/suspend/callback
                   (page-non-student-main session message)) )))))
+
+      ;; update-course-partnership?/session : (session? . -> . session?)
+      ;; Update the can-submit? and partnership-full? fields of a course in a
+      ;; session. This is a common action.
+      (define (update-course-partnership?/session session)
+        (let ((c (session-course session)))
+          (make-session
+            (session-id session)
+            (session-username session)
+            (make-course
+              (course-id c)
+              (course-name c)
+              (course-number c)
+              (course-position c)
+              (schedule (lambda () (backend-can-submit?
+                                     (session-id session)
+                                     (course-id c))))
+              (schedule (lambda () (backend-partnership-full?
+                                     (session-id session)
+                                     (course-id c))))))))
 
       ))
 

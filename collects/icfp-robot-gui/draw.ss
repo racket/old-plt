@@ -5,7 +5,8 @@
            (lib "list.ss")
            (lib "etc.ss")
            (lib "hierlist.ss" "hierlist")
-           "icon.ss")
+           "icon.ss"
+           "data.ss")
 
   (provide board-panel%)
   
@@ -174,15 +175,15 @@
                                                           pkg))
                                                    packages)
                                             (error 'install "robot package not found: ~a" pid)))
-                                      (cadddr (cddr orig)))])
-                       (let ([r (make-robot (sub1 (cadr orig)) ; sub1 for 0-indexed
-                                            (sub1 (caddr orig))
+                                      (bot-packages orig))])
+                       (let ([r (make-robot (sub1 (bot-x orig)) ; sub1 for 0-indexed
+                                            (sub1 (bot-y orig))
                                             (car icons)
                                             (cdr icons)
-                                            (car orig)
+                                            (bot-id orig)
                                             pkgs
-                                            (cadddr orig) ; money
-                                            (cadddr (cdr orig)) ; max-lift
+                                            (bot-money orig)
+                                            (bot-max-lift orig)
                                             #f
                                             #f
                                             #f
@@ -234,20 +235,20 @@
                   ;; Sort by size (smaller first, unknown at end):
                   (let ([pkgs (quicksort orig-pkgs
                                          (lambda (a b)
-                                           (let ([aw (cadddr (cddr a))]
-                                                 [bw (cadddr (cddr b))])
+                                           (let ([aw (pkg-weight a)]
+                                                 [bw (pkg-weight b)])
                                              (cond
                                                [(not aw) #f]
                                                [(not bw) #t]
                                                [else (<= aw bw)]))))])
-                    (let* ([min (cadddr (cddar pkgs))]
+                    (let* ([min (pkg-weight (car pkgs))]
                            [max (let loop ([l pkgs][mx min])
                                   (if (null? l)
                                       mx
-                                      (let ([wt (cadddr (cddar l))])
+                                      (let ([wt (pkg-weight (car l))])
                                         (loop (cdr l) (if wt (max mx wt) mx)))))])
                       (map (lambda (pkg)
-                             (let* ([weight (cadddr (cddr pkg))]
+                             (let* ([weight (pkg-weight pkg)]
                                     [rel-weight (cond
                                                   [(not weight) 0]
                                                   [(= max min)
@@ -258,15 +259,15 @@
                                                                     min)
                                                                  (- max min))
                                                               (sub1 num-pack-icons))))])]
-                                   [dest-x (cadr (cddr pkg))]
-                                   [dest-y (caddr (cddr pkg))])
-                               (make-pack (sub1 (cadr pkg)) ; sub1 for 0-indexed
-                                          (sub1 (caddr pkg))
+                                   [dest-x (pkg-dest-x pkg)]
+                                   [dest-y (pkg-dest-y pkg)])
+                               (make-pack (sub1 (pkg-x pkg)) ; sub1 for 0-indexed
+                                          (sub1 (pkg-y pkg))
                                           (if weight
                                               (vector-ref pack-icons rel-weight)
                                               unknown-pack-icon)
                                           (vector-ref pack-arrow-pens rel-weight)
-                                          (car pkg)
+                                          (pkg-id pkg)
                                           (and dest-x (sub1 dest-x))
                                           (and dest-y (sub1 dest-y))
                                           weight

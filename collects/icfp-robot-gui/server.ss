@@ -2,6 +2,7 @@
 (module server mzscheme
   (require "io.ss"
            "draw.ss"
+           "data.ss"
            (lib "mred.ss" "mred")
            (lib "class.ss"))
   
@@ -10,8 +11,8 @@
   (define server-port 4004)
 
   (define num-players 1)
-  (define board-file "~/tmp/map2")  ; maps available at the contest web site
-  (define pack-file "~/tmp/packs2") ; pkg configuartions available there, too
+  (define board-file "~/tmp/map")  ; maps available at the contest web site
+  (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
   (define start-money 100)
@@ -45,12 +46,12 @@
                            (let ([id (car one)]
                                  [xy (cadr one)]
                                  [wt (caddr one)])
-                             (list id
-                                   x
-                                   y
-                                   (car xy)
-                                   (cadr xy)
-                                   wt)))
+                             (make-pkg id
+                                       x
+                                       y
+                                       (car xy)
+                                       (cadr xy)
+                                       wt)))
                          (cadr one-place))))
                 raw-packs))))))
   
@@ -146,7 +147,6 @@
     
   (define (client-handler input output client-sema server-sema id)
     (when (regexp-match "^Player" input)
-      (printf "player!~n")
       ;; Send board
       (fprintf output "~a ~a~n" board-width board-height)
       (let ([s (make-string board-width)])

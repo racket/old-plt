@@ -96,6 +96,7 @@
 		    disallow-untagged-inexact-numbers
 		    print-tagged-inexact-numbers
 		    whole/fractional-exact-numbers
+                    print-booleans-as-true/false
 		    printing))
    make-setting/parse
 

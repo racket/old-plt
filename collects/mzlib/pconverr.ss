@@ -18,7 +18,8 @@
     (define quasi-read-style-printing (make-parameter #t boolean-filter))
     (define abbreviate-cons-as-list (make-parameter #t boolean-filter))
     (define whole/fractional-exact-numbers (make-parameter #t boolean-filter))
-
+    (define booleans-as-true/false (make-parameter #t boolean-filter))
+    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; share-hash is the hash-table containing info on what cons cells
     ;; of the expression are shared.
@@ -327,8 +328,8 @@
 				     [(or (zero? whole) (zero? frac))
 				      `(+ ,(real-part expr) (* +1i (+ ,whole-i ,frac-i)))]
 				     [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
-                                [(eq? expr #f) 'false]
-                                [(eq? expr #t) 'true]
+                                [(eq? expr #f) (if (booleans-as-true/false) 'false #f)]
+                                [(eq? expr #t) (if (booleans-as-true/false) 'true #t)]
 				[else expr]))
 			   recur)))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

@@ -137,6 +137,11 @@
 			  basis:setting-whole/fractional-exact-numbers
 			  "Print rationals in whole/part notation"
 			  output-syntax-panel)]
+         [booleans-as-true/false
+	  (make-check-box basis:set-setting-print-booleans-as-true/false!
+			  basis:setting-print-booleans-as-true/false
+			  "Print booleans as true and false"
+			  output-syntax-panel)]
 	 [ok-panel (make-object mred:horizontal-pane% main)]
 	 [hide-button (make-object mred:button%
 			"Hide Details"
@@ -177,7 +182,8 @@
 		   (compare-check-box signal-undefined basis:setting-signal-undefined)
 		   (compare-check-box sharing-printing? basis:setting-sharing-printing?)
 		   (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
-		   (eq? (printer-number->symbol (send printing get-selection))
+		   (compare-check-box booleans-as-true/false basis:setting-print-booleans-as-true/false)
+                   (eq? (printer-number->symbol (send printing get-selection))
 			(basis:setting-printing setting)))))]
 	 [reset-choice
 	  (lambda ()
@@ -201,7 +207,9 @@
 		    (get-printer-style-number (basis:setting-printing v)))
 	      (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
 		(send whole/fractional-exact-numbers enable (not r4rs-style?))
+                (send booleans-as-true/false enable (not r4rs-style?))
 		(when r4rs-style?
+                  (basis:set-setting-print-booleans-as-true/false! v #f)
 		  (basis:set-setting-whole/fractional-exact-numbers! v #f)))
 
 	      (for-each
@@ -209,11 +217,13 @@
 	       (list basis:setting-case-sensitive?
 		     basis:setting-sharing-printing?
 		     basis:setting-whole/fractional-exact-numbers
+                     basis:setting-print-booleans-as-true/false
 		     basis:setting-unmatched-cond/case-is-error?
 		     basis:setting-signal-undefined)
 	       (list case-sensitive? 
 		     sharing-printing?
 		     whole/fractional-exact-numbers
+                     booleans-as-true/false
 		     unmatched-cond/case-is-error?
 		     signal-undefined))
 

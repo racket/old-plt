@@ -9,7 +9,8 @@
    quasi-read-style-printing
    abbreviate-cons-as-list
    whole/fractional-exact-numbers
-
+   booleans-as-true/false
+   
    print-convert
    print-convert-expr
    build-share

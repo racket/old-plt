@@ -48,6 +48,7 @@
 				disallow-untagged-inexact-numbers
 				print-tagged-inexact-numbers
 				whole/fractional-exact-numbers
+                                print-booleans-as-true/false
 				printing
 				define-argv?))
   
@@ -72,6 +73,7 @@
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #f)
+             (print-booleans-as-true/false #t)
 	     (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
@@ -93,7 +95,8 @@
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #f)
-	     (printing constructor-style)
+	     (print-booleans-as-true/false #t)
+             (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
@@ -116,7 +119,8 @@
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #f)
-	     (printing constructor-style)
+	     (print-booleans-as-true/false #t)
+             (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "MzScheme")
@@ -137,7 +141,8 @@
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #f)
-	     (printing r4rs-style)
+	     (print-booleans-as-true/false #f)
+             (printing r4rs-style)
 	     (define-argv? #t)))
 	  (make-setting/parse
 	   `((name "MzScheme Debug")
@@ -158,7 +163,8 @@
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #f)
-	     (printing r4rs-style)
+	     (print-booleans-as-true/false #f)
+             (printing r4rs-style)
 	     (define-argv? #t)))))
   
   (define (snoc x y) (append y (list x)))
@@ -652,6 +658,8 @@
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
       (mzlib:print-convert:whole/fractional-exact-numbers
        (setting-whole/fractional-exact-numbers setting))
+      (mzlib:print-convert:booleans-as-true/false
+       (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
       (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
       

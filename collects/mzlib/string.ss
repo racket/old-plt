@@ -251,7 +251,7 @@
 					     (make-output-port
 					      'counter
 					      always-evt
-					      (lambda (s start end flush?)
+					      (lambda (s start end flush? breakable?)
 						(let ([c (- end start)])
 						  (set! discarded (+ c discarded))
 						  c))

@@ -203,3 +203,4 @@
   (do-tests '("apple" "banana"))
   (do-tests '("ax" "b" "cz")))
 
+(report-errs)

@@ -14,9 +14,9 @@
     (test #f null? (member "filelib.ss" rel))
     (test #f null? (member (build-path (current-directory) "filelib.ss") abs))
 
-    (test '("filelib.ss") find-files (lambda (f) (regexp-match "^filelib[.]ss$" f)))
+    (test (list (string->path "filelib.ss")) find-files (lambda (f) (regexp-match "^filelib[.]ss$" (path->string f))))
     (test (list (build-path (current-directory) "filelib.ss"))
-	  find-files (lambda (f) (regexp-match "filelib[.]ss$" f))
+	  find-files (lambda (f) (regexp-match "filelib[.]ss$" (path->string f)))
 	  (current-directory))
 
     (let ([rel2 (fold-files (lambda (name kind accum)

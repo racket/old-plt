@@ -7,7 +7,13 @@
   (static-error dynamic-error internal-error))
 
 (define-signature stepper:shared^
-  (read->raw arglist->ilist *unevaluated* get-arg-symbol))
+  (read->raw 
+   arglist->ilist 
+   *unevaluated* 
+   get-arg-symbol
+   (define-struct varref (var top-level?))
+   register-source
+   find-source-expr))
 
 (define-signature stepper:annotate^
   (annotate))

@@ -2,7 +2,7 @@
   (import [z : zodiac:system^]
 	  mzlib:function^
 	  [e : stepper:error^]
-	  stepper:unparse^
+	  stepper:shared^
 	  stepper:reconstruct)
   
     ; ANNOTATE SOURCE CODE
@@ -23,9 +23,6 @@
   
   (define if-temp (gensym "if-temp-"))
    
-  
-  
-  
   ; make-debug-info takes a list of variables and an expression and
   ; creates a thunk closed over the expression and (if bindings-needed is true) 
   ; the following information for each variable in kept-vars:
@@ -42,44 +39,49 @@
   ; since at most one location can exist for any given stack binding.  That is,
   ; using the source, I can tell whether variables referenced directly in the
   ; continuation chain refer to the same location.
-  #| .
-     okay, hang on just a second here. why do we need mutators here? Why not just
-     test with eq? to see if two things are shared? I'm taking the mutators out,
-     and I'm officially confused. jbc, 3/99
- 
-     (define (make-debug-info vars mutated-vars bindings-needed source)
-       (let* ([kept-vars (if bindings-needed vars null)]
-	      [var-clauses (map (lambda (x) 
-				  `(cons (#%quote ,x)
-					 (cons ,x
-					       ,(if (memq x mutated-vars)
-						    `(lambda (,mutator-gensym)
-						       (set! ,x ,mutator-gensym))
-						    `null))))
-				kept-vars)])
-	 `(#%lambda () (list ,source ,@var-clauses))))
-     
-     |#
   
-  (define (make-debug-info vars bindings-needed source)
+  ; okay, things have changed a bit.  For this iteration, I'm simply not going to 
+  ; store mutators.  later, I'll add them in.
+ 
+  #| (define (make-debug-info vars bindings-needed source)
     (let* ([kept-vars (if bindings-needed vars null)]
 	   [var-clauses (map (lambda (x) 
-			       `(cons (#%quote ,x)
-				      (cons ,x null)))
+			       (let ([var (varref-var x)])
+				 `(cons (#%quote ,var)
+					(cons ,var
+					      ,(if (varref-mutated? x)
+						   `(lambda (,mutator-gensym)
+						      (set! ,var ,mutator-gensym))
+						   `null)))))
 			     kept-vars)])
-      `(#%lambda () (list ,source ,@var-clauses))))
+      `(#%lambda () (list ,source ,@var-clauses)))) |#
   
-  ; set-union takes some lists where no element appears twice in one list, and 
+  (define (make-debug-info vars bindings-needed source label)
+    (let* ([kept-vars (if bindings-needed vars null)]
+	   [var-clauses (map (lambda (x) 
+			       (let ([var (varref-var x)])
+				 `(cons ,var
+					(cons ,x
+					      null))))
+			     kept-vars)])
+      `(#%lambda () (list ,(z:offset (z:start source)) ,label ,@var-clauses))))
+  
+  ;; ADD LABEL ARGUMENT TO EVERY CALL TO MAKE-DEBUG-INFO
+  
+  ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  the elements are 
-  ; compared using eq?
+  ; compared using the first element of the varref
   
-  (define set-union
+  (define var-set-union
     (lambda args
-      (foldl (lambda (a b) (append a (remq* a b)))
+      (foldl (lambda (a b) 
+	       (append a (remove* a b (lambda (x y) 
+					(= (varref-var x)
+					   (varref-var y))))))
 	     null
 	     args)))
   
-  ; set-union test: (relies on current implementation of set-union
+  ; set-union test: (relies on current implementation of set-union) (and is broken now)
   
   #| (andmap (lambda (x) (apply equal? x))
 	  `((,(set-union) ,null)
@@ -156,8 +158,6 @@
        (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
 
   
-  ; annotate:
-  
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
   ; a) the body itself
@@ -186,7 +186,28 @@
 	       (if (z:eof? new-expr)
 		   ()
 		   (cons new-expr (read-loop (reader)))))))
+
+	 ; locate-cond-clause: take a cond expression's start location
+	 ; and a test expression's start location and figure out 
+	 ; which clause of the cond the test comes from.
 	 
+	 (define (locate-cond-clause cond-location test-location)
+	   (let* ([target-offset (z:location-offset (z:zodiac-start test-location))]
+		  [cond-source (find-source-expr cond-location)]
+		  [cond-clauses (cdr (z:read-object cond-source))]
+		  [test-exprs (map car (z:read-object cond-clauses))])
+	     (let loop ([test-exprs test-exprs] [index 0])
+	       (if (null? test-exprs)
+		   (e:static-error test-location "test expression not found in cond expression")
+		   (if (= target-offset (z:location-offset (z:zodiac-start (car test-exprs))))
+		       index
+		       (loop (cdr test-exprs) (+ index 1)))))))
+			
+	   
+	 
+	 
+	 ; annotate:
+
 	 ; debug-key: this key will be used to register the source expr with reconstructr.ss
 	 ; and as a key for the continuation marks.
 	 
@@ -198,20 +219,24 @@
 	   (let ([with-break `(#%begin (,break) ,expr)])
 	     `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
 	 
-	 ; annotate/inner takes an expression to annotate, the list of bound variables, and a boolean
+	 ; annotate/inner takes an expression to annotate and a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
-	 ; an annotated expression, and a list of the bound variables which occur free.
+	 ; an annotated expression, and a list of varref's.	 
+	 
+	 ; annotate/inner: (z:zodiac bool -> sexp (listof varref))
 	 
 	 (define (annotate/inner expr on-spine?)
 	   
+	   ; translate-varref: (bool bool -> sexp (listof varref))
+	   
 	   (let ([translate-varref
-		  (lambda (maybe-undef?)
+		  (lambda (maybe-undef? top-level?)
 		    (let* ([v (z:varref-var expr)]
 			   [real-v (if (z:top-level-varref? expr)
 				       v
 				       (z:binding-orig-name
 					(z:bound-varref-binding expr)))]
-			   [free-vars (list v)]
+			   [free-vars (list (make-varref v top-level?))]
 			   [debug-info (make-debug-info free-vars on-spine? expr)]
 			   [annotated (if (and maybe-undef? (signal-undefined))
 					  `(#%if (#%eq? ,v ,the-undefined-value)
@@ -230,16 +255,15 @@
 	       
 	       [(z:bound-varref? expr)
 		(translate-varref 
-		 expr
 		 (not (never-undefined? (z:bound-varref-binding expr)))
-		 on-spine?)]
+		 #f)]
 	       
 	       [(z:top-level-varref? expr)
 		(if (is-unit-bound? expr)
-		    (translate-varref expr #t on-spine?)
+		    (translate-varref #t #f)
 		    (begin
 		      (check-for-keyword/proc expr)
-		      (translate-varref expr #f on-spine?)))]
+		      (translate-varref #f #t)))]
 	       
 	       [(z:app? expr)
 		(let+
@@ -252,13 +276,13 @@
 				(list annotated free)))
 			    sub-exprs)]
 		  [val annotated-sub-exprs (map car pile-of-values)]
-		  [val free-vars (apply set-union (map cadr pile-of-values))]
+		  [val free-vars (apply var-set-union (map cadr pile-of-values))]
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-sym-list annotated-sub-exprs)]
 		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr)]
 		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info (set-union arg-sym-list free-vars) on-spine? expr)]
+		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr)]
 		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -295,7 +319,7 @@
 					       ,if-temp)
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
-		  [val free-vars (set-union free-vars-test free-vars-then free-vars-else)]
+		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
 		  [val debug-info (make-debug-info free-vars on-spine? expr)])
 		 (values (wrap debug-info annotated) free-vars))]
 	       
@@ -333,7 +357,7 @@
 					     (z:case-lambda-form-bodies expr))]
 		       [annotated-bodies (map car pile-of-results)]
 		       [annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
-		       [new-free-vars (apply set-union (map cadr pile-of-results))]
+		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
 		       [debug-info (make-debug-info new-free-vars null on-spine? expr)]
 		       [closure-info (make-debug-info new-free-vars #t expr)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])

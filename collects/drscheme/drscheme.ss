@@ -30,14 +30,15 @@
   (parameterize ([current-custodian drscheme-custodian])
     (set! drscheme-eventspace (make-eventspace))
     (set! drscheme-namespace (make-namespace))
-    (parameterize ([current-namespace drscheme-namespace]
-		   [current-eventspace drscheme-eventspace])
-      (when (or graphical-debug? textual-debug?)
-	(queue-callback 
-	 (lambda ()
-	   (exit-handler (lambda ___ (custodian-shutdown-all drscheme-custodian)))
-	   (invoke-unit (require-library "errortracer.ss" "errortrace")))))
-      (queue-callback start-drscheme))))
+    (when (or graphical-debug? textual-debug?)
+      (parameterize ([current-eventspace drscheme-eventspace])
+        (queue-callback 
+         (lambda ()
+           [current-namespace drscheme-namespace]
+           [current-eventspace drscheme-eventspace]
+           (exit-handler (lambda ___ (custodian-shutdown-all drscheme-custodian)))
+           (invoke-unit (require-library "errortracer.ss" "errortrace"))))))
+    (queue-callback start-drscheme)))
 
 (cond
   [graphical-debug?

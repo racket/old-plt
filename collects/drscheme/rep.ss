@@ -192,14 +192,14 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   (define (show-interactions-history)
-    (let ([f (make-object (drscheme:frame:basics-mixin fw:frame:standard-menus%)
-	       "Interactions History"
-	       #f
-	       300
-	       400)]
-	  [panel (send f get-panel)]
-	  [text (make-object text%)]
-	  [canvas (make-object editor-canvas% panel text)])
+    (let* ([f (make-object (drscheme:frame:basics-mixin fw:frame:standard-menus%)
+                           "Interactions History"
+                           #f
+                           300
+                           400)]
+           [panel (send f get-panel)]
+           [text (make-object mred:text%)]
+           [canvas (make-object mred:editor-canvas% panel text)])
       (send f show #t)))
 
   (define error-color (make-object mred:color% "PINK"))

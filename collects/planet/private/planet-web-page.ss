@@ -32,33 +32,39 @@
   ;; generate-web-page : -> listof xexpr[xhtml]
   ;; makes the body of a web page telling all currently-available packages
   (define (generate-web-page webroot)
-    (list*
-     `(div 
-       ((class "description"))
-       (p (strong "PLaneT") " is PLT Scheme's centralized package distribution system. Here you"
-          " will find user-contributed Scheme packages along with instructions for using them.")
-       (p "The packages on this site are user-contributed and not part of PLT Scheme. Be aware "
-          "that when you download one of them for use in your programs, you are installing "
-          "software on your computer that could deliberately or accidentally harm your system. "
-          "Do not require from PLaneT any packages you do not trust.")
-       (p "For more about how to use PLaneT and for instructions on turning your own code into"
-          " packages, look up PLaneT in the DrScheme Help Desk."))
-     (make-tall-page-section "Available Packages")
-     (packages->xexprs webroot)))
+    (let ((tree (archive-as-tree webroot)))
+      (list*
+       `(div 
+         ((class "description"))
+         (p (strong "PLaneT") " is PLT Scheme's centralized package distribution system. Here you"
+            " will find user-contributed Scheme packages along with instructions for using them.")
+         (p "The packages on this site are user-contributed and not part of PLT Scheme. Be aware "
+            "that when you download one of them for use in your programs, you are installing "
+            "software on your computer that could deliberately or accidentally harm your system. "
+            "Do not require from PLaneT any packages you do not trust.")
+         (p "For more about how to use PLaneT and for instructions on turning your own code into"
+            " packages, look up PLaneT in the DrScheme Help Desk."))
+       (make-tall-page-section "Available Packages")
+       (tree->table tree)
+       (make-tall-page-section "Available Packages: Detail")
+       (tree->xexprs tree))))
   
-  (define (packages->xexprs webroot)
+  (define-struct owner (name packages))
+  (define-struct package (owner-name name maj min blurb doc.txt primary-file))
+  (define pkg->anchor package-name)
+  
+  (define (archive-as-tree webroot)
     
-    (define (owner-line->html owner)
-      `(div 
-        ((class "owner"))
-        (h2 ,(owner->name owner))
-        ,@(map 
-           (lambda (x) (package-line->html x (owner->name owner)))
-           (quicksort 
-            (owner->packages owner)
-            (lambda (a b) (string<? (pkg->name a) (pkg->name b)))))))
+    (define (owner-line->owner owner)
+      (make-owner
+       (owner->name owner)
+       (quicksort
+        (map 
+         (lambda (x) (package-line->package x (owner->name owner)))
+         (owner->packages owner))
+        (lambda (a b) (string<? (package-name a) (package-name b))))))
     
-    (define (package-line->html pkg owner-name)
+    (define (package-line->package pkg owner-name)
       
       (define metainfo-file-path (build-path (PLANET-SERVER-REPOSITORY) 
                                              (version)
@@ -86,41 +92,78 @@
       (define latest-major-version (apply max (pkg->major-versions pkg)))
       (define latest-minor-version (apply max (pkg->minor-versions pkg latest-major-version)))
       
-      `(div ((class "package")
-             (style "background-color: #f3f4ff; padding-left: 10px; margin-left: 10px; margin-right: 30px;"))
-            (h3 ,(pkg->name pkg))
-            (div ((class "latestVersion"))
-                 ,(if (file-exists? (build-path webroot
-                                                (DOCS-DIR)
-                                                owner-name
-                                                (pkg->name pkg) 
-                                                (number->string latest-major-version)
-                                                (number->string latest-minor-version)
-                                                "doc.txt"))
-                      `(a ((href ,(format "~a/~a/~a/~a/~a/doc.txt"
-                                          (docs-dir)
-                                          owner-name
-                                          (pkg->name pkg)
-                                          latest-major-version
-                                          latest-minor-version)))
-                          "documentation")
-                      `(span ((class "noDocs")) "[no documentation available]"))
-                 nbsp "-" nbsp
-                 "latest version: " ,(format "~a.~a" 
-                                             (number->string latest-major-version)
-                                             (number->string latest-minor-version))
-
-                 (br)
-                 (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" file-to-require owner-name (pkg->name pkg) latest-major-version latest-minor-version)))
-            (p ,@description)))
+      (make-package owner-name (pkg->name pkg) latest-major-version latest-minor-version
+                    description
+                    (if (file-exists? (build-path webroot
+                                                  (DOCS-DIR)
+                                                  owner-name
+                                                  (pkg->name pkg) 
+                                                  (number->string latest-major-version)
+                                                  (number->string latest-minor-version)
+                                                  "doc.txt"))
+                        (format "~a/~a/~a/~a/~a/doc.txt"
+                                (docs-dir)
+                                owner-name
+                                (pkg->name pkg)
+                                latest-major-version
+                                latest-minor-version)
+                        #f)
+                    file-to-require))
     
     
     (let* ([owners/all-versions (current-repository-contents)]
            [owners (let ((x (assoc (version) owners/all-versions)))
                      (if x (cdr x) '()))])
-      (map 
-       owner-line->html
-       (quicksort owners (lambda (a b) (string<? (owner->name a) (owner->name b)))))))
+      (quicksort
+       (map 
+        owner-line->owner
+        owners)
+       (lambda (a b) (string<? (owner-name a) (owner-name b))))))
+  
+  ;; tree->table : tree -> xexpr[html table]
+  ;; builds a summary table of all the packages available.
+  (define (tree->table tree)
+    (define (owner->table-rows owner) (map package->table-row (owner-packages owner)))
+    (define (package->table-row pkg)
+      `(tr ((bgcolor "#ddddff")) 
+           (td ((valign "top")) nbsp (a ((href ,(format "#~a" (pkg->anchor pkg)))) ,(package-name pkg)))
+           (td ((valign "top")) ,@(package-blurb pkg))))
+    
+    `(table ((width "100%"))
+            (tbody
+             ,@(apply append (map owner->table-rows tree)))))
+      
+  
+  (define (tree->xexprs tree)
+    
+    (define (owner->html owner)
+      `(div 
+        ((class "owner"))
+        (h2 ,(owner-name owner))
+        ,@(map package->html (owner-packages owner))))
+    
+    (define (package->html pkg)
+      `(div ((class "package")
+             (style "background-color: #f3f4ff; padding-left: 10px; margin-left: 10px; margin-right: 30px;"))
+            (a ((name ,(pkg->anchor pkg))))
+            (h3 ,(package-name pkg))
+            (div ((class "latestVersion"))
+                 ,(if (package-doc.txt pkg)
+                      `(a ((href ,(package-doc.txt pkg)))
+                          "documentation")
+                      `(span ((class "noDocs")) "[no documentation available]"))
+                 nbsp "-" nbsp
+                 "latest version: " ,(format "~a.~a" (package-maj pkg) (package-min pkg)))
+            (br)
+            (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" 
+                         (package-primary-file pkg)
+                         (package-owner-name pkg)
+                         (package-name pkg) 
+                         (package-maj pkg)
+                         (package-min pkg)))
+            (p ,@(package-blurb pkg))))
+
+      (map owner->html tree))
   
   
   

@@ -33,6 +33,8 @@ removed getter and setter for whitespace
  implemented by IE4/5 for Windows
 fixed GC-related problems with COM 
  event handlers
+fixed error text formatting bug when 
+ COM methods returned an error code
 DHTML test code added, 
  plt/tests/mysterx/dhtmltests.ss
 

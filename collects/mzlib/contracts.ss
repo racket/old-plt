@@ -45,7 +45,7 @@
          (syntax
           (begin
             (provide (rename id-rename id) ...)
-            (require (lib "contract-helpers.scm" "framework" "private"))            
+            (require (lib "contract-helpers.scm" "mzlib" "private"))
 	    (define contract-id ctrct) ...
             (define-syntax id-rename
               (make-set!-transformer

@@ -20,12 +20,9 @@
   (define timeout +inf.0)
   
   (define (start initial-request)
-    
     (report-errors-to-browser send/finish)
     (let ()
       ; doc subcollection name -> boolean
-      
-      (define search-sem (make-semaphore 1))
       
       (define (search-type->search-level st)
         (let loop ([n 0]
@@ -252,7 +249,6 @@
              ,@items))))
       
       (define (search-results lucky? search-string search-type match-type manuals doc-txt? lang-name)
-        (semaphore-wait search-sem)
         (set! search-responses '())
         (set! max-reached #f)
         (let* ([search-level (search-type->search-level search-type)]
@@ -279,7 +275,6 @@
                           (reverse search-responses))
                       regexp? 
                       exact-match?)])
-          (semaphore-post search-sem)
           html))
       
       (define empty-search-page
@@ -311,8 +306,14 @@
       
       (let* ([bindings (request-bindings initial-request)]
              [maybe-get (lambda (sym)
-                          (with-handlers ([exn:fail? (lambda _ #f)])
-                            (extract-binding/single sym bindings)))]
+                          (or (with-handlers ([exn:fail? 
+                                               (lambda (_) #f)])
+                                (extract-binding/single sym bindings))
+                              
+                              ;; temporary hack to keep working on other things.
+                              (with-handlers ([exn:fail? 
+                                               (lambda (_) #f)])
+                                (extract-binding/single (symbol->string sym) bindings))))]
              [search-string (maybe-get 'search-string)]
              [search-type (maybe-get 'search-type)]
              [match-type (maybe-get 'match-type)]

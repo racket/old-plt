@@ -21,8 +21,7 @@
                                (listof path?)
                                any?
                                (union false? string?) . -> . string?))
-   (make-results-url (number? 
-                      string?
+   (make-results-url (string?
                       search-type? search-how? any? 
                       (listof path?) 
                       any?
@@ -74,9 +73,9 @@
      relative-results-url-prefix
      (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? lang-name)))
 
-  (define (make-results-url port search-string search-type match-type lucky? manuals doc.txt? lang-name)
+  (define (make-results-url search-string search-type match-type lucky? manuals doc.txt? lang-name)
     (string-append
-     (format results-url-prefix port)
+     results-url-prefix
      (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? lang-name)))
   
   (define (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? language-name)

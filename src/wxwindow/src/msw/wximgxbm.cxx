@@ -181,16 +181,14 @@ int wxSaveXBM(char *fname, char *pic, int w, int h)
 
   int   i,j,k,bit,len,nbytes;
   unsigned char *pix;
-  char name[256], *foo;
+  char *name;
   FILE *fp;
 
   fp = fopen(fname, "wt");
   if (!fp) return 0;
 
   /* figure out a reasonable basename */
-  strcpy(name,fname);
-  foo = strchr(name,'.');
-  if (foo) *foo='\0';                 /* truncated name at first '.' */
+  name = "mred";
 
   fprintf(fp,"#define %s_width %d\n",name,w);  
   fprintf(fp,"#define %s_height %d\n",name,h);

@@ -87,36 +87,7 @@ XpmWriteFileFromXpmImage(char *filename, XpmImage *image, XpmInfo *info)
 	return (ErrorStatus);
 
     /* figure out a name */
-    if (filename) {
-#ifdef VMS
-	name = filename;
-#else
-#ifdef FOR_MSW
-	if (!(name = strchr(filename, '\\')))
-#else
-	if (!(name = strchr(filename, '/')))
-#endif
-	    name = filename;
-	else
-	    name++;
-#endif
-	if (dot = strchr(name, '.')) {
-	    strcpy(new_name, name);
-#ifdef FOR_MSW
-            // Convert to lower case
-            len = strlen(new_name);
-            for (i = 0; i < len; i++)
-              new_name[i] = tolower(new_name[i]);
-#endif
-	    /* change '.' to '_' to get a valid C syntax name */
-	    name = s = new_name;
-	    while (dot = strchr(s, '.')) {
-		*dot = '_';
-		s = dot;
-	    }
-	}
-    } else
-	name = "image_name";
+    name = "mred";
 
     /* write the XpmData from the XpmImage */
     if (ErrorStatus == XpmSuccess)

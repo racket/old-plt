@@ -477,30 +477,21 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
 	    }
 	}
 	if (!found) {
-	    /* if nothing found look for a color name */
-	    colorname = NULL;
-	    if (rgbn_max)
-		colorname = xpmGetRgbName(rgbn, rgbn_max, xcolor->red,
-					  xcolor->green, xcolor->blue);
-	    if (colorname)
-		color->c_color = (char *) strdup(colorname);
-	    else {
-		/* at last store the rgb value */
-		char buf[BUFSIZ];
+	  /* at last store the rgb value */
+	  char buf[BUFSIZ];
 #ifndef FOR_MSW
-		sprintf(buf, "#%04X%04X%04X",
-			xcolor->red, xcolor->green, xcolor->blue);
+	  sprintf(buf, "#%04X%04X%04X",
+		  xcolor->red, xcolor->green, xcolor->blue);
 #else   
-		sprintf(buf, "#%02x%02x%02x",
-			xcolor->red, xcolor->green, xcolor->blue);
+	  sprintf(buf, "#%02x%02x%02x",
+		  xcolor->red, xcolor->green, xcolor->blue);
 #endif			
-		color->c_color = (char *) strdup(buf);
-	    }
-	    if (!color->c_color) {
-		XpmFree(xcolors);
-		xpmFreeRgbNames(rgbn, rgbn_max);
-		return (XpmNoMemory);
-	    }
+	  color->c_color = (char *) strdup(buf);
+	  if (!color->c_color) {
+	    XpmFree(xcolors);
+	    xpmFreeRgbNames(rgbn, rgbn_max);
+	    return (XpmNoMemory);
+	  }
 	}
     }
 

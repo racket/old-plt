@@ -30,7 +30,7 @@
 					     "lib")))])
 		     (if (ormap (lambda (lib)
 				  (and (file-exists? (build-path lib "libeay32xxxxxxx.lib"))
-				       (file-exists? (build-path lib "libeay32xxxxxxx.lib"))))
+				       (file-exists? (build-path lib "ssleay32xxxxxxx.lib"))))
 				libs)
 			 ;; Use mangleable names:
 			 (list "libeay32xxxxxxx" "ssleay32xxxxxxx")

@@ -239,6 +239,7 @@
                             (new "nw" "ne" "nwe")
                             (this "his" "tis" "ths" "thi" "tihs" "thsi")
                             (if "fi")
+                            (else "lse" "ese" "els" "eles")
                             (return "eturn" "rturn" "reurn" "retrn" "retun" "retur" "reutrn" "retrun" "returns")
                             (true "rue" "tue" "tre" "tru" "ture" "treu")
                             (false "flse" "fase" "fale" "fals" "flase" "fasle")
@@ -257,7 +258,9 @@
                             ))
 
   (define (select-words key)
-    (car (filter (lambda (x) (eq? (car x) key)) misspelled-list)))
+    (safe-car (filter (lambda (x) (eq? (car x) key)) misspelled-list)))
+  (define (safe-car f)
+    (if (null? f) null (car f)))
   
   (define all-words (filter string? (apply append misspelled-list)))
                                 

@@ -608,7 +608,7 @@
       
       (public-final set-exception! get-exception)
       ;Used to interoperate with mzscheme exceptions: set and get the current exception
-      (define (set-exception exn)
+      (define (set-exception! exn)
         (set! exception exn)
         (set! stack (exn-continuation-marks exn)))
       (define (get-exception) exception)

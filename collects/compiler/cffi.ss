@@ -87,7 +87,7 @@
 								 scheme-var scheme-var (cadr type))
 							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
 								 scheme-var)
-							 (format "c-pointer of type ~s or #f"
+							 (format "cpointer of type ~s or #f"
 								 (cadr type))
 							 #f)
 						 (case type

@@ -78,7 +78,7 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
-static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user;
+static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
 
 #define INSTALL_COUNT 520
 
@@ -102,6 +102,7 @@ static void wxScheme_Invoke(Scheme_Env *env)
     get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
     put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
     get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
+    message_box = scheme_lookup_global(scheme_intern_symbol("message-box"), env);
   }
 }
 
@@ -1184,6 +1185,34 @@ Bool wxsPrinterDialog(wxWindow *parent)
     *(wxGetThePrintSetupData()) = *p;
     return 1;
   }
+}
+
+int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
+{
+  Scheme_Object *a[4], *r;
+  
+  a[0] = scheme_make_string(caption);
+  a[1] = scheme_make_string(message);
+  a[2] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
+  a[3] = ((style & wxYES_NO)
+	  ? scheme_intern_symbol("yes-no")
+	  : ((style & wxCANCEL)
+	     ? scheme_intern_symbol("ok-cancel")
+	     : scheme_intern_symbol("ok")));
+    
+
+  r = scheme_apply(message_box, 4, a);
+
+  if (SAME_OBJ(r, scheme_intern_symbol("ok"))) {
+    return wxOK;
+  }
+  if (SAME_OBJ(r, scheme_intern_symbol("cancel"))) {
+    return wxCANCEL;
+  }
+  if (SAME_OBJ(r, scheme_intern_symbol("yes"))) {
+    return wxYES;
+  }
+  return wxNO;
 }
 
 static void wxScheme_Install(Scheme_Env *env, void *global_env)

@@ -88,8 +88,6 @@ static Scheme_Object *bundle_symset_canvasStyle(int v) {
 
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 
-// @INCLUDE wxs_drws.xci
-
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
 

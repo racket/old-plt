@@ -97,7 +97,7 @@ wxs_chce.cxx : wxs_chce.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_chce.xc
 wxs_ckbx.cxx : wxs_ckbx.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_ckbx.xc
-wxs_cnvs.cxx : wxs_cnvs.xc wxs_win.xci wxs_cnvs.xci $(XCDEPEND) $(DRAW_DEPEND)
+wxs_cnvs.cxx : wxs_cnvs.xc wxs_win.xci wxs_cnvs.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_cnvs.xc
 wxs_cstr.cxx : wxs_cstr.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_cstr.xc

@@ -16,7 +16,7 @@
 @SYM "set" :  wxSET
 @SYM "src-invert" :  wxSRC_INVERT
 @SYM "xor" :  wxXOR
-@SYM "colour" :  wxCOLOR
+@SYM "color" :  wxCOLOR
 @ENDSYMBOLS
 
 @BEGINSYMBOLS fillKind > ONE

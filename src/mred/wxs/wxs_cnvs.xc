@@ -29,8 +29,6 @@ static void FillZero(int *a, int *b) {
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 @MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { <x>; }
 
-// @INCLUDE wxs_drws.xci
-
 @CLASSBASE wxCanvas "canvas":"window"
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame

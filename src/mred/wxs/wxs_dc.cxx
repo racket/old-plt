@@ -29,14 +29,6 @@
 #include "wxscomon.h"
 
 
-// @BEGINSYMBOLS mapMode > ONE
-// @SYM "mm-twips" : MM_TWIPS
-// @SYM "mm-points" : MM_POINTS
-// @SYM "mm-metric" : MM_METRIC
-// @SYM "mm-lometric" : MM_LOMETRIC
-// @SYM "mm-text" : MM_TEXT
-// @ENDSYMBOLS
-
 static Scheme_Object *solidity_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *solidity_wxSOLID_sym = NULL;
 
@@ -109,7 +101,7 @@ static void init_symset_logicalFunc(void) {
   logicalFunc_wxSET_sym = scheme_intern_symbol("set");
   logicalFunc_wxSRC_INVERT_sym = scheme_intern_symbol("src-invert");
   logicalFunc_wxXOR_sym = scheme_intern_symbol("xor");
-  logicalFunc_wxCOLOR_sym = scheme_intern_symbol("colour");
+  logicalFunc_wxCOLOR_sym = scheme_intern_symbol("color");
 }
 
 static int unbundle_symset_logicalFunc(Scheme_Object *v, const char *where) {

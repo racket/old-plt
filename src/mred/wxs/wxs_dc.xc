@@ -19,14 +19,6 @@
 
 @HEADER
 
-// @BEGINSYMBOLS mapMode > ONE
-// @SYM "mm-twips" : MM_TWIPS
-// @SYM "mm-points" : MM_POINTS
-// @SYM "mm-metric" : MM_METRIC
-// @SYM "mm-lometric" : MM_LOMETRIC
-// @SYM "mm-text" : MM_TEXT
-// @ENDSYMBOLS
-
 @BEGINSYMBOLS solidity > ONE
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID

@@ -1453,6 +1453,7 @@ mark_sema_waiter {
   gcMARK(w->prev);
   gcMARK(w->next);
   gcMARK(w->waiting);
+  gcMARK(w->sema);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));

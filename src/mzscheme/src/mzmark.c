@@ -3625,6 +3625,7 @@ int mark_sema_waiter_MARK(void *p) {
   gcMARK(w->prev);
   gcMARK(w->next);
   gcMARK(w->waiting);
+  gcMARK(w->sema);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
@@ -3637,6 +3638,7 @@ int mark_sema_waiter_FIXUP(void *p) {
   gcFIXUP(w->prev);
   gcFIXUP(w->next);
   gcFIXUP(w->waiting);
+  gcFIXUP(w->sema);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));

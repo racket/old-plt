@@ -899,6 +899,7 @@ typedef struct Scheme_Sema_Waiter {
   char in_line, picked;
   struct Scheme_Sema_Waiter *prev, *next;
   struct Waiting *waiting;
+  Scheme_Object *sema;
   int waiting_i;
 } Scheme_Sema_Waiter;
 
@@ -954,6 +955,8 @@ typedef struct Waiting {
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);
 Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
+
+void scheme_get_into_line(Scheme_Object *sema, Waiting *waiting, int i);
 
 /*========================================================================*/
 /*                                 numbers                                */

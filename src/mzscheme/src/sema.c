@@ -420,6 +420,7 @@ void scheme_get_into_line(Scheme_Object *sema, Waiting *waiting, int i)
 #endif
   w->p = scheme_current_thread;
   w->waiting = waiting;
+  w->sema = sema;
   w->waiting_i = i;
 
   get_into_line((Scheme_Sema *)sema, w);
@@ -438,7 +439,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	/* can't synchronize with self */
 	w = w->next;
       } else {
-	Scheme_Channel_Put *chp = (Scheme_Channel_Put *)w->waiting->set->argv[w->waiting_i];
+	Scheme_Channel_Put *chp = (Scheme_Channel_Put *)w->sema;
 	
 	if (!w->waiting->result && !pending_break(w->p)) {
 	  w->picked = 1;
@@ -587,6 +588,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 #endif
 	w->p = scheme_current_thread;
 	w->waiting = waiting;
+	w->sema = (Scheme_Object *)semas[i];
 	w->waiting_i = i;
       }
       

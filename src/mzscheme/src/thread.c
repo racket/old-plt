@@ -2225,7 +2225,7 @@ static void remove_thread(Scheme_Thread *r)
     }
   } else {
     /* Only this thread used the runstack, so clear/free it
-       as agressively as possible */
+       as aggressively as possible */
 #if defined(SENORA_GC_NO_FREE) || defined(MZ_PRECISE_GC)
     memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
 #else
@@ -2241,6 +2241,12 @@ static void remove_thread(Scheme_Thread *r)
       saved->runstack_start = NULL;
     }
   }
+
+  r->runstack_swapped = NULL;
+
+  r->cont_mark_stack = NULL;
+  r->cont_mark_stack_owner = NULL;
+  r->cont_mark_stack_swapped = NULL;
 
 #ifndef SENORA_GC_NO_FREE
   if (r->list_stack)

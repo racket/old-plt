@@ -2388,16 +2388,31 @@ call_cc (int argc, Scheme_Object *argv[])
     p->overflow = cont->save_overflow;
     scheme_restore_env_stack_w_thread(cont->ss, p);
 
+    p->runstack_owner = cont->runstack_owner;
+    if (p->runstack_owner && (*p->runstack_owner != p)) {
+      Scheme_Thread *op;
+      op = *p->runstack_owner;
+      saved = copy_out_runstack(op);
+      op->runstack_swapped = saved;
+      *p->runstack_owner = p;
+    }
+
     /* Copy stack back in: (p->runstack and p->runstack_saved arrays
        are already restored, so the shape is certainly the same as
        when cont->runstack_copied was made) */
     copy_in_runstack(p, cont->runstack_copied);
 
+    p->cont_mark_stack_owner = cont->cont_mark_stack_owner;
+    if (p->cont_mark_stack_owner) {
+      Scheme_Thread *op;
+      op = *p->cont_mark_stack_owner;
+      msaved = copy_out_mark_stack(op);
+      op->cont_mark_stack_swapped = msaved;
+      *p->cont_mark_stack_owner = p;
+    }
+
     /* Copy cont mark stack back in. */
     copy_in_mark_stack(p, cont->cont_mark_stack_copied);
-
-    p->runstack_owner = cont->runstack_owner;
-    p->cont_mark_stack_owner = cont->cont_mark_stack_owner;
 
     /* We may have just re-activated breaking: */
     scheme_check_break_now();
@@ -2428,7 +2443,7 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Thread *op;
     Scheme_Saved_Stack *swapped;
     op = *p->runstack_owner;
-    copy_out_runstack(op);
+    swapped = copy_out_runstack(op);
     op->runstack_swapped = swapped;
     *(p->runstack_owner) = p;
     copy_in_runstack(p, p->runstack_swapped);
@@ -2439,7 +2454,7 @@ void scheme_takeover_stacks(Scheme_Thread *p)
     Scheme_Thread *op;
     Scheme_Cont_Mark *swapped;
     op = *p->cont_mark_stack_owner;
-    copy_out_mark_stack(op);
+    swapped = copy_out_mark_stack(op);
     op->cont_mark_stack_swapped = swapped;
     *(p->cont_mark_stack_owner) = p;
     copy_in_mark_stack(p, p->cont_mark_stack_swapped);

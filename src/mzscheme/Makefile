@@ -13,6 +13,7 @@
 # This must be an ANSI C compiler.
 CC = gcc
 CXX = gcc
+CPP = gcc -E
 AS = gcc -c -x assembler-with-cpp
 
 # If you don't have perl, use:
@@ -79,7 +80,7 @@ MZOSKDEST = mzscheme.multiboot
 ################################################################################
 
 # Export string for making src & GC
-EXPORT= CC='$(CC)' CXX='$(CXX)' AS='$(AS)' RANLIB='$(RANLIB)' PERL='$(PERL)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' THREADFLAGS='' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
+EXPORT= CC='$(CC)' CXX='$(CXX)' CPP='$(CPP)' AS='$(AS)' RANLIB='$(RANLIB)' PERL='$(PERL)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' THREADFLAGS='' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
 
 MAIN_CFLAGS_NODBG = $(WARN) $(OPT) $(FLAGS) $(OPTIONS) $(THREADFLAGS) -Iinclude
 MAIN_CFLAGS = $(DEBUGFLAGS) $(NONLINKOPTIONS) $(MAIN_CFLAGS_NODBG)
@@ -278,6 +279,10 @@ zo:
 	rm -f ../collects/mzlib/compiled/*.zo
 	rm -f ../collects/mzlib/compiled/*/*.so
 	$(MZSCHEME) -qf mkmzlib.ss -e '(make-zo)' -e '(exit)'
+
+mzscheme2:
+	cd src; $(XMAKE) all
+	cd gc2; $(XMAKE) mzscheme2
 
 depend:
 	cd src; $(XMAKE) -e depend 

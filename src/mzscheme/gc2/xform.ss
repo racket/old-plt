@@ -1,25 +1,30 @@
 
 (define cmd-line (vector->list argv))
 
-(require-library "errortrace.ss" "errortrace")
+(define cpp (car cmd-line))
+(define file-in (cadr cmd-line))
+(define file-out (caddr cmd-line))
 
-(unless (system (format "gcc -E -I../include -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
-			(if (null? (cddr cmd-line))
+; (require-library "errortrace.ss" "errortrace")
+
+(unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
+			cpp
+			(if (null? (cdddr cmd-line))
 			    ""
-			    (caddr cmd-line))
-			(car cmd-line)))
+			    (cadddr cmd-line))
+			file-in))
   (error 'xform "cpp failed"))
 
 (define e-raw (parameterize ([read-case-sensitive #t])
 		(with-input-from-file "xtmp" read)))
 
-(current-output-port (open-output-file (cadr cmd-line) 'truncate))
+(current-output-port (open-output-file file-out 'truncate))
 (let ([eh (error-escape-handler)])
   (error-escape-handler
    (lambda ()
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
-     (delete-file (cadr cmd-line))
+     (delete-file file-out)
      (eh))))
 
 ;; Header:
@@ -96,6 +101,8 @@
     (display (make-string next-indent #\space))
     (set! next-indent #f))
   (display s))
+
+(define re:quote-or-backslash (regexp "[\\\"]"))
 
 (define (print-it e indent semi-newlines?)
   (let loop ([e e][prev #f])
@@ -174,7 +181,10 @@
 	  (display/indent v "))")]
 	 [else
 	  (if (string? (tok-n v))
-	      (write (tok-n v))
+	      (begin
+		(display/indent v "\"")
+		(display (tok-n v))
+		(display/indent v "\""))
 	      (display/indent v (tok-n v)))
 	  (display/indent v " ")
 	  (when (and (eq? semi (tok-n v))
@@ -488,7 +498,7 @@
 					       \| \|\| & && : ? % + - * / ^ >> << 
 					       = >>= <<= ^= += *= /= -= %= \|= &= ++ --
 					       return sizeof if for while else switch case
-					       __asm__ __volatile__ __extension__
+					       __asm __asm__ __volatile __volatile__ __extension__
 					       ;; These are functions, but they don't trigger GC:
 					       strcpy strlen memcpy)))
 	     (not (string? (tok-n (cadr e-))))

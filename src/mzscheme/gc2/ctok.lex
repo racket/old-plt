@@ -222,7 +222,22 @@ character()
 
 string()
 {
-  printf("(%s %d %d)\n", yytext, start_line, start_col);
+  /* Produce a string such that (printf "\"~a\"" (read ...)) gives exactly the content
+     of yytext. To do this, protect all backslashes. A backslash before
+     a quote must be duplicated. */
+  char *s;
+
+  printf("(\"");
+  for (s = yytext + 1; s[1]; s++) {
+    if (*s == '\\') {
+      putchar('\\');
+      if (s[1] == '"' && s[2]) /* yytext ends with a non-escaped quote */
+	putchar('\\');
+    }
+    putchar(*s);
+  }
+
+  printf("\" %d %d)\n", yytext, start_line, start_col);
 }
 
 start()

@@ -10,9 +10,10 @@ extern "C" {
 
 void GC_add_roots(void *start, void *end);
 
-extern void (*GC_start_collect_callback)(void);
-extern void (*GC_end_collect_callback)(void);
+extern void (*GC_collect_start_callback)(void);
+extern void (*GC_collect_end_callback)(void);
 extern void (*GC_custom_finalize)(void);
+extern void (*GC_out_of_memory)(void);
 
 /* Needed for stack-overflow checks: */
 void GC_set_stack_base(void *base);
@@ -43,6 +44,9 @@ void *GC_malloc_atomic(size_t size_in_bytes);
 void *GC_malloc_atomic_uncollectable(size_t size_in_bytes);
 #define GC_malloc_eternal_tagged GC_malloc_atomic_uncollectable
 
+#define GC_malloc_weak GC_malloc
+#define GC_malloc_one_weak_tagged GC_malloc_one_tagged
+
 void GC_free(void *); /* noop */
 
 void GC_general_register_disappearing_link(void **p, void *a);
@@ -58,6 +62,7 @@ void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data),
 void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata);
+void GC_unregister_disappearing_link(void **p);
 
 void **GC_prepare_stack_frame(int size);
 void GC_set_stack_frame(void **v);

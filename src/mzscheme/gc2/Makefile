@@ -1,10 +1,17 @@
 
-XFORM = mzscheme -r xform.ss
+EXPORT= CC='$(CC)' CXX='$(CXX)' AS='$(AS)' RANLIB='$(RANLIB)' PERL='$(PERL)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
+
+XMAKE = $(MAKE) $(EXPORT)
+
+CFLAGS_NODBG = $(OPT) $(WARN) $(OPTIONS) $(THREADFLAGS) -I../include
+CFLAGS = $(DEBUGFLAGS) $(CFLAGS_NODBG)
+
+CPPFLAGS = $(OPTIONS) $(THREADFLAGS) $(OPTIONS) -I../include
+
+XFORM = mzscheme -r xform.ss "$(CPP) $(CPPFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = ../src
 OBJDIR = objects/sys_i386_linux
-
-XMAKE = make
 
 OBJS =  $(OBJDIR)/salloc.o \
 	$(OBJDIR)/bignum.o \
@@ -38,7 +45,8 @@ OBJS =  $(OBJDIR)/salloc.o \
 	$(OBJDIR)/type.o \
         $(OBJDIR)/unit.o \
 	$(OBJDIR)/vector.o \
-	$(OBJDIR)/main.o
+	$(OBJDIR)/main.o \
+	$(OBJDIR)/gc2.o
 
 XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/bignum.c \
@@ -220,6 +228,12 @@ $(OBJDIR)/vector.o: $(XSRCDIR)/vector.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/vector.c -o $(OBJDIR)/vector.o
 $(OBJDIR)/main.o: $(XSRCDIR)/main.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/main.c -o $(OBJDIR)/main.o
+
+$(OBJDIR)/gc2.o: gc2.c gc2.h
+	$(CC) $(CFLAGS) -c gc2.c -o $(OBJDIR)/gc2.o
+
+mzscheme2: ctok $(OBJS)
+	$(CC) -o mzscheme2 $(OBJS) -lm -ldl
 
 ctok: lex.yy.c
 	gcc -g -o ctok lex.yy.c

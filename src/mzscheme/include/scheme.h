@@ -858,6 +858,8 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_eternal_tagged GC_malloc_eternal_tagged
 # define scheme_malloc_uncollectable_tagged GC_malloc_uncollectable_tagged
 # define scheme_malloc_envunbox GC_malloc
+# define scheme_malloc_weak GC_malloc_weak
+# define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
 #else
 # ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_tagged(size_t);

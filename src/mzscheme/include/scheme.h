@@ -180,7 +180,7 @@ typedef short Scheme_Type;
    also define MZSHORT_IS_SHORT. */
 typedef int mzshort;
 
-/* Unicode (ucs16) chars. We assume that sizeof(wchar_t) >= 2 */
+/* Unicode (ucs-2) chars. We assume that sizeof(wchar_t) >= 2 */
 typedef wchar_t mzwchar;
 
 /* MzScheme values have the type `Scheme_Object *'.

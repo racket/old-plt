@@ -1696,7 +1696,7 @@ read_string(Scheme_Object *port,
 	    indt->suspicious_quote = line;
 	}
       }
-    } else if (unicode && (ch & 0x8)) {
+    } else if (unicode && (ch & 0x80)) {
       /* UTF-8 transformation kicks in */
       int ch1, ch2;
       if (((ch & 0xE0) == 0xC0)

@@ -24,6 +24,14 @@ in several significant ways:
    never produce a string. See the "Paths" section below for more
    details.
 
+ * The class system has changed slightly. The `rename' keyword has
+   been changed to `rename-super', but the new `super' expression form
+   eliminates the need for most `rename' declarations. Also, the class
+   system supports methods that cannot be overridden entirely, but
+   that can augmented through "inner" methods (as in Beta). Some
+   methods in MrEd's classes have been changed to augment-only
+   methods. See the "Classes" section below for more details.
+
  * The built-in exception hierarchy has been revised and streamlined
    (again). See the "Exceptions" section below for more details.
 
@@ -211,6 +219,186 @@ Under Windows, where a pathname is a UTF-16 string, MzScheme
 internally converts to and from byte strings via UTF-8<->UTF-16. A
 byte string that is not a UTF-8 encoding will never correspond to a
 pathname under Windows.
+
+======================================================================
+ Classes in (lib "class.ss")
+======================================================================
+
+Super Calls
+-----------
+
+A `rename' clause is no longer necessary in a typical class with
+method overrides, due to the new `super' form. For example,
+
+  (class splotch%
+    (rename [super-paint paint])
+    (define/override (paint x)
+      (super-paint x)
+      ....)
+    (super-new))
+
+can now be written
+
+  (class splotch%
+    (define/override (paint x)
+      (super paint x)
+      ....)
+    (super-new))
+
+An `override' declaration enables the corresponding (internal) method
+name to be used with the `super' form. The `super' form is legal only
+for expressions within a `class' (or `class*', etc.).
+
+For cases where `super' cannot be used --- either because now
+overriding method is declared in a class that calls a super method, or
+because the super call is in a lexically nested class --- the
+`rename-super' form can be used just like the old `rename' form.
+
+Augment-Only Methods
+--------------------
+
+A `pubment' clause declares a method like `public', but the resulting
+method cannot be overridden. Instead, the `pubment' method can use
+`inner' to dispatch to an augmenting method declared in a
+subclass. The word "pubment" is a contraction of "public, but
+augment-only for subclasses".
+
+The `inner' expression form includes an expression to evaluate when a
+subclass does not provide an augmenting method. A subclass augments a
+`pubment' method with `augment' instead of `override'. The `augment'
+declaration itself is non-overridable, and it can use `inner' to allow
+further augmentation in further subclasses.
+
+Example:
+
+  (define img%
+    (class object%
+      ;; No subclass can avoid clearing the dc in `paint',
+      ;; but a subclass can augment `paint' to draw afterward.
+      ;; The result indicates the size of the drawn image,
+      ;; which is 0 if the paint method is not augmented.
+      (define/pubment (paint dc)
+        (send dc clear)
+        (inner 0 paint dc))
+      (super-new)))
+
+  (define box%
+    (class img%
+      ;; Add a square to the drawing, but allow subclasses
+      ;; to draw first. Subclasses cannot skip the final
+      ;; square-drawing step. Note that the result of the
+      ;; method is the result of the `inner' call, which is 20
+      ;; if the paint method is not augmented.
+      (define/augment (paint dc)
+        (begin0
+         (inner 20 paint dc)
+         (send dc draw-rectangle 0 0 20 20)))
+      (super-new)))
+
+  (define frbox%
+    (class img%
+      ;; Add a larger red square as a background.
+      (define/augment (paint dc)
+        (send dc set-color (make-object color% "red"))
+        (send dc draw-rectangle -1 -1 22 22)
+        (send dc set-color (make-object color% "black"))
+        (inner 22 paint dc))
+      (super-new)))
+
+  (send (new img%) paint dc) ; => 0
+                             ; and clears the dc
+
+  (send (new box%) paint dc) ; => 20
+                             ; and clears the dc,
+                             ; then draws a black rectangle
+
+
+  
+  (send (new frbox%) paint dc) ; => 22
+                               ; and clears the dc,
+                               ; then draws a big red rectangle
+                               ; then draws a black rectangle
+
+An augmentation itself can be made overrideable using `augride', which
+is a contraction of "augment, but allow the augment to be overridden".
+Similarly, `overment' overrides a method, but allows subclasses only
+to augment this overridding.
+
+  (define dot%
+    (class img%
+      ;; This augmentation of img% can be replaced in
+      ;;  subclasses.
+      (define/augride (paint dc)
+        (send dc draw-ellipse 0 0 20 20)
+        20)
+      (super-new)))
+
+  (define emptydot%
+    (class dot%
+      ;; Draw nothing, but still claim to have
+      ;; drawn something of size 20. The dc is still
+      ;; cleared in `paint' from img%; the override
+      ;; replaces only `paint' in dot%.
+      (define/override (paint dc)
+        20)
+      (super-new)))
+
+  (define frdot%
+    (class dot%
+      ;; This method re-uses the `paint' augmentation in
+      ;; dot%, and allows further augmentation in subclasses
+      ;; (which cannot skip the painting here).
+      (define/overment (paint dc)
+        (send dc set-color (make-object color% "red"))
+        (send dc draw-ellipse -1 -1 22 22)
+        (send dc set-color (make-object color% "black"))
+        (super paint dc)
+        (inner 22 paint dc))
+      (super-new)))
+
+Note that `pubment', `augment', or `overment' without an `inner' call
+is effectively the same as `public-final', `augment-final', or
+`override-final'. However, the `-final' variants report a class error
+if a subclass attempts to augment the method, whereas the non-`-final'
+variants allow subclasses to include a augmentation (that is always
+ignored).
+
+In general:
+
+               Can use `inner'?    Can use `super'?
+    public         N                    N
+    pubment        Y                    N
+    override       N                    Y
+    augment        Y                    N
+    overment       Y                    Y
+    augride        N                    N
+
+
+The `rename-inner' form is similar to `rename-super'. Like
+`rename-super', it is rarely useful compared to `inner'.Unlike a use
+of a binding introduced by `rename-super', a use of a binding
+introduced by `rename-inner' must include a `lambda' pattern after the
+identifier to provide the default expression (i.e., the expression to
+evaluate if no subclass augments the method); see the documentation
+for further information.
+
+
+Keywords
+--------
+
+The various keywords for class clauses are now all defined as syntax
+and exported by `(lib "class.ss")'. Use of a keyword in an expression
+positions produces a syntax error.
+
+A complete list of keywords:
+
+	   private public override augment
+	   pubment overment augride
+           public-final override-final augment-final
+	   field init init-field
+	   rename-super rename-inner inherit
+	   super inner
+
 
 ======================================================================
  Exceptions

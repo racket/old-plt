@@ -517,6 +517,7 @@
 					   ast))))])
 			    
 			    (if (and (zodiac:case-lambda-form? (zodiac:app-fun ast))
+				     (not (syntax-property (zodiac:zodiac-stx (zodiac:app-fun ast)) 'mzc-cffi))
 				     (= 1 (length (zodiac:case-lambda-form-args 
 						   (zodiac:app-fun ast))))
 				     (zodiac:list-arglist? 

@@ -226,8 +226,8 @@
 		       (zodiac:syntax->zodiac 
 			(let ([p (src2src:optimize expanded #t)])
 			  '(with-output-to-file "/tmp/l.ss"
-			    (lambda () (pretty-print (syntax-object->datum p)))
-			    'replace)
+			     (lambda () (pretty-print (syntax-object->datum p)))
+			     'replace)
 			  (let ([opt-expanded (expand p)])
 			    (when has-prefix?
 			      (eval-compile-time-part-of-top-level opt-expanded))

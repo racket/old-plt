@@ -624,7 +624,8 @@
 	   (cond
 	    ;; ((lambda (a ...) ...) v ...) => (let ([a v] ...) ...)
 	    [(and (is-a? rator lambda%)
-		  (send rator arg-body-exists? (length rands)))
+		  (send rator arg-body-exists? (length rands))
+		  (send rator can-inline?))
 	     (send rator drop-other-uses (length rands))
 	     (let-values ([(vars body) (send rator arg-vars-and-body (length rands))])
 	       (for-each (lambda (var rand)
@@ -879,7 +880,11 @@
 			    (begin
 			      (send (car bodys) drop-uses)
 			      n))])
-		 (loop n (cdr varss) (cdr normal?s) (cdr bodys))))))])
+		 (loop n (cdr varss) (cdr normal?s) (cdr bodys))))))]
+
+	[can-inline?
+	 (lambda ()
+	   (not (syntax-property stx 'mzc-cffi)))])
 
       (override
 	[bind-sub-exprs (lambda () (apply append varss))]
@@ -897,7 +902,7 @@
 			  (drop-uses)
 			  (make-object constant% stx #t))
 			(super-simplify ctx)))]
-	
+
 	[clone (lambda (env)
 		 (let ([varss+bodys
 			(let loop ([varss varss][bodys bodys])

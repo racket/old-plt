@@ -238,6 +238,9 @@
 	      ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-val ast))
 	      ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-body ast)))]
 
+	   [(zodiac:require/provide-form? ast)
+	    `(require/provide ...)]
+
 	   [else
 	    (error 'zodiac->sexp/annotate "unsupported ~s" ast)]))))))
 

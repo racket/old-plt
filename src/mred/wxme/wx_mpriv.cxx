@@ -2688,18 +2688,16 @@ void wxMediaEdit::RefreshByLineDemand(void)
 void wxMediaEdit::NeedCaretRefresh(void)
 {
   if (!admin || (admin->standard <= 0) || delayRefresh 
-      || startpos != endpos || flash || !hiliteOn) {
+      || startpos != endpos || flash || !hiliteOn
+      || (!caretOn && (caretLocationX < 0) && ownCaret)) {
     caretBlinked = FALSE;
     NeedRefresh(startpos, endpos);
   } else if (ownCaret) {
     caretBlinked = FALSE;
-    CaretOn();
+    if (!caretOn && (caretLocationX >= 0))
+      CaretOn();
   } else {
-    /* caretBlinked is whether we *want* the caret on or not,
-       while caretOn reflects actual drawing. So the
-       !caretBlinked test should be commented out here
-       --- right? */
-    if (/* !caretBlinked && */ caretOn)
+    if (caretOn)
       CaretOff();
     caretBlinked = FALSE;
   }
@@ -2720,6 +2718,9 @@ void wxMediaEdit::CalcCaretLocation(void)
 }
 
 Bool wxMediaEdit::CaretOff(void)
+  /* Actually toggles the state of the caret on the screen,
+     but sets caretOn to FALSE. Do not use this if caretOn
+     is FALSE --- except in CaretOn(). */
 {
   wxDC *dc;
   float dx, dy, x, y, w, h, X, T, B;
@@ -2778,6 +2779,9 @@ Bool wxMediaEdit::CaretOff(void)
 }
 
 void wxMediaEdit::CaretOn(void)
+  /* Assumes that the caret really is not drawn right now.  To test
+     for whether the caret is drawn, note that !caretOn only works
+     when caretLocationX >= 0. */
 {
   if (CaretOff())
     caretOn = TRUE;

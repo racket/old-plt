@@ -735,13 +735,21 @@ void wxMediaEdit::BlinkCaret()
     if ((startpos == endpos) 
 	&& !flash 
 	&& hiliteOn) {
+      int need_refresh = 0;
       BeginSequenceLock();
       caretBlinked  = !caretBlinked;
-      if (caretBlinked)
-	CaretOff();
-      else
-	CaretOn();
+      if (caretBlinked) {
+	if (caretOn)
+	  CaretOff();
+      } else {
+	if (!caretOn && (caretLocationX >= 0))
+	  CaretOn();
+	else
+	  need_refresh = 1;
+      }
       EndSequenceLock();
+      if (need_refresh)
+	NeedCaretRefresh();
     }
   }
 }

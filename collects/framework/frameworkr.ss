@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.9 1998/09/15 03:21:48 robby Exp $
+;; $Id: frameworkr.ss,v 1.10 1998/09/15 22:48:42 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
@@ -13,7 +13,7 @@
 	[preferences : framework:preferences^
 		     ((require-relative-library-unit/sig "prefs.ss")
 		      mred
-		      exn exit (core pretty-print) (core function))]
+		      exn exit panel (core pretty-print) (core function))]
 	[autosave : framework:autosave^
 		  ((require-relative-library-unit/sig "autosave.ss") mred exit preferences)]
 	[handler : framework:handler^
@@ -52,21 +52,27 @@
 		mred exit frame
 		(core function) (core file))]
 
-	[canvas : framework:canvas^ ((require-relative-library-unit/sig "canvas.ss") mred preferences)]
+	[canvas : framework:canvas^ ((require-relative-library-unit/sig "canvas.ss")
+				     mred preferences)]
 
-	[panel : framework:panel^ ((require-relative-library-unit/sig "panel.ss") mred)]
+	[panel : framework:panel^ ((require-relative-library-unit/sig "panel.ss")
+				   mred (core function))]
 
 	[frame : framework:frame^ 
 	       ((require-relative-library-unit/sig "frame.ss")
 		mred
-		group preferences icon handler
-		application panel gui-utils
+		group preferences icon handler application
+		panel gui-utils exit finder keymap
 		(core function))]
 	[scheme : framework:scheme^ 
 		((require-relative-library-unit/sig "scheme.ss")
 		 mred preferences match-cache paren
-		 scheme-paren icon keymap)]
-	[main : () ((require-relative-library-unit/sig "main.ss") preferences exit)])
+		 scheme-paren icon keymap  editor frame
+		 (core thread))]
+	[main : () ((require-relative-library-unit/sig "main.ss")
+		    mred
+		    preferences exit group
+		    (core function))])
   (export
    (unit application)
    (unit version)

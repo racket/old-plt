@@ -93,8 +93,8 @@
 				  object-ID)
 	       (mred:debug:printf 'container-frame-insert-panel
 				  (string-append
-				   "container-frame-insert-panel: Argument: ~s; "
-				   "panel ID ~s")
+				   "container-frame-insert-panel: "
+				   "Argument: ~s; panel ID ~s")
 				  new-panel (ivar new-panel object-ID))
 	       (unless (null? panel)
 		 (error 'insert-panel
@@ -111,7 +111,8 @@
 	       (mred:debug:printf 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
-				   "sizing panel, forcing redraw, and quitting."))
+				   "sizing panel, forcing redraw, "
+				   "and quitting."))
 	       (let-values ([(client-w client-h)
 			     (get-two-int-values get-client-size)])
 		 (send panel set-size WX-BORDER-SIZE WX-BORDER-SIZE
@@ -213,9 +214,9 @@
 			     "container-frame-set-size: "
 			     "forcing panel to redraw to ~s ~s ~s ~s")
 			    WX-BORDER-SIZE WX-BORDER-SIZE panel-w panel)
-		       (send panel set-size
-			     WX-BORDER-SIZE WX-BORDER-SIZE
-			     panel-w panel-h))))
+			   (send panel set-size
+				 WX-BORDER-SIZE WX-BORDER-SIZE
+				 panel-w panel-h))))
 		     (begin
 		       (mred:debug:printf
 			'container-frame-set-size
@@ -235,9 +236,9 @@
 			    ; difference between panel's full size & 
 			    ; frame's full size (tweaked for wm)
 			    [delta-w (+ (- (get-width) f-client-w)
-					WX-BORDER-SIZE)]
+					(* 2 WX-BORDER-SIZE))]
 			    [delta-h (+ (- (get-height) f-client-h)
-					WX-BORDER-SIZE)]
+					(* 2 WX-BORDER-SIZE))]
 			    
 			    ; minimum frame size:
 			    [min-w (+ delta-w (child-info-x-min panel-info))]
@@ -256,7 +257,7 @@
 			       [(< frame-h min-h) min-h]
 			       [(and (> frame-h min-h)
 				     (not (child-info-y-stretch panel-info)))
-				min-w]
+				min-h]
 			       [else frame-h])])
 		       (values new-w new-h)))))]
 	    
@@ -282,7 +283,9 @@
 		 (let-values ([(correct-w correct-h)
 			       (correct-size new-width new-height)])
 		   (mred:debug:printf 'container-frame-on-size
-				      "container-frame-on-size: Correct size ~s ~s"
+				      (string-append
+				       "container-frame-on-size: "
+				       "Correct size ~s ~s")
 				      correct-w correct-h)
 		   (unless (and (= new-width correct-w)
 				(= new-height correct-h)

@@ -1235,7 +1235,7 @@
     scheme-vocabulary
     (let* ((kwd '(define-schema))
 	    (in-pattern '(define-schema var exp))
-	    (out-pattern '((lambda (var) (var)) #%void))
+	    (out-pattern '(#%void))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)

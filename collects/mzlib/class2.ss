@@ -5,7 +5,7 @@
 		      (lib "stx.ss" "syntax")
 		      "private/classidmap.ss")
 
-  (define insp (current-inspector))
+  (define insp (current-inspector)) ; for all structures
 
   ;;--------------------------------------------------------------------
   ;;  class macros
@@ -596,20 +596,14 @@
 							   (lambda (stx)
 							     (syntax-case stx () 
 								 [(_ (arg (... ...)) (kw kwarg) (... ...))
-								  (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))]
-							  [super-make-object-id
-							   (lambda (stx)
-							     (syntax-case stx () 
-							       [(_ arg (... ...))
-								(syntax (-instantiate super-id _ #f (list arg (... ...))))]
-							       [(_ . arg)
-								(with-syntax ([flattened-arg
-									       (flatten-args (syntax arg))])
-								  (syntax (-instantiate super-id _ #f (apply list . flattened-arg))))]))])
-					    (let ([plain-init-name undefined]
-						  ...)
-					      (letrec-syntax mappings
-						. exprs))))))
+								  (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
+					    (let ([super-make-object-id
+						   (lambda args
+						     (super-id #f args null))])
+					      (let ([plain-init-name undefined]
+						    ...)
+						(letrec-syntax mappings
+						    . exprs)))))))
 				     #f)))))))))))))))])))
 
   (define-syntax class*
@@ -1084,14 +1078,9 @@
   ;;  instantiation
   ;;--------------------------------------------------------------------
   
-  (define-syntax make-object 
-    (lambda (stx)
-      (syntax-case stx ()
-	[(_ class arg ...)
-	 (syntax (instantiate class (arg ...)))]
-	[(form class . args)
-	 (with-syntax ([flattened-args (flatten-args (syntax args))])
-	   (syntax (-instantiate do-make-object form class (apply list flattened-args))))])))
+  (define make-object 
+    (lambda (class . args)
+      (do-make-object class args null)))
   
   (define-syntax instantiate
     (lambda (stx)
@@ -1099,6 +1088,7 @@
 	[(form class (arg ...) . x) 
 	 (syntax (-instantiate do-make-object form class (list arg ...) . x))])))
 
+  ;; Helper; used by instantiate and super-instantiate
   (define-syntax -instantiate
     (lambda (stx)
       (syntax-case stx ()

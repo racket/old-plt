@@ -149,9 +149,7 @@
 								(cdr init-defs))))]))])
 		 (syntax
 		  (class*/names 
-		   (this-id super-initialize super-make-object) super-expr (interface-expr ...)
-		   (define (super-init-id . args)
-		     (super-make-object . args))
+		   (this-id super-initialize super-init-id) super-expr (interface-expr ...)
 		   init-expr ...
 		   (public . public-ipds)
 		   (override . override-ipds)

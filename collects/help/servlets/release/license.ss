@@ -11,7 +11,7 @@
                 `(DIV ,s (BR)))
               ss))))
   
-  (define copyright-year 2003)
+  (define copyright-year 2004)
   
   (require (lib "servlet.ss" "web-server"))
   (provide interface-version timeout start)
@@ -28,7 +28,7 @@
       (BODY
        (A ((NAME "lic") (VALUE "License")))
        (B "PLT Software") (BR)
-       (B ,(format "Copyright (c) 1995-~a PLT" copyright-year))
+       (B ,(format "Copyright (c) ~a PLT Scheme, Inc." copyright-year))
        (P)
        "PLT software is distributed under the GNU Library General Public "
        " License (LGPL).  This means you can link PLT software (such as "
@@ -48,13 +48,16 @@
        (P)
        ,@(map make-item 
               `(("DrScheme"
-                 ,(format "Copyright (c) 1995-~a PLT" copyright-year)
+                 "Copyright (c) 1995-2003 PLT"
+                 ,(format "Copyright (c) ~a PLT Scheme, Inc." copyright-year)
                  "All rights reserved.")
                 ("MrEd"
-                 ,(format "Copyright (c) 1995-~a PLT" copyright-year)
+                 "Copyright (c) 1995-2003 PLT"
+		 ,(format "Copyright (c) ~a PLT Scheme, Inc." copyright-year)
                  "All rights reserved.")
                 ("MzScheme" 
-                 ,(format "Copyright (c) 1995-~a PLT" copyright-year)
+                 "Copyright (c) 1995-2003 PLT"
+		 ,(format "Copyright (c) ~a PLT Scheme, Inc." copyright-year)
                  "All rights reserved.")
                 ("libscheme" 
                  "Copyright (c) 1994 Brent Benson"

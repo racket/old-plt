@@ -12,11 +12,12 @@
 (define (make-dir-param name default)
   (make-parameter default
     (lambda (dir)
-      (cond [(or (not dir) (equal? "" dir)) ""]
-            [(not (string? dir))
-             (error name "expecting a directory string")]
-            [(eq? #\/ (string-ref dir (sub1 (string-length dir)))) dir]
-            [else (concat dir "/")]))))
+      (let ([dir (if (path? dir) (path->string dir) dir)])
+        (cond [(or (not dir) (equal? "" dir)) ""]
+              [(not (string? dir))
+               (error name "expecting a directory string")]
+              [(eq? #\/ (string-ref dir (sub1 (string-length dir)))) dir]
+              [else (concat dir "/")])))))
 (define (make-suffix-param name default)
   (make-parameter default
     (lambda (sfx)
@@ -126,11 +127,12 @@
               (substring str 1 (string-length str))))))
 
 (define* (basename path)
-  (let-values ([(_1 name _2) (split-path path)]) name))
+  (let-values ([(_1 name _2) (split-path path)]) (path->string name)))
 
 (define* (dirname path)
   (let-values ([(dir _1 _2) (split-path path)])
-    (cond [(string? dir) (regexp-replace #rx"(.)/$" dir "\\1")]
+    (cond [(path? dir) (regexp-replace #rx"(.)/$" (path->string dir) "\\1")]
+          [(string? dir) (regexp-replace #rx"(.)/$" dir "\\1")]
           [(eq? dir 'relative) "."]
           [(not dir) "/"])))
 

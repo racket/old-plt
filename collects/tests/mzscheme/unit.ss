@@ -498,7 +498,7 @@
 	    x
 	    (with-continuation-mark 
 	     b a 
-	     (current-continuation-marks b))
+	     (continuation-mark-set->list (current-continuation-marks) b))
 	    (interface? (interface (i)))
 	    (invoke-unit
 	     (unit

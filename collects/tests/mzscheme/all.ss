@@ -14,6 +14,7 @@
 (load-relative "unitsig.ss")
 (load-relative "thread.ss")
 (load-relative "contmark.ss")
+(load-relative "will.ss")
 (load-relative "namespac.ss")
 (unless (or (defined? 'building-flat-tests)
 	    (defined? 'read/zodiac)

@@ -71,6 +71,7 @@ static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_ec (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
+static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *extract_cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *is_void_func (int argc, Scheme_Object *argv[]);
@@ -216,6 +217,11 @@ scheme_init_fun (Scheme_Env *env)
 			     scheme_make_prim_w_arity(extract_cc_marks,  
 						      "continuation-mark-set->list", 
 						      2, 2),
+			     env);
+  scheme_add_global_constant("continuation-mark-set?", 
+			     scheme_make_prim_w_arity(cc_marks_p,
+						      "continuation-mark-set?", 
+						      1, 1),
 			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
@@ -1921,6 +1927,15 @@ static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
   return scheme_current_continuation_marks();
+}
+
+static Scheme_Object *
+cc_marks_p(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
+    return scheme_false;
+  else
+    return scheme_true;
 }
 
 static Scheme_Object *

@@ -168,6 +168,13 @@
 		 'ok)))))
   (test '(a.4 a.3 a.2 a.1 b.4 b.2 b.1) 'thread-marks result))
 
-(arity-test extract-current-continuation-marks 1 1)
+(arity-test current-continuation-marks 0 0)
+(arity-test continuation-mark-set->list 2 2)
+(arity-test continuation-mark-set? 1 1)
+
+(error-test '(continuation-mark-set->list 5 1))
+
+(test #f continuation-mark-set? 5)
+(test #t continuation-mark-set? (current-continuation-marks))
 
 (report-errs)

@@ -271,4 +271,84 @@
     (wait 3) (pause)
     (test '(3 2 0) 'queue l)))
 
+;; Nested threads
+(test 5 call-in-nested-thread (lambda () 5))
+
+(error-test '(call-in-nested-thread (lambda () (kill-thread (current-thread)))) exn:thread?)
+(error-test '(call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
+(error-test '(call-in-nested-thread (lambda () (raise 5))) (lambda (x) (= x 5)))
+
+(define c1 (make-custodian))
+(define c2 (make-custodian))
+(define c3 (make-custodian))
+(define output-stream null)
+(define (output v)
+  (set! output-stream 
+	(append output-stream (list v))))
+(define (test-stream v)
+  (test v 'output-stream output-stream))
+
+(define (chain c)
+  (set! output-stream null)
+  
+  (output 'os)
+  (with-handlers ([void (lambda (x) x)])
+    (call-in-nested-thread
+     (lambda ()
+       (output 'ms)
+       (begin0
+	(dynamic-wind
+	 (lambda () (output 'mpre))
+	 (lambda ()
+	   (call-in-nested-thread
+	    (lambda ()
+	      (output 'is)
+	      (with-handlers ([void (lambda (x) 
+				      (if (exn:misc:user-break? x)
+					  (output 'ibreak)
+					  (output 'iother))
+				      (raise x))])
+		(if (procedure? c)
+		    (c)
+		    (custodian-shutdown-all c)))
+	      (output 'ie)
+	      'inner-result)
+	    c2))
+	 (lambda () (output 'mpost)))
+	(output 'me)))
+     c1)))
+
+(test 'inner-result chain c3)
+(test-stream '(os ms mpre is ie mpost me))
+
+(test #t exn:thread? (chain c1))
+(test-stream '(os ms mpre is ibreak))
+
+(parameterize ([break-enabled #f])
+  (test #t exn:thread? (chain c1))
+  (test-stream '(os ms mpre is ie)))
+
+(test #t exn:thread? (chain c2))
+(test-stream '(os ms mpre is mpost))
+
+(test #t exn:thread? (chain (lambda () (kill-thread (current-thread)))))
+(test-stream '(os ms mpre is mpost))
+
+(test #t exn:application? (chain 'wrong))
+(test-stream '(os ms mpre is iother mpost))
+
+(test #t exn:misc:user-break? (chain (let ([t (current-thread)]) (lambda () (break-thread t)))))
+(test-stream '(os ms mpre is ibreak mpost))
+
+(error-test '(let/cc k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
+(error-test '(let/ec k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
+(error-test '((call-in-nested-thread (lambda () (let/cc k k)))) exn:application:continuation?)
+(error-test '((call-in-nested-thread (lambda () (let/ec k k)))) exn:application:continuation?)
+
+(error-test '(call-in-nested-thread 5))
+(error-test '(call-in-nested-thread (lambda (x) 10)))
+(error-test '(call-in-nested-thread (lambda () 10) 5))
+
+(arity-test call-in-nested-thread 1 2)
+
 (report-errs)

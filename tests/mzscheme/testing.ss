@@ -52,6 +52,7 @@
 
 (define exn-table
   (list (cons exn? (cons exn-message string?))
+	(cons exn? (cons exn-continuation-marks continuation-mark-set?))
 	(cons exn:variable? (cons exn:variable-id symbol?))
 	(cons exn:application:arity? (cons exn:application-value integer?))
 	(cons exn:application:arity? (cons exn:application:arity-expected

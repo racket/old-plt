@@ -112,7 +112,6 @@ typedef struct ActiveWill {
 
 typedef struct WillExecutor {
   Scheme_Type type;
-  short running;
   Scheme_Object *sema;
   ActiveWill *first, *last;
 } WillExecutor;
@@ -450,9 +449,9 @@ void scheme_init_process(Scheme_Env *env)
 						      "will-register", 
 						      3, 3), 
 			     env);
-  scheme_add_global_constant("will-execute-try", 
+  scheme_add_global_constant("will-try-execute", 
 			     scheme_make_prim_w_arity(will_executor_try,
-						      "will-execute-try", 
+						      "will-try-execute", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("will-execute", 
@@ -2818,52 +2817,26 @@ static void activate_will(void *o, void *data)
   else
     w->first = a;
   w->last = a;
-  if (!w->running)
-    scheme_post_sema(w->sema);
-  RELEASE_WILL_LOCK();
-}
-
-static Scheme_Object *now_do_will(void *v)
-{
-  ActiveWill *a = (ActiveWill *)v;
-  Scheme_Object *o[1];
-
-  o[0] = a->o;
-  a->o = NULL;
-
-  return scheme_apply_multi(a->proc, 1, o);
-}
-
-static void post_will(void *v)
-{
-  ActiveWill *a = (ActiveWill *)v;
-  
-  GET_WILL_LOCK();
-  a->w->running = 0;
-  if (a->w->first)
-    scheme_post_sema(a->w->sema);
+  scheme_post_sema(w->sema);
   RELEASE_WILL_LOCK();
 }
 
 static Scheme_Object *do_next_will(WillExecutor *w)
 {
   ActiveWill *a;
+  Scheme_Object *o[1];
 
   GET_WILL_LOCK();
-  if (w->running || !w->first) {
-    RELEASE_WILL_LOCK();
-    return scheme_false;
-  }
   a = w->first;
   w->first = a->next;
   if (!w->first)
     w->last = NULL;
-  w->running = 1;
   RELEASE_WILL_LOCK();
   
-  a->w = w;
+  o[0] = a->o;
+  a->o = NULL;
 
-  return scheme_dynamic_wind(NULL, now_do_will, post_will, NULL, a);
+  return scheme_apply_multi(a->proc, 1, o);
 }
 
 static Scheme_Object *make_will_executor(int argc, Scheme_Object **argv)
@@ -2889,15 +2862,15 @@ static Scheme_Object *register_will(int argc, Scheme_Object **argv)
 {
   WillRegistration *r;
 
-  scheme_check_proc_arity("will-register", 1, 1, argc, argv);
-  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_will_executor_type))
-    scheme_wrong_type("will-register", "will-executor", 2, argc, argv);
+  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
+    scheme_wrong_type("will-register", "will-executor", 0, argc, argv);
+  scheme_check_proc_arity("will-register", 1, 2, argc, argv);
 
   r = MALLOC_ONE(WillRegistration);
-  r->proc = argv[1];
-  r->w = (WillExecutor *)argv[2];
+  r->proc = argv[2];
+  r->w = (WillExecutor *)argv[0];
 
-  scheme_add_scheme_finalizer(argv[0], activate_will, (void *)r);
+  scheme_add_scheme_finalizer(argv[1], activate_will, (void *)r);
 
   return scheme_void;
 }
@@ -2907,7 +2880,7 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object **argv)
   WillExecutor *w;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
-    scheme_wrong_type("will-execute-try", "will-executor", 0, argc, argv);
+    scheme_wrong_type("will-try-execute", "will-executor", 0, argc, argv);
   
   w = (WillExecutor *)argv[0];
 

@@ -51,7 +51,6 @@
       x)))
 
 (define main-cust (current-custodian))
-(define main-executor (current-will-executor))
 
 (define zero-arg-proc (lambda () #t))
 (define one-arg-proc (lambda (x) #t))
@@ -201,14 +200,6 @@
 		      exn:user?
 		      (list "bad setting" zero-arg-proc one-arg-proc three-arg-proc))
 
-		(list debug-info-handler
-		      (list (debug-info-handler)
-			    (lambda () 'boo!))
-		      `(with-handlers ([(lambda (x) (not (eq? (exn-debug-info x) 'boo!))) void])
-			   (/ 0))
-		      exn:application:divide-by-zero?
-		      (list "bad setting" one-arg-proc two-arg-proc))
-
 		(list break-enabled
 		      (list #t #f)
 		      '(let ([cont? #f])
@@ -222,7 +213,6 @@
 			   (error 'break-enabled)))
 		      exn:user?
 		      #f)
-		; exception-break-enabled: still needs test!
 
 		(list current-print
 		      (list (current-print)
@@ -303,13 +293,6 @@
 				    (thread (lambda () (sleep 1))))])
 			 (kill-thread th))
 		      exn:misc?
-		      (list "bad setting"))
-
-		(list current-will-executor
-		      (list main-executor (make-will-executor))
-		      '(unless (eq? main-executor (current-will-executor))
-			       (error 'will-exec))
-		      exn:user?
 		      (list "bad setting"))
 
 		(list exit-handler

@@ -121,4 +121,6 @@
 (set-box! l2 l2)
 (test #t 'equal?-forever/struct (equal?-forever l1 l2))
 
+(test #t 'equal?-forever/struct (call-in-nested-thread (lambda () (equal?-forever l1 l2))))
+
 (report-errs)

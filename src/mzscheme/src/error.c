@@ -1012,6 +1012,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
 }
 
 void scheme_read_err(Scheme_Object *port, 
+		     Scheme_Object *stxsrc,
 		     long line, long column, int is_eof,
 		     const char *detail, ...)
 {
@@ -1028,6 +1029,24 @@ void scheme_read_err(Scheme_Object *port,
   
   prepared_buf = init_buf(NULL, &prepared_buf_len);
   
+  if (stxsrc) {
+    if (SAME_TYPE(SCHEME_TYPE(stxsrc), scheme_stx_offset_type)) {
+      Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)stxsrc;
+      
+      if (line == -1) {
+	/* Given location is a position. */
+	column += o->pos;
+      } else {
+	/* Given location is a line and column. */
+	if (line == 1)
+	  column += o->col;
+	line += o->line;
+      }
+      
+      stxsrc = o->src;
+    } 
+  }
+
   if (column >= 0) {
     scheme_sprintf(lbuf, 30, ":%L%ld", line, column);
     ls = lbuf;
@@ -1036,6 +1055,7 @@ void scheme_read_err(Scheme_Object *port,
 
   scheme_raise_exn(is_eof ? MZEXN_READ_EOF : MZEXN_READ, 
 		   port ? port : scheme_false, 
+		   stxsrc ? stxsrc : scheme_false,
 		   (line < 0) ? scheme_false : scheme_make_integer(line),
 		   (column < 0) ? scheme_false : scheme_make_integer(column),
 		   "%t in %s%s", 

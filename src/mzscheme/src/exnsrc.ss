@@ -31,6 +31,7 @@ strings are types/comments.
 	     "syntax error, but not a \\scmfirst{read} error")
      
      (read [port "input-port" "port being read"
+		 source "value" "source name"
 		 line "non-negative exact integer or {\\scmfalse}" "source line"
 		 column "non-negative exact integer or {\\scmfalse}" "source column, or position if line is {\\scmfalse}"]
 	   "\\scm{read} parsing error"

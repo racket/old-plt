@@ -259,7 +259,7 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
       col += o->pos;
     } else {
       /* Given location is a line and column. */
-      if (!line)
+      if (line == 1)
 	col += o->col;
       line += o->line;
     }
@@ -1860,7 +1860,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Re-use rename table or env rename */
       a = scheme_hash_get(rns, a);
       if (!a) {
-	scheme_read_err(scheme_false, -1, -1, 0,
+	scheme_read_err(scheme_false, NULL, -1, -1, 0,
 			"read (compiled): unknown rename table index: %d",
 			SCHEME_INT_VAL(a));
       }

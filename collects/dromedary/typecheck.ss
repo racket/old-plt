@@ -266,21 +266,21 @@
 		    [($ ast:ptyp_arrow label ct1 ct2)
 		     (let* ([convert1 (convert-ttypes (cons ct1 (cdr type-mapping)))]
 			    [convert2 (convert-ttypes (cons ct2 (cdr convert1)))])
-		       (cons (ast:make-ptyp_arrow label (car convert1) (car convert2)) (cdr convert2)))]
+		       (cons (ast:make-core_type (ast:make-ptyp_arrow label (car convert1) (car convert2)) (ast:core_type-src (car type-mapping))) (cdr convert2)))]
 		     [($ ast:ptyp_tuple ctlist)
 		      (let ([finallist (foldl (lambda (n r)
 					       (let ([cres (convert-ttypes (cons n (cdr r)))])
 						 (cons (append (car r) (list (car cres))) (cdr cres)))) 
 					      (cons null (cdr type-mapping)) 
 					      ctlist)])
-			(cons (ast:make-ptyp_tuple (car finallist)) (cdr finallist)))]
+			(cons (ast:make-core_type (ast:make-ptyp_tuple (car finallist)) (ast:core_type-src (car type-mapping))) (cdr finallist)))]
 		     [($ ast:ptyp_constr name ctlist)
 		      (let ([finallist (foldl (lambda (n r)
 					       (let ([cres (convert-ttypes (cons n (cdr r)))])
 						 (cons (append (car r) (list (car cres))) (cdr cres)))) 
 					      (cons null (cdr type-mapping)) 
 					      ctlist)])
-		      (cons (ast:make-ptyp_constr name (car finallist)) (cdr finallist)))]
+		      (cons (ast:make-core_type (ast:make-ptyp_constr name (car finallist)) (ast:core_type-src (car type-mapping))) (cdr finallist)))]
 		     [($ ast:ptyp_var f)
 		      (let* ([varname
 			      (cond
@@ -289,10 +289,10 @@
 			       [else (raise-syntax-error #f (format "Bad ptyp_var: ~a" f))])]
 			     [result (get-type varname (cdr type-mapping))])
 			(if result
-			    (cons (ast:make-ptyp_var result) (cdr type-mapping))
+			    (cons (ast:make-core_type (ast:make-ptyp_var result) (ast:core_type-src (car type-mapping))) (cdr type-mapping))
 			    (let ([ntb (tvar-tbox (fresh-type-var))])
-			       (cons (ast:make-ptyp_var ntb) (update varname ntb (cdr type-mapping))))))]
-		     [x (cons x (cdr type-mappings))]))
+			       (cons (ast:make-core_type (ast:make-ptyp_var ntb) (ast:core_type-src (car type-mapping))) (update varname ntb (cdr type-mapping))))))]
+		     [x (cons (ast:make-core_type x (ast:core_type-src (car type-mapping))) (cdr type-mapping))]))
 	       
 
 		    
@@ -441,15 +441,11 @@
 
 
 	   (define (typecheck-type asttype boundlist)
-	     (pretty-print (format "typecheck-type ~a ~a" asttype boundlist))
+;	     (pretty-print (format "typecheck-type ~a ~a" asttype boundlist))
 	     (match (ast:core_type-desc asttype)
 		    [($ ast:ptyp_any dummy)
 		     (make-tvar (box null))]
 		    [($ ast:ptyp_var f)
-;; Fix this! Should be similar to reading in the premade functions - or do we let the type checker figure it out later. Let's try that.
-;		     (if (tvar? f)
-;			 f
-;			 (make-tvar (box null)))]
 		     (make-tvar (cond 
 				 [(syntax? f)  (syntax-object->datum f)]
 				 [(string? f) f]
@@ -598,7 +594,7 @@
 
 		    [($ ast:ppat_constraint pat ct)
 		     ;Assume a constraint must immediately follow a variable
-		     (let ([type (typecheck-type ct null)]
+		     (let ([type (typecheck-type (car (convert-ttypes (cons ct null))) null)]
 			   [varname (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc pat)))])
 		       (cons type (update varname (cons type null) (empty-context))))]
 		    [else (raise-syntax-error #f (format "No such pattern found: ~a" pat) (at pat (ast:pattern-ppat_src pat)))]))

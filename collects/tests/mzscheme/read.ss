@@ -460,6 +460,49 @@
     (loop (cdr l))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test mis-stream EOF
+
+(let ()
+  (define chars (map (lambda (x)
+		       (if (char? x) (char->integer x) x))
+		     (append
+		      (string->list "1 2")
+		      (list eof)
+		      (string->list "\"a\" \"b\"")
+		      (list eof)
+		      (string->list "(a) (b)")
+		      (list eof)
+		      (string->list "eof"))))
+  (define cp (make-custom-input-port
+	      (lambda (b)
+		(if (null? chars)
+		    eof
+		    (let ([c (car chars)])
+		      (set! chars (cdr chars))
+		      (cond 
+		       [(eof-object? c)
+			eof]
+		       [else
+			(bytes-set! b 0 c)
+			1]))))
+	      #f
+	      void))
+  (define (f) (read cp))
+
+  (test 1 f)
+  (test 2 f)
+  (test eof f)
+  (test "a" f)
+  (test "b" f)
+  (test eof f)
+  (test '(a) f)
+  (test '(b) f)
+  (test eof f)
+  (test 'eof f)
+  (test eof f)
+  (test eof f))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test non-character results for getc
 
 (define-struct special (size))

@@ -732,6 +732,7 @@ modidx_val {
   gcMARK(modidx->base);
   gcMARK(modidx->resolved);
   gcMARK(modidx->shift_cache);
+  gcMARK(modidx->cache_next);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }

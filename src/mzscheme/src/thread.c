@@ -3358,6 +3358,8 @@ static void get_ready_for_GC()
 
   scheme_zero_unneeded_rands(scheme_current_thread);
 
+  scheme_clear_modidx_cache();
+
 #ifdef RUNSTACK_IS_GLOBAL
   scheme_current_thread->runstack = MZ_RUNSTACK;
   scheme_current_thread->runstack_start = MZ_RUNSTACK_START;

@@ -125,13 +125,15 @@ static Scheme_Bucket_Table *initial_toplevel;
 static Scheme_Object *empty_self_modidx;
 static Scheme_Object *empty_self_symbol;
 
+static Scheme_Modidx *modidx_caching_chain;
 static Scheme_Object *global_shift_cache;
 #define GLOBAL_SHIFT_CACHE_SIZE 40
-#define SHIFT_CACHE_LIMIT 128
 #ifdef USE_SENORA_GC
 # define SHIFT_CACHE_NULL scheme_false
+# define SHIFT_CACHE_NULLP(x) SCHEME_FALSEP(x)
 #else
 # define SHIFT_CACHE_NULL NULL
+# define SHIFT_CACHE_NULLP(x) !(x)
 #endif
 
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
@@ -1224,7 +1226,7 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
       c = (cvec ? SCHEME_VEC_SIZE(cvec) : 0);
       
       for (i = 0; i < c; i += 2) {
-	if (!SCHEME_VEC_ELS(cvec)[i])
+	if (SHIFT_CACHE_NULLP(SCHEME_VEC_ELS(cvec)[i]))
 	  break;
 	if (SAME_OBJ(modidx, SCHEME_VEC_ELS(cvec)[i]))
 	  return SCHEME_VEC_ELS(cvec)[i + 1];
@@ -1233,12 +1235,10 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
       smodidx = scheme_make_modidx(((Scheme_Modidx *)modidx)->path,
 				   sbase,
 				   scheme_false);
-      
+
       if (!sbm) {
-	if (!global_shift_cache) {
-	  REGISTER_SO(global_shift_cache);
+	if (!global_shift_cache)
 	  global_shift_cache = scheme_make_vector(GLOBAL_SHIFT_CACHE_SIZE, SHIFT_CACHE_NULL);
-	}
 	for (i = 0; i < (GLOBAL_SHIFT_CACHE_SIZE - 2); i++) {
 	  SCHEME_VEC_ELS(global_shift_cache)[i] = SCHEME_VEC_ELS(global_shift_cache)[i + 2];
 	}
@@ -1246,24 +1246,22 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 	SCHEME_VEC_ELS(global_shift_cache)[i+1] = smodidx;
       } else {
 	if (i >= c) {
-	  if (c > SHIFT_CACHE_LIMIT) {
-	    /* Shift down an add to end: */
-	    for (i = 0; i < (c - 2); i++) {
-	      SCHEME_VEC_ELS(global_shift_cache)[i] = SCHEME_VEC_ELS(global_shift_cache)[i + 2];
-	    }
-	  } else {
-	    /* Grow cache vector */
-	    Scheme_Object *old = sbm->shift_cache, *naya;
-	    int j;
+	  /* Grow cache vector */
+	  Scheme_Object *naya;
+	  int j;
 	    
-	    naya = scheme_make_vector(c + 10, SHIFT_CACHE_NULL);
-	    for (j = 0; j < c; j++) {
-	      SCHEME_VEC_ELS(naya)[j] = SCHEME_VEC_ELS(old)[j];
-	    }
-	    sbm->shift_cache = naya;
+	  naya = scheme_make_vector(c + 10, SHIFT_CACHE_NULL);
+	  for (j = 0; j < c; j++) {
+	    SCHEME_VEC_ELS(naya)[j] = SCHEME_VEC_ELS(cvec)[j];
 	  }
+	  if (!sbm->shift_cache) {
+	    sbm->cache_next = modidx_caching_chain;
+	    modidx_caching_chain = sbm;
+	  }
+
+	  sbm->shift_cache = naya;
 	}
-	
+	  
 	SCHEME_VEC_ELS(sbm->shift_cache)[i] = modidx;
 	SCHEME_VEC_ELS(sbm->shift_cache)[i+1] = smodidx;
       }
@@ -1273,6 +1271,20 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
   }
 
   return modidx;
+}
+
+void scheme_clear_modidx_cache(void)
+{
+  Scheme_Modidx *sbm, *next;
+
+  global_shift_cache = NULL;
+  
+  for (sbm = modidx_caching_chain; sbm; sbm = next) {
+    sbm->shift_cache = NULL;
+    next = sbm->cache_next;
+    sbm->cache_next = NULL;
+  }
+  modidx_caching_chain = NULL;
 }
 
 static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const char *who)

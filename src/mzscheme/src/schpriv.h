@@ -1577,7 +1577,7 @@ typedef struct Scheme_Module
   Scheme_Env *primitive;
 } Scheme_Module;
 
-typedef struct Scheme_Modix {
+typedef struct Scheme_Modidx {
   Scheme_Type type; /* scheme_module_index_type */
   MZ_HASH_KEY_EX
 
@@ -1585,6 +1585,7 @@ typedef struct Scheme_Modix {
   Scheme_Object *base;
   Scheme_Object *resolved;
   Scheme_Object *shift_cache; /* vector */
+  struct Scheme_Modidx *cache_next;
 } Scheme_Modidx;
 
 typedef struct Module_Variable {
@@ -1631,6 +1632,8 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
 void scheme_clean_dead_env(Scheme_Env *env);
 
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o);
+
+void scheme_clear_modidx_cache(void);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

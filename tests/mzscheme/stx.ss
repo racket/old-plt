@@ -1,6 +1,5 @@
 
-(unless (defined? 'SECTION)
-  (load-relative "testing.ss"))
+(load-relative "testing.ss")
 
 (SECTION 'stx)
 
@@ -169,62 +168,45 @@
 
 (module mta mzscheme
   (define mtax 10)
-  (export mtax))
+  (provide mtax))
 
 (module mtb mzscheme
   (define mtby 10)
-  (export mtby))
+  (provide mtby))
 
 (module mt1 mzscheme
-  (import (prefix a: mta))
-  (import-for-syntax (prefix b: mtb))
-  (import (prefix mz: mzscheme))
+  (require (prefix a: mta))
+  (require-for-syntax (prefix b: mtb))
+  (require (prefix mz: mzscheme))
 
-  (define (has-lam? x)
-    (syntax-case x (lambda)
-      [(_ lambda) #t]
-      [else #f]))
+  (define-syntax ck
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ id et?)
+	 (with-syntax ([cmp (if (syntax-e (syntax et?))
+				(syntax module-transformer-identifier=?)
+				(syntax module-identifier=?))])
+	   (syntax
+	    (lambda (x)
+	      (syntax-case* x (id) cmp
+	        [(_ id) #t]
+		[else #f]))))])))
 
-  (define (has-mz:lam? x)
-    (syntax-case x (mz:lambda)
-      [(_ mz:lambda) #t]
-      [else #f]))
+  (define has-lam? (ck lambda #f))
+  (define has-mz:lam? (ck mz:lambda #f))
+  (define has-mtax? (ck a:mtax #f))
+  (define has-mtby? (ck b:mtby #f))
 
-  (define (has-mtax? x)
-    (syntax-case x (a:mtax)
-      [(_ a:mtax) #t]
-      [else #f]))
+  (define has-et-lam? (ck lambda #t))
+  (define has-et-mz:lam? (ck mz:lambda #t))
+  (define has-et-mtax? (ck a:mtax #t))
+  (define has-et-mtby? (ck b:mtby #t))
 
-  (define (has-mtby? x)
-    (syntax-case x (b:mtby)
-      [(_ b:mtby) #t]
-      [else #f]))
+  (provide has-lam? has-mz:lam? has-mtax? has-mtby?
+	   has-et-lam? has-et-mz:lam? has-et-mtax? has-et-mtby?))
 
-  (define (has-et-lam? x)
-    (syntax-case* x (lambda) #t
-      [(_ lambda) #t]
-      [else #f]))
-
-  (define (has-et-mz:lam? x)
-    (syntax-case* x (mz:lambda) #t
-      [(_ mz:lambda) #t]
-      [else #f]))
-
-  (define (has-et-mtax? x)
-    (syntax-case* x (a:mtax) #t
-      [(_ a:mtax) #t]
-      [else #f]))
-
-  (define (has-et-mtby? x)
-    (syntax-case* x (b:mtby) #t
-      [(_ b:mtby) #t]
-      [else #f]))
-
-  (export has-lam? has-mz:lam? has-mtax? has-mtby?
-	  has-et-lam? has-et-mz:lam? has-et-mtax? has-et-mtby?))
-
-(import mt1)
-(import-for-syntax mtb)
+(require mt1)
+(require-for-syntax mtb)
 
 (test #t has-lam? #'(any lambda))
 (test #f has-lam? #'(any lambada))
@@ -251,9 +233,9 @@
 (test #f has-et-mtby? #'(any b:mtby))
 
 (module mt2 #%kernel
-  (import-for-syntax #%kernel)
-  (import mt1)
-  (import mta)
+  (require-for-syntax #%kernel)
+  (require mt1)
+  (require mta)
 
   ;; For #':
   (define-syntax syntax
@@ -292,9 +274,9 @@
       (test #f has-et-mtby? #'(any mtby))
       (test #f has-et-mtby? #'(any b:mtby))))
 
-  (export run-mt2-test))
+  (provide run-mt2-test))
 
-(import mt2)
+(require mt2)
 (run-mt2-test test)
 
 (report-errs)

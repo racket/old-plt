@@ -74,7 +74,6 @@
 	(cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
 	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
-	(cons exn:i/o:port:user? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))
 	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
 								    (memq x '(#f
@@ -140,13 +139,14 @@
 		    (current-exception-handler old-handler)
 		    (error-escape-handler old-esc-handler))))))]))
 
-(if (not (defined? 'error-test))
-    (global-defined-value 
-     'error-test
-     (case-lambda 
-      [(expr) (error-test expr exn:application:type?)]
-      [(expr exn?)
-       (thunk-error-test (lambda () (eval expr)) expr exn?)])))
+(unless (with-handlers ([void (lambda (x) #f)])
+	  (namespace-variable-binding 'error-test))
+  (namespace-variable-binding
+   'error-test
+   (case-lambda 
+    [(expr) (error-test expr exn:application:type?)]
+    [(expr exn?)
+     (thunk-error-test (lambda () (eval expr)) expr exn?)])))
 
 (define-syntax err/rt-test
   (lambda (stx)

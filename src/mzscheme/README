@@ -46,6 +46,12 @@ following platforms:
 [Solaris Note: To ensure that dynamic extensions work right, make sure
  your compiler uses the native Solaris `ld' rather than GNU's `ld'.]
 
+[Solaris 2.7 WARNING: gcc 2.8.1 does not work right under Solaris 2.7,
+ producing a MzScheme binary that crashes. Thanks to Stever Hall for
+ figuring this out in a long--and presumably torturous--process.
+ Apparently, compiling under Solaris 2.6 or compiling without -O under
+ Solaris 2.7 solves the problem.]
+
 To compile the `mzscheme' executable for other Unix platforms:
 
   1) Edit the Makefile if necessary. Common changes include the 

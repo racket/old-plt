@@ -130,8 +130,6 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
 
   browser = (MX_Browser_Object *)scheme_malloc(sizeof(MX_Browser_Object));
   browser->type = mx_browser_type;
-  browser->destroy = FALSE;
-  browser->hwnd = browserHwnd;
   browserWindowInit.browserObject = browser;
 
   // use _beginthread instead of CreateThread
@@ -143,6 +141,9 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   // wait until the window is created
   
   WaitForSingleObject(createHwndSem,INFINITE);
+
+  browser->destroy = FALSE;
+  browser->hwnd = browserHwnd;
   
   hr = CoGetInterfaceAndReleaseStream(pBrowserStream,IID_IUnknown,(void **)&pIUnknown);
   

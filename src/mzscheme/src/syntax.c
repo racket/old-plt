@@ -498,17 +498,15 @@ void scheme_install_macro(Scheme_Bucket *b, Scheme_Object *v)
 
 static Scheme_Object *
 define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
-	       Resolve_Prefix *rp, Scheme_Object *prefix_env_getter)
+	       Resolve_Prefix *rp, Scheme_Env *dm_env)
 {
   Scheme_Object *l, *name, *macro;
   int i, g, show_any;
   Scheme_Bucket *b;
-  Scheme_Env *dm_env;
 
   if (defmacro) {
     Scheme_Object **save_runstack;
 
-    dm_env = scheme_environment_from_dummy(prefix_env_getter);
     scheme_prepare_exp_env(dm_env);
 
     save_runstack = scheme_push_prefix(dm_env->exp_env, rp, NULL, NULL, 1, 1);
@@ -2802,16 +2800,20 @@ lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sche
 /*                          define-syntaxes                           */
 /**********************************************************************/
 
+static Scheme_Object *do_define_syntaxes_execute(Scheme_Object *expr, Scheme_Env *dm_env);
+
 static void *define_syntaxes_execute_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form = p->ku.k.p1;
+  Scheme_Env *dm_env = (Scheme_Env *)p->ku.k.p2;
   p->ku.k.p1 = NULL;
-  return define_syntaxes_execute(form);
+  p->ku.k.p2 = NULL;
+  return do_define_syntaxes_execute(form, dm_env);
 }
 
 static Scheme_Object *
-define_syntaxes_execute(Scheme_Object *form)
+do_define_syntaxes_execute(Scheme_Object *form, Scheme_Env *dm_env)
 {
   Scheme_Thread *p = scheme_current_thread;
   Resolve_Prefix *rp;
@@ -2825,6 +2827,15 @@ define_syntaxes_execute(Scheme_Object *form)
   depth = SCHEME_INT_VAL(base_stack_depth) + rp->num_stxes + 1;
   if (!scheme_check_runstack(depth)) {
     p->ku.k.p1 = form;
+
+    if (!dm_env) {
+      /* Need to get env before we enlarge the runstack: */
+      form = SCHEME_CDDR(form);
+      dummy = SCHEME_CAR(form);
+      dm_env = scheme_environment_from_dummy(dummy);
+    }
+    p->ku.k.p2 = (Scheme_Object *)dm_env;
+
     return (Scheme_Object *)scheme_enlarge_runstack(depth, define_syntaxes_execute_k);
   }
 
@@ -2834,8 +2845,17 @@ define_syntaxes_execute(Scheme_Object *form)
 
   rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
 
+  if (!dm_env)
+    dm_env = scheme_environment_from_dummy(dummy);
+
   scheme_on_next_top(rhs_env, NULL, scheme_false);
-  return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), 1, rp, dummy);
+  return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), 1, rp, dm_env);
+}
+
+static Scheme_Object *
+define_syntaxes_execute(Scheme_Object *form)
+{
+  return do_define_syntaxes_execute(form, NULL);
 }
 
 static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port, 

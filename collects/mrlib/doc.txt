@@ -99,6 +99,14 @@ snip in the same pasteboard.
              (union false? (is-a?/c pen%))
              (union false? (is-a?/c brush%))
              (union false? (is-a?/c brush%)))
+> (add-links (is-a?/c graph-snip<%>) 
+             (is-a?/c graph-snip<%>)
+             (union false? (is-a?/c pen%))
+             (union false? (is-a?/c pen%))
+             (union false? (is-a?/c brush%))
+             (union false? (is-a?/c brush%))
+             (union false? number?)
+             (union false? number?))
 
 When called with two arguments, connects the snips using a
 blue/purple color scheme for the links. The first snip is
@@ -112,6 +120,9 @@ when the mouse cursor is not over the snip. The brush is used to
 draw inside the arrow head and the pen is used to draw the
 border of the arrowhead and the line connecting the two
 snips.
+
+The final arguments are dx and dy offsets for the head
+and the tail of the arrow,  first dx and then dy.
 
 
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]

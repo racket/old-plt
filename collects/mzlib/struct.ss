@@ -1,11 +1,11 @@
 
-;; by Jacob Matthews
+;; by Jacob Matthews (and others)
 
 (module struct mzscheme
-  (provide copy-struct)
-
+  (provide copy-struct make-->vector)
   (require-for-syntax (lib "struct.ss" "syntax")
-		      (lib "stx.ss" "syntax"))
+		      "list.ss"
+                      (lib "stx.ss" "syntax"))
 
   ;; copy-struct expands to `do-copy-struct' to delay the expansion
   ;;  in an internal-definition context. (The `begin0' wrapper
@@ -70,6 +70,23 @@
 			   #,@(map 
 			       (lambda (field) (or (new-binding-for field) #`(#,field the-struct)))
 			       (reverse accessors)))
-			  (raise-type-error '_  #,(format "struct:~a" (syntax-object->datum #'info)) the-struct))))))]))])))
-
-    
+			  (raise-type-error '_  #,(format "struct:~a" (syntax-object->datum #'info)) the-struct))))))]))]))
+  
+  
+  (define-syntax (make-->vector stx)
+    (syntax-case stx ()
+      [(_ name) ; a struct type name
+       (identifier? (syntax name))
+       (let ([info (syntax-local-value (syntax name))])
+         (if (struct-declaration-info? info)
+             (with-syntax ([(accessor ...)
+                            (reverse
+                             (filter identifier? (list-ref info 3)))])
+               (syntax
+                (λ (s)
+                  (vector (accessor s) ...))))
+             (raise-syntax-error
+              #f
+              "not a declared structure type name"
+              stx
+              (syntax name))))])))

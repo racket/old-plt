@@ -1,14 +1,18 @@
 
 (module etc mzscheme
+  
   (require "spidey.ss"
            (lib "plthome.ss" "setup"))
+  
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
 		      (lib "context.ss" "syntax")
-		      (lib "plthome.ss" "setup")
-		      "private/stxset.ss")
+                      (lib "plthome.ss" "setup")
+                      "list.ss"
+                      "private/stxset.ss")
 
+  
   (provide true false
 	   boolean=? symbol=?
 	   identity

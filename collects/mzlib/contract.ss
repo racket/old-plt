@@ -678,7 +678,8 @@ add struct contracts for immutable structs?
                  (string-append one-line " ")
                  (let ([sp (open-output-string)])
                    (newline sp)
-                   (parameterize ([pretty-print-print-line print-contract-liner])
+                   (parameterize ([pretty-print-print-line print-contract-liner]
+                                  [pretty-print-columns 50])
                      (pretty-print contract-sexp sp))
                    (get-output-string sp))))]
 	  [specific-blame

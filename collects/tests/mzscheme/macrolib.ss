@@ -61,6 +61,7 @@
 (test 1 (lambda () (local ((define-values (a b c) (values 1 2 3))) a)))
 (test 8 'local (local [(define lambda 8)] lambda))
 (test 12 'local (local [(define (f y) (add1 y))] (f 11)))
+(test 120 'local (local [(define (f y) 'ignore-me (add1 y))] (f 119)))
 (test 17 'local (local [(define-values (apple b) (values 12 17))] b))
 (test 4 'local (local [(define-struct cons (car cdr))] (cons-car (make-cons 4 5))))
 (test 40 'local (local [(define-struct (cons struct:exn) (car cdr))] (cons-car (make-cons "" (void) 40 50))))

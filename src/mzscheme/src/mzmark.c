@@ -43,6 +43,7 @@ int module_var_MARK(void *p) {
 
   gcMARK(mv->modidx);
   gcMARK(mv->sym);
+  gcMARK(mv->insp);
 
   return
   gcBYTES_TO_WORDS(sizeof(Module_Variable));
@@ -53,6 +54,7 @@ int module_var_FIXUP(void *p) {
 
   gcFIXUP(mv->modidx);
   gcFIXUP(mv->sym);
+  gcFIXUP(mv->insp);
 
   return
   gcBYTES_TO_WORDS(sizeof(Module_Variable));
@@ -1731,6 +1733,7 @@ int namespace_val_MARK(void *p) {
 
   gcMARK(e->module);
   gcMARK(e->module_registry);
+  gcMARK(e->insp);
 
   gcMARK(e->rename);
   gcMARK(e->et_rename);
@@ -1763,6 +1766,7 @@ int namespace_val_FIXUP(void *p) {
 
   gcFIXUP(e->module);
   gcFIXUP(e->module_registry);
+  gcFIXUP(e->insp);
 
   gcFIXUP(e->rename);
   gcFIXUP(e->et_rename);
@@ -1931,6 +1935,7 @@ int stx_val_MARK(void *p) {
   gcMARK(stx->val);
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
+  gcMARK(stx->certs);
   gcMARK(stx->props);
   if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcMARK(stx->u.modinfo_cache);
@@ -1943,6 +1948,7 @@ int stx_val_FIXUP(void *p) {
   gcFIXUP(stx->val);
   gcFIXUP(stx->srcloc);
   gcFIXUP(stx->wraps);
+  gcFIXUP(stx->certs);
   gcFIXUP(stx->props);
   if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcFIXUP(stx->u.modinfo_cache);
@@ -2005,7 +2011,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
-  gcMARK(m->home_registry);
+  gcMARK(m->insp);
 
   gcMARK(m->hints);
 
@@ -2045,7 +2051,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->self_modidx);
 
   gcFIXUP(m->accessible);
-  gcFIXUP(m->home_registry);
+  gcFIXUP(m->insp);
 
   gcFIXUP(m->hints);
 
@@ -2224,6 +2230,7 @@ int mark_comp_env_MARK(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
   gcMARK(e->base.genv);
+  gcMARK(e->base.insp);
   gcMARK(e->base.prefix);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
@@ -2248,6 +2255,7 @@ int mark_comp_env_FIXUP(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
   gcFIXUP(e->base.genv);
+  gcFIXUP(e->base.insp);
   gcFIXUP(e->base.prefix);
   gcFIXUP(e->base.next);
   gcFIXUP(e->base.values);
@@ -2325,6 +2333,7 @@ int mark_comp_info_MARK(void *p) {
   Scheme_Compile_Info *i = (Scheme_Compile_Info *)p;
   
   gcMARK(i->value_name);
+  gcMARK(i->certs);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
@@ -2334,6 +2343,7 @@ int mark_comp_info_FIXUP(void *p) {
   Scheme_Compile_Info *i = (Scheme_Compile_Info *)p;
   
   gcFIXUP(i->value_name);
+  gcFIXUP(i->certs);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
@@ -3934,6 +3944,9 @@ int mark_cport_MARK(void *p) {
   CPort *cp = (CPort *)p;
   gcMARK(cp->start);
   gcMARK(cp->orig_port);
+  gcMARK(cp->ht);
+  gcMARK(cp->symtab);
+  gcMARK(cp->insp);
   return
   gcBYTES_TO_WORDS(sizeof(CPort));
 }
@@ -3942,6 +3955,9 @@ int mark_cport_FIXUP(void *p) {
   CPort *cp = (CPort *)p;
   gcFIXUP(cp->start);
   gcFIXUP(cp->orig_port);
+  gcFIXUP(cp->ht);
+  gcFIXUP(cp->symtab);
+  gcFIXUP(cp->insp);
   return
   gcBYTES_TO_WORDS(sizeof(CPort));
 }
@@ -4101,13 +4117,13 @@ int mark_srcloc_FIXUP(void *p) {
 
 
 int mark_wrapchunk_SIZE(void *p) {
-  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  Wrap_Chunk *wc = (Wrap_Chunk *)p;
   return
   gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
 }
 
 int mark_wrapchunk_MARK(void *p) {
-  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  Wrap_Chunk *wc = (Wrap_Chunk *)p;
   int i;
   for (i = wc->len; i--; ) {
     gcMARK(wc->a[i]);
@@ -4117,7 +4133,7 @@ int mark_wrapchunk_MARK(void *p) {
 }
 
 int mark_wrapchunk_FIXUP(void *p) {
-  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  Wrap_Chunk *wc = (Wrap_Chunk *)p;
   int i;
   for (i = wc->len; i--; ) {
     gcFIXUP(wc->a[i]);
@@ -4128,6 +4144,33 @@ int mark_wrapchunk_FIXUP(void *p) {
 
 #define mark_wrapchunk_IS_ATOMIC 0
 #define mark_wrapchunk_IS_CONST_SIZE 0
+
+
+int mark_cert_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Cert));
+}
+
+int mark_cert_MARK(void *p) {
+  Scheme_Cert *c = (Scheme_Cert *)p;
+  gcMARK(c->mark);
+  gcMARK(c->insp);
+  gcMARK(c->next);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Cert));
+}
+
+int mark_cert_FIXUP(void *p) {
+  Scheme_Cert *c = (Scheme_Cert *)p;
+  gcFIXUP(c->mark);
+  gcFIXUP(c->insp);
+  gcFIXUP(c->next);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Cert));
+}
+
+#define mark_cert_IS_ATOMIC 0
+#define mark_cert_IS_CONST_SIZE 1
 
 
 #endif  /* STXOBJ */

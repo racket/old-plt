@@ -1450,6 +1450,7 @@ void scheme_init_lambda_rec(Scheme_Compile_Info *src, int drec,
 			    Scheme_Compile_Info *lam, int dlrec)
 {
   lam[dlrec].max_let_depth = 0;
+  lam[dlrec].comp = 1;
   lam[dlrec].dont_mark_local_use = src[drec].dont_mark_local_use;
   lam[dlrec].resolve_module_ids = src[drec].resolve_module_ids;
   lam[dlrec].value_name = scheme_false;
@@ -1623,7 +1624,7 @@ static void *compile_k(void)
 
   tl_queue = scheme_null;
 
-  insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+  insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
 
   while (1) {
     rec.comp = 1;
@@ -1787,7 +1788,6 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	    xenv = env;
 	}
 	{
-	  Scheme_Expand_Info erec1;
 	  scheme_init_expand_recs(rec, drec, &erec1, 1);
 	  erec1.depth = 1;
 	  first = scheme_expand_expr(first, xenv, &erec1, 0);
@@ -2164,6 +2164,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     form = forms;
     taking_shortcut = 0;
   } else {
+    scheme_rec_add_certs(rec, drec, forms);
     form = SCHEME_STX_CDR(forms);
     form = scheme_datum_to_syntax(form, forms, forms, 0, 0);
   }
@@ -2271,6 +2272,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     
     return compile_application(form, env, rec, drec);
   } else {
+    scheme_rec_add_certs(rec, drec, form);
     naya = scheme_expand_list(form, scheme_no_defines(env), rec, drec);
     /* naya will be prefixed returned... */
   }

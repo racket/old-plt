@@ -1054,7 +1054,7 @@ Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, Scheme_Object *insp, int 
 
 
   if (!insp)
-    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
 
   e = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
 #ifdef MZTAG_REQUIRED
@@ -3148,7 +3148,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
       Module_Variable *mv;
       Scheme_Object *insp;
 
-      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
       
       mv = MALLOC_ONE_TAGGED(Module_Variable);
       mv->so.type = scheme_module_variable_type;

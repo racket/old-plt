@@ -5790,6 +5790,7 @@ static void make_initial_config(Scheme_Thread *p)
     Scheme_Object *ins;
     ins = scheme_make_initial_inspectors();
     init_param(cells, paramz, MZCONFIG_INSPECTOR, ins);
+    init_param(cells, paramz, MZCONFIG_CODE_INSPECTOR, ins);
   }
   
   {

@@ -53,6 +53,10 @@ static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
 
+static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv);
+
 static Scheme_Object *barrier_symbol;
 
 static Scheme_Object *source_symbol; /* uninterned! */
@@ -374,6 +378,22 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_folding_prim(syntax_src_module,
 						      "syntax-source-module",
 						      1, 1, 1),
+			     env);
+
+  scheme_add_global_constant("syntax-recertify-constrained?", 
+			     scheme_make_prim_w_arity(syntax_recertify_constrained,
+						      "syntax-recertify-constrained?",
+						      3, 3),
+			     env);
+  scheme_add_global_constant("syntax-recertify", 
+			     scheme_make_prim_w_arity(syntax_recertify,
+						      "syntax-recertify",
+						      3, 3),
+			     env);
+  scheme_add_global_constant("syntax-extend-certificate-context", 
+			     scheme_make_prim_w_arity(syntax_extend_certificate_context,
+						      "syntax-extend-certificate-context",
+						      2, 2),
 			     env);
 
   REGISTER_SO(barrier_symbol);
@@ -3411,7 +3431,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     /* Need to convert a list of marks to certs */
     Scheme_Cert *certs = NULL;
     Scheme_Object *a, *insp;
-    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
     while (SCHEME_PAIRP(cert_marks)) {
       a = SCHEME_CAR(cert_marks);
       if (!SCHEME_NUMBERP(a))
@@ -4112,6 +4132,63 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
     scheme_wrong_type("syntax-source-module", "syntax", 0, argc, argv);
 
   return scheme_stx_source_module(argv[0], 0);
+}
+
+/**********************************************************************/
+
+static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-recertify-constrained?", "syntax", 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
+    scheme_wrong_type("syntax-recertify-constrained?", "certificate context or #f", 1, argc, argv);
+  if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
+    scheme_wrong_type("syntax-recertify-constrained?", "inspector", 2, argc, argv);
+
+  return scheme_false;
+}
+
+static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
+{
+  Scheme_Stx *stx, *res;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-recertify", "syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]))
+    scheme_wrong_type("syntax-recertify", "syntax", 1, argc, argv);
+  if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
+    scheme_wrong_type("syntax-recertify", "inspector", 2, argc, argv);
+  
+  if (((Scheme_Stx *)argv[1])->certs) {
+    stx = (Scheme_Stx *)argv[0];
+    
+    res = (Scheme_Stx *)scheme_make_stx(stx->val, 
+					stx->srcloc,
+					stx->props);
+    res->wraps = stx->wraps;
+    res->u.lazy_prefix = stx->u.lazy_prefix;
+    res->certs = ((Scheme_Stx *)argv[1])->certs;
+    
+    return (Scheme_Object *)res;
+  } else
+    return argv[0];
+}
+
+static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *o;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-extend-certificate-context", "syntax", 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
+    scheme_wrong_type("syntax-extend-certificate-context", "certificate context or #f", 1, argc, argv);
+
+  o = scheme_alloc_small_object();
+  o->type = scheme_cert_context_type;
+
+  SCHEME_PTR_VAL(o) = NULL;
+
+  return o;
 }
 
 /**********************************************************************/

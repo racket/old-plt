@@ -14,8 +14,6 @@ extern Scheme_Object *objscheme_bundle_wxMediaAdmin(class wxMediaAdmin *);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *, const char *, int);
-extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
-extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMediaBuffer(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

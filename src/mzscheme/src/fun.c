@@ -792,7 +792,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     data->name = name;
   } else {
     data->name = rec[drec].value_name;
-    if (!data->name) {
+    if (!data->name || SCHEME_FALSEP(data->name)) {
       name = scheme_source_to_name(code);
       data->name= name;
     }
@@ -1342,8 +1342,10 @@ cert_with_specials(Scheme_Object *code, Scheme_Object *mark, Scheme_Env *menv,
   if (SCHEME_STX_PAIRP(code)) {
     Scheme_Object *a, *d, *v;
     
-    a = cert_with_specials(SCHEME_STX_CAR(code), mark, menv, orig_code, phase, 0);
-    d = cert_with_specials(SCHEME_STX_CDR(code), mark, menv, orig_code, phase, 1);
+    a = SCHEME_STX_CAR(code);
+    a = cert_with_specials(a, mark, menv, orig_code, phase, 0);
+    d = SCHEME_STX_CDR(code);
+    d = cert_with_specials(d, mark, menv, orig_code, phase, 1);
 
     v = scheme_make_pair(a, d);
 

@@ -1402,10 +1402,10 @@
 "(not(...? stx)))"
 "(else #t))))"
 "(define-struct syntax-mapping(depth valvar))"
-"(provide make-match&env get-match-vars make-pexpand"
+"(provide(protect make-match&env get-match-vars make-pexpand"
 " make-syntax-mapping syntax-mapping?"
 " syntax-mapping-depth syntax-mapping-valvar"
-" stx-memq-pos no-ellipses?))"
+" stx-memq-pos no-ellipses?)))"
 );
   EVAL_ONE_STR(
 "(module #%stxcase #%kernel"

@@ -60,6 +60,7 @@ typedef struct {
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_code_inspector(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
@@ -384,6 +385,11 @@ scheme_init_struct (Scheme_Env *env)
 						       "current-inspector",
 						       MZCONFIG_INSPECTOR),
 			     env);
+  scheme_add_global_constant("current-code-inspector", 
+			     scheme_register_parameter(current_code_inspector,
+						       "current-code-inspector",
+						       MZCONFIG_CODE_INSPECTOR),
+			     env);
 
 
   scheme_add_global_constant("make-special-comment", 
@@ -503,6 +509,14 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("current-inspector", 
 			     scheme_make_integer(MZCONFIG_INSPECTOR),
+			     argc, argv,
+			     -1, inspector_p, "inspector", 0);
+}
+
+static Scheme_Object *current_code_inspector(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-code-inspector", 
+			     scheme_make_integer(MZCONFIG_CODE_INSPECTOR),
 			     argc, argv,
 			     -1, inspector_p, "inspector", 0);
 }

@@ -482,14 +482,44 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
-// @INCLUDE wxs_mbuf.xci
 
-// X are Methods not intended to be overriden by the user,
+/* 
+   X = Not meant for virtual, defined in wxMediaEdit/wxMediaPasteboard
+       and overloaded there
+   Y = Virtual, defined in wxMediaEdit/wxMediaPasteboard
+   Z = Virtual, defined in wxMediaBuffer 
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// W are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
 
 // No longer actually in C, but we want them in the editor<%> interface:
-
 
 
 
@@ -1885,54 +1915,6 @@ static Scheme_Object *os_wxMediaBufferStyleHasChanged(int n,  Scheme_Object *p[]
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMediaBufferWriteToFile(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxMediaBuffer_class, "write-to-file in editor<%>", n, p);
-  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[POFFSET+0], "write-to-file in editor<%>", 0));
-
-  
-  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->WriteToFile(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *os_wxMediaBufferReadFromFile(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxMediaBuffer_class, "read-from-file in editor<%>", n, p);
-  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[POFFSET+0], "read-from-file in editor<%>", 0));
-
-  
-  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->ReadFromFile(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
-}
-
 static Scheme_Object *os_wxMediaBufferSetMinHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2224,7 +2206,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 67));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 65));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -2279,8 +2261,6 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "end-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferEndEditSequence, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "begin-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferBeginEditSequence, 0, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "style-has-changed" " method", (Scheme_Method_Prim *)os_wxMediaBufferStyleHasChanged, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "write-to-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferWriteToFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferReadFromFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-min-height" " method", (Scheme_Method_Prim *)os_wxMediaBufferSetMinHeight, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-max-height" " method", (Scheme_Method_Prim *)os_wxMediaBufferSetMaxHeight, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-min-height" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetMinHeight, 0, 0));

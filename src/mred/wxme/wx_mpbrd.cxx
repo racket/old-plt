@@ -813,8 +813,6 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   if (!modified)
     SetModified(TRUE);
 
-  AfterInsert(snip, before, x, y);
-
   needResize = TRUE;
   UpdateLocation(loc);
 
@@ -824,6 +822,8 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
 
   if (!sequence)
     UpdateNeeded();
+
+  AfterInsert(snip, before, x, y);
 }
 
 void wxMediaPasteboard::Insert(wxSnip *snip, float x, float y)

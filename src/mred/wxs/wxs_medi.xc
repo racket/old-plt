@@ -76,55 +76,53 @@ static void NoInsertFile(wxMediaBuffer *)
 
 @CLASSID wxTYPE_MEDIA_BUFFER
 
-@SETMARK Y = V
-@SETMARK Z = v
-// @INCLUDE wxs_mbuf.xci
+@SETMARK X = p
+@SETMARK Y = p
+@SETMARK Z = p
+@INCLUDE wxs_mbuf.xci
 
-// X are Methods not intended to be overriden by the user,
+// W are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
-@SETMARK X = D
+@SETMARK W = D
 
-@ X "save-file" : bool SaveFile(nxpathname=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
-@ X "insert-port" : SYM[fileType] InsertPort(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
+@ W "save-file" : bool SaveFile(nxpathname=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
+@ W "insert-port" : SYM[fileType] InsertPort(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
 
 // No longer actually in C, but we want them in the editor<%> interface:
 @ m "load-file" : void NoLoadFile()
 @ m "insert-file" : void NoInsertFile()
 
-@ X "get-max-width" : nnfs[none] GetMaxWidth(); : : : : XrZERO
-@ X "get-min-width" : nnfs[none] GetMinWidth(); : : : : XrZERO
-@ X "set-max-width" : void SetMaxWidth(nnfs[none]);
-@ X "set-min-width" : void SetMinWidth(nnfs[none]);
-@ X "get-max-height" : nnfs[none] GetMaxHeight(); : : : : XrZERO
-@ X "get-min-height" : nnfs[none] GetMinHeight(); : : : : XrZERO
-@ X "set-max-height" : void SetMaxHeight(nnfs[none]);
-@ X "set-min-height" : void SetMinHeight(nnfs[none]);
+@ W "get-max-width" : nnfs[none] GetMaxWidth(); : : : : XrZERO
+@ W "get-min-width" : nnfs[none] GetMinWidth(); : : : : XrZERO
+@ W "set-max-width" : void SetMaxWidth(nnfs[none]);
+@ W "set-min-width" : void SetMinWidth(nnfs[none]);
+@ W "get-max-height" : nnfs[none] GetMaxHeight(); : : : : XrZERO
+@ W "get-min-height" : nnfs[none] GetMinHeight(); : : : : XrZERO
+@ W "set-max-height" : void SetMaxHeight(nnfs[none]);
+@ W "set-min-height" : void SetMinHeight(nnfs[none]);
 
-@ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn!); : : : : XrZERO
-@ X "write-to-file" : bool WriteToFile(wxMediaStreamOut!); : : : : XrZERO
+@ W "style-has-changed" : void StyleHasChanged(wxStyle^);
 
-@ X "style-has-changed" : void StyleHasChanged(wxStyle^);
+@ W "begin-edit-sequence" : void BeginEditSequence(bool=TRUE,bool=TRUE);
+@ W "end-edit-sequence" : void EndEditSequence();
+@ W "refresh-delayed?" : bool RefreshDelayed();
+@ W "in-edit-sequence?" : bool InEditSequence();
+@ W "locations-computed?" : bool LocationsUpToDate();
 
-@ X "begin-edit-sequence" : void BeginEditSequence(bool=TRUE,bool=TRUE);
-@ X "end-edit-sequence" : void EndEditSequence();
-@ X "refresh-delayed?" : bool RefreshDelayed();
-@ X "in-edit-sequence?" : bool InEditSequence();
-@ X "locations-computed?" : bool LocationsUpToDate();
+@ W "get-snip-location" : bool GetSnipLocation(wxSnip!,float?=NULL,float?=NULL,bool=FALSE); : : : : XrZERO
 
-@ X "get-snip-location" : bool GetSnipLocation(wxSnip!,float?=NULL,float?=NULL,bool=FALSE); : : : : XrZERO
+@ W "scroll-line-location" : float ScrollLineLocation(long); : : : : XrZERO
+@ W "num-scroll-lines" : long NumScrollLines(); : : : : XrZERO
+@ W "find-scroll-line" : long FindScrollLine(float); : : : : XrZERO
 
-@ X "scroll-line-location" : float ScrollLineLocation(long); : : : : XrZERO
-@ X "num-scroll-lines" : long NumScrollLines(); : : : : XrZERO
-@ X "find-scroll-line" : long FindScrollLine(float); : : : : XrZERO
+@ W "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKDCOK[0.METHODNAME("editor<%>","print-to-dc")]
 
-@ X "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKDCOK[0.METHODNAME("editor<%>","print-to-dc")]
+@ W "get-admin" : wxMediaAdmin^ GetAdmin(); : : : rNULL
+@ W "set-admin" : void SetAdmin(wxMediaAdmin^);
 
-@ X "get-admin" : wxMediaAdmin^ GetAdmin(); : : : rNULL
-@ X "set-admin" : void SetAdmin(wxMediaAdmin^);
-
-@ X "locked-for-read?" : bool IsLockedForRead();
-@ X "locked-for-write?" : bool IsLockedForWrite();
-@ X "locked-for-flow?" : bool IsLockedForFlow();
+@ W "locked-for-read?" : bool IsLockedForRead();
+@ W "locked-for-write?" : bool IsLockedForWrite();
+@ W "locked-for-flow?" : bool IsLockedForFlow();
 
 @ "global-to-local" : void GlobalToLocal(float?,float?);
 @ "local-to-global" : void LocalToGlobal(float?,float?);

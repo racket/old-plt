@@ -328,14 +328,16 @@ sub ReadFields {
 
     ($s) = @_;
 
-    $virtual = $virtualonly = $hidden = $delegate = $externalmethod = 0;
+    $virtual = $virtualonly = $hidden = $delegate = $externalmethod = $phantom = 0;
 
     $mark = substr($s, 0, 1);
     if ($mark ne '"') {
 	substr($s, 0, 1) = '';
     }
 
-    if ($mark eq 'V') {
+    if ($mark eq 'p') {
+	$phantom = 1;
+    } elsif ($mark eq 'V') {
 	$virtual = $virtualonly = 1;
     } elsif ($mark eq 'v') {
 	$virtual = 1;
@@ -1017,10 +1019,12 @@ sub DoPrintClass
 	$nmethod = 0; # count
 	foreach $function (@functions) {
 	    &ReadFields($function);
-	    @l = grep($_ =~ /^$func$/, @funcs);
-	    if ($#l < $[) {
-		@funcs = (@funcs, $func);
-		$nmethod += 1;
+	    if (!$phantom) {
+		@l = grep($_ =~ /^$func$/, @funcs);
+		if ($#l < $[) {
+		    @funcs = (@funcs, $func);
+		    $nmethod += 1;
+		}
 	    }
 	}
 	foreach $ivar (@ivars) {
@@ -1084,9 +1088,9 @@ sub DoPrintClass
 	    if ($#l < $[) {
 		$sym = &Unquote($fname);
 		print SOUT "\n    $sym";
-	    
+		
 		@funcs = (@funcs, $func);
-		if (!$delegate) {
+		if (!$delegate && !$phantom) {
 		    &OIStart;
 		    print "  WITH_VAR_STACK(";
 		    if ($justoneok{$func}) {
@@ -1346,7 +1350,7 @@ sub PrintMethod
 
     $save_onlyif = $onlyif;
 
-    if ($global || !$virtual) {
+    if ($global || !$virtual || $phantom) {
 	return;
     }
 
@@ -1619,6 +1623,10 @@ sub PrintFunction
 
     if ($delegate) {
 	return; # Superclass will dispatch for us
+    }
+
+    if ($phantom) {
+	return; # No such method, really
     }
 
     if ($numfuncs == 1) {

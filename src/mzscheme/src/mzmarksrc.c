@@ -1589,6 +1589,9 @@ mark_cport {
   CPort *cp = (CPort *)p;
   gcMARK(cp->start);
   gcMARK(cp->orig_port);
+  gcMARK(cp->ht);
+  gcMARK(cp->symtab);
+  gcMARK(cp->insp);
  size:
   gcBYTES_TO_WORDS(sizeof(CPort));
 }

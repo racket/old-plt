@@ -3350,7 +3350,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   rp->ht = ht;
   rp->symtab = symtab;
 
-  insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+  insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
   rp->insp = insp;
 
   result = read_marshalled(scheme_compilation_top_type, rp);

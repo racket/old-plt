@@ -350,7 +350,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   kernel = MALLOC_ONE_TAGGED(Scheme_Module);
   kernel->so.type = scheme_module_type;
 
-  insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+  insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
   
   scheme_initial_env->module = kernel;
   scheme_initial_env->insp = insp;
@@ -840,7 +840,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
     if (protected) {
       Scheme_Object *insp;
-      insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+      insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
       if (scheme_module_protected_wrt(menv->insp, insp))
 	scheme_raise_exn(MZEXN_FAIL_CONTRACT,
 			 "%s: name is protected: %V from module: %V",
@@ -1222,7 +1222,7 @@ static Scheme_Object *namespace_unprotect_module(int argc, Scheme_Object *argv[]
 
   to_modchain = to_env->modchain;
 
-  code_insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+  code_insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
 
   if (!SAME_OBJ(name, kernel_symbol)) {
     menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
@@ -2374,7 +2374,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   prefix = scheme_get_param(config, MZCONFIG_CURRENT_MODULE_PREFIX);
   if (SCHEME_SYMBOLP(prefix))
     name = scheme_symbol_append(prefix, name);
-  insp = scheme_get_param(config, MZCONFIG_INSPECTOR);
+  insp = scheme_get_param(config, MZCONFIG_CODE_INSPECTOR);
 
   m->modname = name;
   m->requires = scheme_null;
@@ -2719,7 +2719,7 @@ module_execute(Scheme_Object *data)
 
   {
     Scheme_Object *insp;
-    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
     m->insp = insp;
   }
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
@@ -2839,6 +2839,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
   m->self_modidx = self_modidx;
   m->src_modidx = self_modidx;
+
+  m->insp = env->insp;
 
   iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), 
 			    self_modidx,
@@ -3179,7 +3181,7 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 
   {
     Scheme_Object *insp;
-    insp = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
+    insp = scheme_get_param(scheme_current_config(), MZCONFIG_CODE_INSPECTOR);
     m->insp = insp;
   }
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);

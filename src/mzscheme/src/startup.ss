@@ -1685,10 +1685,10 @@
   ;; Structure for communicating first-order pattern variable information:
   (define-struct syntax-mapping (depth valvar))
 
-  (provide make-match&env get-match-vars make-pexpand
-	   make-syntax-mapping syntax-mapping?
-	   syntax-mapping-depth syntax-mapping-valvar
-	   stx-memq-pos no-ellipses?))
+  (provide (protect make-match&env get-match-vars make-pexpand
+		    make-syntax-mapping syntax-mapping?
+		    syntax-mapping-depth syntax-mapping-valvar
+		    stx-memq-pos no-ellipses?)))
 
 ;;----------------------------------------------------------------------
 ;; syntax-case and syntax

@@ -1429,7 +1429,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   form = SCHEME_STX_CDR(form);
 
   name = rec[drec].value_name;
-  if (!name)
+  if (!name || SCHEME_FALSEP(name))
     name = scheme_source_to_name(orig_form);
   
   if (SCHEME_STX_NULLP(form)) {
@@ -1504,7 +1504,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 			 + (count - 1) * sizeof(Scheme_Object *));
   cl->so.type = scheme_case_lambda_sequence_type;
   cl->count = count;
-  cl->name = name;
+  cl->name = SCHEME_TRUEP(name) ? name : NULL;
 
   scheme_compile_rec_done_local(rec, drec);
   recs = MALLOC_N_RT(Scheme_Compile_Info, count);
@@ -2402,7 +2402,6 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
     }
 
     if (!partial) {
-      Scheme_Expand_Info erec1;
       scheme_init_expand_recs(erec, drec, &erec1, 1);
       erec1.value_name = rhs_name;
       rhs = scheme_expand_expr(rhs, use_env, &erec1, 0);
@@ -2447,7 +2446,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
 
   v = icons(v, icons(first, body));
 
-  v = scheme_datum_to_syntax(v, form, form, 0, 2);
+  v = scheme_datum_to_syntax(v, form, form, 0, multi ? 2 : -1);
   if (!multi) {
     name = SCHEME_STX_CAR(form);
     v = scheme_stx_track(v, form, name);
@@ -3469,7 +3468,8 @@ do_letrec_syntaxes(const char *where, int normal,
 	  scheme_dup_symbol_check(&r, where, a, "binding", forms);
 	  cnt++;
 	}
-	saw_var = 1;
+	if (i)
+	  saw_var = 1;
       } else {
 	a = SCHEME_STX_CAR(a);
 	scheme_check_identifier(where, a, NULL, stx_env, forms);
@@ -3638,13 +3638,14 @@ do_letrec_syntaxes(const char *where, int normal,
 	Scheme_Object *formname;
 	formname = SCHEME_STX_CAR(forms);
 	v = icons(formname, icons(bindings, icons(var_bindings, v)));
-      } else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
-	v = SCHEME_STX_CAR(v);
-      else
+      } else
+	/* Should this be `let' instead? */
 	v = icons(begin_symbol, v);
+
+      if (SCHEME_PAIRP(v))
+	v = scheme_datum_to_syntax(v, forms, scheme_sys_wraps(origenv), 
+				   0, 2);
       
-      v = scheme_datum_to_syntax(v, forms, scheme_sys_wraps(origenv), 
-				 0, 2);
     }
   } else {
     /* Construct letrec-values expression: */

@@ -3593,10 +3593,6 @@ void scheme_win32_create_thread(void (*f)(void *), void *data,
   ResumeThread((HANDLE)th->th);
 
   scheme_add_finalizer(th, free_win32_break_sema, NULL);
-
-# ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_THREAD_DETACH, NULL);
-# endif
 }
 
 void scheme_win32_exit_thread()

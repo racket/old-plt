@@ -1688,6 +1688,9 @@ void scheme_init_stack_check()
 
 void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
+#ifdef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   d->cont_mark_pos = MZ_CONT_MARK_POS;
   d->cont_mark_stack = MZ_CONT_MARK_STACK;
 
@@ -1696,6 +1699,9 @@ void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 
 void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
+#ifdef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   MZ_CONT_MARK_POS = d->cont_mark_pos;
   MZ_CONT_MARK_STACK = d->cont_mark_stack;
 }
@@ -1758,11 +1764,17 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
 
 void scheme_temp_dec_mark_depth()
 {
+#ifdef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   --MZ_CONT_MARK_POS;
 }
 
 void scheme_temp_inc_mark_depth()
 {
+#ifdef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   MZ_CONT_MARK_POS++;
 }
 

@@ -63,7 +63,7 @@
 			(printf "~aCompiling ~a...~n" indent-string file)
 			(indent)
 			(with-handlers ((void error-handler))
-				       (compile-file file zo '(preserve-elaborations))
+				       (compile-file file zo '(preserve-constructions))
 				       #t)
 			(outdent)
 			(printf "~aCompiled ~a.~n" indent-string file))

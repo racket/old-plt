@@ -34,6 +34,9 @@ document (and "Here" is boldfaced). If the result is a snip instead of
 a string, it replaces the comment in the document. Other types of
 return values are ignored.
 
+If the html file is being accessed as a file: url, the
+current-load-relative-directory parameter is set to the directory
+during the evaluation of the mzscheme code (in both examples)
 
 ----------------------------------------
 

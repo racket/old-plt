@@ -580,8 +580,8 @@
 (make-srfi-4 u16 _uint16)
 (make-srfi-4 s32 _int32)
 (make-srfi-4 u32 _uint32)
-;; (make-srfi-4 s64 _int64)
-;; (make-srfi-4 u64 _uint64)
+(make-srfi-4 s64 _int64)
+(make-srfi-4 u64 _uint64)
 (make-srfi-4 f32 _float)
 (make-srfi-4 f64 _double)
 
@@ -623,17 +623,17 @@
 (provide define-cstruct)
 (define-syntax (define-cstruct stx)
   (syntax-case stx ()
-    [(_ _type ((slot slot-type) ...))
-     (and (identifier? #'_type)
+    [(_ _TYPE ((slot slot-type) ...))
+     (and (identifier? #'_TYPE)
           (andmap identifier? (syntax->list #'(slot ...)))
-          (regexp-match #rx"^_.+" (symbol->string (syntax-e #'_type))))
+          (regexp-match #rx"^_.+" (symbol->string (syntax-e #'_TYPE))))
      (let ([name (cadr (regexp-match #rx"^_(.+)$"
-                                     (symbol->string (syntax-e #'_type))))]
+                                     (symbol->string (syntax-e #'_TYPE))))]
            [slot-names (map (lambda (x) (symbol->string (syntax-e x)))
                             (syntax->list #'(slot ...)))])
        (define (make-id . strings)
          (datum->syntax-object
-          #'_type (string->symbol (apply string-append strings)) #'_type))
+          #'_TYPE (string->symbol (apply string-append strings)) #'_TYPE))
        (define (make-slot-ids name-func)
          (map (lambda (s stx)
                 (datum->syntax-object
@@ -643,39 +643,42 @@
          (generate-temporaries
           (map (lambda (_) t) (syntax->list #'(slot ...)))))
        (with-syntax
-           ([type         (make-id name)]
-            [type?        (make-id name "?")]
-            [make-type    (make-id "make-" name)]
-            [type-pointer (make-id name "-pointer")]
-            [(type-slot ...)
+           ([TYPE         (make-id name)]
+            [TYPE?        (make-id name "?")]
+            [make-TYPE    (make-id "make-" name)]
+            [TYPE-pointer (make-id name "-pointer")]
+            [(slot-type* ...)
+             (make-slot-ids (lambda (s) (list name "-type" s)))]
+            [(TYPE-slot ...)
              (make-slot-ids (lambda (s) (list name "-" s)))]
-            [(set-type-slot! ...)
+            [(set-TYPE-slot! ...)
              (make-slot-ids (lambda (s) (list "set-" name "-" s "!")))]
             [(offset ...) (make-temps 'offset)])
-         #'(define-values (_type type? make-type
-                           type-slot ... set-type-slot! ...)
-             (let*-values ([(slot-type ...) (values slot-type ...)]
-                           [(types) (list slot-type ...)]
+         #'(define-values (_TYPE TYPE? make-TYPE TYPE-pointer
+                           TYPE-slot ... set-TYPE-slot! ...)
+             (let*-values ([(slot-type* ...) (values slot-type ...)]
+                           [(types) (list slot-type* ...)]
                            [(stype) (make-ffi-struct-type types)]
                            [(offset ...)
                             (apply values (compute-offsets types))])
-               (define-struct type (pointer))
-               (define _type
-                 (make-ffi-type stype type-pointer make-type))
-               (values _type
-                       type?
+               (define-struct TYPE (pointer))
+               (define _TYPE
+                 (make-ffi-type stype TYPE-pointer make-TYPE))
+               (values _TYPE
+                       TYPE?
                        (lambda (slot ...)
                          (let ([block (ffi-malloc stype)])
-                           (ptr-set! block slot-type 'abs offset slot)
+                           (ptr-set! block slot-type* 'abs offset slot)
                            ...
-                           (make-type block)))
+                           (make-TYPE block)))
+                       TYPE-pointer
                        (lambda (x)
-                         (let ([block (type-pointer x)])
-                           (ptr-ref block slot-type 'abs offset)))
+                         (let ([block (TYPE-pointer x)])
+                           (ptr-ref block slot-type* 'abs offset)))
                        ...
                        (lambda (x slot)
-                         (let ([block (type-pointer x)])
-                           (ptr-set! block slot-type 'abs offset slot)))
+                         (let ([block (TYPE-pointer x)])
+                           (ptr-set! block slot-type* 'abs offset slot)))
                        ...)))))]))
 
 )

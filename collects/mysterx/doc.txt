@@ -12,8 +12,25 @@ component presentation and event-handling.
  Three Windows .DLL's support low-level operations in MysterX.  
  Two of them, myspage.dll and myssink.dll, must be installed in the 
  Registry, by entering `regsvr32 <name-of-DLL>'.  The third .DLL, 
- mysterx.dll, is loaded as  a MzScheme extension by the file `mysterx.ss' 
+ mysterx.dll, is loaded as a MzScheme extension by the file `mysterx.ss' 
  in the mysterx collection. 
+
+ Loading
+ -------
+
+ There are two ways to load MysterX.  The first is to treat
+ MysterX as a library:  
+
+  `(require-library "mysterx.ss" "mysterx")'
+
+ makes available the procedures listed here.  The other way
+ to load MysterX uses a signed unit: 
+
+  `(require-library "mysterxu.ss" "mysterx")'
+
+ binds `mysterx@' to the unit, with signature `mysterx^',
+ which is defined in the file `sigs.ss' in the MysterX collection.
+ This unit can be invoked or imported into other units as needed.
 
  Documents
  ---------

@@ -52,6 +52,8 @@ class wxFont: public wxbFont
 	int GetMacFontNum(void); // mac platform only
 	Style GetMacFontStyle(void); // mac platform only
 
+	int CanRotate(void);
+
 	int GetEffectiveSmoothing(float yscale);
 };
 

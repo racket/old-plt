@@ -21,10 +21,11 @@ static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, s
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
-				 int again, int qd_spacing, int smoothing);
+				 int again, int qd_spacing, int smoothing,
+				 float angle);
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
+void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d, float angle)
 {
   FontInfo fontInfo;
   Point start, end;
@@ -41,7 +42,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
   start.v = YLOG2DEV(y) + fontInfo.ascent; /* ascent is already scaled */
   MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 
-  DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y));
+  DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y), angle);
 
   // look at pen, use distance travelled instead of calculating 
   // the length of the string (again)
@@ -129,7 +130,7 @@ void wxCheckATSUCapability()
 #endif
 }
 
-void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing, int smoothing)
+void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing, int smoothing, float angle)
 {
   int i;
   int is_sym = 0;
@@ -175,7 +176,7 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_s
       else
 	amt = 1;
 
-      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing, smoothing);
+      (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, qd_spacing, smoothing, angle);
 	  
       d += amt;
       theStrlen -= amt;
@@ -235,7 +236,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
       *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
 			      1, 1, 
 			      txFont, fsize, txFace,
-			      again, qd_spacing, wxSMOOTHING_DEFAULT);
+			      again, qd_spacing, wxSMOOTHING_DEFAULT, 0.0);
       again = 1;
     } else {
       /* Need to split the string into parts */
@@ -265,7 +266,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 				   1, 1, 
 				   txFont, fsize, txFace,
 				   again, qd_spacing,
-				   wxSMOOTHING_DEFAULT);
+				   wxSMOOTHING_DEFAULT, 0.0);
 	  d += amt;
 	  theStrlen -= amt;
 	  again = 1;
@@ -284,7 +285,8 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
-				 int again, int qd_spacing, int smoothing)
+				 int again, int qd_spacing, int smoothing,
+				 float angle)
 {
   ATSUTextLayout layout;
   ByteCount ubytes, converted, usize;
@@ -546,7 +548,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 {
  OSStatus status = noErr;
 
-#define xNUM_TAGS 9
+#define xNUM_TAGS 10
  
  GC_CAN_IGNORE ATSUAttributeTag  theTags[] = { kATSUFontTag,
 					       kATSUSizeTag,
@@ -556,7 +558,9 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					       kATSUQDCondensedTag,
 					       kATSUQDExtendedTag,
 					       kATSUColorTag,
-					       kATSUStyleRenderingOptionsTag };
+					       kATSUStyleRenderingOptionsTag,
+					       kATSUFontMatrixTag
+                                               };
  GC_CAN_IGNORE ByteCount    theSizes[] = { sizeof(ATSUFontID),
 					   sizeof(Fixed),
 					   sizeof(Boolean),
@@ -565,15 +569,19 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(RGBColor),
-					   sizeof(ATSStyleRenderingOptions) };
+					   sizeof(ATSStyleRenderingOptions),
+                                           sizeof(CGAffineTransform)
+                                           };
  ATSUAttributeValuePtr theValues[ xNUM_TAGS /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
- 
+ int tag_count;
+
  ATSUFontID   atsuFont;
  Fixed    atsuSize;
  RGBColor   textColor;
  Boolean    isBold, isItalic, isUnderline, isCondensed, isExtended;
  SInt16    intrinsicStyle;
  ATSStyleRenderingOptions options = kATSStyleNoOptions;
+ CGAffineTransform matrix;
  
  status = atsuFONDtoFontID( txFont, txFace, &atsuFont, &intrinsicStyle );
  apple_require( status == noErr, EXIT );
@@ -616,7 +624,15 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[7] = &textColor;
  theValues[8] = &options;
 
- status = ATSUSetAttributes( iStyle, xNUM_TAGS, theTags, theSizes, theValues );
+ tag_count = xNUM_TAGS;
+ if (angle == 0.0) {
+   --tag_count;
+ } else {
+   matrix = CGAffineTransformMakeRotation(angle);
+   theValues[9] = &matrix;
+ }
+
+ status = ATSUSetAttributes( iStyle, tag_count, theTags, theSizes, theValues );
 
  return status;
 }

@@ -353,6 +353,11 @@ Style wxFont::GetMacFontStyle(void) // mac platform only
 }
 
 
+int wxFont::CanRotate(void)
+{ 
+  return 1; 
+}
+
 
 /*
  * Colour map

@@ -127,7 +127,7 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
   virtual void DrawSpline(int n, wxPoint points[]);
 #endif
-  virtual void DrawText(const char *text, float x, float y, Bool use16 = FALSE, int d = 0) = 0;
+  virtual void DrawText(const char *text, float x, float y, Bool use16 = FALSE, int d = 0, float angle = 0.0) = 0;
   virtual void Clear(void) = 0;
 
   virtual Bool StartDoc(char *message) = 0;

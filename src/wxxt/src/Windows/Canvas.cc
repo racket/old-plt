@@ -52,6 +52,7 @@ wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
 
 #ifdef USE_GL
 int gl_create_window = 0;
+XVisualInfo* temp_visual_info = NULL;
 #endif
 
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
@@ -103,10 +104,18 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
        XtNframeWidth, 0,
        XtNtraversalOn, FALSE,
        NULL);
-#ifdef USE_GL
-    gl_create_window = 0;
-#endif
     X->handle = wgt;
+#ifdef USE_GL
+    if (style & wxGL_CONTEXT)
+    {
+      gl_create_window = 0;
+      // I might need to free this or the XVisualInfo
+      GLctxt = glXCreateContext(XtDisplay(X->handle), 
+				temp_visual_info,
+				NULL,
+				GL_TRUE);
+    }
+#endif
     // Initialize CanvasDC
     CreateDC();
     dc->SetBackground(wxWHITE); // white brush as default for canvas background
@@ -367,3 +376,22 @@ void wxCanvas::OnChar(wxKeyEvent *event)
 	break;
     }
 }
+
+// OpenGL
+#ifdef USE_GL
+
+void wxCanvas::CanvasSwapBuffers(void)
+{
+  glXSwapBuffers(XtDisplay(X->handle), XtWindow(X->handle));
+}
+
+void wxCanvas::ThisContextCurrent(void)
+{
+  glXMakeCurrent(XtDisplay(X->handle), XtWindow(X->handle), GLctxt);
+}
+
+void wxCanvas::PreviousContextCurrent(void)
+{
+
+}
+#endif

@@ -666,14 +666,18 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     Display *dpy;
     int screen;
     XVisualInfo* vi;
+
     int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
 
     dpy = XtDisplay(self);
     screen = XScreenNumberOfScreen(XtScreen(self));
 
-    // Will need to free this
     vi = glXChooseVisual(dpy, screen, gl_attribs);
-    XtCreateWindow(self, InputOutput, vi->visual, 0, 0);
+    attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
+                	                   vi->visual, AllocNone);
+    *mask = *mask | CWColormap;
+    XtCreateWindow(self, InputOutput, vi->visual, *mask, attributes);
+    temp_visual_info = vi;
   }
   else
   {

@@ -52,12 +52,18 @@ static void wxSwapBuffers(wxCanvas* c)
 #ifdef wx_msw
   c->CanvasSwapBuffers();
 #endif
+#ifdef USE_GL
+  c->CanvasSwapBuffers();
+#endif
 }
 
 static void wxThisContextCurrent(wxCanvas* c)
 {
 #ifdef wx_msw
   c->ThisContextCurrent();
+#endif
+#ifdef USE_GL
+  c->CanvasSwapBuffers();
 #endif
 }
 

@@ -265,14 +265,18 @@ is positive.
     Display *dpy;
     int screen;
     XVisualInfo* vi;
+
     int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
 
     dpy = XtDisplay($);
     screen = XScreenNumberOfScreen(XtScreen($));
 
-    // Will need to free this
     vi = glXChooseVisual(dpy, screen, gl_attribs);
-    XtCreateWindow($, InputOutput, vi->visual, 0, 0);
+    attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
+                	                   vi->visual, AllocNone);
+    *mask = *mask | CWColormap;
+    XtCreateWindow($, InputOutput, vi->visual, *mask, attributes);
+    temp_visual_info = vi;
   }
   else
   {

@@ -10,11 +10,13 @@
    (define kernel-forms (kernel-form-identifier-list #'here))
 
    (define (top-block-context? ctx) (memq ctx '(top-block)))
-   (define (block-context? ctx) (memq ctx '(top-block block)))
+   (define (return-block-context? ctx) (memq ctx '(return-block)))
+   (define (block-context? ctx) (memq ctx '(top-block block return-block)))
    (define (expression-context? ctx) (memq ctx '(expression)))
    (define (type-context? ctx) (memq ctx '(type)))
 
    (define block-context 'block)
+   (define return-block-context 'return-block)
    (define top-block-context 'top-block)
    (define expression-context 'expression)
    (define type-context 'type)
@@ -88,6 +90,9 @@
    ;; --------------------------------------------------------
    ;; Parsing blocks
 
+   (define parse-an-expr #f)
+   (define parse-a-tail-expr #f)
+
    (define (parse-block-one ctx body k done-k)
      (cond
       [(stx-null? body) (done-k)]
@@ -95,15 +100,28 @@
        => (lambda (transformer)
 	    (let-values ([(code rest) (transformer body ctx)])
 	      (k code rest)))]
-      [else
-       (raise-syntax-error 
-	'block
-	"unknown form" 
-	(stx-car body))]))
-
-   (define (parse-block stx)
+      [(syntax-case body (#%braces) 
+	 [((#%braces . block) . rest) (cons #'block #'rest)]
+	 [_else #f])
+       => (lambda (b+r)
+	    (k #`(honu-unparsed-block #f void-type #f #,(return-block-context? ctx)
+				      #,@(car b+r))
+	       (cdr b+r)))]
+      [else (let-values ([(expr-stxs after-expr) (extract-until body (list #'\;))])
+	      (unless expr-stxs
+		(raise-syntax-error
+		 #f
+		 "expected a semicolon to terminate form"
+		 (stx-car body)))
+	      (let ([code ((if (return-block-context? ctx)
+			       parse-a-tail-expr
+			       parse-an-expr)
+			   expr-stxs)])
+		(k code (stx-cdr after-expr))))]))
+   
+   (define (parse-block stx ctx)
      (let loop ([stx stx])
-       (parse-block-one block-context
+       (parse-block-one ctx
 			stx 
 			(lambda (code rest)
 			  (cons code (loop rest)))
@@ -123,7 +141,7 @@
 		   (if (stx-null? rest)
 		       (list expr)
 		       (cons expr (start-operator rest))))
-		 (syntax-case stx (#%parens)
+		 (syntax-case stx (#%parens #%braces)
 		   [(v)
 		    (or (number? (syntax-e #'v))
 			(identifier? #'v)
@@ -135,7 +153,19 @@
 			 #'v)
 			(list #'v))]
 		   [((#%parens . pexpr))
-		    (list (parse-expr #'pexpr))]
+		    (if (stx-null? #'pexpr)
+			(raise-syntax-error
+			 #f
+			 "missing expression inside parentheses"
+			 (stx-car stx))
+			(list (parse-expr #'pexpr)))]
+		   [((#%braces . pexpr))
+		    (if (stx-null? #'pexpr)
+			(raise-syntax-error
+			 #f
+			 "missing expression inside braces"
+			 (stx-car stx))
+			(list #'(honu-unparsed-block #f void-type #f #f . pexpr)))]
 		   [(op . more)
 		    (and (identifier? #'op)
 			 (ormap (lambda (uop)
@@ -250,6 +280,25 @@
        
        parse-expr))
 
+   (define (parse-tail-expr expr-stxs)
+     (syntax-case expr-stxs (honu-return #%parens)
+       [(honu-return expr ...)
+	(let ([exprs #'(expr ...)])
+	  (when (stx-null? exprs)
+	    (raise-syntax-error 
+	     #f
+	     "missing expression"
+	     (stx-car expr-stxs)))
+	  (parse-expr exprs))]
+       [((#%parens expr0 expr ...))
+	(let ([exprs #'(expr0 expr ...)])
+	  (parse-tail-expr exprs))]
+       [_else
+	(parse-expr expr-stxs)]))
+
+   (set! parse-an-expr parse-expr)
+   (set! parse-a-tail-expr parse-tail-expr)
+
    ;; --------------------------------------------------------
    ;; Parsing declarations (which always start with a type)
 
@@ -342,7 +391,7 @@
 			      (stx-car #'rest)))
 			   (let ([def #`(define-typed id #f type-name pred-id 
 					  (check-expr #f 'id type-name pred-id 
-						      #,(parse-expr val-stxs)))])
+						      (honu-unparsed-expr #,@val-stxs)))])
 			     (if (module-identifier=? #'\; (stx-car after-expr))
 				 (values #`(begin #,pred-def #,def) (stx-cdr after-expr))
 				 (let-values ([(defs remainder kind) (loop (stx-cdr after-expr) (stx-car after-expr) "comma" #f)])
@@ -361,7 +410,7 @@
 					      ((arg arg-type arg-pred-id) ...)
 					      (lambda (temp-id ...)
 						(define-typed arg id arg-type arg-pred-id temp-id) ...
-						(honu-unparsed-block id type-name pred-id . body))))
+						(honu-unparsed-block id type-name pred-id #t . body))))
 					#'rest)))]
 			   ;; --- Error handling ---
 			   [((#%parens . prest) . bad-rest)
@@ -589,7 +638,9 @@
 	       (cond
 		[(null? exprs) (append 
 				(reverse prev-defns)
-				(if (pair? prev-exprs)
+				(if (and (pair? prev-exprs) 
+					 proc-id 
+					 (syntax-e proc-id))
 				    (reverse (cons
 					      #`(check-expr '#,proc-id #t
 							    #,result-type-name 
@@ -597,7 +648,9 @@
 							    #,(car prev-exprs))
 					      (cdr prev-exprs)))
 				    (begin
-				      (unless (module-identifier=? #'type-name #'void-type)
+				      (unless (or (not proc-id)
+						  (not (syntax-e proc-id))
+						  (module-identifier=? #'type-name #'void-type))
 					(error "no expression for type check; should have been "
 					       "caught earlier"))
 				      (reverse prev-exprs)))
@@ -620,8 +673,16 @@
 
   (define-syntax (honu-unparsed-block stx)
     (syntax-case stx (void)
-      [(_ proc-id result-type-name result-pred-id . body) 
-       #`(honu-block proc-id result-type-name result-pred-id #,@(parse-block #'body))]))
+      [(_ proc-id result-type-name result-pred-id return-context? . body) 
+       #`(honu-block proc-id result-type-name result-pred-id #,@(parse-block 
+								 #'body
+								 (if (syntax-e #'return-context?)
+								     return-block-context
+								     block-context)))]))
+
+  (define-syntax (honu-unparsed-expr stx)
+    (syntax-case stx ()
+      [(_ v ...) (parse-expr (syntax->list #'(v ...)))]))
 
   (define-syntax (h-return stx)
     (syntax-case stx ()
@@ -671,44 +732,172 @@
 
   (define-type-constructor -> make-proc-predicate)
 
+  (define-for-syntax parse-comma-separated
+    (lambda (body empty-case parse-one combine)
+      (syntax-case body (\;)
+	[(\;) (empty-case)]
+	[_else
+	 (let loop ([body body][accum null][prev-comma #f])
+	   (syntax-case body (\, \;)
+	     [(\, . rest)
+	      (let-values ([(one) (parse-one (reverse accum) prev-comma (stx-car body))]
+			   [(other rest) (loop #'rest null (stx-car body))])
+		(values (combine one other) rest))]
+	     [(\; . rest)
+	      (identifier? #'id)
+	      (values (parse-one (reverse accum) prev-comma (stx-car body)) #'rest)]
+	     [(x . rest)
+	      (loop #'rest (cons #'x accum) #f)]))])))
+
   (define-honu-syntax honu-provide
     (lambda (body ctx)
       (unless (top-block-context? ctx)
 	(raise-syntax-error #f "not allowed outside the top level" (stx-car body)))
-      (let loop ([body (stx-cdr body)][prev-comma? #f])
-	(syntax-case body (\, \;)
-	  [(\; . rest)
-	   (not prev-comma?)
-	   (values #`(begin) #'rest)]
-	  [(id \, . rest)
-	   (identifier? #'id)
-	   (let-values ([(decls rest) (loop #'rest #t)])
-	     (values #`(begin (provide id) #,decls) rest))]
-	  [(id \; . rest)
-	   (identifier? #'id)
-	   (values #'(provide id) #'rest)]))))
+      (parse-comma-separated
+       (stx-cdr body)
+       (lambda () #'(begin))
+       (lambda (stxes prev-comma-stx term-stx)
+	 (syntax-case stxes ()
+	   [(id)
+	    (identifier? #'id)
+	    #`(provide id)]
+	   [else
+	    (raise-syntax-error
+	     #f
+	     "unknown provide form"
+	     (stx-car body)
+	     (car stxes))]))
+       (lambda (p decls)
+	 #`(begin #,p #,decls)))))
   
   (define-honu-syntax honu-require
     (lambda (body ctx)
+      (define (check-empty rest after-what)
+	(unless (stx-null? rest)
+	  (raise-syntax-error
+	   #f
+	   (format "expect a comma or semicolon after ~a" after-what)
+	   (stx-car body)
+	   (stx-car rest))))
       (unless (top-block-context? ctx)
 	(raise-syntax-error #f "not allowed outside the top level" (stx-car body)))
-      (let loop ([body (stx-cdr body)][prev-comma? #f])
-	(syntax-case body (\, \;)
-	  [(\; . rest)
-	   (not prev-comma?)
-	   (values #`(begin) #'rest)]
-	  [(fn \, . rest)
-	   (string? (syntax-e #'fn))
-	   (let-values ([(decls rest) (loop #'rest #t)])
-	     (values #`(begin (require fn) #,decls) rest))]
-	  [(fn \; . rest)
-	   (string? (syntax-e #'fn))
-	   (values #'(require fn) #'rest)]))))
+      (parse-comma-separated
+       (stx-cdr body)
+       (lambda () #'(begin))
+       (lambda (stxes prev-comma-stx term-stx)
+	 #`(require 
+	    #,(let ()
+		(define (parse-module-name stxes)
+		  (syntax-case stxes (lib file #%parens)
+		    [(fn . rest)
+		     (string? (syntax-e #'fn))
+		     (begin
+		       (check-empty #'rest "path string")
+		       #'fn)]
+		    [(lib (#%parens names ...) . rest)
+		     (let ([names (let loop ([names #'(names ...)])
+				    (syntax-case names (\,)
+				      [() null]
+				      [(name . rest)
+				       (begin
+					 (unless (string? (syntax-e #'name))
+					   (raise-syntax-error
+					    #f
+					    "expected a string for a library path"
+					    (car stxes)
+					    #'name))
+					 (syntax-case #'rest (\,)
+					   [() (list #'name)]
+					   [(\, . rest)
+					    (cons #'name (loop #'rest))]
+					   [else
+					    (raise-syntax-error
+					     #f
+					     "expected a comma"
+					     (stx-car stxes)
+					     (stx-car #'rest))]))]
+				      [(\,)
+				       (raise-syntax-error
+					#f
+					"expected a string before comma"
+					(car stxes)
+					(stx-car names))]
+				      [_else
+				       (raise-syntax-error
+					#f
+					"expected a string for a library path"
+					(car stxes)
+					(stx-car names))]))])
+		       (when (null? names)
+			 (raise-syntax-error
+			  #f
+			  "expected at least one string for the library path"
+			  (cadr stxes)))
+		       (check-empty #'rest "library path")
+		       (syntax-local-introduce #`(lib #,@names)))]
+		    [(lib . rest)
+		     (raise-syntax-error 
+		      #f
+		      "expected a parenthesized sequence of strings after `lib' keyword"
+		      (car stxes)
+		      (stx-car body))]
+		    [(file (#%parens name) . rest)
+		     (string? (syntax-e #'name))
+		     (begin
+		       (check-empty #'rest "file name")
+		       (syntax-local-introduce #`(file name)))]
+		    [(file . rest)
+		     (raise-syntax-error 
+		      #f
+		      "expected a parenthesized string after `file' keyword"
+		      (car stxes)
+		      (stx-car body))]
+		    [(fn)
+		     (identifier? #'fn)
+		     #'fn]
+		    [else
+		     (raise-syntax-error
+		      #f
+		      "unknown require form"
+		      (stx-car body)
+		      (car stxes))]))
+		(define (parse-module-spec stxes)
+		  (syntax-case stxes (rename #%parens \,)
+		    [(rename (#%parens spec0 spec ... \, local-id \, remote-id) . rest)
+		     (begin
+		       (unless (identifier? #'local-id)
+			 (raise-syntax-error
+			  #f
+			  "expected an identifier"
+			  (stx-car stxes)
+			  #'local-id))
+		       (unless (identifier? #'remote-id)
+			 (raise-syntax-error
+			  #f
+			  "expected an identifier"
+			  (stx-car stxes)
+			  #'remote-id))
+		       (begin0
+			#`(rename #,(parse-module-name 
+				     (syntax->list #'(spec0 spec ...))) 
+				  local-id 
+				  remote-id)
+			(check-empty #'rest "rename")))]
+		    [(rename . rest)
+		     (raise-syntax-error 
+		      #f
+		      "expected a parenthesized id, id, and require spec `rename' keyword"
+		      (car stxes)
+		      (stx-car body))]
+		    [_else (parse-module-name stxes)]))
+		(parse-module-spec stxes))))
+       (lambda (p decls)
+	 #`(begin #,p #,decls)))))
 
   (define-honu-syntax honu-return
     (lambda (stx ctx)
-      (unless (block-context? ctx)
-	(raise-syntax-error #f "allowed only in a block context" (stx-car stx)))
+      (unless (return-block-context? ctx)
+	(raise-syntax-error #f "allowed only in a tail position" (stx-car stx)))
       (let-values ([(val-stxs after-expr) (extract-until (stx-cdr stx)
 							 (list #'\;))])
 	(unless val-stxs
@@ -732,6 +921,48 @@
 	     (h-return expr))
 	   null)))))
 
+  (define-honu-syntax honu-if
+    (lambda (stx ctx)
+      (define (get-block-or-statement kw rest)
+	(syntax-case rest (#%braces)
+	  [((#%braces then ...) . rest)
+	   (values #`(honu-unparsed-block #f void-type #f #,(return-block-context? ctx) then ...)
+		   #'rest)]
+	  [else
+	   (let-values ([(val-stxs rest) (extract-until rest
+							(list #'\;))])
+	     (unless val-stxs
+	       (raise-syntax-error
+		#f
+		"expected a braced block or a terminating semicolon"
+		kw))
+	     (when (null? val-stxs)
+	       (raise-syntax-error
+		#f
+		"expected an expression before semicolon"
+		kw
+		(stx-car rest)))
+	     (if (return-block-context? ctx)
+		 (values (parse-tail-expr val-stxs) (stx-cdr rest))
+		 (values (parse-expr val-stxs) (stx-cdr rest))))]))
+
+      (syntax-case stx (#%parens)
+	[(_ (#%parens test ...) . rest)
+	 (let ([test-expr (parse-expr (syntax->list #'(test ...)))])
+	   (let-values ([(then-expr rest) (get-block-or-statement (stx-car stx) #'rest)])
+	     (syntax-case rest (else)
+	       [(else . rest2)
+		(let-values ([(else-expr rest) (get-block-or-statement (stx-car rest) #'rest2)])
+		  (values #`(if #,test-expr #,then-expr #,else-expr)
+			  rest))]
+	       [_else
+		(values #`(if #,test-expr #,then-expr) rest)])))]
+	[_else
+	 (raise-syntax-error
+	  #f
+	  "expected a parenthesized test after `if' keyword"
+	  (stx-car stx))])))
+
   ;; ----------------------------------------
   ;; Main compiler loop
 
@@ -754,13 +985,19 @@
   
   (define-syntax (\; stx) (raise-syntax-error '\; "out of context" stx))
   
+  (define true #t)
+  (define false #f)
+
   (provide int obj (rename string-type string) ->
 	   \;
            (rename set! =)
 	   (rename honu-return return)
+	   (rename honu-if if)
 	   + - * / (rename modulo %)
 	   (rename string->number stringToNumber)
 	   (rename number->string numberToString)
+	   true false
+	   display write newline
 	   #%datum
 	   #%top
 	   #%parens

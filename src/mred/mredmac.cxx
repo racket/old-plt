@@ -1101,3 +1101,14 @@ wxWindow *wxLocationToWindow(int x, int y)
   
   return NULL;
 }
+
+/***************************************************************************/
+/*                                gc                                       */
+/***************************************************************************/
+
+void wxmac_reg_globs(void)
+{
+  wxREGGLOB(first);
+  wxREGGLOB(last);
+  wxREGGLOB(cont_event_context);
+}

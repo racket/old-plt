@@ -978,6 +978,8 @@ void MovieInitialize(void)
   }
   
   movieInitialized = TRUE;
+
+  wxREGGLOB(playing);
 } 
   
   
@@ -1519,7 +1521,9 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 extern "C" {
  extern char *scheme_mac_spec_to_path(FSSpec *spec);
 };
+# ifndef OS_X
 extern char *wxmac_startup_directory;
+# endif
 #endif
 
 enum {

@@ -2782,6 +2782,10 @@ int MrEdApp::OnExit(void)
 void wxCreateApp(void)
 {
   if (!TheMrEdApp) {
+#ifdef wx_mac
+    wxmac_reg_globs();
+#endif
+
     wxREGGLOB(orig_ps_setup);
     wxREGGLOB(q_callbacks);
 

@@ -1231,7 +1231,7 @@
 				   (if compiler:module-decl-name
 				       (let ([s (symbol->string compiler:module-decl-name)])
 					 (fprintf c-port "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))
-				       (fprintf c-port "NULL"))
+				       (fprintf c-port "scheme_false"))
 				   (fprintf c-port ";~n}~n"))
 
 				 (let emit-vehicles ([vehicle-number 0])

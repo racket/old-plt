@@ -940,14 +940,18 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[])
 {
-  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+  Scheme_Module *m;
+
+  m = scheme_extract_compiled_module(argv[0]);
       
   return (m ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[])
 {
-  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+  Scheme_Module *m;
+
+  m = scheme_extract_compiled_module(argv[0]);
       
   if (m) {
     return m->modname;
@@ -959,9 +963,11 @@ static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
 {
-  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+  Scheme_Module *m;
   Scheme_Object *a[2];
       
+  m = scheme_extract_compiled_module(argv[0]);
+
   if (m) {
     /* Ensure that the lists are immutable: */
     scheme_make_list_immutable(m->requires);
@@ -1837,14 +1843,15 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
     return scheme_make_syntax_compiled(MODULE_EXPD, (Scheme_Object *)m);
   } else {
-    Scheme_Object *hints;
-
+    Scheme_Object *hints, *formname;
+    
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
     hints = m->hints;
     m->hints = NULL;
 
-    fm = cons(SCHEME_STX_CAR(form),
+    formname = SCHEME_STX_CAR(form);
+    fm = cons(formname,
 	      cons(nm,
 		   cons(ii, cons(fm, scheme_null))));
 

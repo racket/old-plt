@@ -67,6 +67,7 @@ static void register_traversers(void);
 #endif
 
 #define CONS scheme_make_pair
+#define ICONS scheme_make_immutable_pair
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
@@ -460,7 +461,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   if (nstx->props) {
     if (SAME_OBJ(nstx->props, STX_SRCTAG)) {
       /* Retain 'source tag. */
-      ne = CONS(CONS(source_symbol, scheme_true), scheme_null);
+      ne = ICONS(ICONS(source_symbol, scheme_true), scheme_null);
     } else
       ne = nstx->props;
   } else
@@ -492,11 +493,11 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	  a = SCHEME_CAR(SCHEME_CAR(oe));
 	  if (!SAME_OBJ(a, source_symbol) && !SAME_OBJ(a, share_symbol)) {
 	    if (!SAME_OBJ(a, origin_symbol)) {
-	      p = CONS(SCHEME_CAR(oe), scheme_null);
+	      p = ICONS(SCHEME_CAR(oe), scheme_null);
 	    } else {
-	      p = CONS(CONS(a, CONS(origin, 
-				    SCHEME_CDR(SCHEME_CAR(oe)))),
-		       scheme_null);
+	      p = ICONS(ICONS(a, ICONS(origin, 
+				       SCHEME_CDR(SCHEME_CAR(oe)))),
+			scheme_null);
 	      add = 0;
 	    }
 
@@ -511,8 +512,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	oe = first;
       } 
       if (add) {
-	oe = CONS(CONS(origin_symbol, 
-		       CONS(origin, scheme_null)),
+	oe = ICONS(ICONS(origin_symbol, 
+			 ICONS(origin, scheme_null)),
 		  oe);
       }
     }
@@ -522,8 +523,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   }
 
   if (!oe)
-    oe = CONS(CONS(origin_symbol, 
-		   CONS(origin, scheme_null)),
+    oe = ICONS(ICONS(origin_symbol, 
+		     ICONS(origin, scheme_null)),
 	      scheme_null);
 
   /* Merge ne and oe (ne takes precedence). */
@@ -555,12 +556,12 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
       v = SCHEME_CDR(SCHEME_CAR(e1));
       for (e2 = oe; SCHEME_PAIRP(e2); e2 = SCHEME_CDR(e2)) {
 	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(e2)), a)) {
-	  v = CONS(v, SCHEME_CDR(SCHEME_CAR(e2)));
+	  v = ICONS(v, SCHEME_CDR(SCHEME_CAR(e2)));
 	  break;
 	}
       }
 
-      p = CONS(CONS(a, v), scheme_null);
+      p = ICONS(ICONS(a, v), scheme_null);
       if (last)
 	SCHEME_CDR(last) = p;
       else
@@ -580,7 +581,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
       }
 
       if (v) {
-	p = CONS(CONS(a, v), scheme_null);
+	p = ICONS(ICONS(a, v), scheme_null);
 	if (last)
 	  SCHEME_CDR(last) = p;
 	else

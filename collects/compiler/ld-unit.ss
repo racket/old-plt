@@ -214,14 +214,24 @@
 	    (printf "  return v;~n}~n~n")
 	    
 	    (printf "static Scheme_Object * loader(int argc, Scheme_Object * * argv) {~n")
+	    (printf "  Scheme_Object *a[2];~n")
 	    (printf "  Scheme_Object * name = argv[0];~n")
+	    (printf "  if (name == scheme_true) {~n")
+	    (printf "    a[0] = scheme_make_prim_w_arity(loader_dispatch_all, \"_loader-dispatch-all\", 0, 0);~n")
+	    (printf "    a[1] = scheme_false;~n")
+	    (printf "  }~n")
 	    (for-each
 	     (lambda (suffix)
-	       (printf "  if (name == syms.~a_symbol) return scheme_make_closed_prim_w_arity(loader_dispatch, LOCAL_PROC(scheme_reload~a), \"_loader-dispatch\", 0, 0);~n"
-		       suffix suffix))
+	       (printf "  else if (name == syms.~a_symbol) {~n" suffix)
+	       (printf "    a[0] = scheme_make_closed_prim_w_arity(loader_dispatch, LOCAL_PROC(scheme_reload~a), \"_loader-dispatch\", 0, 0);~n" suffix)
+	       (printf "    a[1] = ~ascheme_module_name();~n" suffix)
+	       (printf "  }~n"))
 	     suffixes)
-	    (printf "  if (name == scheme_true) return scheme_make_prim_w_arity(loader_dispatch_all, \"_loader-dispatch-all\", 0, 0);~n")
-	    (printf "  return scheme_false;~n}~n~n")
+	    (printf "  else {~n")
+	    (printf "    a[0] = scheme_false;~n")
+	    (printf "    a[1] = scheme_false;~n")
+	    (printf "  }~n")
+	    (printf "  return scheme_values(2, a);~n}~n~n")
 	    
 	    (printf "Scheme_Object * scheme_reload(Scheme_Env * env) {~n")
 	    (printf "  return scheme_make_prim_w_arity(loader, \"_loader\", 1, 1);~n}~n~n")
@@ -231,7 +241,7 @@
 	      (printf "  setup_pooled_symbols();~n"))
 	    (for-each
 	     (lambda (suffix)
-					; (printf "  printf(\"~a is %lx\\n\", scheme_setup~a);~n" suffix suffix)
+	       ;; (printf "  printf(\"~a is %lx\\n\", scheme_setup~a);~n" suffix suffix)
 	       (printf "  LOCAL_PROC(scheme_setup~a)(env);~n" suffix))
 	     suffixes)
 	    (printf "  scheme_register_extension_global(&syms, sizeof(syms));~n")
@@ -239,7 +249,8 @@
 	     (lambda (suffix name)
 	       (printf "  syms.~a_symbol = scheme_intern_exact_symbol(~s, ~a);~n" suffix name (string-length name)))
 	     suffixes names)
-	    (printf "  return scheme_reload(env);~n}~n"))
+	    (printf "  return scheme_reload(env);~n}~n")
+	    (printf "Scheme_Object * scheme_module_name() { return NULL; }~n"))
 	  'truncate)
 	
 	(let ([tmp-dir (let ([d (getenv "PLTLDTMPDIR")])

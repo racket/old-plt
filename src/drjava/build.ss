@@ -111,8 +111,9 @@ string=? ; exec mzscheme -f "$0" "$@"
   (make-directory tmp-dir)
   (let ([src-dir (build-path "java" "edu" "rice" "cs" "drj")])
     (apply compile-java "-d" "classes"
-	   (map (lambda (f) (build-path src-dir f))
-		(directory-list src-dir)))))
+	   (filter file-exists?
+		   (map (lambda (f) (build-path src-dir f))
+			(directory-list src-dir))))))
 
 ;; build-sos : -> Void
 (define (build-sos)

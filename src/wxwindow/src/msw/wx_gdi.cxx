@@ -130,7 +130,7 @@ typedef DWORD (WINAPI *wxGET_FONT_UNICODE_RANGES_PROC)(HDC, wxGLYPHSET*);
 static wxGET_FONT_UNICODE_RANGES_PROC wxGetFontUnicodeRanges;
 static int gfur_tried = 0;
 
-static int CALLBACK glyph_exists(ENUMLOGFONTXW FAR* lpelf, 
+static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf, 
 				 NEWTEXTMETRICW FAR* lpntm, 
 				 DWORD type, 
 				 LPARAM _data)
@@ -162,6 +162,7 @@ static int glyph_exists_in_selected_font(HDC hdc, int c)
       wxGLYPHSET *gs;
       char *bytes;
       int i;
+	  FILE *f;
       bytes = new WXGC_ATOMIC char[sz];
       gs = (wxGLYPHSET *)bytes;
       gs->cbThis = sz;
@@ -192,7 +193,7 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
   int ok;
 
   font = BuildInternalFont(hdc, screen_font, 0);
-  old = (HFONT)::SelectObject(hdc, cfont);
+  old = (HFONT)::SelectObject(hdc, font);
 
   ok = glyph_exists_in_selected_font(hdc, c);
 

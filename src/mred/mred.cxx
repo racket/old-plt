@@ -1174,8 +1174,6 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   return scheme_void;
 }
 
-static int main_loop_exited = 0;
-
 static int MrEdContextReady(MrEdContext *, MrEdContext *c)
 {
   return ((MrEdContext *)c)->ready;
@@ -1230,9 +1228,6 @@ static int try_dispatch(Scheme_Object *do_it)
   MrEdEvent e;
   wxTimer *timer;
   int got_one;
-
-  if (main_loop_exited)
-    return 1;
 
   if (try_q_callback(do_it, 2))
     return 1;
@@ -1440,6 +1435,23 @@ static void MrEdSleep(float secs, void *fds)
 # endif
 #endif
 }
+
+#ifdef wx_xt
+static void user_break_hit(int ignore)
+{
+  scheme_break_thread(NULL);
+  scheme_signal_received();
+
+#  ifdef SIGSET_NEEDS_REINSTALL
+  MZ_SIGSET(SIGINT, user_break_hit);
+#  endif
+#  ifdef MZ_PRECISE_GC
+  /* Restore variable stack. */
+  GC_variable_stack = (void **)__gc_var_stack__[0];
+#  endif
+}
+# define mred_BREAK_HANDLER
+#endif
 
 /****************************************************************************/
 /*                                wxTimer                                   */
@@ -2733,6 +2745,10 @@ wxFrame *MrEdApp::OnInit(void)
   wxInitMedia();
 
   wxscheme_early_gl_init();
+
+#ifdef mred_BREAK_HANDLER
+  MZ_SIGSET(SIGINT, user_break_hit);
+#endif
 
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 

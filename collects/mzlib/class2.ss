@@ -1244,11 +1244,11 @@
 					name
 					(for-class (class-name class)))))))
   
-  (define (class-field-accessor class name)
-    (class-field-X 'class-field-accessor car class name))
+  (define (make-class-field-accessor class name)
+    (class-field-X 'make-class-field-accessor car class name))
   
-  (define (class-field-mutator class name)
-    (class-field-X 'class-field-mutator cdr class name))
+  (define (make-class-field-mutator class name)
+    (class-field-X 'make-class-field-mutator cdr class name))
 
 
   (define-struct generic (applicable))
@@ -1285,10 +1285,10 @@
 		obj))
 	     (vector-ref (class-methods (object-ref obj)) pos))))))
 
-  (define-syntax apply-generic
+  (define-syntax send-generic
     (lambda (stx)
       (syntax-case stx ()
-	[(_ generic obj arg ...)
+	[(_ obj generic arg ...)
 	 (syntax (let ([this obj])
 		   (((generic-applicable generic) this) this arg ...)))])))
 	      
@@ -1424,8 +1424,8 @@
 	   interface interface?
 	   object% object?
 	   make-object instantiate
-	   send class-field-accessor class-field-mutator
-	   (rename make-generic/proc make-generic) apply-generic
+	   send make-class-field-accessor make-class-field-mutator
+	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   method-in-interface? interface->method-names class->interface
 	   exn:object? struct:exn:object make-exn:object

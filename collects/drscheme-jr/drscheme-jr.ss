@@ -1,3 +1,6 @@
+(reference-library "macro.ss")
+(reference-library "prettys.ss")
+
 (begin-expansion-time
   (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
 
@@ -49,12 +52,12 @@
 (plt:require-library "sparamu.ss")
 (plt:require-library "userspcu.ss")
 
-(load-recent (begin-elaboration-time
-	       (build-path plt-dir "zodiac" "load")))
-
 (reference
-  (build-elaboration-time
-    (build-path plt-dir "zodiac" "load")))
+  (begin-elaboration-time
+    (build-path plt-dir "zodiac" "zsigs")))
+(reference
+  (begin-elaboration-time
+    (build-path plt-dir "zodiac" "sigs")))
 
 (define zodiac:system@
   (reference-unit/sig

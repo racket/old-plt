@@ -43,7 +43,7 @@
 	      (V- ("lam" variable M)
 		  b)
 
-	      ;; Continuations with closures (CEK);
+	      ;; Continuations with closures (CEK):
 	      (k- "mt"
 		  ("fun" vcl k-)
 		  ("arg" cl k-)
@@ -204,6 +204,7 @@
 		    (V? (any? . -> . boolean?))
 		    (o1? (any? . -> . boolean?))
 		    (o2? (any? . -> . boolean?))
+		    (on? (any? . -> . boolean?))
 		    (k? (any? . -> . boolean?))
 		    (env? (any? . -> . boolean?))
 		    (cl? (any? . -> . boolean?))

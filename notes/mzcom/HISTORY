@@ -1,3 +1,11 @@
+Version 103
+-----------
+
+Evaluation loop processes Windows events 
+ that may occur as the result of evaluation;
+ motivating example is loading MysterX into
+ MzCOM, running plt\collects\mysterx\mxdemo.ss
+
 Version 102
 -----------
 

@@ -398,7 +398,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
-         (module '(lib "beginner.ss" "lang"))
+         (module '(lib "htdp-beginner.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant beginning-student)))

@@ -2497,8 +2497,8 @@ static Scheme_Object *MrEdMakeStdIn(void)
   return (Scheme_Object *)ip;
 }
 
-static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block, 
-			 int enable_break, int breakable)
+static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, 
+			 int rarely_block, int enable_break)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   if (l)
@@ -2529,7 +2529,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 }
 
 static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, 
-			 int rarely_block, int breakable)
+			 int rarely_block, int enable_break)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   if (l)
@@ -2554,7 +2554,7 @@ static Scheme_Object *MrEdMakeStdErr(void)
 						  scheme_intern_symbol("mred-console"),
 						  scheme_write_evt_via_write,
 						  CAST_WS stderr_write,
-						  NULL, NULL, NULL, NULL, 0);
+						  NULL, NULL, NULL, NULL, NULL, 0);
 }
 #endif
 

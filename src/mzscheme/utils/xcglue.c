@@ -75,8 +75,7 @@
 int objscheme_something_prepared = 0;
 
 typedef struct Scheme_Class {
-  Scheme_Type type;
-  short hash; /* for Precise GC */
+  Scheme_Object so;
   const char *name;
   Scheme_Object *sup;
   Scheme_Object *initf;
@@ -181,7 +180,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
     return NULL;
   }
 
-  if (SCHEME_TRUEP(c->sup) && !((Scheme_Class *)c->sup)->base_struct_type) {
+  if (c->sup && !((Scheme_Class *)c->sup)->base_struct_type) {
     scheme_arg_mismatch("primitive-class-prepare-struct-type!",
 			"super struct-type not yet prepared for primitive-class: ",
 			name);
@@ -191,7 +190,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   /* Root for this class.  */
 
   base_stype = scheme_make_struct_type(name, 
-				       (SCHEME_TRUEP(c->sup) ? ((Scheme_Class *)c->sup)->base_struct_type : object_struct),
+				       (c->sup ? ((Scheme_Class *)c->sup)->base_struct_type : object_struct),
 				       NULL,
 				       0, 0, NULL,
 				       NULL, NULL);
@@ -262,10 +261,13 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 
 static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
 {
+  Scheme_Object *v;
+
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
     scheme_wrong_type("primitive-class->superclass", "primitive-class", 0, argc, argv);
 
-  return ((Scheme_Class *)argv[0])->sup;
+  v = ((Scheme_Class *)argv[0])->sup;
+  return v ? v : scheme_false;
 }
 
 static Scheme_Object *class_find_meth(int argc, Scheme_Object **argv)
@@ -351,12 +353,12 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   Scheme_Object *f, **methods, **names;
 
   sclass = (Scheme_Class *)scheme_malloc_tagged(sizeof(Scheme_Class));
-  sclass->type = objscheme_class_type;
-
-  if (!sup)
-    sup = scheme_false;
+  sclass->so.type = objscheme_class_type;
 
   sclass->name = name;
+
+  if (sup && SCHEME_FALSEP(sup))
+    sup = NULL;
   sclass->sup = sup;
 
   f = scheme_make_prim(initf);

@@ -488,6 +488,8 @@ inline static void reset_nursery(void)
   new_gen0_size = (GEN0_GROW_FACTOR * memory_in_use) + GEN0_GROW_ADDITION;
   if(new_gen0_size > MAX_GEN0_SIZE)
     new_gen0_size = MAX_GEN0_SIZE;
+  if(new_gen0_size < INIT_GEN0_SIZE)
+    new_gen0_size = INIT_GEN0_SIZE;
 
   if(difference(new_gen0_size, gen0_max_size) > MAX_GEN0_GROW_SHRINK) {
     if(gen0_max_size > new_gen0_size)

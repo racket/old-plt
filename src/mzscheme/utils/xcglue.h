@@ -24,10 +24,7 @@ void objscheme_init(Scheme_Env *);
      The following struct declaration is crafted to
      overlay over a Scheme_Structure. */
 typedef struct Scheme_Class_Object {
-  Scheme_Type type; /* scheme_structure_type */
-#ifdef MZ_PRECISE_GC
-  short hash;
-#endif
+  Scheme_Object so; /* scheme_structure_type */
   void *__type; /* struct type */
   long primflag; /* field 0 */
   void *primdata; /* field 1 */

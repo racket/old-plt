@@ -312,7 +312,7 @@ int actual_main(int argc, char *argv[])
   scheme_handle_aewait_event = handle_one;
 
   scheme_sleep = MacSleep;
-  
+
   GC_out_of_memory = MacOutOfMemory;
 
   Drop_GetArgs(&argc, &argv);

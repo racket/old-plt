@@ -3943,7 +3943,6 @@ static inline int Identity(wxFontNameDirectory *, int v)
 
 
 
-
 class os_wxFontNameDirectory : public wxFontNameDirectory {
  public:
 
@@ -4097,58 +4096,6 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,
 }
 
 #pragma argsused
-static Scheme_Object *os_wxFontNameDirectoryGetNewFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  int r;
-  objscheme_check_valid(obj);
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetNewFontId());
-
-  
-  
-  return scheme_make_integer(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxFontNameDirectorySetAFMName(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  int x0;
-  int x1;
-  int x2;
-  string x3;
-
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x3);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-afm-name in font-name-directory<%>"));
-  x1 = WITH_VAR_STACK(unbundle_symset_weight(p[1], "set-afm-name in font-name-directory<%>"));
-  x2 = WITH_VAR_STACK(unbundle_symset_style(p[2], "set-afm-name in font-name-directory<%>"));
-  x3 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[3], "set-afm-name in font-name-directory<%>"));
-
-  
-  WITH_VAR_STACK(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->SetAFMName(x0, x1, x2, x3));
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4206,34 +4153,6 @@ static Scheme_Object *os_wxFontNameDirectorySetScreenName(Scheme_Object *obj, in
   
   
   return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(obj);
-  int x0;
-  int x1;
-  int x2;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory<%>"));
-  x1 = WITH_VAR_STACK(unbundle_symset_weight(p[1], "get-afm-name in font-name-directory<%>"));
-  x2 = WITH_VAR_STACK(unbundle_symset_style(p[2], "get-afm-name in font-name-directory<%>"));
-
-  
-  r = WITH_VAR_STACK(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetAFMName(x0, x1, x2));
-
-  
-  
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -4300,18 +4219,15 @@ void objscheme_setup_wxFontNameDirectory(void *env)
   wxREGGLOB(os_wxFontNameDirectory_class);
   wxREGGLOB(os_wxFontNameDirectory_interface);
 
-  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 12);
+  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 9);
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family", os_wxFontNameDirectoryGetFamily, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name", os_wxFontNameDirectoryGetFontName, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id", os_wxFontNameDirectoryGetFontId, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-new-font-id", os_wxFontNameDirectoryGetNewFontId, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-afm-name", os_wxFontNameDirectorySetAFMName, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name", os_wxFontNameDirectorySetPostScriptName, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name", os_wxFontNameDirectorySetScreenName, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-afm-name", os_wxFontNameDirectoryGetAFMName, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name", os_wxFontNameDirectoryGetPostScriptName, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name", os_wxFontNameDirectoryGetScreenName, 3, 3));
 

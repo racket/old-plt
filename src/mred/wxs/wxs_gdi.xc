@@ -335,13 +335,9 @@ static inline int Identity(wxFontNameDirectory *, int v)
 
 @ "get-screen-name" : nstring GetScreenName(int,SYM[weight],SYM[style]);
 @ "get-post-script-name" : nstring GetPostScriptName(int,SYM[weight],SYM[style]);
-@ "get-afm-name" : nstring GetAFMName(int,SYM[weight],SYM[style]);
 
 @ "set-screen-name" : void SetScreenName(int,SYM[weight],SYM[style],string);
 @ "set-post-script-name" : void SetPostScriptName(int,SYM[weight],SYM[style],string);
-@ "set-afm-name" : void SetAFMName(int,SYM[weight],SYM[style],string);
-
-@ "get-new-font-id" :   int GetNewFontId()
 
 @ "get-font-id" : int GetFontId(string,SYM[family]);
 @ "get-face-name" : nstring GetFontName(int);

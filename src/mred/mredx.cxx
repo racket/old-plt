@@ -221,49 +221,6 @@ Window GetEventWindow(XEvent *e)
   return window;
 }
 
-#if 0
-char *get_event_type(XEvent *e)
-{
-
-#define NAMECASE(type) case type: return #type;
-
-  switch (e->type) {
-    NAMECASE(MappingNotify);
-    NAMECASE(ClientMessage);
-    NAMECASE(SelectionClear);
-    NAMECASE(SelectionNotify);
-    NAMECASE(SelectionRequest);
-    NAMECASE(ButtonPress);
-    NAMECASE(ButtonRelease);
-    NAMECASE(MotionNotify);
-    NAMECASE(ColormapNotify);
-    NAMECASE(EnterNotify);
-    NAMECASE(LeaveNotify);
-    NAMECASE(FocusIn);
-    NAMECASE(FocusOut);
-    NAMECASE(Expose);
-    NAMECASE(GraphicsExpose);
-    NAMECASE(NoExpose);
-    NAMECASE(VisibilityNotify);
-    NAMECASE(KeyPress);
-    NAMECASE(KeyRelease);
-    NAMECASE(KeymapNotify);
-    NAMECASE(PropertyNotify);
-    NAMECASE(ResizeRequest);
-    NAMECASE(CirculateNotify);
-    NAMECASE(ConfigureNotify);
-    NAMECASE(DestroyNotify);
-    NAMECASE(GravityNotify);
-    NAMECASE(MapNotify);
-    NAMECASE(ReparentNotify);
-    NAMECASE(UnmapNotify);
-    NAMECASE(CirculateRequest);
-    NAMECASE(ConfigureRequest);
-    NAMECASE(MapRequest);
-  }
-}
-#endif
-
 static Bool CheckPred(Display *display, XEvent *e, char *args)
 {
   if (short_circuit)

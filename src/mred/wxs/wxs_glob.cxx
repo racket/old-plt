@@ -168,7 +168,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x0;
     string x1;
     string x2;
-    nstring x3;
+    npathname x3;
 
     
     if ((n < 3) ||(n > 4)) 
@@ -177,7 +177,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     x1 = (string)objscheme_unbundle_string(p[1], "write-resource (string case)");
     x2 = (string)objscheme_unbundle_string(p[2], "write-resource (string case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "write-resource (string case)");
+      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "write-resource (string case)");
     } else
       x3 = NULL;
 
@@ -190,7 +190,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x0;
     string x1;
     ExactLong x2;
-    nstring x3;
+    npathname x3;
 
     
     if ((n < 3) ||(n > 4)) 
@@ -199,7 +199,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     x1 = (string)objscheme_unbundle_string(p[1], "write-resource (number case)");
     x2 = objscheme_unbundle_ExactLong(p[2], "write-resource (number case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "write-resource (number case)");
+      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "write-resource (number case)");
     } else
       x3 = NULL;
 
@@ -223,7 +223,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     string x1;
     string _x2;
     string* x2 = &_x2;
-    nstring x3;
+    npathname x3;
 
     
     if ((n < 3) ||(n > 4)) 
@@ -232,7 +232,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     x1 = (string)objscheme_unbundle_string(p[1], "get-resource (string case)");
           *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "get-resource (string case)"), "get-resource (string case)"", extracting boxed argument");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (string case)");
+      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "get-resource (string case)");
     } else
       x3 = NULL;
 
@@ -248,7 +248,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     string x1;
     long _x2;
     long* x2 = &_x2;
-    nstring x3;
+    npathname x3;
 
     
     if ((n < 3) ||(n > 4)) 
@@ -257,7 +257,7 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     x1 = (string)objscheme_unbundle_string(p[1], "get-resource (number case)");
           *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-resource (number case)"), "get-resource (number case)"", extracting boxed argument");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (number case)");
+      x3 = (npathname)objscheme_unbundle_nullable_pathname(p[3], "get-resource (number case)");
     } else
       x3 = NULL;
 

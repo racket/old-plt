@@ -999,7 +999,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   wxTabSnip *tabsnip;
   Bool deleted = FALSE, insertedLine = FALSE, scroll;
 
-  if (writeLocked || userLocked || (!isnip && !strlen))
+  if (writeLocked || userLocked)
     return;
 
   if (start < 0)
@@ -1017,15 +1017,20 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       if (!delayRefresh)
 	needXCopy = TRUE;
 #endif	
-      delayRefresh++;
+      if (isnip || strlen)
+	delayRefresh++;
       Delete(start, end, scrollOk);
       deleted = TRUE;
-      --delayRefresh;
+      if (isnip || strlen)
+	--delayRefresh;
 #if ALLOW_X_STYLE_SELECTION
       if (!delayRefresh)
 	needXCopy = FALSE;
 #endif	
     }
+
+  if (!isnip && !strlen)
+    return;
 
   writeLocked = TRUE;
 

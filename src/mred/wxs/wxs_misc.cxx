@@ -542,7 +542,7 @@ void os_wxClipboardClient::BeingReplaced()
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "being-replaced", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -672,7 +672,7 @@ if (os_wxClipboardClient_class) {
  scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types", os_wxClipboardClientGetTypes, 0, 0);
  scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type", os_wxClipboardClientAddType, 1, 1);
  scheme_add_method_w_arity(os_wxClipboardClient_class, "get-data", os_wxClipboardClientGetData, 1, 1);
- scheme_add_method_w_arity(os_wxClipboardClient_class, "being-replaced", os_wxClipboardClientBeingReplaced, 0, 0);
+ scheme_add_method_w_arity(os_wxClipboardClient_class, "on-replaced", os_wxClipboardClientBeingReplaced, 0, 0);
 
 
   scheme_made_class(os_wxClipboardClient_class);

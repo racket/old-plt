@@ -83,7 +83,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @CREATOR ()
 
-@ V "being-replaced" : void BeingReplaced();
+@ V "on-replaced" : void BeingReplaced();
 @ V "get-data" : nstring GetData(string,-long*); : //setStringSize[1] : : : XrNULL
 
 @ m "add-type" : void AddType(string);

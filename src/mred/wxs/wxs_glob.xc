@@ -86,10 +86,10 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 @ "label->plain-label" : string wxStripMenuCodes_Scheme(string);
 
-@ "get-resource" : bool wxGetResource(string,string,string*,nstring=NULL); <> string
-@ "get-resource" : bool wxGetResource(string,string,long*,nstring=NULL); <> number
-@ "write-resource" : bool wxWriteResource(string,string,string,nstring=NULL); <> string
-@ "write-resource" : bool wxWriteResource(string,string,ExactLong,nstring=NULL); <> number
+@ "get-resource" : bool wxGetResource(string,string,string*,npathname=NULL); <> string
+@ "get-resource" : bool wxGetResource(string,string,long*,npathname=NULL); <> number
+@ "write-resource" : bool wxWriteResource(string,string,string,npathname=NULL); <> string
+@ "write-resource" : bool wxWriteResource(string,string,ExactLong,npathname=NULL); <> number
 
 @MACRO BundleVoidStar = (void *){x}
 @MACRO spSema = semaphore

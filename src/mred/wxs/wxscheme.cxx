@@ -2654,6 +2654,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxSlider(global_env);
   objscheme_setup_wxsGauge(global_env);
   objscheme_setup_wxTabChoice(global_env);
+  objscheme_setup_wxGroupBox(global_env);
   objscheme_setup_wxMenu(global_env);
   objscheme_setup_wxMenuBar(global_env);
   objscheme_setup_wxsMenuItem(global_env);

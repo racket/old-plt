@@ -11,6 +11,7 @@
 
 #ifndef wx_xt
 # include "wx_tabc.h"
+# include "wx_gbox.h"
 #endif
 
 
@@ -31,6 +32,7 @@
 #ifdef wx_xt
 /* This calls won't be instantiated, but it must compile. */
 #include "wx_item.h"
+
 class wxTabChoice : public wxItem {
 public:
     wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -55,6 +57,16 @@ void wxTabChoice::SetSelection(int n) { }
 void wxTabChoice::Enable(Bool enable) { }
 void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
+
+class wxGroupBox : public wxItem {
+public:
+    wxGroupBox(wxPanel *panel, char *label, int style);
+};
+
+wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
+{
+}
+
 #endif
 
 #include "wxscheme.h"
@@ -922,3 +934,548 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
+
+
+
+
+static Scheme_Object *groupBoxStyle_wxINVISIBLE_sym = NULL;
+
+static void init_symset_groupBoxStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(groupBoxStyle_wxINVISIBLE_sym);
+  groupBoxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
+}
+
+static int unbundle_symset_groupBoxStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!groupBoxStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_groupBoxStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == groupBoxStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "groupBoxStyle symbol list", -1, 0, &v));
+  return 0;
+}
+
+
+
+
+
+
+
+
+class os_wxGroupBox : public wxGroupBox {
+ public:
+
+  os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2 = 0));
+  ~os_wxGroupBox();
+  void OnDropFile(pathname x0);
+  Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
+  Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
+  void OnSize(int x0, int x1);
+  void OnSetFocus();
+  void OnKillFocus();
+#ifdef MZ_PRECISE_GC
+  void gcMark();
+  void gcFixup();
+#endif
+};
+
+#ifdef MZ_PRECISE_GC
+void os_wxGroupBox::gcMark() {
+  wxGroupBox::gcMark();
+}
+void os_wxGroupBox::gcFixup() {
+  wxGroupBox::gcFixup();
+}
+#endif
+
+static Scheme_Object *os_wxGroupBox_class;
+
+os_wxGroupBox::os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2))
+CONSTRUCTOR_INIT(: wxGroupBox(x0, x1, x2))
+{
+}
+
+os_wxGroupBox::~os_wxGroupBox()
+{
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+void os_wxGroupBox::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-drop-file", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxGroupBox::OnDropFile(x0);
+  } else {
+  mz_jmp_buf savebuf;
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  }
+}
+
+Bool os_wxGroupBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
+{
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "pre-on-event", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return FALSE;
+  } else {
+  mz_jmp_buf savebuf;
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in group-box%"", extracting return value"));
+  }
+}
+
+Bool os_wxGroupBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
+{
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "pre-on-char", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return FALSE;
+  } else {
+  mz_jmp_buf savebuf;
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in group-box%"", extracting return value"));
+  }
+}
+
+void os_wxGroupBox::OnSize(int x0, int x1)
+{
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-size", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxGroupBox::OnSize(x0, x1);
+  } else {
+  
+  p[POFFSET+0] = scheme_make_integer(x0);
+  p[POFFSET+1] = scheme_make_integer(x1);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
+  
+  
+  }
+}
+
+void os_wxGroupBox::OnSetFocus()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-set-focus", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxGroupBox::OnSetFocus();
+  } else {
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  }
+}
+
+void os_wxGroupBox::OnKillFocus()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxGroupBox *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxGroupBox_class, "on-kill-focus", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxGroupBox::OnKillFocus();
+  } else {
+  mz_jmp_buf savebuf;
+  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  }
+}
+
+static Scheme_Object *os_wxGroupBoxOnDropFile(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxGroupBox_class, "on-drop-file in group-box%", n, p);
+  pathname x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in group-box%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->wxGroupBox::OnDropFile(x0));
+  else
+    WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxGroupBoxPreOnEvent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxGroupBox_class, "pre-on-event in group-box%", n, p);
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-event in group-box%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[POFFSET+1], "pre-on-event in group-box%", 0));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)-> wxWindow::PreOnEvent(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxGroupBoxPreOnChar(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxGroupBox_class, "pre-on-char in group-box%", n, p);
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-char in group-box%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[POFFSET+1], "pre-on-char in group-box%", 0));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)-> wxWindow::PreOnChar(x0, x1));
+  else
+    r = WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxGroupBoxOnSize(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxGroupBox_class, "on-size in group-box%", n, p);
+  int x0;
+  int x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "on-size in group-box%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "on-size in group-box%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->wxGroupBox::OnSize(x0, x1));
+  else
+    WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxGroupBoxOnSetFocus(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxGroupBox_class, "on-set-focus in group-box%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->wxGroupBox::OnSetFocus());
+  else
+    WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxGroupBoxOnKillFocus(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxGroupBox_class, "on-kill-focus in group-box%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->wxGroupBox::OnKillFocus());
+  else
+    WITH_VAR_STACK(((wxGroupBox *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxGroupBox_ConstructScheme(int n,  Scheme_Object *p[])
+{
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
+  os_wxGroupBox *realobj INIT_NULLED_OUT;
+  REMEMBER_VAR_STACK();
+  class wxPanel* x0 INIT_NULLED_OUT;
+  nstring x1 INIT_NULLED_OUT;
+  int x2;
+
+  SETUP_VAR_STACK_PRE_REMEMBERED(4);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, realobj);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+
+  
+  if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in group-box%", POFFSET+2, POFFSET+3, n, p, 1));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in group-box%", 0));
+  x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in group-box%"));
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(unbundle_symset_tabStyle(p[POFFSET+2], "initialization in group-box%"));
+  } else
+    x2 = 0;
+
+  
+  realobj = WITH_VAR_STACK(new os_wxGroupBox CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxGroupBox(x0, x1, x2));
+#endif
+  realobj->__gc_external = (void *)p[0];
+  
+  
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
+}
+
+void objscheme_setup_wxGroupBox(Scheme_Env *env)
+{
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+
+  wxREGGLOB(os_wxGroupBox_class);
+
+  os_wxGroupBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "group-box%", "item%", (Scheme_Method_Prim *)os_wxGroupBox_ConstructScheme, 6));
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxGroupBoxOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxGroupBoxPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxGroupBoxPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "on-size" " method", (Scheme_Method_Prim *)os_wxGroupBoxOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxGroupBoxOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGroupBox_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxGroupBoxOnKillFocus, 0, 0));
+
+
+  WITH_VAR_STACK(scheme_made_class(os_wxGroupBox_class));
+
+
+}
+
+int objscheme_istype_wxGroupBox(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  REMEMBER_VAR_STACK();
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (objscheme_is_a(obj,  os_wxGroupBox_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "group-box% object or " XC_NULL_STR: "group-box% object", -1, 0, &obj));
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxGroupBox(class wxGroupBox *realobj)
+{
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
+    return sobj;
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxGroupBox_class));
+
+  obj->primdata = realobj;
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  return (Scheme_Object *)obj;
+}
+
+class wxGroupBox *objscheme_unbundle_wxGroupBox(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  REMEMBER_VAR_STACK();
+
+  (void)objscheme_istype_wxGroupBox(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
+  if (o->primflag)
+    return (os_wxGroupBox *)o->primdata;
+  else
+    return (wxGroupBox *)o->primdata;
+}
+

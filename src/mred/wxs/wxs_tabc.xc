@@ -3,6 +3,7 @@
 
 #ifndef wx_xt
 # include "wx_tabc.h"
+# include "wx_gbox.h"
 #endif
 
 @INCLUDE wxs.xci
@@ -10,6 +11,7 @@
 #ifdef wx_xt
 /* This calls won't be instantiated, but it must compile. */
 #include "wx_item.h"
+
 class wxTabChoice : public wxItem {
 public:
     wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -34,6 +36,16 @@ void wxTabChoice::SetSelection(int n) { }
 void wxTabChoice::Enable(Bool enable) { }
 void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
+
+class wxGroupBox : public wxItem {
+public:
+    wxGroupBox(wxPanel *panel, char *label, int style);
+};
+
+wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
+{
+}
+
 #endif
 
 @HEADER
@@ -71,3 +83,16 @@ void wxTabChoice::Delete(int which) { }
 @END
 
 @INCLUDE cb_end.xci
+
+
+
+@CLASSBASE wxGroupBox "group-box":"item"
+
+@BEGINSYMBOLS groupBoxStyle > > PRED BUNDLE
+@SYM "deleted" : wxINVISIBLE
+@ENDSYMBOLS
+
+@CREATOR (wxPanel!,nstring,SYM[tabStyle]=0);
+@INCLUDE wxs_item.xci
+
+@END

@@ -13,7 +13,7 @@
 				    with-continuation-mark
 				    if #%app
 				    define-values define-syntax
-				    module) 
+				    module import export import-for-syntax export-indirect)
 			       trans?
 			  clause ...))])))
 

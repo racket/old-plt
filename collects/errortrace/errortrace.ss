@@ -1,22 +1,13 @@
 
-;; Poor man's stack-trace-on-exceptions/profiler
-
-;; see doc.txt for information
+;; Poor man's stack-trace-on-exceptions/profiler.
+;; See doc.txt for information.
 
 (module errortrace mzscheme
+  (import (lib "kerncase.ss" "syntax"))
 
-  (define key (gensym 'key))
-  (export-indirect key)
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Profiling run-time support
 
-  (define (stx-bound-memq ssym l)
-    (ormap (lambda (p)
-	     (and (syntax? P)
-		  (bound-identifier=? ssym p)))
-	   l))
-  
-  (define instrumenting-enabled (make-parameter #t))
-  (define error-context-display-depth (make-parameter 10000 (lambda (x) (and (integer? x) x))))
-  
   (define profile-thread #f)
   (define profile-key (gensym))
   
@@ -68,20 +59,11 @@
                                                    cms))
                                             cmss))))))
   
-  ;; with-mark : stx stx -> stx
-  (define (with-mark mark expr)
-    (with-syntax ([expr expr]
-		  [mark mark]
-		  [key key])
-      (syntax
-       (with-continuation-mark
-	'key
-	(quote-syntax mark)
-	expr))))
-  
-  
-  (define (profile-point body name expr env)
-    (let ([body (map (lambda (e) (annotate e env)) (stx->list body))])
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Profiling instrumenter
+
+  (define (profile-point body name expr env trans?)
+    (let ([body (map (lambda (e) (annotate e env trans?)) (stx->list body))])
       (if (profiling-enabled)
           (let ([key (gensym)])
             (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
@@ -90,7 +72,8 @@
 	      (with-syntax ([rest 
 			     (insert-at-tail*
 			      (syntax (register-profile-done 'key start))
-			      body)])
+			      body
+			      trans?)])
 		(syntax
 		 ((let ([start (register-profile-start 'key)])
 		    (with-continuation-mark
@@ -99,21 +82,15 @@
 		     (begin . rest))))))))
           body)))
   
-  (define (insert-at-tail* e exprs)
+  (define (insert-at-tail* e exprs trans?)
     (if (stx-null? (stx-cdr exprs))
-        (list (insert-at-tail e (stx-car exprs)))
-        (cons (stx-car exprs) (insert-at-tail* e (stx-cdr exprs)))))
+        (list (insert-at-tail e (stx-car exprs) trans?))
+        (cons (stx-car exprs) (insert-at-tail* e (stx-cdr exprs) trans?))))
   
-  (define (insert-at-tail se sexpr)
+  (define (insert-at-tail se sexpr trans?)
     (with-syntax ([expr sexpr]
 		  [e se])
-      (syntax-case sexpr (quote 
-			  quote-syntax #%datum #%unbound
-			  lambda case-lambda
-			  let-values letrec-values
-			  begin begin0 set! struct
-			  with-continuation-mark
-			  if #%app)
+      (kernel-syntax-case sexpr trans?
 	;; negligible time to eval
 	[id
 	 (identifier? sexpr)
@@ -130,41 +107,59 @@
 	[(struct . _) (syntax (begin0 expr e))]
 
 	[(let-values bindings . body)
-	 (with-syntax ([rest (insert-at-tail* se (syntax body))])
+	 (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
 	   (syntax (let-values bindings . rest)))]
 	[(letrec-values bindings . body)
-	 (with-syntax ([rest (insert-at-tail* se (syntax body))])
+	 (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
 	   (syntax (letrec-values bindings . rest)))]
 
 	[(begin . _)
-	 (insert-at-tail* se sexpr)]
+	 (insert-at-tail* se sexpr trans?)]
 	[(with-continuation-mark . _)
-	 (insert-at-tail* se sexpr)]
+	 (insert-at-tail* se sexpr trans?)]
 
 	[(begin0 body ...)
 	 (syntax (begin0 body ... e))]
 
 	[(if test then)
-	 (with-syntax ([then2 (insert-at-tail se (syntax then))])
+	 (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)])
 	   (syntax (if test then2)))]
 	[(if test then else)
 	 ;; WARNING: e inserted twice!
-	 (with-syntax ([then2 (insert-at-tail se (syntax then))]
-		       [else2 (insert-at-tail se (syntax else))])
+	 (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)]
+		       [else2 (insert-at-tail se (syntax else) trans?)])
 	   (syntax (if test then2 else2)))]
 
 	[(#%app . _)
 	 ;; application; exploit guaranteed left-to-right evaluation
-	 (insert-at-tail* se sexpr)]
+	 (insert-at-tail* se sexpr trans?)]
 	
 	[_else
 	 (error 'errortrace
-		"unrecognized expression form: ~e"
+		"unrecognized (non-top-level) expression form: ~e"
 		(syntax->datum sexpr))])))
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Stacktrace instrumenter
+
+  (define key (gensym 'key))
+  (export-indirect key)
+
+  ;; with-mark : stx stx -> stx
+  (define (with-mark mark expr)
+    (with-syntax ([expr expr]
+		  [mark mark]
+		  [key key])
+      (syntax
+       (with-continuation-mark
+	'key
+	(quote-syntax mark)
+	expr))))
+  
   
   ;; Result doesn't have a `lambda', so it works
   ;; for case-lambda
-  (define (annotate-lambda name expr args body env)
+  (define (annotate-lambda name expr args body env trans?)
     (let ([env (let loop ([v (syntax args)])
 		 (cond
 		  [(stx-null? v) env]
@@ -173,11 +168,12 @@
       (with-syntax ([body
 		     (profile-point 
 		      body
-		      name expr env)]
+		      name expr env
+		      trans?)]
 		    [args args])
 	(syntax (args . body)))))
 
-  (define (annotate-let rec? env varsl rhsl bodyl)
+  (define (annotate-let rec? env trans? varsl rhsl bodyl)
     (let ([varses (syntax->list varsl)]
 	  [rhses (syntax->list rhsl)]
 	  [bodies (syntax->list bodyl)])
@@ -194,13 +190,14 @@
 			      (syntax id)]
 			     [_else #f])
 			   rhs
-			   rhs-env))
+			   rhs-env
+			   trans?))
 			varses 
 			rhses)]
 		      [(body ...)
 		       (map
 			(lambda (body)
-			  (annotate body env))
+			  (annotate body env trans?))
 			bodies)]
 		      [(vars ...) varses]
 		      [let (if rec? 
@@ -209,24 +206,17 @@
 	  (syntax (let ([vars rhs] ...)
 		    body ...))))))
 
-  (define (annotate-seq env expr who bodyl annotate)
+  (define (annotate-seq env trans? expr who bodyl annotate)
     (with-syntax ([who who]
 		  [bodyl
 		   (map (lambda (b)
-			  (annotate b env))
+			  (annotate b env trans?))
 			(syntax->list bodyl))])
       (syntax/loc expr (who . bodyl))))
   
   (define (make-annotate top? name)
-    (lambda (expr env)
-      (syntax-case expr (quote 
-			 quote-syntax #%datum #%unbound
-			 lambda case-lambda
-			 let-values letrec-values
-			 begin begin0 set! struct
-			 with-continuation-mark
-			 if #%app
-			 define-values define-syntax)
+    (lambda (expr env trans?)
+      (kernel-syntax-case expr trans?
 	[_
 	 (identifier? expr)
 	 (if (stx-bound-memq expr env)
@@ -252,12 +242,12 @@
 					      (syntax id)]
 					     [_else #f])
 					   (syntax rhs)
-					   env))])
+					   env trans?))])
 	   (syntax/loc expr (define-values names marked)))]
 	[(begin . exprs)
 	 top?
 	 (annotate-seq
-	  env expr (quote-syntax begin)
+	  env trans? expr (quote-syntax begin)
 	  (syntax exprs)
 	  annotate-top)]
 	[(define-syntax name rhs)
@@ -266,64 +256,86 @@
 					  (annotate-named
 					   (syntax name)
 					   (syntax rhs)
-					   env))])
+					   env #t))])
 	   (syntax/loc expr (define-syntax name marked)))]
-	
-	
+
+	;; Just wrap body expressions
+	[(module name init-import body ...)
+	 top?
+	 (with-syntax ([bodyl
+			(map (lambda (b)
+			       (annotate-top b env trans?))
+			     (syntax->list (syntax (body ...))))])
+	   (syntax/loc expr (module name init-import . bodyl)))]
+
+	;; No way to wrap
+	[(import i ...) expr]
+	[(import-for-syntax i ...) expr]
+	;; No error possible (and no way to wrap)
+	[(export i ...) expr]
+	[(export-indirect i ...) expr]
+
+	;; No error possible
 	[(quote _)
 	 expr]
 	[(quote-syntax _)
 	 expr]
 
+	;; Wrap body, also a profile point
 	[(lambda args . body)
 	 (with-syntax ([cl (annotate-lambda name expr 
 					    (syntax args) (syntax body) 
-					    env)])
+					    env trans?)])
 	   (syntax/loc expr (lambda . cl)))]
 	[(case-lambda [args . body] ...)
 	 (with-syntax ([clauses
 			(map
 			 (lambda (args body)
-			   (annotate-lambda name expr args body env))
+			   (annotate-lambda name expr args body env trans?))
 			 (syntax->list (syntax (args ...))) 
 			 (syntax->list (syntax (body ...))))])
 	   (syntax/loc expr (case-lambda . clauses)))]
 	
+	;; Wrap RHSs and body
 	[(let-values ([vars rhs] ...) . body)
-	 (annotate-let #f env
+	 (annotate-let #f env trans?
 		       (syntax (vars ...))
 		       (syntax (rhs ...))
 		       (syntax body))]
 	[(letrec-values ([vars rhs] ...) . body)
-	 (annotate-let #t env
+	 (annotate-let #t env trans?
 		       (syntax (vars ...))
 		       (syntax (rhs ...))
 		       (syntax body))]
 	
+	;; Wrap RHS
 	[(set! var rhs)
 	 (with-syntax ([rhs (annotate-named 
 			     (syntax var)
 			     (syntax rhs)
-			     env)])
+			     env trans?)])
 	   (syntax/loc expr (set! var rhs)))]
 
+	;; Wrap subexpressions only
 	[(begin . body)
-	 (annotate-seq env expr (syntax begin) (syntax body) annotate)]
+	 (annotate-seq env trans? expr (syntax begin) (syntax body) annotate)]
 	[(begin0 . body)
-	 (annotate-seq env expr (syntax begin0) (syntax body) annotate)]
+	 (annotate-seq env trans? expr (syntax begin0) (syntax body) annotate)]
 	[(if . body)
-	 (annotate-seq env expr (syntax if) (syntax body) annotate)]
+	 (annotate-seq env trans? expr (syntax if) (syntax body) annotate)]
 	[(with-continuation-mark . body)
-	 (annotate-seq env expr (syntax with-continuation-mark) (syntax body) annotate)]
+	 (annotate-seq env trans? expr (syntax with-continuation-mark) (syntax body) annotate)]
 
+	;; Wrap whole application, plus subexpressions
 	[(#%app . body)
 	 (with-mark expr
-		    (annotate-seq env expr 
+		    (annotate-seq env trans? expr 
 				  (syntax #%app) (syntax body) 
 				  annotate))]
 
+	;; Going away...
 	[(struct (name sup) fields)
-	 (with-syntax ([sup (annotate (syntax sup) env)])
+	 (with-syntax ([sup (annotate (syntax sup) env trans?)])
 	   (syntax/loc expr (struct (name sup) fields)))]
 	[(struct . _)
 	 ;; no error possile
@@ -337,13 +349,25 @@
   
   (define annotate (make-annotate #f #f))
   (define annotate-top (make-annotate #t #f))
-  (define annotate-named (lambda (name expr env) ((make-annotate #t name) expr env)))
+  (define annotate-named (lambda (name expr env trans?) ((make-annotate #t name) expr env trans?)))
+  
+  (define (stx-bound-memq ssym l)
+    (ormap (lambda (p)
+	     (and (syntax? P)
+		  (bound-identifier=? ssym p)))
+	   l))
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Eval handler, exception handler
+
+  (define instrumenting-enabled (make-parameter #t))
+  (define error-context-display-depth (make-parameter 10000 (lambda (x) (and (integer? x) x))))
   
   (current-eval
    (let* ([orig (current-eval)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let ([a (annotate-top (expand e) null)])
+	     (let ([a (annotate-top (expand e) null #f)])
 	       (orig a)))])
      errortrace-eval-handler))
   
@@ -391,6 +415,8 @@
 		   ((error-escape-handler)))
                  (orig x)))])
      errortrace-exception-handler))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   (export print-error-trace 
 	  error-context-display-depth 

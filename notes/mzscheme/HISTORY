@@ -27,8 +27,8 @@ Added raise-mismatch-error
 MacOS: getenv and putenv work within MzScheme; in a file called
  "Environment" resides in MzScheme's folder, it provides the
  initial environment
-Changed handling of inexact can complex numbers towards complying
- with Brad Lucier's workshop proposal:
+Changed handling of inexact can complex numbers towards compliance
+ with Brad Lucier's proposal:
   (* 0 x) = 0 for all x
   (log 1) = 0, etc.
   -0.0 and 0.0 are properly distinguished; (- 0.0) = -0.0, and
@@ -40,9 +40,7 @@ Changed handling of inexact can complex numbers towards complying
    that (sqrt -4.0) is 0+2.0i
   Complex numbers can have a +nan.0 real/imaginary part with
    an imaginary/real part that is not +nan.0
-  THE FOLLOWING MAY CHANGE: numbers with an inexact imaginary part
-   are never real; note that `zero?' tests for real zero, so 
-   (zero? 0.0+0.0i) = #f;
+  Numbers with an inexact imaginary part are never real
 All zero-length vectors are eq
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@

@@ -138,6 +138,18 @@
 	    [break (lambda () 
 		     (when current-thread-desc
 		       (break-thread current-thread-desc)))]
+	    [userspace-eval
+	     (let ([system-parameterization (current-parameterization)])
+	       (lambda (sexp)
+		 (with-parameterization system-parameterization
+		   (lambda ()
+		     (let* ([z (or (unbox aries:error-box)
+				   (let ([loc (zodiac:make-location 0 0 0 'eval)])
+				     (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+			    [structurized (zodiac:structurize-syntax sexp z)]
+			    [expanded (zodiac:scheme-expand structurized)]
+			    [annotated (aries:annotate expanded)])
+		       (user-eval annotated))))))]
 	    [user-eval
 	     (lambda (expr)
 	       (with-parameterization param
@@ -146,6 +158,7 @@
 				  [current-error-port this-err]
 				  [current-input-port this-in]
 				  [current-load do-load]
+				  ;[current-eval userspace-eval]
 				  [mzlib:pretty-print@:pretty-print-size-hook size-hook]
 				  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
 		     (eval expr)))))]
@@ -200,7 +213,7 @@
 		     [get-zodiac-code
 		      (lambda ()
 			(let* ([structurized (send edit get-zodiac-sexp)]
-			       [expanded (zodiac:expand structurized)]
+			       [expanded (zodiac:scheme-expand structurized)]
 			       [annotated (aries:annotate expanded)])
 			  annotated))])
 		 (do-many-evals get-zodiac-code pre post)))]
@@ -248,7 +261,7 @@
 			       [structurized (zodiac:structurize-syntax
 					      built
 					      (zodiac:make-zodiac 'rep loc loc))]
-			       [expanded (zodiac:expand structurized)]
+			       [expanded (zodiac:scheme-expand structurized)]
 			       [annotated (aries:annotate expanded)])
 			  annotated))])
 		 (mred:local-busy-cursor

@@ -120,7 +120,7 @@ force (int argc, Scheme_Object *argv[])
 #endif
 
     if (is_expr)
-      v = _scheme_eval_compiled_expr_multi(v);
+      v = _scheme_eval_linked_expr_multi(v);
     else
       v = _scheme_apply_multi(v, 0, NULL);
 

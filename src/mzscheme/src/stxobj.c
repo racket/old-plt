@@ -39,6 +39,9 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
+static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
+
+static Scheme_Object *phase_uninterned;
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
@@ -51,6 +54,8 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
    - A pair (cons <hash-table> v) is a module rename set
          the hash table maps renamed syms to modname-srcname pairs,
          and maps #f to a default module name mapping
+         and maps phase_uninterned to phase
+   - A pair (cons (box <num>) v) is a phase shift by <num>
 
    For object with sub-syntax:
 
@@ -129,6 +134,14 @@ void scheme_init_stx(Scheme_Env *env)
 						      "free-identifier=?",
 						      2, 2, 1),
 			     env);
+  scheme_add_global_constant("module-identifier=?", 
+			     scheme_make_folding_prim(module_eq,
+						      "module-identifier=?",
+						      2, 2, 1),
+			     env);
+
+  REGISTER_SO(phase_uninterned);
+  phase_uninterned = scheme_make_symbol("phase");
 }
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
@@ -222,13 +235,12 @@ Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
   return v;
 }
 
-Scheme_Object *scheme_make_module_rename(int for_top)
+Scheme_Object *scheme_make_module_rename(long phase)
 {
   Scheme_Hash_Table *ht;
 
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-  if (for_top)
-    scheme_add_to_table(ht, (const char *)scheme_make_integer(0), scheme_false, 0);
+  scheme_add_to_table(ht, (const char *)phase_uninterned, scheme_make_integer(phase), 0);
   
   return (Scheme_Object *)ht;
 }
@@ -296,14 +308,19 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   return (Scheme_Object *)stx;
 }
 
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift)
+{
+  return scheme_add_rename(stx, scheme_box(scheme_make_integer(shift)));
+}
+
 static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl)
 {
   while (!SCHEME_NULLP(wl)) {
-    if (SCHEME_VECTORP(SCHEME_CAR(wl)))
-      o = scheme_add_rename(o, SCHEME_CAR(wl));
-    else
+    if (SCHEME_NUMBERP(SCHEME_CAR(wl)))
       o = scheme_add_remove_mark(o, SCHEME_CAR(wl));
-
+    else
+      o = scheme_add_rename(o, SCHEME_CAR(wl));
+    
     wl = SCHEME_CDR(wl);
   }
 
@@ -380,13 +397,9 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
 {
   while (1) {
     /* Skip over renames: */
-    while (!SCHEME_NULLP(awl)
-	   && (SCHEME_VECTORP(SCHEME_CAR(awl))
-	       || SCHEME_HASHTP(SCHEME_CAR(awl))))
+    while (!SCHEME_NULLP(awl) && !SCHEME_NUMBERP(SCHEME_CAR(awl)))
       awl = SCHEME_CDR(awl);
-    while (!SCHEME_NULLP(bwl)
-	   && (SCHEME_VECTORP(SCHEME_CAR(bwl))
-	       || SCHEME_HASHTP(SCHEME_CAR(bwl))))
+    while (!SCHEME_NULLP(bwl) && !SCHEME_NUMBERP(SCHEME_CAR(bwl)))
       bwl = SCHEME_CDR(bwl);
 
     /* Either at end? Then the same only if both at end. */
@@ -402,42 +415,47 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
   }
 }
 
-static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
+static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly, long phase)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *rename_stack = scheme_null;
-  Scheme_Object *result = scheme_false;
+  Scheme_Object *result, *mresult = scheme_false;
 
   while (1) {
     if (SCHEME_NULLP(wraps)) {
       /* See rename case for info on rename_stack: */
+      result = scheme_false;
       while (!SCHEME_NULLP(rename_stack)) {
 	if (SAME_OBJ(SCHEME_CAAR(rename_stack), result))
 	  result = SCHEME_CDR(SCHEME_CAR(rename_stack));
 	rename_stack = SCHEME_CDR(rename_stack);
       }
+      if (SCHEME_FALSEP(result))
+	result = mresult;
       return result;
     } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && !lexonly) {
       /* Module rename: */
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      if (SCHEME_FALSEP(result) 
-	  /* A 0 in the table is a flag: this is a top-level rename,
-	     which doesn't override a later one. */
-	  || !scheme_lookup_in_table(ht, (const char *)scheme_make_integer(0))) {
+      if (SAME_OBJ(scheme_make_integer(phase),
+		   scheme_lookup_in_table(ht, (const char *)phase_uninterned))) {
 	Scheme_Object *rename;
 	
 	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
 	if (rename) {
-	  /* Match: set result for the case of no lexical capture: */
-	  result = SCHEME_CAR(rename);
+	  /* Match: set mresult for the case of no lexical capture: */
+	  mresult = SCHEME_CAR(rename);
 	} else {
 	  rename = scheme_lookup_in_table(ht, (const char *)scheme_false);
 	  if (rename) {
 	    /* Match on default: */
-	    result = SCHEME_CAR(rename);
+	    mresult = SCHEME_CAR(rename);
 	  }
 	}
       }
+    } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && !lexonly) {
+      Scheme_Object *n;
+      n= SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      phase -= SCHEME_INT_VAL(n);
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
@@ -453,7 +471,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
 	  other_env = SCHEME_VEC_ELS(rename)[2];
 	  
 	  if (SCHEME_FALSEP(other_env)) {
-	    other_env = resolve_env(renamed, 0);
+	    other_env = resolve_env(renamed, 1, 0);
 	    SCHEME_VEC_ELS(rename)[2] = other_env;
 	  }
 	  
@@ -468,7 +486,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
   }
 }
 
-static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
+static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long phase)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;
@@ -483,10 +501,8 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
 	return result;
     } else if (SCHEME_HASHTP(SCHEME_CAR(wraps))) {
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      if (!result
-	  /* A 0 in the table is a flag: this is a top-level rename,
-	     which doesn't override a later one. */
-	  || !scheme_lookup_in_table(ht, (const char *)scheme_make_integer(0))) {
+      if (SAME_OBJ(scheme_make_integer(phase),
+		   scheme_lookup_in_table(ht, (const char *)phase_uninterned))) {
 	/* Module rename: */
 	Scheme_Object *rename;
 	
@@ -501,6 +517,10 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
 	  }
 	}
       }
+    } else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {
+      Scheme_Object *n;
+      n= SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      phase -= SCHEME_INT_VAL(n);
     }
     
     /* Keep looking: */
@@ -508,7 +528,7 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
   }
 }
 
-int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
+int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
   Scheme_Object *asym, *bsym;
 
@@ -531,14 +551,14 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
   if ((a == asym) || (b == bsym))
     return 1;
   
-  a = resolve_env(a, 0);
-  b = resolve_env(b, 0);
+  a = resolve_env(a, 0, phase);
+  b = resolve_env(b, 0, phase);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
 }
 
-int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b)
+int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
   Scheme_Object *asym, *bsym;
 
@@ -546,11 +566,11 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b)
     return (a == b);
 
   if (SCHEME_STXP(a))
-    asym = get_module_src_name(a, 1);
+    asym = get_module_src_name(a, 1, phase);
   else
     asym = a;
   if (SCHEME_STXP(b))
-    bsym = get_module_src_name(b, 1);
+    bsym = get_module_src_name(b, 1, phase);
   else
     bsym = b;
 
@@ -561,21 +581,21 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b)
   if ((a == asym) || (b == bsym))
     return 1;
   
-  a = resolve_env(a, 0);
-  b = resolve_env(b, 0);
+  a = resolve_env(a, 0, phase);
+  b = resolve_env(b, 0, phase);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
 }
 
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a)
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase)
 {
   if (SCHEME_STXP(*a)) {
     Scheme_Object *modname, *exname;
     
-    exname = get_module_src_name(*a, 0);
+    exname = get_module_src_name(*a, 0, phase);
     if (exname) {
-      modname = resolve_env(*a, 0);
+      modname = resolve_env(*a, 0, phase);
       *a = exname;
       
       return modname;
@@ -585,7 +605,7 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a)
     return NULL;
 }
 
-int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid)
+int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase)
 {
   Scheme_Object *asym, *bsym;
 
@@ -612,25 +632,25 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
       return 0;
   
-  a = resolve_env(a, 0);
+  a = resolve_env(a, 1, phase);
   if (uid)
     b = uid;
   else
-    b = resolve_env(b, 0);
+    b = resolve_env(b, 1, phase);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
 }
 
-int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
-  return scheme_stx_env_bound_eq(a, b, NULL);
+  return scheme_stx_env_bound_eq(a, b, NULL, phase);
 }
 
-int scheme_stx_has_binder(Scheme_Object *a)
+int scheme_stx_has_binder(Scheme_Object *a, long phase)
 {
   if (SCHEME_STXP(a)) {
-    a = resolve_env(a, 1);
+    a = resolve_env(a, 1, phase);
     return SCHEME_TRUEP(a);
   } else
     return 0;
@@ -686,7 +706,7 @@ int scheme_stx_proper_list_length(Scheme_Object *list)
 
     turtle = SCHEME_CDR(turtle);
     if (SCHEME_STXP(turtle))
-      list = SCHEME_STX_VAL(turtle);
+      turtle = SCHEME_STX_VAL(turtle);
 
   }
   
@@ -1190,24 +1210,51 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 {
+  Scheme_Process *p = scheme_current_process;
+
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("bound-identifier=?", "idenfitier syntax", 0, argc, argv);
   if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
     scheme_wrong_type("bound-identifier=?", "idenfitier syntax", 1, argc, argv);
 
-  return (scheme_stx_bound_eq(argv[0], argv[1])
+  return (scheme_stx_bound_eq(argv[0], argv[1], 
+			      (p->current_local_env
+			       ? p->current_local_env->genv->phase
+			       : 0))
 	  ? scheme_true
 	  : scheme_false);
 }
 
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
 {
+  Scheme_Process *p = scheme_current_process;
+
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("free-identifier=?", "idenfitier syntax", 0, argc, argv);
   if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
     scheme_wrong_type("free-identifier=?", "idenfitier syntax", 1, argc, argv);
 
-  return (scheme_stx_free_eq(argv[0], argv[1])
+  return (scheme_stx_free_eq(argv[0], argv[1],
+			     (p->current_local_env
+			      ? p->current_local_env->genv->phase
+			      : 0))
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
+    scheme_wrong_type("module-identifier=?", "idenfitier syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
+    scheme_wrong_type("module-identifier=?", "idenfitier syntax", 1, argc, argv);
+
+  return (scheme_stx_module_eq(argv[0], argv[1],
+			       (p->current_local_env
+				? p->current_local_env->genv->phase
+				: 0))
 	  ? scheme_true
 	  : scheme_false);
 }

@@ -224,6 +224,7 @@
 #define scheme_expand (scheme_extension_table->scheme_expand)
 #define scheme_compile (scheme_extension_table->scheme_compile)
 #define scheme_make_promise_value (scheme_extension_table->scheme_make_promise_value)
+#define scheme_link (scheme_extension_table->scheme_link)
 #define scheme_read (scheme_extension_table->scheme_read)
 #define scheme_read_syntax (scheme_extension_table->scheme_read_syntax)
 #define scheme_write (scheme_extension_table->scheme_write)

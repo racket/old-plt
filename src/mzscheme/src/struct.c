@@ -882,7 +882,7 @@ struct_execute (Scheme_Object *form)
 
   parent = (SCHEME_NULLP(info->parent_type_expr)
 	    ? NULL 
-	    : _scheme_eval_compiled_expr(info->parent_type_expr));
+	    : _scheme_eval_linked_expr(info->parent_type_expr));
 
   if (parent && (SCHEME_FALSEP(parent) 
 		 || SAME_TYPE(SCHEME_TYPE(parent), scheme_inspector_type))) {
@@ -922,17 +922,39 @@ struct_execute (Scheme_Object *form)
 static Scheme_Object *
 struct_link(Scheme_Object *expr, Link_Info *info)
 {
+  Struct_Info *osinfo = (Struct_Info *)expr;
+  Struct_Info *nsinfo;
+  Scheme_Object *e;
+
+  e = osinfo->parent_type_expr;
+  if (e)
+    e = scheme_link_expr(e, info);
+
+  /* If expression needs no linking, reuse Struct_Info */
+  if (e == osinfo->parent_type_expr)
+    return scheme_make_syntax_linked(struct_execute, (Scheme_Object *)osinfo);
+
+  nsinfo = MALLOC_ONE_TAGGED(Struct_Info);
+  memcpy(osinfo, nsinfo, sizeof(Struct_Info));
+  nsinfo->parent_type_expr = e;
+
+  return scheme_make_syntax_linked(struct_execute, (Scheme_Object *)nsinfo);
+}
+
+static Scheme_Object *
+struct_resolve(Scheme_Object *expr, Resolve_Info *info)
+{
   Struct_Info *sinfo;
 
   sinfo = (Struct_Info *)expr;
 
   if (sinfo->parent_type_expr) {
     Scheme_Object *le;
-    le = scheme_link_expr(sinfo->parent_type_expr, info);
+    le = scheme_resolve_expr(sinfo->parent_type_expr, info);
     sinfo->parent_type_expr = le;
   }
 
-  return scheme_make_syntax_link(struct_execute, expr);
+  return scheme_make_syntax_resolved(struct_link, expr);
 }
 
 static Scheme_Object *
@@ -1006,17 +1028,17 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     info->num_fields = count;
     info->memo_names = NULL;
 
-    return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);
+    return scheme_make_syntax_compiled(struct_resolve, (Scheme_Object *)info);
   } else {
     Scheme_Object *base;
     base = (parent_expr 
 	    ? cons(base_symbol,
 		   cons(parent_expr, scheme_null))
 	    : base_symbol);
-    return scheme_datum_to_syntax(cons(struct_symbol,
+    return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(forms),
 				       cons(base,
 					    cons(field_symbols, scheme_null))),
-				  forms, scheme_sys_wraps);
+				  forms, forms);
   }
 }
 

@@ -162,10 +162,12 @@ extern Scheme_Object *scheme_multiple_values;
 
 Scheme_Object *scheme_eval(Scheme_Object *obj, Scheme_Env *env);
 Scheme_Object *scheme_eval_multi(Scheme_Object *obj, Scheme_Env *env);
-Scheme_Object *scheme_eval_compiled(Scheme_Object *obj);
-Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj);
-Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj);
-Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj);
+
+Scheme_Object *scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env);
+Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env);
+
 #ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 Scheme_Object *scheme_apply_multi(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
@@ -403,6 +405,8 @@ Scheme_Object *scheme_expand(Scheme_Object *form, Scheme_Env *env);
 
 Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeable);
 Scheme_Object *scheme_make_promise_value(Scheme_Object *compiled_expr);
+
+Scheme_Object *scheme_link(Scheme_Object *compiled, Scheme_Env *env);
 
 /*========================================================================*/
 /*                               ports                                    */

@@ -19,6 +19,8 @@
 
 #include "scheme.h"
 
+typedef struct Scheme_Env Link_Info;
+
 /*========================================================================*/
 /*                        mallocation and GC                              */
 /*========================================================================*/
@@ -405,7 +407,7 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
-Scheme_Object *scheme_make_module_rename(int for_top);
+Scheme_Object *scheme_make_module_rename(long phase);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
@@ -414,13 +416,15 @@ void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname,
 				 Scheme_Object *locname, Scheme_Object *exname);
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 
-int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
-int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b);
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a);
+int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
+int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 
-int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
-int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid);
-int scheme_stx_has_binder(Scheme_Object *a);
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
+int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
+int scheme_stx_has_binder(Scheme_Object *a, long phase);
+
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift);
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
@@ -610,6 +614,8 @@ void scheme_init_setjumpup(void);
 
 void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_process(k, eb, p) scheme_top_level_do(k, eb)
+
+void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object *name);
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 
@@ -1080,8 +1086,11 @@ Scheme_Object *scheme_make_random_state(long seed);
 #define _scheme_do_eval(obj, env, v) \
   ((SCHEME_INTP(obj) || !SCHEME_STRTAG_VAL(_SCHEME_TYPE(obj))) \
    ? obj : scheme_do_eval(obj, -1, env, v))
-#define q_scheme_eval_compiled(obj) _scheme_do_eval(obj, 1)
+#define q_scheme_eval_linked(obj) _scheme_do_eval(obj, 1)
 #define q_scheme_tail_eval(obj) scheme_tail_eval(obj)
+
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *expr, Scheme_Env *env);
+Scheme_Object *scheme_eval_linked_expr(Scheme_Object *expr);
 
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
@@ -1094,14 +1103,12 @@ Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, 
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 
-#define _scheme_eval_compiled_expr(obj) scheme_do_eval(obj,-1,NULL,1)
-#define _scheme_eval_compiled_expr_multi(obj) scheme_do_eval(obj,-1,NULL,-1)
-#define _scheme_eval_compiled_expr_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,1,p)
-#define _scheme_eval_compiled_expr_multi_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,-1,p)
+#define _scheme_eval_linked_expr(obj) scheme_do_eval(obj,-1,NULL,1)
+#define _scheme_eval_linked_expr_multi(obj) scheme_do_eval(obj,-1,NULL,-1)
+#define _scheme_eval_linked_expr_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,1,p)
+#define _scheme_eval_linked_expr_multi_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,-1,p)
 
-Scheme_Object *scheme_bangboxenv_execute(Scheme_Object *data);
-
-Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj);
+Scheme_Object *scheme_bangboxenv_link(Scheme_Object *data, Link_Info *info);
 
 Scheme_Object *scheme_named_map_1(char *, 
 				  Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), 
@@ -1126,7 +1133,6 @@ typedef struct Scheme_Comp_Env
   short flags; /* used for expanding/compiling */
   Scheme_Object *uid; /* renaming symbol for syntax */
   Scheme_Env *genv; /* run-time environment */
-  Scheme_Hash_Table *ok_modules; /* available modules, or NULL if all ok */
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
   struct Scheme_Object **renames;
@@ -1145,15 +1151,15 @@ typedef struct Scheme_Compile_Info
   Scheme_Object *value_name;
 } Scheme_Compile_Info;
 
-typedef struct Link_Info
+typedef struct Resolve_Info
 {
   MZTAG_IF_REQUIRED
   int size, oldsize, count, pos, anchor_offset;
   short *old_pos;
   short *new_pos;
   int *flags;
-  struct Link_Info *next;
-} Link_Info;
+  struct Resolve_Info *next;
+} Resolve_Info;
 
 typedef struct Scheme_Object *
 (Scheme_Syntax)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
@@ -1163,11 +1169,9 @@ typedef struct Scheme_Object *
 (Scheme_Syntax_Expander)(struct Scheme_Object *form, struct Scheme_Comp_Env *env,
 			 int depth, Scheme_Object *boundname);
 
-typedef struct Scheme_Object *
-(Scheme_Syntax_Linker)(Scheme_Object *data, Link_Info *link);
-
-typedef struct Scheme_Object *
-(Scheme_Syntax_Executer)(struct Scheme_Object *data);
+typedef struct Scheme_Object *(Scheme_Syntax_Linker)(Scheme_Object *data, Link_Info *info);
+typedef struct Scheme_Object *(Scheme_Syntax_Resolver)(Scheme_Object *data, Resolve_Info *info);
+typedef struct Scheme_Object *(Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
 typedef Scheme_Syntax_Executer Scheme_Syntax_Registered;
 
@@ -1258,32 +1262,42 @@ Scheme_Object *scheme_make_linked_closure(Scheme_Process *p,
 Scheme_Object *scheme_compiled_void();
 extern Scheme_Object *scheme_compiled_void_code; /* used by print */
 
-/* Linking */
+/* Resolving & linking */
 void scheme_register_syntax(const char *name, Scheme_Syntax_Registered *f, int protect_after);
 Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f, int *protect_after);
 Scheme_Syntax_Registered *scheme_find_linker(Scheme_Object *sym);
 
 Scheme_Object *scheme_protect_quote(Scheme_Object *expr);
 
-Scheme_Object *scheme_make_syntax_link(Scheme_Syntax_Executer *prim,
+Scheme_Object *scheme_make_syntax_linked(Scheme_Syntax_Executer *prim,
 				       Scheme_Object *data);
-Scheme_Object *scheme_make_syntax_compile(Scheme_Syntax_Linker *prim,
-					  Scheme_Object *data);
+Scheme_Object *scheme_make_syntax_resolved(Scheme_Syntax_Linker *prim,
+					   Scheme_Object *data);
+Scheme_Object *scheme_make_syntax_compiled(Scheme_Syntax_Resolver *prim,
+					   Scheme_Object *data);
 
 Scheme_Object *scheme_link_expr(Scheme_Object *, Link_Info *);
 Scheme_Object *scheme_link_list(Scheme_Object *, Link_Info *);
 
+Scheme_Object *scheme_resolve_expr(Scheme_Object *, Resolve_Info *);
+Scheme_Object *scheme_resolve_list(Scheme_Object *, Resolve_Info *);
+
 int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed);
 
-Scheme_Object *scheme_link_lets(Scheme_Object *form, Link_Info *info);
+Scheme_Object *scheme_link_let_value(Scheme_Object *form, Link_Info *info);
+Scheme_Object *scheme_link_let_void(Scheme_Object *form, Link_Info *info);
+Scheme_Object *scheme_link_let_one(Scheme_Object *form, Link_Info *info);
+Scheme_Object *scheme_link_letrec(Scheme_Object *form, Link_Info *info);
 
-Link_Info *scheme_link_info_create();
-Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int mapcount);
-void scheme_link_info_add_mapping(Link_Info *info, int oldp, int newp, int flags);
-void scheme_link_info_set_anchor_offset(Link_Info *info, int offset);
-int scheme_link_info_flags(Link_Info *info, int pos);
-int scheme_link_info_lookup(Link_Info *link, int pos, int *flags);
-int scheme_link_info_lookup_anchor(Link_Info *info, int pos);
+Scheme_Object *scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info);
+
+Resolve_Info *scheme_resolve_info_create();
+Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapcount);
+void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int flags);
+void scheme_resolve_info_set_anchor_offset(Resolve_Info *info, int offset);
+int scheme_resolve_info_flags(Resolve_Info *info, int pos);
+int scheme_resolve_info_lookup(Resolve_Info *resolve, int pos, int *flags);
+int scheme_resolve_info_lookup_anchor(Resolve_Info *info, int pos);
 
 Scheme_Object *scheme_make_compiled_syntax(Scheme_Syntax *syntax,
 					   Scheme_Syntax_Expander *exp);
@@ -1312,11 +1326,12 @@ void scheme_merge_lambda_rec(Scheme_Compile_Info *src, int drec,
 Scheme_Object *scheme_make_closure_compilation(Scheme_Comp_Env *env,
 					       Scheme_Object *uncompiled_code,
 					       Scheme_Compile_Info *rec, int drec);
-Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *compiled_list,
-						int to_linked, int strip_values);
+Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *compiled_list, 
+						int strip_values);
 
 
 Scheme_Object *scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info);
+Scheme_Object *scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info);
 
 #define SCHEME_SYNTAX(obj)   ((obj)->u.two_ptr_val.ptr1)
 #define SCHEME_SYNTAX_EXP(obj)   ((obj)->u.two_ptr_val.ptr2)
@@ -1327,7 +1342,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_WAS_USED 1
 #define SCHEME_WAS_SET_BANGED 2
 
-/* flags reported by scheme_link_info_flags */
+/* flags reported by scheme_resolve_info_flags */
 #define SCHEME_INFO_BOXED 1
 #define SCHEME_INFO_ANCHORED 2
 
@@ -1382,6 +1397,7 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env);
 Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_make_empty_env(void);
+void scheme_prepare_exp_env(Scheme_Env *env);
 
 int scheme_used_app_only(Scheme_Comp_Env *env, int which);
 int scheme_used_ever(Scheme_Comp_Env *env, int which);
@@ -1405,12 +1421,14 @@ void scheme_define_values_parse(Scheme_Object *form,
 /*                              modules                                   */
 /*========================================================================*/
 
-extern Scheme_Object *scheme_sys_wraps;
+Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname);
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
+Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
+Scheme_Hash_Table *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */
@@ -1463,10 +1481,11 @@ typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Object *syms[5];
   int count;
+  long phase;
   Scheme_Hash_Table *ht;
 } DupCheckRecord;
 
-void scheme_begin_dup_symbol_check(DupCheckRecord *r);
+void scheme_begin_dup_symbol_check(DupCheckRecord *r, Scheme_Comp_Env *e);
 void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *symbol, char *what, 
 			     Scheme_Object *form);

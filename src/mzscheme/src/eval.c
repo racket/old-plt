@@ -72,9 +72,15 @@
 
    Compilation works in two passes. The first pass, called "compile",
    performs most of the work and tracks variable usage (including
-   whether a variable is mutated or not). The second pass, unhelpfully
-   called "link", finishes compilation by computing variable offsets
-   and indirections. */
+   whether a variable is mutated or not). The second pass, called
+   "resolve", finishes compilation by computing variable offsets and
+   indirections (often mutating the records produced by the first
+   pass).
+
+   Linking:
+
+   Linking matches compiled code to a top-level environment. It never
+   mutates records produced by the first pass. */
 
 #include "schpriv.h"
 #include "schrunst.h"
@@ -621,12 +627,10 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
     }
   }
 
-  size = (sizeof(Scheme_App_Rec) + ((n - 1) 
-				    * sizeof(Scheme_Object *))
+  size = (sizeof(Scheme_App_Rec) 
+	  + ((n - 1) * sizeof(Scheme_Object *))
 	  + n * sizeof(char));
-  app = (Scheme_App_Rec *)(final 
-			   ? scheme_malloc_stubborn_tagged(size)
-			   : scheme_malloc_tagged(size));
+  app = (Scheme_App_Rec *)scheme_malloc_tagged(size);
 
   app->type = scheme_application_type;
 
@@ -644,14 +648,35 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
       etype = scheme_get_eval_type(app->args[i]);
       ((char *)app + devals)[i] = etype;
     }
-
-    scheme_end_stubborn_change((void *)app);
   }
 
   return (Scheme_Object *)app;
 }
 
 static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
+{
+  Scheme_App_Rec *oapp = (Scheme_App_Rec *)o;
+  Scheme_App_Rec *napp;
+  Scheme_Object *e;
+  int n, i, size;
+
+  n = oapp->num_args + 1;
+  
+  size = (sizeof(Scheme_App_Rec) 
+	  + ((n - 1) * sizeof(Scheme_Object *))
+	  + n * sizeof(char));
+  napp = (Scheme_App_Rec *)scheme_malloc_tagged(size);
+  memcpy(napp, oapp, size);
+
+  for (i = 0; i < n; i++) {
+    e = scheme_link_expr(oapp->args[i], info);
+    napp->args[i] = e;
+  }
+
+  return (Scheme_Object *)napp;
+}
+
+static Scheme_Object *resolve_application(Scheme_Object *o, Resolve_Info *info)
 {
   Scheme_App_Rec *app;
   int i, n, devals;
@@ -662,11 +687,11 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
   
   n = app->num_args + 1;
 
-  info = scheme_link_info_extend(info, n - 1, 0, 0);
+  info = scheme_resolve_info_extend(info, n - 1, 0, 0);
 
   for (i = 0; i < n; i++) {
     Scheme_Object *le;
-    le = scheme_link_expr(app->args[i], info);
+    le = scheme_resolve_expr(app->args[i], info);
     app->args[i] = le;
   }
 
@@ -692,7 +717,7 @@ scheme_make_branch(Scheme_Object *test, Scheme_Object *thenp,
       return thenp;
   }
 
-  b = (Scheme_Branch_Rec *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Branch_Rec));
+  b = MALLOC_ONE_TAGGED(Scheme_Branch_Rec);
   b->type = scheme_branch_type;
 
 #if 0
@@ -714,21 +739,38 @@ scheme_make_branch(Scheme_Object *test, Scheme_Object *thenp,
   b->tbranch = thenp;
   b->fbranch = elsep;
 
-  scheme_end_stubborn_change((void *)b);
-
   return (Scheme_Object *)b;
 }
 
 static Scheme_Object *link_branch(Scheme_Object *o, Link_Info *info)
+{
+  Scheme_Branch_Rec *ob = (Scheme_Branch_Rec *)o;
+  Scheme_Branch_Rec *nb;
+  Scheme_Object *e;
+
+  nb = MALLOC_ONE_TAGGED(Scheme_Branch_Rec);
+  nb->type = scheme_branch_type;
+
+  e = scheme_link_expr(ob->test, info);
+  nb->test = e;
+  e = scheme_link_expr(ob->tbranch, info);
+  nb->tbranch = e;
+  e = scheme_link_expr(ob->fbranch, info);
+  nb->fbranch = e;
+
+  return (Scheme_Object *)nb;
+}
+
+static Scheme_Object *resolve_branch(Scheme_Object *o, Resolve_Info *info)
 {
   Scheme_Branch_Rec *b;
   Scheme_Object *t, *tb, *fb;
 
   b = (Scheme_Branch_Rec *)o;
 
-  t = scheme_link_expr(b->test, info);
-  tb = scheme_link_expr(b->tbranch, info);
-  fb = scheme_link_expr(b->fbranch, info);
+  t = scheme_resolve_expr(b->test, info);
+  tb = scheme_resolve_expr(b->tbranch, info);
+  fb = scheme_resolve_expr(b->fbranch, info);
   b->test = t;
   b->tbranch = tb;
   b->fbranch = fb;
@@ -736,25 +778,55 @@ static Scheme_Object *link_branch(Scheme_Object *o, Link_Info *info)
   return o;
 }
 
-static Scheme_Sequence *malloc_sequence(int count)
+static Scheme_Object *link_wcm(Scheme_Object *o, Link_Info *info)
 {
-  return (Scheme_Sequence *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Sequence)
-							  + (count - 1) 
-							  * sizeof(Scheme_Object *));
+  Scheme_With_Continuation_Mark *owcm = (Scheme_With_Continuation_Mark *)o;
+  Scheme_With_Continuation_Mark *nwcm;
+  Scheme_Object *k, *v, *b;
+
+  nwcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
+  nwcm->type = scheme_with_cont_mark_type;
+
+  k = scheme_link_expr(owcm->key, info);
+  v = scheme_link_expr(owcm->val, info);
+  b = scheme_link_expr(owcm->body, info);
+  nwcm->key = k;
+  nwcm->val = v;
+  nwcm->body = b;
+
+  return (Scheme_Object *)nwcm;
 }
 
-Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, 
-						int to_linked, 
-						int opt)
+static Scheme_Object *resolve_wcm(Scheme_Object *o, Resolve_Info *info)
 {
-  Scheme_Object **array, *list, *v, *good, **linked;
+  Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)o;
+  Scheme_Object *k, *v, *b;
+
+  k = scheme_resolve_expr(wcm->key, info);
+  v = scheme_resolve_expr(wcm->val, info);
+  b = scheme_resolve_expr(wcm->body, info);
+  wcm->key = k;
+  wcm->val = v;
+  wcm->body = b;
+
+  return (Scheme_Object *)wcm;
+}
+
+static Scheme_Sequence *malloc_sequence(int count)
+{
+  return (Scheme_Sequence *)scheme_malloc_tagged(sizeof(Scheme_Sequence)
+						 + (count - 1) 
+						 * sizeof(Scheme_Object *));
+}
+
+Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
+{
+  Scheme_Object **array, *list, *v, *good;
   Scheme_Sequence *o;
   int count, i, k, total, last, first, setgood, addconst;
   Scheme_Type type;
 
   type = scheme_sequence_type;
-
-  linked = NULL;
 
   list = seq;
   count = i = 0;
@@ -791,7 +863,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq,
   }
 
   if (!count)
-    return scheme_compiled_void(to_linked);
+    return scheme_compiled_void();
   
   if (count == 1) {
     if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq))) {
@@ -836,8 +908,6 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq,
   if (addconst)
     array[i] = scheme_make_integer(0);
   
-  scheme_end_stubborn_change(o);
-
   return (Scheme_Object *)o;
 }
 
@@ -895,20 +965,40 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 
 static Scheme_Object *link_sequence(Scheme_Object *o, Link_Info *info)
 {
+  Scheme_Sequence *os = (Scheme_Sequence *)o;
+  Scheme_Sequence *ns;
+  Scheme_Object *e;
+  int i, count;
+
+  count = os->count;
+  ns = malloc_sequence(count);
+  ns->type = scheme_sequence_type;
+  ns->count = count;
+
+  for (i = 0; i < count; i++) {
+    e = scheme_link_expr(os->array[i], info);
+    ns->array[i] = e;
+  }
+
+  return (Scheme_Object *)ns;
+}
+
+static Scheme_Object *resolve_sequence(Scheme_Object *o, Resolve_Info *info)
+{
   Scheme_Sequence *s = (Scheme_Sequence *)o;
   int i;
 
   for (i = s->count; i--; ) {
     Scheme_Object *le;
-    le = scheme_link_expr(s->array[i], info);
+    le = scheme_resolve_expr(s->array[i], info);
     s->array[i] = le;
   }
   
   return look_for_letv_change(s);
 }
 
-Scheme_Object *scheme_make_syntax_link(Scheme_Syntax_Executer *prim,
-				       Scheme_Object *data)
+Scheme_Object *scheme_make_syntax_linked(Scheme_Syntax_Executer *prim,
+					 Scheme_Object *data)
 {
   Scheme_Object *v;
 
@@ -921,8 +1011,22 @@ Scheme_Object *scheme_make_syntax_link(Scheme_Syntax_Executer *prim,
   return v;
 }
 
-Scheme_Object *scheme_make_syntax_compile(Scheme_Syntax_Linker *prim,
-					  Scheme_Object *data)
+Scheme_Object *scheme_make_syntax_resolved(Scheme_Syntax_Linker *prim,
+					   Scheme_Object *data)
+{
+  Scheme_Object *v;
+
+  v = scheme_alloc_stubborn_object();
+  v->type = scheme_syntax_type;
+  SCHEME_PTR1_VAL(v) = (void *)prim;
+  SCHEME_PTR2_VAL(v) = (void *)data;
+  scheme_end_stubborn_change((void *)v);
+
+  return v;
+}
+
+Scheme_Object *scheme_make_syntax_compiled(Scheme_Syntax_Resolver *prim,
+					   Scheme_Object *data)
 {
   Scheme_Object *v;
 
@@ -940,17 +1044,20 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
   Scheme_Type type = SCHEME_TYPE(expr);
 
   switch (type) {
-  case scheme_local_type:
+  case scheme_variable_type:
     {
-      int pos, flags;
-      
-      pos = scheme_link_info_lookup(info, SCHEME_LOCAL_POS(expr), &flags);
-      return scheme_make_local((flags & SCHEME_INFO_BOXED) 
-			       ? scheme_local_unbox_type
-			       : scheme_local_type,
-			       pos);
+      Scheme_Bucket_With_Home *b = (Scheme_Bucket_With_Home *)expr;
+
+      if (SCHEME_FALSEP(b->home->modname))
+	return (Scheme_Object *)b;
+      else {
+	Scheme_Env *m;
+	
+	m = scheme_module_access(b->home->modname, info);
+	return (Scheme_Object *)scheme_global_bucket((Scheme_Object *)b->bucket.bucket.key, m);
+      }
     }
-  case scheme_compiled_syntax_type:
+  case scheme_syntax_type:
     {
       Scheme_Syntax_Linker *f;
 	  
@@ -964,21 +1071,17 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
   case scheme_branch_type:
     return link_branch(expr, info);
   case scheme_with_cont_mark_type:
-    {
-      Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
-      Scheme_Object *k, *v, *b;
-      k = scheme_link_expr(wcm->key, info);
-      v = scheme_link_expr(wcm->val, info);
-      b = scheme_link_expr(wcm->body, info);
-      wcm->key = k;
-      wcm->val = v;
-      wcm->body = b;
-      return (Scheme_Object *)wcm;
-    }
-  case scheme_compiled_unclosed_procedure_type:
+    return link_wcm(expr, info);
+  case scheme_unclosed_procedure_type:
     return scheme_link_closure_compilation(expr, info);
-  case scheme_compiled_let_void_type:
-    return scheme_link_lets(expr, info);
+  case scheme_let_value_type:
+    return scheme_link_let_value(expr, info);
+  case scheme_let_void_type:
+    return scheme_link_let_void(expr, info);
+  case scheme_let_one_type:
+    return scheme_link_let_one(expr, info);
+  case scheme_letrec_type:
+    return scheme_link_letrec(expr, info);
   default:
     return expr;
   }
@@ -992,6 +1095,67 @@ Scheme_Object *scheme_link_list(Scheme_Object *expr, Link_Info *info)
     Scheme_Object *pr;
 
     pr = scheme_make_pair(scheme_link_expr(SCHEME_CAR(expr), info),
+			  scheme_null);
+
+    if (last)
+      SCHEME_CDR(last) = pr;
+    else
+      first = pr;
+    last = pr;
+
+    expr = SCHEME_CDR(expr);
+  }
+
+  return first;
+}
+
+Scheme_Object *scheme_resolve_expr(Scheme_Object *expr, Resolve_Info *info)
+{
+  Scheme_Type type = SCHEME_TYPE(expr);
+
+  switch (type) {
+  case scheme_local_type:
+    {
+      int pos, flags;
+      
+      pos = scheme_resolve_info_lookup(info, SCHEME_LOCAL_POS(expr), &flags);
+      return scheme_make_local((flags & SCHEME_INFO_BOXED) 
+			       ? scheme_local_unbox_type
+			       : scheme_local_type,
+			       pos);
+    }
+  case scheme_compiled_syntax_type:
+    {
+      Scheme_Syntax_Resolver *f;
+	  
+      f = (Scheme_Syntax_Resolver *)SCHEME_PTR1_VAL(expr);
+      return f((Scheme_Object *)SCHEME_PTR2_VAL(expr), info);
+    }
+  case scheme_application_type:
+    return resolve_application(expr, info);
+  case scheme_sequence_type:
+    return resolve_sequence(expr, info);
+  case scheme_branch_type:
+    return resolve_branch(expr, info);
+  case scheme_with_cont_mark_type:
+    return resolve_wcm(expr, info);
+  case scheme_compiled_unclosed_procedure_type:
+    return scheme_resolve_closure_compilation(expr, info);
+  case scheme_compiled_let_void_type:
+    return scheme_resolve_lets(expr, info);
+  default:
+    return expr;
+  }
+}
+
+Scheme_Object *scheme_resolve_list(Scheme_Object *expr, Resolve_Info *info)
+{
+  Scheme_Object *first = scheme_null, *last = NULL;
+
+  while (SCHEME_PAIRP(expr)) {
+    Scheme_Object *pr;
+
+    pr = scheme_make_pair(scheme_resolve_expr(SCHEME_CAR(expr), info),
 			  scheme_null);
 
     if (last)
@@ -1152,14 +1316,14 @@ static void *compile_k(void)
   rec.value_name = NULL;
 
   if (!SCHEME_STXP(form))
-    form = scheme_datum_to_syntax(form, scheme_false, scheme_sys_wraps);
+    form = scheme_datum_to_syntax(form, scheme_false, scheme_false);
 
   /* Renamings for imports: */
   if (env->genv->rename)
     form = scheme_add_rename(form, env->genv->rename);
 
-  o = scheme_link_expr(scheme_compile_expr(form, env, &rec, 0),
-		       scheme_link_info_create());
+  o = scheme_compile_expr(form, env, &rec, 0);
+  o = scheme_resolve_expr(o, scheme_resolve_info_create());
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
   top->type = scheme_compilation_top_type;
@@ -1368,6 +1532,11 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
   DO_CHECK_FOR_BREAK(scheme_current_process, ;);
 
+#if 1
+  if (!SCHEME_STXP(form))
+    scheme_signal_error("not syntax");
+#endif
+
   if (rec)
     scheme_default_compile_rec(rec, drec);
 
@@ -1499,7 +1668,8 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     /* Compile/expand empty application to null list: */
     if (rec)
       return scheme_null;
-    /* else form will be returned... */
+    else
+      return form;
   } else if (SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
 #if 0
     /* Optimize (void) to just the value void */
@@ -1564,7 +1734,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 									      cons(bindings,
 										   body)),
 									 form, 
-									 scheme_sys_wraps),
+									 scheme_sys_wraps(env)),
 						  env, rec, drec, depth, boundname, 0);
 	      } else {
 #if 0
@@ -1591,7 +1761,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
   /* Make sure resulting form for macro expansion has system wraps on the parens: */
   form = scheme_datum_to_syntax(scheme_make_pair(SCHEME_STX_CAR(form), SCHEME_STX_CDR(form)),
 				forms,
-				scheme_sys_wraps);
+				forms);
   return form;
 }
 
@@ -1631,12 +1801,11 @@ datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object
     scheme_wrong_syntax("#%datum", NULL, form, NULL);
 
   /* Put system wraps on the form: */
-  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps);
+  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps(env));
   return c;
 }
 
-static Scheme_Object *
-unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *c;
 
@@ -1644,6 +1813,29 @@ unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 
   if (!SCHEME_STX_SYMBOLP(c))
     scheme_wrong_syntax("#%unbound", NULL, form, NULL);
+
+  if (env->genv->phase) {
+    Scheme_Object *modname, *symbol = c;
+
+    modname = scheme_stx_module_name(&symbol, env->genv->phase);
+    if (modname) {
+      if (SAME_OBJ(modname, env->genv->modname))
+	modname = NULL;
+    }
+
+    if (modname || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
+      scheme_wrong_syntax(when, NULL, c, "unbound variable in module");
+  }
+}
+
+static Scheme_Object *
+unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  Scheme_Object *c;
+
+  check_unbound("compile", form, env);
+
+  c = SCHEME_STX_CDR(form);
 
   return (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
 }
@@ -1653,13 +1845,12 @@ unbound_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Obje
 {
   Scheme_Object *c;
 
+  check_unbound("expand", form, env);
+
   c = SCHEME_STX_CDR(form);
 
-  if (!SCHEME_STX_SYMBOLP(c))
-    scheme_wrong_syntax("#%unbound", NULL, form, NULL);
-
   /* Put system wraps on the form: */
-  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps);
+  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps(env));
   return c;
 }
 
@@ -1727,7 +1918,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    "bad syntax (empty form)");
       }
 
-      forms = scheme_datum_to_syntax(forms, orig_forms, scheme_sys_wraps);
+      forms = scheme_datum_to_syntax(forms, orig_forms, orig_forms);
 
       goto try_again;
     } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
@@ -1769,7 +1960,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (!SCHEME_STX_NULLP(result)) {
 	  first = SCHEME_STX_CAR(result);
 	  if (SCHEME_STX_PAIRP(first)) {
-	    first = scheme_datum_to_syntax(first, forms, scheme_sys_wraps);
+	    first = scheme_datum_to_syntax(first, forms, forms);
 	    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
 	    name = SCHEME_STX_CAR(first);
 	    if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)) {
@@ -1795,7 +1986,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
       if (SCHEME_STX_PAIRP(result)) {
 	result = scheme_make_pair(letrec_values_symbol, scheme_make_pair(start, result));
-	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps);
+	result = scheme_datum_to_syntax(result, forms, forms);
 
 	name = NULL;
       } else {
@@ -1834,7 +2025,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			cons(body,
 			     rest)));
 
-      result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps);
+      result = scheme_datum_to_syntax(result, forms, forms);
       
       name = NULL;
     }
@@ -1866,7 +2057,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     else
       recs[1].value_name = vname;
 
-    rest = scheme_datum_to_syntax(rest, forms, scheme_sys_wraps);
+    rest = scheme_datum_to_syntax(rest, forms, forms);
 
     first = scheme_compile_expr(first, env, recs, 0);
 #if EMBEDDED_DEFINES_START_ANYWHERE
@@ -1880,11 +2071,11 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     first = scheme_expand_expr(first, env, depth, scheme_false);
 #if EMBEDDED_DEFINES_START_ANYWHERE
     forms = scheme_compile_expand_block(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), 
-							       forms, scheme_sys_wraps), 
+							       forms, forms, 
 					env, rec, drec, depth, boundname);
 #else
     forms = scheme_expand_list(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), forms, 
-						      scheme_sys_wraps), 
+						      forms), 
 			       env, depth, boundname);
 #endif
   }
@@ -1935,7 +2126,7 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
     scheme_wrong_syntax("expand", NULL, form, 
 			"bad syntax (" IMPROPER_LIST_FORM ")");
 
-  return scheme_datum_to_syntax(first, form, scheme_sys_wraps);
+  return scheme_datum_to_syntax(first, form, form);
 }
 
 /*========================================================================*/
@@ -2745,7 +2936,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    obj = SCHEME_ENVBOX_VAL(stack[SCHEME_LOCAL_POS(obj)]);
 	    break;
 	  default:
-	    obj = _scheme_eval_compiled_expr_wp(obj, p);
+	    obj = _scheme_eval_linked_expr_wp(obj, p);
 	    break;
 	  }
 
@@ -2785,7 +2976,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	      default:
 		{
 		  GC_CAN_IGNORE Scheme_Object *er;
-		  er = _scheme_eval_compiled_expr_wp(v, p);
+		  er = _scheme_eval_linked_expr_wp(v, p);
 		  *(randsp++) = er;
 		}
 		break;
@@ -2808,7 +2999,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  
 	  UPDATE_THREAD_RSPTR();
 	  for (i = 0; i < cnt; i++) {
-	    (void)_scheme_eval_compiled_expr_multi_wp(((Scheme_Sequence *)obj)->array[i], p);
+	    (void)_scheme_eval_linked_expr_multi_wp(((Scheme_Sequence *)obj)->array[i], p);
 	  }
 
 	  obj = ((Scheme_Sequence *)obj)->array[cnt];
@@ -2817,7 +3008,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       case scheme_branch_type:
 	{
 	  UPDATE_THREAD_RSPTR();
-	  obj = (NOT_SAME_OBJ(_scheme_eval_compiled_expr_wp(((Scheme_Branch_Rec *)obj)->test, p), 
+	  obj = (NOT_SAME_OBJ(_scheme_eval_linked_expr_wp(((Scheme_Branch_Rec *)obj)->test, p), 
 			      scheme_false)
 		 ? ((Scheme_Branch_Rec *)obj)->tbranch 
 		 : ((Scheme_Branch_Rec *)obj)->fbranch);
@@ -2847,7 +3038,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  UPDATE_THREAD_RSPTR();
 
 	  if (c == 1) {
-	    value = _scheme_eval_compiled_expr_wp(value, p);
+	    value = _scheme_eval_linked_expr_wp(value, p);
 	    if (ab)
 	      SCHEME_ENVBOX_VAL(RUNSTACK[i]) = value;
 	    else
@@ -2856,7 +3047,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    int c2;
 	    GC_CAN_IGNORE Scheme_Object **stack;
 
-	    value = _scheme_eval_compiled_expr_multi_wp(value, p);
+	    value = _scheme_eval_linked_expr_multi_wp(value, p);
 	    c2 = (SAME_OBJ(value, SCHEME_MULTIPLE_VALUES) ? p->ku.multiple.count : 1);
 	    if (c2 != c) {
 	      scheme_wrong_return_arity(NULL, c, c2, 
@@ -2987,7 +3178,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    UPDATE_THREAD_RSPTR();
 	    {
 	      GC_CAN_IGNORE Scheme_Object *val;
-	      val = _scheme_eval_compiled_expr_wp(lo->value, p);
+	      val = _scheme_eval_linked_expr_wp(lo->value, p);
 	      RUNSTACK[0] = val;
 	    }
 	    break;
@@ -3006,10 +3197,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  UPDATE_THREAD_RSPTR();
 	  key = wcm->key;
 	  if (SCHEME_TYPE(key) < _scheme_values_types_)
-	    key = _scheme_eval_compiled_expr_wp(wcm->key, p);
+	    key = _scheme_eval_linked_expr_wp(wcm->key, p);
 	  val = wcm->val;
 	  if (SCHEME_TYPE(val) < _scheme_values_types_)
-	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
+	    val = _scheme_eval_linked_expr_wp(wcm->val, p);
 
 	  scheme_set_cont_mark(key, val);
 
@@ -3072,30 +3263,33 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 Scheme_Object *scheme_eval(Scheme_Object *obj, Scheme_Env *env)
 {
-  return scheme_eval_compiled(scheme_compile(obj, env, 0));
+  return scheme_eval_compiled(scheme_compile(obj, env, 0), env);
 }
 
 Scheme_Object *scheme_eval_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return scheme_eval_compiled_multi(scheme_compile(obj, env, 0));
+  return scheme_eval_compiled_multi(scheme_compile(obj, env, 0), env);
 }
 
 static void *eval_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *v;
+  Scheme_Env *env;
   int isexpr, multi;
 
   v = (Scheme_Object *)p->ku.k.p1;
+  env = (Scheme_Env *)p->ku.k.p2;
   p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
   isexpr = p->ku.k.i2;
   multi = p->ku.k.i1;
     
   if (isexpr) {
     if (multi)
-      v = _scheme_eval_compiled_expr_multi_wp(v, p);
+      v = _scheme_eval_linked_expr_multi_wp(v, p);
     else
-      v = _scheme_eval_compiled_expr_wp(v, p);
+      v = _scheme_eval_linked_expr_wp(v, p);
   } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)v;
 
@@ -3106,12 +3300,13 @@ static void *eval_k(void)
       return (Scheme_Object *)scheme_enlarge_runstack(top->max_let_depth, eval_k);
     }
 
-    v = top->code;    
+    v = top->code;
+    v = scheme_link_expr(v, env);
 
     if (multi)
-      v = _scheme_eval_compiled_expr_multi_wp(v, p);
+      v = _scheme_eval_linked_expr_multi_wp(v, p);
     else
-      v = _scheme_eval_compiled_expr_wp(v, p);
+      v = _scheme_eval_linked_expr_wp(v, p);
   } else {
     v = scheme_void;
   }
@@ -3119,11 +3314,12 @@ static void *eval_k(void)
   return (void *)v;
 }
 
-static Scheme_Object *_eval(Scheme_Object *obj, int isexpr, int multi, int top)
+static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env, int isexpr, int multi, int top)
 {
   Scheme_Process *p = scheme_current_process;
   
   p->ku.k.p1 = obj;
+  p->ku.k.p2 = env;
   p->ku.k.i1 = multi;
   p->ku.k.i2 = isexpr;
 
@@ -3133,29 +3329,34 @@ static Scheme_Object *_eval(Scheme_Object *obj, int isexpr, int multi, int top)
     return (Scheme_Object *)eval_k();
 }
 
-Scheme_Object *scheme_eval_compiled(Scheme_Object *obj)
+Scheme_Object *scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, 0, 0, 1);
+  return _eval(obj, env, 0, 0, 1);
 }
 
-Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj)
+Scheme_Object *scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, 0, 1, 1);
+  return _eval(obj, env, 0, 1, 1);
 }
 
-Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj)
+Scheme_Object *_scheme_eval_compiled(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, 0, 0, 0);
+  return _eval(obj, env, 0, 0, 0);
 }
 
-Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj)
+Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, 0, 1, 0);
+  return _eval(obj, env, 0, 1, 0);
 }
 
-Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj)
+Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(obj, 1, 0, 1);
+  return _eval(scheme_link_expr(obj, env), NULL, 1, 0, 0);
+}
+
+Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj)
+{
+  return _eval(obj, NULL, 1, 0, 0);
 }
 
 static void *expand_k(void)
@@ -3208,7 +3409,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 
   v = _compile(argv[0], env, 0, 0);
 
-  return _eval(v, 0, 1, 0);
+  return _eval(v, env, 0, 1, 0);
 }
 
 /* local functions */
@@ -3507,12 +3708,12 @@ static Scheme_Object *write_sequence(Scheme_Object *obj)
 
 static Scheme_Object *read_sequence(Scheme_Object *obj)
 {
-  return scheme_make_sequence_compilation(obj, 1, 1);
+  return scheme_make_sequence_compilation(obj, 1);
 }
 
 static Scheme_Object *read_sequence_save_first(Scheme_Object *obj)
 {
-  return scheme_make_sequence_compilation(obj, 1, -1);
+  return scheme_make_sequence_compilation(obj, -1);
 }
 
 static Scheme_Object *write_branch(Scheme_Object *obj)
@@ -3650,7 +3851,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
   else
     first = obj;
 
-  return scheme_make_syntax_link(f, first);
+  return scheme_make_syntax_linked(f, first);
 }
 
 /*========================================================================*/

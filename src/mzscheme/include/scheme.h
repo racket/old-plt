@@ -483,16 +483,27 @@ typedef struct Scheme_Env
   MZ_HASH_KEY_EX
 
   Scheme_Object *modname;
-  Scheme_Object *rename;  /* module rename record */
+
+  Scheme_Hash_Table *module_registry; /* loaded modules, 
+					 shared with moucles in same space */
+
+  /* For compilation, per-declaration: */
+  /* First two are passed from module to module-begin: */
+  Scheme_Object *rename;    /* module rename record */
+  Scheme_Object *et_rename; /* exp-time rename record */
+
+  struct Scheme_Comp_Env *init;
+  
+  Scheme_Hash_Table *syntax;
+  struct Scheme_Env *exp_env;
+  Scheme_Hash_Table *module_syntax; /* modname -> syntax table */
+
+  /* Built by module-begin, per-declaration: */
   Scheme_Object *et_imports; /* list of module names */
   Scheme_Object *imports; /* list of module names */
 
   Scheme_Object *body;
-  int running;
-  
-  Scheme_Hash_Table *toplevel;
-  Scheme_Hash_Table *syntax;
-  Scheme_Hash_Table *modules;
+  Scheme_Object *et_body;
 
   Scheme_Object **exports;
   Scheme_Object **export_srcs;
@@ -500,7 +511,12 @@ typedef struct Scheme_Env
   int num_exports;
   int num_var_exports; /* non-syntax listed first in exports */
 
-  struct Scheme_Comp_Env *init; /* initial compilation environment */
+  /* Per-instance: */
+  long phase;
+  int running;  
+  Scheme_Hash_Table *toplevel;
+  Scheme_Hash_Table *modules; /* running modules, 
+				 shared with instances in same phase */
 } Scheme_Env;
 
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))

@@ -224,6 +224,7 @@
   scheme_extension_table->scheme_expand = scheme_expand;
   scheme_extension_table->scheme_compile = scheme_compile;
   scheme_extension_table->scheme_make_promise_value = scheme_make_promise_value;
+  scheme_extension_table->scheme_link = scheme_link;
   scheme_extension_table->scheme_read = scheme_read;
   scheme_extension_table->scheme_read_syntax = scheme_read_syntax;
   scheme_extension_table->scheme_write = scheme_write;

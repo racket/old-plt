@@ -164,6 +164,7 @@ scheme_is_inexact
 scheme_expand
 scheme_compile
 scheme_make_promise_value
+scheme_link
 scheme_read
 scheme_read_syntax
 scheme_write

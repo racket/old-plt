@@ -102,6 +102,11 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj);
 
 static Scheme_Object *rep;
 
+static int top_next_registered;
+static Scheme_Comp_Env *top_next_env;
+static Scheme_Object *top_next_mark;
+static Scheme_Object *top_next_name;
+
 typedef void (*DW_PrePost_Proc)(void *);
 
 #define CONS(a,b) scheme_make_pair(a,b)
@@ -348,7 +353,7 @@ scheme_force_value(Scheme_Object *obj)
     return v;
   } else if (SAME_OBJ(obj, SCHEME_EVAL_WAITING)) {
     Scheme_Process *p = scheme_current_process;
-    return _scheme_eval_compiled_expr_multi(p->ku.eval.wait_expr);
+    return _scheme_eval_linked_expr_multi(p->ku.eval.wait_expr);
   } else if (obj)
     return obj;
   else
@@ -533,11 +538,38 @@ typedef struct {
 Scheme_Object *
 scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
 {
+  Scheme_Closure_Compilation_Data *odata = (Scheme_Closure_Compilation_Data *)_data;
+  Scheme_Closure_Compilation_Data *ndata;
+  Scheme_Object *e;
+
+  ndata = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
+  ndata->type = scheme_unclosed_procedure_type;
+
+  ndata->flags = odata->flags;
+  ndata->num_params = odata->num_params;
+  ndata->max_let_depth = odata->max_let_depth;
+  ndata->closure_size = odata->closure_size;
+  ndata->closure_map = odata->closure_map;
+  ndata->name = odata->name;
+
+  e = scheme_link_expr(odata->code, info);
+  ndata->code = e;
+  
+  if (!ndata->closure_size)
+    /* If only global frame is needed, go ahead and finialize closure */
+    return scheme_make_linked_closure(NULL, (Scheme_Object *)ndata, 0);
+  else
+    return (Scheme_Object *)ndata;
+}
+
+Scheme_Object *
+scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
+{
   Scheme_Closure_Compilation_Data *data;
   int i;
   short *oldpos;
   Closure_Info *cl;
-  Link_Info *new_info;
+  Resolve_Info *new_info;
 
   data = (Scheme_Closure_Compilation_Data *)_data;
   cl = (Closure_Info *)data->closure_map;
@@ -556,15 +588,15 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
   for (i = data->closure_size; i--; ) {
     int li;
     oldpos[i] = data->closure_map[i];
-    li = scheme_link_info_lookup(info, oldpos[i], NULL);
+    li = scheme_resolve_info_lookup(info, oldpos[i], NULL);
     data->closure_map[i] = li;
   }
   
-  new_info = scheme_link_info_extend(info, data->num_params, data->num_params,
-				     data->closure_size + data->num_params);
+  new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
+					data->closure_size + data->num_params);
   for (i = 0; i < data->num_params; i++) {
-    scheme_link_info_add_mapping(new_info, i, i + data->closure_size, 
-				 cl->local_flags[i]);
+    scheme_resolve_info_add_mapping(new_info, i, i + data->closure_size, 
+				    cl->local_flags[i]);
   }
   for (i = 0; i < data->closure_size; i++) {
     int p = oldpos[i];
@@ -574,13 +606,13 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
     else
       p += data->num_params;
 
-    scheme_link_info_add_mapping(new_info, p, i,
-				 scheme_link_info_flags(info, oldpos[i]));
+    scheme_resolve_info_add_mapping(new_info, p, i,
+				    scheme_resolve_info_flags(info, oldpos[i]));
   }
 
   {
     Scheme_Object *code;
-    code = scheme_link_expr(data->code, new_info);
+    code = scheme_resolve_expr(data->code, new_info);
     data->code = code;
   }
 
@@ -590,9 +622,9 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
       int j = i + data->closure_size;
       Scheme_Object *code;
       
-      code = scheme_make_syntax_link(scheme_bangboxenv_execute, 
-				     scheme_make_pair(scheme_make_integer(j),
-						      data->code));
+      code = scheme_make_syntax_resolved(scheme_bangboxenv_link, 
+					 scheme_make_pair(scheme_make_integer(j),
+							  data->code));
       data->code = code;
     }
   }
@@ -600,11 +632,7 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
   if (SCHEME_TYPE(data->code) > _scheme_compiled_values_types_)
     data->flags |= CLOS_FOLDABLE;
 
-  if (!data->closure_size)
-    /* If only global frame is needed, go ahead and finialize closure */
-    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
-  else
-    return (Scheme_Object *)data;
+  return (Scheme_Object *)data;
 }
 
 Scheme_Object *
@@ -652,7 +680,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (SCHEME_STX_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
-  forms = scheme_datum_to_syntax(forms, code, scheme_sys_wraps);
+  forms = scheme_datum_to_syntax(forms, code, code);
   forms = scheme_add_env_renames(forms, frame, env);
 
   data->name = rec[drec].value_name;
@@ -704,6 +732,20 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   return (Scheme_Object *)data;
 }
 
+void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object *name)
+{
+  if (!top_next_registered) {
+    top_next_registered = 1;
+    REGISTER_SO(top_next_env);
+    REGISTER_SO(top_next_mark);
+    REGISTER_SO(top_next_name);
+  }
+
+  top_next_env = env;
+  top_next_mark = mark;
+  top_next_name = name;
+}
+
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
 void *scheme_top_level_do(void *(*k)(void), int eb)
@@ -715,8 +757,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   void * volatile old_cc_start;
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
-  Scheme_Comp_Env *save_current_local_env;
-  Scheme_Object *save_mark, *save_name;
+  Scheme_Comp_Env * volatile save_current_local_env;
+  Scheme_Object * volatile save_mark, *  volatile save_name;
   Scheme_Process * volatile p = scheme_current_process;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
@@ -760,6 +802,15 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   save_current_local_env = p->current_local_env;
   save_mark = p->current_local_mark;
   save_name = p->current_local_name;
+
+  if (top_next_env) {
+    p->current_local_env = top_next_env;
+    p->current_local_mark = top_next_mark;
+    p->current_local_name = top_next_name;
+    top_next_env = NULL;
+    top_next_mark = NULL;
+    top_next_name = NULL;
+  }
 
   /* We set up an overflow handler at the lowest point possible
      in the stack for each thread. When we create a thread,
@@ -861,6 +912,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
       memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
       p->overflow_set = 0;
     }
+    p->current_local_env = save_current_local_env;
+    p->current_local_mark = save_mark;
+    p->current_local_name = save_name;
     scheme_longjmp(save, 1);
   }
 
@@ -1077,27 +1131,15 @@ scheme_apply_macro(Scheme_Object *name,
 		   Scheme_Object *rator, Scheme_Object *code,
 		   Scheme_Comp_Env *env, Scheme_Object *boundname)
 {
-  Scheme_Object *mark, *save_mark, *save_name;
-  Scheme_Comp_Env *save_env;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *mark;
 
   mark = scheme_new_mark();
   code = scheme_add_remove_mark(code, mark);
 
-  save_env = p->current_local_env;
-  save_mark = p->current_local_mark;
-  save_name = p->current_local_name;
-
-  p->current_local_env = env;
-  p->current_local_mark = mark;
-  p->current_local_name = boundname;
+  scheme_on_next_top(env, mark, boundname);
 
   code = X_scheme_apply_to_list(rator, scheme_make_pair(code, scheme_null), 
 				1, 1, code);
-
-  p->current_local_env = save_env;
-  p->current_local_mark = save_mark;
-  p->current_local_name = save_name;
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,
@@ -2721,9 +2763,6 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
   if (SCHEME_TYPE(data->code) > _scheme_values_types_)
     data->flags |= CLOS_FOLDABLE;
-
-  if (!data->closure_size)
-    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
 
   return (Scheme_Object *)data;
 }

@@ -17,9 +17,12 @@
 	  marshall-settings
           unmarshall-settings
           default-settings
+          
           front-end
 	  config-panel
 	  on-execute
+          render-value
+          
           get-language-position))
       
       (define module-based-language<%>
@@ -30,6 +33,8 @@
           get-module
 	  config-panel
 	  on-execute
+          render-value
+          
           get-language-position))
       
       (define simple-module-based-language<%>
@@ -50,7 +55,9 @@
       (define simple-module-based-language->module-based-language%
 	(class* object% (module-based-language<%>)
 	  (init-field simple-module-based-language)
-	  (public get-module config-panel on-execute get-language-position)
+	  (public get-module config-panel on-execute get-language-position 
+                  render-value
+                  default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings) settings)
           (define (unmarshall-settings printable) printable)
           (define (default-settings) 'no-settings)
@@ -63,6 +70,8 @@
             (initialize-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
 	    (send simple-module-based-language get-language-position))
+          (define (render-value port value)
+            (write value port))
 	  (super-instantiate ())))
       
       ;; module-based-language->language : language<%>
@@ -70,11 +79,15 @@
       (define module-based-language->language%
 	(class* object% (language<%>)
 	  (init-field module-based-language)
-	  (public front-end config-panel on-execute get-language-position)
+	  (public front-end config-panel on-execute get-language-position 
+                  render-value
+                  default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings)
             (send module-based-language marshall-settings settings))
           (define (unmarshall-settings printable)
             (send module-based-language unmarshall-settings printable))
+          (define (default-settings)
+            (send module-based-language default-settings))
           (define (front-end input settings)
             (lambda ()
               '...))
@@ -84,6 +97,8 @@
             (send module-based-language on-execute settings run-in-user-thread))
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
+          (define (render-value port value)
+            (send module-based-language render-value port value))
 	  (super-instantiate ())))
       
       (define (initialize-module-based-language setting module-spec run-in-user-thread)

@@ -58,20 +58,12 @@
       (preferences:set-un/marshall
        drscheme:language:settings-preferences-symbol
        (lambda (x) (cdr (vector->list (struct->vector x))))
-       (lambda (x) 
-         (if (and (list? x)
-                  (equal? (procedure-arity basis:make-setting)
-                          (length x)))
-             (let ([setting (apply basis:make-setting x)])
-               (if (valid-setting? setting)
-                   setting
-                   #f))
-             #f)))
+       (lambda (x) #f))
       
       (preferences:set-default
        drscheme:language:settings-preferences-symbol
-       (basis:get-default-setting)
-       basis:setting?)
+       'dummy-default-language
+       (lambda (x) #t))
       
       
       (preferences:set-default
@@ -204,22 +196,13 @@
                 [canvas (make-object editor-canvas% main text)]
                 [update-text
                  (lambda (setting)
-                   (let ([language (basis:setting-name setting)])
-                     (send text begin-edit-sequence)
-                     (send text lock #f)
-                     (send text erase)
-                     (send text insert
-                           (cond
-                             [(basis:beginner-language? setting) beginner-program]
-                             [(basis:intermediate-language? setting) intermediate-program]
-                             [(basis:advanced-language? setting) advanced-program]
-                             [(regexp-match "MrEd" language) mred-program]
-                             [(regexp-match "MzScheme" language) mzscheme-program]
-                             [else
-                              (format "unknown language: ~a" language)]))
-                     (send text set-position 0 0)
-                     (send text lock #t)
-                     (send text end-edit-sequence)))])
+                   (send text begin-edit-sequence)
+                   (send text lock #f)
+                   (send text erase)
+                   (send text insert (format "<<language name>>"))
+                   (send text set-position 0 0)
+                   (send text lock #t)
+                   (send text end-edit-sequence))])
            
            (preferences:add-callback
             drscheme:language:settings-preferences-symbol

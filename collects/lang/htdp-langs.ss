@@ -27,7 +27,6 @@
           print-.-symbols-without-bars
           print-whole/part-fractions))
       
-      
       ;; settings structure
       (define-struct/parse 
        setting
@@ -49,8 +48,37 @@
         print-.-symbols-without-bars
         print-whole/part-fractions))
       
-  ;; build-simple-module-based-language-settings : ((instanceof panel<%>) -> (-> setting))
-  ;; constrcts the standard settings panel
+      (define (use-number-snip? x)
+        (and (number? x)
+             (exact? x)
+             (real? x)
+             (not (integer? x))))
+      
+      (define (drscheme-pretty-print-size-hook x _ port)
+        (cond
+          [(is-a? x snip%) 1]
+          [(and (use-number-snip? x))
+           (+ (string-length (number->string (floor x)))
+              (max (string-length
+                    (number->string 
+                     (numerator (- x (floor x)))))
+                   (string-length
+                    (number->string 
+                     (numerator (- x (floor x)))))))]
+          [else #f]))
+      
+      #|
+                                         ;; used to print values
+                                         (let* ([v (print-convert:print-convert v)])
+                                           (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+                                                           drscheme-pretty-print-size-hook]
+                                                          [mzlib:pretty-print:pretty-print-print-hook
+                                                           (lambda (x _ port) (this-result-write x))])
+                                             (mzlib:pretty-print:pretty-print v this-result)))
+                                         |#
+                                         
+      ;; build-simple-module-based-language-settings : ((instanceof panel<%>) -> (-> setting))
+      ;; constrcts the standard settings panel
       (define (build-simple-module-based-language-settings parent language)
         (let* ([make-sub-panel
                 (lambda (name panel)

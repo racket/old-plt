@@ -13,11 +13,6 @@
    initial-column
    
    initialize-parameters
-   get-settings
-   get-default-setting
-   get-default-setting-name
-   
-   drscheme-load-handler
    
    raw-reader
    
@@ -27,7 +22,6 @@
    full-language?
    
    error-display/debug-handler
-   current-setting
    bottom-escape-handler
    
    drscheme-print
@@ -43,31 +37,7 @@
    
    (struct process-finish (error?))
    
-   setting-name->number
-   number->setting
-   setting/unparse
-   (struct setting (key
-                    name
-                    language-defining-module
-                    
-                    read-decimal-as-exact?
-                    case-sensitive?
-                    allow-reader-quasiquote?
-                    disallow-untagged-inexact-numbers
-                    
-                    whole/fractional-exact-numbers
-                    
-                    printing
-                    use-pretty-printer?
-                    sharing-printing?
-                    abbreviate-cons-as-list?
-                    print-tagged-inexact-numbers
-                    print-booleans-as-true/false
-                    print-exact-as-decimal?
-                    print-.-symbols-without-bars
-                    print-whole/part-fractions
-                    
-                    define-argv?))
+
    make-setting/parse
    
    teaching-level?
@@ -313,38 +283,6 @@
                                                      "expected a procedure, got: ~e" x))
                                             x)))
   
-  (define-struct process-finish (error?))
-  
-  ;; process-file : string
-  ;;                ((+ process-finish sexp) ( -> void) -> void)
-  ;;                -> void
-  ;; expects to be called with user's parameter settings active
-  (define (process-file filename f)
-    (call-with-input-file filename
-      (lambda (port)
-	(process (lambda () ((raw-reader) port)) f))))
-  
-  ;; process-sexp : sexp
-  ;;                ((+ process-finish sexp) ( -> void) -> void)
-  ;;                -> void
-  ;; expects to be called with user's parameter settings active
-  (define (process-sexp sexp f)
-    (process (let ([first? #t]) 
-	       (lambda ()
-		 (if first?
-		     (begin (set! first? #f)
-			    sexp)
-		     eof)))
-	     f))
-  
-  ;; process : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
-  (define (process reader f)
-    (let loop ()
-      (let ([expr (reader)])
-	(if (eof-object? expr)
-	    (f (make-process-finish #f) void)
-	    (f expr loop)))))
-  
   (define format-source-loc 
     (case-lambda
      [(start-location end-location)
@@ -379,10 +317,6 @@
 			  msg)
 	   msg))))
   
-  ;; bottom-escape-handler : (parameter ( -> A))
-  ;; must escape
-  (define bottom-escape-handler (make-parameter void))
-  
   ;; drscheme-exception-handler : exn -> A
   ;; effect: displays the exn-message and escapes
   (define (drscheme-exception-handler exn)
@@ -416,64 +350,6 @@
   
   (define re:zo (regexp "[.][zZ][oO]$"))
 
-  ;; drscheme-load-handler : string ->* TST
-  (define (drscheme-load-handler filename)
-    (unless (string? filename)
-      (raise (make-exn:application:arity
-	      (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
-	      (current-continuation-marks)
-	      filename
-	      'string)))
-    (let ([zo-file? (regexp-match re:zo filename)])
-      (cond
-        [zo-file?
-	 (primitive-load filename)]
-        [else
-         (let ([has-hash-bang?
-                (call-with-input-file filename
-                  (lambda (port)
-                    (equal? (list (read-char port)
-                                  (read-char port))
-                            (list #\# #\!))))])
-           (call-with-input-file filename
-             (lambda (port)
-               (when has-hash-bang?
-                 (read-line port 'any))
-               (let loop ([last-vals (list (void))])
-                 (let ([r ((raw-reader) port)])
-                   (if (eof-object? r)
-                       (apply values last-vals)
-                       (call-with-values
-                        (lambda ()
-			  (eval r))
-                        (lambda x
-                          (loop x)))))))))])))
-  
-  ;; drscheme-print : TST -> void
-  ;; effect: prints the value, on the screen, attending to the values of the current setting
-  (define drscheme-print
-    (lambda (v)
-      (unless (void? v)
-        (drscheme-print/void v))))
-  
-  ;; drscheme-print/void : TST -> void
-  ;; effect: prints the value, on the screen, attending to the values of the current setting
-  (define (drscheme-print/void v)
-    (let* ([setting (current-setting)]
-	   [value (if (r4rs-style-printing? setting)
-		      v
-		      (print-convert v))])
-      (if (setting-use-pretty-printer? setting)
-	  (pretty-print value)
-	  (write value))))
-  
-  ;; drscheme-port-print-handler : TST port -> void
-  ;; effect: prints the value on the port
-  (define (drscheme-port-print-handler value port)
-    (parameterize ([pretty-print-columns 'infinity]
-		   [current-output-port port])
-      (drscheme-print/void value)))
-  
   (define (teaching-level? setting)
     (let* ([name (setting-name setting)]
 	   [ans (or (equal? name "Beginning Student")
@@ -488,22 +364,12 @@
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
     
-    (current-setting setting)
-    (current-custodian custodian)
-    (error-value->string-handler drscheme-error-value->string-handler)
-    (current-exception-handler drscheme-exception-handler)
-    (initial-exception-handler drscheme-exception-handler)
     
-    (break-enabled #t)
-    (read-curly-brace-as-paren #t)
-    (read-square-bracket-as-paren #t)
-    (print-struct (not (eq? 'r4rs-style (setting-printing setting))))
-    (read-decimal-as-inexact (not (setting-read-decimal-as-exact? setting)))
     
-    (error-print-width 250)
+    
     (current-print drscheme-print)
     
-    (current-load-relative-directory #f)
+    
     
       ;; must call the resolver before setting the namespace
     (let ([namespace (make-namespace 'empty)])
@@ -518,13 +384,7 @@
     
     (read-case-sensitive (setting-case-sensitive? setting))
     
-    (current-load drscheme-load-handler)
     
-    (when (setting-define-argv? setting)
-      (namespace-variable-binding 'argv #())
-      (namespace-variable-binding 'program this-program))
-    
-    (global-port-print-handler drscheme-port-print-handler)
     
     (case (setting-printing setting)
       [(constructor-style)

@@ -6,15 +6,49 @@
 	   "drsig.ss"
            (lib "etc.ss")
            (lib "framework.ss" "framework")
-           (lib "zodiac.ss" "syntax")
-           (prefix basis: (lib "basis.ss" "userspce")))
+           (lib "zodiac.ss" "syntax"))
   
   (provide load-handler@)
-
+  
   (define load-handler@
     (unit/sig drscheme:load-handler^
       (import)
+
+      ;; process-finish is used to indicate some processing is done.
+      ;; its only purpose is to be a new distinct type.
+      (define-struct process-finish ())
       
+      ;; process-file : string
+      ;;                ((+ process-finish sexp) ( -> void) -> void)
+      ;;                -> void
+      ;; expects to be called with user's parameter settings active
+      (define (process-file filename f)
+        (call-with-input-file filename
+          (lambda (port)
+            (process (lambda () (read port)) f))))
+      
+      ;; process-sexp : sexp
+      ;;                ((+ process-finish sexp) ( -> void) -> void)
+      ;;                -> void
+      ;; expects to be called with user's parameter settings active
+      (define (process-sexp sexp f)
+        (process (let ([first? #t]) 
+                   (lambda ()
+                     (if first?
+                         (begin (set! first? #f)
+                                sexp)
+                         eof)))
+                 f))
+      
+      ;; process : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
+      (define (process reader f)
+        (let loop ()
+          (let ([expr (reader)])
+            (if (eof-object? expr)
+                (f (make-process-finish #f) void)
+                (f expr loop)))))
+      
+      ;; like process-file, etc expect it reads the input from a text
       (define (process-text text f start end)
         (let* ([buffer-thunk (gui-utils:read-snips/chars-from-text text start end)]
                [snip-string (string->list " 'non-string-snip ")]
@@ -30,8 +64,9 @@
                                      (begin0 (car from-snip)
                                              (set! from-snip (cdr from-snip)))))))]
                [port (make-input-port port-thunk (lambda () #t) void)])
-          (basis:process (lambda () ((basis:raw-reader) port)) f)))
+          (process (lambda () (read port)) f)))
       
+      (define primitive-load-handler (current-load))
       (define (drscheme-load-handler filename)
         (unless (string? filename)
           (raise (raise-type-error
@@ -50,11 +85,11 @@
                      (let ([last (list (void))])
                        (lambda (sexp recur)
                          (cond
-                           [(basis:process-finish? sexp) last]
+                           [(process-finish? sexp) last]
                            [else
                             (set! last
                                   (call-with-values
-                                   (lambda () (basis:primitive-eval sexp))
+                                   (lambda () (eval sexp))
                                    (lambda x x)))
                             (recur)])))])
                 (apply values 
@@ -74,4 +109,4 @@
 		      ;; is a drscheme:text:text% editor
 		      ;; (send text on-close)
                            ))))
-              (basis:drscheme-load-handler filename)))))))
+              (primitive-load-handler filename)))))))

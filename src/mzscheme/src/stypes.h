@@ -79,7 +79,7 @@ enum {
   scheme_cont_mark_set_type,
   scheme_sema_type,
   scheme_hash_table_type,
-  scheme_c_pointer_type,
+  scheme_cpointer_type,
   scheme_weak_box_type,
   scheme_struct_type_type,
   scheme_module_index_type,

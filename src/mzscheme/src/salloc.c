@@ -210,7 +210,7 @@ Scheme_Object *scheme_make_cptr(void *cptr, const char *typestr)
   Scheme_Object *o;
 
   o = scheme_alloc_object();
-  o->type = scheme_c_pointer_type;
+  o->type = scheme_cpointer_type;
   SCHEME_PTR1_VAL(o) = cptr;
   SCHEME_PTR2_VAL(o) = (void *)typestr;
 

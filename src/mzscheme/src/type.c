@@ -182,7 +182,7 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_subprocess_type, "<subprocess>");
 
-  set_name(scheme_c_pointer_type, "<c-pointer>");
+  set_name(scheme_cpointer_type, "<cpointer>");
 
   set_name(scheme_wrap_chunk_type, "<wrap-chunk>");
 

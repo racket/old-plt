@@ -1002,6 +1002,11 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
+# Make sure the --enable-shared default is propagated:
+if test "${enable_shared}" = "yes" ; then
+  ac_configure_args="$ac_configure_args --enable-shared"
+fi
+
 FOREIGNTARGET=
 FOREIGN_OBJS_IF_USED=
 if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then

@@ -76,6 +76,7 @@ public:
     XColor *get_pixel_color_cache;
     short get_pixel_cache_full, set_a_pixel;
     Bool         is_window;
+    int cache_dx, cache_dy;
 };
 // easier access to private data
 #define PEN_GC		(X->pen_gc)
@@ -163,7 +164,7 @@ public:
 
     Bool GetPixel(float x, float y, wxColour *col);
 
-    void BeginSetPixel();
+    void BeginSetPixel(int mini, int near_i, int near_j);
     void EndSetPixel();
     void SetPixel(float x, float y, wxColour *col);
 

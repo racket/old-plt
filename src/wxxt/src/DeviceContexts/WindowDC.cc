@@ -2115,14 +2115,12 @@ void wxWindowDC::SetCanvasClipping(void)
     }
 }
 
-/* MATTHEW */
 Bool wxWindowDC::Ok(void)
 {
   return !!DRAWABLE;
 }
 
 
-/* MATTHEW: [5] */
 Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 {
   int i, j;
@@ -2131,7 +2129,7 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   XColor xcol;
   int get_pixel_cache_pos;
   XColor *get_pixel_color_cache;
-  Bool get_pixel_cache_full;
+  Bool get_pixel_cache_full, mini = 1;
   unsigned int w, h;
 
   if (!DRAWABLE)
@@ -2140,7 +2138,6 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   i = XLOG2DEV(x);
   j = YLOG2DEV(y);
 
-  
   w = X->width;
   h = X->height;
 
@@ -2150,8 +2147,19 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 
 #define NUM_GETPIX_CACHE_COLORS 256
 
+  if (X->get_pixel_image_cache
+      && ((i < X->cache_dx)
+	  || (i >= X->cache_dx + X->get_pixel_image_cache->width)
+	  || (j < X->cache_dy)
+	  || (j >= X->cache_dy + X->get_pixel_image_cache->height))) {
+    /* Turns out that getting a small part wasn't such a
+       good idea. Go into whole-image mode. */
+    EndSetPixel();
+    mini = 0;
+  }
+
   if (!X->get_pixel_image_cache) {
-    BeginSetPixel();
+    BeginSetPixel(mini, i, j);
 
     if (X->get_pixel_image_cache->depth == 1) {
       get_pixel_color_cache = X->get_pixel_color_cache;
@@ -2174,7 +2182,7 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   get_pixel_color_cache = X->get_pixel_color_cache;
   get_pixel_cache_full = X->get_pixel_cache_full;
 
-  pixel = XGetPixel(X->get_pixel_image_cache, i, j);
+  pixel = XGetPixel(X->get_pixel_image_cache, i - X->cache_dx, j - X->cache_dy);
 
   if (!wx_alloc_color_is_fast
       || (X->get_pixel_image_cache->depth == 1)) {
@@ -2226,9 +2234,9 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   return TRUE;
 }
 
-void wxWindowDC::BeginSetPixel()
+void wxWindowDC::BeginSetPixel(int mini, int near_i, int near_j)
 {
-  unsigned int w, h;
+  unsigned int w, h, dx, dy, ni = (unsigned int)near_i, nj = (unsigned int)near_j;
 
   if (!DRAWABLE)
     return;
@@ -2240,13 +2248,44 @@ void wxWindowDC::BeginSetPixel()
   h = X->height;
 
   if (X->is_window) {
-    /* For now, disallow: */
+    /* Disallow: */
     return;
+  }
+
+  if (mini) {
+    /* To lessen the cost of localized get-pixel and set-pixel
+       in a large bitmap, we first try to get a small piece
+       of the bitmap in "mini" mode. If we need more, then we'll
+       jump to "whole-image" mode. */
+#   define wxMINI_SIZE 20
+    if (w > wxMINI_SIZE) {
+      if (ni < (wxMINI_SIZE / 2))
+	dx = 0;
+      else if ((ni + (wxMINI_SIZE / 2)) > w)
+	dx = w - wxMINI_SIZE;
+      else
+	dx = ni - (wxMINI_SIZE / 2);
+      w = wxMINI_SIZE;
+    } else
+      dx = 0;
+    if (h > wxMINI_SIZE) {
+      if (nj < (wxMINI_SIZE / 2))
+	dy = 0;
+      else if ((nj + (wxMINI_SIZE / 2)) > h)
+	dy = h - wxMINI_SIZE;
+      else
+	dy = nj - (wxMINI_SIZE / 2);
+      h = wxMINI_SIZE;
+    } else
+      dy = 0;
+  } else {
+    dx = 0;
+    dy = 0;
   }
 
   {
     XImage *img;
-    img = XGetImage(DPY, DRAWABLE, 0, 0, w, h, AllPlanes, ZPixmap);
+    img = XGetImage(DPY, DRAWABLE, dx, dy, w, h, AllPlanes, ZPixmap);
     X->get_pixel_image_cache = img;
   }
   
@@ -2258,6 +2297,8 @@ void wxWindowDC::BeginSetPixel()
     X->get_pixel_color_cache = cols;
   }
   X->set_a_pixel = FALSE;
+  X->cache_dx = dx;
+  X->cache_dy = dy;
 }
 
 void wxWindowDC::EndSetPixel()
@@ -2266,11 +2307,13 @@ void wxWindowDC::EndSetPixel()
     return;
 
   if (X->set_a_pixel) {
-    int w, h;
+    int w, h, dx, dy;
     w = X->get_pixel_image_cache->width;
     h = X->get_pixel_image_cache->height;
+    dx = X->cache_dx;
+    dy = X->cache_dy;
     
-    XPutImage(DPY, DRAWABLE, PEN_GC, X->get_pixel_image_cache, 0, 0, 0, 0, w, h);
+    XPutImage(DPY, DRAWABLE, PEN_GC, X->get_pixel_image_cache, 0, 0, dx, dy, w, h);
   }
 
   if (X->get_pixel_image_cache) {
@@ -2292,19 +2335,30 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   XColor *get_pixel_color_cache;
   Bool get_pixel_cache_full;
 
-  BeginSetPixel();
-
-  if (!X->get_pixel_image_cache)
-    return;
-
   i = XLOG2DEV(x);
   j = YLOG2DEV(y);
+
+  BeginSetPixel(1, i, j);
+
+  if (i < 0 || i >= (int)X->width
+      || j < 0 || j >= (int)X->height)
+    return;
 
   w = X->get_pixel_image_cache->width;
   h = X->get_pixel_image_cache->height;
 
-  if (i < 0 || i >= w
-      || j < 0 || j >= h)
+  if (X->get_pixel_image_cache
+      && ((i < X->cache_dx)
+	  || (i >= X->cache_dx + w)
+	  || (j < X->cache_dy)
+	  || (j >= X->cache_dy + h))) {
+    /* Turns out that getting a small part wasn't such a
+       good idea. Go into whole-image mode. */
+    EndSetPixel();
+    BeginSetPixel(0, i, j);
+  }
+
+  if (!X->get_pixel_image_cache)
     return;
 
   red = col->Red();
@@ -2372,7 +2426,7 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   }
 
  put:
-  pixel = XPutPixel(get_pixel_image_cache, i, j, pixel);
+  pixel = XPutPixel(get_pixel_image_cache, i - X->cache_dx, j - X->cache_dy, pixel);
 }
 
 void wxWindowDC::DoFreeGetPixelCache(void)

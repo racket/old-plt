@@ -1977,7 +1977,8 @@ static char *do_convert(iconv_t cd,
 			long *oilen, long *oolen,
 			/* status is set to 
 			   0 for complete, 
-			   -1 for error (possibly partial input),
+			   -1 for partial input,
+			   -2 for error,
 			   1 for more avail */
 			int *status)
 {
@@ -2067,7 +2068,7 @@ static char *do_convert(iconv_t cd,
 	}
       } else {
 	/* Either EINVAL (premature end) or EILSEQ (bad sequence) */
-	if (errno == EILSEQ)
+	if (ICONV_errno == EILSEQ)
 	  *status = -2;
 	if (close_it)
 	  iconv_close(cd);
@@ -2470,7 +2471,6 @@ int do_locale_comp(const char *who, const mzchar *us1, long ul1, const mzchar *u
 #if defined(MACOS_UNICODE_SUPPORT) || defined(WINDOWS_UNICODE_SUPPORT)
   if (current_locale_name && !*current_locale_name) {
     utf16 = 1;
-    csize = 2;
     mz_strcoll = mz_native_strcoll;
   }
 #endif
@@ -2570,7 +2570,7 @@ mzchar *do_locale_recase(int to_up, mzchar *in, int delta, int len, long *olen)
 
     if (!len && SCHEME_NULLP(parts)) {
       *olen = (clen >> 2);
-      c[*olen] = 0;
+      ((mzchar *)c)[*olen] = 0;
       return (mzchar *)c;
     }
 
@@ -2660,7 +2660,6 @@ static Scheme_Object *mz_recase(const char *who, int to_up, mzchar *us, long ule
 #if defined(MACOS_UNICODE_SUPPORT) || defined(WINDOWS_UNICODE_SUPPORT)
   if (current_locale_name && !*current_locale_name) {
     utf16 = 1;
-    csize = 2;
     mz_do_recase = do_native_recase;
   }
 #endif

@@ -12,7 +12,7 @@
     ch)
 
   (define (channel-send-evt ch v)
-    (convert-evt
+    (wrap-evt
      (channel-put-evt ch v)
      void))
 
@@ -24,17 +24,12 @@
   (define (time-evt t)
     (alarm-evt t))
 
-  (define (wrap-evt e p)
-    (convert-evt e p))
-
   (provide/contract
    (spawn ((-> any) . -> . thread?))
    (channel (-> channel?))
    (channel-recv-evt (channel? . -> . evt?))
    (channel-send-evt (channel? any? . -> . evt?))
    
-   (wrap-evt (evt? (any? . -> . any) . -> . evt?))
-
    (thread-done-evt (thread? . -> . evt?))
    (current-time (-> number?))
    (time-evt (real? . -> . evt?))))

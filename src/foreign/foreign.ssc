@@ -28,7 +28,7 @@ exec mzpp -s "---begin" -o `echo "$0" | sed 's/ssc$/c/'` "$0"
 
 (define (scheme-id->c-name str)
   (let loop ([str (format "~a" str)]
-             [substs '((#rx"->" "_to_") (#rx"[-/]" "_") (#rx"*" "S")
+             [substs '((#rx"->" "_to_") (#rx"[-/]" "_") (#rx"\\*" "S")
                        (#rx"\\?$" "_p") (#rx"!$" ""))])
     (if (null? substs)
       str

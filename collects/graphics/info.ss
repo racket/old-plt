@@ -1,9 +1,12 @@
 (let ([drs (require-library "info.ss" "drscheme")])
-  (let ([graphics-info
-          (lambda (what failure)
-            (case what
-              [(name) "Graphics"]
-              [(compile-prefix) (drs 'compile-prefix failure)]
-              [(compile-omit-files) null]
-              [else (failure)]))])
-    graphics-info))
+  (lambda (what failure)
+    (case what
+      [(name) "Graphics"]
+      [(compile-prefix) `(begin
+			   ,(drs 'compile-prefix failure)
+			   (require-library "tmacro.ss" "graphics"))]
+      [(compile-omit-files) (list "tmacro.ss"
+				  "turtles.ss"
+				  "graphics.ss")]
+      [else (failure)])))
+

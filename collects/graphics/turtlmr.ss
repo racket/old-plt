@@ -32,6 +32,7 @@
 		(send dc blit 0 0 width height memory-dc 0 0 wx:const-copy))]))]
 	[clear (lambda () 
 		 (send memory-dc set-pen w-pen)
+		 (send memory-dc set-brush w-brush)
 		 (send memory-dc draw-rectangle 0 0 width height)
 		 (send canvas on-paint)
 		 (send memory-dc set-pen b-pen))])

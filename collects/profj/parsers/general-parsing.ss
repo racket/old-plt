@@ -188,7 +188,7 @@
   (define-token? c-bracket? 'C_BRACKET)
   (define-token? star? '*)
   (define-token? semi-colon? 'SEMI_COLON)
-  (define-token? colon? 'COLON)
+  (define-token? colon? ':)
   (define-token? dot? 'PERIOD)
   (define-token? comma? 'COMMA)
   

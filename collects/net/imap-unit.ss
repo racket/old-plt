@@ -140,7 +140,7 @@
 				eol-k eop-k)
 			  (error 'imap-read "failure reading atom: ~a" s)))])])))
 
-      (define (imap-send r w cmd info-handler)
+      (define (imap-send r w cmd info-handler . continuation-handler)
 	(let ([id (make-msg-id)])
 	  (log "sending ~a~a~n" id cmd)
 	  (fprintf w "~a~a~a" id cmd crlf)
@@ -158,7 +158,11 @@
 		  (info-handler info))
 		(loop)]
 	       [(starts-with? l "+ ")
-		(error 'imap-send "unexpected continuation request: ~a" l)]
+                (if (null? continuation-handler)
+                    (error 'imap-send "unexpected continuation request: ~a" l)
+                    (begin
+                      ((car continuation-handler) (imap-read (skip l 2) r))
+                      (loop)))]
 	       [else
 		(log-warning "warning: unexpected response for ~a: ~a" id l)
 		(loop)])))))
@@ -327,6 +331,17 @@
 			      (splice msgs ",")
 			      (str->arg dest-mailbox))
 		      void))))
+      
+      (define (imap-append imap dest-mailbox msg)
+        (let ([r (imap-connection-r imap)]
+              [w (imap-connection-w imap)])
+          (check-ok
+           (imap-send r w (format "APPEND ~a (\\Seen) {~a}"
+                                  dest-mailbox (string-length msg))
+                      void
+                      (lambda (contin)
+                        (fprintf w "~a~n" msg))))))
+                      
       
       (define (imap-expunge imap)
 	(let ([r (imap-connection-r imap)]

@@ -14,7 +14,7 @@
      imap-status
 
      imap-get-messages
-     imap-copy
+     imap-copy imap-append
      imap-store imap-flag->symbol symbol->imap-flag
      imap-expunge
      

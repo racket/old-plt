@@ -1,11 +1,12 @@
 
-(require-library "refer.ss")
+(module texpict mzscheme
+  (require (lib "unitsig.ss"))
 
-(require-library "texpicts.ss" "texpict")
+  (require "texpict-sig.ss"
+	   "texpict-unit.ss")
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (define-values/invoke-unit/sig texpict^
+    texpict@)
 
+  (provide-signature-elements texpict^))
 
-(define-values/invoke-unit/sig texpict^
-  (require-library-unit/sig "texpictr.ss" "texpict"))

@@ -1196,7 +1196,8 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
   
   switch(page->page_type) {
-    case PAGE_TAGGED: if(*(unsigned short*)ptr != scheme_thread_type)
+    case PAGE_TAGGED: if((*(unsigned short*)ptr != scheme_thread_type) &&
+                         (*(unsigned short*)ptr != scheme_custodian_type))
                         mark_table[*(unsigned short*)ptr](ptr); 
                       break;
     case PAGE_ATOMIC: break;

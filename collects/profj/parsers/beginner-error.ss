@@ -190,7 +190,11 @@
         ((body-end)
          (case tok-kind
            ((EOF) (parse-error "Expected a } to close this body" (get-start pre) (get-end pre)))
-           ((C_BRACE) (parse-definition cur-tok (getter) 'start getter))
+           ((C_BRACE) 
+            (let ((next (getter)))
+              (if (c-brace? (get-tok next))
+                  (parse-error "Unnecessary }, class body already closed" start (get-end next))
+                  (parse-definition cur-tok next 'start getter))))
            (else (parse-error (format "Expected a } to close class body, found ~a" (output-format tok))
                               (get-start pre) stop)))))))
               

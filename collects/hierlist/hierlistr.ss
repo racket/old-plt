@@ -204,7 +204,7 @@
 	     (send s get-item)))])
       (public
 	[deselect-all 
-	 (lambda () (for-each (lambda (l) (send l select #f)) children))]
+	 (lambda () (for-each (lambda (l) (send l deselect-all)) children))]
 	[new-item 
 	 (lambda () (insert-item mred:hierarchical-item-snip% #t))]
 	[new-list
@@ -237,6 +237,7 @@
       (public
 	[get-item-buffer% (lambda () mred:hierarchical-item-buffer%)]
 	[select (lambda (on?) (send item-buffer select on?))]
+	[deselect-all (lambda () (select #f))]
 	[show-select (lambda (on?) (send item-buffer show-select on?))]
 	[get-item-buffer (lambda () item-buffer)]
 	[get-item (lambda () item)])
@@ -260,15 +261,15 @@
 	[select (lambda (on?)
 		  (if on?
 		      (send title-buffer select #t)
-		      (begin
-			(send title-buffer select #f)
-			(send content-buffer deselect-all))))]
+		      (send title-buffer select #f)))]
+	[deselect-all (lambda ()
+			(select #f)
+			(send content-buffer deselect-all))]
 	[show-select (lambda (on?) (send title-buffer show-select on?))]
 	[on-arrow (lambda (a)
 		    (if (send a on)
 			(begin
 			  (send main-buffer begin-edit-sequence)
-			  (send content-buffer deselect-all)
 			  (send top item-opened (get-item))
 			  (send* main-buffer
 			    (insert #\newline 2)
@@ -277,6 +278,7 @@
 			  (send main-buffer end-edit-sequence))
 			(begin
 			  (send main-buffer begin-edit-sequence)
+			  (send content-buffer deselect-all)
 			  (send main-buffer delete 2 5)
 			  (send top item-closed (get-item))
 			  (send main-buffer end-edit-sequence))))]
@@ -316,7 +318,7 @@
 	[get-items (lambda () (send top-buffer get-items))])
       (private
 	[do-select (lambda (item s)
-		     (unless (eq? s selected)
+		     (unless (eq? item selected-item)
 		       (when selected (send selected show-select #f))
 		       (set! selected (if item s #f))
 		       (set! selected-item item)

@@ -355,7 +355,8 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 			  void (**ext_oldf)(void *p, void *data),
 			  void **ext_olddata,
 			  Finalizations **_fns,
-			  Finalization **_fn)
+			  Finalization **_fn,
+			  int no_dup)
 {
   void (*oldf)(void *p, void *data);
   void *olddata;
@@ -405,8 +406,21 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
     fns->ext_data = data;
   } else {
     if (prim) {
-      fn->next = fns->prim;
-      fns->prim = fn;
+      if (no_dup) {
+	/* Make sure it's not already here */
+	Finalization *fnx, *prev;
+	prev = NULL;
+	for (fnx = fns->prim; fnx; fnx = fnx->next) {
+	  if (fnx->f == fn->f && fnx->data == fn->data) {
+	    fn = NULL;
+	    break;
+	  }
+	}
+      }
+      if (fn) {
+	fn->next = fns->prim;
+	fns->prim = fn;
+      }
     } else {
       fn->next = fns->scheme;
       fns->scheme = fn;
@@ -477,10 +491,10 @@ void scheme_weak_reference_indirect(void **p, void *v)
     z = MALLOC_ONE_ATOMIC(ZeroingRecord);
 
     z->p = p;
-    add_finalizer(v, zero_out, z, 1, 0, NULL, NULL, &z->src_fns, &z->src_fn);
+    add_finalizer(v, zero_out, z, 1, 0, NULL, NULL, &z->src_fns, &z->src_fn, 0);
 
     if ((base = GC_base(p)))
-      add_finalizer(base, z_rmve_finalizers, z, 1, 0, NULL, NULL, &z->dest_fns, &z->dest_fn);
+      add_finalizer(base, z_rmve_finalizers, z, 1, 0, NULL, NULL, &z->dest_fns, &z->dest_fn, 0);
     else {
       z->dest_fn = NULL;
       z->dest_fns = NULL;
@@ -490,19 +504,29 @@ void scheme_weak_reference_indirect(void **p, void *v)
 
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL);
+  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 0);
+}
+
+void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data)
+{
+  add_finalizer(p, f, data, 1, 0, NULL, NULL, NULL, NULL, 1);
 }
 
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data)
 {
-  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL);
+  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 0);
+}
+
+void scheme_add_scheme_finalizer_once(void *p, void (*f)(void *p, void *data), void *data)
+{
+  add_finalizer(p, f, data, 0, 0, NULL, NULL, NULL, NULL, 1);
 }
 
 void scheme_register_finalizer(void *p, void (*f)(void *p, void *data), 
 			       void *data, void (**oldf)(void *p, void *data), 
 			       void **olddata)
 {
-  add_finalizer(p, f, data, 0, 1, oldf, olddata, NULL, NULL);
+  add_finalizer(p, f, data, 0, 1, oldf, olddata, NULL, NULL, 0);
 }
 
 void scheme_collect_garbage(void)

@@ -59,6 +59,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
     size = 0;
 
   if (b->stack_max_size < size) {
+    /* printf("Stack size: %d\n", size); */
     b->stack_copy = scheme_malloc(size);
     b->stack_max_size = size;    
   }
@@ -69,7 +70,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 	 size);
 }
 
-static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b)
+static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 {
   Scheme_Jumpup_Buf *c;
 
@@ -79,7 +80,13 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b)
 
     z = (unsigned long)&junk[0];
 
-    uncopy_stack(STK_COMP(z, DEEPPOS(b)), b);
+    uncopy_stack(STK_COMP(z, DEEPPOS(b)), b, junk);
+  }
+
+  {
+    int i;
+    for (i = 0; i < 200; i++)
+      prev[i] = 0;
   }
 
   FLUSH_REGISTER_WINDOWS;
@@ -95,9 +102,9 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b)
 #ifdef WIN32_SETJMP_HACK
   /* Mystical hack for Win32 with Borland C++ 4.5 */
   /* My best guess is that the j_excep field is used by the
-     Win32 kernal to gurantee that longjmp isn't used nastily
+     Win32 kernel to gurantee that longjmp isn't used nastily
      by jumping across the handling of different events. Or something.
-     Of course, I'm using longjmp nastily, so I have to trick the kernal. */
+     Of course, I'm using longjmp nastily, so I have to trick the kernel. */
   /* That's just a guess. In any case, it seems to work. */
   {
     jmp_buf hack;
@@ -139,8 +146,9 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *start,
 void scheme_longjmpup(Scheme_Jumpup_Buf *b)
 {
   long z;
+  long junk[200];
 
-  uncopy_stack(STK_COMP((unsigned long)&z, DEEPPOS(b)), b);
+  uncopy_stack(STK_COMP((unsigned long)&z, DEEPPOS(b)), b, junk);
 }
 
 void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)

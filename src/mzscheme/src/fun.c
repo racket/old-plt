@@ -619,7 +619,7 @@ Scheme_Object *
 scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code, 
 				Scheme_Compile_Info *rec)
 {
-  Scheme_Object *allparams, *params, *forms, *param, *name, *rest;
+  Scheme_Object *allparams, *params, *forms, *param;
   Scheme_Closure_Compilation_Data *data;
   Scheme_Compile_Info lam;
   Scheme_Comp_Env *frame;
@@ -643,27 +643,6 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   forms = SCHEME_CDR(SCHEME_CDR(code));
 
-  /* Check for duplicate names: */
-  for (params = allparams;
-       SCHEME_PAIRP(params); 
-       params = SCHEME_CDR(params)) {
-    name = SCHEME_CAR(params);
-    for (rest = SCHEME_CDR(params); 
-	 !SCHEME_NULLP(rest); 
-	 rest = SCHEME_CDR(rest)) {
-      if (!SCHEME_PAIRP(rest))
-	param = rest;
-      else
-	param = SCHEME_CAR(rest);
-      if (SCHEME_SYMBOLP(name) && SAME_OBJ(param, name)) {
-	scheme_wrong_syntax("lambda", name, code,
-			    "duplicate argument name");
-      }
-      if (!SCHEME_PAIRP(rest))
-	break;
-    }
-  }
-
   frame = scheme_new_compilation_frame(data->num_params, SCHEME_LAMBDA_FRAME, env);
   params = allparams;
   for (i = 0; i < data->num_params; i++) {
@@ -671,7 +650,6 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
       param = params;
     else
       param = SCHEME_CAR(params);
-    scheme_check_identifier("lambda", param, NULL, env, code);
     scheme_add_compilation_binding(i, param, frame);
     if (SCHEME_PAIRP(params))
       params = SCHEME_CDR (params);
@@ -1628,7 +1606,7 @@ static Scheme_Object *do_call_ec(void *ec)
 
   p[0] = (Scheme_Object *)ec;
   f = SCHEME_CONT_VAL(ec);
-  SCHEME_CONT_VALS(ec) = NULL;
+  SCHEME_CONT_VAL(ec) = NULL;
 
   return _scheme_apply_multi(f, 1, p);
 }
@@ -1637,6 +1615,9 @@ static Scheme_Object *handle_call_ec(void *ec)
 {
   if (SCHEME_CONT_VAL(ec)) {
     int n;
+    Scheme_Object *v = SCHEME_CONT_VAL(ec);
+    Scheme_Object **vs = SCHEME_CONT_VALS(ec);
+    SCHEME_CONT_VAL(ec) = NULL;
     scheme_jumping_to_continuation = 0;
 #ifdef ERROR_ON_OVERFLOW
     scheme_current_process->stack_overflow = 
@@ -1644,9 +1625,9 @@ static Scheme_Object *handle_call_ec(void *ec)
 #endif
     n = SCHEME_CONT_NUM_VALS(ec);
     if (n == 1)
-      return SCHEME_CONT_VAL(ec);
+      return v;
     else
-      return scheme_values(n, SCHEME_CONT_VALS(ec));
+      return scheme_values(n, vs);
   } else
     return NULL;
 }

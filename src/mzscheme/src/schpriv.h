@@ -60,7 +60,6 @@ typedef struct Scheme_Compile_Info
 {
   int max_let_depth;
   char can_optimize_constants;
-  char globals_must_be_primitive;
   char keep_unit_debug_info;
   char dont_mark_local_use;
   Scheme_Object *value_name;
@@ -586,11 +585,6 @@ int scheme_check_float(const char *where, float v, const char *dest);
 
 unsigned long scheme_get_deeper_address(void);
 
-#ifdef DIR_FUNCTION
-void scheme_set_process_directory(Scheme_Process *newp, Scheme_Process *oldp);
-void scheme_done_process_directory(Scheme_Process *p);
-#endif
-
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
 #ifndef MZ_REAL_THREADS
 extern unsigned long scheme_stack_boundary;
@@ -673,7 +667,7 @@ typedef struct {
 } DupCheckRecord;
 
 DupCheckRecord *scheme_begin_dup_symbol_check(DupCheckRecord *r);
-void scheme_dup_symbol_check(DupCheckRecord *r, char *where,
+void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *symbol, char *what, 
 			     Scheme_Object *form, int inverted);
 
@@ -918,6 +912,9 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_LET_FRAME 16
 #define SCHEME_ANCHORED_FRAME 32
 #define SCHEME_TOPLEVEL_FRAME 64
+#define SCHEME_PRIM_GLOBALS_ONLY 128
+
+#define ENV_PRIM_GLOBALS_ONLY(env) ((env)->basic.flags & SCHEME_PRIM_GLOBALS_ONLY)
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1
@@ -1000,8 +997,6 @@ Scheme_Object *scheme_get_file_directory(const char *filename);
 char *scheme_normal_path_case(char *s, int len);
 
 Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, Scheme_Manager *mgr);
-
-char *scheme_get_thread_current_directory(Scheme_Process *p, int *len, int noexn);
 
 #ifdef WIN32_THREADS
 void *scheme_win32_get_break_semaphore(void *th);

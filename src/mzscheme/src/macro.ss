@@ -617,7 +617,7 @@
 	  (#%void)
 	  (#%raise-syntax-error 'with-handlers "bad syntax"
 				(#%list* 'with-handlers clauses body)))
-      (if (#%null? clauses)
+      (#%if (#%null? clauses)
 	  `(begin ,@body)
         (#%let ([k (#%gensym)]
 	        [loop (#%gensym)]
@@ -753,12 +753,15 @@
 	(#%let/ec done
           (#%let loop ()
 	    (#%let/ec k
-		(#%set! jump k)
-		(#%let ([v ((#%current-prompt-read))])
-		   (#%when (#%eof-object? v) (done (#%void)))
-		   (#%call-with-values
-		    (#%lambda () ((#%current-eval) v))
-		    (#%lambda results (#%for-each (#%current-print) results)))))
+              (#%dynamic-wind
+                 (#%lambda () (#%set! jump k))
+		 (#%lambda ()
+		   (#%let ([v ((#%current-prompt-read))])
+		     (#%when (#%eof-object? v) (done (#%void)))
+		     (#%call-with-values
+		      (#%lambda () ((#%current-eval) v))
+		      (#%lambda results (#%for-each (#%current-print) results)))))
+		 (#%lambda () (#%set! jump #f))))
 	    (loop))))
       (#%lambda () (#%error-escape-handler eeh)
 		   (#%set! jump #f)
@@ -1149,3 +1152,74 @@
 	  (#%eval `(#%begin ,@body)))))
 
 > kstop begin-elaboration-time <
+
+(#%define-values (report-environment null-environment)
+  (#%let* ([debug debug-info-handler]
+	  [r4-syntax '(quasiquote unquote unquote-splicing 
+				   if let and or
+				   cond case define delay do
+				   letrec let* begin
+				   lambda quote set!)]
+	  [r4 '(car cdr caar cadr cdar cddr
+		    caaar caadr cadar caddr cdaar cdadr cddar cdddr
+		    caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
+		    cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
+		    map = < > <= >= max min + - * / 
+		    abs gcd lcm exp log sin cos tan not eq?
+		    call-with-current-continuation
+		    symbol->string make-rectangular exact->inexact inexact->exact number->string string->number 
+		    rationalize output-port? current-input-port current-output-port current-error-port 
+		    open-input-file open-output-file close-input-port close-output-port
+		    with-output-to-file transcript-on transcript-off flush-output
+		    string-length string-ci<=? string-ci>=? string-append string->list list->string string-fill! 
+		    vector-length vector->list list->vector vector-fill! char-alphabetic? char-numeric? char-whitespace? 
+		    char-upper-case? char-lower-case? char->integer integer->char char-downcase
+		    call-with-output-file call-with-input-file with-input-from-file
+		    apply for-each symbol? pair? cons set-car! set-cdr! null? list? list length append reverse list-tail list-ref
+		    memq memv member assq assv assoc
+		    number? complex? real? rational? integer? exact? inexact? zero? positive?  negative? odd? even? 
+		    quotient remainder modulo floor ceiling truncate round numerator denominator asin acos atan sqrt
+		    expt make-polar real-part imag-part angle magnitude input-port? read read-char peek-char eof-object?
+		    char-ready? write display newline write-char load string? string string-ref string-set! string=? 
+		    string-ci=? string<? string>? string<=? string>=? string-ci<? string-ci>? substring string-copy
+		    vector? make-vector vector vector-ref vector-set! 
+		    char? char=? char<? char>? char<=? char>=? char-ci=? char-ci<? char-ci>? char-ci<=? char-ci>=? 
+		    char-upcase boolean? eqv? equal? force)]
+	  [#%r4 '(#%make-promise #%letrec*)]
+	  [r5 '(call-with-values values eval port?)]
+	  [copy-env (#%lambda (l l2)
+		      (#%let ([n (#%make-namespace 'empty)]
+			      [all (#%make-namespace)]
+			      [l (#%append l l2 (#%map (#%lambda (s) 
+						          (#%string->symbol 
+							   (#%string-append "#%" (#%symbol->string s)))) 
+						       l))])
+			 (#%parameterize ([#%current-namespace n])
+			   (#%for-each
+			    (#%lambda (s v) (#%global-defined-value s v))
+			    l
+			    (#%parameterize ([#%current-namespace all])
+			      (#%map
+			       (#%lambda (s) (#%global-defined-value s))
+			       l))))
+			 n))]
+	  [make-maker
+	   (#%lambda (who r5 r4 #%r4)
+            (#%lambda (n)
+	     (#%cond
+	      [(#%eq? n 5) (copy-env (#%append r5 r4) #%r4)]
+	      [(#%eq? n 4) (copy-env r4 #%r4)]
+	      [(#%and (#%number? n) (#%integer? n) (#%positive? n))
+	       (#%raise (#%make-exn:misc:unsupported
+			 (#%format "~s: version ~a not supported" who n)
+			 ((debug))))]
+	      [else (#%raise-type-error who "positive integer" n)])))])
+     (#%values
+      (make-maker 'report-environment '() r4-syntax '())
+      (make-maker 'null-environment r5 (append r4-syntax r4) #%r4))))
+
+> fstop report-environment null-environment <
+
+(#%define interaction-environment #%current-namespace)
+
+> fstop interaction-environment <

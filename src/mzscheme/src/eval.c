@@ -656,7 +656,6 @@ void scheme_init_compile_recs(Scheme_Compile_Info *src,
   for (i = 0; i < n; i++) {
     dest[i].max_let_depth = 0;
     dest[i].can_optimize_constants = src->can_optimize_constants;
-    dest[i].globals_must_be_primitive = src->globals_must_be_primitive;
     dest[i].keep_unit_debug_info = src->keep_unit_debug_info;
     dest[i].dont_mark_local_use = src->dont_mark_local_use;
     dest[i].value_name = NULL;
@@ -686,7 +685,6 @@ void scheme_init_lambda_rec(Scheme_Compile_Info *src,
 {
   lam->max_let_depth = 0;
   lam->can_optimize_constants = src->can_optimize_constants;
-  lam->globals_must_be_primitive = src->globals_must_be_primitive;
   lam->keep_unit_debug_info = src->keep_unit_debug_info;
   lam->dont_mark_local_use = src->dont_mark_local_use;
   lam->value_name = NULL;
@@ -788,7 +786,6 @@ static void *compile_k()
   can_opt = !writeable;
 
   rec.can_optimize_constants = can_opt;
-  rec.globals_must_be_primitive = 0;
   rec.keep_unit_debug_info = 1;
   rec.dont_mark_local_use = 0;
   rec.value_name = NULL;
@@ -1045,7 +1042,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       var = scheme_static_distance(form, env, 
 				   SCHEME_ENV_CONSTANTS_OK
 				   + ((rec && rec->can_optimize_constants
-				       && !rec->globals_must_be_primitive)
+				       && !ENV_PRIM_GLOBALS_ONLY(env))
 				      ? SCHEME_ELIM_CONST 
 				      : 0)
 				   + (app_position 
@@ -1074,9 +1071,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
 
       /* Check for global use within unit: */
-      if (rec && rec->globals_must_be_primitive
+      if (ENV_PRIM_GLOBALS_ONLY(env)
 	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = get_primitive_global(var, scheme_min_env(env), 0, rec->can_optimize_constants, 1);
+	var = get_primitive_global(var, scheme_min_env(env), 0, rec && rec->can_optimize_constants, 1);
 
       if (rec) {
 	scheme_compile_rec_done_local(rec);
@@ -1098,7 +1095,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				 SCHEME_APP_POS
 				 + SCHEME_ENV_CONSTANTS_OK
 				 + ((rec && rec->can_optimize_constants
-				     && !rec->globals_must_be_primitive)
+				     && !ENV_PRIM_GLOBALS_ONLY(env))
 				    ? SCHEME_ELIM_CONST
 				    : 0)
 				 + ((rec && rec->dont_mark_local_use)
@@ -1135,9 +1132,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       /* Else: unknown global - must be a function: compile normally */
 
       /* Check for global use within unit: */
-      if (rec && rec->globals_must_be_primitive
+      if (ENV_PRIM_GLOBALS_ONLY(env)
 	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = get_primitive_global(var, scheme_min_env(env), 0, rec->can_optimize_constants, 1);
+	var = get_primitive_global(var, scheme_min_env(env), 0, rec && rec->can_optimize_constants, 1);
 
       /* Optimize (void) to just the value void */
       if (rec && rec->can_optimize_constants && SAME_OBJ(var, scheme_void_func)
@@ -1315,12 +1312,14 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  break;
       }
 
-      if (SCHEME_PAIRP(result) || rec) {
+      if (SCHEME_PAIRP(result)) {
 	result = scheme_make_pair(letrec_star_values_symbol, scheme_make_pair(start, result));
       
 	name = NULL;
       } else {
-	/* Looks illegal, but we're just expanding for now... */
+	/* Empty body: illegal. */
+	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
+			    "no expression after a sequence of embedded definitions");
       }
     } else if (SAME_OBJ(gval, scheme_defmacro_syntax)
 	       || SAME_OBJ(gval, scheme_def_id_macro_syntax)
@@ -1353,7 +1352,11 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       first = SCHEME_CDR(first);
       if (!SCHEME_NULLP(first))
 	scheme_wrong_syntax(where, first, result, NULL);
-      
+
+      if (SCHEME_NULLP(rest))
+	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
+			    "no expression after a macro or expansion-time definition");
+
       result = cons(let,
 		   cons(var,
 			cons(body,
@@ -2853,7 +2856,6 @@ compile_x(int argc, Scheme_Object *argv[])
   Scheme_Compile_Info rec;
 
   rec.can_optimize_constants = 1;
-  rec.globals_must_be_primitive = 0;
   rec.value_name = NULL;
   return scheme_link_expr(scheme_compile_expr(argv[0], 
 					      scheme_get_env(scheme_config)->init, 

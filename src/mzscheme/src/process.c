@@ -134,6 +134,9 @@ static int process_ended_with_activity;
 
 static int tls_pos = 0;
 
+#ifndef USE_SENORA_GC
+extern void GC_free(void*);
+#endif
 extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
 #ifndef MZ_REAL_THREADS
@@ -592,12 +595,6 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   process->checking_break = 0;
   process->external_break = 0;
 
-#ifdef USE_MAC_FILE_TOOLBOX
-  process->wd_inited = 0;
-#else
-  process->working_directory = NULL;
-#endif
-
   process->print_buffer = NULL;
   process->print_allocated = 0;
 
@@ -1005,13 +1002,12 @@ Scheme_Process *scheme_get_current_process()
 
 void scheme_swap_process(Scheme_Process *new_process)
 {
-#ifdef DIR_FUNCTION
-  scheme_set_process_directory(new_process, scheme_current_process);
-#endif
-
   scheme_zero_unneeded_rands(scheme_current_process);
 
   if (SETJMP(scheme_current_process)) {
+#ifndef USE_SENORA_GC
+    GC_free(scheme_current_process->jmpup_buf.stack_copy);
+#endif
     CLEARJMP(scheme_current_process);
     /* We're back! */
   } else {
@@ -1052,8 +1048,6 @@ static void remove_process(Scheme_Process *r)
   }
 
   scheme_remove_managed(r->mref, (Scheme_Object *)r);
-
-  scheme_done_process_directory(r);
 }
 
 static void start_child(Scheme_Process *child,
@@ -2562,6 +2556,8 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 
+  scheme_set_param(config, MZCONFIG_CURRENT_DIRECTORY, scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 0)));
+
   config->extensions = NULL;
 
   return config;
@@ -2783,13 +2779,19 @@ static Scheme_Bucket *get_ext_bucket(Scheme_Config *config, const char *key, Sch
   return b;
 }
 
+typedef Scheme_Object *(*PCheck_Proc)(int, Scheme_Object **, Scheme_Config *);
+
 Scheme_Object *scheme_param_config(char *name, long pos,
 				   int argc, Scheme_Object **argv,
 				   int arity,
-				   /* -2 => user paramter; pos is (cons key defval)
-				      -1 => try check, etc. 
+				   /* -3 => like -1, plus use check to unmarshall the value
+                                      -2 => user paramter; pos is (cons key defval)
+				      -1 => use check; if isboolorfilter, check is a filter
+                                            (and expected is ignored)
 				      0+ => check argument for this arity */
-				   Scheme_Object *(*check)(int, Scheme_Object **), char *expected,
+				   Scheme_Object *(*check)(int, Scheme_Object **), 
+				   /* Actually called witjh (int, S_O **, Scheme_Config *) */
+				   char *expected,
 				   int isboolorfilter)
 {
   int set = 0;
@@ -2820,15 +2822,22 @@ Scheme_Object *scheme_param_config(char *name, long pos,
 	return (Scheme_Object *)b->val;
       }
       return defval;
-    } else
-      return scheme_get_param(config, pos);
+    } else {
+      Scheme_Object *s = scheme_get_param(config, pos);
+      if (arity == -3) {
+	Scheme_Object *a[1];
+	a[0] = s;
+	s = ((PCheck_Proc)check)(1, a, config);
+      }
+      return s;
+    }
   } else {
     Scheme_Object *naya = argv[0];
 
     if (arity != -2) {
       if (arity < 0) {
 	if (check) {
-	  Scheme_Object *r = check(1, argv);
+	  Scheme_Object *r = ((PCheck_Proc)check)(1, argv, config);
 	  
 	  if (!isboolorfilter && SCHEME_FALSEP(r))
 	    r = NULL;

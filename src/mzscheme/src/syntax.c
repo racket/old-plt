@@ -445,14 +445,35 @@ static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *for
     if (!SCHEME_NULLP(v))
       if (!SCHEME_SYMBOLP(v))
 	scheme_wrong_syntax(who, v, form, "bad identifier");
-  }
 
+    /* Check for duplicate names: */
+    for (v = args; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
+      Scheme_Object *name = SCHEME_CAR(v), *rest;
+      for (rest = SCHEME_CDR(v); !SCHEME_NULLP(rest); rest = SCHEME_CDR(rest)) {
+	Scheme_Object *param;
+	if (!SCHEME_PAIRP(rest))
+	  param = rest;
+	else
+	  param = SCHEME_CAR(rest);
+	if (SCHEME_SYMBOLP(name) && SAME_OBJ(param, name))
+	  scheme_wrong_syntax(who, name, form, "duplicate argument name");
+	if (!SCHEME_PAIRP(rest))
+	  break;
+      }
+    }
+  }
 }
 
 static Scheme_Object *
 lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 {
+  Scheme_Object *args;
+  
   lambda_check(form);
+
+  args = SCHEME_CAR(SCHEME_CDR(form));
+  lambda_check_args("lambda", args, form);
+
   return scheme_make_closure_compilation(env, form, rec);
 }
 
@@ -572,6 +593,9 @@ static void define_values_parse(Scheme_Object *form,
   Scheme_Object *vars;
   int len;
 
+  if (!scheme_is_toplevel(env))
+    scheme_wrong_syntax("define-values", NULL, form, "illegal use (not at top-level)");
+
   len = check_form("define-values", form);
   if (len != 3)
     bad_form(form, "define-values", len);
@@ -599,9 +623,6 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 {
   Scheme_Object *var, *val, *first = scheme_null, *last = NULL, *variables;
   Scheme_Env *globals = scheme_min_env(env);
-
-  if (!scheme_is_toplevel(env))
-    scheme_wrong_syntax("define-values", NULL, form, "illegal use (not at top-level)");
 
   define_values_parse(form, &var, &val, env);
   variables = var;
@@ -703,7 +724,9 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
   recs[1].value_name = name;
   recs[2].value_name = name;
 
-  test = scheme_compile_expr(test, scheme_no_defines(env), &recs[0]);
+  env = scheme_no_defines(env);
+
+  test = scheme_compile_expr(test, env, &recs[0]);
 
   if (SAME_TYPE(SCHEME_TYPE(test), scheme_quote_compilation_type))
     test = SCHEME_PTR_VAL(test);
@@ -749,8 +772,10 @@ if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   if (!(((len == 3) || (len == 4))))
     bad_form(form, "if", len);
 
+  env = scheme_no_defines(env);
+
   test = SCHEME_CADR(form);
-  test = scheme_expand_expr(test, scheme_no_defines(env), depth);
+  test = scheme_expand_expr(test, env, depth);
 
   rest = SCHEME_CDR(SCHEME_CDR(form));
   rest = scheme_expand_list(rest, env, depth);
@@ -847,17 +872,13 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
       if (SCHEME_LOCAL_POS(var) == SCHEME_LOCAL_POS(val))
 	return scheme_compiled_void(rec->can_optimize_constants);
     } else {
-      /* global; can't do this b/c var might be undefined or constant */
-#if 0
-      if (SAME_OBJ(var, val))
-	return scheme_compiled_void(rec->can_optimize_constants);
-#endif
+      /* global; can't do anything b/c var might be undefined or constant */
     }
   }
   
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)) {
   } else {
-    if (rec->globals_must_be_primitive) {
+    if (ENV_PRIM_GLOBALS_ONLY(env)) {
       scheme_wrong_syntax("set!", NULL, form,
 			  "cannot mutate a global from within a unit");
     }
@@ -876,7 +897,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 static Scheme_Object *
 set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  Scheme_Object *name;
+  Scheme_Object *name, *var;
   int l = check_form("set!", form);
   if (l != 3)
     bad_form(form, "set!", l);
@@ -886,6 +907,12 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   name = SCHEME_CADR(form);
 
   scheme_check_identifier("set!", name, NULL, env, form);
+
+  /* Make sure it's mutable: */
+  var = scheme_static_distance(name, env, SCHEME_SETTING);
+  if (ENV_PRIM_GLOBALS_ONLY(env) && SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type))
+    scheme_wrong_syntax("set!", NULL, form,
+			"cannot mutate a global from within a unit");
 
   return cons(set_symbol,
 	      cons(name,
@@ -1331,6 +1358,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
   Scheme_Compile_Info *recs;
   Scheme_Object *first = NULL;
   Scheme_Compiled_Let_Value *last = NULL, *lv;
+  DupCheckRecord r;
 
   if (scheme_proper_list_length(form) < 3)
     scheme_wrong_syntax(formname, NULL, form, NULL);
@@ -1388,6 +1416,12 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
   scheme_compile_rec_done_local(rec);
   scheme_init_compile_recs(rec, recs, num_clauses + 1);
 
+  
+  if (!star) {
+    r.scheck_size = 0;
+    scheme_begin_dup_symbol_check(&r);
+  }
+
   for (i = 0, k = 0; i < num_clauses; i++) {
     if (!SCHEME_PAIRP(bindings))
       scheme_wrong_syntax(formname, bindings, form, NULL);
@@ -1418,14 +1452,10 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
       scheme_check_identifier(formname, name, NULL, env, form);
       names[k++] = name;
     }
-
+    
     if (!star) {
-      for (j = 0; j < pre_k; j++)
-	for (m = pre_k; m < k; m++)
-	  if (SAME_OBJ(names[m], names[j]))
-	    scheme_wrong_syntax(formname, NULL, form,
-				"multiple bindings of \"%s\"", 
-				scheme_symbol_name(names[m]));
+      for (m = pre_k; m < k; m++)
+	scheme_dup_symbol_check(&r, formname, names[m], "binding", form, 0);
     }
 
     lv = MALLOC_ONE_TAGGED(Scheme_Compiled_Let_Value);
@@ -1503,6 +1533,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   Scheme_Object *fmname;
   Scheme_Object *vars, *body, *first, *last, *name, *v, *vs, *vlist;
   Scheme_Comp_Env *use_env;
+  DupCheckRecord r;
 
   fmname = SCHEME_CAR(form);
 
@@ -1574,6 +1605,11 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
     }
   }
 
+  if (!letstar) {
+    r.scheck_size = 0;
+    scheme_begin_dup_symbol_check(&r);
+  }
+
   vlist = scheme_null;
   vs = vars;
   while (SCHEME_PAIRP(vs)) {
@@ -1589,12 +1625,19 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
     name = SCHEME_CAR(v);
 
     if (multi) {
+      DupCheckRecord r2;
       Scheme_Object *names = name;
+      r2.scheck_size = 0;
+      scheme_begin_dup_symbol_check(&r2);
       while (SCHEME_PAIRP(names)) {
 	name = SCHEME_CAR(names);
 
 	scheme_check_identifier(formname, name, NULL, env, form);
 	vlist = cons(name, vlist);
+
+	scheme_dup_symbol_check(&r2, formname, name, "clause binding", form, 0);
+	if (!letstar)
+	  scheme_dup_symbol_check(&r, formname, name, "binding", form, 0);
 	
 	names = SCHEME_CDR(names);
       }
@@ -1603,6 +1646,8 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
     } else {
       scheme_check_identifier(formname, name, NULL, env, form);
       vlist = cons(name, vlist);
+      if (!letstar)
+	scheme_dup_symbol_check(&r, formname, name, "binding", form, 0);
     }
 
     vs = SCHEME_CDR(vs);

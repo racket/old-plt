@@ -416,6 +416,8 @@ enum {
 
   MZCONFIG_LOAD_EXTENSION_HANDLER,
 
+  MZCONFIG_CURRENT_DIRECTORY,
+
   __MZCONFIG_BUILTIN_COUNT__
 };
 
@@ -485,15 +487,6 @@ typedef struct Scheme_Process {
 #ifndef ERROR_ON_OVERFLOW
   struct Scheme_Overflow *overflow;
   mz_jmp_buf overflow_buf;
-#endif
-
-#ifdef USE_MAC_FILE_TOOLBOX
-  short wd_inited;
-  short vrefnum;
-  long dirid;
-#else
-  char *working_directory;
-  int wd_len;
 #endif
 
   struct Scheme_Comp_Env *current_local_env;

@@ -83,6 +83,7 @@ enum {
   MZEXN_I_O_FILESYSTEM_DIRECTORY,
   MZEXN_I_O_FILESYSTEM_COLLECTION,
   MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
+  MZEXN_I_O_FILESYSTEM_LINK,
   MZEXN_I_O_PORT_CLOSED,
   MZEXN_I_O_USER_PORT,
   MZEXN_I_O_TCP,
@@ -193,6 +194,7 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
+  { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -321,6 +323,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_FILESYSTEM_DIRECTORY].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_COLLECTION].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_FILE_EXISTS].args = 3;
+  exn_table[MZEXN_I_O_FILESYSTEM_LINK].args = 3;
   exn_table[MZEXN_I_O_PORT_CLOSED].args = 3;
   exn_table[MZEXN_I_O_USER_PORT].args = 3;
   exn_table[MZEXN_I_O_TCP].args = 2;
@@ -491,6 +494,7 @@ static const char *MZEXN_MISC_IMAGE_FIELDS[1] = { "name" };
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_DIRECTORY, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:directory", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_COLLECTION, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:collection", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_FILE_EXISTS, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:file-exists", 0, NULL)
+  SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_LINK, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:link", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT_CLOSED, EXN_PARENT(MZEXN_I_O), "exn:i/o:port-closed", 1, MZEXN_I_O_PORT_CLOSED_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_USER_PORT, EXN_PARENT(MZEXN_I_O), "exn:i/o:user-port", 1, MZEXN_I_O_USER_PORT_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)

@@ -852,14 +852,6 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
       scheme_wrong_syntax(formname, form ? id : NULL, 
 			  form ? form : id, "illegal use of keyword");
   }
-
-  /* Allow #% for whatever if it's not already a keyword */
-/*
-  s = SCHEME_SYM_VAL(id);
-  if (s[0] == '#' && s[1] == '%')
-    scheme_signal_error("%s: illegal use of special identifier `%s'%s",
-			form, s, where);
-*/
 }
 
 static void init_compile_data(Scheme_Comp_Env *env)
@@ -892,7 +884,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->values = MALLOC_N(Scheme_Object *, count);
 
   frame->basic.num_bindings = num_bindings;
-  frame->basic.flags = flags;
+  frame->basic.flags = flags | (base->basic.flags & SCHEME_PRIM_GLOBALS_ONLY);
   frame->basic.next = base;
   frame->basic.genv = base->basic.genv;
 

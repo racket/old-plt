@@ -112,7 +112,9 @@
   scheme_extension_table->scheme_weak_reference = scheme_weak_reference;
   scheme_extension_table->scheme_weak_reference_indirect = scheme_weak_reference_indirect;
   scheme_extension_table->scheme_add_finalizer = scheme_add_finalizer;
+  scheme_extension_table->scheme_add_finalizer_once = scheme_add_finalizer_once;
   scheme_extension_table->scheme_add_scheme_finalizer = scheme_add_scheme_finalizer;
+  scheme_extension_table->scheme_add_scheme_finalizer_once = scheme_add_scheme_finalizer_once;
   scheme_extension_table->scheme_register_finalizer = scheme_register_finalizer;
   scheme_extension_table->scheme_dont_gc_ptr = scheme_dont_gc_ptr;
   scheme_extension_table->scheme_gc_ptr_ok = scheme_gc_ptr_ok;
@@ -233,8 +235,8 @@
   scheme_extension_table->scheme_file_exists = scheme_file_exists;
   scheme_extension_table->scheme_directory_exists = scheme_directory_exists;
   scheme_extension_table->scheme_expand_filename = scheme_expand_filename;
-  scheme_extension_table->scheme_getcwd = scheme_getcwd;
-  scheme_extension_table->scheme_setcwd = scheme_setcwd;
+  scheme_extension_table->scheme_os_getcwd = scheme_os_getcwd;
+  scheme_extension_table->scheme_os_setcwd = scheme_os_setcwd;
   scheme_extension_table->scheme_getdrive = scheme_getdrive;
   scheme_extension_table->scheme_split_pathname = scheme_split_pathname;
   scheme_extension_table->scheme_build_pathname = scheme_build_pathname;

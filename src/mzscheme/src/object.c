@@ -328,7 +328,7 @@ DupCheckRecord *scheme_begin_dup_symbol_check(DupCheckRecord *r)
   return r;
 }
 
-void scheme_dup_symbol_check(DupCheckRecord *r, char *where,
+void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *symbol, char *what, 
 			     Scheme_Object *form, int inverted)
 {

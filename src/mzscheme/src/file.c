@@ -101,6 +101,8 @@ long scheme_creator_id = 'MzSc';
 # define IS_A_SEP(x) ((x) == ':')
 #endif
 
+#define CURRENT_WD() scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)
+
 /* local */
 static Scheme_Object *file_exists(int argc, Scheme_Object **argv);
 static Scheme_Object *directory_exists(int argc, Scheme_Object **argv);
@@ -114,6 +116,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[]);
 static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[]);
+static Scheme_Object *split_pathname(int argc, Scheme_Object **argv);
 static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv);
@@ -121,6 +124,7 @@ static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv);
 #ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[]);
+static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[]);
 static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[]);
@@ -134,9 +138,8 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 static Scheme_Object *current_directory(int argc, Scheme_Object *argv[]);
 #endif
 
-#ifdef DOS_FILE_SYSTEM
-static char get_cur_drive_id(void);
-#endif
+static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt, long wlen);
+static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle_check);
 
 static Scheme_Object *up_symbol, *relative_symbol;
 static Scheme_Object *same_symbol;
@@ -220,7 +223,7 @@ void scheme_init_file(Scheme_Env *env)
 						      1, -1), 
 			     env);
   scheme_add_global_constant("split-path", 
-			     scheme_make_prim_w_arity2(scheme_split_pathname,
+			     scheme_make_prim_w_arity2(split_pathname,
 						       "split-path",
 						       1, 1,
 						       3, 3), 
@@ -248,6 +251,11 @@ void scheme_init_file(Scheme_Env *env)
   scheme_add_global_constant("resolve-path",
 			     scheme_make_prim_w_arity(resolve_path,
 						      "resolve-path",
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("simplify-path",
+			     scheme_make_prim_w_arity(simplify_path,
+						      "simplify-path",
 						      1, 1), 
 			     env);
   scheme_add_global_constant("expand-path",
@@ -304,10 +312,10 @@ void scheme_init_file(Scheme_Env *env)
 #endif
 
 #ifdef DIR_FUNCTION
-  scheme_add_global_constant("current-directory", 
-			     scheme_make_prim_w_arity(current_directory, 
-						      "current-directory", 
-						      0, 1), 
+  scheme_add_global_constant("current-directory",
+			     scheme_register_parameter(current_directory,
+						       "current-directory", 
+						       MZCONFIG_CURRENT_DIRECTORY),
 			     env);
 #endif
 
@@ -332,20 +340,20 @@ static char *getcwd(char *s, int l)
  need_l = GetCurrentDirectory(l, s);
 
  if (need_l > l) {
-	if (l)
-	  return NULL;
-	s = scheme_malloc_atomic(need_l);
-	need_l = GetCurrentDirectory(need_l, s);
+   if (l)
+     return NULL;
+   s = scheme_malloc_atomic(need_l);
+   need_l = GetCurrentDirectory(need_l, s);
  }
-
+ 
  if (!need_l)
-  return NULL;
-
+   return NULL;
+ 
  return s;
 }
 #endif
 
-char *scheme_getcwd(char *buf, int buflen, int *actlen, int noexn)
+char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 {
 #ifdef USE_MAC_FILE_TOOLBOX
     char *dir;
@@ -424,7 +432,7 @@ char *scheme_getcwd(char *buf, int buflen, int *actlen, int noexn)
 #endif
 }
 
-int scheme_setcwd(char *expanded, int noexn)
+int scheme_os_setcwd(char *expanded, int noexn)
 {
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
@@ -432,7 +440,7 @@ int scheme_setcwd(char *expanded, int noexn)
   int err;
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(expanded, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(expanded, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     WDPBRec rec;
     
     rec.ioNamePtr = NULL;
@@ -457,15 +465,17 @@ int scheme_setcwd(char *expanded, int noexn)
 
 Scheme_Object *scheme_get_file_directory(const char *filename)
 {
-  Scheme_Object *v = scheme_make_sized_string((char *)filename, strlen(filename), 0);
+  int isdir;
+  Scheme_Object *base;
   
-  v = path_to_complete_path(1, &v);
-  scheme_split_pathname(1, &v);
-  return scheme_current_process->ku.multiple.array[0];
+  scheme_split_pathname(filename, strlen(filename), &base, &isdir);
+  
+  return base;
 }
 
 #ifdef USE_MAC_FILE_TOOLBOX
-static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int findfile,
+static int find_mac_file(const char *filename, int use_real_cwd,
+			 FSSpec *spec, int finddir, int findfile,
 			 int *dealiased, int *wasdir, int *exists,
 			 long *filedate, int *flags, 
 			 long *type, unsigned long *size,
@@ -505,14 +515,22 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
   if (filedate)
     *filedate = 0;
 
-  wdrec.ioNamePtr = (StringPtr)buf;
-  if (PBHGetVol(&wdrec, 0))
-    return 0;
+  if (use_real_cwd) {
+    wdrec.ioNamePtr = (StringPtr)buf;
+    if (PBHGetVol(&wdrec, 0))
+      return 0;
+    
+    find_vref = wdrec.ioWDVRefNum;
+    find_dir_id = wdrec.ioWDDirID;
+  } else {
+    int len = filename && strlen(filename);
+    find_vref = -1;
+    find_dir_id = 0;
+    if (!filename || !scheme_is_complete_path(filename, len))
+      filename = do_path_to_complete_path(filename, len, NULL, 0);
+  }
   
-  find_vref = wdrec.ioWDVRefNum;
-  find_dir_id = wdrec.ioWDDirID;
-  
-  /* filename is NULL => Local directory */
+  /* filename is empty => Local directory */
   if (!*filename) {
     if (findfile && (findfile != -3))
       return 0;
@@ -782,7 +800,7 @@ void scheme_file_create_hook(char *filename)
 {
   FSSpec spec;
     
-  if (find_mac_file(filename, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, 1, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     FInfo info;
 
     FSpGetFInfo(&spec, &info);
@@ -794,7 +812,7 @@ void scheme_file_create_hook(char *filename)
 
 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 {
-  return find_mac_file(filename, spec, 0, 0, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
+  return find_mac_file(filename, 1, spec, 0, 0, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
 }
 #endif
 
@@ -866,9 +884,36 @@ static int check_dos_slashslash_drive(const char *next, int len,
 }
 #endif
 
+#ifdef DOS_FILE_SYSTEM
+static char *get_drive_part(char *wds, int wdlen)
+{
+  int dend;
+  char *naya;
+
+  if (!check_dos_slashslash_drive(wds, wdlen, &dend, 0))
+    dend = 3;
+
+  naya = scheme_malloc_atomic(dend + 1);
+  memcpy(naya, wds, dend);
+  naya[dend] = 0;
+
+  return naya;
+}
+#endif
+
+char *scheme_getdrive()
+{
+#ifdef DOS_FILE_SYSTEM
+  Scheme_Object *wd = CURRENT_WD();
+  return get_drive_part(SCHEME_STR_VAL(wd), SCHEME_STRTAG_VAL(wd));
+#else
+  return "";
+#endif
+}
+
 static char *do_expand_filename(char* filename, int ilen, char *errorin, 
 				int *expanded,
-				int report_bad_user)
+				int report_bad_user, int fullpath)
 {
   if (expanded)
     *expanded = 0;
@@ -900,8 +945,9 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     if (filename[f] && filename[f] != '/') {
       if (errorin && report_bad_user)
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH_USERNAME,
-			    scheme_make_string(filename),
-			    "%s: bad username in %.255s", errorin, filename);
+			 scheme_make_string(filename),
+			 "%s: bad username in path: \"%.255s\"", 
+			 errorin, filename);
       return NULL;
     }
     user[u] = 0;
@@ -928,8 +974,9 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     if (!home) {
       if (errorin && report_bad_user)
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH_USERNAME,
-			    scheme_make_string(filename),
-			    "%s: bad username in %.255s", errorin, filename);
+			 scheme_make_string(filename),
+			 "%s: bad username in path: \"%.255s\"", 
+			 errorin, filename);
       return NULL;
     }
 
@@ -1036,7 +1083,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     FSSpec spec;
     int dealiased, wasdir;
     
-    if (find_mac_file(filename, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (find_mac_file(filename, 0, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
       if (dealiased) {
         char *s;
         s = scheme_build_mac_filename(&spec, wasdir);
@@ -1045,16 +1092,25 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 	    *expanded = 1;
 	  return s;
         }
+      }
     }
   }
 #endif
+
+  if (fullpath) {
+    if (!scheme_is_complete_path(filename, ilen)) {
+      if (expanded)
+	*expanded = 1;
+      return do_path_to_complete_path(filename, ilen, NULL, 0);
+    }
+  }
 
   return filename;
 }
 
 char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *expanded)
 {
-  return do_expand_filename(filename, ilen, errorin, expanded, 1);
+  return do_expand_filename(filename, ilen, errorin, expanded, 1, 1);
 }
 
 int scheme_file_exists(char *filename)
@@ -1062,7 +1118,7 @@ int scheme_file_exists(char *filename)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(filename, 1, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
     return 0;
   return 1;
 
@@ -1185,7 +1241,7 @@ int scheme_directory_exists(char *dirname)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(dirname, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(dirname, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
     return 0;
 
   return 1;
@@ -1233,7 +1289,7 @@ static Scheme_Object *file_exists(int argc, Scheme_Object **argv)
 			 SCHEME_STRTAG_VAL(argv[0]),
 			 "file-exists?",
 			 NULL,
-			 0);
+			 0, 1);
 
   return (f && scheme_file_exists(f)) ? scheme_true : scheme_false;
 }
@@ -1249,7 +1305,7 @@ static Scheme_Object *directory_exists(int argc, Scheme_Object **argv)
 			 SCHEME_STRTAG_VAL(argv[0]),
 			 "directory-exists?",
 			 NULL,
-			 0);
+			 0, 1);
 
   return (f && scheme_directory_exists(f)) ? scheme_true : scheme_false;
 }
@@ -1264,6 +1320,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   filename = SCHEME_STR_VAL(argv[0]);
 
 #ifndef UNIX_FILE_SYSTEM
+  /* DOS or MAC: expand isn't called, so check the form now */
   if (has_null(filename, SCHEME_STRTAG_VAL(argv[0]))) {
     raise_null_error("link-exists?", scheme_make_string(filename), "");
     return NULL;
@@ -1277,7 +1334,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   {
     FSSpec spec;
   
-    if (!find_mac_file(filename, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(filename, 0, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return scheme_false;
 
     return scheme_true;
@@ -1291,46 +1348,13 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 				  SCHEME_STRTAG_VAL(argv[0]),
 				  "link-exists?",
 				  NULL,
-				  0);
+				  0, 1);
 
     if (!MSC_IZE(lstat)(filename, &buf) && S_ISLNK(buf.st_mode))
       return scheme_true;
     else
       return scheme_false;
   }
-#endif
-}
-
-#ifdef DOS_FILE_SYSTEM
-static char get_cur_drive_id(void)
-{
-#ifdef USE_GETDRIVE
-  char cwd[1];
-  int drive = _getdrive();
-  cwd[0] = 'a' + (drive -1);
-#else
-  char buffer[256], *cwd;
-  
-  if (!(cwd = scheme_getcwd(buffer, 256, NULL, 0)))
-    return 'c';
-#endif
-  return cwd[0];
-}
-#endif
-
-char *scheme_getdrive()
-{
-#ifdef DOS_FILE_SYSTEM
-  char *drive = MALLOC_N(char, 4);
-
-  drive[0] = get_cur_drive_id();
-  drive[1] = ':';
-  drive[2] = '\\';
-  drive[3] = 0;
-
-  return drive;
-#else
-  return "";
 #endif
 }
 
@@ -1594,30 +1618,16 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
   return scheme_make_sized_string(str, pos, alloc == PN_BUF_LEN);
 }
 
-Scheme_Object *scheme_split_pathname(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **base_out, int *id_out)
 {
   char *s;
-  int p, len, last_was_sep = 0, is_dir;
-  Scheme_Object *file, *three[3], *inpath;
+  int p, last_was_sep = 0, is_dir;
+  Scheme_Object *file;
 #ifdef DOS_FILE_SYSTEM
   int allow_double_before, drive_end;
 #endif
 
-  inpath = argv[0];
-
-  if (!SCHEME_STRINGP(inpath))
-    scheme_wrong_type("split-path", "string", 0, argc, argv);
-
-  s = SCHEME_STR_VAL(inpath);
-  len = SCHEME_STRTAG_VAL(inpath);
-
-  if (!len) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
-		     inpath, "split-path: pathname is an empty string");
-  }
-
-  if (has_null(s, len))
-    raise_null_error("split-path", inpath, "");
+  s = (char *)path;
 
 #ifdef DOS_FILE_SYSTEM
   allow_double_before = 0;
@@ -1687,9 +1697,7 @@ Scheme_Object *scheme_split_pathname(int argc, Scheme_Object **argv)
       }
     }
 
-#define MAKE_SPLIT(x, y, z) \
-  (three[0] = x, three[1] = y, three[2] = z ? scheme_true : scheme_false, \
-   scheme_values(3, three))
+#define MAKE_SPLIT(x, y, z) (*base_out = x, *id_out = z, y)
 
   if (p < 0) {
     Scheme_Object *dir;
@@ -1777,6 +1785,35 @@ Scheme_Object *scheme_split_pathname(int argc, Scheme_Object **argv)
 #endif  
 }
 
+Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
+{
+  char *s;
+  int is_dir, len;
+  Scheme_Object *three[3], *inpath;
+
+  inpath = argv[0];
+
+  if (!SCHEME_STRINGP(inpath))
+    scheme_wrong_type("split-path", "string", 0, argc, argv);
+
+  s = SCHEME_STR_VAL(inpath);
+  len = SCHEME_STRTAG_VAL(inpath);
+
+  if (!len) {
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+		     inpath, "split-path: pathname is an empty string");
+  }
+
+  if (has_null(s, len))
+    raise_null_error("split-path", inpath, "");
+
+  three[1] = scheme_split_pathname(s, len, &three[0], &is_dir);
+
+  three[2] = is_dir ? scheme_true : scheme_false;
+
+  return scheme_values(3, three);
+}
+
 int scheme_is_relative_path(const char *s, long len)
 {
 #ifdef MAC_FILE_SYSTEM
@@ -1833,6 +1870,38 @@ int scheme_is_complete_path(const char *s, long len)
     return 0;
 }
 
+static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt, long wlen)
+{
+  if (!scheme_is_complete_path(filename, ilen)) {
+    char *naya;
+    
+    if (!wrt) {
+      Scheme_Object *wd = CURRENT_WD();
+      wrt = SCHEME_STR_VAL(wd);
+      wlen = SCHEME_STRTAG_VAL(wd);
+    }
+
+# ifdef DOS_FILE_SYSTEM
+    if (!scheme_is_relative_path(filename, ilen)) {
+      /* Absolute, not complete. Fill in the disk */
+      wrt = get_drive_part(wrt, wlen);
+      wlen = strlen(wrt);
+    }
+# endif
+
+    naya = (char *)scheme_malloc_atomic(ilen + wlen + 2);
+    memcpy(naya, wrt, wlen);
+    if (!IS_A_SEP(naya[wlen - 1]))
+      naya[wlen++] = FN_SEP;
+    memcpy(naya + wlen, filename, ilen);
+    naya[wlen + ilen] = 0;
+    
+    return naya;
+  }
+
+  return filename;
+}
+
 static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
 {
   Scheme_Object *p, *wrt;
@@ -1855,72 +1924,32 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
   if (has_null(s, len))
     raise_null_error("path->complete-path", p, "");
   if (wrt) {
-    char *s;
-    int len;
+    char *ws;
+    int wlen;
 
-    s = SCHEME_STR_VAL(wrt);
-    len = SCHEME_STRTAG_VAL(wrt);
+    ws = SCHEME_STR_VAL(wrt);
+    wlen = SCHEME_STRTAG_VAL(wrt);
     
-    if (has_null(s, len))
+    if (has_null(ws, wlen))
       raise_null_error("path->complete-path", p, "");
 
-    if (!scheme_is_complete_path(s, len))
+    if (!scheme_is_complete_path(ws, wlen))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
 		       wrt,
 		       "path->complete-path: second argument is not a complete path: \"%.255s\"",
-		       s);
+		       ws);
+
+    if (!scheme_is_complete_path(s, len)) {
+      s = do_path_to_complete_path(s, len, ws, wlen);
+      return scheme_make_sized_string(s, strlen(s), 0);
+    }
+  } else if (!scheme_is_complete_path(s, len)) {
+    s = do_path_to_complete_path(s, len, NULL, 0);
+
+    return scheme_make_sized_string(s, strlen(s), 0);
   }
-
-  if (!scheme_is_complete_path(s, len)) {
-    Scheme_Object *args[2];
-
-#ifdef DOS_FILE_SYSTEM
-    if (!scheme_is_relative_path(s, len)) {
-      /* Get just the drive: */
-      if (wrt) {
-        char *s;
-        int len;
-      
-        s = SCHEME_STR_VAL(wrt);
-        len = SCHEME_STRTAG_VAL(wrt);
-        if (s[1] == ':') {
-	  wrt = scheme_make_sized_string(s, 2, 0);
-        } else {
-	  int i;
-
-	  /* Skip first slashes: */
-	  for (i = 0; IS_A_SEP(s[i]); i++);
-	  /* Find next slash: */
-	  for (; !IS_A_SEP(s[i]); i++);
-	  /* Skip these slashes: */
-	  for (; IS_A_SEP(s[i]); i++);
-	  /* Find next slash or end-of-string: */
-	  for (; s[i] && !IS_A_SEP(s[i]); i++);
-	
-	  wrt = scheme_make_sized_string(s, i, 0);
-	}
-      } else {
-	char d[4];
-
-        d[0] = get_cur_drive_id();
-        d[1] = ':';
-        d[2] = 0;
-
-        wrt = scheme_make_sized_string(d, 2, 1);
-      }
-    }
-#endif
-
-    if (!wrt) {
-      char *d = scheme_getcwd(NULL, 0, NULL, 0);
-      wrt = scheme_make_string(d);
-    }
-
-    args[0] = wrt;
-    args[1] = p;
-    return scheme_build_pathname(2, args);
-  } else
-    return p;
+   
+  return p;
 }
 
 #ifndef NO_FILE_SYSTEM_UTILS
@@ -1939,7 +1968,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
-    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return scheme_false;
 
     if (FSpDelete(&spec))
@@ -1990,9 +2019,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(src, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
+  if (find_mac_file(src, 0, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
       && sexists) {
-    if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
+    if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
       /* Directory already exists or different volumes => failure */
       if (!dexists && (srcspec.vRefNum == destspec.vRefNum)) {
         int rename;
@@ -2148,8 +2177,8 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     int exists;
     static OSErr en;
    
-    if (find_mac_file(src, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
-      if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
+    if (find_mac_file(src, 0, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
+      if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
       	  && !exists) {
         CopyParam rec;
         
@@ -2272,30 +2301,178 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("resolve-path", "string", 0, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]),
-				    "resolve-path",
-				    &expanded);
+  filename = do_expand_filename(SCHEME_STR_VAL(argv[0]),
+				SCHEME_STRTAG_VAL(argv[0]),
+				"resolve-path",
+				&expanded,
+				1, 0);
 
 #ifndef NO_READLINK
-  /* Make sure pathname doesn't have trailing separator: */
-  len = strlen(filename);
-  while (len && IS_A_SEP(filename[len - 1])) {
-    if (!expanded && !copied) {
-      filename = scheme_strdup(filename);
+  {
+    char *fullfilename = filename;
+
+    len = strlen(fullfilename);
+    if (!scheme_is_complete_path(fullfilename, len)) {
+      fullfilename = do_path_to_complete_path(fullfilename, len, NULL, 0);
       copied = 1;
     }
-    filename[--len] = 0;
-  }
 
-  if ((len = readlink(filename, buffer, SL_NAME_MAX)) > 0)
-    return scheme_make_sized_string(buffer, len, 1);
+    /* Make sure pathname doesn't have trailing separator: */
+    len = strlen(fullfilename);
+    while (len && IS_A_SEP(fullfilename[len - 1])) {
+      if (!expanded && !copied) {
+	fullfilename = scheme_strdup(fullfilename);
+	copied = 1;
+      }
+      fullfilename[--len] = 0;
+    }
+
+    if ((len = readlink(fullfilename, buffer, SL_NAME_MAX)) > 0)
+      return scheme_make_sized_string(buffer, len, 1);
+  }
 #endif
 
   if (!expanded)
     return argv[0];
   else
     return scheme_make_sized_string(filename, strlen(filename), 1);
+}
+
+static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle_check)
+{
+  int isdir;
+  Scheme_Object *file, *base;
+
+  /* Check whether it can be simplified: */
+  base = path;
+  do {
+    char *s = SCHEME_STR_VAL(base);
+    int len = SCHEME_STRTAG_VAL(base);
+    file = scheme_split_pathname(s, len, &base, &isdir);
+    if (SCHEME_SYMBOLP(file))
+      break;
+  } while(SCHEME_STRINGP(base));
+
+  if (SCHEME_SYMBOLP(file)) {
+    /* It can be simplified: */
+    char *s;
+    int len;
+    Scheme_Object *accum = scheme_null, *result;
+
+    /* Make it absolute */
+    s = scheme_expand_filename(SCHEME_STR_VAL(path), 
+			       SCHEME_STRTAG_VAL(path), 
+			       "simplify-path", NULL);
+    len = strlen(s);
+
+    /* Check for cycles: */
+    {
+      Scheme_Object *l = cycle_check;
+      while (!SCHEME_NULLP(l)) {
+	Scheme_Object *p = SCHEME_CAR(l);
+	if ((len == SCHEME_STRTAG_VAL(p))
+	    && !strcmp(s, SCHEME_STR_VAL(p))) {
+	  /* Cycle of links detected */
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_LINK,
+			   path,
+			   "simplify-path: cycle detected at link: \"%.255s\"",
+			   s);
+	}
+	l = SCHEME_CDR(l);
+      }
+    }
+
+    /* Split the path into a list. */
+    while (1) {
+      file = scheme_split_pathname(s, len, &base, &isdir);
+    
+      if (SAME_OBJ(file, same_symbol)) {
+	/* Drop it */
+      } else
+	accum = scheme_make_pair(file, accum);
+      
+      if (SCHEME_STRINGP(base)) {
+	s = SCHEME_STR_VAL(base);
+	len = SCHEME_STRTAG_VAL(base);
+      } else
+	break;
+    }
+
+    /* Now assemble the result */
+    result = SCHEME_CAR(accum);
+    accum = SCHEME_CDR(accum);
+    /* Build up path, watching for links just before a ..: */
+    while (!SCHEME_NULLP(accum)) {
+      Scheme_Object *a[2];
+      a[0] = result;
+      a[1] = SCHEME_CAR(accum);
+      result = scheme_build_pathname(2, a);
+      accum = SCHEME_CDR(accum);
+      if (SCHEME_PAIRP(accum) && SAME_OBJ(SCHEME_CAR(accum), up_symbol)) {
+	/* Just before a ..; resolve links: */
+	Scheme_Object *new_result;
+	a[0] = result;
+	new_result = resolve_path(1, a);
+
+	/* Was it a link? */
+	if (result != new_result) {
+	  /* It was a link. Is the new result relative? */
+	  if (!scheme_is_complete_path(SCHEME_STR_VAL(new_result),
+				       SCHEME_STRTAG_VAL(new_result))) {
+	    Scheme_Object *a[2], *result_base;
+	    /* Yes - resolve it relative to result's base: */
+	    scheme_split_pathname(SCHEME_STR_VAL(result),
+				  SCHEME_STRTAG_VAL(result),
+				  &result_base,
+				  &isdir);
+	    a[0] = result_base;
+	    a[1] = new_result;
+	    new_result = scheme_build_pathname(2, a);
+	  }
+	  
+	  /* Simplify the new result */
+	  result = do_simplify_path(new_result, scheme_make_pair(new_result, cycle_check));
+	}
+	
+	while (SAME_OBJ(SCHEME_CAR(accum), up_symbol)) {
+	  Scheme_Object *next, *file;
+	  accum = SCHEME_CDR(accum);
+	  file = scheme_split_pathname(SCHEME_STR_VAL(result),
+				       SCHEME_STRTAG_VAL(result),
+				       &next,
+				       &isdir);
+	  if (!SCHEME_STRINGP(next) || SAME_OBJ(file, up_symbol)) {
+	    /* If result is a root or file is up, we can't eliminate the .. */
+	    Scheme_Object *a[2];
+	    a[0] = result;
+	    a[1] = up_symbol;
+	    result = scheme_build_pathname(2, a);
+	  } else
+	    result = next;
+	}
+      }
+    }
+
+    return result;
+  } else
+    return path;
+}
+
+static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
+{
+  char *s;
+  int len;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("simplify-path", "string", 0, argc, argv);
+
+  s = SCHEME_STR_VAL(argv[0]);
+  len = SCHEME_STRTAG_VAL(argv[0]);
+
+  if (!len || has_null(s, len))
+    raise_null_error("simplify-path", argv[0], "");
+
+  return do_simplify_path(argv[0], scheme_null);
 }
 
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
@@ -2317,32 +2494,11 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("expand-path", "string", 0, argc, argv);
 
-  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
-				    SCHEME_STRTAG_VAL(argv[0]),
-				    "expand-path",
-				    &expanded);
-
-#if 0
-  /* Don't prefix a drive anymore. */
-#ifdef DOS_FILE_SYSTEM
-#ifdef DIR_FUNCTION
-  if (IS_A_SEP(filename[0]) && !IS_A_SEP(filename[1])) {
-    /* Put a drive on the filename: */
-    int len;
-    char *old = filename;
-    
-    len = strlen(filename);
-    filename = (char *)scheme_malloc_atomic(len + 4);
-    memcpy(filename + 2, old, len + 1);
-    filename[0] = get_cur_drive_id();
-    filename[1] = ':';
-    filename[2] = '\\';
-    
-    expanded = 1;
-  }
-#endif
-#endif
-#endif
+  filename = do_expand_filename(SCHEME_STR_VAL(argv[0]),
+				SCHEME_STRTAG_VAL(argv[0]),
+				"expand-path",
+				&expanded,
+				1, 0);
 
   if (!expanded)
     return argv[0];
@@ -2406,7 +2562,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 				      "directory-list",
 				      NULL);
   else
-    filename = NULL;
+    filename = SCHEME_STR_VAL(CURRENT_WD());
 
   if (filename && !scheme_directory_exists(filename))
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
@@ -2419,10 +2575,10 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   if (argc) {
     filename = SCHEME_STR_VAL(argv[0]);
     if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
-	  raise_null_error("directory-list", argv[0], "");
+      raise_null_error("directory-list", argv[0], "");
   } else
     filename = "";
-  if (!find_mac_file(filename, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (argc) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
 		       argv[0],
@@ -2608,7 +2764,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
       first = v;
     last = v;
     i++;
-   }
+  }
 #endif
 
   return first;
@@ -2681,7 +2837,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #ifdef USE_MAC_FILE_TOOLBOX	  
   file = SCHEME_STR_VAL(argv[0]);
   if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
-	  raise_null_error("file-modify-seconds", argv[0], "");
+    raise_null_error("file-modify-seconds", argv[0], "");
 #else
   file = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				SCHEME_STRTAG_VAL(argv[0]),
@@ -2690,7 +2846,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
-  if (!find_mac_file(file, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
+  if (!find_mac_file(file, 0, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
       || !exists)
     return scheme_false;
 
@@ -2781,7 +2937,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (!find_mac_file(filename, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
+  if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
       || !exists)
     return scheme_null;
 
@@ -2872,7 +3028,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
+  if (!find_mac_file(filename, 0, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
     return scheme_false;
 #endif
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
@@ -2892,160 +3048,41 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef DIR_FUNCTION
-static Scheme_Object *current_directory(int argc, Scheme_Object **args)
+
+static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
 {
-  if (argc) {
-    char *expanded;
-
-    if (!SCHEME_STRINGP(args[0]))
-      scheme_wrong_type("current-directory", "string", 0, argc, args);
-
-    expanded = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
-				      SCHEME_STRTAG_VAL(args[0]),
-				      "current-directory",
-				      NULL);
-
-    scheme_setcwd(expanded, 0);
-
-    return scheme_void;
-  } else
-    return scheme_make_string_without_copying(scheme_getcwd(NULL, 0, NULL, 0));
-}
-
-#ifdef USE_FCHDIR
-static const char *wd_via_fchdir = "fchdir";
-static int using_fchdir = 0;
-/* File descriptors are a limited resource, so set a max number to be
-   used for tracking thread directories: */
-#define MAX_PROCESSES_USE_FCHDIR 8
-#endif
-
-void scheme_set_process_directory(Scheme_Process *newp, Scheme_Process *oldp)
-{
-#ifdef USE_MAC_FILE_TOOLBOX
-  WDPBRec  wdrec;
-  char buf[256];
-
-  if (oldp->running > 0) {
-    wdrec.ioNamePtr = (StringPtr)buf;
-    if (PBHGetVol(&wdrec, 0))
-      oldp->wd_inited = 0;
-    else {
-      oldp->vrefnum = wdrec.ioWDVRefNum;
-      oldp->dirid = wdrec.ioWDDirID;
-      oldp->wd_inited = 1;
-    }
-  }
-
-  if (newp->wd_inited) {
-    wdrec.ioNamePtr = NULL;
-    wdrec.ioVRefNum = newp->vrefnum;
-    wdrec.ioWDDirID = newp->dirid;
-
-    PBHSetVol(&wdrec, 0);
-  }
-#else
-  int len, old_set = 0;
-
-  if (oldp->running > 0) {
-#ifdef USE_FCHDIR
-    int used_fchdir;
-    
-    if (using_fchdir < MAX_PROCESSES_USE_FCHDIR) {
-      oldp->wd_len = open(".", O_RDONLY, 0);
-      if (oldp->wd_len != -1) {
-	/* printf("open dir: #%d %d\n", using_fchdir, oldp->wd_len); */
-	oldp->working_directory = (char *)wd_via_fchdir;
-	using_fchdir++;
-	used_fchdir = 1;
-      } else
-	used_fchdir = 0;
-    } else
-      used_fchdir = 0;
-    
-    if (!used_fchdir) {
-#endif
-      old_set = 1;
-      
-      if (!oldp->working_directory) {
-	oldp->wd_len = GETCWD_BUFSIZE;
-	oldp->working_directory = (char *)scheme_malloc_atomic(oldp->wd_len);
-      }
-      
-      oldp->working_directory = scheme_getcwd(oldp->working_directory, oldp->wd_len, &len, 1);
-      if (len > oldp->wd_len)
-	oldp->wd_len = len;
-#ifdef USE_FCHDIR
-    }
-#endif
-  }
-
-#ifdef USE_FCHDIR
-  if (newp->working_directory == wd_via_fchdir) {
-    fchdir(newp->wd_len);
-    close(newp->wd_len);
-    --using_fchdir;
-    /* printf("close dir: #%d %d\n", using_fchdir, newp->wd_len); */
-    newp->working_directory = NULL;
+  if (!SCHEME_STRINGP(argv[0])) {
+    return NULL;
   } else {
-#endif
-    if (newp->working_directory
-	&& (!old_set
-	    || strcmp(oldp->working_directory, newp->working_directory)))
-      MSC_IZE(chdir)(newp->working_directory);
-#ifdef USE_FCHDIR
+    char *s, *expanded;
+    int len;
+    Scheme_Object *ed;
+
+    s = SCHEME_STR_VAL(argv[0]);
+    len = SCHEME_STRTAG_VAL(argv[0]);
+
+    expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
+    ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
+    if (!scheme_directory_exists(expanded)) {
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+		       ed,
+		       "current-directory: directory not found or not a directory: \"%.255s\"",
+		       expanded);
+    }
+
+    return do_simplify_path(ed, scheme_null);
   }
-#endif
-#endif
 }
 
-char *scheme_get_thread_current_directory(Scheme_Process *p, int *len, int noexn)
+static Scheme_Object *current_directory(int argc, Scheme_Object **argv)
 {
-  if (p == scheme_current_process)
-    return scheme_getcwd(NULL, 0, len, noexn);
-  
-#ifdef USE_MAC_FILE_TOOLBOX
-  {
-    FSSpec spec;
-    char *s;
-
-    spec.vRefNum = p->vrefnum;
-    spec.parID = p->dirid;
-
-    s = scheme_build_mac_filename(&spec, 1);
-    *len = strlen(s);
-
-    return s;
-  }
-#else
-# ifdef USE_FCHDIR
-  if (p->working_directory == wd_via_fchdir) {
-    char *savedir = scheme_getcwd(NULL, 0, NULL, 1);
-    char *result;
-
-    fchdir(p->wd_len);
-    result = scheme_getcwd(NULL, 0, len, noexn);
-    scheme_setcwd(savedir, noexn);
-
-    return result;
-  }
-# endif
-  *len = strlen(p->working_directory);
-  return scheme_strdup(p->working_directory);
-#endif  
+  return scheme_param_config("current-directory",
+			     MZCONFIG_CURRENT_DIRECTORY,
+			     argc, argv,
+			     -1, cwd_check, 
+			     "complete path string", 1);
 }
 
-void scheme_done_process_directory(Scheme_Process *p)
-{
-#ifdef USE_FCHDIR
-  if (p->working_directory == wd_via_fchdir) {
-    close(p->wd_len);
-    --using_fchdir;
-    /* printf("close dir: #%d %d\n", using_fchdir, p->wd_len); */
-    p->working_directory = NULL;
-  }
-#endif
-}
 #endif
 
 #ifndef NO_FILE_SYSTEM_UTILS
@@ -3132,7 +3169,7 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
 			       name,
 			       NULL);
 
-    if (!find_mac_file(s, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(s, 0, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return 0;
   }
   

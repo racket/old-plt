@@ -442,7 +442,6 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   BodyExpr *e;
   int c, count, import_count, expr_count = 0;
   int dpos, ipos;
-  int orig_glob_prim;
   Scheme_Compile_Info *recs;
   Scheme_Comp_Env *expand_env;
   
@@ -679,7 +678,9 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   
   /* Extend environment: */
   indirect_env = env = scheme_add_compilation_frame(indirect_first, env, 
-						    SCHEME_AUTO_UNBOX | SCHEME_ANCHORED_FRAME);
+						    SCHEME_AUTO_UNBOX 
+						    | SCHEME_ANCHORED_FRAME
+						    | SCHEME_PRIM_GLOBALS_ONLY);
 
   for (c = 0; c < import_count; c++)
     scheme_unsettable_variable(env, c);
@@ -687,14 +688,8 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   l = unit_varlist(body->first, scheme_null, 0);
   count = scheme_list_length(l);
   env = scheme_add_compilation_frame(l, env, 
-				     SCHEME_AUTO_UNBOX | SCHEME_ANCHORED_FRAME);
-
-  if (rec) {
-    orig_glob_prim = rec->globals_must_be_primitive;
-    rec->globals_must_be_primitive = 1;
-  } else {
-    orig_glob_prim = 0;
-  }
+				     SCHEME_AUTO_UNBOX 
+				     | SCHEME_ANCHORED_FRAME);
 
   if (rec) {
     recs = MALLOC_N(Scheme_Compile_Info, expr_count);
@@ -753,8 +748,6 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec) {
     scheme_merge_compile_recs(rec, recs, expr_count);
     rec->max_let_depth += (indirect_env->basic.num_bindings + env->basic.num_bindings);
-
-    rec->globals_must_be_primitive = orig_glob_prim;
   }
 
   return count;

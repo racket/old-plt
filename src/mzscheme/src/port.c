@@ -2337,7 +2337,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   len = strlen(filename);
 
   if (scheme_is_relative_path(filename, len)) {
-    dir = scheme_getcwd(NULL, 0, NULL, 1);
+    dir = scheme_os_getcwd(NULL, 0, NULL, 1);
     drive = NULL;
   } else if (scheme_is_complete_path(filename, len)) {
     dir = NULL;
@@ -3349,7 +3349,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
 		       ed,
-		       "current-load-relative-directory: not a directory: \"%.255s\"",
+		       "current-load-relative-directory: directory not found or not a directory: \"%.255s\"",
 		       expanded);
     }
 
@@ -4017,6 +4017,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(err_subprocess[1], 2);
     }
 
+    /* Set real CWD - and hope no other thread changes it! */
+    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
+
     spawn_status = MSC_IZE(spawnv)(type, command, (const char * const *)argv);
 
     if (!synchonous) {
@@ -4109,7 +4112,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	MSC_IZE(close)(err_subprocess[0]);
 	MSC_IZE(close)(err_subprocess[1]);
       }
-      /* Exec new process */
+      
+      /* Set real CWD */
+      scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
+
+      /* Exec new process */      
 
       if (shell) {
 	int v;

@@ -1052,7 +1052,7 @@ def_exn_handler(int argc, Scheme_Object *argv[])
       s = SCHEME_STR_VAL(str);
       len = SCHEME_STRTAG_VAL(str);
     } else
-      s = "[exn-message not a string]";
+      s = "exception raised [message field is not a string]";
   } else {
     char *v;
 
@@ -1128,8 +1128,25 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 {
  Scheme_Object *v;
 
- if (scheme_current_process->error_invoked)
-   call_error("exception", -1);
+ if (scheme_current_process->error_invoked) {
+   char *s;
+   if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
+       && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
+     Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
+     if (SCHEME_STRINGP(str)) {
+       char *msg;
+       int len;
+       msg = SCHEME_STR_VAL(str);
+       len = strlen(msg);
+       s = (char *)scheme_malloc_atomic(len + 20);
+       memcpy(s, "exception raised: ", 20);
+       strcat(s, msg);
+     } else
+       s = "exception raised [message field is not a string]";
+   } else
+     s = "raise called";
+   call_error(s, -1);
+ }
 
  if (scheme_current_process->exn_raised) {
    long len;

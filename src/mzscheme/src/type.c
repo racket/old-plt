@@ -163,8 +163,9 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_manager_type, "<custodian>");
 
-  set_name(scheme_reserved_4_type, "<reserved4>");
-  set_name(scheme_reserved_5_type, "<reserved5>");
+  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_reserved_2_type, "<reserved2>");
+  set_name(scheme_reserved_3_type, "<reserved3>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");

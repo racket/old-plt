@@ -611,4 +611,34 @@
 (err/rt-test (regexp "[a-b-c\341\275\270]") exn:misc?)
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; String comparison. Relies on the default locale knowing
+;;  about upper A with hat (\303\202) and lower a with hat (\303\242),
+;;  and also relies on a "C" locale that can't encode those
+;;  two characters. It doesn't rely on a relative order of A-hat
+;;  and a-hat --- only that they're the same case-insensitively.
+(let ()
+  (define (stest r comp? a b)
+    (test r comp? a b)
+    (test r comp? (format "xx~ayy" a) (format "xx~ayy" b))
+    (test r comp? (format "x\000x~ay" a) (format "x\000x~ay" b))
+    (test r comp? (format "x\000~ay" a) (format "x\000~ay" b))
+    (test r comp? (format "x\000~a\000y" a) (format "x\000~a\000y" b)))
+  (define (go c?)
+    (stest #f string=? "\303\202" "\303\242") 
+    (stest #f string-ci=? "\303\202" "\303\242")
+    (stest #f string-unicode=? "\303\202" "\303\242")
+    (stest (if c? #f #t) string-unicode-ci=? "\303\202" "\303\242")
+    (stest #f string<? "\303\242" "b")
+    (stest (if c? #f #t) string-unicode<? "\303\242" "b")
+    (stest #t string>? "\303\242" "b")
+    (stest (if c? #t #f) string-unicode>? "\303\242" "b")
+    (stest #t string<? "b" "\303\242")
+    (stest (if c? #t #f) string-unicode<? "b" "\303\242")
+    (stest #f string>? "b" "\303\242")
+    (stest (if c? #f #t) string-unicode>? "b" "\303\242"))
+  (go #f)
+  (parameterize ([current-locale "C"])
+    (go #t)))
+
 (report-errs)

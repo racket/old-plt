@@ -96,7 +96,7 @@
     ))
 
 (define-signature zodiac:scheme-objects^
-  (create-class*-form
+  (create-class*/names-form
     (struct supervar-varref ())  create-supervar-varref
     (struct superinit-varref ()) create-superinit-varref
     (struct public-varref ())    create-public-varref
@@ -109,14 +109,12 @@
     (struct private-binding ())   create-private-binding+marks
     (struct inherit-binding ())   create-inherit-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
-    (struct class*-form (this super-names super-exprs super-inits
-			  init-vars inst-clauses))
+    (struct class*/names-form
+      (this super-init super-expr interfaces init-vars inst-clauses))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
     (struct inherit-clause (internals imports))
-    (struct inherit-from-clause (super))
     (struct rename-clause (internals imports))
-    (struct rename-from-clause (super))
     (struct sequence-clause (exprs))))
 
 (define-signature zodiac:scheme-units^
@@ -138,14 +136,14 @@
     (struct :-form (exp type))
     (struct type:-form (type attrs))
     (struct st:control-form (para val))
-    (struct cache-form (exp za kind cd))
+    (struct include-unit-form (file cd kind))
     (struct define-type-form (sym type))
     (struct define-constructor-form (sym modes))
     create-poly-form
     create-:-form
     create-type:-form
     create-st:control-form
-    create-cache-form
+    create-include-unit-form
     create-define-type-form
     create-define-constructor-form))
 

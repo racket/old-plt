@@ -157,11 +157,11 @@
    mrspidey:add-summary-handler
    mrspidey:progress
    mrspidey:progress-handler
-   make-file-thunk-thunk	
    record-analyzed-file
-   record-analyzed-file-hook
-    
-))
+   record-analyzed-file-hook))
+
+(define-signature mrspidey:file-read^
+   (make-file-thunk-thunk))	
 
 (define-signature mrspidey:config^
   ( st:restricted

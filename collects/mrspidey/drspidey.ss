@@ -35,18 +35,10 @@
 
 (define mrspidey:interaction@
   (unit/sig mrspidey:interaction^
-    (import 
-      [mred : mred^]
-      framework^	
+    (import	
       [zodiac : zodiac:system^]
       mzlib:file^)
     (include "handlers.ss")
-
-    (define (make-file-thunk-thunk filename)   	
-      (lambda () 
- 	(let ([txt (make-object mred:text%)])
- 	  (send txt load-file filename)
-	  (gui-utils:read-snips/chars-from-text txt))))
 
     (mrspidey:error-handler
       (case-lambda
@@ -64,14 +56,24 @@
                 (file-name-from-path (zodiac:location-file loc))
                 (zodiac:location-line loc)
                 (zodiac:location-column loc))))]
-        [(message)
-          (mred:message-box
-	   "MrSpidey Error"
-            (format "~a~n" message))
-          (raise 'mrspidey-raise)]))
-    ))
+        [(message) 
+	 ((mrspidey:error-handler) message)
+	 (raise 'mrspidey-raise)]))))
 
 ;; ----------------------------------------------------------------------
+
+(define mrspidey:file-read@
+  (unit/sig mrspidey:file-read^
+    (import 
+      [mred : mred^]
+      framework^)
+    (define (make-file-thunk-thunk filename)   	
+      (lambda () 
+ 	(let ([txt (make-object mred:text%)])
+ 	  (send txt load-file filename)
+	  (gui-utils:read-snips/chars-from-text txt))))))
+
+;; ------------------------------------------------------------------------
 
 (define mrspidey-tool@
   (unit/sig ()
@@ -159,11 +161,16 @@
 
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
-		       MRED FRAMEWORK ZODIAC
+		       ZODIAC
 		       (MZLIB file))]
+	  [FILE-READ : mrspidey:file-read^
+		      (mrspidey:file-read@ 
+		       MRED
+		       FRAMEWORK)]
 	 [SBA : mrspidey:sba^
 	      (mrspidey:sba@ 
 	       INTERACTION 
+	       FILE-READ	
 	       ((MZLIB function) : mrspidey:mzlib:function^)
 	       (MZLIB pretty-print)
 	       (MZLIB file)

@@ -19,6 +19,7 @@
 (compound-unit/sig ; mrspidey:sba^
  (import
   (INTERACTION : mrspidey:interaction^)
+  (FILE-READ : mrspidey:file-read^)
   (FUNCTION  : mrspidey:mzlib:function^)
   (PRETTY-PRINT : mzlib:pretty-print^)
   (FILE : mzlib:file^)
@@ -51,7 +52,7 @@
 	INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [LOADEXPAND : mrspidey:loadexpand^
 	      ((require-relative-library-unit/sig "ldexpand.ss")
-	       CDL INTERACTION LANGUAGES ZODIAC ZAUX 
+	       CDL INTERACTION FILE-READ LANGUAGES ZODIAC ZAUX 
 	       FUNCTION PRETTY-PRINT FILE STRING)]
   [HASH : mrspidey:hash^
 	((require-relative-library-unit/sig "hash.ss")
@@ -141,7 +142,7 @@
 	     ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]
   [ATLUNIT : mrspidey:atlunit^
 	   ((require-relative-library-unit/sig "atlunit.ss")
-	    CDL INTERACTION KERNEL KERNEL-AUX
+	    CDL INTERACTION FILE-READ KERNEL KERNEL-AUX
 	    MIN LOADEXPAND TYPE-ENV
 	    TEMPLATES LANGUAGES ATYPE ATENV TRAVERSE
 	    ZA ZODIAC ZAUX FUNCTION PRETTY-PRINT FILE STRING)]

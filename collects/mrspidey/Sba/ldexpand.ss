@@ -20,6 +20,7 @@
   (import
    mrspidey:CDL^
    mrspidey:interaction^
+   mrspidey:file-read^
    mrspidey:languages^
    (zodiac : zodiac:system^)
    (zodiac : mrspidey:zodiac^)

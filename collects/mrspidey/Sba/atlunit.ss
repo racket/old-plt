@@ -21,6 +21,7 @@
   (import
    mrspidey:CDL^
    mrspidey:interaction^
+   mrspidey:file-read^
    mrspidey:kernel^
    mrspidey:kernel-aux^
    mrspidey:min^

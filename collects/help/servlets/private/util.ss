@@ -83,7 +83,7 @@
 		      `(B "[Bad manual entry: "
 			  ,man "::" ,ndx)))))
 
-  (define hexifiable '(#\: #\? #\& #\%))
+  (define hexifiable '(#\: #\; #\? #\& #\% #\#))
   ; string -> string
   (define (hexify-string s)
     (apply string-append 

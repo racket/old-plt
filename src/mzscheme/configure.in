@@ -987,6 +987,7 @@ makefiles="Makefile
 FOREIGN_OBJ_IF_USED=
 FOREIGN_OBJS_IF_USED=
 if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
+  AC_CONFIG_AUX_DIR( foreign/gcc )
   AC_CONFIG_SUBDIRS( foreign/gcc/libffi )
   makefiles="$makefiles foreign/Makefile"
   FOREIGN_OBJ_IF_USED="\$(FOREIGN_OBJ)"
@@ -1024,6 +1025,7 @@ if test "${enable_mred}" = "yes" ; then
   fi
 
   if test "${enable_libjpeg}" = "no" ; then
+    AC_CONFIG_AUX_DIR( wxcommon/jpeg )
     AC_CONFIG_SUBDIRS( wxcommon/jpeg )
   fi
 fi

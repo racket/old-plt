@@ -68,27 +68,27 @@
     ;; Under windows, put "{lib,sll}eay32" into the system folder when
     ;; they're in a "precompiled" dir.
     (when (eq? 'windows (system-type))
-	  (let ([dir (build-path (collection-path "openssl")
-				 "precompiled"
-				 "native"
-				 (system-library-subpath))])
-	    (when (directory-exists? dir)
-		  (let ([l (directory-list dir)])
-		    (let ([libeay (ormap (lambda (f)
-					   (regexp-match #rx"^libeay32.*[.]dll$" f))
-					 l)]
-			  [ssleay (ormap (lambda (f)
-					   (regexp-match #rx"^ssleay32.*[.]dll$" f))
-					 l)])
-		      (when (and libeay ssleay)
-			    (let ([sys-dir (find-system-path 'sys-dir)])
-			      (let ([move-over
-				     (lambda (f)
-				       (unless (file-exists? (build-path sys-dir f))
-					       (printf "  Installing ~a into system directory~n" f)
-					       (copy-file (build-path dir f)
-							  (build-path sys-dir f))))])
-				(move-over (car libeay))
-				(move-over (car ssleay)))))))))))
+      (let ([dir (build-path (collection-path "openssl")
+			     "precompiled"
+			     "native"
+			     (system-library-subpath))])
+	(when (directory-exists? dir)
+	  (let ([l (directory-list dir)])
+	    (let ([libeay (ormap (lambda (f)
+				   (regexp-match #rx"^libeay32.*[.]dll$" f))
+				 l)]
+		  [ssleay (ormap (lambda (f)
+				   (regexp-match #rx"^ssleay32.*[.]dll$" f))
+				 l)])
+	      (when (and libeay ssleay)
+		(let ([sys-dir (find-system-path 'sys-dir)])
+		  (let ([move-over
+			 (lambda (f)
+			   (unless (file-exists? (build-path sys-dir f))
+			     (printf "  Installing ~a into system directory~n" f)
+			     (copy-file (build-path dir f)
+					(build-path sys-dir f))))])
+		    (move-over (car libeay))
+		    (move-over (car ssleay)))))))))))
 
   (provide pre-installer))

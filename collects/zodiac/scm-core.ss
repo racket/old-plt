@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.40 1997/09/19 17:08:31 shriram Exp shriram $
+; $Id: scm-core.ss,v 1.41 1997/09/20 18:51:55 shriram Exp shriram $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -710,7 +710,7 @@
       (let ((contents (expose-list expr)))
 	(when (and (language<=? 'structured)
 		(null? contents))
-	  (static-error expr "Procedure does not take any arguments"))
+	  (static-error expr "All procedures must take at least one argument"))
 	(make-list-arglist
 	  (map create-lexical-binding+marks
 	    contents)))))

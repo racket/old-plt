@@ -1380,18 +1380,11 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
   if (pTypeDesc->descKind == funcDesc) {
-
     pFuncDesc = pTypeDesc->pFuncDesc;
 
     paramTypes = scheme_null;
 
     numActualParams = pFuncDesc->cParams;
-
-    // return value shouldn't count in num of parameters
-
-    if (invKind == INVOKE_PROPERTYGET && pFuncDesc->cParams > 0) {
-      numActualParams--; 
-    }
 
     numOptParams = pFuncDesc->cParamsOpt; 
 
@@ -1477,7 +1470,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
     if (pTypeDesc->descKind == funcDesc) {
 
-      if (pFuncDesc->cParams == 0) {
+      if (lastParamIsRetval == FALSE || pFuncDesc->cParams == 0) {
 	returnType = elemDescToSchemeType(&pFuncDesc->elemdescFunc,TRUE,FALSE);
       }
       else {
@@ -2144,10 +2137,9 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   numOptParams = pFuncDesc->cParamsOpt;
 
   if (pFuncDesc->cParams > 0 && 
-      (invKind == INVOKE_PROPERTYGET ||
-       (invKind == INVOKE_FUNC && 
+      ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) && 
 	(pFuncDesc->lprgelemdescParam[numParamsPassed-1].paramdesc.wParamFlags 
-	 & PARAMFLAG_FRETVAL)))) {
+	 & PARAMFLAG_FRETVAL))) {
     // last parameter is retval
     numParamsPassed--;
   }

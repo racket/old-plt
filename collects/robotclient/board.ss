@@ -342,8 +342,13 @@
                  (packages-held))))
 	(for-each (lambda (robot)
 		    (cond
-		     ((not (= 1 (get-robot (get-spot (board) (robot-x robot) (robot-y robot)))))
-		      (printf "Robot at (~a,~a) not on board~n" (robot-x robot) (robot-y robot)))))
+		     ((not (= 1 (get-robot (get-spot (board) 
+                                                     (robot-x robot) (robot-y robot)))))
+		      (printf "Robot at (~a,~a) not on board~n" 
+                              (robot-x robot) (robot-y robot))
+                      (printf "~a~n"
+                              (= 1 (get-robot (get-spot (board) 
+                                                     (robot-x robot) (robot-y robot))))))))
 		  robots)
         robots)))
   

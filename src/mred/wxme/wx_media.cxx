@@ -50,12 +50,6 @@ static wxCursor *iBeam = NULL, *arrow = NULL;
 
 /************************************************************************/
 
-extern "C" {
-  int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
-			     int permissive);
-  int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
-};
-
 void wxme_utf8_decode(char *str, long len, wxchar **_us, long *_ulen)
 {
   long ulen;

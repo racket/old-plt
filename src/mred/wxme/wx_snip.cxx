@@ -497,7 +497,7 @@ static TextSnipClass *TheTextSnipClass;
 TextSnipClass::TextSnipClass(void)
 {
   classname = "wxtext";
-  version = 2;
+  version = 3;
   required = TRUE;
 }
 
@@ -939,7 +939,8 @@ void wxTextSnip::Copy(wxTextSnip *snip)
 
 void wxTextSnip::Write(wxMediaStreamOut *f)
 {
-  long writeFlags;
+  long writeFlags, ul;
+  char *ub, buf[128];
 
   writeFlags = flags;
   if (writeFlags & wxSNIP_OWNED)
@@ -950,11 +951,20 @@ void wxTextSnip::Write(wxMediaStreamOut *f)
     writeFlags -= wxSNIP_CAN_SPLIT;
 
   f->Put(writeFlags);
-  f->Put(count * sizeof(wxchar), (char *)buffer, dtext * sizeof(wxchar));
+
+  ul = scheme_utf8_encode(buffer, dtext, dtext + count, NULL, 0, 0);
+  if (ul <= 128)
+    ub = buf;
+  else
+    ub = new WXGC_ATOMIC char[ul];
+  scheme_utf8_encode(buffer, dtext, dtext + count, (unsigned char *)ub, 0, 0);
+  f->Put(ul, ub, 0);
 }
 
 void wxTextSnip::Read(long len, wxMediaStreamIn *f)
 {
+  int rv;
+
   if (len <= 0)
     return;
 
@@ -978,13 +988,13 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
     }
 
     allocated = l;
-
     if (!buffer)
       Read(10, f);
   }
 
   dtext = 0;
-  if (f->ReadingVersion(TheTextSnipClass) < 2) {
+  rv = f->ReadingVersion(TheTextSnipClass);
+  if (rv < 2) {
     int i;
     /* Read Latin-1: */
     f->Get((long *)&len, (char *)buffer);
@@ -993,7 +1003,23 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
       buffer[i] = ((unsigned char *)buffer)[i];
     }
     count = len;
+  } else if (rv > 2) {
+    /* Read UTF-8: */
+    char *ub, buf[128];
+    long bl;
+    if (len > 128)
+      ub = new WXGC_ATOMIC char[len];
+    else
+      ub = buf;
+    bl = len;
+    f->Get(&bl, ub);
+    len = scheme_utf8_decode((unsigned char *)ub, 0, bl,
+			     buffer, 0, len,
+			     NULL, 0, 1);
+    count = len;
   } else {
+    /* Version 2 wrote out UTF-32 directly -- bad idea!
+       because it uses the machine's endianness. */
     len *= sizeof(wxchar);
     f->Get((long *)&len, (char *)buffer);
     count = len / sizeof(wxchar);
@@ -1905,7 +1931,7 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(wxMediaStream *f, short 
 	  /* unknown class/version */
 	  /* since we zero out sl->name, error is only shown once */
 	  char buffer2[256];
-	  sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", sl->name);
+	  sprintf(buffer2, "Unknown snip class or version: \"%.100s\" version %d.", sl->name, sl->readingVersion);
 	  wxmeError(buffer2);
 	} else {
 	  sl->c = sclass;

@@ -9,6 +9,10 @@ DRIVER_MGR_LIB=odbc
 # driver manager library directory
 LIBDIR=/usr/site/unixODBC/lib
 
+# gcc 3.2 needs libstdc++.a
+# see also srpmain.so target, below
+STDCPP_LIBDIR=/usr/lib/gcc-lib/i386-redhat-linux/3.2
+
 # driver manager include directory
 INCDIR=/usr/local/include
 
@@ -43,8 +47,10 @@ clean :
 	rm -f *.so
 
 srpmain.so : $(OBJS)
-	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) \
-	  -l$(DRIVER_MGR_LIB)
+	$(MZC) --ld srpmain.so $(OBJS) \
+	-L$(LIBDIR) -l$(DRIVER_MGR_LIB) \
+#	-L$(STDCPP_LIBDIR) -lstdc++
+# uncomment previous line for gcc 3.2
 
 srpersist.o : srpersist.cxx srptypes.h srpbuffer.h srpersist.h srpprims.tbl \
 	srpstructs.tbl srpexns.tbl srpconsts.tbl srpinfo.tbl srpbitmask.tbl

@@ -74,11 +74,11 @@
 				    (send old-font get-weight)
 				    (send old-font get-underlined))))))
 
-  (define (add-font-items menu)
+  (define (add-font-items frame menu)
     (make-object menu-item%
       "Choose Font"
       menu
-      (lambda x (configure-font)))
+      (lambda x (configure-font frame)))
     (make-object menu-item%
       "Make Board Bigger"
       menu
@@ -294,7 +294,7 @@
 					   (editor problem))))
 
 	  (make-object separator-menu-item% pbn-menu)
-	  (add-font-items pbn-menu)))
+	  (add-font-items this pbn-menu)))
 
       (inherit top-panel help-button get-area-container)
       (private
@@ -435,7 +435,7 @@
 	  (make-object menu-item% "Test Puzzle" pbn-menu (lambda (_1 _2) (test-puzzle)))
 
 	  (make-object separator-menu-item% pbn-menu)
-	  (add-font-items pbn-menu)))))
+	  (add-font-items this pbn-menu)))))
 
   (define (editor bitmap?)
     (let* ([default 15]

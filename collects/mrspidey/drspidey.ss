@@ -22,8 +22,6 @@
 (require-relative-library "pltrc-co.ss")
 (require-relative-library "macros.ss")
 
-(require-library "load.ss" "zodiac")
-
 (require-library "sigs.ss" "mrspidey" "Sba")
 
 (define mrspidey:sba@
@@ -131,14 +129,9 @@
 	   [MZLIB : mzlib:core^]
 	   [PCONVERT : mzlib:print-convert^]
 	   [DRSCHEME : drscheme:export^]
-	   [ZODIAC-UNUSED : zodiac:system^])
+	   [ZODIAC : zodiac:system^])
     (link [INTERFACE : zodiac:interface^
 		     (mrspidey:zodiac:interface@ INTERACTION)]
-	  [ZODIAC : zodiac:system^
-		  (zodiac:system@ 
-		   INTERFACE (MZLIB pretty-print) 
-		   (MZLIB file))]
-
 	  [URL : mzlib:url^
 	       ((require-library "urlr.ss" "net") (MZLIB file))]
 	  [BROWSER : browser^

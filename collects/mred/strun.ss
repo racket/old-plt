@@ -1,18 +1,23 @@
 ;;
-;; $Id: strun.ss,v 1.6 1997/08/11 21:01:43 krentel Exp krentel $
+;; $Id: strun.ss,v 1.7 1997/08/15 19:28:42 krentel Exp krentel $
 ;;
 ;; Run one fake action in the real handler thread.
-;; This should be the only file that needs to worry about thread
-;; issues, semaphores, etc.
-;;
-;; (mred:test:run-one thunk) is internal-only, not for export,
-;; called directly from mred:test:primitives.
+;; This should be the only file that needs to worry about multiple
+;; threads, semaphores, etc.
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
 ;;
-;; run-one (currently) does not return a useful value, but does
-;; reraise errors from the actions.
+;; (mred:test:number-pending-actions) => number of unfinished 
+;; actions, counting a pending error as an unfinished action.
+;; So, zero really means zero.
+;;
+;; (mred:test:reraise-error) reraises a pending error, if there
+;; is one, else returns void.
+;;
+;; (mred:test:run-one thunk) is internal-only, not for export, called
+;; directly from mred:test:primitives.  Currently does not return a 
+;; useful value, but does reraise errors from the actions.
 ;;
 
 (unit/sig mred:test:run^
@@ -57,24 +62,44 @@
 	(send timer start msec #t))))
   
   ;;
-  ;; Simple error catching/reporting.
-  ;; Errors may occur long after mred:test:... has yielded and returned.
-  ;; Store the first error and reraise it in main thread at first opportunity.
-  ;; Getting/reraising error flushes the buffer (so can catch future errors).
-  ;; the-error = #f (no error), or box containing exn value.
-  ;; (Just so (raise #f) is correctly handled.)
-  ;; Put-exn is called from handler thread, get-exn-box from main thread.
-  ;; Do need semaphores because get-exn-box is not atomic.
-  ;; Put-exn takes exn struct (not box), get-exn-box returns the box (or #f).
+  ;; Simple accounting of actions and errors.
+  ;;
+  ;; Keep number of unfinished actions.  An error in the buffer
+  ;; (caught but not-yet-reraised) counts as an unfinished action.
+  ;; (but kept in the-error, not count).
+  ;;
+  ;; Keep buffer of one error, and reraise at first opportunity.
+  ;; Keep just first error, any others are thrown on the floor.
+  ;; Reraising the error flushes the buffer.
+  ;; Store exn in box, so can correctly catch (raise #f).
+  ;; 
+  ;; These values are set in handler thread and read in main thread,
+  ;; so certainly need semaphores here.
   ;;
   
-  (define-values (put-exn get-exn-box is-exn?)
-    (let ([sem  (make-semaphore 1)]
-	  [the-error  #f])
+  (define-values (begin-action  end-action  end-action-with-error
+		  get-exn-box   is-exn?     num-actions)
+    (let 
+	([sem    (make-semaphore 1)]
+	 [count      0]     ;; number unfinished actions.
+	 [the-error  #f])   ;; boxed exn struct, or else #f.
       (letrec
-	  ([put-exn
+	  ([begin-action
+	    (lambda ()
+	      (semaphore-wait sem)
+	      (set! count (add1 count))
+	      (semaphore-post sem))]
+	   
+	   [end-action
+	    (lambda ()
+	      (semaphore-wait sem)
+	      (set! count (sub1 count))
+	      (semaphore-post sem))]
+	   
+	   [end-action-with-error
 	    (lambda (exn)
 	      (semaphore-wait sem)
+	      (set! count (sub1 count))
 	      (unless the-error
 		(set! the-error (box exn)))
 	      (semaphore-post sem))]
@@ -82,25 +107,42 @@
 	   [get-exn-box
 	    (lambda ()
 	      (semaphore-wait sem)
-	      (let ([my-copy  the-error])
+	      (let ([ans  the-error])
 		(set! the-error #f)
 		(semaphore-post sem)
-		my-copy))]
+		ans))]
 	   
 	   [is-exn?
 	    (lambda ()
 	      (semaphore-wait sem)
-	      (let ([my-copy  the-error])
+	      (let ([ans  (if the-error #t #f)])
 		(semaphore-post sem)
-		(if my-copy #t #f)))])
+		ans))]
+ 
+	   [num-actions
+	    (lambda ()
+	      (semaphore-wait sem)
+	      (let ([ans  (+ count (if the-error 1 0))])
+		(semaphore-post sem)
+		ans))])
 	
-	(values put-exn get-exn-box is-exn?))))
+	(values  begin-action  end-action  end-action-with-error
+		 get-exn-box   is-exn?     num-actions))))
+  
+  ;; Functions to export, always in main thread.
+  
+  (define number-pending-actions num-actions)
+  
+  (define reraise-error
+    (lambda ()
+      (let ([exn-box  (get-exn-box)])
+	(if exn-box (raise (unbox exn-box)) (void)))))
   
   ;;
   ;; Start running thunk in handler thread.
   ;; Don't return until run-interval expires, and thunk finishes, 
   ;; raises error, or yields (ie, at event boundary).
-  ;; Reraise error, if exists, even from previous action.
+  ;; Reraise error (if exists) even from previous action.
   ;; Note: never more than one timer (of ours) on real event queue.
   ;; 
   
@@ -113,14 +155,16 @@
 		(wx:yield)  ;; flush out real events.
 		(install-timer (run-interval) return)
 		(unless (is-exn?)
-		  (pass-errors-out thunk)))]
+		  (begin-action)
+		  (pass-errors-out thunk)
+		  (end-action)))]
 	     
 	     [pass-errors-out
 	      (lambda (thunk)
 		(parameterize
 		    ([current-exception-handler
 		      (lambda (exn)
-			(put-exn exn)
+			(end-action-with-error exn)
 			((error-escape-handler)))])
 		  (thunk)))]
 	     
@@ -128,7 +172,6 @@
 	  
 	  (install-timer 0 start)
 	  (semaphore-wait sem)
-	  (let ([exn-box  (get-exn-box)])
-	    (if exn-box (raise (unbox exn-box)) (void)))))))
+	  (reraise-error)))))
   
   )

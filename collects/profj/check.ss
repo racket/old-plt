@@ -1855,6 +1855,7 @@
            (set-call-method-record! call method-record)
            (method-record-rtype method-record))
           ((method-contract? method-record)
+           (set-call-method-record! call method-record)
            (method-contract-return method-record))))))
     
   ;close-to-keyword: string -> bool

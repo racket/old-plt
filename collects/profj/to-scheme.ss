@@ -1474,9 +1474,17 @@
                                         (ref-type-class/iface type))
                                 (ref-type-class/iface type))))))
       ((unknown-ref? type)
-       '...)
+       `(c:object-contract ,@(map (lambda (m) 
+                                    `(,(string->symbol (java-name->scheme (method-contract-name m)))
+                                       ,(type->contract m)))
+                                  (unknown-ref-methods type))
+                           ,@(map (lambda (f) `(field ,(string->symbol (java-name->scheme (scheme-val-name f)))
+                                                      ,(type->contract (scheme-val-type f))))
+                                  (unknown-ref-fields type))))
       ((method-contract? type)
-       '...)
+       `(c:-> ,@(map type->contract (map scheme-val-type (method-contract-args type)))
+              ,(type->contract (scheme-val-type (method-contract-return type)))))
+      ((not type) 'c:any/c)
       ))
   
   ;------------------------------------------------------------------------------------------------------------------------
@@ -1749,13 +1757,17 @@
           
         ;Normal case
         ((id? method-name)
-         (let* ((static? (memq 'static (method-record-modifiers method-record)))
-                (temp (mangle-method-name (method-record-name method-record)
-                                          (method-record-atypes method-record)))
-                (m-name (if static?
-                            (build-static-name temp (car (method-record-class method-record)))
-                            temp))
-                (generic-name (build-generic-name (car (method-record-class method-record)) m-name)))
+         (let* ((static? (unless (method-contract? method-record)
+                           (memq 'static (method-record-modifiers method-record))))
+                (temp (unless (method-contract? method-record)
+                        (mangle-method-name (method-record-name method-record)
+                                            (method-record-atypes method-record))))
+                (m-name (unless (method-contract? method-record)
+                          (if static?
+                              (build-static-name temp (car (method-record-class method-record)))
+                              temp)))
+                (generic-name (unless (method-contract? method-record)
+                                (build-generic-name (car (method-record-class method-record)) m-name))))
            (cond 
              ((special-name? expr)
               (let* ((over? (overridden? (string->symbol m-name)))
@@ -1769,9 +1781,15 @@
                   (over? (create-syntax #f `(super ,name ,@args) (build-src src)))
                   (else (create-syntax #f `(send this ,name ,@args) (build-src src))))))
              ((not expr)
-              (if (or static? (memq 'private (method-record-modifiers method-record)))
-                  (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src))
-                  (create-syntax #f `(send this ,(translate-id m-name (id-src method-name)) ,@args) (build-src src))))
+              (cond
+                ((method-contract? method-record)
+                 (create-syntax #f `((contract ,(type->contract method-record) 
+                                               ,(java-name->scheme (method-contract-name method-record)))
+                                     ,@args) (build-src src)))
+                ((or static? (memq 'private (method-record-modifiers method-record)))
+                 (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))
+                (else
+                 (create-syntax #f `(send this ,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))))
              (else
               (let ((name (translate-id m-name (id-src method-name))))
                 (cond

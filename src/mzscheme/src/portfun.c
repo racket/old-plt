@@ -93,6 +93,8 @@ static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
 
 static Scheme_Object *all_symbol, *none_symbol;
 
+static Scheme_Object *module_symbol;
+
 static Scheme_Object *default_read_handler;
 static Scheme_Object *default_display_handler;
 static Scheme_Object *default_write_handler;
@@ -139,6 +141,10 @@ scheme_init_port_fun(Scheme_Env *env)
   
   all_symbol = scheme_intern_symbol("all");
   none_symbol = scheme_intern_symbol("none");
+  
+  REGISTER_SO(module_symbol);
+  
+  module_symbol = scheme_intern_symbol("module");
   
   scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
 					       "write", 
@@ -469,7 +475,7 @@ void scheme_init_port_fun_config(void)
     Scheme_Object *dlh;
     dlh = scheme_make_prim_w_arity2(default_load,
 				    "default-load-handler",
-				    1, 1,
+				    2, 2,
 				    0, -1);
     scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
   }
@@ -2130,6 +2136,7 @@ typedef struct {
   Scheme_Object *port;
   Scheme_Thread *p;
   Scheme_Object *stxsrc;
+  Scheme_Object *expected_module;
 } LoadHandlerData;
 
 static void post_load_handler(void *data)
@@ -2146,13 +2153,117 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Thread *p = lhd->p;
   Scheme_Config *config = lhd->config;
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
-  int save_count = 0;
+  int save_count = 0, got_one = 0;
 
   while ((obj = scheme_internal_read(port, lhd->stxsrc,
 				     1,
 				     config)) 
 	 && !SCHEME_EOFP(obj)) {
     save_array = NULL;
+    got_one = 1;
+
+    /* ... begin special support for module loading ... */
+
+    if (SCHEME_SYMBOLP(lhd->expected_module)) {
+      /* Must be of the form `(module <expectedname> ...)',possibly compiled. */
+      /* Also, file should have no more expressions. */
+      Scheme_Object *a, *d, *other = NULL;
+      Scheme_Module *m;
+
+      d = obj;
+
+      m = scheme_extract_compiled_module(SCHEME_STX_VAL(d));
+      if (m) {
+	/* In the case of a compiled `module' expression, the prefix
+	   is applied during the read... */
+	a = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+	if (SCHEME_SYMBOLP(a))
+	  a = scheme_symbol_append(a, lhd->expected_module);
+	else
+	  a = lhd->expected_module;
+
+	if (!SAME_OBJ(m->modname, a)) {
+	  other = m->modname;
+	  d = NULL;
+	}
+      } else {
+	if (!SCHEME_STX_PAIRP(d))
+	  d = NULL;
+	else {
+	  a = SCHEME_STX_CAR(d);
+	  if (!SAME_OBJ(SCHEME_STX_VAL(a), module_symbol))
+	    d = NULL;
+	  else {
+	    d = SCHEME_STX_CDR(d);
+	    if (!SCHEME_STX_PAIRP(d))
+	      d = NULL;
+	    else {
+	      a = SCHEME_STX_CAR(d);
+	      other = SCHEME_STX_VAL(a);
+	      if (!SAME_OBJ(other, lhd->expected_module))
+		d = NULL;
+	    }
+	  }
+	}
+      }
+
+      /* If d is NULL, shape was wrong */
+      if (!d) {
+	Scheme_Stx_Srcloc *loc = ((Scheme_Stx *)obj)->srcloc;
+
+	if (!other)
+	  other = scheme_make_string("something else");
+	else {
+	  char *s, *t;
+	  long len, slen;
+
+	  t = "declaration for `";
+	  len = strlen(t);
+	  slen = SCHEME_SYM_LEN(other);
+
+	  s = (char *)scheme_malloc_atomic(len + slen + 2);
+	  memcpy(s, t, len);
+	  memcpy(s + len, SCHEME_SYM_VAL(other), slen);
+	  s[len + slen] = '\'';
+	  s[len + slen + 1]= 0;
+
+	  other = scheme_make_sized_string(s, len + slen + 1, 0);
+	}
+
+	scheme_read_err(port, 
+			loc->src, loc->line, loc->col, loc->pos, loc->span,
+			0, 
+			"default-load-handler: expected a `module' declaration for `%S', found %T",
+			lhd->expected_module,
+			other);
+
+	return NULL;
+      }
+
+      /* Check no more expressions: */
+      d = scheme_internal_read(port, lhd->stxsrc, 1, config);
+      if (!SCHEME_EOFP(d)) {
+	Scheme_Stx_Srcloc *loc = ((Scheme_Stx *)d)->srcloc;
+
+	scheme_read_err(port, 
+			loc->src, loc->line, loc->col, loc->pos, loc->span,
+			0, 
+			"default-load-handler: expected only a `module' declaration for `%S', but found an extra expression",
+			lhd->expected_module);
+	return NULL;
+      }
+
+      if (!m) {
+	/* Replace `module' in read expression with one bound to #%kernel's `module': */
+	a = SCHEME_STX_CAR(obj);
+	d = SCHEME_STX_CDR(obj);
+	a = scheme_datum_to_syntax(module_symbol, a, scheme_sys_wraps(NULL), 0, 1);
+	d = scheme_make_immutable_pair(a, d);
+	obj = scheme_datum_to_syntax(d, obj, scheme_false, 0, 1);
+      }
+    }
+
+    /* ... end special support for module loading ... */
 
     last_val = _scheme_apply_multi(scheme_get_param(config, MZCONFIG_EVAL_HANDLER),
 				   1, &obj);
@@ -2165,6 +2276,18 @@ static Scheme_Object *do_load_handler(void *data)
       if (SAME_OBJ(save_array, p->values_buffer))
 	p->values_buffer = NULL;
     }
+
+    if (SCHEME_SYMBOLP(lhd->expected_module))
+      break;
+  }
+
+  if (SCHEME_SYMBOLP(lhd->expected_module) && !got_one) {
+    scheme_read_err(port, 
+		    NULL, -1, -1, -1, -1,
+		    EOF, 
+		    "default-load-handler: expected a `module' declaration for `%S', found end-of-file",
+		    lhd->expected_module);
+    return NULL;
   }
 
   if (save_array) {
@@ -2177,7 +2300,7 @@ static Scheme_Object *do_load_handler(void *data)
 
 static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *port, *name;
+  Scheme_Object *port, *name, *expected_module;
   int ch;
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Config *config = p->config;
@@ -2185,6 +2308,9 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("default-load-handler", "string", 0, argc, argv);
+  expected_module = argv[1];
+  if (!SCHEME_FALSEP(expected_module) && !SCHEME_SYMBOLP(expected_module))
+    scheme_wrong_type("default-load-handler", "symbol or #f", 1, argc, argv);
 
   port = scheme_do_open_input_file("default-load-handler", 0, 1, argv);
 
@@ -2230,6 +2356,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->port = port;
   name = scheme_make_string(((Scheme_Input_Port *)port)->name);
   lhd->stxsrc = name;
+  lhd->expected_module = expected_module;
 
   return scheme_dynamic_wind(NULL, do_load_handler, post_load_handler,
 			     NULL, (void *)lhd);
@@ -2260,10 +2387,11 @@ static void post_load(void *data)
 static Scheme_Object *do_load(void *data)
 {  
   LoadData *ld = (LoadData *)data;
-  Scheme_Object *argv[1];
+  Scheme_Object *argv[2];
 
   argv[0] = ld->filename;
-  return _scheme_apply_multi(scheme_get_param(ld->config, ld->param), 1, argv);
+  argv[1] = scheme_false;
+  return _scheme_apply_multi(scheme_get_param(ld->config, ld->param), 2, argv);
 }
 
 Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
@@ -2315,7 +2443,7 @@ current_load(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-load",
 			     scheme_make_integer(MZCONFIG_LOAD_HANDLER),
 			     argc, argv,
-			     1, NULL, NULL, 0);
+			     2, NULL, NULL, 0);
 }
 
 static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)

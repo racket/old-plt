@@ -158,15 +158,20 @@ current_load_extension(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-load-extension", 
 			     scheme_make_integer(MZCONFIG_LOAD_EXTENSION_HANDLER),
 			     argc, argv,
-			     1, NULL, NULL, 0);
+			     2, NULL, NULL, 0);
 }
 
 #ifndef NO_DYNAMIC_LOAD
 
+typedef Scheme_Object *(*Init_Procedure)(Scheme_Env *);
+typedef Scheme_Object *(*Reload_Procedure)(Scheme_Env *);
+typedef Scheme_Object *(*Modname_Procedure)(void);
+
 typedef struct {
   void *handle;
-  Scheme_Object *(*init_f)(Scheme_Env *);
-  Scheme_Object *(*reload_f)(Scheme_Env *);
+  Init_Procedure init_f;
+  Reload_Procedure reload_f;
+  Modname_Procedure modname_f;
 } ExtensionData;
 
 #endif
@@ -183,15 +188,14 @@ static char *copy_vers(char *vers)
     return NULL;
 }
 
-typedef Scheme_Object *(*Init_Procedure)(Scheme_Env *);
-typedef Scheme_Object *(*Reload_Procedure)(Scheme_Env *);
 typedef char *(*Setup_Procedure)(SSI_ARG_TYPES);
 
-static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
+static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *expected_module, Scheme_Env *env)
 {
 #ifndef NO_DYNAMIC_LOAD
   Init_Procedure init_f; /* set by platform-specific code */
   Reload_Procedure reload_f; /* set by platform-specific code */
+  Modname_Procedure modname_f; /* set by platform-specific code */
   ExtensionData *ed;
   void *handle;
   int comppath;
@@ -199,10 +203,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   comppath = scheme_is_complete_path(filename, strlen(filename));
 
   reload_f = NULL;
+  modname_f = NULL;
   handle = NULL;
 
   if (comppath)
-    init_f = (Scheme_Object *(*)(Scheme_Env *))scheme_hash_get(fullpath_loaded_extensions, (Scheme_Object *)filename);
+    init_f = (Init_Procedure)scheme_hash_get(fullpath_loaded_extensions, (Scheme_Object *)filename);
   else
     init_f = NULL;
 
@@ -269,9 +274,13 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     }
     
     init_f = (Init_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
-    reload_f = (Reload_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
+    if (init_f) {
+      reload_f = (Reload_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
+      if (reload_f)
+	modname_f = (Modname_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_module_name");
+    }
     
-    if (!init_f || !reload_f) {
+    if (!init_f || !reload_f || !modname_f) {
       const char *err;
       err = dlerror();
       dlclose(dl);
@@ -279,7 +288,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       scheme_make_string(filename),
 		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\" (%s)",
-		       init_f ? "scheme_reload" : "scheme_initialize",
+		       (init_f 
+			? (reload_f
+			   ? "scheme_module_name"
+			   : "scheme_reload")
+			: "scheme_initialize"),
 		       filename, err);
     }
 #endif
@@ -327,15 +340,23 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     }
     
     init_f = (Init_Procedure)GetProcAddress(dl,"scheme_initialize");
-    reload_f = (Reload_Procedure)GetProcAddress(dl,"scheme_reload");
+    if (init_f) {
+      reload_f = (Reload_Procedure)GetProcAddress(dl,"scheme_reload");
+      if (reload_f)
+	modname_f = (Modname_Procedure)GetProcAddress(dl,"scheme_module_name");
+    }
     
-    if (!init_f || !reload_f) {
+    if (!init_f || !reload_f || !modname_f) {
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\"", 
-		       init_f ? "scheme_reload" : "scheme_initialize",
+		       (init_f 
+			? (reload_f
+			   ? "scheme_module_name"
+			   : "scheme_reload")
+			: "scheme_initialize"),
 		       filename);
     }
 #endif
@@ -374,6 +395,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 	  err = FindSymbol( connID, "\pscheme_reload", ( Ptr * )&reload_f, 0 );
 	  if ( err != noErr )
 	    reload_f = NULL;
+	  else {
+	    err = FindSymbol( connID, "\pscheme_module_name", ( Ptr * )&modname_f, 0 );
+	    if ( err != noErr )
+	      modname_f = NULL;
+	  }
 	}
 
 	if ( err != noErr )
@@ -381,7 +407,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 			   scheme_make_string(filename),
 			   fail_err_symbol,
 			   "load-extension: no %s in \"%s\"", 
-			   init_f ? "scheme_reload" : "scheme_initialize",
+			   (init_f 
+			    ? (reload_f
+			       ? "scheme_module_name"
+			       : "scheme_reload")
+			    : "scheme_initialize"),
 			   filename);
 	
 
@@ -433,6 +463,13 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     if (status == B_NO_ERROR) {
       status = get_image_symbol(image, "scheme_reload",
 				B_SYMBOL_TYPE_TEXT, (void **)&reload_f);
+      if (status == B_NO_ERROR) {
+	status = get_image_symbol(image, "scheme_module_name",
+				  B_SYMBOL_TYPE_TEXT, (void **)&modname_f);
+	if (status != B_NO_ERROR)
+	  modname_f = NULL;
+      } else
+	reload_f = NULL;
     } else
       init_f = NULL;
     
@@ -441,7 +478,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 		       scheme_make_string(filename),
 		       fail_err_symbol,
 		       "load-extension: no %s in \"%s\"", 
-		       init_f ? "scheme_reload" : "scheme_initialize",
+		       (init_f 
+			? (reload_f
+			   ? "scheme_module_name"
+			   : "scheme_reload")
+			: "scheme_initialize"),
 		       filename);
 #endif
 #ifdef NO_DYNAMIC_LOAD
@@ -462,12 +503,50 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 
   if (ed) {
     init_f = ed->reload_f;
+    modname_f = ed->modname_f;
   } else {
     ed = MALLOC_ONE_ATOMIC(ExtensionData);
     ed->handle = handle;
     ed->init_f = init_f;
     ed->reload_f = reload_f;
+    ed->modname_f = modname_f;
     scheme_hash_set(loaded_extensions, (Scheme_Object *)init_f, (Scheme_Object *)ed);
+  }
+
+  if (SCHEME_SYMBOLP(expected_module)) {
+    Scheme_Object *n;
+    n = modname_f();
+    if (!SAME_OBJ(expected_module, n)) {
+      Scheme_Object *other;
+
+      if (n && SCHEME_SYMBOLP(n)) {
+	char *s, *t;
+	long len, slen;
+	
+	t = "module `";
+	len = strlen(t);
+	slen = SCHEME_SYM_LEN(n);
+	
+	s = (char *)scheme_malloc_atomic(len + slen + 2);
+	memcpy(s, t, len);
+	memcpy(s + len, SCHEME_SYM_VAL(n), slen);
+	s[len + slen] = '\'';
+	s[len + slen + 1]= 0;
+	
+	other = scheme_make_sized_string(s, len + slen + 1, 0);
+      } else
+	other = scheme_make_string("non-module");
+
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       scheme_make_string(filename),
+		       fail_err_symbol,
+		       "load-extension: expected module `%S', but found %T in: %s", 
+		       expected_module,
+		       other,
+		       filename);
+
+      return NULL;
+    }
   }
 
   return init_f(env);
@@ -495,16 +574,20 @@ static Scheme_Object *load_extension(int argc, Scheme_Object **argv)
 Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv)
 {
   char *filename;
+  Scheme_Object *expected_module;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("default-load-extension", "string", 0, argc, argv);
-  
+    scheme_wrong_type("default-load-extension-handler", "string", 0, argc, argv);
+  expected_module = argv[1];
+  if (!SCHEME_FALSEP(expected_module) && !SCHEME_SYMBOLP(expected_module))
+    scheme_wrong_type("default-load-extension-handler", "symbol or #f", 1, argc, argv);
+
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
-				    "default-load-extension",
+				    "default-load-extension-handler",
 				    NULL);
 
-  return scheme_force_value(do_load_extension(filename, scheme_get_env(scheme_config)));
+  return scheme_force_value(do_load_extension(filename, expected_module, scheme_get_env(scheme_config)));
 }
 
 Scheme_Object *scheme_load_extension(const char *filename, Scheme_Env *env)

@@ -2384,7 +2384,7 @@
 		    (or (and (not bm) am) (and am bm (>= am bm))))))])
       (case-lambda 
        [(path) (-core-load/use-compiled path #f)]
-       [(path none-there)
+       [(path expect-module)
 	(unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
 	  (raise-type-error 'load/use-compiled "pathname string" path))
 	(let*-values ([(path) (resolve path)]
@@ -2419,15 +2419,14 @@
 	    (cond
 	     [(and (date>=? _loader-so path-d)
 		   (let ([getter (load-extension _loader-so)])
-		     (getter (string->symbol (regexp-replace -re:suffix file "")))))
+		     (getter (string->symbol (regexp-replace -re:suffix file "")) expect-module)))
 	      => (lambda (loader) (with-dir loader))]
 	     [(date>=? so path-d)
-	      (with-dir (lambda () ((current-load-extension) so)))]
+	      (with-dir (lambda () ((current-load-extension) so expect-module)))]
 	     [(date>=? zo path-d)
-	      (with-dir (lambda () ((current-load) zo)))]
-	     [(and (not path-d) none-there)
-	      (none-there)]
-	     [else (load path)])))])))
+	      (with-dir (lambda () ((current-load) zo expect-module)))]
+	     [else
+	      (with-dir (lambda () ((current-load) path expect-module)))])))])))
 
   (define (collection-path collection . collection-path) 
     (-check-collection 'collection-path collection collection-path)
@@ -2549,7 +2548,7 @@
 			(let ([prefix (string->symbol abase)])
 			  (with-continuation-mark -loading-filename filename
 			    (parameterize ([current-module-name-prefix prefix])
-			      (load/use-compiled filename))))
+			      (-core-load/use-compiled filename (string->symbol no-sfx)))))
 			(hash-table-put! ht modname #t))
 		      ;; Result is the module name:
 		      modname))))))

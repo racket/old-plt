@@ -2937,7 +2937,7 @@ static Scheme_Config *make_initial_config(void)
     Scheme_Object *lh;
     lh = scheme_make_prim_w_arity2(scheme_default_load_extension,
 				   "default-load-extension-handler",
-				   1, 1,
+				   2, 2,
 				   0, -1);
     scheme_set_param(config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
   }

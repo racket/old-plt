@@ -31,6 +31,7 @@ extern "C"
 
 extern Scheme_Object *scheme_initialize(Scheme_Env *global_env);
 extern Scheme_Object *scheme_reload(Scheme_Env *global_env);
+extern Scheme_Object *scheme_module_name(void);
 
 #ifdef __cplusplus
 }

@@ -2002,6 +2002,7 @@ int mark_load_handler_data_MARK(void *p) {
   gcMARK(d->port);
   gcMARK(d->p);
   gcMARK(d->stxsrc);
+  gcMARK(d->expected_module);
 
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -2014,6 +2015,7 @@ int mark_load_handler_data_FIXUP(void *p) {
   gcFIXUP(d->port);
   gcFIXUP(d->p);
   gcFIXUP(d->stxsrc);
+  gcFIXUP(d->expected_module);
 
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -3105,6 +3107,7 @@ int mark_rename_table_SIZE(void *p) {
 int mark_rename_table_MARK(void *p) {
   Module_Renames *rn = (Module_Renames *)p;
   gcMARK(rn->ht);
+  gcMARK(rn->plus_kernel_nominal_source);
   return
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }
@@ -3112,6 +3115,7 @@ int mark_rename_table_MARK(void *p) {
 int mark_rename_table_FIXUP(void *p) {
   Module_Renames *rn = (Module_Renames *)p;
   gcFIXUP(rn->ht);
+  gcFIXUP(rn->plus_kernel_nominal_source);
   return
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }

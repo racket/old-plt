@@ -927,23 +927,18 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
 {
-  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_compilation_top_type)) {
-    Scheme_Compilation_Top *c = (Scheme_Compilation_Top *)argv[0];
+  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+  Scheme_Object *a[2];
+      
+  if (m) {
+    /* Ensure that the lists are immutable: */
+    scheme_make_list_immutable(m->requires);
+    scheme_make_list_immutable(m->et_requires);
     
-    if (SAME_TYPE(SCHEME_TYPE(c->code), scheme_syntax_type)
-	&& (SCHEME_PINT_VAL(c->code) == MODULE_EXPD)) {
-      Scheme_Module *m = (Scheme_Module *)SCHEME_IPTR_VAL(c->code);
-      Scheme_Object *a[2];
-      
-      /* Ensure that the lists are immutable: */
-      scheme_make_list_immutable(m->requires);
-      scheme_make_list_immutable(m->et_requires);
-      
-      a[0] = m->requires;
-      a[1] = m->et_requires;
-
-      return scheme_values(2, a);
-    }
+    a[0] = m->requires;
+    a[1] = m->et_requires;
+    
+    return scheme_values(2, a);
   }
 
   scheme_wrong_type("module-compiled-imports", "compiled module declaration", 0, argc, argv);
@@ -1507,6 +1502,20 @@ Scheme_Object *scheme_builtin_value(const char *name)
   /* Maybe in MzScheme? */
   a[0] = scheme_intern_symbol("mzscheme");
   return _dynamic_require(2, a, 0, 0, 0, 0);
+}
+
+Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)
+{
+  if (SAME_TYPE(SCHEME_TYPE(o), scheme_compilation_top_type)) {
+    Scheme_Compilation_Top *c = (Scheme_Compilation_Top *)o;
+    
+    if (SAME_TYPE(SCHEME_TYPE(c->code), scheme_syntax_type)
+	&& (SCHEME_PINT_VAL(c->code) == MODULE_EXPD)) {
+      return (Scheme_Module *)SCHEME_IPTR_VAL(c->code);
+    }
+  }
+
+  return NULL;
 }
 
 /**********************************************************************/

@@ -870,6 +870,7 @@ mark_load_handler_data {
   gcMARK(d->port);
   gcMARK(d->p);
   gcMARK(d->stxsrc);
+  gcMARK(d->expected_module);
 
  size:
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -1375,6 +1376,7 @@ mark_rename_table {
  mark:
   Module_Renames *rn = (Module_Renames *)p;
   gcMARK(rn->ht);
+  gcMARK(rn->plus_kernel_nominal_source);
  size:
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }

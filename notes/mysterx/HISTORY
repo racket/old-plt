@@ -11,6 +11,9 @@ Methods find-element, find-element-by-id-or-name,
  element itself, as well as its children
 When a custodian shuts down an mx-browser% object,
  its Win32 window is destroyed
+Fixed marshalling of BYREF parameters to COM event 
+ handlers, for several types; added VT_INT and 
+ VT_INT | VT_BYREF 
 
 Version 103:
 

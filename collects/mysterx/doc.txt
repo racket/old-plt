@@ -40,21 +40,10 @@ _MysterX_
  Loading
  -------
 
- There are two ways to load MysterX.  The first is
- to treat MysterX as a library:
+ As of PLT Scheme 200, MysterX is a module.
+ Load the MysterX module with 
 
-  (require-library "mysterx.ss" "mysterx")
-
- makes available the procedures listed here.  The
- other way to load MysterX uses a signed unit:
-
-  (require-library "mysterxu.ss" "mysterx")
-
- binds `mysterx@' to the unit, with signature
- `mysterx^', which is defined in the file
- `sigs.ss' in the mysterx collection.  This unit
- can be invoked or imported into other units as
- needed.
+  (require (library "mysterx.ss" "mysterx"))
 
  Using the xml collection
  ------------------------
@@ -103,9 +92,9 @@ _MysterX_
  Returns the current document in the browser, an instance
  of mx-document%.
 
-> print :: (send an-mx-browser print)
+> print-document :: (send an-mx-browser print-document)
 
- Prints the contents displayed by the browser to the default
+ Prints the document displayed by the browser to the default
  printer.  As an unintentional side-effect, the browser 
  window is minimized.
 

@@ -2,7 +2,8 @@
 
 ;;; requires Office 97 to be installed for Calendar Control to work
 
-(require-library "mysterx.ss" "mysterx")
+(require (lib "class2.ss"))
+(require (lib "mysterx.ss" "mysterx"))
 
 ; the browser with the calendar
 
@@ -22,6 +23,7 @@
 (define cal (car (send caldoc objects)))
 
 ; the control panel document 
+
 (define ctrlwb (make-object mx-browser% "Control Panel" 180 350 600 300 '()))
 (define ctrldoc (send ctrlwb current-document))
 
@@ -91,7 +93,7 @@
 	"<td id=\"event-reflector\">Click on the calendar</td>"
 
 	"</table>"))
-	
+
 (define reflector (send ctrldoc find-element "TD" "event-reflector"))
 
 (com-register-event-handler 
@@ -181,5 +183,7 @@
  button-handlers)
 
 (send ctrlwb handle-events)
+
+
 
 			       

@@ -78,7 +78,7 @@
 	     [mred : mred^ 
 	       (mred@ mzlib trigger (drscheme : mred:application^))]
 	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac)]
-	     [params : plt:parameters^ (plt:baby-parameters@)]
+	     [params : plt:parameters^ (plt:mzscheme-parameters@)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [drscheme : drscheme^
 	       (drscheme@ mred mzlib zodiac interface print-convert params)])

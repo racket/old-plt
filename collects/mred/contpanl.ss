@@ -221,11 +221,11 @@
 			     (gms-helper
 			      (cdr kid-info)
 			      (max x-accum
-				   (+ const-default-border
+				   (+ (* 2 const-default-border)
 				      (child-info-x-posn curr-info)
 				      (child-info-x-min curr-info)))
 			      (max y-accum
-				   (+ const-default-border
+				   (+ (* 2 const-default-border)
 				      (child-info-y-posn curr-info)
 				      (child-info-y-min
 				       curr-info)))))))])
@@ -234,7 +234,8 @@
 			     (get-two-int-values get-client-size)])
 		 (let ([min-client-size
 			 (gms-helper (get-children-info)
-			   const-default-border const-default-border)]
+				     (* 2 const-default-border)
+				     (* 2 const-default-border))]
 		       [delta-w (- (get-width) client-w)]
 		       [delta-h (- (get-height) client-h)])
 		   (list (max (user-min-width)
@@ -370,8 +371,7 @@
 	(letrec ([gms-help
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
-			 (list (max x-accum (send container user-min-width))
-			   (max y-accum (send container user-min-height)))
+			 (list x-accum y-accum)
 			 (gms-help
 			   (cdr kid-info)
 			   (compute-x x-accum kid-info)
@@ -383,11 +383,14 @@
 	      (let* ([border (send container border)]
 		     [min-client-size
 		       (gms-help (send container get-children-info)
-			 border border)]
+				 (* 2 border) (* 2 border))]
 		     [delta-w (- (send container get-width) client-w)]
 		     [delta-h (- (send container get-height) client-h)])
-		(list (+ delta-w (car min-client-size))
-		      (+ delta-h (cadr min-client-size)))))))))
+		(list
+		 (max (+ delta-w (car min-client-size))
+		      (send container user-min-width))
+		 (max (+ delta-h (cadr min-client-size))
+		      (send container user-min-height)))))))))
     
     ; make-h-v-redraw: creates place-children functions for
     ; horizontal-panel% or vertical-panel% classes.
@@ -532,7 +535,7 @@
 	      (lambda (x-accum kid-info)
 		(+ x-accum (child-info-x-min (car kid-info))
 		  (if (null? (cdr kid-info))
-		      (border)
+		      0
 		      (spacing))))
 	      (lambda (y-accum kid-info)
 		(max y-accum
@@ -573,7 +576,7 @@
 	      (lambda (y-accum kid-info)
 		(+ y-accum (child-info-y-min (car kid-info))
 		  (if (null? (cdr kid-info))
-		      (border)
+		      0
 		      (spacing)))))]
 
 	  [place-children

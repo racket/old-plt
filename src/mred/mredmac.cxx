@@ -289,7 +289,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   WindowPtr window;
   wxFrame *fr;
   int found = 0;
-  int saw_mdown = 0, saw_kdown = 0, we_are_front;
+  int saw_mdown = 0, saw_mup = 0, saw_kdown = 0, we_are_front;
   
   if (!event)
     event = &ebuf;
@@ -337,6 +337,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
       q->event.what = activateEvt;
       q->event.modifiers = we_are_front ? activeFlag : 0;
       q->event.message = (long)front;
+      
+      if (we_are_front)
+        wxSetCursor(NULL); /* reset cursor */
     }
   }
 #endif
@@ -385,7 +388,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	int part;
 
 	saw_mdown = 1;
-
+	
         part = FindWindow(e->where, &window);
 	front = FrontWindow();
 	if (part == inMenuBar)
@@ -424,6 +427,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       }
       break;
     case mouseUp:
+      saw_mup = 1;
       if (!cont_event_context) {
       	if (!saw_mdown) {
 	  MrDequeue(osq);
@@ -463,6 +467,11 @@ int MrEdGetNextEvent(int check_only, int current_only,
       break;
 
     osq = next;
+  }
+  
+  if (cont_event_context && !saw_mup) {
+    if (!StillDown())
+      cont_event_context = NULL;
   }
 
   if (found) {
@@ -581,12 +590,14 @@ int MrEdGetNextEvent(int check_only, int current_only,
       GetMouse(&event->where);
       LocalToGlobal(&event->where);
       
-      if ((event->where.v != last_mouse.v)
-          || (event->where.h != last_mouse.h)
-          || last_front_window != FrontWindow()) {
+      if (((event->where.v != last_mouse.v)
+           || (event->where.h != last_mouse.h)
+           || last_front_window != FrontWindow())
+          && (!cont_event_context || (cont_event_context == keyOk))) {
           
         if (which)
-	  *which = (cont_event_context ? cont_event_context : keyOk);
+          *which = (cont_event_context ? cont_event_context : keyOk);
+	
         if (check_only) {
 #ifdef RECORD_HISTORY
 	  fprintf(history, "move or drag\n");

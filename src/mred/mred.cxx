@@ -472,7 +472,7 @@ static void ChainContextsList()
   while (f) {
     first = f->list->First();
 
-#ifdef wx_mac
+#if 0
     while (first && !first->IsShown())
       first = first->Next();
 #endif

@@ -4,7 +4,7 @@
 
 (define-macro make
   (let ([make (lambda (spec argv)
-		(let ([form-error (lambda (s . p) (apply syntax-error 'make s spec p))])
+		(let ([form-error (lambda (s . p) (apply raise-syntax-error 'make s spec p))])
 		  (and (or (list? spec) (form-error "illegal specification (not a sequence)"))
 		       (or (pair? spec) (form-error "empty specification"))
 		       (andmap

@@ -14,7 +14,8 @@
     void
     
     (unit/sig mred:container-panels^
-      (import [mred:connections : mred:connections^]
+      (import [mred:constants : mred:constants^]
+	      [mred:connections : mred:connections^]
 	      [mzlib:function : mzlib:function^]
 	      mred:container-children^)
       

@@ -1,6 +1,7 @@
 
   (unit/sig mred:canvas^
-    (import [mred:container : mred:container^]
+    (import [mred:constants : mred:constants^]
+	    [mred:container : mred:container^]
 	    [mred:edit : mred:edit^]
 	    [mred:preferences : mred:preferences^]
 	    [mzlib:file : mzlib:file^])

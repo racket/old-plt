@@ -1,6 +1,7 @@
 
   (unit/sig mred:console^
-    (import [mred:preferences : mred:preferences^]
+    (import [mred:constants : mred:constants^]
+	    [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^]
 	    [mred:canvas : mred:canvas^]

@@ -30,18 +30,19 @@
 ;  single-panel%
 
   (compound-unit/sig
-    (import [connections : mred:connections^]
+    (import [constants : mred:constants^]
+	    [connections : mred:connections^]
             [function : mzlib:function^])
     (link [container-frames : mred:container-frames^
 	    ((reference-unit/sig "contfram.ss")
-	     connections container-children container-panels)]
+	     constants connections container-children container-panels)]
 
 	  [container-children : mred:container-children^
 	    ((reference-unit/sig "contkids.ss")
-	     connections container-frames container-panels)]
+	     constants connections container-frames container-panels)]
 	  [container-panels : mred:container-panels^
 	    ((reference-unit/sig "contpanl.ss")
-	     connections function container-children)])
+	     constants connections function container-children)])
     (export
      (open (container-frames : mred:container-frames^))
      (open (container-children : mred:container-children-export^))

@@ -1,6 +1,7 @@
 
   (unit/sig mred:gui-utils^
-    (import [mred:frame : mred:frame^]
+    (import [mred:constants : mred:constants^]
+	    [mred:frame : mred:frame^]
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]

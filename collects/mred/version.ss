@@ -1,5 +1,6 @@
   (unit/sig mred:version^
-    (import mzlib:function^
+    (import [mred:constants : mred:constants^]
+	    mzlib:function^
 	    mzlib:string^)
 
     (rename [-version version])

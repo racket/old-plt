@@ -11,7 +11,8 @@
     void
 
     (unit/sig mred:container-frames^
-      (import [mred:connections : mred:connections^]
+      (import [mred:constants : mred:constants^]
+	      [mred:connections : mred:connections^]
 	      mred:container-children^
 	      mred:container-panels^)
       

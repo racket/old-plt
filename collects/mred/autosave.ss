@@ -1,6 +1,7 @@
 
   (unit/sig mred:autosave^
-    (import [mred:exit : mred:exit^]
+    (import [mred:constants : mred:constants^]
+	    [mred:exit : mred:exit^]
 	    [mred:preferences : mred:preferences^])
 	    
     (mred:debug:printf 'invoke "mred:autosave@")

@@ -83,7 +83,7 @@
 (define-signature mred:debug^ (printf exit? on?))
 
 (define-signature mred:constants^
-  (plt-home-directory))
+  (debug-on debug-param plt-home-directory))
 
 (define-signature mred:exn-external^
   (exn? exn:unknown-preference? exn:during-preferences? exn:url?))
@@ -362,7 +362,7 @@
    (open mred:container-panels^)))
 
 (define-signature mred^
-  ((open mred:constants^)
+  ((unit constants : mred:constants^)
    (open mred:version^)
    (open mred:exn-external^)
    (open mred:connections^) (open mred:container^) (open mred:preferences^)

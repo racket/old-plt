@@ -1,7 +1,7 @@
 
   (let ([original-outside-world-struct:exn struct:exn])
     (unit/sig mred:exn^
-      (import)
+      (import [mred:constants : mred:constants^])
 
       (mred:debug:printf 'invoke "mred:exn@")
 

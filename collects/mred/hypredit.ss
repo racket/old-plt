@@ -5,7 +5,8 @@
 ;(define top-box (box #f))
 
   (unit/sig mred:hyper-edit^
-    (import [mred:edit : mred:edit^]
+    (import [mred:constants : mred:constants^]
+	    [mred:edit : mred:edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:html : mred:html^]
 	    [mred:url : mred:url^]

@@ -1,6 +1,7 @@
 
   (unit/sig mred:autoload^
-    (import [mred:preferences : mred:preferences^]
+    (import [mred:constants : mred:constants^]
+	    [mred:preferences : mred:preferences^]
 	    [mzlib:file : mzlib:file^])
 
     (mred:debug:printf 'invoke "mred:autoload@")

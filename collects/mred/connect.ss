@@ -1,6 +1,7 @@
 
   (unit/sig mred:connections^
-    (import [mzlib:function : mzlib:function^])
+    (import [mred:constants : mred:constants^]
+	    [mzlib:function : mzlib:function^])
 
     (mred:debug:printf 'invoke "mred:connections@")
 

@@ -24,12 +24,13 @@
 		    base
 		    mred:system-source-directory))
 	      mred:system-source-directory)))))
+(define plt:home-directory mred:plt-home-directory)
+(define mred:constants:plt-home-directory mred:plt-home-directory)
 
 (define mred:app-sig-location #f)
 (define mred:app-location (build-path mred:system-source-directory "app.ss"))
 (define mred:output-spidey-file #f)
 
-(define plt:home-directory mred:plt-home-directory)
 
 (define mred:default-splash (build-path mred:plt-home-directory
 					"icons"

@@ -8,15 +8,21 @@
   
   (define drscheme-eventspace (current-eventspace))
   
+  (define stepper-canvas%
+    (class editor-canvas% (parent editor style scrolls-per-page)
+      ;; PROVIDE DEFAULTS FOR THESE VARIABLES
+      
+      
+      
   (lambda (frame)
-    (letrec ([edit (ivar frame definitions-edit)]
+    (letrec ([edit (ivar frame definitions-text)]
              [text (send edit get-text)]
              [stepper-semaphore (make-semaphore)]
              [expr-list #f]
              
              [history null]
              
-             [highlight-color (make-object color% 200 200 200)]
+             [highlight-color (make-object color% 130 200 130)]
              
              [store-step
               (lambda (reconstructed redex)
@@ -48,8 +54,8 @@
                       (send outer-edit change-style output-delta between
                             (send outer-edit last-position))
                       (when (and redex-begin redex-end)
-                        (send outer-edit change-style redex-delta redex-begin redex-end))
-;                      (send outer-edit highlight-range highlight-begin highlight-end highlight-color #f #f)
+;                        (send outer-edit change-style redex-delta redex-begin redex-end))
+                        (send outer-edit highlight-range redex-begin redex-end highlight-color #f #f))
                       (set! history (append history (list outer-edit)))))))]
              
              [view-currently-updating #f]
@@ -70,10 +76,10 @@
               (lambda ()
                 (update-view (- view 1)))]
              
-             [s-frame (make-object frame% "Stepper")]
+             [s-frame (make-object f:frame:basic% "Stepper")]
              [output-delta (make-object style-delta% 'change-family 'modern)]
              [result-delta (make-object style-delta% 'change-family 'modern)]
-             [redex-delta (make-object style-delta%)] 
+;             [redex-delta (make-object style-delta%)] 
              [error-delta (make-object style-delta%)]
                                        
              [button-panel (make-object horizontal-panel% s-frame)]
@@ -94,9 +100,11 @@
                 (send home-button enable (not (zero? view)))
                 (send next-button enable (not (eq? final-view view))))]
              
+             [global-defined-vars #f]
+             
              [break 
               (lambda (mark-list all-defs current-def)
-                (when (r:stop-here? mark-list all-defs)
+                (when (r:stop-here? mark-list all-defs global-defined-vars)
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback (lambda () 
                                       (apply store-step (r:reconstruct expr-list mark-list all-defs current-def))
@@ -139,6 +147,8 @@
                        (queue-callback 
                         (lambda ()
                           ((require-library "beginner.ss" "userspce"))
+                          (set! global-defined-vars
+                                (map car (make-global-value-list)))
                           (call-with-current-continuation
                            (lambda (k)
                              (current-exception-handler
@@ -159,11 +169,13 @@
 
       (send result-delta set-delta-foreground "BLACK")
       (send output-delta set-delta-foreground "PURPLE")
-      (send redex-delta set-delta-foreground "BLUE")
+;      (send redex-delta set-delta-foreground "BLUE")
       (send error-delta set-delta-foreground "RED")
       (set! view-currently-updating 0)
       (stepper-start)
       (send button-panel stretchable-width #f)
+      (send button-panel stretchable-height #f)
+      (send canvas stretchable-height #t)
       (send canvas min-width 500)
       (send canvas min-height 500)
       (send previous-button enable #f)

@@ -38,12 +38,10 @@
                       print-convert
                       (drscheme basis)
                       shared)]
-        [mred-interfaces : mred-interfaces^
-                         (mred-interfaces@)]
         [STEPPER : ()
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty
-                  (mred-interfaces : mred^)
+                  mred
                   drscheme
                   annotate
                   reconstruct

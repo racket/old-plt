@@ -294,7 +294,7 @@
                                            `(#%if (#%eq? ,v ,the-undefined-value)
                                              (#%raise (,make-undefined
                                                        ,(format undefined-error-format real-v)
-                                                       ((#%debug-info-handler))
+                                                       (#%current-continuation-marks)
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
@@ -372,15 +372,16 @@
 		       (tail-recur (z:if-form-else expr))]
 		  [val annotated `(#%begin
                                    (#%set! ,if-temp ,annotated-test)
-                                   (#%if (#%boolean? ,if-temp)
-                                   ,(break-wrap `(#%if ,if-temp
-                                                  ,annotated-then
-                                                  ,annotated-else))
-                                   (#%raise (,make-not-boolean
-                                             (#%format ,not-boolean-error-format
-                                              ,if-temp)
-                                             ((#%debug-info-handler))
-                                             ,if-temp))))]
+                                   ,(break-wrap
+                                     `(#%if (#%boolean? ,if-temp)
+                                       (#%if ,if-temp
+                                        ,annotated-then
+                                        ,annotated-else)
+                                       (#%raise (,make-not-boolean
+                                                 (#%format ,not-boolean-error-format
+                                                  ,if-temp)
+                                                 (#%current-continuation-marks)
+                                                 ,if-temp)))))]
                   [val if-temp-varref-list (list (create-bogus-bound-varref if-temp))]
 		  [val free-vars (var-set-union if-temp-varref-list
                                                 free-vars-test 

@@ -170,6 +170,36 @@
   (test #t char-set= abc (->char-set abc))
   (test #t char-set= (char-set #\a) (->char-set #\a)))
 
+(printf "x~n")
+(test #t char-set= 
+      (ucs-range->char-set 0 #x20000)
+      (char-set-union (ucs-range->char-set 0 #xD800)
+		      (ucs-range->char-set #xE000 #x20000)))
+(test #t char-set= 
+      (ucs-range->char-set 0 #xD801)
+      (ucs-range->char-set 0 #xD800))
+(test #t char-set= 
+      (ucs-range->char-set 0 #xDFFF)
+      (ucs-range->char-set 0 #xD800))
+(test #t char-set= 
+      (ucs-range->char-set #xD800 #xD810)
+      char-set:empty)
+(test #t char-set= 
+      (ucs-range->char-set #xD810 #xE000)
+      char-set:empty)
+(test #t char-set= 
+      (ucs-range->char-set #xE000 #xE001)
+      (ucs-range->char-set #xD810 #xE001))
+(test #t char-set= 
+      (ucs-range->char-set #xD7FF #xE001)
+      (char-set #\uD7FF #\uE000))
+
+(err/rt-test (ucs-range->char-set -1 10))
+(err/rt-test (ucs-range->char-set 2 2))
+(err/rt-test (ucs-range->char-set 2 1))
+(err/rt-test (ucs-range->char-set 0 #x300000))
+(err/rt-test (ucs-range->char-set #x300000 #x300001))
+
 ;; Querying character sets ------------------------------
 
 (test 3 char-set-count (lambda (x) (char<=? #\0 x #\2)) char-set:digit)

@@ -1,5 +1,5 @@
 (module md5 mzscheme
-  (provide md5)
+  (provide md5) 
   
 ;;; -*- mode: scheme; mode: font-lock -*-
 ;;;
@@ -47,6 +47,14 @@
 ;   - Trivial port to PLT. Rewrote the word macro to syntax-rules.
 ;     Larceny primitives written as syntax-rules macros exanding
 ;     to their PLT name.
+  
+; 5-5-2005 / Greg Pettyjohn
+;  - It was failing for strings of length 56 bytes i.e. when the length
+;    in bits was congruent 448 modulo 512. Changed step 1 to fix this.
+;    According to RFC 1321, the message should still be padded in this
+;    case.
+  
+
 
 ;;; Summary
 ; This is an implementation of the md5 message-digest algorithm
@@ -257,24 +265,25 @@
   ;; We allways append a 1 bit and then append the proper numbber of 0's.
   ;; NB: 448 bits is 14 words and 512 bits is 16 words
   ;; step1 : (list byte) -> (list byte)
-
+  
   (define (step1 message)
-    (let ((zero-bits-to-append (modulo (- 448 (* 8 (length message))) 512)))
+    (let* ([z-b-t-a (modulo (- 448 (* 8 (length message))) 512)]
+           [zero-bits-to-append (if (zero? z-b-t-a) 512 z-b-t-a)])
       (append message 
-	      (cons #x80		; The byte containing the 1 bit => one less 
+              (cons #x80		; The byte containing the 1 bit => one less 
 					; 0 byte to append 
-		    (vector->list
-		     (make-vector
-		      (quotient (- zero-bits-to-append 1) 8) 0))))))
+                    (vector->list
+                     (make-vector
+                      (quotient (- zero-bits-to-append 1) 8) 0))))))
 
   ;; Step 2  -  Append Length
   ;; A 64 bit representation of the bit length b of the message before
-  ;; the padding of step 1is appended. Lower word first.
+  ;; the padding of step 1 is appended. Lower word first.
   ;; step2 : number (list byte) -> (list word)
   ;;  org-len is the length of the original message in number of bits
 
-  (define (step2 org-len padded-message)
-    (let* ((b  org-len)
+  (define (step2 original-length padded-message)
+    (let* ((b  original-length)
 	   (lo (remainder b #x100000000))
 	   (hi (remainder (quotient b #x100000000) #x100000000)))
       (bytes->words 
@@ -296,6 +305,8 @@
   ;; step4 : (list word) -> "(list word word word word)"
 
   (define (step4 message)
+    
+    
     (define (loop A B C D message)
       (if (null? message)
 	  (list A B C D)
@@ -404,6 +415,7 @@
   ;; step5 : "(list word word word word)" -> string
 
   (define (step5 l)
+    
     
     (define hex #(48 49 50 51 52 53 54 55 56 57 97 98 99 100 101 102))
 

@@ -17,6 +17,7 @@
   ;; used for 'red primitives
   (define red-style (make-object style-delta% 'change-weight 'bold))
   (send red-style set-delta-foreground "red")
+  (send red-style set-underlined-on #t)
 
   ;; used for 'green primitives
   (define green-style (make-object style-delta% 'change-weight 'bold))

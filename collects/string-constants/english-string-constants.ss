@@ -608,28 +608,42 @@ please adhear to these guidelines:
  (are-you-sure-quit "Are you sure you want to quit?")
  
  ;;; autosaving
- (error-autosaving "Error autosaving \"~a\".")
+ (error-autosaving "Error autosaving \"~a\".") ;; ~a will be a filename
  (autosaving-turned-off "Autosaving is turned off\nuntil the file is saved.")
  (recover-autosave-files-frame-title "Recover Autosaved Files")
  (autosave-details "Details")
  (autosave-recover "Recover")
  (autosave-unknown-filename "<<unknown>>")
- (autosave-autosave-label: "Autosave file:")
- (autosave-original-label: "Original file:")
- (autosave-autosave-label "Autosave file")
- (autosave-original-label "Original file")
- (autosave-compare-files "Compare autosave files")
- (autosave-show-autosave "Autosave file")
- (autosave-explanation "DrScheme found autosave files, which may contain your unsaved work.")
- (autosave-recovered! "Recovered!")
- (autosave-error-deleting "Error deleting ~a\n\n~a")
- (autosave-are-you-sure-delete? "Are you sure you want to delete ~a?")
- (autosave-delete-button "Delete")
- (autosave-delete-title "Delete")
- (autosave-deleted "Deleted")
- (autosave-done "Done")
- (autosave-restore-to-where? "Choose a place to save the autosave file.")
+  
+  ;; these are labels in a dialog that drscheme displays
+  ;; if you have leftover autosave files. to see the dialog,
+  ;; start up drscheme and modify (but don't save) a file
+  ;; (also, do this with an unsaved file). Wait for the autosave
+  ;; files to appear (typically 5 minutes). Kill DrScheme
+  ;; and restart it. You'll see the dialog
+  (autosave-autosave-label: "Autosave file:")
+  (autosave-original-label: "Original file:")
+  (autosave-autosave-label "Autosave file")
+  (autosave-original-label "Original file")
+  (autosave-compare-files "Compare autosave files")
 
+  (autosave-show-autosave "Autosave file") ;; title of a window showing the autosave file
+
+  (autosave-explanation "DrScheme found autosave files, which may contain your unsaved work.")
+
+  (autosave-recovered! "Recovered!") ;; status of an autosave file
+  (autosave-deleted "Deleted")       ;; status of an autosave file
+
+  (autosave-error-deleting "Error deleting ~a\n\n~a") ;; first is a filename, second is an error message from mz.
+  (autosave-are-you-sure-delete? "Are you sure you want to delete ~a?") ;; ~a is a filename
+  (autosave-delete-button "Delete")
+  (autosave-delete-title "Delete")  ;; title of a dialog asking for deletion confirmation
+  (autosave-done "Done")
+  
+  ;; appears in the file dialog
+  (autosave-restore-to-where? "Choose a place to save the autosave file.")
+  
+  
  ;;; file modified warning
  (file-has-been-modified
   "The file has beeen modified since it was last saved. Overwrite the modifications?")

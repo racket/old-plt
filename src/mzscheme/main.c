@@ -390,7 +390,9 @@ int actual_main(int argc, char *argv[])
 /**************** OSKIT stuff START **********************/
 #if defined(OSKIT) && !defined(OSKIT_TEST)
 
-# include <oskit/fs/bmodfs.h> 
+#  include <oskit/clientos.h>
+#  include <oskit/dev/osenv.h>
+# include <oskit/fs/memfs.h> 
 # include <oskit/dev/clock.h> 
 # include <oskit/c/sys/time.h> 
 # include <oskit/x86/pc/dev.h>
@@ -399,6 +401,9 @@ int actual_main(int argc, char *argv[])
 # else
 #  include <oskit/dev/freebsd.h> 
 # endif
+
+static oskit_osenv_t *osenv;
+
 void start_clock()
 {
 # define LOCAL_TO_GMT(t) /* (t)->tv_sec += secondswest */
@@ -410,7 +415,25 @@ void start_clock()
   LOCAL_TO_GMT(&time);            /* adjust for local time */
   oskit_clock_settime(clock, &time); /* set time */
   
-  set_system_clock(clock);
+  oskit_register(&oskit_clock_iid, (void *) clock);
+}
+
+void start_memfs()
+{
+  oskit_error_t err;
+  oskit_filesystem_t *fs;
+  oskit_dir_t *root;
+  oskit_fsnamespace_t *fsnamespace;
+
+# define CHECK(what, f) \
+  if ((err = f)) { printf("in-memory filesystem init error at " what ": %x\n", err); return; }
+
+  CHECK("memfs", oskit_memfs_init(osenv, &fs));
+  CHECK("getroot", oskit_filesystem_getroot(fs, &root));
+  CHECK("fsnamespace", oskit_create_fsnamespace(root, root, &fsnamespace)); 
+  CHECK("setfsnamespace",oskit_clientos_setfsnamespace(fsnamespace));
+
+#undef CHECK
 }
 
 oskit_error_t fs_gettime(struct oskit_timespec *tsp)
@@ -451,7 +474,7 @@ static void unmount(void)
 {
   if (main_fs_root) {
     fflush(NULL);
-    fs_release();
+    /* Probably missing a release: */
     oskit_dir_release(main_fs_root);
     oskit_filesystem_sync(main_fs, 1);
     oskit_filesystem_release(main_fs);
@@ -467,6 +490,7 @@ int start_linux_fs(char *diskname, char *partname, int net)
   oskit_blkio_t *part;
   oskit_filesystem_t *fs;
   oskit_dir_t *root;
+  oskit_fsnamespace_t *fsnamespace;
 # define MAX_PARTS 30
   diskpart_t part_array[MAX_PARTS];
   int num_parts;
@@ -475,7 +499,8 @@ int start_linux_fs(char *diskname, char *partname, int net)
   if ((err = f)) { printf("filesystem init error at " what ": %x\n", err); return 0; }
 
   printf(">> Initializing devices\n");
-  oskit_dev_init();
+  oskit_dev_init(osenv);
+  oskit_linux_init_osenv(osenv);
   oskit_linux_init_ide();
   if (net)
     oskit_linux_init_net();
@@ -507,11 +532,12 @@ int start_linux_fs(char *diskname, char *partname, int net)
 
   printf(">> Mounting filesystem\n");
   CHECK("mount", fs_linux_mount(part, 0, &fs));
+
   printf(">> Getting root\n");
   CHECK("getroot", oskit_filesystem_getroot(fs, &root));
-
-  fs_init(root);
-
+  CHECK("fsnamespace", oskit_create_fsnamespace(root, root, &fsnamespace)); 
+  CHECK("setfsnamespace",oskit_clientos_setfsnamespace(fsnamespace));
+  
   main_fs = fs;
   main_fs_root = root;
   atexit(unmount);
@@ -531,14 +557,15 @@ static int start_freebsd_enet(char *addr, char *mask, char *gate, int fs)
   if (!fs) {
     /* Otherwise, fs initialization does this: */
     printf(">> Initializing devices\n");
-    oskit_dev_init();
+    oskit_dev_init(osenv);
+    oskit_linux_init_osenv(osenv);
     oskit_linux_init_net();
     printf(">> Probing devices\n");
     oskit_dev_probe();
   }
 
   printf(">> Initializing ethernet\n");
-  CHECK("socket creator", oskit_freebsd_net_init(&factory));
+  CHECK("socket creator", oskit_freebsd_net_init(osenv, &factory));
   oskit_register(&oskit_socket_factory_iid, (void *)factory);
 
   printf(">> Finding ethernet device\n");
@@ -596,6 +623,9 @@ int main(int argc, char **argv)
 
   /******* OSKIT init START *******/
 #if defined(OSKIT) && !defined(OSKIT_TEST)
+  oskit_clientos_init();
+  osenv = oskit_osenv_create_default();
+  oskit_register(&oskit_osenv_iid, (void *)osenv);
   start_clock();
   oskit_init_libc();
 
@@ -646,17 +676,23 @@ int main(int argc, char **argv)
     }
 
     if (fs) {
-      start_linux_fs(disk, partition, net);
+      if (!start_linux_fs(disk, partition, net)) {
+	printf("Disk filesystem init failed; using in-memory filesystem.\n");
+	start_memfs();
+      }
     } else {
       printf("No disk or partition specified; using in-memory filesystem.\n");
-      fs_init(oskit_bmod_init());
+      start_memfs();
     }
   
     if (!net || !start_freebsd_enet(addr, mask, gate, fs))
       printf("No ethernet; TCP connections will fail.\n"); 
   }
 # else
-  fs_init(oskit_bmod_init());
+  {
+    oskit_filesystem_t fs;
+    start_msmfs();
+  }
 # endif
 
 # ifdef USE_OSKIT_CONSOLE

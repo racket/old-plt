@@ -205,9 +205,9 @@ $(MZSCHEME): objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDI
 $(MZOSKDEST) : objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o
 	$(LD) -Ttext 100000 $(LDFLAGS) $(OSKIT_LDFLAGS) $(OSKHOME)/lib/oskit/multiboot.o \
 		-o $(MZOSKDEST) $(OBJDIR)/main.o -L$(LIBDIR)/ -lmzscheme -lgc \
-                -L$(OSKHOME)/lib -loskit_kern $(EXTRA_OSK_LIBS) \
+                -L$(OSKHOME)/lib -loskit_kern -loskit_clientos $(EXTRA_OSK_LIBS) \
                 -loskit_freebsd_c -loskit_c -loskit_lmm \
-                -loskit_freebsd_m -loskit_fs \
+                -loskit_freebsd_m -loskit_memfs -loskit_fsnamespace  \
                 -loskit_dev -loskit_com \
                 -loskit_kern -loskit_freebsd_c -loskit_c \
 		$(OSKHOME)/lib/oskit/crtn.o

@@ -1192,8 +1192,9 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
       return scheme_false;
     read_valid = 1;
     r = bignum_multiply(&s1, r, decimal_digits[radix], 0);
-    r = bignum_add((Scheme_Object *)&s2, &buffer, &size, 
-		   r, decimal_digits[d], 0);
+    if (d)
+      r = bignum_add((Scheme_Object *)&s2, &buffer, &size, 
+		     r, decimal_digits[d], 0);
   }
 
   if (!read_valid)

@@ -8,7 +8,7 @@
 #  mzscheme.multiboot, a kernel in multiboot format.
 
 # Before invoking this script, you must first install OSKit, which is
-#  available from the Flux group at Utah:
+#  available from the Flux Research Group at Utah:
 #      http://www.cs.utah.edu/projects/flux/oskit/
 
 # By default, this script assumes that OSKit is installed in
@@ -92,4 +92,4 @@ fi
 
 DEST="MZOSKDEST=${MZOSKDEST:-mzscheme.multiboot}"
 
-MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $FS" OSKHOME="$OSKHOME" $DEST $TARGET
+MZPLATFORMSUFFIX=$BUILDDIR make CC=i586-oskit-gcc GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $FS" OSKHOME="$OSKHOME" $DEST $TARGET

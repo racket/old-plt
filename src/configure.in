@@ -65,15 +65,15 @@ if test "${enable_oskit}" = "yes" ; then
   CFLAGS="-nostdinc -I${OSKHOME}/include/oskit -I${OSKHOME}/include/oskit/freebsd "
   CFLAGS="$CFLAGS -I${OSKHOME}/include/oskit/c -I${OSKHOME}/include -I${STDINC}"
 
+  GCDIR=sgc
+  OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0"
+
   if test "${enable_smalloskit}" = "yes" ; then
     EXTRA_OSK_LIBS=
   else
     EXTRA_OSK_LIBS="-loskit_linux_dev -loskit_linux_fs -loskit_diskpart -loskit_freebsd_net"
-    CFLAGS="$CFLAGS -DOSK_FILESYSTEMS_AND_ETHERNET"
+    OPTIONS="$OPTIONS -DOSK_FILESYSTEMS_AND_ETHERNET"
   fi
-
-  GCDIR=sgc
-  OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $FS"
 
   MZBINTARGET=oskit
 fi

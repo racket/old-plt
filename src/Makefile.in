@@ -3,8 +3,16 @@
 
 all: mz @MAKE_MRED@
 
+2k: mz2k @MAKE_MRED2K@
+
 mz:
 	cd mzscheme; $(MAKE)
 
+mz2k:
+	cd mzscheme; $(MAKE) 2k
+
 mr:
 	cd mred; $(MAKE)
+
+mr2k:
+	cd mred; $(MAKE) 2k

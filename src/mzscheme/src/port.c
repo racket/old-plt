@@ -378,9 +378,11 @@ void flush_original_output_fds(void);
 #endif
 
 static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
+static Scheme_Object *sch_process_ports(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_system(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_execute(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_process_star(int c, Scheme_Object *args[]);
+static Scheme_Object *sch_process_star_ports(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_system_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
@@ -945,6 +947,11 @@ scheme_init_port (Scheme_Env *env)
 						      "process", 
 						      1, 1), 
 			     env);
+  scheme_add_global_constant("process/ports", 
+			     scheme_make_prim_w_arity(sch_process_ports,
+						      "process/ports",
+						      4, 4), 
+			     env);
   scheme_add_global_constant("system", 
 			     scheme_make_prim_w_arity(sch_system,
 						      "system", 
@@ -959,6 +966,11 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity(sch_process_star,
 						      "process*",
 						      1, -1), 
+			     env);
+  scheme_add_global_constant("process*/ports", 
+			     scheme_make_prim_w_arity(sch_process_star_ports,
+						      "process*/ports",
+						      4, -1), 
 			     env);
   scheme_add_global_constant("system*", 
 			     scheme_make_prim_w_arity(sch_system_star,
@@ -5951,7 +5963,7 @@ static long spawnv(int type, char *command, const char *  const *argv)
 
 static Scheme_Object *process(int c, Scheme_Object *args[], 
 			      char *name, int shell, int synchonous, 
-			      int as_child)
+			      int as_child, int ports)
 {
 #ifdef PROCESS_FUNCTION
   char *command;
@@ -5965,6 +5977,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #else
   void *sc = 0;
 #endif
+  int offset;
+  Scheme_Object *inport;
+  Scheme_Object *outport;
+  Scheme_Object *errport;
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;
 
@@ -5976,18 +5992,79 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   }
 #endif
 
-  if (!SCHEME_STRINGP(args[0]) || scheme_string_has_null(args[0]))
-    scheme_wrong_type(name, STRING_W_NO_NULLS, 0, c, args);
+  if (ports) {
+    if (SCHEME_TRUEP(args[0])) {
+      inport = args[0];
+      if (SCHEME_INPORTP(inport) && file_stream_port_p(1, &inport)) {
+#ifdef PROCESS_FUNCTION
+	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
+
+	if (SAME_OBJ(ip->sub_type, file_input_port_type))
+	  to_subprocess[0] = fileno(((Scheme_Input_File *)ip->port_data)->f);
+# ifdef USE_FD_PORTS
+	else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
+	  to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
+# endif
+#endif
+      } else
+	scheme_wrong_type(name, "file-stream-input-port", 0, c, args);
+    } else
+      inport = NULL;
+
+    if (SCHEME_TRUEP(args[1])) {
+      outport = args[1];
+      if (SCHEME_OUTPORTP(outport) && file_stream_port_p(1, &outport)) {
+#ifdef PROCESS_FUNCTION
+	Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
+
+	if (SAME_OBJ(op->sub_type, file_output_port_type))
+	  from_subprocess[1] = fileno(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USE_FD_PORTS
+	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+	  from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
+# endif
+#endif
+      } else
+	scheme_wrong_type(name, "file-stream-output-port", 1, c, args);
+    } else
+      outport = NULL;
+
+    if (SCHEME_TRUEP(args[2])) {
+      errport = args[2];
+      if (SCHEME_OUTPORTP(errport) && file_stream_port_p(1, &errport)) {
+#ifdef PROCESS_FUNCTION
+	Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
+
+	if (SAME_OBJ(op->sub_type, file_output_port_type))
+	  err_subprocess[1] = fileno(((Scheme_Output_File *)op->port_data)->f);
+# ifdef USE_FD_PORTS
+	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
+	  err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
+# endif
+#endif
+      } else
+	scheme_wrong_type(name, "file-stream-output-port", 2, c, args);
+    } else
+      errport = NULL;
+
+    offset = 3;
+  } else {
+    offset = 0;
+    inport = outport = errport = NULL;
+  }
+
+  if (!SCHEME_STRINGP(args[offset]) || scheme_string_has_null(args[offset]))
+    scheme_wrong_type(name, STRING_W_NO_NULLS, offset, c, args);
 
   if (shell) {
     argv = NULL;
-    command = SCHEME_STR_VAL(args[0]);
+    command = SCHEME_STR_VAL(args[offset]);
   } else  {
     argv = MALLOC_N(char *, c + 1);
     {
       char *ef;
-      ef = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
-				  SCHEME_STRTAG_VAL(args[0]),
+      ef = scheme_expand_filename(SCHEME_STR_VAL(args[offset]),
+				  SCHEME_STRTAG_VAL(args[offset]),
 				  name, NULL);
       argv[0] = ef;
     }
@@ -5998,10 +6075,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       argv[0] = np;
     }
     
-    for (i = 1; i < c; i++) { 
+    for (i = 1 + offset; i < c; i++) { 
       if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
 	scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
-      argv[i] = SCHEME_STR_VAL(args[i]);
+      argv[i - offset] = SCHEME_STR_VAL(args[i - offset]);
     }
     argv[c] = NULL;
 
@@ -6012,20 +6089,26 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 			 scheme_get_param(scheme_config, MZCONFIG_EXIT_HANDLER));
   
   if (!synchonous) {
-    if (PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
+    if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
       scheme_raise_exn(MZEXN_MISC,
 		       "%s: pipe failed (too many ports open?)", name);
-    if (PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
-      MSC_IZE(close)(to_subprocess[0]);
-      MSC_IZE(close)(to_subprocess[1]);
+    if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
+      if (!inport) {
+	MSC_IZE(close)(to_subprocess[0]);
+	MSC_IZE(close)(to_subprocess[1]);
+      }
       scheme_raise_exn(MZEXN_MISC,
 		       "%s: pipe failed (too many ports open?)", name);
     }
-    if (PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
-      MSC_IZE(close)(to_subprocess[0]);
-      MSC_IZE(close)(to_subprocess[1]);
-      MSC_IZE(close)(from_subprocess[0]);
-      MSC_IZE(close)(from_subprocess[1]);
+    if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
+      if (!inport) {
+	MSC_IZE(close)(to_subprocess[0]);
+	MSC_IZE(close)(to_subprocess[1]);
+      }
+      if (!outport) {
+	MSC_IZE(close)(from_subprocess[0]);
+	MSC_IZE(close)(from_subprocess[1]);
+      }
       scheme_raise_exn(MZEXN_MISC,
 		       "%s: pipe failed (too many ports open?)", name);
     }
@@ -6190,12 +6273,18 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	MSC_IZE(dup2)(err_subprocess[1], 2);
 	
 	/* Close unwanted descriptors. */
-	MSC_IZE(close)(to_subprocess[0]);
-	MSC_IZE(close)(to_subprocess[1]);
-	MSC_IZE(close)(from_subprocess[0]);
-	MSC_IZE(close)(from_subprocess[1]);
-	MSC_IZE(close)(err_subprocess[0]);
-	MSC_IZE(close)(err_subprocess[1]);
+	if (!inport) {
+	  MSC_IZE(close)(to_subprocess[0]);
+	  MSC_IZE(close)(to_subprocess[1]);
+	}
+	if (!outport) {
+	  MSC_IZE(close)(from_subprocess[0]);
+	  MSC_IZE(close)(from_subprocess[1]);
+	}
+	if (!errport) {
+	  MSC_IZE(close)(err_subprocess[0]);
+	  MSC_IZE(close)(err_subprocess[1]);
+	}
 
 #ifdef CLOSE_ALL_FDS_AFTER_FORK
 	/* Actually, unwanted includes everything
@@ -6256,20 +6345,32 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   /* Close unneeded descriptors */
 
   if (!synchonous) {
-    MSC_IZE(close)(to_subprocess[0]);
-    MSC_IZE(close)(from_subprocess[1]);
-    MSC_IZE(close)(err_subprocess[1]);
-
+    if (!inport) {
+      MSC_IZE(close)(to_subprocess[0]);
+      in = NULL;
+    } else
+      in = scheme_false;
+    if (!outport) {
+      MSC_IZE(close)(from_subprocess[1]);
+      out = NULL;
+    } else
+      out = scheme_false;
+    if (!errport) {
+      MSC_IZE(close)(err_subprocess[1]);
+      err = NULL;
+    } else
+      err = scheme_false;
+    
     scheme_file_open_count += 3;
 
 #ifdef USE_FD_PORTS
-    in = make_fd_input_port(from_subprocess[0], "subprocess-stdout");
-    out = make_fd_output_port(to_subprocess[1]);
-    err = make_fd_input_port(err_subprocess[0], "subprocess-stderr");
+    in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout"));
+    out = (out ? out : make_fd_output_port(to_subprocess[1]));
+    err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr"));
 #else
-    in = make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1);
-    out = scheme_make_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w"));
-    err = make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1);
+    in = (in ? in : make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
+    out = (out ? out : scheme_make_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w")));
+    err = (err ? err : make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
 #endif
 
     subpid = scheme_make_integer_value(pid);
@@ -6323,7 +6424,12 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
 {
-  return process(c, args, "process*", 0, 0, 1);
+  return process(c, args, "process*", 0, 0, 1, 0);
+}
+
+static Scheme_Object *sch_process_star_ports(int c, Scheme_Object *args[])
+{
+  return process(c, args, "process*", 0, 0, 1, 1);
 }
 
 static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
@@ -6340,7 +6446,7 @@ static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
 	  ? scheme_true
 	  : scheme_false);
 #else
-  return process(c, args, "system*", 0, 1, 1);
+  return process(c, args, "system*", 0, 1, 1, 0);
 #endif
 }
 
@@ -6359,13 +6465,18 @@ static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[])
 
   return scheme_void;
 #else
-  return process(c, args, "execute*", 0, 1, 0);
+  return process(c, args, "execute*", 0, 1, 0, 0);
 #endif
 }
 
 static Scheme_Object *sch_process(int c, Scheme_Object *args[])
 {
-  return process(c, args, "process", 1, 0, 1);
+  return process(c, args, "process", 1, 0, 1, 0);
+}
+
+static Scheme_Object *sch_process_ports(int c, Scheme_Object *args[])
+{
+  return process(c, args, "process", 1, 0, 1, 1);
 }
 
 static Scheme_Object *sch_system(int c, Scheme_Object *args[])
@@ -6375,7 +6486,7 @@ static Scheme_Object *sch_system(int c, Scheme_Object *args[])
 	  ? scheme_true
 	  : scheme_false);
 #else
-  return process(c, args, "system", 1, 1, 1);
+  return process(c, args, "system", 1, 1, 1, 0);
 #endif
 }
 
@@ -6387,7 +6498,7 @@ static Scheme_Object *sch_execute(int c, Scheme_Object *args[])
 
   return scheme_void;
 #else
-  return process(c, args, "execute", 1, 1, 0);
+  return process(c, args, "execute", 1, 1, 0, 0);
 #endif
 }
 

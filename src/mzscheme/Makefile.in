@@ -21,16 +21,16 @@ INSTALLSYS = `../../bin/archsys`
 
 bin: 
 	$(MAKE) g-c
-	$(MAKE) dynlib
 	$(MAKE) @MZBINTARGET@
 
 normal-bin:
+	$(MAKE) dynlib
 	$(MAKE) mzlibrary
 	$(MAKE) mzscheme 
 
 aixdl-bin:
 	$(MAKE) aixdl
-	$(MAKE) xbin
+	$(MAKE) normal-bin
 
 cygwin-bin:
 	$(MAKE) cygwin-dll-setup
@@ -38,8 +38,6 @@ cygwin-bin:
 	$(MAKE) normal-bin
 
 oskit: 
-	$(MAKE) g-c
-	$(MAKE) dynlib
 	$(MAKE) mzlibrary
 	$(MAKE) mzscheme.multiboot
 
@@ -52,41 +50,41 @@ libguile:
 	cd guile; make
 
 dynlib:
-	cd src; $(MAKE) -e mzheaders
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' -e dynlib 
+	cd src; $(MAKE) mzheaders
+	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynlib 
 
 dynexample:
 	$(MAKE) dynlib
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' -e dynexample 
+	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynexample 
 
 oe:
 	$(MAKE) dynlib
-	cd dynsrc; $(MAKE) -e oe
+	cd dynsrc; $(MAKE) oe
 
 aixdl:
 	cd aixdlfcn; $(MAKE) CC='$(CC)'
 	$(MAKE) $(LIBDIR)/libdl.a
 
 cygwin-dll-setup:
-	cd src; $(MAKE) -e mzheaders
+	cd src; $(MAKE) mzheaders
 	$(MAKE) gmzwin.exp
 
 gmzwin.exp: include/gmzwin.def
 	dlltool --def include/gmzwin.def --output-exp gmzwin.exp --output-lib gmzwin.a --dllname mzscheme.exe
 
 g-c:
-	cd @GCDIR@; $(MAKE) -e gc.a 
+	cd @GCDIR@; $(MAKE) gc.a 
 	$(MAKE) libgc.a
 
 sproc-extra-lib:
-	cd @GCDIR@; $(MAKE) -e sproc.o
+	cd @GCDIR@; $(MAKE) sproc.o
 	$(MAKE) sproc.o
 
 gc.a: @GCDIR@/*.o
 	$(AR) $(ARFLAGS) @GCDIR@/gc.a @GCDIR@/*.o  
 
 mzlibrary:
-	cd src; $(MAKE) -e all 
+	cd src; $(MAKE) all 
 	$(MAKE) libmzscheme.a
 
 libmzscheme.a: src/*.o
@@ -109,7 +107,7 @@ mzscheme: libmzscheme.a libgc.a main.o $(SPECIALIZINGOBJECTS)
 
 # OSKit-based MzScheme
 mzscheme.multiboot : libmzscheme.a libgc.a main.o
-	@OSKIT_LD@ -Ttext 100000 @OSKIT_LDFLAGS@ @OSKHOME@/lib/oskit/multiboot.o \
+	$(LD) -Ttext 100000 $(LDFLAGS) @OSKHOME@/lib/oskit/multiboot.o \
 		-o mzscheme.multiboot main.o -L. -lmzscheme -lgc \
                 -L@OSKHOME@/lib -loskit_kern -loskit_clientos @EXTRA_OSK_LIBS@ \
                 -loskit_freebsd_c -loskit_c -loskit_lmm \
@@ -162,7 +160,7 @@ $(srcdir)/../../collects/mzscheme/include/scheme.h: \
 	cp $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
           $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/../../collects/mzscheme/include 
-	perl -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \
+	$(PERL) -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \
           < $(srcdir)/include/scheme.h > $(srcdir)/../../collects/mzscheme/include/scheme.h
 
 # mzdyn.c, used for MacOS "library"
@@ -193,16 +191,12 @@ zo:
 2k:
 	$(MAKE) bin
 	cd gc2; $(MAKE) all
-	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' -e dynlib2k
-	cd gc2; $(MAKE) ../$(MZBUILDDIR)mzscheme2k
+	cd dynsrc; $(MAKE) LIBDIR='$(LIBDIR)' dynlib2k
+	cd gc2; $(MAKE) ../mzscheme2k
 
 palmos:
 #	$(MAKE) bin
 	cd palm; $(MAKE) all
-
-depend:
-	cd src; $(MAKE) -e depend 
-	cd dynsrc; $(MAKE) -e depend 
 
 clean:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]

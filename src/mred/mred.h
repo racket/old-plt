@@ -56,6 +56,7 @@ typedef struct MrEdContext {
   struct MrEdContext *next;
 
   int busyState;
+  int killed;
 
 #ifdef wx_msw
   struct LeaveEvent *queued_leaves;

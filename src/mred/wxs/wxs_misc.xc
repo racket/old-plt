@@ -22,9 +22,11 @@
 
 @MACRO rFALSE = return FALSE;
 
+@INCLUDE wxs_espc.xci
+
 @CLASSBASE wxTimer "timer" : "object"
 
-@CREATOR ();
+@CREATOR (); : : /CHECKEVENTSPACE[METHODNAME("timer%","initialization")]
 
 @ "interval" : int Interval();
 @ v "notify" : void Notify();

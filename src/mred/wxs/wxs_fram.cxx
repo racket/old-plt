@@ -18,12 +18,10 @@
 
 
 #ifdef wx_xt
-#define NOT_XT 0
 #define HAS_GET_MENU_BAR 1
 #define GET_THE_MENU_BAR(f) (f)->GetMenuBar()
 #else
 #define HAS_GET_MENU_BAR 0
-#define NOT_XT 1
 #define GET_THE_MENU_BAR(f) (f)->wx_menu_bar
 #endif
 
@@ -35,6 +33,9 @@
 
 #define NO_GET_MENU_BAR !HAS_GET_MENU_BAR
 
+
+
+extern void *wxsCheckEventspace(char *);
 
 static Scheme_Object *frameStyle_wxNO_CAPTION_sym = NULL;
 static Scheme_Object *frameStyle_wxICONIZE_sym = NULL;
@@ -962,7 +963,7 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
   } else
     x7 = "frame";
 
-  if (!x4) x4 = -1;if (!x5) x5 = -1;
+  wxsCheckEventspace(METHODNAME("frame%","initialization"));if (!x4) x4 = -1;if (!x5) x5 = -1;
   realobj = new os_wxFrame(obj, x0, x1, x2, x3, x4, x5, x6, x7);
   
   

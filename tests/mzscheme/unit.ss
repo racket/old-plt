@@ -30,7 +30,6 @@
 (syntax-test '(unit (import i) (export (a x . y) b) (define a 5) (define b 6)))
 (syntax-test '(unit (import i) (export b (a x . y)) (define a 5) (define b 6)))
 
-(syntax-test '(unit (import i) (export) (begin)))
 (syntax-test '(unit (import i) (export) (begin 1 . 2)))
 (syntax-test '(unit (import i) (export b a) (begin (define a 5) (define b 6) . x)))
 (syntax-test '(unit (import i) (export b a) (begin (define a 5) (define b 6)) (define b 6)))
@@ -79,8 +78,9 @@
 	(export))))
 
 (unless (defined? 'test-global-var)
-  (define test-global-var 5)
-  (syntax-test '(unit (import) (export) test-global-var)))
+  (let ()
+    (define test-global-var 5)
+    (syntax-test '(unit (import) (export) test-global-var))))
 
 (test #t unit? (unit (import) (export)))
 (test #t unit? (unit (import) (export) 5))
@@ -98,6 +98,11 @@
 									(define-struct a ())
 									make-a
 									1)))))
+
+; Empty begin is OK in a unit context:
+(test #t unit? (unit (import i) (export) (begin)))
+(test #t unit? (unit (import i) (export) (begin (begin))))
+
 (syntax-test '(compound-unit))
 (syntax-test '(compound-unit . x))
 (syntax-test '(compound-unit (import)))

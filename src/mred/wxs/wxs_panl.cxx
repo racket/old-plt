@@ -990,6 +990,9 @@ static Scheme_Object *bundle_symset_dialogStyle(int v) {
 
 
 
+extern void *wxsCheckEventspace(char *);
+
+
 
 
 
@@ -1550,7 +1553,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x8 = "dialogBox";
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);if (!x5) x5 = -1;if (!x6) x6 = -1;
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);wxsCheckEventspace(METHODNAME("dialog%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = new os_wxDialogBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
   
   

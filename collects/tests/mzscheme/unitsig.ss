@@ -54,7 +54,6 @@
 (syntax-test '(unit/sig b (import (i : a)) (define x 7) (define i:y 6)))
 (syntax-test '(unit/sig blah (import) (define x 7)))
 
-(syntax-test '(unit/sig () (import) (begin)))
 (syntax-test '(unit/sig () (import) (begin 1 . 2)))
 (syntax-test '(unit/sig () (import) (begin (define x 5)) (define x 5)))
 
@@ -159,6 +158,10 @@
 		    (import)
 		    (link [export : () ((unit/sig () (import) 10))])
 		    (export)))
+
+; Empty begin is OK in a unit context:
+(test #t unit/sig? (unit/sig () (import) (begin)))
+(test #t unit/sig? (unit/sig () (import) (begin (begin))))
 
 ; Include:
 

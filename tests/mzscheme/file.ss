@@ -480,7 +480,7 @@
 	(parameterize ([error-print-width 40])
 	  (format "~e" (make-string 200 #\v))))
   
-  (begin
+  (let()
     (define bads
       (let loop ([i badc-range-end])
 	(cond
@@ -501,11 +501,11 @@
     ;  be printed to a terminal directly because it can contain contain
     ;  control characters; censor it
     (unless (defined? 'building-flat-tests)
-	    (with-censor
-	     (lambda ()
-	       (for-each (lambda (c)
-			   (error-test `(,@format-name ,(format "a~~~cb" c) 0)))
-			 bads)))))
+      (with-censor
+       (lambda ()
+	 (for-each (lambda (c)
+		     (error-test `(,@format-name ,(format "a~~~cb" c) 0)))
+		   bads)))))
   
   (error-test `(,@format-name 9))
   (error-test `(,@format-name "apple~"))

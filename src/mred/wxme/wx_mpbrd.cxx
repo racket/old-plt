@@ -85,7 +85,7 @@ wxMediaPasteboard::wxMediaPasteboard()
 {
   sizeCacheInvalid = TRUE;
   updateNonemtpy = FALSE;
-  locked = FALSE;
+  writeLocked = 0;
 
   snips = lastSnip = NULL;
   snipLocationList = new wxList(wxKEY_INTEGER);
@@ -626,12 +626,15 @@ void wxMediaPasteboard::DoSelect(wxSnip *snip, Bool on)
 
   if ((loc = XSnipLoc(snip))) {
     if (loc->selected != on) {
+      writeLocked++;
       if (CanSelect(snip, on)) {
 	OnSelect(snip, on);
+	--writeLocked;
 	loc->selected = on;
 	AfterSelect(snip, on);
 	UpdateLocation(loc);
-      }
+      } else
+	--writeLocked;
     }
   }
 }
@@ -709,7 +712,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   wxSnipLocation *loc;
   wxSnip *search;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if (snip->IsOwned())
@@ -719,12 +722,20 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
     wxmeError("Inserting a snip without a class."
 	      " Data will be lost if you try to save the file.");
 
+  writeLocked++;
   BeginEditSequence();
   if (!CanInsert(snip, before, x, y)) {
     EndEditSequence();
+    --writeLocked;
     return;
   }
   OnInsert(snip, before, x, y);
+  --writeLocked;
+
+  if (snip->IsOwned()) {
+    /* Disaster: Can/OnInsert made the snip owned. */
+    snip = new wxImageSnip();
+  }
 
   for (search = snips; search && (search != before); search = search->next);
   
@@ -775,7 +786,10 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
 
   needResize = TRUE;
   UpdateLocation(loc);
+
+  writeLocked++;
   EndEditSequence();
+  --writeLocked;
 }
 
 void wxMediaPasteboard::Insert(wxSnip *snip, float x, float y)
@@ -805,7 +819,7 @@ void wxMediaPasteboard::Delete()
   wxSnipLocation *loc;
   wxDeleteSnipRecord *del;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   del = new wxDeleteSnipRecord(sequenceStreak);
@@ -831,7 +845,7 @@ void wxMediaPasteboard::Erase()
   wxSnip *snip, *next;
   wxDeleteSnipRecord *del;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   del = new wxDeleteSnipRecord(sequenceStreak);
@@ -860,13 +874,15 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
 
   for (snip = snips; snip; snip = snip->next) {
     if (PTREQ(snip, del_snip)) {
+      writeLocked++;
       BeginEditSequence();
-
       if (!CanDelete(del_snip)) {
 	EndEditSequence();
+	--writeLocked;
 	return;
       }
       OnDelete(del_snip);
+      --writeLocked;
 
       if (del_snip == caretSnip) {
 	caretSnip->OwnCaret(FALSE);
@@ -902,7 +918,9 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
       AfterDelete(del_snip);
       changed = TRUE;
 
+      writeLocked++;
       EndEditSequence();
+      --writeLocked;
     }
   }  
 
@@ -915,7 +933,7 @@ void wxMediaPasteboard::Delete(wxSnip *del_snip)
 {
   wxDeleteSnipRecord *del;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   del = new wxDeleteSnipRecord(sequenceStreak);
@@ -930,7 +948,7 @@ void wxMediaPasteboard::Delete(wxSnip *del_snip)
 
 void wxMediaPasteboard::Remove(wxSnip *del_snip)
 {
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   _Delete(del_snip, NULL);
@@ -942,7 +960,7 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
   wxSnipLocation *loc;
   wxMoveSnipRecord *rec;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if ((node = snipLocationList->Find((long)snip))) {
@@ -951,12 +969,15 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
     if ((loc->x == x) && (loc->y == y))
       return;
 
+    writeLocked++;
     BeginEditSequence();
     if (!CanMoveTo(snip, x, y, dragging)) {
       EndEditSequence();
+      --writeLocked;
       return;
     }
     OnMoveTo(snip, x, y, dragging);
+    --writeLocked;
 
     UpdateLocation(loc);
 
@@ -984,7 +1005,9 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
 
     needResize = TRUE;
 
+    writeLocked++;
     EndEditSequence();
+    --writeLocked;
   }
 }
 
@@ -993,7 +1016,7 @@ void wxMediaPasteboard::Move(wxSnip *snip, float dx, float dy)
   wxNode *node;
   wxSnipLocation *loc;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if ((node = snipLocationList->Find((long)snip))) {
@@ -1007,7 +1030,7 @@ void wxMediaPasteboard::Move(float dx, float dy)
   wxNode *node;
   wxSnipLocation *loc;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   BeginEditSequence();
@@ -1038,12 +1061,15 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
   oldw = loc->w;
   oldh = loc->h;
 
+  writeLocked++;
   BeginEditSequence();
   if (!CanResize(snip, w, h)) {
     EndEditSequence();
+    --writeLocked;
     return FALSE;
   }
   OnResize(snip, w, h);
+  --writeLocked;
 
   if (!snip->Resize(w, h))
     rv = FALSE;
@@ -1065,7 +1091,9 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
 
   AfterResize(snip, w, h, rv);
 
+  writeLocked++;
   EndEditSequence();
+  --writeLocked;
 
   return rv;
 }
@@ -1093,7 +1121,7 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
   wxStyleChangeSnipRecord *rec;
   Bool didit = FALSE;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   rec = new wxStyleChangeSnipRecord(sequenceStreak);
@@ -1152,7 +1180,7 @@ void wxMediaPasteboard::Raise(wxSnip *snip)
 {
   wxSnip *prev;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if (!snipLocationList->Find((long)snip))
@@ -1184,7 +1212,7 @@ void wxMediaPasteboard::Lower(wxSnip *snip)
 {
   wxSnip *next;
 
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if (!snipLocationList->Find((long)snip))
@@ -1214,7 +1242,7 @@ void wxMediaPasteboard::Lower(wxSnip *snip)
 
 void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
 {
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if (!before)
@@ -1255,7 +1283,7 @@ void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
 
 void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
 {
-  if (userLocked)
+  if (userLocked || writeLocked)
     return;
 
   if (!after)
@@ -1445,7 +1473,8 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
   if (!admin)
     return;
 
-  locked = TRUE;
+  writeLocked++;
+  writeLocked = -writeLocked;
 
   dcx = cx + dx;
   dcy = cy + dy;
@@ -1556,7 +1585,8 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 	  ? show_caret
 	  : (int)wxSNIP_DRAW_NO_CARET);
 
-  locked = FALSE;
+  writeLocked = -writeLocked;
+  --writeLocked;
 }
 
 void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h, 
@@ -1565,7 +1595,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
   float dx, dy, ddx, ddy;
   wxDC *dc;
 
-  if (!admin || locked)
+  if (!admin || (writeLocked < 0))
     return;
 
   if ((h <= 0) || (w <= 0))
@@ -2199,6 +2229,9 @@ void wxMediaPasteboard::DoPaste(long time)
   wxSnipLocation *loc;
   wxDC *dc;
 
+  if (userLocked || writeLocked)
+    return;
+
   start = snips;
   GetCenter(&cx, &cy);
 
@@ -2247,6 +2280,9 @@ void wxMediaPasteboard::DoPaste(long time)
 
 void wxMediaPasteboard::Paste(long time)
 {
+  if (userLocked || writeLocked)
+    return;
+
   BeginEditSequence();
 
   NoSelected();
@@ -2348,6 +2384,9 @@ void wxMediaPasteboard::SetSnipData(wxSnip *snip, wxBufferData *data)
 
 Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
+  if (userLocked || writeLocked)
+    return FALSE;
+
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
       char *path;
@@ -2415,6 +2454,9 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 
 Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showErrors)
 {
+  if (userLocked || writeLocked)
+    return FALSE;
+
   FILE *f = fopen(wxmeExpandFilename(file), "rb");
   
   if (!f)
@@ -2425,6 +2467,9 @@ Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showEr
 
 Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
 {
+  if (userLocked || writeLocked)
+    return FALSE;
+
   int n;
   char buffer[MRED_START_STR_LEN + 1];
   Bool fileerr;
@@ -2578,6 +2623,9 @@ Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut &f)
 
 Bool wxMediaPasteboard::ReadFromFile(wxMediaStreamIn &f, Bool overwritestyle)
 {
+  if (userLocked || writeLocked)
+    return FALSE;
+
   if (wxMediaFileIOReady != (void *)&f) {
     wxmeError("File reading has not been initialized for this stream.");
     return FALSE;
@@ -2625,7 +2673,7 @@ void wxMediaPasteboard::BeginEditSequence(Bool undoable)
   if (noundomode || !undoable)
     noundomode++;
 
-  if (!sequence)
+  if (!sequence && !writeLocked)
     OnEditSequence();
 
   sequence++;
@@ -2634,7 +2682,7 @@ void wxMediaPasteboard::BeginEditSequence(Bool undoable)
 
 void wxMediaPasteboard::EndEditSequence(void)
 {
-  if (!(--sequence)) {
+  if (!(--sequence) && !writeLocked) {
     sequenceStreak = FALSE;
     UpdateNeeded();
     AfterEditSequence();

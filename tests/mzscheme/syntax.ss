@@ -1,6 +1,6 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(unless (defined? 'SECTION)
+  (load-relative "testing.ss"))
 
 (test 0 'with-handlers (with-handlers () 0))
 (test 1 'with-handlers (with-handlers ([void void]) 1))
@@ -61,6 +61,10 @@
 (test-values '(1 2) (lambda () (with-handlers ([void void])
 					      (values 1 2))))
 
+(test 45 'with-handlers-internal-defns (with-handlers ([void void])
+					 (define x 45)
+					 x))
+
 (SECTION 4 1 2)
 (test '(quote a) 'quote (quote 'a))
 (test '(quote a) 'quote ''a)
@@ -80,7 +84,8 @@
   (let ((x 4))
     (lambda (y) (+ x y))))
 (test 10 add4 6)
-(test (letrec([x x]) x) 'lambda ((lambda () (begin (define d d) d))))
+(test (letrec([x x]) x) 'lambda (let ([x (lambda () (define d d) d)]) (x)))
+(test (letrec([x x]) x) 'lambda ((lambda () (define d d) d)))
 (test '(3 4 5 6) (lambda x x) 3 4 5 6)
 (test '(5 6) (lambda (x y . z) z) 3 4 5 6)
 (test 'second (lambda () (cons 'first 2) 'second))
@@ -480,7 +485,17 @@
   (wrap '((define 3 8) x))
   (wrap '((define-values x 8) x)))
 
-(syntax-test '(let () (begin (define x 5)) x))
+(let ([wrap
+       (lambda (val body)
+	 (teval `(test ,val 'let-begin (let () ,@body)))
+	 (teval `(test ,val (lambda () ,@body)))
+	 (teval `(test 12 'begin0-begin (begin0 12 ,@body))))])
+  (wrap 5 '((begin (define x 5)) x))
+  (wrap 5 '((begin (define x 5) x)))
+  (wrap 15 '((begin (define x 5)) (begin (define y (+ x 10)) y)))
+  (wrap 13 '((begin) 13))
+  (wrap 7 '((begin) (begin) (begin (define x 7) (begin) x)))
+  (wrap 7 '((begin (begin (begin (define x 7) (begin) x))))))
 
 (SECTION 4 2 3)
 (define x 0)
@@ -541,7 +556,7 @@
   (test-bg ''s `(,(make-bg `(,(make-bg `('b (set! x 9) ,(make-bg '('a (+ x 1) 's))))))))
   (test-bg ''t `(,(make-bg `(,(make-bg `('b (set! x 9) ,(make-bg '('a (+ x 1))))))) 't))
   (teval `(test 5 call-with-values (lambda () ,(make-bg '((values 1 2) (values 1 3 1)))) +))
-  (syntax-test `(,bg))
+  (syntax-test `(let () 10 (,bg) 5))
   (syntax-test `(,bg . 1))
   (syntax-test `(,bg 1 . 2))))
 
@@ -549,6 +564,9 @@
 (test-begin 'begin0 'begin)
 (test-begin 'begin0 'begin0)
 (test-begin 'begin 'begin0)
+
+(syntax-test `(begin0))
+(begin) ; must succeed, but we can't wrap it
 
 (test 4 'implicit-begin (let ([x 4][y 7]) 'y x))
 (test 4 'implicit-begin (let ([x 4][y 7]) y x))
@@ -682,7 +700,6 @@
 (syntax-test '(letrec () (define x 2)))
 (syntax-test '(lambda () (define x 2)))
 (syntax-test '(lambda () (void (define x 2)) 1))
-(syntax-test '(let () (begin (define x 10)) x))
 
 ; Unfortunately, there's no good way to test this for mzc:
 (unless (defined? 'building-flat-tests)

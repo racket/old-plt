@@ -925,7 +925,7 @@ static Scheme_Object *ApplicationFileProc(int n, Scheme_Object *p[])
   }
 }
 
-static Scheme_Object *DefaultAppQuitProc(int n, Scheme_Object *p[])
+static Scheme_Object *DefaultAppQuitProc(int, Scheme_Object **)
 {
   return scheme_void;
 }
@@ -1073,6 +1073,24 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 #ifdef wx_mac
   return scheme_false;
 #endif
+}
+
+extern "C" {
+  void scheme_start_atomic(void);
+  void scheme_end_atomic(void);
+}
+
+static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
+{
+  if (SCHEME_SEMAP(argv[0])) {
+    scheme_wait_sema(argv[0], 0);
+    /* MzScheme promises that no break or kill will happen
+       between receiving the semaphore post and returning to us. */
+    scheme_start_atomic();
+  } else
+    scheme_end_atomic();
+
+  return scheme_void;
 }
 
 #ifdef wx_mac
@@ -1487,6 +1505,14 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						    "shortcut-visible-in-label?",
 						    0, 1),
 			   global_env);
+
+
+  scheme_install_xc_global("in-atomic-region",
+			   scheme_make_prim_w_arity(wxInAtomicRegion,
+						    "in-atomic-region",
+						    1, 1),
+			   global_env);
+  
 
   /* Order is important! Base class must be initialized before derived. */
   objscheme_setup_wxObject(global_env);

@@ -236,7 +236,7 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 
   if (window) {
     widget = XtWindowToWidget(display, window);
-#if 0
+#if 1
     if (widget)
       if (e->type == DestroyNotify)
 	printf("DestroyNotified window %lx is still widget-mapped; BadWindow error is imminent.\n", window);
@@ -304,6 +304,9 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 	}
 
       /* Toplevel without context; perhaps it's the main context: */
+#if 0
+      printf("Can't map top-level to eventspace for %lx\n", window);
+#endif
       if (checking_for_break)
 	return FALSE;
       else
@@ -496,7 +499,26 @@ void MrEdDispatchEvent(XEvent *event)
   }
 
 #if 0
-  printf("dispatch %d for %lx in %lx\n", event->type, GetEventWindow(event), scheme_current_process);
+  Window w = GetEventWindow(event);
+  if (orig_top_level) {
+    Widget wg = w ? XtWindowToWidget(XtDisplay(orig_top_level), w) : (Widget)0;
+    if (wg) {
+      Widget parent;
+      for (parent = wg; XtParent(parent); parent = XtParent(parent));
+      
+      MrEdContext *here = MrEdGetContext();
+      if (here->finalized->toplevel != parent) {
+	printf("Wrong context %lx for dispatching %lx\n", here, w);
+	MrEdContext *c;
+	for (c = mred_contexts; c; c = c->next)
+	  if (c->finalized->toplevel == parent) {
+	    printf("Should have been %lx\n", c);
+	    break;
+	  }
+      }
+    }
+  }
+  printf("dispatch %d for %lx in %lx\n", event->type, w, scheme_current_process);
 #endif
 
   XtDispatchEvent(event);
@@ -574,4 +596,3 @@ extern "C" {
     }
 }
 #endif
-

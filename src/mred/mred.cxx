@@ -3,7 +3,7 @@
  * Purpose:     MrEd main file, including a hodge-podge of global stuff
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995-98, Matthew Flatt
+ * Copyright:   (c) 1995-99, Matthew Flatt
  */
 
 /* #define STANDALONE_WITH_EMBEDDED_EXTENSION */
@@ -294,6 +294,16 @@ Bool wxIsPrimEventspace()
   return MrEdGetContext() == mred_main_context;
 }
 
+void *wxsCheckEventspace(char *who)
+{
+  MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
+  
+  if (c->killed)
+    scheme_signal_error("%s: the current eventspace has been shut down", who);
+
+  return (void *)c;
+}
+
 static int ps_ready = 0;
 static wxPrintSetupData *orig_ps_setup;
 
@@ -316,8 +326,6 @@ void wxSetThePrintSetupData(wxPrintSetupData *d)
 }
 
 
-static int num_contexts = 0;
-
 /* Forward decl: */
 static int MrEdSameContext(MrEdContext *c, MrEdContext *testc);
 
@@ -336,6 +344,8 @@ static void kill_eventspace(Scheme_Object *ec, void *)
 
   if (!c)
     return; /* must not have had any frames or timers */
+
+  c->killed = 1;
 
   {
     wxChildNode *node, *next;
@@ -389,8 +399,6 @@ static void CollectingContext(void *cfx, void *)
 
   delete cf->frames->list;
   cf->frames = NULL;
-
-  --num_contexts;
 }
 
 static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
@@ -409,6 +417,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   c->handler_running = NULL;
 
   c->busyState = 0;
+  c->killed = 0;
 
   MrEdContextFrames *frames;
   frames = c->finalized->frames = new MrEdContextFrames;
@@ -431,8 +440,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   scheme_register_finalizer((void *)c->finalized,
 			    CollectingContext, NULL,
 			    NULL, NULL);
-
-  num_contexts++;
+  WXGC_IGNORE(c->finalized);
 
   c->type = mred_eventspace_type;
 
@@ -451,14 +459,16 @@ static void ChainContextsList()
 {
   MrEdContextFrames *f = mred_frames;
   wxChildNode *first;
-  
+
   mred_contexts = NULL;
 
   while (f) {
     first = f->list->First();
 
+#ifdef wx_mac
     while (first && !first->IsShown())
       first = first->Next();
+#endif
 
     if (first) {
       wxObject *o = first->Data();
@@ -1049,16 +1059,13 @@ static void (*mzsleep)(float secs, void *fds);
 
 static void MrEdSleep(float secs, void *fds)
 {
-  MrEdContext *c;
   unsigned long now;
 
   if (!(KEEP_GOING))
     return;
-
-  ChainContextsList();
   
   now = (unsigned long)scheme_get_milliseconds();
-  for (c = mred_contexts; c; c = c->next) {
+  {
     wxTimer *timer = mred_timers;
     
     while (timer && !((MrEdContext *)timer->context)->ready)
@@ -1076,8 +1083,6 @@ static void MrEdSleep(float secs, void *fds)
 	secs = diff;
     }
   }
-  
-  UnchainContextsList();
   
 #ifdef wx_msw
   MrEdMSWSleep(secs, fds);
@@ -1272,12 +1277,14 @@ Scheme_Object *MrEd_mid_queue_key;
 
 void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
 {
-  MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
+  MrEdContext *c;
   Q_Callback_Set *cs;
   Q_Callback *cb;
   int hi;
   
   scheme_check_proc_arity(who, 0, 0, argc, argv);
+  c = (MrEdContext *)wxsCheckEventspace("queue-callback");
+
   if (argc > 1) {
     if (argv[1] == MrEd_mid_queue_key)
       hi = 1;
@@ -1983,7 +1990,7 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 #endif
 #define PROGRAM "MrEd"
 #define PROGRAM_LC "mred"
-#define BANNER "MrEd version " VERSION ", Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)\n"
+#define BANNER "MrEd version " VERSION ", Copyright (c) 1995-99 PLT (Matthew Flatt and Robby Findler)\n"
 
 #ifdef wx_mac
 #define GET_PLTCOLLECTS_VIA_RESOURCES
@@ -2405,13 +2412,10 @@ void wxFlushDisplay(void)
   Display *d;
 
 #ifdef wx_motif
-    d = XtDisplay(wxTheApp->topLevel);
-#endif
-#ifdef wx_xview
-    d = (Display*)xv_get((Frame)(wxTheApp->wx_frame->GetHandle()), XV_DISPLAY);
+  d = XtDisplay(wxTheApp->topLevel);
 #endif
 #ifdef wx_xt
-    d = XtDisplay(wxAPP_TOPLEVEL);
+  d = XtDisplay(wxAPP_TOPLEVEL);
 #endif
 
   XFlush(d);

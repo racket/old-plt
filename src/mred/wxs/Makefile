@@ -107,7 +107,7 @@ wxs_evnt.cxx : wxs_evnt.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_evnt.xc
 wxs_form.cxx : wxs_form.xc  $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_form.xc
-wxs_fram.cxx : wxs_fram.xc wxs_win.xci wxs_fram.xci $(XCDEPEND)
+wxs_fram.cxx : wxs_fram.xc wxs_win.xci wxs_fram.xci wxs_espc.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_fram.xc
 wxs_gage.cxx : wxs_gage.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_gage.xc
@@ -135,13 +135,13 @@ wxs_menu.cxx : wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_menu.xc
 wxs_mio.cxx : wxs_mio.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_mio.xc
-wxs_misc.cxx : wxs_misc.xc  $(XCDEPEND) $(CB_DEPEND)
+wxs_misc.cxx : wxs_misc.xc  wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_misc.xc
 wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_mpb.xc
 wxs_obj.cxx : wxs_obj.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_obj.xc
-wxs_panl.cxx : wxs_panl.xc wxs_panl.xci wxs_fram.xci wxs_cnvs.xci wxs_dorf.xci wxs_ifnt.xci wxs_win.xci $(XCDEPEND) $(CB_DEPEND)
+wxs_panl.cxx : wxs_panl.xc wxs_panl.xci wxs_fram.xci wxs_cnvs.xci wxs_dorf.xci wxs_ifnt.xci wxs_win.xci wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_panl.xc
 wxs_rado.cxx : wxs_rado.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_rado.xc

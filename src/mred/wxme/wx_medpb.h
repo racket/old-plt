@@ -208,7 +208,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   Bool updateNonemtpy;
 
   Bool sizeCacheInvalid;
-  Bool locked;
+  int writeLocked;
 
   int sequence;
 

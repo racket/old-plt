@@ -175,6 +175,7 @@ wxMediaBuffer::~wxMediaBuffer()
 #endif
     offscreen->SelectObject(NULL);
     delete offscreen;
+    offscreen = NULL;
     if (bitmap)
       delete bitmap;
 #ifndef EACH_BUFFER_OWN_OFFSCREEN

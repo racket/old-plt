@@ -34,4 +34,5 @@
  file-selector
  register-collecting-blit
  unregister-collecting-blit
- shortcut-visible-in-label?)
+ shortcut-visible-in-label?
+ in-atomic-region)

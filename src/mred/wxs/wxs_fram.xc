@@ -9,12 +9,10 @@
 @HEADER
 
 #ifdef wx_xt
-#define NOT_XT 0
 #define HAS_GET_MENU_BAR 1
 #define GET_THE_MENU_BAR(f) (f)->GetMenuBar()
 #else
 #define HAS_GET_MENU_BAR 0
-#define NOT_XT 1
 #define GET_THE_MENU_BAR(f) (f)->wx_menu_bar
 #endif
 
@@ -27,6 +25,8 @@
 #define NO_GET_MENU_BAR !HAS_GET_MENU_BAR
 
 @MACRO CHECKHASMENU[log] = if (<log>GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)obj)->primdata))) return scheme_void;
+
+@INCLUDE wxs_espc.xci
 
 @BEGINSYMBOLS frameStyle
 @SYM "no-caption" : wxNO_CAPTION
@@ -50,7 +50,7 @@
 
 @CLASSID wxTYPE_FRAME
 
-@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle]=0, string = "frame") : : /NOZERO[4]|NOZERO[5]/
+@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle]=0, string = "frame") : : /CHECKEVENTSPACE[METHODNAME("frame%","initialization")]|NOZERO[4]|NOZERO[5]/
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
 

@@ -23,7 +23,7 @@
   (syntax-test  `(,cl* ,@renames () () () (x)))
   (syntax-test  `(,cl* ,@renames () () (x) ()))
 
-  (begin
+  (let ()
     (define (try-dotted cl)
       (syntax-test  `(,cl* ,@renames () () () (,cl . x))))
     
@@ -31,7 +31,7 @@
 			     inherit-from rename-from
 			     sequence)))
   
-  (begin
+  (let ()
     (define (try-defn-kind cl)
       (syntax-test  `(,cl* ,@renames () () () (,cl 8)))
       (syntax-test  `(,cl* ,@renames () () () (,cl [8 9])))
@@ -45,7 +45,7 @@
     (try-defn-kind 'override)
     (try-defn-kind 'private))
 
-  (begin
+  (let ()
     (define (try-defn-rename-kind cl)
       (syntax-test  `(,cl* ,@renames () () () (,cl [((x) y) 9])))
       (syntax-test  `(,cl* ,@renames () () () (,cl [(x (y)) 9])))
@@ -55,7 +55,7 @@
     (try-defn-rename-kind 'public)
     (try-defn-rename-kind 'override))
 
-  (begin
+  (let ()
     (define (try-ref-kind cl)
       (syntax-test  `(,cl* ,@renames () () () (,cl 8)))
       (syntax-test  `(,cl* ,@renames () () () (,cl x 8)))

@@ -31,6 +31,9 @@
 
 
 
+extern void *wxsCheckEventspace(char *);
+
+
 
 
 class os_wxTimer : public wxTimer {
@@ -172,7 +175,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
   if (n != 0) 
     scheme_wrong_count("initialization in timer%", 0, 0, n, p);
 
-  
+  wxsCheckEventspace(METHODNAME("timer%","initialization"));
   realobj = new os_wxTimer(obj);
   
   

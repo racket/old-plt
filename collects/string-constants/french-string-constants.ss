@@ -560,4 +560,22 @@
  (just-break "Simplement stopper")
  (kill "Tuer")
  (kill? "Tuer ?")
+
+ ;;; version checker
+
+ (check-question "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
+ (network-timeout "Expiration du compte-à-rebours lors de la connexion réseau.") 
+ (cannot-connect  "Impossible de se connecter au serveur de version de PLT.")
+ (collections-not-installed  "Les collections suivantes ne sont pas installées:")
+ (collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant:")
+ (update-check "Vérification des mises à jour.")
+ (network-failure "Erreur réseau.")
+ (old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour.")
+ (binary-information-format "Version binaire installée: ~a (itération ~a)")
+ (update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
+ (binary-name "Binaire")
+ (updates-available "Les mises à jour sont disponibles à")
+ (latest-binary-information-format "Version la plus récente: ~a (itération ~a)")
+ (connecting-version-server "Connexion au server de version de PLT en cours.")
+ (update-dialog-title "Etat des mises à jour")
  )

@@ -1,8 +1,9 @@
-#| TODO -----------------------------------------------------------------------
-   buttons: multiple points of returns: continuation functions 
-|# 
+#cs(module servlet2-unit mzscheme
+  #| TODO -----------------------------------------------------------------------
+  buttons: multiple points of returns: continuation functions 
+  |# 
 
-(module servlet2-unit mzscheme
+
   (require (lib "unitsig.ss")
            (lib "servlet-helpers.ss" "web-server")
            (lib "servlet-sig.ss" "web-server")

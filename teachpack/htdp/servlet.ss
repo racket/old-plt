@@ -1,5 +1,5 @@
 ; Author: Paul Graunke
-(module servlet mzscheme
+#cs(module servlet mzscheme
   (require (lib "servlet-primitives.ss" "web-server")
            (lib "servlet-helpers.ss" "web-server")
            (lib "servlet-sig.ss" "web-server")

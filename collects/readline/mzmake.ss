@@ -17,6 +17,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 (define search-path
   (list "/usr"
 	"/usr/local/gnu"
+        "/sw" ;; OS X fink location 
 	;; Hack for NU PLT
         "/arch/gnu/packages/readline-4.2"
 	;; Hack for the author's convenience:

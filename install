@@ -134,11 +134,15 @@ if [ `bin/archsys` = "sparc-solaris" ] ; then
   checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4-static" ".bin/sparc-solaris" "sparc-sunos4-static" "SunOS4 Static" "Solaris"
 fi
 
-echo 'PLT software starts up much faster with .zo files, but creating .zo'
-echo 'files now takes a few minutes and requires about 5MB of additional'
-echo 'disk space. Create .zo files later by running plt/bin/setup-plt.'
-echo -n ' Create .zo files now (y/n)? [y] '
-read response
+if [ -z "${RPM_INSTALL_PREFIX}" ] ; then
+  echo 'PLT software starts up much faster with .zo files, but creating .zo'
+  echo 'files now takes a few minutes and requires about 5MB of additional'
+  echo 'disk space. Create .zo files later by running plt/bin/setup-plt.'
+  echo -n ' Create .zo files now (y/n)? [y] '
+  read response
+else
+  response="y"
+fi
 if [ "$response" != 'n' ] ; then
   if [ "$response" != 'N' ] ; then
     didnothing=""

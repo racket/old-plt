@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.10 1998/09/15 22:48:42 robby Exp $
+;; $Id: frameworkr.ss,v 1.11 1998/09/16 04:33:30 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
@@ -32,11 +32,11 @@
 
 	[editor : framework:editor^ ((require-relative-library-unit/sig "editor.ss")
 				     mred
-				     autosave finder path-utils keymap icon preferences gui-utils)]
+				     autosave finder path-utils keymap icon preferences text pasteboard)]
 	[pasteboard : framework:pasteboard^ ((require-relative-library-unit/sig "pasteboard.ss")
 					     mred editor)]
 	[text : framework:text^ ((require-relative-library-unit/sig "text.ss")
-				 mred editor preferences keymap
+				 mred editor preferences keymap gui-utils
 				 (core function))]
 
 	[gui-utils : framework:gui-utils^ ((require-relative-library-unit/sig "guiutils.ss") mred)]
@@ -67,12 +67,12 @@
 	[scheme : framework:scheme^ 
 		((require-relative-library-unit/sig "scheme.ss")
 		 mred preferences match-cache paren
-		 scheme-paren icon keymap  editor frame
+		 scheme-paren icon keymap text frame
 		 (core thread))]
-	[main : () ((require-relative-library-unit/sig "main.ss")
-		    mred
-		    preferences exit group
-		    (core function))])
+	[main : framework:main^ ((require-relative-library-unit/sig "main.ss")
+				 mred
+				 preferences exit group
+				 (core function))])
   (export
    (unit application)
    (unit version)
@@ -96,4 +96,5 @@
    (unit canvas)
    (unit panel)
    (unit frame)
-   (unit scheme)))
+   (unit scheme)
+   (unit main)))

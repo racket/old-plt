@@ -1,7 +1,10 @@
-(let ([original-outside-world-struct:exn struct:exn])
-  (unit/sig framework:exn^
-    (import)
+(dunit/sig framework:exn^
+  (import)
 
-    (define-struct (exn original-outside-world-struct:exn) ())
-    (define-struct (unknown-preference struct:exn) ())
-    (define-struct (during-preferences struct:exn) ())))
+  (rename [struct:-exn struct:exn]
+	  [make--exn make-exn]
+	  [-exn? exn?])
+
+  (define-struct (-exn struct:exn) ())
+  (define-struct (unknown-preference struct:exn) ())
+  (define-struct (during-preferences struct:exn) ()))

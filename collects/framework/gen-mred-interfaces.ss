@@ -3,19 +3,10 @@
 string=? ; exec mred -qvf $0
 
 (require-library "function.ss")
-(require-library "compile.ss" "compiler")
 (require-library "pretty.ss")
 (require-library "macro.ss")
 
-(define framework-dir (collection-path "framework"))
-(define classhack "classhack")
-(define classhack.so (build-path framework-dir (string-append classhack ".so")))
-
-  (let ([classhack.c (build-path (collection-path "mzlib") 'up 'up "tests" "mred" (string-append classhack ".c"))])
-    (require-library "compiler.ss" "compiler")
-    (compile-c-extensions (list classhack.c) framework-dir))
-
-(load-extension classhack.so) ;; now we have interface->names and class->names
+(load-relative "classhack.ss")
 
 (define (class-name->interface-name f)
   (let* ([str (symbol->string f)]
@@ -37,6 +28,8 @@ string=? ; exec mred -qvf $0
     #f))
 
 (define signature-names (vector->list (signature->symbols mred^)))
+(unless (andmap symbol? signature-names)
+  (error 'gen-mred-interfaces.ss "found non-symbol in mred^ signature"))
 
 (define class-names (foldl (lambda (f l)
 			     (if (and (class? (global-defined-value f))
@@ -56,7 +49,6 @@ string=? ; exec mred -qvf $0
 	 signature-names))
 
 (define (build-interface class-name)
-  (printf "building interface for ~a~n" class-name)
   `(define ,(class-name->interface-name class-name)
      (interface () ,@(class->names (global-defined-value class-name)))))
 
@@ -64,10 +56,17 @@ string=? ; exec mred -qvf $0
   (string->symbol (string-append "-" (symbol->string x))))
 
 (define (build-new-class class-name)
-  `(define ,(add-export-prefix class-name)
-     (class* ,class-name (,(class-name->interface-name class-name)) args
-       (sequence
-	 (apply super-init args)))))
+  (let* ([class (eval class-name)]
+	 [interfaces (foldl (lambda (this-class-name so-far)
+			      (if (subclass? class (eval this-class-name))
+				  (cons (class-name->interface-name this-class-name) so-far)
+				  so-far))
+			    null
+			    class-names)])
+    `(define ,(add-export-prefix class-name)
+       (class* ,class-name (,@interfaces) args
+	 (sequence
+	   (apply super-init args))))))
 
 (define new-signature-definition
   `(define-signature mred-interfaces^
@@ -93,7 +92,10 @@ string=? ; exec mred -qvf $0
       (export (open (mred : (,@leftover-names)))
 	      (open interfaces)))))
 
-(printf "Added ~a interface definitions~n" (length interface-names))
+(printf "added ~a interface definitions~nmred^ has ~a names, mred-interfaces^ has ~a names~n"
+	(length interface-names)
+	(length signature-names)
+	(+ (length signature-names) (length interface-names)))
 
 (call-with-output-file (build-path framework-dir "mred-interfaces.ss")
   (lambda (port)

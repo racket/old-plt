@@ -65,8 +65,33 @@
 	 'MIXIN-BEGINS-HERE
 
 	 (lambda (,super-g)
+	   (unless (class? ,super-g)
+	     (error 'mixin "argument ~a not a class matching interfaces: ~a" ,super-g ,from-g))
 	   (unless (andmap (lambda (x) (implementation? ,super-g x)) ,from-g)
-	     (error 'mixin "argument ~a does not match ~a" ,super-g ,from-g))
+	     (error 'mixin "argument ~s does not match ~s" ,super-g ,from-g))
 
 	   (class* ,super-g ,to-gs ,args
 	     ,@clauses)))))))
+
+(define-macro dunit/sig
+  (let ([debugging? #f])
+    (if debugging?
+	(begin
+	  (require-library "loader.ss" "system")
+	  (lambda (sig imports . args)
+	    (let-values ([(before-args args)
+			  (if (and (pair? args)
+				   (pair? (car args))
+				   (eq? (caar args) 'rename))
+			      (values (list (car args))
+				      (cdr args))
+			      (values null args))])
+	      
+	      `(unit/sig ,sig ,imports
+			 ,@(append before-args
+				   (list `(fprintf (current-error-port) "invoking unit with ~a signature~n" ',sig))
+				   args
+				   (list `(fprintf (current-error-port) "invoked  unit with ~a signature~n" ',sig)))))))
+	(lambda args
+	  `(unit/sig ,@args)))))
+  

@@ -1,13 +1,13 @@
 ; Cache parenthesis-matching
 ;  Implemented as a splay tree
 
-(unit/sig framework:match-cache^
+(dunit/sig framework:match-cache^
   (import)
   
   (define-struct node (left right pos jump-to))
   
   (define %
-    (class '() ()
+    (class null ()
       (private
 	[tree #f]
 	[offset 0])

@@ -326,7 +326,7 @@
       (define (setup-mailboxes-file mailbox-name)
         (define mailboxes-file (build-path (LOCAL-DIR) "mailboxes"))
         (define mailboxes
-          (with-handlers ([not-break-exn? (lambda (x) '(("Inbox" "inbox")))])
+          (with-handlers ([not-break-exn? (lambda (x) '(("Inbox" #"inbox")))])
             (with-input-from-file mailboxes-file
               read)))
         
@@ -365,7 +365,8 @@
                 (with-output-to-file (build-path (LOCAL-DIR) "mailboxes")
                   (lambda () (write
                               (append mailboxes
-                                      (list (list mailbox-name mailbox-dir)))))
+                                      (list (list mailbox-name 
+						  (path->bytes mailbox-dir))))))
                   'truncate))))))
       
       

@@ -123,7 +123,7 @@
       ;; The "mailboxes" file tells us where to find local copies
       ;;  of the mailbox content
       (define mailboxes
-	(with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
+	(with-handlers ([void (lambda (x) '(("Inbox" #"inbox")))])
 	  (with-input-from-file (build-path (LOCAL-DIR) "mailboxes")
 	    read)))
 
@@ -131,7 +131,8 @@
 	(error 'sirmail "No local mapping for mailbox: ~a" mailbox-name))
       
       ;; find the mailbox for this window:
-      (define mailbox-dir (build-path (LOCAL-DIR) (cadr (assoc mailbox-name mailboxes))))
+      (define mailbox-dir (build-path (LOCAL-DIR) 
+				      (bytes->path (cadr (assoc mailbox-name mailboxes)))))
       
       (unless (directory-exists? mailbox-dir)
 	(make-directory mailbox-dir))
@@ -268,7 +269,7 @@
 		(lambda (break-bad break-ok) 
 		  (with-handlers ([void no-status-handler])
 		    (imap-disconnect connection)))
-		void)
+		close-frame)
 	       (status "")
 	       (set! connection #f)))
 	   (lambda ()
@@ -1261,7 +1262,7 @@
 				(lambda (break-bad break-ok) 
 				  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
 				    (get-body uid)))
-				void)]
+				close-frame)]
 			 [insert (lambda (body delta)
 				   (let ([start (send e last-position)])
 				     (send e set-position start)
@@ -1349,7 +1350,7 @@
 				   (with-handlers ([void no-status-handler])
 				     (copy-messages-to (list item) mailbox-name)
 				     (purge-messages (list item))))
-				 void)))))
+				 close-frame)))))
                          (status "")))))]
               [else
                (when (and dragging-item
@@ -1397,9 +1398,11 @@
 				(set! need-del-selection? #t))
 			  (when (eq? i current-selected)
 				(let ([e (send message get-editor)])
+				  (send e begin-edit-sequence)
 				  (send e lock #f)
 				  (send e erase)
-				  (send e lock #t))
+				  (send e lock #t)
+				  (send e end-edit-sequence))
 				(set-current-selected #f))
 			  (send header-list delete-item i)))))
 		items)
@@ -1462,7 +1465,7 @@
 		(when (or (not initialized?)
 			  (check-for-new))
 		  (update-local)))
-	      void)))))
+	      close-frame)))))
       
       (define (purge-marked/update-headers)
 	(header-changing-action 
@@ -1473,7 +1476,7 @@
 	    (lambda (break-bad break-ok) 
 	      (with-handlers ([void no-status-handler])
 		(purge-marked)))
-	    void))))
+	    close-frame))))
       
       (define (copy-marked-to dest-mailbox-name)
 	(let* ([marked (filter message-marked? mailbox)])
@@ -1481,7 +1484,7 @@
 	   enable-main-frame
 	   (lambda (break-bad break-ok)
 	     (copy-messages-to marked dest-mailbox-name))
-	   void)))
+	   close-frame)))
       
       (define (copy-messages-to marked dest-mailbox-name)
         (unless (null? marked)
@@ -1533,7 +1536,7 @@
 				  file-msgs)
 			(write-mailbox)))))))
 	    (AUTO-FILE-TABLE)))
-	 void)
+	 close-frame)
 	(status "Auto file done"))
       
       (define (download-all)
@@ -1554,7 +1557,7 @@
 				 (get-body uid)
 				 (break-ok)))
 			     mailbox))))
-	    void))))
+	    close-frame))))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  GUI: Rest of Frame                                     ;;
@@ -1604,6 +1607,9 @@
 	  (when (and on? refocus)
 	    (send refocus focus))
 	  w))
+
+      (define (close-frame)
+	(send main-frame show #f))
       
       (define no-status-handler (lambda (x) (status "") (raise x)))
             
@@ -1995,7 +2001,7 @@
                           [mb (assq bid mailbox)])
                      (compare ma mb))))
            (status ""))
-         void))
+         close-frame))
       
       (define (sort-by-uid)
         (as-background
@@ -2008,7 +2014,7 @@
                          [bid (send b user-data)])
                      (< aid bid))))
            (status ""))
-         void))
+         close-frame))
       
       (define (sort-by-fields fields)
 	(let* ([ht (make-hash-table)]
@@ -2055,7 +2061,7 @@
 				     (loop (cdr fields) #f)
 				     c))))))))
 	     (status ""))
-	   void)))
+	   close-frame)))
 
       (when (SORT)
 	(case (SORT)
@@ -2242,7 +2248,7 @@
                                            (close-output-port out)
                                            (render-html-to-text in target img-mode? #f))
                                          (status "")))
-                                     void)
+                                     close-frame)
                                     (unless text-obj
                                       ;; Copy text in target to `insert':
                                       (insert (send target get-text) void)))]
@@ -2319,7 +2325,7 @@
 		     enable-main-frame
 		     (lambda (break-bad break-ok) 
 		       (check-for-new))
-		     void)
+		     close-frame)
 		    (when (and new-messages?
 			       (not (eq? old-new-messages? new-messages?)))
 		      (bell)))))))

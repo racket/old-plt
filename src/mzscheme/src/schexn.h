@@ -5,7 +5,6 @@
 enum {
   MZEXN,
   MZEXN_USER,
-  MZEXN_SYNTAX,
   MZEXN_VARIABLE,
   MZEXN_VARIABLE_KEYWORD,
   MZEXN_APPLICATION,
@@ -18,6 +17,7 @@ enum {
   MZEXN_STRUCT,
   MZEXN_OBJECT,
   MZEXN_UNIT,
+  MZEXN_SYNTAX,
   MZEXN_READ,
   MZEXN_READ_EOF,
   MZEXN_I_O,
@@ -48,7 +48,6 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
-  { 3, NULL, NULL, 0 },
   { 4, NULL, NULL, 0 },
   { 4, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -58,6 +57,7 @@ static exn_rec exn_table[] = {
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
+  { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
@@ -85,7 +85,6 @@ static exn_rec *exn_table;
   exn_table = (exn_rec *)scheme_malloc(sizeof(exn_rec) * MZEXN_OTHER);
   exn_table[MZEXN].args = 2;
   exn_table[MZEXN_USER].args = 2;
-  exn_table[MZEXN_SYNTAX].args = 3;
   exn_table[MZEXN_VARIABLE].args = 3;
   exn_table[MZEXN_VARIABLE_KEYWORD].args = 3;
   exn_table[MZEXN_APPLICATION].args = 3;
@@ -98,6 +97,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_STRUCT].args = 2;
   exn_table[MZEXN_OBJECT].args = 2;
   exn_table[MZEXN_UNIT].args = 2;
+  exn_table[MZEXN_SYNTAX].args = 3;
   exn_table[MZEXN_READ].args = 3;
   exn_table[MZEXN_READ_EOF].args = 3;
   exn_table[MZEXN_I_O].args = 2;
@@ -119,11 +119,11 @@ static exn_rec *exn_table;
 #ifdef _MZEXN_DECL_FIELDS
 
 static const char *MZEXN_FIELDS[2] = { "message", "debug-info" };
-static const char *MZEXN_SYNTAX_FIELDS[1] = { "expr" };
 static const char *MZEXN_VARIABLE_FIELDS[1] = { "id" };
 static const char *MZEXN_APPLICATION_FIELDS[1] = { "value" };
 static const char *MZEXN_APPLICATION_ARITY_FIELDS[1] = { "expected" };
 static const char *MZEXN_APPLICATION_TYPE_FIELDS[1] = { "expected" };
+static const char *MZEXN_SYNTAX_FIELDS[1] = { "expr" };
 static const char *MZEXN_READ_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
@@ -134,7 +134,6 @@ static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
 
   SETUP_STRUCT(MZEXN, NULL, "exn", 2, MZEXN_FIELDS)
   SETUP_STRUCT(MZEXN_USER, EXN_PARENT(MZEXN), "exn:user", 0, NULL)
-  SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 1, MZEXN_SYNTAX_FIELDS)
   SETUP_STRUCT(MZEXN_VARIABLE, EXN_PARENT(MZEXN), "exn:variable", 1, MZEXN_VARIABLE_FIELDS)
   SETUP_STRUCT(MZEXN_VARIABLE_KEYWORD, EXN_PARENT(MZEXN_VARIABLE), "exn:variable:keyword", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION, EXN_PARENT(MZEXN), "exn:application", 1, MZEXN_APPLICATION_FIELDS)
@@ -147,6 +146,7 @@ static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
   SETUP_STRUCT(MZEXN_STRUCT, EXN_PARENT(MZEXN), "exn:struct", 0, NULL)
   SETUP_STRUCT(MZEXN_OBJECT, EXN_PARENT(MZEXN), "exn:object", 0, NULL)
   SETUP_STRUCT(MZEXN_UNIT, EXN_PARENT(MZEXN), "exn:unit", 0, NULL)
+  SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 1, MZEXN_SYNTAX_FIELDS)
   SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 1, MZEXN_READ_FIELDS)
   SETUP_STRUCT(MZEXN_READ_EOF, EXN_PARENT(MZEXN_READ), "exn:read:eof", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O, EXN_PARENT(MZEXN), "exn:i/o", 0, NULL)

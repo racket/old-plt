@@ -27,7 +27,7 @@
    get-children-from-label
    has-member?
    ast-nodes
-
+   
    get-mzscheme-position-from-label
    is-label-atom?
    get-span-from-label
@@ -40,28 +40,28 @@
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
-;  (define-syntax debug1
-;    (let ([counter 1])
-;      (lambda (stx)
-;        (syntax-case stx ()
-;          [(_ args ...)
-;           (begin
-;             (printf "debug counter: ~a~n" counter)
-;             (let* ([stx-args (syntax (args ...))]
-;                    [stx-args-list (syntax-e stx-args)]
-;                    [stx-out (datum->syntax-object
-;                              stx-args
-;                              `(#%app debug2 ,counter ,@stx-args-list))])
-;               (set! counter (add1 counter))
-;               stx-out))]))))
-;  
-;  (define (debug2 n . args)
-;    ;(when (and (label-cst? (cadr args))
-;    ;           (number? (label-cst-value (cadr args)))
-;    ;           (= 7 (label-cst-value (cadr args))))
-;    (printf "debug: ~a args: ~a~n" n args)
-;    ;  )
-;    (apply (car args) (cdr args)))
+  ;  (define-syntax debug1
+  ;    (let ([counter 1])
+  ;      (lambda (stx)
+  ;        (syntax-case stx ()
+  ;          [(_ args ...)
+  ;           (begin
+  ;             (printf "debug counter: ~a~n" counter)
+  ;             (let* ([stx-args (syntax (args ...))]
+  ;                    [stx-args-list (syntax-e stx-args)]
+  ;                    [stx-out (datum->syntax-object
+  ;                              stx-args
+  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
+  ;               (set! counter (add1 counter))
+  ;               stx-out))]))))
+  ;  
+  ;  (define (debug2 n . args)
+  ;    ;(when (and (label-cst? (cadr args))
+  ;    ;           (number? (label-cst-value (cadr args)))
+  ;    ;           (= 7 (label-cst-value (cadr args))))
+  ;    (printf "debug: ~a args: ~a~n" n args)
+  ;    ;  )
+  ;    (apply (car args) (cdr args)))
   
   ;  ; XXX perf analysis
   (define ast-nodes 0)
@@ -236,128 +236,128 @@
                             free-var-label-in)
                            (cond
                              [(eq? free-var-name-in 'make-struct-type)
-                             (create-make-struct-type-label term)]
-                            ; we will process these two after the one above, for a given struct
-                            ; definition, because, after program expansion,
-                            ; make-struct-field-accessor/mutator appear in the body of a letrec-values
-                            ; with make-struct-type being used in one of the letrec-values clauses.
-                            [(eq? free-var-name-in 'make-struct-field-accessor)
-                             (create-make-struct-field-accessor-label term)]
-                            [(eq? free-var-name-in 'make-struct-field-mutator)
-                             (create-make-struct-field-mutator-label term)]
-                            [(eq? free-var-name-in 'set-car!)
-                             (create-2args-mutator label-cons?
-                                                   cst:test-true
-                                                   label-cons-car
-                                                   cst:id
-                                                   "pair"
-                                                   "internal error 1: all types must be a subtype of top"
-                                                   term)]
-                            [(eq? free-var-name-in 'set-cdr!)
-                             (create-2args-mutator label-cons?
-                                                   cst:test-true
-                                                   label-cons-cdr
-                                                   cst:id
-                                                   "pair"
-                                                   "internal error 2: all types must be a subtype of top"
-                                                   term)]
-                            ; we just inject the string type into the first arg
-                            [(eq? free-var-name-in 'string-set!)
-                             (create-3args-mutator (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'string)
-                                                              'lookup-and-bind-top-level-vars1
-                                                              #f #f))
-                                                   (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'exact-integer)
-                                                              'lookup-and-bind-top-level-vars2
-                                                              #f #f))
-                                                   (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'char)
-                                                              'lookup-and-bind-top-level-vars3
-                                                              #f #f))
-                                                   cst:id
-                                                   (lambda (inflowing-label)
-                                                     (let ([label (make-label-cst
-                                                                   #f #f #f
-                                                                   (label-term inflowing-label)
-                                                                   (make-hash-table)
-                                                                   (make-hash-table)
-                                                                   'string)])
-                                                       (initialize-label-set-for-value-source label)
-                                                       label))
-                                                   "string"
-                                                   "exact-integer"
-                                                   "char"
-                                                   term)]
-                            [(eq? free-var-name-in 'string-fill!)
-                             (create-2args-mutator (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'string)
-                                                              'lookup-and-bind-top-level-vars4
-                                                              #f #f))
-                                                   (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'char)
-                                                              'lookup-and-bind-top-level-vars5
-                                                              #f #f))
-                                                   cst:id
-                                                   (lambda (inflowing-label)
-                                                     (let ([label (make-label-cst
-                                                                   #f #f #f
-                                                                   (label-term inflowing-label)
-                                                                   (make-hash-table)
-                                                                   (make-hash-table)
-                                                                   'string)])
-                                                       (initialize-label-set-for-value-source label)
-                                                       label))
-                                                   "string"
-                                                   "char"
-                                                   term)]
-                            ; inject third arg into first
-                            [(eq? free-var-name-in 'vector-set!)
-                             (create-3args-mutator (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-vector (make-type-cst 'top))
-                                                              'lookup-and-bind-top-level-vars6
-                                                              #f #f))
-                                                   (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-cst 'exact-integer)
-                                                              'lookup-and-bind-top-level-vars7
-                                                              #f #f))
-                                                   cst:test-true
-                                                   label-vector-element
-                                                   cst:id
-                                                   "vector"
-                                                   "exact-integer"
-                                                   "internal error 3: all types must be a subtype of top"
-                                                   term)]
-                            [(eq? free-var-name-in 'vector-fill!)
-                             (create-2args-mutator (lambda (inflowing-label)
-                                                     (subtype (get-type-from-label inflowing-label)
-                                                              (make-type-vector (make-type-cst 'top))
-                                                              'lookup-and-bind-top-level-vars8
-                                                              #f #f))
-                                                   cst:test-true
-                                                   label-vector-element
-                                                   cst:id
-                                                   "vector"
-                                                   "internal error 4: all types must be a subtype of top"
-                                                   term)]
-                            [else
-                             (begin
-                               (err:error-table-set *errors*
-                                                    (list free-var-label-in)
-                                                    'red
-                                                    ;(format "reference to undefined identifier: ~a in function ~a"
-                                                    ;        free-var-name-in
-                                                    ;        (unexpand (syntax-object->datum term))))
-                                                    (format "reference to undefined identifier: ~a"
-                                                            free-var-name-in))
-                               #f)])))))])
+                              (create-make-struct-type-label term)]
+                             ; we will process these two after the one above, for a given struct
+                             ; definition, because, after program expansion,
+                             ; make-struct-field-accessor/mutator appear in the body of a letrec-values
+                             ; with make-struct-type being used in one of the letrec-values clauses.
+                             [(eq? free-var-name-in 'make-struct-field-accessor)
+                              (create-make-struct-field-accessor-label term)]
+                             [(eq? free-var-name-in 'make-struct-field-mutator)
+                              (create-make-struct-field-mutator-label term)]
+                             [(eq? free-var-name-in 'set-car!)
+                              (create-2args-mutator label-cons?
+                                                    cst:test-true
+                                                    label-cons-car
+                                                    cst:id
+                                                    "pair"
+                                                    "internal error 1: all types must be a subtype of top"
+                                                    term)]
+                             [(eq? free-var-name-in 'set-cdr!)
+                              (create-2args-mutator label-cons?
+                                                    cst:test-true
+                                                    label-cons-cdr
+                                                    cst:id
+                                                    "pair"
+                                                    "internal error 2: all types must be a subtype of top"
+                                                    term)]
+                             ; we just inject the string type into the first arg
+                             [(eq? free-var-name-in 'string-set!)
+                              (create-3args-mutator (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'string)
+                                                               'lookup-and-bind-top-level-vars1
+                                                               #f #f))
+                                                    (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'exact-integer)
+                                                               'lookup-and-bind-top-level-vars2
+                                                               #f #f))
+                                                    (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'char)
+                                                               'lookup-and-bind-top-level-vars3
+                                                               #f #f))
+                                                    cst:id
+                                                    (lambda (inflowing-label)
+                                                      (let ([label (make-label-cst
+                                                                    #f #f #f
+                                                                    (label-term inflowing-label)
+                                                                    (make-hash-table)
+                                                                    (make-hash-table)
+                                                                    'string)])
+                                                        (initialize-label-set-for-value-source label)
+                                                        label))
+                                                    "string"
+                                                    "exact-integer"
+                                                    "char"
+                                                    term)]
+                             [(eq? free-var-name-in 'string-fill!)
+                              (create-2args-mutator (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'string)
+                                                               'lookup-and-bind-top-level-vars4
+                                                               #f #f))
+                                                    (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'char)
+                                                               'lookup-and-bind-top-level-vars5
+                                                               #f #f))
+                                                    cst:id
+                                                    (lambda (inflowing-label)
+                                                      (let ([label (make-label-cst
+                                                                    #f #f #f
+                                                                    (label-term inflowing-label)
+                                                                    (make-hash-table)
+                                                                    (make-hash-table)
+                                                                    'string)])
+                                                        (initialize-label-set-for-value-source label)
+                                                        label))
+                                                    "string"
+                                                    "char"
+                                                    term)]
+                             ; inject third arg into first
+                             [(eq? free-var-name-in 'vector-set!)
+                              (create-3args-mutator (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-vector (make-type-cst 'top))
+                                                               'lookup-and-bind-top-level-vars6
+                                                               #f #f))
+                                                    (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-cst 'exact-integer)
+                                                               'lookup-and-bind-top-level-vars7
+                                                               #f #f))
+                                                    cst:test-true
+                                                    label-vector-element
+                                                    cst:id
+                                                    "vector"
+                                                    "exact-integer"
+                                                    "internal error 3: all types must be a subtype of top"
+                                                    term)]
+                             [(eq? free-var-name-in 'vector-fill!)
+                              (create-2args-mutator (lambda (inflowing-label)
+                                                      (subtype (get-type-from-label inflowing-label)
+                                                               (make-type-vector (make-type-cst 'top))
+                                                               'lookup-and-bind-top-level-vars8
+                                                               #f #f))
+                                                    cst:test-true
+                                                    label-vector-element
+                                                    cst:id
+                                                    "vector"
+                                                    "internal error 4: all types must be a subtype of top"
+                                                    term)]
+                             [else
+                              (begin
+                                (err:error-table-set *errors*
+                                                     (list free-var-label-in)
+                                                     'red
+                                                     ;(format "reference to undefined identifier: ~a in function ~a"
+                                                     ;        free-var-name-in
+                                                     ;        (unexpand (syntax-object->datum term))))
+                                                     (format "reference to undefined identifier: ~a"
+                                                             (syntax-object->datum (label-term free-var-label-in))))
+                                #f)])))))])
          (when binding-label-in
            (add-edge-and-propagate-set-through-edge
             binding-label-in
@@ -2098,6 +2098,134 @@
     (set! register-label-with-gui-hack register-label-with-gui)
     (create-label-from-term term gamma enclosing-lambda-label))
   
+  ; (listof (syntax-object-listof syntax-object)) (listof (syntax-object-listof syntax-object))
+  ; syntax-object (listof (cons symbol label)) -> case-lambda-label
+  (define (create-case-lambda-label argss expss term gamma)
+    (let* ([label (make-label-case-lambda
+                   #f #f #f
+                   term
+                   (make-hash-table)
+                   (make-hash-table)
+                   #f
+                   cst:dummy
+                   cst:dummy
+                   cst:dummy
+                   cst:dummy
+                   '())]
+           [all-labels
+            (list:foldr
+             (lambda (args exps other-clauses-labels)
+               (let ([rest-arg?s (vector-ref other-clauses-labels 0)]
+                     [req-args (vector-ref other-clauses-labels 1)]
+                     [argss-labels (vector-ref other-clauses-labels 2)]
+                     [exps-labels (vector-ref other-clauses-labels 3)]
+                     ; scheme list of syntax objects for body exps
+                     [exps (syntax-e exps)])
+                 ; we add one new element to each list each time we process a new clause,
+                 ; so that the element for the current clause is always at the start of the
+                 ; list, so we know where to find this element when we need it (we need to
+                 ; update the top free vars for the current clause in the #%top case, and
+                 ; the application thunk for the current clause in the #%app case).
+                 (set-label-case-lambda-effects!
+                  label
+                  (cons cst:dummy-thunk (label-case-lambda-effects label)))
+                 (kern:kernel-syntax-case
+                  args #f
+                  [(args ...)
+                   (let* (; proper scheme list of syntax objects for arguments
+                          [args (syntax-e (syntax (args ...)))]
+                          [args-labels (map create-simple-label args)]
+                          [gamma-extended (extend-env gamma args args-labels)])
+                     (vector (cons #f rest-arg?s)
+                             (cons (length args) req-args)
+                             (cons args-labels argss-labels)
+                             (cons (list:foldl
+                                    (lambda (exp _)
+                                      (create-label-from-term exp gamma-extended label))
+                                    cst:dummy
+                                    exps)
+                                   exps-labels)))]
+                  [(first-arg . other-args-including-rest-arg)
+                   (let* (; (syntax other-args-including-rest-arg) is either a (syntax
+                          ; version of a) list of syntax objects (if there's strictly more
+                          ; than one required argument), or a single syntax object (if
+                          ; there's only one required argument). In both cases we want to
+                          ; construct an improper list of syntax objects. syntax-e takes
+                          ; care of that in the list case, cons takes care of that in the
+                          ; other case.
+                          [args (cons (syntax first-arg)
+                                      (let* ([syntax-obj (syntax other-args-including-rest-arg)]
+                                             [symbol-or-list-of-syntax-obj (syntax-e syntax-obj)])
+                                        (if (symbol? symbol-or-list-of-syntax-obj)
+                                            syntax-obj
+                                            symbol-or-list-of-syntax-obj)))]
+                          ; convert the improper list into a proper one.
+                          [args (let loop ([args args])
+                                  (if (pair? args)
+                                      (cons (car args)
+                                            (loop (cdr args)))
+                                      (list args)))]
+                          [args-labels (map create-simple-label args)]
+                          [gamma-extended (extend-env gamma args args-labels)])
+                     (vector (cons #t rest-arg?s)
+                             (cons (sub1 (length args)) req-args)
+                             (cons args-labels argss-labels)
+                             (cons (list:foldl
+                                    (lambda (exp _)
+                                      (create-label-from-term exp gamma-extended label))
+                                    cst:dummy
+                                    exps)
+                                   exps-labels)))]
+                  [rest-arg
+                   (let* (; one syntax object for rest-arg
+                          [rest-arg (syntax rest-arg)]
+                          [rest-arg-label-list (list (create-simple-label rest-arg))]
+                          [gamma-extended (extend-env gamma (list rest-arg) rest-arg-label-list)])
+                     (vector (cons #t rest-arg?s)
+                             (cons 0 req-args)
+                             (cons rest-arg-label-list argss-labels)
+                             (cons (list:foldl
+                                    (lambda (exp _)
+                                      (create-label-from-term exp gamma-extended label))
+                                    cst:dummy
+                                    exps)
+                                   exps-labels)))]
+                  )))
+             (vector '()'()'()'())
+             argss
+             expss
+             )])
+      ;(set! graph-nodes (add1 graph-nodes))
+      (set-label-case-lambda-rest-arg?s! label (vector-ref all-labels 0))
+      (set-label-case-lambda-req-args! label (vector-ref all-labels 1))
+      (set-label-case-lambda-argss! label (vector-ref all-labels 2))
+      (set-label-case-lambda-exps! label (vector-ref all-labels 3))
+      (initialize-label-set-for-value-source label)
+      (register-label-with-gui label)
+      label))
+  
+  ; syntax-object (listof (cons symbol label)) label (listof label) -> label
+  (define (create-top-level-label identifier gamma enclosing-lambda-label)
+    (let* ([identifier-name (syntax-e identifier)]
+           ; note that bound-label doesn't contain the #%top, but they have the same
+           ; syntax source/line/column/position, so arrows and underlining will work
+           ; the same, but it will make things a little bit simpler when doing a
+           ; lookup-top-level-name in the #%app case (if we have to).
+           [bound-label (create-simple-label identifier)])
+      (if enclosing-lambda-label
+          ; free var inside a lambda, so add it to the list of free variables, don't do
+          ; any lookup now (will be done when the enclosing lambda is applied)
+          (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
+                 [current-thunk (car enclosing-lambda-effects)])
+            (set-car! enclosing-lambda-effects
+                      (lambda ()
+                        (current-thunk)
+                        (lookup-and-bind-top-level-vars (list bound-label) identifier)
+                        )))
+          ; top level
+          (lookup-and-bind-top-level-vars (list bound-label) identifier))
+      bound-label))
+  
   ; syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
@@ -2107,119 +2235,17 @@
     (kern:kernel-syntax-case
      term #f
      ; lambda and case-lambda are currently both core forms. This might change (dixit Matthew)
-     [(lambda . clause)
-      (create-label-from-term (datum->syntax-object
-                               term
-                               `(case-lambda . (,(syntax clause)))
-                               term term)
-                              gamma enclosing-lambda-label)]
+     [(lambda args exps ...)
+      (let (; scheme lists of syntax object lists of syntax objects
+            [argss (list (syntax args))]
+            [expss (list (syntax (exps ...)))])
+        (create-case-lambda-label argss expss term gamma))]
      [(case-lambda . ((args exps ...) ...))
       (set! ast-nodes (add1 ast-nodes))
-      (let* (; scheme lists of syntax object lists of syntax objects
-             [argss (syntax-e (syntax (args ...)))]
-             [expss (syntax-e (syntax ((exps ...) ...)))]
-             [label (make-label-case-lambda
-                     #f #f #f
-                     term
-                     (make-hash-table)
-                     (make-hash-table)
-                     #f
-                     cst:dummy
-                     cst:dummy
-                     cst:dummy
-                     cst:dummy
-                     '())]
-             [all-labels
-              (list:foldr
-               (lambda (args exps other-clauses-labels)
-                 (let ([rest-arg?s (vector-ref other-clauses-labels 0)]
-                       [req-args (vector-ref other-clauses-labels 1)]
-                       [argss-labels (vector-ref other-clauses-labels 2)]
-                       [exps-labels (vector-ref other-clauses-labels 3)]
-                       ; scheme list of syntax objects for body exps
-                       [exps (syntax-e exps)])
-                   ; we add one new element to each list each time we process a new clause,
-                   ; so that the element for the current clause is always at the start of the
-                   ; list, so we know where to find this element when we need it (we need to
-                   ; update the top free vars for the current clause in the #%top case, and
-                   ; the application thunk for the current clause in the #%app case).
-                   (set-label-case-lambda-effects!
-                    label
-                    (cons cst:dummy-thunk (label-case-lambda-effects label)))
-                   (kern:kernel-syntax-case
-                    args #f
-                    [(args ...)
-                     (let* (; proper scheme list of syntax objects for arguments
-                            [args (syntax-e (syntax (args ...)))]
-                            [args-labels (map create-simple-label args)]
-                            [gamma-extended (extend-env gamma args args-labels)])
-                       (vector (cons #f rest-arg?s)
-                               (cons (length args) req-args)
-                               (cons args-labels argss-labels)
-                               (cons (list:foldl
-                                      (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label))
-                                      cst:dummy
-                                      exps)
-                                     exps-labels)))]
-                    [(first-arg . other-args-including-rest-arg)
-                     (let* (; (syntax other-args-including-rest-arg) is either a (syntax
-                            ; version of a) list of syntax objects (if there's strictly more
-                            ; than one required argument), or a single syntax object (if
-                            ; there's only one required argument). In both cases we want to
-                            ; construct an improper list of syntax objects. syntax-e takes
-                            ; care of that in the list case, cons takes care of that in the
-                            ; other case.
-                            [args (cons (syntax first-arg)
-                                        (let* ([syntax-obj (syntax other-args-including-rest-arg)]
-                                               [symbol-or-list-of-syntax-obj (syntax-e syntax-obj)])
-                                          (if (symbol? symbol-or-list-of-syntax-obj)
-                                              syntax-obj
-                                              symbol-or-list-of-syntax-obj)))]
-                            ; convert the improper list into a proper one.
-                            [args (let loop ([args args])
-                                    (if (pair? args)
-                                        (cons (car args)
-                                              (loop (cdr args)))
-                                        (list args)))]
-                            [args-labels (map create-simple-label args)]
-                            [gamma-extended (extend-env gamma args args-labels)])
-                       (vector (cons #t rest-arg?s)
-                               (cons (sub1 (length args)) req-args)
-                               (cons args-labels argss-labels)
-                               (cons (list:foldl
-                                      (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label))
-                                      cst:dummy
-                                      exps)
-                                     exps-labels)))]
-                    [rest-arg
-                     (let* (; one syntax object for rest-arg
-                            [rest-arg (syntax rest-arg)]
-                            [rest-arg-label-list (list (create-simple-label rest-arg))]
-                            [gamma-extended (extend-env gamma (list rest-arg) rest-arg-label-list)])
-                       (vector (cons #t rest-arg?s)
-                               (cons 0 req-args)
-                               (cons rest-arg-label-list argss-labels)
-                               (cons (list:foldl
-                                      (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label))
-                                      cst:dummy
-                                      exps)
-                                     exps-labels)))]
-                    )))
-               (vector '()'()'()'())
-               argss
-               expss
-               )])
-        ;(set! graph-nodes (add1 graph-nodes))
-        (set-label-case-lambda-rest-arg?s! label (vector-ref all-labels 0))
-        (set-label-case-lambda-req-args! label (vector-ref all-labels 1))
-        (set-label-case-lambda-argss! label (vector-ref all-labels 2))
-        (set-label-case-lambda-exps! label (vector-ref all-labels 3))
-        (initialize-label-set-for-value-source label)
-        (register-label-with-gui label)
-        label)]
+      (let (; scheme lists of syntax object lists of syntax objects
+            [argss (syntax-e (syntax (args ...)))]
+            [expss (syntax-e (syntax ((exps ...) ...)))])
+        (create-case-lambda-label argss expss term gamma))]
      [(#%app op actual-args ...)
       (set! ast-nodes (add1 ast-nodes))
       (let* ([app-label (create-simple-label term)]
@@ -2656,11 +2682,31 @@
         (add-edge-and-propagate-set-through-edge test-label test-edge)
         if-label)]
      [(if test then)
-      (create-label-from-term (datum->syntax-object
-                               term
-                               (list 'if (syntax test) (syntax then) '(#%app (#%top . void)))
-                               term term)
-                              gamma enclosing-lambda-label)]
+      (set! ast-nodes (add1 ast-nodes))
+      (let* ([test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label)]
+             [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)]
+             [else-label (let ([void-label (make-label-cst
+                                            #f #f #t
+                                            term
+                                            (make-hash-table)
+                                            (make-hash-table)
+                                            cst:void)])
+                           ;(set! graph-nodes (add1 graph-nodes))
+                           (initialize-label-set-for-value-source void-label)
+                           ;(register-label-with-gui void-label)
+                           void-label)]
+             ; because of the (if test then) case below, else-label might be associated with
+             ; the same position as the whole term, so we have to create the if-label after
+             ; the else-label, so that the wrong label/position association created by the
+             ; else-label is overwritten.
+             [if-label (create-simple-label term)]
+             [if-edge (create-simple-edge if-label)]
+             [test-edge (create-self-modifying-edge (lambda (label)
+                                                      (or (not (label-cst? label))
+                                                          (label-cst-value label)))
+                                                    then-label else-label if-edge)])
+        (add-edge-and-propagate-set-through-edge test-label test-edge)
+        if-label)]
      [(begin exp exps ...)
       (set! ast-nodes (add1 ast-nodes))
       (let ([begin-label (create-simple-label term)]
@@ -2687,26 +2733,8 @@
         begin0-label)]
      [(#%top . identifier)
       (set! ast-nodes (add1 ast-nodes))
-      (let* ([identifier (syntax identifier)]
-             [identifier-name (syntax-e identifier)]
-             ; note that bound-label doesn't contain the #%top, but they have the same
-             ; syntax source/line/column/position, so arrows and underlining will work
-             ; the same, but it will make things a little bit simpler when doing a
-             ; lookup-top-level-name in the #%app case (if we have to).
-             [bound-label (create-simple-label identifier)])
-        (if enclosing-lambda-label
-            ; free var inside a lambda, so add it to the list of free variables, don't do
-            ; any lookup now (will be done when the enclosing lambda is applied)
-            (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
-                   [current-thunk (car enclosing-lambda-effects)])
-              (set-car! enclosing-lambda-effects
-                        (lambda ()
-                          (current-thunk)
-                          (lookup-and-bind-top-level-vars (list bound-label) identifier)
-                          )))
-            ; top level
-            (lookup-and-bind-top-level-vars (list bound-label) identifier))
-        bound-label)]
+      (let ([identifier (syntax identifier)])
+        (create-top-level-label identifier gamma enclosing-lambda-label))]
      [(set! var exp)
       (set! ast-nodes (add1 ast-nodes))
       (let* ([var-stx (syntax var)]
@@ -2868,11 +2896,8 @@
               bound-label)
             ; probably a top level var (like a primitive name) but without #%top (if it comes
             ; from a macro, or some strange stuff like that.
-            (create-label-from-term
-             (datum->syntax-object var-stx
-                                   (cons '#%top var-stx)
-                                   var-stx var-stx)
-             gamma enclosing-lambda-label)))]
+            (create-top-level-label var-stx gamma enclosing-lambda-label)
+            ))]
      ))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES

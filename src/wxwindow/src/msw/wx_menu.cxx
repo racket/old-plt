@@ -486,6 +486,11 @@ wxMenuItem *wxMenu::FindItemForMenuId(WORD menuId)
   return NULL;
 }
 
+void wxMenu::SetWidth(int n)
+{
+  requestedWidth = n;
+}
+
 // Menu Bar
 
 wxMenuBar::wxMenuBar(void)

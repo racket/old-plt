@@ -27,6 +27,7 @@ class wxMenu: public wxbMenu
   Bool mustBeBreaked;
  public:
   HANDLE save_ms_handle; // Used for Enable() on popup
+  int requestedWidth;
 
   wxMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxMenu(void);
@@ -55,6 +56,8 @@ class wxMenu: public wxbMenu
   wxMenuItem *FindItemForMenuId(WORD menuId);
 
   BOOL MSWCommand(UINT param, WORD id);
+  
+  void SetWidth(int n);
 };
 
 class wxFrame;

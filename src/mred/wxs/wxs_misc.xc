@@ -7,6 +7,7 @@
 #include "wx_types.h"
 #include "wx_stdev.h"
 #include "wx_dc.h"
+#include "wx_dcps.h"
 #include "wx_clipb.h"
 
 @INCLUDE wxs.xci
@@ -87,7 +88,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
   return first;
 }
 
-@MACRO makeSizedString[i] = (r ? scheme_make_sized_string(r, _x<i>, 1) : scheme_null)
+@MACRO makeSizedString[i] = (r ? scheme_make_sized_string(r, _x<i>, 1) : XC_SCHEME_NULL)
 
 @CLASSBASE wxClipboard "wx:clipboard" : "wx:object"
 
@@ -120,3 +121,47 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @END
 
+
+@BEGINSYMBOLS psMode > ONE
+@SYM "preview" : PS_PREVIEW
+@SYM "file" : PS_FILE
+@SYM "printer" : PS_PRINTER
+@ENDSYMBOLS
+
+@BEGINSYMBOLS psOrientation > ONE
+@SYM "portrait" : PS_PORTRAIT
+@SYM "landscape" : PS_LANDSCAPE
+@ENDSYMBOLS
+
+
+@CLASSBASE wxPrintSetupData "wx:ps-setup" : "wx:object"
+
+@CREATOR ()
+
+@ "get-command" : string GetPrinterCommand();
+@ "get-file" : string GetPrinterFile();
+@ "get-preview-command" : string GetPrintPreviewCommand();
+@ "get-mode" : SYM[psMode] GetPrinterMode();
+@ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
+@ "get-options" : string GetPrinterOptions();
+@ "get-scaling" : void GetPrinterScaling(float*,float*);
+@ "get-translation" : void GetPrinterTranslation(float*,float*);
+@ "get-paper-name" : nstring GetPaperName();
+@ "get-afm-path" : nstring GetAFMPath();
+@ "get-level-2" : bool GetLevel2();
+
+@ "set-command" : void SetPrinterCommand(string);
+@ "set-file" : void SetPrinterFile(pathname);
+@ "set-preview-command" : void SetPrintPreviewCommand(string); 
+@ "set-mode" : void SetPrinterMode(SYM[psMode]);
+@ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
+@ "set-options" : void SetPrinterOptions(string);
+@ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);
+@ "set-translation" : void SetPrinterTranslation(float,float);
+@ "set-paper-name" : void SetPaperName(nstring);
+@ "set-afm-path" : void SetAFMPath(nstring);
+@ "set-level-2" : void SetLevel2(bool);
+
+@ "copy-from" : void copy(wxPrintSetupData%);
+
+@END

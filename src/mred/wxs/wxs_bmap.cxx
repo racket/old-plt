@@ -23,40 +23,64 @@
 #define wxBITMAP_TYPE_PICT_RESOURCE 100
 #endif
 
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = NULL;
+
+static void init_symset_bitmapType(void) {
+  bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
+  bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = scheme_intern_symbol("bmp-resource");
+  bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("gif");
+  bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
+  bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
+  bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("pict");
+  bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = scheme_intern_symbol("pict-resource");
+}
+
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBITMAP_TYPE_BMP) { return wxBITMAP_TYPE_BMP; }
-    if ((vi) == wxBITMAP_TYPE_BMP_RESOURCE) { return wxBITMAP_TYPE_BMP_RESOURCE; }
-    if ((vi) == wxBITMAP_TYPE_GIF) { return wxBITMAP_TYPE_GIF; }
-    if ((vi) == wxBITMAP_TYPE_XBM) { return wxBITMAP_TYPE_XBM; }
-    if ((vi) == wxBITMAP_TYPE_XPM) { return wxBITMAP_TYPE_XPM; }
-    if ((vi) == wxBITMAP_TYPE_PICT) { return wxBITMAP_TYPE_PICT; }
-    if ((vi) == wxBITMAP_TYPE_PICT_RESOURCE) { return wxBITMAP_TYPE_PICT_RESOURCE; }
-  }
-  if (where) scheme_wrong_type(where, "bitmapType integer", -1, 0, &v);
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return wxBITMAP_TYPE_BMP_RESOURCE; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return wxBITMAP_TYPE_PICT_RESOURCE; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBITMAP_TYPE_BMP) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_BMP_RESOURCE) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_GIF) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_XBM) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_XPM) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_PICT) { return 1; }
-    if ((vi) == wxBITMAP_TYPE_PICT_RESOURCE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "bitmapType integer", -1, 0, &v);
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_bitmapType(int v) {
-  return scheme_make_integer(v);
+  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
+  switch (v) {
+  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
+  case wxBITMAP_TYPE_BMP_RESOURCE: return bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym;
+  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
+  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
+  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
+  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
+  case wxBITMAP_TYPE_PICT_RESOURCE: return bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym;
+  default: return NULL;
+  }
 }
 
 
@@ -396,20 +420,6 @@ static Scheme_Object *objscheme_classname_os_wxBitmap(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxBitmap(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-bmp", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-bmp", scheme_make_integer(wxBITMAP_TYPE_BMP), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-bmp-resource", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-bmp-resource", scheme_make_integer(wxBITMAP_TYPE_BMP_RESOURCE), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-gif", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-gif", scheme_make_integer(wxBITMAP_TYPE_GIF), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-xbm", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-xbm", scheme_make_integer(wxBITMAP_TYPE_XBM), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-xpm", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-xpm", scheme_make_integer(wxBITMAP_TYPE_XPM), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-pict", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-pict", scheme_make_integer(wxBITMAP_TYPE_PICT), env);
-  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-pict-resource", env))
-    scheme_install_xc_global("wx:const-""bitmap-type-pict-resource", scheme_make_integer(wxBITMAP_TYPE_PICT_RESOURCE), env);
 if (os_wxBitmap_class) {
     objscheme_add_global_class(os_wxBitmap_class,  "wx:bitmap%", env);
 } else {
@@ -434,14 +444,14 @@ if (os_wxBitmap_class) {
 
 int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxBitmap_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:bitmap%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:bitmap% object or " XC_NULL_STR: "wx:bitmap% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -451,7 +461,7 @@ Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -470,7 +480,7 @@ Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *realobj)
 
 class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxBitmap(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -555,14 +565,14 @@ if (os_wxIcon_class) {
 
 int objscheme_istype_wxIcon(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxIcon_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:icon%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:icon% object or " XC_NULL_STR: "wx:icon% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -572,7 +582,7 @@ Scheme_Object *objscheme_bundle_wxIcon(class wxIcon *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -591,7 +601,7 @@ Scheme_Object *objscheme_bundle_wxIcon(class wxIcon *realobj)
 
 class wxIcon *objscheme_unbundle_wxIcon(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxIcon(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

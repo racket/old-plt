@@ -16,10 +16,10 @@
 @MACRO rZERO = return 0;
 
 @BEGINSYMBOLS style
-@SYM "mcanvas-no-h-scroll" : wxMCANVAS_NO_H_SCROLL
-@SYM "mcanvas-no-v-scroll" : wxMCANVAS_NO_V_SCROLL
-@SYM "mcanvas-hide-h-scroll" : wxMCANVAS_HIDE_H_SCROLL
-@SYM "mcanvas-hide-v-scroll" : wxMCANVAS_HIDE_V_SCROLL
+@SYM "no-h-scroll" : wxMCANVAS_NO_H_SCROLL
+@SYM "no-v-scroll" : wxMCANVAS_NO_V_SCROLL
+@SYM "hide-h-scroll" : wxMCANVAS_HIDE_H_SCROLL
+@SYM "hide-v-scroll" : wxMCANVAS_HIDE_V_SCROLL
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci
@@ -45,7 +45,7 @@ typedef void *(*CAPOFunc)(void*);
 
 @CLASSBASE wxMediaCanvas "wx:media-canvas" : "wx:canvas"
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
+// @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
 
 @CLASSID wxTYPE_MEDIA_CANVAS

@@ -98,7 +98,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 
 @CREATOR ()
 
-@MACRO makeSizedString = (r ? scheme_make_sized_string(r, _x0 - 1, 0) : scheme_null)
+@MACRO makeSizedString = (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL)
 
 @ "get-string" : nstring/makeSizedString GetString(-long*);
 

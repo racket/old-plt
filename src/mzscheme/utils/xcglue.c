@@ -218,7 +218,7 @@ Scheme_Object *objscheme_bundle_generic(void *p)
 Scheme_Object *objscheme_bundle_string(char *s)
 {
   if (!s)
-    return scheme_null;
+    return XC_SCHEME_NULL;
   else
     return scheme_make_string(s);
 }
@@ -303,18 +303,27 @@ char *objscheme_unbundle_pathname(Scheme_Object *obj, const char *where)
 
 char *objscheme_unbundle_nullable_string(Scheme_Object *obj, const char *where)
 {
-  if (SCHEME_NULLP(obj))
+  if (XC_SCHEME_NULLP(obj))
     return NULL;
-  else
+  else if (!where || SCHEME_STRINGP(obj))
     return objscheme_unbundle_string(obj, where);
+  else {
+    scheme_wrong_type(where, "string or "  XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  }
 }
 
 char *objscheme_unbundle_nullable_pathname(Scheme_Object *obj, const char *where)
 {
-  if (SCHEME_NULLP(obj))
+  if (XC_SCHEME_NULLP(obj))
     return NULL;
-  else
+  else  if (!where || SCHEME_STRINGP(obj))
     return objscheme_unbundle_pathname(obj, where);
+  else  {
+    scheme_wrong_type(where, "pathname string or " XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  }
+    
 }
 
 char objscheme_unbundle_char(Scheme_Object *obj, const char *where)

@@ -5,11 +5,11 @@
 #endif
 
 @BEGINSYMBOLS bitmapType > ONE
-@SYM "bitmap-type-bmp" : wxBITMAP_TYPE_BMP
-@SYM "bitmap-type-bmp-resource" : wxBITMAP_TYPE_BMP_RESOURCE
-@SYM "bitmap-type-gif" : wxBITMAP_TYPE_GIF
-@SYM "bitmap-type-xbm" : wxBITMAP_TYPE_XBM
-@SYM "bitmap-type-xpm" : wxBITMAP_TYPE_XPM
-@SYM "bitmap-type-pict" : wxBITMAP_TYPE_PICT
-@SYM "bitmap-type-pict-resource" : wxBITMAP_TYPE_PICT_RESOURCE
+@SYM "bmp" : wxBITMAP_TYPE_BMP
+@SYM "bmp-resource" : wxBITMAP_TYPE_BMP_RESOURCE
+@SYM "gif" : wxBITMAP_TYPE_GIF
+@SYM "xbm" : wxBITMAP_TYPE_XBM
+@SYM "xpm" : wxBITMAP_TYPE_XPM
+@SYM "pict" : wxBITMAP_TYPE_PICT
+@SYM "pict-resource" : wxBITMAP_TYPE_PICT_RESOURCE
 @ENDSYMBOLS

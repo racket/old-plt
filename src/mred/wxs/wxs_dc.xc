@@ -19,13 +19,13 @@
 
 @HEADER
 
-@BEGINSYMBOLS mapMode > ONE
-@SYM "mm-twips" : MM_TWIPS
-@SYM "mm-points" : MM_POINTS
-@SYM "mm-metric" : MM_METRIC
-@SYM "mm-lometric" : MM_LOMETRIC
-@SYM "mm-text" : MM_TEXT
-@ENDSYMBOLS
+// @BEGINSYMBOLS mapMode > ONE
+// @SYM "mm-twips" : MM_TWIPS
+// @SYM "mm-points" : MM_POINTS
+// @SYM "mm-metric" : MM_METRIC
+// @SYM "mm-lometric" : MM_LOMETRIC
+// @SYM "mm-text" : MM_TEXT
+// @ENDSYMBOLS
 
 @BEGINSYMBOLS solidity > ONE
 @SYM "transparent" : wxTRANSPARENT
@@ -88,7 +88,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @ Q "try-colour" : void TryColour(wxColour!,wxColour!);
 
-@ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
+// @ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
 @ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
 @ q "set-colour-map" : void SetColourMap(wxColourMap!); : : /CheckOk
 @ Q "set-user-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
@@ -99,7 +99,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 @ q "get-brush" : wxBrush! GetBrush();
 @ q "get-font" : wxFont! GetFont();
 @ q "get-logical-function" : SYM[logicalFunc] GetLogicalFunction();
-@ q "get-map-mode" : SYM[mapMode] GetMapMode();
+// @ q "get-map-mode" : SYM[mapMode] GetMapMode();
 @ q "get-pen" : wxPen! GetPen();
 @ m "get-text-background" : wxColour! dcGetTextBackground();
 @ m "get-text-foreground" : wxColour! dcGetTextForeground();

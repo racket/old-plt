@@ -498,7 +498,7 @@ sub DoPrintClass
 	print HEADER "$proto;\n";
 	print "$proto\n";
 	print "{\n";
-	print "  if (nullOK && SCHEME_NULLP(obj)) return 1;\n";
+	print "  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;\n";
 	print "  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)\n";
 	print "      && scheme_is_subclass(";
 	print "((Scheme_Class_Object *)obj)->sclass,";
@@ -508,7 +508,7 @@ sub DoPrintClass
 	print "    if (!stop)\n";
 	print "       return 0;\n";
 	$cs = &Unquote($classstring, 1);
-	print "    scheme_wrong_type(stop, \"$cs\", -1, 0, &obj);\n";
+	print "    scheme_wrong_type(stop, nullOK ? \"$cs object or \" XC_NULL_STR: \"$cs object\", -1, 0, &obj);\n";
 	print "    return 0;\n";
 	print "  }\n";
 	print "}\n\n";
@@ -519,7 +519,7 @@ sub DoPrintClass
 	print HEADER "$proto;\n";
 	print "$proto\n";
 	print "{\n  Scheme_Class_Object *obj;\n  Scheme_Object *sobj;\n\n";
-	print "  if (!realobj) return scheme_null;\n\n";
+	print "  if (!realobj) return XC_SCHEME_NULL;\n\n";
 	print "  if (realobj->__gc_external)\n";
 	print "    return (Scheme_Object *)realobj->__gc_external;\n";
 	if ($idfield ne '') {
@@ -547,7 +547,7 @@ sub DoPrintClass
 	print HEADER "$proto;\n";
 	print "$proto\n";
 	print "{\n";
-	print "  if (nullOK && SCHEME_NULLP(obj)) return NULL;\n\n";
+	print "  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;\n\n";
 	print "  (void)objscheme_istype_${oldclass}(obj, where, nullOK);\n";
 
 	print "  Scheme_Class_Object *o = ";
@@ -1342,7 +1342,7 @@ sub PrintBundleVar
 	print "objscheme_box(";
 	&PrintBundleVar("(*$var)", $paramtype);
 	print ")";
-	print " : scheme_null)";
+	print " : XC_SCHEME_NULL)";
     } elsif (substr($paramtype, -1) eq '&') {
 	substr($paramtype, -1) = '';
 	$var = "&$var" unless $outgoing;
@@ -1634,12 +1634,12 @@ sub PrintUnbundles
 	    $svar = "p[" . ($paramnum - $offset) . "]";
 	    $xvar = "x${paramnum}";
 	    if (&NeedsDeref($paramtype)) {
-		print "if (SCHEME_NULLP($svar))\n";
+		print "if (XC_SCHEME_NULLP($svar))\n";
 		if (&CanBeNull($paramtype)) {
 		    print "$prefix    $xvar = NULL;";
 		} else {
 		    print "$prefix    scheme_wrong_type($mname, ";
-		    print "\"non-null\", ($paramnum - $offset), n, p);"
+		    print "\"non-\" XC_NULL_STR, ($paramnum - $offset), n, p);"
 		}
 		print "\n$prefix  else\n$prefix    *";
 	    }
@@ -1676,7 +1676,7 @@ sub PrintBundledEffects
 	    if (&NeedsDeref($paramtype)) {
 		$pos = $paramnum - $offset;
 		print "$prefix  if (n > $pos";
-		print " && !SCHEME_NULLP(p[$pos])" if &CanBeNull($paramtype);
+		print " && !XC_SCHEME_NULLP(p[$pos])" if &CanBeNull($paramtype);
 		print ")\n$prefix    objscheme_set_box(p[$pos], ";
 		substr($paramtype, -1) = '';
 		&PrintBundleVar("_x${paramnum}", $paramtype, $bundle);
@@ -1748,7 +1748,7 @@ sub PrintTypecheck
 	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', $stop);
 	print ")";
     } elsif (substr($paramtype, -1) eq '?') {
-	print "(SCHEME_NULLP($var) || (objscheme_istype_box($var, $stop) && ";
+	print "(XC_SCHEME_NULLP($var) || (objscheme_istype_box($var, $stop) && ";
 	substr($paramtype, -1) = '';
 	&PrintTypecheck("objscheme_unbox($var, $stop)", $paramtype, '', $stop);
 	print "))";
@@ -1775,11 +1775,11 @@ sub PrintTypecheck
 	print "objscheme_istype_string($var, $stop)";
     } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring'
 	     || $paramtype eq 'nustring' || $paramtype eq 'ncustring') {
-	print "(SCHEME_NULLP($var) || objscheme_istype_string($var, $stop))";
+	print "(XC_SCHEME_NULLP($var) || objscheme_istype_string($var, $stop))";
     } elsif ($paramtype eq 'pathname' || $paramtype eq 'cpathname') {
 	print "objscheme_istype_pathname($var, $stop)";
     } elsif ($paramtype eq 'npathname' || $paramtype eq 'ncpathname') {
-	print "(SCHEME_NULLP($var) || objscheme_istype_pathname($var, $stop))";
+	print "(XC_SCHEME_NULLP($var) || objscheme_istype_pathname($var, $stop))";
     } elsif (substr($paramtype, -1) eq '!') {
 	substr($paramtype, -1) = '';
 	&PrintTypecheckObj($var, $paramtype, $stop);
@@ -1904,10 +1904,10 @@ sub OIEnd
     }
 }
 
-sub newPrintSymSet
+sub PrintSymSet
 {
     local ($name, $kind, @syms) = @_;
-    local ($multi, $vv, $lname);
+    local ($multi, $vv, $lname, $char);
 
     if ($kind =~ /ONE/) {
 	$multi = 0;
@@ -1915,6 +1915,11 @@ sub newPrintSymSet
     } else {
 	$multi = 1;
 	$lname = " list";
+    }
+    if ($kind =~ /CHAR/) {
+	$char = 1;
+    } else {
+	$char = 0;
     }
 
     foreach $sym (@syms) {
@@ -1955,6 +1960,15 @@ sub newPrintSymSet
 	    $donepost = "";
 	}
 	print "  if (0) { }\n";
+	if ($char) {
+	    print "  else if (SCHEME_CHARP(v)) { return ";
+	    if ($mode eq 'unbundle') {
+		print "SCHEME_CHAR_VAL(v)";
+	    } else {
+		print "1";
+	    }
+	    print "; }\n";
+	}
 	foreach $sym (@syms) {
 	    ($n, $v) = split(/,/, $sym);
 	    if ($mode eq 'unbundle') {
@@ -1994,13 +2008,17 @@ sub newPrintSymSet
 	    ($n, $v) = split(/,/, $sym);
 	    print "  case $v: return ${name}_${v}_sym;\n";
 	}
-	print "  default: return NULL;\n";
+	if ($char) {
+	    print "  default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);\n";
+	} else {
+	    print "  default: return NULL;\n";
+	}
 	print "  }\n";
     }
     print "}\n\n";
 }
 
-sub PrintSymSet
+sub oldPrintSymSet
 {
     local ($name, $kind, @syms) = @_;
     local ($multi, $vv, $lname);

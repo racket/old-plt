@@ -12,6 +12,7 @@
 #include "wx_types.h"
 #include "wx_stdev.h"
 #include "wx_dc.h"
+#include "wx_dcps.h"
 #include "wx_clipb.h"
 
 
@@ -158,14 +159,14 @@ if (os_baseMetaFile_class) {
 
 int objscheme_istype_baseMetaFile(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_baseMetaFile_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:meta-file%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:meta-file% object or " XC_NULL_STR: "wx:meta-file% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -175,7 +176,7 @@ Scheme_Object *objscheme_bundle_baseMetaFile(class baseMetaFile *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -194,7 +195,7 @@ Scheme_Object *objscheme_bundle_baseMetaFile(class baseMetaFile *realobj)
 
 class baseMetaFile *objscheme_unbundle_baseMetaFile(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_baseMetaFile(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -390,14 +391,14 @@ if (os_wxTimer_class) {
 
 int objscheme_istype_wxTimer(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxTimer_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:timer%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:timer% object or " XC_NULL_STR: "wx:timer% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -407,7 +408,7 @@ Scheme_Object *objscheme_bundle_wxTimer(class wxTimer *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -426,7 +427,7 @@ Scheme_Object *objscheme_bundle_wxTimer(class wxTimer *realobj)
 
 class wxTimer *objscheme_unbundle_wxTimer(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxTimer(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -499,7 +500,7 @@ static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n, 
 
   
   
-  return (r ? scheme_make_sized_string(r, _x1, 1) : scheme_null);
+  return (r ? scheme_make_sized_string(r, _x1, 1) : XC_SCHEME_NULL);
 }
 
 #pragma argsused
@@ -610,14 +611,14 @@ if (os_wxClipboard_class) {
 
 int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxClipboard_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:clipboard%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:clipboard% object or " XC_NULL_STR: "wx:clipboard% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -627,7 +628,7 @@ Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -646,7 +647,7 @@ Scheme_Object *objscheme_bundle_wxClipboard(class wxClipboard *realobj)
 
 class wxClipboard *objscheme_unbundle_wxClipboard(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxClipboard(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -882,14 +883,14 @@ if (os_wxClipboardClient_class) {
 
 int objscheme_istype_wxClipboardClient(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxClipboardClient_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:clipboard-client%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:clipboard-client% object or " XC_NULL_STR: "wx:clipboard-client% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -899,7 +900,7 @@ Scheme_Object *objscheme_bundle_wxClipboardClient(class wxClipboardClient *realo
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -918,7 +919,7 @@ Scheme_Object *objscheme_bundle_wxClipboardClient(class wxClipboardClient *realo
 
 class wxClipboardClient *objscheme_unbundle_wxClipboardClient(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxClipboardClient(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -929,4 +930,662 @@ class wxClipboardClient *objscheme_unbundle_wxClipboardClient(Scheme_Object *obj
     return (wxClipboardClient *)o->primdata;
 }
 
+
+
+static Scheme_Object *psMode_PS_PREVIEW_sym = NULL;
+static Scheme_Object *psMode_PS_FILE_sym = NULL;
+static Scheme_Object *psMode_PS_PRINTER_sym = NULL;
+
+static void init_symset_psMode(void) {
+  psMode_PS_PREVIEW_sym = scheme_intern_symbol("preview");
+  psMode_PS_FILE_sym = scheme_intern_symbol("file");
+  psMode_PS_PRINTER_sym = scheme_intern_symbol("printer");
+}
+
+static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
+  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
+  if (0) { }
+  else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
+  else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
+  else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
+  if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_psMode(Scheme_Object *v, const char *where) {
+  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
+  if (0) { }
+  else if (v == psMode_PS_PREVIEW_sym) { return 1; }
+  else if (v == psMode_PS_FILE_sym) { return 1; }
+  else if (v == psMode_PS_PRINTER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_psMode(int v) {
+  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
+  switch (v) {
+  case PS_PREVIEW: return psMode_PS_PREVIEW_sym;
+  case PS_FILE: return psMode_PS_FILE_sym;
+  case PS_PRINTER: return psMode_PS_PRINTER_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *psOrientation_PS_PORTRAIT_sym = NULL;
+static Scheme_Object *psOrientation_PS_LANDSCAPE_sym = NULL;
+
+static void init_symset_psOrientation(void) {
+  psOrientation_PS_PORTRAIT_sym = scheme_intern_symbol("portrait");
+  psOrientation_PS_LANDSCAPE_sym = scheme_intern_symbol("landscape");
+}
+
+static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
+  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
+  if (0) { }
+  else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
+  else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
+  if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_psOrientation(Scheme_Object *v, const char *where) {
+  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
+  if (0) { }
+  else if (v == psOrientation_PS_PORTRAIT_sym) { return 1; }
+  else if (v == psOrientation_PS_LANDSCAPE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_psOrientation(int v) {
+  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
+  switch (v) {
+  case PS_PORTRAIT: return psOrientation_PS_PORTRAIT_sym;
+  case PS_LANDSCAPE: return psOrientation_PS_LANDSCAPE_sym;
+  default: return NULL;
+  }
+}
+
+
+
+
+
+
+
+
+class os_wxPrintSetupData : public wxPrintSetupData {
+ public:
+
+  os_wxPrintSetupData(Scheme_Object * obj);
+  ~os_wxPrintSetupData();
+};
+
+Scheme_Object *os_wxPrintSetupData_class;
+
+os_wxPrintSetupData::os_wxPrintSetupData(Scheme_Object * o)
+: wxPrintSetupData()
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxPrintSetupData::~os_wxPrintSetupData()
+{
+    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxPrintSetupData* x0;
+
+  
+  x0 = objscheme_unbundle_wxPrintSetupData(p[0], "wx:ps-setup%::copy-from", 0);
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->copy(*x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetLevel2(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  Bool x0;
+
+  
+  x0 = objscheme_unbundle_bool(p[0], "wx:ps-setup%::set-level-2");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetLevel2(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetAFMPath(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nstring x0;
+
+  
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:ps-setup%::set-afm-path");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetAFMPath(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPaperName(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nstring x0;
+
+  
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:ps-setup%::set-paper-name");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPaperName(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "wx:ps-setup%::set-translation");
+  x1 = objscheme_unbundle_float(p[1], "wx:ps-setup%::set-translation");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterTranslation(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nnfloat x0;
+  nnfloat x1;
+
+  
+  x0 = objscheme_unbundle_nonnegative_float(p[0], "wx:ps-setup%::set-scaling");
+  x1 = objscheme_unbundle_nonnegative_float(p[1], "wx:ps-setup%::set-scaling");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterScaling(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  string x0;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "wx:ps-setup%::set-options");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterOptions(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterOrientation(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+
+  
+  x0 = unbundle_symset_psOrientation(p[0], "wx:ps-setup%::set-orientation");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterOrientation(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+
+  
+  x0 = unbundle_symset_psMode(p[0], "wx:ps-setup%::set-mode");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterMode(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  string x0;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "wx:ps-setup%::set-preview-command");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrintPreviewCommand(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "wx:ps-setup%::set-file");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterFile(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  string x0;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "wx:ps-setup%::set-command");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterCommand(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetLevel2(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetLevel2();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetAFMPath(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  nstring r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetAFMPath();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPaperName(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  nstring r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPaperName();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float _x0;
+  float* x0 = &_x0;
+  float _x1;
+  float* x1 = &_x1;
+
+  
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:ps-setup%::get-translation", "non-" XC_NULL_STR, (0 - 0), n, p);
+  else
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:ps-setup%::get-translation"), "wx:ps-setup%::get-translation");
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:ps-setup%::get-translation", "non-" XC_NULL_STR, (1 - 0), n, p);
+  else
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:ps-setup%::get-translation"), "wx:ps-setup%::get-translation");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterTranslation(x0, x1);
+
+  
+  if (n > 0)
+    objscheme_set_box(p[0], scheme_make_double(_x0));
+  if (n > 1)
+    objscheme_set_box(p[1], scheme_make_double(_x1));
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float _x0;
+  float* x0 = &_x0;
+  float _x1;
+  float* x1 = &_x1;
+
+  
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:ps-setup%::get-scaling", "non-" XC_NULL_STR, (0 - 0), n, p);
+  else
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:ps-setup%::get-scaling"), "wx:ps-setup%::get-scaling");
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:ps-setup%::get-scaling", "non-" XC_NULL_STR, (1 - 0), n, p);
+  else
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:ps-setup%::get-scaling"), "wx:ps-setup%::get-scaling");
+
+  
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterScaling(x0, x1);
+
+  
+  if (n > 0)
+    objscheme_set_box(p[0], scheme_make_double(_x0));
+  if (n > 1)
+    objscheme_set_box(p[1], scheme_make_double(_x1));
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterOptions(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  string r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterOptions();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterOrientation(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterOrientation();
+
+  
+  
+  return bundle_symset_psOrientation(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterMode(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterMode();
+
+  
+  
+  return bundle_symset_psMode(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  string r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrintPreviewCommand();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  string r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterFile();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  string r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterCommand();
+
+  
+  
+  return objscheme_bundle_string((char *)r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  os_wxPrintSetupData *realobj;
+
+  
+  if (n != 0) 
+    scheme_wrong_count("wx:ps-setup%::initialization", 0, 0, n, p);
+
+  
+  realobj = new os_wxPrintSetupData(obj);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
+}
+
+static Scheme_Object *objscheme_classname_os_wxPrintSetupData(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(obj);
+  if (n) scheme_wrong_count("wx:ps-setup%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("wx:ps-setup%");
+}
+
+void objscheme_setup_wxPrintSetupData(void *env)
+{
+if (os_wxPrintSetupData_class) {
+    objscheme_add_global_class(os_wxPrintSetupData_class,  "wx:ps-setup%", env);
+} else {
+  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "wx:ps-setup%", "wx:object%", os_wxPrintSetupData_ConstructScheme, 24);
+
+  scheme_add_method_w_arity(os_wxPrintSetupData_class,"get-class-name",objscheme_classname_os_wxPrintSetupData, 0, 0);
+
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2", os_wxPrintSetupDataSetLevel2, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-afm-path", os_wxPrintSetupDataSetAFMPath, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name", os_wxPrintSetupDataSetPaperName, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-translation", os_wxPrintSetupDataSetPrinterTranslation, 2, 2);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-scaling", os_wxPrintSetupDataSetPrinterScaling, 2, 2);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-options", os_wxPrintSetupDataSetPrinterOptions, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-orientation", os_wxPrintSetupDataSetPrinterOrientation, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-mode", os_wxPrintSetupDataSetPrinterMode, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-preview-command", os_wxPrintSetupDataSetPrintPreviewCommand, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-file", os_wxPrintSetupDataSetPrinterFile, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-command", os_wxPrintSetupDataSetPrinterCommand, 1, 1);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-level-2", os_wxPrintSetupDataGetLevel2, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-afm-path", os_wxPrintSetupDataGetAFMPath, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name", os_wxPrintSetupDataGetPaperName, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-translation", os_wxPrintSetupDataGetPrinterTranslation, 2, 2);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-scaling", os_wxPrintSetupDataGetPrinterScaling, 2, 2);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-options", os_wxPrintSetupDataGetPrinterOptions, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-orientation", os_wxPrintSetupDataGetPrinterOrientation, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-mode", os_wxPrintSetupDataGetPrinterMode, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-preview-command", os_wxPrintSetupDataGetPrintPreviewCommand, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-file", os_wxPrintSetupDataGetPrinterFile, 0, 0);
+ scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-command", os_wxPrintSetupDataGetPrinterCommand, 0, 0);
+
+
+  scheme_made_class(os_wxPrintSetupData_class);
+
+
+}
+}
+
+int objscheme_istype_wxPrintSetupData(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxPrintSetupData_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    scheme_wrong_type(stop, nullOK ? "wx:ps-setup% object or " XC_NULL_STR: "wx:ps-setup% object", -1, 0, &obj);
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxPrintSetupData(class wxPrintSetupData *realobj)
+{
+  Scheme_Class_Object *obj;
+  Scheme_Object *sobj;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+    return sobj;
+  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxPrintSetupData_class);
+
+  obj->primdata = realobj;
+  objscheme_register_primpointer(&obj->primdata);
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  objscheme_backpointer(&realobj->__gc_external);
+  return (Scheme_Object *)obj;
+}
+
+class wxPrintSetupData *objscheme_unbundle_wxPrintSetupData(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  (void)objscheme_istype_wxPrintSetupData(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  objscheme_check_valid(obj);
+  if (o->primflag)
+    return (os_wxPrintSetupData *)o->primdata;
+  else
+    return (wxPrintSetupData *)o->primdata;
+}
 

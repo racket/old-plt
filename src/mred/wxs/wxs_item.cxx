@@ -271,14 +271,14 @@ if (os_wxItem_class) {
 
 int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxItem_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:item%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:item% object or " XC_NULL_STR: "wx:item% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -288,7 +288,7 @@ Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -307,7 +307,7 @@ Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj)
 
 class wxItem *objscheme_unbundle_wxItem(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxItem(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -789,14 +789,14 @@ if (os_wxMessage_class) {
 
 int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMessage_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:message%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:message% object or " XC_NULL_STR: "wx:message% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -806,7 +806,7 @@ Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -825,7 +825,7 @@ Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj)
 
 class wxMessage *objscheme_unbundle_wxMessage(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMessage(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

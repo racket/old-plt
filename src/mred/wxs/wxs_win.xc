@@ -53,11 +53,9 @@ static int wxSchemeWindowGetY(wxWindow *w)
 }
 
 @BEGINSYMBOLS sizeMode > ONE
-@SYM "size-auto" : wxSIZE_AUTO
-@SYM "size-auto-width" : wxSIZE_AUTO_WIDTH
-@SYM "size-auto-height" : wxSIZE_AUTO_HEIGHT
-@SYM "size-use-exsiting" : wxSIZE_USE_EXISTING
-@SYM "pos-use-minus-one" : wxPOS_USE_MINUS_ONE
+@SYM "auto" : wxSIZE_AUTO
+@SYM "use-exsiting" : wxSIZE_USE_EXISTING
+@SYM "use-minus-one" : wxPOS_USE_MINUS_ONE
 @ENDSYMBOLS
 
 @BEGINSYMBOLS direction > ONE

@@ -57,23 +57,23 @@ static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
 @INCLUDE wxs_fcs.xci
 
 @BEGINSYMBOLS editOp > ONE
-@SYM "edit-undo" : wxEDIT_UNDO
-@SYM "edit-redo" : wxEDIT_REDO
-@SYM "edit-clear" : wxEDIT_CLEAR
-@SYM "edit-cut" : wxEDIT_CUT
-@SYM "edit-copy" : wxEDIT_COPY
-@SYM "edit-paste" : wxEDIT_PASTE
-@SYM "edit-kill" : wxEDIT_KILL
-@SYM "edit-insert-text-box" : wxEDIT_INSERT_TEXT_BOX
-@SYM "edit-insert-graphic-box" : wxEDIT_INSERT_GRAPHIC_BOX
-@SYM "edit-insert-image" : wxEDIT_INSERT_IMAGE
-@SYM "edit-select-all" : wxEDIT_SELECT_ALL
+@SYM "undo" : wxEDIT_UNDO
+@SYM "redo" : wxEDIT_REDO
+@SYM "clear" : wxEDIT_CLEAR
+@SYM "cut" : wxEDIT_CUT
+@SYM "copy" : wxEDIT_COPY
+@SYM "paste" : wxEDIT_PASTE
+@SYM "kill" : wxEDIT_KILL
+@SYM "insert-text-box" : wxEDIT_INSERT_TEXT_BOX
+@SYM "insert-graphic-box" : wxEDIT_INSERT_GRAPHIC_BOX
+@SYM "insert-image" : wxEDIT_INSERT_IMAGE
+@SYM "select-all" : wxEDIT_SELECT_ALL
 @ENDSYMBOLS
 
 @BEGINSYMBOLS printMethod > ONE
-@SYM "print-standard" : 0
-@SYM "print-postscript" : 1
-@SYM "print-ask" : 2
+@SYM "standard" : 0
+@SYM "postscript" : 1
+@SYM "ask" : 2
 @ENDSYMBOLS
 
 @CLASSBASE wxMediaBuffer "wx:media-buffer" : "wx:object"
@@ -147,7 +147,7 @@ static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
 
 @ "append-edit-items" : int AppendEditItems(wxMenu!,int=0);
 @ "append-font-items" : int AppendFontItems(wxMenu!,int=0);
-@ "do-edit" : void DoEdit(int,bool=TRUE,long=0);
+@ "do-edit" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
 @ "do-font" : void DoFont(int,bool=TRUE);
 @ m "do-edit-command" : void DoEditCommand(SYM[editOp],bool=TRUE,long=0);
 

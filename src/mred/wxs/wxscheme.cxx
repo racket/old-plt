@@ -20,7 +20,6 @@
 #include "wxs_fram.h"
 #include "wxs_item.h"
 #include "wxs_butn.h"
-#include "wxs_text.h"
 #include "wxs_ckbx.h"
 #include "wxs_chce.h"
 #include "wxs_evnt.h"
@@ -42,13 +41,6 @@
 #include "wxs_slid.h"
 #include "wxs_gage.h"
 #include "wxs_lbox.h"
-#if USE_TOOLBAR 
-#include "wxs_tbar.h"
-#endif
-#if USE_CONSTRAINTS && 0
-#include "wxs_cstr.h"
-#endif
-// #include "wxs_form.h"
 
 #include "wxs_glob.h"
 
@@ -56,6 +48,7 @@
 #include "wxs_gdi.h"
 #include "wxs_dc.h"
 #include "wxs_cnvs.h"
+#include "wxs_misc.h"
 
 #include <stdlib.h>
 
@@ -989,6 +982,31 @@ static Scheme_Object *wxSchemeMakeEventspace(int argc, Scheme_Object **argv)
   return (Scheme_Object *)MrEdMakeEventspace(argc ? (Scheme_Config *)argv[0] : (Scheme_Config *)NULL);
 }
 
+static Scheme_Object *PS_Setup_p(int, Scheme_Object **argv)
+{
+  return (objscheme_istype_wxPrintSetupData(argv[0], NULL, 0)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+Scheme_Object *wxsBundlePSSetup(wxPrintSetupData *d)
+{
+  return objscheme_bundle_wxPrintSetupData(d);
+}
+
+wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *o)
+{
+  return objscheme_unbundle_wxPrintSetupData(o, NULL, 0);
+}
+
+static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
+{
+  return scheme_param_config("wx:current-ps-setup", mred_ps_setup_param,
+			     argc, argv,
+			     -1, PS_Setup_p, "ps-setup% instance", 0);
+}
+
+
 static int check_sema(void *s)
 {
   if (!*(void **)s)
@@ -1322,6 +1340,12 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 						    1, 1),
 			   global_env);
 
+  scheme_install_xc_global("wx:current-ps-setup",
+			   scheme_register_parameter(wxSchemeCurrentPSSetup,
+						     "wx:current-ps-setup",
+						     mred_ps_setup_param),
+			   global_env);
+
   scheme_install_xc_global("wx:check-for-break",
 			   scheme_make_prim_w_arity(wxSchemeCheckForBreak,
 						    "wx:check-for-break",
@@ -1354,13 +1378,6 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 
   /* Order is important! Base class must be initialized before derived. */
   objscheme_setup_wxObject(global_env);
-#if 0
-  objscheme_setup_wxNode(global_env);
-  objscheme_setup_wxList(global_env);
-  objscheme_setup_wxHashTable(global_env);
-  objscheme_setup_wxPathList(global_env);
-  objscheme_setup_wxStringList(global_env);
-#endif
   objscheme_setup_wxWindow(global_env);
   objscheme_setup_wxFrame(global_env);
   objscheme_setup_wxColour(global_env);
@@ -1380,7 +1397,6 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxFontNameDirectory(global_env);
   objscheme_setup_wxItem(global_env);
   objscheme_setup_wxMessage(global_env);
-  // objscheme_setup_wxGroupBox(global_env);
   objscheme_setup_wxButton(global_env);
   objscheme_setup_wxRadioBox(global_env);
   objscheme_setup_wxCheckBox(global_env);
@@ -1388,34 +1404,20 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxChoice(global_env);
   objscheme_setup_wxSlider(global_env);
   objscheme_setup_wxsGauge(global_env);
-  objscheme_setup_wxText(global_env);
-  objscheme_setup_wxMultiText(global_env);
-  objscheme_setup_wxTextWindow(global_env);
   objscheme_setup_wxMenu(global_env);
   objscheme_setup_wxMenuBar(global_env);
-//  objscheme_setup_wxMenuItem(global_env);
   objscheme_setup_wxEvent(global_env);
   objscheme_setup_wxCommandEvent(global_env);
   objscheme_setup_wxKeyEvent(global_env);
   objscheme_setup_wxMouseEvent(global_env);
   objscheme_setup_wxDC(global_env);
   objscheme_setup_wxCanvasDC(global_env);
-#if 0
-#ifndef wx_mac
-  objscheme_setup_wxPanelDC(global_env);
-#endif
-#endif
   objscheme_setup_wxMemoryDC(global_env);
   objscheme_setup_wxPostScriptDC(global_env);
   objscheme_setup_basePrinterDC(global_env);
   objscheme_setup_wxCanvas(global_env);
   objscheme_setup_wxPanel(global_env);
   objscheme_setup_wxDialogBox(global_env);
-#if USE_ENHANCED_DIALOG && 0
-  objscheme_setup_wxEnhDialogBox(global_env);
-#endif
-//  objscheme_setup_wxFormItem(global_env);
-//  objscheme_setup_wxForm(global_env);
   objscheme_setup_wxMediaGlobal(global_env);
   objscheme_setup_wxMediaCanvas(global_env);
   objscheme_setup_wxMediaBuffer(global_env);
@@ -1448,42 +1450,14 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxStyleDelta(global_env);
   objscheme_setup_wxStyle(global_env);
   objscheme_setup_wxStyleList(global_env);
-#if 0
-  objscheme_setup_wxConnection(global_env);
-  objscheme_setup_wxClient(global_env);
-  objscheme_setup_wxServer(global_env);
-#endif
-#if USE_HELP && 0
-  objscheme_setup_wxHelpInstance(global_env);
-#endif
   objscheme_setup_baseMetaFile(global_env);
   objscheme_setup_baseMetaFileDC(global_env);
   objscheme_setup_wxTimer(global_env);
   objscheme_setup_wxClipboard(global_env);
   objscheme_setup_wxClipboardClient(global_env);
-#if 0
-  objscheme_setup_wxTypeTree(global_env);
-#endif
-#if USE_TOOLBAR 
-  objscheme_setup_wxToolBar(global_env);
-  objscheme_setup_wxToolBarTool(global_env);
-#if USE_BUTTONBAR && defined(wx_msw)
-  objscheme_setup_wxButtonBar(global_env);
-#endif
-#endif
-#if USE_CONSTRAINTS && 0
-  objscheme_setup_wxLayoutConstraints(global_env);
-  objscheme_setup_wxIndividualLayoutConstraint(global_env);
-#endif
+  objscheme_setup_wxPrintSetupData(global_env);
 
   objscheme_setup_wxsGlobal(global_env);
-#if 0
-  objscheme_setup_wxsIPCGlobal(global_env);
-#endif
-#if 0
-  objscheme_setup_wxsTypesGlobal(global_env);
-#endif
-//  objscheme_setup_wxFormGlobal(global_env);
 
   scheme_defining_primitives = 0;
 }

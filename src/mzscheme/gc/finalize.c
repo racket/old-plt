@@ -551,7 +551,7 @@ static void finalize_eagers(int eager_level)
 {
   struct finalizable_object * curr_fo, * prev_fo, * next_fo;
   struct finalizable_object * end_eager_mark;
-  ptr_t real_ptr, real_link;
+  ptr_t real_ptr;
   register int i;
   int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
 

@@ -47,17 +47,6 @@
 @SYM "cancel" : wxCANCEL
 @ENDSYMBOLS
 
-@BEGINSYMBOLS psMode > ONE
-@SYM "ps-preview" : PS_PREVIEW
-@SYM "ps-file" : PS_FILE
-@SYM "ps-printer" : PS_PRINTER
-@ENDSYMBOLS
-
-@BEGINSYMBOLS psOrientation > ONE
-@SYM "ps-portrait" : PS_PORTRAIT
-@SYM "ps-landscape" : PS_LANDSCAPE
-@ENDSYMBOLS
-
 @BEGINSYMBOLS fileSelMode > ONE
 @SYM "open" : wxOPEN
 @SYM "save" : wxSAVE
@@ -168,7 +157,7 @@ extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char 
 extern int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK);
 extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char *where, int nullOK);
 
-@MACRO ubFrameDialog[who] = (((n <= {s}) || SCHEME_NULLP({x})) ? (wxWindow *)NULL : (objscheme_istype_wxFrame({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame({x}, NULL, 0) : (objscheme_istype_wxDialogBox({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox({x}, NULL, 0) : (scheme_wrong_type(<who>, "wx:frame% or wx:dialog-box%", -1, 0, &{x}), (wxWindow *)NULL))))
+@MACRO ubFrameDialog[who] = (((n <= {s}) || XC_SCHEME_NULLP({x})) ? (wxWindow *)NULL : (objscheme_istype_wxFrame({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame({x}, NULL, 0) : (objscheme_istype_wxDialogBox({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox({x}, NULL, 0) : (scheme_wrong_type(<who>, "wx:frame% or wx:dialog-box%", -1, 0, &{x}), (wxWindow *)NULL))))
 @MACRO cFrameDialog = (objscheme_istype_wxFrame({x}, NULL, 1) || objscheme_istype_wxDialogBox({x}, NULL, 1))
 
 @ "wx:file-selector" : nstring wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["wx:file-selector"]/cFrameDialog=NULL,int=-1,int=-1);
@@ -238,30 +227,6 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 @ "wx:make-meta-file-placeable" : bool wxMakeMetaFilePlaceable(string,float,float,float,float,float);
 
 @ "wx:set-cursor" : void wxSetCursor(wxCursor!); : : /CHECKVOIDABLEOK[0]
-
-@ "wx:get-printer-command" : string wxGetPrinterCommand(); ## USE_PRINTER
-@ "wx:get-printer-file" : string wxGetPrinterFile(); ## USE_PRINTER
-@ "wx:get-printer-preview-command" : string wxGetPrintPreviewCommand(); ## USE_PRINTER
-@ "wx:get-printer-mode" : SYM[psMode] wxGetPrinterMode(); ## USE_PRINTER
-@ "wx:get-printer-orientation" : SYM[psOrientation] wxGetPrinterOrientation(); ## USE_PRINTER
-@ "wx:get-printer-options" : string wxGetPrinterOptions(); ## USE_PRINTER
-@ "wx:get-printer-scaling" : void wxGetPrinterScaling(float*,float*); ## USE_PRINTER
-@ "wx:get-printer-translation" : void wxGetPrinterTranslation(float*,float*); ## USE_PRINTER
-@ "wx:get-print-paper-name" : nstring wxGetPrintPaperName(); ## USE_PRINTER
-@ "wx:get-afm-path" : nstring wxGetAFMPath(); ## USE_PRINTER
-@ "wx:get-post-script-level-2" : bool wxGetLevel2Ok(); ## USE_PRINTER
-
-@ "wx:set-printer-command" : void wxSetPrinterCommand(string); ## USE_PRINTER
-@ "wx:set-printer-file" : void wxSetPrinterFile(pathname); ## USE_PRINTER
-@ "wx:set-printer-preview-command" : void wxSetPrintPreviewCommand(string);  ## USE_PRINTER
-@ "wx:set-printer-mode" : void wxSetPrinterMode(SYM[psMode]); ## USE_PRINTER
-@ "wx:set-printer-orientation" : void wxSetPrinterOrientation(SYM[psOrientation]); ## USE_PRINTER
-@ "wx:set-printer-options" : void wxSetPrinterOptions(string); ## USE_PRINTER
-@ "wx:set-printer-scaling" : void wxSetPrinterScaling(nnfloat,nnfloat); ## USE_PRINTER
-@ "wx:set-printer-translation" : void wxSetPrinterTranslation(float,float); ## USE_PRINTER
-@ "wx:set-print-paper-name" : void wxSetPrintPaperName(nstring); ## USE_PRINTER
-@ "wx:set-afm-path" : void wxSetAFMPath(nstring); ## USE_PRINTER
-@ "wx:set-post-script-level-2" : void wxSetLevel2Ok(bool); ## USE_PRINTER
 
 @ "wx:begin-busy-cursor" : void wxBeginBusyCursor()
 @ "wx:is-busy?" : bool wxIsBusy();

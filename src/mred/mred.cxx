@@ -167,6 +167,7 @@ int mred_eventspace_param;
 int mred_event_dispatch_param;
 Scheme_Type mred_eventspace_type;
 static Scheme_Object *def_dispatch;
+int mred_ps_setup_param;
 
 typedef struct Context_Manager_Hop {
   Scheme_Type type;
@@ -255,6 +256,28 @@ Bool wxIsPrimEventspace()
 {
   return MrEdGetContext() == mred_main_context;
 }
+
+static int ps_ready = 0;
+static wxPrintSetupData *orig_ps_setup;
+
+wxPrintSetupData *wxGetThePrintSetupData()
+{
+  if (ps_ready) {
+    Scheme_Object *o = scheme_get_param(scheme_config, mred_ps_setup_param);
+    if (o)
+      return wxsUnbundlePSSetup(o);
+  }
+  return orig_ps_setup;
+}
+
+void wxSetThePrintSetupData(wxPrintSetupData *d)
+{
+  if (ps_ready) {
+    scheme_set_param(scheme_config, mred_ps_setup_param, wxsBundlePSSetup(d));
+  }
+  orig_ps_setup = d;
+}
+
 
 static int num_contexts = 0;
 
@@ -1706,6 +1729,7 @@ static int mred_init(int argc, char **argv)
   
   mred_eventspace_param = scheme_new_param();
   mred_event_dispatch_param = scheme_new_param();
+  mred_ps_setup_param = scheme_new_param();
 
   global_env = scheme_basic_env();
 
@@ -1847,6 +1871,10 @@ wxFrame *MrEdApp::OnInit(void)
 					  "default-event-dispatch-handler",
 					  1, 1);
   scheme_set_param(scheme_config, mred_event_dispatch_param, def_dispatch);
+
+  /* Make sure ps-setup is installed in the parameterization */
+  ps_ready = 1;
+  wxSetThePrintSetupData(wxGetThePrintSetupData());
 
   MakeContext(mred_main_context, NULL);
 

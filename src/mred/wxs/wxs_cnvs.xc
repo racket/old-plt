@@ -29,11 +29,11 @@ static void FillZero(int *a, int *b) {
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 @MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { <x>; }
 
-@INCLUDE wxs_drws.xci
+// @INCLUDE wxs_drws.xci
 
 @CLASSBASE wxCanvas "wx:canvas":"wx:window"
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
+// @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
 
 @ "allow-double-click" : void AllowDoubleClick(bool);
@@ -63,7 +63,7 @@ static void FillZero(int *a, int *b) {
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 
-#define DrawsForCanvas
-@INCLUDE wxs_draw.xci
+// #define DrawsForCanvas
+// @INCLUDE wxs_draw.xci
 
 @END

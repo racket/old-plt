@@ -58,9 +58,9 @@
 
 @BEGINSYMBOLS align > ONE
 @SYM "base" : wxBASE
-@SYM "align-top" :  wxALIGN_TOP
-@SYM "align-bottom" : wxALIGN_BOTTOM
-@SYM "align-center" : wxALIGN_CENTER
+@SYM "top" :  wxALIGN_TOP
+@SYM "bottom" : wxALIGN_BOTTOM
+@SYM "center" : wxALIGN_CENTER
 @ENDSYMBOLS
 
 @BEGINSYMBOLS changeNoArg > ONE

@@ -30,128 +30,65 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
+static Scheme_Object *canvasStyle_wxBORDER_sym = NULL;
+static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
+static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
+
+static void init_symset_canvasStyle(void) {
+  canvasStyle_wxBORDER_sym = scheme_intern_symbol("border");
+  canvasStyle_wxVSCROLL_sym = scheme_intern_symbol("vscroll");
+  canvasStyle_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
+}
+
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
-    if ((vi & wxVSCROLL) == wxVSCROLL) { vi -= wxVSCROLL; }
-    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
-    if (!vi) { return orig_vi; }
+  if (!canvasStyle_wxHSCROLL_sym) init_symset_canvasStyle();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == canvasStyle_wxBORDER_sym) { result = result | wxBORDER; }
+  else if (i == canvasStyle_wxVSCROLL_sym) { result = result | wxVSCROLL; }
+  else if (i == canvasStyle_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "canvasStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "canvasStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_canvasStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
-    if ((vi & wxVSCROLL) == wxVSCROLL) { vi -= wxVSCROLL; }
-    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
-    if (!vi) { return 1; }
+  if (!canvasStyle_wxHSCROLL_sym) init_symset_canvasStyle();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == canvasStyle_wxBORDER_sym) { ; }
+  else if (i == canvasStyle_wxVSCROLL_sym) { ; }
+  else if (i == canvasStyle_wxHSCROLL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "canvasStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "canvasStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_canvasStyle(int v) {
-  return scheme_make_integer(v);
+  if (!canvasStyle_wxHSCROLL_sym) init_symset_canvasStyle();
+  Scheme_Object *l = scheme_null;
+  if (v & wxBORDER) l = scheme_make_pair(canvasStyle_wxBORDER_sym, l);
+  if (v & wxVSCROLL) l = scheme_make_pair(canvasStyle_wxVSCROLL_sym, l);
+  if (v & wxHSCROLL) l = scheme_make_pair(canvasStyle_wxHSCROLL_sym, l);
+  return l;
 }
 
 
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 
-
-static int unbundle_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxAND) { return wxAND; }
-    if ((vi) == wxAND_INVERT) { return wxAND_INVERT; }
-    if ((vi) == wxAND_REVERSE) { return wxAND_REVERSE; }
-    if ((vi) == wxCLEAR) { return wxCLEAR; }
-    if ((vi) == wxCOPY) { return wxCOPY; }
-    if ((vi) == wxEQUIV) { return wxEQUIV; }
-    if ((vi) == wxINVERT) { return wxINVERT; }
-    if ((vi) == wxNAND) { return wxNAND; }
-    if ((vi) == wxNOR) { return wxNOR; }
-    if ((vi) == wxNO_OP) { return wxNO_OP; }
-    if ((vi) == wxOR) { return wxOR; }
-    if ((vi) == wxOR_INVERT) { return wxOR_INVERT; }
-    if ((vi) == wxOR_REVERSE) { return wxOR_REVERSE; }
-    if ((vi) == wxSET) { return wxSET; }
-    if ((vi) == wxSRC_INVERT) { return wxSRC_INVERT; }
-    if ((vi) == wxXOR) { return wxXOR; }
-    if ((vi) == wxCOLOR) { return wxCOLOR; }
-  }
-  if (where) scheme_wrong_type(where, "logicalFunc integer", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxAND) { return 1; }
-    if ((vi) == wxAND_INVERT) { return 1; }
-    if ((vi) == wxAND_REVERSE) { return 1; }
-    if ((vi) == wxCLEAR) { return 1; }
-    if ((vi) == wxCOPY) { return 1; }
-    if ((vi) == wxEQUIV) { return 1; }
-    if ((vi) == wxINVERT) { return 1; }
-    if ((vi) == wxNAND) { return 1; }
-    if ((vi) == wxNOR) { return 1; }
-    if ((vi) == wxNO_OP) { return 1; }
-    if ((vi) == wxOR) { return 1; }
-    if ((vi) == wxOR_INVERT) { return 1; }
-    if ((vi) == wxOR_REVERSE) { return 1; }
-    if ((vi) == wxSET) { return 1; }
-    if ((vi) == wxSRC_INVERT) { return 1; }
-    if ((vi) == wxXOR) { return 1; }
-    if ((vi) == wxCOLOR) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "logicalFunc integer", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_logicalFunc(int v) {
-  return scheme_make_integer(v);
-}
-
-
-static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxODDEVEN_RULE) { return wxODDEVEN_RULE; }
-    if ((vi) == wxWINDING_RULE) { return wxWINDING_RULE; }
-  }
-  if (where) scheme_wrong_type(where, "fillKind integer", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_fillKind(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxODDEVEN_RULE) { return 1; }
-    if ((vi) == wxWINDING_RULE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "fillKind integer", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_fillKind(int v) {
-  return scheme_make_integer(v);
-}
-
-
+// @INCLUDE wxs_drws.xci
 
 
 
@@ -172,196 +109,8 @@ static Scheme_Object *bundle_symset_fillKind(int v) {
 
 
 
-#define DrawsForCanvas
-
-#undef DO_OK_CHECK
-#ifdef DrawsForCanvas
-#define DO_OK_CHECK(v)
-#else
-#define DO_OK_CHECK(v) if (!((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Ok()) return v;
-#endif
-
-
-extern Scheme_Object *objscheme_bundle_wxPoint(wxPoint *);
-extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
-extern Scheme_Object *objscheme_bundle_wxIntPoint(wxIntPoint *);
-extern wxIntPoint *objscheme_unbundle_wxIntPoint(Scheme_Object *, const char *, int);
-
-#undef l_ADDRESS
-#undef l_DEREF
-#undef l_TEST
-#undef l_POINT
-#undef l_TYPE
-#undef l_LIST_ITEM_BUNDLE
-#undef l_LIST_ITEM_UNBUNDLE
-#undef l_MAKE_LIST
-#undef l_MAKE_ARRAY
-#undef l_EXTRA
-#undef l_TERMINATE
-#undef l_COPY
-#undef l_OKTEST
-#undef l_INTTYPE
-
-#define l_ADDRESS &
-#define l_DEREF *
-#define l_NULLOK 0
-#define l_TEST , l_NULLOK
-#define l_POINT 
-#define l_EXTRA 0
-#define l_TERMINATE 
-#define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
-#define l_OKTEST 
-#define l_INTTYPE int
-
-#define l_TYPE wxPoint
-#define l_LIST_ITEM_BUNDLE objscheme_bundle_wxPoint
-#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxPoint
-#define l_MAKE_LIST __MakewxPointList
-#define l_MAKE_ARRAY __MakewxPointArray
-
-
-
-
-
-static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-
-  while (c--) {
-    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
-    cdr = scheme_make_pair(obj, cdr);
-  }
-  
-  return cdr;
-}
-
-static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
-{
-  int i = 0;
-  long len;
-
-  len = scheme_proper_list_length(l);
-  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
-  if (c) *c = len;
-
-  if (!(len + l_EXTRA))
-    return NULL;
-
-  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
-
-  while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
-
-#define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
-
-    l_COPY
-
-    l_OKTEST
-
-    i++;
-
-    l = SCHEME_CDR(l);
-  }
-  l_TERMINATE
-
-  return f;
-}
-
-
-#undef l_ADDRESS
-#undef l_DEREF
-#undef l_TEST
-#undef l_POINT
-#undef l_TYPE
-#undef l_LIST_ITEM_BUNDLE
-#undef l_LIST_ITEM_UNBUNDLE
-#undef l_MAKE_LIST
-#undef l_MAKE_ARRAY
-#undef l_EXTRA
-#undef l_TERMINATE
-#undef l_COPY
-#undef l_OKTEST
-#undef l_INTTYPE
-
-#define l_ADDRESS &
-#define l_DEREF *
-#define l_NULLOK 0
-#define l_TEST , l_NULLOK
-#define l_POINT 
-#define l_EXTRA 0
-#define l_TERMINATE 
-#define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
-#define l_OKTEST 
-#define l_INTTYPE int
-
-#define l_TYPE wxIntPoint
-#define l_LIST_ITEM_BUNDLE objscheme_bundle_wxIntPoint
-#define l_LIST_ITEM_UNBUNDLE objscheme_unbundle_wxIntPoint
-#define l_MAKE_LIST __MakewxIntPointList
-#define l_MAKE_ARRAY __MakewxIntPointArray
-
-
-
-
-
-static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
-{
-  Scheme_Object *cdr = scheme_null, *obj;
-
-  while (c--) {
-    obj = l_LIST_ITEM_BUNDLE(l_ADDRESS f[c]);
-    cdr = scheme_make_pair(obj, cdr);
-  }
-  
-  return cdr;
-}
-
-static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
-{
-  int i = 0;
-  long len;
-
-  len = scheme_proper_list_length(l);
-  if (len < 0) scheme_wrong_type(who, "proper-list", -1, 0, &l);
-  if (c) *c = len;
-
-  if (!(len + l_EXTRA))
-    return NULL;
-
-  l_TYPE l_POINT *f = new l_TYPE l_POINT[len + l_EXTRA];
-
-  while (!SCHEME_NULLP(l)) {
-    if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
-
-#define l_COPYDEST f[i]
-#define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
-
-    l_COPY
-
-    l_OKTEST
-
-    i++;
-
-    l = SCHEME_CDR(l);
-  }
-  l_TERMINATE
-
-  return f;
-}
-
-
-/* The methods are here: */
-
-
-
-
-
-
-
-
+// #define DrawsForCanvas
+// @INCLUDE wxs_draw.xci
 
 class os_wxCanvas : public wxCanvas {
  public:
@@ -703,535 +452,6 @@ wxCanvas::OnPaint();
 }
 
 #pragma argsused
-static Scheme_Object *os_wxCanvasSetTextForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:canvas%::set-text-foreground", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetTextForeground(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetTextBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:canvas%::set-text-background", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetTextBackground(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetPen(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxPen* x0;
-
-  
-  x0 = objscheme_unbundle_wxPen(p[0], "wx:canvas%::set-pen", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetPen(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetLogicalFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-
-  DO_OK_CHECK(scheme_void)
-  x0 = unbundle_symset_logicalFunc(p[0], "wx:canvas%::set-logical-function");
-
-  
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetLogicalFunction(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxFont* x0;
-
-  
-  x0 = objscheme_unbundle_wxFont(p[0], "wx:canvas%::set-font", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetFont(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxBrush* x0;
-
-  
-  x0 = objscheme_unbundle_wxBrush(p[0], "wx:canvas%::set-brush", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetBrush(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxBrush* x0;
-
-  
-  x0 = objscheme_unbundle_wxBrush(p[0], "wx:canvas%::set-background", 0);
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetBackground(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasGetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
-  float _x3;
-  float* x3 = &_x3;
-
-  
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:canvas%::get-clipping-region", "non-null", (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:canvas%::get-clipping-region"), "wx:canvas%::get-clipping-region");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:canvas%::get-clipping-region", "non-null", (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:canvas%::get-clipping-region"), "wx:canvas%::get-clipping-region");
-  if (SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:canvas%::get-clipping-region", "non-null", (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:canvas%::get-clipping-region"), "wx:canvas%::get-clipping-region");
-  if (SCHEME_NULLP(p[3]))
-    scheme_wrong_type("wx:canvas%::get-clipping-region", "non-null", (3 - 0), n, p);
-  else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:canvas%::get-clipping-region"), "wx:canvas%::get-clipping-region");
-
-  
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetClippingRegion(x0, x1, x2, x3);
-
-  
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
-  if (n > 2)
-    objscheme_set_box(p[2], scheme_make_double(_x2));
-  if (n > 3)
-    objscheme_set_box(p[3], scheme_make_double(_x3));
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasSetClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::set-clipping-region");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::set-clipping-region");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "wx:canvas%::set-clipping-region");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "wx:canvas%::set-clipping-region");
-
-  DO_OK_CHECK(scheme_void)if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDestroyClippingRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DestroyClippingRegion();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawPolygon(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  class wxPoint* x1;
-  float x2;
-  float x3;
-  int x4;
-
-  
-  x1 = NULL;
-  if (n > 1) {
-    x2 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-polygon");
-  } else
-    x2 = 0;
-  if (n > 2) {
-    x3 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-polygon");
-  } else
-    x3 = 0;
-  if (n > 3) {
-    x4 = unbundle_symset_fillKind(p[3], "wx:canvas%::draw-polygon");
-  } else
-    x4 = wxODDEVEN_RULE;
-
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, "wx:dc%::draw-polygon");
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawPolygon(x0, x1, x2, x3, x4);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawLines(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-  class wxPoint* x1;
-  float x2;
-  float x3;
-
-  
-  x1 = NULL;
-  if (n > 1) {
-    x2 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-lines");
-  } else
-    x2 = 0;
-  if (n > 2) {
-    x3 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-lines");
-  } else
-    x3 = 0;
-
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, "wx:dc%::draw-lines");
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawLines(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawEllipse(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-ellipse");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-ellipse");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "wx:canvas%::draw-ellipse");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "wx:canvas%::draw-ellipse");
-
-  if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawEllipse(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawArc(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  float x2;
-  float x3;
-  float x4;
-  float x5;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-arc");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-arc");
-  x2 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-arc");
-  x3 = objscheme_unbundle_float(p[3], "wx:canvas%::draw-arc");
-  x4 = objscheme_unbundle_float(p[4], "wx:canvas%::draw-arc");
-  x5 = objscheme_unbundle_float(p[5], "wx:canvas%::draw-arc");
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawArc(x0, x1, x2, x3, x4, x5);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawText(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  string x0;
-  float x1;
-  float x2;
-  Bool x3;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:canvas%::draw-text");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-text");
-  x2 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-text");
-  if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "wx:canvas%::draw-text");
-  } else
-    x3 = FALSE;
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawText(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawSpline(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  float x2;
-  float x3;
-  float x4;
-  float x5;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-spline");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-spline");
-  x2 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-spline");
-  x3 = objscheme_unbundle_float(p[3], "wx:canvas%::draw-spline");
-  x4 = objscheme_unbundle_float(p[4], "wx:canvas%::draw-spline");
-  x5 = objscheme_unbundle_float(p[5], "wx:canvas%::draw-spline");
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawSpline(x0, x1, x2, x3, x4, x5);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawRoundedRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-  float x4;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-rounded-rectangle");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-rounded-rectangle");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "wx:canvas%::draw-rounded-rectangle");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "wx:canvas%::draw-rounded-rectangle");
-  if (n > 4) {
-    x4 = objscheme_unbundle_float(p[4], "wx:canvas%::draw-rounded-rectangle");
-  } else
-    x4 = 20;
-
-  if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawRoundedRectangle(x0, x1, x2, x3, x4);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawRectangle(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-rectangle");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-rectangle");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "wx:canvas%::draw-rectangle");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "wx:canvas%::draw-rectangle");
-
-  if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawRectangle(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawPoint(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-point");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-point");
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawPoint(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDrawLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  float x2;
-  float x3;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "wx:canvas%::draw-line");
-  x1 = objscheme_unbundle_float(p[1], "wx:canvas%::draw-line");
-  x2 = objscheme_unbundle_float(p[2], "wx:canvas%::draw-line");
-  x3 = objscheme_unbundle_float(p[3], "wx:canvas%::draw-line");
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->DrawLine(x0, x1, x2, x3);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasClear(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->Clear();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasEndDrawing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->EndDrawing();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasBeginDrawing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  DO_OK_CHECK(scheme_void)
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->BeginDrawing();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1469,12 +689,12 @@ static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Ob
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:canvas%::view-start", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:canvas%::view-start", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:canvas%::view-start"), "wx:canvas%::view-start");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:canvas%::view-start", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:canvas%::view-start", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:canvas%::view-start"), "wx:canvas%::view-start");
 
@@ -1544,12 +764,12 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:canvas%::get-virtual-size", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:canvas%::get-virtual-size", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:canvas%::get-virtual-size"), "wx:canvas%::get-virtual-size");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:canvas%::get-virtual-size", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:canvas%::get-virtual-size", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:canvas%::get-virtual-size"), "wx:canvas%::get-virtual-size");
 
@@ -1786,80 +1006,13 @@ static Scheme_Object *objscheme_classname_os_wxCanvas(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxCanvas(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""border", env))
-    scheme_install_xc_global("wx:const-""border", scheme_make_integer(wxBORDER), env);
-  if (!scheme_lookup_xc_global("wx:const-""vscroll", env))
-    scheme_install_xc_global("wx:const-""vscroll", scheme_make_integer(wxVSCROLL), env);
-  if (!scheme_lookup_xc_global("wx:const-""hscroll", env))
-    scheme_install_xc_global("wx:const-""hscroll", scheme_make_integer(wxHSCROLL), env);
-  if (!scheme_lookup_xc_global("wx:const-""and", env))
-    scheme_install_xc_global("wx:const-""and", scheme_make_integer(wxAND), env);
-  if (!scheme_lookup_xc_global("wx:const-""and-invert", env))
-    scheme_install_xc_global("wx:const-""and-invert", scheme_make_integer(wxAND_INVERT), env);
-  if (!scheme_lookup_xc_global("wx:const-""and-reverse", env))
-    scheme_install_xc_global("wx:const-""and-reverse", scheme_make_integer(wxAND_REVERSE), env);
-  if (!scheme_lookup_xc_global("wx:const-""clear", env))
-    scheme_install_xc_global("wx:const-""clear", scheme_make_integer(wxCLEAR), env);
-  if (!scheme_lookup_xc_global("wx:const-""copy", env))
-    scheme_install_xc_global("wx:const-""copy", scheme_make_integer(wxCOPY), env);
-  if (!scheme_lookup_xc_global("wx:const-""equiv", env))
-    scheme_install_xc_global("wx:const-""equiv", scheme_make_integer(wxEQUIV), env);
-  if (!scheme_lookup_xc_global("wx:const-""invert", env))
-    scheme_install_xc_global("wx:const-""invert", scheme_make_integer(wxINVERT), env);
-  if (!scheme_lookup_xc_global("wx:const-""nand", env))
-    scheme_install_xc_global("wx:const-""nand", scheme_make_integer(wxNAND), env);
-  if (!scheme_lookup_xc_global("wx:const-""nor", env))
-    scheme_install_xc_global("wx:const-""nor", scheme_make_integer(wxNOR), env);
-  if (!scheme_lookup_xc_global("wx:const-""no-op", env))
-    scheme_install_xc_global("wx:const-""no-op", scheme_make_integer(wxNO_OP), env);
-  if (!scheme_lookup_xc_global("wx:const-""or", env))
-    scheme_install_xc_global("wx:const-""or", scheme_make_integer(wxOR), env);
-  if (!scheme_lookup_xc_global("wx:const-""or-invert", env))
-    scheme_install_xc_global("wx:const-""or-invert", scheme_make_integer(wxOR_INVERT), env);
-  if (!scheme_lookup_xc_global("wx:const-""or-reverse", env))
-    scheme_install_xc_global("wx:const-""or-reverse", scheme_make_integer(wxOR_REVERSE), env);
-  if (!scheme_lookup_xc_global("wx:const-""set", env))
-    scheme_install_xc_global("wx:const-""set", scheme_make_integer(wxSET), env);
-  if (!scheme_lookup_xc_global("wx:const-""src-invert", env))
-    scheme_install_xc_global("wx:const-""src-invert", scheme_make_integer(wxSRC_INVERT), env);
-  if (!scheme_lookup_xc_global("wx:const-""xor", env))
-    scheme_install_xc_global("wx:const-""xor", scheme_make_integer(wxXOR), env);
-  if (!scheme_lookup_xc_global("wx:const-""colour", env))
-    scheme_install_xc_global("wx:const-""colour", scheme_make_integer(wxCOLOR), env);
-  if (!scheme_lookup_xc_global("wx:const-""oddeven-rule", env))
-    scheme_install_xc_global("wx:const-""oddeven-rule", scheme_make_integer(wxODDEVEN_RULE), env);
-  if (!scheme_lookup_xc_global("wx:const-""winding-rule", env))
-    scheme_install_xc_global("wx:const-""winding-rule", scheme_make_integer(wxWINDING_RULE), env);
 if (os_wxCanvas_class) {
     objscheme_add_global_class(os_wxCanvas_class,  "wx:canvas%", env);
 } else {
-  os_wxCanvas_class = objscheme_def_prim_class(env, "wx:canvas%", "wx:window%", os_wxCanvas_ConstructScheme, 44);
+  os_wxCanvas_class = objscheme_def_prim_class(env, "wx:canvas%", "wx:window%", os_wxCanvas_ConstructScheme, 21);
 
   scheme_add_method_w_arity(os_wxCanvas_class,"get-class-name",objscheme_classname_os_wxCanvas, 0, 0);
 
- scheme_add_method_w_arity(os_wxCanvas_class, "set-text-foreground", os_wxCanvasSetTextForeground, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-text-background", os_wxCanvasSetTextBackground, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-pen", os_wxCanvasSetPen, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-logical-function", os_wxCanvasSetLogicalFunction, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-font", os_wxCanvasSetFont, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-brush", os_wxCanvasSetBrush, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-background", os_wxCanvasSetBackground, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "get-clipping-region", os_wxCanvasGetClippingRegion, 4, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "set-clipping-region", os_wxCanvasSetClippingRegion, 4, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "destroy-clipping-region", os_wxCanvasDestroyClippingRegion, 0, 0);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-polygon", os_wxCanvasDrawPolygon, 1, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-lines", os_wxCanvasDrawLines, 1, 3);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-ellipse", os_wxCanvasDrawEllipse, 4, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-arc", os_wxCanvasDrawArc, 6, 6);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-text", os_wxCanvasDrawText, 3, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-spline", os_wxCanvasDrawSpline, 6, 6);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-rounded-rectangle", os_wxCanvasDrawRoundedRectangle, 4, 5);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-rectangle", os_wxCanvasDrawRectangle, 4, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-point", os_wxCanvasDrawPoint, 2, 2);
- scheme_add_method_w_arity(os_wxCanvas_class, "draw-line", os_wxCanvasDrawLine, 4, 4);
- scheme_add_method_w_arity(os_wxCanvas_class, "clear", os_wxCanvasClear, 0, 0);
- scheme_add_method_w_arity(os_wxCanvas_class, "end-drawing", os_wxCanvasEndDrawing, 0, 0);
- scheme_add_method_w_arity(os_wxCanvas_class, "begin-drawing", os_wxCanvasBeginDrawing, 0, 0);
  scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-char", os_wxCanvasPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "on-size", os_wxCanvasOnSize, 2, 2);
@@ -1890,14 +1043,14 @@ if (os_wxCanvas_class) {
 
 int objscheme_istype_wxCanvas(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxCanvas_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:canvas%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:canvas% object or " XC_NULL_STR: "wx:canvas% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1907,7 +1060,7 @@ Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1926,7 +1079,7 @@ Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj)
 
 class wxCanvas *objscheme_unbundle_wxCanvas(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxCanvas(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

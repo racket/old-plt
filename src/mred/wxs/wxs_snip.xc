@@ -8,18 +8,18 @@
 @HEADER
 
 @BEGINSYMBOLS flags
-@SYM "snip-can-append" : wxSNIP_CAN_APPEND
-@SYM "snip-newline" : wxSNIP_NEWLINE
-@SYM "snip-hard-newline" : wxSNIP_HARD_NEWLINE
-@SYM "snip-is-text" : wxSNIP_IS_TEXT
-@SYM "snip-invisible" : wxSNIP_INVISIBLE
-@SYM "snip-handles-events" : wxSNIP_HANDLES_EVENTS
-@SYM "snip-width-depends-on-x" : wxSNIP_WIDTH_DEPENDS_ON_X
-@SYM "snip-height-depends-on-x" : wxSNIP_HEIGHT_DEPENDS_ON_X
-@SYM "snip-width-depends-on-y" : wxSNIP_WIDTH_DEPENDS_ON_Y
-@SYM "snip-height-depends-on-y" : wxSNIP_HEIGHT_DEPENDS_ON_Y
-@SYM "snip-anchored" : wxSNIP_ANCHORED
-@SYM "snip-uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
+@SYM "can-append" : wxSNIP_CAN_APPEND
+@SYM "newline" : wxSNIP_NEWLINE
+@SYM "hard-newline" : wxSNIP_HARD_NEWLINE
+@SYM "is-text" : wxSNIP_IS_TEXT
+@SYM "invisible" : wxSNIP_INVISIBLE
+@SYM "handles-events" : wxSNIP_HANDLES_EVENTS
+@SYM "width-depends-on-x" : wxSNIP_WIDTH_DEPENDS_ON_X
+@SYM "height-depends-on-x" : wxSNIP_HEIGHT_DEPENDS_ON_X
+@SYM "width-depends-on-y" : wxSNIP_WIDTH_DEPENDS_ON_Y
+@SYM "height-depends-on-y" : wxSNIP_HEIGHT_DEPENDS_ON_Y
+@SYM "anchored" : wxSNIP_ANCHORED
+@SYM "uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
 @ENDSYMBOLS
 
 @CLASSBASE wxSnip "wx:snip":"wx:object"

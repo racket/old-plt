@@ -20,7 +20,7 @@
 @ENDSYMBOLS
 
 @BEGINSYMBOLS fillKind > ONE
-@SYM "oddeven-rule" : wxODDEVEN_RULE
-@SYM "winding-rule" : wxWINDING_RULE
+@SYM "odd-even" : wxODDEVEN_RULE
+@SYM "winding" : wxWINDING_RULE
 @ENDSYMBOLS
 

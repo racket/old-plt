@@ -39,172 +39,191 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *messageStyle_wxOK_sym = NULL;
+static Scheme_Object *messageStyle_wxYES_NO_sym = NULL;
+static Scheme_Object *messageStyle_wxCANCEL_sym = NULL;
+static Scheme_Object *messageStyle_wxCENTRE_sym = NULL;
+static Scheme_Object *messageStyle_wxICON_EXCLAMATION_sym = NULL;
+static Scheme_Object *messageStyle_wxICON_HAND_sym = NULL;
+static Scheme_Object *messageStyle_wxICON_QUESTION_sym = NULL;
+static Scheme_Object *messageStyle_wxICON_INFORMATION_sym = NULL;
+
+static void init_symset_messageStyle(void) {
+  messageStyle_wxOK_sym = scheme_intern_symbol("ok");
+  messageStyle_wxYES_NO_sym = scheme_intern_symbol("yes-no");
+  messageStyle_wxCANCEL_sym = scheme_intern_symbol("cancel");
+  messageStyle_wxCENTRE_sym = scheme_intern_symbol("centre");
+  messageStyle_wxICON_EXCLAMATION_sym = scheme_intern_symbol("icon-exclamation");
+  messageStyle_wxICON_HAND_sym = scheme_intern_symbol("icon-hand");
+  messageStyle_wxICON_QUESTION_sym = scheme_intern_symbol("icon-question");
+  messageStyle_wxICON_INFORMATION_sym = scheme_intern_symbol("icon-information");
+}
+
 static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
-    if ((vi & wxYES_NO) == wxYES_NO) { vi -= wxYES_NO; }
-    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
-    if ((vi & wxCENTRE) == wxCENTRE) { vi -= wxCENTRE; }
-    if ((vi & wxICON_EXCLAMATION) == wxICON_EXCLAMATION) { vi -= wxICON_EXCLAMATION; }
-    if ((vi & wxICON_HAND) == wxICON_HAND) { vi -= wxICON_HAND; }
-    if ((vi & wxICON_QUESTION) == wxICON_QUESTION) { vi -= wxICON_QUESTION; }
-    if ((vi & wxICON_INFORMATION) == wxICON_INFORMATION) { vi -= wxICON_INFORMATION; }
-    if (!vi) { return orig_vi; }
+  if (!messageStyle_wxICON_INFORMATION_sym) init_symset_messageStyle();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageStyle_wxOK_sym) { result = result | wxOK; }
+  else if (i == messageStyle_wxYES_NO_sym) { result = result | wxYES_NO; }
+  else if (i == messageStyle_wxCANCEL_sym) { result = result | wxCANCEL; }
+  else if (i == messageStyle_wxCENTRE_sym) { result = result | wxCENTRE; }
+  else if (i == messageStyle_wxICON_EXCLAMATION_sym) { result = result | wxICON_EXCLAMATION; }
+  else if (i == messageStyle_wxICON_HAND_sym) { result = result | wxICON_HAND; }
+  else if (i == messageStyle_wxICON_QUESTION_sym) { result = result | wxICON_QUESTION; }
+  else if (i == messageStyle_wxICON_INFORMATION_sym) { result = result | wxICON_INFORMATION; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "messageStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
-    if ((vi & wxYES_NO) == wxYES_NO) { vi -= wxYES_NO; }
-    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
-    if ((vi & wxCENTRE) == wxCENTRE) { vi -= wxCENTRE; }
-    if ((vi & wxICON_EXCLAMATION) == wxICON_EXCLAMATION) { vi -= wxICON_EXCLAMATION; }
-    if ((vi & wxICON_HAND) == wxICON_HAND) { vi -= wxICON_HAND; }
-    if ((vi & wxICON_QUESTION) == wxICON_QUESTION) { vi -= wxICON_QUESTION; }
-    if ((vi & wxICON_INFORMATION) == wxICON_INFORMATION) { vi -= wxICON_INFORMATION; }
-    if (!vi) { return 1; }
+  if (!messageStyle_wxICON_INFORMATION_sym) init_symset_messageStyle();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageStyle_wxOK_sym) { ; }
+  else if (i == messageStyle_wxYES_NO_sym) { ; }
+  else if (i == messageStyle_wxCANCEL_sym) { ; }
+  else if (i == messageStyle_wxCENTRE_sym) { ; }
+  else if (i == messageStyle_wxICON_EXCLAMATION_sym) { ; }
+  else if (i == messageStyle_wxICON_HAND_sym) { ; }
+  else if (i == messageStyle_wxICON_QUESTION_sym) { ; }
+  else if (i == messageStyle_wxICON_INFORMATION_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "messageStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_messageStyle(int v) {
-  return scheme_make_integer(v);
+  if (!messageStyle_wxICON_INFORMATION_sym) init_symset_messageStyle();
+  Scheme_Object *l = scheme_null;
+  if (v & wxOK) l = scheme_make_pair(messageStyle_wxOK_sym, l);
+  if (v & wxYES_NO) l = scheme_make_pair(messageStyle_wxYES_NO_sym, l);
+  if (v & wxCANCEL) l = scheme_make_pair(messageStyle_wxCANCEL_sym, l);
+  if (v & wxCENTRE) l = scheme_make_pair(messageStyle_wxCENTRE_sym, l);
+  if (v & wxICON_EXCLAMATION) l = scheme_make_pair(messageStyle_wxICON_EXCLAMATION_sym, l);
+  if (v & wxICON_HAND) l = scheme_make_pair(messageStyle_wxICON_HAND_sym, l);
+  if (v & wxICON_QUESTION) l = scheme_make_pair(messageStyle_wxICON_QUESTION_sym, l);
+  if (v & wxICON_INFORMATION) l = scheme_make_pair(messageStyle_wxICON_INFORMATION_sym, l);
+  return l;
 }
 
 
+static Scheme_Object *messageReply_wxOK_sym = NULL;
+static Scheme_Object *messageReply_wxNO_sym = NULL;
+static Scheme_Object *messageReply_wxYES_sym = NULL;
+static Scheme_Object *messageReply_wxCANCEL_sym = NULL;
+
+static void init_symset_messageReply(void) {
+  messageReply_wxOK_sym = scheme_intern_symbol("ok");
+  messageReply_wxNO_sym = scheme_intern_symbol("no");
+  messageReply_wxYES_sym = scheme_intern_symbol("yes");
+  messageReply_wxCANCEL_sym = scheme_intern_symbol("cancel");
+}
+
 static int unbundle_symset_messageReply(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
-    if ((vi & wxNO) == wxNO) { vi -= wxNO; }
-    if ((vi & wxYES) == wxYES) { vi -= wxYES; }
-    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
-    if (!vi) { return orig_vi; }
+  if (!messageReply_wxCANCEL_sym) init_symset_messageReply();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageReply_wxOK_sym) { result = result | wxOK; }
+  else if (i == messageReply_wxNO_sym) { result = result | wxNO; }
+  else if (i == messageReply_wxYES_sym) { result = result | wxYES; }
+  else if (i == messageReply_wxCANCEL_sym) { result = result | wxCANCEL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "messageReply integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "messageReply symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_messageReply(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
-    if ((vi & wxNO) == wxNO) { vi -= wxNO; }
-    if ((vi & wxYES) == wxYES) { vi -= wxYES; }
-    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
-    if (!vi) { return 1; }
+  if (!messageReply_wxCANCEL_sym) init_symset_messageReply();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageReply_wxOK_sym) { ; }
+  else if (i == messageReply_wxNO_sym) { ; }
+  else if (i == messageReply_wxYES_sym) { ; }
+  else if (i == messageReply_wxCANCEL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "messageReply integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "messageReply symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_messageReply(int v) {
-  return scheme_make_integer(v);
+  if (!messageReply_wxCANCEL_sym) init_symset_messageReply();
+  Scheme_Object *l = scheme_null;
+  if (v & wxOK) l = scheme_make_pair(messageReply_wxOK_sym, l);
+  if (v & wxNO) l = scheme_make_pair(messageReply_wxNO_sym, l);
+  if (v & wxYES) l = scheme_make_pair(messageReply_wxYES_sym, l);
+  if (v & wxCANCEL) l = scheme_make_pair(messageReply_wxCANCEL_sym, l);
+  return l;
 }
 
 
-static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == PS_PREVIEW) { return PS_PREVIEW; }
-    if ((vi) == PS_FILE) { return PS_FILE; }
-    if ((vi) == PS_PRINTER) { return PS_PRINTER; }
-  }
-  if (where) scheme_wrong_type(where, "psMode integer", -1, 0, &v);
-  return 0;
+static Scheme_Object *fileSelMode_wxOPEN_sym = NULL;
+static Scheme_Object *fileSelMode_wxSAVE_sym = NULL;
+static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
+static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
+
+static void init_symset_fileSelMode(void) {
+  fileSelMode_wxOPEN_sym = scheme_intern_symbol("open");
+  fileSelMode_wxSAVE_sym = scheme_intern_symbol("save");
+  fileSelMode_wxOVERWRITE_PROMPT_sym = scheme_intern_symbol("overwrite-prompt");
+  fileSelMode_wxHIDE_READONLY_sym = scheme_intern_symbol("hide-readonly");
 }
-
-static int istype_symset_psMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == PS_PREVIEW) { return 1; }
-    if ((vi) == PS_FILE) { return 1; }
-    if ((vi) == PS_PRINTER) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "psMode integer", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_psMode(int v) {
-  return scheme_make_integer(v);
-}
-
-
-static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == PS_PORTRAIT) { return PS_PORTRAIT; }
-    if ((vi) == PS_LANDSCAPE) { return PS_LANDSCAPE; }
-  }
-  if (where) scheme_wrong_type(where, "psOrientation integer", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_psOrientation(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == PS_PORTRAIT) { return 1; }
-    if ((vi) == PS_LANDSCAPE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "psOrientation integer", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_psOrientation(int v) {
-  return scheme_make_integer(v);
-}
-
 
 static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxOPEN) { return wxOPEN; }
-    if ((vi) == wxSAVE) { return wxSAVE; }
-    if ((vi) == wxOVERWRITE_PROMPT) { return wxOVERWRITE_PROMPT; }
-    if ((vi) == wxHIDE_READONLY) { return wxHIDE_READONLY; }
-  }
-  if (where) scheme_wrong_type(where, "fileSelMode integer", -1, 0, &v);
+  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
+  if (0) { }
+  else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
+  else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
+  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
+  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
+  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxOPEN) { return 1; }
-    if ((vi) == wxSAVE) { return 1; }
-    if ((vi) == wxOVERWRITE_PROMPT) { return 1; }
-    if ((vi) == wxHIDE_READONLY) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "fileSelMode integer", -1, 0, &v);
+  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
+  if (0) { }
+  else if (v == fileSelMode_wxOPEN_sym) { return 1; }
+  else if (v == fileSelMode_wxSAVE_sym) { return 1; }
+  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return 1; }
+  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_fileSelMode(int v) {
-  return scheme_make_integer(v);
+  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
+  switch (v) {
+  case wxOPEN: return fileSelMode_wxOPEN_sym;
+  case wxSAVE: return fileSelMode_wxSAVE_sym;
+  case wxOVERWRITE_PROMPT: return fileSelMode_wxOVERWRITE_PROMPT_sym;
+  case wxHIDE_READONLY: return fileSelMode_wxHIDE_READONLY_sym;
+  default: return NULL;
+  }
 }
 
 
@@ -444,8 +463,6 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 
 
 
-
-
 #pragma argsused
 static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 {
@@ -553,8 +570,8 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       scheme_wrong_count("::wx:get-resource (string case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-resource (string case)");
     x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-resource (string case)");
-    if (SCHEME_NULLP(p[2]))
-      scheme_wrong_type("::wx:get-resource (string case)", "non-null", (2 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[2]))
+      scheme_wrong_type("::wx:get-resource (string case)", "non-" XC_NULL_STR, (2 - 0), n, p);
     else
       *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "::wx:get-resource (string case)"), "::wx:get-resource (string case)");
     if (n > 3) {
@@ -581,8 +598,8 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       scheme_wrong_count("::wx:get-resource (number case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-resource (number case)");
     x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-resource (number case)");
-    if (SCHEME_NULLP(p[2]))
-      scheme_wrong_type("::wx:get-resource (number case)", "non-null", (2 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[2]))
+      scheme_wrong_type("::wx:get-resource (number case)", "non-" XC_NULL_STR, (2 - 0), n, p);
     else
       *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "::wx:get-resource (number case)"), "::wx:get-resource (number case)");
     if (n > 3) {
@@ -692,12 +709,12 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("::wx:display-size", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("::wx:display-size", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "::wx:display-size"), "::wx:display-size");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("::wx:display-size", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("::wx:display-size", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "::wx:display-size"), "::wx:display-size");
 
@@ -773,509 +790,6 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
   
   return scheme_void;
 }
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetLevel2Ok(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  Bool x0;
-
-  
-  x0 = objscheme_unbundle_bool(p[0], "::wx:set-post-script-level-2");
-
-  
-  wxSetLevel2Ok(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetAFMPath(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  nstring x0;
-
-  
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "::wx:set-afm-path");
-
-  
-  wxSetAFMPath(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrintPaperName(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  nstring x0;
-
-  
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "::wx:set-print-paper-name");
-
-  
-  wxSetPrintPaperName(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterTranslation(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  float x0;
-  float x1;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "::wx:set-printer-translation");
-  x1 = objscheme_unbundle_float(p[1], "::wx:set-printer-translation");
-
-  
-  wxSetPrinterTranslation(x0, x1);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterScaling(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  nnfloat x0;
-  nnfloat x1;
-
-  
-  x0 = objscheme_unbundle_nonnegative_float(p[0], "::wx:set-printer-scaling");
-  x1 = objscheme_unbundle_nonnegative_float(p[1], "::wx:set-printer-scaling");
-
-  
-  wxSetPrinterScaling(x0, x1);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterOptions(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  string x0;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "::wx:set-printer-options");
-
-  
-  wxSetPrinterOptions(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterOrientation(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  int x0;
-
-  
-  x0 = unbundle_symset_psOrientation(p[0], "::wx:set-printer-orientation");
-
-  
-  wxSetPrinterOrientation(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterMode(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  int x0;
-
-  
-  x0 = unbundle_symset_psMode(p[0], "::wx:set-printer-mode");
-
-  
-  wxSetPrinterMode(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrintPreviewCommand(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  string x0;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "::wx:set-printer-preview-command");
-
-  
-  wxSetPrintPreviewCommand(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterFile(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  pathname x0;
-
-  
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "::wx:set-printer-file");
-
-  
-  wxSetPrinterFile(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxSetPrinterCommand(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  string x0;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "::wx:set-printer-command");
-
-  
-  wxSetPrinterCommand(x0);
-
-  
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetLevel2Ok(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetLevel2Ok();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-post-script-level-2");
-#endif
-  return (r ? scheme_true : scheme_false);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetAFMPath(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  nstring r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetAFMPath();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-afm-path");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrintPaperName(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  nstring r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrintPaperName();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-print-paper-name");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterTranslation(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-
-  
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("::wx:get-printer-translation", "non-null", (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "::wx:get-printer-translation"), "::wx:get-printer-translation");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("::wx:get-printer-translation", "non-null", (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "::wx:get-printer-translation"), "::wx:get-printer-translation");
-
-  
-  wxGetPrinterTranslation(x0, x1);
-
-  
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterScaling(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-#if  USE_PRINTER
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-
-  
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("::wx:get-printer-scaling", "non-null", (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "::wx:get-printer-scaling"), "::wx:get-printer-scaling");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("::wx:get-printer-scaling", "non-null", (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "::wx:get-printer-scaling"), "::wx:get-printer-scaling");
-
-  
-  wxGetPrinterScaling(x0, x1);
-
-  
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
-  
-#endif
-  return scheme_void;
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterOptions(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrinterOptions();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-options");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterOrientation(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrinterOrientation();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-orientation");
-#endif
-  return bundle_symset_psOrientation(r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterMode(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrinterMode();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-mode");
-#endif
-  return bundle_symset_psMode(r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrintPreviewCommand(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrintPreviewCommand();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-preview-command");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterFile(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrinterFile();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-file");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
-
-#if  USE_PRINTER
-#pragma argsused
-static Scheme_Object *wxsGlobalwxGetPrinterCommand(int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
-#if  USE_PRINTER
-
-  
-
-  
-  r = wxGetPrinterCommand();
-
-  
-  
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-command");
-#endif
-  return objscheme_bundle_string((char *)r);
-}
-#endif
 
 #pragma argsused
 static Scheme_Object *wxsGlobalwxSetCursor(int n,  Scheme_Object *p[])
@@ -1376,7 +890,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoiceData(int n,  Scheme_Object *p[])
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice-data");
   x3 = NULL;
   x4 = NULL;
-  x5 = (((n <= 4) || SCHEME_NULLP(p[4])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[4], NULL, 0) : (objscheme_istype_wxDialogBox(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[4], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-data", "wx:frame% or wx:dialog-box%", -1, 0, &p[4]), (wxWindow *)NULL))));
+  x5 = (((n <= 4) || XC_SCHEME_NULLP(p[4])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[4], NULL, 0) : (objscheme_istype_wxDialogBox(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[4], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-data", "wx:frame% or wx:dialog-box%", -1, 0, &p[4]), (wxWindow *)NULL))));
   if (n > 5) {
     x6 = objscheme_unbundle_integer(p[5], "::wx:get-single-choice-data");
   } else
@@ -1426,7 +940,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoiceIndex(int n,  Scheme_Object *p[]
   x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-single-choice-index");
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice-index");
   x3 = NULL;
-  x4 = (((n <= 3) || SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-index", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
+  x4 = (((n <= 3) || XC_SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-index", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x5 = objscheme_unbundle_integer(p[4], "::wx:get-single-choice-index");
   } else
@@ -1476,7 +990,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoice(int n,  Scheme_Object *p[])
   x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-single-choice");
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice");
   x3 = NULL;
-  x4 = (((n <= 3) || SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
+  x4 = (((n <= 3) || XC_SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x5 = objscheme_unbundle_integer(p[4], "::wx:get-single-choice");
   } else
@@ -1530,7 +1044,7 @@ static Scheme_Object *wxsGlobalwxGetMultipleChoice(int n,  Scheme_Object *p[])
   x3 = NULL;
   x4 = objscheme_unbundle_integer(p[3], "::wx:get-multiple-choice");
   x5 = __CopyIntArray(p[4], p[2]);
-  x6 = (((n <= 5) || SCHEME_NULLP(p[5])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[5], NULL, 0) : (objscheme_istype_wxDialogBox(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[5], NULL, 0) : (scheme_wrong_type("wx:get-multiple-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[5]), (wxWindow *)NULL))));
+  x6 = (((n <= 5) || XC_SCHEME_NULLP(p[5])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[5], NULL, 0) : (objscheme_istype_wxDialogBox(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[5], NULL, 0) : (scheme_wrong_type("wx:get-multiple-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[5]), (wxWindow *)NULL))));
   if (n > 6) {
     x7 = objscheme_unbundle_integer(p[6], "::wx:get-multiple-choice");
   } else
@@ -1583,7 +1097,7 @@ static Scheme_Object *wxsGlobalwxGetTextFromUser(int n,  Scheme_Object *p[])
     x2 = (string)objscheme_unbundle_string(p[2], "::wx:get-text-from-user");
   } else
     x2 = "";
-  x3 = (((n <= 3) || SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-text-from-user", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
+  x3 = (((n <= 3) || XC_SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-text-from-user", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x4 = objscheme_unbundle_integer(p[4], "::wx:get-text-from-user");
   } else
@@ -1627,7 +1141,7 @@ static Scheme_Object *wxsGlobalwxMessageBox(int n,  Scheme_Object *p[])
     x2 = unbundle_symset_messageStyle(p[2], "::wx:message-box");
   } else
     x2 = wxOK|wxCENTER;
-  x3 = (((n <= 3) || SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:message-box", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
+  x3 = (((n <= 3) || XC_SCHEME_NULLP(p[3])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:message-box", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x4 = objscheme_unbundle_integer(p[4], "::wx:message-box");
   } else
@@ -1682,7 +1196,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
     x5 = unbundle_symset_fileSelMode(p[5], "::wx:file-selector");
   } else
     x5 = wxOPEN;
-  x6 = (((n <= 6) || SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("wx:file-selector", "wx:frame% or wx:dialog-box%", -1, 0, &p[6]), (wxWindow *)NULL))));
+  x6 = (((n <= 6) || XC_SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("wx:file-selector", "wx:frame% or wx:dialog-box%", -1, 0, &p[6]), (wxWindow *)NULL))));
   if (n > 7) {
     x7 = objscheme_unbundle_integer(p[7], "::wx:file-selector");
   } else
@@ -1800,48 +1314,6 @@ static Scheme_Object *wxsGlobalwxGetHostName_Scheme(int n,  Scheme_Object *p[])
 
 void objscheme_setup_wxsGlobal(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""ok", env))
-    scheme_install_xc_global("wx:const-""ok", scheme_make_integer(wxOK), env);
-  if (!scheme_lookup_xc_global("wx:const-""yes-no", env))
-    scheme_install_xc_global("wx:const-""yes-no", scheme_make_integer(wxYES_NO), env);
-  if (!scheme_lookup_xc_global("wx:const-""cancel", env))
-    scheme_install_xc_global("wx:const-""cancel", scheme_make_integer(wxCANCEL), env);
-  if (!scheme_lookup_xc_global("wx:const-""centre", env))
-    scheme_install_xc_global("wx:const-""centre", scheme_make_integer(wxCENTRE), env);
-  if (!scheme_lookup_xc_global("wx:const-""icon-exclamation", env))
-    scheme_install_xc_global("wx:const-""icon-exclamation", scheme_make_integer(wxICON_EXCLAMATION), env);
-  if (!scheme_lookup_xc_global("wx:const-""icon-hand", env))
-    scheme_install_xc_global("wx:const-""icon-hand", scheme_make_integer(wxICON_HAND), env);
-  if (!scheme_lookup_xc_global("wx:const-""icon-question", env))
-    scheme_install_xc_global("wx:const-""icon-question", scheme_make_integer(wxICON_QUESTION), env);
-  if (!scheme_lookup_xc_global("wx:const-""icon-information", env))
-    scheme_install_xc_global("wx:const-""icon-information", scheme_make_integer(wxICON_INFORMATION), env);
-  if (!scheme_lookup_xc_global("wx:const-""ok", env))
-    scheme_install_xc_global("wx:const-""ok", scheme_make_integer(wxOK), env);
-  if (!scheme_lookup_xc_global("wx:const-""no", env))
-    scheme_install_xc_global("wx:const-""no", scheme_make_integer(wxNO), env);
-  if (!scheme_lookup_xc_global("wx:const-""yes", env))
-    scheme_install_xc_global("wx:const-""yes", scheme_make_integer(wxYES), env);
-  if (!scheme_lookup_xc_global("wx:const-""cancel", env))
-    scheme_install_xc_global("wx:const-""cancel", scheme_make_integer(wxCANCEL), env);
-  if (!scheme_lookup_xc_global("wx:const-""ps-preview", env))
-    scheme_install_xc_global("wx:const-""ps-preview", scheme_make_integer(PS_PREVIEW), env);
-  if (!scheme_lookup_xc_global("wx:const-""ps-file", env))
-    scheme_install_xc_global("wx:const-""ps-file", scheme_make_integer(PS_FILE), env);
-  if (!scheme_lookup_xc_global("wx:const-""ps-printer", env))
-    scheme_install_xc_global("wx:const-""ps-printer", scheme_make_integer(PS_PRINTER), env);
-  if (!scheme_lookup_xc_global("wx:const-""ps-portrait", env))
-    scheme_install_xc_global("wx:const-""ps-portrait", scheme_make_integer(PS_PORTRAIT), env);
-  if (!scheme_lookup_xc_global("wx:const-""ps-landscape", env))
-    scheme_install_xc_global("wx:const-""ps-landscape", scheme_make_integer(PS_LANDSCAPE), env);
-  if (!scheme_lookup_xc_global("wx:const-""open", env))
-    scheme_install_xc_global("wx:const-""open", scheme_make_integer(wxOPEN), env);
-  if (!scheme_lookup_xc_global("wx:const-""save", env))
-    scheme_install_xc_global("wx:const-""save", scheme_make_integer(wxSAVE), env);
-  if (!scheme_lookup_xc_global("wx:const-""overwrite-prompt", env))
-    scheme_install_xc_global("wx:const-""overwrite-prompt", scheme_make_integer(wxOVERWRITE_PROMPT), env);
-  if (!scheme_lookup_xc_global("wx:const-""hide-readonly", env))
-    scheme_install_xc_global("wx:const-""hide-readonly", scheme_make_integer(wxHIDE_READONLY), env);
   scheme_install_xc_global("wx:flush-display", scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "wx:flush-display", 0, 0), env);
   scheme_install_xc_global("wx:yield", scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "wx:yield", 0, 1), env);
   scheme_install_xc_global("wx:write-resource", scheme_make_prim(wxsGlobalwxWriteResource), env);
@@ -1855,72 +1327,6 @@ void objscheme_setup_wxsGlobal(void *env)
   scheme_install_xc_global("wx:end-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxEndBusyCursor, "wx:end-busy-cursor", 0, 0), env);
   scheme_install_xc_global("wx:is-busy?", scheme_make_prim_w_arity(wxsGlobalwxIsBusy, "wx:is-busy?", 0, 0), env);
   scheme_install_xc_global("wx:begin-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "wx:begin-busy-cursor", 0, 0), env);
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-post-script-level-2", scheme_make_prim_w_arity(wxsGlobalwxSetLevel2Ok, "wx:set-post-script-level-2", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-afm-path", scheme_make_prim_w_arity(wxsGlobalwxSetAFMPath, "wx:set-afm-path", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-print-paper-name", scheme_make_prim_w_arity(wxsGlobalwxSetPrintPaperName, "wx:set-print-paper-name", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-translation", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterTranslation, "wx:set-printer-translation", 2, 2), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-scaling", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterScaling, "wx:set-printer-scaling", 2, 2), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-options", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterOptions, "wx:set-printer-options", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-orientation", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterOrientation, "wx:set-printer-orientation", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-mode", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterMode, "wx:set-printer-mode", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-preview-command", scheme_make_prim_w_arity(wxsGlobalwxSetPrintPreviewCommand, "wx:set-printer-preview-command", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-file", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterFile, "wx:set-printer-file", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:set-printer-command", scheme_make_prim_w_arity(wxsGlobalwxSetPrinterCommand, "wx:set-printer-command", 1, 1), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-post-script-level-2", scheme_make_prim_w_arity(wxsGlobalwxGetLevel2Ok, "wx:get-post-script-level-2", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-afm-path", scheme_make_prim_w_arity(wxsGlobalwxGetAFMPath, "wx:get-afm-path", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-print-paper-name", scheme_make_prim_w_arity(wxsGlobalwxGetPrintPaperName, "wx:get-print-paper-name", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-translation", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterTranslation, "wx:get-printer-translation", 2, 2), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-scaling", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterScaling, "wx:get-printer-scaling", 2, 2), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-options", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterOptions, "wx:get-printer-options", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-orientation", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterOrientation, "wx:get-printer-orientation", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-mode", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterMode, "wx:get-printer-mode", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-preview-command", scheme_make_prim_w_arity(wxsGlobalwxGetPrintPreviewCommand, "wx:get-printer-preview-command", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-file", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterFile, "wx:get-printer-file", 0, 0), env);
-#endif
-#if  USE_PRINTER
-  scheme_install_xc_global("wx:get-printer-command", scheme_make_prim_w_arity(wxsGlobalwxGetPrinterCommand, "wx:get-printer-command", 0, 0), env);
-#endif
   scheme_install_xc_global("wx:set-cursor", scheme_make_prim_w_arity(wxsGlobalwxSetCursor, "wx:set-cursor", 1, 1), env);
   scheme_install_xc_global("wx:make-meta-file-placeable", scheme_make_prim_w_arity(wxsGlobalwxMakeMetaFilePlaceable, "wx:make-meta-file-placeable", 6, 6), env);
   scheme_install_xc_global("wx:display-depth", scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "wx:display-depth", 0, 0), env);

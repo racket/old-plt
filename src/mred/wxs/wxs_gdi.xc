@@ -37,7 +37,6 @@
 @SYM "slant" : wxSLANT
 @ENDSYMBOLS
 
-
 #define USE_FONT_NAME_DIRECTORY 1
 
 /* Not used, anyway: */
@@ -52,12 +51,11 @@
 @CLASSBASE wxFont "wx:font":"wx:object"
 
 @CREATOR (); <> no argument
-// @CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@CREATOR (nnint,int,SYM[style],SYM[weight],bool=0) <> font id
-@CREATOR (nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
+@CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family
+@CREATOR (nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
 
 @ "get-family" : SYM[family] GetFamily();
-@ "get-font-id" : int GetFontId(); ## USE_FONT_NAME_DIRECTORY
+@ "get-face" : nstring GetFaceString();
 @ "get-style" : SYM[style] GetStyle();
 @ "get-point-size" : int GetPointSize();
 @ "get-weight" : SYM[weight] GetWeight();
@@ -65,13 +63,11 @@
 
 @END
 
-
 @CLASSBASE wxFontList "wx:font-list":"wx:object"
 
 @CREATOR ();
 
-// @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,int,SYM[style],SYM[weight],bool=0) <> font id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
 @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @CONSTANT "wx:the-font-list" : wxFontList! wxTheFontList
@@ -204,15 +200,15 @@
 @ENDSYMBOLS
 
 @BEGINSYMBOLS join > ONE
-@SYM "join-bevel" : wxJOIN_BEVEL
-@SYM "join-miter" : wxJOIN_MITER
-@SYM "join-round" : wxJOIN_ROUND
+@SYM "bevel" : wxJOIN_BEVEL
+@SYM "miter" : wxJOIN_MITER
+@SYM "round" : wxJOIN_ROUND
 @ENDSYMBOLS
 
 @BEGINSYMBOLS cap > ONE
-@SYM "cap-round" : wxCAP_ROUND
-@SYM "cap-projecting" : wxCAP_PROJECTING
-@SYM "cap-butt" : wxCAP_BUTT
+@SYM "round" : wxCAP_ROUND
+@SYM "projecting" : wxCAP_PROJECTING
+@SYM "butt" : wxCAP_BUTT
 @ENDSYMBOLS
 
 @CLASSBASE wxPen "wx:pen" : "wx:object"
@@ -254,30 +250,30 @@
 @END
 
 @BEGINSYMBOLS cursor > ONE
-@SYM "cursor-arrow" : wxCURSOR_ARROW
-@SYM "cursor-bullseye" : wxCURSOR_BULLSEYE
-@SYM "cursor-char" : wxCURSOR_CHAR
-@SYM "cursor-cross" : wxCURSOR_CROSS
-@SYM "cursor-hand" : wxCURSOR_HAND
-@SYM "cursor-ibeam" : wxCURSOR_IBEAM
-@SYM "cursor-left-button" : wxCURSOR_LEFT_BUTTON
-@SYM "cursor-magnifier" : wxCURSOR_MAGNIFIER
-@SYM "cursor-middle-button" : wxCURSOR_MIDDLE_BUTTON
-@SYM "cursor-no-entry" : wxCURSOR_NO_ENTRY
-@SYM "cursor-paint-brush" : wxCURSOR_PAINT_BRUSH
-@SYM "cursor-pencil" : wxCURSOR_PENCIL
-@SYM "cursor-point-left" : wxCURSOR_POINT_LEFT
-@SYM "cursor-point-right" : wxCURSOR_POINT_RIGHT
-@SYM "cursor-question-arrow" : wxCURSOR_QUESTION_ARROW
-@SYM "cursor-right-button" : wxCURSOR_RIGHT_BUTTON
-@SYM "cursor-sizenesw" : wxCURSOR_SIZENESW
-@SYM "cursor-sizens" : wxCURSOR_SIZENS
-@SYM "cursor-sizenwse" : wxCURSOR_SIZENWSE
-@SYM "cursor-sizewe" : wxCURSOR_SIZEWE
-@SYM "cursor-sizing" : wxCURSOR_SIZING
-@SYM "cursor-spraycan" : wxCURSOR_SPRAYCAN
-@SYM "cursor-wait" : wxCURSOR_WAIT
-@SYM "cursor-watch" : wxCURSOR_WATCH
+@SYM "arrow" : wxCURSOR_ARROW
+@SYM "bullseye" : wxCURSOR_BULLSEYE
+// @SYM "char" : wxCURSOR_CHAR
+@SYM "cross" : wxCURSOR_CROSS
+@SYM "hand" : wxCURSOR_HAND
+@SYM "ibeam" : wxCURSOR_IBEAM
+// @SYM "left-button" : wxCURSOR_LEFT_BUTTON
+// @SYM "magnifier" : wxCURSOR_MAGNIFIER
+// @SYM "middle-button" : wxCURSOR_MIDDLE_BUTTON
+// @SYM "no-entry" : wxCURSOR_NO_ENTRY
+// @SYM "paint-brush" : wxCURSOR_PAINT_BRUSH
+// @SYM "pencil" : wxCURSOR_PENCIL
+// @SYM "point-left" : wxCURSOR_POINT_LEFT
+// @SYM "point-right" : wxCURSOR_POINT_RIGHT
+// @SYM "question-arrow" : wxCURSOR_QUESTION_ARROW
+// @SYM "right-button" : wxCURSOR_RIGHT_BUTTON
+// @SYM "sizenesw" : wxCURSOR_SIZENESW
+// @SYM "sizens" : wxCURSOR_SIZENS
+// @SYM "sizenwse" : wxCURSOR_SIZENWSE
+// @SYM "sizewe" : wxCURSOR_SIZEWE
+// @SYM "sizing" : wxCURSOR_SIZING
+// @SYM "spraycan" : wxCURSOR_SPRAYCAN
+// @SYM "wait" : wxCURSOR_WAIT
+@SYM "watch" : wxCURSOR_WATCH
 @ENDSYMBOLS
 
 @CLASSBASE wxCursor "wx:cursor" : "wx:object"

@@ -169,7 +169,7 @@ static Scheme_Object *os_wxMenuGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   
   x0 = objscheme_unbundle_integer(p[0], "wx:menu%::get-label");
 
-  if (x0 < 0) return scheme_null;
+  if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->GetLabel(x0);
 
   
@@ -188,7 +188,7 @@ static Scheme_Object *os_wxMenuGetHelpString(Scheme_Object *obj, int n,  Scheme_
   
   x0 = objscheme_unbundle_integer(p[0], "wx:menu%::get-help-string");
 
-  if (x0 < 0) return scheme_null;
+  if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->GetHelpString(x0);
 
   
@@ -472,14 +472,14 @@ if (os_wxMenu_class) {
 
 int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMenu_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:menu%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:menu% object or " XC_NULL_STR: "wx:menu% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -489,7 +489,7 @@ Scheme_Object *objscheme_bundle_wxMenu(class wxMenu *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -508,7 +508,7 @@ Scheme_Object *objscheme_bundle_wxMenu(class wxMenu *realobj)
 
 class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMenu(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -844,7 +844,7 @@ static Scheme_Object *os_wxMenuBarGetLabelTop(Scheme_Object *obj, int n,  Scheme
   
   x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-label-top");
 
-  if (x0 < 0) return scheme_null;
+  if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetLabelTop(x0);
 
   
@@ -863,7 +863,7 @@ static Scheme_Object *os_wxMenuBarGetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-label");
 
-  if (x0 < 0) return scheme_null;
+  if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetLabel(x0);
 
   
@@ -882,7 +882,7 @@ static Scheme_Object *os_wxMenuBarGetHelpString(Scheme_Object *obj, int n,  Sche
   
   x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-help-string");
 
-  if (x0 < 0) return scheme_null;
+  if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetHelpString(x0);
 
   
@@ -1129,14 +1129,14 @@ if (os_wxMenuBar_class) {
 
 int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMenuBar_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:menu-bar%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:menu-bar% object or " XC_NULL_STR: "wx:menu-bar% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1146,7 +1146,7 @@ Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1165,7 +1165,7 @@ Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *realobj)
 
 class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMenuBar(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

@@ -62,65 +62,85 @@ static int wxSchemeWindowGetY(wxWindow *w)
   return y;
 }
 
+static Scheme_Object *sizeMode_wxSIZE_AUTO_sym = NULL;
+static Scheme_Object *sizeMode_wxSIZE_USE_EXISTING_sym = NULL;
+static Scheme_Object *sizeMode_wxPOS_USE_MINUS_ONE_sym = NULL;
+
+static void init_symset_sizeMode(void) {
+  sizeMode_wxSIZE_AUTO_sym = scheme_intern_symbol("auto");
+  sizeMode_wxSIZE_USE_EXISTING_sym = scheme_intern_symbol("use-exsiting");
+  sizeMode_wxPOS_USE_MINUS_ONE_sym = scheme_intern_symbol("use-minus-one");
+}
+
 static int unbundle_symset_sizeMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxSIZE_AUTO) { return wxSIZE_AUTO; }
-    if ((vi) == wxSIZE_AUTO_WIDTH) { return wxSIZE_AUTO_WIDTH; }
-    if ((vi) == wxSIZE_AUTO_HEIGHT) { return wxSIZE_AUTO_HEIGHT; }
-    if ((vi) == wxSIZE_USE_EXISTING) { return wxSIZE_USE_EXISTING; }
-    if ((vi) == wxPOS_USE_MINUS_ONE) { return wxPOS_USE_MINUS_ONE; }
-  }
-  if (where) scheme_wrong_type(where, "sizeMode integer", -1, 0, &v);
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  if (0) { }
+  else if (v == sizeMode_wxSIZE_AUTO_sym) { return wxSIZE_AUTO; }
+  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return wxSIZE_USE_EXISTING; }
+  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return wxPOS_USE_MINUS_ONE; }
+  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_sizeMode(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxSIZE_AUTO) { return 1; }
-    if ((vi) == wxSIZE_AUTO_WIDTH) { return 1; }
-    if ((vi) == wxSIZE_AUTO_HEIGHT) { return 1; }
-    if ((vi) == wxSIZE_USE_EXISTING) { return 1; }
-    if ((vi) == wxPOS_USE_MINUS_ONE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "sizeMode integer", -1, 0, &v);
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  if (0) { }
+  else if (v == sizeMode_wxSIZE_AUTO_sym) { return 1; }
+  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return 1; }
+  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_sizeMode(int v) {
-  return scheme_make_integer(v);
+  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
+  switch (v) {
+  case wxSIZE_AUTO: return sizeMode_wxSIZE_AUTO_sym;
+  case wxSIZE_USE_EXISTING: return sizeMode_wxSIZE_USE_EXISTING_sym;
+  case wxPOS_USE_MINUS_ONE: return sizeMode_wxPOS_USE_MINUS_ONE_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *direction_wxBOTH_sym = NULL;
+static Scheme_Object *direction_wxVERTICAL_sym = NULL;
+static Scheme_Object *direction_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_direction(void) {
+  direction_wxBOTH_sym = scheme_intern_symbol("both");
+  direction_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  direction_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
 static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBOTH) { return wxBOTH; }
-    if ((vi) == wxVERTICAL) { return wxVERTICAL; }
-    if ((vi) == wxHORIZONTAL) { return wxHORIZONTAL; }
-  }
-  if (where) scheme_wrong_type(where, "direction integer", -1, 0, &v);
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  if (0) { }
+  else if (v == direction_wxBOTH_sym) { return wxBOTH; }
+  else if (v == direction_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == direction_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_direction(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBOTH) { return 1; }
-    if ((vi) == wxVERTICAL) { return 1; }
-    if ((vi) == wxHORIZONTAL) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "direction integer", -1, 0, &v);
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  if (0) { }
+  else if (v == direction_wxBOTH_sym) { return 1; }
+  else if (v == direction_wxVERTICAL_sym) { return 1; }
+  else if (v == direction_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_direction(int v) {
-  return scheme_make_integer(v);
+  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
+  switch (v) {
+  case wxBOTH: return direction_wxBOTH_sym;
+  case wxVERTICAL: return direction_wxVERTICAL_sym;
+  case wxHORIZONTAL: return direction_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
 }
 
 
@@ -572,23 +592,23 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "wx:window%::get-text-extent");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::get-text-extent", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::get-text-extent", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:window%::get-text-extent"), "wx:window%::get-text-extent");
-  if (SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:window%::get-text-extent", "non-null", (2 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[2]))
+    scheme_wrong_type("wx:window%::get-text-extent", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
     *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:window%::get-text-extent"), "wx:window%::get-text-extent");
   if (n > 3) {
-    if (SCHEME_NULLP(p[3]))
+    if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
     *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:window%::get-text-extent"), "wx:window%::get-text-extent");
   } else
     x3 = NULL;
   if (n > 4) {
-    if (SCHEME_NULLP(p[4]))
+    if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
     *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:window%::get-text-extent"), "wx:window%::get-text-extent");
@@ -611,9 +631,9 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
     objscheme_set_box(p[1], scheme_make_double(_x1));
   if (n > 2)
     objscheme_set_box(p[2], scheme_make_double(_x2));
-  if (n > 3 && !SCHEME_NULLP(p[3]))
+  if (n > 3 && !XC_SCHEME_NULLP(p[3]))
     objscheme_set_box(p[3], scheme_make_double(_x3));
-  if (n > 4 && !SCHEME_NULLP(p[4]))
+  if (n > 4 && !XC_SCHEME_NULLP(p[4]))
     objscheme_set_box(p[4], scheme_make_double(_x4));
   
   return scheme_void;
@@ -663,12 +683,12 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:window%::screen-to-client", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:window%::screen-to-client", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:window%::screen-to-client"), "wx:window%::screen-to-client");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::screen-to-client", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::screen-to-client", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:window%::screen-to-client"), "wx:window%::screen-to-client");
 
@@ -695,12 +715,12 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:window%::client-to-screen", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:window%::client-to-screen", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:window%::client-to-screen"), "wx:window%::client-to-screen");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::client-to-screen", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::client-to-screen", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:window%::client-to-screen"), "wx:window%::client-to-screen");
 
@@ -796,12 +816,12 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:window%::get-position", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:window%::get-position", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:window%::get-position"), "wx:window%::get-position");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::get-position", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::get-position", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:window%::get-position"), "wx:window%::get-position");
 
@@ -828,12 +848,12 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:window%::get-client-size", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:window%::get-client-size", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:window%::get-client-size"), "wx:window%::get-client-size");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::get-client-size", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::get-client-size", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:window%::get-client-size"), "wx:window%::get-client-size");
 
@@ -860,12 +880,12 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   int* x1 = &_x1;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:window%::get-size", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:window%::get-size", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:window%::get-size"), "wx:window%::get-size");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:window%::get-size", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:window%::get-size", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:window%::get-size"), "wx:window%::get-size");
 
@@ -1046,22 +1066,6 @@ static Scheme_Object *objscheme_classname_os_wxWindow(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxWindow(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""size-auto", env))
-    scheme_install_xc_global("wx:const-""size-auto", scheme_make_integer(wxSIZE_AUTO), env);
-  if (!scheme_lookup_xc_global("wx:const-""size-auto-width", env))
-    scheme_install_xc_global("wx:const-""size-auto-width", scheme_make_integer(wxSIZE_AUTO_WIDTH), env);
-  if (!scheme_lookup_xc_global("wx:const-""size-auto-height", env))
-    scheme_install_xc_global("wx:const-""size-auto-height", scheme_make_integer(wxSIZE_AUTO_HEIGHT), env);
-  if (!scheme_lookup_xc_global("wx:const-""size-use-exsiting", env))
-    scheme_install_xc_global("wx:const-""size-use-exsiting", scheme_make_integer(wxSIZE_USE_EXISTING), env);
-  if (!scheme_lookup_xc_global("wx:const-""pos-use-minus-one", env))
-    scheme_install_xc_global("wx:const-""pos-use-minus-one", scheme_make_integer(wxPOS_USE_MINUS_ONE), env);
-  if (!scheme_lookup_xc_global("wx:const-""both", env))
-    scheme_install_xc_global("wx:const-""both", scheme_make_integer(wxBOTH), env);
-  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
-    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
-    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
 if (os_wxWindow_class) {
     objscheme_add_global_class(os_wxWindow_class,  "wx:window%", env);
 } else {
@@ -1111,14 +1115,14 @@ if (os_wxWindow_class) {
 
 int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxWindow_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:window%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:window% object or " XC_NULL_STR: "wx:window% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1128,7 +1132,7 @@ Scheme_Object *objscheme_bundle_wxWindow(class wxWindow *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1147,7 +1151,7 @@ Scheme_Object *objscheme_bundle_wxWindow(class wxWindow *realobj)
 
 class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxWindow(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

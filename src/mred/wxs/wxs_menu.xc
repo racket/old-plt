@@ -20,7 +20,7 @@
 
 @MACRO CHECKNEG[pos.result] = if (x<pos> < 0) return <result>;
 @MACRO CHECKNEGVOID[pos] = $$CHECKNEG[<pos>.scheme_void]
-@MACRO CHECKNEGNULL[pos] = $$CHECKNEG[<pos>.scheme_null]
+@MACRO CHECKNEGNULL[pos] = $$CHECKNEG[<pos>.XC_SCHEME_NULL]
 @MACRO CHECKNEGFALSE[pos] = $$CHECKNEG[<pos>.scheme_false]
 
 @CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback); : : ubCallbackSetup///ubCallbackCreatorFinish

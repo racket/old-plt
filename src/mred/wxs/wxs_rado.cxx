@@ -18,30 +18,39 @@
 
 
 
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxVERTICAL) { return wxVERTICAL; }
-    if ((vi) == wxHORIZONTAL) { return wxHORIZONTAL; }
-  }
-  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxVERTICAL) { return 1; }
-    if ((vi) == wxHORIZONTAL) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return 1; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_orientation(int v) {
-  return scheme_make_integer(v);
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  switch (v) {
+  case wxVERTICAL: return orientation_wxVERTICAL_sym;
+  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
 }
 
 
@@ -515,7 +524,7 @@ static Scheme_Object *os_wxRadioBoxGetString(Scheme_Object *obj, int n,  Scheme_
   
   x0 = objscheme_unbundle_integer(p[0], "wx:radio-box%::get-string");
 
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_null;
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
 
   
@@ -742,7 +751,7 @@ static Scheme_Object *os_wxRadioBoxOnKillFocus(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxRadioBox *realobj;
-  if ((n >= 8) && objscheme_istype_wxPanel(p[0], NULL, 0) && (SCHEME_NULLP(p[1]) || objscheme_istype_proc2(p[1], NULL)) && (SCHEME_NULLP(p[2]) || objscheme_istype_string(p[2], NULL)) && objscheme_istype_number(p[3], NULL) && objscheme_istype_number(p[4], NULL) && objscheme_istype_number(p[5], NULL) && objscheme_istype_number(p[6], NULL) && (SCHEME_LISTP(p[7]) && (SCHEME_NULLP(p[7]) || objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0)))) {
+  if ((n >= 8) && objscheme_istype_wxPanel(p[0], NULL, 0) && (SCHEME_NULLP(p[1]) || objscheme_istype_proc2(p[1], NULL)) && (XC_SCHEME_NULLP(p[2]) || objscheme_istype_string(p[2], NULL)) && objscheme_istype_number(p[3], NULL) && objscheme_istype_number(p[4], NULL) && objscheme_istype_number(p[5], NULL) && objscheme_istype_number(p[6], NULL) && (SCHEME_LISTP(p[7]) && (XC_SCHEME_NULLP(p[7]) || objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0)))) {
     class wxPanel* x0;
     wxFunction x1;
     nstring x2;
@@ -858,10 +867,6 @@ static Scheme_Object *objscheme_classname_os_wxRadioBox(Scheme_Object *obj, int 
 
 void objscheme_setup_wxRadioBox(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
-    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
-    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
 if (os_wxRadioBox_class) {
     objscheme_add_global_class(os_wxRadioBox_class,  "wx:radio-box%", env);
 } else {
@@ -892,14 +897,14 @@ if (os_wxRadioBox_class) {
 
 int objscheme_istype_wxRadioBox(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxRadioBox_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:radio-box%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:radio-box% object or " XC_NULL_STR: "wx:radio-box% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -909,7 +914,7 @@ Scheme_Object *objscheme_bundle_wxRadioBox(class wxRadioBox *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -928,7 +933,7 @@ Scheme_Object *objscheme_bundle_wxRadioBox(class wxRadioBox *realobj)
 
 class wxRadioBox *objscheme_unbundle_wxRadioBox(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxRadioBox(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

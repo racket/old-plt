@@ -351,7 +351,7 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_integer(p[0], "wx:choice%::get-string");
 
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_null;
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
 
   
@@ -709,14 +709,14 @@ if (os_wxChoice_class) {
 
 int objscheme_istype_wxChoice(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxChoice_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:choice%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:choice% object or " XC_NULL_STR: "wx:choice% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -726,7 +726,7 @@ Scheme_Object *objscheme_bundle_wxChoice(class wxChoice *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -745,7 +745,7 @@ Scheme_Object *objscheme_bundle_wxChoice(class wxChoice *realobj)
 
 class wxChoice *objscheme_unbundle_wxChoice(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxChoice(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

@@ -37,91 +37,160 @@
 #define NO_GET_MENU_BAR !HAS_GET_MENU_BAR
 
 
+static Scheme_Object *frameStyle_wxCAPTION_sym = NULL;
+static Scheme_Object *frameStyle_wxICONIZE_sym = NULL;
+static Scheme_Object *frameStyle_wxMINIMIZE_sym = NULL;
+static Scheme_Object *frameStyle_wxMAXIMIZE_sym = NULL;
+static Scheme_Object *frameStyle_wxSDI_sym = NULL;
+static Scheme_Object *frameStyle_wxMDI_PARENT_sym = NULL;
+static Scheme_Object *frameStyle_wxMDI_CHILD_sym = NULL;
+static Scheme_Object *frameStyle_wxTHICK_FRAME_sym = NULL;
+static Scheme_Object *frameStyle_wxSYSTEM_MENU_sym = NULL;
+static Scheme_Object *frameStyle_wxMINIMIZE_BOX_sym = NULL;
+static Scheme_Object *frameStyle_wxMAXIMIZE_BOX_sym = NULL;
+static Scheme_Object *frameStyle_wxRESIZE_BORDER_sym = NULL;
+
+static void init_symset_frameStyle(void) {
+  frameStyle_wxCAPTION_sym = scheme_intern_symbol("caption");
+  frameStyle_wxICONIZE_sym = scheme_intern_symbol("iconize");
+  frameStyle_wxMINIMIZE_sym = scheme_intern_symbol("minimize");
+  frameStyle_wxMAXIMIZE_sym = scheme_intern_symbol("maximize");
+  frameStyle_wxSDI_sym = scheme_intern_symbol("sdi");
+  frameStyle_wxMDI_PARENT_sym = scheme_intern_symbol("mdi-parent");
+  frameStyle_wxMDI_CHILD_sym = scheme_intern_symbol("mdi-child");
+  frameStyle_wxTHICK_FRAME_sym = scheme_intern_symbol("thick-frame");
+  frameStyle_wxSYSTEM_MENU_sym = scheme_intern_symbol("system-menu");
+  frameStyle_wxMINIMIZE_BOX_sym = scheme_intern_symbol("minimize-box");
+  frameStyle_wxMAXIMIZE_BOX_sym = scheme_intern_symbol("maximize-box");
+  frameStyle_wxRESIZE_BORDER_sym = scheme_intern_symbol("resize-border");
+}
+
 static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxCAPTION) == wxCAPTION) { vi -= wxCAPTION; }
-    if ((vi & wxICONIZE) == wxICONIZE) { vi -= wxICONIZE; }
-    if ((vi & wxMINIMIZE) == wxMINIMIZE) { vi -= wxMINIMIZE; }
-    if ((vi & wxMAXIMIZE) == wxMAXIMIZE) { vi -= wxMAXIMIZE; }
-    if ((vi & wxSDI) == wxSDI) { vi -= wxSDI; }
-    if ((vi & wxMDI_PARENT) == wxMDI_PARENT) { vi -= wxMDI_PARENT; }
-    if ((vi & wxMDI_CHILD) == wxMDI_CHILD) { vi -= wxMDI_CHILD; }
-    if ((vi & wxTHICK_FRAME) == wxTHICK_FRAME) { vi -= wxTHICK_FRAME; }
-    if ((vi & wxSYSTEM_MENU) == wxSYSTEM_MENU) { vi -= wxSYSTEM_MENU; }
-    if ((vi & wxMINIMIZE_BOX) == wxMINIMIZE_BOX) { vi -= wxMINIMIZE_BOX; }
-    if ((vi & wxMAXIMIZE_BOX) == wxMAXIMIZE_BOX) { vi -= wxMAXIMIZE_BOX; }
-    if ((vi & wxRESIZE_BORDER) == wxRESIZE_BORDER) { vi -= wxRESIZE_BORDER; }
-    if (!vi) { return orig_vi; }
+  if (!frameStyle_wxRESIZE_BORDER_sym) init_symset_frameStyle();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == frameStyle_wxCAPTION_sym) { result = result | wxCAPTION; }
+  else if (i == frameStyle_wxICONIZE_sym) { result = result | wxICONIZE; }
+  else if (i == frameStyle_wxMINIMIZE_sym) { result = result | wxMINIMIZE; }
+  else if (i == frameStyle_wxMAXIMIZE_sym) { result = result | wxMAXIMIZE; }
+  else if (i == frameStyle_wxSDI_sym) { result = result | wxSDI; }
+  else if (i == frameStyle_wxMDI_PARENT_sym) { result = result | wxMDI_PARENT; }
+  else if (i == frameStyle_wxMDI_CHILD_sym) { result = result | wxMDI_CHILD; }
+  else if (i == frameStyle_wxTHICK_FRAME_sym) { result = result | wxTHICK_FRAME; }
+  else if (i == frameStyle_wxSYSTEM_MENU_sym) { result = result | wxSYSTEM_MENU; }
+  else if (i == frameStyle_wxMINIMIZE_BOX_sym) { result = result | wxMINIMIZE_BOX; }
+  else if (i == frameStyle_wxMAXIMIZE_BOX_sym) { result = result | wxMAXIMIZE_BOX; }
+  else if (i == frameStyle_wxRESIZE_BORDER_sym) { result = result | wxRESIZE_BORDER; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "frameStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_frameStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxCAPTION) == wxCAPTION) { vi -= wxCAPTION; }
-    if ((vi & wxICONIZE) == wxICONIZE) { vi -= wxICONIZE; }
-    if ((vi & wxMINIMIZE) == wxMINIMIZE) { vi -= wxMINIMIZE; }
-    if ((vi & wxMAXIMIZE) == wxMAXIMIZE) { vi -= wxMAXIMIZE; }
-    if ((vi & wxSDI) == wxSDI) { vi -= wxSDI; }
-    if ((vi & wxMDI_PARENT) == wxMDI_PARENT) { vi -= wxMDI_PARENT; }
-    if ((vi & wxMDI_CHILD) == wxMDI_CHILD) { vi -= wxMDI_CHILD; }
-    if ((vi & wxTHICK_FRAME) == wxTHICK_FRAME) { vi -= wxTHICK_FRAME; }
-    if ((vi & wxSYSTEM_MENU) == wxSYSTEM_MENU) { vi -= wxSYSTEM_MENU; }
-    if ((vi & wxMINIMIZE_BOX) == wxMINIMIZE_BOX) { vi -= wxMINIMIZE_BOX; }
-    if ((vi & wxMAXIMIZE_BOX) == wxMAXIMIZE_BOX) { vi -= wxMAXIMIZE_BOX; }
-    if ((vi & wxRESIZE_BORDER) == wxRESIZE_BORDER) { vi -= wxRESIZE_BORDER; }
-    if (!vi) { return 1; }
+  if (!frameStyle_wxRESIZE_BORDER_sym) init_symset_frameStyle();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == frameStyle_wxCAPTION_sym) { ; }
+  else if (i == frameStyle_wxICONIZE_sym) { ; }
+  else if (i == frameStyle_wxMINIMIZE_sym) { ; }
+  else if (i == frameStyle_wxMAXIMIZE_sym) { ; }
+  else if (i == frameStyle_wxSDI_sym) { ; }
+  else if (i == frameStyle_wxMDI_PARENT_sym) { ; }
+  else if (i == frameStyle_wxMDI_CHILD_sym) { ; }
+  else if (i == frameStyle_wxTHICK_FRAME_sym) { ; }
+  else if (i == frameStyle_wxSYSTEM_MENU_sym) { ; }
+  else if (i == frameStyle_wxMINIMIZE_BOX_sym) { ; }
+  else if (i == frameStyle_wxMAXIMIZE_BOX_sym) { ; }
+  else if (i == frameStyle_wxRESIZE_BORDER_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "frameStyle integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_frameStyle(int v) {
-  return scheme_make_integer(v);
+  if (!frameStyle_wxRESIZE_BORDER_sym) init_symset_frameStyle();
+  Scheme_Object *l = scheme_null;
+  if (v & wxCAPTION) l = scheme_make_pair(frameStyle_wxCAPTION_sym, l);
+  if (v & wxICONIZE) l = scheme_make_pair(frameStyle_wxICONIZE_sym, l);
+  if (v & wxMINIMIZE) l = scheme_make_pair(frameStyle_wxMINIMIZE_sym, l);
+  if (v & wxMAXIMIZE) l = scheme_make_pair(frameStyle_wxMAXIMIZE_sym, l);
+  if (v & wxSDI) l = scheme_make_pair(frameStyle_wxSDI_sym, l);
+  if (v & wxMDI_PARENT) l = scheme_make_pair(frameStyle_wxMDI_PARENT_sym, l);
+  if (v & wxMDI_CHILD) l = scheme_make_pair(frameStyle_wxMDI_CHILD_sym, l);
+  if (v & wxTHICK_FRAME) l = scheme_make_pair(frameStyle_wxTHICK_FRAME_sym, l);
+  if (v & wxSYSTEM_MENU) l = scheme_make_pair(frameStyle_wxSYSTEM_MENU_sym, l);
+  if (v & wxMINIMIZE_BOX) l = scheme_make_pair(frameStyle_wxMINIMIZE_BOX_sym, l);
+  if (v & wxMAXIMIZE_BOX) l = scheme_make_pair(frameStyle_wxMAXIMIZE_BOX_sym, l);
+  if (v & wxRESIZE_BORDER) l = scheme_make_pair(frameStyle_wxRESIZE_BORDER_sym, l);
+  return l;
 }
 
 
+static Scheme_Object *orientation_wxBOTH_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxBOTH_sym = scheme_intern_symbol("both");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+}
+
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxBOTH) == wxBOTH) { vi -= wxBOTH; }
-    if ((vi & wxHORIZONTAL) == wxHORIZONTAL) { vi -= wxHORIZONTAL; }
-    if ((vi & wxVERTICAL) == wxVERTICAL) { vi -= wxVERTICAL; }
-    if (!vi) { return orig_vi; }
+  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == orientation_wxBOTH_sym) { result = result | wxBOTH; }
+  else if (i == orientation_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else if (i == orientation_wxVERTICAL_sym) { result = result | wxVERTICAL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "orientation symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxBOTH) == wxBOTH) { vi -= wxBOTH; }
-    if ((vi & wxHORIZONTAL) == wxHORIZONTAL) { vi -= wxHORIZONTAL; }
-    if ((vi & wxVERTICAL) == wxVERTICAL) { vi -= wxVERTICAL; }
-    if (!vi) { return 1; }
+  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == orientation_wxBOTH_sym) { ; }
+  else if (i == orientation_wxHORIZONTAL_sym) { ; }
+  else if (i == orientation_wxVERTICAL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "orientation symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_orientation(int v) {
-  return scheme_make_integer(v);
+  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
+  Scheme_Object *l = scheme_null;
+  if (v & wxBOTH) l = scheme_make_pair(orientation_wxBOTH_sym, l);
+  if (v & wxHORIZONTAL) l = scheme_make_pair(orientation_wxHORIZONTAL_sym, l);
+  if (v & wxVERTICAL) l = scheme_make_pair(orientation_wxVERTICAL_sym, l);
+  return l;
 }
 
 
@@ -1068,36 +1137,6 @@ static Scheme_Object *objscheme_classname_os_wxFrame(Scheme_Object *obj, int n, 
 
 void objscheme_setup_wxFrame(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""caption", env))
-    scheme_install_xc_global("wx:const-""caption", scheme_make_integer(wxCAPTION), env);
-  if (!scheme_lookup_xc_global("wx:const-""iconize", env))
-    scheme_install_xc_global("wx:const-""iconize", scheme_make_integer(wxICONIZE), env);
-  if (!scheme_lookup_xc_global("wx:const-""minimize", env))
-    scheme_install_xc_global("wx:const-""minimize", scheme_make_integer(wxMINIMIZE), env);
-  if (!scheme_lookup_xc_global("wx:const-""maximize", env))
-    scheme_install_xc_global("wx:const-""maximize", scheme_make_integer(wxMAXIMIZE), env);
-  if (!scheme_lookup_xc_global("wx:const-""sdi", env))
-    scheme_install_xc_global("wx:const-""sdi", scheme_make_integer(wxSDI), env);
-  if (!scheme_lookup_xc_global("wx:const-""mdi-parent", env))
-    scheme_install_xc_global("wx:const-""mdi-parent", scheme_make_integer(wxMDI_PARENT), env);
-  if (!scheme_lookup_xc_global("wx:const-""mdi-child", env))
-    scheme_install_xc_global("wx:const-""mdi-child", scheme_make_integer(wxMDI_CHILD), env);
-  if (!scheme_lookup_xc_global("wx:const-""thick-frame", env))
-    scheme_install_xc_global("wx:const-""thick-frame", scheme_make_integer(wxTHICK_FRAME), env);
-  if (!scheme_lookup_xc_global("wx:const-""system-menu", env))
-    scheme_install_xc_global("wx:const-""system-menu", scheme_make_integer(wxSYSTEM_MENU), env);
-  if (!scheme_lookup_xc_global("wx:const-""minimize-box", env))
-    scheme_install_xc_global("wx:const-""minimize-box", scheme_make_integer(wxMINIMIZE_BOX), env);
-  if (!scheme_lookup_xc_global("wx:const-""maximize-box", env))
-    scheme_install_xc_global("wx:const-""maximize-box", scheme_make_integer(wxMAXIMIZE_BOX), env);
-  if (!scheme_lookup_xc_global("wx:const-""resize-border", env))
-    scheme_install_xc_global("wx:const-""resize-border", scheme_make_integer(wxRESIZE_BORDER), env);
-  if (!scheme_lookup_xc_global("wx:const-""both", env))
-    scheme_install_xc_global("wx:const-""both", scheme_make_integer(wxBOTH), env);
-  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
-    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
-    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
 if (os_wxFrame_class) {
     objscheme_add_global_class(os_wxFrame_class,  "wx:frame%", env);
 } else {
@@ -1145,19 +1184,19 @@ if (os_wxFrame_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxFrame, wxTYPE_FRAME);
 
 }
-  scheme_install_xc_global("wx:const-default-frame", bundle_symset_frameStyle(wxDEFAULT_FRAME), env);
+  scheme_install_xc_global("wx:const-default-frame-style", bundle_symset_frameStyle(wxDEFAULT_FRAME), env);
 }
 
 int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxFrame_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:frame%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:frame% object or " XC_NULL_STR: "wx:frame% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1167,7 +1206,7 @@ Scheme_Object *objscheme_bundle_wxFrame(class wxFrame *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1186,7 +1225,7 @@ Scheme_Object *objscheme_bundle_wxFrame(class wxFrame *realobj)
 
 class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxFrame(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

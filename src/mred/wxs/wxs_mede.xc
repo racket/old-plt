@@ -16,23 +16,23 @@
 @MACRO rZERO = return 0;
 
 @BEGINSYMBOLS selType > ONE
-@SYM "default-select" : wxDEFAULT_SELECT
-@SYM "x-select" : wxX_SELECT
-@SYM "local-select" : wxLOCAL_SELECT
+@SYM "default" : wxDEFAULT_SELECT
+@SYM "x" : wxX_SELECT
+@SYM "local" : wxLOCAL_SELECT
 @ENDSYMBOLS
 
 @BEGINSYMBOLS move > ONE
-@SYM "move-simple" : wxMOVE_SIMPLE
-@SYM "move-line" : wxMOVE_LINE
-@SYM "move-page" : wxMOVE_PAGE
-@SYM "move-word" : wxMOVE_WORD
+@SYM "simple" : wxMOVE_SIMPLE
+@SYM "line" : wxMOVE_LINE
+@SYM "page" : wxMOVE_PAGE
+@SYM "word" : wxMOVE_WORD
 @ENDSYMBOLS
 
 @BEGINSYMBOLS findKind > ONE
-@SYM "snip-before-or-null" : wxSNIP_BEFORE_OR_NULL
-@SYM "snip-before" : wxSNIP_BEFORE
-@SYM "snip-after" : wxSNIP_AFTER
-@SYM "snip-after-or-null" : wxSNIP_AFTER_OR_NULL
+@SYM "before-or-none" : wxSNIP_BEFORE_OR_NULL
+@SYM "before" : wxSNIP_BEFORE
+@SYM "after" : wxSNIP_AFTER
+@SYM "after-or-none" : wxSNIP_AFTER_OR_NULL
 @ENDSYMBOLS
 
 @INCLUDE wxs_bkt.xci
@@ -145,8 +145,8 @@
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,long,bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut%,long,long=-1); <> with position
 
-@ "get-file-format" : int GetFileFormat();
-@ "set-file-format" : void SetFileFormat(int);
+@ "get-file-format" : SYM[fileType] GetFileFormat();
+@ "set-file-format" : void SetFileFormat(SYM[fileType]);
 
 @ "get-overwrite-mode" : bool GetOverwriteMode();
 @ "set-overwrite-mode" : void SetOverwriteMode(bool);
@@ -215,11 +215,11 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
     if (start)
       s = scheme_box(objscheme_bundle_integer(*start));
     else
-      s = scheme_null;
+      s = XC_SCHEME_NULL;
     if (end)
       e = scheme_box(objscheme_bundle_integer(*end));
     else
-      e = scheme_null;
+      e = XC_SCHEME_NULL;
     p[1] = s;
     p[2] = e;
     p[3] = scheme_make_integer(reason);

@@ -27,8 +27,8 @@
 @DEFINE OKTESTWHERE "wx:radio-box%::initialization"
 @INCLUDE list.xci
 
-@MACRO cStringList = (SCHEME_LISTP({x}) && (SCHEME_NULLP({x}) || SCHEME_STRINGP(SCHEME_CAR({x}))))
-@MACRO cBitmapList = (SCHEME_LISTP({x}) && (SCHEME_NULLP({x}) || objscheme_istype_wxBitmap((SCHEME_CAR({x})), NULL, 0)))
+@MACRO cStringList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || SCHEME_STRINGP(SCHEME_CAR({x}))))
+@MACRO cBitmapList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || objscheme_istype_wxBitmap((SCHEME_CAR({x})), NULL, 0)))
 
 @MACRO spBitmapList = (listof wxBitmap-object)
 
@@ -46,7 +46,7 @@
 @ "number" : int Number()
 @ "set-string-selection" : void SetStringSelection(string);
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
-@ "get-string" : nstring GetString(int);  : : /RANGERET[0.scheme_null]
+@ "get-string" : nstring GetString(int);  : : /RANGERET[0.XC_SCHEME_NULL]
 
 @ "enable" : void Enable(int,bool); : : /RANGE[0] <> single-button
 @ "enable" : void Enable(bool); <> all-buttons

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.2 1998/07/03 21:17:31 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.3 1998/08/01 12:42:15 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -728,7 +728,8 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 			values.fill_style = FillTiled;
 		    } // else wrong depth
 		}
-		if (stipple || tile) values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+		if (stipple || tile) 
+		  values.foreground = IS_COLOR ? BlackPixel(DPY, DefaultScreen(DPY)) : 1;
 	    } else {
 		stipple = hatch_bitmaps[style-wxFIRST_HATCH];
 		values.fill_style = FillStippled;

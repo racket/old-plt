@@ -618,14 +618,15 @@ Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;
 
+#if 0
   if (!d && zerod)
     return zerod;
-  else {
-    sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
-    sd->type = scheme_double_type;
-    SCHEME_DBL_VAL(sd) = d;
-    return (Scheme_Object *)sd;
-  }
+#endif
+
+  sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
+  sd->type = scheme_double_type;
+  SCHEME_DBL_VAL(sd) = d;
+  return (Scheme_Object *)sd;
 }
 
 #ifdef MZ_USE_SINGLE_FLOATS

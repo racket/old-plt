@@ -1,6 +1,8 @@
 
 @INCLUDE prefix.xci
 
+#if 0
+
 #include "wx_item.h"
 #include "wx_txt.h"
 #include "wx_mtxt.h"
@@ -113,3 +115,5 @@
 @INCLUDE wxs_char.xci
 
 @END
+
+#endif

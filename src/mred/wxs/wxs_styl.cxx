@@ -69,16 +69,16 @@ static Scheme_Object *os_wxMultColourGet(Scheme_Object *obj, int n,  Scheme_Obje
   float* x2 = &_x2;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:mult-colour%::get", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:mult-colour%::get", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:mult-colour%::get"), "wx:mult-colour%::get");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:mult-colour%::get", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:mult-colour%::get", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:mult-colour%::get"), "wx:mult-colour%::get");
-  if (SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:mult-colour%::get", "non-null", (2 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[2]))
+    scheme_wrong_type("wx:mult-colour%::get", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
     *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:mult-colour%::get"), "wx:mult-colour%::get");
 
@@ -220,14 +220,14 @@ if (os_wxMultColour_class) {
 
 int objscheme_istype_wxMultColour(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMultColour_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:mult-colour%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:mult-colour% object or " XC_NULL_STR: "wx:mult-colour% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -237,7 +237,7 @@ Scheme_Object *objscheme_bundle_wxMultColour(class wxMultColour *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -256,7 +256,7 @@ Scheme_Object *objscheme_bundle_wxMultColour(class wxMultColour *realobj)
 
 class wxMultColour *objscheme_unbundle_wxMultColour(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMultColour(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -319,16 +319,16 @@ static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Objec
   short* x2 = &_x2;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:add-colour%::get", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:add-colour%::get", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:add-colour%::get"), "wx:add-colour%::get");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:add-colour%::get", "non-null", (1 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[1]))
+    scheme_wrong_type("wx:add-colour%::get", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
     *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:add-colour%::get"), "wx:add-colour%::get");
-  if (SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:add-colour%::get", "non-null", (2 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[2]))
+    scheme_wrong_type("wx:add-colour%::get", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
     *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "wx:add-colour%::get"), "wx:add-colour%::get");
 
@@ -470,14 +470,14 @@ if (os_wxAddColour_class) {
 
 int objscheme_istype_wxAddColour(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxAddColour_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:add-colour%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:add-colour% object or " XC_NULL_STR: "wx:add-colour% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -487,7 +487,7 @@ Scheme_Object *objscheme_bundle_wxAddColour(class wxAddColour *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -506,7 +506,7 @@ Scheme_Object *objscheme_bundle_wxAddColour(class wxAddColour *realobj)
 
 class wxAddColour *objscheme_unbundle_wxAddColour(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxAddColour(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -518,324 +518,468 @@ class wxAddColour *objscheme_unbundle_wxAddColour(Scheme_Object *obj, const char
 }
 
 
+static Scheme_Object *family_wxBASE_sym = NULL;
+static Scheme_Object *family_wxDEFAULT_sym = NULL;
+static Scheme_Object *family_wxDECORATIVE_sym = NULL;
+static Scheme_Object *family_wxROMAN_sym = NULL;
+static Scheme_Object *family_wxSCRIPT_sym = NULL;
+static Scheme_Object *family_wxSWISS_sym = NULL;
+static Scheme_Object *family_wxMODERN_sym = NULL;
+static Scheme_Object *family_wxTELETYPE_sym = NULL;
+static Scheme_Object *family_wxSYSTEM_sym = NULL;
+
+static void init_symset_family(void) {
+  family_wxBASE_sym = scheme_intern_symbol("base");
+  family_wxDEFAULT_sym = scheme_intern_symbol("default");
+  family_wxDECORATIVE_sym = scheme_intern_symbol("decorative");
+  family_wxROMAN_sym = scheme_intern_symbol("roman");
+  family_wxSCRIPT_sym = scheme_intern_symbol("script");
+  family_wxSWISS_sym = scheme_intern_symbol("swiss");
+  family_wxMODERN_sym = scheme_intern_symbol("modern");
+  family_wxTELETYPE_sym = scheme_intern_symbol("teletype");
+  family_wxSYSTEM_sym = scheme_intern_symbol("system");
+}
+
 static int unbundle_symset_family(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return wxBASE; }
-    if ((vi) == wxDEFAULT) { return wxDEFAULT; }
-    if ((vi) == wxDECORATIVE) { return wxDECORATIVE; }
-    if ((vi) == wxROMAN) { return wxROMAN; }
-    if ((vi) == wxSCRIPT) { return wxSCRIPT; }
-    if ((vi) == wxSWISS) { return wxSWISS; }
-    if ((vi) == wxMODERN) { return wxMODERN; }
-    if ((vi) == wxTELETYPE) { return wxTELETYPE; }
-    if ((vi) == wxSYSTEM) { return wxSYSTEM; }
-  }
-  if (where) scheme_wrong_type(where, "family integer", -1, 0, &v);
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxBASE_sym) { return wxBASE; }
+  else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
+  else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
+  else if (v == family_wxROMAN_sym) { return wxROMAN; }
+  else if (v == family_wxSCRIPT_sym) { return wxSCRIPT; }
+  else if (v == family_wxSWISS_sym) { return wxSWISS; }
+  else if (v == family_wxMODERN_sym) { return wxMODERN; }
+  else if (v == family_wxTELETYPE_sym) { return wxTELETYPE; }
+  else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_family(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return 1; }
-    if ((vi) == wxDEFAULT) { return 1; }
-    if ((vi) == wxDECORATIVE) { return 1; }
-    if ((vi) == wxROMAN) { return 1; }
-    if ((vi) == wxSCRIPT) { return 1; }
-    if ((vi) == wxSWISS) { return 1; }
-    if ((vi) == wxMODERN) { return 1; }
-    if ((vi) == wxTELETYPE) { return 1; }
-    if ((vi) == wxSYSTEM) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "family integer", -1, 0, &v);
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  if (0) { }
+  else if (v == family_wxBASE_sym) { return 1; }
+  else if (v == family_wxDEFAULT_sym) { return 1; }
+  else if (v == family_wxDECORATIVE_sym) { return 1; }
+  else if (v == family_wxROMAN_sym) { return 1; }
+  else if (v == family_wxSCRIPT_sym) { return 1; }
+  else if (v == family_wxSWISS_sym) { return 1; }
+  else if (v == family_wxMODERN_sym) { return 1; }
+  else if (v == family_wxTELETYPE_sym) { return 1; }
+  else if (v == family_wxSYSTEM_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "family symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_family(int v) {
-  return scheme_make_integer(v);
+  if (!family_wxSYSTEM_sym) init_symset_family();
+  switch (v) {
+  case wxBASE: return family_wxBASE_sym;
+  case wxDEFAULT: return family_wxDEFAULT_sym;
+  case wxDECORATIVE: return family_wxDECORATIVE_sym;
+  case wxROMAN: return family_wxROMAN_sym;
+  case wxSCRIPT: return family_wxSCRIPT_sym;
+  case wxSWISS: return family_wxSWISS_sym;
+  case wxMODERN: return family_wxMODERN_sym;
+  case wxTELETYPE: return family_wxTELETYPE_sym;
+  case wxSYSTEM: return family_wxSYSTEM_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *weight_wxBASE_sym = NULL;
+static Scheme_Object *weight_wxNORMAL_sym = NULL;
+static Scheme_Object *weight_wxLIGHT_sym = NULL;
+static Scheme_Object *weight_wxBOLD_sym = NULL;
+
+static void init_symset_weight(void) {
+  weight_wxBASE_sym = scheme_intern_symbol("base");
+  weight_wxNORMAL_sym = scheme_intern_symbol("normal");
+  weight_wxLIGHT_sym = scheme_intern_symbol("light");
+  weight_wxBOLD_sym = scheme_intern_symbol("bold");
+}
+
 static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return wxBASE; }
-    if ((vi) == wxNORMAL) { return wxNORMAL; }
-    if ((vi) == wxLIGHT) { return wxLIGHT; }
-    if ((vi) == wxBOLD) { return wxBOLD; }
-  }
-  if (where) scheme_wrong_type(where, "weight integer", -1, 0, &v);
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxBASE_sym) { return wxBASE; }
+  else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
+  else if (v == weight_wxBOLD_sym) { return wxBOLD; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_weight(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return 1; }
-    if ((vi) == wxNORMAL) { return 1; }
-    if ((vi) == wxLIGHT) { return 1; }
-    if ((vi) == wxBOLD) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "weight integer", -1, 0, &v);
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  if (0) { }
+  else if (v == weight_wxBASE_sym) { return 1; }
+  else if (v == weight_wxNORMAL_sym) { return 1; }
+  else if (v == weight_wxLIGHT_sym) { return 1; }
+  else if (v == weight_wxBOLD_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "weight symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_weight(int v) {
-  return scheme_make_integer(v);
+  if (!weight_wxBOLD_sym) init_symset_weight();
+  switch (v) {
+  case wxBASE: return weight_wxBASE_sym;
+  case wxNORMAL: return weight_wxNORMAL_sym;
+  case wxLIGHT: return weight_wxLIGHT_sym;
+  case wxBOLD: return weight_wxBOLD_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *style_wxBASE_sym = NULL;
+static Scheme_Object *style_wxNORMAL_sym = NULL;
+static Scheme_Object *style_wxITALIC_sym = NULL;
+static Scheme_Object *style_wxSLANT_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxBASE_sym = scheme_intern_symbol("base");
+  style_wxNORMAL_sym = scheme_intern_symbol("normal");
+  style_wxITALIC_sym = scheme_intern_symbol("italic");
+  style_wxSLANT_sym = scheme_intern_symbol("slant");
+}
+
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return wxBASE; }
-    if ((vi) == wxNORMAL) { return wxNORMAL; }
-    if ((vi) == wxITALIC) { return wxITALIC; }
-    if ((vi) == wxSLANT) { return wxSLANT; }
-  }
-  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxBASE_sym) { return wxBASE; }
+  else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
+  else if (v == style_wxITALIC_sym) { return wxITALIC; }
+  else if (v == style_wxSLANT_sym) { return wxSLANT; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_style(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return 1; }
-    if ((vi) == wxNORMAL) { return 1; }
-    if ((vi) == wxITALIC) { return 1; }
-    if ((vi) == wxSLANT) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
+  if (!style_wxSLANT_sym) init_symset_style();
+  if (0) { }
+  else if (v == style_wxBASE_sym) { return 1; }
+  else if (v == style_wxNORMAL_sym) { return 1; }
+  else if (v == style_wxITALIC_sym) { return 1; }
+  else if (v == style_wxSLANT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "style symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_style(int v) {
-  return scheme_make_integer(v);
+  if (!style_wxSLANT_sym) init_symset_style();
+  switch (v) {
+  case wxBASE: return style_wxBASE_sym;
+  case wxNORMAL: return style_wxNORMAL_sym;
+  case wxITALIC: return style_wxITALIC_sym;
+  case wxSLANT: return style_wxSLANT_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *align_wxBASE_sym = NULL;
+static Scheme_Object *align_wxALIGN_TOP_sym = NULL;
+static Scheme_Object *align_wxALIGN_BOTTOM_sym = NULL;
+static Scheme_Object *align_wxALIGN_CENTER_sym = NULL;
+
+static void init_symset_align(void) {
+  align_wxBASE_sym = scheme_intern_symbol("base");
+  align_wxALIGN_TOP_sym = scheme_intern_symbol("top");
+  align_wxALIGN_BOTTOM_sym = scheme_intern_symbol("bottom");
+  align_wxALIGN_CENTER_sym = scheme_intern_symbol("center");
+}
+
 static int unbundle_symset_align(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return wxBASE; }
-    if ((vi) == wxALIGN_TOP) { return wxALIGN_TOP; }
-    if ((vi) == wxALIGN_BOTTOM) { return wxALIGN_BOTTOM; }
-    if ((vi) == wxALIGN_CENTER) { return wxALIGN_CENTER; }
-  }
-  if (where) scheme_wrong_type(where, "align integer", -1, 0, &v);
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  if (0) { }
+  else if (v == align_wxBASE_sym) { return wxBASE; }
+  else if (v == align_wxALIGN_TOP_sym) { return wxALIGN_TOP; }
+  else if (v == align_wxALIGN_BOTTOM_sym) { return wxALIGN_BOTTOM; }
+  else if (v == align_wxALIGN_CENTER_sym) { return wxALIGN_CENTER; }
+  if (where) scheme_wrong_type(where, "align symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_align(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxBASE) { return 1; }
-    if ((vi) == wxALIGN_TOP) { return 1; }
-    if ((vi) == wxALIGN_BOTTOM) { return 1; }
-    if ((vi) == wxALIGN_CENTER) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "align integer", -1, 0, &v);
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  if (0) { }
+  else if (v == align_wxBASE_sym) { return 1; }
+  else if (v == align_wxALIGN_TOP_sym) { return 1; }
+  else if (v == align_wxALIGN_BOTTOM_sym) { return 1; }
+  else if (v == align_wxALIGN_CENTER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "align symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_align(int v) {
-  return scheme_make_integer(v);
+  if (!align_wxALIGN_CENTER_sym) init_symset_align();
+  switch (v) {
+  case wxBASE: return align_wxBASE_sym;
+  case wxALIGN_TOP: return align_wxALIGN_TOP_sym;
+  case wxALIGN_BOTTOM: return align_wxALIGN_BOTTOM_sym;
+  case wxALIGN_CENTER: return align_wxALIGN_CENTER_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *changeNoArg_wxCHANGE_NOTHING_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_BOLD_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_ITALIC_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = NULL;
+static Scheme_Object *changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = NULL;
+
+static void init_symset_changeNoArg(void) {
+  changeNoArg_wxCHANGE_NOTHING_sym = scheme_intern_symbol("change-nothing");
+  changeNoArg_wxCHANGE_NORMAL_sym = scheme_intern_symbol("change-normal");
+  changeNoArg_wxCHANGE_BOLD_sym = scheme_intern_symbol("change-bold");
+  changeNoArg_wxCHANGE_ITALIC_sym = scheme_intern_symbol("change-italic");
+  changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym = scheme_intern_symbol("change-toggle-underline");
+  changeNoArg_wxCHANGE_NORMAL_COLOUR_sym = scheme_intern_symbol("change-normal-colour");
+}
+
 static int unbundle_symset_changeNoArg(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_NOTHING) { return wxCHANGE_NOTHING; }
-    if ((vi) == wxCHANGE_NORMAL) { return wxCHANGE_NORMAL; }
-    if ((vi) == wxCHANGE_BOLD) { return wxCHANGE_BOLD; }
-    if ((vi) == wxCHANGE_ITALIC) { return wxCHANGE_ITALIC; }
-    if ((vi) == wxCHANGE_TOGGLE_UNDERLINE) { return wxCHANGE_TOGGLE_UNDERLINE; }
-    if ((vi) == wxCHANGE_NORMAL_COLOUR) { return wxCHANGE_NORMAL_COLOUR; }
-  }
-  if (where) scheme_wrong_type(where, "changeNoArg integer", -1, 0, &v);
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  if (0) { }
+  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { return wxCHANGE_NOTHING; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { return wxCHANGE_NORMAL; }
+  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { return wxCHANGE_BOLD; }
+  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { return wxCHANGE_ITALIC; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { return wxCHANGE_TOGGLE_UNDERLINE; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { return wxCHANGE_NORMAL_COLOUR; }
+  if (where) scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeNoArg(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_NOTHING) { return 1; }
-    if ((vi) == wxCHANGE_NORMAL) { return 1; }
-    if ((vi) == wxCHANGE_BOLD) { return 1; }
-    if ((vi) == wxCHANGE_ITALIC) { return 1; }
-    if ((vi) == wxCHANGE_TOGGLE_UNDERLINE) { return 1; }
-    if ((vi) == wxCHANGE_NORMAL_COLOUR) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeNoArg integer", -1, 0, &v);
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  if (0) { }
+  else if (v == changeNoArg_wxCHANGE_NOTHING_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_BOLD_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_ITALIC_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym) { return 1; }
+  else if (v == changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeNoArg symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeNoArg(int v) {
-  return scheme_make_integer(v);
+  if (!changeNoArg_wxCHANGE_NORMAL_COLOUR_sym) init_symset_changeNoArg();
+  switch (v) {
+  case wxCHANGE_NOTHING: return changeNoArg_wxCHANGE_NOTHING_sym;
+  case wxCHANGE_NORMAL: return changeNoArg_wxCHANGE_NORMAL_sym;
+  case wxCHANGE_BOLD: return changeNoArg_wxCHANGE_BOLD_sym;
+  case wxCHANGE_ITALIC: return changeNoArg_wxCHANGE_ITALIC_sym;
+  case wxCHANGE_TOGGLE_UNDERLINE: return changeNoArg_wxCHANGE_TOGGLE_UNDERLINE_sym;
+  case wxCHANGE_NORMAL_COLOUR: return changeNoArg_wxCHANGE_NORMAL_COLOUR_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeFam_wxCHANGE_FAMILY_sym = NULL;
+
+static void init_symset_changeFam(void) {
+  changeFam_wxCHANGE_FAMILY_sym = scheme_intern_symbol("change-family");
 }
 
 static int unbundle_symset_changeFam(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_FAMILY) { return wxCHANGE_FAMILY; }
-  }
-  if (where) scheme_wrong_type(where, "changeFam integer", -1, 0, &v);
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  if (0) { }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return wxCHANGE_FAMILY; }
+  if (where) scheme_wrong_type(where, "changeFam symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeFam(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_FAMILY) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeFam integer", -1, 0, &v);
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  if (0) { }
+  else if (v == changeFam_wxCHANGE_FAMILY_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeFam symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeFam(int v) {
-  return scheme_make_integer(v);
+  if (!changeFam_wxCHANGE_FAMILY_sym) init_symset_changeFam();
+  switch (v) {
+  case wxCHANGE_FAMILY: return changeFam_wxCHANGE_FAMILY_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeStyle_wxCHANGE_STYLE_sym = NULL;
+static Scheme_Object *changeStyle_wxCHANGE_TOGGLE_STYLE_sym = NULL;
+
+static void init_symset_changeStyle(void) {
+  changeStyle_wxCHANGE_STYLE_sym = scheme_intern_symbol("change-style");
+  changeStyle_wxCHANGE_TOGGLE_STYLE_sym = scheme_intern_symbol("change-toggle-style");
 }
 
 static int unbundle_symset_changeStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_STYLE) { return wxCHANGE_STYLE; }
-    if ((vi) == wxCHANGE_TOGGLE_STYLE) { return wxCHANGE_TOGGLE_STYLE; }
-  }
-  if (where) scheme_wrong_type(where, "changeStyle integer", -1, 0, &v);
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  if (0) { }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return wxCHANGE_STYLE; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return wxCHANGE_TOGGLE_STYLE; }
+  if (where) scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeStyle(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_STYLE) { return 1; }
-    if ((vi) == wxCHANGE_TOGGLE_STYLE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeStyle integer", -1, 0, &v);
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  if (0) { }
+  else if (v == changeStyle_wxCHANGE_STYLE_sym) { return 1; }
+  else if (v == changeStyle_wxCHANGE_TOGGLE_STYLE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeStyle(int v) {
-  return scheme_make_integer(v);
+  if (!changeStyle_wxCHANGE_TOGGLE_STYLE_sym) init_symset_changeStyle();
+  switch (v) {
+  case wxCHANGE_STYLE: return changeStyle_wxCHANGE_STYLE_sym;
+  case wxCHANGE_TOGGLE_STYLE: return changeStyle_wxCHANGE_TOGGLE_STYLE_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeWeight_wxCHANGE_WEIGHT_sym = NULL;
+static Scheme_Object *changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym = NULL;
+
+static void init_symset_changeWeight(void) {
+  changeWeight_wxCHANGE_WEIGHT_sym = scheme_intern_symbol("change-weight");
+  changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym = scheme_intern_symbol("change-toggle-weight");
 }
 
 static int unbundle_symset_changeWeight(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_WEIGHT) { return wxCHANGE_WEIGHT; }
-    if ((vi) == wxCHANGE_TOGGLE_WEIGHT) { return wxCHANGE_TOGGLE_WEIGHT; }
-  }
-  if (where) scheme_wrong_type(where, "changeWeight integer", -1, 0, &v);
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  if (0) { }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return wxCHANGE_WEIGHT; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return wxCHANGE_TOGGLE_WEIGHT; }
+  if (where) scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeWeight(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_WEIGHT) { return 1; }
-    if ((vi) == wxCHANGE_TOGGLE_WEIGHT) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeWeight integer", -1, 0, &v);
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  if (0) { }
+  else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { return 1; }
+  else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeWeight(int v) {
-  return scheme_make_integer(v);
+  if (!changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) init_symset_changeWeight();
+  switch (v) {
+  case wxCHANGE_WEIGHT: return changeWeight_wxCHANGE_WEIGHT_sym;
+  case wxCHANGE_TOGGLE_WEIGHT: return changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeUnderline_wxCHANGE_UNDERLINE_sym = NULL;
+
+static void init_symset_changeUnderline(void) {
+  changeUnderline_wxCHANGE_UNDERLINE_sym = scheme_intern_symbol("change-underline");
 }
 
 static int unbundle_symset_changeUnderline(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_UNDERLINE) { return wxCHANGE_UNDERLINE; }
-  }
-  if (where) scheme_wrong_type(where, "changeUnderline integer", -1, 0, &v);
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  if (0) { }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return wxCHANGE_UNDERLINE; }
+  if (where) scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeUnderline(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_UNDERLINE) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeUnderline integer", -1, 0, &v);
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  if (0) { }
+  else if (v == changeUnderline_wxCHANGE_UNDERLINE_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeUnderline symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeUnderline(int v) {
-  return scheme_make_integer(v);
+  if (!changeUnderline_wxCHANGE_UNDERLINE_sym) init_symset_changeUnderline();
+  switch (v) {
+  case wxCHANGE_UNDERLINE: return changeUnderline_wxCHANGE_UNDERLINE_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeSize_wxCHANGE_SIZE_sym = NULL;
+static Scheme_Object *changeSize_wxCHANGE_BIGGER_sym = NULL;
+static Scheme_Object *changeSize_wxCHANGE_SMALLER_sym = NULL;
+
+static void init_symset_changeSize(void) {
+  changeSize_wxCHANGE_SIZE_sym = scheme_intern_symbol("change-size");
+  changeSize_wxCHANGE_BIGGER_sym = scheme_intern_symbol("change-bigger");
+  changeSize_wxCHANGE_SMALLER_sym = scheme_intern_symbol("change-smaller");
 }
 
 static int unbundle_symset_changeSize(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_SIZE) { return wxCHANGE_SIZE; }
-    if ((vi) == wxCHANGE_BIGGER) { return wxCHANGE_BIGGER; }
-    if ((vi) == wxCHANGE_SMALLER) { return wxCHANGE_SMALLER; }
-  }
-  if (where) scheme_wrong_type(where, "changeSize integer", -1, 0, &v);
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  if (0) { }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { return wxCHANGE_SIZE; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return wxCHANGE_BIGGER; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return wxCHANGE_SMALLER; }
+  if (where) scheme_wrong_type(where, "changeSize symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeSize(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_SIZE) { return 1; }
-    if ((vi) == wxCHANGE_BIGGER) { return 1; }
-    if ((vi) == wxCHANGE_SMALLER) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeSize integer", -1, 0, &v);
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  if (0) { }
+  else if (v == changeSize_wxCHANGE_SIZE_sym) { return 1; }
+  else if (v == changeSize_wxCHANGE_BIGGER_sym) { return 1; }
+  else if (v == changeSize_wxCHANGE_SMALLER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeSize symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeSize(int v) {
-  return scheme_make_integer(v);
+  if (!changeSize_wxCHANGE_SMALLER_sym) init_symset_changeSize();
+  switch (v) {
+  case wxCHANGE_SIZE: return changeSize_wxCHANGE_SIZE_sym;
+  case wxCHANGE_BIGGER: return changeSize_wxCHANGE_BIGGER_sym;
+  case wxCHANGE_SMALLER: return changeSize_wxCHANGE_SMALLER_sym;
+  default: return NULL;
+  }
+}
+
+static Scheme_Object *changeAlign_wxCHANGE_ALIGNMENT_sym = NULL;
+
+static void init_symset_changeAlign(void) {
+  changeAlign_wxCHANGE_ALIGNMENT_sym = scheme_intern_symbol("change-alignment");
 }
 
 static int unbundle_symset_changeAlign(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_ALIGNMENT) { return wxCHANGE_ALIGNMENT; }
-  }
-  if (where) scheme_wrong_type(where, "changeAlign integer", -1, 0, &v);
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  if (0) { }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return wxCHANGE_ALIGNMENT; }
+  if (where) scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_changeAlign(Scheme_Object *v, const char *where) {
-  long vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    if ((vi) == wxCHANGE_ALIGNMENT) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "changeAlign integer", -1, 0, &v);
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  if (0) { }
+  else if (v == changeAlign_wxCHANGE_ALIGNMENT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "changeAlign symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_changeAlign(int v) {
-  return scheme_make_integer(v);
+  if (!changeAlign_wxCHANGE_ALIGNMENT_sym) init_symset_changeAlign();
+  switch (v) {
+  case wxCHANGE_ALIGNMENT: return changeAlign_wxCHANGE_ALIGNMENT_sym;
+  default: return NULL;
+  }
 }
 
 
@@ -1740,80 +1884,6 @@ static Scheme_Object *objscheme_classname_os_wxStyleDelta(Scheme_Object *obj, in
 
 void objscheme_setup_wxStyleDelta(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""base", env))
-    scheme_install_xc_global("wx:const-""base", scheme_make_integer(wxBASE), env);
-  if (!scheme_lookup_xc_global("wx:const-""default", env))
-    scheme_install_xc_global("wx:const-""default", scheme_make_integer(wxDEFAULT), env);
-  if (!scheme_lookup_xc_global("wx:const-""decorative", env))
-    scheme_install_xc_global("wx:const-""decorative", scheme_make_integer(wxDECORATIVE), env);
-  if (!scheme_lookup_xc_global("wx:const-""roman", env))
-    scheme_install_xc_global("wx:const-""roman", scheme_make_integer(wxROMAN), env);
-  if (!scheme_lookup_xc_global("wx:const-""script", env))
-    scheme_install_xc_global("wx:const-""script", scheme_make_integer(wxSCRIPT), env);
-  if (!scheme_lookup_xc_global("wx:const-""swiss", env))
-    scheme_install_xc_global("wx:const-""swiss", scheme_make_integer(wxSWISS), env);
-  if (!scheme_lookup_xc_global("wx:const-""modern", env))
-    scheme_install_xc_global("wx:const-""modern", scheme_make_integer(wxMODERN), env);
-  if (!scheme_lookup_xc_global("wx:const-""teletype", env))
-    scheme_install_xc_global("wx:const-""teletype", scheme_make_integer(wxTELETYPE), env);
-  if (!scheme_lookup_xc_global("wx:const-""system", env))
-    scheme_install_xc_global("wx:const-""system", scheme_make_integer(wxSYSTEM), env);
-  if (!scheme_lookup_xc_global("wx:const-""base", env))
-    scheme_install_xc_global("wx:const-""base", scheme_make_integer(wxBASE), env);
-  if (!scheme_lookup_xc_global("wx:const-""normal", env))
-    scheme_install_xc_global("wx:const-""normal", scheme_make_integer(wxNORMAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""light", env))
-    scheme_install_xc_global("wx:const-""light", scheme_make_integer(wxLIGHT), env);
-  if (!scheme_lookup_xc_global("wx:const-""bold", env))
-    scheme_install_xc_global("wx:const-""bold", scheme_make_integer(wxBOLD), env);
-  if (!scheme_lookup_xc_global("wx:const-""base", env))
-    scheme_install_xc_global("wx:const-""base", scheme_make_integer(wxBASE), env);
-  if (!scheme_lookup_xc_global("wx:const-""normal", env))
-    scheme_install_xc_global("wx:const-""normal", scheme_make_integer(wxNORMAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""italic", env))
-    scheme_install_xc_global("wx:const-""italic", scheme_make_integer(wxITALIC), env);
-  if (!scheme_lookup_xc_global("wx:const-""slant", env))
-    scheme_install_xc_global("wx:const-""slant", scheme_make_integer(wxSLANT), env);
-  if (!scheme_lookup_xc_global("wx:const-""base", env))
-    scheme_install_xc_global("wx:const-""base", scheme_make_integer(wxBASE), env);
-  if (!scheme_lookup_xc_global("wx:const-""align-top", env))
-    scheme_install_xc_global("wx:const-""align-top", scheme_make_integer(wxALIGN_TOP), env);
-  if (!scheme_lookup_xc_global("wx:const-""align-bottom", env))
-    scheme_install_xc_global("wx:const-""align-bottom", scheme_make_integer(wxALIGN_BOTTOM), env);
-  if (!scheme_lookup_xc_global("wx:const-""align-center", env))
-    scheme_install_xc_global("wx:const-""align-center", scheme_make_integer(wxALIGN_CENTER), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-nothing", env))
-    scheme_install_xc_global("wx:const-""change-nothing", scheme_make_integer(wxCHANGE_NOTHING), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-normal", env))
-    scheme_install_xc_global("wx:const-""change-normal", scheme_make_integer(wxCHANGE_NORMAL), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-bold", env))
-    scheme_install_xc_global("wx:const-""change-bold", scheme_make_integer(wxCHANGE_BOLD), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-italic", env))
-    scheme_install_xc_global("wx:const-""change-italic", scheme_make_integer(wxCHANGE_ITALIC), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-toggle-underline", env))
-    scheme_install_xc_global("wx:const-""change-toggle-underline", scheme_make_integer(wxCHANGE_TOGGLE_UNDERLINE), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-normal-colour", env))
-    scheme_install_xc_global("wx:const-""change-normal-colour", scheme_make_integer(wxCHANGE_NORMAL_COLOUR), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-family", env))
-    scheme_install_xc_global("wx:const-""change-family", scheme_make_integer(wxCHANGE_FAMILY), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-style", env))
-    scheme_install_xc_global("wx:const-""change-style", scheme_make_integer(wxCHANGE_STYLE), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-toggle-style", env))
-    scheme_install_xc_global("wx:const-""change-toggle-style", scheme_make_integer(wxCHANGE_TOGGLE_STYLE), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-weight", env))
-    scheme_install_xc_global("wx:const-""change-weight", scheme_make_integer(wxCHANGE_WEIGHT), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-toggle-weight", env))
-    scheme_install_xc_global("wx:const-""change-toggle-weight", scheme_make_integer(wxCHANGE_TOGGLE_WEIGHT), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-underline", env))
-    scheme_install_xc_global("wx:const-""change-underline", scheme_make_integer(wxCHANGE_UNDERLINE), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-size", env))
-    scheme_install_xc_global("wx:const-""change-size", scheme_make_integer(wxCHANGE_SIZE), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-bigger", env))
-    scheme_install_xc_global("wx:const-""change-bigger", scheme_make_integer(wxCHANGE_BIGGER), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-smaller", env))
-    scheme_install_xc_global("wx:const-""change-smaller", scheme_make_integer(wxCHANGE_SMALLER), env);
-  if (!scheme_lookup_xc_global("wx:const-""change-alignment", env))
-    scheme_install_xc_global("wx:const-""change-alignment", scheme_make_integer(wxCHANGE_ALIGNMENT), env);
 if (os_wxStyleDelta_class) {
     objscheme_add_global_class(os_wxStyleDelta_class,  "wx:style-delta%", env);
 } else {
@@ -1871,14 +1941,14 @@ if (os_wxStyleDelta_class) {
 
 int objscheme_istype_wxStyleDelta(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxStyleDelta_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:style-delta%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:style-delta% object or " XC_NULL_STR: "wx:style-delta% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1888,7 +1958,7 @@ Scheme_Object *objscheme_bundle_wxStyleDelta(class wxStyleDelta *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1907,7 +1977,7 @@ Scheme_Object *objscheme_bundle_wxStyleDelta(class wxStyleDelta *realobj)
 
 class wxStyleDelta *objscheme_unbundle_wxStyleDelta(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxStyleDelta(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -2416,14 +2486,14 @@ if (os_wxStyle_class) {
 
 int objscheme_istype_wxStyle(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxStyle_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:style%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:style% object or " XC_NULL_STR: "wx:style% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2433,7 +2503,7 @@ Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -2452,7 +2522,7 @@ Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *realobj)
 
 class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxStyle(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -2822,14 +2892,14 @@ if (os_wxStyleList_class) {
 
 int objscheme_istype_wxStyleList(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxStyleList_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:style-list%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:style-list% object or " XC_NULL_STR: "wx:style-list% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2839,7 +2909,7 @@ Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -2858,7 +2928,7 @@ Scheme_Object *objscheme_bundle_wxStyleList(class wxStyleList *realobj)
 
 class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxStyleList(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

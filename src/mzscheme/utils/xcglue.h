@@ -130,6 +130,10 @@ typedef long nnlong;
 typedef int nnint;
 typedef float nnfloat;
 
+#define XC_SCHEME_NULL scheme_false
+#define XC_SCHEME_NULLP(x) SCHEME_FALSEP(x)
+#define XC_NULL_STR "#f"
+
 #ifdef __GNUG__
 #define WXS_USE_ARGUMENT(x) x = x; /* compiler optimizes it away */
 #else

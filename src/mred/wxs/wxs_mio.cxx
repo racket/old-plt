@@ -495,14 +495,14 @@ if (os_wxMediaStreamInBase_class) {
 
 int objscheme_istype_wxMediaStreamInBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamInBase_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-in-base%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in-base% object or " XC_NULL_STR: "wx:media-stream-in-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -512,7 +512,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInBase(class wxMediaStreamInBase *r
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -531,7 +531,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInBase(class wxMediaStreamInBase *r
 
 class wxMediaStreamInBase *objscheme_unbundle_wxMediaStreamInBase(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamInBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -836,14 +836,14 @@ if (os_wxMediaStreamOutBase_class) {
 
 int objscheme_istype_wxMediaStreamOutBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOutBase_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-out-base%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out-base% object or " XC_NULL_STR: "wx:media-stream-out-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -853,7 +853,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutBase(class wxMediaStreamOutBase 
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -872,7 +872,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutBase(class wxMediaStreamOutBase 
 
 class wxMediaStreamOutBase *objscheme_unbundle_wxMediaStreamOutBase(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamOutBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -958,14 +958,14 @@ if (os_wxMediaStreamInStringBase_class) {
 
 int objscheme_istype_wxMediaStreamInStringBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamInStringBase_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-in-string-base%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in-string-base% object or " XC_NULL_STR: "wx:media-stream-in-string-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -975,7 +975,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInStringBase(class wxMediaStreamInS
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -994,7 +994,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamInStringBase(class wxMediaStreamInS
 
 class wxMediaStreamInStringBase *objscheme_unbundle_wxMediaStreamInStringBase(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamInStringBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -1048,7 +1048,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(Scheme_Object *obj,
 
   
   
-  return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : scheme_null);
+  return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
 
 #pragma argsused
@@ -1097,14 +1097,14 @@ if (os_wxMediaStreamOutStringBase_class) {
 
 int objscheme_istype_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOutStringBase_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-out-string-base%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out-string-base% object or " XC_NULL_STR: "wx:media-stream-out-string-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1114,7 +1114,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutStringBase(class wxMediaStreamOu
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1133,7 +1133,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutStringBase(class wxMediaStreamOu
 
 class wxMediaStreamOutStringBase *objscheme_unbundle_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamOutStringBase(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -1307,8 +1307,8 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
     
     if (n != 1) 
       scheme_wrong_count("wx:media-stream-in%::>> (exact case)", 1, 1, n, p);
-    if (SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::>> (exact case)", "non-null", (0 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[0]))
+      scheme_wrong_type("wx:media-stream-in%::>> (exact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
       *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::>> (exact case)"), "wx:media-stream-in%::>> (exact case)");
 
@@ -1326,8 +1326,8 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
     
     if (n != 1) 
       scheme_wrong_count("wx:media-stream-in%::>> (inexact case)", 1, 1, n, p);
-    if (SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::>> (inexact case)", "non-null", (0 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[0]))
+      scheme_wrong_type("wx:media-stream-in%::>> (inexact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
       *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-stream-in%::>> (inexact case)"), "wx:media-stream-in%::>> (inexact case)");
 
@@ -1387,8 +1387,8 @@ static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Sch
   long* x0 = &_x0;
 
   
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:media-stream-in%::get-fixed", "non-null", (0 - 0), n, p);
+  if (XC_SCHEME_NULLP(p[0]))
+    scheme_wrong_type("wx:media-stream-in%::get-fixed", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get-fixed"), "wx:media-stream-in%::get-fixed");
 
@@ -1413,7 +1413,7 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    if (SCHEME_NULLP(p[0]))
+    if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
     *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get-string"), "wx:media-stream-in%::get-string");
@@ -1424,10 +1424,10 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
   r = ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
 
   
-  if (n > 0 && !SCHEME_NULLP(p[0]))
+  if (n > 0 && !XC_SCHEME_NULLP(p[0]))
     objscheme_set_box(p[0], scheme_make_integer(_x0));
   
-  return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : scheme_null);
+  return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
 
 #pragma argsused
@@ -1443,8 +1443,8 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
     
     if (n != 1) 
       scheme_wrong_count("wx:media-stream-in%::get (exact number case)", 1, 1, n, p);
-    if (SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::get (exact number case)", "non-null", (0 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[0]))
+      scheme_wrong_type("wx:media-stream-in%::get (exact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
       *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get (exact number case)"), "wx:media-stream-in%::get (exact number case)");
 
@@ -1462,8 +1462,8 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
     
     if (n != 1) 
       scheme_wrong_count("wx:media-stream-in%::get (inexact number case)", 1, 1, n, p);
-    if (SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::get (inexact number case)", "non-null", (0 - 0), n, p);
+    if (XC_SCHEME_NULLP(p[0]))
+      scheme_wrong_type("wx:media-stream-in%::get (inexact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
       *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-stream-in%::get (inexact number case)"), "wx:media-stream-in%::get (inexact number case)");
 
@@ -1538,14 +1538,14 @@ if (os_wxMediaStreamIn_class) {
 
 int objscheme_istype_wxMediaStreamIn(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamIn_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-in%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in% object or " XC_NULL_STR: "wx:media-stream-in% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1555,7 +1555,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1574,7 +1574,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *realobj)
 
 class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamIn(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
@@ -1855,14 +1855,14 @@ if (os_wxMediaStreamOut_class) {
 
 int objscheme_istype_wxMediaStreamOut(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMediaStreamOut_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:media-stream-out%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out% object or " XC_NULL_STR: "wx:media-stream-out% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1872,7 +1872,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *realobj
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1891,7 +1891,7 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *realobj
 
 class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxMediaStreamOut(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

@@ -23,7 +23,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
   return cdr;
 }
 
-@BEGINSYMBOLS kind > SINGLE
+@BEGINSYMBOLS kind > ONE
 @SYM "single" : wxSINGLE       
 @SYM "multiple" : wxMULTIPLE     
 @SYM "extended" : wxEXTENDED     
@@ -53,7 +53,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 #define RANGECLASS wxListBox
 @INCLUDE range.xci
 
-@MACRO bAnythingFromString = (({x}) ? ((Scheme_Object *){x}) : scheme_null)
+@MACRO bAnythingFromString = (({x}) ? ((Scheme_Object *){x}) : XC_SCHEME_NULL)
 @MACRO ubAnythingToString = ((char *){x})
 @MACRO cAnything = 1
 
@@ -65,7 +65,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @ "set-selection" : void SetSelection(int,bool=TRUE); : : /RANGE[0]
 @ "selected?" : bool Selected(int); : : /RANGE[0]
 @ "get-string-selection" : nstring GetStringSelection();
-@ "get-client-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.scheme_null]
+@ "get-client-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.XC_SCHEME_NULL]
 @ "set-client-data" : void SetClientData(int, string//ubAnythingToString/cAnything); : : /RANGE[0]
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
@@ -81,7 +81,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @ "set-first-item" : void SetFirstItem(int); : : /RANGE[0] <> index
 @ "set-first-item" : void SetFirstItem(string); <> string
 @ "set-string-selection" : void SetStringSelection(string);
-@ "get-string" : nstring GetString(int); : : /RANGERET[0.scheme_null]
+@ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]
 @ "set-string" : void SetString(int,string); : : /RANGE[0]
 
 @END

@@ -33,71 +33,95 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
   return cdr;
 }
 
+static Scheme_Object *kind_wxSINGLE_sym = NULL;
+static Scheme_Object *kind_wxMULTIPLE_sym = NULL;
+static Scheme_Object *kind_wxEXTENDED_sym = NULL;
+
+static void init_symset_kind(void) {
+  kind_wxSINGLE_sym = scheme_intern_symbol("single");
+  kind_wxMULTIPLE_sym = scheme_intern_symbol("multiple");
+  kind_wxEXTENDED_sym = scheme_intern_symbol("extended");
+}
+
 static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxSINGLE) == wxSINGLE) { vi -= wxSINGLE; }
-    if ((vi & wxMULTIPLE) == wxMULTIPLE) { vi -= wxMULTIPLE; }
-    if ((vi & wxEXTENDED) == wxEXTENDED) { vi -= wxEXTENDED; }
-    if (!vi) { return orig_vi; }
-  }
-  if (where) scheme_wrong_type(where, "kind integer", -1, 0, &v);
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  if (0) { }
+  else if (v == kind_wxSINGLE_sym) { return wxSINGLE; }
+  else if (v == kind_wxMULTIPLE_sym) { return wxMULTIPLE; }
+  else if (v == kind_wxEXTENDED_sym) { return wxEXTENDED; }
+  if (where) scheme_wrong_type(where, "kind symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_kind(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxSINGLE) == wxSINGLE) { vi -= wxSINGLE; }
-    if ((vi & wxMULTIPLE) == wxMULTIPLE) { vi -= wxMULTIPLE; }
-    if ((vi & wxEXTENDED) == wxEXTENDED) { vi -= wxEXTENDED; }
-    if (!vi) { return 1; }
-  }
-  if (where) scheme_wrong_type(where, "kind integer", -1, 0, &v);
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  if (0) { }
+  else if (v == kind_wxSINGLE_sym) { return 1; }
+  else if (v == kind_wxMULTIPLE_sym) { return 1; }
+  else if (v == kind_wxEXTENDED_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "kind symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_kind(int v) {
-  return scheme_make_integer(v);
+  if (!kind_wxEXTENDED_sym) init_symset_kind();
+  switch (v) {
+  case wxSINGLE: return kind_wxSINGLE_sym;
+  case wxMULTIPLE: return kind_wxMULTIPLE_sym;
+  case wxEXTENDED: return kind_wxEXTENDED_sym;
+  default: return NULL;
+  }
 }
 
 
+static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
+static Scheme_Object *style_wxHSCROLL_sym = NULL;
+
+static void init_symset_style(void) {
+  style_wxALWAYS_SB_sym = scheme_intern_symbol("always-sb");
+  style_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
+}
+
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxALWAYS_SB) == wxALWAYS_SB) { vi -= wxALWAYS_SB; }
-    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
-    if (!vi) { return orig_vi; }
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxALWAYS_SB_sym) { result = result | wxALWAYS_SB; }
+  else if (i == style_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_style(Scheme_Object *v, const char *where) {
-  long vi;
-  long orig_vi;
-  if (SCHEME_INTP(v)) {
-    vi = SCHEME_INT_VAL(v);
-    orig_vi = vi;
-    if ((vi & wxALWAYS_SB) == wxALWAYS_SB) { vi -= wxALWAYS_SB; }
-    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
-    if (!vi) { return 1; }
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == style_wxALWAYS_SB_sym) { ; }
+  else if (i == style_wxHSCROLL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
-  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_style(int v) {
-  return scheme_make_integer(v);
+  if (!style_wxHSCROLL_sym) init_symset_style();
+  Scheme_Object *l = scheme_null;
+  if (v & wxALWAYS_SB) l = scheme_make_pair(style_wxALWAYS_SB_sym, l);
+  if (v & wxHSCROLL) l = scheme_make_pair(style_wxHSCROLL_sym, l);
+  return l;
 }
 
 
@@ -460,7 +484,7 @@ static Scheme_Object *os_wxListBoxGetString(Scheme_Object *obj, int n,  Scheme_O
   
   x0 = objscheme_unbundle_integer(p[0], "wx:list-box%::get-string");
 
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_null;
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
 
   
@@ -676,12 +700,12 @@ static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Sche
   
   x0 = objscheme_unbundle_integer(p[0], "wx:list-box%::get-client-data");
 
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_null;
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetClientData(x0);
 
   
   
-  return ((r) ? ((Scheme_Object *)r) : scheme_null);
+  return ((r) ? ((Scheme_Object *)r) : XC_SCHEME_NULL);
 }
 
 #pragma argsused
@@ -1017,16 +1041,6 @@ static Scheme_Object *objscheme_classname_os_wxListBox(Scheme_Object *obj, int n
 
 void objscheme_setup_wxListBox(void *env)
 {
-  if (!scheme_lookup_xc_global("wx:const-""single", env))
-    scheme_install_xc_global("wx:const-""single", scheme_make_integer(wxSINGLE), env);
-  if (!scheme_lookup_xc_global("wx:const-""multiple", env))
-    scheme_install_xc_global("wx:const-""multiple", scheme_make_integer(wxMULTIPLE), env);
-  if (!scheme_lookup_xc_global("wx:const-""extended", env))
-    scheme_install_xc_global("wx:const-""extended", scheme_make_integer(wxEXTENDED), env);
-  if (!scheme_lookup_xc_global("wx:const-""always-sb", env))
-    scheme_install_xc_global("wx:const-""always-sb", scheme_make_integer(wxALWAYS_SB), env);
-  if (!scheme_lookup_xc_global("wx:const-""hscroll", env))
-    scheme_install_xc_global("wx:const-""hscroll", scheme_make_integer(wxHSCROLL), env);
 if (os_wxListBox_class) {
     objscheme_add_global_class(os_wxListBox_class,  "wx:list-box%", env);
 } else {
@@ -1070,14 +1084,14 @@ if (os_wxListBox_class) {
 
 int objscheme_istype_wxListBox(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxListBox_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:list-box%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:list-box% object or " XC_NULL_STR: "wx:list-box% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1087,7 +1101,7 @@ Scheme_Object *objscheme_bundle_wxListBox(class wxListBox *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -1106,7 +1120,7 @@ Scheme_Object *objscheme_bundle_wxListBox(class wxListBox *realobj)
 
 class wxListBox *objscheme_unbundle_wxListBox(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxListBox(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

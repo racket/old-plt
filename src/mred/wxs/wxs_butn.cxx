@@ -562,14 +562,14 @@ if (os_wxButton_class) {
 
 int objscheme_istype_wxButton(Scheme_Object *obj, const char *stop, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return 1;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
       && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxButton_class))
     return 1;
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, "wx:button%", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:button% object or " XC_NULL_STR: "wx:button% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -579,7 +579,7 @@ Scheme_Object *objscheme_bundle_wxButton(class wxButton *realobj)
   Scheme_Class_Object *obj;
   Scheme_Object *sobj;
 
-  if (!realobj) return scheme_null;
+  if (!realobj) return XC_SCHEME_NULL;
 
   if (realobj->__gc_external)
     return (Scheme_Object *)realobj->__gc_external;
@@ -598,7 +598,7 @@ Scheme_Object *objscheme_bundle_wxButton(class wxButton *realobj)
 
 class wxButton *objscheme_unbundle_wxButton(Scheme_Object *obj, const char *where, int nullOK)
 {
-  if (nullOK && SCHEME_NULLP(obj)) return NULL;
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
 
   (void)objscheme_istype_wxButton(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;

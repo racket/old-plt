@@ -84,6 +84,6 @@
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 
-@CONSTANT "wx:const-default-frame" : SYM[frameStyle] wxDEFAULT_FRAME
+@CONSTANT "wx:const-default-frame-style" : SYM[frameStyle] wxDEFAULT_FRAME
 
 @END

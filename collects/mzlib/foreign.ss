@@ -1251,8 +1251,7 @@
 (define killer-executor (make-will-executor))
 (define killer-thread
   (thread (lambda () (let loop () (will-execute killer-executor) (loop)))))
-(provide (rename register-finalizer* register-finalizer))
-(define (register-finalizer* obj finalizer)
+(define* (register-finalizer obj finalizer)
   (will-register killer-executor obj finalizer))
 
 (define-unsafer unsafe!)

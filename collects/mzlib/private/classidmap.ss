@@ -13,8 +13,13 @@
        [else
 	(list* 'apply id this (reverse (cons args accum)))])))
 
-  (define (make-this-map the-obj)
-    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+  (define (find the-finder name src)
+    (let ([this-id (syntax-local-value the-finder)])
+      (datum->syntax-object this-id name src)))
+
+
+  (define (make-this-map the-finder the-obj)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -24,34 +29,34 @@
 	   [(id . args)
 	    (datum->syntax-object 
 	     stx
-	     (cons the-obj (syntax args))
+	     (cons (find the-finder the-obj stx) (syntax args))
 	     stx)]
-	   [id the-obj])))))
+	   [id (find the-finder the-obj stx)])))))
 
-  (define (make-field-map the-obj field-accessor field-mutator)
-    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+  (define (make-field-map the-finder the-obj field-accessor field-mutator)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
 	    (module-identifier=? (syntax set!) set!-stx)
 	    (datum->syntax-object 
-	     the-obj
-	     (list field-mutator the-obj (syntax expr))
+	     the-finder
+	     (list field-mutator (find the-finder the-obj stx) (syntax expr))
 	     stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     the-obj
-	     (cons (list field-accessor the-obj) (syntax args))
+	     the-finder
+	     (cons (list field-accessor (find the-finder the-obj stx)) (syntax args))
 	     stx)]
 	   [_else
 	    (datum->syntax-object 
-	     the-obj
-	     (list field-accessor the-obj)
+	     the-finder
+	     (list field-accessor (find the-finder the-obj stx))
 	     stx)])))))
 
-  (define (make-method-map the-obj method-accessor)
-    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+  (define (make-method-map the-finder the-obj method-accessor)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -60,10 +65,10 @@
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     the-obj
+	     the-finder
 	     (make-method-apply
-	      (list method-accessor the-obj)
-	      the-obj
+	      (list method-accessor (find the-finder the-obj stx))
+	      (find the-finder the-obj stx)
 	      (syntax args))
 	     stx)]
 	   [_else
@@ -74,8 +79,8 @@
 
   ;; For methods that are dirrectly available via their names
   ;;  (e.g., private methods)
-  (define (make-direct-method-map the-obj new-name)
-    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+  (define (make-direct-method-map the-finder the-obj new-name)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -84,8 +89,8 @@
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     the-obj
-	     (make-method-apply new-name the-obj (syntax args))
+	     the-finder
+	     (make-method-apply (find the-finder new-name stx) (find the-finder the-obj stx) (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 
@@ -93,8 +98,8 @@
 	     "misuse of method (not in application)" 
 	     stx)])))))
 
-  (define (make-rename-map the-obj rename-temp)
-    (let ([set!-stx (datum->syntax-object the-obj 'set!)])
+  (define (make-rename-map the-finder the-obj rename-temp)
+    (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
@@ -103,8 +108,8 @@
 	    (raise-syntax-error 'class "cannot mutate super method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     the-obj
-	     (make-method-apply rename-temp the-obj (syntax args))
+	     the-finder
+	     (make-method-apply (find the-finder rename-temp stx) (find the-finder the-obj stx) (syntax args))
 	     stx)]
 	   [_else
 	    (raise-syntax-error 

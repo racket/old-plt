@@ -32,6 +32,7 @@
 	    if
 	    quote
 	    letrec-syntaxes
+	    fluid-let-syntax
 	    with-continuation-mark
 	    #%app
 	    #%top

@@ -19,9 +19,8 @@
 	     ...)
 	 (let-values ([(defn-and-exprs) (syntax->list (syntax (defn-or-expr ...)))]
 		      [(this-id) (syntax this-id)]
-		      [(the-obj) (datum->syntax-object (quote-syntax here) 
-						       ;; Non-hygenic:
-						       (gensym (box 'self)))]
+		      [(the-obj) (datum->syntax-object (quote-syntax here) (gensym 'self))]
+		      [(the-finder) (datum->syntax-object (quote-syntax here) (gensym 'find-self))]
 		      [(super-instantiate-id super-make-object-id)
 		       (let ([s (syntax supers)])
 			 (if (stx-null? s)
@@ -326,11 +325,13 @@
 					   (vars-ok? (syntax vars))
 					   (if xform?
 					       (with-syntax ([the-obj the-obj]
+							     [the-finder the-finder]
 							     [name (mk-name name)])
 						 (syntax/loc stx 
 						   (let ([name
 							  (lambda (the-obj . vars) 
-							    body1 body ...)])
+							    (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+							      body1 body ...))])
 						     name)))
 					       stx)]
 					  [(lambda . _)
@@ -339,11 +340,13 @@
 					   (andmap vars-ok? (syntax->list (syntax (vars ...))))
 					   (if xform?
 					       (with-syntax ([the-obj the-obj]
+							     [the-finder the-finder]
 							     [name (mk-name name)])
 						 (syntax/loc stx
 						   (let ([name
 							  (case-lambda [(the-obj . vars) 
-									body1 body ...] ...)])
+									(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+									  body1 body ...)] ...)])
 						     name)))
 					       stx)]
 					  [(case-lambda . _)
@@ -362,8 +365,7 @@
 								(lambda (id)
 								  (datum->syntax-object
 								   #f
-								   ;; NOT HYGIENIC!!
-								   (gensym (box (syntax-e id)))))
+								   (gensym (syntax-e id))))
 								ids)
 							       ids)]
 						  [body-locals (append ids locals)]
@@ -390,10 +392,12 @@
 								 (lambda (old-id new-id)
 								   (with-syntax ([old-id old-id]
 										 [new-id new-id]
-										 [the-obj the-obj])
+										 [the-obj the-obj]
+										 [the-finder the-finder])
 								     (syntax (old-id (make-direct-method-map 
-										      (quote-syntax the-obj)
-										      (quote-syntax new-id))))))
+										      (quote-syntax the-finder)
+										      (quote the-obj)
+										      (quote new-id))))))
 								 ids new-ids)
 								null)]
 							   [body body])
@@ -565,9 +569,8 @@
 			     [mk-method-temp
 			      (lambda (id-stx)
 				(datum->syntax-object (quote-syntax here)
-						      ;; Non-hygenic:
-						      (gensym (box (syntax-e id-stx)))))])
-
+						      (gensym (syntax-e id-stx))))])
+			 
 			 ;; ---- set up field and method mappings ----
 			 (with-syntax ([(rename-orig ...) (map car renames)]
 				       [(rename-temp ...) (generate-temporaries (map car renames))]
@@ -613,34 +616,42 @@
 			   (let ([mappings
 				  ;; make-XXX-map is supplied by private/classidmap.ss
 				  (with-syntax ([the-obj the-obj]
+						[the-finder the-finder]
 						[this-id this-id])
 				    (syntax 
 				     ([this-id
-				       (make-this-map (quote-syntax the-obj))]
+				       (make-this-map (quote-syntax the-finder)
+						      (quote the-obj))]
 				      [all-field
-				       (make-field-map (quote-syntax the-obj)
+				       (make-field-map (quote-syntax the-finder)
+						       (quote the-obj)
 						       (quote-syntax field-accessor)
 						       (quote-syntax field-mutator))]
 				      ...
 				      [rename-orig
-				       (make-rename-map (quote-syntax the-obj)
-							(quote-syntax rename-temp))]
+				       (make-rename-map (quote-syntax the-finder)
+							(quote the-obj)
+							(quote rename-temp))]
 				      ...
 				      [method-name
-				       (make-method-map (quote-syntax the-obj)
+				       (make-method-map (quote-syntax the-finder)
+							(quote the-obj)
 							(quote-syntax method-accessor))]
 				      ...
 				      [private-name
-				       (make-direct-method-map (quote-syntax the-obj)
-							       (quote-syntax private-temp))]
+				       (make-direct-method-map (quote-syntax the-finder)
+							       (quote the-obj)
+							       (quote private-temp))]
 				      ...
 				      [public-final-name
-				       (make-direct-method-map (quote-syntax the-obj)
-							       (quote-syntax public-final-temp))]
+				       (make-direct-method-map (quote-syntax the-finder)
+							       (quote the-obj)
+							       (quote public-final-temp))]
 				      ...
 				      [override-final-name
-				       (make-direct-method-map (quote-syntax the-obj)
-							       (quote-syntax override-final-temp))]
+				       (make-direct-method-map (quote-syntax the-finder)
+							       (quote the-obj)
+							       (quote override-final-temp))]
 				      ...)))]
 				 [extra-init-mappings
 				  (with-syntax ([super-instantiate-id super-instantiate-id]
@@ -701,6 +712,7 @@
 					     [extra-init-mappings extra-init-mappings]
 					     [exprs exprs]
 					     [the-obj the-obj]
+					     [the-finder the-finder]
 					     [super-instantiate-id super-instantiate-id]
 					     [super-make-object-id super-make-object-id]
 					     [name class-name])
@@ -742,18 +754,19 @@
 					      (list override-final-temp ... . override-methods)
 					      ;; Initialization
 					      (lambda (the-obj super-id init-args)
-						(letrec-syntax ([super-instantiate-id
-								 (lambda (stx)
-								   (syntax-case stx () 
-								     [(_ (arg (... ...)) (kw kwarg) (... ...))
-								      (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
-						  (let ([super-make-object-id
-							 (lambda args
-							   (super-id #f args null))])
-						    (let ([plain-init-name undefined]
-							  ...)
-						      (void) ; in case the body is empty
-						      . exprs))))))))
+						(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+						  (letrec-syntax ([super-instantiate-id
+								   (lambda (stx)
+								     (syntax-case stx () 
+								       [(_ (arg (... ...)) (kw kwarg) (... ...))
+									(syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
+						    (let ([super-make-object-id
+							   (lambda args
+							     (super-id #f args null))])
+						      (let ([plain-init-name undefined]
+							    ...)
+							(void) ; in case the body is empty
+							. exprs)))))))))
 				     ;; Not primitive:
 				     #f)))))))))))))))])))
 

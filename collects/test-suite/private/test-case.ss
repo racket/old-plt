@@ -7,8 +7,9 @@ to give better error messages when the test-case is not at the top level.
 
 (module test-case mzscheme
   
-  (provide test-case)
-    
+  (provide test-case test-error-case)
+  
+  ;; STATUS : Abstract these two syntaxes and use string constant for the error  
   (define-syntax (test-case stx)
     (syntax-case stx ()
       [(_ test to-test-stx exp-stx record set-actuals)
@@ -40,4 +41,35 @@ to give better error messages when the test-case is not at the top level.
             ))]
          [else (raise-syntax-error #f
                                    "test case not at toplevel"
-                                   (syntax/loc stx (test-case to-test-stx exp-stx)))])])))
+                                   (syntax/loc stx (test-case to-test-stx exp-stx)))])]))
+  
+  (define-syntax (test-error-case stx)
+    (syntax-case stx ()
+      [(_ to-test-stx exn-pred exn-handler record set-actuals)
+       (case (syntax-local-context)
+         [(module top-level)
+          (syntax-property
+           #'(define-values ()
+               (with-handlers ([exn-pred
+                                (lambda (v)
+                                  (set-actuals (list v))
+                                  (record (exn-handler v))
+                                  (values))]
+                               [void
+                                (lambda (v)
+                                  (set-actuals v)
+                                  (record #f)
+                                  (values))])
+                 to-test-stx
+                 (record #f)
+                 (values)))
+           'stepper-skipto
+           (list ;; define-values
+            syntax-e cdr cdr car
+            ;; with-handlers
+            syntax-e cdr cdr cdr car
+            ))]
+         [else (raise-syntax-error #f
+                                   "test case not at toplevel"
+                                   (syntax/loc stx (test-case to-test-stx exp-stx)))])]))
+  )

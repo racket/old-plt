@@ -1,3 +1,7 @@
+#| Note: Test cases have a lot of state like the to-test, predicate, etc. I need to find a way
+   to not have to maintain this list of state in many places. It's not as simple as a global
+   list, however, because they need to be instantiation variables, etc.
+|#
 (module test-case-box mzscheme
   
   (provide test-case-box^ test-case-box@)
@@ -21,12 +25,6 @@
    "print-to-text.ss"
    "test-case.ss")
   
-  (define-syntax (b stx)
-    (syntax-case stx ()
-      [(_ stuff ...)
-       #'(with-handlers ([exn? (lambda (v) (write 'b) (newline) (raise v))])
-           (stuff ...))]))
-  
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
     (unit/sig test-case-box^
@@ -44,8 +42,9 @@
       
       ;; The test case box that is inserted into the drscheme frame
       (define test-case-box%
-         (class* (convert-to-string-mixin
-                  (decorated-editor-snip-mixin editor-snip%)) (readable-snip<%>)
+         (class* (on-show-editor-snip-mixin
+                  (convert-to-string-mixin
+                   (decorated-editor-snip-mixin editor-snip%))) (readable-snip<%>)
            (inherit get-admin convert-to-string)
            
            ;; A text that will uncollapse the test case when it is highlighted for an error
@@ -66,15 +65,8 @@
             [to-test (new error-alert-text%)]
             [expected (new error-alert-text%)]
             [predicate (new error-alert-text% (text "equal?"))]
-            [should-raise (new error-alert-text% (text "exn:user?"))]
+            [should-raise (new error-alert-text% (text "exn:fail?"))]
             [error-message (new error-alert-text%)])
-           
-           (field
-            [actual (new actual-text%)]
-            [result (new result-snip%
-                         (status (if enabled?
-                                     'unknown
-                                     'disabled)))])
            
            #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
            ;; Called by the execution to get a syntax object that represents this box.
@@ -95,15 +87,37 @@
                                       (syntax-position next)
                                       (syntax-span next))]))
                (if enabled?
-                   (with-syntax ([to-test-stx (text->syntax-object to-test)]
-                                 [exp-stx (text->syntax-object expected)]
-                                 [pred-stx (text->syntax-object predicate)]
-                                 [update-stx (lambda (x) (update x))] ; eta public method
-                                 [set-actuals-stx set-actuals]
-                                 [error-box? error-box?])
-                     (syntax/loc (datum->syntax-object
-                                  false 'ignored (list source line column position 1))
-                       (test-case pred-stx to-test-stx exp-stx update-stx set-actuals-stx)))
+                     (with-syntax ([to-test-stx (syntax-property (text->syntax-object to-test)
+                                                                 'stepper-test-suite-hint
+                                                                 true)]
+                                   [update-stx (lambda (x) (update x))] ; eta public method
+                                   [set-actuals-stx set-actuals]
+                                   [w printf])
+                       (if error-box?
+                           (with-syntax ([exn-pred-stx (text->syntax-object should-raise)]
+                                         [exn-handler-stx
+                                          (if (empty-text? error-message)
+                                              #'(lambda (v) true)
+                                              #`(lambda (v)
+                                                  (equal? (exn-message v)
+                                                          #,(text->syntax-object
+                                                             error-message))))])
+                             (syntax/loc (datum->syntax-object
+                                          false 'ignored (list source line column position 1))
+                               (test-error-case to-test-stx
+                                                exn-pred-stx
+                                                exn-handler-stx
+                                                update-stx
+                                                set-actuals-stx)))
+                           (with-syntax ([exp-stx (text->syntax-object expected)]
+                                         [pred-stx (text->syntax-object predicate)])
+                             (syntax/loc (datum->syntax-object
+                                          false 'ignored (list source line column position 1))
+                               (test-case pred-stx
+                                          to-test-stx
+                                          exp-stx
+                                          update-stx
+                                          set-actuals-stx)))))
                    (syntax-property #'(define-values () (values))
                                     'stepper-skip-completely
                                     true))))
@@ -157,6 +171,7 @@
            
            #;((is-a?/c expand-program%) (listof any?) . -> . void?)
            ;; set the text in the actual field to the value given
+           ;; STATUS: Ensure the edit-sequence is needed.
            (define (set-actuals vals)
              (send (send (get-admin) get-editor) begin-edit-sequence)
              (send actual lock false)
@@ -170,10 +185,16 @@
            #;(-> (is-a?/c test-case-box%))
            ;; Called by drscheme to copy and paste this test-case
            (define/override (copy)
-             (let ([new-to-test (new test-case:program-editor%)]
-                   [new-expected (new test-case:program-editor%)])
+             (let ([new-to-test (new error-alert-text%)]
+                   [new-expected (new error-alert-text%)]
+                   [new-predicate (new error-alert-text%)]
+                   [new-should-raise (new error-alert-text%)]
+                   [new-error-message (new error-alert-text%)])
                (send to-test copy-self-to new-to-test)
                (send expected copy-self-to new-expected)
+               (send predicate copy-self-to new-predicate)
+               (send should-raise copy-self-to new-should-raise)
+               (send error-message copy-self-to new-error-message)
                (new test-case-box%
                     (enabled? enabled?)
                     (actual-show? actual-show?)
@@ -205,27 +226,40 @@
              (let ([enabled?-box (box 0)]
                    [collapsed?-box (box 0)]
                    [error-box?-box (box 0)])
-               (send to-test read-from-file f)
-               (send expected read-from-file f)
-               (send predicate read-from-file f)
-               (send should-raise read-from-file f)
-               (send error-message read-from-file f)
+               (send* to-test (erase) (read-from-file f))
+               (send* expected (erase) (read-from-file f))
+               (send* predicate (erase) (read-from-file f))
+               (send* should-raise (erase) (read-from-file f))
+               (send* error-message (erase) (read-from-file f))
                (send f get enabled?-box)
                (send f get collapsed?-box)
-               (set! enabled? (= (unbox enabled?-box) 1))
-               (set! collapsed? (= (unbox collapsed?-box) 1))
-               (set! error-box? (= (unbox error-box?-box 1)))))
+               (send f get error-box?-box)
+               (enable (= (unbox enabled?-box) 1))
+               ;; Presently this is poking a bug in the embedded-gui.
+               ;; I'll leaving it commented til I reduce the bug.
+               #;(collapse (= (unbox collapsed?-box) 1))
+               (toggle-error-box (= (unbox error-box?-box) 1))))
            
            ;;;;;;;;;;
            ;; Layout
            
+           #;(-> (is-a?/c bitmap%))
+           ;; The bitmap to use for the top corner of the box.
            (define/override (get-corner-bitmap)
              (if error-box?
                  (make-object bitmap% (icon "scheme-box.jpg"))
                  (make-object bitmap% (icon "scheme-box.jpg"))))
            
+           #;(-> (symbols 'top-right 'top-left 'bottom-left 'bottom-right))
+           ;; The location of the corner bitmap
+           (define/override (get-position) 'top-right)
+           
+           #;(-> (union string? (is-a?/c color%)))
+           ;; The color of the border of this box
            (define/override (get-color) (if error-box? "red" "purple"))
            
+           #;(-> (is-a?/c popup-menu%))
+           ;; The popup menu used for the top corner of this box
            (define/override (get-menu)
              (let ([the-menu (new popup-menu% (title (string-constant test-case-menu-title)))])
                (define (make-toggle label f init)
@@ -242,7 +276,7 @@
                                (string-constant test-case-switch-to-error-box)))
                     (parent the-menu)
                     (callback (lambda (m e)
-                                (toggle-error-box))))
+                                (toggle-error-box (not error-box?)))))
                (make-toggle
                 (string-constant test-case-collapse)
                 collapse collapsed?)
@@ -264,14 +298,12 @@
                      (lambda (m e)
                        (convert-to-string (get-string)))))
                the-menu))
-           (define/override (get-position) 'top-right)
            
-           
-           #(-> void)
+           #;(-> void)
            ;; Hide and show the boxes that differ between error and now and
            ;; poke the snip-parent to display the new boarder color
-           (define (toggle-error-box)
-             (set! error-box? (not error-box?))
+           (define (toggle-error-box bool)
+             (set! error-box? bool)
              (send pb lock-alignment true)
              (send should-be-pane show (not error-box?))
              (send should-raise-pane show error-box?)
@@ -281,7 +313,9 @@
              (if error-box?
                  (set-tabbing to-test should-raise)
                  (set-tabbing to-test expected))
-             (send (snip-parent this) resized this #t))
+             (>>= (snip-parent this)
+                  (lambda (admin)
+                    (send admin resized this true))))
            
            #;(boolean? . -> . void)
            ;; Shows or hides the actual box
@@ -317,21 +351,24 @@
            
            ;;;;;;;;;;
            ;; The button bar w/ result check mark box
+           
+           (field
+            [button-pane (new vertical-alignment% (parent main))]
+            [result (new result-snip% (status (if enabled? 'unknown 'disabled)))])
+           (snip-wrap button-pane result)
            (field
             [collapse-button
-             (new turn-button-snip%
+             (new turn-button%
+                  (parent button-pane)
                   (state (boolean->collapse-btn-state collapsed?))
                   (turn-off (lambda (b e) (collapse true)))
                   (turn-on (lambda (b e) (collapse false))))]
             [show-actual-button
-             (new turn-button-snip%
+             (new turn-button%
+                  (parent button-pane)
                   (state (boolean->show-actual-btn-state actual-show?))
                   (turn-off (lambda (b e) (show-actual false)))
                   (turn-on (lambda (b e) (show-actual true))))])
-           (let ([button-pane (new vertical-alignment% (parent main))])
-             (snip-wrap button-pane result)
-             (snip-wrap button-pane collapse-button)
-             (snip-wrap button-pane show-actual-button))
            
            ;;;;;;;;;;
            ;; The text boxes
@@ -357,13 +394,14 @@
                   (show? error-box?)
                   (label (string-constant test-case-should-raise))
                   (text should-raise))]
-             [actual-pane
-              (new labeled-text-field%
-                   (parent result-pane)
-                   (label (string-constant test-case-actual))
-                   (show? actual-show?)
-                   (snip-class (grey-editor-snip-mixin stretchable-editor-snip%))
-                   (text actual))]
+            [actual (new actual-text%)]
+            [actual-pane
+             (new labeled-text-field%
+                  (parent result-pane)
+                  (label (string-constant test-case-actual))
+                  (show? actual-show?)
+                  (snip-class (grey-editor-snip-mixin stretchable-editor-snip%))
+                  (text actual))]
             
             [right-pane (new vertical-alignment% (parent body) (show? show-right-pane?))]
             [predicate-pane
@@ -394,14 +432,43 @@
       ;; Snip class
       
       ;; A snip-class for the test case box
-      (define tcb-sc (make-snipclass test-case-box% "test-case-box%"))
+      (define tcb-sc
+        (make-snipclass
+         test-case-box%
+         "test-case-box%"
+         #;(lambda (class% f)
+           (let ([enabled?-box (box 0)]
+                 [collapsed?-box (box 0)]
+                 [error-box?-box (box 0)]
+                 [to-test (new test-case:program-editor%)]
+                 [expected (new test-case:program-editor%)]
+                 [predicate (new test-case:program-editor%)]
+                 [should-raise (new test-case:program-editor%)]
+                 [error-message (new test-case:program-editor%)])
+             (send to-test read-from-file f)
+             (send expected read-from-file f)
+             (send predicate read-from-file f)
+             (send should-raise read-from-file f)
+             (send error-message read-from-file f)
+             (send f get enabled?-box)
+             (send f get collapsed?-box)
+             (send f get error-box?-box)
+             (new class%
+                  (enabled? (= (unbox enabled?-box) 1))
+                  (collapsed? (= (unbox collapsed?-box) 1))
+                  (error-box? (= (unbox error-box?-box) 1))
+                  (to-test to-test)
+                  (expected expected)
+                  (predicate predicate)
+                  (should-raise should-raise)
+                  (error-message error-message))))))
       ))
   
   #;((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
   ;; a snip which acts as a toggle button for rolling a window up and down
   ;; STATUS : Change this to derive embedded-toggle-button%
-  (define turn-button-snip%
-    (class toggle-button-snip%
+  (define turn-button%
+    (class embedded-toggle-button%
       (super-new
        (images-off (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
        (images-on (cons (icon "turn-up.gif") (icon "turn-up-click.gif"))))))
@@ -462,6 +529,12 @@
   (define (boolean->show-actual-btn-state bool)
     (if bool 'off 'on))
   
+  #;((is-a?/c text%) . -> . boolean?)
+  ;; True if the given text is empty
+  (define (empty-text? t)
+    (let ([str (send t get-text)])
+      (string=? str "")))
+  
   ;;;;;;;;;;
   ;; Eaiser syntax for embedded-gui
   (define (snip-wrap p snip)
@@ -478,4 +551,11 @@
            (snip (new snip-class
                       (editor text)
                       (min-width 80))))))
+  
+  #;((union any? false?) (any? . -> . any?) . -> . (union any? false?))
+  ;; Send the value to the function unless it 'fails' by returning false. Like haskell's bind operator.
+  (define (>>= value function)
+    (cond
+      [value => function]
+      [else false]))
   )

@@ -390,13 +390,13 @@ typedef struct Scheme_Stx {
   Scheme_Object *src;
   Scheme_Object *wraps;
   long lazy_prefix; /* # if initial items in wraps to propagate */
-  Scheme_Object *extra;
+  Scheme_Object *props;
 } Scheme_Stx;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
 			       Scheme_Object *src,
-			       Scheme_Object *extra);
+			       Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 

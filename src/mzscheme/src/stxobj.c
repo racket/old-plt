@@ -39,13 +39,14 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
-static Scheme_Object *syntax_origin(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_property(int argc, Scheme_Object **argv);
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 
-static Scheme_Object *source_symbol;
+static Scheme_Object *source_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 
 #ifdef MZ_PRECISE_GC
@@ -155,10 +156,15 @@ void scheme_init_stx(Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
-  scheme_add_global_constant("syntax-origin", 
-			     scheme_make_prim_w_arity(syntax_origin,
-						      "syntax-origin",
-						      2, 2),
+  scheme_add_global_constant("syntax-original?", 
+			     scheme_make_prim_w_arity(syntax_original_p,
+						      "syntax-original?",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("syntax-property", 
+			     scheme_make_prim_w_arity(syntax_property,
+						      "syntax-property",
+						      2, 3),
 			     env);
 
   scheme_add_global_constant("bound-identifier=?", 
@@ -177,14 +183,14 @@ void scheme_init_stx(Scheme_Env *env)
 						      2, 2, 1),
 			     env);
 
-  source_symbol = scheme_intern_symbol("source");
+  source_symbol = scheme_make_symbol("source");
   origin_symbol = scheme_intern_symbol("origin");
 }
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
 			       Scheme_Object *src,
-			       Scheme_Object *extra)
+			       Scheme_Object *props)
 {
   Scheme_Stx *stx;
 
@@ -195,7 +201,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   stx->col = col;
   stx->src = src;
   stx->wraps = scheme_null;
-  stx->extra = extra;
+  stx->props = props;
 
   return (Scheme_Object *)stx;
 }
@@ -206,45 +212,56 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 {
   Scheme_Stx *nstx = (Scheme_Stx *)naya;
   Scheme_Stx *ostx = (Scheme_Stx *)old;
-  Scheme_Object *ne, *oe;
+  Scheme_Object *ne, *oe, *e1, *e2;
   Scheme_Object *wraps;
   long lazy_prefix;
   
-  if (nstx->extra) {
-    if (SAME_OBJ(nstx->extra, STX_SRCTAG)) {
+  if (nstx->props) {
+    if (SAME_OBJ(nstx->props, STX_SRCTAG)) {
       /* Retain 'source tag. */
       ne = scheme_make_pair(scheme_make_pair(source_symbol, 
 					     scheme_true),
 			    scheme_null);
     } else
-      ne = nstx->extra;
+      ne = nstx->props;
   } else
     ne = scheme_null;
   
-  if (ostx->extra) {
-    if (SAME_OBJ(ostx->extra, STX_SRCTAG)) {
+  if (ostx->props) {
+    if (SAME_OBJ(ostx->props, STX_SRCTAG)) {
       /* Drop 'source, add 'origin. */
       oe = NULL;
     } else {
-      Scheme_Object *p;
-      int drop = 0, add = 1;
+      Scheme_Object *p, *a;
+      int mod = 0, add = 1;
 
-      oe = ostx->extra;
+      oe = ostx->props;
 
       /* Drop 'source, add 'origin if not there */
       for (p = oe; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
-	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(p)), source_symbol))
-	  drop = 1;
-	else if (SAME_OBJ(p, origin_symbol))
-	  add = 0;
+	a = SCHEME_CAR(SCHEME_CAR(p));
+	if (SAME_OBJ(a, source_symbol))
+	  mod = 1;
+	else if (SAME_OBJ(a, origin_symbol))
+	  mod = 1;
       }
 
-      if (drop) {
+      if (mod) {
 	Scheme_Object *first = scheme_null, *last = NULL;
 
 	for (; SCHEME_PAIRP(oe); oe = SCHEME_CDR(oe)) {
-	  if (!SAME_OBJ(SCHEME_CAR(SCHEME_CAR(oe)), source_symbol)) {
-	    p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
+	  a = SCHEME_CAR(SCHEME_CAR(oe));
+	  if (!SAME_OBJ(a, source_symbol)) {
+	    if (!SAME_OBJ(a, origin_symbol)) {
+	      p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
+	    } else {
+	      p = scheme_make_pair(scheme_make_pair(a, 
+						    scheme_make_pair(SCHEME_CDR(SCHEME_CAR(oe)),
+								     origin)),
+				   scheme_null);
+	      add = 0;
+	    }
+
 	    if (last)
 	      SCHEME_CDR(last) = p;
 	    else
@@ -257,7 +274,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
       } 
       if (add) {
 	oe = scheme_make_pair(scheme_make_pair(origin_symbol, origin),
-			      scheme_null);
+			      oe);
       }
     }
   } else {
@@ -269,10 +286,73 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
     oe= scheme_make_pair(scheme_make_pair(origin_symbol, origin),
 			 scheme_null);
 
-  /* Append extra info */
-  ne = scheme_append(ne, oe);
+  /* Merge ne and oe (ne takes precedence). */
+  
+  /* First, check for overlap: */
+  for (e1 = ne; SCHEME_PAIRP(e1); e1 = SCHEME_CDR(e1)) {
+    Scheme_Object *a;
+    a = SCHEME_CAR(SCHEME_CAR(e1));
+    for (e2 = oe; SCHEME_PAIRP(e2); e2 = SCHEME_CDR(e2)) {
+      if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(e2)), a)) {
+	break;
+      }
+    }
+    if (!SCHEME_NULLP(e1))
+      break;
+  }
 
-  /* Clone nstx, keeping wraps, changing extra to ne */
+  if (SCHEME_NULLP(e1)) {
+    /* Can just append props info (probably the common case). */
+    if (!SCHEME_NULLP(oe))
+      ne = scheme_append(ne, oe);
+  } else {
+    /* Have to perform an actual merge: */
+    Scheme_Object *first = scheme_null, *last = NULL, *p;
+
+    for (e1 = ne; SCHEME_PAIRP(e1); e1 = SCHEME_CDR(e1)) {
+      Scheme_Object *a, *v;
+      a = SCHEME_CAR(SCHEME_CAR(e1));
+      v = SCHEME_CDR(SCHEME_CAR(e1));
+      for (e2 = oe; SCHEME_PAIRP(e2); e2 = SCHEME_CDR(e2)) {
+	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(e2)), a)) {
+	  v = scheme_make_pair(v, SCHEME_CDR(SCHEME_CAR(e2)));
+	  break;
+	}
+      }
+
+      p = scheme_make_pair(scheme_make_pair(a, v), scheme_null);
+      if (last)
+	SCHEME_CDR(last) = p;
+      else
+	first = p;
+      last = p;
+    }
+
+    for (e1 = oe; SCHEME_PAIRP(e1); e1 = SCHEME_CDR(e1)) {
+      Scheme_Object *a, *v;
+      a = SCHEME_CAR(SCHEME_CAR(e1));
+      v = SCHEME_CDR(SCHEME_CAR(e1));
+      for (e2 = ne; SCHEME_PAIRP(e2); e2 = SCHEME_CDR(e2)) {
+	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(e2)), a)) {
+	  v = NULL;
+	  break;
+	}
+      }
+
+      if (v) {
+	p = scheme_make_pair(scheme_make_pair(a, v), scheme_null);
+	if (last)
+	  SCHEME_CDR(last) = p;
+	else
+	  first = p;
+	last = p;
+      }
+    }
+
+    ne = first;
+  }
+
+  /* Clone nstx, keeping wraps, changing props to ne */
 
   wraps = nstx->wraps;
   lazy_prefix = nstx->lazy_prefix;
@@ -332,7 +412,7 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   lp = stx->lazy_prefix;
   wraps = add_remove_mark(stx->wraps, m, &lp);
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -449,7 +529,7 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   wraps = scheme_make_pair(rename, stx->wraps);
   lp = stx->lazy_prefix + 1;
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -490,7 +570,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     
     if (SAME_OBJ(stx->wraps, p1)) {
       long lp = stx->lazy_prefix + len;
-      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
+      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
       stx->wraps = owner_wraps;
       stx->lazy_prefix = lp;
       return (Scheme_Object *)stx;
@@ -1891,43 +1971,115 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
     return scheme_false;
 }
 
-static Scheme_Object *syntax_origin(int argc, Scheme_Object **argv)
+static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv)
 {
   Scheme_Stx *stx;
-  Scheme_Object *key = argv[1];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-origin", "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-original?", "syntax", 0, argc, argv);
 
   stx = (Scheme_Stx *)argv[0];
 
-  if (stx->extra) {
-    if (SAME_OBJ(stx->extra, STX_SRCTAG)) {
-      if (SAME_OBJ(key, source_symbol))
-	return scheme_make_pair(scheme_true, scheme_null);
-      else
-	return scheme_null;
+  if (stx->props) {
+    if (SAME_OBJ(stx->props, STX_SRCTAG)) {
+      /* Check for marks... */
     } else {
-      Scheme_Object *first = scheme_null, *last = NULL, *p, *e;
+      Scheme_Object *e;
 
-      for (e = stx->extra; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
+      for (e = stx->props; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
+	if (SAME_OBJ(source_symbol, SCHEME_CAR(SCHEME_CAR(e)))) {
+	  break;
+	}
+      }
+
+      if (SCHEME_NULLP(e))
+	return scheme_false;
+    }
+  } else
+    return scheme_false;
+
+  if (same_marks(stx->wraps, scheme_null))
+    return scheme_true;
+  else
+    return scheme_false;
+}
+
+static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
+{
+  Scheme_Stx *stx;
+  Scheme_Object *key = argv[1], *l;
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-property", "syntax", 0, argc, argv);
+
+  stx = (Scheme_Stx *)argv[0];
+
+  if (stx->props) {
+    if (SAME_OBJ(stx->props, STX_SRCTAG)) {
+      if (argc > 2)
+	l = scheme_make_pair(scheme_make_pair(source_symbol, scheme_true),
+			     scheme_null);
+      else
+	l = NULL;
+    } else {
+      Scheme_Object *e;
+
+      for (e = stx->props; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
 	if (SAME_OBJ(key, SCHEME_CAR(SCHEME_CAR(e)))) {
-	  p = scheme_make_pair(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
+	  if (argc > 2)
+	    break;
+	  else
+	    return SCHEME_CDR(SCHEME_CAR(e));
+	}
+      }
+
+      if (SCHEME_NULLP(e))
+	l = stx->props;
+      else {
+	/* Remove existing binding: */
+	Scheme_Object *first = scheme_null, *last = NULL, *p;
+
+	for (e = stx->props; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
+	  if (SAME_OBJ(key, SCHEME_CAR(SCHEME_CAR(e)))) {
+	    p = SCHEME_CDR(e);
+	    e = NULL;
+	  } else {
+	    p = scheme_make_pair(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
+	  }
+
 	  if (last)
 	    SCHEME_CDR(last) = p;
 	  else
 	    first = p;
 	  last = p;
+
+	  if (!e)
+	    break;
 	}
+	
+	l = first;
       }
-      return first;
     }
-  } else {
-    if (SAME_OBJ(key, source_symbol))
-      return scheme_make_pair(scheme_false, scheme_null);
-    else
-      return scheme_null;
-  }
+  } else
+    l = scheme_null;
+
+  if (argc > 2) {
+    Scheme_Object *wraps;
+    long lazy_prefix;
+    
+    l = scheme_make_pair(scheme_make_pair(key, argv[2]), l);
+
+    wraps = stx->wraps;
+    lazy_prefix = stx->lazy_prefix;
+
+    stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, l);
+
+    stx->wraps = wraps;
+    stx->lazy_prefix = lazy_prefix;
+
+    return (Scheme_Object *)stx;
+  } else
+    return scheme_false;
 }
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)

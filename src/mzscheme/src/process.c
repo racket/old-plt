@@ -899,8 +899,6 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
     }
   }
 
-  printf("closed %d leaving %d\n", cx, scheme_file_open_count);
-
   return kill_self;
 }
 

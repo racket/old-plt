@@ -116,6 +116,8 @@
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  (are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a ?") ;; ~a is a filename
+ (ignore "Ignorer")
+ (revert "Retourner") ; revenir?
  
  ;;; important urls
  (web-materials "Sites web apparentés") ;; menu item title

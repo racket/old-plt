@@ -1,15 +1,16 @@
 (require-library "macro.ss")
 (require-library "files.ss")
 
-(define-signature graphics^
+(define-signature graphics:posn^
+  (make-posn posn? posn-x posn-y))
+
+(define-signature graphics:posn-less^
   (viewport?
 
    open-graphics 
    close-graphics 
    graphics-open?
-
-   make-posn posn? posn-x posn-y
-
+   
    get-mouse-click
    ready-mouse-click
    ready-mouse-release
@@ -60,3 +61,7 @@
    viewport->snip
 
    viewport-dc viewport-buffer-dc))
+
+(define-signature graphics^
+  ((open graphics:posn-less^)
+   (open graphics:posn^)))

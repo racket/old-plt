@@ -26,14 +26,14 @@
     (cond
       [(zero? n) (void)]
       [else
-       (begin (split (turn (/ pi (expt 2 (sub1 p)))))
+       (begin (split (turn (/ pi (expt 2 (sub1 n)))))
 	      (radial-turtles (sub1 n)))])))
 
 (define spaced-turtles
   (lambda (n)
     (cond
       [(zero? n) (void)]
-      [else (begin (split (move (expt 2 (+ p 1))))
+      [else (begin (split (move (expt 2 (+ n 1))))
 		   (spaced-turtles (sub1 n)))])))
 
 (define spokes

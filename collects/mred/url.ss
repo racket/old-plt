@@ -387,22 +387,34 @@
 				   (if first-question first-question
 				     (if first-hash first-hash
 				       total-length)))))
-		(let-values (((host port path)
-			       (parse-host/port/path
-				 string path-start path-finish)))
-		  (make-url
-		    (and scheme-start
-		      (substring string scheme-start scheme-finish))
-		    host
-		    port
-		    path
-		    (and params-start
-		      (substring string params-start params-finish))
-		    (and query-start
-		      (substring string query-start query-finish))
-		    (and fragment-start
-		      (substring string fragment-start
-			fragment-finish))))))))))
+		(let ((scheme (and scheme-start
+				(substring string
+				  scheme-start scheme-finish))))
+		  (if (and scheme
+			(string=? scheme "file"))
+		    (make-url
+		      scheme		; scheme
+		      #f		; host
+		      #f		; port
+		      (substring string path-start total-length) ; path
+		      #f		; params
+		      #f		; query
+		      #f)		; fragment
+		    (let-values (((host port path)
+				   (parse-host/port/path
+				     string path-start path-finish)))
+		      (make-url
+			scheme
+			host
+			port
+			path
+			(and params-start
+			  (substring string params-start params-finish))
+			(and query-start
+			  (substring string query-start query-finish))
+			(and fragment-start
+			  (substring string fragment-start
+			    fragment-finish))))))))))))
 
     ; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
     (define parse-host/port/path
@@ -426,7 +438,7 @@
 		  ;    will be false.
 		  ; 2. The input is an absolute URL with a hostname,
 		  ;    and the intended path is "/", but the URL is missing
-		  ;    a "/" at the end.
+		  ;    a "/" at the end.  has-host? must be true.
 		  (let ((host/path (substring path begin-point end-point)))
 		    (if has-host?
 		      (values host/path #f "/")

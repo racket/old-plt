@@ -182,6 +182,8 @@
 #define XtNcursor		"cursor"
 #endif
 
+#define XtNoffset		"offset"
+
 #define	XtNhighlightForeground	"highlightForeground"
 #define	XtNhighlightBackground	"highlightBackground"
 #define XtNcolumnSpacing	"columnSpacing"

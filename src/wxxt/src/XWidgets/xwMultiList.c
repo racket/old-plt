@@ -1,5 +1,12 @@
 /****************************************************************************
 
+  Ugly-hacked MrEd version!
+  (Allows lists with a virtual size > max-short)
+
+***********************************************************************/
+
+/****************************************************************************
+
 	MultiList.c
 
 	This file contains the implementation of the Picasso List
@@ -58,8 +65,8 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
-#include <xwMultiListP.h>
-#include <xwTabString.h>
+#include "xwMultiListP.h"
+#include "xwTabString.h"
 
 /*===========================================================================*
 
@@ -112,10 +119,6 @@ static void			DestroyOldData();
 static void			InitializeNewData();
 static void			CreateNewGCs();
 
-static void			RecalcCoords();
-static void			NegotiateSizeChange();
-static Boolean			Layout();
-
 static void			RedrawAll();
 static void			RedrawItem();
 static void			RedrawRowColumn();
@@ -147,14 +150,6 @@ static Boolean		SetValues(XfwfMultiListWidget cpl,
 static void		DestroyOldData(XfwfMultiListWidget mlw);
 static void		InitializeNewData(XfwfMultiListWidget mlw);
 static void		CreateNewGCs(XfwfMultiListWidget mlw);
-static void		RecalcCoords(XfwfMultiListWidget mlw,
-				Boolean width_changeable,
-				Boolean height_changeable);
-static void		NegotiateSizeChange(XfwfMultiListWidget mlw,
-				Dimension width, Dimension height);
-static Boolean		Layout(XfwfMultiListWidget mlw,
-				Boolean w_changeable, Boolean h_changeable,
-				Dimension *w_ptr, Dimension *h_ptr);
 static void		RedrawAll(XfwfMultiListWidget mlw);
 static void		RedrawItem(XfwfMultiListWidget mlw, int item_index);
 static void		RedrawRowColumn(XfwfMultiListWidget mlw,
@@ -199,10 +194,6 @@ static XtResource resources[] =
 
 	{XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
 	    SimpleFieldOffset(cursor), XtRString, "left_ptr"},
-#if 0
-	{XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
-	    MultiListFieldOffset(foreground), XtRString,"XtDefaultForeground"},
-#endif
 	{XtNhighlightForeground, XtCHForeground, XtRPixel, sizeof(Pixel),
 	    MultiListFieldOffset(highlight_fg), XtRString, "XtDefaultBackground"},
 	{XtNhighlightBackground, XtCHBackground, XtRPixel, sizeof(Pixel),
@@ -217,10 +208,6 @@ static XtResource resources[] =
 	    MultiListFieldOffset(force_cols), XtRString, (caddr_t) "False"},
 	{XtNpasteBuffer, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	    MultiListFieldOffset(paste), XtRString, (caddr_t) "False"},
-	{XtNverticalList, XtCBoolean, XtRBoolean,  sizeof(Boolean),
-	    MultiListFieldOffset(row_major), XtRString, (caddr_t) "False"},
-	{XtNlongest, XtCLongest, XtRInt,  sizeof(int),
-	    MultiListFieldOffset(longest), XtRImmediate, (caddr_t)0},
 	{XtNnumberStrings, XtCNumberStrings, XtRInt,  sizeof(int),
 	    MultiListFieldOffset(nitems), XtRImmediate, (caddr_t)0},
 	{XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
@@ -233,6 +220,9 @@ static XtResource resources[] =
 	    MultiListFieldOffset(callback), XtRCallback, NULL},
 	{XtNmaxSelectable, XtCValue, XtRInt, sizeof(int),
 	    MultiListFieldOffset(max_selectable), XtRImmediate, (caddr_t) 1},
+
+	{XtNoffset, XtCValue, XtRInt, sizeof(int),
+	    MultiListFieldOffset(offset), XtRString, "0"},
 
 	{XtNshadeSurplus, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	    MultiListFieldOffset(shade_surplus), XtRString, "True"},
@@ -362,8 +352,9 @@ Widget request,new;
 	InitializeNewData(mlw);
 	MultiListLastRelease(mlw) = CurrentTime;
 	MultiListTabs(mlw) = XfwfTablist2Tabs(MultiListTabList(mlw));
-	RecalcCoords(mlw,(MultiListWidth(mlw) == 0),
-		     (MultiListHeight(mlw) == 0));
+	MultiListWidth(mlw) = MultiListHeight(mlw) = 100;
+	MultiListNumCols(mlw) = 1;
+	MultiListNumRows(mlw) = 1;
 	if (MultiListClickExtends(mlw)) {
 	  XtTranslations t = XtParseTranslationTable(extendTranslations);
 	  XtOverrideTranslations((Widget)new, t);
@@ -436,45 +427,24 @@ Region rectangle_union;
 
  *---------------------------------------------------------------------------*/
 
+extern void XfwfCallComputeInside(Widget self,Position * x,Position * y,int * w,int * h);
+
 static XtGeometryResult PreferredGeometry(mlw,parent_idea,our_idea)
 XfwfMultiListWidget mlw;
 XtWidgetGeometry *parent_idea,*our_idea;
 {
-	Dimension nw,nh;
-	Boolean parent_wants_w,parent_wants_h,we_changed_size;
-    
-	parent_wants_w = (parent_idea->request_mode) & CWWidth;
-	parent_wants_h = (parent_idea->request_mode) & CWHeight;
+        Position px, py;
+	int nw,nh;
+	Widget parent;
 
-	if (parent_wants_w)
-	  nw = parent_idea->width;
-	else
-	  nw = MultiListWidth(mlw);
+	parent = XtParent(mlw);
+	XfwfCallComputeInside(parent, &px, &py, &nw, &nh);
 
-	if (parent_wants_h)
-	  nh = parent_idea->height;
-	else {
-#if 0
-	  /* MrEd hack: recompute height */
-	  Dimension dnw;
-	  Layout(mlw, !parent_wants_w, !parent_wants_h, &dnw, &nh);
-#else
-	  nh = MultiListHeight(mlw);
-#endif
-	}
-
-	our_idea->request_mode = 0;
-	if (!parent_wants_w && !parent_wants_h) return(XtGeometryYes);
-
-	we_changed_size = Layout(mlw,!parent_wants_w,!parent_wants_h,&nw,&nh);
 	our_idea->request_mode |= (CWWidth | CWHeight);
 	our_idea->width = nw;
 	our_idea->height = nh;
 
-	if (we_changed_size)
-	  return(XtGeometryAlmost);
-	else
-	  return(XtGeometryYes);
+	return XtGeometryAlmost;
 } /* End PreferredGeometry */
 
 
@@ -490,11 +460,7 @@ XtWidgetGeometry *parent_idea,*our_idea;
 static void Resize(mlw)
 XfwfMultiListWidget mlw;
 {
-	Dimension width,height;
-
-	width = MultiListWidth(mlw);
-	height = MultiListHeight(mlw);
-	Layout(mlw,False,False,&width,&height);
+  MultiListColWidth(mlw) = MultiListWidth(mlw);
 } /* End Resize */
 
 
@@ -574,13 +540,15 @@ XfwfMultiListWidget cpl,rpl,npl;
 	    (MultiListDefaultCols(cpl) != MultiListDefaultCols(npl)) ||
 	    ((MultiListForceCols(cpl) != MultiListForceCols(npl)) &&
 	     (MultiListNumCols(cpl) != MultiListNumCols(npl))) ||
-	    (MultiListRowMajor(cpl) != MultiListRowMajor(npl)) ||
-	    (MultiListFont(cpl) != MultiListFont(npl)) ||
-	    (MultiListLongest(cpl) != MultiListLongest(npl)))
+	    (MultiListFont(cpl) != MultiListFont(npl)))
 	{
 		recalc = True;
 		redraw = True;
 	}
+
+	if (MultiListOffset(cpl) != MultiListOffset(npl))
+	  redraw = True;
+
 
 	if (MultiListColWidth(cpl) != MultiListColWidth(npl))
 	{
@@ -593,11 +561,6 @@ XfwfMultiListWidget cpl,rpl,npl;
 		MultiListRowHeight(npl) = MultiListRowHeight(cpl);
 	}
 
-	if (recalc)
-	{
-		RecalcCoords(npl,!MultiListWidth(npl),!MultiListHeight(npl));
-	}
-    
 	if (!XtIsRealized((Widget)cpl))
 		return(False);
 	    else
@@ -769,265 +732,6 @@ XfwfMultiListWidget mlw;
 
 /*===========================================================================*
 
-        L A Y O U T    A N D    G E O M E T R Y    M A N A G E M E N T
-
- *===========================================================================*/
-
-/*---------------------------------------------------------------------------*
-
-        RecalcCoords(mlw,width_changeable,height_changeable)
-
-	This routine takes a MultiList widget <mlw> and recalculates
-	the coordinates, and item placement based on the current
-	width, height, and list of items.  The <width_changeable> and
-	<height_changeable> indicate if the width and/or height can
-	be arbitrarily set.
-
-	This routine requires that the internal list data be initialized.
-
- *---------------------------------------------------------------------------*/
-
-#if NeedFunctionPrototypes
-static void
-RecalcCoords(XfwfMultiListWidget mlw,
-	     Boolean width_changeable, Boolean height_changeable)
-#else
-static void
-RecalcCoords(mlw,width_changeable,height_changeable)
-XfwfMultiListWidget mlw;
-Boolean width_changeable,height_changeable;
-#endif
-{
-	String str;
-	Dimension width,height;
-	register int i,text_width;
-
-	width = MultiListWidth(mlw);
-	height = MultiListHeight(mlw);
-	if (MultiListNumItems(mlw) != 0 && MultiListLongest(mlw) == 0)
-	{
-		for (i = 0; i < MultiListNumItems(mlw); i++)
-		{
-			str = MultiListItemString(MultiListNthItem(mlw,i));
-			text_width = FontW(MultiListFont(mlw),str,mlw);
-			MultiListLongest(mlw) = max(MultiListLongest(mlw),
-						    text_width);
-		}
-	}
-	if (Layout(mlw,width_changeable,height_changeable,&width,&height))
-	{
-		NegotiateSizeChange(mlw,width,height);
-	}
-} /* End RecalcCoords */
-
-
-/*---------------------------------------------------------------------------*
-
-        NegotiateSizeChange(mlw,width,height)
-
-	This routine tries to change the MultiList widget <mlw> to have the
-	new size <width> by <height>.  A negotiation will takes place
-	to try to change the size.  The resulting size is not necessarily
-	the requested size.
-
- *---------------------------------------------------------------------------*/
-
-#if NeedFunctionPrototypes
-static void
-NegotiateSizeChange(XfwfMultiListWidget mlw, Dimension width, Dimension height)
-#else
-static void
-NegotiateSizeChange(mlw,width,height)
-XfwfMultiListWidget mlw;
-Dimension width,height;
-#endif
-{
-	int attempt_number;
-	Boolean w_fixed,h_fixed;
-	Dimension *w_ptr,*h_ptr;
-	
-	XtWidgetGeometry request,reply;
-
-	request.request_mode = CWWidth | CWHeight;
-	request.width = width;
-	request.height = height;
-    
-	for (attempt_number = 1; attempt_number <= 3; attempt_number++)
-	{
-		switch (XtMakeGeometryRequest((Widget)mlw,&request,&reply))
-		{
-		    case XtGeometryYes:
-		    case XtGeometryNo:
-			return;
-		    case XtGeometryAlmost:
-			switch (attempt_number)
-			{
-			    case 1:
-				w_fixed = (request.width != reply.width);
-				h_fixed = (request.height != reply.height);
-				w_ptr = &(reply.width);
-				h_ptr = &(reply.height);
-				Layout(mlw,!w_fixed,!h_fixed,w_ptr,h_ptr);
-				break;
-			    case 2:
-				w_ptr = &(reply.width);
-				h_ptr = &(reply.height);
-				Layout(mlw,False,False,w_ptr,h_ptr);
-				break;
-			    case 3:
-				return;
-			}
-			break;
-		    default:
-			XtAppWarning(XtWidgetToApplicationContext((Widget)mlw),
-				"MultiList Widget: Unknown geometry return.");
-			break;
-		}
-		request = reply;
-	}
-} /* End NegotiateSizeChange */
-
-
-/*---------------------------------------------------------------------------*
-
-	Boolean Layout(mlw,w_changeable,h_changeable,w_ptr,h_ptr)
-
-	This routine tries to generate a layout for the MultiList widget
-	<mlw>.  The Layout routine is free to arbitrarily set the width
-	or height if the corresponding variables <w_changeable> and
-	<h_changeable> are set True.  Otherwise the original width or
-	height in <w_ptr> and <h_ptr> are used as fixed values.  The
-	resulting new width and height are stored back through the
-	<w_ptr> and <h_ptr> pointers.  False is returned if no size
-	change was done, True is returned otherwise.
-
- *---------------------------------------------------------------------------*/
-
-extern void ScrollWinViewableHeight(Widget w, int *h);
-
-#if NeedFunctionPrototypes
-static Boolean
-Layout(XfwfMultiListWidget mlw, Boolean w_changeable, Boolean h_changeable,
-       Dimension *w_ptr, Dimension *h_ptr)
-#else
-static Boolean
-Layout(mlw,w_changeable,h_changeable,w_ptr,h_ptr)
-XfwfMultiListWidget mlw;
-Boolean w_changeable,h_changeable;
-Dimension *w_ptr,*h_ptr;
-#endif
-{
-	Boolean size_changed = False;
-
-	/*
-	 * If force columns is set, then always use the number
-	 * of columns specified by default_cols.
-	 */
-
-	MultiListColWidth(mlw) = MultiListLongest(mlw) +
-		MultiListColumnSpace(mlw);
-	MultiListRowHeight(mlw) = FontH(MultiListFont(mlw)) +
-		MultiListRowSpace(mlw);
-	if (MultiListForceCols(mlw))
-	{
-		MultiListNumCols(mlw) = max(MultiListDefaultCols(mlw),1);
-		if (MultiListNumItems(mlw) == 0)
-			MultiListNumRows(mlw) = 1;
-		    else
-			MultiListNumRows(mlw) = (MultiListNumItems(mlw) - 1) /
-				MultiListNumCols(mlw) + 1;
-		if (w_changeable)
-		{
-			*w_ptr = MultiListNumCols(mlw) *
-				MultiListColWidth(mlw);
-			size_changed = True;
-		}
-		    else
-		{
-			MultiListColWidth(mlw) = *w_ptr /
-				(Dimension)MultiListNumCols(mlw);
-		}
-		if (h_changeable)
-		{
-			*h_ptr = MultiListNumRows(mlw) *
-				MultiListRowHeight(mlw);
-			size_changed = True;
-
-		}
-#if 0
-		{
-		  /* MrEd hack: if the parent (always a scroll win) has more room, use it up */
-		  int max_height;
-		  ScrollWinViewableHeight(XtParent((Widget)mlw), &max_height);
-		  
-		  if (*h_ptr < max_height) {
-		    *h_ptr = max_height;
-		    size_changed = True;
-		  }
-		}
-#endif
-		return(size_changed);
-	}
-
-	/*
-	 * If both width and height are free to change then use
-	 * default_cols to determine the number of columns and set
-	 * the new width and height to just fit the window.
-	 */
-
-	if (w_changeable && h_changeable)
-	{
-		MultiListNumCols(mlw) = max(MultiListDefaultCols(mlw),1);
-		if (MultiListNumItems(mlw) == 0)
-			MultiListNumRows(mlw) = 1;
-		    else
-			MultiListNumRows(mlw) = (MultiListNumItems(mlw) - 1) /
-				MultiListNumCols(mlw) + 1;
-		*w_ptr = MultiListNumCols(mlw) * MultiListColWidth(mlw);
-		*h_ptr = MultiListNumRows(mlw) * MultiListRowHeight(mlw);
-		
-
-		return(True);
-	}
-
-	/*
-	 * If the width is fixed then use it to determine the
-	 * number of columns.  If the height is free to move
-	 * (width still fixed) then resize the height of the
-	 * widget to fit the current MultiList exactly.
-	 */
-
-	if (!w_changeable)
-	{
-		MultiListNumCols(mlw) = *w_ptr / MultiListColWidth(mlw);
-		MultiListNumCols(mlw) = max(MultiListNumCols(mlw),1);
-		MultiListNumRows(mlw) = (MultiListNumItems(mlw) - 1) /
-			MultiListNumCols(mlw) + 1;
-		MultiListColWidth(mlw) = *w_ptr / (Dimension)MultiListNumCols(mlw);
-		if (h_changeable)
-		{
-			*h_ptr = MultiListNumRows(mlw) * MultiListRowHeight(mlw);
-			size_changed = True;
-		}
-		return(size_changed);
-	}
-
-	/*
-	 * The last case is xfree and !yfree we use the height to
-	 * determine the number of rows and then set the width to
-	 * just fit the resulting number of columns.
-	 */
-
-	MultiListNumRows(mlw) = *h_ptr / MultiListRowHeight(mlw);
-	MultiListNumRows(mlw) = max(MultiListNumRows(mlw),1);
-	MultiListNumCols(mlw) = (MultiListNumItems(mlw) - 1) /
-		MultiListNumRows(mlw) + 1;
-	*w_ptr = MultiListNumCols(mlw) * MultiListColWidth(mlw);
-	return(True);
-} /* End Layout */
-
-/*===========================================================================*
-
                     R E D R A W    R O U T I N E S
 
  *===========================================================================*/
@@ -1173,7 +877,7 @@ static void PixelToRowColumn(mlw,x,y,row_ptr,column_ptr)
 XfwfMultiListWidget mlw;
 int x,y,*row_ptr,*column_ptr;
 {
-	*row_ptr = y / (int)MultiListRowHeight(mlw);
+	*row_ptr = (y / (int)MultiListRowHeight(mlw)) + MultiListOffset(mlw);
 	*column_ptr = x / (int)MultiListColWidth(mlw);
 } /* End PixelToRowColumn */
 
@@ -1191,7 +895,7 @@ XfwfMultiListWidget mlw;
 int row,col,*x_ptr,*y_ptr,*w_ptr,*h_ptr;
 {
 	*x_ptr = col * MultiListColWidth(mlw);
-	*y_ptr = row * MultiListRowHeight(mlw);
+	*y_ptr = (row - MultiListOffset(mlw)) * MultiListRowHeight(mlw);
 	*w_ptr = MultiListColWidth(mlw);
 	*h_ptr = MultiListRowHeight(mlw);
 } /* End RowColumnToPixels */
@@ -1219,16 +923,8 @@ int row,column,*item_ptr;
 	{
 		return(False);
 	}
-	if (MultiListRowMajor(mlw))
-	{
-		x_stride = 1;
-		y_stride = MultiListNumCols(mlw);
-	}
-	    else
-	{
-		x_stride = MultiListNumRows(mlw);
-		y_stride = 1;
-	}
+	x_stride = MultiListNumRows(mlw);
+	y_stride = 1;
 	*item_ptr = row * y_stride + column * x_stride;
 	if (*item_ptr >= MultiListNumItems(mlw))
 		return(False);
@@ -1257,16 +953,9 @@ int item_index,*row_ptr,*column_ptr;
 	{
 		return(False);
 	}
-	if (MultiListRowMajor(mlw))
-	{
-		*row_ptr = item_index / MultiListNumCols(mlw);
-		*column_ptr = item_index % MultiListNumCols(mlw);
-	}
-	    else
-	{
-		*row_ptr = item_index % MultiListNumRows(mlw);
-		*column_ptr = item_index / MultiListNumRows(mlw);
-	}
+	*row_ptr = item_index % MultiListNumRows(mlw);
+	*column_ptr = item_index / MultiListNumRows(mlw);
+
 	return(True);
 } /* End ItemToRowColumn */
 
@@ -1854,13 +1543,17 @@ Boolean *sensitivity_array;
 	DestroyOldData(mlw);
 	MultiListList(mlw) = list;
 	MultiListNumItems(mlw) = max(nitems,0);
-	MultiListLongest(mlw) = max(longest,0);
 	MultiListSensitiveArray(mlw) = sensitivity_array;
+	MultiListNumCols(mlw) = 1;
+	MultiListNumRows(mlw) = nitems;
+
+	MultiListColWidth(mlw) = MultiListWidth(mlw);
+        MultiListRowHeight(mlw) = FontH(MultiListFont(mlw));
+
 	if (MultiListNumItems(mlw) == 0) {
 	    MultiListList(mlw) = NULL;
 	    MultiListSensitiveArray(mlw) = NULL;
 	}
 	InitializeNewData(mlw);
-	RecalcCoords(mlw,resize,resize);
 	if (XtIsRealized((Widget)mlw)) Redisplay(mlw,NULL,NULL);
 } /* End XfwfMultiListSetNewData */

@@ -111,8 +111,7 @@ typedef struct
 	Dimension		col_width;
 	Dimension		row_height;
 
-	int			right_padding;
-	int			bottom_padding;
+        int                     offset;
 	int			nrows;
 	int			ncols;
 	int			most_recent_clicked_item;
@@ -181,10 +180,10 @@ typedef struct _XfwfMultiListRec
 #define	MultiListClickExtends(w)	(InstanceMultiList(w)->clickExtends)
 #define	MultiListDrawGray(w)	        (InstanceMultiList(w)->drawgray)
 
+#define	MultiListOffset(w)	        (InstanceMultiList(w)->offset)
+
 #define	MultiListColWidth(w)		(InstanceMultiList(w)->col_width)
 #define	MultiListRowHeight(w)		(InstanceMultiList(w)->row_height)
-#define	MultiListRightPadding(w)	(InstanceMultiList(w)->right_padding)
-#define	MultiListBottomPadding(w)	(InstanceMultiList(w)->bottom_padding)
 #define	MultiListNumRows(w)		(InstanceMultiList(w)->nrows)
 #define	MultiListNumCols(w)		(InstanceMultiList(w)->ncols)
 #define	MultiListMostRecentItem(w)	(InstanceMultiList(w)->most_recent_clicked_item)

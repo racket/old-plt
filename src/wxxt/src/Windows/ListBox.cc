@@ -82,7 +82,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     wxWindow_Xintern *ph;
     Widget wgt;
     Bool vert;
-    Dimension row_height;
     long labelw = 0, labelh = 0;
 
     ChainToPanel(panel, style | ((long)multiple), name);
@@ -128,10 +127,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 NULL);
     X->handle = wgt;
 
+    XtVaSetValues(X->scroll, XtNautoAdjustScrollbars, 0, NULL);
+    misc_flags |= 8; /* Indicates no auto-scroll. */
+
     Set(n, choices);
-    // configure scrollbar
-    XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
-    XtVaSetValues(X->scroll,  XtNvScrollAmount, row_height, NULL);
     // callback
     callback = func;
     XtAddCallback(X->handle, XtNcallback,
@@ -169,28 +168,12 @@ wxListBox::~wxListBox(void)
 
 void wxListBox::ChangeColours(void)
 {
-    wxItem::ChangeColours();
-    if (X->scroll) {
-      wxColour *bgc;
-      bgc = parent->GetBackgroundColour();
-      if (bgc) {
-	unsigned long pixel;
-	pixel = bgc->GetPixel(cmap);
-	XtVaSetValues(X->scroll, XtNbackground,
-		      pixel, NULL);
-      }
-      if (label_fg)
-	XtVaSetValues(X->scroll, XtNforeground,
-		      label_fg->GetPixel(cmap), NULL);
-    }
 }
 
 void wxListBox::SetSize(int x, int y, int width, int height, int flags)
 {
-    if (width > -1)
-      XtVaSetValues(X->handle, XtNlongest, (Dimension)width, NULL); 
     wxItem::SetSize(x, y, width, height, flags);
-    XtVaSetValues(X->handle, XtNwidth, 0, NULL);
+    OnListSize(width, height);
 }
 
 //-----------------------------------------------------------------------------
@@ -326,76 +309,66 @@ void wxListBox::Set(int n, char *_choices[])
   SetInternalData();
 }
 
-void wxListBox::Set(wxStringList *slist)
-{
-    int	n;
-    int i = 0;
-    wxNode *node;
-    char **sa;
-
-    n = slist->Number();
-
-    // clear ListBox
-    Clear();
-    // copy choices and initialize client_data
-    num_choices = n;
-    num_free = LIST_CHUNK_SIZE;
-    sa = new char*[n+num_free];
-    choices = sa;
-    sa = new char*[n+num_free];
-    client_data = sa;
-    for (node = slist->First(); node; node = node->Next()) {
-      char *s;
-      s = (char*)node->Data();
-      s = copystring(s);
-      choices[i] = s;
-      client_data[i] = NULL;
-      ++i;
-    }
-    SetInternalData();
-}
-
 void wxListBox::SetInternalData(void)
 {
     int ww, hh;
-    Position pos;
 
     GetSize(&ww, &hh);
     XfwfMultiListSetNewData(
 	MULTILIST, num_choices ? choices : (String*)NULL, num_choices,
 	ww, TRUE, (Boolean*)NULL);
-   
-    /* Make sure current scroll pos is legal. */
-    XtVaGetValues(X->handle, XtNy, &pos, NULL);
-    Scroll(0, pos);
+
+    OnListSize(0, 0);
+}
+
+void wxListBox::OnScroll(wxScrollEvent* event)
+{
+  int p;
+
+  wxItem::OnScroll(event);
+
+  p = GetScrollPos(wxVERTICAL);
+  XtVaSetValues(X->handle, XtNoffset, p, NULL);
+}
+
+void wxListBox::OnSize(int width, int height)
+{
+  OnListSize(width, height);
+  wxItem::OnSize(width, height);
+}
+
+void wxListBox::OnListSize(int, int)
+{
+  int v, s;
+  v = NumberOfVisibleItems();
+  s = num_choices - v;
+  if (s < 0)
+    s = 0;
+  SetScrollRange(wxVERTICAL, s);
+  if (!v)
+    v = 1;
+  SetScrollPage(wxVERTICAL, v);
 }
 
 void wxListBox::SetFirstItem(int n)
 {
-    Dimension row_height;
-    XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
-    Scroll(0, n * row_height);
+  SetScrollPos(wxVERTICAL, n);
+    
+  n = GetScrollPos(wxVERTICAL);
+  XtVaSetValues(X->handle, XtNoffset, n, NULL);
 }
 
 int wxListBox::GetFirstItem()
 {
-  Dimension row_height;
-  Position y;
-  XtVaGetValues(X->handle, XtNrowHeight, &row_height, XtNy, &y, NULL);
-
-  y = -y;
-  if (y % row_height)
-    return (y / row_height) + 1;
-  else
-    return (y / row_height);
+  return GetScrollPos(wxVERTICAL);
 }
 
 void wxListBox::SetFirstItem(char *s)
 {
-    int n;
-    if ((n = FindString(s)) > -1) {
-	SetFirstItem(n);
-    }
+  int n;
+  if ((n = FindString(s)) > -1) {
+    SetFirstItem(n);
+  }
 }
 
 int wxListBox::NumberOfVisibleItems()

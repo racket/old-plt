@@ -183,13 +183,15 @@ static char *make_load_cd(char *file)
   return s;
 }
 
-static char *make_require_lib(char *file)
+static char *make_require_lib(const char *file, const char *coll)
 {
   char *s;
   
-  s = (char *)malloc(strlen(file) + 21);
+  s = (char *)malloc(strlen(file) + strlen(coll) + 31);
   strcpy(s, "(require-library \"");
   strcat(s, file);
+  strcat(s, "\" \"");
+  strcat(s, coll);
   strcat(s, "\")");
   return s;
 }
@@ -431,11 +433,26 @@ int actual_main(int argc, char *argv[])
 	  }
 	  argv++;
 	  --argc;
-	  evals_and_loads[num_enl] = make_require_lib(argv[0]);
+	  evals_and_loads[num_enl] = make_require_lib(argv[0], "mzlib");
+	  is_load[num_enl++] = 0;
+	  break;
+	case 'L':
+	  if (argc < 3) {
+	    printf("%s: Missing %s after %s switch.\n", 
+		   prog, 
+		   (argc < 2) ? "file and collection" : "collection",
+		   real_switch);
+	    goto show_need_help;
+	  }
+	  argv++;
+	  --argc;
+	  evals_and_loads[num_enl] = make_require_lib(argv[0], argv[1]);
+	  argv++;
+	  --argc;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'w':
-	  evals_and_loads[num_enl] = make_require_lib("awk.ss");
+	  evals_and_loads[num_enl] = make_require_lib("awk.ss", "mzlib");
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'q':
@@ -591,6 +608,7 @@ int actual_main(int argc, char *argv[])
 	 "  -F : Loads all remaining arguments after MzScheme starts.\n"
 	 "  -D : Load/cds all remaining arguments after MzScheme starts.\n"
 	 "  -l <file> : Same as -e '(require-library \"<file>\")'.\n"
+	 "  -L <file> <coll> : Same as -e '(require-library \"<file>\" \"<coll>\")'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 	 "  -w, --awk : Same as -l awk.ss.\n"

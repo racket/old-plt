@@ -1,7 +1,7 @@
 #|
 
 When modifying the string constants files,
-please adhear to these guidelines:
+please adhere to these guidelines:
 
 - All the entries in english-string-constants.ss have the same format
   (name string).  If the purpose of an entry you are adding to the

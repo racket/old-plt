@@ -663,6 +663,8 @@ Bool wxFrame::IsVisible(void)
             return FALSE;
 }
 
+#ifndef OS_X
+
 //-----------------------------------------------------------------------------
 void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD, 
                                 int& savePortH, int& savePortV)
@@ -685,8 +687,6 @@ void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD,
 	::SetOrigin(savePortH, savePortV);
 	::SetGWorld(oldPort, oldGD);
 }
-
-#ifndef OS_X
 
 //-----------------------------------------------------------------------------
 // Mac platform only; internal use only.

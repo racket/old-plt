@@ -54,6 +54,8 @@ class wxCanvasDC: public wxbCanvasDC
   virtual void BeginDrawing(void);
   virtual void EndDrawing(void);
   virtual void SetCurrentDC(void); // mac platform only
+  int DCOffsetX; // mac platform only 
+  int DCOffsetY; // mac platform only
 
   void FloodFill(float x1, float y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
   Bool GetPixel(float x1, float y1, wxColour* col) ;

@@ -185,10 +185,10 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(this);
-		int theRootX = 0, theRootY = 0;
+                DCOffsetX = DCOffsetY = 0;
 		if (canvas)
-			canvas->ClientArea()->FrameContentAreaOffset(&theRootX, &theRootY);
-		::SetOrigin(-theRootX, -theRootY);
+			canvas->ClientArea()->FrameContentAreaOffset(&DCOffsetX, &DCOffsetY);
+                SetOrigin(-DCOffsetX,-DCOffsetY);
 		wxMacSetClip();
 		cMacCurrentTool = kPenTool; /* to force setting bg, etc. */
 		wxMacSetCurrentTool(kNoTool);

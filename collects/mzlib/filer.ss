@@ -164,7 +164,8 @@
      (case-lambda 
       [(name) (find-library name "mzlib")]
       [(name collection . cp)
-       (let ([dir (apply collection-path collection cp)])
+       (let ([dir (with-handlers ([void (lambda (exn) #f)])
+		      (apply collection-path collection cp))])
 	 (if dir
 	     (let ([file (build-path dir name)])
 	       (if (file-exists? file)

@@ -387,7 +387,7 @@
 						  [p-s (print-struct)])
 					      (when p-s
 						    (print-struct #f))
-					      (display obj p)
+					      ((if display? display write) obj p)
 					      (when p-s
 						    (print-struct p-s))
 					      (get-output-string p))

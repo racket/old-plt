@@ -229,7 +229,7 @@
 							   (null? (cdddr s)))))
 					     (let ([name (cadr s)]
 						   [collection (if (null? (cddr s))
-								   "standard"
+								   "mzlib"
 								   (caddr s))])
 					       (if expand-rl?
 						   (let* ([key (string->symbol (string-append collection (string #\null) name))])

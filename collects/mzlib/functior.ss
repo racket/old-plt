@@ -7,16 +7,23 @@
    (define compose
      (polymorphic
       (case-lambda 
-       [(f) f]
+       [(f) (if (procedure? f) f (raise-type-error 'compose "procedure" f))]
        [(f g)
-	(if (eqv? 1 (arity f)) ; optimize: don't use call-w-values
-	    (if (eqv? 1 (arity g)) ; optimize: single arity everywhere
-		(lambda (x) (f (g x)))
-		(lambda args (f (apply g args))))
-	    (lambda args
-	      (call-with-values
-	       (lambda () (apply g args))
-	       f)))]
+	(let ([f (compose f)]
+	      [g (compose g)])
+	  (if (eqv? 1 (arity f)) ; optimize: don't use call-w-values
+	      (if (eqv? 1 (arity g)) ; optimize: single arity everywhere
+		  (lambda (x) (f (g x)))
+		  (lambda args (f (apply g args))))
+	      (if (eqv? 1 (arity g)) ; optimize: single input
+		  (lambda (a)
+		    (call-with-values
+		     (lambda () (g a))
+		     f))
+		  (lambda args
+		    (call-with-values
+		     (lambda () (apply g args))
+		     f)))))]
        [(f . more)
 	(let ([m (apply compose more)])
 	  (compose f m))])))

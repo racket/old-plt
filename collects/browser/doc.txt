@@ -140,6 +140,11 @@ document (and "Here" is boldfaced).
   controls permit a user to move back and forth in the hypertext
   history.
 
+  The mixin adds a initialization argument, info-line?, which is a
+  boolean indicating whether the browser should contain a line to
+  display special "MZINFO" tags in a page. These tags are used
+  primarily by the PLT documentation.
+
   The mixin adds the following instance variables:
 
 >   make-canvas :: (send o make-canvas)

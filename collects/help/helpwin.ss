@@ -136,7 +136,7 @@
 						   (stop-search))
 						 (super-leaving-page page new-page))]
 					      [on-navigate stop-search])
-					    (sequence (super-init (send f get-area-container))))))
+					    (sequence (super-init #t (send f get-area-container))))))
 	  (define results (send html-panel get-canvas))
 
 	  (define before-results

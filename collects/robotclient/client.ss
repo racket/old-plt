@@ -13,14 +13,13 @@
                                 (custodian-shutdown-all client-custodian)
                                 (printf "~a~n" (exn-message ex))
                                 (display (score))(newline)
-                                (raise ex)
+                                ;(raise ex)
                                 (score))))
           (let-values (((input output) (tcp-connect host-name port)))
             (display "Player" output)
             (newline output)
-            (read-board! input (cond
-                                 (gui? (dynamic-require "gui-client.ss" 'initialize))
-                                 (else void)))
+	    (score 0)
+            (read-board! input gui?)
             (do-turn (lambda (x) (score (+ (score) x))) 
                      baseline? gui? input output)
             (score))))))
@@ -73,8 +72,6 @@
       (let ((robots (read-response! update-score
                                     packages
                                     in 
-                                    (cond
-                                      (gui? (dynamic-require "gui-client.ss" 'update))
-                                      (else void)))))
+				    gui?)))
         (loop (read-packages in) robots))))
   )

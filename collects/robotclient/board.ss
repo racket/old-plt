@@ -195,7 +195,7 @@
                                 (token-NUM i))
                                (else 'EOF))))))))
           
-  (define (read-initial-response! in init-gui)
+  (define (read-initial-response! in gui?)
     (let* ((responses
             (filter (lambda (x)
                       (eq? 'X (response-name x)))
@@ -211,8 +211,10 @@
                     (set-spot (board) x y (set-robot (get-spot (board) x y))))
                   (hash-table-put! (robot-table) (robot-id robot) robot))
                 robots)
-      (init-gui (board-width) (board-height) (board)
-                robots)
+      (cond
+       (gui?
+	((dynamic-require "gui-client.ss" 'initialize)
+	 (board-width) (board-height) (board) robots)))
       (robot-indexes (remove-dups (map robot-id robots)))))
     
   (define (find-dead alive all)
@@ -235,7 +237,7 @@
          (loop (cdr l) (cons (car l) r))))))
           
   
-  (define (read-response! set-score packages in gui-update)
+  (define (read-response! set-score packages in gui?)
     (let* ((responses (read-response in))
            (flat-responses (apply append responses))
            (alive-robots (remove-dups (map (lambda (x) 
@@ -245,37 +247,40 @@
             (find-dead alive-robots (robot-indexes)))
            (package-table (make-hash-table)))
       ;(printf "~a~n" responses)
-      (gui-update (map (lambda (r)
-                         (let ((good-responses
-                                (filter (lambda (r)
-                                          (not (eq? 'x (response-name r))))
-                                        r)))
-                           (case (response-name (car good-responses))
-                             ((n s w e) (list (response-id (car good-responses)) 
-                                              0
-                                              (response-name (car good-responses))))
-                             ((p) (list (response-id (car good-responses))
-                                        0
-                                        (cons 'pick
-                                              (map response-arg
-                                                   (filter (lambda (x)
-                                                             (eq? 'P (response-name x)))
-                                                           good-responses)))))
-                             ((d) (list (response-id (car good-responses))
-                                        0
-                                        (cons 'drop
-                                              (map response-arg
-                                                   (filter (lambda (x)
-                                                             (eq? 'D (response-name x)))
-                                                           good-responses))))))))
-                       (filter (lambda (rl)
-                                 (not (eq? 'nothing (response-name (car rl)))))
-                               responses))
-                  packages)
-                                    
+      (cond
+       (gui?
+	((dynamic-require "gui-client.ss" 'update)
+	 (map (lambda (r)
+		(let ((good-responses
+		       (filter (lambda (r)
+				 (not (eq? 'x (response-name r))))
+			       r)))
+		  (case (response-name (car good-responses))
+		    ((n s w e) (list (response-id (car good-responses)) 
+				     0
+				     (response-name (car good-responses))))
+		    ((p) (list (response-id (car good-responses))
+			       0
+			       (cons 'pick
+				     (map response-arg
+					  (filter (lambda (x)
+						    (eq? 'P (response-name x)))
+						  good-responses)))))
+		    ((d) (list (response-id (car good-responses))
+			       0
+			       (cons 'drop
+				     (map response-arg
+					  (filter (lambda (x)
+						    (eq? 'D (response-name x)))
+						  good-responses))))))))
+	      (filter (lambda (rl)
+			(not (eq? 'nothing (response-name (car rl)))))
+		      responses))
+	 packages)))
+	
       (for-each
        (lambda (p)
-         (hash-table-put! package-table
+	 (hash-table-put! package-table
                           (package-id p)
                           p))
        packages)
@@ -344,7 +349,7 @@
          flat-responses)
         (robot-indexes alive-robots))))
         
-  (define (read-board! input init-gui)
+  (define (read-board! input gui?)
     (board-width (read input))
     (board-height (read input))
     (robot-table (make-hash-table))
@@ -368,7 +373,7 @@
     (player-money (read input))
     (player-initial-money (player-money))
     (read-line input)
-    (read-initial-response! input init-gui))
+    (read-initial-response! input gui?))
     
   (define (fix-home!)
     (let ((spot (get-spot (board) (get-player-x) (get-player-y))))

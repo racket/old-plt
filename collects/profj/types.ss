@@ -372,6 +372,19 @@
               (string=? (method-record-name m) mname))
             (class-record-methods c)))
   
+  (define (remove-dups methods)
+    (cond
+      ((null? methods) methods)
+      ((meth-member? (car methods) (cdr methods))
+       (remove-dups (cdr methods)))
+      (else (cons (car methods) (remove-dups (cdr methods))))))
+  
+  (define (meth-member? meth methods)
+    (and (not (null? methods))
+         (or (andmap type=? (method-record-atypes meth) 
+                            (method-record-atypes (car methods)))
+             (meth-member? meth (cdr methods)))))
+  
   (define sort 
     (lambda (l)
       (quicksort l
@@ -391,8 +404,9 @@
     (let* ((a (length arg-types))
            (m-atypes method-record-atypes)
            (a-convert? (lambda (t1 t2) (assignment-conversion t1 t2 type-recs)))
-           (methods (filter (lambda (mr) (= a (length (m-atypes mr)))) methods))
-           (methods-same (filter (lambda (mr) (andmap type=? (m-atypes mr) arg-types))
+           (methods (remove-dups (filter (lambda (mr) (= a (length (m-atypes mr)))) methods)))
+           (methods-same (filter (lambda (mr) 
+                                   (andmap type=? (m-atypes mr) arg-types))
                                  methods))
            (assignable (filter (lambda (mr)
                                  (andmap a-convert? (m-atypes mr) arg-types))
@@ -401,7 +415,7 @@
                               (map (lambda (mr)
                                      (list (number-assign-conversions arg-types (m-atypes mr) type-recs)
                                            mr))
-                                   assignable))))           
+                                   assignable))))
       (cond
         ((null? methods) (arg-count-fail))
         ((= 1 (length methods-same)) (car methods-same))

@@ -66,7 +66,7 @@
         (datum->syntax-object so 
                               `(begin ,@(filter (lambda (x) x)
                                                 (map (lambda (r) (get-keepable-reqs r (syntax-object->datum so)))
-                                                     (map cadr compiled-pieces)))
+                                                     (apply append (map cadr compiled-pieces))))
                                       ,@(map caddr compiled-pieces))
                               #f))))
   
@@ -79,11 +79,11 @@
                       (syntax begin)))))
   
   (define (get-keepable-reqs req names)
-    (syntax-case req ()
-      ((lib "drj" "libs" "java" "lang" name) 
-       (and (not (member-name (syntax-object->datum (syntax name)) names) req)))
+    (syntax-case req (lib file)
+      ((lib name "drj" "libs" "java" "lang")
+       (and (not (member-name (syntax-object->datum (syntax name)) (cdr names))) req))
       ((file name)
-       (and (not (member-name (syntax-object->datum (syntax name)) names) req)))
+       (and (not (member-name (syntax-object->datum (syntax name)) (cdr names))) req))
       (name #f)))
   
   (define (member-name name names)

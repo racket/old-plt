@@ -1215,7 +1215,7 @@
                        ((char int long float double boolean) value)
                        ((String string) 
                         `(let ((temp-obj (make-object |String|)))
-                           (send temp-obj make-scheme-string ,value)
+                           (send temp-obj make-mzscheme-string ,value)
                            temp-obj))
                        ((null) 'null)
                        (else
@@ -1270,7 +1270,7 @@
           ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) ,op ,left ,right) source))
           ;comparisons
           ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
-          ((==) (make-syntax #f `(,(create-syntax #f '= (build-src key)) ,left ,right) source))
+          ((==) (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source))
           ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
           ;logicals
           ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) ,op ,left ,right) source))

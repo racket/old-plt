@@ -3,6 +3,7 @@
   (unit/sig drscheme:language^
     (import [mred : mred^]
 	    [drscheme:basis : drscheme:basis^]
+	    [aries : plt:aries^]
 	    mzlib:function^
 	    mzlib:print-convert^)
 
@@ -14,13 +15,18 @@
 			    unmatched-cond/case-is-error?
 			    allow-improper-lists?
 			    sharing-printing?
+			    signal-undefined?
 			    printing))
 
     (define settings
-      (list (list 'Beginner (make-setting 'core #t #f #t #f #f 'constructor-style))
-	    (list 'Intermediate (make-setting 'structured #t #f #t #f #f 'constructor-style))
-	    (list 'Advanced (make-setting 'side-effecting #t #f #t #f #t 'constructor-style))
-	    (list 'Quasi-R4RS (make-setting 'advanced #t #t #t #t #f 'r4rs-style))))
+      (list (list 'Beginner (make-setting 'core #t #f #t #f #f #t
+					  'constructor-style))
+	    (list 'Intermediate (make-setting 'structured #t #f #t #f #f #t
+					      'constructor-style))
+	    (list 'Advanced (make-setting 'side-effecting #t #f #t #f #t #t
+					  'constructor-style))
+	    (list 'Quasi-R4RS (make-setting 'advanced #t #t #t #t #f #t
+					    'r4rs-style))))
 
     (define copy-setting
       (lambda (x)
@@ -56,6 +62,7 @@
     (define check-syntax-level (car drscheme:basis:level-symbols)) 
     (define callback
       (lambda (pref)
+	(aries:signal-undefined? (setting-signal-undefined? pref))
 	(show-sharing (setting-sharing-printing? pref))
 	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
@@ -181,6 +188,12 @@
 			      "Unmatched cond/case is an error?"
 			      "on restart"
 			      dynamic-panel)]
+	     [signal-undefined?
+	      (make-check-box set-setting-signal-undefined?!
+			      setting-signal-undefined?
+			      "Signal undefined variables when first referenced?"
+			      "next execution"
+			      dynamic-panel)]
 	     [sharing-printing?
 	      (make-check-box set-setting-sharing-printing?!
 			      setting-sharing-printing?
@@ -236,6 +249,7 @@
 		  (and (compare-check-box case-sensitive? setting-case-sensitive?)
 		       (compare-check-box allow-set!-on-undefined? setting-allow-set!-on-undefined?)
 		       (compare-check-box unmatched-cond/case-is-error? setting-unmatched-cond/case-is-error?)
+		       (compare-check-box signal-undefined? setting-signal-undefined?)
 		       (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 		       (compare-check-box sharing-printing? setting-sharing-printing?)
 		       (eq? (printer-number->symbol (send printing get-selection))
@@ -268,11 +282,13 @@
 		     (list setting-case-sensitive?
 			   setting-allow-set!-on-undefined?
 			   setting-unmatched-cond/case-is-error?
+			   setting-signal-undefined?
 			   setting-allow-improper-lists?
 			   setting-sharing-printing?)
 		     (list case-sensitive? 
 			   allow-set!-on-undefined? 
 			   unmatched-cond/case-is-error?
+			   signal-undefined?
 			   allow-improper-lists?
 			   sharing-printing?))
 		(reset-choice))])

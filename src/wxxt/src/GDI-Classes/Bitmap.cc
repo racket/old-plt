@@ -42,6 +42,10 @@
 #include <X11/cursorfont.h>
 
 extern int read_JPEG_file(char * filename, wxBitmap *bm);
+extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
+
+extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask);
+extern int wx_write_png(char *file_name, wxBitmap *bm);
 
 // hints for what to free in wxBitmap::Destroy()
 enum {
@@ -297,85 +301,95 @@ extern int wxsGetImageType(char *);
 // load bitmaps
 Bool wxBitmap::LoadFile(char *fname, long flags)
 {
-  Bool getMask;
+  int getMask;
 
-    if (selectedIntoDC)
-      return FALSE;
+  if (selectedIntoDC)
+    return FALSE;
 
-    Destroy(); // destroy old pixmap if any
+  Destroy(); // destroy old pixmap if any
 
-    getMask = !!(flags & wxBITMAP_TYPE_MASK);
+  if (flags & wxBITMAP_TYPE_MASK)
+    getMask = 1;
+  else if (flags & wxBITMAP_TYPE_ALPHA)
+    getMask = 2;
+  else
+    getMask = 0;
 
-    if (!flags || (flags == wxBITMAP_TYPE_MASK))
-      flags = wxsGetImageType(fname);
+  if (!flags || (flags == wxBITMAP_TYPE_MASK) || (flags == wxBITMAP_TYPE_ALPHA))
+    flags = wxsGetImageType(fname);
 
-    /* MATTHEW: move "Xbitmap = new wxBitmap_Xintern" into
-       two appropriate cases. */
+  /* MATTHEW: move "Xbitmap = new wxBitmap_Xintern" into
+     two appropriate cases. */
 
-    if (flags & wxBITMAP_TYPE_XBM) { // XBM file format
-      Xbitmap = new wxBitmap_Xintern;
+  if (flags & wxBITMAP_TYPE_XBM) { // XBM file format
+    Xbitmap = new wxBitmap_Xintern;
 
-	if (XReadBitmapFile(wxAPP_DISPLAY, wxAPP_ROOT, fname,
-			    &(Xbitmap->width), &(Xbitmap->height),
-			    &(Xbitmap->x_pixmap), 
-			    &(Xbitmap->x_hot), &(Xbitmap->y_hot))
-	    == BitmapSuccess)
-	{
-	    Xbitmap->type  = __BITMAP_NORMAL;
-	    Xbitmap->depth = 1;
-	} else {
-	    DELETE_OBJ Xbitmap;
-	    Xbitmap = NULL;
-	}
-    }
-    else if (flags == wxBITMAP_TYPE_JPEG) {
-      if (!read_JPEG_file(fname, this)) {
-	Destroy();
-      }
-    }
-#if USE_XPM
-    else if (flags & wxBITMAP_TYPE_XPM) { // XPM file format
-      Xbitmap = new wxBitmap_Xintern;
-
-      // what I want to get
-#ifdef MZ_PRECISE_GC
+    if (XReadBitmapFile(wxAPP_DISPLAY, wxAPP_ROOT, fname,
+			&(Xbitmap->width), &(Xbitmap->height),
+			&(Xbitmap->x_pixmap), 
+			&(Xbitmap->x_hot), &(Xbitmap->y_hot))
+	== BitmapSuccess)
       {
-	XpmAttributes *attr;
-	attr = (XpmAttributes *)GC_malloc_atomic(sizeof(XpmAttributes));
-	Xbitmap->xpm = attr;
+	Xbitmap->type  = __BITMAP_NORMAL;
+	Xbitmap->depth = 1;
+      } else {
+	DELETE_OBJ Xbitmap;
+	Xbitmap = NULL;
       }
-#else
-      Xbitmap->xpm = new WXGC_ATOMIC XpmAttributes;
-#endif
-      Xbitmap->xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness | XpmDepth;
-      Xbitmap->xpm->closeness = 40000;
-      Xbitmap->xpm->depth = DefaultDepth(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
-      
-      if (XpmReadFileToPixmap(wxAPP_DISPLAY, wxAPP_ROOT, fname,
-			      &(Xbitmap->x_pixmap), (Pixmap*)NULL, Xbitmap->xpm)
-	  == XpmSuccess)
-	{
-	  // read pixmap ok!
-	  int sdummy; unsigned int udummy; Window wdummy;
-	  Xbitmap->type   = __BITMAP_XPM;
-	  Xbitmap->width  = Xbitmap->xpm->width;
-	  Xbitmap->height = Xbitmap->xpm->height;
-	  Xbitmap->x_hot  = Xbitmap->xpm->x_hotspot;
-	  Xbitmap->y_hot  = Xbitmap->xpm->y_hotspot;
-	  XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
-		       &udummy, &udummy, &udummy, &(Xbitmap->depth));
-	} else {
-	  // read failed: free all memory
-	  XpmFreeAttributes(Xbitmap->xpm);
-	  DELETE_VAL Xbitmap->xpm;
-	  DELETE_OBJ Xbitmap;
-	  Xbitmap = NULL;
-	}
+  }
+  else if (flags & wxBITMAP_TYPE_JPEG) {
+    if (!read_JPEG_file(fname, this)) {
+      Destroy();
     }
+  }
+  else if (flags & wxBITMAP_TYPE_PNG) {
+    if (!wx_read_png(fname, this, getMask)) {
+      Destroy();
+    }
+  }
+#if USE_XPM
+else if (flags & wxBITMAP_TYPE_XPM) { // XPM file format
+  Xbitmap = new wxBitmap_Xintern;
+
+  // what I want to get
+#ifdef MZ_PRECISE_GC
+  {
+    XpmAttributes *attr;
+    attr = (XpmAttributes *)GC_malloc_atomic(sizeof(XpmAttributes));
+    Xbitmap->xpm = attr;
+  }
+#else
+  Xbitmap->xpm = new WXGC_ATOMIC XpmAttributes;
+#endif
+  Xbitmap->xpm->valuemask = XpmReturnInfos | XpmReturnPixels | XpmCloseness | XpmDepth;
+  Xbitmap->xpm->closeness = 40000;
+  Xbitmap->xpm->depth = DefaultDepth(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
+  
+  if (XpmReadFileToPixmap(wxAPP_DISPLAY, wxAPP_ROOT, fname,
+			  &(Xbitmap->x_pixmap), (Pixmap*)NULL, Xbitmap->xpm)
+      == XpmSuccess)
+    {
+      // read pixmap ok!
+      int sdummy; unsigned int udummy; Window wdummy;
+      Xbitmap->type   = __BITMAP_XPM;
+      Xbitmap->width  = Xbitmap->xpm->width;
+      Xbitmap->height = Xbitmap->xpm->height;
+      Xbitmap->x_hot  = Xbitmap->xpm->x_hotspot;
+      Xbitmap->y_hot  = Xbitmap->xpm->y_hotspot;
+      XGetGeometry(wxAPP_DISPLAY, Xbitmap->x_pixmap, &wdummy, &sdummy, &sdummy,
+		   &udummy, &udummy, &udummy, &(Xbitmap->depth));
+    } else {
+      // read failed: free all memory
+      XpmFreeAttributes(Xbitmap->xpm);
+      DELETE_VAL Xbitmap->xpm;
+      DELETE_OBJ Xbitmap;
+      Xbitmap = NULL;
+    }
+}
 #endif
 #if USE_IMAGE_LOADING_IN_X
-  else if ((flags & wxBITMAP_TYPE_ANY) || (flags & wxBITMAP_TYPE_BMP) ||
-           (flags & wxBITMAP_TYPE_GIF))
+else if ((flags & wxBITMAP_TYPE_ANY) || (flags & wxBITMAP_TYPE_BMP) ||
+	 (flags & wxBITMAP_TYPE_GIF))
   {
     wxColourMap *map = NULL;
     Bool success = FALSE;
@@ -398,7 +412,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
   }
 #endif
 
-    return Ok();
+  return Ok();
 }
 
 static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname, 
@@ -486,6 +500,12 @@ Bool wxBitmap::SaveFile(char *fname, int type, wxColourMap *WXUNUSED(cmap))
       return (XpmWriteFileFromPixmap(wxAPP_DISPLAY, fname, Xbitmap->x_pixmap,
 				     (Pixmap)NULL, (XpmAttributes*)NULL)
 	      == XpmSuccess);
+      break; // write failed
+    case wxBITMAP_TYPE_JPEG:
+      return write_JPEG_file(fname, this, 75);
+      break; // write failed
+    case wxBITMAP_TYPE_PNG:
+      return wx_write_png(fname, this);
       break; // write failed
     default:
       break; // no other save methods so far

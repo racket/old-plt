@@ -2634,7 +2634,7 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
 # ifdef USE_MAC_TCP
   {
     here_a = ((TCPOpenPB *)tcp->tcp.create_pb)->localHost;
-    here_a = ((TCPOpenPB *)tcp->tcp.create_pb)->remoteHost;
+    there_a = ((TCPOpenPB *)tcp->tcp.create_pb)->remoteHost;
   }
 # endif
 

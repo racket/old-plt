@@ -1,5 +1,7 @@
 /*
- * Derived from IJG's example.c.
+ * This file has both JPEG and PNG support (despite the file name).
+ *
+ * The JPEG part Derived from IJG's example.c.
  */
 
 #if defined(_MSC_VER) && defined(MZ_PRECISE_GC)
@@ -13,10 +15,11 @@
 #include "wx_gdi.h"
 
 #include <stdio.h>
-#include <setjmp.h>
 extern "C" {
 # include "jpeglib.h"
+# include "libpng/png.h"
 }
+#include <setjmp.h>
 
 #ifdef MPW_CPLUS
 extern "C" { typedef void (*JPEG_ERROR_F_PTR)(j_common_ptr info); }
@@ -93,12 +96,34 @@ wxMemoryDC *create_dc(int width, int height, wxBitmap *bm)
   wxMemoryDC *dc;
 
   dc = new wxMemoryDC();
-  bm->Create(width, height);
+  if (width >= 0)
+    bm->Create(width, height);
   dc->SelectObject(bm);
 
   if (!dc->Ok()) {
     dc->SelectObject(NULL);
     return NULL;
+  }
+
+  return dc;
+}
+
+wxMemoryDC *create_reader_dc(wxBitmap *bm, int *desel)
+{
+  wxMemoryDC *dc;
+
+  dc = new wxMemoryDC(1); /* 1 => read-only */
+  dc->SelectObject(bm);
+  if (!dc->GetObject()) {
+# ifdef wx_msw
+    if (bm->selectedInto) {
+      /* Even selecting into a read-only dc doesn't seem to work
+	 if it already has a dc. Just use that one, then. */
+      dc = (wxMemoryDC *)bm->selectedInto;
+      *desel = 0;
+    } else
+# endif
+      return NULL;
   }
 
   return dc;
@@ -309,19 +334,7 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
   END_XFORM_SKIP;
 #endif
 
-  dc = new wxMemoryDC(1); /* 1 => read-only */
-  dc->SelectObject(bm);
-  if (!dc->GetObject()) {
-# ifdef wx_msw
-    if (bm->selectedInto) {
-      /* Even selecting into a read-only dc doesn't seem to work
-      /* if it already has a dc. Just use that one, then. */
-      dc = (wxMemoryDC *)bm->selectedInto;
-      desel = 0;
-    } else
-# endif
-      return 0;
-  }
+  dc = create_reader_dc(bm, &desel);
 
   wid = bm->GetWidth();
   row_pointer = (JSAMPROW)malloc(sizeof(JSAMPLE) * 3 * wid);
@@ -456,6 +469,390 @@ int write_JPEG_file(char *filename, wxBitmap *bm, int quality)
  * On some systems you may need to set up a signal handler to ensure that
  * temporary files are deleted if the program is interrupted.  See libjpeg.doc.
  */
+
+/**********************************************************************/
+
+static char *png_err_msg;
+static int pem_registered;
+
+static void user_error_proc(png_structp png_ptr, png_const_charp msg)
+{
+  int len;
+
+  if (!pem_registered) {
+    wxREGGLOB(png_err_msg);
+  }
+  len = strlen(msg);
+  png_err_msg = new WXGC_ATOMIC char[len + 1];
+  memcpy(png_err_msg, msg, len + 1);
+  
+  longjmp(png_jmpbuf(png_ptr), 1);
+}
+
+static void user_warn_proc(png_structp info, png_const_charp msg)
+{
+}
+
+static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc)
+{
+  int colnum, delta;
+  int step = (mdc ? 4 : 3);
+
+  if (!the_color) {
+    wxREGGLOB(the_color);
+    the_color = new wxColour(0, 0, 0);
+  }
+
+  for (colnum = 0, delta = 0; colnum < cols; colnum++, delta += step) {
+    the_color->Set(row[delta], 
+		   row[delta + 1], 
+		   row[delta + 2]);
+    dc->SetPixel(colnum, rownum, the_color);
+    if (mdc) {
+      the_color->Set(row[delta + 3],
+		     row[delta + 3],
+		     row[delta + 3]);
+      mdc->SetPixel(colnum, rownum, the_color);
+    }
+  }
+}
+
+static void png_get_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc)
+{
+  int colnum, delta, r, g, b;
+  int step = (mdc ? 4 : 3);
+
+  if (!the_color) {
+    wxREGGLOB(the_color);
+    the_color = new wxColour(0, 0, 0);
+  }
+
+  for (colnum = 0, delta = 0; colnum < cols; colnum++, delta += step) {
+    dc->GetPixel(colnum, rownum, the_color);
+    r = the_color->Red();
+    g = the_color->Green();
+    b = the_color->Blue();
+    row[delta] = r;
+    row[delta+1] = g;
+    row[delta+2] = b;
+    if (mdc) {
+      mdc->GetPixel(colnum, rownum, the_color);
+      r = the_color->Red();
+      row[delta+3] = r;
+    }
+  }
+}
+
+
+int wx_read_png(char *file_name, wxBitmap *bm, int w_mask)
+{
+   png_structp png_ptr;
+   png_infop info_ptr;
+   png_uint_32 width, height;
+   int bit_depth, color_type, interlace_type;
+   unsigned int number_passes, pass, y;
+   FILE *fp;
+   png_bytep *rows;
+   wxMemoryDC *dc = NULL;
+   wxMemoryDC *mdc = NULL;
+   wxBitmap *mbm = NULL;
+
+   if ((fp = fopen(file_name, "rb")) == NULL)
+     return 0;
+
+   /* Create and initialize the png_struct with the desired error handler
+    * functions.  If you want to use the default stderr and longjump method,
+    * you can supply NULL for the last three parameters.  We also supply the
+    * the compiler header file version, so that we know if the application
+    * was compiled with a compatible version of the library.  REQUIRED
+    */
+   png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, user_error_proc, user_warn_proc);
+
+   if (png_ptr == NULL)
+   {
+      fclose(fp);
+      return 0;
+   }
+
+   /* Allocate/initialize the memory for image information.  REQUIRED. */
+   info_ptr = png_create_info_struct(png_ptr);
+   if (info_ptr == NULL)
+   {
+      fclose(fp);
+      png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+      return 0;
+   }
+
+   /* Set error handling if you are using the setjmp/longjmp method (this is
+    * the normal method of doing things with libpng).  REQUIRED unless you
+    * set up your own error handlers in the png_create_read_struct() earlier.
+    */
+
+   if (setjmp(png_jmpbuf(png_ptr)))
+   {
+      /* Free all of the memory associated with the png_ptr and info_ptr */
+      png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+      fclose(fp);
+      if (dc)
+	dc->SelectObject(NULL);
+      /* If we get here, we had a problem reading the file */
+      return 0;
+   }
+
+   /* Set up the input control if you are using standard C streams */
+   png_init_io(png_ptr, fp);
+
+   /* The call to png_read_info() gives us all of the information from the
+    * PNG file before the first IDAT (image data chunk).  REQUIRED
+    */
+   png_read_info(png_ptr, info_ptr);
+
+   png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
+		&interlace_type, int_p_NULL, int_p_NULL);
+
+   /* Normalize formal of returned rows: */
+   if (color_type == PNG_COLOR_TYPE_PALETTE)
+     png_set_palette_to_rgb(png_ptr);
+   if (color_type == PNG_COLOR_TYPE_GRAY ||
+       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+     png_set_gray_to_rgb(png_ptr);
+   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+     png_set_tRNS_to_alpha(png_ptr);
+   if (bit_depth == 16)
+     png_set_strip_16(png_ptr);
+
+   /* Expand grayscale images to the full 8 bits from 1, 2, or 4 bits/pixel */
+   png_set_gray_1_2_4_to_8(png_ptr);
+
+   /* Set the background color to draw transparent and alpha images over.
+    * It is possible to set the red, green, and blue components directly
+    * for paletted images instead of supplying a palette index.  Note that
+    * even if the PNG file supplies a background, you are not required to
+    * use it - you should use the (solid) application background if it has one.
+    */
+   if (!w_mask) {
+     png_color_16 *image_background;
+
+     if (png_get_bKGD(png_ptr, info_ptr, &image_background))
+       png_set_background(png_ptr, image_background,
+			  PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+     else {
+       png_color_16 my_background;
+       
+       my_background.red = 0xffff;
+       my_background.green = 0xffff;
+       my_background.blue = 0xffff;
+       my_background.gray = 0xffff;
+
+       png_set_background(png_ptr, &my_background,
+			  PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+     }
+   }
+
+   if (w_mask) {
+     /* Add filler (or alpha) byte (before/after each RGB triplet) */
+     if (w_mask > 1) {
+       /* Keep alphas */
+       png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+     } else {
+       /* Want just a mask: */
+       png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
+       png_set_invert_alpha(png_ptr);
+     }
+   }
+
+   /* Turn on interlace handling.  REQUIRED if you are not using
+    * png_read_image().  To see how to handle interlacing passes,
+    * see the png_read_row() method below:
+    */
+   number_passes = png_set_interlace_handling(png_ptr);
+
+   /* Optional call to gamma correct and add the background to the palette
+    * and update info structure.  REQUIRED if you are expecting libpng to
+    * update the palette for you (ie you selected such a transform above).
+    */
+   png_read_update_info(png_ptr, info_ptr);
+
+   /* Allocate the memory to hold the image using the fields of info_ptr. */
+
+   rows = new png_bytep[height];
+   for (y = 0; y < height; y++) {
+     rows[y] = (png_bytep)(new WXGC_ATOMIC char[png_get_rowbytes(png_ptr, info_ptr)]);
+   }
+
+   dc = create_dc(width, height, bm);
+   if (w_mask) {
+     mbm = new wxBitmap(width, height, ((w_mask > 1) ? 0 : 1));
+     if (mbm->Ok())
+       mdc = create_dc(-1, -1, mbm);
+     else
+       mdc = NULL;
+   }
+   if (!dc || (w_mask && !mdc)) {
+     if (dc)
+       dc->SelectObject(NULL);
+     png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+     fclose(fp);
+     return 0;
+   }
+
+   for (pass = 0; pass < number_passes; pass++) {
+     png_read_rows(png_ptr, rows, NULL, height);
+   }
+
+   for (y = 0; y < height; y++) {
+     png_draw_line(rows[y], width, y, dc, mdc);
+   }
+
+   /* read rest of file, and get additional chunks in info_ptr - REQUIRED */
+   png_read_end(png_ptr, info_ptr);
+
+   /* At this point you have read the entire image */
+
+   /* clean up after the read, and free any memory allocated - REQUIRED */
+   png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+
+   /* close the file */
+   fclose(fp);
+
+   dc->SelectObject(NULL);
+   if (mdc) {
+     mdc->SelectObject(NULL);
+     bm->SetMask(mbm);
+   }
+
+   /* that's it */
+   return 1;
+}
+
+int wx_write_png(char *file_name, wxBitmap *bm)
+{
+   png_structp png_ptr;
+   png_infop info_ptr;
+   int width, height;
+   int bit_depth, color_type;
+   int y;
+   FILE *fp;
+   png_bytep *rows;
+   wxMemoryDC *dc = NULL;
+   wxMemoryDC *mdc = NULL;
+   wxBitmap *mbm = NULL;
+   int desel = 1, mdesel = 1;
+
+   if ((fp = fopen(file_name, "wb")) == NULL)
+     return 0;
+
+   /* Create and initialize the png_struct with the desired error handler
+    * functions.  If you want to use the default stderr and longjump method,
+    * you can supply NULL for the last three parameters.  We also supply the
+    * the compiler header file version, so that we know if the application
+    * was compiled with a compatible version of the library.  REQUIRED
+    */
+   png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, user_error_proc, user_warn_proc);
+
+   if (png_ptr == NULL)
+   {
+      fclose(fp);
+      return 0;
+   }
+
+   /* Allocate/initialize the memory for image information.  REQUIRED. */
+   info_ptr = png_create_info_struct(png_ptr);
+   if (info_ptr == NULL)
+   {
+      fclose(fp);
+      png_destroy_write_struct(&png_ptr, png_infopp_NULL);
+      return 0;
+   }
+
+   /* Set error handling if you are using the setjmp/longjmp method (this is
+    * the normal method of doing things with libpng).  REQUIRED unless you
+    * set up your own error handlers in the png_create_read_struct() earlier.
+    */
+
+   if (setjmp(png_jmpbuf(png_ptr)))
+   {
+      /* Free all of the memory associated with the png_ptr and info_ptr */
+      png_destroy_write_struct(&png_ptr, &info_ptr);
+      fclose(fp);
+      if (dc && desel)
+	dc->SelectObject(NULL);
+      if (mdc && mdesel)
+	mdc->SelectObject(NULL);
+      /* If we get here, we had a problem reading the file */
+      return 0;
+   }
+
+   /* Set up the input control if you are using standard C streams */
+   png_init_io(png_ptr, fp);
+
+   width = bm->GetWidth();
+   height = bm->GetHeight();
+   bit_depth = 8;
+   
+   mbm = bm->GetMask();
+   if (mbm && mbm->Ok() && (mbm->GetWidth() == width) &&  (mbm->GetHeight() == height))
+     color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+    else {
+     color_type = PNG_COLOR_TYPE_RGB;
+     mbm = NULL;
+   }
+
+   /* Set the image information here.  Width and height are up to 2^31,
+    * bit_depth is one of 1, 2, 4, 8, or 16, but valid values also depend on
+    * the color_type selected. color_type is one of PNG_COLOR_TYPE_GRAY,
+    * PNG_COLOR_TYPE_GRAY_ALPHA, PNG_COLOR_TYPE_PALETTE, PNG_COLOR_TYPE_RGB,
+    * or PNG_COLOR_TYPE_RGB_ALPHA.  interlace is either PNG_INTERLACE_NONE or
+    * PNG_INTERLACE_ADAM7, and the compression_type and filter_type MUST
+    * currently be PNG_COMPRESSION_TYPE_BASE and PNG_FILTER_TYPE_BASE. REQUIRED
+    */
+   png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type,
+		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, 
+		PNG_FILTER_TYPE_DEFAULT);
+
+   if (mbm && (mbm->GetDepth() == 1))
+     png_set_invert_alpha(png_ptr);
+
+   /* Write the file header information.  REQUIRED */
+   png_write_info(png_ptr, info_ptr);
+
+   /* Allocate the memory to hold the image using the fields of info_ptr. */
+   rows = new png_bytep[height];
+   for (y = 0; y < height; y++) {
+     rows[y] = (png_bytep)(new WXGC_ATOMIC char[png_get_rowbytes(png_ptr, info_ptr)]);
+   }
+
+   dc = create_reader_dc(bm, &desel);
+   if (mbm)
+     mdc = create_reader_dc(mbm, &mdesel);
+   else
+     mdc = NULL;
+
+   for (y = 0; y < height; y++) {
+     png_get_line(rows[y], width, y, dc, mdc);
+   }
+
+   png_write_image(png_ptr, rows);
+
+   png_write_end(png_ptr, info_ptr);
+
+   /* clean up after the write, and free any memory allocated */
+   png_destroy_write_struct(&png_ptr, &info_ptr);
+
+   /* close the file */
+   fclose(fp);
+
+   if (desel)
+     dc->SelectObject(NULL);
+   if (mdc && mdesel) {
+     mdc->SelectObject(NULL);
+   }
+
+   /* that's it */
+   return 1;
+}
+
+/**********************************************************************/
 
 static unsigned char alternate_icon[] = {
 83,67,70,84,67,70,85,67,70,85,66,70,85,66,70,85,66,70,85,68,71,

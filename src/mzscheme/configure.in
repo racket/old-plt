@@ -654,12 +654,12 @@ if test "${enable_mred}" = "yes" ; then
     mk_needed_dir wxxt/contrib
     mk_needed_dir wxxt/contrib/xpm
   fi
-  mk_needed_dir wxcommon
 
   makefiles="$makefiles
              mred/Makefile
                mred/wxs/Makefile mred/wxme/Makefile
-               mred/gc2/Makefile"
+               mred/gc2/Makefile
+               wxcommon/libpng/Makefile wxcommon/zlib/Makefile"
 
   if test "${enable_quartz}" = "yes" ; then
     makefiles="$makefiles

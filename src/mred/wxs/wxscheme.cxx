@@ -2097,6 +2097,10 @@ int wxsGetImageType(char *fn)
       expect = (unsigned char *)"\xD8\xFF\xE0";
       type = wxBITMAP_TYPE_JPEG;
       break;
+    case 137:
+      expect = (unsigned char *)"PNG\r\n";
+      type = wxBITMAP_TYPE_PNG;
+      break;
     default:
       type = 0;
       break;

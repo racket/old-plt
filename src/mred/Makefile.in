@@ -50,7 +50,7 @@ WXLIBS_wx_xt = ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/u
 MREDX_wx_xt = mredx.o
 WXLIBS_wx_mac = ../wxmac/src/libwxmac.a
 MREDX_wx_mac = mredmac.o simpledrop.o
-WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a
+WXLIBSNORM = mred.o $(MREDX_@WXVARIANT@) wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a $(WXLIBS_@WXVARIANT@) ../wxcommon/jpeg/libjpeg.a ../wxcommon/libpng/libpng.a ../wxcommon/zlib/libz.a
 WXLIBSDYN = libmred.@LIBSFX@
 GUILIBS_wx_xt = $(LDLIBS)
 GUILIBS_wx_mac = @LIBS@
@@ -186,6 +186,12 @@ $(WXDIR)/libwx_xt.a:
 ../wxcommon/jpeg/libjpeg.a:
 	cd ../wxcommon/jpeg; $(MAKE) libjpeg.a
 
+../wxcommon/libpng/libpng.a:
+	cd ../wxcommon/libpng; $(MAKE) libpng.a
+
+../wxcommon/zlib/libz.a:
+	cd ../wxcommon/zlib; $(MAKE) libz.a
+
 CLEANDIR_wx_xt = ../wxxt/src/x
 CLEANDIR_wx_mac = ../wxmac/src
 
@@ -196,6 +202,8 @@ clean:
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
 	cd ../wxcommon/jpeg; $(MAKE) clean
+	cd ../wxcommon/libpng; $(MAKE) clean
+	cd ../wxcommon/zlib; $(MAKE) clean
 	rm -f $(WXLIBS_@WXVARIANT@)
 	$(MAKE) clean_@WXVARIANT@
 

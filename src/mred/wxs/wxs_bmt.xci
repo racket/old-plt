@@ -5,6 +5,8 @@
 
 #define wxBITMAP_TYPE_UNKNOWN 0
 #define wxBITMAP_TYPE_GIF_MASK (wxBITMAP_TYPE_GIF | wxBITMAP_TYPE_MASK)
+#define wxBITMAP_TYPE_PNG_MASK (wxBITMAP_TYPE_PNG | wxBITMAP_TYPE_MASK)
+#define wxBITMAP_TYPE_PNG_ALPHA (wxBITMAP_TYPE_PNG | wxBITMAP_TYPE_ALPHA)
 
 @BEGINSYMBOLS bitmapType > ONE > PRED
 @SYM "bmp" : wxBITMAP_TYPE_BMP
@@ -14,8 +16,12 @@
 @SYM "xpm" : wxBITMAP_TYPE_XPM
 @SYM "pict" : wxBITMAP_TYPE_PICT
 @SYM "jpeg" : wxBITMAP_TYPE_JPEG
+@SYM "png" : wxBITMAP_TYPE_PNG
+@SYM "png/mask" : wxBITMAP_TYPE_PNG_MASK
+@SYM "png/alpha" : wxBITMAP_TYPE_PNG_ALPHA
 @SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @SYM "unknown/mask" : wxBITMAP_TYPE_MASK
+@SYM "unknown/alpha" : wxBITMAP_TYPE_ALPHA
 @ENDSYMBOLS
 
 @MACRO USEALLFUEL[ok] = if (<ok>) WITH_VAR_STACK(scheme_thread_block(0.0));

@@ -392,6 +392,8 @@ class wxMediaCanvas : public wxCanvas
   void UpdateCursorNow(void);
 
  public:
+  int wheel_amt;
+
   wxMediaCanvas(wxWindow *parent, int x = -1, int y = -1,
 		int width = -1, int height = -1, char *name = "",
 		long scrollStyle = 0,

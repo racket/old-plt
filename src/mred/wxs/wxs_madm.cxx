@@ -186,6 +186,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
+
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
@@ -1046,6 +1047,39 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *objscheme_wxMediaCanvas_Getwheel_amt(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  nnint v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxMediaCanvas_class, "get-wheel-step in editor-canvas%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-wheel-step in editor-canvas%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxMediaCanvas *)cobj->primdata)->wxMediaCanvas::wheel_amt;
+  else
+    v = ((wxMediaCanvas *)cobj->primdata)->wheel_amt;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxMediaCanvas_Setwheel_amt(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  nnint v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxMediaCanvas_class, "set-wheel-step in editor-canvas%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-wheel-step in editor-canvas%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET], "set-wheel-step in editor-canvas%"));
+  ((wxMediaCanvas *)cobj->primdata)->wheel_amt = v;
+
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1127,7 +1161,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 20));
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char", os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event", os_wxMediaCanvasOnEvent, 1, 1));
@@ -1150,6 +1184,8 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-editor", os_wxMediaCanvasGetMedia, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-editor", os_wxMediaCanvasSetMedia, 1, 2));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"get-wheel-step", objscheme_wxMediaCanvas_Getwheel_amt, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"set-wheel-step", objscheme_wxMediaCanvas_Setwheel_amt, 1, 1));
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaCanvas_class));
 

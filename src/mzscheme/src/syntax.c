@@ -2983,12 +2983,7 @@ do_letrec_syntaxes(const char *where, int normal,
 
     a = scheme_resolve_expr(a, scheme_resolve_info_create(rp));
 
-    if (SCHEME_TYPE(a) > _scheme_compiled_values_types_) {
-      /* short cut */
-      a = _scheme_eval_linked_expr_multi(a);
-    } else {
-      a = eval_letmacro_rhs(a, rhs_env, mrec.max_let_depth, rp, eenv->genv->phase);
-    }
+    a = eval_letmacro_rhs(a, rhs_env, mrec.max_let_depth, rp, eenv->genv->phase);
 
     if (SAME_OBJ(a, SCHEME_MULTIPLE_VALUES))
       vc = scheme_current_thread->ku.multiple.count;

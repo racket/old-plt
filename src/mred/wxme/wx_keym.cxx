@@ -237,6 +237,8 @@ static Keybind keylist[]
 		{ "leftbuttonseq" , WXK_MOUSE_LEFT },
 		{ "rightbuttonseq" , WXK_MOUSE_RIGHT },
 		{ "middlebuttonseq" , WXK_MOUSE_MIDDLE },
+		{ "wheelup" , WXK_WHEEL_UP },
+		{ "wheeldown" , WXK_WHEEL_DOWN },
 		{ "esc", WXK_ESCAPE }, 
 		{ "delete", WXK_DELETE },
 		{ "del", WXK_DELETE },

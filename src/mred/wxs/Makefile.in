@@ -89,6 +89,8 @@ kernel.ss : $(srcdir)/../../../collects/mred/private/kernel.ss
 $(srcdir)/../../../collects/mred/private/kernel.ss : $(SSDESCS) $(srcdir)/khead.ss $(srcdir)/ktail.ss 
 	cat $(srcdir)/khead.ss $(SSDESCS) $(srcdir)/ktail.ss > $(srcdir)/../../../collects/mred/private/kernel.ss
 
+ss: $(SSDESCS)
+
 ccsources: $(SOURCES)
 
 clean:

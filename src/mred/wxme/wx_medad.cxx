@@ -157,6 +157,8 @@ void wxAutoDragTimer::Kill(void) {
 
 /************************************************************************/
 
+static int default_wheel_amt;
+
 #ifndef wxOVERRIDE_KEY_TRANSLATIONS
 #define wxOVERRIDE_KEY_TRANSLATIONS 0
 #endif
@@ -255,6 +257,15 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   lazy_refresh = need_refresh = FALSE;
 
   autoDragger = NULL;
+
+  if (!default_wheel_amt) {
+    wxGetResource(wxAPP_CLASS, "wheelStep", &default_wheel_amt);
+    if (!default_wheel_amt)
+      default_wheel_amt = 3;
+    if (default_wheel_amt > 1000)
+      default_wheel_amt = 1000;
+  }
+  wheel_amt = default_wheel_amt;
 
   if (m)
     SetMedia(m);
@@ -554,23 +565,22 @@ wxMenu *wxMediaCanvas::PopupForMedia(wxMediaBuffer *WXUNUSED(b), void *WXUNUSED(
 
 void wxMediaCanvas::OnChar(wxKeyEvent *event)
 {
-  /* Handle wheel here */
-  switch (event->KeyCode()) {
-  case WXK_WHEEL_UP:
-  case WXK_WHEEL_DOWN:
-    if (allowYScroll && !fakeYScroll) {
-      int x, y;
-      GetScroll(&x, &y);
-      y += ((event->KeyCode() == WXK_WHEEL_UP)
-	    ? -1
-	    : 1);
-      Scroll(x, y, 1);
+  if (wheel_amt > 0) {
+    /* Handle wheel here */
+    switch (event->KeyCode()) {
+    case WXK_WHEEL_UP:
+    case WXK_WHEEL_DOWN:
+      if (allowYScroll && !fakeYScroll) {
+	int x, y;
+	
+	GetScroll(&x, &y);
+	y += (wheel_amt * ((event->KeyCode() == WXK_WHEEL_UP) ? -1 : 1));
+	if (y < 0) y = 0;	
+	Scroll(x, y, 1);
+      }
+      return;
     }
-    return;
-  default:
-    break;
   }
-
 
   if (media && !media->printing) {
     wxCanvasMediaAdmin *oldadmin;

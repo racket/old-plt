@@ -46,6 +46,8 @@ typedef void *(*CAPOFunc)(void*);
 
 @CLASSID wxTYPE_MEDIA_CANVAS
 
+@IVAR "wheel-step" : nnint wheel_amt
+
 @ "set-editor" : void SetMedia(wxMediaBuffer^,bool=TRUE);
 @ "get-editor" : wxMediaBuffer^ GetMedia();
 

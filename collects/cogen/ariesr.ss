@@ -320,7 +320,7 @@
 				(imports
 				  (map (lambda (import)
 					 (if (z:lexical-varref? import)
-					   (annotate import)
+					   (z:varref-var import)
 					   `(,(read->raw (car import))
 					      ,(read->raw (cdr import)))))
 				    (cddr link-clause))))
@@ -333,10 +333,11 @@
 			     (,(read->raw (cadr export-clause))
 			       ,(read->raw (cddr export-clause)))))
 			exports)))
-		  `(#%compound-unit
-		     (import ,@imports)
-		     (link ,@links)
-		     (export ,@exports))))]
+		  (let ((e `(#%compound-unit
+			      (import ,@imports)
+			      (link ,@links)
+			      (export ,@exports))))
+		    e)))]
 
 	    [(z:invoke-unit-form? expr)
 	      `(#%invoke-unit ,(mv-wrap (z:invoke-unit-form-unit expr))

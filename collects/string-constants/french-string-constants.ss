@@ -230,6 +230,7 @@
  (fixup-parens "Corriger les parenthèses.")
  (flash-paren-match "Montrer le pairage de parenthèses.")
  (auto-save-files "Sauvegarde automatique des fichiers.")
+ (backup-files "Fichiers de sauvegarde")
  (map-delete-to-backspace "La touche Delete génére Backspace.")
  (verify-exit "Confirmation pour quitter.")
  (ask-before-changing-format "Confirmation avant de changer le format de sauvegarde.")
@@ -610,7 +611,9 @@
  (input-syntax "Syntaxe d'entrée")
  (dynamic-properties "Propriétés dynamiques")
  (output-syntax "Syntaxe de sortie")
+ (no-debugging-or-profiling "Pas de débogage ou profilage") ; Profilage. Eurk...
  (debugging "Débogage")
+ (debugging-and-profiling "Débogage et profilage")
  (whole/fractional-exact-numbers-label "Imprimer les nombres sous forme de fractions.")
  (booleans-as-true/false-label "Imprimer les booléens sous forme true et false.")
  (show-details-button-label "Montrer les détails")
@@ -651,12 +654,39 @@
  ;;; debug language
  (backtrace-window-title "Trace - DrScheme")
  (files-interactions "les interactions de ~a") ;; filled with a filename
- (stack-frame-in-current-interactions "interactions")
- (stack-frame-in-current-definitions "définitions")
+ (current-interactions "interactions")
+ (current-definitions "définitions")
  (mzscheme-w/debug "Textuel (MzScheme)")
  (mzscheme-one-line-summary "PLT Scheme sans la bibliothèque graphique")
  (mred-w/debug "Graphique (MrEd)")
  (mred-one-line-summary "PLT Scheme plus la bibliothèque graphique")
+ 
+ ;; profiling
+ (profiling-low-color "Bas")
+ (profiling-high-color "Elevé")
+ (profiling-choose-low-color "Sélectionnez une couleur pour Bas")
+ (profiling-choose-high-color "Sélectionnez une couleur pour Elevé")
+ (profiling "Profilage")
+ (profiling-example-text "(define (whee) (whee))")
+ (profiling-color-config "Gamme de couleurs pour le profil") 
+ (profiling-scale "Echelle de couleurs pour le profil")
+ (profiling-sqrt "Racine Carrée")
+ (profiling-linear "Linéaire")
+ (profiling-square "Quadratique")
+ (profiling-number "Numbre d'appels de fonctions")
+ (profiling-time "Temps cumulatif")
+ (profiling-clear "Effacer le profil")
+ (profiling-update "Mettre à jour le profil")
+ (profiling-col-percent-time "% Temps")
+ (profiling-col-function "Fonction")
+ (profiling-col-name "Nom")
+ (profiling-col-time-in-msec "ms")
+ (profiling-col-calls "Appels de fonctions")
+ (profiling-show-profile "Montrer le profil")
+ (profiling-hide-profile "Cacher le profil")
+ (profiling-unknown-src "<< inconnu >>")
+ (profiling-no-information-available "Pas d'information de profilage disponible. Assurez vous que l'option de profilage ait été spécifiée pour ce language et que vous ayez exécuté le programme.")
+ (profiling-clear? "Modifier le contenu de la fenêtre de définition invalide le profil. Voulez-vous continuer ?")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation terminée.")
@@ -719,4 +749,6 @@
  (module-browser... "Navigateur de modules...") ;; menu item title
  (module-browser-error-expanding "Erreur durant l'expansion du programme:\n\n~a")
  
+ (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
+
  )

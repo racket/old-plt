@@ -5,6 +5,8 @@
 
   (define-struct (exn:make struct:exn) (target orig-exn))
   
+  (define make-print-checking (make-parameter #t))
+
  (define make/proc
   (let ([form-error
 	 (lambda (s p) (error 'make/proc "~a: ~s" s p))]
@@ -39,7 +41,8 @@
 		       (raise-type-error 'make/proc "string or string vector" argv))
 		   (letrec ([make-file
 			     (lambda (s indent)
-			       (printf "~achecking ~a~n" indent s)
+			       (when (make-print-checking)
+				 (printf "make: ~achecking ~a~n" indent s))
 			       (let ([line (assoc s spec)]
 				     [date (if (directory-exists? s)
 					       +inf.0
@@ -54,7 +57,9 @@
 							deps))
 					     (let ([l (cddr line)])
 					       (unless (null? l)
-						 (printf "~amaking ~a~n" indent s)
+						 (printf "make: ~amaking ~a~n"
+							 (if (make-print-checking) indent "")
+							 s)
 						 (with-handlers ([(lambda (x) #t)
 								  (lambda (exn)
 								    (raise (make-exn:make (format "Failed to make ~a; ~a"

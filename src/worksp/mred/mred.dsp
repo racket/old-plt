@@ -196,6 +196,11 @@ SOURCE=..\..\wxcommon\wxGC.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\wxcommon\wxJPEG.cxx
+# ADD CPP /I "..\jpeg" /I "..\..\wxcommon\jpeg"
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\mzscheme\utils\xcglue.c
 # End Source File
 # End Group

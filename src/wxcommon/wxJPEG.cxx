@@ -2,10 +2,6 @@
  * Derived from IJG's example.c.
  */
 
-#if defined(_MSC_VER)
-# include "wx.h"
-#endif
-
 #include "wx_dcmem.h"
 #include "wx_gdi.h"
 
@@ -15,9 +11,15 @@ extern "C" {
 # include "jpeglib.h"
 }
 
+#ifdef wx_x
+# define WX_QUANTIZE 1
+#else
+# define WX_QUANTIZE 0
+#endif
+
 static wxColor *the_color;
 
-static void draw_scanline(JSAMPROW row, int cols, int rownum, JSAMPARRAY colormap, wxMemoryDC *dc)
+static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc)
 {
   int colnum;
 
@@ -27,9 +29,22 @@ static void draw_scanline(JSAMPROW row, int cols, int rownum, JSAMPARRAY colorma
   }
 
   for (colnum = 0; colnum < cols; colnum++) {
+#if WX_QUANTIZE
     int v;
     v = row[colnum];
     the_color->Set(colormap[0][v], colormap[1][v], colormap[2][v]);
+#else
+    if (step == 1) {
+      if (row[colnum])
+	the_color->Set(0, 0, 0);
+      else
+	the_color->Set(255, 255, 255);
+    } else {
+      the_color->Set(row[colnum * step], 
+		     row[colnum * step + 1], 
+		     row[colnum * step + 2]);
+    }
+#endif
     dc->SetPixel(colnum, rownum, the_color);
   }
 }
@@ -138,11 +153,9 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
    */
 
   /* Step 4: set parameters for decompression */
+#if WX_QUANTIZE
   cinfo.quantize_colors = 1;
-
-  /* In this example, we don't need to change any of the defaults set by
-   * jpeg_read_header(), so we do nothing here.
-   */
+#endif
 
   /* Step 5: Start decompressor */
 
@@ -179,9 +192,9 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
      */
     (void) jpeg_read_scanlines(&cinfo, buffer, 1);
     /* Assume put_scanline_someplace wants a pointer and sample count. */
-    draw_scanline(buffer[0], row_stride, 
-		  cinfo.output_scanline - 1, 
-		  cinfo.colormap,
+    draw_scanline(buffer[0],
+		  cinfo.output_width, cinfo.output_scanline - 1, 
+		  cinfo.output_components, cinfo.colormap,
 		  dc);
   }
 

@@ -26,6 +26,10 @@ NULL=
 NULL=nul
 !ENDIF 
 
+CPP=cl.exe
+MTL=midl.exe
+RSC=rc.exe
+
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 OUTDIR=.\..\..\..\..\plt
@@ -40,12 +44,12 @@ ALL : "$(OUTDIR)\mred.exe"
 
 !ELSE 
 
-ALL : "wxutils - Win32 Release" "wxs - Win32 Release" "gc - Win32 Release" "mzsrc - Win32 Release" "wxwin - Win32 Release" "$(OUTDIR)\mred.exe"
+ALL : "jpeg - Win32 Release" "wxutils - Win32 Release" "wxs - Win32 Release" "gc - Win32 Release" "mzsrc - Win32 Release" "wxwin - Win32 Release" "$(OUTDIR)\mred.exe"
 
 !ENDIF 
 
 !IF "$(RECURSE)" == "1" 
-CLEAN :"wxwin - Win32 ReleaseCLEAN" "mzsrc - Win32 ReleaseCLEAN" "gc - Win32 ReleaseCLEAN" "wxs - Win32 ReleaseCLEAN" "wxutils - Win32 ReleaseCLEAN" 
+CLEAN :"wxwin - Win32 ReleaseCLEAN" "mzsrc - Win32 ReleaseCLEAN" "gc - Win32 ReleaseCLEAN" "wxs - Win32 ReleaseCLEAN" "wxutils - Win32 ReleaseCLEAN" "jpeg - Win32 ReleaseCLEAN" 
 !ELSE 
 CLEAN :
 !ENDIF 
@@ -67,6 +71,7 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_SNIP.obj"
 	-@erase "$(INTDIR)\WX_STYLE.obj"
 	-@erase "$(INTDIR)\wxGC.obj"
+	-@erase "$(INTDIR)\wxJPEG.obj"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(OUTDIR)\mred.exe"
 	-@erase "$(OUTDIR)\mred.pdb"
@@ -77,42 +82,8 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\Mred.res" /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "NDEBUG" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
@@ -136,13 +107,15 @@ LINK32_OBJS= \
 	"$(INTDIR)\WX_SNIP.obj" \
 	"$(INTDIR)\WX_STYLE.obj" \
 	"$(INTDIR)\wxGC.obj" \
+	"$(INTDIR)\wxJPEG.obj" \
 	"$(INTDIR)\xcglue.obj" \
 	"$(INTDIR)\Mred.res" \
 	"$(OUTDIR)\src\worksp\wxwin\Release\wxwin.lib" \
 	"$(OUTDIR)\src\worksp\mzsrc\Release\mzsrc.lib" \
 	"$(OUTDIR)\src\worksp\gc\Release\gc.lib" \
 	"$(OUTDIR)\src\worksp\wxs\Release\wxs.lib" \
-	"$(OUTDIR)\src\worksp\wxutils\Release\wxutils.lib"
+	"$(OUTDIR)\src\worksp\wxutils\Release\wxutils.lib" \
+	"$(OUTDIR)\src\worksp\jpeg\Release\jpeg.lib"
 
 "$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -163,12 +136,12 @@ ALL : "$(OUTDIR)\mred.exe" "$(OUTDIR)\mred.bsc"
 
 !ELSE 
 
-ALL : "wxutils - Win32 Debug" "wxs - Win32 Debug" "gc - Win32 Debug" "mzsrc - Win32 Debug" "wxwin - Win32 Debug" "$(OUTDIR)\mred.exe" "$(OUTDIR)\mred.bsc"
+ALL : "jpeg - Win32 Debug" "wxutils - Win32 Debug" "wxs - Win32 Debug" "gc - Win32 Debug" "mzsrc - Win32 Debug" "wxwin - Win32 Debug" "$(OUTDIR)\mred.exe" "$(OUTDIR)\mred.bsc"
 
 !ENDIF 
 
 !IF "$(RECURSE)" == "1" 
-CLEAN :"wxwin - Win32 DebugCLEAN" "mzsrc - Win32 DebugCLEAN" "gc - Win32 DebugCLEAN" "wxs - Win32 DebugCLEAN" "wxutils - Win32 DebugCLEAN" 
+CLEAN :"wxwin - Win32 DebugCLEAN" "mzsrc - Win32 DebugCLEAN" "gc - Win32 DebugCLEAN" "wxs - Win32 DebugCLEAN" "wxutils - Win32 DebugCLEAN" "jpeg - Win32 DebugCLEAN" 
 !ELSE 
 CLEAN :
 !ENDIF 
@@ -205,6 +178,8 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_STYLE.sbr"
 	-@erase "$(INTDIR)\wxGC.obj"
 	-@erase "$(INTDIR)\wxGC.sbr"
+	-@erase "$(INTDIR)\wxJPEG.obj"
+	-@erase "$(INTDIR)\wxJPEG.sbr"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(INTDIR)\xcglue.sbr"
 	-@erase "$(OUTDIR)\mred.bsc"
@@ -217,42 +192,8 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\Mred.res" /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
@@ -272,6 +213,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\WX_SNIP.sbr" \
 	"$(INTDIR)\WX_STYLE.sbr" \
 	"$(INTDIR)\wxGC.sbr" \
+	"$(INTDIR)\wxJPEG.sbr" \
 	"$(INTDIR)\xcglue.sbr"
 
 "$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -297,13 +239,15 @@ LINK32_OBJS= \
 	"$(INTDIR)\WX_SNIP.obj" \
 	"$(INTDIR)\WX_STYLE.obj" \
 	"$(INTDIR)\wxGC.obj" \
+	"$(INTDIR)\wxJPEG.obj" \
 	"$(INTDIR)\xcglue.obj" \
 	"$(INTDIR)\Mred.res" \
 	"$(OUTDIR)\src\worksp\wxwin\Debug\wxwin.lib" \
 	"$(OUTDIR)\src\worksp\mzsrc\Debug\mzsrc.lib" \
 	"$(OUTDIR)\src\worksp\gc\Debug\gc.lib" \
 	"$(OUTDIR)\src\worksp\wxs\Debug\wxs.lib" \
-	"$(OUTDIR)\src\worksp\wxutils\Debug\wxutils.lib"
+	"$(OUTDIR)\src\worksp\wxutils\Debug\wxutils.lib" \
+	"$(OUTDIR)\src\worksp\jpeg\Debug\jpeg.lib"
 
 "$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -366,6 +310,8 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_STYLE.sbr"
 	-@erase "$(INTDIR)\wxGC.obj"
 	-@erase "$(INTDIR)\wxGC.sbr"
+	-@erase "$(INTDIR)\wxJPEG.obj"
+	-@erase "$(INTDIR)\wxJPEG.sbr"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(INTDIR)\xcglue.sbr"
 	-@erase "$(OUTDIR)\mred.bsc"
@@ -378,8 +324,67 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mred\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mred\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mred\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNTER" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\Mred.res" /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
+BSC32_SBRS= \
+	"$(INTDIR)\MRED.sbr" \
+	"$(INTDIR)\MREDMSW.sbr" \
+	"$(INTDIR)\WX_CGREC.sbr" \
+	"$(INTDIR)\WX_KEYM.sbr" \
+	"$(INTDIR)\WX_MBUF.sbr" \
+	"$(INTDIR)\WX_MEDAD.sbr" \
+	"$(INTDIR)\WX_MEDIA.sbr" \
+	"$(INTDIR)\WX_MEDIO.sbr" \
+	"$(INTDIR)\WX_MLINE.sbr" \
+	"$(INTDIR)\WX_MPBRD.sbr" \
+	"$(INTDIR)\WX_MPRIV.sbr" \
+	"$(INTDIR)\WX_MSNIP.sbr" \
+	"$(INTDIR)\WX_SNIP.sbr" \
+	"$(INTDIR)\WX_STYLE.sbr" \
+	"$(INTDIR)\wxGC.sbr" \
+	"$(INTDIR)\wxJPEG.sbr" \
+	"$(INTDIR)\xcglue.sbr"
+
+"$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+    $(BSC32) @<<
+  $(BSC32_FLAGS) $(BSC32_SBRS)
+<<
+
+LINK32=link.exe
+LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib libc.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
+LINK32_OBJS= \
+	"$(INTDIR)\MRED.obj" \
+	"$(INTDIR)\MREDMSW.obj" \
+	"$(INTDIR)\WX_CGREC.obj" \
+	"$(INTDIR)\WX_KEYM.obj" \
+	"$(INTDIR)\WX_MBUF.obj" \
+	"$(INTDIR)\WX_MEDAD.obj" \
+	"$(INTDIR)\WX_MEDIA.obj" \
+	"$(INTDIR)\WX_MEDIO.obj" \
+	"$(INTDIR)\WX_MLINE.obj" \
+	"$(INTDIR)\WX_MPBRD.obj" \
+	"$(INTDIR)\WX_MPRIV.obj" \
+	"$(INTDIR)\WX_MSNIP.obj" \
+	"$(INTDIR)\WX_SNIP.obj" \
+	"$(INTDIR)\WX_STYLE.obj" \
+	"$(INTDIR)\wxGC.obj" \
+	"$(INTDIR)\wxJPEG.obj" \
+	"$(INTDIR)\xcglue.obj" \
+	"$(INTDIR)\Mred.res" \
+	"$(OUTDIR)\src\worksp\wxwin\SGC\wxwin.lib" \
+	"$(OUTDIR)\src\worksp\mzsrc\SGC\mzsrc.lib" \
+	"$(OUTDIR)\src\worksp\wxs\SGC\wxs.lib" \
+	"$(OUTDIR)\src\worksp\wxutils\SGC\wxutils.lib"
+
+"$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -410,67 +415,6 @@ CPP_PROJ=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mred\mzscheme\sgc" /I "..\..\wxw
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
-
-MTL=midl.exe
-MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\Mred.res" /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
-BSC32_SBRS= \
-	"$(INTDIR)\MRED.sbr" \
-	"$(INTDIR)\MREDMSW.sbr" \
-	"$(INTDIR)\WX_CGREC.sbr" \
-	"$(INTDIR)\WX_KEYM.sbr" \
-	"$(INTDIR)\WX_MBUF.sbr" \
-	"$(INTDIR)\WX_MEDAD.sbr" \
-	"$(INTDIR)\WX_MEDIA.sbr" \
-	"$(INTDIR)\WX_MEDIO.sbr" \
-	"$(INTDIR)\WX_MLINE.sbr" \
-	"$(INTDIR)\WX_MPBRD.sbr" \
-	"$(INTDIR)\WX_MPRIV.sbr" \
-	"$(INTDIR)\WX_MSNIP.sbr" \
-	"$(INTDIR)\WX_SNIP.sbr" \
-	"$(INTDIR)\WX_STYLE.sbr" \
-	"$(INTDIR)\wxGC.sbr" \
-	"$(INTDIR)\xcglue.sbr"
-
-"$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
-    $(BSC32) @<<
-  $(BSC32_FLAGS) $(BSC32_SBRS)
-<<
-
-LINK32=link.exe
-LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib libc.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
-LINK32_OBJS= \
-	"$(INTDIR)\MRED.obj" \
-	"$(INTDIR)\MREDMSW.obj" \
-	"$(INTDIR)\WX_CGREC.obj" \
-	"$(INTDIR)\WX_KEYM.obj" \
-	"$(INTDIR)\WX_MBUF.obj" \
-	"$(INTDIR)\WX_MEDAD.obj" \
-	"$(INTDIR)\WX_MEDIA.obj" \
-	"$(INTDIR)\WX_MEDIO.obj" \
-	"$(INTDIR)\WX_MLINE.obj" \
-	"$(INTDIR)\WX_MPBRD.obj" \
-	"$(INTDIR)\WX_MPRIV.obj" \
-	"$(INTDIR)\WX_MSNIP.obj" \
-	"$(INTDIR)\WX_SNIP.obj" \
-	"$(INTDIR)\WX_STYLE.obj" \
-	"$(INTDIR)\wxGC.obj" \
-	"$(INTDIR)\xcglue.obj" \
-	"$(INTDIR)\Mred.res" \
-	"$(OUTDIR)\src\worksp\wxwin\SGC\wxwin.lib" \
-	"$(OUTDIR)\src\worksp\mzsrc\SGC\mzsrc.lib" \
-	"$(OUTDIR)\src\worksp\wxs\SGC\wxs.lib" \
-	"$(OUTDIR)\src\worksp\wxutils\SGC\wxutils.lib"
-
-"$(OUTDIR)\mred.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -864,6 +808,40 @@ SOURCE=..\..\wxcommon\wxGC.cxx
 
 !ENDIF 
 
+SOURCE=..\..\wxcommon\wxJPEG.cxx
+
+!IF  "$(CFG)" == "mred - Win32 Release"
+
+CPP_SWITCHES=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\jpeg" /I "..\..\wxcommon\jpeg" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\wxJPEG.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\jpeg" /I "..\..\wxcommon\jpeg" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\wxJPEG.obj"	"$(INTDIR)\wxJPEG.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+CPP_SWITCHES=/nologo /MTd /W3 /Gm /ZI /Od /I "..\..\mred\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mred\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mred\mzscheme\utils" /I "..\jpeg" /I "..\..\wxcommon\jpeg" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNTER" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\wxJPEG.obj"	"$(INTDIR)\wxJPEG.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
 SOURCE=..\..\mzscheme\utils\xcglue.c
 
 !IF  "$(CFG)" == "mred - Win32 Release"
@@ -1066,6 +1044,34 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
    cd "..\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mred"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "mred - Win32 Release"
+
+"jpeg - Win32 Release" : 
+   cd "..\jpeg"
+   $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Release" 
+   cd "..\mred"
+
+"jpeg - Win32 ReleaseCLEAN" : 
+   cd "..\jpeg"
+   $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Release" RECURSE=1 CLEAN 
+   cd "..\mred"
+
+!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
+
+"jpeg - Win32 Debug" : 
+   cd "..\jpeg"
+   $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Debug" 
+   cd "..\mred"
+
+"jpeg - Win32 DebugCLEAN" : 
+   cd "..\jpeg"
+   $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Debug" RECURSE=1 CLEAN 
+   cd "..\mred"
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 !ENDIF 
 

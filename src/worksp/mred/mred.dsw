@@ -15,6 +15,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "jpeg"=..\jpeg\jpeg.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "mred"=.\mred.dsp - Package Owner=<4>
 
 Package=<5>
@@ -37,6 +49,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name wxutils
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name jpeg
     End Project Dependency
 }}}
 

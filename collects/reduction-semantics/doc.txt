@@ -85,8 +85,9 @@ conjuction with in-named-hole to support languages that
 require multiple patterns in a hole. 
 
 The _<symbol>_ pattern stands for a literal symbol that must
-match exactly (except, of course, for any, number, string,
-hole, or variable which are reserved).
+match exactly, unless it is the name of a non-terminal in a
+relevant language. In that case, it matches any of the
+right-hand sides of that non-terminal.
 
 _name_: The pattern:
 

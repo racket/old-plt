@@ -20,6 +20,8 @@ typedef void *XtRegion;
 class wxPathRgn;
 #endif
 
+class wxPath;
+
 class wxRegion : public wxObject 
 {
  public:
@@ -57,12 +59,15 @@ class wxRegion : public wxObject
   void SetRoundedRectangle(double x, double y, double width, double height, double radius = 20.0);
   void SetEllipse(double x, double y, double width, double height);
   void SetPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, 
-		  int fillStyle=wxODDEVEN_RULE);
+		  int fillStyle=wxODDEVEN_RULE, int delta = 0);
+  void SetPath(wxPath *p, double xoffset = 0, double yoffset = 0, 
+	       int fillStyle=wxODDEVEN_RULE);
   void SetArc(double x, double y, double w, double h, double start, double end);
 
   void Union(wxRegion *);
   void Intersect(wxRegion *);
   void Subtract(wxRegion *);
+  void Xor(wxRegion *r);
 
   void BoundingBox(double *x, double *y, double *w, double *h);
 
@@ -194,8 +199,7 @@ class wxPolygonPathRgn : public wxPathRgn
   double xoffset;
   double yoffset;
   int fillStyle;
-  wxPolygonPathRgn(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, 
-		   int fillStyle=wxODDEVEN_RULE);
+  wxPolygonPathRgn(int n, wxPoint points[], double xoffset, double yoffset, int fillStyle);
   virtual void Install(long target, Bool reverse);
 };
 
@@ -209,6 +213,17 @@ class wxArcPathRgn : public wxPathRgn
   double start;
   double end;
   wxArcPathRgn(double x, double y, double w, double h, double start, double end);
+  virtual void Install(long target, Bool reverse);
+};
+
+class wxPathPathRgn : public wxPathRgn
+{
+ public:
+  wxPath *p;
+  double xoffset;
+  double yoffset;
+  int fillStyle;
+  wxPathPathRgn(wxPath *p, double xoffset, double yoffset, int fillStyle);
   virtual void Install(long target, Bool reverse);
 };
 
@@ -241,5 +256,46 @@ class wxDiffPathRgn : public wxPathRgn
 };
 
 #endif
+
+/************************************************************/
+
+class wxPath : public wxObject
+{
+ public:
+  long cmd_size, alloc_cmd_size, last_cmd;
+  double *cmds;
+
+  int num_polys;
+  double **poly_pts;
+
+  wxPath();
+  ~wxPath();
+
+  void Reset();
+
+  Bool IsOpen();
+
+  void Close();
+  void MoveTo(double x, double y);
+  void LineTo(double x, double y);
+  void Arc(double x, double y, double w, double h, double start, double end, Bool ccw);
+  void CurveTo(double x1, double y1, double x2, double y2, double x3, double y3);
+
+  void Translate(double x, double y);
+  void Scale(double x, double y);
+  void Rotate(double a);
+
+  void Reverse(int start_cmd = 0);
+
+  void AddPath(wxPath *p);
+  
+  void Install(long target, double dx, double dy);
+  void InstallPS();
+  int ToPolygons(int **_lens, double ***_pts, double sx, double sy);
+
+ private:
+  void MakeRoom(int n);
+  void ClearCache();
+};
 
 #endif

@@ -315,16 +315,41 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "set-ellipse" : void SetEllipse(double, double, nndouble, nndouble); : : /CheckRgnLock["set-ellipse"]
 @ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,double=0,double=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckRgnLock["set-polygon"]|glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
 @ "set-arc" : void SetArc(double, double, nndouble, nndouble, double, double); : : /CheckRgnLock["set-arc"]
+@ "set-path" : void SetPath(wxPath!,double=0,double=0,SYM[fillKind]=wxODDEVEN_RULE); : : /CheckRgnLock["set-path"]//
 
 @ "union" : void Union(wxRegion!);  : : /CheckRgnLock["union"]|CheckRgn[0."union"]
 @ "intersect" : void Intersect(wxRegion!);  : : /CheckRgnLock["intersect"]|CheckRgn[0."intersect"]
 @ "subtract" : void Subtract(wxRegion!);  : : /CheckRgnLock["subtract"]|CheckRgn[0."subtract"]
+@ "xor" : void Xor(wxRegion!);  : : /CheckRgnLock["xor"]|CheckRgn[0."xor"]
 
 @MACRO bundleAny = ((Scheme_Object *){x})
  
 @ m "get-bounding-box" : void*/bundleAny RgnBoundingBox();
 
 @ "is-empty?" : bool Empty();
+
+@END
+
+@MACRO CheckOpen[who] = if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%",<who>), "path is not open: ", THEOBJ);
+
+@CLASSBASE wxPath "dc-path" : "object"
+
+@CREATOR ()
+
+@ "reset" : void Reset();
+@ "close" : void Close(); : : /CheckOpen["close"]
+@ "open?" : bool IsOpen();
+@ "move-to" : void MoveTo(double, double);
+@ "line-to" : void LineTo(double, double); : : /CheckOpen["line-to"]
+@ "arc" : void Arc(double, double, double, double, double, double, bool=TRUE);
+@ "curve-to" : void CurveTo(double, double, double, double, double, double); : : /CheckOpen["curve-to"]
+
+@ "translate" : void Translate(double, double);
+@ "scale" : void Scale(double, double);
+@ "rotate" :  void Rotate(double);
+@ "reverse" : void Reverse();
+
+@ "append" : void AddPath(wxPath!);
 
 @END
 

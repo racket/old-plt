@@ -991,6 +991,7 @@ void mred_clean_up_gdi_objects(void)
 static void clean_up_and_exit(int v)
 {
   mred_clean_up_gdi_objects();
+  wxGDIShutdown();
   if (orig_exit)
     orig_exit(v);
   exit(v);

@@ -416,10 +416,7 @@ void wxPostScriptDC::SetClippingRect(double cx, double cy, double cw, double ch)
 
 wxRegion *wxPostScriptDC::GetClippingRegion()
 {
-  if (clipping)
-    return new wxRegion(this, clipping);
-  else
-    return NULL;
+  return clipping;
 }
 
 void wxPostScriptDC::SetClippingRegion(wxRegion *r)
@@ -444,6 +441,7 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
   }
 
   if (clipping) {
+    --clipping->locked;
     clipping = NULL;
     pstream->Out("initclip\n");
   }
@@ -460,6 +458,7 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
     pstream->Out("clip\n");
 
     clipping = r;
+    clipping->locked++;
   }
 }
 
@@ -726,6 +725,13 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
 	}
     }
 }
+
+void wxPostScriptDC::DrawPath(wxPath *p, double xoff, double yoff, int fillStyle)
+{
+  if (!pstream)
+    return;
+}
+
 
 void wxPostScriptDC::DrawLines (int n, wxPoint points[], double xoffset, double yoffset)
 {

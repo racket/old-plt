@@ -1135,7 +1135,7 @@ void wxWindowDC::Clear(void)
 	       &w, &h, &udummy, &udummy);
   
 #ifdef WX_USE_CAIRO
-  if (anti_alias && Colour) {
+  if (anti_alias) {
     wxColour *c;
     int r, g, b;
     
@@ -1177,7 +1177,7 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias && Colour) {
+  if (anti_alias) {
     double pw;
 
     InitCairoDev();
@@ -1270,7 +1270,7 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias && Colour) {
+  if (anti_alias) {
     DrawArc(x, y, w, h, 0, 2 * wxPI);
     return;
   }
@@ -1300,7 +1300,7 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
 #ifdef WX_USE_CAIRO
-      if (anti_alias && Colour) {
+      if (anti_alias) {
 	double xx1 = x1, yy1 = y1, xx2 = x2, yy2 = y2, pw;
 
 	InitCairoDev();
@@ -1345,7 +1345,7 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
   FreeGetPixelCache();
   
 #if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
-  if (anti_alias && Colour) {
+  if (anti_alias) {
     double pw;
     int i;
 
@@ -1405,7 +1405,7 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias && Colour) {
+  if (anti_alias) {
     double pw;
 
     InitCairoDev();
@@ -1482,7 +1482,7 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
     FreeGetPixelCache();
     
 #ifdef WX_USE_CAIRO
-    if (anti_alias && Colour) {
+    if (anti_alias) {
       double pw;
       
       InitCairoDev();
@@ -1549,7 +1549,7 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
       radius = - radius * ((w < h) ? w : h);
 
 #ifdef WX_USE_CAIRO
-    if (anti_alias && Colour) {
+    if (anti_alias) {
       double xx = x, yy = y, ww = w, hh = h, pw;
 
       if ((anti_alias == 2)
@@ -1638,6 +1638,109 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 		 270*64, 90*64);
 	XDrawArc(DPY, DRAWABLE, PEN_GC, xx, yy+hh-dd, dd, dd, 180*64, 90*64);
     }
+}
+
+void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
+{
+  double **ptss;
+  int *lens, cnt, i, total_cnt, j, k;
+  XPoint *xpts;
+
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+
+  FreeGetPixelCache();
+
+#ifdef WX_USE_CAIRO
+  if (anti_alias) {
+    
+    InitCairoDev();
+    if (SetCairoBrush()) {
+      if (fill == wxODDEVEN_RULE)
+	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
+
+      p->Install((long)CAIRO_DEV, xoff, yoff);
+      cairo_fill(CAIRO_DEV);
+
+      if (fill == wxODDEVEN_RULE)
+	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_WINDING);
+    }
+
+    if (SetCairoPen()) {
+      p->Install((long)CAIRO_DEV, xoff, yoff);
+      cairo_stroke(CAIRO_DEV);
+    }
+
+    return;
+  }
+#endif
+
+  cnt = p->ToPolygons(&lens, &ptss, user_scale_x, user_scale_y);
+
+  if (!cnt)
+    return;
+
+  total_cnt = 0;
+  for (i = 0; i < cnt; i++) {
+    total_cnt += (lens[i] / 2) + 1;
+  }
+  
+  xpts = new WXGC_ATOMIC XPoint[total_cnt];
+
+  for (i = 0, k = 0; i < cnt; i++) {
+    for (j = 0; j < lens[i]; j += 2) {
+      xpts[k].x = XLOG2DEV(ptss[i][j]);
+      xpts[k].y = YLOG2DEV(ptss[i][j+1]);
+      k++;
+    }
+    xpts[k].x = XLOG2DEV(ptss[i][0]);
+    xpts[k].y = YLOG2DEV(ptss[i][1]);
+    k++;
+  }
+
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    XSetFillRule(DPY, BRUSH_GC, fill_rule[fill]);
+    if (cnt == 1) {
+      XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, total_cnt, Complex, 0);
+    } else {
+      Region rgn = 0, rgn1;
+
+      for (i = 0, k = 0; i < cnt; i++) {
+	j = (lens[i] / 2) + 1;
+	rgn1 = XPolygonRegion(xpts + k, j, fill_rule[fill]);
+	if (rgn) {
+	  /* Xoring implements the even-odd rule */
+	  XXorRegion(rgn, rgn1, rgn);
+	  XDestroyRegion(rgn1);
+	} else {
+	  rgn = rgn1;
+	}
+	k += j;
+      }
+
+      if (CURRENT_REG)
+	XIntersectRegion(rgn, CURRENT_REG, rgn);
+
+      XSetRegion(DPY, BRUSH_GC, rgn);
+      XFillRectangle(DPY, DRAWABLE, BRUSH_GC, 0, 0, 32000, 32000);
+
+      if (CURRENT_REG)
+	XSetRegion(DPY, BRUSH_GC, CURRENT_REG);
+      else
+	XSetRegion(DPY, BRUSH_GC, None);
+
+      XDestroyRegion(rgn);
+    }      
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    for (i = 0, k = 0; i < cnt; i++) {
+      j = (lens[i] / 2) + 1;
+      if ((i + 1 == cnt) && p->IsOpen())
+	--j;
+      XDrawLines(DPY, DRAWABLE, PEN_GC, xpts + k, j, 0);
+      k += j;
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -2679,6 +2782,8 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
       DEPTH = wxDisplayDepth(); // depth is display depth
     }
     Colour = (DEPTH != 1); // accept everything else than depth one as colour display
+    if (!Colour && anti_alias)
+      anti_alias = 0;
 
 #ifdef WX_USE_XRENDER
     X->picture = 0;

@@ -24,6 +24,7 @@ extern class wxBrush *objscheme_unbundle_wxBrush(Scheme_Object *, const char *, 
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *);
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern class wxPath *objscheme_unbundle_wxPath(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxDC(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

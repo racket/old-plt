@@ -383,7 +383,7 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
 
 typedef struct { double x, y; } FPoint;
 
-void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffset, int fillStyle)
+void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffset, int fillStyle, int delta)
 {
   POINT *cpoints;
   FPoint *fpoints;
@@ -404,14 +404,14 @@ void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffse
   cpoints = new POINT[n];
   fpoints = (is_ps ? new FPoint[n] : (FPoint *)NULL);
   for (i = 0; i < n; i++) {
-    v = dc->LogicalToDeviceX(points[i].x + xoffset);
+    v = dc->LogicalToDeviceX(points[i+delta].x + xoffset);
     cpoints[i].x = v;
-    v = dc->LogicalToDeviceY(points[i].y + yoffset);
+    v = dc->LogicalToDeviceY(points[i+delta].y + yoffset);
     cpoints[i].y = v;
     if (fpoints) {
-      vf = dc->FLogicalToDeviceX(points[i].x + xoffset);
+      vf = dc->FLogicalToDeviceX(points[i+delta].x + xoffset);
       fpoints[i].x = vf;
-      vf = dc->FLogicalToDeviceY(points[i].y + yoffset);
+      vf = dc->FLogicalToDeviceY(points[i+delta].y + yoffset);
       fpoints[i].y = vf;
     }
   }
@@ -460,6 +460,69 @@ void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffse
 
     ::SetGWorld(savep, savegd);
   }
+#endif
+}
+
+void wxRegion::SetPath(wxPath *p, double xoffset, double yoffset, int fillStyle)
+{
+  double **ptss, xs, ys;
+  int *lens, cnt, i, total_cnt, j, k;
+  wxPoint *a;
+
+  Cleanup();
+
+#ifdef WX_USE_PATH_RGN
+  if (!no_prgn) {
+    prgn = new wxPathPathRgn(p, xoffset, yoffset, fillStyle);
+    no_prgn = 1;
+  }
+#endif
+
+  dc->GetUserScale(&xs, &ys);
+  cnt = p->ToPolygons(&lens, &ptss, xs, ys);
+
+  if (!cnt)
+    return;
+  
+  total_cnt = 0;
+  for (i = 0; i < cnt; i++) {
+    total_cnt += (lens[i] / 2);
+  }
+
+#ifdef MZ_PRECISE_GC
+  a = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * total_cnt);
+#else
+  a = new wxPoint[total_cnt];
+#endif
+
+  for (i = 0, k = 0; i < cnt; i++) {
+    for (j = 0; j < lens[i]; j += 2) {
+      a[k].x = ptss[i][j];
+      a[k].y = ptss[i][j+1];
+      k++;
+    }
+  }
+
+  if (cnt == 1) {
+    SetPolygon(total_cnt, a, xoffset, yoffset, fillStyle, 0);
+  } else {
+    for (i = 0, k = 0; i < cnt; i++) {
+      j = (lens[i] / 2);
+      if (i == 0)
+	SetPolygon(j, a, xoffset, yoffset, fillStyle, k);
+      else {
+	wxRegion *r;
+	r = new wxRegion(dc, NULL, 1);
+	r->SetPolygon(j, a, xoffset, yoffset, fillStyle, k);
+	Xor(r);
+	delete r;
+      }
+      k += j;
+    }
+  }      
+  
+#ifdef WX_USE_PATH_RGN
+  no_prgn = 0;
 #endif
 }
 
@@ -753,6 +816,43 @@ void wxRegion::Subtract(wxRegion *r)
     rd = new wxPSRgn_Diff(ps, r->ps);
     ri = new wxPSRgn_Intersect(ps, rd);
     ps = ri;
+  }
+}
+  
+void wxRegion::Xor(wxRegion *r)
+{
+  if (r->dc != dc) return;
+
+#ifdef WX_USE_PATH_RGN
+  if (!no_prgn) {
+    wxPathRgn *pr;
+    if (!r->prgn) abort();
+    pr = new wxDiffPathRgn(prgn, r->prgn);
+    prgn = pr;
+  }
+#endif
+
+#ifdef wx_msw
+  if (!rgn) return;
+  CombineRgn(rgn, rgn, r->rgn, RGN_XOR);
+#endif
+#ifdef wx_x
+  if (!rgn) return;
+  XXorRegion(rgn, r->rgn, rgn);
+#endif
+#ifdef wx_mac
+  if (!rgn) return;
+  XorRgn(rgn, r->rgn, rgn);
+#endif
+
+  if (ReallyEmpty()) {
+    Cleanup();
+    ps = NULL;
+    return;
+  } else if (is_ps) {
+    wxPSRgn *rd;
+    rd = new wxPSRgn_Diff(ps, r->ps);
+    ps = rd;
   }
 }
   
@@ -1346,6 +1446,37 @@ void wxPolygonPathRgn::Install(long target, Bool reverse)
 #endif
 }
 
+wxPathPathRgn::wxPathPathRgn(wxPath *_p, double _xoffset, double _yoffset, int _fillStyle)
+{
+  p = new wxPath();
+  p->AddPath(_p);
+  xoffset = _xoffset;
+  yoffset = _yoffset;
+  fillStyle = _fillStyle;
+}
+
+void wxPathPathRgn::Install(long target, Bool reverse)
+{
+  wxPath *q;
+
+  if (reverse) {
+    q = new wxPath();
+    q->AddPath(p);
+    q->Reverse();
+  } else
+    q = p;
+
+#ifdef WX_USE_CAIRO
+  q->Install(target, 0, 0);
+#endif
+#ifdef wx_mac
+  q->Install((long)CGPATH, 0, 0);
+#endif
+#ifdef wx_msw
+  q->Install((long)GP, 0, 0);
+#endif
+}
+
 wxArcPathRgn::wxArcPathRgn(double _x, double _y, double _w, double _h, double _start, double _end)
 {
   x = _x;
@@ -1619,3 +1750,578 @@ wxPathRgn *wxDiffPathRgn::Lift()
 }
 
 #endif
+
+/********************************************************/
+/*                        Paths                         */
+/********************************************************/
+
+#define CMD_CLOSE        1.0
+#define CMD_MOVE         2.0
+#define CMD_LINE         3.0
+#define CMD_CURVE        4.0
+
+#define ROTATE_XY(x, y) { xtmp1 = x; ytmp1 = y;             \
+                          xtmp2 = (xx * xtmp1) + (xy * ytmp1); \
+                          ytmp2 = (yy * ytmp1) + (yx * xtmp1); \
+                          x = xtmp2; y = ytmp2; }
+
+wxPath::wxPath()
+{
+  Reset();
+}
+
+wxPath::~wxPath()
+{
+  Reset();
+}
+
+void wxPath::Reset()
+{
+  ClearCache();
+  cmd_size = 0;
+  alloc_cmd_size = 0;
+  cmds = NULL;
+  last_cmd = -1;
+}
+
+void wxPath::ClearCache()
+{
+  poly_pts = NULL;
+}
+
+void wxPath::MakeRoom(int n)
+{
+  ClearCache();
+  if (cmd_size + n > alloc_cmd_size) {
+    double *a;
+    int s;
+    s = 2 * (alloc_cmd_size + n);
+    a = new WXGC_ATOMIC double[s];
+    memcpy(a, cmds, sizeof(double) * cmd_size);
+    cmds = a;
+    alloc_cmd_size = s;
+  }
+}
+
+Bool wxPath::IsOpen()
+{
+  return ((last_cmd > -1) && (cmds[last_cmd] != CMD_CLOSE));
+}
+
+void wxPath::Close()
+{
+  if ((last_cmd > -1) && (cmds[last_cmd] != CMD_CLOSE)) {
+    MakeRoom(1);
+    cmds[cmd_size++] = CMD_CLOSE;
+  }
+}
+
+void wxPath::MoveTo(double x, double y)
+{
+  Close();
+
+  MakeRoom(3);
+  last_cmd = cmd_size;
+  cmds[cmd_size++] = CMD_MOVE;
+  cmds[cmd_size++] = x;
+  cmds[cmd_size++] = y;
+}
+
+void wxPath::LineTo(double x, double y)
+{
+  MakeRoom(3);
+  last_cmd = cmd_size;
+  cmds[cmd_size++] = CMD_LINE;
+  cmds[cmd_size++] = x;
+  cmds[cmd_size++] = y;
+}
+
+void wxPath::Arc(double x, double y, double w, double h, double start, double end, Bool ccw)
+{
+  double delta, angle, rotate;
+  double x0, y0, x1, y1, x2, y2, x3, y3;
+  double xx, xy, yy, yx, xtmp1, ytmp1, xtmp2, ytmp2;
+  int did_one = 0, start_cmd = cmd_size;
+
+  if (!ccw) {
+    /* We'll reverse at the end: */
+    double s;
+    s = start;
+    start = end;
+    end = s;
+  }
+
+  delta = end - start;
+  if (delta > 2 * wxPI)
+    delta = 2 * wxPI;
+  else if (delta < 0) {
+    delta = fmod(delta, 2 * wxPI);
+    delta += 2 * wxPI;
+  }
+
+  /* At this point, delta is between 0 and 2pi */
+  
+  if (delta == 2 * wxPI)
+    start = 0;
+
+  /* Change top-left to center: */
+  x += w/2;
+  y += h/2;
+
+  /* Make up to 4 curves to represent the arc. */
+  do {
+    if (delta > (wxPI / 2))
+      angle = (wxPI / 2);
+    else
+      angle = delta;
+
+    /* First generate points for an arc
+       of `angle' length from -angle/2 to
+       +angle/2. */
+
+    x0  = cos(angle / 2);
+    y0  = sin(angle / 2);
+    x1 = (4 - x0) / 3;
+    y1 = ((1 - x0) * (3 - x0)) / (3 * y0);
+    x2 = x1;
+    y2 = -y1;
+    x3 = x0;
+    y3 = -y0;
+    
+    /* Rotate to start: */
+    rotate = start + (angle / 2);
+    xx = cos(rotate);
+    xy = sin(rotate);
+    yy = xx;
+    yx = -xy;
+    ROTATE_XY(x0, y0);
+    ROTATE_XY(x1, y1);
+    ROTATE_XY(x2, y2);
+    ROTATE_XY(x3, y3);
+
+    /* Scale and move to match ellipse: */
+    x0 = (x0 * w/2) + x;
+    x1 = (x1 * w/2) + x;
+    x2 = (x2 * w/2) + x;
+    x3 = (x3 * w/2) + x;
+
+    y0 = (y0 * h/2) + y;
+    y1 = (y1 * h/2) + y;
+    y2 = (y2 * h/2) + y;
+    y3 = (y3 * h/2) + y;
+
+    if (!did_one) {
+      if ((last_cmd > -1) && (cmds[last_cmd] != CMD_CLOSE)) {
+	LineTo(x0, y0);
+      } else {
+	MoveTo(x0, y0);
+      }
+    }
+
+    if (angle)
+      CurveTo(x1, y1, x2, y2, x3, y3);
+    else
+      LineTo(x3, y3);
+    
+    start += angle;
+    delta -= angle;
+    did_one = 1;
+  } while (delta > 0);
+
+  if (ccw) {
+    Reverse(start_cmd);
+  }
+}
+
+void wxPath::CurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
+{
+  MakeRoom(7);
+  last_cmd = cmd_size;
+  cmds[cmd_size++] = CMD_CURVE;
+  cmds[cmd_size++] = x1;
+  cmds[cmd_size++] = y1;
+  cmds[cmd_size++] = x2;
+  cmds[cmd_size++] = y2;
+  cmds[cmd_size++] = x3;
+  cmds[cmd_size++] = y3;
+}
+
+void wxPath::Translate(double x, double y)
+{
+  int i = 0;
+  while (i < cmd_size) {
+    if (cmds[i] == CMD_CLOSE) {
+      i += 1;
+    } else if ((cmds[i] == CMD_MOVE)
+	       || (cmds[i] == CMD_LINE)) {
+      cmds[i+1] += x;
+      cmds[i+2] += y;
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+      cmds[i+1] += x;
+      cmds[i+2] += y;
+      cmds[i+3] += x;
+      cmds[i+4] += y;
+      cmds[i+5] += x;
+      cmds[i+6] += y;
+      i += 7;
+    }
+  }
+}
+
+void wxPath::Scale(double x, double y)
+{
+  int i = 0;
+  while (i < cmd_size) {
+    if (cmds[i] == CMD_CLOSE) {
+      i += 1;
+    } else if ((cmds[i] == CMD_MOVE)
+	       || (cmds[i] == CMD_LINE)) {
+      cmds[i+1] *= x;
+      cmds[i+2] *= y;
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+      cmds[i+1] *= x;
+      cmds[i+2] *= y;
+      cmds[i+3] *= x;
+      cmds[i+4] *= y;
+      cmds[i+5] *= x;
+      cmds[i+6] *= y;
+      i += 7;
+    }
+  }
+}
+
+void wxPath::Rotate(double a)
+{
+  double xx, xy, yy, yx, xtmp1, ytmp1, xtmp2, ytmp2;
+  int i = 0;
+
+  xx = cos(a);
+  xy = sin(a);
+  yy = xx;
+  yx = -xy;
+
+  while (i < cmd_size) {
+    if (cmds[i] == CMD_CLOSE) {
+      i += 1;
+    } else if ((cmds[i] == CMD_MOVE)
+	       || (cmds[i] == CMD_LINE)) {
+      ROTATE_XY(cmds[i+1], cmds[i+2]);
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+      ROTATE_XY(cmds[i+1], cmds[i+2]);
+      ROTATE_XY(cmds[i+3], cmds[i+4]);
+      ROTATE_XY(cmds[i+5], cmds[i+6]);
+      i += 7;
+    }
+  }
+}
+
+void wxPath::Reverse(int start_cmd)
+{
+  int e, i, j, pos, n, *cs, controls;
+  double *a;
+
+  while (start_cmd < cmd_size) {
+    /* Find next starting point: */
+    if (cmds[start_cmd] == CMD_CLOSE) {
+      start_cmd += 1;
+    }
+
+    i = start_cmd;
+    n = 0;
+    while (i < cmd_size) {
+      if (cmds[i] == CMD_CLOSE) {
+	break;
+      } else {
+	n++;
+	if (cmds[i] == CMD_MOVE) {
+	  i += 3;
+	} else if (cmds[i] == CMD_LINE) {
+	  i += 3;
+	} else if (cmds[i] == CMD_CURVE) {
+	  i += 7;
+	}
+      }
+    }
+    e = i;
+
+    /* Reverse sub-path in [start_cmd, e) */
+
+    a = new WXGC_ATOMIC double[e - start_cmd];
+    cs = new WXGC_ATOMIC int[n];
+
+    /* Traverse again to find command starts: */
+    n = 0;
+    i = start_cmd;
+    while (i < e) {
+      cs[n++] = i;
+      if (cmds[i] == CMD_MOVE) {
+	i += 3;
+      } else if (cmds[i] == CMD_LINE) {
+	i += 3;
+      } else if (cmds[i] == CMD_CURVE) {
+	i += 7;
+      }
+    }
+
+    /* Reverse */
+    controls = -1;
+    pos = 0;
+    for (j = n; j--; ) {
+      i = cs[j];
+      if (j == n - 1) {
+	a[pos++] = CMD_MOVE;
+      } else if (controls >= 0) {
+	a[pos++] = CMD_CURVE;
+	a[pos++] = cmds[controls+3];
+	a[pos++] = cmds[controls+4];
+	a[pos++] = cmds[controls+1];
+	a[pos++] = cmds[controls+2];
+      } else {
+	a[pos++] = CMD_LINE;
+      }
+
+      if ((cmds[i] == CMD_MOVE)
+	  || (cmds[i] == CMD_LINE)) {
+	a[pos++] = cmds[i+1];
+	a[pos++] = cmds[i+2];
+	controls = -1;
+      } else if (cmds[i] == CMD_CURVE) {
+	a[pos++] = cmds[i+5];
+	a[pos++] = cmds[i+6];
+	controls = i;
+      }
+    }
+
+    memcpy(cmds + start_cmd, a, (e - start_cmd) * sizeof(double));
+
+    start_cmd = e;
+  }
+  
+}
+
+void wxPath::AddPath(wxPath *p)
+{
+  int i, closed_n;
+
+  if (!IsOpen()) {
+    /* Simple case: this path is closed, so just append p */
+    MakeRoom(p->cmd_size);
+    last_cmd = cmd_size + p->last_cmd;
+    for (i = 0; i < p->cmd_size; i++) {
+      cmds[cmd_size++] = p->cmds[i];
+    }
+  } else {
+    /* Put closed paths in p on the front of this path,
+       and add unclosed paths to this path's unclosed
+       path. */
+    if (p->IsOpen()) {
+      for (i = 0; i < p->cmd_size; i++) {
+	if (p->cmds[i] == CMD_CLOSE)
+	  break;
+	else if (cmds[i] == CMD_CURVE)
+	  i += 7;
+	else
+	  i += 3;
+      }
+      
+      if (i < p->cmd_size) {
+	closed_n = i + 1;
+      } else {
+	closed_n = 0;
+      }
+    } else {
+      /* No open path in p */
+      closed_n = p->cmd_size;
+    }
+    
+    MakeRoom(p->cmd_size);
+    memmove(cmds + closed_n, cmds, cmd_size * sizeof(double));
+    memcpy(cmds, p->cmds, closed_n * sizeof(double));
+    if (closed_n  < p->cmd_size) {
+      /* There was an open path in p... */
+      memcpy(cmds + cmd_size + closed_n, p->cmds + closed_n, (p->cmd_size - closed_n) * sizeof(double));
+
+      /* p's open path must start with CMD_MOVE; change it to CMD_LINE */
+      cmds[closed_n + cmd_size] = CMD_LINE;
+    
+      last_cmd = cmd_size + p->last_cmd;
+    } else {
+      /* No open path in p, so just adjust last_cmd */
+      last_cmd += closed_n;
+    }
+    cmd_size += p->cmd_size;
+  }
+}
+
+void wxPath::Install(long target, double dx, double dy)
+{
+  int i = 0;
+
+#ifdef WX_USE_CAIRO
+  cairo_new_path(CAIRO_DEV);
+#endif
+
+  while (i < cmd_size) {
+    if (cmds[i] == CMD_CLOSE) {
+#ifdef WX_USE_CAIRO
+      cairo_close_path(CAIRO_DEV);
+#endif
+      i += 1;
+    } else if (cmds[i] == CMD_MOVE) {
+#ifdef WX_USE_CAIRO
+      cairo_move_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+#endif
+      i += 3;
+    } else if (cmds[i] == CMD_LINE) {
+#ifdef WX_USE_CAIRO
+      cairo_line_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+#endif
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+#ifdef WX_USE_CAIRO
+      cairo_curve_to(CAIRO_DEV, 
+		     cmds[i+1]+dx, cmds[i+2]+dy, 
+		     cmds[i+3]+dx, cmds[i+4]+dy, 
+		     cmds[i+5]+dx, cmds[i+6]+dy);
+#endif
+      i += 7;
+    }
+  }
+}
+
+void wxPath::InstallPS()
+{
+  int i = 0;
+  while (i < cmd_size) {
+    if (cmds[i] == CMD_CLOSE) {
+      i += 1;
+    } else if (cmds[i] == CMD_MOVE) {
+      i += 3;
+    } else if (cmds[i] == CMD_LINE) {
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+      i += 7;
+    }
+  }
+}
+
+int wxPath::ToPolygons(int **_lens, double ***_ptss, double sx, double sy)
+{
+  int i, cnt, *lens, len, alloc_len, need_len;
+  double lx, ly, **ptss, *pts, *naya;
+
+  cnt = 0;
+  for (i = 0; i < cmd_size; ) {
+    if (cmds[i] == CMD_CLOSE) {
+      cnt++;
+      i += 1;
+    } else if (cmds[i] == CMD_MOVE) {
+      i += 3;
+    } else if (cmds[i] == CMD_LINE) {
+      i += 3;
+    } else if (cmds[i] == CMD_CURVE) {
+      i += 7;
+    }
+  }
+
+  if (IsOpen())
+    cnt++;
+
+  ptss = new double*[cnt];
+  lens = new int[cnt];
+  cnt = 0;
+
+  pts = NULL;
+  len = 0;
+  alloc_len = 0;
+  lx = ly = 0;
+
+  for (i = 0; i < cmd_size; ) {
+    if (cmds[i] == CMD_CLOSE) {
+      ptss[cnt] = pts;
+      lens[cnt] = len;
+      cnt++;
+
+      len = 0;
+      alloc_len = 0;
+      pts = NULL;
+      lx = ly = 0;
+
+      i += 1;
+    } else {
+      if ((cmds[i] == CMD_MOVE)
+	  || (cmds[i] == CMD_LINE)) {
+	need_len = 1;
+      } else if (cmds[i] == CMD_CURVE) {
+	double dx, dy;
+	dx = sx * (lx - cmds[i + 5]);
+	dy = sy * (ly - cmds[i + 6]);
+	if (dx < 0) dx = -dx;
+	if (dy < 0) dy = -dy;
+	if (dx > dy)
+	  need_len = (int)ceil(dx);
+	else
+	  need_len = (int)ceil(dy);
+	need_len += 1;
+      } else {
+	need_len = 0;
+      }
+
+      if (len + (2 * need_len) > alloc_len) {
+	int l;
+	l = (len + (2 * need_len)) * 2;
+	naya = new WXGC_ATOMIC double[l];
+	memcpy(naya, pts, len * sizeof(double));
+	pts = naya;
+	alloc_len = l;
+      }
+
+      if ((cmds[i] == CMD_MOVE)
+	  || (cmds[i] == CMD_LINE)) {
+	lx = cmds[i+1];
+	ly = cmds[i+2];
+	pts[len++] = lx;
+	pts[len++] = ly;
+	i += 3;
+      } else if (cmds[i] == CMD_CURVE) {
+	int d;
+	double x0 = lx, x1 = cmds[i+1], x2 = cmds[i+3], x3 = cmds[i+5];
+	double y0 = ly, y1 = cmds[i+2], y2 = cmds[i+4], y3 = cmds[i+6];
+	double ax = (((x3 - (x2 * 3)) + (x1 * 3)) - x0);
+	double ay = (((y3 - (y2 * 3)) + (y1 * 3)) - y0);
+	double bx = (((x2 * 3) - (x1 * 6)) + (x0 * 3));
+	double by = (((y2 * 3) - (y1 * 6)) + (y0 * 3));
+	double cx = ((x1 * 3) - (x0 * 3));
+	double cy = ((y1 * 3) -  (y0 * 3));
+	double dx = x0, dy = y0, tt, x, y;
+
+	for (d = 0; d < need_len; d++) {
+	  tt = ((double)d / (double)(need_len - 1));
+	  x = ((((((tt * ax) + bx) * tt) + cx) * tt) + dx);
+	  y = ((((((tt * ay) + by) * tt) + cy) * tt) + dy);
+	  pts[len++] = x;
+	  pts[len++] = y;
+	}
+
+	lx = x3;
+	ly = y3;
+
+	i += 7;
+      }
+    }
+  }
+
+  if (IsOpen()) {
+    ptss[cnt] = pts;
+    lens[cnt] = len;
+    cnt++;
+  }
+
+  *_lens = lens;
+  *_ptss = ptss;
+
+  return cnt;
+}

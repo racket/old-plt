@@ -17,6 +17,7 @@
 
 @ Q "draw-arc" : void DrawArc(double,double,nndouble,nndouble,double,double); : : /CheckOk[METHODNAME("dc<%>","draw-arc")]
 @ Q "draw-ellipse" : void DrawEllipse(double,double,nndouble,nndouble); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk[METHODNAME("dc<%>","draw-ellipse")]
+@ Q "draw-path" : void DrawPath(wxPath!,double=0.0,double=0.0,SYM[fillKind]=wxODDEVEN_RULE); : : /CheckOk[METHODNAME("dc<%>","draw-path")]
 
 @ Q "draw-lines" : void DrawLines(-int,wxPoint!/bList/ubList/cList,double=0,double=0); : /methListSet[wxPoint.0.1.0]// : / glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-lines")]|CheckOk[METHODNAME("dc<%>","draw-lines")]//
 @ Q "draw-polygon" : void DrawPolygon(-int,wxPoint!/bList/ubList/cList,double=0,double=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-polygon")]|CheckOk[METHODNAME("dc<%>","draw-polygon")]//

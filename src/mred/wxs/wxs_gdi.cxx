@@ -3746,6 +3746,43 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 }
 
 
+static Scheme_Object *smoothingMode_0_sym = NULL;
+static Scheme_Object *smoothingMode_1_sym = NULL;
+static Scheme_Object *smoothingMode_2_sym = NULL;
+
+static void init_symset_smoothingMode(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(smoothingMode_0_sym);
+  smoothingMode_0_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unsmoothed"));
+  wxREGGLOB(smoothingMode_1_sym);
+  smoothingMode_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("smoothed"));
+  wxREGGLOB(smoothingMode_2_sym);
+  smoothingMode_2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("compatible"));
+}
+
+static int unbundle_symset_smoothingMode(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!smoothingMode_2_sym) WITH_VAR_STACK(init_symset_smoothingMode());
+  if (0) { }
+  else if (v == smoothingMode_0_sym) { READY_TO_RETURN; return 0; }
+  else if (v == smoothingMode_1_sym) { READY_TO_RETURN; return 1; }
+  else if (v == smoothingMode_2_sym) { READY_TO_RETURN; return 2; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "smoothingMode symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_smoothingMode(int v) {
+  if (!smoothingMode_2_sym) init_symset_smoothingMode();
+  switch (v) {
+  case 0: return smoothingMode_0_sym;
+  case 1: return smoothingMode_1_sym;
+  case 2: return smoothingMode_2_sym;
+  default: return NULL;
+  }
+}
+
 
 
 
@@ -3830,6 +3867,29 @@ static Scheme_Object *os_wxRegionRgnBoundingBox(int n,  Scheme_Object *p[])
   return ((Scheme_Object *)r);
 }
 
+static Scheme_Object *os_wxRegionXor(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxRegion_class, "xor in region%", n, p);
+  class wxRegion* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "xor in region%", 0));
+
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","xor"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","xor"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
+  WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->Xor(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxRegionSubtract(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3892,6 +3952,44 @@ static Scheme_Object *os_wxRegionUnion(int n,  Scheme_Object *p[])
 
   if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","union"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","union"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->Union(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxRegionSetPath(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxRegion_class, "set-path in region%", n, p);
+  class wxPath* x0 INIT_NULLED_OUT;
+  double x1;
+  double x2;
+  int x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPath(p[POFFSET+0], "set-path in region%", 0));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-path in region%"));
+  } else
+    x1 = 0;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "set-path in region%"));
+  } else
+    x2 = 0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(unbundle_symset_fillKind(p[POFFSET+3], "set-path in region%"));
+  } else
+    x3 = wxODDEVEN_RULE;
+
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-path"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
+  WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetPath(x0, x1, x2, x3));
 
   
   
@@ -4120,13 +4218,15 @@ void objscheme_setup_wxRegion(Scheme_Env *env)
 
   wxREGGLOB(os_wxRegion_class);
 
-  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", (Scheme_Method_Prim *)os_wxRegion_ConstructScheme, 11));
+  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", (Scheme_Method_Prim *)os_wxRegion_ConstructScheme, 13));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?" " method", (Scheme_Method_Prim *)os_wxRegionEmpty, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box" " method", (Scheme_Method_Prim *)os_wxRegionRgnBoundingBox, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "xor" " method", (Scheme_Method_Prim *)os_wxRegionXor, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "subtract" " method", (Scheme_Method_Prim *)os_wxRegionSubtract, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "intersect" " method", (Scheme_Method_Prim *)os_wxRegionIntersect, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "union" " method", (Scheme_Method_Prim *)os_wxRegionUnion, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-path" " method", (Scheme_Method_Prim *)os_wxRegionSetPath, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-arc" " method", (Scheme_Method_Prim *)os_wxRegionSetArc, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-polygon" " method", (Scheme_Method_Prim *)os_wxRegionSetPolygon, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse" " method", (Scheme_Method_Prim *)os_wxRegionSetEllipse, 4, 4));
@@ -4195,6 +4295,451 @@ class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *wher
     return (os_wxRegion *)o->primdata;
   else
     return (wxRegion *)o->primdata;
+}
+
+
+
+
+
+
+
+
+class os_wxPath : public wxPath {
+ public:
+
+  os_wxPath CONSTRUCTOR_ARGS(());
+  ~os_wxPath();
+#ifdef MZ_PRECISE_GC
+  void gcMark();
+  void gcFixup();
+#endif
+};
+
+#ifdef MZ_PRECISE_GC
+void os_wxPath::gcMark() {
+  wxPath::gcMark();
+}
+void os_wxPath::gcFixup() {
+  wxPath::gcFixup();
+}
+#endif
+
+static Scheme_Object *os_wxPath_class;
+
+os_wxPath::os_wxPath CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxPath())
+{
+}
+
+os_wxPath::~os_wxPath()
+{
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxPathAddPath(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "append in dc-path%", n, p);
+  class wxPath* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPath(p[POFFSET+0], "append in dc-path%", 0));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->AddPath(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathReverse(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "reverse in dc-path%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Reverse());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathRotate(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "rotate in dc-path%", n, p);
+  double x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "rotate in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Rotate(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathScale(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "scale in dc-path%", n, p);
+  double x0;
+  double x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "scale in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "scale in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Scale(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathTranslate(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "translate in dc-path%", n, p);
+  double x0;
+  double x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "translate in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "translate in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Translate(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathCurveTo(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "curve-to in dc-path%", n, p);
+  double x0;
+  double x1;
+  double x2;
+  double x3;
+  double x4;
+  double x5;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "curve-to in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "curve-to in dc-path%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "curve-to in dc-path%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "curve-to in dc-path%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "curve-to in dc-path%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "curve-to in dc-path%"));
+
+  if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%","curve-to"), "path is not open: ", THEOBJ);
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->CurveTo(x0, x1, x2, x3, x4, x5));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathArc(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "arc in dc-path%", n, p);
+  double x0;
+  double x1;
+  double x2;
+  double x3;
+  double x4;
+  double x5;
+  Bool x6;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "arc in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "arc in dc-path%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "arc in dc-path%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "arc in dc-path%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "arc in dc-path%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "arc in dc-path%"));
+  if (n > (POFFSET+6)) {
+    x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "arc in dc-path%"));
+  } else
+    x6 = TRUE;
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Arc(x0, x1, x2, x3, x4, x5, x6));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathLineTo(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "line-to in dc-path%", n, p);
+  double x0;
+  double x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "line-to in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "line-to in dc-path%"));
+
+  if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%","line-to"), "path is not open: ", THEOBJ);
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->LineTo(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathMoveTo(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "move-to in dc-path%", n, p);
+  double x0;
+  double x1;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "move-to in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "move-to in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->MoveTo(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathIsOpen(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxPath_class, "open? in dc-path%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->IsOpen());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxPathClose(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "close in dc-path%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%","close"), "path is not open: ", THEOBJ);
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Close());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathReset(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "reset in dc-path%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Reset());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPath_ConstructScheme(int n,  Scheme_Object *p[])
+{
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
+  os_wxPath *realobj INIT_NULLED_OUT;
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, realobj);
+
+  
+  if (n != (POFFSET+0)) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in dc-path%", POFFSET+0, POFFSET+0, n, p, 1));
+
+  
+  realobj = WITH_VAR_STACK(new os_wxPath CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxPath());
+#endif
+  realobj->__gc_external = (void *)p[0];
+  
+  
+  READY_TO_RETURN;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  return scheme_void;
+}
+
+void objscheme_setup_wxPath(Scheme_Env *env)
+{
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+
+  wxREGGLOB(os_wxPath_class);
+
+  os_wxPath_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc-path%", "object%", (Scheme_Method_Prim *)os_wxPath_ConstructScheme, 12));
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "append" " method", (Scheme_Method_Prim *)os_wxPathAddPath, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "reverse" " method", (Scheme_Method_Prim *)os_wxPathReverse, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "rotate" " method", (Scheme_Method_Prim *)os_wxPathRotate, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "scale" " method", (Scheme_Method_Prim *)os_wxPathScale, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "translate" " method", (Scheme_Method_Prim *)os_wxPathTranslate, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "curve-to" " method", (Scheme_Method_Prim *)os_wxPathCurveTo, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "arc" " method", (Scheme_Method_Prim *)os_wxPathArc, 6, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "line-to" " method", (Scheme_Method_Prim *)os_wxPathLineTo, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "move-to" " method", (Scheme_Method_Prim *)os_wxPathMoveTo, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "open?" " method", (Scheme_Method_Prim *)os_wxPathIsOpen, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "close" " method", (Scheme_Method_Prim *)os_wxPathClose, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "reset" " method", (Scheme_Method_Prim *)os_wxPathReset, 0, 0));
+
+
+  WITH_VAR_STACK(scheme_made_class(os_wxPath_class));
+
+
+  READY_TO_RETURN;
+}
+
+int objscheme_istype_wxPath(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  REMEMBER_VAR_STACK();
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (objscheme_is_a(obj,  os_wxPath_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "dc-path% object or " XC_NULL_STR: "dc-path% object", -1, 0, &obj));
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxPath(class wxPath *realobj)
+{
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
+    { READY_TO_RETURN; return sobj; }
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxPath_class));
+
+  obj->primdata = realobj;
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
+  return (Scheme_Object *)obj;
+}
+
+class wxPath *objscheme_unbundle_wxPath(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  REMEMBER_VAR_STACK();
+
+  (void)objscheme_istype_wxPath(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
+  if (o->primflag)
+    return (os_wxPath *)o->primdata;
+  else
+    return (wxPath *)o->primdata;
 }
 
 

@@ -134,6 +134,7 @@ public:
     void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0, int fill=wxODDEVEN_RULE);
     void  DrawRectangle(double x, double y, double w, double h);
     void  DrawRoundedRectangle(double x, double y, double w, double h, double radius=20);
+    void  DrawPath(wxPath *p, double dx, double dy, int fill=wxODDEVEN_RULE);
 
     void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
     double GetCharHeight(void);

@@ -31,6 +31,7 @@ class ofstream;
 #endif
 
 class wxMemoryDC;
+class wxPath;
 
 #if USE_POSTSCRIPT
 
@@ -94,6 +95,7 @@ class wxPostScriptDC: public wxDC
   void DrawPoint(wxPoint* point) { DrawPoint(point->x, point->y); }
   void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
   void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
+  void  DrawPath(wxPath *p, double dx, double dy, int fillStyle=wxODDEVEN_RULE);
 
   void DrawSpline(double x1, double y1, double x2, double y2, double x3, double y3);
 

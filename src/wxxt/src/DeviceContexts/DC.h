@@ -69,6 +69,7 @@ class wxFont;
 class wxList;
 class wxPen;
 class wxRegion;
+class wxPath;
 
 class wxDC : public wxObject {
 public:
@@ -95,6 +96,7 @@ public:
     virtual void  DrawRectangle(double x, double y, double w, double h) = 0;
     virtual void  DrawRoundedRectangle(double x, double y, double w, double h,
 				       double radius=20) = 0;
+    virtual void  DrawPath(wxPath *p, double dx, double dy, int fill=wxODDEVEN_RULE) = 0;
 
     virtual void  DrawText(char *text, double x, double y, Bool combine=FALSE,
 			   Bool use16 = FALSE, int dt = 0, double angle = 0.0) = 0;

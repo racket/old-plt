@@ -242,7 +242,8 @@ int wxDC::GetAntiAlias()
 
 void wxDC::SetAntiAlias(int v)
 {
-  anti_alias = v;
+  if (Colour)
+    anti_alias = v;
 }
 
 //-----------------------------------------------------------------------------

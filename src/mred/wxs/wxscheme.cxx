@@ -3094,6 +3094,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxBitmap(global_env);
   objscheme_setup_wxCursor(global_env);
   objscheme_setup_wxRegion(global_env);
+  objscheme_setup_wxPath(global_env);
   objscheme_setup_wxFont(global_env);
   objscheme_setup_wxFontList(global_env);
   objscheme_setup_wxFontNameDirectory(global_env);

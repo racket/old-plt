@@ -89,6 +89,8 @@ class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *wher
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
+extern class wxPath *objscheme_unbundle_wxPath(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 #endif
@@ -97,6 +99,13 @@ void objscheme_setup_wxRegion(Scheme_Env *env);
 int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *realobj);
 class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *where, int nullOK);
+extern class wxPath *objscheme_unbundle_wxPath(Scheme_Object *, const char *, int);
+#endif
+void objscheme_setup_wxPath(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
+int objscheme_istype_wxPath(Scheme_Object *obj, const char *stop, int nullOK);
+Scheme_Object *objscheme_bundle_wxPath(class wxPath *realobj);
+class wxPath *objscheme_unbundle_wxPath(Scheme_Object *obj, const char *where, int nullOK);
 #endif
 void objscheme_setup_wxFontNameDirectory(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

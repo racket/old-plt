@@ -1849,6 +1849,44 @@ static Scheme_Object *os_wxDCDrawLines(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxDCDrawPath(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxDC_class, "draw-path in dc<%>", n, p);
+  class wxPath* x0 INIT_NULLED_OUT;
+  double x1;
+  double x2;
+  int x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPath(p[POFFSET+0], "draw-path in dc<%>", 0));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-path in dc<%>"));
+  } else
+    x1 = 0.0;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-path in dc<%>"));
+  } else
+    x2 = 0.0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(unbundle_symset_fillKind(p[POFFSET+3], "draw-path in dc<%>"));
+  } else
+    x3 = wxODDEVEN_RULE;
+
+  DO_OK_CHECK(METHODNAME("dc<%>","draw-path"))
+  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawPath(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxDCDrawEllipse(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2125,7 +2163,7 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 48));
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 49));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "glyph-exists?" " method", (Scheme_Method_Prim *)os_wxDCGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page" " method", (Scheme_Method_Prim *)os_wxDCEndPage, 0, 0));
@@ -2166,6 +2204,7 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-clipping-rect" " method", (Scheme_Method_Prim *)os_wxDCSetClippingRect, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-polygon" " method", (Scheme_Method_Prim *)os_wxDCDrawPolygon, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-lines" " method", (Scheme_Method_Prim *)os_wxDCDrawLines, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-path" " method", (Scheme_Method_Prim *)os_wxDCDrawPath, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-ellipse" " method", (Scheme_Method_Prim *)os_wxDCDrawEllipse, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-arc" " method", (Scheme_Method_Prim *)os_wxDCDrawArc, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-text" " method", (Scheme_Method_Prim *)os_wxDCDrawText, 3, 6));

@@ -176,10 +176,11 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont
 	  doDraw(display, drawable, gc, x+tx, y, p, 1, image, xfont, draw, &col);
 	  if (line && (*p != '&')) {
 #ifdef WX_USE_XFT	
-	    XftDrawRect(draw,&col, x+tx, y+1, ww, 1);
-#else
-	    XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+ww, y+1);
+	    if (xfont)
+	      XftDrawRect(draw,&col, x+tx, y+1, ww, 1);
+	    else
 #endif
+	      XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+ww, y+1);
 	  }
 	  length -= 1;
 	  tx += ww;

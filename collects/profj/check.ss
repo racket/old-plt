@@ -157,15 +157,15 @@
          (let ((name (id-string (field-name prog))))
            (check-var-init (var-init-init prog)
                            (lambda (e) 
-                             (check-expr e (remove-var-from-env name env) level type-recs c-class #f #t))
+                             (check-expr e (remove-var-from-env name env) level type-recs c-class #f #t #t))
                            (type-spec-to-type (field-type prog) level type-recs)
                            (string->symbol name)
                            type-recs)))
         ((var-decl? prog) (void))
         ((statement? prog)
-         (check-statement prog null env level type-recs c-class #f #t #f #f))
+         (check-statement prog null env level type-recs c-class #f #t #f #f #t))
         ((expr? prog)
-         (check-expr prog env level type-recs c-class #f #t))
+         (check-expr prog env level type-recs c-class #f #t #t))
         (else
          (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))
   
@@ -179,7 +179,7 @@
                      (add-var-to-env "this" this-ref parm empty-env)
                      level
                      type-recs 
-                     (list (id-string (header-id (class-def-info class))))))
+                     (list (id-string (header-id (class-def-info class)))) #f))
     (set-class-def-uses! class (send type-recs get-class-reqs)))
 
   ;check-interface: interface-def (list string) symbol type-recs -> void
@@ -187,19 +187,20 @@
     (send type-recs set-location! (interface-def-file iface))
     (send type-recs set-class-reqs (interface-def-uses iface))
     (check-members (interface-def-members iface) empty-env level type-recs 
-                   (list (id-string (header-id (interface-def-info iface)))))
+                   (list (id-string (header-id (interface-def-info iface)))) #t)
     (set-interface-def-uses! iface (send type-recs get-class-reqs)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
   
-  ;check-members: (list member) env symbol type-records (list string) -> void
-  (define (check-members members env level type-recs c-class)
+  ;check-members: (list member) env symbol type-records (list string) bool -> void
+  (define (check-members members env level type-recs c-class iface?)
     (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
            (field-env (create-field-env fields env (car c-class)))
-           (ctor-throw-env (consolidate-throws 
-                            (get-constructors (class-record-methods class-record)) field-env))
+           (ctor-throw-env (if iface? field-env
+                               (consolidate-throws 
+                                (get-constructors (class-record-methods class-record)) field-env)))
            (static-env (get-static-fields-env field-env))
            (setting-fields null))
       (let loop ((rest members) (statics empty-env) (fields env))
@@ -208,15 +209,15 @@
             (cond
               ((method? member)
                (if (memq 'static (map modifier-kind (method-modifiers member)))
-                   (check-method member static-env level type-recs c-class #t)
-                   (check-method member field-env level type-recs c-class #f))
+                   (check-method member static-env level type-recs c-class #t iface?)
+                   (check-method member field-env level type-recs c-class #f iface?))
                (loop (cdr rest) statics fields))
               ((initialize? member)
                (if (initialize-static member)
                    (check-statement (initialize-block member) 'void static-env
-                                    level type-recs c-class #f #t #f #f)
+                                    level type-recs c-class #f #t #f #f #f)
                    (check-statement (initialize-block member) 'void ctor-throw-env level
-                                    type-recs c-class #f #f #f #f))
+                                    type-recs c-class #f #f #f #f #f))
                (loop (cdr rest) statics fields))
               ((field? member)
                (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
@@ -228,7 +229,7 @@
                                        (check-expr e 
                                                    (if static? statics fields)
                                                    level type-recs c-class #f 
-                                                   static?))
+                                                   static? #f))
                                      type
                                      (string->symbol name)
                                      type-recs)
@@ -448,8 +449,8 @@
                            (cdr assigns))
                        class level static?)))))
   
-  ;check-method: method env type-records (list string) boolean-> void
-  (define (check-method method env level type-recs c-class static?)
+  ;check-method: method env type-records (list string) boolean boolean-> void
+  (define (check-method method env level type-recs c-class static? iface?)
     (let* ((ctor? (eq? 'ctor (type-spec-name (method-type method))))
            (name (method-name method))
            (sym-name (string->symbol (id-string name)))
@@ -458,12 +459,15 @@
            (return (if ctor? 
                        'void
                        (type-spec-to-type (method-type method) level type-recs))))
+      (when iface? (set! mods (cons 'abstract mods)))
       (if (or (memq 'abstract mods) (memq 'native mods))
           (when body
             (method-error (if (memq 'abstract mods) 'abstract 'native)
                           sym-name (id-src name)))
           (begin
             (when (and (not (eq? return 'void))
+                       (or (not (memq 'abstract mods))
+                           (not (memq 'native mods)))
                        (not (reachable-return? body)))
               (method-error 'no-reachable sym-name (id-src name)))
             (check-statement body
@@ -477,6 +481,7 @@
                              c-class
                              ctor?
                              static?
+                             #f
                              #f
                              #f)
             ))))
@@ -516,8 +521,10 @@
             (andmap reachable-return? (map catch-body (try-catches body)))))
       ((switch? body) #f)
       ((block? body)
-       (reachable-return? (list-ref (block-stmts body)
-                                    (sub1 (length (block-stmts body))))))
+       (if (null? (block-stmts body))
+           #f
+           (reachable-return? (list-ref (block-stmts body)
+                                        (sub1 (length (block-stmts body)))))))
       ((break? body) #f)
       ((continue? body) #f)
       ((label? body) (reachable-return? (label-stmt body)))
@@ -558,9 +565,9 @@
   (define (method-error kind method src)
     (raise-error method
                  (case kind
-                   ((no-return)
+                   ((no-reachable)
                     (format "method ~a does not have a reachable return" method))
-                   ((abs)
+                   ((abstract)
                     (format "abstract method ~a has an implementation. A ';' should come after the header"
                             method))
                    ((native)
@@ -607,14 +614,14 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
-  ;;check-statement: statement type env symbol type-records (U #f string) bool bool bool bool-> type
-  (define (check-statement statement return env level type-recs c-c ctor? static? in-loop? in-switch?)
+  ;;check-statement: statement type env symbol type-records (U #f string) bool bool bool bool bool-> type
+  (define (check-statement statement return env level type-recs c-c ctor? static? in-loop? in-switch? interactions?)
     (let* ((check-s (lambda (stmt env in-l? in-s?)
-                      (check-statement stmt return env level type-recs c-c ctor? static? in-l? in-s?)))
+                      (check-statement stmt return env level type-recs c-c ctor? static? in-l? in-s? interactions?)))
            (check-s-env-change (lambda (smt env) (check-s smt env in-loop? in-switch?)))
            (check-s-no-change (lambda (stmt) (check-s stmt env in-loop? in-switch?)))
            (check-e (lambda (exp env)
-                      (check-expr exp env level type-recs c-c ctor? static?)))
+                      (check-expr exp env level type-recs c-c ctor? static? interactions?)))
            (check-e-no-change (lambda (exp) (check-e exp env))))
       (cond
         ((ifS? statement) 
@@ -944,10 +951,10 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression checking functions
   
-  ;; check-expr: expression env symbol type-records (U string #f) bool bool-> type
-  (define (check-expr exp env level type-recs current-class ctor? static?)
+  ;; check-expr: expression env symbol type-records (U string #f) bool bool bool-> type
+  (define (check-expr exp env level type-recs current-class ctor? static? interactions?)
     (let ((check-sub-expr 
-           (lambda (expr) (check-expr expr env level type-recs current-class ctor? static?))))
+           (lambda (expr) (check-expr expr env level type-recs current-class ctor? static? interactions?))))
       (cond
         ((literal? exp) 
          (when (memq (expr-types exp) `(String string))
@@ -963,7 +970,7 @@
                                       type-recs)))
         ((access? exp)
          (set-expr-type exp
-                        (check-access exp check-sub-expr env level type-recs current-class)))
+                        (check-access exp check-sub-expr env level type-recs current-class interactions?)))
         ((special-name? exp)
          (set-expr-type exp (check-special-name exp env static? #f))) ;last bool is interactions. PROBLEM
         ((call? exp)
@@ -1117,8 +1124,8 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
-  ;;check-access: expression (expr -> type) env symbol type-records (list string) -> type
-  (define (check-access exp check-sub-expr env level type-recs c-class)
+  ;;check-access: expression (expr -> type) env symbol type-records (list string) interactions? -> type
+  (define (check-access exp check-sub-expr env level type-recs c-class interactions?)
     (let ((acc (access-name exp)))
       (cond
         ((field-access? acc)
@@ -1127,7 +1134,7 @@
                (src (id-src (field-access-field acc)))
                (record null))
            (if obj
-               (set! record (field-lookup fname (check-sub-expr obj) obj level type-recs))
+               (set! record (field-lookup fname (check-sub-expr obj) obj src level type-recs))
                (set! record 
                      (let ((name (var-access-class (field-access-access acc))))
                        (get-field-record fname
@@ -1139,7 +1146,7 @@
                                            (field-lookup-error 'not-found
                                                                (string->symbol fname)
                                                                (make-ref-type name null)
-                                                               (expr-src exp)))))))
+                                                               src))))))
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
@@ -1196,25 +1203,28 @@
                                                          (car acc)
                                                          (make-var-access #t null c-class)))
                          (cdr acc))
-                        (build-field-accesses
-                         (make-access #f (expr-src exp)
-                                      (make-field-access (make-special-name #f (expr-src exp)
-                                                                            "this")
-                                                         (car acc)
-                                                         #f))
-                         (cdr acc))))
+                        (if interactions?
+                            (build-field-accesses (make-access #f (expr-src exp) (make-local-access (car acc)))
+                                                  (cdr acc))
+                            (build-field-accesses
+                             (make-access #f (expr-src exp)
+                                          (make-field-access (make-special-name #f (expr-src exp)
+                                                                                "this")
+                                                             (car acc)
+                                                             #f))
+                             (cdr acc)))))
                    (else (variable-not-found-error (car acc) (id-src (car acc)))))))
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
-  ;; field-lookup: string type expression symbol type-records -> field-record
-  (define (field-lookup fname obj-type obj level type-recs)
-    (let ((src (expr-src obj))
+  ;; field-lookup: string type expression src symbol type-records -> field-record
+  (define (field-lookup fname obj-type obj src level type-recs)
+    (let ((obj-src (expr-src obj))
           (name (string->symbol fname)))
       (cond
         ((reference-type? obj-type)
          (let ((obj-record (send type-recs get-class-record obj-type
-                                 ((get-importer type-recs) obj-type type-recs level src))))
+                                 ((get-importer type-recs) obj-type type-recs level obj-src))))
            (get-field-record fname 
                              (get-record obj-record type-recs)
                              (lambda () 
@@ -1223,7 +1233,7 @@
          (unless (equal? fname "length")
            (field-lookup-error 'array name obj-type src))
          (make-field-record "length" `() #f `(array) 'int))
-        (else (field-lookup-error 'primitive name obj-type src)))))
+        (else (field-lookup-error 'primitive name obj-type obj-src)))))
   
   ;; build-field-accesses: access (list id) -> field-access
   (define (build-field-accesses start accesses)

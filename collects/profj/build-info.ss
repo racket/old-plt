@@ -370,7 +370,6 @@
                                                    (header-implements info))
                                              level
                                              type-recs)
-                   
                    (check-current-methods (cons super-record iface-records)
                                           m
                                           members
@@ -387,10 +386,9 @@
                                                (class-specific-method? meth m))
                                              (class-record-methods super-record)))
                            (cons super-name (class-record-parents super-record))
-                           (flatten
-                            (append (map name->list (header-implements info))
-                                    (map class-record-parents iface-records)
-                                    (class-record-ifaces super-record))))))
+                           (append (map name->list (header-implements info))
+                                   (map class-record-parents iface-records)
+                                   (class-record-ifaces super-record)))))
                      (send type-recs add-class-record record)
                      record))))))
         (if look-in-table?
@@ -615,7 +613,7 @@
   (define (check-current-methods records methods members level type-recs)
     (or (null? records)
         (and (check-for-conflicts methods (car records) members level type-recs)
-             (check-current-methods methods (cdr records) members level type-recs))))
+             (check-current-methods (cdr records) methods members level type-recs))))
   
   (define (check-for-conflicts methods record members level type-recs)
     (or (null? methods)
@@ -646,15 +644,15 @@
             ifaces-name
             ))
   
-  ;implements-all? (list method-record) (list method) id symbol -> bool
+  ;implements-all? (list method-record) (list method) name symbol -> bool
   (define (implements-all? inherit-methods methods name level)
     (or (null? inherit-methods)
         (and (not (method-member? (car inherit-methods) methods level))
              (method-error 'not-implement 
                            (make-id (method-record-name (car inherit-methods)) #f)
                            (method-record-atypes (car inherit-methods))
-                           (id-string name)
-                           (id-src name)
+                           (id-string (name-id name))
+                           (id-src (name-id name))
                            #f))
         (implements-all? (cdr inherit-methods) methods name level)))
   

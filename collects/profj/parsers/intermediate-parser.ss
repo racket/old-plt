@@ -187,7 +187,9 @@
 
       (VariableDeclaratorId
        [(IDENTIFIER)
-	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f 0 (build-src 1)) (build-src 1))])
+	(make-var-decl (make-id $1 (build-src 1)) 
+                       (list (make-modifier 'private #f))
+                       (make-type-spec #f 0 (build-src 1)) (build-src 1))])
 			
       (VariableInitializer
        [(Expression) $1])
@@ -195,13 +197,13 @@
       ;; 19.8.3
       (MethodDeclaration
        [(MethodHeader MethodBody) (make-method (method-modifiers $1)
-                                                   (method-type $1)
-                                                   (method-type-parms $1)
-                                                   (method-name $1)
-                                                   (method-parms $1)
-                                                   (method-throws $1)
-                                                   $2
-                                                   (build-src 2))])
+                                               (method-type $1)
+                                               (method-type-parms $1)
+                                               (method-name $1)
+                                               (method-parms $1)
+                                               (method-throws $1)
+                                               $2
+                                               (build-src 2))])
 
       (MethodHeader
        [(Modifiers Type MethodDeclarator) (construct-method-header (cons (make-modifier 'public #f) $1) null $2 $3 null)]
@@ -239,8 +241,9 @@
       
       (ConstructorDeclaration
        [(ConstructorDeclarator ConstructorBody)
-	(make-method null (make-type-spec 'ctor 0 (build-src 2)) null (car $1)
-                         (cadr $1) null $2 (build-src 2))])
+	(make-method (list (make-modifier 'public #f))         
+                     (make-type-spec 'ctor 0 (build-src 2)) null (car $1)
+                     (cadr $1) null $2 (build-src 2))])
       
       (ConstructorDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]

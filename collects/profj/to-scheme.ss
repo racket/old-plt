@@ -269,7 +269,7 @@
              (exists-path-to-cycle? 
               (lambda (def)
                 (let ((reqs-in-cycle (filter (lambda (req)
-                                               (or (not (completed req))
+                                               (or (not (completed? req))
                                                    (in-cycle? req)
                                                    (and (dependence-on-cycle req)
                                                         (hash-table-put! cycle req 'in-cycle))
@@ -476,7 +476,7 @@
                                    ,@(map build-identifier static-field-names)
                                    ,@static-field-setters
                                    ,@field-getters/setters)))
-          
+                    
           (list `(begin ,provides
                         ,(create-local-names (append (make-method-names (accesses-private methods)
                                                                         (get-statics (accesses-private methods))
@@ -662,11 +662,11 @@
         (send type-recs set-location! (loc))
         
         (let* ((static-field-names (make-static-field-names (members-field members)))
-               (provides `(provides ,name ,@static-field-names)))
+               (provides `(provide ,name ,@static-field-names)))
         
           (list `(begin ,provides
                         (define ,syntax-name (,interface ,(translate-parents (header-extends header))
-                                              ,(make-method-names (members-method members) null type-recs)))
+                                              ,@(make-method-names (members-method members) null type-recs)))
                         ,@(create-static-fields static-field-names (members-field members)))
                 (make-syntax #f `(module ,name mzscheme (requires ,(module-name)) ,provides) #f))))))
   
@@ -709,7 +709,7 @@
         null
         (if (memq (car methods) minus-methods)
             (make-method-names (cdr methods) minus-methods type-recs)
-            (cons (build-identifier (build-method-name (method-name (car methods)) 
+            (cons (build-identifier (build-method-name (id-string (method-name (car methods)))
                                                        (map (lambda (t) (type-spec-to-type t 'full type-recs))
                                                             (map field-type (method-parms (car methods))))))
                   (make-method-names (cdr methods) minus-methods type-recs)))))

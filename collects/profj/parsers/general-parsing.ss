@@ -39,7 +39,7 @@
                  (car declarator)
                  (cadr declarator)
                  throws
-                 (make-block null #f)
+                 #f
                  #f))
   
   (define (name->access n)

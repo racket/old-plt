@@ -65,6 +65,7 @@
       ("framework" "PLT Framework: GUI Application Framework" 8)
 
       ("mzc" "PLT mzc: MzScheme Compiler Manual" 10)
+      ("foreign" "PLT Foreign Interface Manual" 10)
       
       ("tools" "PLT Tools: DrScheme Extension Manual" 30)
       ("insidemz" "Inside PLT MzScheme" 50)

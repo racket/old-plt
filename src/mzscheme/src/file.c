@@ -4217,11 +4217,12 @@ find_system_path(int argc, Scheme_Object **argv)
       return scheme_append_string(home, scheme_make_string(":mzschemerc.ss" + ends_in_colon));
     if (which == id_pref_file)
       return scheme_append_string(home, scheme_make_string(":plt-prefs.ss" + ends_in_colon));
-    if (which == id_pref_file)
+    if (which == id_addon_dir)
       return scheme_append_string(home, scheme_make_string(":PLT Scheme AddOns" + ends_in_colon));
   }
 #endif
 
+  /* Something went wrong if we get here. */
   return scheme_void;
 }
 

@@ -1,164 +1,57 @@
 
-This is the MzScheme source code distribution. Please see the file
-plt/LICENSE for license information.
+This is the MzScheme source code directory. See ../README for general
+information on compiling it.
 
 Compiled binaries, documentation, and up-to-date information about
 MzScheme are at:
  http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
 
-MzScheme should compile (via `mzmake') and execute without
-modification on most platforms. You may have to adjust some flags in
-the Makefile and "sconfig.h".  Special per-platform instructions are
-below, followed by some general notes on compilation and changing
-MzScheme. (Please read the general notes if you plan on changing
-MzScheme or the default compilation flags.)
-
--Matthew Flatt
- PLT
- mflatt@cs.utah.edu
- http://www.cs.utah.edu/~mflatt/
-
-========================================================================
- Compiling for Unix (or Cygwin or BeOS)
-========================================================================
-
-Compile
--------
-
-Run the `mzmake' script to compile the `mzscheme' executable for the
-following platforms:
-
-  Alpha OSF1
-  BeOS
-  DEC Ultrix
-  HP/UX
-  i386 FreeBSD
-  i386 Linux
-  i386 Solaris [see note below]
-  i386 Win32 with Cygwin [beta 20]
-  PPC Linux
-  RS6000 AIX
-  SGI IRIX
-  Sparc Solaris [see note below]
-  Sparc SunOS4    
-
-[Solaris Note: To ensure that dynamic extensions work right, make sure
- your compiler uses the native Solaris `ld' rather than GNU's `ld'.]
-
-[Solaris 2.7 Note: gcc 2.8.1 does not work correctly under Solaris
- 2.7, producing a MzScheme binary that crashes. Thanks to Stever Hall
- for figuring this out in a long--and presumably torturous--process.
- Compiling under Solaris 2.6 or compiling without -O under Solaris 2.7
- apparently solves the problem.]
-
-To compile the `mzscheme' executable for other Unix platforms:
-
-  1) Edit the Makefile if necessary. Common changes include the C
-     compiler name, compiler flags, the ranlib processor (if your
-     machine does not have `ranlib', set RANLIB to ':'), and
-     libraries. If Boehm's conservative garbage collector is not
-     supported for the platform, use SenoraGC by setting GCDIR to
-     'sgc' and including '-DUSE_SENORA_GC' in OPTIONS.
-
-  2) Edit "sconfig.h" to set platform-specific flags if necessary.
-
-  3) Execute `make bin' (or just `make').
-
-  [Cygwin note: either use `mzmake', or run `make cygwin-dll-setup'
-   and `make starter' before `make bin'.]
-
-Install
--------
-
-After compiling MzScheme, `[mz]make install' copies the binary and
-libraries into their normal places in the plt tree relative to the
-source directory. (For example, mzscheme is copied to to
-../../.bin/<platform-id>/mzscheme for unix, ../../mzscheme.exe for
-Cygwin.)
-
-Unix and BeOS: After running `[mz]make install', run ./install in the
-plt directory (two directories up from here). Afterwards,
-plt/bin/setup-plt and plt/bin/mzc work. If you move the plt tree,
-re-run plt/install.
-
-Cygwin: Create the other executables (besides mred.exe
-and mzscheme.exe) by running
-   mzscheme.exe -mvqL- setup.ss compiler
-in the plt directory (two directories up from here). The above makes
-the .zo files, too, but add -n to the end of the command to skip the
-.zo-compiling step. Afterwards, `plt/Setup PLT.exe' and `plt/mzc.exe'
-work.
-
-Compiling Parts
----------------
-
-To compile parts of MzScheme for embedding or extending:
-
-  * `[mz]make mzschemelib' (or `mzmake mzschemelib') compiles 
-     libmzscheme.a and libgc.a and puts them in lib/sys
-
-  * `[mz]make libguile' creates lib/sys/libguile.a; this is
-     libmzscheme.a + libgc.a + compatibility routines to support
-     GNU's emerging GUILE high-level interface specification
-     (still experimental, and with an unpromising future)
-
-  * `[mz]make dynlib' compiles mzdyn.o (for linking
-     dynamically-loaded extensions to MzScheme) and puts
-     it in lib/sys
-
-  * `[mz]make g-c' compiles /lib/sys/libgc.a only
-
-See also plt/collects/mzscheme/examples/ for some example extensions.
-
-------------------------------------------------------------------------
- Compiling for Multiple Unix Platforms
-------------------------------------------------------------------------
-
-MzScheme's Unix makefiles are set up to support compilation for
-multiple platforms in the same filesystem. To differentiate platforms
-for the makefiles, set the MZPLTFORMSUFFIX environment
-variable. Object files (.o files) are placed in the subdirectory
-  objects/sys${MZPLTFORMSUFFIX} 
-and library files (.a files) are placed in the subdirectory 
-  objects/lib${MZPLTFORMSUFFIX}
-
-MZPLTFORMSUFFIX does not need to be defined if you are only compiling
-for a single platform. In this case, object files are put in
-  objects/sys
-and library files are put in
-  lib/sys
-
-The destination for the `mzscheme' binary does not use the
-MZPLTFORMSUFFIX environment variable. (That would be too easy.)
-Instead, the MZBUILDDIR environment variable designates a destination
-directory for the binary. If MZBUILDDIR is not defined, the binary is
-placed in the same directory as the main "Makefile".
-
-========================================================================
- Compiling for Windows
-========================================================================
-
-To compile with MSVC, read the instructions in "plt\src\worksp\README".
-
-To compile with Cygwin's gcc, follow the Unix instructions above.
-
-========================================================================
- Compiling for MacOS
-========================================================================
-
-Unpack the Compactor archive plt:src:cw.cpt to plt:src:cw and then
-see `ABOUT MZSCHEME' in that folder.
-
 ========================================================================
  Compiling the OSKit-based kernel
 ========================================================================
 
-Run `./oskmake' to build the OSKit-based MzScheme kernel. See `oskmake'
-for information about build options.
+To build the OSKit-based MzScheme kernel, run the configure script
+with the --enable-oskit or --enable-small-oskit flag. The result will
+be `mzscheme.multiboot' in the `mzscheme' build directory. It is a
+kernel in multiboot format.
+
+Before building the MzScheme kernel, you must first install OSKit,
+which is available from the Flux Research Group at Utah:
+     http://www.cs.utah.edu/projects/flux/oskit/
+
+By default, configure assumes that OSKit is installed in
+/usr/local. To specify a different location for OSKit, define the
+OSKHOME environment variable.
 
 For simplicity, the MzScheme kernel uses SGC rather than Boehm's
-conservative garbage collector. The `oskmake' script sets the
-necessary compilation flags.
+conservative garbage collector.
+
+The --enable-smalloskit configuration produces a kernel without
+networking or filesystem support. The kernel created by
+--enable--oskit accepts filesystem and networking configuration
+information on its multiboot command line via the --fs and --net
+flags:
+
+  --fs <drive> <partition> : mounts the given partition as the root
+   directory. For example, to mount the seventh parition on main disk,
+   supply: --fs hda f. Many filesystem formats are supported,
+   including EXT2, MSDOS, and VFAT (all of the ones supported by
+   Linux; see OSKit for details). The standard kernel can only mount
+   one filesystem per run; hack main.c to get more.
+
+  --net <address> <netmask> <gateway> : initializes ethernet support
+   for MzScheme's TCP primitives. Example: --net 128.42.6.101
+   255.255.255.0 128.42.6.254. Many types of ethernet cards are
+   supported (the ones supported by FreeBSD; see OSKit for details).
+
+Each of --fs and --net should be used once at most. The --fs and --net
+flags must appear before any other command-line arguments, which are
+handled by MzScheme in the usual way.
+
+To access a filesystem or the network from non-multiboot kernels
+(e.g., a LILO-compatible kernel), you must hardwire filesystem and
+networking parameters in oskglue.inc when compiling the kernel; see
+oskglue.inc for details (grep for `hardwire').
 
 ========================================================================
  General Compilation Notes
@@ -171,11 +64,7 @@ By default, MzScheme is compiled:
 
  * without using any OS-specific threads; and
 
- * without support for simple-precision floating point numbers.
-
-These options can be changed by modifying sconfig.h or specifying -D
-compiler flags for the macros described in sconfig.h. (In the latter
-case, you may find it convenient to edit `mzmake'.)
+ * without support for single-precision floating point numbers.
 
 ------------------------------------------------------------------------
 
@@ -188,6 +77,15 @@ See schminc.h for details.
 
 The conservative garbage collector distributed with MzScheme has been
 modified slightly from Boehm's standard distribution.
+
+========================================================================
+ Miscellaneous
+========================================================================
+
+See plt/collects/mzscheme/examples/ for some example extensions.
+
+`make libguile' produces a libguile.a library that implements the
+high-level guile interface. See libguile/README.
 
 ========================================================================
  Bug Reports

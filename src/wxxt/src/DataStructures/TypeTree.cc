@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: TypeTree.cc,v 1.5 1999/11/24 21:20:19 mflatt Exp $
  *
  * Purpose: type tree
  *

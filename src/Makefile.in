@@ -5,6 +5,10 @@ all: mz @MAKE_MRED@
 
 2k: mz2k @MAKE_MRED2K@
 
+clean:
+	cd mzscheme; $(MAKE) clean
+	if [ -d mred ] ; then cd mred; $(MAKE) clean; fi
+
 mz:
 	cd mzscheme; $(MAKE)
 

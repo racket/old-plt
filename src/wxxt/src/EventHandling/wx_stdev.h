@@ -16,73 +16,6 @@
 # endif
 #endif
 
-#ifndef wx_xt
-    /* sccsid[] = "@(#)wx_stdev.h	1.2 5/9/94" */
-#   include "common.h"
-#   include "wx_obj.h"
-#   include "wx_sysev.h"
-
-/*
- * Event types
- *
- */
-enum {
- EVENT_TYPES_FIRST = 10000,
-
-/* Command event types */
- wxEVENT_TYPE_BUTTON_COMMAND,
- wxEVENT_TYPE_CHECKBOX_COMMAND,
- wxEVENT_TYPE_RESERVED1,
- wxEVENT_TYPE_CHOICE_COMMAND,
- wxEVENT_TYPE_LISTBOX_COMMAND,
- wxEVENT_TYPE_RESERVED2,
- wxEVENT_TYPE_TEXT_COMMAND,
- wxEVENT_TYPE_MULTITEXT_COMMAND,
- wxEVENT_TYPE_MENU_COMMAND,
- wxEVENT_TYPE_SLIDER_COMMAND,
- wxEVENT_TYPE_RADIOBOX_COMMAND,
- wxEVENT_TYPE_TEXT_ENTER_COMMAND, /* +12 */
- wxEVENT_TYPE_SET_FOCUS,
- wxEVENT_TYPE_KILL_FOCUS,
- wxEVENT_TYPE_SCROLLBAR_COMMAND,
- wxEVENT_TYPE_VIRT_LISTBOX_COMMAND,
-
-/* Mouse event types */
- wxEVENT_TYPE_LEFT_DOWN =  EVENT_TYPES_FIRST + 30,
- wxEVENT_TYPE_LEFT_UP,
- wxEVENT_TYPE_MIDDLE_DOWN,
- wxEVENT_TYPE_MIDDLE_UP,
- wxEVENT_TYPE_RIGHT_DOWN,
- wxEVENT_TYPE_RIGHT_UP,
- wxEVENT_TYPE_MOTION,
- wxEVENT_TYPE_ENTER_WINDOW,
- wxEVENT_TYPE_LEAVE_WINDOW,
- wxEVENT_TYPE_LEFT_DCLICK,
- wxEVENT_TYPE_MIDDLE_DCLICK,
- wxEVENT_TYPE_RIGHT_DCLICK, /* +41 */
-
-/* Character input event type  */
- wxEVENT_TYPE_CHAR = EVENT_TYPES_FIRST + 50,
-
- /*
-  * Scrollbar event identifiers
-  */
- wxEVENT_TYPE_SCROLL_TOP,
- wxEVENT_TYPE_SCROLL_BOTTOM,
- wxEVENT_TYPE_SCROLL_LINEUP,
- wxEVENT_TYPE_SCROLL_LINEDOWN,
- wxEVENT_TYPE_SCROLL_PAGEUP,
- wxEVENT_TYPE_SCROLL_PAGEDOWN,
- wxEVENT_TYPE_SCROLL_THUMBTRACK
-};
-#endif // #ifndef wx_xt
-
-#ifdef IN_CPROTO
-typedef       void    *wxCommandEvent ;
-typedef       void    *wxMouseEvent;
-typedef       void    *wxKeyEvent;
-#else
-
 // Item or menu event class
 class wxScrollEvent: public wxEvent
 {
@@ -209,6 +142,5 @@ class wxKeyEvent: public wxEvent
   virtual void Position(float *x,float *y) ;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_stdevh
 

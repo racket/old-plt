@@ -92,7 +92,7 @@
 (thread (lambda ()
 	  (let ([s (make-string 4096)])
 	    (let loop ()
-	      (let ([l (read-string! s (car cpp-process))])
+	      (let ([l (read-string-avail! s (car cpp-process))])
 		(unless (eof-object? l)
 		  (display (if (< l 4096) (substring s 0 l) s)
 			   (cadr ctok-process))

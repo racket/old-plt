@@ -159,7 +159,7 @@ $(XSRCDIR)/unit.c: $(SRCDIR)/unit.o $(XFORMDEP)
 $(XSRCDIR)/vector.c: $(SRCDIR)/vector.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
 $(XSRCDIR)/main.c: ../main.o $(XFORMDEP)
-	$(XFORM) ../main.c $(XSRCDIR)/main.c
+	$(XFORM) $(srcdir)/../main.c $(XSRCDIR)/main.c
 
 
 salloc.o: $(XSRCDIR)/salloc.c

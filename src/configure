@@ -2177,17 +2177,17 @@ inline void *operator new(long size) { return (void *)0x1; }
   inline void *operator new[](long size) { return (void *)0x2; }  
    class C { int x; };
    int main() {
-    return (new C) != (new C[10]);       
+    return (new C) == (new C[10]);       
    }
 EOF
 if { (eval echo configure:2184: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
-  different=no
+  different=yes
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
   rm -fr conftest*
-  different=yes
+  different=no
 fi
 rm -fr conftest*
 fi

@@ -544,7 +544,8 @@ Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *mns);
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname,
 				 Scheme_Object *locname, Scheme_Object *exname,
-				 Scheme_Object *nominal_src, Scheme_Object *nominal_ex);
+				 Scheme_Object *nominal_src, Scheme_Object *nominal_ex,
+				 int mod_phase);
 void scheme_extend_module_rename_with_kernel(Scheme_Object *rn, Scheme_Object *nominal_src);
 void scheme_remove_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname);
@@ -562,7 +563,8 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 Scheme_Object *scheme_stx_module_name(Scheme_Object **name, long phase,
 				      Scheme_Object **nominal_modidx,
-				      Scheme_Object **nominal_name);
+				      Scheme_Object **nominal_name,
+				      int *mod_phase);
 int scheme_stx_parallel_is_used(Scheme_Object *sym, Scheme_Object *stx);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
@@ -1733,7 +1735,7 @@ struct Scheme_Env {
   Scheme_Hash_Table *shadowed_syntax; /* top level only */
 
   /* Per-instance: */
-  long phase;
+  long phase, mod_phase;
   Scheme_Object *link_midx;
   Scheme_Object *require_names, *et_require_names, *tt_require_names; /* resolved */
   char running, et_running, tt_running, lazy_syntax, attached;
@@ -1818,7 +1820,7 @@ typedef struct Module_Variable {
   Scheme_Object so; /* scheme_module_variable_type */
   Scheme_Object *modidx;
   Scheme_Object *sym;
-  int pos;
+  int pos, mod_phase;
 } Module_Variable;
 
 void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *env);
@@ -1835,7 +1837,7 @@ Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
-Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
+Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env, int rev_mod_phase);
 void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
 int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname);
@@ -1848,7 +1850,8 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 				   Scheme_Object *shift_from_modidx,
 				   Scheme_Object *shift_to_modidx);
 
-Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym, int pos);
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym, 
+					   int pos, int mod_phase);
 
 extern Scheme_Env *scheme_initial_env;
 

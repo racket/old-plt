@@ -398,7 +398,7 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   rn = scheme_make_module_rename(0, 0, NULL);
   for (i = kernel->num_provides; i--; ) {
-    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i], 0);
   }
 
   scheme_sys_wraps(NULL);
@@ -483,7 +483,7 @@ void scheme_require_from_original_env(Scheme_Env *env, int syntax_only)
   c = kernel->num_provides;
   i = (syntax_only ? kernel->num_var_provides : 0);
   for (; i < c; i++) {
-    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i], 0);
   }
 }
 
@@ -796,7 +796,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   if (SCHEME_SYMBOLP(name)) {
     Scheme_Bucket *b;
 
-    menv = scheme_module_access(srcmname, env);
+    menv = scheme_module_access(srcmname, env, 0);
 
     b = scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
 
@@ -1167,7 +1167,7 @@ static int add_require_renames(Scheme_Object *rn, Scheme_Module *im, Scheme_Obje
       midx = scheme_modidx_shift(exss[i], im->src_modidx, idx);
     else
       midx = idx;
-    scheme_extend_module_rename(rn, midx, exs[i], exsns[i], idx, exs[i]);
+    scheme_extend_module_rename(rn, midx, exs[i], exsns[i], idx, exs[i], 0);
     if (SAME_OBJ(exs[i], module_begin_symbol))
       saw_mb = 1;
   }
@@ -1232,13 +1232,13 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	for (i = 0; i < m->num_provides; i++) {
 	  if (SCHEME_FALSEP(m->provide_srcs[i])) {
 	    name = m->provides[i];
-	    scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name);
+	    scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name, 0);
 	  }
 	}
 	/* Local, not provided: */
 	for (i = 0; i < m->num_indirect_provides; i++) {
 	  name = m->indirect_provides[i];
-	  scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name);
+	  scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name, 0);
 	}
 
 	/* Required: */
@@ -1623,24 +1623,43 @@ static void setup_accessible_table(Scheme_Module *m)
   }
 }
 
-Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
+Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env, int rev_mod_phase)
 {
-  if (name == kernel_symbol)
+  if ((name == kernel_symbol) && !rev_mod_phase)
     return scheme_initial_env;
-  else
-    return (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), name);
+  else {
+    Scheme_Object *chain;
+    Scheme_Env *menv;
+
+    chain = env->modchain;
+    if (rev_mod_phase) {
+      chain = (SCHEME_VEC_ELS(chain))[2];
+      if (SCHEME_FALSEP(chain))
+	return NULL;
+    }
+
+    menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(chain), name);
+    
+    if (rev_mod_phase && menv)
+      menv = menv->exp_env;
+
+    return menv;
+  }
 }
 
 Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
 						 Scheme_Object *stx, 
 						 int position, int want_pos)
-/* Returns the actual name when want_pos, needed in case of uninterned
+/* Returns the actual name when !want_pos, needed in case of uninterned
    names.  Otherwise, returns a position value on success.  */
 {
   symbol = scheme_tl_id_sym(env, symbol, 0);
 
   if ((env == scheme_initial_env)
-      || (env->module->primitive)) {
+      || (env->module->primitive)
+      /* For now, we're pretending that all definitions exists for
+	 local phase 1 and up */
+      || env->mod_phase) {
     if (want_pos)
       return scheme_make_integer(-1);
     else
@@ -1960,7 +1979,11 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env,
 
   scheme_prepare_exp_env(menv);
   exp_env = menv->exp_env;
-  menv->exp_env = NULL;
+
+  /* This line was here to help minimize garbage, I think, but
+     with the advent of `begin-for-syntax', we need to keep
+     a module's exp_env. */
+  /* menv->exp_env = NULL; */
 
   for_stx_globals = exp_env->toplevel;
 
@@ -3244,7 +3267,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    scheme_add_global_symbol(name, scheme_undefined, env->genv);
 
 	    /* Add a renaming: */
-	    scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name);
+	    scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name, 0);
 
 	    vars = SCHEME_STX_CDR(vars);
 	  }
@@ -3297,7 +3320,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    }
 	    
 	    /* Check that it's not yet defined: */
-	    if (scheme_lookup_in_table(eenv->genv->toplevel, (const char *)name)) {
+	    if (scheme_lookup_in_table(oenv->genv->toplevel, (const char *)name)) {
 	      scheme_wrong_syntax("module", name, e, 
 				  (for_stx
 				   ? "duplicate for-syntax definition for identifier"
@@ -3340,12 +3363,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
 	  eval_defmacro(names, count, m, eenv->genv, rhs_env, rp, mrec.max_let_depth, 0, 
-			(for_stx ? env->genv->toplevel : env->genv->syntax), for_stx);
+			(for_stx ? env->genv->exp_env->toplevel : env->genv->syntax), for_stx);
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	    m = SCHEME_CAR(l);
-	    scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, m, m, self_modidx, m);
+	    scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, m, m, self_modidx, m,
+					for_stx ? 1 : 0);
 	  }
 
 	  if (rec)
@@ -4505,11 +4529,11 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	    Scheme_Env *menv;
 	    Scheme_Object *val;
 	    modidx = scheme_module_resolve(modidx);
-	    menv = scheme_module_access(modidx, env);
+	    menv = scheme_module_access(modidx, env, 0);
 	    val = scheme_lookup_in_table(menv->toplevel, (char *)exsns[j]);
 	    scheme_add_global_symbol(iname, val, env);
 	  } else
-	    scheme_extend_module_rename(rn, modidx, iname, exsns[j], nominal_modidx, exs[j]);
+	    scheme_extend_module_rename(rn, modidx, iname, exsns[j], nominal_modidx, exs[j], 0);
 	}
 
 	iname = NULL;

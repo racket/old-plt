@@ -769,7 +769,8 @@ defn_targets_syntax (Scheme_Object *var, Scheme_Comp_Env *env, Scheme_Compile_In
       bucket = (Scheme_Object *)scheme_global_bucket(name, env->genv);
     } else {
       /* Create a module variable reference, so that idx is preserved: */
-      bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1);
+      bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1,
+					   env->genv->mod_phase);
     }
     /* Get indirection through the prefix: */
     bucket = scheme_register_toplevel_in_prefix(bucket, env, rec, drec);

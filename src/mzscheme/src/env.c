@@ -642,6 +642,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 
     eenv = make_env(NULL, -1, 7);
     eenv->phase = env->phase + 1;
+    eenv->mod_phase = env->mod_phase + 1;
 
     eenv->module = env->module;
     eenv->module_registry = env->module_registry;
@@ -671,6 +672,7 @@ void scheme_prepare_template_env(Scheme_Env *env)
 
     eenv = make_env(NULL, -1, 7);
     eenv->phase = env->phase - 1;
+    eenv->mod_phase = env->mod_phase - 1;
 
     eenv->module = env->module;
     eenv->module_registry = env->module_registry;
@@ -708,6 +710,7 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   menv2->syntax = menv->syntax;
 
   menv2->phase = menv->phase;
+  menv2->mod_phase = menv->mod_phase;
   menv2->link_midx = menv->link_midx;
   menv2->running = menv->running;
   menv2->et_running = menv->et_running;
@@ -909,7 +912,8 @@ void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
 				  env->module->self_modidx,
 				  n, n,
 				  env->module->self_modidx,
-				  n);
+				  n,
+				  env->mod_phase);
     }
   }
 
@@ -1371,7 +1375,7 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
 }
 
 Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym,
-					   int pos)
+					   int pos, int mod_phase)
 {
   Scheme_Object *val;
   Scheme_Hash_Table *ht;
@@ -1401,6 +1405,7 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
     mv->modidx = modidx;
     mv->sym = stxsym;
     mv->pos = pos;
+    mv->mod_phase = mod_phase;
 
     val = (Scheme_Object *)mv;
 
@@ -1500,7 +1505,7 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
        existing rename. */
     if (!SCHEME_HASHTP((Scheme_Object *)env) && env->module && (is_def != 2)) {
       Scheme_Object *mod, *nm = id;
-      mod = scheme_stx_module_name(&nm, env->phase, NULL, NULL);
+      mod = scheme_stx_module_name(&nm, env->phase, NULL, NULL, NULL);
       if (mod /* must refer to env->module, otherwise there would
 		 have been an error before getting here */
 	  && NOT_SAME_OBJ(nm, sym))
@@ -1871,7 +1876,7 @@ Scheme_Object *
 scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
 {
   Scheme_Comp_Env *frame;
-  int j = 0, p = 0, modpos, skip_stops = 0;
+  int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase;
   Scheme_Bucket *b;
   Scheme_Object *val, *modidx, *modname, *src_find_id, *find_global_id;
   Scheme_Env *genv;
@@ -1948,7 +1953,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
   }
 
   src_find_id = find_id;
-  modidx = scheme_stx_module_name(&find_id, phase, NULL, NULL);
+  modidx = scheme_stx_module_name(&find_id, phase, NULL, NULL, &mod_defn_phase);
   
   /* Used out of context? */
   if (SAME_OBJ(modidx, scheme_undefined)) {
@@ -1967,7 +1972,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
       modname = NULL;
       genv = env->genv;
     } else {
-      genv = scheme_module_access(modname, env->genv);
+      genv = scheme_module_access(modname, env->genv, mod_defn_phase);
 
       if (!genv) {
 	if (env->genv->phase) {
@@ -1975,13 +1980,13 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
 	     execution. Force all laziness at the prior level 
 	     and try again. */
 	  scheme_module_force_lazy(env->genv, 1);
-	  genv = scheme_module_access(modname, env->genv);
+	  genv = scheme_module_access(modname, env->genv, mod_defn_phase);
 	}
 
 	if (!genv) {
 	  scheme_wrong_syntax("require", NULL, src_find_id, 
-			      "broken compiled code (phase %d): cannot find module %S",
-			      env->genv->phase, modname);
+			      "broken compiled code (phase %d, defn-phase %d): cannot find module %S",
+			      env->genv->phase, mod_defn_phase, modname);
 	  return NULL;
 	}
       }
@@ -2055,12 +2060,12 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
      idea, because it causes module instances to be preserved. */
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
-    return scheme_hash_module_variable(env->genv, modidx, find_id, modpos);
+    return scheme_hash_module_variable(env->genv, modidx, find_id, modpos, mod_defn_phase);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Need to return a variable reference in this case, too. */
-    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, modpos);
+    return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, modpos, genv->mod_phase);
   }
 
   b = scheme_bucket_from_table(genv->toplevel, (char *)find_global_id);
@@ -2245,7 +2250,7 @@ void scheme_check_context(Scheme_Env *env, Scheme_Object *name, Scheme_Object *f
   if (mod && SCHEME_TRUEP(mod) && NOT_SAME_OBJ(ok_modidx, mod)) {
     bad = 1;
   } else {
-    mod = scheme_stx_module_name(&id, env->phase, NULL, NULL);
+    mod = scheme_stx_module_name(&id, env->phase, NULL, NULL, NULL);
     if (SAME_OBJ(mod, scheme_undefined))
       bad = 2;
   }
@@ -3048,8 +3053,11 @@ static Scheme_Object *write_variable(Scheme_Object *obj)
      it must be a reference to a module referenced directly by its
      a symbolic name (i.e., no path). */
 
-  if (m)
+  if (m) {
     sym = scheme_make_pair(m->modname, sym);
+    if (home->mod_phase)
+      sym = scheme_make_pair(scheme_make_integer(home->mod_phase), sym);
+  }
 
   return sym;
 }
@@ -3063,13 +3071,25 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
   if (!SCHEME_SYMBOLP(obj)) {
     /* Find variable from module. */
     Scheme_Object *modname, *varname;
+    int mod_phase = 0;
 
     if (!SCHEME_PAIRP(obj)) return NULL;
 
     modname = SCHEME_CAR(obj);
+    
+    if (SCHEME_INTP(modname)) {
+      mod_phase = SCHEME_INT_VAL(modname);
+      if (mod_phase != 1) return NULL;
+
+      obj = SCHEME_CDR(obj);
+
+      if (!SCHEME_PAIRP(obj)) return NULL;
+      modname = SCHEME_CAR(obj);
+    }
+
     varname = SCHEME_CDR(obj);
 
-    if (SAME_OBJ(modname, kernel_symbol))
+    if (SAME_OBJ(modname, kernel_symbol) && !mod_phase)
       return (Scheme_Object *)scheme_global_bucket(varname, scheme_initial_env);
     else {
       Module_Variable *mv;
@@ -3080,6 +3100,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
       mv->modidx = modname;
       mv->sym = varname;
       mv->pos = -1;
+      mv->mod_phase = mod_phase;
 
       return (Scheme_Object *)mv;
     }

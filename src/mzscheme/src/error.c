@@ -1345,7 +1345,7 @@ void scheme_wrong_syntax(const char *where,
  	  if (scheme_current_thread->current_local_env)
 	    phase = scheme_current_thread->current_local_env->genv->phase;
 	  else phase = 0;
-	  scheme_stx_module_name(&first, phase, &mod, &nomwho);
+	  scheme_stx_module_name(&first, phase, &mod, &nomwho, NULL);
 	}
       }
     } else {

@@ -89,7 +89,8 @@ typedef struct Module_Renames {
   Scheme_Hash_Table *ht; /* localname ->  modidx  OR
                                           (cons modidx exportname) OR
                                           (cons-immutable modidx nominal_modidx) OR
-                                          (list* modidx exportname nominal_modidx nominal_exportname) */
+                                          (list* modidx exportname nominal_modidx nominal_exportname) OR
+                                          (list* modidx mod-phase exportname nominal_modidx nominal_exportname) */
   Scheme_Hash_Table *marked_names; /* shared with module environment while compiling the module;
 				      this table maps a top-level-bound identifier with a non-empty mark
 				      set to a gensym created for the binding */
@@ -792,18 +793,21 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname,   /* name in local context */
 				 Scheme_Object *exname,      /* name in definition context  */
 				 Scheme_Object *nominal_mod, /* nominal source module */
-				 Scheme_Object *nominal_ex)  /* nominal import before local renaming */
+				 Scheme_Object *nominal_ex,  /* nominal import before local renaming */
+				 int mod_phase)              /* phase of source defn */
 {
   Scheme_Object *elem;
 
   if (SAME_OBJ(modname, nominal_mod)
-      && SAME_OBJ(exname, nominal_ex)) {
+      && SAME_OBJ(exname, nominal_ex)
+      && !mod_phase) {
     if (SAME_OBJ(localname, exname))
       elem = modname;
     else
       elem = CONS(modname, exname);
   } else if (SAME_OBJ(exname, nominal_ex)
-	     && SAME_OBJ(localname, exname)) {
+	     && SAME_OBJ(localname, exname)
+	     && !mod_phase) {
     /* It's common that a sequence of similar mappings shows up,
        e.g., '(#%kernel . mzscheme) */
     if (nominal_ipair_cache
@@ -815,7 +819,10 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
       nominal_ipair_cache = elem;
     }
   } else {
-    elem = CONS(modname, CONS(exname, CONS(nominal_mod, nominal_ex)));
+    elem = CONS(exname, CONS(nominal_mod, nominal_ex));
+    if (mod_phase)
+      elem = CONS(scheme_make_integer(mod_phase), elem);
+    elem = CONS(modname, elem);
   }
   
   scheme_hash_set(((Module_Renames *)mrn)->ht, localname, elem);
@@ -845,13 +852,23 @@ static void do_append_module_rename(Scheme_Object *src, Scheme_Object *dest,
 	/* Shift the modidx part */
 	if (SCHEME_PAIRP(v)) {
 	  if (SCHEME_PAIRP(SCHEME_CDR(v))) {
-	    /* (list* modidx exportname nominal_modidx nominal_exportname) */
+	    /* (list* modidx [mod-phase] exportname nominal_modidx nominal_exportname) */
 	    Scheme_Object *midx1, *midx2;
+	    int mod_phase;
 	    midx1 = SCHEME_CAR(v);
-	    midx2 = SCHEME_CAR(SCHEME_CDDR(v));
+	    v = SCHEME_CDR(v);
+	    if (SCHEME_INTP(SCHEME_CAR(v))) {
+	      mod_phase = SCHEME_INT_VAL(SCHEME_CAR(v));
+	      v = SCHEME_CDR(v);
+	    } else
+	      mod_phase = 0;
+	    midx2 = SCHEME_CAR(SCHEME_CDR(v));
 	    midx1 = scheme_modidx_shift(midx1, old_midx, new_midx);
 	    midx2 = scheme_modidx_shift(midx2, old_midx, new_midx);
-	    v = CONS(midx1, CONS(SCHEME_CADR(v), CONS(midx2, SCHEME_CDR(SCHEME_CDDR(v)))));
+	    v = CONS(SCHEME_CAR(v), CONS(midx2, SCHEME_CDR(SCHEME_CDR(v))));
+	    if (mod_phase)
+	      v = CONS(scheme_make_integer(mod_phase), v);
+	    v = CONS(midx1, v);
 	  } else if (SCHEME_IMMUTABLEP(v)) {
 	    /* (cons-immutable modidx nominal_modidx) */
 	    v = ICONS(scheme_modidx_shift(SCHEME_CAR(v), old_midx, new_midx),
@@ -1359,8 +1376,9 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 				  int w_mod, Scheme_Object **get_names)
 /* Module binding ignored if w_mod is 0.
    If module bound, result is module idx, and get_names[0] is set to source name,
-     get_names[1] is set to the nominal source module, and get_names[2] is set to
-     the nominal source module's export.
+     get_names[1] is set to the nominal source module, get_names[2] is set to
+     the nominal source module's export, and get_names[3] is set to the phase of
+     the source definition
    If lexically bound, result is env id, and a get_names[0] is set to scheme_undefined.
    If neither, result is #f and get_names[0] is either unchanged or NULL. */
 {
@@ -1438,7 +1456,11 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 		} else {
 		  rename = SCHEME_CDR(rename);
 		  if (SCHEME_PAIRP(rename)) {
-		    /* (list* modidx exportname nominal_modidx nominal_exportname) case */
+		    /* (list* modidx [mod-phase] exportname nominal_modidx nominal_exportname) case */
+		    if (SCHEME_INTP(SCHEME_CAR(rename))) {
+		      get_names[3] = SCHEME_CAR(rename);
+		      rename = SCHEME_CDR(rename);
+		    }
 		    get_names[0] = SCHEME_CAR(rename);
 		    get_names[1] = SCHEME_CADR(rename);
 		    get_names[2] = SCHEME_CDDR(rename);
@@ -1729,15 +1751,17 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 
 Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase, 
 				      Scheme_Object **nominal_modidx,
-				      Scheme_Object **nominal_name)
+				      Scheme_Object **nominal_name,
+				      int *mod_phase)
 /* If module bound, result is module idx, and a is set to source name.
    If lexically bound, result is scheme_undefined and a is unchanged. 
    If neither, result is NULL and a is unchanged. */
 {
   if (SCHEME_STXP(*a)) {
-    Scheme_Object *modname, *names[3];
+    Scheme_Object *modname, *names[4];
 
     names[0] = NULL;
+    names[3] = scheme_make_integer(0);
 
     modname = resolve_env(*a, phase, 1, names);
     
@@ -1750,6 +1774,8 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase,
 	  *nominal_modidx = names[1];
 	if (nominal_name)
 	  *nominal_name = names[2];
+	if (mod_phase)
+	  *mod_phase = SCHEME_INT_VAL(names[3]);
 	return modname;
       }
     } else
@@ -2817,10 +2843,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       if (count & 0x1) return NULL;
 
       for (i = 0; i < count; i+= 2) {
-	/* key and p be bad, but that shouldn't cause a crash */
 	key = SCHEME_VEC_ELS(a)[i];
 	p = SCHEME_VEC_ELS(a)[i+1];
-	  
+	
+	/* FIXME: need to check key & p */
+	
 	scheme_hash_set(mrn->ht, key, p);
       }
 
@@ -3676,6 +3703,7 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *a, *m, *nom_mod, *nom_a;
+  int mod_phase;
 
   a = argv[0];
 
@@ -3685,7 +3713,8 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
   m = scheme_stx_module_name(&a, dphase + (p->current_local_env
 					   ? p->current_local_env->genv->phase
 					   : 0),
-			     &nom_mod, &nom_a);
+			     &nom_mod, &nom_a,
+			     &mod_phase);
 
   if (!m)
     return scheme_false;

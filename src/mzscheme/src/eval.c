@@ -1231,7 +1231,7 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
 
 static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 					   Scheme_Object *varname,
-					   int pos,
+					   int pos, int mod_phase,
 					   Scheme_Env *env)
 {
   Scheme_Object *modname;
@@ -1240,29 +1240,34 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   /* If it's a name id, resolve the name. */
   modname = scheme_module_resolve(modidx);
 
-  menv = scheme_module_access(modname, env);
-  
-  if (!menv && env->phase) {
-    /* The failure might be due a laziness in required-syntax
-       execution. Force all laziness at the prior level 
-       and try again. */
-    scheme_module_force_lazy(env, 1);
-    menv = scheme_module_access(modname, env);
+  if (env->module && SAME_OBJ(env->module->modname, modname)
+      && (env->mod_phase == mod_phase))
+    menv = env;
+  else {
+    menv = scheme_module_access(modname, env, mod_phase);
+    
+    if (!menv && env->phase) {
+      /* The failure might be due a laziness in required-syntax
+	 execution. Force all laziness at the prior level 
+	 and try again. */
+      scheme_module_force_lazy(env, 1);
+      menv = scheme_module_access(modname, env, mod_phase);
+    }
+    
+    if (!menv) {
+      scheme_wrong_syntax("link", NULL, varname,
+			  "broken compiled code (phase %d, defn-phase %d, in %V), no declaration for module"
+			  ": %S", 
+			  env->phase, mod_phase,
+			  env->module ? env->module->modname : scheme_false,
+			  modname);
+      return NULL;
+    }
+
+    if (!SAME_OBJ(menv, env))
+      varname = scheme_check_accessible_in_module(menv, varname, NULL, pos, 0);
   }
 
-  if (!menv) {
-    scheme_wrong_syntax("link", NULL, varname,
-			"broken compiled code (phase %d, in %V), no declaration for module"
-			": %S", 
-			env->phase, 
-			env->module ? env->module->modname : scheme_false,
-			modname);
-    return NULL;
-  }
-
-  if (!SAME_OBJ(menv, env))
-    varname = scheme_check_accessible_in_module(menv, varname, NULL, pos, 0);
-      
   return (Scheme_Object *)scheme_global_bucket(varname, menv);
 }
 
@@ -1278,7 +1283,7 @@ static Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env,
     else
       return link_module_variable(b->home->module->modname,
 				  (Scheme_Object *)b->bucket.bucket.key,
-				  -1,
+				  -1, b->home->mod_phase,
 				  env);
   } else {
     Module_Variable *mv = (Module_Variable *)expr;
@@ -1287,7 +1292,7 @@ static Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env,
 						    src_modidx,
 						    dest_modidx),
 				mv->sym,
-				mv->pos,
+				mv->pos, mv->mod_phase,
 				env);
   }
 }
@@ -2276,7 +2281,7 @@ static Scheme_Object *check_top(const char *when, Scheme_Object *form, Scheme_Co
     if (NOT_SAME_OBJ(tl_id, SCHEME_STX_SYM(symbol))) {
       /* Since the module has a rename for this id, it's certainly defined. */
     } else {
-      modidx = scheme_stx_module_name(&symbol, env->genv->phase, NULL, NULL);
+      modidx = scheme_stx_module_name(&symbol, env->genv->phase, NULL, NULL, NULL);
       if (modidx) {
 	/* If it's an access path, resolve it: */
 	if (env->genv->module
@@ -2314,7 +2319,8 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
     /* Self-reference in a module; need to remember the modidx.  Don't
        need a pos, because the symbol's gensym-ness (if any) will be
        preserved within the module. */
-    c = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c, -1);
+    c = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c, -1,
+				    env->genv->mod_phase);
   } else
     c = (Scheme_Object *)scheme_global_bucket(c, env->genv);
 

@@ -474,6 +474,7 @@
 			   child-major-stretch
 			   child-minor-size
 			   child-minor-stretch
+			   child-minor-position
 			   major-dim minor-dim
 			   get-x-info get-y-info)
 	  (lambda (kid-info width height)
@@ -530,12 +531,9 @@
 						   border
 						   (inexact->exact
 						    (round
-						     (/ (- (minor-dim
-							    width
-							    height)
-							   (child-minor-size
-							    curr-info))
-							2))))]
+						     (child-minor-position 
+						      (minor-dim width height) 
+						      (child-minor-size curr-info)))))]
 				   [minor-size (if (child-minor-stretch
 						    curr-info)
 						   (- (minor-dim width height)
@@ -582,6 +580,13 @@
 	      (set! curr-border new-val)
 	      (send panel force-redraw)]))))
       
+      (define child-align
+	(lambda (width size child-align)
+	  (case child-align
+	    [(center) (/ (- width size) 2)]
+	    [(left) 0]
+	    [(right) (- width size)])))
+
       ; horizontal-panel%: a panel which arranges its children in an evenly
       ; spaced horizontal row.  Items are vertically centered (or stretched
       ; to fit the dialog box if they are stretchable).  The items are evenly
@@ -589,6 +594,20 @@
       ; stretchable items. 
       (define horizontal-panel%
 	(class-asi panel%
+	  (private
+	    [child-align-pos 'center])
+	  
+	  (inherit force-redraw)
+	  (public
+	    [child-align-top (lambda () 
+			       (set! child-align-pos 'left)
+			       (force-redraw))]
+	    [child-align-center (lambda () 
+				  (set! child-align-pos 'center)
+				  (force-redraw))]
+	    [child-align-bottom (lambda () 
+				  (set! child-align-pos 'right)
+				  (force-redraw))])
 	  
 	  (public
 	    [default-spacing-width const-default-spacing]
@@ -618,6 +637,7 @@
 	      child-info-x-stretch
 	      child-info-y-min
 	      child-info-y-stretch
+	      (lambda (width size) (child-align width size child-align-pos))
 	      (lambda (width height) width)
 	      (lambda (width height) height)
 	      (lambda (major minor) major)
@@ -627,7 +647,21 @@
       ; "horizontal" and "vertical."
       (define vertical-panel%
 	(class-asi panel%
+	  (private
+	    [child-align-pos 'center])
 	  
+	  (inherit force-redraw)
+	  (public
+	    [child-align-left (lambda () 
+				(set! child-align-pos 'left)
+				(force-redraw))]
+	    [child-align-center (lambda () 
+				  (set! child-align-pos 'center)
+				  (force-redraw))]
+	    [child-align-right (lambda () 
+				 (set! child-align-pos 'right)
+				 (force-redraw))])
+
 	  (public
 	    [default-spacing-width const-default-spacing]
 	    [default-border-width const-default-border]
@@ -655,6 +689,7 @@
 				  child-info-y-stretch
 				  child-info-x-min
 				  child-info-x-stretch
+				  (lambda (width size) (child-align width size child-align-pos))
 				  (lambda (width height) height)
 				  (lambda (width height) width)
 				  (lambda (major minor) minor)

@@ -2,30 +2,44 @@
 #|
 # PLT software installer
 # Configures PLTHOME path within scripts
-# For certain platforms and installations, adds extra
-#  directory links (to reach non-standard binaries
-#  through the platform's standard path)
-# Creates .zo files if the user assents
+# For certain platforms and installations, adds extra directory links (to reach
+# non-standard binaries through the platform's standard path)
+# Can create .zo files or re-use existing ones (modifying .dep files)
 
-if [ ! \( \( -x install \) -a \( -d collects \) \) ] ; then
+if [ ! \( -x "install" -a -d "collects" \) ]; then
+  echo "(Trying to get to the installation directory...)"
+  if [ -x "/bin/dirname" ]; then
+    cd "`/bin/dirname \"$0\"`"
+  elif [ -x "/usr/bin/dirname" ]; then
+    cd "`/usr/bin/dirname \"$0\"`"
+  else
+    dirname="`which dirname`"
+    if [ ! -z "$dirname" ]; then
+      cd "$dirname"
+    fi
+  fi
+fi
+
+if [ ! \( -x install -a -d collects \) ]; then
   echo "install: must be run from its own directory"
   exit 1
 fi
 
-if [ ! \( -x bin/mzscheme \) ] ; then
-  echo "install: cannot execute bin/mzscheme"
+if [ -x ./bin/mzscheme ]; then
+  exec ./bin/mzscheme -qr "$0" ${1+"$@"}
+elif [ -x ./MzScheme.exe ]; then
+  exec ./MzScheme.exe -qr "$0" ${1+"$@"}
+else
+  echo "install: cannot execute mzscheme"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   echo "!!               Install incomplete!               !!"
   echo "!!                                                 !!"
   echo "!! If you downloaded the source distribution, see  !!"
   echo "!!        src/README for build instructions.       !!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  exit 1
 fi
 
-exec ./bin/mzscheme -qr "$0" ${1+"$@"}
 exit 1
-
 |#
 
 (use-compiled-file-kinds 'none)
@@ -33,8 +47,7 @@ exit 1
 (define plthome (current-directory))
 (putenv "PLTHOME" plthome)
 (putenv "PLTCOLLECTS" "")
-(current-library-collection-paths
- (list (build-path plthome "collects")))
+(current-library-collection-paths (list (build-path plthome "collects")))
 
 ;; this will be the same as plthome, except when a `-p' argument is used.
 ;; `plthome' always points at the current plthome, the one we use to load
@@ -69,7 +82,7 @@ exit 1
     (set! scripts? #f))
    (("+s")
     "modify PLTHOME setting in scripts (default)."
-    (set! scripts? #f))
+    (set! scripts? #t))
    (("-d")
     "skip modifying .dep files (default)."
     (set! deps? #f))
@@ -231,8 +244,8 @@ exit 1
       (define (do-files path)
         (lambda (x)
           (if (directory-exists? x)
-            (parameterize ((current-directory x))
-              (let ((do-dir (do-files (cons (string->symbol x) path))))
+            (parameterize ([current-directory x])
+              (let ([do-dir (do-files (cons (string->symbol x) path))])
                 (map do-dir (directory-list))))
             (op x path))))
       (map (do-files null) (directory-list)))
@@ -242,29 +255,29 @@ exit 1
     (define old-plthome-len
       (and (string? old-plthome) (string-length old-plthome)))
     (define (plthome:old->new path)
-      (cond ((and (string? path)
+      (cond [(and (string? path)
                   old-plthome-len
                   (<= old-plthome-len (string-length path))
                   (string=? old-plthome (substring path 0 old-plthome-len)))
              (string-append
               fake-plthome
-              (substring path old-plthome-len (string-length path))))
-            ((pair? path)
-             (cons (plthome:old->new (car path)) (plthome:old->new (cdr path))))
-            (else path)))
+              (substring path old-plthome-len (string-length path)))]
+            [(pair? path)
+             (cons (plthome:old->new (car path)) (plthome:old->new (cdr path)))]
+            [else path]))
     (recurse (lambda (f path)
                (when (memq 'compiled path)
-                 (cond ((regexp-match #rx"\\.dep$" f)
+                 (cond [(regexp-match #rx"\\.dep$" f)
                         (when old-plthome
                           (let ((dep (with-input-from-file f read)))
                             (with-output-to-file f
                               (lambda () (write (plthome:old->new dep)))
-                              'truncate))))
-                       ((regexp-match #rx"\\.zo$" f)
-                        (touch f 0))
-                       ((and (memq 'native path)
+                              'truncate)))]
+                       [(regexp-match #rx"\\.zo$" f)
+                        (touch f 0)]
+                       [(and (memq 'native path)
                              (regexp-match #rx"\\.(dll|so)$" f))
-                        (touch f 5))))))))
+                        (touch f 5)]))))))
 
 ;; ============================================================================
 ;; Start working here

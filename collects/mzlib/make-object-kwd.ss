@@ -8,6 +8,8 @@
     (hash-table-put! real-args-table vertical-panel% `((parent) (style ())))
     (hash-table-put! real-args-table canvas% `((parent) (style ())))
     (hash-table-put! real-args-table button% `((label) (parent) (callback) (style ())))
+    (hash-table-put! real-args-table editor-canvas% `((parent) (editor #f) (style ()) (scrolls-per-page 100)))
+    
     
     (lambda (c . kwd-pairs)
       (unless (andmap (lambda (kwd)
@@ -19,88 +21,73 @@
       (let* ([kwd-gensyms (map (lambda (x) (gensym "make-object/kwd/kwd")) kwd-pairs)]
 	     [class-gensym (gensym "make-object/kwd/class")]
 	     [kwds (map car kwd-pairs)]
-	     [get-kwds (map (lambda (x) (string->symbol
-					 (string-append
-					  "get-"
-					  (symbol->string x))))
-			    kwds)]
 	     [set-kwds (map (lambda (x) (string->symbol
 					 (string-append
 					  "set-"
 					  (symbol->string x))))
 			    kwds)]
 	     [validate-keyword-before-object-creation
-	      (lambda (kwd set-kwd get-kwd)
+	      (lambda (kwd set-kwd)
 		`(begin
 		   (unless (or (memq ',kwd names)
-			       (and (memq ',get-kwd names)
-				    (memq ',set-kwd names)))
+                               (memq ',kwd arg/defaults-kwds)
+                               (memq ',set-kwd names))
 		     (error 'make-object/kwd "keyword ~a not available in class ~e"
 			    ',kwd ,class-gensym))))]
 
 	     [construct/validate-arguments
 	      (lambda ()
-		`(let ([arg/defaults (hash-table-get ,real-args-table ,class-gensym (lambda () #f))])
-		   (unless arg/defaults
-		     (error 'make-object/kwd "unknown class: ~e" ,class-gensym))
-		   (map (lambda (arg/default)
-			  (cond
-			   [(let loop ([kwd-pairs (list ,@(map (lambda (x)
-								 `(list ',(car x)
-									(lambda () ,(cadr x))))
-							       kwd-pairs))])
-			      (cond
-			       [(null? kwd-pairs) #f]
-			       [else (let ([kwd-pair (car kwd-pairs)])
-				       (if (eq? (car kwd-pair) (car arg/default))
-					   ((cadr kwd-pair))
-					   (loop (cdr kwd-pairs))))]))
-			    =>
-			    (lambda (x) x)]
-			   [(not (null? (cdr arg/default)))
-			    (cadr arg/default)]
-			   [else
-			    (error 'make-object/kwd "required keyword left unspecified: ~a"
-				   (car arg/default))]))
-			arg/defaults)))]
+                `(map (lambda (arg/default)
+                        (cond
+                          [(let loop ([kwd-pairs (list ,@(map (lambda (x)
+                                                                `(list ',(car x)
+                                                                       (lambda () ,(cadr x))))
+                                                              kwd-pairs))])
+                             (cond
+                               [(null? kwd-pairs) #f]
+                               [else (let ([kwd-pair (car kwd-pairs)])
+                                       (if (eq? (car kwd-pair) (car arg/default))
+                                           ((cadr kwd-pair))
+                                           (loop (cdr kwd-pairs))))]))
+                           =>
+                           (lambda (x) x)]
+                          [(not (null? (cdr arg/default)))
+                           (cadr arg/default)]
+                          [else
+                           (error 'make-object/kwd "required keyword left unspecified: ~a"
+                                  (car arg/default))]))
+                      arg/defaults))]
 
 	     [validate/invoke-keyword-after-object-creation
-	      (lambda (gen kwd get-kwd set-kwd)
+	      (lambda (gen kwd set-kwd)
 		`(cond
-		  [(memq ',set-kwd names)
-		   (unless (equal? 1 (arity (ivar obj ,set-kwd)))
-		     (error 'make-object/kwd "keyword ~a not available in class ~e"
-			    ',kwd ,class-gensym))
-		   (send obj ,set-kwd ,gen)]
-		  [(memq ',kwd names)
-		   (unless (equal? '(0 1) (arity (ivar obj ,kwd)))
-		     (error 'make-object/kwd "keyword ~a not available in class ~e"
-			    ',kwd ,class-gensym))
-		   (send obj ,kwd ,gen)]))])
+                   [(memq ',kwd arg/defaults-kwds)
+                    (void)]
+                   [(memq ',set-kwd names)
+                    (unless (equal? 1 (arity (ivar obj ,set-kwd)))
+                      (error 'make-object/kwd "keyword ~a not available in class ~e"
+                             ',kwd ,class-gensym))
+                    (send obj ,set-kwd ,gen)]
+                   [(memq ',kwd names)
+                    (unless (equal? '(0 1) (arity (ivar obj ,kwd)))
+                      (error 'make-object/kwd "keyword ~a not available in class ~e"
+                             ',kwd ,class-gensym))
+                    (send obj ,kwd ,gen)]))])
 	`(let ([,class-gensym ,c]
 	       ,@(map (lambda (gen kwd) `[,gen ,(cadr kwd)]) kwd-gensyms kwd-pairs))
-	   (let ([names (interface->ivar-names (class->interface ,class-gensym))])
-	     (begin ,@(map (lambda (gen get-kwd set-kwd)
-			     (validate-keyword-before-object-creation
-			      gen get-kwd set-kwd))
-			   kwds
-			   set-kwds
-			   get-kwds))
-	     (let ([obj (apply make-object ,class-gensym ,(construct/validate-arguments))])
-	       (begin ,@(map (lambda (gen kwd get-kwd set-kwd)
-			       (validate/invoke-keyword-after-object-creation
-				gen kwd get-kwd set-kwd))
-			     kwd-gensyms
-			     kwds
-			     get-kwds
-			     set-kwds))
-	       obj)))))))
+           
+           (let ([arg/defaults (hash-table-get ,real-args-table ,class-gensym (lambda () #f))])
+             (unless arg/defaults
+               (error 'make-object/kwd "unknown class: ~e" ,class-gensym))
 
-
-(define f (make-object/kwd frame% (label "frame") (height 100)))
-(define hp (make-object/kwd horizontal-panel% (style '(border)) (parent f)))
-(define c (make-object/kwd canvas%
-			   (stretchable-width #f)
-			   (parent hp)
-			   (cursor (make-object cursor% 'hand))))
-(send f show #t)
+             (let ([arg/defaults-kwds (map car arg/defaults)]
+                   [names (interface->ivar-names (class->interface ,class-gensym))])
+               (begin ,@(map validate-keyword-before-object-creation
+                             kwds
+                             set-kwds))
+               (let ([obj (apply make-object ,class-gensym ,(construct/validate-arguments))])
+                 (begin ,@(map validate/invoke-keyword-after-object-creation
+                               kwd-gensyms
+                               kwds
+                               set-kwds))
+                 obj))))))))

@@ -677,6 +677,38 @@ void wxMediaBuffer::SetSnipData(wxSnip *, wxBufferData *)
 
 /**********************************************************************/
 
+Bool wxWriteMediaVersion(wxMediaStreamOut *f, wxMediaStreamOutBase *b)
+{
+  b->Write(MRED_START_STR, MRED_START_STR_LEN);
+  b->Write(MRED_FORMAT_STR, MRED_FORMAT_STR_LEN);
+  b->Write(MRED_VERSION_STR, MRED_VERSION_STR_LEN);
+  b->Write(" ## ", 4);
+
+  return !b->Bad();
+}
+
+Bool wxReadMediaVersion(wxMediaStreamIn *mf, wxMediaStreamInBase *b, Bool parseFormat, Bool showErrors)
+{
+  char vbuf[MRED_FORMAT_STR_LEN + MRED_VERSION_STR_LEN + MRED_START_STR_LEN + 1];
+
+  if (parseFormat) {
+    memset(vbuf, 0, MRED_START_STR_LEN + 1);
+    b->Read(vbuf, MRED_START_STR_LEN);
+    if (strcmp(vbuf, MRED_START_STR)) {
+      if (showErrors)
+	wxmeError("insert-file in pasteboard%: not a MrEd editor<%> file");
+      return FALSE;
+    }
+  }
+
+  b->Read(vbuf, MRED_FORMAT_STR_LEN);
+  memcpy((char *)mf->read_format, vbuf, MRED_FORMAT_STR_LEN);
+  b->Read(vbuf, MRED_VERSION_STR_LEN);
+  memcpy((char *)mf->read_version, vbuf, MRED_VERSION_STR_LEN);
+  
+  return wxmeCheckFormatAndVersion(mf, b, showErrors);
+}
+
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 {
   f->scl->ResetHeaderFlags(f);
@@ -1787,18 +1819,18 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
       b = new wxMediaStreamInStringBase(str, len);
       mf = new wxMediaStreamIn(b);
 
-      strcpy(mf->read_format, MRED_FORMAT_STR);
-      strcpy(mf->read_version, MRED_VERSION_STR);
-
-      if (wxReadMediaGlobalHeader(mf))
-	if (mf->Ok())
-	  if (ReadFromFile(mf)) {
-	    wxBufferData *data;
-	    data = ReadBufferData(mf);
-	    if (data && bufferType == wxEDIT_BUFFER)
-	      ((wxMediaEdit *)this)->PasteRegionData(data);
-	  }
-      wxReadMediaGlobalFooter(mf);
+      if (wxReadMediaVersion(mf, b, TRUE, FALSE)) {
+	if (wxReadMediaGlobalHeader(mf)) {
+	  if (mf->Ok())
+	    if (ReadFromFile(mf)) {
+	      wxBufferData *data;
+	      data = ReadBufferData(mf);
+	      if (data && bufferType == wxEDIT_BUFFER)
+		((wxMediaEdit *)this)->PasteRegionData(data);
+	    }
+	}
+	wxReadMediaGlobalFooter(mf);
+      }
     } else {
       wxBitmap *bm = NULL;
       
@@ -1987,6 +2019,8 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 
     b = new wxMediaStreamOutStringBase();
     mf = new wxMediaStreamOut(b);
+
+    wxWriteMediaVersion(mf, b);
 
     wxWriteMediaGlobalHeader(mf);
     if (mf->Ok()) {

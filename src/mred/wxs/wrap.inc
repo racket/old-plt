@@ -3083,7 +3083,7 @@
 "(lambda(e)"
 "(super-copy-self-to"
 " e)"
-"(auto-wrap"
+"(send e auto-wrap"
 " auto-set-wrap?)))"
 "(on-display-size"
 "(entry-point"

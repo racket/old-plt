@@ -2261,9 +2261,30 @@ static char *object_type_name(void *v)
     if ((t >= 0) && (t < NUM_OBJ_KIND)) {
       char *c;
       c = wxGetTypeName(t);
-      if (c)
+      if (c) {
+	if (wxSubType(t, wxTYPE_WINDOW)) {
+	  char *lbl;
+	  lbl = ((wxWindow *)v)->GetLabel();
+	  if (!lbl)
+	    lbl = ((wxWindow *)v)->GetTitle();
+	  if (!lbl)
+	    lbl = ((wxWindow *)v)->GetName();
+
+	  if (lbl) {
+	    int l1, l2;
+	    char *r;
+	    l1 = strlen(c);
+	    l2 = strlen(lbl);
+	    r = new char[l1+l2+2];
+	    memcpy(r, c, l1);
+	    r[l1] = '=';
+	    memcpy(r + l1 + 1, lbl, l2 + 1);
+
+	    return r;
+	  }
+	}
 	return c;
-      else
+      } else
 	return "wxUNKNOWN";
     } else
       return "wxBAD";

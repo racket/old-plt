@@ -5,7 +5,7 @@
                       (lib "stx.ss" "syntax")
                       (lib "list.ss"))
   
-  (provide structure dot open open-as)
+  (provide structure dot open open-in-context open-as)
 
   ;; Dangerous, but seems to work.
   (define-syntax define-syntaxes-ml
@@ -165,14 +165,21 @@
   (define-syntax (open stx)
     (syntax-case stx ()
       ((_ top-name path ...)
+       #'(open-in-context top-name top-name path ...))))
+  
+  (define-syntax (open-in-context stx)
+    (syntax-case stx ()
+      ((_ context top-name path ...)
        (let ((env (open (cons #'top-name (syntax->list #'(path ...))) 'open)))
          (with-syntax ((((pub . hid) ...)
                         (map (lambda (x)
-                               (cons (datum->syntax-object stx (car x) stx stx) (cdr x)))
+                               (cons (datum->syntax-object #'context (car x))
+                                     (cdr x)))
                              env)))
            #`(define-syntaxes-ml (pub ...)
                (values (make-rename-transformer (quote-syntax hid)) ...)))))))
-
+       
+  
   (define-syntax (dot-helper stx)
     (syntax-case stx ()
       ((_ path field)

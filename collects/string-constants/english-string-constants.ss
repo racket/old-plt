@@ -443,6 +443,7 @@ please adhere to these guidelines:
  (paren-match-color "Parenthesis highlight color") ; in prefs dialog
  (choose-color "Choose Color") ; in prefs dialog
  (online-coloring-active "Color syntax interactively")
+ (open-files-in-tabs "Open files in separate tabs (not separate windows)")
 
  ; title of the color choosing dialog
  (choose-paren-highlight-color "Choose Parenthesis Highlight Color")
@@ -789,6 +790,7 @@ please adhere to these guidelines:
  (save-interactions-as "Save Interactions As...")
  (save-interactions-as-text "Save Interactions As Text...")
  (print-interactions "Print Interactions...")
+ (new-tab "New Tab")
  
  ;;; edit-menu
  (split-menu-item-label "&Split")

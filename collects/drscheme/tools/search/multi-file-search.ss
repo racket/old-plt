@@ -22,11 +22,11 @@
 ;; the second argument is called for each match.
 ;;     the arguments are: line-string line-number col-number match-length
 
-;; search-info = (make-search-info searcher (-> (union #f string)))
+;; search-info = (make-search-info string searcher (-> (union #f string)))
 ;; this is the info from the user to do a particular search
 ;; do-single-search runs the search in a particular file
 ;; filenames is a thunk that returns the next filename, or #f
-(define-struct search-info (searcher get-filenames))
+(define-struct search-info (base-filename searcher get-filenames))
 
 ;; search-types : (listof search-type)
 (define search-types
@@ -115,13 +115,14 @@
       (send results-text begin-edit-sequence)
       (for-each
        (lambda (match)
-         (let ([filename (car match)]
-               [line-string (cadr match)]
-               [line-number (caddr match)]
-               [col-number (cadddr match)]
-               [match-length (car (cddddr match))])
+         (let ([base-filename (car match)]
+               [filename (cadr match)]
+               [line-string (caddr match)]
+               [line-number (cadddr match)]
+               [col-number (car (cddddr match))]
+               [match-length (cadr (cddddr match))])
            (send results-text add-match
-                 filename line-string line-number col-number match-length)))
+                 base-filename filename line-string line-number col-number match-length)))
        matches)
       (send results-text end-edit-sequence)))
 
@@ -129,11 +130,12 @@
     (thread
      (lambda ()
        (do-search search-info 
-                  (lambda (filename line-string line-number col-number match-length)
+                  (lambda (base-filename filename line-string line-number col-number match-length)
                     (semaphore-wait sema)
                     (set! lst
                           (cons
                            (list
+                            base-filename
                             filename
                             line-string
                             line-number
@@ -159,13 +161,15 @@
 ;; called in a new thread that may be broken (to indicate a stop)
 (define (do-search search-info add-match)
   (let ([searcher (search-info-searcher search-info)]
-        [get-filenames (search-info-get-filenames search-info)])
+        [get-filenames (search-info-get-filenames search-info)]
+        [base-filename (search-info-base-filename search-info)])
     (let loop ()
       (let ([filename (get-filenames)])
         (when filename
           (searcher filename 
                     (lambda (line-string line-number col-number match-length)
                       (add-match
+                       base-filename
                        filename
                        line-string
                        line-number
@@ -184,7 +188,7 @@
     (inherit insert last-paragraph erase
              paragraph-start-position paragraph-end-position
              last-position change-style
-             set-clickback)
+             set-clickback set-position)
     (private
       [filename-delta (make-object style-delta% 'change-bold)]
       [match-delta (let ([d (make-object style-delta%)])
@@ -234,17 +238,22 @@
          (when current-file
            (handler:edit-file current-file)))]
       [add-match
-       (lambda (filename line-string line-number col-number match-length)
-         (let* ([this-match-number (last-paragraph)]
-                [len (string-length filename)]
+       (lambda (base-filename full-filename line-string line-number col-number match-length)
+         (let* ([new-line-position (last-position)]
+                [short-filename (file:find-relative-path 
+                                 (file:normalize-path base-filename)
+                                 (file:normalize-path full-filename))]
+                [this-match-number (last-paragraph)]
+                [len (string-length short-filename)]
                 [insertion-start #f]
                 [show-this-match
                  (lambda ()
                    (set! match-shown? #t)
-                   (set! current-file filename)
+                   (set! current-file full-filename)
+                   (set-position new-line-position new-line-position)
                    (send zoom-text begin-edit-sequence)
                    (send zoom-text lock #f)
-                   (send zoom-text load-file filename)
+                   (send zoom-text load-file full-filename)
                    (send zoom-text set-position (send zoom-text paragraph-start-position line-number))
                    (let ([start (+ (send zoom-text paragraph-start-position line-number)
                                    col-number)])
@@ -267,7 +276,7 @@
                  (set! insertion-start (last-position))
                  (set! widest-filename len)))
            (let ([filename-start (last-position)])
-             (insert filename (last-position) (last-position))
+             (insert short-filename (last-position) (last-position))
              (insert ": " (last-position) (last-position))
              (change-style filename-delta insertion-start (last-position))
              (let ([line-start (last-position)])
@@ -505,6 +514,7 @@
   (and
    ok?
    (make-search-info
+    (send dir-field get-value)
     searcher
     (get-files))))
 

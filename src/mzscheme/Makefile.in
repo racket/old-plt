@@ -189,7 +189,7 @@ mark:
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:
-	./mzscheme -r mkincludes.ss $(srcdir)/../.. . $(srcdir)
+	./mzscheme -r $(srcdir)/mkincludes.ss $(srcdir)/../.. . $(srcdir)
 	$(MAKE) $(srcdir)/../../collects/mzscheme/lib/mzdyn.c
 
 # This is superseded by mkincludes.ss

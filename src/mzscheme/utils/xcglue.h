@@ -24,6 +24,7 @@ typedef struct Scheme_Class_Object {
   Scheme_Type type;
   /* MZ_HASH_KEY */
   short primflag;
+  short num_extra;
   void *primdata;
   Scheme_Object *sclass;
   Scheme_Object *dispatcher;

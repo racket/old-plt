@@ -34,7 +34,7 @@ LOCALFLAGS =
 
 WXSCFLAGS = $(CFLAGS)
 
-WXSCHEMEHEADERS = $(srcdir)/wxscheme.h $(srcdir)/../../mzscheme/src/stypes.h \
+WXSCHEMEHEADERS = $(srcdir)/wxscheme.h $(srcdir)/../../mzscheme/src/stypes.h $(srcdir)/../../mzscheme/utils/xcglue.h \
                   $(srcdir)/../../mzscheme/include/scheme.h $(srcdir)/../../wxxt/src/DataStructures/Object.h \
                   $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
 MEDIAHEADERS = $(srcdir)/../wxme/wx_media.h $(srcdir)/../wxme/wx_medad.h $(srcdir)/../wxme/wx_snip.h
@@ -64,13 +64,15 @@ SCRIPTS = $(srcdir)/wxs_bmap.xc $(srcdir)/wxs_butn.xc $(srcdir)/wxs_chce.xc $(sr
           $(srcdir)/wxs_obj.xc $(srcdir)/wxs_panl.xc $(srcdir)/wxs_rado.xc $(srcdir)/wxs_slid.xc \
           $(srcdir)/wxs_snip.xc $(srcdir)/wxs_styl.xc $(srcdir)/wxs_win.xc
 
-SSDESCS = $(srcdir)/wxs_bmap.ss $(srcdir)/wxs_butn.ss $(srcdir)/wxs_chce.ss $(srcdir)/wxs_ckbx.ss \
+# Order matters: superclasses first
+SSDESCS = $(srcdir)/wxs_obj.ss $(srcdir)/wxs_win.ss $(srcdir)/wxs_item.ss $(srcdir)/wxs_medi.ss \
+          $(srcdir)/wxs_bmap.ss $(srcdir)/wxs_butn.ss $(srcdir)/wxs_chce.ss $(srcdir)/wxs_ckbx.ss \
           $(srcdir)/wxs_cnvs.ss $(srcdir)/wxs_dc.ss $(srcdir)/wxs_evnt.ss $(srcdir)/wxs_fram.ss \
-          $(srcdir)/wxs_gage.ss $(srcdir)/wxs_gdi.ss $(srcdir)/wxs_glob.ss $(srcdir)/wxs_item.ss \
-          $(srcdir)/wxs_lbox.ss $(srcdir)/wxs_madm.ss $(srcdir)/wxs_mede.ss $(srcdir)/wxs_medi.ss \
+          $(srcdir)/wxs_gage.ss $(srcdir)/wxs_gdi.ss $(srcdir)/wxs_glob.ss \
+          $(srcdir)/wxs_lbox.ss $(srcdir)/wxs_madm.ss $(srcdir)/wxs_mede.ss \
           $(srcdir)/wxs_menu.ss $(srcdir)/wxs_mio.ss $(srcdir)/wxs_misc.ss $(srcdir)/wxs_mpb.ss \
-          $(srcdir)/wxs_obj.ss $(srcdir)/wxs_panl.ss $(srcdir)/wxs_rado.ss $(srcdir)/wxs_slid.ss \
-          $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss $(srcdir)/wxs_win.ss
+          $(srcdir)/wxs_panl.ss $(srcdir)/wxs_rado.ss $(srcdir)/wxs_slid.ss \
+          $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss
 
 all: libwxscheme.a
 
@@ -82,7 +84,9 @@ test-file:
 	rm -f $(srcdir)/../../../tests/mred/tests.ss
 	$(MAKE) $(srcdir)/../../../tests/mred/tests.ss
 
-$(srcdir)/../../../collects/mred/kernel.ss : $(SSDESCS)
+kernel.ss : $(srcdir)/../../../collects/mred/kernel.ss 
+
+$(srcdir)/../../../collects/mred/kernel.ss : $(SSDESCS) $(srcdir)/khead.ss $(srcdir)/ktail.ss 
 	cat $(srcdir)/khead.ss $(SSDESCS) $(srcdir)/ktail.ss > $(srcdir)/../../../collects/mred/kernel.ss
 
 ccsources: $(SOURCES)
@@ -220,3 +224,31 @@ wxs_styl.o : $(srcdir)/wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir
 	$(WXSCC) $(srcdir)/wxs_styl.cxx -o wxs_styl.o
 wxs_win.o : $(srcdir)/wxs_win.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_win.cxx -o wxs_win.o
+
+$(srcdir)/wxs_bmap.ss : $(srcdir)/wxs_bmap.cxx
+$(srcdir)/wxs_butn.ss : $(srcdir)/wxs_butn.cxx
+$(srcdir)/wxs_chce.ss : $(srcdir)/wxs_chce.cxx
+$(srcdir)/wxs_ckbx.ss : $(srcdir)/wxs_ckbx.cxx
+$(srcdir)/wxs_cnvs.ss : $(srcdir)/wxs_cnvs.cxx
+$(srcdir)/wxs_dc.ss : $(srcdir)/wxs_dc.cxx
+$(srcdir)/wxs_evnt.ss : $(srcdir)/wxs_evnt.cxx
+$(srcdir)/wxs_fram.ss : $(srcdir)/wxs_fram.cxx
+$(srcdir)/wxs_gage.ss : $(srcdir)/wxs_gage.cxx
+$(srcdir)/wxs_gdi.ss : $(srcdir)/wxs_gdi.cxx
+$(srcdir)/wxs_glob.ss : $(srcdir)/wxs_glob.cxx
+$(srcdir)/wxs_item.ss : $(srcdir)/wxs_item.cxx
+$(srcdir)/wxs_lbox.ss : $(srcdir)/wxs_lbox.cxx
+$(srcdir)/wxs_madm.ss : $(srcdir)/wxs_madm.cxx
+$(srcdir)/wxs_mede.ss : $(srcdir)/wxs_mede.cxx
+$(srcdir)/wxs_medi.ss : $(srcdir)/wxs_medi.cxx
+$(srcdir)/wxs_menu.ss : $(srcdir)/wxs_menu.cxx
+$(srcdir)/wxs_mio.ss : $(srcdir)/wxs_mio.cxx
+$(srcdir)/wxs_misc.ss : $(srcdir)/wxs_misc.cxx
+$(srcdir)/wxs_mpb.ss : $(srcdir)/wxs_mpb.cxx
+$(srcdir)/wxs_obj.ss : $(srcdir)/wxs_obj.cxx
+$(srcdir)/wxs_panl.ss : $(srcdir)/wxs_panl.cxx
+$(srcdir)/wxs_rado.ss : $(srcdir)/wxs_rado.cxx
+$(srcdir)/wxs_slid.ss : $(srcdir)/wxs_slid.cxx
+$(srcdir)/wxs_snip.ss : $(srcdir)/wxs_snip.cxx
+$(srcdir)/wxs_styl.ss : $(srcdir)/wxs_styl.cxx
+$(srcdir)/wxs_win.ss : $(srcdir)/wxs_win.cxx

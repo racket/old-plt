@@ -7569,7 +7569,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaEdit(void *env)
+void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

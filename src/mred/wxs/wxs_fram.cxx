@@ -32,10 +32,8 @@ START_XFORM_SKIP;
 #endif
 
 #ifdef wx_xt
-#define HAS_GET_MENU_BAR 1
 #define GET_THE_MENU_BAR(f) (f)->GetMenuBar()
 #else
-#define HAS_GET_MENU_BAR 0
 #define GET_THE_MENU_BAR(f) (f)->wx_menu_bar
 #endif
 
@@ -45,11 +43,14 @@ START_XFORM_SKIP;
 #define wxALLOW_AUTO_RESIZE 0
 #endif
 
-#define NO_GET_MENU_BAR !HAS_GET_MENU_BAR
-
 
 
 extern void *wxsCheckEventspace(char *);
+
+static wxMenuBar *GetTheMenuBar(wxFrame *f)
+{
+  return GET_THE_MENU_BAR(f);
+}
 
 static Scheme_Object *frameStyle_wxNO_CAPTION_sym = NULL;
 static Scheme_Object *frameStyle_wxMDI_PARENT_sym = NULL;
@@ -911,14 +912,12 @@ static Scheme_Object *os_wxFrameSetStatusText(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#if  HAS_GET_MENU_BAR
-static Scheme_Object *os_wxFrameGetMenuBar(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxFrameGetTheMenuBar(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   class wxMenuBar* r;
   objscheme_check_valid(os_wxFrame_class, "get-menu-bar in frame%", n, p);
-#if  HAS_GET_MENU_BAR
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -927,16 +926,12 @@ static Scheme_Object *os_wxFrameGetMenuBar(int n,  Scheme_Object *p[])
   
 
   
-  r = WITH_VAR_STACK(((wxFrame *)((Scheme_Class_Object *)p[0])->primdata)->GetMenuBar());
+  r = WITH_VAR_STACK(GetTheMenuBar(((wxFrame *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
-#else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "get-menu-bar in frame%");
-#endif
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenuBar(r));
 }
-#endif
 
 static Scheme_Object *os_wxFrameSetMenuBar(int n,  Scheme_Object *p[])
 {
@@ -1040,25 +1035,6 @@ static Scheme_Object *os_wxFrameSetTitle(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-#if  NO_GET_MENU_BAR
-static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  class wxMenuBar* v;
-  REMEMBER_VAR_STACK();
-
-  objscheme_check_valid(os_wxFrame_class, "get-menu-bar in frame%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-menu-bar in frame%", POFFSET, POFFSET, n, p));
-  cobj = (Scheme_Class_Object *)p[0];
-  if (cobj->primflag)
-    v = ((os_wxFrame *)cobj->primdata)->wxFrame::wx_menu_bar;
-  else
-    v = ((wxFrame *)cobj->primdata)->wx_menu_bar;
-
-  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenuBar(v));
-}
-#endif
-
 static Scheme_Object *os_wxFrame_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1126,14 +1102,14 @@ static Scheme_Object *os_wxFrame_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxFrame(void *env)
+void objscheme_setup_wxFrame(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
 
   wxREGGLOB(os_wxFrame_class);
 
-  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 22));
+  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2));
@@ -1151,17 +1127,12 @@ void objscheme_setup_wxFrame(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?", os_wxFrameStatusLineExists, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconized?", os_wxFrameIconized, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-status-text", os_wxFrameSetStatusText, 1, 1));
-#if  HAS_GET_MENU_BAR
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetMenuBar, 0, 0));
-#endif
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetTheMenuBar, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar", os_wxFrameSetMenuBar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconize", os_wxFrameIconize, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-title", os_wxFrameSetTitle, 1, 1));
 
-#if  NO_GET_MENU_BAR
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class,"get-menu-bar", objscheme_wxFrame_Getwx_menu_bar, 0, 0));
-#endif
 
   WITH_VAR_STACK(scheme_made_class(os_wxFrame_class));
 

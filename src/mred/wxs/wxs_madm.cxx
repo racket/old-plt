@@ -1104,7 +1104,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaCanvas(void *env)
+void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2014,7 +2014,7 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(int n,  Scheme_Object *p[]
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaAdmin(void *env)
+void objscheme_setup_wxMediaAdmin(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2148,7 +2148,7 @@ static Scheme_Object *os_wxMediaSnipMediaAdminGetSnip(int n,  Scheme_Object *p[]
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaSnip(r));
 }
 
-void objscheme_setup_wxMediaSnipMediaAdmin(void *env)
+void objscheme_setup_wxMediaSnipMediaAdmin(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3129,7 +3129,7 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxSnipAdmin(void *env)
+void objscheme_setup_wxSnipAdmin(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3558,7 +3558,7 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxSnipClass(void *env)
+void objscheme_setup_wxSnipClass(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3786,7 +3786,7 @@ static Scheme_Object *os_wxSnipClassListFind(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnipClass(r));
 }
 
-void objscheme_setup_wxSnipClassList(void *env)
+void objscheme_setup_wxSnipClassList(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -4394,7 +4394,7 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxKeymap(void *env)
+void objscheme_setup_wxKeymap(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -4719,7 +4719,7 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Obje
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaWordbreakMap(void *env)
+void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

@@ -541,7 +541,7 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(int n,  Scheme_Obje
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamInBase(void *env)
+void objscheme_setup_wxMediaStreamInBase(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -917,7 +917,7 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(int n,  Scheme_Obj
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamOutBase(void *env)
+void objscheme_setup_wxMediaStreamOutBase(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1064,7 +1064,7 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(int n,  Schem
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamInStringBase(void *env)
+void objscheme_setup_wxMediaStreamInStringBase(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1226,7 +1226,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(int n,  Sche
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamOutStringBase(void *env)
+void objscheme_setup_wxMediaStreamOutStringBase(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1736,7 +1736,7 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(int n,  Scheme_Object *
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamIn(void *env)
+void objscheme_setup_wxMediaStreamIn(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2139,7 +2139,7 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(int n,  Scheme_Object 
   return scheme_void;
 }
 
-void objscheme_setup_wxMediaStreamOut(void *env)
+void objscheme_setup_wxMediaStreamOut(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

@@ -19,7 +19,7 @@ extern int objscheme_istype_wxDialogBox(Scheme_Object *, const char *, int);
 extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *, const char *, int);
 extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxPanel(void *env);
+void objscheme_setup_wxPanel(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxPanel(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPanel(class wxPanel *realobj);
@@ -34,7 +34,7 @@ extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxDialogBox(void *env);
+void objscheme_setup_wxDialogBox(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxDialogBox(class wxDialogBox *realobj);

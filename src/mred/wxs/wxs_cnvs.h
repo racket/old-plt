@@ -16,7 +16,7 @@ extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const ch
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxCanvas(void *env);
+void objscheme_setup_wxCanvas(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxCanvas(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj);

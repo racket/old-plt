@@ -127,7 +127,7 @@ static Scheme_Object *os_wxEvent_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxEvent(void *env)
+void objscheme_setup_wxEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -382,7 +382,7 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(int n,  Scheme_Object *p
   return scheme_void;
 }
 
-void objscheme_setup_wxCommandEvent(void *env)
+void objscheme_setup_wxCommandEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -555,7 +555,7 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(int n,  Scheme_Object *p[]
   return scheme_void;
 }
 
-void objscheme_setup_wxPopupEvent(void *env)
+void objscheme_setup_wxPopupEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -883,7 +883,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[
   return scheme_void;
 }
 
-void objscheme_setup_wxScrollEvent(void *env)
+void objscheme_setup_wxScrollEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1612,7 +1612,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxKeyEvent(void *env)
+void objscheme_setup_wxKeyEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2356,7 +2356,7 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
   return scheme_void;
 }
 
-void objscheme_setup_wxMouseEvent(void *env)
+void objscheme_setup_wxMouseEvent(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

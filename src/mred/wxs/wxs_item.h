@@ -1,7 +1,7 @@
 #ifndef WXS_SETUP_ONLY
 extern class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxItem(void *env);
+void objscheme_setup_wxItem(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj);
@@ -22,7 +22,7 @@ extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, 
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxMessage(void *env);
+void objscheme_setup_wxMessage(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj);

@@ -568,7 +568,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxFont(void *env)
+void objscheme_setup_wxFont(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -792,7 +792,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxFontList(void *env)
+void objscheme_setup_wxFontList(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1143,7 +1143,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxColour(void *env)
+void objscheme_setup_wxColour(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1292,7 +1292,7 @@ static Scheme_Object *os_wxColourDatabaseFindColour(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
-void objscheme_setup_wxColourDatabase(void *env)
+void objscheme_setup_wxColourDatabase(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1540,7 +1540,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxPoint(void *env)
+void objscheme_setup_wxPoint(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2003,7 +2003,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxBrush(void *env)
+void objscheme_setup_wxBrush(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2203,7 +2203,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxBrushList(void *env)
+void objscheme_setup_wxBrushList(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2881,7 +2881,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxPen(void *env)
+void objscheme_setup_wxPen(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3092,7 +3092,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxPenList(void *env)
+void objscheme_setup_wxPenList(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3379,7 +3379,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxCursor(void *env)
+void objscheme_setup_wxCursor(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3959,7 +3959,7 @@ static Scheme_Object *os_wxRegion_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxRegion(void *env)
+void objscheme_setup_wxRegion(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -4317,7 +4317,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(int n,  Scheme_Object 
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-void objscheme_setup_wxFontNameDirectory(void *env)
+void objscheme_setup_wxFontNameDirectory(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

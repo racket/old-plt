@@ -15,7 +15,7 @@ extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, 
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxCheckBox(void *env);
+void objscheme_setup_wxCheckBox(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxCheckBox(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCheckBox(class wxCheckBox *realobj);

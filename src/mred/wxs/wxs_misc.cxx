@@ -235,7 +235,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxTimer(void *env)
+void objscheme_setup_wxTimer(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -545,7 +545,7 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(int n,  Scheme_Object *p[
   return scheme_void;
 }
 
-void objscheme_setup_wxClipboard(void *env)
+void objscheme_setup_wxClipboard(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -864,7 +864,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(int n,  Scheme_Object
   return scheme_void;
 }
 
-void objscheme_setup_wxClipboardClient(void *env)
+void objscheme_setup_wxClipboardClient(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1686,7 +1686,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object 
   return scheme_void;
 }
 
-void objscheme_setup_wxPrintSetupData(void *env)
+void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

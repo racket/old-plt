@@ -1146,7 +1146,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxCanvas(void *env)
+void objscheme_setup_wxCanvas(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

@@ -134,7 +134,7 @@ static Scheme_Object *os_wxItemCommand(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxItem(void *env)
+void objscheme_setup_wxItem(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -792,7 +792,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxMessage(void *env)
+void objscheme_setup_wxMessage(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

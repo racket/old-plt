@@ -9,7 +9,7 @@ extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxSlider(void *env);
+void objscheme_setup_wxSlider(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxSlider(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxSlider(class wxSlider *realobj);

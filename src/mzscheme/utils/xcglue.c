@@ -17,12 +17,15 @@
 	The method dispatcher is called to check for overriding
         methods.  The `proc' gets a primitive object and a symbolic
         method; it should return a method (if it was overridden) or
-        #f. The procedure can use the cache box in any way; the box is
-        specific to a primitive class, and will be reused in future
-        dispatcher calls (even for different objects).
+        #f.
 
       (initialize-primitive-object prim-obj v ...) - initializes the
         primitive object, given initialization arguments v.
+
+      (primitive-object-ref o k) - returns the value in the kth extra
+        field.
+      (primitive-object-set! o k) - sets the value in the kth extra
+        field.
 
       (primitive-object->class prim-obj) - returns the primitive
         class of an object.
@@ -34,6 +37,12 @@
         parallel to the name list) of methods. Each method expects an
         instance of the class as its first argument, and the remaining
         arguments are method-specific.
+
+      (primitive-class->superclass prim-class) - gets the superclass
+
+      (primitive-class? v) - returns #t if v is a primitive class.
+
+      (primitive-object? v) - returns #t if v is a primitive object.
 
    In addition, the C code will generate definitions of classes.
 
@@ -98,6 +107,7 @@ static Scheme_Object *make_prim_obj(int argc, Scheme_Object **argv)
   obj = (Scheme_Class_Object *)scheme_malloc_tagged(sizeof(Scheme_Class_Object)
 						    + (k - 1) * sizeof(Scheme_Object*));
   obj->type = objscheme_object_type;
+  obj->num_extra = k;
 
   for (i = 0; i < k; i++) {
     obj->extra[i] = scheme_false;
@@ -111,12 +121,57 @@ static Scheme_Object *make_prim_obj(int argc, Scheme_Object **argv)
 
 static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 {
-  Scheme_Class *sclass = (Scheme_Class *)argv[0];
+  Scheme_Class_Object *obj = (Scheme_Class_Object *)argv[0];
 
  if (SCHEME_TYPE(argv[0]) != objscheme_object_type)
-    scheme_wrong_type("primitive-object->class", "primitive-object", 0, argc, argv);
+    scheme_wrong_type("init-primitive-object", "primitive-object", 0, argc, argv);
 
-  return _scheme_apply(sclass->initf, argc, argv);
+  return _scheme_apply(((Scheme_Class *)obj->sclass)->initf, argc, argv);
+}
+
+static Scheme_Object *obj_ref(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *obj = argv[0], *ki = argv[1];
+  long k = SCHEME_INT_VAL(ki);
+
+  if (SCHEME_TYPE(obj) != objscheme_object_type)
+    scheme_wrong_type("primitive-object-ref", "primitive-object", 0, argc, argv);
+  if (!SCHEME_INTP(ki) || (SCHEME_INT_VAL(ki) < 0))
+    scheme_wrong_type("primitive-object-ref", "non-negative fixnum integer", 1, argc, argv);
+
+  if (k >= (long)((Scheme_Class_Object *)obj)->num_extra)
+    scheme_arg_mismatch("primitive-object-ref", "index too large: ", ki);
+
+  return ((Scheme_Class_Object *)obj)->extra[SCHEME_INT_VAL(ki)];
+}
+
+static Scheme_Object *obj_set(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *obj = argv[0], *ki = argv[1];
+  long k = SCHEME_INT_VAL(ki);
+
+  if (SCHEME_TYPE(obj) != objscheme_object_type)
+    scheme_wrong_type("primitive-object-set!", "primitive-object", 0, argc, argv);
+  if (!SCHEME_INTP(ki) || (SCHEME_INT_VAL(ki) < 0))
+    scheme_wrong_type("primitive-object-set!", "non-negative fixnum integer", 1, argc, argv);
+
+  if (k >= (long)((Scheme_Class_Object *)obj)->num_extra)
+    scheme_arg_mismatch("primitive-object-set!", "index too large: ", ki);
+
+  return ((Scheme_Class_Object *)obj)->extra[SCHEME_INT_VAL(ki)] = argv[2];
+}
+
+static Scheme_Object *obj_size(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *obj = argv[0];
+  long s;
+
+  if (SCHEME_TYPE(obj) != objscheme_object_type)
+    scheme_wrong_type("primitive-object-size", "primitive-object", 0, argc, argv);
+
+  s = ((Scheme_Class_Object *)obj)->num_extra;
+
+  return scheme_make_integer(s);
 }
 
 static Scheme_Object *obj_to_class(int argc, Scheme_Object **argv)
@@ -125,6 +180,14 @@ static Scheme_Object *obj_to_class(int argc, Scheme_Object **argv)
     scheme_wrong_type("primitive-object->class", "primitive-object", 0, argc, argv);
 
   return ((Scheme_Class_Object *)argv[0])->sclass;
+}
+
+static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
+    scheme_wrong_type("primitive-class->superclass", "primitive-class", 0, argc, argv);
+
+  return ((Scheme_Class *)argv[0])->sup;
 }
 
 static Scheme_Object *class_meth_list(int argc, Scheme_Object **argv)
@@ -139,7 +202,7 @@ static Scheme_Object *class_meth_list(int argc, Scheme_Object **argv)
   if (sclass->cache_nl)
     return sclass->cache_nl;
 
-  for (i = sclass->num_methods; i--; ) {
+  for (i = sclass->num_installed; i--; ) {
     l = scheme_make_pair(sclass->names[i], l);
     SCHEME_SET_PAIR_IMMUTABLE(l);
   }
@@ -161,16 +224,54 @@ static Scheme_Object *class_meth_vec(int argc, Scheme_Object **argv)
   if (sclass->cache_mv)
     return sclass->cache_mv;
 
-  v = scheme_make_vector(sclass->num_methods, NULL);
+  v = scheme_make_vector(sclass->num_installed, NULL);
   SCHEME_SET_VECTOR_IMMUTABLE(v);
 
-  for (i = sclass->num_methods; i--; ) {
+  for (i = sclass->num_installed; i--; ) {
     SCHEME_VEC_ELS(v)[i] = sclass->methods[i];
   }
 
   sclass->cache_mv = v;
   
   return v;
+}
+
+static Scheme_Object *find_meth(int argc, Scheme_Object **argv)
+{
+  Scheme_Class *sclass = (Scheme_Class *)argv[0];
+  Scheme_Object *sym = argv[1];
+
+  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
+    scheme_wrong_type("find-in-primitive-class", "primitive-class", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(sym))
+    scheme_wrong_type("find-in-primitive-class", "symbol", 1, argc, argv);
+  
+  while (sclass) {
+    int i;
+
+    for (i = sclass->num_installed; i--; ) {
+      if (sclass->names[i] == sym)
+	return sclass->methods[i];
+    }
+
+    sclass = (Scheme_Class *)sclass->sup;
+  }
+
+  return scheme_false;
+}
+
+static Scheme_Object *class_p(int argc, Scheme_Object **argv)
+{
+  return ((SCHEME_TYPE(argv[0]) == objscheme_class_type)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *obj_p(int argc, Scheme_Object **argv)
+{
+  return ((SCHEME_TYPE(argv[0]) == objscheme_object_type)
+	  ? scheme_true
+	  : scheme_false);
 }
 
 Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
@@ -335,6 +436,22 @@ void objscheme_init(Scheme_Env *env)
 						    1, -1),
 			   env);
 
+  scheme_install_xc_global("primitive-object-ref",
+			   scheme_make_prim_w_arity(obj_ref,
+						    "primitive-object-ref",
+						    2, 2),
+			   env);
+  scheme_install_xc_global("primitive-object-set!",
+			   scheme_make_prim_w_arity(obj_set,
+						    "primitive-object-set!",
+						    3, 3),
+			   env);
+  scheme_install_xc_global("primitive-object-size",
+			   scheme_make_prim_w_arity(obj_size,
+						    "primitive-object-size",
+						    1, 1),
+			   env);
+
   scheme_install_xc_global("primitive-object->class",
 			   scheme_make_prim_w_arity(obj_to_class,
 						    "primitive-object->class",
@@ -354,6 +471,28 @@ void objscheme_init(Scheme_Env *env)
 						    1, 1),
 			   env);
   
+  scheme_install_xc_global("primitive-class->superclass",
+			   scheme_make_prim_w_arity(class_sup,
+						    "primitive-class->superclass",
+						    1, 1),
+			   env);
+  
+  scheme_install_xc_global("primitive-class?",
+			   scheme_make_prim_w_arity(class_p,
+						    "primitive-class?",
+						    1, 1),
+			   env);
+  scheme_install_xc_global("primitive-object?",
+			   scheme_make_prim_w_arity(obj_p,
+						    "primitive-object?",
+						    1, 1),
+			   env);
+
+  scheme_install_xc_global("find-in-primitive-class",
+			   scheme_make_prim_w_arity(find_meth,
+						    "find-in-primitive-class",
+						    2, 2),
+			   env);
 }
 
 Scheme_Object *objscheme_def_prim_class(void *global_env, 
@@ -952,7 +1091,7 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
     return;
   }
   if (!obj->primdata) {
-    scheme_signal_error("attempt to use an uninitialized object: %v",
+    scheme_signal_error("attempt to use an uninitialized object: %V",
 			obj);
   }
 }

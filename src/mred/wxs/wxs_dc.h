@@ -21,7 +21,7 @@ extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *
 extern Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *);
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxDC(void *env);
+void objscheme_setup_wxDC(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxDC(class wxDC *realobj);
@@ -31,21 +31,21 @@ extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxMemoryDC(void *env);
+void objscheme_setup_wxMemoryDC(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxMemoryDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMemoryDC(class wxMemoryDC *realobj);
 class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *where, int nullOK);
 extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxPostScriptDC(void *env);
+void objscheme_setup_wxPostScriptDC(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxPostScriptDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxPostScriptDC(class wxPostScriptDC *realobj);
 class wxPostScriptDC *objscheme_unbundle_wxPostScriptDC(Scheme_Object *obj, const char *where, int nullOK);
 extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_basePrinterDC(void *env);
+void objscheme_setup_basePrinterDC(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_basePrinterDC(class basePrinterDC *realobj);

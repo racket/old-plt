@@ -712,7 +712,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxCheckBox(void *env)
+void objscheme_setup_wxCheckBox(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

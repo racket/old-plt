@@ -9,10 +9,8 @@
 @HEADER
 
 #ifdef wx_xt
-#define HAS_GET_MENU_BAR 1
 #define GET_THE_MENU_BAR(f) (f)->GetMenuBar()
 #else
-#define HAS_GET_MENU_BAR 0
 #define GET_THE_MENU_BAR(f) (f)->wx_menu_bar
 #endif
 
@@ -22,11 +20,14 @@
 #define wxALLOW_AUTO_RESIZE 0
 #endif
 
-#define NO_GET_MENU_BAR !HAS_GET_MENU_BAR
-
 @MACRO CHECKHASMENU[log] = if (<log>GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)THEOBJ)->primdata))) return scheme_void;
 
 @INCLUDE wxs_espc.xci
+
+static wxMenuBar *GetTheMenuBar(wxFrame *f)
+{
+  return GET_THE_MENU_BAR(f);
+}
 
 @BEGINSYMBOLS frameStyle > > PRED BUNDLE
 @SYM "no-caption" : wxNO_CAPTION
@@ -68,8 +69,7 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 @ "iconize" : void Iconize(bool);
 @ "set-icon" : void SetIcon(wxBitmap!,wxBitmap^ = NULL,SYM[iconKind] = 0); : : /CHECKICONOK[0]|CHECKICONOK[1]|CHECKICONBW[1]
 @ "set-menu-bar" : void SetMenuBar(wxMenuBar!) : : /CHECKHASMENU[ ]
-@IVAR r "menu-bar" : wxMenuBar^ wx_menu_bar ## NO_GET_MENU_BAR
-@ "get-menu-bar" : wxMenuBar^ GetMenuBar() ## HAS_GET_MENU_BAR
+@ m "get-menu-bar" : wxMenuBar^ GetTheMenuBar()
 @ "set-status-text" : void SetStatusText(string)
 @ "iconized?" : bool Iconized();
 @ "status-line-exists?" : bool StatusLineExists();

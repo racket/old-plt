@@ -222,7 +222,7 @@ static Scheme_Object *objscheme_wxMultColour_Setb(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxMultColour(void *env)
+void objscheme_setup_wxMultColour(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -498,7 +498,7 @@ static Scheme_Object *objscheme_wxAddColour_Setb(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxAddColour(void *env)
+void objscheme_setup_wxAddColour(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2105,7 +2105,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
   return scheme_void;
 }
 
-void objscheme_setup_wxStyleDelta(void *env)
+void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2783,7 +2783,7 @@ static Scheme_Object *os_wxStyleGetName(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-void objscheme_setup_wxStyle(void *env)
+void objscheme_setup_wxStyle(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -3258,7 +3258,7 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxStyleList(void *env)
+void objscheme_setup_wxStyleList(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

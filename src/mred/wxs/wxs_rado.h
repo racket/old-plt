@@ -11,7 +11,7 @@ extern int objscheme_istype_wxPanel(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxRadioBox(void *env);
+void objscheme_setup_wxRadioBox(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxRadioBox(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxRadioBox(class wxRadioBox *realobj);

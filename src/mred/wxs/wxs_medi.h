@@ -72,7 +72,7 @@ extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxStyleDelta *objscheme_unbundle_wxStyleDelta(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxMediaBuffer(void *env);
+void objscheme_setup_wxMediaBuffer(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxMediaBuffer(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *realobj);
@@ -87,6 +87,6 @@ extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxMediaGlobal(void *env);
+void objscheme_setup_wxMediaGlobal(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 #endif

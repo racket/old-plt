@@ -1537,7 +1537,7 @@ static Scheme_Object *os_wxDCClear(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxDC(void *env)
+void objscheme_setup_wxDC(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1825,7 +1825,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxMemoryDC(void *env)
+void objscheme_setup_wxMemoryDC(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -1981,7 +1981,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
   return scheme_void;
 }
 
-void objscheme_setup_wxPostScriptDC(void *env)
+void objscheme_setup_wxPostScriptDC(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
@@ -2164,7 +2164,7 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[
   return scheme_void;
 }
 
-void objscheme_setup_basePrinterDC(void *env)
+void objscheme_setup_basePrinterDC(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

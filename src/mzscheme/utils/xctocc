@@ -986,7 +986,7 @@ sub DoPrintClass
 
     # Setup function
     if (!$global) {
-	$proto = "void objscheme_setup_${oldclass}(void *env)";
+	$proto = "void objscheme_setup_${oldclass}(Scheme_Env *env)";
         print HEADER $setup_d_end;
 	print HEADER "$proto;\n";
 	print HEADER $setup_d_start;
@@ -1036,16 +1036,30 @@ sub DoPrintClass
 	print ", ${nmethod}))";
 	print ";\n\n";
 
-	$sym = &Unquote($classstring);
-	print SOUT "(class $sym";
+	if ($interfacestring ne '') {
+	    $sym = &Unquote($classstring);
+	    print SOUT "  (define-private-class $sym ";
+	    $sym = &Unquote($interfacestring);
+	    print SOUT "$sym<%> ";
+	} else {
+	    $sym = &Unquote($classstring);
+	    print SOUT "  (define-class $sym ";
+	}
+	if ($parentstring ne '') {
+	    $sym = &Unquote($parentstring);
+	    print SOUT "$sym";
+	} else {
+	    print SOUT "#f";
+	}
 	
 	@funcs = ();
 	foreach $function (@functions) {
 	    &ReadFields($function);
-	    $sym = &Unquote($fname);
-	    print SOUT "\n  $sym";
 	    @l = grep($_ =~ /^$func$/, @funcs);
 	    if ($#l < $[) {
+		$sym = &Unquote($fname);
+		print SOUT "\n    $sym";
+	    
 		@funcs = (@funcs, $func);
 		if (!$delegate) {
 		    &OIStart;
@@ -1080,14 +1094,14 @@ sub DoPrintClass
 	    print "${getname}, objscheme_${oldclass}_Get${ivarname}, 0, 0));\n";
 
 	    $sym = &Unquote($getname);
-	    print SOUT "\n  $sym";
+	    print SOUT "\n    $sym";
 
 	    if (!$readonly) {
 		print "  WITH_VAR_STACK(scheme_add_method_w_arity(${newclass}_class,";
 		print "${setname}, objscheme_${oldclass}_Set${ivarname}, 1, 1));\n";
 
 		$sym = &Unquote($setname);
-		print SOUT "\n  $sym";
+		print SOUT "\n    $sym";
 	    }
 	    &OIEnd;
 	}
@@ -1111,7 +1125,7 @@ sub DoPrintClass
 
 	print "\n";
     } else {
-	$proto = "void objscheme_setup_${globalname}(void *env)";
+	$proto = "void objscheme_setup_${globalname}(Scheme_Env *env)";
         print HEADER $setup_d_end;
 	print HEADER "$proto;\n";
         print HEADER $setup_d_start;
@@ -1125,11 +1139,11 @@ sub DoPrintClass
 	foreach $function (@functions) {
 	    &ReadFields($function);
 
-	    $sym = &Unquote($fname);
-	    print SOUT "(function $sym)\n";
-
 	    @l = grep($_ =~ /^$func$/, @funcs);
 	    if ($#l < $[) {
+		$sym = &Unquote($fname);
+		print SOUT "  (define-function $sym)\n";
+
 		@funcs = (@funcs, $func);
 		&OIStart;
 		print "  functmp = WITH_VAR_STACK(";
@@ -1163,6 +1177,9 @@ sub DoPrintClass
 	print ";\n";
 	print "  WITH_VAR_STACK(scheme_install_xc_global(${const}, xcconsttmp, env));\n";
 	&OIEnd;
+
+	$sym = &Unquote($const);
+	print SOUT "  (define-constant $sym)\n";
     }
 
     print "}\n\n";
@@ -1506,6 +1523,12 @@ sub PrintFunction
     # Define Scheme callback
     #
 
+    if ($global) {
+	$POFFSET = "0";
+    } else {
+	$POFFSET = "POFFSET";
+    }
+
     $numfuncs = 0;
     $thisfuncs = ();
     $fp = 0;
@@ -1698,7 +1721,7 @@ sub PrintFunction
 	    }
 	    $checkcount = $pos;
 	    $pos += 1;
-	    print "(n >= (POFFSET+$pos))";
+	    print "(n >= ($POFFSET+$pos))";
 
 	    # Check them:
 	    $pos = 0;
@@ -1711,7 +1734,7 @@ sub PrintFunction
 		    $scheme = shift(@scms);
 		}
 		print " && ";
-		&PrintTypecheck("p[POFFSET+${pos}]", $schemeparams[$pos], $check, 0);
+		&PrintTypecheck("p[$POFFSET+${pos}]", $schemeparams[$pos], $check, 0);
 		$pos += 1;
 	    }
 	    print " && ";
@@ -1720,7 +1743,7 @@ sub PrintFunction
 		$check = shift(@checks);
 		$scheme = shift(@scms);
 	    }
-	    &PrintTypecheck("p[POFFSET+${pos}]", $schemeparams[$pos], $check, 0);
+	    &PrintTypecheck("p[$POFFSET+${pos}]", $schemeparams[$pos], $check, 0);
 	    
 	    print ") {\n";
 	    if ($casename eq "") {
@@ -1932,24 +1955,24 @@ sub PrintSpecificFunction
 	$possible = &CalcNumPossible(1);
 	print "$prefix  if (";
 	if ($req == $possible) {
-	    print "n != (POFFSET+$req)";
+	    print "n != ($POFFSET+$req)";
 	    $minimumok = $possible;
 	} else {
 	    if ($req) {
 		$req_arg = $req;
-		print "(n < (POFFSET+$req_arg)) || ";
+		print "(n < ($POFFSET+$req_arg)) || ";
 		$minimumok = $req_arg;
 	    } else {
-		$minimumok = "POFFSET";
+		$minimumok = "$POFFSET";
 	    }
-	    print "(n > (POFFSET+$possible))";
+	    print "(n > ($POFFSET+$possible))";
 	}
 	print ") \n";
 	
 	print "$prefix    WITH_VAR_STACK(scheme_wrong_count(";
 	print "\"${aname}${casename}\"";
 	
-	print ", POFFSET+${minimumok}, POFFSET+${possible}, n, p));\n";
+	print ", $POFFSET+${minimumok}, $POFFSET+${possible}, n, p));\n";
     }
 
     &PrintUnbundles($prefix, "\"${aname}${casename}\"");
@@ -2436,9 +2459,9 @@ sub PrintUnbundles
 	if ($scheme || ($unbundle ne '')) {
 	    print "$prefix  ";
 	    if (($defval ne '') && ($defval ne '.')) {
-		print "if (n > (POFFSET+" . ($paramnum -  $offset) . ")) {\n$prefix    ";
+		print "if (n > ($POFFSET+" . ($paramnum -  $offset) . ")) {\n$prefix    ";
 	    }
-	    $svar = "p[POFFSET+" . ($paramnum - $offset) . "]";
+	    $svar = "p[$POFFSET+" . ($paramnum - $offset) . "]";
 	    $xvar = "x${paramnum}";
 	    if (&NeedsDeref($paramtype)) {
 		if (&CanBeNull($paramtype)) {
@@ -2476,9 +2499,9 @@ sub PrintBundledEffects
 	if ($schemes[$paramnum]) {
 	    if (&NeedsDeref($paramtype)) {
 		$pos = $paramnum - $offset;
-		print "$prefix  if (n > (POFFSET+$pos)";
-		print " && !XC_SCHEME_NULLP(p[POFFSET+$pos])" if &CanBeNull($paramtype);
-		print ")\n$prefix    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+$pos], ";
+		print "$prefix  if (n > ($POFFSET+$pos)";
+		print " && !XC_SCHEME_NULLP(p[$POFFSET+$pos])" if &CanBeNull($paramtype);
+		print ")\n$prefix    WITH_VAR_STACK(objscheme_set_box(p[$POFFSET+$pos], ";
 		substr($paramtype, -1) = '';
 		&PrintBundleVar("_x${paramnum}", $paramtype, 'WITH_VAR_STACK', $bundle);
 		print "));\n";
@@ -2505,7 +2528,7 @@ sub PrintUnbundledEffects
 		    print "if (x${paramnum}) *";
 		}
 		print "x${paramnum} = ";
-		$svar = "p[POFFSET+". ($paramnum - $offset) . "]";
+		$svar = "p[$POFFSET+". ($paramnum - $offset) . "]";
 		&PrintUnbundleVar($svar, $paramtype, undef, undef, &GetMethod(1) . "\", extracting return value via box\"");
 		print ";\n";
 	    }

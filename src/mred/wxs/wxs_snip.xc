@@ -54,7 +54,7 @@
 
 @END
 
-@MACRO SetLength = x1 = SCHEME_STRLEN_VAL(p[0]);
+@MACRO SetLength = x1 = SCHEME_STRLEN_VAL(p[POFFSET]);
 
 @CLASSBASE wxTextSnip "string-snip":"snip" / nofnl
 

@@ -618,7 +618,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-void objscheme_setup_wxSlider(void *env)
+void objscheme_setup_wxSlider(Scheme_Env *env)
 {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);

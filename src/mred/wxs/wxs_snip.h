@@ -49,7 +49,7 @@ extern Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *);
 extern Scheme_Object *objscheme_bundle_wxSnipClass(class wxSnipClass *);
 extern class wxSnipClass *objscheme_unbundle_wxSnipClass(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxSnip(void *env);
+void objscheme_setup_wxSnip(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxSnip(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *realobj);
@@ -98,7 +98,7 @@ extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxTextSnip(void *env);
+void objscheme_setup_wxTextSnip(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxTextSnip(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxTextSnip(class wxTextSnip *realobj);
@@ -146,7 +146,7 @@ extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxTabSnip(void *env);
+void objscheme_setup_wxTabSnip(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxTabSnip(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxTabSnip(class wxTabSnip *realobj);
@@ -197,7 +197,7 @@ extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxImageSnip(void *env);
+void objscheme_setup_wxImageSnip(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxImageSnip(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxImageSnip(class wxImageSnip *realobj);
@@ -248,7 +248,7 @@ extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, co
 extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 #endif
-void objscheme_setup_wxMediaSnip(void *env);
+void objscheme_setup_wxMediaSnip(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxMediaSnip(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaSnip(class wxMediaSnip *realobj);
@@ -258,7 +258,7 @@ extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, cons
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *);
 #endif
-void objscheme_setup_wxBufferDataClass(void *env);
+void objscheme_setup_wxBufferDataClass(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxBufferDataClass(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass *realobj);
@@ -268,7 +268,7 @@ extern class wxBufferDataClass *objscheme_unbundle_wxBufferDataClass(Scheme_Obje
 extern class wxBufferDataClass *objscheme_unbundle_wxBufferDataClass(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass *);
 #endif
-void objscheme_setup_wxBufferDataClassList(void *env);
+void objscheme_setup_wxBufferDataClassList(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxBufferDataClassList(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxBufferDataClassList(class wxBufferDataClassList *realobj);
@@ -280,7 +280,7 @@ extern Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass
 extern class wxBufferDataClass *objscheme_unbundle_wxBufferDataClass(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *);
 #endif
-void objscheme_setup_wxBufferData(void *env);
+void objscheme_setup_wxBufferData(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxBufferData(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *realobj);

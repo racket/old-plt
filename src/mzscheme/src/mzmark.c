@@ -1493,6 +1493,8 @@ int module_val_MARK(void *p) {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
+
+  gcMARK(m->primitive);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
 }
@@ -1517,6 +1519,8 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->self_modidx);
 
   gcFIXUP(m->accessible);
+
+  gcFIXUP(m->primitive);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
 }

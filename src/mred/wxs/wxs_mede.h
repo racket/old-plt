@@ -84,7 +84,7 @@ extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, cons
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 #endif
-void objscheme_setup_wxMediaEdit(void *env);
+void objscheme_setup_wxMediaEdit(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY
 int objscheme_istype_wxMediaEdit(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaEdit(class wxMediaEdit *realobj);

@@ -3278,8 +3278,6 @@ wxFrame *MrEdApp::OnInit(void)
 # endif
 #endif
 
-  wxscheme_prepare_hooks(argc, argv);
-
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 
 #if WINDOW_STDIO

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.13 1998/09/21 05:21:16 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.14 1998/09/23 02:54:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -445,6 +445,10 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
 
   (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), NULL);
   (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy2));
+  if (current_pen  && !current_pen->GetWidth()) {
+    /* Convention across platforms: line includes pixel on endpoint */
+    ::SetPixel(dc, XLOG2DEV(xx2), YLOG2DEV(yy2), current_pen->GetColour().pixel);
+  }
 
   DoneDC(dc);
 
@@ -462,6 +466,9 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   int style = brush->GetStyle();
   wxColour *c = &brush->GetColour();
 
+  old = dc->GetClippingRegion();
+  if (old) r->Intersect(old);
+
   r->BoundingBox(&x, &y, &w, &h);
   bw = bm->GetWidth();
   bh = bm->GetHeight();
@@ -477,7 +484,6 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   ystart = floor(y / bh);
   yend = floor((y + h + bh - 0.00001) / bh);
 
-  old = dc->GetClippingRegion();
   dc->SetClippingRegion(r);
 
   for (i = xstart; i < xend; i++)
@@ -726,8 +732,8 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
   }
 
   if (StartBrush(dc, 1)) {
-    (void)RoundRect(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2),
-		    YLOG2DEV(y2), XLOG2DEV(radius), YLOG2DEV(radius));
+    (void)RoundRect(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2) + 1,
+		    YLOG2DEV(y2) + 1, XLOG2DEV(radius), YLOG2DEV(radius));
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
@@ -759,7 +765,7 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
   ShiftXY(x + width, y + height, x2, y2);
 
   if (StartBrush(dc, 1)) {
-    (void)Ellipse(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
+    (void)Ellipse(dc, XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2) + 1, YLOG2DEV(y2) + 1);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
@@ -1295,16 +1301,18 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   SetTextColor(dc, 0); /* 0 = black */
   if (source->GetDepth() == 1) {
-    SetTextColor(dc, c ? c->pixel : wxBLACK->pixel);
     if (rop == wxSOLID) {
-      op = 0;
-      success = MaskBlt(dc, xdest1, ydest1, 
-			width, height,
-			dc_src, xsrc1, ysrc1, 
-			source->ms_bitmap, xsrc1, ysrc1,
-			MAKEROP4(SRCAND, SRCCOPY));
+      SetTextColor(dc, wxBLACK->pixel);
+      success = BitBlt(dc, xdest1, ydest1, 
+		       width, height,
+		       dc_src, xsrc1, ysrc1,
+		       MERGEPAINT);
+      op = SRCAND;
     } else
-      op = SRCCOPY; /* opaque */
+      op = ((rop == wxXOR) 
+	    ? 0x00990066 /* => DSnx */
+	    : SRCCOPY);  /* opaque */
+    SetTextColor(dc, c ? c->pixel : wxBLACK->pixel);
   } else {
     op = SRCCOPY;		
     SetTextColor(dc, wxBLACK->pixel);

@@ -234,10 +234,10 @@
 							    (get-whole/frac expr)])
 						(and (or (zero? whole)
 							 (zero? frac))))))))
-			    (and (symbol? expr)
-				 (not (eq? expr 'quasiquote))
-				 (not (eq? expr 'quote))
-				 (not (eq? expr 'unquote))
+                            (and (symbol? expr)
+                                 (not (eq? expr 'quasiquote))
+                                 (not (eq? expr 'quote))
+                                 (not (eq? expr 'unquote))
                                  (not (eq? expr 'quote-syntax))
                                  (not (eq? expr 'syntax)))
 			    (char? expr)
@@ -254,12 +254,22 @@
 		      (lambda ()
 			(cond
 			 [(null? expr) '()]
-			 [(and (list? expr)
+			 [(and (pair? expr)
+                               (pair? (cdr expr))
+                               (null? (cddr expr))
+                               (or (eq? (car expr) 'quote)
+                                   (eq? expr 'quasiquote)
+                                   (eq? expr 'quote)
+                                   (eq? expr 'unquote)
+                                   (eq? expr 'quote-syntax)
+                                   (eq? expr 'syntax)))
+                          `(,(car expr) ,(recur (cadr expr)))]
+                         [(and (list? expr)
 			       (doesnt-contain-shared-conses expr))
 			  (map recur expr)]
 			 [(pair? expr) 
 			  (cons (recur (car expr)) (recur (cdr expr)))]
-			 [(self-quoting? expr) expr]
+                         [(self-quoting? expr) expr]
 			 [else `(,'unquote ,((print #f first-time) expr))]))]
 		     [guard
 		      (lambda (f)
@@ -316,7 +326,10 @@
 					`(lambda ,(make-lambda-helper arity) ...)))))]
 			      [(regexp? expr) `(regexp ...)]
                               [(syntax? expr) `(syntax ,(syntax-object->datum expr))]
-			      [(interface? expr) `(interface ...)]
+			      [(module-path-index? expr) 
+                               (let-values ([(left right) (module-path-index-split expr)])
+                                 `(module-path-index-join ,(recur left) ,(recur right)))]
+                              [(interface? expr) `(interface ...)]
 			      [(class? expr) 
 			       (build-named 
 				expr

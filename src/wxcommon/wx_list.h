@@ -144,10 +144,10 @@ class wxStringList: public wxList
   wxStringList(void);
   ~wxStringList(void);
 
-  virtual wxNode *Add(const char *s);
-  virtual void Delete(const char *s);
-  virtual char **ListToArray(Bool new_copies = FALSE);
-  virtual Bool Member(const char *s);
+  wxNode *Add(const char *s);
+  void Delete(const char *s);
+  char **ListToArray(Bool new_copies = FALSE);
+  Bool Member(const char *s);
 };
 
 class wxChildList;

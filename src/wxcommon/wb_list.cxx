@@ -4,37 +4,21 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cc,v 1.5 1999/11/10 03:46:20 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.1 1999/11/12 17:21:42 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-#ifndef wx_xt
-    // wxWindows standard include mechanism
-    /* static const char sccsid[] = "@(#)wb_list.cc	1.2 5/9/94"; */
-    // For compilers that support precompilation, includes "wx.h".
-// #   include "wx_prec.h"
-#   ifdef __BORLANDC__
-#	pragma hdrstop
-#   endif
-#   ifndef WX_PRECOMP
-#	include "common.h"
-#	include "wx_list.h"
-#	include "wx_utils.h"
-#   endif
-    // Sun CC compatibility (interference with xview/pkg.h, apparently...)
-#   if defined(SUN_CC) && defined(wx_xview)
-#	undef va_start
-#	undef va_end
-#	undef va_arg
-#	undef va_list
-#   endif
-#   include <stdlib.h>
-#else // wx_xt
-    // The Xt port uses another include mechanism
-#   define  Uses_wxList
-#   define  Uses_wxStringList
-#   include "wx.h"
-#endif // #ifndef wx_xt
+#if defined(_MSC_VER)
+# include "wx.h"
+#else
+# ifdef wx_x
+#  define  Uses_wxList
+#  define  Uses_wxStringList
+#  include "wx.h"
+# else
+#  include "wx.h"
+# endif
+#endif
 
 #include <stdarg.h>
 #include <string.h>
@@ -344,6 +328,38 @@ void wxList::Clear (void)
   n = 0;
 }
 
+#ifdef wx_mac
+long wxList::MemberIndex(wxObject *object) // WCH wx_mac added 8/12/94
+{
+  long result = 0;
+  wxNode *current = First();
+  wxNode *found = NULL;
+  while (current && !found)
+  {
+    wxObject *each = current->Data();
+    if (each == object)
+      found = current;
+    else {
+      current = current->Next();
+      result++;
+    }
+  }
+  return (found ? result : -1);
+}
+
+Bool wxList::OnDeleteObject(wxObject *object)  // mac platform only
+{
+  int destroy_data_saved = destroy_data; // kludge
+  destroy_data = kNoDestroyData; // kludge
+
+  DeleteObject(object);
+    
+  destroy_data = destroy_data_saved; // kludge
+  
+  return FALSE;
+}
+#endif // wx_mac
+
 /*
  * String list
  *
@@ -507,55 +523,6 @@ Bool wxChildList::DeleteObject(wxObject *object)
 
   return FALSE;
 }
-
-#ifdef wx_mac
-long wxList::MemberIndex(wxObject *object) // WCH wx_mac added 8/12/94
-{
-  long result = 0;
-  wxNode *current = First();
-  wxNode *found = NULL;
-  while (current && !found)
-  {
-    wxObject *each = current->Data();
-    if (each == object)
-      found = current;
-    else
-    {
-    	current = current->Next();
-    	result++;
-    }
-  }
-  return (found ? result : -1);
-}
-
-Bool wxList::OnDeleteObject(wxObject *object)  // mac platform only
-{
-  Bool result;
-
-  wxNode *current = first_node;
-  while (current)
-  {
-    if (current->Data() == object)
-      break;
-    else current = current->Next();
-  }
-
-  if (current)
-  {
-	int destroy_data_saved = destroy_data; // kludge
-	destroy_data = kNoDestroyData; // kludge
-
-    delete current;
-    
-	destroy_data = destroy_data_saved; // kludge
-
-    result = TRUE;
-  }
-  else result = FALSE;
-
-  return result;
-}
-#endif // wx_mac
 
 Bool wxChildList::DeleteNode(wxChildNode *node)
 {

@@ -4,28 +4,23 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cc,v 1.3 1999/11/04 17:25:32 mflatt Exp $
+ * RCS_ID:	$Id: wb_hash.cxx,v 1.1 1999/11/12 17:21:42 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-#ifndef wx_xt
-    // wxWindows standard include mechanism
-    /* static const char sccsid[] = "@(#)wb_hash.cc	1.2 5/9/94"; */
-    // For compilers that support precompilation, includes "wx.h".
-// #   include "wx_prec.h"
-#   ifdef __BORLANDC__
-#	pragma hdrstop
-#   endif
-#   ifndef WX_PRECOMP
-#	include "wx_list.h"
-#   endif
-#   include "wx_hash.h"
-#   include "wx_types.h"
-#else // wx_xt
-    // The Xt port uses another include mechanism
-#   define  Uses_wxHashTable
-#   include "wx.h"
-#endif // #ifndef wx_xt
+#if defined(_MSC_VER)
+# include "wx.h"
+#else
+# ifdef wx_xt
+#  define  Uses_wxHashTable
+#  include "wx.h"
+# else
+#  include "common.h"
+#  include "wx_list.h"
+#  include "wx_hash.h"
+#  include "wx_types.h"
+# endif
+#endif
 
 #include <string.h>
 #include <stdarg.h>
@@ -37,7 +32,6 @@ wxHashTable::wxHashTable (int the_key_type, int size)
   current_position = -1;
   current_node = NULL;
 
-  key_type = the_key_type;
   hash_table = new wxList *[size];
   int i;
   for (i = 0; i < size; i++)
@@ -51,23 +45,6 @@ wxHashTable::~wxHashTable (void)
     if (hash_table[i])
       delete hash_table[i];
   delete[] hash_table;
-}
-
-Bool wxHashTable::Create(int the_key_type, int size)
-{
-  __type = wxTYPE_HASH_TABLE;
-  n = size;
-  current_position = -1;
-  current_node = NULL;
-
-  key_type = the_key_type;
-  if (hash_table)
-    delete[] hash_table;
-  hash_table = new wxList *[size];
-  int i;
-  for (i = 0; i < size; i++)
-    hash_table[i] = NULL;
-  return TRUE;
 }
 
 void wxHashTable::Put (long key, long value, wxObject * object)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.9 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: FontDirectory.cxx,v 1.1 1999/11/12 17:21:41 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -23,10 +23,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define  Uses_wxApp
-#define  Uses_wxFontNameDirectory
-#include "wx.h"
-#include <string.h>
+#ifdef wx_x
+# define  Uses_wxApp
+# define  Uses_wxFontNameDirectory
+# include "wx.h"
+# include <string.h>
+#endif
 
 char *font_defaults[] = {
   "FamilySystem", "System",
@@ -77,12 +79,7 @@ char *font_defaults[] = {
   "PostScriptBoldItalic", "-BoldOblique",
   "PostScriptBoldSlant", "-BoldOblique",
 
-#if WX_NORMALIZED_PS_FONTS
   "PostScript___", "${PostScriptTimes,$[weight],$[style]}",
-#else
-  "PostScriptRoman__", "${PostScriptTimes,$[weight],$[style]}",
-  "PostScript___", "LucidaSans${PostScript$[weight]$[style]}",
-#endif
 
   "PostScriptTimesMedium", "",
   "PostScriptTimesLight", "",
@@ -100,10 +97,7 @@ char *font_defaults[] = {
 
   "PostScriptTeletype__", "${PostScriptModern,$[weight],$[style]}",
 
-#if !WX_NORMALIZED_PS_FONTS
-  "PostScriptScript__", "Zapf-Chancery-MediumItalic",
-#endif
-
+#ifdef wx_x
   "ScreenMedium", "medium",
   "ScreenBold", "bold",
   "ScreenLight", "light",
@@ -142,6 +136,32 @@ char *font_defaults[] = {
   "+-${ScreenScriptBase}${ScreenStdSuffix}",
   "ScreenSymbol__",
   "+-${ScreenSymbolBase}-medium-r-normal-*-*-%d-*-*-*-*-*-*",
+#endif
+
+#ifdef wx_msw
+  "ScreenSystem__", "MS Sans Serif",
+  "ScreenDefault__", "MS Sans Serif",
+  "ScreenRoman__", "Times New Roman",
+  "ScreenDecorative__", "Arial",
+  "ScreenModern__", "Courier New",
+  "ScreenTeletype__", "${ScreenModern$[weight];$[style]}",
+  "ScreenSwiss__", "Arial",
+  "ScreenScript__", "Arial",
+  "ScreenSymbol__", "Symbol",
+#endif
+
+#ifdef wx_mac
+  "ScreenDefault__", "applicationfont",
+  "ScreenSystem__", "systemfont",
+  "ScreenRoman__", "times",
+  "ScreenDecorative__", "geneva",
+  "ScreenModern__", "monaco", /* "courier" is also good */
+  "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
+  "ScreenSwiss__", "helvetica",
+  "ScreenScript__", "geneva",
+  "ScreenSymbol__", "symbol",
+#endif
+
   NULL
 };
 
@@ -164,12 +184,11 @@ enum {
 class wxSuffixMap {
  public:
   char *map[wxNUM_WEIGHTS][wxNUM_STYLES];
-  void Initialize(const char *, const char *, int weight, int style); /* MATTHEW: [6] */
+  void Initialize(const char *, const char *, int weight, int style);
 
   wxSuffixMap();
 };
 
-  /* MATTHEW: [6] zero map initially: */
 wxSuffixMap::wxSuffixMap() {
   int i, j;
   for (i = 0; i < wxNUM_WEIGHTS; i++)
@@ -216,7 +235,7 @@ static int SCoordinate(int s)
 wxFontNameDirectory::wxFontNameDirectory(void)
 {
   table = new wxHashTable(wxKEY_INTEGER, 20);
-  nextFontId = 10; /* Larger than all family ids */
+  nextFontId = 100; /* Larger than all family ids */
 }
 
 wxFontNameDirectory::~wxFontNameDirectory()
@@ -228,6 +247,12 @@ int wxFontNameDirectory::GetNewFontId(void)
 {
   return (nextFontId++);
 }
+
+#ifdef wx_x
+# define GET_CLASS_NAME wxTheApp->GetClassName()
+#else
+# define GET_CLASS_NAME wxTheApp->wx_class
+#endif
 
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
@@ -248,7 +273,7 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	strcat(resource, "_");
     }
 
-    if (wxGetResource(wxTheApp->GetClassName(), (char *)resource, v) && **v)
+    if (wxGetResource(GET_CLASS_NAME, (char *)resource, v) && **v)
       return;
 
     if (!internal) {
@@ -282,7 +307,6 @@ void wxFontNameDirectory::Initialize()
 
 typedef char *a_charptr;
 
-/* MATTHEW: [6] Pass in weight & style and just do one */
 void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 			     int wt, int st)
 {
@@ -394,6 +418,13 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	  goto found;
 	}
 
+      rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
+
+#if defined(wx_msw) || defined(wx_mac)
+      if (!v)
+	v = copystring(rname);
+#endif
+#ifdef wx_x
       if (!strcmp(devresname, "Screen")) {
 	if (v && (v[0] == '+')) {
 	  memmove(v, v + 1, strlen(v));
@@ -406,7 +437,6 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	     -([^-]*)-(.*) => -\1-\2-<weight>-<style>-normal-*-*-%d-*-*-*-*-*-*
 	     ([^-].*[^-]) => \1
 	     */
-          rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
 	  src = (v ? v : (char *)rname);
 	  len = strlen(src);
 	  if (src[0] == '-') {
@@ -463,6 +493,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    v = copystring(src);
 	}
       }
+#endif
 
       /* We have a final value: */
       map[wt][st] = v;
@@ -549,6 +580,7 @@ void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char 
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
+#ifdef wx_x
   /* Safety: name must be less than 500 chars, and must not contain %
      except maybe one instance of %d. */
   int i, found_d = 0;
@@ -566,8 +598,11 @@ void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char 
     }
   }
 
-  if (s)
-    item->screen.map[wt][st] = s;
+  if (!s)
+    return;
+#endif
+
+  item->screen.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)

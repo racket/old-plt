@@ -15,8 +15,6 @@
 #endif
 
 #ifndef wx_xt
-    // wxWindows standard include mechanism
-    /* sccsid[] = "@(#)wx_hash.h	1.2 5/9/94" */
 #   include "wx_obj.h"
 #   include "wx_list.h"
 #endif
@@ -40,13 +38,10 @@ class wxHashTable: public wxObject
   int current_position;
   wxNode *current_node;
 
-  unsigned int key_type;
   wxList **hash_table;
 
-  wxHashTable(int the_key_type = wxKEY_INTEGER, int size = 1000);
+  wxHashTable(int the_key_type = 0, int size = 1000);
   ~wxHashTable(void);
-
-  Bool Create(int the_key_type = wxKEY_INTEGER, int size = 1000);
 
   // Note that there are 2 forms of Put, Get.
   // With a key and a value, the *value* will be checked
@@ -99,10 +94,7 @@ class wxHashTable: public wxObject
 
 };
 
-/* Special hash table implementation for widgets.
- * This is part of an experimental garbage collection system
- * for wxWindows, by Matthew Flatt: use with caution.
- */
+/* Special hash table implementation for widgets. */
 class wxNonlockingHashTable
 {
   struct Bucket *buckets;
@@ -113,7 +105,6 @@ class wxNonlockingHashTable
   void Put(long widget, wxObject *object);
   wxObject *Get(long widget);
   void Delete(long widget);
-  /* MATTHEW: New methods */
   void DeleteObject(wxObject *object);
   inline void Append(long w, wxObject *o) { Put(w, o); }
   inline wxObject *Find(long w) { return Get(w); }

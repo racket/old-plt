@@ -184,7 +184,7 @@ typedef struct {
 
 typedef struct Scheme_Symbol {
   Scheme_Type type;
-  MZ_HASH_KEY_EX
+  short keyex; /* See `keyex' in Scheme_Object; flag here is for non-hygenic ids */
   int len;
   char s[4]; /* Really, a number of chars to match `len' */
 } Scheme_Symbol;

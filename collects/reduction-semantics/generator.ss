@@ -6,75 +6,55 @@
            for-each-generated/size
            generate-all/size)
   
-  (define cache-limit 10)
-  
-  (define (force-cache! min-size max-size cache gen)
-    (when (<= min-size max-size)
-      (if (vector-ref cache min-size)
-          (force-cache! (add1 min-size) max-size cache gen)
-          (begin
-            ;; Init cache slots between min-size and max-size
-            (let iloop ([i min-size])
-              (vector-set! cache i null)
-              (unless (= i max-size) 
-                (iloop (add1 i))))
-            ;; Generate all from min-size to max-size:
-            (let loop ([gen gen])
-              (gen min-size
-                   max-size
-                   (lambda (v size leftover-max gen-next)
-                     (vector-set! cache size 
-                                  (cons v (vector-ref cache size)))
-                     (loop gen-next))
-                   void))))))
-  
-  (define (xcache-small gen)
-    (let ([cache (make-vector (add1 cache-limit) #f)])
-      (lambda (min-size max-size next-k done-k)
-        (let loop ([i min-size][next-k next-k])
-          (cond
-            [(i . > . max-size) (done-k)]
-            [(i . <= . cache-limit)
-             (force-cache! i (min cache-limit max-size) cache gen)
-             (let iloop ([l (vector-ref cache i)][next-k next-k])
-               (if (null? l)
-                   (loop (add1 i) next-k)
-                   (next-k (car l)
-                           i
-                           (- max-size i)
-                           (lambda (s xs next-k done-again-k)
-                             (iloop (cdr l) next-k)))))]
-            [else (gen i max-size next-k done-k)])))))
-    
-  (define (cache-small gen) gen)
-    
   (define (lang->generator-table lang
 				 nums
 				 vars
 				 strs
-				 skip-kws)
+				 skip-kws
+				 cache-limit)
+
+    ;; -------------------- Cache implementation --------------------
+    ;; Cache is currently disabled. It's not clear that it's useful.
+    (define (cache-small gen) gen)
+    
+    ;; -------------------- Build table --------------------
+    ;; The `gens' table maps non-terminal symbols to
+    ;; generator functions. A generator function conumes:
+    ;;   * the min acceptable size of a generated element
+    ;;   * the max acceptable size of a generated element
+    ;;   * a sucess continuation proc that accepts
+    ;;        - the generated value
+    ;;        - the value's size
+    ;;        - a generator proc that produces the next value;
+    ;;          this proc expects to be given the same min, max,
+    ;;          and fail continuation proc as before
+    ;;   * a failure continuation thunk
+    ;;
     (let ([nts (compiled-lang-lang lang)]
           [nt-map (make-hash-table)])
+      ;; nt-map tells us which symbols are non-terminals; it also 
+      ;; provides conservative min-size and max-size thunks that are
+      ;; refined as table generation proceeds
       (for-each (lambda (nt) (hash-table-put! nt-map (nt-name nt) 
                                               (cons (lambda () 1)
                                                     (lambda () +inf.0))))
                 nts)
+      ;; gens is the main hash table
       (let ([gens (make-hash-table)]
-            [atomic-alts (lambda (l)
+            [atomic-alts (lambda (l size)
                            (values
-                            (lambda (min-size max-size next-k done-k)
-                              (if (<= min-size 1 max-size)
-                                  (let loop ([l l][next-k next-k])
+                            (lambda (min-size max-size result-k fail-k)
+                              (if (<= min-size size max-size)
+                                  (let loop ([l l][result-k result-k])
                                     (if (null? l)
-                                        (done-k)
-                                        (next-k (car l)
-                                                1
-                                                (sub1 max-size)
-                                                (lambda (s xs next-k done-again-k)
-                                                  (loop (cdr l) next-k)))))
-                                  (done-k)))
-                            (lambda () 1)
-                            (lambda () 1)))]
+                                        (fail-k)
+                                        (result-k (car l)
+						  size
+						  (lambda (s xs result-k again-fail-k)
+						    (loop (cdr l) result-k)))))
+                                  (fail-k)))
+                            (lambda () size)
+                            (lambda () size)))]
             [to-do nts])
         (letrec ([make-gen/get-size
                   (lambda (p)
@@ -82,50 +62,51 @@
                       [(hash-table-get nt-map p (lambda () #f))
                        => (lambda (get-sizes)
                             (values
-                             (lambda (min-size max-size next-k done-k)
-                               ((hash-table-get gens p) min-size max-size next-k done-k))
+                             (lambda (min-size max-size result-k fail-k)
+                               ((hash-table-get gens p) min-size max-size result-k fail-k))
                              (car get-sizes)
                              (cdr get-sizes)))]
-                      [(eq? 'number p) (atomic-alts nums)]
-                      [(eq? 'string p) (atomic-alts strs)]
-                      [(eq? 'any p) (atomic-alts '(0 "s1" '(1 2)))]
+                      [(eq? 'number p) (atomic-alts nums 1)]
+                      [(eq? 'string p) (atomic-alts strs 1)]
+                      [(eq? 'any p) (atomic-alts (append nums strs vars) 1)]
                       [(or (eq? 'variable p)
                            (and (pair? p)
                                 (eq? (car p) 'variable-except)))
-                       (atomic-alts vars)]
-                      [(symbol? p) (if (memq p skip-kws)
-                                       (values
-                                        (lambda (min-size max-size next-k done-k)
-                                          (done-k))
-                                        (lambda () +inf.0)
-                                        (lambda () -1))
-                                       (atomic-alts (list p)))]
-                      [(null? p) (atomic-alts (list null))]
+                       (atomic-alts vars 1)]
+                      [(symbol? p) ; not a non-terminal, because we checked above
+		       (if (memq p skip-kws)
+			   (values
+			    (lambda (min-size max-size result-k fail-k)
+			      (fail-k))
+			    (lambda () +inf.0)
+			    (lambda () -1))
+			   (atomic-alts (list p) 0))]
+                      [(null? p) (atomic-alts (list null) 0)]
                       [(and (pair? p)
                             (or (not (pair? (cdr p)))
                                 (not (eq? '... (cadr p)))))
-                       (make-pair-gen/get-size p cons 0)]
+                       (make-pair-gen/get-size p cons)]
                       [(and (pair? p) (pair? (cdr p)) (eq? '... (cadr p)))
 		       (let-values ([(just-rest just-rest-min-size just-rest-max-size)
 				     (make-gen/get-size (cddr p))]
 				    [(both both-min-size both-max-size)
-				     (make-pair-gen/get-size (cons (kleene+ (car p)) (cddr p)) append -1)])
+				     (make-pair-gen/get-size (cons (kleene+ (car p)) (cddr p)) append)])
 			 (values
-			  (lambda (min-size max-size next-k done-k)
-			    (let loop ([both both][next-k next-k])
+			  (lambda (min-size max-size result-k fail-k)
+			    (let loop ([both both][result-k result-k])
 			      (both min-size max-size
-				    (lambda (v size r-max-size next-both)
-				      (next-k v size r-max-size
-					      (lambda (ns xs next-k again-done-k)
-						(loop next-both next-k))))
+				    (lambda (v size next-both)
+				      (result-k v size
+						(lambda (ns xs result-k again-fail-k)
+						  (loop next-both result-k))))
 				    (lambda ()
-				      (just-rest min-size max-size next-k done-k)))))
+				      (just-rest min-size max-size result-k fail-k)))))
 			  just-rest-min-size
 			  (lambda () +inf.0)))]
                       [else
                        (error 'make-gen "unrecognized pattern: ~e" p)]))]
                  [make-pair-gen/get-size
-                  (lambda (p combiner delta)
+                  (lambda (p combiner)
                     (let*-values ([(first first-min-size first-max-size) 
                                    (make-gen/get-size (car p))]
                                   [(rest rest-min-size rest-max-size) 
@@ -134,40 +115,37 @@
 						     (lambda ()
 						       (unless v
 							 (set! v (+ (first-min-size)
-								    (rest-min-size)
-								    delta)))
+								    (rest-min-size))))
 						       v))]
                                   [(this-max-size) (let ([v #f])
 						     (lambda ()
 						       (unless v
 							 (set! v (+ (first-max-size)
-								    (rest-max-size)
-								    delta)))
+								    (rest-max-size))))
 						       v))])
                       (values
                        (cache-small
-                        (lambda (min-size max-size next-k done-k)
+                        (lambda (min-size max-size result-k fail-k)
                           (if (or (max-size . < . (this-min-size))
                                   (min-size . > . (this-max-size)))
-                              (done-k)
-                              (let rloop ([rest rest][next-k next-k])
+                              (fail-k)
+                              (let rloop ([rest rest][result-k result-k])
                                 (rest
 				 (max 0 (- min-size (first-max-size)))
-				 (- max-size (first-min-size) delta)
-                                 (lambda (rest rest-size leftover-max-size next-rest)
-                                   (let floop ([first first][next-k next-k])
-                                    (first (- (max 0 (- min-size rest-size)) delta)
-					   (- (+ leftover-max-size (first-min-size)) delta)
-					   (lambda (first first-size r-max-size next-first)
-                                            (next-k 
+				 (- max-size (first-min-size))
+                                 (lambda (rest rest-size next-rest)
+                                   (let floop ([first first][result-k result-k])
+                                    (first (max 0 (- min-size rest-size))
+					   (- max-size rest-size)
+					   (lambda (first first-size next-first)
+                                            (result-k 
                                              (combiner first rest)
-                                             (+ first-size rest-size delta)
-                                             r-max-size
-                                             (lambda (ns xs next-k done-again-k)
-                                               (floop next-first next-k))))
+                                             (+ first-size rest-size)
+                                             (lambda (ns xs result-k again-fail-k)
+                                               (floop next-first result-k))))
                                           (lambda ()
-                                            (rloop next-rest next-k)))))
-                                 done-k)))))
+                                            (rloop next-rest result-k)))))
+                                 fail-k)))))
                        this-min-size
                        this-max-size)))]
                  [kleene+ (lambda (p)
@@ -198,41 +176,42 @@
                                    (let ([v #f])
                                      (lambda ()
                                        (unless v
-                                         (set! v (apply min (map (lambda (gs) (gs))
-                                                                 get-min-sizes))))
-                                       v)))]
+                                         (set! v (add1
+						  (apply min (map (lambda (gs) (gs))
+								  get-min-sizes)))))
+				       v)))]
                                 [get-max-size
                                  (let ([get-max-sizes (map cddr gens+sizes)])
                                    (let ([v #f])
                                      (lambda ()
                                        (unless v
-                                         (set! v (apply max (map (lambda (gs) (gs))
-                                                                 get-max-sizes))))
+                                         (set! v (add1
+						  (apply max (map (lambda (gs) (gs))
+								  get-max-sizes)))))
                                        v)))])
                            (hash-table-put! nt-map (nt-name nt)
                                             (cons get-min-size get-max-size))
                            (cache-small
-                            (lambda (min-size max-size next-k done-k)
-                              (if (or (max-size . < . (get-min-size))
+                            (lambda (min-size max-size result-k fail-k)
+			      (if (or (max-size . < . (get-min-size))
                                       (min-size . > . (get-max-size)))
-                                  (done-k)
-                                  (let loop ([l (map car gens+sizes)][next-k next-k])
+                                  (fail-k)
+                                  (let loop ([l (map car gens+sizes)][result-k result-k])
                                     (if (null? l)
-                                        (done-k)
+                                        (fail-k)
                                         (let iloop ([alt-next (car l)]
-                                                    [next-k next-k])
+                                                    [result-k result-k])
                                           (alt-next
-                                           min-size
-                                           max-size
-                                           (lambda (alt a-size l-max-size alt-next)
-                                             (next-k
+                                           (max 0 (sub1 min-size))
+                                           (sub1 max-size)
+                                           (lambda (alt a-size alt-next)
+                                             (result-k
                                               alt
-                                              a-size
-                                              l-max-size
-                                              (lambda (ns xs next-k done-again-k)
-                                                (iloop alt-next next-k))))
+                                              (add1 a-size)
+                                              (lambda (ns xs result-k again-fail-k)
+                                                (iloop alt-next result-k))))
                                            (lambda ()
-                                             (loop (cdr l) next-k))))))))))))
+                                             (loop (cdr l) result-k))))))))))))
                       nts)
             (unless (null? to-do)
               (to-do-loop to-do))))
@@ -244,7 +223,7 @@
         (gen
          min-size
          max-size
-         (lambda (val z1 z2 gen-next)
+         (lambda (val z1 gen-next)
            (proc val z1)
            (loop gen-next))
          void))))
@@ -258,5 +237,5 @@
   
   (define (for-each-generated proc gens nonterm)
     (let loop ([i 0])
-      (for-each-generated/size proc gens i nonterm)
+      (for-each-generated/size proc gens i i nonterm)
       (loop (add1 i)))))

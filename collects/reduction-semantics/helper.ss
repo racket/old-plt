@@ -118,16 +118,16 @@
 
 
   ;; function-reduce*
-  (define (function-reduce* reds expr done?)
+  (define (function-reduce* reds expr done? max-steps)
     (cons 
      expr
-     (if (done? expr)
+     (if (or (zero? max-steps) (done? expr))
 	 null
 	 (let ([l (reduce reds expr)])
 	   (cond
 	    [(null? l) null]
 	    [(= 1 (length l))
-	     (function-reduce* reds (car l) done?)]
+	     (function-reduce* reds (car l) done? (sub1 max-steps))]
 	    [else
 	     (error 'function-reduce* 
 		    "found ~a possible steps from ~e"
@@ -196,7 +196,7 @@
    explore-results
    explore-parallel-results)
   (provide/contract
-   (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
+   (function-reduce* ((listof red?) any? (any? . -> . boolean?) number?
 		      . -> . (listof any?)))
    (unique-names? ((listof symbol?) . -> . boolean?))
    (generate-string (-> string?))

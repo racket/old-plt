@@ -688,14 +688,16 @@ Aggregates potential results for future exploration.
 > function-reduce* : ((listof red?)
                       any?
                       (any? . -> . boolean?)
+                      number?
                       . -> . (listof any?))
 
    A poor-man's `gui' for test interaction. The first argument
    represents a set of reductions that define a function; the second
-   argument is the starting expression; the last argument is a
-   predicate to recognize ending expressions.  The function applies
-   the reductions repeatedly until an ending expression os found, or
-   until the reduction gets stuck. (If the reduction produces multiple
+   argument is the starting expression; the thrid argument is a
+   predicate to recognize ending expressions; the fourth argument
+   limits the number of steps taken.  The function applies the
+   reductions repeatedly until an ending expression os found, or until
+   the reduction gets stuck. (If the reduction produces multiple
    results, an exception is raised.) The result is the list of
    expressions leading to the ending expression.
 

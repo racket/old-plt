@@ -109,15 +109,6 @@
 	  ,(make-cheap-mark (z:make-zodiac #f start finish))
 	  ,body))))
   
-  ; binding-indexer: (z:parsed -> integer)
-  
-  (define binding-indexer
-    (let ([indexer-table (make-hash-table-weak)])
-      (lambda (binding)
-        (let ([old-index (hash-table-get indexer-table binding (lambda () -1))])
-          (hash-table-put! indexer-table binding (+ old-index 1))
-          (+ old-index 1)))))
-  
   ; wrap-struct-form 
   
   (define (wrap-struct-form names annotated)
@@ -541,7 +532,7 @@
                                      binding-sets))]
                              [dummy-binding-list (apply append dummy-binding-sets)]
                              [create-index-finder (lambda (binding)
-                                                    `(,binding-indexer ,binding))]
+                                                    `(,binding-indexer))]
                              [outer-dummy-initialization
                               `([,(append lifted-gensyms (map z:binding-var dummy-binding-list))
                                  (#%values ,@(append (map create-index-finder binding-list)
@@ -601,7 +592,7 @@
                         (values (expr-cheap-wrap `(#%letrec-values ,bindings ,annotated-body))
                                 free-bindings-outer))
                       (let* ([create-index-finder (lambda (binding)
-                                                    `(,binding-indexer ,binding))]
+                                                    `(,binding-indexer))]
                              [outer-initialization
                               `((,(append lifted-gensyms binding-names) 
                                  (#%values ,@(append (map create-index-finder binding-list)

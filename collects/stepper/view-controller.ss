@@ -12,6 +12,14 @@
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^])
 
+  (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
+  (define reduct-highlight-color (make-object color% 255 255 255))
+  (define redex-highlight-color (make-object color% 255 255 255))
+  (send test-dc try-color (make-object color% 212 159 245) reduct-highlight-color)
+  (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
+  
+  (define error-delta (make-object style-delta% 'change-style 'italic))
+  (send error-delta set-delta-foreground "RED")
 
 ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
@@ -53,15 +61,10 @@
 	   (let* ([admin (get-admin)]
 		  [reporting-media (send admin get-editor)]
 		  [reporting-admin (send reporting-media get-admin)]
-		  [widthb (box 0)]
-		  [space 2])
+		  [widthb (box 0)])
 	     (send reporting-admin get-view #f #f widthb #f)
-	     (set! width (max 0.0
-                              (- (unbox widthb) 
-                                 space
-                                 2))))
-	   (set! height 1)
-	   (unless (not w-box)
+	     (set! width (- (unbox widthb) 2)))
+           (unless (not w-box)
 	     (set-box! w-box width))
 	   (unless (not h-box)
 	     (set-box! h-box (+ (* 2 white-around) height))))]
@@ -114,7 +117,8 @@
       (private [width 1]
 	       [white-around 2])
       (public [set-height! 
-               (lambda (x) (set! height x))])
+               (lambda (x) 
+                 (set! height x))])
       (override
 	[copy (lambda () 
 		(let ([s (make-object vertical-separator-snip% height)])
@@ -151,27 +155,18 @@
   
   ;;;; end of vertical snip-stuff
   
-  (define (image? val)
-   (is-a? val snip%))
-  
-  (define (confusable-value? val)
-    (or (number? val)
-        (boolean? val)
-        (string? val)
-        (symbol? val)))
-
   (define stepper-editor-snip%
     (class editor-snip% ()
-      (inherit get-editor set-min-width)
-      (private [inset 5])
+      (inherit get-editor set-min-width set-max-width)
       (public
-        [set-new-min-width
+        [set-new-width
          (lambda (width canvas)
            (set-min-width width)
+           (set-max-width width)
            (let ([editor (get-editor)])
              (when editor
-               (send editor reset-pretty-print-width (- width (* 2 inset)) canvas))))])
-      (sequence (super-init #f #f))))
+               (send editor reset-pretty-print-width width canvas))))])
+      (sequence (super-init #f #f 0 0 0 0 0 0 0 0))))
   
   (define stepper-sub-text%
     (class f:text:basic% (exps highlights highlight-color (line-spacing 1.0) (tabstops null))
@@ -307,6 +302,7 @@
   (define stepper-sub-error-text%
     (class f:text:basic% (error-msg (line-spacing 1.0) (tabstops null))
       (inherit get-style-list last-position set-style-list insert change-style auto-wrap)
+      (public [reset-pretty-print-width void])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list))
                 (let ([before-error-msg (last-position)])
@@ -328,8 +324,7 @@
                (send editor reset-width this))))])
       (sequence (super-init parent editor style scrolls-per-page))))
   
-  ; constructor : ((listof sexp) (union sexp no-sexp) (union sexp no-sexp) 
-  ;                (union sexp no-sexp multiple-highlight) (union sexp no-sexp) (union string #f) ... -> )
+  ; constructor : ((listof sexp) (listof sexp) (listof sexp) (listof sexp) (listof sexp) (union string #f) (listof sexp) -> )
   
   ; redexes MUST NOT OVERLAP. all warranties void if this is violated.
   
@@ -337,14 +332,14 @@
     (class f:text:basic% (finished-exprs exps redex-list post-exps reduct-list 
                                          error-msg after-exprs (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
-               begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
+               begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list
+               get-admin get-snip-location get-dc)
       (public [reset-width 
                (lambda (canvas)
-                 (let* ([canvas-width (let-values ([(client-width client-height)
-                                                    (send canvas get-client-size)])
-                                        client-width)]
+                 (let* ([width-box (box 0)]
+                        [canvas-width (begin (send (get-admin) get-view #f #f width-box #f) (unbox width-box))]
                         [dc (send canvas get-dc)])
-                   (unless (eq? canvas-width old-width)
+                   (unless (and old-width (= canvas-width old-width))
                      (set! old-width canvas-width)
                      (let* ([minus-cursor-margin (- canvas-width 2)]
                             [vert-separator-width-box (box 0)]
@@ -353,19 +348,41 @@
                             [vert-separator-width (unbox vert-separator-width-box)]
                             [minus-center-bar (- minus-cursor-margin vert-separator-width)]
                             [l-r-box-widths (floor (/ minus-center-bar 2))])
-                       (send top-defs-snip set-new-min-width minus-cursor-margin canvas)
-                       (send before-snip set-new-min-width l-r-box-widths canvas)
-                       (send after-snip set-new-min-width l-r-box-widths canvas)
-                       (send bottom-defs-snip set-new-min-width minus-cursor-margin canvas)))))])
+                       (send top-defs-snip set-new-width minus-cursor-margin canvas)
+                       (send before-snip set-new-width l-r-box-widths canvas)
+                       (send after-snip set-new-width l-r-box-widths canvas)
+                       (send bottom-defs-snip set-new-width minus-cursor-margin canvas)
+                       (coordinate-snip-sizes)))))])
 
       (private [old-width #f]
                [top-defs-snip (make-object stepper-editor-snip%)]
                [horiz-separator-1 (make-object separator-snip%)]
                [before-snip (make-object stepper-editor-snip%)]
-               [vert-separator (make-object vertical-separator-snip% 100)]
+               [vert-separator (make-object vertical-separator-snip% 10)]
                [after-snip (make-object stepper-editor-snip%)]
                [horiz-separator-2 (make-object separator-snip%)]
-               [bottom-defs-snip (make-object stepper-editor-snip%)])
+               [bottom-defs-snip (make-object stepper-editor-snip%)]
+               [release-snip-sizes
+                (lambda ()
+                  (for-each (lambda (snip)
+                              (send snip set-min-height 0.0)
+                              (send snip set-max-height 'none))
+                            (list before-snip after-snip)))]
+               [coordinate-snip-sizes
+                (lambda ()
+                  (let* ([get-snip-height
+                          (lambda (snip)
+                            (let* ([top-box (box 0)]
+                                   [bottom-box (box 0)])
+                              (get-snip-location snip #f top-box #f)
+                              (get-snip-location snip #f bottom-box #t)
+                              (- (unbox bottom-box) (unbox top-box))))]
+                         [max-height (apply max (map get-snip-height (list before-snip after-snip)))])
+                    (send vert-separator set-height! (- max-height 4))
+                    (send before-snip set-min-height max-height)
+                    (send before-snip set-max-height max-height)
+                    (send after-snip set-min-height max-height)
+                    (send after-snip set-max-height max-height)))])
       
       
 
@@ -379,7 +396,7 @@
                       (make-object stepper-sub-text% finished-exprs null #f))
                 (send before-snip set-editor
                       (make-object stepper-sub-text% exps redex-list redex-highlight-color))
-                (if (not (eq? reduct-list no-sexp))
+                (if (eq? error-msg #f)
                     (send after-snip set-editor
                           (make-object stepper-sub-text% post-exps reduct-list reduct-highlight-color))
                     (send after-snip set-editor
@@ -387,27 +404,17 @@
                 (send bottom-defs-snip set-editor
                       (make-object stepper-sub-text% after-exprs null #f)))))
 
-  (define stepper-frame%
-    (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
-      (rename [super-on-close on-close])
-      (override
-        [on-close
-         (lambda ()
-           (send drscheme-frame stepper-frame #f)
-           (super-on-close))])
-      (sequence (super-init "The Foot"))))
-
-
-
-  
 ;  (define (stepper-text-test . args)
 ;    (let* ([new-frame (make-object frame% "test-frame")]
 ;           [new-text (apply make-object stepper-text% args)]
 ;           [new-canvas (make-object stepper-canvas% new-frame new-text)])
 ;      (send new-canvas min-width 500)
 ;      (send new-canvas min-height 100)
-;      (send new-frame show #t)))
+;      (send new-frame show #t)
+;      (send new-text reset-width new-canvas)
+;      new-canvas))
 ;  
+;  (define a
 ;  (stepper-text-test `((define x 3) 14)
 ;                     `((* 13 ,highlight-placeholder))
 ;                     `((* 15 16))
@@ -415,7 +422,7 @@
 ;                       298 (+ (x 398 ,highlight-placeholder) ,highlight-placeholder) ,highlight-placeholder)
 ;                     `((+ 3 4) 13 #f (+ x 398) (x 398 (+ x 398)) #f)
 ;                     #f
-;                     `((define y (+ 13 14)) 80))
+;                     `((define y (+ 13 14)) 80)))
 ;  
 ;  (stepper-text-test `()
 ;                     `('uninteresting)
@@ -433,19 +440,30 @@
 ;                     `(uninteresting)
 ;                     `() `(,highlight-placeholder ,highlight-placeholder) `(too-few-fill-ins) #f `())
 ;  
-;  (stepper-text-test `() `(uninteresting) `() no-sexp no-sexp "This is an error message" `((define x 3 4 5)))
+;  (stepper-text-test `() `(uninteresting but long series of lines) `() `() `() "This is an error message" `((define x 3 4 5)))
 ;  
-;  (stepper-text-test `() no-sexp no-sexp no-sexp no-sexp "This is another error message" `(poomp))
+;  (stepper-text-test `() `() `() `() `() "This is another error message" `(poomp))
   
-   
-  (define error-delta (make-object style-delta% 'change-style 'italic))
-  (send error-delta set-delta-foreground "RED")
+  (define (image? val)
+    (is-a? val snip%))
+  
+  (define (confusable-value? val)
+    (or (number? val)
+        (boolean? val)
+        (string? val)
+        (symbol? val)))
+  
+  
+  (define stepper-frame%
+    (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
+      (rename [super-on-close on-close])
+      (override
+        [on-close
+         (lambda ()
+           (send drscheme-frame stepper-frame #f)
+           (super-on-close))])
+      (sequence (super-init "Stepper"))))
 
-  (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
-  (define reduct-highlight-color (make-object color% 255 255 255))
-  (define redex-highlight-color (make-object color% 255 255 255))
-  (send test-dc try-color (make-object color% 212 159 245) reduct-highlight-color)
-  (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
 
   (define (stepper-wrapper drscheme-frame settings)
     
@@ -489,9 +507,9 @@
             (define (update-view new-view)
               (set! view new-view)
               (let ([e (list-ref view-history view)])
-                (send e reset-width canvas)
-                (send canvas lazy-refresh #t)
+                (send canvas lazy-refresh #f)
                 (send canvas set-editor e)
+                (send e reset-width canvas)
                 (send e set-position (send e last-position))
                 (send canvas lazy-refresh #f))
               (send previous-button enable (not (zero? view)))
@@ -515,30 +533,30 @@
                                          (before-error-result-finished-exprs result)
                                          (before-error-result-exp result)
                                          (before-error-result-redex result)
-                                         no-sexp
-                                         no-sexp
+                                         null
+                                         null
                                          (before-error-result-err-msg result)
                                          (before-error-result-after-exprs result))]
                            [(error-result? result)  
                             (set! final-view view-currently-updating)
                             (make-object stepper-text%
                                          (error-result-finished-exprs result)
-                                         no-sexp
-                                         no-sexp
-                                         no-sexp
-                                         no-sexp
+                                         null
+                                         null
+                                         null
+                                         null
                                          (error-result-err-msg result)
-                                         no-sexp)]
+                                         null)]
                            [(finished-result? result)
                             (set! final-view view-currently-updating)
                             (make-object stepper-text%
                                          (finished-result-finished-exprs result)
-                                         no-sexp
-                                         no-sexp
-                                         no-sexp
-                                         no-sexp
+                                         null
+                                         null
+                                         null
+                                         null
                                          #f
-                                         no-sexp)])])
+                                         null)])])
                 (set! view-history (append view-history (list step-text))) 
                 (update-view view-currently-updating)))
             

@@ -88,7 +88,9 @@
    flatten-take
    closure-table-put!
    closure-table-lookup
-   insert-highlighted-value))
+   insert-highlighted-value
+   binding-indexer 
+   binding-index-reset))
 
 (define-signature stepper:annotate^
   (initial-env-package
@@ -101,5 +103,3 @@
    final-mark-list?
    skip-result-step?
    skip-redex-step?))
-
-  

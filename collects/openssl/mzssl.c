@@ -1728,6 +1728,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 				    "SSL Flushing Thread",
 				    0, 0);
   newcust = scheme_make_custodian(NULL);
+
+  scheme_register_extension_global(&daemon_attn, sizeof(daemon_attn));
+  scheme_register_extension_global(&ssls, sizeof(ssls));
+  scheme_register_extension_global(&ssl_input_port_type, sizeof(ssl_input_port_type));
+  scheme_register_extension_global(&ssl_output_port_type, sizeof(ssl_output_port_type));
   
   SSL_library_init();
   daemon_attn = scheme_make_sema(0);
@@ -1738,10 +1743,6 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 #endif
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
-  scheme_register_extension_global(&daemon_attn, sizeof(daemon_attn));
-  scheme_register_extension_global(&ssls, sizeof(ssls));
-  scheme_register_extension_global(&ssl_input_port_type, sizeof(ssl_input_port_type));
-  scheme_register_extension_global(&ssl_output_port_type, sizeof(ssl_output_port_type));
   
 #ifdef MZ_PRECISE_GC
   GC_register_traversers(ssl_listener_type, listener_SIZE,

@@ -15,16 +15,18 @@ exec mzscheme -r "$0" "$@"
 (xosd-set-colour         x "yellow")
 (xosd-set-shadow-colour  x "black")
 (xosd-set-outline-colour x "blue")
-(xosd-set-font           x "-adobe-courier-bold-r-*-*-144-*-*-*-*-*-*-*")
+(xosd-set-font           x "-adobe-courier-bold-r-*-*-34-*-*-*-*-*-*-*")
 
 (printf ">>> xosd=~s, lines=~s, colour=~s\n"
         x (xosd-get-number-lines x) (xosd-get-colour x))
 
 (xosd-display-string x "Xosd Test")
 
-(xosd-set-timeout x 1)
-(xosd-wait-until-no-display x)
-(sleep 1)
+;; this doesn't work for some reason
+;; (xosd-set-timeout x 1)
+;; (xosd-wait-until-no-display x)
+
+(sleep 2)
 (xosd-set-timeout x 0)
 
 (let loop ([n 10])
@@ -60,7 +62,7 @@ exec mzscheme -r "$0" "$@"
 (set! x (xosd-create 4))
 (xosd-set-pos   x 'middle)
 (xosd-set-align x 'center)
-(xosd-set-font  x "-adobe-courier-bold-r-*-*-48-*-*-*-*-*-*-*")
+(xosd-set-font  x "-adobe-courier-bold-r-*-*-25-*-*-*-*-*-*-*")
 (xosd-set-shadow-offset  x 7)
 (xosd-set-outline-offset x 2)
 (xosd-display-string x "This is the first line" 0)

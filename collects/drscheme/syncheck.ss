@@ -630,6 +630,11 @@
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
+            (send (get-definitions-text) begin-edit-sequence)
+            (color-range (get-definitions-text)
+                         0
+                         (send (get-definitions-text) last-position)
+                         base-style-str)
             (send (get-interactions-text)
                   expand-program
                   (drscheme:language:make-text/pos (get-definitions-text) 
@@ -642,36 +647,52 @@
                     (if err?
                         (report-error (car sexp) (cdr sexp))
                         (annotate sexp))
-                    (loop))))
+                    (loop)))
+            (send (get-definitions-text) end-edit-sequence))
 
           ;; annotate : syntax -> void
           ;; annotates the program described by the sexp
           (define (annotate sexp)
             (let loop ([sexp sexp]
                        [bound-vars null])
-              (annotate-original-keyword sexp keyword-style-str)
-              (syntax-case sexp (lambda case-lambda if begin0 let-value letrec-values set!
+              (annotate-original-keywords sexp)
+              (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
                                   quote quote-syntax with-continuation-mark 
-                                  #%app #%datum #%top)
+                                  #%app #%datum #%top
+                                  define-values define-syntaxes module
+                                  require require-for-syntax provide)
                 [(lambda args bodies ...)
-                 (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
-                           (syntax->list (syntax (bodies ...))))]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                             (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
-                 (for-each
-                  (lambda (args bodies)
-                    (for-each
-                     (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
-                     (syntax->list bodies)))
-                  (syntax->list (syntax (argss ...)))
-                  (syntax->list (syntax ((bodiess ...) ...))))]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each
+                    (lambda (args bodies)
+                      (for-each
+                       (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                       (syntax->list bodies)))
+                    (syntax->list (syntax (argss ...)))
+                    (syntax->list (syntax ((bodiess ...) ...)))))]
                 [(if test then else)
                  (begin
+                   (annotate-raw-keyword sexp)
                    (loop (syntax test) bound-vars)
                    (loop (syntax then) bound-vars)
                    (loop (syntax else) bound-vars))]
+                [(begin bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (body) (loop body bound-vars))
+                             (syntax->list (syntax (bodies ...)))))]
+                
                 [(begin0 bodies ...)
-                 (for-each (lambda (body) (loop body bound-vars))
-                           (syntax->list (syntax (bodies ...))))]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (body) (loop body bound-vars))
+                             (syntax->list (syntax (bodies ...)))))]
                 
                 [(let-values (((xss ...) es) ...) bs ...)
                  (let ([new-vars (foldl 
@@ -679,6 +700,7 @@
                                   (apply append (map syntax->list
                                                      (syntax->list (syntax ((xss ...) ...)))))
                                   bound-vars)])
+                   (annotate-raw-keyword sexp)
                    (for-each (lambda (e) (loop e bound-vars)) (syntax->list (syntax (es ...))))
                    (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
                 [(letrec-values (((xss ...) es) ...) bs ...)
@@ -687,57 +709,69 @@
                                   (apply append (map syntax->list
                                                      (syntax->list (syntax ((xss ...) ...)))))
                                   bound-vars)])
+                   (annotate-raw-keyword sexp)
                    (for-each (lambda (e) (loop e new-vars)) (syntax->list (syntax (es ...))))
                    (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
                 [(set! var E)
-                 (loop (syntax E) bound-vars)]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax E) bound-vars))]
                 [(quote datum)
-                 (void)]
+                 (annotate-raw-keyword sexp)]
                 [(quote-syntax datum)
-                 (void)]
+                 (annotate-raw-keyword sexp)]
                 [(with-continuation-mark a b c)
                  (begin
+                   (annotate-raw-keyword sexp)
                    (loop (syntax a) bound-vars)
                    (loop (syntax b) bound-vars)
                    (loop (syntax c) bound-vars))]
                 [(#%app pieces ...)
-                 (for-each (lambda (arg) (loop arg bound-vars))
-                           (syntax->list (syntax (pieces ...))))]
-                [(#%datum datum)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (arg) (loop arg bound-vars))
+                             (syntax->list (syntax (pieces ...)))))]
+                [(#%datum . datum)
                  (color sexp constant-style-str)]
-                [(#%top var)
+                [(#%top . var)
                  (void)]
                 
-                [(begin es ...)
-                 (for-each (lambda (e) (loop e bound-vars))
-                           (syntax->list (syntax (e ...))))]
                 [(define-values (xs ...) b)
-                 (loop (syntax b) (args->vars (syntax (xs ...)) bound-vars))]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax b) (args->vars (syntax (xs ...)) bound-vars)))]
                 [(define-syntaxes (names ...) exp)
-                 (loop (syntax exp) bound-vars)]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax exp) bound-vars))]
                 [(module m-name lang bodies ...)
-                 (for-each (lambda (body) (loop body bound-vars))
-                           (syntax->list (syntax (bodies ...))))]
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (body) (loop body bound-vars))
+                             (syntax->list (syntax (bodies ...)))))]
                 
                 ; top level or module top level only:
                 [(require require-spec)
-                 (void)]
+                 (annotate-raw-keyword sexp)]
                 [(require-for-syntax require-spec)
-                 (void)]
+                 (annotate-raw-keyword sexp)]
                 
                 ; module top level only:
                 [(provide vars)
-                 (void)]
+                 (annotate-raw-keyword sexp)]
                 
-                [else 
-                 (if (identifier? sexp)
-                     '...
-                     (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-                             sexp
-                             (and (syntax? sexp)
-                                  (syntax-object->datum sexp))
-                             (and (syntax? sexp)
-                                  (syntax-source sexp))))])))
+                [_
+                 (cond
+                   [(identifier? sexp)
+                    (cond 
+                      [(memq sexp bound-vars) (color sexp bound-variable-style-str)]
+                      [else (color sexp unbound-variable-style-str)])]
+                   [else (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+                                 sexp
+                                 (and (syntax? sexp)
+                                      (syntax-object->datum sexp))
+                                 (and (syntax? sexp)
+                                      (syntax-source sexp)))])])))
 
           ;; args->vars : syntax (listof syntax) -> (listof syntax)
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
@@ -752,38 +786,48 @@
                     [else (cons first incoming)]))))
 
           
-          ;; annotate-original-keyword : syntax str -> void
+          ;; annotate-original-keywords : syntax -> void
           ;; annotates the origin of the stx with style-name's style.
-          (define (annotate-original-keyword stx style-name)
-            (let* ([origin (syntax-property stx 'origin)]
-                   [to-be-annotated
-                    (cond
-                      [origin
-                       (let loop ([orign origin]
-                                  [stxs null])
-                         (cond
-                           [(cons? origin)
-                            (loop (car origin) (loop (cdr origin) stxs))]
-                           [(syntax? origin)
-                            (if (syntax-original? origin)
-                                (cons origin stxs)
-                                stxs)]))]
-                      [(cons? (syntax-e stx))
-                       (list (car (syntax-e stx)))]
-                      [else null])])
-              (for-each (lambda (stx) (color stx keyword-style-str)) to-be-annotated)))
-          
+          (define (annotate-original-keywords stx)
+            (let* ([origin (syntax-property stx 'origin)])
+              (when origin
+                (let loop ([orign origin])
+                  (cond
+                    [(cons? origin)
+                     (loop (car origin))
+                     (loop (cdr origin))]
+                    [(syntax? origin)
+                     (when (syntax-original? origin)
+                       (color origin keyword-style-str))])))))
+
+          ;; annotate-raw-keyword : syntax -> void
+          ;; annotates keywords when they were never expanded. eg.
+          ;; if someone just types `(lambda (x) x)' it has no 'origin
+          ;; field, but there still are keywords.
+          (define (annotate-raw-keyword stx)
+            (unless (syntax-property stx 'origin)
+              (let ([lst (syntax-e stx)])
+                (when (pair? lst)
+                  (let ([f-stx (car lst)])
+                    (when (syntax-original? f-stx)
+                      (color f-stx keyword-style-str)))))))
+                      
           ;; color : syntax str -> void
           ;; colors the syntax with style-name's style
           (define (color stx style-name)
             (let ([source (syntax-source stx)])
               (when (is-a? source mred:text%)
-                (let ([style (send (send source get-style-list)
-                                   find-named-style
-                                   style-name)]
-                      [pos (- (syntax-position stx) 1)]
+                (let ([pos (- (syntax-position stx) 1)]
                       [span (syntax-span stx)])
-                  (send source change-style style pos (+ pos span))))))
+                  (color-range source pos (+ pos span) style-name)))))
+
+          ;; color-range : text start finish style-name 
+          ;; colors a range in the text based on `style-name'
+          (define (color-range source start finish style-name)
+            (let ([style (send (send source get-style-list)
+                               find-named-style
+                               style-name)])
+              (send source change-style style start finish)))
           
           (super-instantiate ())
           

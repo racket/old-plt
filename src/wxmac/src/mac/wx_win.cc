@@ -254,6 +254,8 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 // Public destructor
 //=============================================================================
 
+static wxWindow *entered;
+
 //-----------------------------------------------------------------------------
 wxWindow::~wxWindow(void) // Destructor
 {
@@ -296,6 +298,9 @@ wxWindow::~wxWindow(void) // Destructor
 			delete (wxArea *)w->Data();
 		}
 	}
+	
+	//don't send leaveEvt messages to this window anymore.
+	if (entered == this) entered = NULL; 
 }
 
 //=============================================================================
@@ -1019,8 +1024,6 @@ void wxWindow::ReleaseMouse(void)
 }
 
 //-----------------------------------------------------------------------------
-static wxWindow *entered;
-
 /* Forward decl */
 Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 
@@ -1129,7 +1132,7 @@ static Bool IsCaptureAncestorArea(wxArea *area)
 {
     wxChildNode* childWindowNode = area->Windows()->First();
 	while (childWindowNode)
-	{
+	{ 
 		wxWindow* p = (wxWindow*)childWindowNode->Data(), *w;
 		for (w = wxWindow::gMouseWindow; w; w = w->GetParent()) {
 		  if (w == p)

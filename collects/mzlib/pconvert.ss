@@ -124,6 +124,7 @@
                    [(and (not (struct? expr))  ;; struct names are the wrong thing, here
                          (not (regexp? expr))
                          (not (procedure? expr))
+                         (not (promise? expr))
                          (object-name expr))
                     'atomic]
                    [(box? expr) 
@@ -176,14 +177,6 @@
                      [ans (and info
                                (share-info-shared? info))])
                 ans))]
-           
-           ;; make-syntax-name : -> string
-           ;; creates a distinctive symbol print-converting syntax.
-           [make-syntax-name
-            (let ([n 0])
-              (lambda ()
-                (set! n (+ n 1))
-                (string->symbol (format "=~a=" n))))]
            
            [make-list
             (lambda (f n)
@@ -291,15 +284,6 @@
                           [(self-quoting? expr) expr]
                           [else `(,'unquote ,((print #f first-time) expr))]))]
                      
-                     [syntax-style
-                      (lambda ()
-                        (cond
-                          [(or (pair? expr)
-                               (null? expr))
-                           ((print in-quasiquote? #f) (datum->syntax-object #f expr))]
-                          [else
-                           (void)]))]
-                     
                      [guard/quasiquote
                       (lambda (f)
                         (cond
@@ -364,39 +348,6 @@
                                          `(lambda ,(make-lambda-helper arity) ...)))))]
                                [(regexp? expr) `(regexp ,(or (object-name expr)
                                                              '...))]
-                               [(syntax? expr) 
-                                (let* ([objs null]
-                                       [names null]
-                                       [datum
-                                        (let loop ([expr expr])
-                                          (cond
-                                            [(syntax? expr)
-                                             (let ([datum (syntax-e expr)])
-                                               (cond
-                                                 [(null? datum) null]
-                                                 [(self-quoting? datum) datum]
-                                                 [(pair? datum)
-                                                  (let ([lst (syntax->list expr)])
-                                                    (cond
-                                                      [(and lst
-                                                            (= (length lst) 2)
-                                                            (symbol? (syntax-e (car lst))))
-                                                       (list (syntax-e (car lst))
-                                                             (loop (cadr lst)))]
-                                                      [else (improper-map loop datum)]))]
-                                                 [else 
-                                                  (let ([name (make-syntax-name)])
-                                                    (set! names (cons name names))
-                                                    (set! objs (cons (recur datum)
-                                                                     objs))
-                                                    name)]))]
-                                            [else (recur expr)]))])
-                                  (if (null? objs)
-                                      `(syntax ,datum)
-                                      `(with-syntax (,@(map (lambda (obj name) `[,name ,obj])
-                                                            (reverse objs)
-                                                            (reverse names)))
-                                         (syntax ,datum))))]
                                [(module-path-index? expr) 
                                 (let-values ([(left right) (module-path-index-split expr)])
                                   `(module-path-index-join ,(recur left) ,(recur right)))]

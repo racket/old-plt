@@ -3,21 +3,21 @@
 
 (reference-library "refer.ss")
 
-(reference-relative-library "spidey.ss")
+(reference "spidey.ss")
 
-(reference-relative-library "macro.ss")
+(reference "macro.ss")
 
-(reference-relative-library "prettyu.ss")
-(reference-relative-library "match.ss")
-(reference-relative-library "defstru.ss")
-(reference-relative-library "fileu.ss")
-(reference-relative-library "functiou.ss")
-(reference-relative-library "compatu.ss")
-(reference-relative-library "stringu.ss")
-(reference-relative-library "compileu.ss")
-(reference-relative-library "threadu.ss")
-(reference-relative-library "shared.ss")
+(reference "prettyu.ss")
+(reference "match.ss")
+(reference "defstru.ss")
+(reference "fileu.ss")
+(reference "functiou.ss")
+(reference "compatu.ss")
+(reference "stringu.ss")
+(reference "compileu.ss")
+(reference "threadu.ss")
+(reference "shared.ss")
 
-(reference-relative-library "cores.ss")
+(reference "cores.ss")
 
-(define mzlib:core@ (reference-relative-library-unit/sig "corer.ss"))
+(define mzlib:core@ (reference-unit/sig "corer.ss"))

@@ -83,6 +83,25 @@
       (lambda (item list)
 	(remove item list eqv?))))
 
+   (define remove* 
+     (polymorphic
+      (case-lambda
+       [(l r equal?)
+	(if (null? l)
+	    r
+	    (remove* (cdr l) (remove (car l) r equal?)))]
+       [(l r) (remove* l r equal?)])))
+     
+   (define remq*
+     (polymorphic
+      (lambda (l r)
+	(remove* l r eq?))))
+
+   (define remv*
+     (polymorphic
+      (lambda (l r)
+	(remove* l r eqv?))))
+
    (define dynamic-disable-break
      (polymorphic
       (lambda (thunk)

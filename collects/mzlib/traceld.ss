@@ -1,10 +1,4 @@
 
-(define-macro time
-  (lambda (expr)
-    `(begin0
-      ,expr
-      (fprintf (current-output-port) "done ~a~n" (current-process-milliseconds)))))
-
 (let ([load (current-load)]
       [load-extension (current-load-extension)]
       [tab ""])
@@ -12,32 +6,34 @@
 	 (lambda (load)
 	   (lambda (filename)
 	     (fprintf (current-error-port)
-		      "~aloading ~a~n" 
-		      tab filename)
+		      "~aloading ~a at ~a~n" 
+		      tab filename (current-process-milliseconds))
 	     (begin0
 	      (let ([s tab])
 		(dynamic-wind
 		 (lambda () (set! tab (string-append " " tab)))
 		 (lambda () 
 		   (if (regexp-match "_loader" filename)
-		       (let ([f (time (load filename))])
+		       (let ([f (load filename)])
 			 (lambda (sym)
 			   (fprintf (current-error-port)
 				    "~atrying ~a~n" tab sym)
-			   (let ([loader (time (f sym))])
+			   (let ([loader (f sym)])
 			     (and loader
 				  (lambda ()
 				    (fprintf (current-error-port)
-					     "~astarting ~a~n" tab sym)
+					     "~astarting ~a at ~a~n" tab sym
+					     (current-process-milliseconds))
 				    (begin0
-				     (time (loader))
+				     (loader)
 				     (fprintf (current-error-port)
-					      "~adone ~a~n"
-					      tab sym)))))))
-		       (time (load filename))))
+					      "~adone ~a at ~a~n"
+					      tab sym
+					      (current-process-milliseconds))))))))
+		       (load filename)))
 		 (lambda () (set! tab s))))
 	      (fprintf (current-error-port)
-		       "~adone ~a~n"
-		       tab filename))))])
+		       "~adone ~a at ~a~n"
+		       tab filename (current-process-milliseconds)))))])
     (current-load (mk-chain load))
     (current-load-extension (mk-chain load-extension))))

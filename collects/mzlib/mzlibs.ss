@@ -5,7 +5,7 @@
 (reference-library "pconvers.ss")
 (reference-library "dates.ss")
 (reference-library "inflates.ss")
-(reference-library "cmdline.ss")
+(reference-library "cmdlines.ss")
 
 (define-signature mzlib^
   ((open mzlib:core^)

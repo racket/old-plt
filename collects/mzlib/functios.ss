@@ -6,6 +6,9 @@
    remv
    remq
    remove
+   remv*
+   remq*
+   remove*
    ignore-errors
    quicksort
    identity

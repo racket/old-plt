@@ -31,7 +31,7 @@
 |#
 
     (define legal-formats
-      '(american chinese german indian irish))
+      (list 'american 'chinese 'german 'indian 'irish))
 
     (define date-display-format 
       (make-parameter 'irish

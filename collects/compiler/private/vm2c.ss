@@ -62,7 +62,7 @@
       (define vm->c:bucket-name
 	(lambda (mod var)
 	  ;; Shouldn't generate any new names:
-	  (mod-glob-cname (compiler:add-global-varref! mod var #f #f #f))))
+	  (mod-glob-cname (compiler:add-global-varref! mod var #f #f #f #f))))
 
       (define (vm->c:SYMBOLS-name)
 	(if (compiler:multi-o-constant-pool)
@@ -651,6 +651,7 @@
 			 (varref:module-invoke? var))
 	       (let* ([name (vm->c:convert-symbol (mod-glob-cname var))]
 		      [et? (mod-glob-exp-time? var)]
+		      [ed? (mod-glob-exp-def? var)]
 		      [position (mod-glob-position var)]
 		      [mod (mod-glob-modname var)]
 		      [in-mod? (mod-glob-in-module? var)]
@@ -659,10 +660,11 @@
 				   (compiler:get-module-path-constant mod))]
 		      [mod-local (and mod (not (symbol? mod)) (not modidx))]
 		      [mod-far (and mod (or (symbol? mod) modidx))])
-		 (fprintf port "~aG~a = scheme_~a~a_bucket(~a~a~a, ~a~a~a);~n"
+		 (fprintf port "~aG~a = scheme_~a~a~a_bucket(~a~a~a, ~a~a~a);~n"
 			  indent 
 			  name 
 			  (if et? "exptime_" "")
+			  (if ed? "expdef_" "")
 			  (if mod-far "module" "global")
 			  (if mod-far
 			      (if (symbol? mod)

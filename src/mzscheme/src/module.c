@@ -653,14 +653,14 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 				       Scheme_Env *env,
 				       int get_bucket, 
-				       int phase, int indirect_ok,
+				       int phase, int mod_phase, int indirect_ok,
 				       int fail_with_error,
 				       int position)
 {
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
   Scheme_Module *m, *srcm;
-  Scheme_Env *menv;
+  Scheme_Env *menv, *lookup_env = NULL;
   int i, count;
   const char *errname;
 
@@ -670,8 +670,8 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   errname = (phase 
 	     ? ((phase < 0)
 		? "dynamic-require-for-template" 
-		: "dynamic-require" )
-	     : "dynamic-require-for-syntax");
+		: "dynamic-require-for-syntax" )
+	     : "dynamic-require");
 
   if (SCHEME_TRUEP(name) && !SCHEME_SYMBOLP(name) && !SCHEME_VOIDP(name)) {
     scheme_wrong_type(errname, "symbol, #f, or void", 1, argc, argv);
@@ -687,7 +687,10 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
   if (phase == 1) {
     scheme_prepare_exp_env(env);
-    env = env->exp_env;
+    if (mod_phase)
+      lookup_env = env->exp_env;
+    else
+      env = env->exp_env;
   } else if (phase == -1) {
     scheme_prepare_template_env(env);
     env = env->template_env;
@@ -700,90 +703,95 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   srcname = NULL;
 
   if (SCHEME_SYMBOLP(name)) {
-  try_again:
+    if (mod_phase) {
+      srcname = name;
+      srcmname = modname;
+    } else {
+    try_again:
     
-    /* Before starting, check whether the name is provided */
-    count = srcm->num_provides;
-    if (position >= 0) {
-      if (position < srcm->num_var_provides) {
-	i = position;
-	if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->provide_src_names[i]))
-	    && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->provide_src_names[i]), SCHEME_SYM_LEN(name))) {
-	  name = srcm->provides[i];
+      /* Before starting, check whether the name is provided */
+      count = srcm->num_provides;
+      if (position >= 0) {
+	if (position < srcm->num_var_provides) {
+	  i = position;
+	  if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->provide_src_names[i]))
+	      && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->provide_src_names[i]), SCHEME_SYM_LEN(name))) {
+	    name = srcm->provides[i];
+	  } else {
+	    i = count; /* not found */
+	    indirect_ok = 0; /* don't look further */
+	  }
 	} else {
-	  i = count; /* not found */
-	  indirect_ok = 0; /* don't look further */
+	  position -= srcm->num_var_provides;
+	  i = count;
 	}
       } else {
-	position -= srcm->num_var_provides;
-	i = count;
-      }
-    } else {
-      for (i = 0; i < count; i++) {
-	if (SAME_OBJ(name, srcm->provides[i])) {
-	  if (i < srcm->num_var_provides) {
-	    break;
-	  } else {
-	    if (fail_with_error)
-	      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-			       "%s: name is provided as syntax: %V by module: %V",
-			       errname,
-			       name, srcm->modname);
-	    return NULL;
-	  }
-	}
-      }
-    }
-
-    if (i < count) {
-      srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
-      if (SCHEME_FALSEP(srcmname))
-	srcmname = srcm->modname;
-      else {
-	srcmname = scheme_modidx_shift(srcmname, srcm->src_modidx, srcm->self_modidx);
-	srcmname = scheme_module_resolve(srcmname);
-      }
-      srcname = srcm->provide_src_names[i];
-    }
-
-    if ((position < 0) && (i == count) && srcm->reprovide_kernel) {
-      /* Check kernel. */
-      srcm = kernel;
-      goto try_again;
-    }
-
-    if (i == count) {
-      if (indirect_ok) {
-	/* Try indirect provides: */
-	srcm = m;
-	count = srcm->num_indirect_provides;
-	if (position >= 0) {
-	  i = position;
-	  if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
-	      && !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->indirect_provides[i]), SCHEME_SYM_LEN(name))) {
-	    name = srcm->indirect_provides[i];
-	    srcname = name;
-	    srcmname = srcm->modname;
-	  } else
-	    i = count; /* not found */
-	} else {
-	  for (i = 0; i < count; i++) {
-	    if (SAME_OBJ(name, srcm->indirect_provides[i])) {
-	      srcname = name;
-	      srcmname = srcm->modname;
+	for (i = 0; i < count; i++) {
+	  if (SAME_OBJ(name, srcm->provides[i])) {
+	    if (i < srcm->num_var_provides) {
 	      break;
+	    } else {
+	      if (fail_with_error)
+		scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+				 "%s: name is provided as syntax: %V by module: %V",
+				 errname,
+				 name, srcm->modname);
+	      return NULL;
 	    }
 	  }
 	}
       }
 
+      if (i < count) {
+	srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
+	if (SCHEME_FALSEP(srcmname))
+	  srcmname = srcm->modname;
+	else {
+	  srcmname = scheme_modidx_shift(srcmname, srcm->src_modidx, srcm->self_modidx);
+	  srcmname = scheme_module_resolve(srcmname);
+	}
+	srcname = srcm->provide_src_names[i];
+      }
+
+      if ((position < 0) && (i == count) && srcm->reprovide_kernel) {
+	/* Check kernel. */
+	srcm = kernel;
+	goto try_again;
+      }
+
       if (i == count) {
-	if (fail_with_error)
-	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-			   "%s: name is not provided: %V by module: %V",
-			   errname,
-			   name, srcm->modname);
-	return NULL;
+	if (indirect_ok) {
+	  /* Try indirect provides: */
+	  srcm = m;
+	  count = srcm->num_indirect_provides;
+	  if (position >= 0) {
+	    i = position;
+	    if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
+		&& !memcmp(SCHEME_SYM_VAL(name), SCHEME_SYM_VAL(srcm->indirect_provides[i]), SCHEME_SYM_LEN(name))) {
+	      name = srcm->indirect_provides[i];
+	      srcname = name;
+	      srcmname = srcm->modname;
+	    } else
+	      i = count; /* not found */
+	  } else {
+	    for (i = 0; i < count; i++) {
+	      if (SAME_OBJ(name, srcm->indirect_provides[i])) {
+		srcname = name;
+		srcmname = srcm->modname;
+		break;
+	      }
+	    }
+	  }
+	}
+
+	if (i == count) {
+	  if (fail_with_error)
+	    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+			     "%s: name is not provided: %V by module: %V",
+			     errname,
+			     name, srcm->modname);
+	  return NULL;
+	}
       }
     }
   }
@@ -796,7 +804,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   if (SCHEME_SYMBOLP(name)) {
     Scheme_Bucket *b;
 
-    menv = scheme_module_access(srcmname, env, 0);
+    menv = scheme_module_access(srcmname, lookup_env ? lookup_env : env, mod_phase);
 
     b = scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
 
@@ -819,12 +827,12 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
     if (r) return r;
   }
 
-  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 0, 0, 1, -1);
+  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 0, 0, 0, 1, -1);
 }
 
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 1, 0, 1, -1);
+  return _dynamic_require(argc, argv, scheme_get_env(NULL), 0, 1, 0, 0, 1, -1);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp, int copy, int etonly)
@@ -2023,9 +2031,11 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env,
        syntax table is the same as menv, and the exp_env is exp_env */
     cenv = MALLOC_ONE_TAGGED(Scheme_Env);
     cenv->so.type = scheme_namespace_type;
+    cenv->module_registry = menv->module_registry;
     cenv->module = menv->module;
     cenv->syntax = menv->syntax;
-    cenv->exp_env = exp_env;    
+    cenv->exp_env = exp_env;
+    cenv->modchain = menv->modchain;
 
     ivk(cenv, menv->phase, menv->link_midx, menv->module->body);
   } else {
@@ -2246,7 +2256,7 @@ Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 0, 1, 1, pos);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 0, 0, 1, 1, pos);
 }
 
 Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, int pos, Scheme_Env *env)
@@ -2256,7 +2266,17 @@ Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Objec
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 1, 1, pos);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 0, 1, 1, pos);
+}
+
+Scheme_Bucket *scheme_exptime_expdef_module_bucket(Scheme_Object *modname, Scheme_Object *var, int pos, Scheme_Env *env)
+{
+  Scheme_Object *a[2];
+
+  a[0] = modname;
+  a[1] = var;
+
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 1, 1, 1, pos);
 }
 
 Scheme_Object *scheme_builtin_value(const char *name)
@@ -2267,14 +2287,14 @@ Scheme_Object *scheme_builtin_value(const char *name)
 
   /* Try kernel first: */
   a[0] = kernel_symbol;
-  v = _dynamic_require(2, a, scheme_get_env(NULL), 0, 0, 0, 0, -1);
+  v = _dynamic_require(2, a, scheme_get_env(NULL), 0, 0, 0, 0, 0, -1);
 
   if (v)
     return v;
 
   /* Maybe in MzScheme? */
   a[0] = scheme_intern_symbol("mzscheme");
-  return _dynamic_require(2, a, initial_modules_env, 0, 0, 0, 0, -1);
+  return _dynamic_require(2, a, initial_modules_env, 0, 0, 0, 0, 0, -1);
 }
 
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)

@@ -839,6 +839,14 @@ scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
 Scheme_Bucket *
 scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
 {
+  /* This is for mzc, but it can't be right. */
+  scheme_prepare_exp_env(env);
+  return scheme_global_bucket(symbol, env->exp_env);
+}
+
+Scheme_Bucket *
+scheme_exptime_expdef_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
+{
   scheme_prepare_exp_env(env);
   return scheme_global_bucket(symbol, env->exp_env);
 }

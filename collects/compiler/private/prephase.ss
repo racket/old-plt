@@ -121,6 +121,7 @@
 				  '#%kernel
 				  (box '())
 				  #f
+				  #f
 				  #f)))])
 		 (case name
 		   [(void) (if (null? args)
@@ -596,6 +597,7 @@
 				     proc
 				     '#%kernel
 				     (box '())
+				     #f
 				     #f
 				     #f)])
 

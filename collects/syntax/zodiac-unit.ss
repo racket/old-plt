@@ -223,6 +223,7 @@
 			    modname)
 			  (get-slot stx (if trans? trans-slot-table slot-table))
 			  trans?
+			  (and b (list-ref b 4))
 			  (and b
 			       ((if trans?
 				    identifier-transformer-binding-export-position
@@ -235,6 +236,7 @@
 		  stx
 		  (mk-back)
 		  (syntax-e (syntax id))
+		  #f
 		  #f
 		  (get-slot (syntax id) (if trans? trans-slot-table slot-table))
 		  trans?
@@ -261,6 +263,7 @@
 				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
+			    (and (pair? b) (list-ref b 4))
 			    (get-slot stx slot-table)
 			    #f
 			    #f)))
@@ -280,6 +283,7 @@
 				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
+			    (and (pair? b) (list-ref b 4))
 			    (get-slot stx syntax-slot-table)
 			    #f
 			    #f)))
@@ -321,6 +325,9 @@
 			[et-required
 			 (cons (syntax init-require)
 			       (get-required-modules (quote-syntax require-for-syntax)))]
+			[tt-required
+			 (cons (syntax init-require)
+			       (get-required-modules (quote-syntax require-for-template)))]
 			[et-body
 			 (filter define-syntaxes-form? body)]
 			[rt-body
@@ -333,6 +340,7 @@
 		    (syntax name)
 		    rt-required
 		    et-required
+		    tt-required
 		    (make-begin-form
 		     stx
 		     (mk-back)
@@ -351,6 +359,10 @@
 		  stx
 		  (mk-back))]
 		[(require-for-syntax i ...)
+		 (make-require/provide-form
+		  stx
+		  (mk-back))]
+		[(require-for-template i ...)
 		 (make-require/provide-form
 		  stx
 		  (mk-back))]
@@ -610,9 +622,9 @@
 
       (define-struct (varref parsed) (var))
 
-      (define-struct (top-level-varref varref) (module slot exptime? position))
-      (define (create-top-level-varref z var module slot exptime? position)
-	(make-top-level-varref (zodiac-stx z) (mk-back) var module slot exptime? position))
+      (define-struct (top-level-varref varref) (module slot exptime? expdef? position))
+      (define (create-top-level-varref z var module slot exptime? expdef? position)
+	(make-top-level-varref (zodiac-stx z) (mk-back) var module slot exptime? expdef? position))
 
       (define-struct (bound-varref varref) (binding))
       (define (create-bound-varref z var binding)
@@ -683,18 +695,18 @@
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
-      (define-struct (module-form parsed) (name requires for-syntax-requires 
-						       body syntax-body 
-						       provides syntax-provides indirect-provides
-						       kernel-reprovide-hint
-						       self-path-index))
-      (define (create-module-form z name rt-requires et-requires 
-				  rt-body et-body 
+      (define-struct (module-form parsed) (name requires for-syntax-requires for-template-requires 
+						body syntax-body 
+						provides syntax-provides indirect-provides
+						kernel-reprovide-hint
+						self-path-index))
+      (define (create-module-form z name rt-requires et-requires tt-requires
+				  rt-body et-body
 				  var-provides syntax-provides indirect-provides
 				  kernel-hint self)
 	(make-module-form (zodiac-stx z) (mk-back) 
-			  name rt-requires et-requires 
-			  rt-body et-body 
+			  name rt-requires et-requires tt-requires 
+			  rt-body et-body
 			  var-provides syntax-provides indirect-provides
 			  kernel-hint self))
 

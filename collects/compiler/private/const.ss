@@ -135,6 +135,7 @@
 		      #f
 		      (box '())
 		      #f
+		      #f
 		      #f)]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx code)
@@ -169,6 +170,7 @@
 			   (string->symbol (number->string counter))
 			   #f
 			   (box '())
+			   #f
 			   #f
 			   #f)])
 		  
@@ -233,6 +235,7 @@
 		     constructor-name
 		     '#%kernel
 		     (box '())
+		     #f
 		     #f
 		     #f)]
 		 [app  (zodiac:make-app 
@@ -491,6 +494,7 @@
 		    #f
 		    (box '())
 		    #f
+		    #f
 		    #f)])
 	  (set! syntax-constants (cons (cons sv stx)
 				       syntax-constants))
@@ -546,6 +550,7 @@
 			    #f
 			    (box '())
 			    #f
+			    #f
 			    #f)])
 
 		  (set-annotation! sv (varref:empty-attributes))
@@ -590,6 +595,7 @@
 				   'vector-ref
 				   '#%kernel
 				   (box '())
+				   #f
 				   #f
 				   #f)
 				  (list

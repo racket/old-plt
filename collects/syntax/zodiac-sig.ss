@@ -50,7 +50,7 @@
      (struct parsed (back))
 
      (struct varref (var))
-     (struct top-level-varref (module slot exptime? position))  ; added module, exptime?, position
+     (struct top-level-varref (module slot exptime? expdef? position))  ; added module, exptime?, position
      create-top-level-varref
      (struct bound-varref (binding))   create-bound-varref
 
@@ -79,6 +79,7 @@
      (struct define-syntaxes-form (names expr))      create-define-syntaxes-form
      (struct module-form (name requires            ; lstof stx for module paths
 			       for-syntax-requires ; lstof stx for module paths
+			       for-template-requires ; lstof stx for module paths
 			       body                ; begin form
 			       syntax-body         ; begin form
 			       provides  ; lstof (sym | (def-sym . prvd-sym) | (mod-path def-sym . prvd-sym))

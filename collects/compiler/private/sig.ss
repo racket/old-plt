@@ -249,7 +249,7 @@
      
      (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
 
-     (struct mod-glob (cname modname varname position exp-time? in-module?))
+     (struct mod-glob (cname modname varname position exp-time? exp-def? in-module?))
      compiler:get-module-path-constant
 
      compiler:finish-syntax-constants!

@@ -2317,7 +2317,7 @@ case $OS in
     fi
     ;;
   Darwin)
-    if test "$CC" = "mwccppc"; then
+    if test `basename "$CC"` = "mwccppc"; then
       MZBINTARGET=macosx-bin
       CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
       AR="libtool"
@@ -2421,7 +2421,7 @@ else
 #line 2421 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int) throw();
+extern "C" void exit(int);
 #endif
   #include <stddef.h> 
    inline void *operator new(size_t size) { return (void *)0x1; }
@@ -2488,7 +2488,7 @@ else
 #line 2488 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int) throw();
+extern "C" void exit(int);
 #endif
   #include <X11/Intrinsic.h>
   #include <X11/XKBlib.h>

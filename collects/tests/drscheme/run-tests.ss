@@ -48,15 +48,13 @@
       
   (define test-suite-frame%
     (class frame%
-      (override on-size on-close)
-      [define on-size
-        (lambda (w h)
-          (preferences:set 'drscheme:test-suite:frame-width w)
-          (preferences:set 'drscheme:test-suite:frame-height h))]
-      [define on-close
-        (lambda ()
-          (set! current-test-suite-frame #f))]
-      (super-instantiate ())))
+      (define/override (on-size w h)
+        (preferences:set 'drscheme:test-suite:frame-width w)
+        (preferences:set 'drscheme:test-suite:frame-height h))
+      (define/augment (on-close)
+        (inner (void) on-close)
+        (set! current-test-suite-frame #f))
+      (super-new)))
 
   (define (ask-test-suite parent)
     (if current-test-suite-frame

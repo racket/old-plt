@@ -1431,6 +1431,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
   Scheme_Object *thread;
   Scheme_Custodian *newcust;
+  Scheme_Config *cfg;
 
   thread = scheme_make_prim_w_arity(write_close_thread,
 				    "SSL Flushing Thread",
@@ -1466,7 +1467,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 		      tcp_check_accept, tcp_accept_needs_wakeup,
 		      NULL, 0);
 
-  scheme_thread_w_custodian(thread, (Scheme_Config *)scheme_branch_config(), newcust);
+  cfg = (Scheme_Config *)scheme_branch_config();
+  scheme_thread_w_custodian(thread, cfg, newcust);
   return scheme_reload(env);
 }
 

@@ -63,6 +63,11 @@
              (out-str (regexp-replace* "<type-to-scheme>" out-str (cadddr trans))))
         (call-with-output-file output-file (lambda (x) (display out-str x)) 'replace))))
 
+  (define mz-headers
+    (let ([inc-dir (build-path (collection-path "mzlib") 'up 'up "include")])
+      (list (build-path inc-dir "scheme.h")
+	    (build-path inc-dir "schvers.h"))))
+  
   (define (make-gl-vector file-name+replacements home)
     (let* ((file-name (car file-name+replacements))
            (replacements (cadr file-name+replacements))
@@ -74,7 +79,7 @@
            (file.h (cadddr names)))
       `((,file.so (,file.c ,file.h)
          ,(lambda () (compile-c-to-so file file.c file.so home)))
-        (,file.c ("gl-vectors/gl-vector.c")
+        (,file.c ("gl-vectors/gl-vector.c" ,@mz-headers)
          ,(lambda ()
             (delete/continue file.c)
             (generate "gl-vectors/gl-vector.c" file.c replacements)))
@@ -92,7 +97,7 @@
                            (build-path "gl-vectors"
                                        (cadr (build-names v))))
                          vecs)))
-      `((,file.so (,file.c "gl-prims.h" ,@vec-sos)
+      `((,file.so (,file.c "gl-prims.h" ,@vec-sos ,@mz-headers)
                   ,(lambda ()
                      (compile-c-to-so file file.c file.so home))))))
       

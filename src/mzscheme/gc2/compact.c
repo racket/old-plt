@@ -3633,7 +3633,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
 void *GC_malloc(size_t size_in_bytes)
 {
   return malloc_untagged(size_in_bytes, MTYPE_ARRAY,
-			 &array_low, &array_high, &tagged_malloc_page,
+			 &array_low, &array_high, &array_malloc_page,
 			 array_free_lists);
 }
 

@@ -30,19 +30,19 @@ doesn't exist as a class, then the wizard inserts a buggy program.
 
 |#
 
+drawing: 
+
+* finish drawing unions, recursion
+
 model 
 
 * figure out how to add toString and template flags to the macro version 
 
 view
 
-* don't show toString and template checkboxes in views for Variant classes
-* refactor via classes and subclasses
-
 both
 
+* parameterize over language level? 
 * privacy modifiers
 
-drawing: 
 
-* finish drawing unions, recursion 

@@ -6,9 +6,9 @@
            (lib "etc.ss")
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
+           
            (file "class.scm")
-           (file "view.scm")
-           )
+           (file "view.scm"))
 
   (provide tool@)
   

@@ -1,0 +1,7 @@
+view0: 
+ design interfaces by hand 
+ abstract into functions 
+ abstract common pieces via multiple values 
+
+view: 
+ replace the multiple values abstraction with classes

@@ -55,17 +55,53 @@
          (send ui call)))
      
      #|
-
-            dialog%
-              |
-            class-union-wizard%
+            *---------------------*
+            | dialog%             |
+	    *---------------------*
+               |
+               |
+              / \
+	    *---------------------*
+            | class-union-wizard% |
+	    *---------------------*
+	    | tostring?           |
+	    | template?           |
+	    | error-message       |
+	    | an-error?           |
+	    | call                |
+	    | A: produce          |
+	    | A: make-class-cb    |
+	    | A: add-field-cb     |
+	    *---------------------*
+	      |
               |
              / \
-        --------------
-        |            |
-     class-info%  union-info%
-
-     |#
+        --------------------------------------------
+        |                                          |
+    *---------------------*                    *---------------------*
+    | class-info%         |		       | union-info%         |
+    *---------------------*		       *---------------------*
+    | field-panel         |--+		       | vart-panel          |--+
+    *---------------------*  |  	       *---------------------*  |
+                             |                                          |          
+                             |                                          |          
+                             |                                          |          
+                             |                                          |          
+    *---------------------*  |                 *---------------------*  | 
+    | vertical-panel%     |  |                 | horizontal-panel%   |  |          
+    *---------------------*  |                 *---------------------*  |          
+                      |      |                                   |      |          
+                      |      |                                   |      |          
+                     / \     |                                  / \     |          
+                 *---------------------*		  *---------------------*
+                 | field-panel%        |		  | variant-panel%      |
+                 *---------------------*		  *---------------------*
+		 | add                 |		  | add                 |
+		 | add-on-return       |		  | produce             |
+		 | produce             |		  *---------------------*
+                 *---------------------*		  
+ 
+    |#
      
      ;; ------------------------------------------------------------------------
      ;; Set up the frame, including the info-panel where subclasses can 
@@ -75,7 +111,7 @@
      
      ;; String String String -> ClassUnionWizard
      (define class-union-wizard%
-       (class dialog% (init-field title insert-str add-str)
+       (class dialog% (init-field title insert-str add-str (switches? #t))
          (super-new (label title) (width 500) (height 300))        
          (define p (new vertical-pane% (parent this)))
          
@@ -89,11 +125,18 @@
          
          (define/abstract add-field-cb)
          (add-button button-panel add-str (lambda (x e) (add-field-cb x e)))
-         
-         (define switch-pane (add-horizontal-panel p))
-         (field (tostring? (make-checkbox switch-pane ADD-TOSTRING))
-                (template? (make-checkbox switch-pane ADD-TEMPLATE)))
-         
+
+         ;; switches for toString methods and template in comments 
+         (define-values (string template)
+           (if switches? 
+               (let ([switch-pane (add-horizontal-panel p)])
+                 (values (make-checkbox switch-pane ADD-TOSTRING) 
+                         (make-checkbox switch-pane ADD-TEMPLATE)))
+               (values #f #f)))
+         (define (get-switch x) (and switches? (send x get-value)))
+         (define/public (tostring?) (get-switch string))
+         (define/public (template?) (get-switch template))
+      
          ;; --------------------------------------------------------------------
          ;; info panel
          (field (info-pane (new vertical-panel% (parent p) (style '(border)))))
@@ -127,8 +170,8 @@
        (class class-union-wizard%
          (init-field (a-super null) (a-v-class null))
          (super-new)
-         (inherit-field tostring? template? info-pane)
-         (inherit error-message an-error?)
+         (inherit-field info-pane)
+         (inherit tostring? template? error-message an-error?)
          
          ;; --------------------------------------------------------------------
          ;; filling the info-pane 
@@ -162,8 +205,8 @@
              (list (list (produce-name-from-text class-name CLASS)
                          (produce-name-from-text super-name SUPER)
                          (send field-panel produce))
-                   (send tostring? get-value) 
-                   (send template? get-value))))
+                   (tostring?) 
+                   (template?))))
          
          ;; TextField String -> java-id?
          (define (produce-name-from-text name msg)
@@ -207,8 +250,8 @@
      ;; produce the field specs on demand 
      (define field-panel%
        (class vertical-panel% 
-         (init-field parent window error-message)
-         (super-new (parent parent))
+         (init-field window error-message)
+         (super-new)
          
          ;; (Listof TextField)
          ;; the list of name TextFields that have been added via (add)
@@ -288,8 +331,8 @@
      (define union-info%
        (class class-union-wizard%
          (super-new)
-         (inherit-field tostring? template? info-pane)
-         (inherit error-message an-error?)
+         (inherit-field info-pane)
+         (inherit tostring? template? error-message an-error?)
          
          ;; --------------------------------------------------------------------
          ;; filling in the info-pane 
@@ -322,8 +365,8 @@
              (list 
               (list (get-type)
                     (send vart-panel produce))
-              (send tostring? get-value)
-              (send template? get-value))))
+              (tostring?)
+              (template?))))
          
          (define/override (make-class-cb x e)
            (when (produce) (send this show #f)))
@@ -361,6 +404,7 @@
                       [a-class (send (new class-info% 
                                           (title "Variant Wizard")
                                           (insert-str "Insert Variant")
+                                          (switches? #f)
                                           (add-str ADD-FIELD)
                                           (a-super type)
                                           (a-v-class (if class-in class-in '())))
@@ -413,7 +457,7 @@
                                 (filter (lambda (c) (not (eq? vp c))) cs)))))))
      
      ;; ------------------------------------------------------------------------
-     #| Run, program, run:
+     #| Run, program, run: |#
      
      (require (file "class.scm"))
 
@@ -423,5 +467,5 @@
      (define y (get-union-info))
      (if y (printf "~a~n" (apply make-union y)))
      
-     |#
+     #||#
      )

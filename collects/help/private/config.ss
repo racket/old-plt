@@ -39,12 +39,14 @@
                  (file-root ,file-root)
                  (servlet-root ,servlet-root)
                  (password-authentication "passwords"))))])
-      (build-developer-configuration 
+      (build-developer-configuration/vhosts
        `((port ,internal-port)
          (max-waiting 40)
          (initial-connection-timeout 30)
          (default-host-table
            ,(make-host-config (build-normal-path doc-path 'up)))
          (virtual-host-table
-          (,addon-host ,(make-host-config (build-path (find-system-path 'addon-dir) 
-                                                      (version))))))))))
+          (,addon-host 
+           ,(make-host-config
+             (build-path (find-system-path 'addon-dir) 
+                         (version))))))))))

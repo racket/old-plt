@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.7 1998/07/13 21:00:17 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.8 1998/08/14 21:44:41 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -386,12 +386,14 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
     wxMenuBar *menu  = (wxMenuBar*)dclient;
     menu_item *item  = (menu_item*)dcall;
 
-    if (item->type == MENU_TOGGLE)
+    if (item->ID != -1) {
+      if (item->type == MENU_TOGGLE)
 	item->set = (!item->set);
-
-    // call OnMenuCommandt of parent (usually of a frame)
-    if (menu->parent)
+      
+      // call OnMenuCommandt of parent (usually of a frame)
+      if (menu->parent)
 	menu->parent->GetEventHandler()->OnMenuCommand(item->ID);
+    }
 }
 
 void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),

@@ -14,6 +14,7 @@
    (lib "parser.ss" "profj")
    (lib "text-syntax-object.ss" "test-suite" "private")
    (lib "print-to-text.ss" "test-suite" "private")
+   (lib "make-snipclass.ss" "test-suite" "private")
    "table.ss")
   
   (provide interactions-box@
@@ -85,7 +86,6 @@
           (define/override (write f)
             (send interactions write f))
             
-          
           #;((is-a?/c editor-stream-in%) . -> . void?)
           ;; Reads interactions from file
           (define/public (read-from-file f)
@@ -112,20 +112,7 @@
             (send interactions add-new))
           (set-snipclass sc)))
       
-      (define interactions-box-snipclass%
-        (class snip-class%
-          #;((is-a?/c editor-stream-in%) . -> . (is-a?/c interactions-box%))
-          ;; Produces an interaction box from the given file stream
-          (define/override (read f)
-            (let ([box (new interactions-box%)])
-              (send box read-from-file f)
-              box))
-          (super-new)))
-      
-      (define sc (new interactions-box-snipclass%))
-      (send sc set-classname "interactions-box%")
-      (send sc set-version 1)
-      (send (get-the-snip-class-list) add sc)
+      (define sc (make-snipclass interactions-box% "interactions-box%"))
   
       ;; One interaction laid out horizontally
       (define interaction%

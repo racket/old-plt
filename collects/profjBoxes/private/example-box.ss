@@ -125,20 +125,7 @@
           (send pb lock-alignment false)
           (set-snipclass sc)))
       
-      (define example-box-snipclass%
-        (class snip-class%
-          #;((is-a?/c file-stream-in%) . -> . (is-a?/c example-box%))
-          ;; Produces an example box from the given file stream
-          (define/override (read f)
-            (let ([box (new example-box%)])
-              (send box read-from-file f)
-              box))
-          (super-new)))
-      
-      (define sc (new example-box-snipclass%))
-      (send sc set-classname "example-box%")
-      (send sc set-version 1)
-      (send (get-the-snip-class-list) add sc)
+      (define sc (make-snipclass example-box-snipclass% "example-box%"))
       
       ;; An example layed out in a horizontal manner. Allows access to the pieces of an example.
       (define example%

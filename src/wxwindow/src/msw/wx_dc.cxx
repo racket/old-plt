@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.4 1998/07/04 02:57:33 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.5 1998/07/17 03:49:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -874,31 +874,21 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
 void wxDC::DrawIcon(wxIcon *icon, float x, float y)
 {
   if (icon->Ok() && !icon->selectedIntoDC) {
-
     int w, h;
-
     wxMemoryDC *mdc;
 
     w = icon->GetWidth();
-
     h = icon->GetHeight();
 
-
-
     mdc = new wxMemoryDC();
-
     mdc->SelectObject(icon);
 
     if (mdc->Ok()) {
-
       Blit(x, y, w, h, mdc, 0, 0);
-
     }
 
     mdc->SelectObject(NULL);
-
     delete mdc;
-
   }
 }
 
@@ -995,15 +985,9 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
 
   if (!dc) return;
 
-
-
   int xx1, yy1;
 
-  
-
   ShiftXY(x, y, xx1, yy1);
-
-  
   
   if (font && font->cfont)
   {
@@ -1443,29 +1427,16 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   if (!dc_src) return FALSE;
 
-  Bool special_op = FALSE;
   Bool success;
 
   DWORD op = 0;
 
-  wxBrush *tmpbrush = NULL, *savebrush = NULL;
-
+  SetTextColor(dc, 0); /* 0 = black */
   if (rop == wxCOLOR) {
-    if (current_pen) {
-      wxColour c = current_pen->GetColour();
-      if (c.Red() || c.Green() || c.Blue()) {
-	tmpbrush = wxTheBrushList->FindOrCreateBrush(&c, wxSOLID);
-	if (tmpbrush) {
-	  op = 0x00FC008A;
-	  special_op = TRUE;
-	  savebrush = current_brush;
-	  SetBrush(tmpbrush);
-	}
-      }
-    }
-  } 
-
-  if (!special_op) {
+    op = SRCCOPY;
+    if (current_pen)
+      SetTextColor(dc, current_pen->GetColour().pixel);
+  } else {
     op = rop == wxCOPY ? SRCCOPY :
                 rop == wxCLEAR ? WHITENESS :
                 rop == wxSET ? BLACKNESS :
@@ -1486,10 +1457,6 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 		   XLOG2DEVREL(width), YLOG2DEVREL(height), 
 		   dc_src, xsrc1, ysrc1, op);
 
-  if (special_op) {
-    SetBrush(savebrush);
-  }
-
   DoneDC(dc);
 
   source->DoneDC(dc_src);
@@ -1502,11 +1469,8 @@ void wxDC::GetSize(float *width, float *height)
   HDC dc = ThisDC();
 
   if (!dc) {
-
-	  *width = *height = 0;
-
-	  return;
-
+    *width = *height = 0;
+    return;
   }
 
   int w=::GetDeviceCaps(dc,HORZRES);
@@ -1522,11 +1486,8 @@ void wxDC::GetSizeMM(float *width, float *height)
   HDC dc = ThisDC();
 
   if (!dc) {
-
-	  *width = *height = 0;
-
-	  return;
-
+    *width = *height = 0;
+    return;
   }
 
   int w=::GetDeviceCaps(dc,HORZSIZE);
@@ -1564,6 +1525,15 @@ wxCanvasDC::~wxCanvasDC(void)
   /* MATTHEW: [11] */
   if (canvas)
     ((wxWnd *)canvas->handle)->ReleaseHDC();
+}
+
+void wxCanvasDC::GetSize(float *width, float *height)
+{
+  int ww, hh;
+
+  canvas->GetClientSize(&ww, &hh);
+  *width = ww;
+  *height = hh;
 }
 
 void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)

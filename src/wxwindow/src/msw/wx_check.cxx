@@ -23,8 +23,6 @@
 BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
 {
   wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
-  event->commandInt = GetValue();
-  event->eventObject = this;
   ProcessCommand(*event);
   return TRUE;
 }

@@ -16,10 +16,10 @@
 @MACRO rZERO = return 0;
 
 @BEGINSYMBOLS style
-@SYM "no-h-scroll" : wxMCANVAS_NO_H_SCROLL
-@SYM "no-v-scroll" : wxMCANVAS_NO_V_SCROLL
-@SYM "hide-h-scroll" : wxMCANVAS_HIDE_H_SCROLL
-@SYM "hide-v-scroll" : wxMCANVAS_HIDE_V_SCROLL
+@SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL
+@SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
+@SYM "hide-hscroll" : wxMCANVAS_HIDE_H_SCROLL
+@SYM "hide-vscroll" : wxMCANVAS_HIDE_V_SCROLL
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

@@ -75,7 +75,7 @@ class wxEvtHandler: public wxObject
   inline virtual void OnCommand(wxWindow& WXUNUSED(win), wxCommandEvent& WXUNUSED(event)) {};
                                                  // Called if child control has no
                                                  // callback function
-  virtual void OnScroll(wxCommandEvent& WXUNUSED(event)) {};
+  virtual void OnScroll(wxScrollEvent& WXUNUSED(event)) {};
   inline virtual void OnPaint(void) {};                 // Called when needs painting
   virtual void OnSize(int WXUNUSED(width), int WXUNUSED(height)) {};           // Called on resize
   inline virtual void OnMove(int WXUNUSED(x), int WXUNUSED(y)) {};          // Called on move

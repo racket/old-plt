@@ -166,15 +166,6 @@ class wxbPanel: public wxCanvas
 
   inline virtual void SetSlowDrag(Bool sl) { dragSlow = sl; }
   inline virtual Bool GetSlowDrag(void) { return dragSlow ; }
-
-  // Optional wxStatic... classes
-#if USE_EXTENDED_STATICS
-  wxList &GetStaticItems(void) { return staticItems; } ;
-  virtual void AddStaticItem(wxStaticItem *the_item);
-  virtual void RemoveStaticItem(wxStaticItem *the_item);
-  virtual void DestroyStaticItem(wxStaticItem *the_item);
-  virtual void DrawAllStaticItems() {} ;
-#endif
 };
 
 #endif // IN_CPROTO

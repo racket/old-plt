@@ -30,19 +30,10 @@ wxChoiceCallback (Widget w, XtPointer clientData,
 		  XtPointer)
 {
   wxChoice *item = (wxChoice *) clientData;
-  if (item && item->Number())
-    {
-      char *s = NULL;
-      XtVaGetValues (w, XmNuserData, &s, NULL);
-      if (s)
-	{
-	  wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-	  event->eventObject = item;
-	  event->commandInt = item->FindString (s);
-	  event->commandString = copystring(s);
-	  item->ProcessCommand (*event);
-	}
-    }
+  if (item && item->Number()) {
+    wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+    item->ProcessCommand (*event);
+  }
 }
 
 IMPLEMENT_DYNAMIC_CLASS(wxChoice, wxItem)

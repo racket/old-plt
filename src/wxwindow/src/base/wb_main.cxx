@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_main.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_main.cxx,v 1.1.1.1 1997/12/22 16:11:56 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -139,7 +139,6 @@ void wxCommonInit(void)
   wxTheColourDatabase->Initialize();
   wxInitializeStockObjects();
   wxInitStandardTypes();
-  wxInitStandardEvents();
 
   // For PostScript printing
 #if USE_POSTSCRIPT
@@ -164,8 +163,6 @@ void wxCommonCleanUp(void)
   delete wxThePrintPaperDatabase;
   wxThePrintPaperDatabase = NULL;
 #endif
-
-  wxDeleteEventLists() ;
 
   delete[] wxBuffer;
 }

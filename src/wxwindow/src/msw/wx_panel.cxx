@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.2 1998/07/04 02:57:33 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -460,62 +460,7 @@ void wxPanel::SetButtonColour(wxColour* WXUNUSED(col))
 {
 }
 
-#if USE_EXTENDED_STATICS
-
-#define LOH_MAX(a,b) ((a > b) ? a : b)
-#define LOH_MIN(a,b) ((a < b) ? a : b)
-
-Bool IsBoxCovered(RECT r1,RECT r2)
-   {
-     int x_min, x_max, y_min, y_max, w_max, h_max;
-
-     x_min = LOH_MIN(r1.left  ,r2.left);
-     x_max = LOH_MAX(r1.right ,r2.right);
-     y_min = LOH_MIN(r1.top   ,r2.top);
-     y_max = LOH_MAX(r1.bottom,r2.bottom);
-
-     w_max = r1.right - r1.left + r2.right - r2.left;
-     h_max = r1.bottom - r1.top + r2.bottom - r2.top;
-
-     if (((x_max - x_min) <= (w_max)) && ((y_max - y_min) <= (h_max)))
-          return TRUE;
-     else return FALSE;
-   }
-
-void wxPanel::DrawAllStaticItems(PAINTSTRUCT *ps)
-{
-  int x,y,w,h;
-  RECT r1;
-  if (staticItems.Number() > 0)
-  {
-    wxDC *dc = GetDC();
-    dc->BeginDrawing();
-    wxNode *node = staticItems.First();
-    wxStaticItem *item;
-    while(node)
-    {
-       item = (wxStaticItem *)node -> Data();
-       item -> GetDrawingSize(&x,&y,&w,&h);
-       r1.left   = x;
-       r1.top    = y;
-       r1.right  = x + w;
-       r1.bottom = y + h;
-
-       if (!ps || (IsBoxCovered(ps -> rcPaint,r1) && item -> IsShow()))
-       {
-         item -> Draw(ps);
-       }
-       node = node -> Next();
-    }
-    dc->EndDrawing();
-  }
-}
-#endif
-
 void wxPanel::OnPaint(void)
 {
-#if USE_EXTENDED_STATICS
-  DrawAllStaticItems(tempPS);
-#endif
   PaintSelectionHandles();
 }

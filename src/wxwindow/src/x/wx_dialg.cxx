@@ -4,11 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.5 1998/04/08 00:09:12 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.6 1998/07/13 19:08:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_dialg.cxx,v $
+// Revision 1.6  1998/07/13 19:08:21  mflatt
+// .
+//
 // Revision 1.5  1998/04/08 00:09:12  mflatt
 // beginning of fixing pre-on-char
 //
@@ -311,20 +314,11 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   // This patch come from Torsten Liermann lier@lier1.muc.de
   if (XmIsMotifWMRunning(wxTheApp->topLevel)) {
     int decor = 0 ;
-    if (style & wxRESIZE_BORDER)
-      decor |= MWM_DECOR_RESIZEH ;
     if (style & wxSYSTEM_MENU)
       decor |= MWM_DECOR_MENU;
-    if ((style & wxCAPTION) ||
-        (style && wxTINY_CAPTION_HORIZ) ||
-        (style && wxTINY_CAPTION_VERT))
+    if (!(style & wxNO_CAPTION))
       decor |= MWM_DECOR_TITLE;
-    if (style & wxTHICK_FRAME)
-      decor |= MWM_DECOR_BORDER;
-    if (style & wxMINIMIZE_BOX)
-      decor |= MWM_DECOR_MINIMIZE;
-    if (style & wxMAXIMIZE_BOX)
-      decor |= MWM_DECOR_MAXIMIZE;
+    decor |= MWM_DECOR_BORDER;
     
     XtVaSetValues(shell,XmNmwmDecorations,decor,NULL);
   }

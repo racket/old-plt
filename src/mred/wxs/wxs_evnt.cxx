@@ -729,6 +729,36 @@ static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, i
   return scheme_void;
 }
 
+static Scheme_Object *objscheme_wxScrollEvent_Getpos(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  int v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-pos", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxScrollEvent *)cobj->primdata)->wxScrollEvent::pos;
+  else
+    v = ((wxScrollEvent *)cobj->primdata)->pos;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  int v;
+
+  if (n != 1) scheme_wrong_count("set-pos", 1, 1, n, p);
+
+  v = objscheme_unbundle_integer(p[0], "wx:scroll-event%::pos");
+  ((wxScrollEvent *)cobj->primdata)->pos = v;
+
+  return scheme_void;
+}
+
 #pragma argsused
 static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
@@ -760,7 +790,7 @@ void objscheme_setup_wxScrollEvent(void *env)
 if (os_wxScrollEvent_class) {
     objscheme_add_global_class(os_wxScrollEvent_class,  "wx:scroll-event%", env);
 } else {
-  os_wxScrollEvent_class = objscheme_def_prim_class(env, "wx:scroll-event%", "wx:event%", os_wxScrollEvent_ConstructScheme, 5);
+  os_wxScrollEvent_class = objscheme_def_prim_class(env, "wx:scroll-event%", "wx:event%", os_wxScrollEvent_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxScrollEvent_class,"get-class-name",objscheme_classname_os_wxScrollEvent, 0, 0);
 
@@ -769,6 +799,8 @@ if (os_wxScrollEvent_class) {
   scheme_add_method_w_arity(os_wxScrollEvent_class,"set-event-type", objscheme_wxScrollEvent_SetmoveType, 1, 1);
   scheme_add_method_w_arity(os_wxScrollEvent_class,"get-direction", objscheme_wxScrollEvent_Getdirection, 0, 0);
   scheme_add_method_w_arity(os_wxScrollEvent_class,"set-direction", objscheme_wxScrollEvent_Setdirection, 1, 1);
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"get-pos", objscheme_wxScrollEvent_Getpos, 0, 0);
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"set-pos", objscheme_wxScrollEvent_Setpos, 1, 1);
 
   scheme_made_class(os_wxScrollEvent_class);
 

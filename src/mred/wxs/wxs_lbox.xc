@@ -30,7 +30,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @ENDSYMBOLS
 
 @BEGINSYMBOLS style
-@SYM "always-sb" : wxALWAYS_SB    
+@SYM "always-vscroll" : wxALWAYS_SB    
 @SYM "hscroll" : wxHSCROLL
 @ENDSYMBOLS
 

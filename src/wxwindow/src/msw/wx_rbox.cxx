@@ -25,21 +25,7 @@
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
   if (param == BN_CLICKED)  {
-#ifdef WIN32
-    int i;
-    for (i = 0; i < no_items; i++)
-      if (id == GetWindowLong(radioButtons[i], GWL_ID))
-        selected = i;
-#else
-    int i;
-    for (i = 0; i < no_items; i++)
-      if (id == GetWindowWord(radioButtons[i], GWW_ID))
-        selected = i;
-#endif
-
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-    event->commandInt = selected;
-    event->eventObject = this;
     ProcessCommand(*event);
     return TRUE;
   } else 

@@ -35,6 +35,8 @@ class wxCanvasDC: public wxbCanvasDC
   /* MATTHEW: [8] */
   void GetClippingRegion(float *x, float *y, float *width, float *height);
 
+  void GetSize(float *width, float *height);
+
   ~wxCanvasDC(void);
 };
 

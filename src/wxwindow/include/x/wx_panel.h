@@ -23,20 +23,9 @@
 #include <Xm/Xm.h>
 #endif
 
-#ifdef wx_xview
-#include <xview/panel.h>
-#endif
-
 #ifdef wx_motif
 extern void wxPanelRepaintProc(Widget w, XtPointer c_data, XEvent *event, char *);
 #endif
-
-#ifdef wx_xview
-extern void wxPanelRepaintProc(Panel panel, Xv_Window pw, Rectlist *p_area);
-#define PANEL_STATIC_ITEM 11111
-#endif
-
-Bool IsBoxCovered(XRectangle *rl1,int  count, XRectangle r2);
 
 #define PANEL_HSPACING  14
 #define PANEL_VSPACING  12
@@ -58,7 +47,6 @@ class wxPanel: public wxbPanel
   // background of this panel.
   wxBrush *panelBackgroundBrush;
  public:
-#ifdef wx_motif
   // For panel item positioning.
   int cursor_x;
   int cursor_y;
@@ -78,7 +66,6 @@ class wxPanel: public wxbPanel
   // To help with focus processing
   Bool manualChange;
   wxItem *previousFocus;
-#endif
 
   wxPanel(void);
   wxPanel(wxWindow *parent,
@@ -103,9 +90,7 @@ class wxPanel: public wxbPanel
   // Start a new line
   void NewLine(void);
   void NewLine(int pixels);
-#ifdef wx_motif
   void RealNewLine(void) ;
-#endif
   // Tab specified number of pixels
   void Tab(void);
   void Tab(int pixels);
@@ -126,24 +111,18 @@ class wxPanel: public wxbPanel
 
   // Update next cursor position
   void AdvanceCursor(wxWindow *item);
-#if wx_motif
   void RealAdvanceCursor(void);
-#endif
+
   // If x or y are not specified (i.e. < 0), supply
   // values based on left to right, top to bottom layout.
   // Internal use only.
   void GetValidPosition(int *x, int *y);
 
-#ifdef wx_motif
   void OptimizeLayout(void);
   void AttachWidget(wxPanel *panel, Widget formWidget,
                     int x, int y, int width, int height) ;
   void AttachWidget(wxWindow *item, Widget formWidget,
                     int x, int y, int width, int height) ;
-#endif
-#ifdef wx_xview
-  virtual void DragAcceptFiles(Bool accept = TRUE);
-#endif
 
   void SetBackgroundColour(wxColour*col)
           { backColour = col; ChangeColour(); }
@@ -156,16 +135,10 @@ class wxPanel: public wxbPanel
   virtual void DoPaint(XRectangle *xrect, int n);
   virtual void OnPaint(void);
 
-#if USE_EXTENDED_STATICS
-  virtual void DrawAllStaticItems(XRectangle *rect, int count);
-#endif
-
   Window GetXWindow(void);
 
-#ifdef wx_motif
   // Override edit mode so we can remove translations etc.
   void SetUserEditMode(Bool edit);
-#endif
 };
 
 #endif // IN_CPROTO

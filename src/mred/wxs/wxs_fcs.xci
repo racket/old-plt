@@ -1,7 +1,7 @@
 
 @BEGINSYMBOLS bufferType > ONE
-@SYM "edit-buffer" : wxEDIT_BUFFER
-@SYM "pasteboard-buffer" : wxPASTEBOARD_BUFFER
+@SYM "text" : wxEDIT_BUFFER
+@SYM "pasteboard" : wxPASTEBOARD_BUFFER
 @ENDSYMBOLS
 
 @BEGINSYMBOLS fileType > ONE

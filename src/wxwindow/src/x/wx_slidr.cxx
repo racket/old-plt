@@ -34,9 +34,6 @@ wxSliderCallback (Widget widget, XtPointer clientData, XmScaleCallbackStruct * c
 {
   wxSlider *slider = (wxSlider *) clientData;
   wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-  XtVaGetValues (widget, XmNvalue, &event->commandInt, NULL);
-  event->eventHandle = (char *) cbs->event;
-  event->eventObject = slider;
   slider->ProcessCommand (*event);
 }
 

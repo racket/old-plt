@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.2 1998/04/11 21:59:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -95,6 +95,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   
   SetName(name);
   frame_type = style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD);
+  if (!frame_type) frame_type = wxSDI;
   windowStyle = style;
   wx_menu_bar = NULL;
   status_line_exists = FALSE;
@@ -734,34 +735,20 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 //    msflags = WS_DLGFRAME;
   
   DWORD extendedStyle = 0;
-  if (style & wxMINIMIZE_BOX)
+  if (!(style & wxNO_RESIZE_BORDER)) {
     msflags |= WS_MINIMIZEBOX;
-  if (style & wxMAXIMIZE_BOX)
     msflags |= WS_MAXIMIZEBOX;
-  if (style & wxTHICK_FRAME)
-    msflags |= WS_THICKFRAME;
-  if (style & wxSYSTEM_MENU)
+  }
+  if (!(style & wxNO_THICK_FRAME))
+    msflags |= WS_THICKFRAME | WS_BORDER;
+  if (!(style & wxNO_SYSTEM_MENU))
     msflags |= WS_SYSMENU;
-  if ((style & wxMINIMIZE) || (style & wxICONIZE))
+  if (style & wxICONIZE)
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (style & wxCAPTION)
+  if (!(style & wxNO_CAPTION))
     msflags |= WS_CAPTION;
-
-#if USE_ITSY_BITSY
-  if (style & wxTINY_CAPTION_VERT)
-    msflags |= IBS_VERTCAPTION;
-  if (style & wxTINY_CAPTION_HORIZ)
-    msflags |= IBS_HORZCAPTION;
-#else
-  if (style & wxTINY_CAPTION_VERT)
-    msflags |= WS_CAPTION;
-  if (style & wxTINY_CAPTION_HORIZ)
-    msflags |= WS_CAPTION;
-#endif
-  if ((style & wxTHICK_FRAME) == 0)
-    msflags |= WS_BORDER;
 
   if (style & wxSTAY_ON_TOP)
     extendedStyle |= WS_EX_TOPMOST;
@@ -940,19 +927,19 @@ wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
 #endif
   
   DWORD msflags = WS_OVERLAPPED;
-  if (style & wxMINIMIZE_BOX)
+  if (!(style & wxNO_RESIZE_BORDER)) {
     msflags |= WS_MINIMIZEBOX;
-  if (style & wxMAXIMIZE_BOX)
     msflags |= WS_MAXIMIZEBOX;
-  if (style & wxTHICK_FRAME)
+  }
+  if (!(style & wxNO_THICK_FRAME))
     msflags |= WS_THICKFRAME;
-  if (style & wxSYSTEM_MENU)
+  if (!(style & wxNO_SYSTEM_MENU))
     msflags |= WS_SYSMENU;
-  if ((style & wxMINIMIZE) || (style & wxICONIZE))
+  if (style & wxMINIMIZE)
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (style & wxCAPTION)
+  if (!(style & wxNO_CAPTION))
     msflags |= WS_CAPTION;
 
   Create(parent, wxMDIFrameClassName, wx_win, title, x, y, width, height,
@@ -1186,19 +1173,19 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   else mcs.cy = CW_USEDEFAULT;
 
   DWORD msflags = WS_OVERLAPPED;
-  if (style & wxMINIMIZE_BOX)
+  if (!(style & wxNO_RESIZE_BORDER)) {
     msflags |= WS_MINIMIZEBOX;
-  if (style & wxMAXIMIZE_BOX)
     msflags |= WS_MAXIMIZEBOX;
-  if (style & wxTHICK_FRAME)
+  }
+  if (!(style & wxNO_THICK_FRAME))
     msflags |= WS_THICKFRAME;
-  if (style & wxSYSTEM_MENU)
+  if ((!style & wxNO_SYSTEM_MENU))
     msflags |= WS_SYSMENU;
-  if ((style & wxMINIMIZE) || (style & wxICONIZE))
+  if (style & wxMINIMIZE)
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (style & wxCAPTION)
+  if (!(style & wxNO_CAPTION))
     msflags |= WS_CAPTION;
 
   mcs.style = msflags;

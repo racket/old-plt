@@ -63,10 +63,7 @@
 
 
 @BEGINSYMBOLS dialogStyle
-@SYM "caption" : wxCAPTION
-@SYM "thick-frame" : wxTHICK_FRAME
-@SYM "system-menu" : wxSYSTEM_MENU
-@SYM "resize-border" : wxRESIZE_BORDER
+@SYM "no-caption" : wxNO_CAPTION
 @ENDSYMBOLS
 
 @CLASSBASE wxDialogBox "wx:dialog-box" : "wx:panel"
@@ -75,14 +72,12 @@
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
+@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=0,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci
 
 @SETMARK p = d
 @INCLUDE wxs_panl.xci
-
-@CONSTANT "wx:const-default-dialog-style" : SYM[dialogStyle] wxDEFAULT_DIALOG_STYLE
 
 @END

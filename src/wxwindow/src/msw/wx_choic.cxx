@@ -36,9 +36,6 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
 		  (LPARAM)GetHWND());
     } else {
       wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-      event->commandInt = GetSelection();
-      event->eventObject = this;
-      event->commandString = copystring(GetStringSelection());
       ProcessCommand(*event);
       /* delete[] event->commandString; */
     }

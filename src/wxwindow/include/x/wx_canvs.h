@@ -116,7 +116,7 @@ class wxCanvas: public wxbCanvas
   void Scroll(int x_pos, int y_pos);
   void GetScrollUnitsPerPage(int *x_page, int *y_page);
 
-  void OnScroll(wxCommandEvent& event);
+  void OnScroll(wxScrollEvent& event);
   void SetScrollPos(int orient, int pos);
   void SetScrollRange(int orient, int range);
   void SetScrollPage(int orient, int page);

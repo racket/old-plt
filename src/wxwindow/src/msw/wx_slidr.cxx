@@ -242,8 +242,6 @@ void wxSliderEvent(HWND bar, WORD wParam, WORD pos)
       {
         slider->SetValue(new_pos);
         wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-        event->commandInt = new_pos;
-        event->eventObject = slider;
         slider->ProcessCommand(*event);
       }
     }

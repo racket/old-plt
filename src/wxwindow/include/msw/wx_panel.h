@@ -71,8 +71,8 @@ class wxPanel: public wxbPanel
   void Tab(void);
 
   void Tab(int pixels);
-
-  virtual void ChangeToGray(Bool gray);
+
+  virtual void ChangeToGray(Bool gray);
 
   void GetCursor(int *x, int *y);
   void SetItemCursor(int x, int y);
@@ -102,9 +102,6 @@ class wxPanel: public wxbPanel
   void SetLabelColour(wxColour*col) ;
   void SetButtonColour(wxColour*col) ;
 
-#if USE_EXTENDED_STATICS
-  virtual void DrawAllStaticItems(PAINTSTRUCT *ps);
-#endif
   virtual void OnPaint(void);
 };
 

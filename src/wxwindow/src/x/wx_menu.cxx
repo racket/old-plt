@@ -639,9 +639,8 @@ wxMenuProc (Menu x_menu, Menu_item menu_item)
     }
   else if (top_level_menu && top_level_menu->callback)
     {
-      wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
-      event->eventObject = menu;
-      event->commandInt = menuItem->itemId;
+      wxPopupEvent *event  = new wxPopupEvent();
+      event->menuId = menuItem->itemId;
       (void) (*(top_level_menu->callback)) (*menu, *event);
     }
 }

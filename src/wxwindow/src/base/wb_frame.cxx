@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cxx,v 1.1.1.1 1997/12/22 16:11:57 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cxx,v 1.2 1998/04/08 00:09:08 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -205,26 +205,5 @@ void wxbFrame::Command(int id)
 
 void wxbFrame::ProcessCommand(int id)
 {
-  wxCommandEvent commandEvent(wxEVENT_TYPE_MENU_COMMAND);
-  commandEvent.commandInt = id;
-
-  if (wxNotifyEvent(commandEvent, TRUE))
-    return;
-
-  wxMenuBar *bar = GetMenuBar() ;
-  if (!bar)
-    return;
-
-  // Motif does the job by itself!!
-#ifndef wx_motif
-  wxMenuItem *item = bar->FindItemForId(id) ;
-  if (item && item->checkable)
-  {
-//wxDebugMsg("Toggling id %d\n",id) ;
-    bar->Check(id,!bar->Checked(id)) ;
-  }
-#endif
   OnMenuCommand(id);
-
-  wxNotifyEvent(commandEvent, FALSE);
 }

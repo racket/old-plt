@@ -63,6 +63,7 @@
 
 @IVAR "event-type" : SYM[scrollMoveType] moveType
 @IVAR "direction" : SYM[orientation] direction
+@IVAR "position" : int pos
 
 @END
 

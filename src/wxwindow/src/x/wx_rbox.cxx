@@ -43,9 +43,6 @@ wxRadioBoxCallback (Widget w, XtPointer clientData,
   item->selected = sel;
 
   wxCommandEvent *event  = new wxCommandEvent (wxEVENT_TYPE_RADIOBOX_COMMAND);
-  event->commandInt = sel;
-  event->eventHandle = (char *) cbs->event;
-  event->eventObject = item;
   item->ProcessCommand (*event);
 }
 

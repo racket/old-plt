@@ -48,13 +48,13 @@ class wxbFrame: public wxWindow
   wxbFrame(void);
   wxbFrame(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
-          long type = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
+          long type = 0, char *name = "frame");
 
   ~wxbFrame(void);
 
   Bool Create(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
-          long type = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
+          long type = 0, char *name = "frame");
 
   // Override, e.g. to resize subwindows
   void OnSize(int x, int y);

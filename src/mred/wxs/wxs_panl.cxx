@@ -1329,29 +1329,20 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 
-static Scheme_Object *dialogStyle_wxCAPTION_sym = NULL;
-static Scheme_Object *dialogStyle_wxTHICK_FRAME_sym = NULL;
-static Scheme_Object *dialogStyle_wxSYSTEM_MENU_sym = NULL;
-static Scheme_Object *dialogStyle_wxRESIZE_BORDER_sym = NULL;
+static Scheme_Object *dialogStyle_wxNO_CAPTION_sym = NULL;
 
 static void init_symset_dialogStyle(void) {
-  dialogStyle_wxCAPTION_sym = scheme_intern_symbol("caption");
-  dialogStyle_wxTHICK_FRAME_sym = scheme_intern_symbol("thick-frame");
-  dialogStyle_wxSYSTEM_MENU_sym = scheme_intern_symbol("system-menu");
-  dialogStyle_wxRESIZE_BORDER_sym = scheme_intern_symbol("resize-border");
+  dialogStyle_wxNO_CAPTION_sym = scheme_intern_symbol("no-caption");
 }
 
 static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
-  if (!dialogStyle_wxRESIZE_BORDER_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
   Scheme_Object *i, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
-  else if (i == dialogStyle_wxCAPTION_sym) { result = result | wxCAPTION; }
-  else if (i == dialogStyle_wxTHICK_FRAME_sym) { result = result | wxTHICK_FRAME; }
-  else if (i == dialogStyle_wxSYSTEM_MENU_sym) { result = result | wxSYSTEM_MENU; }
-  else if (i == dialogStyle_wxRESIZE_BORDER_sym) { result = result | wxRESIZE_BORDER; }
+  else if (i == dialogStyle_wxNO_CAPTION_sym) { result = result | wxNO_CAPTION; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -1361,16 +1352,13 @@ static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
 }
 
 static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
-  if (!dialogStyle_wxRESIZE_BORDER_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
   Scheme_Object *i, *l = v;
   long result = 1;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
-  else if (i == dialogStyle_wxCAPTION_sym) { ; }
-  else if (i == dialogStyle_wxTHICK_FRAME_sym) { ; }
-  else if (i == dialogStyle_wxSYSTEM_MENU_sym) { ; }
-  else if (i == dialogStyle_wxRESIZE_BORDER_sym) { ; }
+  else if (i == dialogStyle_wxNO_CAPTION_sym) { ; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -1380,12 +1368,9 @@ static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
 }
 
 static Scheme_Object *bundle_symset_dialogStyle(int v) {
-  if (!dialogStyle_wxRESIZE_BORDER_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
   Scheme_Object *l = scheme_null;
-  if (v & wxCAPTION) l = scheme_make_pair(dialogStyle_wxCAPTION_sym, l);
-  if (v & wxTHICK_FRAME) l = scheme_make_pair(dialogStyle_wxTHICK_FRAME_sym, l);
-  if (v & wxSYSTEM_MENU) l = scheme_make_pair(dialogStyle_wxSYSTEM_MENU_sym, l);
-  if (v & wxRESIZE_BORDER) l = scheme_make_pair(dialogStyle_wxRESIZE_BORDER_sym, l);
+  if (v & wxNO_CAPTION) l = scheme_make_pair(dialogStyle_wxNO_CAPTION_sym, l);
   return l;
 }
 
@@ -1415,11 +1400,10 @@ static Scheme_Object *bundle_symset_dialogStyle(int v) {
 // @ p "on-left-click" : void OnLeftClick(int,int,int); ## INTERACT_METHODS
 // @ p "on-right-click" : void OnRightClick(int,int,int); ## INTERACT_METHODS
 
-
 class os_wxDialogBox : public wxDialogBox {
  public:
 
-  os_wxDialogBox(Scheme_Object * obj, class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = wxDEFAULT_DIALOG_STYLE, string x8 = "dialogBox");
+  os_wxDialogBox(Scheme_Object * obj, class wxWindow* x0, nstring x1, Bool x2 = FALSE, int x3 = 300, int x4 = 300, int x5 = 500, int x6 = 500, int x7 = 0, string x8 = "dialogBox");
   ~os_wxDialogBox();
   void OnDefaultAction(class wxItem* x0);
   void OnChar(class wxKeyEvent& x0);
@@ -2088,7 +2072,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   if (n > 7) {
     x7 = unbundle_symset_dialogStyle(p[7], "wx:dialog-box%::initialization");
   } else
-    x7 = wxDEFAULT_DIALOG_STYLE;
+    x7 = 0;
   if (n > 8) {
     x8 = (string)objscheme_unbundle_string(p[8], "wx:dialog-box%::initialization");
   } else
@@ -2138,7 +2122,6 @@ if (os_wxDialogBox_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxDialogBox, wxTYPE_DIALOG_BOX);
 
 }
-  scheme_install_xc_global("wx:const-default-dialog-style", bundle_symset_dialogStyle(wxDEFAULT_DIALOG_STYLE), env);
 }
 
 int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK)

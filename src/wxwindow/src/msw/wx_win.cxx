@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.9 1998/07/18 01:16:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.10 1998/07/23 15:59:46 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -252,30 +252,10 @@ wxWindow::~wxWindow(void)
       if (ms_handle)
 		  wxwmDestroyWindow((HWND)ms_handle);
       handle = NULL;
-      // Free global memory of text panel item
-      if (wxSubType(__type, wxTYPE_TEXT))
-      {
-        wxText *textItem = (wxText *)this;
-        if (textItem->globalHandle)
-        {
-          // GlobalFree(textItem->globalHandle);
-          textItem->globalHandle = 0;
-        }
-      }
-
+      
       if (wxControlHandleList)
         wxControlHandleList->DeleteObject(this);
 
-      // Free global memory of editable text window
-      if (wxSubType(__type, wxTYPE_TEXT_WINDOW))
-      { 
-        wxTextWindow *textWin = (wxTextWindow *)this;
-        if (textWin->globalHandle)
-        {
-          // GlobalFree(textWin->globalHandle);
-          textWin->globalHandle = 0;
-        }
-      }
       break;
     }
     default:
@@ -2369,7 +2349,6 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
     wx_window->CaptureMouse();
@@ -2398,7 +2377,6 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
     wx_window->ReleaseMouse();
@@ -2430,7 +2408,6 @@ void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
 
@@ -2477,7 +2454,6 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
     wx_window->CaptureMouse();
@@ -2506,7 +2482,6 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
     wx_window->ReleaseMouse();
@@ -2537,7 +2512,6 @@ void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
   
@@ -2585,7 +2559,6 @@ void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2618,7 +2591,6 @@ void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2654,7 +2626,6 @@ void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_DCLICK;
 
@@ -2754,7 +2725,6 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   // Window gets a click down message followed by a mouse move
   // message even if position isn't changed!  We want to discard
@@ -2797,7 +2767,6 @@ void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   last_event = wxEVENT_TYPE_ENTER_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
@@ -2831,7 +2800,6 @@ void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = wx_window;
 
   last_event = wxEVENT_TYPE_LEAVE_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
@@ -2893,7 +2861,6 @@ void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
       event.altDown = TRUE;
 
-    event.eventObject = wx_window;
     event.keyCode = id;
     event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
@@ -2938,38 +2905,38 @@ void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
     return;
   }
 
-  wxCommandEvent *_event = new wxCommandEvent;
-  wxCommandEvent &event = *_event;
+  wxScrollEvent *_event = new wxScrollEvent;
+  wxScrollEvent &event = *_event;
   
-  event.commandInt = pos;
-  event.extraLong = wxVERTICAL;
+  event.pos = pos;
+  event.direction = wxVERTICAL;
   switch (wParam) {
   case SB_TOP:
-    event.eventType = wxEVENT_TYPE_SCROLL_TOP;
+    event.moveType = wxEVENT_TYPE_SCROLL_TOP;
     break;
     
   case SB_BOTTOM:
-    event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
+    event.moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
     break;
     
   case SB_LINEUP:
-    event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
+    event.moveType = wxEVENT_TYPE_SCROLL_LINEUP;
     break;
     
   case SB_LINEDOWN:
-    event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
+    event.moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
     break;
     
   case SB_PAGEUP:
-    event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
+    event.moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
     break;
     
   case SB_PAGEDOWN:
-    event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+    event.moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
     break;
     
   case SB_THUMBTRACK:
-    event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+    event.moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
     break;
     
   default:
@@ -3001,39 +2968,39 @@ void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
 #endif
     return;
   } else {
-    wxCommandEvent *_event = new wxCommandEvent;
-    wxCommandEvent &event = *_event;
+    wxScrollEvent *_event = new wxScrollEvent;
+    wxScrollEvent &event = *_event;
 
     
-    event.commandInt = pos;
-    event.extraLong = wxHORIZONTAL;
+    event.pos = pos;
+    event.direction = wxHORIZONTAL;
     switch (wParam) {
     case SB_TOP:
-      event.eventType = wxEVENT_TYPE_SCROLL_TOP;
+      event.moveType = wxEVENT_TYPE_SCROLL_TOP;
       break;
       
     case SB_BOTTOM:
-      event.eventType = wxEVENT_TYPE_SCROLL_BOTTOM;
+      event.moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
       break;
       
     case SB_LINEUP:
-      event.eventType = wxEVENT_TYPE_SCROLL_LINEUP;
+      event.moveType = wxEVENT_TYPE_SCROLL_LINEUP;
       break;
       
     case SB_LINEDOWN:
-      event.eventType = wxEVENT_TYPE_SCROLL_LINEDOWN;
+      event.moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
       break;
       
     case SB_PAGEUP:
-      event.eventType = wxEVENT_TYPE_SCROLL_PAGEUP;
+      event.moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
       break;
       
     case SB_PAGEDOWN:
-      event.eventType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+      event.moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
       break;
       
     case SB_THUMBTRACK:
-      event.eventType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+      event.moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
       break;
       
     default:
@@ -3229,9 +3196,9 @@ int wxCharCodeWXToMSW(int id, Bool *isVirtual)
   return keySym;
 }
 
-void wxWindow::DoScroll(wxCommandEvent& event)
+void wxWindow::DoScroll(wxScrollEvent& event)
 {
-  long orient = event.extraLong;
+  long orient = event.direction;
 
   int nScrollInc = CalcScrollInc(event);
   if (nScrollInc == 0)
@@ -3254,15 +3221,15 @@ void wxWindow::DoScroll(wxCommandEvent& event)
 }
 
 
-int wxWindow::CalcScrollInc(wxCommandEvent& event)
+int wxWindow::CalcScrollInc(wxScrollEvent& event)
 {
-  int pos = event.commandInt;
-  long orient = event.extraLong;
+  int pos = event.pos;
+  long orient = event.direction;
 
   int nScrollInc = 0;
   wxWnd *wnd = (wxWnd *)handle;
 
-  switch (event.GetEventType())
+  switch (event.moveType)
   {
     case wxEVENT_TYPE_SCROLL_TOP:
     {
@@ -3373,9 +3340,9 @@ int wxWindow::CalcScrollInc(wxCommandEvent& event)
   }
 }
 
-void wxWindow::OnScroll(wxCommandEvent& event)
+void wxWindow::OnScroll(wxScrollEvent& event)
 {
-  long orient = event.extraLong;
+  long orient = event.direction;
 
   int nScrollInc = CalcScrollInc(event);
   if (nScrollInc == 0)
@@ -3678,7 +3645,6 @@ int APIENTRY _EXPORT
       if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
         event.altDown = TRUE;
           
-      event.eventObject = NULL;
       event.keyCode = id;
       event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 

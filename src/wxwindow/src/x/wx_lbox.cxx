@@ -30,30 +30,8 @@ wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
 {
   wxListBox *item = (wxListBox *) clientData;
 
-  wxCommandEvent *_event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-  wxCommandEvent &event = *_event;
-
-  switch (cbs->reason) {
-  case XmCR_MULTIPLE_SELECT:
-  case XmCR_BROWSE_SELECT:
-  case XmCR_EXTENDED_SELECT:
-    {
-      if (!(item->multiple & (wxMULTIPLE | wxEXTENDED))) {
-	event.commandInt = cbs->item_position - 1;
-	event.clientData = item->GetClientData(event.commandInt);
-	event.commandString = item->GetString(event.commandInt);
-	event.extraLong = 1;
-      } else {
-	event.commandInt = -1;
-	event.clientData = NULL;
-	event.commandString = NULL;
-	event.extraLong = 0;
-      }
-      event.eventObject = item;
-      item->ProcessCommand (event);
-      break;
-    }
-  }
+  wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+  item->ProcessCommand (event);
 }
 
 /* Respond by getting the
@@ -63,10 +41,8 @@ wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
 void 
 wxListBoxDefaultActionProc (Widget, XtPointer client_data, XmListCallbackStruct *)
 {
-  wxListBox *lbox = (wxListBox *) client_data;
-  wxPanel *panel = (wxPanel *) lbox->GetParent ();
-  if (panel)
-    panel->GetEventHandler()->OnDefaultAction (lbox);
+  wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+  item->ProcessCommand (event);
 }
 
 // Listbox item

@@ -136,17 +136,15 @@ typedef short int WXTYPE;
 #define wxSDI               0x00000040
 #define wxMDI_PARENT        0x00000080
 #define wxMDI_CHILD         0x00000100
-#define wxTHICK_FRAME       0x00000200
-#define wxSYSTEM_MENU       0x00000400
-#define wxMINIMIZE_BOX      0x00000800
-#define wxMAXIMIZE_BOX      0x00001000
+#define wxNO_THICK_FRAME       0x00000200
+#define wxNO_SYSTEM_MENU       0x00000400
+#define wxRESIZE_BORDER      0x00001000
 #define wxTINY_CAPTION_HORIZ 0x00002000
 #define wxTINY_CAPTION_VERT 0x00004000
 #define wxRESIZE_BOX        wxMAXIMIZE_BOX
-#define wxRESIZE_BORDER	    0x00800000
+#define wxNO_RESIZE_BORDER	    0x00800000
 #define wxPUSH_PIN          0x00008000
-
-#define wxDEFAULT_FRAME    (wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxTHICK_FRAME | wxSYSTEM_MENU | wxCAPTION)
+#define wxNO_CAPTION           0x00000004
 
 /*
  * Subwindow style flags
@@ -212,7 +210,6 @@ typedef short int WXTYPE;
 #define wxCANCEL_BUTTON_SECOND  0x00300000
 #define wxMASK_CANCEL           0x00300000
 
-#define wxDEFAULT_DIALOG_STYLE	(wxSYSTEM_MENU|wxCAPTION|wxTHICK_FRAME)
 
 #ifdef wx_motif
 #define       wxENH_DEFAULT   (wxCAPTION|wxMOTIF_RESIZE|wxBOTTOM_COMMANDS|wxSTATUS_FOOTER|wxNO_CANCEL_BUTTON)
@@ -302,7 +299,7 @@ typedef enum {
   wxOR,         // src OR dst
   wxSET,        // 1
   wxSRC_OR,     // source _bitmap_ OR destination
-  wxSRC_AND,     // source _bitmap_ AND destination
+  wxSRC_AND,     // source _bitmap_ AND destination
   wxCOLOR
 } form_ops_t;
 

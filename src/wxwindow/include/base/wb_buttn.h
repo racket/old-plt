@@ -36,9 +36,6 @@ class wxbButton: public wxItem
            int width = -1, int height = -1, long style = 0, char *name = "button");
   ~wxbButton(void);
 
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
-
   virtual void SetDefault(void) = 0;
   // Avoids compiler warning
   inline void SetLabel(char *label) { wxItem::SetLabel(label) ; }

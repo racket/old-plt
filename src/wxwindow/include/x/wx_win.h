@@ -107,7 +107,7 @@ class wxWindow: public wxbWindow
   virtual Window GetXCursorWindow(void);
   virtual Display *GetXDisplay(void);
 
-  inline void OnScroll(wxCommandEvent& /*  event */) {}
+  inline void OnScroll(wxScrollEvent& /*  event */) {}
   inline void SetScrollPosX(int /* pos */) {}
   inline void SetScrollPosY(int /* pos */) {}
   inline int GetScrollPos(int /* orient */) { return 0; };

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_stdev.cxx,v 1.1.1.1 1997/12/22 16:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -38,48 +38,15 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
 {
   eventClass = wxTYPE_COMMAND_EVENT;
   eventType = commandType;
-  clientData = NULL;
-  extraLong = 0;
-  commandInt = 0;
-  commandString = NULL;
-  labelString = NULL;
 }
 
-Bool wxCommandEvent::ReadEvent(istream& in)
+wxPopupEvent::wxPopupEvent()
+  : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)
 {
-  switch (eventType) {
-    case wxEVENT_TYPE_BUTTON_COMMAND:
-      return TRUE;
-    case wxEVENT_TYPE_TEXT_COMMAND:
-      // @@@@@ Hugh?
-      if (!wxReadString(in, &commandString))
-        return FALSE;
-    default:
-      return FALSE;
-  }
-  // NOTREADED
 }
 
-Bool wxCommandEvent::WriteEvent(ostream& out)
+wxScrollEvent::wxScrollEvent()
 {
-  switch (eventType) {
-
-    case wxEVENT_TYPE_BUTTON_COMMAND:
-      return TRUE;
-
-    case wxEVENT_TYPE_TEXT_COMMAND:
-      wxWriteString(out, commandString);
-      return TRUE;
-
-    default:
-      return FALSE;
-  }
-  // NOTREACHED
-}
-
-wxEvent *wxCommandEventConstructor(WXTYPE WXUNUSED(eventClass), WXTYPE eventType)
-{
-  return new wxCommandEvent(eventType);
 }
 
 /*
@@ -97,21 +64,6 @@ wxMouseEvent::wxMouseEvent(WXTYPE commandType)
   altDown = FALSE;
   controlDown = FALSE;
   shiftDown = FALSE;
-}
-
-Bool wxMouseEvent::ReadEvent(istream& WXUNUSED(in))
-{
-  return FALSE;
-}
-
-Bool wxMouseEvent::WriteEvent(ostream& WXUNUSED(out))
-{
-  return FALSE;
-}
-
-wxEvent *wxMouseEventConstructor(WXTYPE WXUNUSED(eventClass), WXTYPE eventType)
-{
-  return new wxMouseEvent(eventType);
 }
 
 Bool wxMouseEvent::ControlDown(void)
@@ -336,21 +288,6 @@ wxKeyEvent::wxKeyEvent(WXTYPE type)
   keyCode = 0;
 }
 
-Bool wxKeyEvent::ReadEvent(istream& WXUNUSED(in))
-{
-  return FALSE;
-}
-
-Bool wxKeyEvent::WriteEvent(ostream& WXUNUSED(out))
-{
-  return FALSE;
-}
-
-wxEvent *wxKeyEventConstructor(WXTYPE WXUNUSED(eventClass), WXTYPE eventType)
-{
-  return new wxKeyEvent(eventType);
-}
-
 Bool wxKeyEvent::ControlDown(void)
 {
   return controlDown;
@@ -380,53 +317,4 @@ void wxKeyEvent::Position(float *xpos, float *ypos)
 {
   *xpos = x;
   *ypos = y;
-}
-
-/*
- * Standard primary event handler
- *
- */
-
-// (find-window) can use the title or widget label:
-// (bind ?ok (find-window (find-top-window) "OK"))
-// (send-event ButtonCommand ?ok)
-
-// Aaargh! another problem. What if a button kills a dialog containing
-// it, but a post event handler is called? The object pointer will be invalid!
-// If we used IDs in a hash table, then the handler could check if the ID
-// was still valid. This would need minimum coding if we put it in the
-// wxWindow constructor and destructor.
-
-Bool wxStandardEventHandler(wxEvent *event, Bool WXUNUSED(external))
-{
-  switch (event->eventClass) {
-    case wxTYPE_COMMAND_EVENT:
-    {
-      ((wxItem *)event->eventObject)->ProcessCommand(*((wxCommandEvent *)event));
-      break;
-    }
-    default:
-      return FALSE;
-  }
-  return FALSE;
-}
-
-/*
- * Initialize all the standard event classes
- *
- */
- 
-void wxInitStandardEvents(void)
-{
-  wxRegisterEventClass(wxTYPE_COMMAND_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxCommandEventConstructor,
-                       "command event");
-  wxRegisterEventClass(wxTYPE_MOUSE_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxMouseEventConstructor,
-                       "mouse event");
-  wxRegisterEventClass(wxTYPE_KEY_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxKeyEventConstructor,
-                       "keyboard event");
-  wxRegisterEventName(wxEVENT_TYPE_BUTTON_COMMAND, wxTYPE_COMMAND_EVENT, "ButtonCommand");
-  // AND THE REST!!
 }

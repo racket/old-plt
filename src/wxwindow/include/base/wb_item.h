@@ -59,8 +59,8 @@ class wxbItem: public wxWindow
    virtual void SetLabel(char *label) = 0;
    virtual char *GetLabel(void) = 0;
 
-   inline virtual void Command(wxCommandEvent& WXUNUSED(event)) {};        // Simulates an event
-   inline virtual void ProcessCommand(wxCommandEvent& WXUNUSED(event)) {}; // Calls the callback and 
+   virtual void Command(wxCommandEvent& event);        // Simulates an event
+   virtual void ProcessCommand(wxCommandEvent& event); // Calls the callback and 
                                                                  // appropriate event handlers
    virtual float GetCharWidth(void) = 0;
    virtual float GetCharHeight(void) = 0;

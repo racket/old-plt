@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.1.1.1 1997/12/22 17:28:47 mflatt Exp $
+ * RCS_ID:      $Id: wb_ps.cxx,v 1.2 1998/01/27 00:07:09 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1934,6 +1934,7 @@ wxPrinterDialogCancel (wxButton & button, wxEvent & WXUNUSED(event))
 Bool 
 XPrinterDialog (wxWindow *parent)
 {
+#if 0
   wxBeginBusyCursor();
   char buf[100];
   wxPrinterDialogBox &dialog = *(new wxPrinterDialogBox(parent, "Printer Settings", TRUE, 
@@ -2086,6 +2087,8 @@ XPrinterDialog (wxWindow *parent)
   }
 
   return wxPrinterDialogAnswer;
+#endif
+  return 0;
 }
 
 #endif
@@ -2334,6 +2337,10 @@ void wxPrintSetupData::SetColour(Bool col)
   printColour = col;
 }
 
+void wxPrintSetupData::SetLevel2(Bool col)
+{
+}
+
 // Get current values
 char *wxPrintSetupData::GetPrinterCommand(void)
 {
@@ -2392,6 +2399,11 @@ Bool wxPrintSetupData::GetColour(void)
   return printColour;
 }
 
+Bool wxPrintSetupData::GetLevel2(void)
+{
+  return TRUE;
+}
+
 void wxPrintSetupData::operator=(wxPrintSetupData& data)
 {
   SetPrinterCommand(data.GetPrinterCommand());
@@ -2409,6 +2421,10 @@ void wxPrintSetupData::operator=(wxPrintSetupData& data)
   SetAFMPath(data.GetAFMPath());
   SetPaperName(data.GetPaperName());
   SetColour(data.GetColour());
+}
+
+void wxPrintSetupData::copy(wxPrintSetupData& data)
+{
 }
 
 void wxInitializePrintSetupData(Bool init)

@@ -259,6 +259,7 @@ class wxPrintSetupData: public wxObject
   void SetPrinterMode(int mode);
   void SetAFMPath(char *f);
   void SetColour(Bool col);
+  void SetLevel2(Bool v);
 
   // Get current values
   char *GetPrinterCommand(void);
@@ -272,8 +273,10 @@ class wxPrintSetupData: public wxObject
   int GetPrinterMode(void);
   char *GetAFMPath(void);
   Bool GetColour(void);
+  Bool GetLevel2();
 
   void operator=(wxPrintSetupData& data);
+  void copy(wxPrintSetupData& data);
 };
 
 extern wxPrintSetupData *wxThePrintSetupData;

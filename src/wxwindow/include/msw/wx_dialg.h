@@ -33,13 +33,13 @@ class wxDialogBox: public wxbDialogBox
   wxDialogBox(void);
   wxDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
-              int width = -1, int height = -1, long style = wxDEFAULT_DIALOG_STYLE,
+              int width = -1, int height = -1, long style = 0,
               char *name = "dialogBox");
   ~wxDialogBox(void);
 
   Bool Create(wxWindow *parent, char *title, Bool modal=FALSE,
               int x=-1, int y=-1,
-              int width=-1, int height=-1, long style=wxDEFAULT_DIALOG_STYLE,
+              int width=-1, int height=-1, long style=0,
               char *name="dialogBox");
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
   void SetClientSize(int width, int height);
@@ -50,8 +50,8 @@ class wxDialogBox: public wxbDialogBox
   void Fit(void);
 
   void SetTitle(char *title);
-  char *GetTitle(void);
-
+  char *GetTitle(void);
+
   virtual void ChangeToGray(Bool gray);
 
   Bool OnCharHook(wxKeyEvent& event);

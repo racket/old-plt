@@ -31,7 +31,6 @@ wxButtonCallback (Widget w, XtPointer clientData, XtPointer ptr)
 
   wxButton *item = (wxButton *) clientData;
   wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-  event->eventObject = item;
   item->ProcessCommand (*event);
 }
 

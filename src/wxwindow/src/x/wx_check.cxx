@@ -48,8 +48,6 @@ wxCheckBoxCallback (Widget w, XtPointer clientData,
     item->doubleClickAllowed -= IS_CHECKED;
 
   wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
-  event->commandInt = i;
-  event->eventObject = item;
   item->ProcessCommand (*event);
 }
 #endif

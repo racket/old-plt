@@ -22,30 +22,13 @@
 
 BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
-  wxCommandEvent *_event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-  wxCommandEvent &event = *_event;
-
   if (param == LBN_SELCHANGE) {
-    if (multiple == wxSINGLE) {
-      event.commandInt = GetSelection();
-      event.clientData = GetClientData(event.commandInt);
-      event.commandString = GetString(event.commandInt);
-      event.extraLong = 1;
-    } else {
-      event.commandInt = -1;
-      event.clientData = NULL;
-      event.commandString = NULL;
-      event.extraLong = 0;
-    }
-
-    event.eventObject = this;
-    ProcessCommand(event);
-
+    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+    ProcessCommand(*event);
     return TRUE;
   } else if (param == LBN_DBLCLK) {
-    wxPanel *parent = (wxPanel *)GetParent();
-    if (parent)
-      parent->GetEventHandler()->OnDefaultAction(this);
+    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+    ProcessCommand(*event);
     return TRUE;
   }
 

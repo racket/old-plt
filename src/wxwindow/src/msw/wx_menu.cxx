@@ -426,9 +426,8 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD id)
   if (item && item->checkable)
     Check(id,!Checked(id));
 
-  wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
-  event->eventObject = this;
-  event->commandInt = id;
+  wxPopupEvent *event = new wxPopupEvent();
+  event->menuId = id;
   ProcessCommand(*event);
   return TRUE;
 }

@@ -59,13 +59,13 @@ class wxFrame: public wxbFrame
   wxFrame(void);
   wxFrame(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
-          long style = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
+          long style = 0, char *name = "frame");
 
   ~wxFrame(void);
 
   Bool Create(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
-          long style = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
+          long style = 0, char *name = "frame");
 
   void SetClientSize(int width, int height);
   void GetClientSize(int *width, int *height);

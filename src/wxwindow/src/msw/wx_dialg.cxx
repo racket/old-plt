@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.2 1998/04/11 21:59:24 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.3 1998/05/09 14:13:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -214,7 +214,7 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 
   // Allows creation of dialogs with & without captions under MSWindows
   wxDialogWnd *wnd;
-  if(style & wxCAPTION){
+  if (!(style & wxNO_CAPTION)) {
     wnd = new wxDialogWnd(cparent, this, x, y, width, height,
                           "wxCaptionDialog");
   }

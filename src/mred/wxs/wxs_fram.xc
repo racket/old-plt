@@ -29,18 +29,14 @@
 @MACRO CHECKHASMENU[log] = if (<log>GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)obj)->primdata))) return scheme_void;
 
 @BEGINSYMBOLS frameStyle
-@SYM "caption" : wxCAPTION
+@SYM "no-caption" : wxNO_CAPTION
 @SYM "iconize" : wxICONIZE
-@SYM "minimize" : wxMINIMIZE
 @SYM "maximize" : wxMAXIMIZE
-@SYM "sdi" : wxSDI
 @SYM "mdi-parent" : wxMDI_PARENT
 @SYM "mdi-child" : wxMDI_CHILD
-@SYM "thick-frame" : wxTHICK_FRAME
-@SYM "system-menu" : wxSYSTEM_MENU
-@SYM "minimize-box" : wxMINIMIZE_BOX
-@SYM "maximize-box" : wxMAXIMIZE_BOX
-@SYM "resize-border" : wxRESIZE_BORDER
+@SYM "no-thick-frame" : wxNO_THICK_FRAME
+@SYM "no-system-menu" : wxNO_SYSTEM_MENU
+@SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @ENDSYMBOLS
 
 @BEGINSYMBOLS orientation
@@ -54,7 +50,7 @@
 
 @CLASSID wxTYPE_FRAME
 
-@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle] = wxDEFAULT_FRAME, string = "frame") : : /NOZERO[4]|NOZERO[5]/
+@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle]=0, string = "frame") : : /NOZERO[4]|NOZERO[5]/
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
 
@@ -83,7 +79,5 @@
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci
-
-@CONSTANT "wx:const-default-frame-style" : SYM[frameStyle] wxDEFAULT_FRAME
 
 @END

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.3 1998/04/23 20:40:06 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cxx,v 1.4 1998/07/15 02:38:01 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -327,6 +327,17 @@ void wxbItem::OnRightClick(int x, int y, int keys)
   ((wxPanel *)theParent)->GetEventHandler()->OnItemRightClick((wxItem *)this, x, y, keys);
 }
 
+void wxbItem::Command (wxCommandEvent & event)
+{
+  ProcessCommand (event);
+}
+
+void wxbItem::ProcessCommand (wxCommandEvent & event)
+{
+  wxFunction fun = callback;
+  if (fun)
+    (void) (*(fun)) (*this, event);
+}
 
 /*
  * Button
@@ -374,29 +385,6 @@ wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), wxBitmap *
 
 wxbButton::~wxbButton (void)
 {
-}
-
-void wxbButton::Command (wxCommandEvent & event)
-{
-  ProcessCommand (event);
-}
-
-void wxbButton::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
 }
 
 /*
@@ -504,20 +492,9 @@ char *wxbMenu::GetHelpString (int itemId)
 
 void wxbMenu::ProcessCommand (wxCommandEvent & event)
 {
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
   wxFunction fun = callback;
   if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
+    (void) (*(fun)) (*this, event);
 }
 
 /*
@@ -719,30 +696,6 @@ wxbCheckBox::~wxbCheckBox (void)
 {
 }
 
-void wxbCheckBox::Command (wxCommandEvent & event)
-{
-  SetValue (event.commandInt);
-  ProcessCommand (event);
-}
-
-void wxbCheckBox::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
-}
-
 /*
  * Choice
  */
@@ -798,30 +751,6 @@ Bool wxbChoice::SetStringSelection (char *s)
     return FALSE;
 }
 
-void wxbChoice::Command (wxCommandEvent & event)
-{
-  if (event.commandInt >= 0 && event.commandInt < Number())
-    SetSelection(event.commandInt);
-  ProcessCommand(event);
-}
-
-void wxbChoice::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
-}
 
 /*
  * Listbox
@@ -891,40 +820,6 @@ Bool wxbListBox::SetStringSelection (char *s)
     return FALSE;
 }
 
-void wxbListBox::Command (wxCommandEvent & event)
-{
-  if (event.extraLong < 2) {
-    if (event.commandInt >= 0 && event.commandInt < Number()) {
-      if (event.extraLong)
-	SetSelection(event.commandInt);
-      else {
-	Deselect(event.commandInt);
-	return;
-      }
-    }
-  }
-  ProcessCommand (event);
-}
-
-void wxbListBox::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-
-  wxNotifyEvent (event, FALSE);
-}
 
 /*
  * Radiobox item
@@ -1013,30 +908,6 @@ Bool wxbRadioBox::SetStringSelection (char *s)
     return FALSE;
 }
 
-void wxbRadioBox::Command (wxCommandEvent & event)
-{
-  SetSelection (event.commandInt);
-  ProcessCommand (event);
-}
-
-void wxbRadioBox::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
-}
 
 /*
  * Message
@@ -1087,114 +958,6 @@ wxbMessage::~wxbMessage (void)
 }
 
 /*
- * Text item
- */
- 
-wxbText::wxbText (void)
-{
-  __type = wxTYPE_TEXT;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
-wxbText::wxbText (wxPanel * panel, wxFunction WXUNUSED(Function), char *WXUNUSED(label), char *WXUNUSED(value),
-	 int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
-{
-  __type = wxTYPE_TEXT;
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-}
-
-wxbText::~wxbText (void)
-{
-}
-
-
-void wxbText::Command (wxCommandEvent & event)
-{
-  SetValue (event.commandString);
-  ProcessCommand (event);
-}
-
-void wxbText::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-
-  wxNotifyEvent (event, FALSE);
-}
-
-/*
- * Multi-line Text item
- */
- 
-wxbMultiText::wxbMultiText (void)
-{
-  __type = wxTYPE_MULTI_TEXT;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
-wxbMultiText::wxbMultiText (wxPanel * panel, wxFunction WXUNUSED(Function), char *WXUNUSED(label), char *WXUNUSED(value),
-	      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
-{
-  __type = wxTYPE_MULTI_TEXT;
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-}
-
-void wxbMultiText::Command (wxCommandEvent & event)
-{
-  SetValue (event.commandString);
-  ProcessCommand (event);
-}
-
-void wxbMultiText::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-  wxNotifyEvent (event, FALSE);
-}
-
-/*
  * Slider
  */
  
@@ -1224,64 +987,6 @@ wxbSlider::wxbSlider (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED
 }
 
 wxbSlider::~wxbSlider (void)
-{
-}
-
-void wxbSlider::Command (wxCommandEvent & event)
-{
-  SetValue (event.commandInt);
-  ProcessCommand (event);
-}
-
-void wxbSlider::ProcessCommand (wxCommandEvent & event)
-{
-  if (wxNotifyEvent (event, TRUE))
-    return;
-
-  wxFunction fun = callback;
-  if (fun)
-    {
-      (void) (*(fun)) (*this, event);
-    }
-    else
-    {
-      GetEventHandler()->OnCommand(*this, event);
-    }
-  wxNotifyEvent (event, FALSE);
-}
-
-/*
- * Group box
- */
- 
-wxbGroupBox::wxbGroupBox (void)
-{
-  __type = wxTYPE_GROUP_BOX;
-  window_parent = NULL;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
-wxbGroupBox::wxbGroupBox (wxPanel * panel, char *WXUNUSED(label),
-	   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height),
-           long style, char *WXUNUSED(name))
-{
-  __type = wxTYPE_GROUP_BOX;
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-}
-
-wxbGroupBox::~wxbGroupBox (void)
 {
 }
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.2 1998/04/08 00:09:15 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -659,72 +659,6 @@ Window wxPanel::GetXWindow(void)
   return wxCanvas::GetXWindow();
 }
 
-#if USE_EXTENDED_STATICS
-
-#define LOH_MAX(a,b) ((a > b) ? a : b)
-#define LOH_MIN(a,b) ((a < b) ? a : b)
-
-Bool IsBoxCovered(XRectangle *r_list,int count,XRectangle rect)
-   {
-     if (count == 0)
-       return TRUE;
-       
-     int llp, x_min, x_max, y_min, y_max;
-
-     int rx1 = rect.x;
-     int rx2 = rx1 + rect.width;
-     int ry1 = rect.y;
-     int ry2 = ry1 + rect.height;
-
-     int cx1,cx2,cy1,cy2;
-
-     for(llp = 0;llp < count;llp++)
-        {
-          cx1 = r_list[llp].x;
-          cx2 = cx1 + r_list[llp].width;
-          cy1 = r_list[llp].y;
-          cy2 = cy1 + r_list[llp].height;
-          
-          x_min = LOH_MIN(rx1,cx1);
-          x_max = LOH_MAX(rx2,cx2);
-          y_min = LOH_MIN(ry1,cy1);
-          y_max = LOH_MAX(ry2,cy2);
-
-          if (((x_max - x_min) <= (rect.width + r_list[llp].width)) &&
-              ((y_max - y_min) <= (rect.height + r_list[llp].height)))
-             return TRUE;
-
-        }
-     return FALSE;
-   }
-
-void wxPanel::DrawAllStaticItems(XRectangle *rect,int count)
-{
-  XRectangle xr;
-  int x,y,w,h;
-  if (staticItems.Number() > 0)
-  {
-    wxNode *node = staticItems.First();
-    wxStaticItem *item;
-    while(node)
-    {
-      item = (wxStaticItem *)node -> Data();
-      item -> GetDrawingSize(&x,&y,&w,&h);
-      xr.x = x;
-      xr.y = y;
-      xr.width = w; 
-      xr.height = h;
-      if (IsBoxCovered(rect,count,xr) && item -> IsShow()) 
-      {
-        item -> Draw(rect,count);
-      }
-      node = node -> Next();
-    }
-  }
-}
-#endif
-
-
 void wxPanel::DoPaint(XRectangle *xrect, int n)
 {
   updateRects.Clear();
@@ -744,9 +678,6 @@ void wxPanel::DoPaint(XRectangle *xrect, int n)
 
 void wxPanel::OnPaint(void)
 {
-#if USE_EXTENDED_STATICS
-  DrawAllStaticItems(NULL, 0);
-#endif
   PaintSelectionHandles();
 }
 

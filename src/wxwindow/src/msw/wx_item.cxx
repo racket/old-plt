@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.3 1998/04/11 13:58:19 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.4 1998/04/11 21:59:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -323,7 +323,6 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	event.middleDown = (flags & MK_MBUTTON);
 	event.rightDown = (flags & MK_RBUTTON);
 	event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-	event.eventObject = item;
 
 	if (item->CallPreOnEvent(item, &event))
 	  return 0;
@@ -367,7 +366,6 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
 	    event.altDown = TRUE;
 	  
-	  event.eventObject = item;
 	  event.keyCode = id;
 	  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 	  
@@ -384,31 +382,6 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	    return 0;
 	}
       }
-    }
-
-    // Special edit control processing
-    if (!panel->GetUserEditMode() && (item->__type == wxTYPE_TEXT)) {
-      switch (message)
-	{
-	case WM_GETDLGCODE:
-	  {
-	    if (item->GetWindowStyleFlag() & wxPROCESS_ENTER)
-	      return DLGC_WANTALLKEYS;
-	    break;
-	  }
-	case WM_CHAR: // Always an ASCII character
-	  {
-	    if (wParam == VK_RETURN)
-	      {
-		wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_TEXT_ENTER_COMMAND);
-		event->commandString = ((wxText *)item)->GetValue();
-		event->eventObject = item;
-		item->ProcessCommand(*event);
-		return 0;
-	      }
-	  }
-	break;
-	}
     }
   }
 

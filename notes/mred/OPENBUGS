@@ -6,9 +6,6 @@ MrEd Engine:
 * Windows: pre-on-char doesn't work for input that moves
    the focus between controls (e.g., cursor keys)
 
-* MacOS: busy-cursor state is wrong for new windows when the
-   busy cursor is active
-
 * MacOS needs way to control the 0-window menu bar
 
 * MacOS: bitmaps don't print with platform-specific printing

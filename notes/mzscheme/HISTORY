@@ -4,23 +4,34 @@ Added scheme-report-environment, null-environment, and
  interaction-environment
 current-directory is now a parameter
 Added simplify-path
+Changed execute and execute* to exit via the exit handler
 Top-level definitions are no longer allowed in the branches 
  of an if expression; consider replacing an expression like
  (if ... (define x ...)) with 
  (if ... (global-defined-value 'x ...))
 expand-defmacro now signals the same set of syntax errors
  as compile and eval
-local-expand-defmacro no longer lets define expressions
- pass in a non-to-level context; to implement a macro that
+local-expand-defmacro no longer expands define expressions
+ in a non-top-level context; to implement a macro that
  detects define forms, use local-expand-body-expression
 Fixed bug in (let/ec a (let/ec b (let/cc k ...))); calling
  b then k then a would fail, jumping to b instead of a
 Fixed read-eval-print loop when jumping to the continuation
  of a previous eval and raising an exception there before
  the evaluation finishes
+regexp-replace and regexp-replace*: \$ ("\\$" in Scheme)
+ is now replaced by the empty string; this allows forms
+ like "\\0\\$3" to insert the 1st submatch followed by 3
+Fixed a potential bug with continuations (although I never
+ saw it happen); they need to be marked by the GC with
+ interior pointer marking
 Inside MzScheme: current-directory, now a parameter, no
  longer sets the current directory as managed by the OS
 Inside MzScheme: scheme_split_pathname changed
+Inside MzScheme: scheme_setcwd and scheme_getcwd renamed to
+ scheme_os_setcwd and scheme_os_getcwd; these set and get the
+ OS-managed cwd, but they have no effect on the current 
+ directory seen by Scheme code
 
 Version 51, March 25, 1998
 Changed load/use-compiled: searches for .zo files in

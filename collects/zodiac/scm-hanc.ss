@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.55 1998/11/04 19:52:54 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.56 1998/11/06 01:35:11 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1029,10 +1029,11 @@
 
 (define cu/s-check-self-import
   (lambda (tag attributes)
-    (when (eq? (z:read-object tag)
-	    (get-attribute attributes cu/s-this-link-attr
-	      (lambda () (internal-error tag "No this-link attribute"))))
-      (static-error tag "Self import of tag ~s" (z:read-object tag)))))
+    (when #f ; we allow self-import, now
+      (when (eq? (z:read-object tag)
+		 (get-attribute attributes cu/s-this-link-attr
+				(lambda () (internal-error tag "No this-link attribute"))))
+	(static-error tag "Self import of tag ~s" (z:read-object tag))))))
 
 (define cu/s-link-prim-unit-names-vocab
   (create-vocabulary 'cu/s-link-prim-unit-names-vocab #f

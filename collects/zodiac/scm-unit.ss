@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.70 1998/11/23 17:38:42 mflatt Exp $
+; $Id: scm-unit.ss,v 1.71 1998/12/01 00:17:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -540,11 +540,12 @@
 	    (lambda (p-env)
 	      (let ((tag (pat:pexpand 'tag p-env kwd))
 		     (ids (pat:pexpand '(id ...) p-env kwd)))
-		(when (eq? (z:read-object tag)
-			(get-c-unit-current-link-tag-attribute
-			  attributes))
-		  (static-error expr "Self-import of tag ~a"
-		    (z:read-object tag)))
+		(when #f ; we allow self-import, now
+		  (when (eq? (z:read-object tag)
+			     (get-c-unit-current-link-tag-attribute
+			      attributes))
+		    (static-error expr "Self-import of tag ~a"
+				  (z:read-object tag))))
 		(map (lambda (id) (cons tag id)) ids))))
 	  (else
 	    (static-error expr "Invalid link syntax"))))))

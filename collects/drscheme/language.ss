@@ -152,16 +152,13 @@
 					   (append language-levels (list "Custom")))]
 	     [_2 (make-object mred:horizontal-panel% language-panel)]
 	     [right-align
-	      (opt-lambda (mo panel [warning #f])
+	      (opt-lambda (mo panel)
 		(let* ([hp (make-object mred:horizontal-panel% panel)])
 		  (begin0
 		   (mo hp)
-		   (make-object mred:horizontal-panel% hp)
-		   (when warning
-		     (make-object mred:message% hp
-				  (string-append "changes effective " warning))))))]
+		   (make-object mred:horizontal-panel% hp))))]
 	     [make-check-box
-	      (lambda (set-setting! setting name warning panel)
+	      (lambda (set-setting! setting name panel)
 		(right-align
 		 (lambda (hp)
 		   (make-object mred:check-box% hp
@@ -172,8 +169,7 @@
 				    (mred:set-preference 'drscheme:settings
 							 s)))
 				name))
-		 panel
-		 warning))]
+		 panel))]
 	     [vocab (right-align 
 		     (lambda (hp)
 		       (make-object mred:choice% hp
@@ -186,48 +182,40 @@
 				    "Vocabulary"
 				    -1 -1 -1 -1
 				    language-levels))
-		     input-syntax-panel
-		     "on restart")]
+		     input-syntax-panel)]
 	     [case-sensitive? (make-check-box set-setting-case-sensitive?!
 					      setting-case-sensitive?
 					      "Case sensitive?"
-					      "next interaction"
 					      input-syntax-panel)]
 	     [allow-improper-lists?
 	      (make-check-box set-setting-allow-improper-lists?!
 			      setting-allow-improper-lists?
 			      "Allow improper lists?"
-			      "next execution"
 			      dynamic-panel)]
 	     [allow-set!-on-undefined?
 	      (make-check-box set-setting-allow-set!-on-undefined?!
 			      setting-allow-set!-on-undefined?
 			      "Allow set! on undefined identifiers?"
-			      "next interaction"
 			      dynamic-panel)]
 	     [unmatched-cond/case-is-error?
 	      (make-check-box set-setting-unmatched-cond/case-is-error?!
 			      setting-unmatched-cond/case-is-error?
 			      "Unmatched cond/case is an error?"
-			      "next interaction"
 			      dynamic-panel)]
 	     [signal-undefined
 	      (make-check-box set-setting-signal-undefined!
 			      setting-signal-undefined
 			      "Signal undefined variables when first referenced?"
-			      "next execution"
 			      dynamic-panel)]
 	     [signal-not-boolean
 	      (make-check-box set-setting-signal-not-boolean!
 			      setting-signal-not-boolean
 			      "Conditionals must evaluate to either #t or #f"
-			      "next execution"
 			      dynamic-panel)]
 	     [eq?-only-compares-symbols?
 	      (make-check-box set-setting-eq?-only-compares-symbols?!
 			      setting-eq?-only-compares-symbols?
 			      "Eq? only compares symbols"
-			      "next execution"
 			      dynamic-panel)]
 	     [printer-number->symbol
 	      (lambda (which)
@@ -252,19 +240,16 @@
 				    "Quasiquote (lists only)"
 				    "Quasiquote (read syntax)"
 				    "R4RS")))
-	       output-syntax-panel
-	       "next interaction")]
+	       output-syntax-panel)]
 	     [abbreviate-cons-as-list?
 	      (make-check-box set-setting-abbreviate-cons-as-list?!
 			      abbreviate-cons-as-list?
 			      "Abbreviate multiples cons's with list when possible?"
-			      "next interaction"
 			      output-syntax-panel)]
 	     [sharing-printing?
 	      (make-check-box set-setting-sharing-printing?!
 			      setting-sharing-printing?
 			      "Show sharing in values?"
-			      "next interaction"
 			      output-syntax-panel)]
 	     [ok-panel (make-object mred:horizontal-panel% main)]
 	     [hide-button (make-object mred:button% ok-panel

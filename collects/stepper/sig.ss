@@ -7,11 +7,16 @@
   (static-error dynamic-error internal-error))
 
 (define-signature stepper:shared^
-  (read-exprs
+  (list-take
+   read-exprs
    read->raw 
    arglist->ilist 
    *unevaluated* 
    if-temp
+   make-closure-record
+   closure-record-name
+   closure-record-mark
+   ;(struct closure-record (name mark))
    create-bogus-bound-varref
    create-bogus-top-level-varref
    get-arg-symbol

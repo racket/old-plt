@@ -161,6 +161,25 @@
                              kept-vars)])
       `(#%lambda () (list ,source (#%quote ,label) ,@var-clauses))))
   
+  
+  ; wrap-struct-form 
+  
+  (define (wrap-struct-form names annotated)
+    (let* ([arg-temps (build-list (length names) get-arg-symbol)]
+           [arg-temp-syms (map z:varref-var arg-temps)]
+           [struct-proc-names (list-take (- (length names) 1) names)]
+           [closure-records (map (lambda (proc-name) `(list (#%quote ,proc-name) 
+                                                            (lambda () #f)))
+                                 struct-proc-names)]
+           [proc-arg-temp-syms (list-take (- (length names) 1) arg-temp-syms)]
+           [setters (map (lambda (arg-temp-sym closure-record)
+                           `(,closure-table-put! ,arg-temp-sym ,closure-record))
+                         proc-arg-temp-syms
+                         closure-records)]
+           [full-body (append setters (list `(values ,@arg-temp-syms)))])
+      `(#%let-values ((,arg-temp-syms ,annotated)) ,full-body)))
+  
+  
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
   ; a) the body itself
@@ -388,11 +407,15 @@
                        ; if it was in tail posn (i.e., we must hold on to 
                        ; bindings).
 		       
+                       [val val (z:define-values-form-val expr)]
                        [val (values annotated-val free-vars-val)
-			    (tail-recur (z:define-values-form-val expr))]
+			    (tail-recur val)]
 		       [val free-vars (varref-remove* vars free-vars-val)]
 		       [val annotated `(#%define-values ,var-names ,annotated-val)])
-		      (values annotated free-vars))]
+                      (cond [(z:struct-form? val)
+                             (values (wrap-struct-form var-names annotated) free-vars)]
+                            [else
+                             (values annotated free-vars)]))]
 	       
 	       ; there is no set! in beginner level
 	       
@@ -417,7 +440,8 @@
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
 		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
-				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
+				       (,closure-table-put! (,closure-key-maker ,closure-temp) 
+                                        (,make-closure-record (#%quote no-name) ,closure-info))
 				       ,closure-temp)])
 		  (values hash-wrapped
 			  new-free-vars))]

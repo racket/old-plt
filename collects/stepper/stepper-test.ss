@@ -81,9 +81,26 @@
                          [else 5]))
     (+ 3 4)))
 
+(define string-program
+  '("this is a string"))
+
+(define struct-program
+  '((define-struct my-cons (first rest))
+    (define (last-elt my-list)
+      (cond [(null? my-list) (error "empty list given to last-elt")]
+            [(null? (my-cons-rest my-list))
+             (my-cons-first my-list)]
+            [else (last-elt (my-cons-rest my-list))]))
+    (define test-list (make-my-cons 13
+                                    (make-my-cons
+                                     'foo
+                                     null?)))
+    (define result (last-elt test-list))
+    (+ 3 4)))
+
 (define (program->string program)
   (apply string-append
-         (map (lambda (clause) (format "~a~n" clause)) program)))
+         (map (lambda (clause) (format "~s~n" clause)) program)))
 
 
 (define step
@@ -93,7 +110,7 @@
           (begin
             (set! first-time #f)
             (stepper:stepper-start
-             (program->string cond-program)))
+             (program->string struct-program)))
           (stepper:stepper-step)))))
 
 ;(require-library "view.ss" "stepper")

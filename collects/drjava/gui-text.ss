@@ -309,13 +309,16 @@
            [repl-editor (add-repl parent)]
            [goobers (make-object goober-panel% parent top-editor)]
            [make-button
-            (lambda (name action)
+            (lambda (iname name action)
               (make-object button%
-                           (make-object bitmap% (build-path (collection-path "icons") name))
+                           (let ([bits (make-object bitmap% (build-path (collection-path "icons") iname))])
+                             (if (send bits ok?)
+                                 (build-bitmap bits name)
+                                 name))
                            button-bar
                            action))]
            [save-button
-            (make-button "save.bmp"
+            (make-button "save.bmp" "Save"
                          (lambda _
                            (send top-editor save-file)))]
            [call-with-goobers
@@ -325,7 +328,7 @@
                 (thunk))
               (send goobers appear))]
            [execute-button
-            (make-button "execute.bmp"
+            (make-button "execute.bmp" "Execute"
                          (lambda _
                            (call-with-goobers
                             (lambda ()
@@ -339,6 +342,23 @@
       (send blank stretchable-width #t)
       (send button-bar stretchable-height #f)
       (k top-editor repl-editor)))
+  
+  ;; build-bitmap : Bitmap% String -> Bitmap%
+  (define (build-bitmap icon text)
+    (let-values ([(width height _ __)
+                  (send (make-object bitmap-dc% (make-object bitmap% 1 1))
+                        get-text-extent text)])
+      (let* ([icon-width (send icon get-width)]
+             [text-height (inexact->exact height)]
+             [total-height (max text-height (send icon get-height))]
+             [big (make-object bitmap% (+ (inexact->exact width) icon-width) total-height)]
+             [big-dc (make-object bitmap-dc% big)])
+        (send big-dc clear)
+        (send big-dc draw-bitmap icon 0 0)
+        (send big-dc draw-text text icon-width (/ (- total-height text-height) 2))
+        
+        (send big-dc set-bitmap #f)
+        big)))
   
   ;; compile-string : String jobject(Env) -> Void
   (define (compile-string source env)

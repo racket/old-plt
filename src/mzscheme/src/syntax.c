@@ -434,19 +434,19 @@ static void lambda_check(Scheme_Object *form)
     scheme_wrong_syntax("lambda", NULL, form, NULL);
 }
 
-static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *form)
+static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *v;
 
   if (!SCHEME_SYMBOLP(args)) {
     for (v = args; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
-      if (!SCHEME_SYMBOLP(SCHEME_CAR(v)))
-	scheme_wrong_syntax(who, SCHEME_CAR(v), form, "bad identifier");
+      scheme_check_identifier(who, SCHEME_CAR(v), NULL, env, form);
     }
 
     if (!SCHEME_NULLP(v))
-      if (!SCHEME_SYMBOLP(v))
-	scheme_wrong_syntax(who, v, form, "bad identifier");
+      if (!SCHEME_SYMBOLP(v)) {
+	scheme_check_identifier(who, v, NULL, env, form);
+      }
 
     /* Check for duplicate names: */
     for (v = args; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
@@ -474,7 +474,7 @@ lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
   lambda_check(form);
 
   args = SCHEME_CAR(SCHEME_CDR(form));
-  lambda_check_args("lambda", args, form);
+  lambda_check_args("lambda", args, form, env);
 
   return scheme_make_closure_compilation(env, form, rec, drec);
 }
@@ -488,7 +488,7 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   
   args = SCHEME_CAR(SCHEME_CDR(form));
 
-  lambda_check_args("lambda", args, form);
+  lambda_check_args("lambda", args, form, env);
 
   env = scheme_add_compilation_frame(args, env, 0);
 
@@ -1046,7 +1046,7 @@ case_lambda_link(Scheme_Object *expr, Link_Info *link)
   return scheme_make_syntax_link(case_lambda_execute, expr);
 }
 
-static void case_lambda_check_line(Scheme_Object *line, Scheme_Object *form)
+static void case_lambda_check_line(Scheme_Object *line, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *body, *args;
 
@@ -1056,7 +1056,7 @@ static void case_lambda_check_line(Scheme_Object *line, Scheme_Object *form)
   body = SCHEME_CDR(line);
   args = SCHEME_CAR(line);
   
-  lambda_check_args("case-lambda", args, form);
+  lambda_check_args("case-lambda", args, form, env);
   
   if (!SCHEME_PAIRP(body))
     scheme_wrong_syntax("case-lambda", line, form, "bad syntax (%s)",
@@ -1091,7 +1091,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   if (!SCHEME_PAIRP(form))
     scheme_wrong_syntax("case-lambda", form, orig_form, NULL);
   if (SCHEME_NULLP(SCHEME_CDR(form))) {
-    case_lambda_check_line(SCHEME_CAR(form), orig_form);
+    case_lambda_check_line(SCHEME_CAR(form), orig_form, env);
     
     return lambda_syntax(scheme_make_pair(lambda_symbol,
 					  SCHEME_CAR(form)), env, rec, drec);
@@ -1102,7 +1102,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
   list = last = NULL;
   while (SCHEME_PAIRP(form)) {
-    case_lambda_check_line(SCHEME_CAR(form), orig_form);
+    case_lambda_check_line(SCHEME_CAR(form), orig_form, env);
 
     c = scheme_make_pair(scheme_make_pair(lambda_symbol, SCHEME_CAR(form)),
 			 scheme_null);
@@ -1156,7 +1156,7 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   while (SCHEME_PAIRP(form)) {
     args = SCHEME_CAR(form);
 
-    case_lambda_check_line(args, orig_form);
+    case_lambda_check_line(args, orig_form, env);
     
     body = SCHEME_CDR(args);
     args = SCHEME_CAR(args);

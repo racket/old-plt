@@ -12,10 +12,6 @@ AR = @AR@
 ARFLAGS = @ARFLAGS@
 RANLIB = @RANLIB@
 
-# GC Directory
-# sgc for SenoraGC
-GCDIR = gc
-
 # system name for installation
 INSTALLSYS = `$(srcdir)/../../bin/archsys`
 

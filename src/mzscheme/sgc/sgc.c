@@ -839,7 +839,7 @@ static void *platform_plain_sector(int count)
   static int fd;
 
   if (!fd) {
-    fd = open("/dev/zero", O_RDONLY);
+    fd = open("/dev/zero", O_RDWR);
   }
   
   return mmap(0, count << LOG_SECTOR_SEGMENT_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);

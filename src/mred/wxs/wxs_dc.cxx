@@ -853,7 +853,7 @@ static Scheme_Object *os_wxDCGetCharWidth(Scheme_Object *obj, int n,  Scheme_Obj
 
   
 
-  
+  DO_OK_CHECK(METHODNAME("dc<%>","get-char-width"))
   r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetCharWidth());
 
   
@@ -874,7 +874,7 @@ static Scheme_Object *os_wxDCGetCharHeight(Scheme_Object *obj, int n,  Scheme_Ob
 
   
 
-  
+  DO_OK_CHECK(METHODNAME("dc<%>","get-char-height"))
   r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetCharHeight());
 
   
@@ -914,7 +914,7 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   } else
     x3 = 0;
 
-  if (x3 > SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[3]));
+  if (x3 > SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[3]));DO_OK_CHECK(METHODNAME("dc<%>","get-text-extent"))
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3));
 
   

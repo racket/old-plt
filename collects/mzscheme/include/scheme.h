@@ -484,8 +484,9 @@ typedef struct Scheme_Process {
   Scheme_Object *blocker; /* semaphore or port */
   int (*block_check)(Scheme_Object *blocker);
   void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
-  int ran_some;
+  short ran_some;
 
+  short overflow_set;
   struct Scheme_Overflow *overflow;
   mz_jmp_buf overflow_buf;
 

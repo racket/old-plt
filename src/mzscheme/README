@@ -70,11 +70,17 @@ source directory. (For example, mzscheme is copied to to
 Cygwin.)
 
 Unix and BeOS: After running `[mz]make install', run ./install in the
-plt directory (two directories up from here). At this point,
+plt directory (two directories up from here). Afterwards,
 plt/bin/setup-plt and plt/bin/mzc work. If you move the plt tree,
 re-run plt/install.
 
-Cygwin: At this point, `plt/Setup PLT.exe' and `plt/mzc.exe' work.
+Cygwin: Create the other executables (besides mred.exe
+and mzscheme.exe) by running
+   mzscheme.exe -mvqL- setup.ss compiler
+in the plt directory (two directories up from here). The above makes
+the .zo files, too, but add -n to the end of the command to skip the
+.zo-compiling step. Afterwards, `plt/Setup PLT.exe' and `plt/mzc.exe'
+work.
 
 Compiling Parts
 ---------------

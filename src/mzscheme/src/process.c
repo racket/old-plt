@@ -1228,6 +1228,8 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   child = make_process(NULL, config, mgr);
 
+  scheme_init_error_escape_proc(child);
+
   child->stack_start = child_start;
   
 #ifndef MZ_REAL_THREADS

@@ -3463,7 +3463,10 @@ static void *expand_k(void)
 
   obj = scheme_expand_expr(obj, env, depth, scheme_false);
 
-  return scheme_add_mark_barrier(obj);
+  if (rename)
+    obj = scheme_add_mark_barrier(obj);
+
+  return obj;
 }
 
 static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, 

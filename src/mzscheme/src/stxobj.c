@@ -24,7 +24,7 @@
 
 #define STX_GRAPH_FLAG 0x1
 
-#define STX_DEBUG 0
+#define STX_DEBUG 1
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
@@ -719,8 +719,10 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier
 	    awl = SCHEME_CDR(awl);
 	  } else
 	    break;
-	} else
+	} else {
 	  acur_mark = SCHEME_CAR(awl);
+	  awl = SCHEME_CDR(awl);
+	}
       } else if (SAME_OBJ(SCHEME_CAR(awl), barrier_symbol) && !ignore_barrier) {
 	awl = scheme_null;
       } else
@@ -737,8 +739,10 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier
 	    bwl = SCHEME_CDR(bwl);
 	  } else
 	    break;
-	} else
+	} else {
 	  bcur_mark = SCHEME_CAR(bwl);
+	  bwl = SCHEME_CDR(bwl);
+	}
       } else if (SAME_OBJ(SCHEME_CAR(bwl), barrier_symbol)) {
 	bwl = scheme_null;
       } else
@@ -749,16 +753,9 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier
     if (!SAME_OBJ(acur_mark, bcur_mark))
       return 0;
 
-    /* Either at end? Then the same only if both at end. */
-    if (SCHEME_NULLP(awl) || SCHEME_NULLP(bwl))
-      return (SCHEME_NULLP(awl) && SCHEME_NULLP(bwl));
-
-    /* Same first mark? */
-    if (!scheme_bin_eq(SCHEME_CAR(awl), SCHEME_CAR(bwl)))
-      return 0;
-
-    awl = SCHEME_CDR(awl);
-    bwl = SCHEME_CDR(bwl);
+    /* Done if both reached the end: */
+    if (SCHEME_NULLP(awl) && SCHEME_NULLP(bwl))
+      return 1;
   }
 }
 

@@ -24,11 +24,8 @@
 	    define-values
 	    define-syntaxes
 	    set!
-	    let
 	    let-values
-	    let*
 	    let*-values
-	    letrec
 	    letrec-values
 	    lambda
 	    case-lambda

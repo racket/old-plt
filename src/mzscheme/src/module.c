@@ -1041,13 +1041,13 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
       for (i = 0; i < count; i++) {
 	if (SCHEME_FALSEP(exss[i]))
-	  scheme_add_to_table(menv->toplevel, (const char *)exsns[i], scheme_undefined, 0);
+	  scheme_add_to_table(menv->toplevel, (const char *)exsns[i], NULL, 0);
       }
 
       count = m->num_indirect_provides;
       exsns = m->indirect_provides;
       for (i = 0; i < count; i++) {
-	scheme_add_to_table(menv->toplevel, (const char *)exsns[i], scheme_undefined, 0);
+	scheme_add_to_table(menv->toplevel, (const char *)exsns[i], NULL, 0);
       }
     }
   }

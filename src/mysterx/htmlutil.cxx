@@ -1,4 +1,4 @@
-// htmlutil.cpp
+// htmlutil.cxx
 
 #include "stdafx.h"
 
@@ -680,13 +680,6 @@ elt_style_string_setter(mx_element_set_list_style,
 			"element-set-list-style!",
 			put_listStyle)
 
-elt_style_string_getter(mx_element_whitespace,
-			"element-whitespace",
-			get_whiteSpace)
-elt_style_string_setter(mx_element_set_whitespace,
-			"element-set-whitespace!",
-			put_whiteSpace)
-
 // note: no setter here
 elt_style_string_getter(mx_element_position,  
 			"element-position",
@@ -879,13 +872,6 @@ elt_style_variant_getter(mx_element_background_position_y,
 elt_style_variant_setter(mx_element_set_background_position_y,
 			 "element-set-background_position-y!",
 			 put_backgroundPositionY)
-
-elt_style_variant_getter(mx_element_word_spacing,
-			 "element-word-spacing",
-			 get_wordSpacing)
-elt_style_variant_setter(mx_element_set_word_spacing,
-			 "element-set-word-spacing",
-			 put_wordSpacing)
 
 elt_style_variant_getter(mx_element_letter_spacing,
 			 "element-letter-spacing",

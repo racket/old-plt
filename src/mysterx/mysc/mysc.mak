@@ -9,7 +9,7 @@ HTMLHELP=C:\Program Files\HTML Help Workshop
 SHELL32=F:\SBN
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../mzscheme/include" /I"$(SHELL32)\Include" \
+CPP_FLAGS=/I"../../../collects/mzscheme/include" /I"$(SHELL32)\Include" \
 	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
 
 .cxx.obj::

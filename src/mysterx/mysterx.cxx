@@ -140,6 +140,8 @@ static MX_PRIM mxPrims[] = {
   { mx_element_set_font,"element-set-font!",2,2 }, 
   { mx_element_background,"element-background",1,1 },
   { mx_element_set_background,"element-set-background!",2,2 }, 
+  { mx_element_background_attachment,"element-background-attachment",1,1 },
+  { mx_element_set_background_attachment,"element-set-background-attachment!",2,2 },
   { mx_element_background_image,"element-background-image",1,1 },
   { mx_element_set_background_image,"element-set-background-image!",2,2 },
   { mx_element_background_repeat,"element-background-repeat",1,1 },
@@ -196,8 +198,6 @@ static MX_PRIM mxPrims[] = {
   { mx_element_set_list_style_image,"element-set-list-style-image!",2,2 }, 
   { mx_element_list_style,"element-list-style",1,1 },
   { mx_element_set_list_style,"element-set-list-style!",2,2 }, 
-  { mx_element_whitespace,"element-whitespace",1,1 },
-  { mx_element_set_whitespace,"element-set-whitespace!",2,2 }, 
   { mx_element_position,"element-position",1,1 },
   { mx_element_overflow,"element-overflow",1,1 },
   { mx_element_set_overflow,"element-set-overflow!",2,2 }, 
@@ -250,8 +250,6 @@ static MX_PRIM mxPrims[] = {
   { mx_element_set_background_position_x,"element-set-background-position-x!",2,2 }, 
   { mx_element_background_position_y,"element-background-position-y",1,1 },
   { mx_element_set_background_position_y,"element-set-background-position-y!",2,2 }, 
-  { mx_element_word_spacing,"element-word-spacing",1,1 },
-  { mx_element_set_word_spacing,"element-set-word-spacing!",2,2 }, 
   { mx_element_letter_spacing,"element-letter-spacing",1,1 },
   { mx_element_set_letter_spacing,"element-set-letter-spacing!",2,2 }, 
   { mx_element_vertical_align,"element-vertical-align",1,1 },
@@ -3935,7 +3933,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   if (isatty(fileno(stdin))) {
     fputs("MysterX extension for MzScheme, "
-	  "Copyright (c) 1999 Rice PLT (Paul Steckler)\n",stderr);
+	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)\n",stderr);
   }
   
   return (Scheme_Object *)mx_unit;

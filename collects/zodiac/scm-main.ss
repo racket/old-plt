@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.144 1998/03/06 21:15:41 shriram Exp $
+; $Id: scm-main.ss,v 1.145 1998/03/13 21:20:44 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1296,14 +1296,18 @@
 			    ,debug-info-handler-expression)))
 	      (out-pattern-2-no-error
 		'(begin val (#%void)))
-	      (in-pattern-3 '(_ val (test-expr b ...) rest ...))
-	      (out-pattern-3 '(let ((tmp val))
+	      (kwd-3 '(else))
+	      (in-pattern-3 '(_ val (else b ...) rest))
+	      (kwd-4 '())
+	      (in-pattern-4 '(_ val (test-expr b ...) rest ...))
+	      (out-pattern-4 '(let ((tmp val))
 				(if (#%eqv? tmp test-expr)
 				  (begin b ...)
 				  (evcase tmp rest ...))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
-	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
+	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-3))
+	      (m&e-4 (pat:make-match&env in-pattern-4 kwd-4)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
 	    (if (compile-allow-cond-fallthrough)
@@ -1311,8 +1315,11 @@
 		out-pattern-2-no-error kwd-2 env)
 	      (pat:match-and-rewrite expr m&e-2
 		out-pattern-2-signal-error kwd-2 env))
-	    (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd-2 env)
-	    (static-error expr "Malformed evcase"))))))
+	    (let ((penv (pat:match-against m&e-3 expr env)))
+	      (if penv
+		(static-error expr "else used before last evcase branch")
+		(or (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-4 env)
+		  (static-error expr "Malformed evcase")))))))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-macro-form

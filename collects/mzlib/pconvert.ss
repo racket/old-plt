@@ -155,6 +155,11 @@
       (string->symbol
        (string-append "-" (s:expr->string name) "-"))))
   
+  (define next-number 1)
+  (define (get-next-number)
+    (begin0 next-number
+            (set! next-number (+ next-number 1))))
+
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; prints an expression given that it has already been hashed. This
@@ -308,12 +313,7 @@
                           [else
                            (f)]))]
                      [constructor-style
-                      (let* ([next-number 1]
-                             [get-next-number
-                              (lambda ()
-                                (begin0 next-number
-                                        (set! next-number (+ next-number 1))))]
-                             [build-named
+                      (let ([build-named
                               (lambda (expr build-unnamed)
                                 (let ([answer (and (not (struct? expr))
                                                    (object-name expr))])

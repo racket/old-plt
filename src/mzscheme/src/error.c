@@ -982,7 +982,7 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
     
     result = (char *)scheme_malloc_atomic(srclen + 15);
 
-    rlen = scheme_sprintf(result, srclen + 15, " %t[%L%ld]", 
+    rlen = scheme_sprintf(result, srclen + 15, " %t:%L%ld", 
 			  srcstr, srclen, line, col);
     
     if (len) *len = rlen;
@@ -1011,7 +1011,7 @@ void scheme_read_err(Scheme_Object *port,
   prepared_buf = init_buf(NULL, &prepared_buf_len);
   
   if (column >= 0) {
-    scheme_sprintf(lbuf, 30, "[%L%ld]", line, column);
+    scheme_sprintf(lbuf, 30, ":%L%ld", line, column);
     ls = lbuf;
   } else
     ls = "";

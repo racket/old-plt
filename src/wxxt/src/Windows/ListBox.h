@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.h,v 1.1 1996/01/10 14:57:15 markus Exp $
+ * $Id: ListBox.h,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -77,6 +77,7 @@ public:
     void  SetFirstItem(char *s);
     void  SetSelection(int c, Bool select = TRUE);
     Bool  SetStringSelection(char *s);
+    int NumberOfVisibleItems();
 private:
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget w, XtPointer, XtPointer);

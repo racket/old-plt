@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.2 1996/01/11 10:26:40 markus Exp $
+ * $Id: AppMain.cc,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -155,6 +155,58 @@ void wxInitNewToplevel(void)
 				    wxAPP_DISPLAY, NULL, 0));
 }
 
+typedef struct {
+  char *flag;
+  int arg_count;
+} X_flag_entry;
+
+X_flag_entry X_flags[] = {
+  { "-display", 1 },
+  { "-geometry", 1 },
+  { "-bg", 1 },
+  { "-background", 1 },
+  { "-fg", 1 },
+  { "-foreground", 1 },
+  { "-fn", 1 },
+  { "-font", 1 },
+  { "-iconic", 0 },
+  { "-name", 1 },
+  { "-rv", 0 },
+  { "-reverse", 0 },
+  { "+rv", 0 },
+  { "-selectionTimeout", 1 },
+  { "-synchronous", 0 },
+  { "-title", 1 },
+  { "-xnllanguage", 1 },
+  { "-xrm", 1 },
+  { NULL, 0 }
+};
+
+int filter_x_readable(char **argv, int argc)
+{
+  int pos = 1, i;
+
+  while (pos < argc) {
+    for (i = 0; X_flags[i].flag; i++)
+      if (!strcmp(X_flags[i].flag, argv[pos]))
+	break;
+
+    if (!X_flags[i].flag)
+      return pos;
+    else {
+      int newpos = pos + X_flags[i].arg_count + 1;
+      if (newpos > argc) {
+	printf("%s: X Window System flag \"%s\" expects %d arguments, %d provided\n",
+	       argv[0], argv[pos], X_flags[i].arg_count, argc - pos - 1);
+	exit(-1);
+      }
+      pos = newpos;
+    }
+  }
+
+  return pos;
+}
+
 int wxEntry(int argc, char *argv[])
 {
     if (!wxTheApp) {
@@ -166,12 +218,26 @@ int wxEntry(int argc, char *argv[])
     if (!wxAPP_CLASS) wxAPP_CLASS = wxFileNameFromPath(argv[0]);
     if (!wxAPP_NAME)  wxAPP_NAME  = wxFileNameFromPath(argv[0]);
 
+    int xargc = filter_x_readable(argv, argc), ate;
+    ate = xargc - 1;
+
     wxPutAppToplevel(XtAppInitialize(
 	&wxAPP_CONTEXT, wxAPP_CLASS,
 	wxAppOptions, XtNumber(wxAppOptions),	// resource options
-	&argc, argv,				// command line arguments
+	&xargc, argv,				// command line arguments
 	NULL,					// fallback resources
 	NULL, 0));				// argument override for app-shell
+
+    if (xargc != 1) {
+      printf("%s: standard X Window System flag \"%s\" was rejected\n",
+	     argv[0], argv[1]);
+      exit(-1);
+    }
+
+    for (int i = ate + 1; i < argc; i++)
+      argv[i] = argv[i + ate];
+    argc -= ate;
+
     XtGetApplicationResources(wxAPP_TOPLEVEL, 
 			      &wxAPP_DATA, 
 			      wxAppResources, 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.1 1996/01/10 14:57:15 markus Exp $
+ * $Id: ListBox.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -329,6 +329,19 @@ void wxListBox::SetFirstItem(char *s)
     if ((n = FindString(s)) > -1) {
 	SetFirstItem(n);
     }
+}
+
+int wxListBox::NumberOfVisibleItems()
+{
+  Dimension row_height;
+  XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
+
+  int cw, ch;
+  GetClientSize(&cw, &ch);
+  
+  ch = ch / row_height;
+
+  return max(1, ch);
 }
 
 //-----------------------------------------------------------------------------

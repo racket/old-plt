@@ -20,8 +20,6 @@
 # define DONT_LOAD_INIT_FILE
 #endif
 
-#pragma optimize("", off)
-
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP

@@ -37,8 +37,10 @@ return values are ignored.
 
 ----------------------------------------
 
-> (open-url url) - Opens the given url (either a string, url record,
-  or port) in a vanilla browser frame
+> (open-url url) - Opens the given url
+  (either a string, url record, or port) 
+  in a vanilla browser frame and returns
+  the frame.
    
 ----------------------------------------
 

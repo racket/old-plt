@@ -19,13 +19,7 @@ determination of whether a package is up-to-date is made on the server
 side.
 
 Two files may be used to run version checks from MrEd and MzScheme:
-
-> check-text.ss
-(for MrEd or MzScheme)
-
-> check-gui.ss
-(for MrEd)
-
+_check-text.ss_ for (MrEd or MzScheme), and _check-gui.ss_ (for MrEd).
 These files contain modules that export a procedure named
 check-version:
 

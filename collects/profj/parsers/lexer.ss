@@ -65,7 +65,7 @@
 		EndOfLineComment
                 DocumentationComment))
     (TraditionalComment (@ "/*" NotStar CommentTail))
-    (EndOfLineComment (@ "//" (* InputCharacter) LineTerminator))
+    (EndOfLineComment (@ "//" (* InputCharacter) (: (eof) LineTerminator)))
     (DocumentationComment (@ "/**" CommentTailStar))
     (CommentTail (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
                     (* NotStar)
@@ -76,6 +76,26 @@
                         "/"))
     (NotStar (: (^ "*")))
     (NotStarNotSlash (: (^ "*" "/")))
+                     
+    (SyntaxComment (: TraditionalCommentEOF
+                      EndOfLineComment
+                      DocumentationCommentEOF))
+    (TraditionalCommentEOF (@ "/*" NotStar CommentTailEOF))
+    (DocumentationCommentEOF (@ "/**" CommentTailStarEOF))
+    (CommentTailEOF (: (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
+                        (* NotStar)
+                        (+ "*")
+                        "/")
+                       (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
+                        (* NotStar)
+                        (* "*")
+                        (eof))))
+    (CommentTailStarEOF (: (@ (* (@ (* "*") NotStarNotSlash (* NotStar) "*"))
+                          (* "*")
+                          "/")
+                         (@ (* (@ (* "*") NotStarNotSlash (* NotStar) "*"))
+                          (* "*")
+                          (eof))))
 
     ;; 3.8 (No need to worry about excluding keywords and such.  They will
     ;;      appear first in the lexer spec)
@@ -327,7 +347,7 @@
      (Identifier (syn-val 'identifier lexeme start-pos end-pos))
 
      ;; 3.7
-     (Comment (syn-val 'comment lexeme start-pos end-pos))
+     (SyntaxComment (syn-val 'comment lexeme start-pos end-pos))
 
      ;; 3.6
      ((+ WhiteSpace) (syn-val 'default lexeme start-pos end-pos))

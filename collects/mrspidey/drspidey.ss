@@ -159,7 +159,6 @@
 		    (MZLIB string)
 		    (MZLIB file)
 		    URL MRED)]
-
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
 		       ZODIAC
@@ -168,32 +167,31 @@
 		      (mrspidey:file-read@ 
 		       MRED
 		       FRAMEWORK)]
-	 [SBA : mrspidey:sba^
-	      (mrspidey:sba@ 
-	       INTERACTION 
-	       FILE-READ	
-	       ((MZLIB function) : mrspidey:mzlib:function^)
-	       (MZLIB pretty-print)
-	       (MZLIB file)
-	       (MZLIB string)
-	       MRED	
-	       ZODIAC)]
-	 [GUI : mrspidey-gui^
-	      (mrspidey-gui@ 
-	       MRED 
-	       FRAMEWORK
-	       DRSCHEME
-	       BROWSER
-	       URL
-	       ((MZLIB function) : mrspidey:mzlib:function^)
-	       (MZLIB pretty-print)
-	       (MZLIB file)
-	       (MZLIB string)
-	       SBA INTERACTION ZODIAC)]
-	 [TOOL : () 
-	       (mrspidey-tool@ 
-		MRED FRAMEWORK GUI)])
-   (export)))
+	  [SBA : mrspidey:sba^	
+	       (mrspidey:sba@ 
+		INTERACTION 
+		FILE-READ	
+		((MZLIB function) : mrspidey:mzlib:function^)
+		(MZLIB pretty-print)
+		(MZLIB file)
+		(MZLIB string)
+		ZODIAC)]
+	  [GUI : mrspidey-gui^
+	       (mrspidey-gui@ 
+		MRED 
+		FRAMEWORK
+		DRSCHEME
+		BROWSER
+		URL
+		((MZLIB function) : mrspidey:mzlib:function^)
+		(MZLIB pretty-print)
+		(MZLIB file)
+		(MZLIB string)
+		SBA INTERACTION ZODIAC)]
+	  [TOOL : () 
+		(mrspidey-tool@ 
+		 MRED FRAMEWORK GUI)])
+    (export)))
 
 
 

@@ -237,11 +237,11 @@
     (add-constructor! 'pair #t #t)
 
     (add-default-primitives!
-     `(;; for demos
+     `( ;; for demos
        (nil            nil)
        (pair           (forall (a b) (a b -> (pair a b))))
-       (left            (forall (a) ((pair a _) -> a)))
-       (right            (forall (a) ((pair _ a) -> a)))
+       (left           (forall (a) ((pair a _) -> a)))
+       (right          (forall (a) ((pair _ a) -> a)))
 
        ;; booleans
        (not            (_ -> bool) (predicate* (#t false) (#f false)))

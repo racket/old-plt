@@ -25,7 +25,6 @@
    mrspidey:interaction^
    mrspidey:kernel^
    mrspidey:templates^
-   mred^
    (zodiac : zodiac:system^)
    mrspidey:zodiac^)
 
@@ -213,12 +212,12 @@
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
 	    [($ zodiac:external _ _ _ ext)
-	     (cond 
-	      [(is-a? ext image-snip%)
-	       (make-constructed-AV 'image)]
-	      [(is-a? ext editor-snip%)
-	       (make-constructed-AV 'text-box)]
-	      [else (error "traverse-const-exact: unknown external" ext)])]
+	     (case (inferred-name (object-interface ext))
+	       [(image-snip%)
+		(make-constructed-AV 'image)]
+	       [(editor-snip%)
+		(make-constructed-AV 'text-box)]
+	       [else (error "traverse-const-exact: unknown external" ext)])]
 	    [(? box? b)
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact (unbox b)))

@@ -24,7 +24,6 @@
   (PRETTY-PRINT : mzlib:pretty-print^)
   (FILE : mzlib:file^)
   (STRING : mzlib:string^)
-  (MRED : mred^)
   (ZODIAC : zodiac:system^))
  (link
   [ZAUX : mrspidey:zodiac^ 
@@ -100,7 +99,7 @@
 	      CDL INTERACTION KERNEL)]
   [KERNEL-AUX : mrspidey:kernel-aux^
 	      ((require-relative-library-unit/sig "kern-aux.ss")
-	       CDL INTERACTION KERNEL TEMPLATES MRED ZODIAC ZAUX)]
+	       CDL INTERACTION KERNEL TEMPLATES ZODIAC ZAUX)]
   [ATYPE : mrspidey:atype^
 	 ((require-relative-library-unit/sig "atype.ss")
 	  CDL INTERACTION KERNEL KERNEL-AUX

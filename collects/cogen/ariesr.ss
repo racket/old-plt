@@ -135,11 +135,14 @@
 	(letrec ((x x)) x))
 
       (define-struct (undefined struct:exn) (id))
-
       (define signal-undefined? (make-parameter #t))
-
       (define undefined-error-format
 	 "Variable ~s referenced before definition or initialization")
+
+      (define-struct (not-boolean struct:exn) (val))
+      (define signal-not-boolean? (make-parameter #t))
+      (define not-boolean-error-format
+	"Value ~s is neither #t nor #f")
 
       (define annotate
 	(lambda (expr)
@@ -192,9 +195,21 @@
 		 ,(map read->raw (z:struct-form-fields expr)))]
 
 	    [(z:if-form? expr)
-	      `(#%if ,(annotate (z:if-form-test expr))
-		 ,(annotate (z:if-form-then expr))
-		 ,(annotate (z:if-form-else expr)))]
+	      (if (z:language<=? 'structured)
+		`(#%let ((if-test-v ,(wrap (z:if-form-test expr)
+				       (annotate (z:if-form-test expr)))))
+		   (#%if (#%eq? if-test-v #t)
+		     ,(annotate (z:if-form-then expr))
+		     (#%if (#%eq? if-test-v #f)
+		       ,(annotate (z:if-form-else expr))
+		       (#%raise (,make-not-boolean
+				  (#%format ,not-boolean-error-format
+				    if-test-v)
+				  ((#%debug-info-handler))
+				  if-test-v)))))
+		`(#%if ,(annotate (z:if-form-test expr))
+		   ,(annotate (z:if-form-then expr))
+		   ,(annotate (z:if-form-else expr))))]
 
 	    [(z:quote-form? expr)
 	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]

@@ -151,7 +151,8 @@ HWND wxWindow::GetHWND(void)
     case wxTYPE_MDICHILD:
     {
       wxWnd *wnd = (wxWnd *)handle;
-      hWnd = (HWND)wnd->handle;
+	  if (wnd)
+        hWnd = (HWND)wnd->handle;
       break;
     }
     default:
@@ -175,9 +176,6 @@ wxWindow::wxWindow(void)
   windows_id = 0;
   mouseInWindow = FALSE;
   winEnabled = TRUE;
-  caretWidth = 0; caretHeight = 0;
-  caretEnabled = FALSE;
-  caretShown = FALSE;
 
   focusWindow = NULL;
 }
@@ -1684,8 +1682,9 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL minimized, HWND WXUNUSED(activate))
       wxFrame *frame = (wxFrame *)wx_window;
       if (frame->frame_type == wxMDI_PARENT) {
         wxMDIFrame *mdiFrame = (wxMDIFrame *)this;
-        if ((mdiFrame->current_child) && ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)))
-          mdiFrame->current_child->wx_window->GetEventHandler()->OnActivate(TRUE);
+        if (mdiFrame->current_child) {
+          mdiFrame->current_child->OnActivate(state, 0, 0);
+	}
       }
     }
     return 0;
@@ -1699,14 +1698,6 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
     wxWindow *p = wx_window->GetTopLevel();
     p->focusWindow = wx_window;
     
-    // Deal with caret
-    if (wx_window->caretEnabled && (wx_window->caretWidth > 0) 
-	&& (wx_window->caretHeight > 0)) {
-      ::CreateCaret(wx_window->GetHWND(), NULL, wx_window->caretWidth, wx_window->caretHeight);
-      if (wx_window->caretShown)
-	::ShowCaret(wx_window->GetHWND());
-    }
-    
     wx_window->GetEventHandler()->OnSetFocus();
     
     return TRUE;
@@ -1717,10 +1708,6 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 BOOL wxWnd::OnKillFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
-    // Deal with caret
-    if (wx_window->caretEnabled)
-      ::DestroyCaret();
-
     wx_window->GetEventHandler()->OnKillFocus();
     return TRUE;
   } else 

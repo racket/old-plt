@@ -356,8 +356,9 @@ Bool wxFrame::Show(Bool show)
     }
   }
   
-  if (!skipShow)
+  if (!skipShow) {
     ShowWindow(GetHWND(), cshow);
+  }
   if (show) {
     wxwmBringWindowToTop(GetHWND());
     /* OnActivate(TRUE); */
@@ -384,9 +385,6 @@ Bool wxFrame::Show(Bool show)
 	  ::DrawMenuBar(cparent->handle);
 	}
       }
-
-      /* Force redraw in the MDI parent: */
-      InvalidateRect(cparent->client_hwnd, NULL, TRUE);
     }
   }
 
@@ -1121,6 +1119,9 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
 
   mcs.lParam = 0;
 
+  HWND o;
+  o = (HWND)::SendMessage(parent->client_hwnd, WM_MDIGETACTIVE, 0, 0);
+
   // turn off redrawing in the MDI client window
   SendMessage(parent->client_hwnd, WM_SETREDRAW, FALSE, 0L);
  
@@ -1142,6 +1143,11 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   SendMessage(parent->client_hwnd, WM_SETREDRAW, TRUE, 0L);
   InvalidateRect(parent->client_hwnd, NULL, TRUE);
   UpdateWindow(parent->client_hwnd);
+
+  if (o) {
+    InvalidateRect(o, NULL, TRUE); /* Because focus moved. */
+    wxwmBringWindowToTop(o);
+  }
 }
 
 static HWND invalidHandle = 0;
@@ -1254,8 +1260,7 @@ BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED
 
   ::DrawMenuBar(cparent->handle);
   
-  if (child)
-    child->GetEventHandler()->OnActivate(bActivate);
+  wxFrameWnd::OnActivate(bActivate, 0, 0);
 
   return 0;
 }

@@ -202,19 +202,43 @@
 
   (define previous-attribute (make-attributes))
 
+  (define-argument-list zodiac:scheme-expand/nal
+    (kwd expression: expr)
+    (opt (kwd parameterization: params) (current-parameterization))
+    (opt (kwd attributes: attr) 'previous)
+    (opt (kwd vocabulary: vocab) #f))
+
   (define scheme-expand
-    (opt-lambda (expr (params (current-parameterization))
-		  (attr previous-attribute))
-      (let ((attr (or attr (make-attributes))))
+    (lambda/nal zodiac:scheme-expand/nal
+      (let ((attr (cond
+		    ((eq? attr 'previous) previous-attribute)
+		    ((not attr) (make-attributes))
+		    (else attr))))
 	(set-top-level-status attr #t)
-	(expand expr attr scheme-vocabulary params))))
+	(call/nal zodiac:expand/nal expand
+	  (expression: expr)
+	  (attributes: attr)
+	  (vocabulary: (or vocab scheme-vocabulary))
+	  (parameterization: params)))))
+  
+  (define-argument-list zodiac:scheme-expand-program/nal
+    (kwd expressions: exprs)
+    (opt (kwd parameterization: params) (current-parameterization))
+    (opt (kwd attributes: attr) 'previous)
+    (opt (kwd vocabulary: vocab) #f))
 
   (define scheme-expand-program
-    (opt-lambda (exprs (params (current-parameterization))
-		  (attr previous-attribute))
-      (let ((attr (or attr (make-attributes))))
+    (lambda/nal zodiac:scheme-expand-program/nal
+      (let ((attr (cond
+		    ((eq? attr 'previous) previous-attribute)
+		    ((not attr) (make-attributes))
+		    (else attr))))
 	(set-top-level-status attr #t)
-	(expand-program exprs attr scheme-vocabulary params))))
+	(call/nal zodiac:expand-program/nal expand-program
+	  (expressions: exprs)
+	  (attributes: attr)
+	  (vocabulary: (or vocab scheme-vocabulary))
+	  (parameterization: params)))))
 
   ; ----------------------------------------------------------------------
 

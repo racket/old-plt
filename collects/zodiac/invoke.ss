@@ -86,8 +86,9 @@
 		      (let ((e (car
 				 (with-parameterization system-params
 				   (lambda ()
-				     (zodiac:scheme-expand-program
-				       (list in)))))))
+				     (call/nal zodiac:scheme-expand-program/nal
+				       zodiac:scheme-expand-program
+				       (expressions: (list in))))))))
 			(if show-raw?
 			  (zodiac:parsed->raw e)
 			  e)))))
@@ -118,10 +119,12 @@
 		      (let ((e (car
 				 (with-parameterization system-params
 				   (lambda ()
-				     (zodiac:expand-program
-				       (list in)
-				       (zodiac:make-attributes)
-				       zodiac:mrspidey-vocabulary))))))
+				     (call/nal zodiac:scheme-expand-program/nal
+				       zodiac:scheme-expand-program
+				       (expressions: (list in))
+				       (attributes: (zodiac:make-attributes))
+				       (vocabulary:
+					 zodiac:mrspidey-vocabulary)))))))
 			(if show-raw?
 			  (zodiac:parsed->raw e)
 			  e)))))

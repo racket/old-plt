@@ -977,7 +977,7 @@ void doDrawBitmapLabel(Display *dpy,
 		       Region reg)
 {
 #ifdef WX_USE_XRENDER
-  if (mask_depth > 1) {
+  if (maskmap && (mask_depth > 1)) {
     Picture dest, src, mask;
 
     dest = (Picture)wxMakeXrenderPicture(drawable, 1);
@@ -1007,7 +1007,7 @@ void doDrawBitmapLabel(Display *dpy,
   }
 #endif
 
-  if (mask_depth == 1) {
+  if (maskmap && (mask_depth == 1)) {
     XSetClipMask(dpy, agc, maskmap);
     XSetClipOrigin(dpy, agc, x, y);
   }
@@ -1020,7 +1020,7 @@ void doDrawBitmapLabel(Display *dpy,
 	      0, 0, width, height, x, y);
   }
 
-  if (mask_depth == 1) {
+  if (maskmap && (mask_depth == 1)) {
     XSetClipMask(dpy, agc, None);
     XSetClipOrigin(dpy, agc, 0, 0);
   }

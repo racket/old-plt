@@ -109,7 +109,7 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
   }
 
   if (times) {
-    m = scheme_make_bignum(1);
+    m = scheme_make_small_bignum(1, &onesmall);
     while (times--) {
       bignum_double_inplace(m, 0);      
     }

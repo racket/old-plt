@@ -76,9 +76,6 @@ START_XFORM_SKIP;
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
   o->o.type = scheme_bignum_type;
-#if MZ_PRECISE_GC
-  o->o.allocated_inline = 1;
-#endif  
   SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
   if (v < 0)
     v = -v;
@@ -104,6 +101,9 @@ Scheme_Object *scheme_make_bignum(long v)
   if (v <= BIG_MAX && v >= -BIG_MAX) {
     Small_Bignum *r;
     r = MALLOC_ONE_TAGGED(Small_Bignum);
+#if MZ_PRECISE_GC
+    r->o.allocated_inline = 1;
+#endif  
     return scheme_make_small_bignum(v, r);
   } else {
     Small_Bignum *o;
@@ -149,6 +149,9 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
   if (v <= BIG_MAX) {
     Small_Bignum *r;
     r = MALLOC_ONE_TAGGED(Small_Bignum);
+#if MZ_PRECISE_GC
+    r->o.allocated_inline = 1;
+#endif
     return scheme_make_small_bignum(v, r);
   } else {
     Small_Bignum *o;
@@ -540,6 +543,7 @@ static void bignum_double_inplace(Scheme_Object *n, int bs)
     if (bs < nl + 1) {
       /* expand */
       na = NULL; /* Might be a pointer into the middle of a small bignum */
+      /* [actually, n is currently required to not be small.] */
       naya = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (nl + 1));
       na = SCHEME_BIGDIG(n);
 

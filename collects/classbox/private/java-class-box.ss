@@ -11,7 +11,10 @@
    (lib "gui-editor-snip.ss" "alignment")
    (lib "parser.ss" "profj")
    (lib "button-snip.ss" "test-suite" "private")
+   (lib "match.ss")
    "contracted-ast.ss")
+  
+  (define (wrap x) (write x) x)
   
   (define-syntax (string-constant stx)
     (syntax-case stx ()
@@ -22,6 +25,7 @@
            [(extends) "Extends"]
            [(fields) "Fields"]
            [(methods) "Methods"]
+           [(implements) "Implements"]
            [(type) "Type"]
            [(name) "Name"]
            [(add) "Add"])]))
@@ -33,8 +37,9 @@
       
       (field
        [purpose (new text%)]
-       [class (new text%)]
-       [extends (new text%)])
+       [class (new color:text%)]
+       [extends (new color:text%)]
+       [implements (new color:text%)])
             
       #;((integer? any?)
          ((union integer? false?) (union integer? false?) (union integer? false?))
@@ -47,14 +52,14 @@
              
              #;(jfield? . -> . var-decl?)
              ;; Converts a jfield into a profj AST field
-             (define (build-field ajfield)
+             (define (build-var-decl ajfield)
                (make-var-decl (build-id (jfield-name ajfield))
                               (list (make-modifier 'public false))
                               (make-type-spec
                                (build-name (jfield-type ajfield))
                                0
-                               dummy-src)
-                              dummy-src))
+                               false)
+                              false))
              
              #;((is-a?/c text%) . -> . method?)
              ;; Converts a string into a profj AST method
@@ -65,34 +70,57 @@
              
              #;((is-a?/c text%) . -> . id?)
              ;; Make an id out of the given text
+             ;; STATUS: I'm parsing the ID with a regexp that probablly not
+             ;; the correct Java variable regexp. Furthermore, I need to parse
+             ;; it differently if it's a class name vs. field name.
              (define (build-id atext)
-               (make-id (send atext get-text)
-                        dummy-src))
+               (let ([str (send atext get-text)])
+                 (match-let ([((start . end))
+                              (regexp-match-positions (regexp "[A-Za-z_]+") str)])
+                   (make-id (substring str start end)
+                            (make-src 1 start (add1 start) (- end start) atext)))))
              
              #;((is-a?/c text%) . -> . name?)
              ;; Make a name out of the given text.
+             ;; STATUS: Is the src the same from the ID to the name?
              (define (build-name atext)
-               (make-name (build-id atext)
-                          empty
-                          dummy-src))
+               (let ([id (build-id atext)])
+                 (make-name id empty (id-src id))))
+             
+             #;(jfield? . -> . assignment?)
+             ;; makes an assignment for the constructor
+             (define (build-assignment field)
+               (make-assignment
+                false
+                false
+                (make-access
+                 false
+                 false
+                 (make-field-access
+                  (make-special-name false dummy-src "this")
+                  (build-id (jfield-name field))
+                  false))
+                '=
+                (make-access
+                 false
+                 false
+                 (list (build-id (jfield-name field))))
+                false))
              
              #;src?
              ;; "A dummy src that should be ignored
-             (define dummy-src false)
+             (define dummy-src (make-src 1 1 1 1 "window"))
              
              (let* (;(listof member?)
-                    ;; The list of profj ASTs that make up the members of this class
-                    [members
-                     (append (map build-field (send fields-area get-fields))
-                             (map build-method (send methods-area get-methods)))]
+                    [fields (map build-var-decl (send fields-area get-fields))]
+                    
+                    ;(listof member?)
+                    [methods (map build-method (send methods-area get-methods))]
                     
                     ;(listof name?)
                     ;; The list of classes this class extends
                     ;; STATUS: I don't know why this is a list, it's Kathy's data definition
-                    [extends
-                     (case level
-                       [(beginner intermediate advanced full)
-                        (list (build-name extends))])]
+                    [extends (list (build-name extends))]
                     
                     ;(listof name?)
                     ;; The interfaces this class implements
@@ -107,64 +135,38 @@
                     ;; The header of this class in profj AST data types
                     [header
                      (make-header
-                      (make-id (send class get-text)
-                               ;; FIXME This make-src is wrong. I don't account for the
-                               ;; possible error of multiple lines and I don't account for
-                               ;; not starting at the first position of the text.
-                               (make-src 1 0 1 (send class line-length 0) class))
+                      (build-id class)
                       (list (make-modifier 'public false))
                       extends
                       implements
                       empty
-                      dummy-src #;(make-src line column position 1 source))]
+                      (make-src line column position 1 source))]
                     
                     ;method?
                     ;; The constructor of the Java class
                     [constructor
                      (make-method
                       (list (make-modifier 'public false))
-                      (make-type-spec 'ctor 0 dummy-src)
+                      (make-type-spec 'ctor 0 #f)
                       empty
-                      (make-id (send class get-text) false)
-                      (map (lambda (field)
-                             (make-var-decl
-                              (make-id (send (jfield-name field) get-text) false)
-                              empty
-                              (make-type-spec
-                               (build-name (jfield-type field))
-                               0
-                               false)
-                              false))
+                      (build-id class)
+                      (map build-var-decl
                            (send fields-area get-fields))
                       empty
                       (make-block
-                       (map (lambda (field)
-                              (make-call false false false
-                                         (make-special-name false false "super")
-                                         empty false)
-                              (make-assignment
-                               false
-                               false
-                               (make-access
-                                false
-                                false
-                                (make-field-access
-                                 (make-special-name false false "this")
-                                 (make-id "car" false)
-                                 false))
-                               '=
-                               (make-access false false (list (make-id "car" false)))
-                               false))
-                            (send fields-area get-fields))
+                       (cons (make-call false false false
+                                        (make-special-name false false "super")
+                                        empty false)
+                             (map build-assignment
+                                  (send fields-area get-fields)))
                        false)
                       false
                       false)]
                     )
                
-               ;; Right here I need to manipulate the boxes look and feel to be the
-               ;; correct language level.
+               (arange-box level)
                (make-class-def header
-                               (cons constructor members)
+                               (append fields (cons constructor methods))
                                #f
                                box-pos
                                class-loc
@@ -181,16 +183,25 @@
        [main (new aligned-pasteboard%)]
        [purpose-line (add-purpose-line main purpose)]
        [class-line (new class-line% (class class) (extends extends) (parent main))]
+       [implements-line (new implements-line% (implements implements) (parent main))]
        [fields-area (new fields-area% (parent main))]
        [methods-area (new methods-area%
                           (super extends)
                           (fields-area fields-area)
                           (parent main))])
       
+      #;(level? . -> . void?)
+      ;; Aranges the box to look the way it should for a given language level
+      (define (arange-box level)
+        (case level
+          [(beginner) (send implements-line show false)]
+          [(intermediate advanced full)
+           (send implements-line show true)]))
+      
       (super-new (editor main))
       (inherit set-snipclass)
       (set-snipclass jcb-sc)))
-  
+    
   (define java-class-box-snipclass%
     (class snip-class%
       (define/override (read f)
@@ -220,6 +231,14 @@
       (add (make-object string-snip% (string-constant extends)))
       (add (new editor-snip% (editor extends)))))
   
+  (define implements-line%
+    (class horizontal-alignment%
+      (inherit add)
+      (init-field implements)
+      (super-new)
+      (add (make-object string-snip% (string-constant implements)))
+      (add (new editor-snip% (editor implements)))))
+    
   (define fields-area%
     (class vertical-alignment%
       (inherit add)
@@ -238,7 +257,7 @@
                     (label (string-constant add))
                     (callback
                      (lambda (button event)
-                       (let ([new-field (make-jfield (new text%) (new text%))])
+                       (let ([new-field (make-jfield (new color:text%) (new color:text%))])
                          (set! fields (append fields (list new-field)))
                          (send table add
                                (vector (new editor-snip% (editor (jfield-type new-field)))
@@ -297,8 +316,7 @@
   (define j (new java-class-box%))
   (send e insert j)
   (send f show true)
-  #;(define class-func (let-values ([(a b c) (send j read-one-special #f #f)])
-                                  a))
+  #;(define class-func (let-values ([(a b c) (send j read-one-special #f #f)]) a))
   #;(class-func 'beginner #f #f 1)
   |#
   )

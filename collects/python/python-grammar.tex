@@ -12,19 +12,12 @@
 \newpage
 
 \section{Program}
+
 The grammar for Python programs is presented here.  The empty string is represented by $\varepsilon$.
 
 The starting non-terminal is usually {\bf \verb+<+file\_input~\ref{filezzzinputb}\verb+>+}, but {\bf \verb+<+eval\_input~\ref{evalzzzinputb}\verb+>+} is used instead by the \verb|eval| function.
 
-If a non-terminal is named {\bf nonterm\_list\_plus}, it is assumed that it defines the regular expression {\bf nonterm+}.
-
-\subsection{ident}
-\label{identb}
-\begin{tabular}{lcl}
-{\bf \verb+<+ident\verb+>+} & ::=  & NAME \\
-\end{tabular} \\
-
-The NAME token is a valid Python identifier.  A valid Python identifier is an alphanumeric sequence of characters starting with a letter.  The underscore character (\_) counts as a letter.  The language is case-sensitive.
+If a non-terminal is named {\bf nonterm\_list\_plus}, it is assumed that it defines the regular expression {\bf nonterm+}, while {\bf nonterm\_list} usually defines the regular expression {\bf nonterm*}, though it might be {\bf (nonterm ,)*} as well.
 
 \subsection{file\_input}
 \label{filezzzinputb}
@@ -43,7 +36,7 @@ The following non-terminal ({\bf file\_{}input}) is the result of the parser in 
 
 \subsection{eval\_input}
 \label{evalzzzinputb}
-Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Not all statements (\ref{stmtb}) are allowed; only expression statements (\ref{exprzzzstmtb}) are valid in this case, since the others are executed for side-effects. \\
+Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only expressions (\ref{tuplezzzorzzztestb}) followed by newlines are allowed. \\
 
 \begin{tabular}{lcl}
 {\bf \verb+<+eval\_input\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -90,7 +83,7 @@ Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation 
  & \verb+|+  & {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
 \end{tabular} \\
 
-An expression statement consists of either an in-place variable mutation operation; an assignment, which can define or mutate variables; or an expression (\ref{tuplezzzorzzztestb}), which will be displayed in the output of the interpreter.
+An expression statement consists of either an in-place variable mutation operation or a {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+} .
 
 \subsection{testlist\_list\_plus}
 \label{testlistzzzlistzzzplusb}
@@ -99,7 +92,7 @@ An expression statement consists of either an in-place variable mutation operati
  & \verb+|+  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|=| {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+}  \\
 \end{tabular} \\
 
-A tuple is a list of tests.  A ``test'' is an expression or a boolean expression.  i.e., a test is either an expression x, ``x or y'', ``x and y'', or ``not x''.
+A \verb|testlist_list_plus| is an assignment, which can define or mutate variables, or an expression (\ref{tuplezzzorzzztestb}), which will be displayed in the output of the interpreter.
 
 \subsection{augassign}
 \label{augassignb}
@@ -125,19 +118,13 @@ A tuple is a list of tests.  A ``test'' is an expression or a boolean expression
  & \verb+|+  & print \verb|>>| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
 \end{tabular} \\
 
-http://www.python.org/doc/current/ref/print.html
+\urlh{http://www.python.org/doc/current/ref/print.html}{Print Statement\\ (\path{\1})}
 
 \verb|print| has an extended form, sometimes referred to as ``print chevron.'' 
 In this form, the first expression after the \verb+>>+ must evaluate to a ``file-like'' 
-object, specifically an object that has a write() method as described above, or \verb|None|.
+object, specifically an object that has a \verb|write| method, or \verb|None|.
 
-\subsection{test\_list}
-\label{testzzzlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+test\_list\verb+>+} & ::=  & $\varepsilon$ \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
-\end{tabular}
+
 
 \subsection{del\_stmt}
 \label{delzzzstmtb}
@@ -563,15 +550,7 @@ Expressions produce a value that can be used in an assignment or a boolean check
 {\bf \verb+<+tuple\verb+>+} & ::=  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
 \end{tabular} \\
 
-A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptive sometimes.
-
-\subsection{testlist}
-\label{testlistb}
-\begin{tabular}{lcl}
-{\bf \verb+<+testlist\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
-\end{tabular}
+A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptiveDaniel sometimes.
 
 \subsection{test}
 \label{testb}
@@ -580,6 +559,22 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
 \begin{tabular}{lcl}
 {\bf \verb+<+test\verb+>+} & ::=  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+lambdef~\ref{lambdefb}\verb+>+}  \\
+\end{tabular}
+
+\subsection{test\_list}
+\label{testzzzlistb}
+\begin{tabular}{lcl}
+{\bf \verb+<+test\_list\verb+>+} & ::=  & $\varepsilon$ \\
+ & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+ & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
+\end{tabular}
+
+\subsection{testlist}
+\label{testlistb}
+\begin{tabular}{lcl}
+{\bf \verb+<+testlist\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
+ & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+ & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
 \end{tabular}
 
 \subsection{lambdef}
@@ -852,7 +847,7 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
 \end{tabular} \\
 
-Used in list comprehensions (\ref{listzzzforb}).
+Used in list comprehensions (\ref{listzzzforb}).  A safe \verb|testlist| cannot end with a comma.
 
 \subsection{dictmaker}
 \label{dictmakerb}
@@ -869,4 +864,11 @@ Used in list comprehensions (\ref{listzzzforb}).
  & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
+\subsection{ident}
+\label{identb}
+\begin{tabular}{lcl}
+{\bf \verb+<+ident\verb+>+} & ::=  & NAME \\
+\end{tabular} \\
+
+The NAME token is a valid Python identifier.  A valid Python identifier is an alphanumeric sequence of characters starting with a letter.  The underscore character (\_) counts as a letter.  The language is case-sensitive.
 \end{document}

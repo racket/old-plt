@@ -52,14 +52,13 @@
 								     (symbol? (cadr x))))
 							      (cdr x)))))
       
-      (define (class/d* super interfaces init-args clauses . def/exps)
+      (define (class/d* super-f interfaces init-args clauses . def/exps)
 	(apply class/d*/names '(this super-init) super interfaces init-args clauses def/exps))
 
-      (define (class/d super init-args clauses . def/exps)
+      (define (class/d super-f init-args clauses . def/exps)
 	(apply class/d* super '() init-args clauses def/exps))
 
-      (define (class/d*/names local-names super interfaces init-args clauses . def/exps)
-
+      (define (class/d*/names-f local-names super interfaces init-args clauses . def/exps)
 	(unless (and (list? local-names)
 		     (= 2 (length local-names))
 		     (andmap symbol? local-names))
@@ -130,4 +129,24 @@
 			       (rename ,@renamed-vars)
 			       (inherit ,@inherited-vars)
 
-			       ,@(apply append clausess))))))))
+			       ,@(apply append clausess)))))))
+      
+
+      (define namespace (make-namespace))
+      
+      (parameterize ([current-namespace namespace])
+        (eval `(define-macro class/d*/names ,class/d*/names-f))
+        (eval `(define-macro class/d* ,class/d*-f))
+        (eval `(define-macro class/d ,class/d-f)))
+      
+      (define (class/d*/names . args)
+        (parameterize ([current-namespace namespace])
+          (expand-defmacro `(class/d*/names ,@args))))
+      
+      (define (class/d* . args)
+        (parameterize ([current-namespace namespace])
+          (expand-defmacro `(class/d* ,@args))))
+      
+      (define (class/d . args)
+        (parameterize ([current-namespace namespace])
+          (expand-defmacro `(class/d ,@args)))))

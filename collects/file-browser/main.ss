@@ -128,12 +128,14 @@
 
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
-             (send (car (send container get-children)) enable #t)
+             (if active?
+                 (send (car (send container get-children)) enable #t))
              (super-enable-evaluation))
            
            (rename (super-disable-evaluation disable-evaluation))
            (define/override (disable-evaluation)
-             (send (car (send container get-children)) enable #f)
+             (if active?
+                 (send (car (send container get-children)) enable #f))
              (super-disable-evaluation))
            
            (rename (super-execute-callback execute-callback))

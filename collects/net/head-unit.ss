@@ -141,7 +141,7 @@
 	(let ([h (insert-field
 		  "Subject" subject
 		  (insert-field 
-		   "Date" (parameterize ([date-display-format 'rfc822])
+		   "Date" (parameterize ([date-display-format 'rfc2822])
 			    (date->string (seconds->date (current-seconds)) #t))
 		   empty-header))])
 	  ;; NOTE: bccs don't go into the header; that's why

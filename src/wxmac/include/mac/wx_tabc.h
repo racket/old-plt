@@ -30,10 +30,18 @@ class wxTabChoice : public wxItem
 
   virtual char *GetLabel();
 
+  virtual void Refresh(void);
+
   int tab_count;
   char **tab_labels;
 
+  ControlHandle pane;
+
+  virtual void Activate(Bool gray);
+  virtual void MaybeMoveControls();
+
 protected:
+  virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);
   virtual void OnEvent(wxMouseEvent *event);
 };

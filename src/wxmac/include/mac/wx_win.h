@@ -314,7 +314,7 @@ class wxWindow: public wxbWindow
   /* Other methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   virtual void Paint(void);
-  void Refresh(void);
+  virtual void Refresh(void);
 	
   virtual Bool PreOnEvent(wxWindow *win, wxMouseEvent *event);
   virtual Bool PreOnChar(wxWindow *win, wxKeyEvent *event);

@@ -431,6 +431,7 @@ void wxSlider::SetValue(int value)
   ::SetControlValue(cMacControl, value);
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
     Paint();
+    Refresh(); /* in case an update is in progress */
   }
 }
 

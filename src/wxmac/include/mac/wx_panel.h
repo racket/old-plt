@@ -42,13 +42,13 @@ protected:
 
     wxArea*     cPanelBorder;
 
-    ControlHandle paneControl;
-
 friend class wxWindow;	
 //=============================================================================
 // Public methods
 //=============================================================================
 public:
+
+        ControlHandle paneControl;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Constructors

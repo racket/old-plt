@@ -198,23 +198,27 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 static Scheme_Object *tabStyle_wxINVISIBLE_sym = NULL;
+static Scheme_Object *tabStyle_wxBORDER_sym = NULL;
 
 static void init_symset_tabStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(tabStyle_wxINVISIBLE_sym);
   tabStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
+  wxREGGLOB(tabStyle_wxBORDER_sym);
+  tabStyle_wxBORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
 }
 
 static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!tabStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_tabStyle());
+  if (!tabStyle_wxBORDER_sym) WITH_VAR_STACK(init_symset_tabStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == tabStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else if (i == tabStyle_wxBORDER_sym) { result = result | wxBORDER; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

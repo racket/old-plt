@@ -19,3 +19,12 @@
 #define OPERATOR_NEW_ARRAY
 
 #define WXME_FOR_MRED 1
+
+/* code added by JBC because compiler no longer handles keyword 
+   'far' for PPC */
+   
+#if defined(__powerc)
+#  define WX_FAR /**/
+# else
+#  define WX_FAR far
+# endif

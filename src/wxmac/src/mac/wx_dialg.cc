@@ -273,7 +273,7 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
     switch (callBackSelector)
     {
         case kNavCBEvent:
-            QueueMrEdEvent(callBackParms->eventData.event);
+            QueueMrEdEvent(callBackParms->eventData.eventDataParms.event);
             break;
     }
 }

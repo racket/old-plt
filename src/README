@@ -48,11 +48,19 @@ mkbordyn.bat script requires bcc23.exe.)
  Compiling for Mac OS (OS X or Classic)
 ========================================================================
 
-Read the instructions in plt/src/mac/README.
+OS X:
+
+Read the instructions in the following section, then follow the 
+instructions in plt/src/mac/README.
+
+Classic:
+
+Follow the instructions in plt/src/mac/README.
+
 
 ========================================================================
- Compiling for supported Unix variants (including Linux),
-               Mac OS X (MzScheme only), or Cygwin (MzScheme only)
+ Compiling for supported Unix variants (including Linux)
+               or Cygwin (MzScheme only)
 ========================================================================
 
  0. If you have an old PLT installation in the target directory,

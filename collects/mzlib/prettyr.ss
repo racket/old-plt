@@ -29,7 +29,7 @@
 ;                         instead of like `write'
 ;
 ;  pretty-print-columns - parameter for the default number of columns
-;    initial setting: 79
+;    or 'infinity; initial setting: 79
 ;
 ;  pretty-print-print-line - parameter of a procedure that prints
 ;   to separate each line; 0 indicate before the first line, #f after the
@@ -78,7 +78,7 @@
 		       (unless (integer? x)
 			       (raise-type-error 
 				'pretty-print-columns
-				"integer"
+				"integer or 'infinity"
 				x))
 		       x)))
 
@@ -191,6 +191,10 @@
      (define table (make-hash-table)) ; Hash table for looking for loops
 
      (define-struct mark (str def))
+
+     (define max-expr-width (if (number? width)
+				width
+				+inf.0))
 
      (define found-cycle
        (or print-graph?
@@ -638,8 +642,6 @@
 	 (define indent-general 2)
 
 	 (define max-call-head-width 5)
-
-	 (define max-expr-width 50)
 
 	 (define (style head)
 	   (case head

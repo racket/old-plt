@@ -21,6 +21,9 @@ and `match-type', and displays result in the Help Desk browser.  The
 The `match-type' is one of "exact-match", "containing-match", or 
 "regexp-match".  The `lucky?' parameter indicates whether to do a 
 lucky search or not; it is considered true for any value other than #f.
+Side effect: the `search-type' and `match-type' values are stored as 
+preferences, reflected in the Help Desk search pane as the values  
+of options shown in drop-down lists.
 
 > goto-manual-link hd-cookie manual index-key -> void
 

@@ -365,6 +365,10 @@ typedef struct Scheme_Jumpup_Buf {
   long stack_size, stack_max_size;
   struct Scheme_Jumpup_Buf *cont;
   mz_jmp_buf buf;
+#ifdef MZ_PRECISE_GC
+  void *gc_var_stack;
+  int gc_var_count;
+#endif
 } Scheme_Jumpup_Buf;
 
 enum {

@@ -249,6 +249,51 @@ static void *cautious_mark(void *p)
     return p;
 }
 
+void GC_mark_variable_stack(void **var_stack,
+			    int var_count,
+			    long delta)
+{
+  int i, stack_depth;
+
+  stack_depth = 0;
+  while (var_stack) {
+    int size = var_count;
+    void ***p;
+
+    var_stack = (void **)((char *)var_stack + delta);
+    p = (void ***)(var_stack + 2);
+    
+    while (size--) {
+      if (!*p) {
+	/* Array */
+	long count = ((long *)p)[2];
+	void **a = ((void ***)p)[1];
+	p += 2;
+	size -= 2;
+	a = (void **)((char *)a + delta);
+	while (count--) {
+	  *a = cautious_mark(*a);
+	  a++;
+	}
+      } else {
+	void **a = *p;
+	a = (void **)((char *)a + delta);
+	*a = cautious_mark(*a);
+      }
+      p++;
+    }
+
+    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
+      printf("bad %d\n", stack_depth);
+      *(int *)0x0 = 1;
+    }
+
+    var_count = ((long *)var_stack)[1]; 
+    var_stack = *var_stack;
+    stack_depth++;
+  }
+}
+
 void gcollect(int needsize)
 {
   /* Check old: */
@@ -256,9 +301,8 @@ void gcollect(int needsize)
   void *new_space;
   long new_size = alloc_size;
   void **tagged_mark, **untagged_mark;
-  void **var_stack;
   char *bitmap;
-  int i, var_count, stack_depth;
+  int i;
 
   printf("gc\n");
 
@@ -319,39 +363,9 @@ void gcollect(int needsize)
   tagged_mark = new_tagged_high = (void **)new_space;
   untagged_mark = new_untagged_low = (void **)(new_space + new_size);
 
-  var_stack = GC_variable_stack;
-  var_count = GC_variable_count;
-  stack_depth = 0;
-  while (var_stack) {
-    int size = var_count;
-    void ***p = (void ***)(var_stack + 2);
-    
-    while (size--) {
-      if (!*p) {
-	/* Array */
-	long count = ((long *)p)[2];
-	void **a = ((void ***)p)[1];
-	p += 2;
-	size -= 2;
-	while (count--) {
-	  *a = cautious_mark(*a);
-	  a++;
-	}
-      } else {
-	**p = cautious_mark(**p);
-      }
-      p++;
-    }
-
-    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
-      printf("bad %d\n", stack_depth);
-      *(int *)0x0 = 1;
-    }
-
-    var_count = ((long *)var_stack)[1]; 
-    var_stack = *var_stack;
-    stack_depth++;
-  }
+  GC_mark_variable_stack(GC_variable_stack,
+			 GC_variable_count,
+			 0);
 
   for (i = 0; i < roots_count; i += 2) {
     void **s = (void **)roots[i];

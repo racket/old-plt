@@ -39,6 +39,8 @@
 #undef memcpy
 #endif
 
+#ifndef MZ_PRECISE_GC
+
 /**********************************************************************/
 
 /* When we copy the stack, we must set up GC to specially traverse the
@@ -84,9 +86,6 @@ int scheme_num_copied_stacks = 0;
 
 static void push_copied_stacks(int init)
 {
-#ifndef MZ_PRECISE_GC
-  /* FIXME */
-
   /* This is called after everything else is marked.
      Mark from those stacks that are still reachable. If
      we mark from a stack, we need to go back though the list
@@ -125,7 +124,6 @@ static void push_copied_stacks(int init)
       }
     }
   } while (pushed_one);
-#endif
 }
 
 static void init_push_copied_stacks(void)
@@ -144,11 +142,8 @@ void scheme_init_setjumpup(void)
   first_copied_stack = MALLOC_LINK();
   *first_copied_stack = NULL;
 
-#ifndef MZ_PRECISE_GC
-  /* FIXME */
   GC_push_last_roots = init_push_copied_stacks;
   GC_push_last_roots_again = update_push_copied_stacks;
-#endif
 }
 
 static void remove_cs(void *_cs, void *unused)
@@ -208,6 +203,15 @@ void set_copy(void *s_c, void *c)
 
 /**********************************************************************/
 
+#else
+
+/* Precise GC: */
+# define MALLOC_STACK(size) scheme_malloc_atomic(size)
+# define get_copy(s_c) (sc)
+# define set_copy(s_c, c) sc = c
+
+#endif
+
 #define memcpy(dd, ss, ll) \
 {  stack_val *d, *s; long l; \
    l = ll / sizeof(stack_val); d = (stack_val *)dd; s = (stack_val *)ss; \
@@ -240,6 +244,11 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
     b->stack_max_size = size;
   }
   b->stack_size = size;
+
+#ifdef MZ_PRECISE_GC
+  b->gc_var_stack = GC_variable_stack;
+  b->gc_var_count = GC_variable_count;
+#endif
   
   memcpy(get_copy(b->stack_copy),
 	 b->stack_from,
@@ -275,6 +284,11 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 	   c->stack_size);
     c = c->cont;
   }
+
+#ifdef MZ_PRECISE_GC
+  GC_variable_stack = c->gc_var_stack;
+  GC_variable_count = b->gc_var_count;
+#endif
 
 #ifdef WIN32_SETJMP_HACK
   /* Mystical hack for Win32 with Borland C++ 4.5 */
@@ -337,11 +351,13 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   if (b->stack_copy) {
+#ifndef MZ_PRECISE_GC
     /* Drop the copy of the stack, */
     /* remove the finalizer, */
     /* and explicitly call the finalization proc */
     GC_register_finalizer(b->stack_copy, NULL, NULL, NULL, NULL);
     remove_cs(b->stack_copy, NULL);
+#endif
 
     scheme_init_jmpup_buf(b);
   }

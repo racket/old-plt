@@ -52,6 +52,10 @@
 
    drscheme-print
 
+   INITIAL-LINE
+   INITIAL-COLUMN
+   INITIAL-OFFSET
+   
    format-source-loc
    
    primitive-eval

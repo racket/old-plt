@@ -10,6 +10,10 @@
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^])
 
+  (define INITIAL-LINE 1)
+  (define INITIAL-COLUMN 1)
+  (define INITIAL-OFFSET 0)
+
   (define original-output-port (current-output-port))
   (define (printf . args)
     (apply fprintf original-output-port args))
@@ -200,7 +204,10 @@
 	 (process/zodiac
 	  (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
 	    (zodiac:read port
-			 (zodiac:make-location 0 0 0 (path->complete-path filename))
+			 (zodiac:make-location INITIAL-LINE
+					       INITIAL-COLUMN
+					       INITIAL-OFFSET
+					       (path->complete-path filename))
 			 #t 1))
 	  f
 	  annotate?))
@@ -309,7 +316,7 @@
 	      (zodiac:location-line start-location)
 	      (zodiac:location-column start-location)
 	      (zodiac:location-line end-location)
-	      (zodiac:location-column end-location))))
+	      (+ (zodiac:location-column end-location) 1))))
 
   ;; (parameter (string debug-info -> void))
   (define error-display/debug-handler
@@ -404,7 +411,7 @@
     (define (drscheme-eval-handler sexp)
       (if (setting-use-zodiac? (current-setting))
 	  (let* ([z (or (unbox aries:error-box)
-			(let ([loc (zodiac:make-location 0 0 0 'eval)])
+			(let ([loc (zodiac:make-location INITIAL-LINE INITIAL-COLUMN INITIAL-OFFSET 'eval)])
 			  (zodiac:make-zodiac 'mzrice-eval loc loc)))]
 		 [answer (list (void))]
 		 [f

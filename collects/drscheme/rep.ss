@@ -663,7 +663,10 @@
 				       'string)))
 			     (if (and (basis:setting-use-zodiac? user-setting)
 				      (let* ([p (open-input-file filename)]
-					     [loc (zodiac:make-location 0 0 0 filename)]
+					     [loc (zodiac:make-location basis:INITIAL-LINE
+									basis:INITIAL-COLUMN
+									basis:INITIAL-OFFSET
+									filename)]
 					     [chars (begin0
 						     (list (read-char p) (read-char p) (read-char p) (read-char p))
 						     (close-input-port p))])

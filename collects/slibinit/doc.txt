@@ -15,9 +15,18 @@ That's enough if the SCHEME_LIBRARY_PATH environment variable is
 defined, or if SLIB is installed as an "slib" collection (i.e., in an
 "slib" directory in the same location as the "mzlib" directory).
 
-Note that SLIB is not integerated with MzScheme's module system.
-Instead, SLIB works in the top-level environment, and it provides its
-own "feature" system that re-defines `require'.
+
+SLIB is not integerated with MzScheme's module system.  Instead, SLIB
+works in the top-level environment, and it provides its own "feature"
+system that re-defines `require'.
+
+
+SLIB's `implementation-vicinity' points to the PLT installation
+directory. If that directory is not writable by SLIB users, then
+initialize the installation with
+
+ (require (lib "load.ss" "slibinit"))
+ (require 'new-catalog) ; which is an SLIB `require'
 
 
 The initialization file contains one system-dependent setting:
@@ -27,4 +36,4 @@ is in the file, but commented out. The only problem with using the
 32-bit value for a 64-bit architecture is a decrease in performance.
 
 No other changes should be necessary. Send patches to
-scheme@cs.rice.edu.
+bugs@plt-scheme.org.

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.h,v 1.4 1999/05/20 20:51:15 mflatt Exp $
+ * $Id: GlobalData.h,v 1.5 1999/11/04 17:25:32 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -78,14 +78,6 @@ wxWindow *wxGetModalWindow(wxObject*);
 void wxPushModalWindow(wxObject*,wxWindow *);
 void wxPopModalWindow(wxObject*,wxWindow *);
 
-//-- Events --------------------------------------------------------------------
-
-extern wxList wxEventClassList;
-extern wxList wxEventNameList;
-extern wxList wxPrimaryEventHandlerList;
-extern wxList wxPreEventHandlerList;
-extern wxList wxPostEventHandlerList;
-
 //-- Frame --------------------------------------------------------------------
 
 extern wxChildList *wxGetTopLevelWindowsList(wxObject*);
@@ -115,7 +107,7 @@ extern wxPrintPaperDatabase* wxThePrintPaperDatabase;
 #if defined (Uses_XtIntrinsic) || defined (Uses_XtIntrinsicP) || defined (Uses_XLib)
 extern XrmDatabase wxResourceDatabase;
 #endif
-extern wxList wxResourceCache;
+extern wxList *wxResourceCache;
 
 //-- simple language support---------------------------------------------------
 
@@ -167,6 +159,6 @@ extern wxCursor* wxIBEAM_CURSOR;
 
 //-- Types --------------------------------------------------------------------
 
-extern wxTypeTree wxAllTypes;
+extern wxTypeTree *wxAllTypes;
 
 #endif // GlobalData_h

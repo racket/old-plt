@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: Clipboard.cc,v 1.1.1.1 1997/12/22 17:28:54 mflatt Exp $
+ * RCS_ID:      $Id: Clipboard.cc,v 1.2 1999/11/04 17:25:35 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -51,6 +51,11 @@ void wxInitClipboard(void)
   xa_targets = ATOM("TARGETS");
 }
 
+wxClipboardClient::wxClipboardClient()
+{
+  formats = new wxStringList();
+}
+
 wxClipboard::wxClipboard()
 {
   clipOwner = NULL;
@@ -77,10 +82,10 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
 
   if (*target == xa_targets) {
     if (cb->clipOwner) {
-      count = cb->clipOwner->formats.Number();
-      extra = (cb->clipOwner->formats.Member("TEXT")) ? 1 : 0;
+      count = cb->clipOwner->formats->Number();
+      extra = (cb->clipOwner->formats->Member("TEXT")) ? 1 : 0;
       cb->receivedTargets = new Atom[count + extra];
-      formats = cb->clipOwner->formats.ListToArray(FALSE);
+      formats = cb->clipOwner->formats->ListToArray(FALSE);
       for (i = 0; i < count; i++)
 	((Atom *)cb->receivedTargets)[i] = ATOM(formats[i]);
       if (extra)
@@ -106,8 +111,8 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
   cb->receivedTargets = NULL;
 
   if (cb->clipOwner) {
-    formats = cb->clipOwner->formats.ListToArray(FALSE);
-    for (i = cb->clipOwner->formats.Number(); i--; ) {
+    formats = cb->clipOwner->formats->ListToArray(FALSE);
+    for (i = cb->clipOwner->formats->Number(); i--; ) {
       xa = ATOM(formats[i]);
       if (xa == *target)
 	break;
@@ -269,7 +274,7 @@ static int CheckReady(void *v)
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {
-    if (clipOwner->formats.Member(format))
+    if (clipOwner->formats->Member(format))
       return clipOwner->GetData(format, length);
     else
       return NULL;

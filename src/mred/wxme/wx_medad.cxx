@@ -166,7 +166,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
 #if USE_OLD_TYPE_SYSTEM
   if (!type_added) {
-    wxAllTypes.AddType(wxTYPE_MEDIA_CANVAS, wxTYPE_CANVAS, "media-canvas");
+    wxAllTypes->AddType(wxTYPE_MEDIA_CANVAS, wxTYPE_CANVAS, "media-canvas");
     type_added = TRUE;
   }
 

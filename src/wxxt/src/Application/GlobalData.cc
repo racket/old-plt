@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.cc,v 1.2 1998/04/11 13:57:29 mflatt Exp $
+ * $Id: GlobalData.cc,v 1.3 1999/11/04 17:25:31 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -53,14 +53,6 @@ Display* wxAPP_DISPLAY = 0;
 Screen*	 wxAPP_SCREEN = 0;
 Window   wxAPP_ROOT = 0;
 
-//-- Events --------------------------------------------------------------------
-
-wxList wxEventClassList(wxKEY_INTEGER);
-wxList wxEventNameList(wxKEY_INTEGER);
-wxList wxPrimaryEventHandlerList;
-wxList wxPreEventHandlerList;
-wxList wxPostEventHandlerList;
-
 //-- GDI collections ----------------------------------------------------------
 
 wxColourDatabase* wxTheColourDatabase = 0;
@@ -82,7 +74,7 @@ wxPrintSetupData*     wxThePrintSetupData = 0;
 //-- Resources ----------------------------------------------------------------
 
 XrmDatabase wxResourceDatabase;
-wxList wxResourceCache(wxKEY_STRING);
+wxList *wxResourceCache;
 
 //-- simple language support---------------------------------------------------
 
@@ -134,5 +126,4 @@ wxPen* wxLIGHT_GREY_PEN = 0;
 
 //-- Types --------------------------------------------------------------------
 
-wxTypeTree wxAllTypes;
-
+wxTypeTree *wxAllTypes;

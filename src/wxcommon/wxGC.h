@@ -28,7 +28,7 @@ typedef void (*GCCleanUpFunc)(void* obj, void* clientData);
 
 extern "C" {
   void gc_mark_external_invalid(void *);
-  void GC_cleanup(void *obj, void *displ);
+  void GC_cleanup(void *obj, void *ignored);
 };
 
 #include "gc.h"
@@ -47,7 +47,7 @@ public:
   inline gc();
   inline gc(int cleanup);
   inline virtual ~gc();
-  inline void install_cleanup();
+  void install_cleanup();
 
   inline void *operator new(size_t size);
   inline void *operator new(size_t size, GCPlacement gcp);
@@ -78,24 +78,6 @@ inline gc::~gc(void)
   GC_register_finalizer_ignore_self(this, 0, 0, 0, 0);
   if (__gc_external) 
     gc_mark_external_invalid(__gc_external);
-}
-
-inline void gc::install_cleanup(void)
-{
-  register void *base = GC_base((void *)this);
-
-  if (base) {
-    GC_finalization_proc old_fn;
-    void *old_data;
-    GC_register_finalizer_ignore_self(base, GC_cleanup,
-				      (void *)((char *)this - (char *)base), 
-				      &old_fn, &old_data);
-    if (old_fn) {
-      /* Put the old one back. We don't need to register. */
-      GC_register_finalizer_ignore_self(base, old_fn, old_data, 
-					&old_fn, &old_data);
-    }
-  }
 }
 
 /***** Allocators: ******/

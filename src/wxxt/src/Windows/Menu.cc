@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.13 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Menu.cc,v 1.14 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -84,8 +84,6 @@ wxMenu::~wxMenu(void)
 // create and popup menu, will be destroyed by wxMenuCallback
 //-----------------------------------------------------------------------------
 
-static wxList poppedup_menus;
-
 extern "C" {
   extern void wxAddGrab(Widget);
   extern void wxRemoveGrab(Widget);
@@ -130,8 +128,6 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     XtAddGrab(X->shell, TRUE, FALSE);
     wxAddGrab(X->shell);
     XtCallActionProc(X->menu, "start", &xevent, NULL, 0);
-
-    poppedup_menus.Append(this);
 
     return TRUE;
 }
@@ -426,9 +422,6 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     menu->X->shell = menu->X->menu = 0;
     delete menu->X; menu->X=NULL;
 
-    poppedup_menus.DeleteObject(menu);
-
-    /* MATTHEW: check item */
     if (item && (item->ID != -1)) {
       wxPopupEvent *event;
 

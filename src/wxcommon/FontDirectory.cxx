@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cxx,v 1.2 1999/11/12 22:33:04 mflatt Exp $
+ * $Id: FontDirectory.cxx,v 1.3 1999/11/12 22:50:37 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -165,7 +165,7 @@ char *font_defaults[] = {
   NULL
 };
 
-wxFontNameDirectory wxTheFontNameDirectory;
+wxFontNameDirectory *wxTheFontNameDirectory;
 
 enum {
   wxWEIGHT_NORMAL,
@@ -292,17 +292,18 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
     *v = copystring(internal);
 }
 
-void wxFontNameDirectory::Initialize()
+void wxInitializeFontNameDirectory(void)
 {
-  wxTheFontNameDirectory.Initialize(wxSYSTEM, wxSYSTEM, "System");
-  wxTheFontNameDirectory.Initialize(wxDEFAULT, wxDEFAULT, "Default");
-  wxTheFontNameDirectory.Initialize(wxDECORATIVE, wxDECORATIVE, "Decorative");
-  wxTheFontNameDirectory.Initialize(wxROMAN, wxROMAN, "Roman");
-  wxTheFontNameDirectory.Initialize(wxMODERN, wxMODERN, "Modern");
-  wxTheFontNameDirectory.Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
-  wxTheFontNameDirectory.Initialize(wxSWISS, wxSWISS, "Swiss");
-  wxTheFontNameDirectory.Initialize(wxSCRIPT, wxSCRIPT, "Script");
-  wxTheFontNameDirectory.Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
+  wxTheFontNameDirectory = new wxFontNameDirectory;
+  wxTheFontNameDirectory->Initialize(wxSYSTEM, wxSYSTEM, "System");
+  wxTheFontNameDirectory->Initialize(wxDEFAULT, wxDEFAULT, "Default");
+  wxTheFontNameDirectory->Initialize(wxDECORATIVE, wxDECORATIVE, "Decorative");
+  wxTheFontNameDirectory->Initialize(wxROMAN, wxROMAN, "Roman");
+  wxTheFontNameDirectory->Initialize(wxMODERN, wxMODERN, "Modern");
+  wxTheFontNameDirectory->Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
+  wxTheFontNameDirectory->Initialize(wxSWISS, wxSWISS, "Swiss");
+  wxTheFontNameDirectory->Initialize(wxSCRIPT, wxSCRIPT, "Script");
+  wxTheFontNameDirectory->Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
 }
 
 typedef char *a_charptr;

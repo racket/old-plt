@@ -458,7 +458,7 @@ class TextSnipClass : public wxSnipClass
   wxSnip *Read(wxTextSnip *, wxMediaStreamIn *);
 };
 
-static TextSnipClass TheTextSnipClass;
+static TextSnipClass *TheTextSnipClass;
 
 TextSnipClass::TextSnipClass(void)
 {
@@ -517,7 +517,7 @@ wxTextSnip::wxTextSnip(long allocsize)
   text = STRALLOC(allocated + 1);
   buffer = text;
 
-  snipclass = &TheTextSnipClass;
+  snipclass = TheTextSnipClass;
   
   count = 0;
 }
@@ -923,7 +923,7 @@ class TabSnipClass : public TextSnipClass
   virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
-static TabSnipClass TheTabSnipClass;
+static TabSnipClass *TheTabSnipClass;
 
 TabSnipClass::TabSnipClass(void)
 {
@@ -947,7 +947,7 @@ wxTabSnip::wxTabSnip() : wxTextSnip(1)
   __type = wxTYPE_TAB_SNIP;
 #endif
 
-  snipclass = &TheTabSnipClass;
+  snipclass = TheTabSnipClass;
 
   flags |= wxSNIP_WIDTH_DEPENDS_ON_X;
   flags -= (flags & wxSNIP_CAN_APPEND);
@@ -1053,7 +1053,7 @@ class ImageSnipClass : public wxSnipClass
   virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
-static ImageSnipClass TheImageSnipClass;
+static ImageSnipClass *TheImageSnipClass;
 
 ImageSnipClass::ImageSnipClass(void)
 {
@@ -1156,7 +1156,7 @@ void wxImageSnip::Init(void)
   __type = wxTYPE_IMAGE_SNIP;
 #endif
 
-  snipclass = &TheImageSnipClass;
+  snipclass = TheImageSnipClass;
 
   contentsChanged = TRUE;
   filename = NULL;
@@ -1533,7 +1533,7 @@ class MediaSnipClass : public wxSnipClass
   virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
-static MediaSnipClass TheMediaSnipClass;
+static MediaSnipClass *TheMediaSnipClass;
 
 MediaSnipClass::MediaSnipClass(void)
 {
@@ -1662,10 +1662,10 @@ wxStandardSnipClassList::wxStandardSnipClassList(void)
 {
   unknowns = new wxList((KeyType)wxKEY_INTEGER);
 
-  Add(&TheTextSnipClass);
-  Add(&TheTabSnipClass);
-  Add(&TheMediaSnipClass);
-  Add(&TheImageSnipClass);
+  Add(TheTextSnipClass);
+  Add(TheTabSnipClass);
+  Add(TheMediaSnipClass);
+  Add(TheImageSnipClass);
 }
 
 void wxStandardSnipClassList::ResetHeaderFlags(int doneMsg)
@@ -1831,12 +1831,12 @@ wxBufferData *LocationBufferDataClass::Read(wxMediaStreamIn *f)
   return data;
 }
 
-LocationBufferDataClass TheLocationBufferDataClass;
+static LocationBufferDataClass *TheLocationBufferDataClass;
 
 wxLocationBufferData::wxLocationBufferData()
 {
   x = y = 0;
-  dataclass = &TheLocationBufferDataClass;
+  dataclass = TheLocationBufferDataClass;
 }
 
 Bool wxLocationBufferData::Write(wxMediaStreamOut *f)
@@ -1857,7 +1857,7 @@ wxBufferDataClassList::wxBufferDataClassList(void)
   
   unknowns = new wxList((KeyType)wxKEY_INTEGER);
 
-  Add(&TheLocationBufferDataClass);
+  Add(TheLocationBufferDataClass);
 }
 
 wxBufferDataClassList::~wxBufferDataClassList()
@@ -1984,4 +1984,17 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
 wxBufferDataClassList *wxMakeTheBufferDataClassList()
 {
   return new wxBufferDataClassList;
+}
+
+/**************************************************/
+
+int wxInitSnips(void)
+{
+  TheTextSnipClass = new TextSnipClass;
+  TheTabSnipClass = new TabSnipClass;
+  TheMediaSnipClass = new MediaSnipClass;
+  TheImageSnipClass = new ImageSnipClass;
+  TheLocationBufferDataClass = new LocationBufferDataClass;
+
+  return 0;
 }

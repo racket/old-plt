@@ -207,7 +207,7 @@ $(OBJDIR)/wxs_menu.o : wxs_menu.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_menu.cxx -o $(OBJDIR)/wxs_menu.o
 $(OBJDIR)/wxs_mio.o : wxs_mio.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_mio.cxx -o $(OBJDIR)/wxs_mio.o
-$(OBJDIR)/wxs_misc.o : wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_misc.o : wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../../wxxt/src/Misc/Clipboard.h
 	$(WXSCC) wxs_misc.cxx -o $(OBJDIR)/wxs_misc.o
 $(OBJDIR)/wxs_mpb.o : wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) ../wxme/wx_medpb.h $(MAINDCHEADERS)
 	$(WXSCC) wxs_mpb.cxx -o $(OBJDIR)/wxs_mpb.o

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.6 1999/10/05 17:26:05 mflatt Exp $
+ * $Id: DC.cc,v 1.7 1999/11/04 17:25:33 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -204,7 +204,7 @@ static void wx_spline_push(float x1, float y1, float x2, float y2,
 static Bool wx_spline_add_point(float x, float y);
 static void wx_spline_draw_point_array(wxDC *dc);
 
-static wxList wx_spline_point_list;
+static wxList *wx_spline_point_list;
 
 void wxDC::DrawOpenSpline(wxList *pts)
 {
@@ -340,21 +340,30 @@ int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
 
 static Bool wx_spline_add_point(float x, float y)
 {
-    wxPoint *point = new wxPoint ;
+    wxPoint *point;
+
+    if (!wx_spline_point_list)
+      wx_spline_point_list = new wxList;
+
+    point = new wxPoint;
     point->x = x;
     point->y = y;
-    wx_spline_point_list.Append((wxObject*)point);
+    wx_spline_point_list->Append((wxObject*)point);
     return TRUE;
 }
 
 static void wx_spline_draw_point_array(wxDC *dc)
 {
-    dc->DrawLines(&wx_spline_point_list, 0.0, 0.0);
-    wxNode *node = wx_spline_point_list.First();
+  if (wx_spline_point_list) {
+    wxNode *node;
+    dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
+    node = wx_spline_point_list->First();
     while (node) {
-	wxPoint *point = (wxPoint *)node->Data();
+	wxPoint *point;
+	point = (wxPoint *)node->Data();
 	delete point;
-	wx_spline_point_list.DeleteNode(node);
-	node = wx_spline_point_list.First();
+	wx_spline_point_list->DeleteNode(node);
+	node = wx_spline_point_list->First();
     }
+  }
 }

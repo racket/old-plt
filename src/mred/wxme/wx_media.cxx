@@ -39,7 +39,7 @@ extern "C" int scheme_directory_exists(char *dirname);
 
 static void StandardWordbreak(wxMediaEdit *win, long *start, long *end, int, void*);
 
-wxMediaWordbreakMap wxTheMediaWordbreakMap;
+wxMediaWordbreakMap *wxTheMediaWordbreakMap;
 
 extern void *wxMediaFileIOReady;
 
@@ -65,39 +65,41 @@ void wxInitMedia(void)
   wxInitClipboard();
   wxInitStyles();
 
+  wxTheMediaWordbreakMap = new wxMediaWordbreakMap;
+
 #if USE_OLD_TYPE_SYSTEM
-  wxAllTypes.AddType(wxTYPE_MEDIA_CANVAS, wxTYPE_CANVAS, "media-canvas");
+  wxAllTypes->AddType(wxTYPE_MEDIA_CANVAS, wxTYPE_CANVAS, "media-canvas");
 
-  wxAllTypes.AddType(wxTYPE_MEDIA_BUFFER, wxTYPE_OBJECT, "media-buffer");
-  wxAllTypes.AddType(wxTYPE_MEDIA_EDIT, wxTYPE_MEDIA_BUFFER, "media-edit");
-  wxAllTypes.AddType(wxTYPE_MEDIA_PASTEBOARD, wxTYPE_MEDIA_BUFFER, "media-pasteboard");
+  wxAllTypes->AddType(wxTYPE_MEDIA_BUFFER, wxTYPE_OBJECT, "media-buffer");
+  wxAllTypes->AddType(wxTYPE_MEDIA_EDIT, wxTYPE_MEDIA_BUFFER, "media-edit");
+  wxAllTypes->AddType(wxTYPE_MEDIA_PASTEBOARD, wxTYPE_MEDIA_BUFFER, "media-pasteboard");
 
-  wxAllTypes.AddType(wxTYPE_SNIP, wxTYPE_OBJECT, "snip");
-  wxAllTypes.AddType(wxTYPE_TEXT_SNIP, wxTYPE_SNIP, "text-snip");
-  wxAllTypes.AddType(wxTYPE_TAB_SNIP, wxTYPE_SNIP, "tab-snip");
-  wxAllTypes.AddType(wxTYPE_IMAGE_SNIP, wxTYPE_SNIP, "image-snip");
-  wxAllTypes.AddType(wxTYPE_MEDIA_SNIP, wxTYPE_SNIP, "media-snip");
+  wxAllTypes->AddType(wxTYPE_SNIP, wxTYPE_OBJECT, "snip");
+  wxAllTypes->AddType(wxTYPE_TEXT_SNIP, wxTYPE_SNIP, "text-snip");
+  wxAllTypes->AddType(wxTYPE_TAB_SNIP, wxTYPE_SNIP, "tab-snip");
+  wxAllTypes->AddType(wxTYPE_IMAGE_SNIP, wxTYPE_SNIP, "image-snip");
+  wxAllTypes->AddType(wxTYPE_MEDIA_SNIP, wxTYPE_SNIP, "media-snip");
 
-  wxAllTypes.AddType(wxTYPE_MEDIA_ADMIN, wxTYPE_OBJECT, "media-admin");
-  wxAllTypes.AddType(wxTYPE_CANVAS_MEDIA_ADMIN, wxTYPE_MEDIA_ADMIN, "canvas-media-admin");
-  wxAllTypes.AddType(wxTYPE_MEDIA_SNIP_MEDIA_ADMIN, wxTYPE_MEDIA_ADMIN, "media-snip-media-admin");
+  wxAllTypes->AddType(wxTYPE_MEDIA_ADMIN, wxTYPE_OBJECT, "media-admin");
+  wxAllTypes->AddType(wxTYPE_CANVAS_MEDIA_ADMIN, wxTYPE_MEDIA_ADMIN, "canvas-media-admin");
+  wxAllTypes->AddType(wxTYPE_MEDIA_SNIP_MEDIA_ADMIN, wxTYPE_MEDIA_ADMIN, "media-snip-media-admin");
 
-  wxAllTypes.AddType(wxTYPE_MEDIA_SNIP_ADMIN, wxTYPE_OBJECT, "media-snip-admin");
+  wxAllTypes->AddType(wxTYPE_MEDIA_SNIP_ADMIN, wxTYPE_OBJECT, "media-snip-admin");
 
-  wxAllTypes.AddType(wxTYPE_SNIP_CLASS, wxTYPE_OBJECT, "snip-class");
-  wxAllTypes.AddType(wxTYPE_BUFFER_DATA, wxTYPE_OBJECT, "buffer-data");
-  wxAllTypes.AddType(wxTYPE_BUFFER_DATA_CLASS, wxTYPE_OBJECT, "buffer-data-class");
+  wxAllTypes->AddType(wxTYPE_SNIP_CLASS, wxTYPE_OBJECT, "snip-class");
+  wxAllTypes->AddType(wxTYPE_BUFFER_DATA, wxTYPE_OBJECT, "buffer-data");
+  wxAllTypes->AddType(wxTYPE_BUFFER_DATA_CLASS, wxTYPE_OBJECT, "buffer-data-class");
 
-  wxAllTypes.AddType(wxTYPE_KEYMAP, wxTYPE_OBJECT, "keymap");
+  wxAllTypes->AddType(wxTYPE_KEYMAP, wxTYPE_OBJECT, "keymap");
 
-  wxAllTypes.AddType(wxTYPE_STYLE, wxTYPE_OBJECT, "style");
-  wxAllTypes.AddType(wxTYPE_STYLE_DELTA, wxTYPE_OBJECT, "style-delta");
-  wxAllTypes.AddType(wxTYPE_STYLE_LIST, wxTYPE_OBJECT, "style-list");
+  wxAllTypes->AddType(wxTYPE_STYLE, wxTYPE_OBJECT, "style");
+  wxAllTypes->AddType(wxTYPE_STYLE_DELTA, wxTYPE_OBJECT, "style-delta");
+  wxAllTypes->AddType(wxTYPE_STYLE_LIST, wxTYPE_OBJECT, "style-list");
 
-  wxAllTypes.AddType(wxTYPE_WORDBREAK_MAP, wxTYPE_OBJECT, "wordbreak-map");
+  wxAllTypes->AddType(wxTYPE_WORDBREAK_MAP, wxTYPE_OBJECT, "wordbreak-map");
 
-  wxAllTypes.AddType(wxTYPE_SNIP_CLASS_LIST, wxTYPE_LIST, "snip-class-list");
-  wxAllTypes.AddType(wxTYPE_BUFFER_DATA_CLASS_LIST, wxTYPE_LIST, "buffer-data-class-list");
+  wxAllTypes->AddType(wxTYPE_SNIP_CLASS_LIST, wxTYPE_LIST, "snip-class-list");
+  wxAllTypes->AddType(wxTYPE_BUFFER_DATA_CLASS_LIST, wxTYPE_LIST, "buffer-data-class-list");
 #endif
 
   wxMediaIOCheckLSB();
@@ -194,10 +196,7 @@ wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs)
 
   wordBreak = StandardWordbreak;
   wordBreakData = NULL;
-  wordBreakMap = &wxTheMediaWordbreakMap;
-  if (!wxTheMediaWordbreakMap.IsUsed())
-    wxTheMediaWordbreakMap.AdjustUsage(TRUE); /* Once to keep forever */
-  wxTheMediaWordbreakMap.AdjustUsage(TRUE);
+  wordBreakMap = wxTheMediaWordbreakMap;
 
   caretLocationX = -1;
   caretOn = FALSE;
@@ -2353,7 +2352,7 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
 
   wordBreakMap = win->GetWordbreakMap();
 
-  map = wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap.map;
+  map = wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap->map;
 
 #define nonbreak(x) (map[x] & reason)
   /* Try looking at only MAX_DIST_TRY chars. If that fails, then
@@ -2508,20 +2507,10 @@ wxMediaWordbreakMap *wxMediaEdit::GetWordbreakMap(void)
 
 void wxMediaEdit::SetWordbreakMap(wxMediaWordbreakMap *map)
 {
-  if (wordBreakMap) {
-    wordBreakMap->AdjustUsage(FALSE);
-#if !WXGARBAGE_COLLECTION_ON
-    if (!wordBreakMap->IsUsed())
-      delete wordBreakMap;
-#endif
-  }
-
   wordBreakMap = map;
 
   if (!map)
     return;
-
-  map->AdjustUsage(TRUE);
 }
 
 /****************************************************************/

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Resources.cc,v 1.4 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Resources.cc,v 1.5 1999/11/12 17:27:50 mflatt Exp $
  *
  * Purpose: read/write .Xdefaults
  *
@@ -36,7 +36,6 @@
 // which will only get flushed when we call wxFlushResources().
 // Build up a list of resource databases waiting to be written.
 //-----------------------------------------------------------------------------
-//wxList wxResourceCache(wxKEY_STRING); // now in Application/wxGloabaData
 
 //-----------------------------------------------------------------------------
 // utility functions for get/write resources
@@ -163,7 +162,7 @@ void wxFlushResources(void)
 {
     char nameBuffer[512];
 
-    wxNode *node = wxResourceCache.First();
+    wxNode *node = wxResourceCache->First();
     while (node) {
 	char *file = node->string_key;
 	// If file doesn't exist, create it first.
@@ -192,12 +191,12 @@ Bool wxWriteResource(const char *section, const char *entry, char *value,
     (void)GetIniFile(buffer, file);
 
     XrmDatabase database;
-    wxNode *node = wxResourceCache.Find(buffer);
+    wxNode *node = wxResourceCache->Find(buffer);
     if (node)
       database = (XrmDatabase)node->Data();
     else {
       database = wxXrmGetFileDatabase(buffer);
-      node = wxResourceCache.Append(buffer, (wxObject *)database);
+      node = wxResourceCache->Append(buffer, (wxObject *)database);
     }
     char resName[300];
     strcpy(resName, section ? section : "wxWindows");
@@ -208,8 +207,8 @@ Bool wxWriteResource(const char *section, const char *entry, char *value,
     XrmPutStringResource(&database, resName, value);
     if (isnull) {
       if (node)
-	wxResourceCache.DeleteNode(node);
-      wxResourceCache.Append(buffer, (wxObject *)database);
+	wxResourceCache->DeleteNode(node);
+      wxResourceCache->Append(buffer, (wxObject *)database);
     }
 
     XrmPutFileDatabase(database, buffer);
@@ -255,12 +254,12 @@ Bool wxGetResource(const char *section, const char *entry, char **value,
       char buffer[500];
       (void)GetIniFile(buffer, file);
       
-      wxNode *node = wxResourceCache.Find(buffer);
+      wxNode *node = wxResourceCache->Find(buffer);
       if (node)
 	database = (XrmDatabase)node->Data();
       else {
 	database = wxXrmGetFileDatabase(buffer);
-	wxResourceCache.Append(buffer, (wxObject *)database);
+	wxResourceCache->Append(buffer, (wxObject *)database);
       }
     } else
       database = wxResourceDatabase;

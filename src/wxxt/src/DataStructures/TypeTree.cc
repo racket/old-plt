@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TypeTree.cc,v 1.2 1998/08/14 21:44:37 mflatt Exp $
+ * $Id: TypeTree.cc,v 1.3 1999/11/04 17:25:32 mflatt Exp $
  *
  * Purpose: type tree
  *
@@ -94,22 +94,19 @@ static wxInitType init_types[] = {
 
 };
 
-void wxInitStandardTypes(void)
-{
-    // Define explicit type hierarchy
-    for (unsigned int i=0; i < wxNumberOf(init_types); ++i)
-	wxAllTypes.AddType(init_types[i].my_type,
-			   init_types[i].parent_type,
-			   init_types[i].my_name);
-}
-
 //-----------------------------------------------------------------------------
 // wxTypeTree implementation
 //-----------------------------------------------------------------------------
 
 wxTypeTree::wxTypeTree(void) : wxHashTable(wxKEY_INTEGER)
 {
-    wxInitStandardTypes();
+  unsigned int i;
+
+  // Define explicit type hierarchy
+  for (i = 0; i < wxNumberOf(init_types); i++)
+    AddType(init_types[i].my_type,
+	    init_types[i].parent_type,
+	    init_types[i].my_name);
 }
 
 wxTypeTree::~wxTypeTree(void)
@@ -144,7 +141,7 @@ Bool wxSubType(WXTYPE type1, WXTYPE type2)
 
     WXTYPE t = type1;
     while (TRUE) {
-	wxTypeDef *typ = (wxTypeDef*)wxAllTypes.Get((long)t);
+	wxTypeDef *typ = (wxTypeDef*)wxAllTypes->Get((long)t);
 	if (!typ)
 	    return FALSE;
 	if (type2 == typ->parent)
@@ -157,7 +154,7 @@ char *wxGetTypeName(WXTYPE type)
 {
     if (type == wxTYPE_ANY)
 	return "any";
-    wxTypeDef *typ = (wxTypeDef *)wxAllTypes.Get((long)type);
+    wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)type);
     if (!typ)
 	return NULL;
     return typ->name;

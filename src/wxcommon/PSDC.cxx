@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cxx,v 1.1 1999/11/12 17:21:41 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cxx,v 1.2 1999/11/18 16:35:06 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -837,7 +837,7 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   int Style = current_font->GetStyle();
   int Weight = current_font->GetWeight();
 
-  name = wxTheFontNameDirectory.GetPostScriptName(Family, Weight, Style);
+  name = wxTheFontNameDirectory->GetPostScriptName(Family, Weight, Style);
   if (!name)
     name = "Times-Roman";
 
@@ -1601,7 +1601,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     char *name;
     char *afmName;
 
-    name = wxTheFontNameDirectory.GetAFMName(Family, Weight, Style);
+    name = wxTheFontNameDirectory->GetAFMName(Family, Weight, Style);
     if (name && afm_path) {
       int len = strlen(afm_path);
       // get the directory of the AFM files

@@ -13,7 +13,9 @@ class wxClipboardClient : public wxObject
      this client can provide. Almost all clients will provide "TEXT".
      Format names should be 4 characters long, so things will work
      out on the Macintosh */
-  wxStringList formats;
+  wxStringList *formats;
+
+  wxClipboardClient();
 
   /* This method is called when the client is losing the selection. */
   virtual void BeingReplaced(void) = 0;

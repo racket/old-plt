@@ -13,6 +13,8 @@ IMAGELIB = $(IMAGEDIR)/lib/sys$(MZPLATFORMSUFFIX)/libimage$(GUISUFFIX).a
 OBJDIR = $(IMAGEDIR)/src/objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
 OBJECTS = $(OBJDIR)/wx_image.$(OBJSUFF) $(OBJDIR)/wx_img.$(OBJSUFF) $(OBJDIR)/wx_gif.$(OBJSUFF) $(OBJDIR)/wx_gifwr.$(OBJSUFF) $(OBJDIR)/wx_gam.$(OBJSUFF) $(OBJDIR)/wx_pbm.$(OBJSUFF) $(OBJDIR)/wx_24to8.$(OBJSUFF) $(OBJDIR)/wx_pm.$(OBJSUFF) $(OBJDIR)/wx_xbm.$(OBJSUFF) $(OBJDIR)/wx_bmp.$(OBJSUFF) $(OBJDIR)/wx_pcx.$(OBJSUFF)
 
+GLOBALDEPS = ../../../src/DataStructures/Object.h ../../../../wxcommon/wxGC.h
+
 LDFLAGS = $(XLIB) -L$(IMAGEDIR)/lib -L$(WXDIR)/lib
 
 XVIEWLDLIBS = -limage_ol -lwx_ol -lxview -lolgx -lX11 -lm $(COMPLIBS)
@@ -63,48 +65,42 @@ $(IMAGELIB): $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 	$(RANLIB) $@
 
-$(OBJDIR)/wx_image.$(OBJSUFF):	wx_image.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_image.$(OBJSUFF):	wx_image.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_image.$(SRCSUFF)
 
 
-$(OBJDIR)/wx_img.$(OBJSUFF):	wx_img.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_img.$(OBJSUFF):	wx_img.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_img.$(SRCSUFF)
 
-$(OBJDIR)/wx_gif.$(OBJSUFF):	wx_gif.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_gif.$(OBJSUFF):	wx_gif.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_gif.$(SRCSUFF)
 
-$(OBJDIR)/wx_gifwr.$(OBJSUFF):	wx_gifwr.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_gifwr.$(OBJSUFF):	wx_gifwr.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_gifwr.$(SRCSUFF)
 
-$(OBJDIR)/wx_gam.$(OBJSUFF):	wx_gam.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_gam.$(OBJSUFF):	wx_gam.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_gam.$(SRCSUFF)
 
-$(OBJDIR)/wx_pbm.$(OBJSUFF):	wx_pbm.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_pbm.$(OBJSUFF):	wx_pbm.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_pbm.$(SRCSUFF)
 
-$(OBJDIR)/wx_bmp.$(OBJSUFF):	wx_bmp.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_bmp.$(OBJSUFF):	wx_bmp.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_bmp.$(SRCSUFF)
 
-$(OBJDIR)/wx_pcx.$(OBJSUFF):	wx_pcx.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_pcx.$(OBJSUFF):	wx_pcx.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_pcx.$(SRCSUFF)
 
-$(OBJDIR)/wx_xbm.$(OBJSUFF):	wx_xbm.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_xbm.$(OBJSUFF):	wx_xbm.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_xbm.$(SRCSUFF)
 
-$(OBJDIR)/wx_pm.$(OBJSUFF):	wx_pm.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_pm.$(OBJSUFF):	wx_pm.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_pm.$(SRCSUFF)
 
-$(OBJDIR)/wx_24to8.$(OBJSUFF):	wx_24to8.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/wx_24to8.$(OBJSUFF):	wx_24to8.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ wx_24to8.$(SRCSUFF)
 
-$(OBJDIR)/test.$(OBJSUFF):		test.h test.$(SRCSUFF) wx_image.h wx_imgx.h
+$(OBJDIR)/test.$(OBJSUFF):		test.h test.$(SRCSUFF) wx_image.h wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(CPPFLAGS) -o $@ test.$(SRCSUFF)
-
-test$(GUISUFFIX): $(OBJDIR)/test.$(OBJSUFF) $(WXLIB) $(IMAGELIB)
-	$(CXX) $(LDFLAGS) -o test$(GUISUFFIX) $(OBJDIR)/test.$(OBJSUFF) $(XVIEW_LINK) $(LDLIBS)
-
-tmp.$(OBJSUFF):		tmp.$(SRCSUFF)
-	$(CXX) -c $(CPPFLAGS) -o $@ tmp.$(SRCSUFF)
 
 cleaneach:
 	rm -f $(OBJECTS) $(IMAGELIB) core

@@ -61,7 +61,7 @@ class wxMediaClipboardClient : public wxClipboardClient
   char *GetData(char *format, long *size);
   void BeingReplaced(void);
 };
-static wxMediaClipboardClient TheMediaClipboardClient;
+static wxMediaClipboardClient *TheMediaClipboardClient;
 
 #if ALLOW_X_STYLE_SELECTION
 class wxMediaXClipboardClient : public wxClipboardClient
@@ -71,7 +71,7 @@ class wxMediaXClipboardClient : public wxClipboardClient
   char *GetData(char *format, long *size);
   void BeingReplaced(void);
 };
-static wxMediaXClipboardClient TheMediaXClipboardClient;
+static wxMediaXClipboardClient *TheMediaXClipboardClient;
 #endif
 
 typedef wxChangeRecord *wxChangeRecordPtr;
@@ -1535,6 +1535,11 @@ static void InitCutNPaste()
     wxmb_commonCopyBuffer = new wxList();
     wxmb_commonCopyBuffer2 = new wxList();
   }
+
+  TheMediaClipboardClient = new wxMediaClipboardClient;
+#if ALLOW_X_STYLE_SELECTION
+  TheMediaXClipboardClient = new wxMediaXClipboardClient;
+#endif
 }
 
 void wxMediaBuffer::CopyRingNext(void)
@@ -1655,7 +1660,7 @@ void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)
 #if ALLOW_X_STYLE_SELECTION
     if (!xClipboardHack)
 #endif
-      wxTheClipboard->SetClipboardClient(&TheMediaClipboardClient, time);
+      wxTheClipboard->SetClipboardClient(TheMediaClipboardClient, time);
   }
 }
 
@@ -1667,7 +1672,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   wxBufferData *bd;
 
   owner = wxTheClipboard->GetClipboardClient();
-  if (local || (!pasteTextOnly && PTREQ(owner, &TheMediaClipboardClient))) {
+  if (local || (!pasteTextOnly && PTREQ(owner, TheMediaClipboardClient))) {
     copyDepth++;
     for ((node = wxmb_commonCopyBuffer->First(),
 	  node2 = wxmb_commonCopyBuffer2->First()); 
@@ -1716,8 +1721,8 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
 
 wxMediaClipboardClient::wxMediaClipboardClient()
 {
-  formats.Add("TEXT");
-  formats.Add("WXME");
+  formats->Add("TEXT");
+  formats->Add("WXME");
 }
 
 void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
@@ -1886,8 +1891,8 @@ void wxMediaClipboardClient::BeingReplaced(void)
 
 wxMediaXClipboardClient::wxMediaXClipboardClient()
 {
-  formats.Add("TEXT");
-  formats.Add("WXME");
+  formats->Add("TEXT");
+  formats->Add("WXME");
 }
 
 char *wxMediaXClipboardClient::GetData(char *format, long *size)
@@ -1912,7 +1917,7 @@ char *wxMediaXClipboardClient::GetData(char *format, long *size)
       return wxTheClipboard->GetClipboardData(format, size, 0);
   }
 
-  return TheMediaClipboardClient.GetData(format, size);
+  return TheMediaClipboardClient->GetData(format, size);
 }
 
 void wxMediaXClipboardClient::BeingReplaced(void)
@@ -1942,13 +1947,13 @@ Bool wxMediaBuffer::DoOwnXSelection(Bool on, Bool force)
       wxMediaXSelectionOwner = NULL; // should be redundant
     }
     xSelectionCopied = FALSE;
-    wxTheClipboard->SetClipboardClient(&TheMediaXClipboardClient, 0L);
+    wxTheClipboard->SetClipboardClient(TheMediaXClipboardClient, 0L);
     wxMediaXSelectionOwner = this;
   } else if (this == wxMediaXSelectionOwner) {
     wxMediaXSelectionOwner = NULL;
     if (!xSelectionCopied
 	&& PTREQ(wxTheClipboard->GetClipboardClient(), 
-		 &TheMediaXClipboardClient)) {
+		 TheMediaXClipboardClient)) {
       wxTheClipboard->SetClipboardString("", 0L);
     }
   }
@@ -1973,7 +1978,7 @@ void wxMediaSetXSelectionMode(Bool on)
 #if ALLOW_X_STYLE_SELECTION
   wxMediaXSelectionMode = on;
   if (!on && PTREQ(wxTheClipboard->GetClipboardClient(), 
-		   &TheMediaXClipboardClient))
+		   TheMediaXClipboardClient))
     wxTheClipboard->SetClipboardString("", 0L);
 #endif
 }

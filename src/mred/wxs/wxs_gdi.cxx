@@ -3705,7 +3705,7 @@ if (os_wxFontNameDirectory_class) {
   objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
 
 }
-  scheme_install_xc_global("the-font-name-directory", objscheme_bundle_wxFontNameDirectory(&wxTheFontNameDirectory), env);
+  scheme_install_xc_global("the-font-name-directory", objscheme_bundle_wxFontNameDirectory(wxTheFontNameDirectory), env);
 }
 
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK)

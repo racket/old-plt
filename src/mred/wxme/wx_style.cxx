@@ -233,8 +233,8 @@ wxStyleDelta *wxStyleDelta::SetDeltaFace(char *name)
   if (face)
     delete[] face;
   face = copystring(name);
-  id = FONT_DIRECTORY.FindOrCreateFontId(name, wxDEFAULT);
-  family = FONT_DIRECTORY.GetFamily(id);
+  id = FONT_DIRECTORY->FindOrCreateFontId(name, wxDEFAULT);
+  family = FONT_DIRECTORY->GetFamily(id);
 
   return this;
 }
@@ -499,7 +499,7 @@ static unsigned char ColourNum(float v)
 }
 
 wxStyle::wxStyle()
-: wxObject(WXGC_NO_CLEANUP)
+: wxObject(WXGC_NO_CLEANUP), children(wxKEY_NONE, FALSE)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_STYLE;
@@ -564,8 +564,8 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   if (!nonjoin_delta->face && nonjoin_delta->family == wxBASE) {
     fontid = base->font->GetFontId();
   } else if (nonjoin_delta->face)
-    fontid = FONT_DIRECTORY.FindOrCreateFontId(nonjoin_delta->face, 
-					       nonjoin_delta->family);
+    fontid = FONT_DIRECTORY->FindOrCreateFontId(nonjoin_delta->face, 
+						nonjoin_delta->family);
   else
     fontid = nonjoin_delta->family;
 

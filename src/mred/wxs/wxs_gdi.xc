@@ -351,7 +351,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @ "find-or-create-font-id" : int FindOrCreateFontId(cstring,SYM[family]);
 @ m "find-family-default-font-id" : int Identity(SYM[family]);
 
-@CONSTANT "the-font-name-directory" : wxFontNameDirectory% wxTheFontNameDirectory
+@CONSTANT "the-font-name-directory" : wxFontNameDirectory! wxTheFontNameDirectory
 
 @END
 

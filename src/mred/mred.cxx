@@ -2184,6 +2184,8 @@ wxFrame *MrEdApp::OnInit(void)
   mred_event_dispatch_param = scheme_new_param();
   mred_ps_setup_param = scheme_new_param();
 
+  wxInitSnips(); /* and snip classes */
+
   mred_main_context = new MrEdContext;
   mred_main_context->topLevelWindowList = new wxChildList();
   mred_main_context->snipClassList = wxMakeTheSnipClassList();

@@ -3841,7 +3841,7 @@ if (os_wxMediaWordbreakMap_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaWordbreakMap, wxTYPE_WORDBREAK_MAP);
 
 }
-  scheme_install_xc_global("the-editor-wordbreak-map", objscheme_bundle_wxMediaWordbreakMap(&wxTheMediaWordbreakMap), env);
+  scheme_install_xc_global("the-editor-wordbreak-map", objscheme_bundle_wxMediaWordbreakMap(wxTheMediaWordbreakMap), env);
 }
 
 int objscheme_istype_wxMediaWordbreakMap(Scheme_Object *obj, const char *stop, int nullOK)

@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.8 1999/10/05 13:32:17 mflatt Exp $
+ * $Id: Font.cc,v 1.9 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -62,7 +62,7 @@ wxFont::wxFont(void)
     __type = wxTYPE_FONT;
 
     font_id       = wxDEFAULT;
-    family        = wxTheFontNameDirectory.GetFamily(font_id);
+    family        = wxTheFontNameDirectory->GetFamily(font_id);
     style         = wxNORMAL;
     weight        = wxNORMAL_WEIGHT;
     point_size    = 12;
@@ -77,7 +77,7 @@ wxFont::wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
     __type = wxTYPE_FONT;
 
     font_id       = FontIdOrFamily;
-    family        = wxTheFontNameDirectory.GetFamily(FontIdOrFamily);
+    family        = wxTheFontNameDirectory->GetFamily(FontIdOrFamily);
     style         = Style;
     weight        = Weight == wxNORMAL ? wxNORMAL_WEIGHT : Weight;
     point_size    = PointSize;
@@ -90,8 +90,8 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style,
 {
     __type = wxTYPE_FONT;
 
-    font_id       = wxTheFontNameDirectory.FindOrCreateFontId(Face, Family);
-    family        = wxTheFontNameDirectory.GetFamily(font_id);
+    font_id       = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
+    family        = wxTheFontNameDirectory->GetFamily(font_id);
     style         = Style;
     weight        = Weight == wxNORMAL ? wxNORMAL_WEIGHT : Weight;
     point_size    = PointSize;
@@ -126,7 +126,7 @@ char *wxFont::GetFaceString(void)
   case wxSYMBOL:
     return NULL;
   default:
-    return wxTheFontNameDirectory.GetFontName(font_id); 
+    return wxTheFontNameDirectory->GetFontName(font_id); 
   }
 }
 
@@ -207,8 +207,8 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 				     Bool underline)
 {
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory.FindOrCreateFontId(Face, 
-								    Family),
+			  wxTheFontNameDirectory->FindOrCreateFontId(Face, 
+								     Family),
 			  Style,
 			  Weight,
 			  underline);
@@ -223,7 +223,7 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
 				    int si_try_again)
 {
   char buffer[512];
-  char *name = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
+  char *name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
 
   if (!name)
     name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";

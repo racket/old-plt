@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Layout.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
+ * $Id: Layout.cc,v 1.2 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: layout classes
  *
@@ -94,6 +94,7 @@ void wxLayoutConstraints::UnDone(void)
 //-----------------------------------------------------------------------------
 
 wxIndividualLayoutConstraint::wxIndividualLayoutConstraint(void)
+  : wxObject(FALSE)
 {
     otherWin	 = NULL;
     otherEdge	 = wxTop;

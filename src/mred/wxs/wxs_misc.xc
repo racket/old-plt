@@ -38,12 +38,12 @@
 
 void AddType(wxClipboardClient *c, char *s) 
 { 
-  c->formats.Add(s); 
+  c->formats->Add(s); 
 }
 
 Scheme_Object *GetTypes(wxClipboardClient *c)
 {
-  wxNode *n = c->formats.First();
+  wxNode *n = c->formats->First();
   Scheme_Object *first = scheme_null, *last = NULL;
   for (; n; n = n->Next()) {
     Scheme_Object *p;

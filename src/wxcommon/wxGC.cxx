@@ -31,14 +31,39 @@ void *operator new(size_t size)
 #endif
 }
 
-void operator delete(void *obj)
+void operator delete(void */*obj*/)
 {
 }
 
+void gc::install_cleanup(void)
+{
+  GC_finalization_proc old_fn;
+  void *old_data;
+
+# define CHECK_BASE 1
+
+# if CHECK_BASE 
+  if (GC_base(this) != (void *)this) {
+    printf("Clean-up object is not the base object\n");
+    abort();
+  }
+# endif
+
+  GC_register_finalizer_ignore_self(this, GC_cleanup, NULL, 
+				    &old_fn, &old_data);
+
+# if CHECK_BASE
+  if (old_fn) {
+    printf("Object already has a clean-up\n");
+    abort();
+  }
+# endif
+}
+
 extern "C" {
-  void GC_cleanup(void *obj, void *displ)
+  void GC_cleanup(void *obj, void *)
   {
-    gc *clean = ((gc *)((char *)obj + (ptrdiff_t)displ));
+    gc *clean = (gc *)obj;
     clean->~gc();
   }
 }
@@ -59,7 +84,7 @@ void* operator new[](size_t size)
 #endif
 }
   
-void operator delete[](void *obj)
+void operator delete[](void */*obj*/)
 {
 }
 

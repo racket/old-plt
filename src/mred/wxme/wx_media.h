@@ -115,7 +115,7 @@ class wxMediaWordbreakMap : public wxObject
   Bool IsUsed(void);
 };
 
-extern wxMediaWordbreakMap wxTheMediaWordbreakMap;
+extern wxMediaWordbreakMap *wxTheMediaWordbreakMap;
 
 class wxMediaEdit : public wxMediaBuffer
 {

@@ -458,6 +458,21 @@
       (lambda (value)
 	(pretty-print-handler value))))
 
+(define drscheme-jr-error-value->string-handler
+  (lambda (value count)
+    (let* ([string (format "~s"
+			   (if (use-print-convert)
+			       (print-convert value)
+			       value))]
+	   [len (string-length string)])
+      (when (< count len)
+	(set! string (substring string 0 count))
+	(for-each (lambda (x) (string-set! string x #\.))
+		  (list (- count 3)
+			(- count 2)
+			(- count 1))))
+      string)))
+
 (show-sharing #t)
 (constructor-style-printing #t)
 (quasi-read-style-printing #t)
@@ -522,15 +537,14 @@
 		  (split-path (path->complete-path f (current-directory)))))
       base)))
 
-(define drscheme-jr-load
-  (let ([zo-file?
-	 (lambda (f)
+(define (make-drscheme-jr-load print-values?)
+  (lambda (f)
+    (let ([zo-file?
 	   (let ([l (string-length f)])
 	     (and (<= 3 l)
-		  (string=? ".zo" (substring f (- l 3) l)))))]
-	[old-handler (current-load)])
-    (lambda (f)
-      (if (zo-file? f)
+		  (string=? ".zo" (substring f (- l 3) l))))])
+      
+      (if zo-file?
 	  (with-parameterization user-parameterization
 	    (lambda ()
 	      (parameterize ((current-eval (with-parameterization 
@@ -562,30 +576,39 @@
 				  t)))])
 		  (let loop ([old-vals null])
 		    (let ([this (read)])
+		      (when (or #t print-values?)
+			(for-each (lambda (val)
+				    (unless (void? val)
+				      (drscheme-jr-print val)))
+				  old-vals))
 		      (cond
-		       [(zodiac:eof? this) (apply values old-vals)]
-		       [else (begin 
-			       (call-with-values
-				(lambda () 
-				  (with-parameterization user-parameterization
-				    (lambda ()
-				      (parameterize ([current-load-relative-directory
-						      (load-dir/path f)])
-					 (drscheme-jr-expand-eval this)))))
-				(lambda vals
-				  (loop vals))))])))))))))))
+			[(zodiac:eof? this) (apply values old-vals)]
+			[else
+			 (begin 
+			   (call-with-values
+			    (lambda () 
+			      (with-parameterization user-parameterization
+				(lambda ()
+				  (parameterize ([current-load-relative-directory
+						  (load-dir/path f)])
+				    (drscheme-jr-expand-eval this)))))
+			    (lambda vals
+			      (loop vals))))])))))))))))
+
+(define drscheme-jr-load (make-drscheme-jr-load #f))
+(define drscheme-jr-print-load (make-drscheme-jr-load #t))
 
 (define (load/prompt f)
- (let/ec jump
-   (let* ([eeh #f])
-     (dynamic-wind
-      (lambda () 
-	(set! eeh (error-escape-handler))
-	(error-escape-handler jump))
-      (lambda () (load f))
-      (lambda () 
-	(error-escape-handler eeh)
-	(set! eeh #f))))))
+  (let/ec jump
+    (let* ([eeh #f])
+      (dynamic-wind
+       (lambda () 
+	 (set! eeh (error-escape-handler))
+	 (error-escape-handler jump))
+       (lambda () (drscheme-jr-print-load f))
+       (lambda () 
+	 (error-escape-handler eeh)
+	 (set! eeh #f))))))
 
 (constructor-style-printing #t)
 (quasi-read-style-printing #t)
@@ -612,12 +635,13 @@
 			  (open userspace))))])
 	(lambda ()
 	  (current-namespace namespace)
+	  (error-value->string-handler drscheme-jr-error-value->string-handler)
 	  (global-defined-value 'read/zodiac read/zodiac)
 	  (global-defined-value 'restart restart)
 	  (invoke-open-unit u@)
 	  
 	  ; In case the user uses pretty-print:
-	  ((global-defined-value 'pretty-print-show-inexactness) 
+	  ((global-defined-value 'pretty-print-show-inexactness)
 	   (inexact-needs-#i))
 	
 	  (require-library-use-compiled #f)
@@ -641,43 +665,47 @@
     (load/prompt file))
 
   (current-prompt-read prompt-read)
+  (error-value->string-handler drscheme-jr-error-value->string-handler)
   (current-print drscheme-jr-print)
-
+  
   (read-eval-print-loop))
 
 (define (go)
-  (let loop ([file startup-file])
-    (define redo #f)
-    (define c (make-custodian))
-
-    (invoke-open-unit/sig z@)
-    ; Set the newly-created parameters:
-    (set! drscheme-jr-user-vocabulary (make-drj-vocab))
-    (aries:signal-undefined (signal-undef))
-    (aries:signal-not-boolean (cond-req-bool))
-    (zodiac:disallow-untagged-inexact-numbers (inexact-needs-#i))
-    (zodiac:allow-improper-lists (allow-.-lists))
-    (pretty-print-show-inexactness (inexact-needs-#i))
-    (abbreviate-cons-as-list (print-with-list))
-    (constructor-style-printing #t)
-    (quasi-read-style-printing #t)
-    (show-sharing (print-graph))
-    
-    (thread-wait
-     (parameterize ([current-custodian c])
-       (thread
-	(lambda ()
-	  (repl file
-		(let ([restart
-		       (lambda (file)
-			 (set! redo file)
-			 (custodian-shutdown-all c))])
-		  (case-lambda
-		   [(file)
-		    (unless (or (relative-path? file)
-				(absolute-path? file))
-		       (raise-type-error 'restart "path string" file))
-		    (restart file)]
-		   [() (restart #t)])))))))
-    (when redo
-      (loop redo))))
+  (let ([file startup-file])
+    (let loop ()
+      (define continue? #f)
+      (define c (make-custodian))
+      
+      (invoke-open-unit/sig z@)
+      ; Set the newly-created parameters:
+      (set! drscheme-jr-user-vocabulary (make-drj-vocab))
+      (aries:signal-undefined (signal-undef))
+      (aries:signal-not-boolean (cond-req-bool))
+      (zodiac:disallow-untagged-inexact-numbers (inexact-needs-#i))
+      (zodiac:allow-improper-lists (allow-.-lists))
+      (pretty-print-show-inexactness (inexact-needs-#i))
+      (abbreviate-cons-as-list (print-with-list))
+      (constructor-style-printing #t)
+      (quasi-read-style-printing #t)
+      (show-sharing (print-graph))
+      
+      (thread-wait
+       (parameterize ([current-custodian c])
+	 (thread
+	  (lambda ()
+	    (repl file
+		  (let ([die
+			 (lambda ()
+			   (set! continue? #t)
+			   (custodian-shutdown-all c))])
+		    (rec restart
+			 (case-lambda
+			  [(new-file)
+			   (unless (or (relative-path? file)
+				       (absolute-path? file))
+			     (raise-type-error 'restart "path string" file))
+			   (set! file new-file)
+			   (die)]
+			  [() (die)]))))))))
+      (when continue?
+	(loop)))))

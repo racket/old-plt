@@ -2213,6 +2213,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     }
   }
 
+  fstat(fd, &buf);
   regfile = S_ISREG(buf.st_mode);
   scheme_file_open_count++;
   return make_fd_output_port(fd, regfile);

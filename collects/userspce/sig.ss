@@ -151,6 +151,7 @@
 
 (define-signature plt:init-namespace^
   (init-namespace
+   bad-teachpacks
    teachpack-ok?
    teachpack-changed))
 

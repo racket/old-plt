@@ -138,7 +138,8 @@
                               null
                               (lambda (x) 
                                 (and (list? x)
-                                     (andmap string? x))))
+                                     (andmap string? x)
+				     (andmap basis:teachpack-ok? x))))
   
      
   (fw:preferences:add-callback

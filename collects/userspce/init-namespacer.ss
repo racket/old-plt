@@ -45,12 +45,13 @@
 
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
-  ;; build-single-teachpack-unit : string -> (union #f (unit () X))
-  (define (build-single-teachpack-unit v)
+  ;; build-single-teachpack-unit : string boolean -> (union #f (unit () X))
+  (define (build-single-teachpack-unit v call-invalid?)
     (with-handlers
      ([(lambda (x) #t)
        (lambda (x)
-	 (invalid-teachpack (exn-message x))
+	 (when call-invalid?
+	   (invalid-teachpack (exn-message x)))
 	 #f)])
      (let ([new-unit (parameterize ([read-case-sensitive #t])
 				   (load/cd v))])
@@ -77,36 +78,43 @@
 		    #f
 		    plt:userspace^)))))
 	   (begin
-	     (invalid-teachpack 
-	      (format "loading Teachpack file does not result in a unit/sig, got: ~e"
-		      new-unit))
+	     (when call-invalid?
+	       (invalid-teachpack 
+		(format "loading Teachpack file does not result in a unit/sig, got: ~e"
+			new-unit)))
 	     #f)))))
 
-  ;; build-teachpack-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
-  ;; accepts a filename and returns a thunk that invokes the corresponding teachpack and
-  ;; a symbol indicating if this is a mzscheme teachpack or a mred teachpack.
+  ;; build-teachpack-thunk : (listof string)
+  ;;                      -> (values (union #f (-> void))
+  ;;                                 (listof string))
+  ;; accepts a filename and returns two values:
+  ;; - either #f or a thunk that invokes the teachpack
+  ;; - a list of the invalid teachpacks (a subset of the input list)
   (define (build-teachpack-thunk v)
     (unless (and (list? v)
 		 (andmap string? v))
-	    (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
+      (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
     (let* ([tagn 0]
+	   [bad-teachpacks null]
 	   [link-clauses
-	    (let loop ([units v]
+	    (let loop ([teachpack-strings v]
 		       [link-clauses null])
 	      (cond
-	       [(null? units) (reverse link-clauses)]
+	       [(null? teachpack-strings) (reverse link-clauses)]
 	       [else
-		(let ([unit (build-single-teachpack-unit (car units))])
+		(let ([unit (build-single-teachpack-unit (car teachpack-strings) #t)])
 		  (if unit
 		      (begin
 			(set! tagn (+ tagn 1))
-			(loop (cdr units)
+			(loop (cdr teachpack-strings)
 			      (cons
 			       `[,(string->symbol (format "teachpack~a" tagn)) : ()
 				 (,unit userspace)]
 			       link-clauses)))
-		      (loop (cdr units)
-			    link-clauses)))]))]
+		      (begin
+			(set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))
+			(loop (cdr teachpack-strings)
+			      link-clauses))))]))]
 	   [cu
 	    (eval
 	     `(compound-unit/sig
@@ -156,18 +164,21 @@
 
 		    link-clauses))
 		(export)))])
-      (lambda ()
-	(invoke-unit/sig
-	 cu))))
+      (values
+       (lambda ()
+	 (invoke-unit/sig
+	  cu))
+       bad-teachpacks)))
 
   (define (teachpack-ok? x)
-    (if (build-single-teachpack-unit x)
+    (if (build-single-teachpack-unit x #f)
 	#t
 	#f))
 
-  (define teachpack-thunk (build-teachpack-thunk null))
+  (define-values (teachpack-thunk bad-teachpacks) (build-teachpack-thunk null))
   (define (teachpack-changed v)
-    (set! teachpack-thunk (build-teachpack-thunk v)))
+    (set!-values (teachpack-thunk bad-teachpacks) (build-teachpack-thunk v))
+    bad-teachpacks)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

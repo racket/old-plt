@@ -359,18 +359,17 @@
 		  "Select a Teachpack"
 		  ".*\\.(ss|scm)$"))])
 	  (when lib-file
-	    (let ([old-pref (fw:preferences:get
-			     'drscheme:teachpack-file)])
-	      (let ([new-item (normalize-path lib-file)])
-		(if (member new-item old-pref)
-		    (mred:message-box "DrScheme Teachpacks"
-				      (format "Already added ~a Teachpack"
-					      new-item)
-				      frame)
-		    (when (basis:teachpack-ok? lib-file)
-		      (fw:preferences:set
-		       'drscheme:teachpack-file
-		       (append old-pref (list lib-file)))))))
+	    (let* ([old-pref (fw:preferences:get 'drscheme:teachpack-file)]
+		   [new-item (normalize-path lib-file)])
+	      (if (member (normal-case-path new-item) (map normal-case-path old-pref))
+		  (mred:message-box "DrScheme Teachpacks"
+				    (format "Already added ~a Teachpack"
+					    new-item)
+				    frame)
+		  (when (basis:teachpack-ok? lib-file)
+		    (fw:preferences:set
+		     'drscheme:teachpack-file
+		     (append old-pref (list lib-file))))))
 	    (set! teachpack-directory (path-only lib-file))))))
     (make-object (class fw:menu:can-restore-menu-item% args
                    (inherit enable)

@@ -12,7 +12,11 @@
 					; [x list (str)] -> ()
     combine-url/relative))		; url x str -> url
 
-; Need to return the HTTPd version, status code, etc.
+; To do:
+;   Handle HTTP/file errors.
+;   Report internal errors properly.
+;   Not throw away MIME headers.
+;     Determine file type.
 
 ; ----------------------------------------------------------------------
 

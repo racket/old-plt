@@ -733,7 +733,7 @@
                                     (interactions-offset (input-length-start-pos input-len))
                                     (compile-interactions ((input-port)) ed type-recs level))
                                   (reverse inputs-list))))
-                (printf "~a~n~a~n" syntax-list (map remove-requires syntax-list))
+;                (printf "~a~n~a~n" syntax-list (map remove-requires syntax-list))
                 (if ret-list?
                     (values syntax-list 1 #t)
                     (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) 1 #t)))))

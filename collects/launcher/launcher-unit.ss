@@ -55,6 +55,10 @@
 		     (if (directory-exists? (build-path plthome "MrEd3m.app"))
 			 '(3m)
 			 null)]
+		    [(eq? 'windows (system-type))
+		     (if (file-exists? (build-path plthome (format "~a3m.exe" kind)))
+			 '(3m)
+			 null)]
 		    [else
 		     ;; 3m launchers not yet supported for other platforms:
 		     null])]
@@ -106,8 +110,10 @@
 	(let ([s (variant-suffix variant)])
 	  (if (string=? "" s)
 	      path
-	      ;; FIXME for windows - need to add before the extension, if any
-	      (string-append path s))))
+	      (if (and (eq? 'windows (system-type))
+		       (regexp-match #rx"[.]exe$" path))
+		  (regexp-replace #rx"[.]exe$" path (format "~a.exe" s))
+		  (string-append path s)))))
       
       (define (string-append/spaces f flags)
 	(if (null? flags)

@@ -335,7 +335,9 @@ wxObject *wxNonlockingHashTable::Get(long widget)
     i = (i + 1) % numbuckets;
   }
 
-  if (buckets[i].widget && (nlGET_WIDGET(buckets[i].widget) == widget)) {
+  if (buckets[i].widget 
+      && (nlGET_WIDGET(buckets[i].widget) == widget)
+      && buckets[i].object) {
     wxObject *r;
     r = nlGET_OBJECT(buckets[i].object);
     return r;

@@ -142,10 +142,11 @@
 	  (with-new-flags
 	   current-standard-link-libraries
 	   (if is-win?
-	       (map 
-		(lambda (l)
-		  (build-path sys-path "lib" (format "~a.lib" l)))
-		find-windows-libs)
+	       (append (map 
+			(lambda (l)
+			  (build-path sys-path "lib" (format "~a.lib" l)))
+			find-windows-libs)
+		       windows-libs)
 	       null)
 
 	   ;; Extra stuff:

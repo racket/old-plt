@@ -39,15 +39,16 @@
 
     ;; Build for 3m when it looks like we can/should.
     ;; This is a hack --- hopefully temporary!
-    (let ([3m-dir (build-path "compiled" "native" (system-library-subpath #f) "3m")])
+    (let ([3m-dir (build-path "compiled" "native" (system-library-subpath #f) "3m")]
+	  [mzssl.so (if (eq? 'windows (system-type)) "mzssl.dll" "mzssl.so")])
       (parameterize ([current-directory (collection-path "openssl")])
-	(when (and (memq (system-type) '(unix macosx))
+	(when (and (memq (system-type) '(unix macosx windows))
 		   (memq '3m (available-mzscheme-variants))
 		   (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2"))
-		   (or (not (file-exists? (build-path 3m-dir "mzssl.so")))
-		       ((file-or-directory-modify-seconds (build-path 3m-dir 'up "mzssl.so"))
+		   (or (not (file-exists? (build-path 3m-dir mzssl.so)))
+		       ((file-or-directory-modify-seconds (build-path 3m-dir 'up mzssl.so))
 			. > .
-			(file-or-directory-modify-seconds (build-path 3m-dir "mzssl.so")))))
+			(file-or-directory-modify-seconds (build-path 3m-dir mzssl.so)))))
 	  (make-directory* 3m-dir)
 	  (restart-mzscheme #() 
 			    (lambda (x) x)
@@ -55,9 +56,12 @@
 			     (list
 			      "-qr"
 			      (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
-			      (format "gcc -E -DOS_X -I~s -I~s" 
-				      (build-path 'up 'up "include")
-				      (build-path 'up 'up "src" "mzscheme" "gc2"))
+			      (let ([inc (build-path 'up 'up "include")])
+				(if (eq? 'windows (system-type))
+				    (format "cl.exe /MT /E /I~s /I~s" 
+					    inc
+					    (build-path (collection-path "openssl") "openssl" "include"))
+				    (format "gcc -E -DOS_X -I~s" inc)))
 			      "mzssl.c"
 			      (build-path 3m-dir "mzssl.c")))
 			    void)

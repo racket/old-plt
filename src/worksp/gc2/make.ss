@@ -177,7 +177,7 @@
 
 (let ([objs (list
 	     "xsrc/main.obj"
-	     "libmzsch3mxxxxxxx.lib")])
+	     "../../../libmzsch3mxxxxxxx.lib")])
   (link-dll objs null exe "" #t))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -368,3 +368,8 @@
 	     "../../../libmzsch3mxxxxxxx.lib"
 	     "../../../libmred3mxxxxxxx.lib")])
   (link-dll objs null "../../../MrEd3m.exe" "/link /subsystem:windows" #t))
+
+(system- "cl.exe /MT /O2 /DMZ_PRECISE_GC /I../../mzscheme/include /c ../../mzscheme/dynsrc/mzdyn.c /Fomzdyn3m.obj")
+(system- "lib.exe -def:../../mzscheme/dynsrc/mzdyn.def -out:mzdyn3m.lib")
+(copy-file "mzdyn3m.exp" "../../../lib/msvc/mzdyn3m.exp")
+(copy-file "mzdyn3m.obj" "../../../lib/msvc/mzdyn3m.obj")

@@ -24,36 +24,6 @@
   (define if-temp (gensym "if-temp-"))
    
   
-  ; get-arg-symbol maintains a list of gensyms associated with the non-negative
-  ; integers.  These symbols are used in the elaboration of applications; the nth
-  ; in the application is evaluated and stored in a variable whose name is the nth
-  ; gensym supplied by get-arg-symbol.
-  
-  ; I'm just going to implement this with a simple assq list. if this isn't good
-  ; enough, it can always be improved later.
-  
-  (define get-arg-symbol
-    (let ([assoc-list null])
-      (lambda (arg-num)
-	(let ([entry (assq arg-num assoc-list)])
-	  (if entry
-	      (cadr entry)
-	      (begin
-		(let ([new-sym (gensym (string-append "arg" (number->string arg-num) "-"))])
-		  (set! assoc-list `((,arg-num ,new-sym) ,@assoc-list))
-		  new-sym)))))))
-  
-  ; test cases: (returns #t on success)
-  ;(let ([arg3 (get-arg-symbol 3)]
-  ;      [arg2 (get-arg-symbol 2)]
-  ;      [arg1 (get-arg-symbol 1)]
-  ;      [arg2p (get-arg-symbol 2)])
-  ;  (and (not (eq? arg3 arg2))
-  ;       (not (eq? arg3 arg1))
-  ;       (not (eq? arg3 arg2p))
-  ;       (not (eq? arg2 arg1))
-  ;       (eq? arg2 arg2p)
-  ;       (not (eq? arg1 arg2p))))
   
   
   ; make-debug-info takes a list of variables and an expression and

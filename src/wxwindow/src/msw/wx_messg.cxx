@@ -58,10 +58,10 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
   if (panel)
     cparent = (wxWnd *)(panel->handle);
 
-  HWND static_item = wxwmCreateWindowEx(0, STATIC_CLASS, label,
-								 STATIC_FLAGS,
-                         0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
-                         wxhInstance, NULL);
+  HWND static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
+					STATIC_FLAGS,
+					0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+					wxhInstance, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(static_item);
 #endif
@@ -70,11 +70,11 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
 
   SubclassControl(static_item);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
+  HDC the_dc = GetWindowDC((HWND)ms_handle);
   if (labelFont && labelFont->GetInternalFont(the_dc))
     SendMessage((HWND)ms_handle,WM_SETFONT,
                 (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  ReleaseDC((HWND)ms_handle,the_dc);
 
   panel->GetValidPosition(&x, &y);
 
@@ -106,10 +106,10 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
     cparent = (wxWnd *)(panel->handle);
 
   HWND static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
-//                         FS_BITMAP | FS_Y4 | FS_X4 | WS_CHILD | WS_VISIBLE | WS_GROUP,
-                         FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD | WS_VISIBLE | WS_GROUP,
-                         0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
-                         wxhInstance, NULL);
+					FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
+					| WS_VISIBLE | WS_GROUP,
+					0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+					wxhInstance, NULL);
   if (image) {
     SetBitmapDimensionEx(image->ms_bitmap,
 			 image->GetWidth(),
@@ -119,23 +119,12 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
                   (WPARAM)0xFFFF/*((image->GetHeight()<<8)+image->GetWidth())*/,
                   (LPARAM)image->ms_bitmap);
   }
-/*
-#if CTL3D
-  Ctl3dSubclassCtl(static_item);
-#endif
-*/
+
   ms_handle = (HANDLE)static_item;
 
   // Subclass again for purposes of dialog editing mode
   SubclassControl(static_item);
 
-/*
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
-*/
   panel->GetValidPosition(&x, &y);
 
   SetSize(x, y, image ? image->GetWidth() : 0, image ? image->GetHeight() : 0);
@@ -146,7 +135,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
 
 wxMessage::~wxMessage(void)
 {
- if (bm_label) {
+  if (bm_label) {
     --bm_label->selectedIntoDC;
     bm_label = NULL;
   }
@@ -188,8 +177,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   // If we're prepared to use the existing width, then...
   if (width == -1 && ((sizeFlags & wxSIZE_AUTO_WIDTH) != wxSIZE_AUTO_WIDTH))
     actualWidth = ww;
-  else if (width == -1)
-  {
+  else if (width == -1) {
     int cx;
     int cy;
     wxGetCharSize((HWND)ms_handle, &cx, &cy,labelFont);
@@ -199,8 +187,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   // If we're prepared to use the existing height, then...
   if (height == -1 && ((sizeFlags & wxSIZE_AUTO_HEIGHT) != wxSIZE_AUTO_HEIGHT))
     actualHeight = hh;
-  else if (height == -1)
-  {
+  else if (height == -1) {
     actualHeight = (int)(cyf) ;
   }
 
@@ -226,8 +213,7 @@ void wxMessage::SetLabel(char *label)
   POINT point;
   point.x = rect.left;
   point.y = rect.top;
-  if (parent)
-  {
+  if (parent) {
     wxWnd *cparent = (wxWnd *)(parent->handle);
     ::ScreenToClient(cparent->handle, &point);
   }
@@ -260,12 +246,12 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
              FALSE);
   
   SetBitmapDimensionEx(bitmap->ms_bitmap,
-			 bitmap->GetWidth(),
-			 bitmap->GetHeight(),
-			 NULL);
-  SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
-                (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-                (LPARAM)bitmap->ms_bitmap);
+		       bitmap->GetWidth(),
+		       bitmap->GetHeight(),
+		       NULL);
+  SendMessage((HWND)ms_handle, WM_CHANGEBITMAP,
+	      (WPARAM)0xFFFF /*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
+	      (LPARAM)bitmap->ms_bitmap);
   
   InvalidateRect(GetParent()->GetHWND(), &rect, TRUE);
 #endif

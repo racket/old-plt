@@ -148,12 +148,11 @@ Bool wxText::Create(wxPanel *panel, wxFunction Function, char *label, char *valu
   }
 
   // If label exists, create a static control for it.
-  if (label)
-  {
-	 static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-                         STATIC_FLAGS,
-                         0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
-                         wxhInstance, NULL);
+  if (label) {
+    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
+				      STATIC_FLAGS,
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
 #endif
@@ -175,8 +174,7 @@ Bool wxText::Create(wxPanel *panel, wxFunction Function, char *label, char *valu
   // using global memory instead of the local heap, which
   // runs out far too soon. Solves the problem with
   // failing to appear.
-  globalHandle=GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT,
-								 256L);
+  globalHandle=GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, 256L);
 #endif
 
   long msStyle = ES_AUTOHSCROLL | ES_LEFT | WS_BORDER |
@@ -188,17 +186,18 @@ Bool wxText::Create(wxPanel *panel, wxFunction Function, char *label, char *valu
   if (windowStyle & wxPASSWORD) // hidden input
     msStyle |= ES_PASSWORD;
 
-  HWND edit = wxwmCreateWindowEx(0, "EDIT", NULL,
-                        msStyle,
-                        0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-								globalHandle, NULL);
+  HWND edit = wxwmCreateWindowEx(0, "wxEDIT", NULL,
+				 msStyle,
+				 0, 0, 0, 0, cparent->handle, 
+				 (HMENU)windows_id,
+				 globalHandle, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(edit);
 #endif
-/* The following code subclasses the EDIT control (again! -- CTL3D may
- * already have done it) to intercept the ENTER key, which only
- * works if the style wxPROCESS_ENTER has been used.
- */
+  /* The following code subclasses the EDIT control (again! -- CTL3D may
+   * already have done it) to intercept the ENTER key, which only
+   * works if the style wxPROCESS_ENTER has been used.
+   */
   ms_handle = (HANDLE)edit;
   
   SubclassControl(edit);
@@ -251,6 +250,8 @@ Bool wxText::Create(wxPanel *panel, wxFunction Function, char *label, char *valu
     if (the_label)
       delete [] the_label ;
   }
+
+  wx_cursor = wxIBEAM_CURSOR;
 
   return TRUE;
 }
@@ -522,10 +523,10 @@ void wxText::SetEditable(Bool editable)
   HWND hWnd = GetHWND();
   SendMessage(hWnd, EM_SETREADONLY, (WPARAM)!editable, (LPARAM)0L);
 }
-
-void wxText::ChangeToGray(Bool gray)
-{
-  wxWindow::ChangeToGray(gray);
-  if (static_label)
-    ::EnableWindow(static_label, !gray);
-}
+
+void wxText::ChangeToGray(Bool gray)
+{
+  wxWindow::ChangeToGray(gray);
+  if (static_label)
+    ::EnableWindow(static_label, !gray);
+}

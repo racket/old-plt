@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -82,8 +82,11 @@ wxFrame::wxFrame(wxFrame *Parent, char *title, int x, int y,
   Create(Parent, title, x, y, width, height, style, name);
 }
 
+
 extern void wxCreatedWindow(wxWindow *w);
+
 extern void wxDestroyedWindow(void *, wxWindow *w);
+
 
 Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
                  int width, int height, long style, char *name)
@@ -132,8 +135,11 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 #if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxModelessWindows.Append(this);
 #endif
-  
+
+  wx_cursor = wxSTANDARD_CURSOR;  
+
   wxCreatedWindow(this);
+
 
   return TRUE;
 }
@@ -162,7 +168,9 @@ wxFrame::~wxFrame(void)
      PostQuitMessage(0);
   }
 
+
   wxDestroyedWindow(context, this);
+
 
   wxModelessWindows.DeleteObject(this);
 }
@@ -174,11 +182,18 @@ HMENU wxFrame::GetWinMenu(void)
   else return 0;
 }
 
+
 void wxFrame::ChangeToGray(Bool gray)
+
 {
+
   wxWindow::ChangeToGray(gray);
+
   InternalGrayChildren(gray);
+
 }
+
+
 
 
 // Get size *available for subwindows* i.e. excluding menu bar etc.

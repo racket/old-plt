@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cc,v 1.2 1994/08/14 23:00:24 edz Exp edz $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,12 +32,12 @@
                     // If this works for Borland 4.0 as well, then no worries.
 #include <dir.h>
 #endif
-
+
 #if 0
 #ifdef WIN32
 #include <io.h>
 #endif
-#endif
+#endif
 
 /* MATTHEW: [5] Normalize wxSleep(): */
 #define WX_USE_GLOBAL_SLEEP 1
@@ -45,10 +45,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if 0
+#if 0
 #ifndef __WATCOMC__
 #include <errno.h>
-#endif
+#endif
 #endif
 #include <stdarg.h>
 
@@ -679,8 +679,8 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
   int no_file = !file;
 
   if (!file)
-    file = wxUserResourceFile;
-
+    file = wxUserResourceFile;
+
   wxBuffer[0] = 0;
 
   if (file)
@@ -749,6 +749,8 @@ static int wxBusyCursorCount = 0;
 extern int wxGetBusyState();
 extern void wxSetBusyState(int);
 
+extern HCURSOR wxMSWSetCursor(HCURSOR c);
+
 // Set the cursor to the busy cursor for all windows
 void wxBeginBusyCursor(wxCursor *cursor)
 {
@@ -757,9 +759,9 @@ void wxBeginBusyCursor(wxCursor *cursor)
   wxSetBusyState(wxBusyCursorCount);
 
   if (wxBusyCursorCount == 1)
-    wxBusyCursorOld = ::SetCursor(cursor->ms_cursor);
+    wxBusyCursorOld = wxMSWSetCursor(cursor->ms_cursor);
   else
-    (void)::SetCursor(cursor->ms_cursor);
+    (void)wxMSWSetCursor(cursor->ms_cursor);
 }
 
 // Restore cursor to normal
@@ -773,7 +775,7 @@ void wxEndBusyCursor(void)
     
   if (wxBusyCursorCount == 0)
   {
-    ::SetCursor(wxBusyCursorOld);
+    wxMSWSetCursor(wxBusyCursorOld);
     wxBusyCursorOld = 0;
   }
 }

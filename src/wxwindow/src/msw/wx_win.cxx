@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.4 1998/04/08 12:35:39 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.5 1998/04/11 13:58:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -435,8 +435,7 @@ void wxWindow::InternalGrayChildren(Bool gray)
 void wxWindow::CaptureMouse(void)
 {
   HWND hWnd = GetHWND();
-  if (hWnd && !winCaptured)
-  {
+  if (hWnd && !winCaptured) {
     SetCapture(hWnd);
     winCaptured = TRUE;
   }
@@ -444,8 +443,7 @@ void wxWindow::CaptureMouse(void)
 
 void wxWindow::ReleaseMouse(void)
 {
-  if (winCaptured)
-  {
+  if (winCaptured) {
     ReleaseCapture();
     winCaptured = FALSE;
   }
@@ -457,8 +455,7 @@ void wxWindow::DragAcceptFiles(Bool accept)
   if (hWnd)
     ::DragAcceptFiles(hWnd, (BOOL)accept);
 /*
-  switch (wxWinType)
-  {
+  switch (wxWinType) {
     case wxTYPE_XWND:
     {
       wxWnd *wnd = (wxWnd *)handle;
@@ -534,6 +531,11 @@ void wxWindow::ClientToScreen(int *x, int *y)
   *y = pt.y;
 }
 
+HCURSOR wxMSWSetCursor(HCURSOR c)
+{
+  return SetCursor(c);
+}
+
 wxCursor *wxWindow::SetCursor(wxCursor *cursor)
 {
   wxCursor *old_cursor = wx_cursor;
@@ -554,7 +556,7 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
     ::GetWindowRect(hWnd, &rect);
 
     if (::PtInRect(&rect, point) && !wxIsBusy())
-      ::SetCursor(wx_cursor->ms_cursor);
+      wxMSWSetCursor(wx_cursor->ms_cursor);
   }
 
   wxFlushEvents();
@@ -2542,16 +2544,12 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
   event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->CaptureMouse();
-
+    wx_window->CaptureMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window)
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
@@ -2575,18 +2573,13 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
   event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->ReleaseMouse();
-
-
+    wx_window->ReleaseMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
 
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
@@ -2616,8 +2609,7 @@ void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
@@ -2627,16 +2619,13 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   // how to emulate Sleep()...
   // This means that your app will receive Down-Up-Dclick sequences
   // rather than Dclick
-  if (wx_window && wx_window->doubleClickAllowed)
-  {
+  if (wx_window && wx_window->doubleClickAllowed) {
     UINT time = GetDoubleClickTime() ;
     Sleep(time) ;
     MSG dummy ;
     if (PeekMessage(&dummy,handle,
                     WM_MBUTTONDBLCLK,WM_MBUTTONDBLCLK,
-                    PM_NOREMOVE)
-       )
-    {
+                    PM_NOREMOVE)) {
       PeekMessage(&dummy,handle,WM_MBUTTONUP,WM_MBUTTONUP,PM_REMOVE);
       return; 
     }
@@ -2663,17 +2652,12 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->CaptureMouse();
-
-
+    wx_window->CaptureMouse();
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
@@ -2696,18 +2680,14 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
   event.eventObject = wx_window;
 
-
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
-
-	  wx_window->ReleaseMouse();
+    wx_window->ReleaseMouse();
 
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
   if (wx_window)
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
@@ -2862,77 +2842,77 @@ void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
 
 void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
 {
-//wxDebugMsg("Client 0x%08x Move Msg %d,%d\n",this,x,y) ;
-
-// #if MOUSE_EXIT_FIX //Should work now!!
-
   // Don't do the Leave/Enter fix if we've captured the window,
   // or SetCapture won't work properly.
-  if (wx_window && !wx_window->winCaptured)
-  {
-    HWND hunder ;
-    POINT pt ;
+  if (wx_window && !wx_window->winCaptured) {
+    HWND hunder;
+    POINT pt;
     // See if we Leave/Enter the window.
-    GetCursorPos(&pt) ;
-    hunder = WindowFromPoint(pt) ;
-    if (hunder==handle)
-    {
+    GetCursorPos(&pt);
+    hunder = WindowFromPoint(pt);
+    if (hunder==handle) {
       // I'm in the Window, but perhaps in NC area.
-      RECT wind ;
-      RECT nc ;
-      GetClientRect(handle,&wind) ;
-      GetWindowRect(handle,&nc) ;
-      pt.x -= nc.left ;
-      pt.y -= nc.top ;
+      RECT wind;
+      RECT nc;
+      GetClientRect(handle,&wind);
+      GetWindowRect(handle,&nc);
+      pt.x -= nc.left;
+      pt.y -= nc.top;
       wind.left    += WINDOW_MARGIN ; // to be able to 'see' leave
       wind.top     += WINDOW_MARGIN ; // to be able to 'see' leave
       wind.right   -= WINDOW_MARGIN ; // to be able to 'see' leave
       wind.bottom  -= WINDOW_MARGIN ; // to be able to 'see' leave
-
+      
       if (!PtInRect(&wind,pt))
         hunder = NULL ; // So, I can simulate a Leave event...
     }
 
-    if (hunder!=handle)
-    {
-      if (mouse_in_window)
-      {
-        mouse_in_window = FALSE ;
-        // Capture/Release is no more needed...
-        //ReleaseCapture() ;
-        OnMouseLeave(x,y,flags) ;
-        return ;
+    if (hunder != handle) {
+      if (mouse_in_window) {
+        mouse_in_window = FALSE;
+        OnMouseLeave(x, y, flags);
+        return;
       }
       // We never want to see Enter or Motion in this part of the Window...
-      return ;
-    }
-    else
-    {
+      return;
+    } else {
       // Event was triggered while I'm really into my client area.
       // Do an Enter if not done.
-      if (!mouse_in_window)
-      {
-        mouse_in_window = TRUE ;
-        // Capture/Release is no more needed...
-        //SetCapture(handle) ;
+      if (!mouse_in_window) {
+        mouse_in_window = TRUE;
         // Set cursor, but only if we're not in 'busy' mode
 	if (wxIsBusy())
-	  ::SetCursor(wxHOURGLASS_CURSOR->ms_cursor);
-	else if (wx_window->wx_cursor)
-          ::SetCursor(wx_window->wx_cursor->ms_cursor);
-        OnMouseEnter(x,y,flags) ;
-        return ;
+	  wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
+	else {
+	  wxWindow *w = wx_window;
+	  while (w) {
+	    if (w->wx_cursor) {
+	      wxMSWSetCursor(w->wx_cursor->ms_cursor);
+	      break;
+	    }
+	    w = w->GetParent();
+	  }
+	  OnMouseEnter(x, y, flags);
+	  return;
+	}
       }
     }
   }
-// #endif //MOUSE_EXIT_FIX
     
   // 'normal' move event...
   // Set cursor, but only if we're not in 'busy' mode
   if (wxIsBusy())
-    ::SetCursor(wxHOURGLASS_CURSOR->ms_cursor);
-  else if (wx_window->wx_cursor)
-    ::SetCursor(wx_window->wx_cursor->ms_cursor);
+    wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
+  else {
+    wxWindow *w = wx_window;
+    while (w) {
+      if (w->wx_cursor) {
+	wxMSWSetCursor(w->wx_cursor->ms_cursor);
+	break;
+      }
+      w = w->GetParent();
+    }
+  }
 
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
   wxMouseEvent &event = *_event;
@@ -2956,8 +2936,7 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
   // the trailing move event if x and y are the same.
   if ((last_event == wxEVENT_TYPE_RIGHT_DOWN || last_event == wxEVENT_TYPE_LEFT_DOWN ||
        last_event == wxEVENT_TYPE_MIDDLE_DOWN) &&
-      (last_x_pos == event.x && last_y_pos == event.y))
-  {
+      (last_x_pos == event.x && last_y_pos == event.y)) {
     last_x_pos = event.x; last_y_pos = event.y;
     last_event = wxEVENT_TYPE_MOTION;
     return;
@@ -2966,10 +2945,8 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_MOTION;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
-
-	if (!wx_window->CallPreOnEvent(wx_window, &event))
-
-	  wx_window->GetEventHandler()->OnEvent(event);
+    if (!wx_window->CallPreOnEvent(wx_window, &event))
+      wx_window->GetEventHandler()->OnEvent(event);
 }
 
 void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
@@ -2978,7 +2955,7 @@ void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
 
   // Set cursor, but only if we're not in 'busy' mode
   if (wx_window->wx_cursor && !wxIsBusy())
-    ::SetCursor(wx_window->wx_cursor->ms_cursor);
+    wxMSWSetCursor(wx_window->wx_cursor->ms_cursor);
 
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
   wxMouseEvent &event = *_event;
@@ -3012,7 +2989,7 @@ void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
 
   // Set cursor, but only if we're not in 'busy' mode
   if (wx_window->wx_cursor && !wxIsBusy())
-    ::SetCursor(wx_window->wx_cursor->ms_cursor);
+    wxMSWSetCursor(wx_window->wx_cursor->ms_cursor);
 
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
   wxMouseEvent &event = *_event;

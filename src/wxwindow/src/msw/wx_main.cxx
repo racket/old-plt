@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -192,7 +192,18 @@ static void EnablePenAppHooks (Bool hook)
 #endif	/* ! Windows-NT */
 }
 
+void RegisterNoCursor(HANDLE hInstance, char *src, char *dest)
+{
+  WNDCLASSEX c;
 
+  c.cbSize = sizeof(c);
+  if (!GetClassInfoEx(hInstance, src, &c))
+    wxFatalError("Can't get info for cursorless class");
+  c.lpszClassName = dest;
+  c.hCursor = NULL;
+  if (!RegisterClassEx(&c))
+    wxFatalError("Can't register cursorless class");
+}
 
 void wxInitialize(HANDLE hInstance)
 {
@@ -235,7 +246,7 @@ void wxInitialize(HANDLE hInstance)
   wndclass.cbWndExtra    = sizeof( DWORD ); // was 4
   wndclass.hInstance     = hInstance;
   wndclass.hIcon         = wxSTD_FRAME_ICON;
-  wndclass.hCursor       = LoadCursor( NULL, IDC_ARROW );
+  wndclass.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
 #if FAFA_LIB
   wndclass.hbrBackground =  (HBRUSH)(COLOR_APPWORKSPACE+1) ;
 #else
@@ -247,7 +258,7 @@ void wxInitialize(HANDLE hInstance)
 #endif
   wndclass.lpszClassName = wxFrameClassName;
 
-  if (!RegisterClass( &wndclass ))
+  if (!RegisterClass(&wndclass))
     wxFatalError("Can't register Frame Window class");
 
 ///////////////////////////////////////////////////////////////////////
@@ -260,7 +271,7 @@ void wxInitialize(HANDLE hInstance)
   wndclass1.cbWndExtra    = sizeof( DWORD ); // was 4
   wndclass1.hInstance     = hInstance;
   wndclass1.hIcon         = wxSTD_MDIPARENTFRAME_ICON;
-  wndclass1.hCursor       = LoadCursor( NULL, IDC_ARROW );
+  wndclass1.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
 #if FAFA_LIB
   wndclass1.hbrBackground =  (HBRUSH)(COLOR_APPWORKSPACE+1) ;
 #else
@@ -285,7 +296,7 @@ void wxInitialize(HANDLE hInstance)
   wndclass4.cbWndExtra    = sizeof( DWORD ); // was 4
   wndclass4.hInstance     = hInstance;
   wndclass4.hIcon         = wxSTD_MDICHILDFRAME_ICON;
-  wndclass4.hCursor       = LoadCursor( NULL, IDC_ARROW );
+  wndclass4.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
 #if FAFA_LIB
   wndclass4.hbrBackground =  (HBRUSH)(COLOR_WINDOW+1) ;
 #else
@@ -355,6 +366,12 @@ void wxInitialize(HANDLE hInstance)
   wndclass3.lpszClassName = wxCanvasClassName;
   if (!RegisterClass( &wndclass3))
    wxFatalError("Can't register Canvas class");
+
+  RegisterNoCursor(hInstance, "BUTTON", "wxBUTTON");
+  RegisterNoCursor(hInstance, "COMBOBOX", "wxCOMBOBOX");
+  RegisterNoCursor(hInstance, "LISTBOX", "wxLISTBOX");
+  RegisterNoCursor(hInstance, "EDIT", "wxEDIT");
+  RegisterNoCursor(hInstance, "STATIC", "wxSTATIC");
 
 #ifndef __WATCOMC__
 #if !defined(__win32s__) && !defined(WIN32)
@@ -458,58 +475,58 @@ void wxCleanUp(void)
 
 extern void wxInitUserResource(char *s);
 
-static int retValue = 0;
-
-static int parse_command_line(int count, char **command, 
-							  char *buf, int maxargs)
-{
-    char *parse, *created, *write;
-	int findquote = 0;
-    
-    parse = created = write = buf;
-	while (*parse) {
-      while (*parse && isspace(*parse)) parse++;
-
-	  while (*parse && (!isspace(*parse) || findquote))	{
-        if (*parse== '"') {
-		  findquote = !findquote;
-	    } else if (*parse== '\\') {
-		  char *next;
-		  for (next = parse; *next == '\\'; next++);
-		  if (*next == '"') {
-		    /* Special handling: */
-			int count = (next - parse), i;
-			for (i = 1; i < count; i += 2)
-				*(write++) = '\\';
-			parse += (count - 1);
-			if (count & 0x1) {
-			  *(write++) = '\"';
-			  parse++;
-			}
-		  }	else
-			*(write++) = *parse;
-	    } else
-		  *(write++) = *parse;
-		parse++;
-	  }
-	  if (*parse)
-		  parse++;
-	  *(write++) = 0;
-	  
-	  if (*created)	{
-        command[count++] = created;
-		if (count == maxargs)
-			return count;
-	  }
-      created = write;
-	}
-
-	return count;
+static int retValue = 0;
+
+static int parse_command_line(int count, char **command, 
+							  char *buf, int maxargs)
+{
+    char *parse, *created, *write;
+	int findquote = 0;
+    
+    parse = created = write = buf;
+	while (*parse) {
+      while (*parse && isspace(*parse)) parse++;
+
+	  while (*parse && (!isspace(*parse) || findquote))	{
+        if (*parse== '"') {
+		  findquote = !findquote;
+	    } else if (*parse== '\\') {
+		  char *next;
+		  for (next = parse; *next == '\\'; next++);
+		  if (*next == '"') {
+		    /* Special handling: */
+			int count = (next - parse), i;
+			for (i = 1; i < count; i += 2)
+				*(write++) = '\\';
+			parse += (count - 1);
+			if (count & 0x1) {
+			  *(write++) = '\"';
+			  parse++;
+			}
+		  }	else
+			*(write++) = *parse;
+	    } else
+		  *(write++) = *parse;
+		parse++;
+	  }
+	  if (*parse)
+		  parse++;
+	  *(write++) = 0;
+	  
+	  if (*created)	{
+        command[count++] = created;
+		if (count == maxargs)
+			return count;
+	  }
+      created = write;
+	}
+
+	return count;
 }
-
-#ifdef USE_SENORA_GC
-extern "C" void GC_set_stack_base(void *);
-#endif
+
+#ifdef USE_SENORA_GC
+extern "C" void GC_set_stack_base(void *);
+#endif
 
 #ifdef __WATCOMC__
 //***It's really principal for Watcom that WinMain should be PASCAL,
@@ -521,13 +538,13 @@ extern "C" int APIENTRY WinMain(HANDLE hInstance, HANDLE WXUNUSED(hPrevInstance)
 						  int nCmdShow )
 #endif
 {
-#ifdef USE_SENORA_GC
-  {
-    int dummy;
-    GC_set_stack_base(&dummy);
-  }
-#endif
-
+#ifdef USE_SENORA_GC
+  {
+    int dummy;
+    GC_set_stack_base(&dummy);
+  }
+#endif
+
   wxhInstance = hInstance;
 
   wxInitialize(hInstance);

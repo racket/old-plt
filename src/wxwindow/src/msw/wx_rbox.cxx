@@ -46,7 +46,8 @@ BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
     return FALSE;
 }
 
-extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
+			long *r);
 
 typedef struct {
   FARPROC old;
@@ -61,8 +62,9 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   
   if (!i) return FALSE;
 
-  if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam))
-    return FALSE;
+  long r;
+  if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r))
+    return r;
 
   return CallWindowProc(i->old, hWnd, message, wParam, lParam);
 }
@@ -191,16 +193,16 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   static_label = NULL;
   HWND the_handle ;
 
-  ms_handle = wxwmCreateWindowEx(0,
-				GROUP_CLASS,Title,
-				GROUP_FLAGS,
-				0,0,0,0,
-				cparent->handle,(HMENU)NewId(),wxhInstance,NULL) ;
+  ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, Title,
+				 GROUP_FLAGS,
+				 0, 0, 0, 0,
+				 cparent->handle, (HMENU)NewId(),
+				 wxhInstance, NULL);
 
   the_handle = cparent->handle ;
 
 #if CTL3D
-    Ctl3dSubclassCtl(ms_handle);
+  Ctl3dSubclassCtl(ms_handle);
 #endif
   HDC the_dc = GetWindowDC(ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
@@ -214,29 +216,27 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   SubclassControl((HWND)ms_handle);
 
   // Some radio boxes test consecutive id.
-  (void)NewId() ;
+  (void)NewId();
   radioButtons = new HWND[N];
-  radioWidth = new int[N] ;
-  radioHeight = new int[N] ;
+  radioWidth = new int[N];
+  radioHeight = new int[N];
 
   buttonEnabled = new Bool[N];
   int i;
-  for (i = 0; i < N; i++)
-  {
-
+  for (i = 0; i < N; i++) {
     buttonEnabled[i] = TRUE;
     radioWidth[i] = radioHeight[i] = -1 ;
     long groupStyle = 0;
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
     long newId = NewId();
-	 radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
-                          groupStyle | RADIO_FLAGS,0,0,0,0,
-                          the_handle, (HMENU)newId, wxhInstance, NULL);
+    radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
+					 groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
+					 the_handle, (HMENU)newId, wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(radioButtons[i]);
 #endif
-	SubclassRadioButton(radioButtons[i], this);
+    SubclassRadioButton(radioButtons[i], this);
     HDC the_dc = GetWindowDC((HWND)radioButtons[i]) ;
     if (buttonFont && buttonFont->GetInternalFont(the_dc))
       SendMessage((HWND)radioButtons[i],WM_SETFONT,
@@ -244,26 +244,24 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     ReleaseDC((HWND)radioButtons[i],the_dc) ;
     subControls.Append((wxObject *)newId);
   }
-//  (void)NewId() ;
+  //  (void)NewId() ;
   // Create a dummy radio control to end the group.
-  (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", WS_GROUP|RADIO_FLAGS, 0,0,0,0, the_handle, (HMENU)NewId(), wxhInstance, NULL);
+  (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
+			   WS_GROUP|RADIO_FLAGS, 0, 0, 0, 0, 
+			   the_handle, (HMENU)NewId(), wxhInstance, NULL);
 
   no_items = N;
   SetSelection(0);
-
+  
   style = Title ? HAS_LABEL : 0;
-
-
 
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
   Callback(func);
 
-  if (Title)
-  {
-
+  if (Title) {
     if (_style & wxFIXED_LENGTH)
-      SetLabel(Title) ;
+      SetLabel(Title);
   }
 
 
@@ -322,9 +320,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   HWND the_handle ;
 
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS,the_label,
-									GROUP_FLAGS,
-									0,0,0,0,
-									cparent->handle,(HMENU)NewId(),wxhInstance,NULL) ;
+				 GROUP_FLAGS,
+				 0, 0, 0, 0,
+				 cparent->handle,(HMENU)NewId(),wxhInstance,NULL) ;
 
   HDC the_dc = GetWindowDC(ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
@@ -379,8 +377,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
 	 bm_labels[i]->selectedIntoDC++;
 	 radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
-                          groupStyle | BITRADIO_FLAGS,0,0,0,0,
-                          the_handle, (HMENU)newId, wxhInstance, NULL);
+					      groupStyle | BITRADIO_FLAGS,
+					      0, 0, 0, 0,
+					      the_handle, (HMENU)newId, wxhInstance, NULL);
      SubclassRadioButton(radioButtons[i], this);
     
     SetBitmapDimensionEx(Choices[i]->ms_bitmap,
@@ -400,8 +399,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
 	 bm_labels[i] = NULL;
 	 radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, tmp,
-                          groupStyle | RADIO_FLAGS,0,0,0,0,
-                          the_handle, (HMENU)newId, wxhInstance, NULL);
+					      groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
+					      the_handle, (HMENU)newId, wxhInstance, NULL);
 
     }
 #if CTL3D
@@ -418,7 +417,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   }
 //  (void)NewId() ;
   // Create a dummy radio control to end the group.
-  (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", WS_GROUP|RADIO_FLAGS, 0,0,0,0, the_handle, (HMENU)NewId(), wxhInstance, NULL);
+  (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
+			   WS_GROUP|RADIO_FLAGS, 0, 0, 0, 0,
+			   the_handle, (HMENU)NewId(), wxhInstance, NULL);
 
   no_items = N;
   SetSelection(0);

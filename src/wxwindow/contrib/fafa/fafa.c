@@ -130,7 +130,7 @@ static	int	MyRegisterClass( void )
 	w.lpszClassName = FafaWind ;
 	w.hInstance	= Inst ;
 	w.lpfnWndProc	= LoopFafaDialog ;
-	w.hCursor	= LoadCursor( 0, IDC_ARROW ) ;
+	w.hCursor	= NULL /* LoadCursor( 0, IDC_ARROW ) */ ;
 	w.hIcon		= LoadIcon( Inst, "fafa_icn") ;
 	w.hbrBackground = ((HBRUSH)(COLOR_WINDOW+1)) ;
 	w.style		= CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;

@@ -105,12 +105,11 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
     the_label[strlen(Title)] = '\0' ;
   }
 
-  if (Title)
-  {
-	 static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-                         STATIC_FLAGS,
-                         0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
-                         wxhInstance, NULL);
+  if (Title) {
+    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
+				      STATIC_FLAGS,
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
 #endif
@@ -119,17 +118,16 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
       SendMessage(static_label,WM_SETFONT,
                   (WPARAM)labelFont->GetInternalFont(the_dc),0L);
     ReleaseDC(static_label,the_dc) ;
-  }
-  else
+  } else
     static_label = NULL;
-
+  
   windows_id = (int)NewId();
 
-  HWND wx_combo = wxwmCreateWindowEx(0, "COMBOBOX", NULL,
-						 WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
-                   | WS_BORDER | WS_TABSTOP | WS_VISIBLE,
-                   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                   wxhInstance, NULL);
+  HWND wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
+				     WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
+				     | WS_BORDER | WS_TABSTOP | WS_VISIBLE,
+				     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				     wxhInstance, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(wx_combo);
 #endif

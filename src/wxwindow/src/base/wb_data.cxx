@@ -1,7 +1,7 @@
 /*
  * Global Data
  *
- * RCS_ID:      $Id: wb_data.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_data.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
  */
 
 /* static const char sccsid[] = "@(#)wb_data.cc	1.2 5/9/94"; */
@@ -92,4 +92,5 @@ wxColour *wxLIGHT_GREY;
 wxCursor *wxSTANDARD_CURSOR = NULL;
 wxCursor *wxHOURGLASS_CURSOR = NULL;
 wxCursor *wxCROSS_CURSOR = NULL;
+wxCursor *wxIBEAM_CURSOR = NULL;
 

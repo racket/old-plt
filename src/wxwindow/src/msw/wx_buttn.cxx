@@ -85,20 +85,10 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
 
   windows_id = (int)NewId();
 
-/* Sorry, but Fafa seems to mess up default button setting,
- * so we're reverting to normal Windows buttons this time.
- * JACS 29/3/94
-#if FAFA_LIB
   HWND wx_button =
-		wxwmCreateWindowEx(0, FafaButt, label, FB_TEXT | WS_TABSTOP | WS_CHILD,
-                     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                     wxhInstance, NULL);
-#else
-*/
-  HWND wx_button =
-	 wxwmCreateWindowEx(0, "BUTTON", label, BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
-						  0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-						  wxhInstance, NULL);
+    wxwmCreateWindowEx(0, "wxBUTTON", label, BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
+		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+		       wxhInstance, NULL);
 
 #if CTL3D
   Ctl3dSubclassCtl(wx_button);
@@ -112,7 +102,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
   if (buttonFont && buttonFont->GetInternalFont(the_dc))
     SendMessage((HWND)ms_handle,WM_SETFONT,
-					 (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
+		(WPARAM)buttonFont->GetInternalFont(the_dc),0L);
   ReleaseDC((HWND)ms_handle,the_dc) ;
 
   SetSize(x, y, width, height);
@@ -162,21 +152,22 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
   height+= FB_MARGIN ;
 
   HWND wx_button =
-		wxwmCreateWindowEx(0, FafaButt, "?", FB_BITMAP | WS_TABSTOP | WS_CHILD,
-							0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-							wxhInstance, NULL);
+    wxwmCreateWindowEx(0, FafaButt, "?", FB_BITMAP | WS_TABSTOP | WS_CHILD,
+		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+		       wxhInstance, NULL);
   SetBitmapDimensionEx(bitmap->ms_bitmap,
-			 bitmap->GetWidth(),
-			 bitmap->GetHeight(),
-			 NULL);
-		SendMessage((HWND)wx_button,WM_CHANGEBITMAP,
-			(WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-			(LPARAM)bitmap->ms_bitmap);
+		       bitmap->GetWidth(),
+		       bitmap->GetHeight(),
+		       NULL);
+  SendMessage((HWND)wx_button, WM_CHANGEBITMAP,
+	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
+	      (LPARAM)bitmap->ms_bitmap);
 #else
   HWND wx_button =
-	 wxwmCreateWindowEx(0, "BUTTON", "not implemented", BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
-                    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                    wxhInstance, NULL);
+    wxwmCreateWindowEx(0, "wxBUTTON", "not implemented", 
+		       BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,
+		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+		       wxhInstance, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(wx_button);
 #endif

@@ -141,12 +141,11 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   }
 
   // If label exists, create a static control for it.
-  if (Title)
-  {
-	 static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-                         STATIC_FLAGS,
-                         0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
-                         wxhInstance, NULL);
+  if (Title) {
+    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
+				      STATIC_FLAGS,
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
 #endif
@@ -175,10 +174,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   windows_id = (int)NewId();
 
-  HWND wx_list = wxwmCreateWindowEx(0, "LISTBOX", NULL,
-								 wstyle | WS_CHILD,
-                         0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-                         wxhInstance, NULL);
+  HWND wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
+				    wstyle | WS_CHILD,
+				    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				    wxhInstance, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(wx_list);
 #endif
@@ -212,8 +211,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   panel->AdvanceCursor(this);
   Callback(func);
 
-  if (Title)
-  {
+  if (Title) {
     if (style&wxFIXED_LENGTH)
       SetLabel(Title) ;
     if (the_label)

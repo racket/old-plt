@@ -115,10 +115,10 @@
        [(INTERACTIONS_BOX) $1]
        [(CLASS_BOX)
         (let ((old-input-port (input-port))
-              (parse-port-list (class:send (class-case-box $1) read-one-special 0 #f #f #f #f)))
+              (parse-port-list ((class:send (class-case-box $1) read-one-special 0 #f #f #f #f) 'beginner)))
           (input-port (car parse-port-list))
           (begin0
-            (car (package-defs ((cadr parse-port-list) 'beginner)))
+            (car (package-defs ((cadr parse-port-list))))
             (input-port old-input-port)))]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])

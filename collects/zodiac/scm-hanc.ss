@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.67 2000/06/08 19:52:28 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.68 2000/06/10 15:43:14 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -257,7 +257,7 @@
       (lambda ()
 	(static-error
 	  "unit linkage" 'term:unit-link-unbound-tag tag
-	  "unbound tag")))))
+	  (format "unbound tag: ~a" (z:read-object tag)))))))
 
 (define cu/s-tag-table-lookup/internal-error
   (lambda (table tag)

@@ -1,14 +1,14 @@
 
-_SLIB_ Initialization File
+_Slib_ Initialization File
 --------------------------
 
-The "init.ss" file in the _slibinit_ collection is an SLIB (version
-2c5) initialization file. To configure MzScheme for SLIB, load:
+The "init.ss" file in the _slibinit_ collection is an slib2c5
+initialization file. To configure MzScheme for slib, load:
 
   (require-library "init.ss" "slibinit")
 
 That's enough if the SCHEME_LIBRARY_PATH environment variable is
-defined. Otherwise, the initialization file assumes that SLIB is
+defined. Otherwise, the initialization file assumes that slib is
 installed as an "slib" collection (i.e., in an "slib" directory in the
 same location as the "mzlib" directory).
 

@@ -1,5 +1,6 @@
-;"Template.scm" configuration template of *features* for Scheme	-*-scheme-*-
-; Copyright (C) 1991, 1992, 1993 Aubrey Jaffer.
+; Derived from:                 	-*-scheme-*-
+; "Template.scm" configuration template of *features* for Scheme
+;  Copyright (C) 1991, 1992, 1993 Aubrey Jaffer.
 
 ; Compatibility file for MzScheme --
 ;   http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
@@ -222,7 +223,16 @@
 
 (define defmacro? macro?)
 
-(define macroexpand-1 expand-defmacro-once)
+(define (macroexpand-1 x)
+  ;; Slib expects macroexpand-1 to return an `eq?' value if there's nothing
+  ;;  to expand. MzScheme returns an `equal?' value, instead.
+  ;; Of course, using will equal? is bad if the input contains cycles.
+  ;;  We assume that slib-based code won't try to use MzScheme's graph input
+  ;;  syntax, since it isn't standard.
+  (let ([xx (expand-defmacro-once x)])
+    (if (equal? xx x)
+	x
+	xx)))
 
 (define macroexpand expand-defmacro)
 

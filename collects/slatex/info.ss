@@ -3,7 +3,7 @@
     ((name) "SLaTeX")
     ((install-collection)
      (lambda (plt-home) 
-       (unless (file-exists? (build-path (collection-path "slatex") "compiled" "slatex.zo"))
+       (unless (file-exists? (build-path (collection-path "slatex") "compiled" "slatexsrc.zo"))
 	 (parameterize ([current-namespace (make-namespace)]
 			[current-output-port (make-output-port void void)]
 			[current-directory (collection-path "slatex" "slatex-code")])

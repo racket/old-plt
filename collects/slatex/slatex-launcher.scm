@@ -1,4 +1,4 @@
-(require-library "slatex.ss" "slatex")
+(require-library "slatexsrc.ss" "slatex")
 
 (case (system-type)
   [(macos)

@@ -148,7 +148,7 @@
    (let ([compiled-file-directory (build-path (current-load-relative-directory) 'up "compiled")])
      (unless (directory-exists? compiled-file-directory)
        (make-directory compiled-file-directory))
-     (compile-file "slatexsrc.scm" (build-path compiled-file-directory "slatex.zo")))
+     (compile-file "slatexsrc.scm" (build-path compiled-file-directory "slatexsrc.zo")))
    
    ;;(delete-file "slatexsrc.scm")
    (display "Finished compilation")))

@@ -113,8 +113,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   return NULL;
 }
 
-Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,
-				    long numDims,long currDim,
+Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,long currDim,
 				    long *allIndices,long *currNdx) {
   Scheme_Object *vec;
   long low,high,vecSize;
@@ -126,12 +125,12 @@ Scheme_Object *buildVectorFromArray(SAFEARRAY *theArray,
 
   vec = scheme_make_vector(vecSize,scheme_void);
 
-  if (currDim < numDims) {
+  if (currDim > 1) {
     for (i = 0,j = low; i < vecSize; i++,j++) {
       currNdx[0] = j;
       SCHEME_VEC_ELS(vec)[i] = 
-	buildVectorFromArray(theArray,numDims,currDim + 1,
-			     allIndices,currNdx + 1);
+	buildVectorFromArray(theArray,currDim - 1,
+			     allIndices,currNdx - 1);
     }
   }
   else {
@@ -154,7 +153,8 @@ Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *theArray) {
 
   indices = (long *)scheme_malloc(numDims * sizeof(long));
 
-  retval = buildVectorFromArray(theArray,numDims,1,indices,indices);
+  retval = buildVectorFromArray(theArray,numDims,
+				indices,indices + numDims - 1);
 
   return retval;
 }
@@ -174,15 +174,16 @@ int getSchemeVectorDims(Scheme_Object *vec) {
   return numDims;
 }
 
-void setArrayEltCounts(Scheme_Object *vec,SAFEARRAYBOUND *rayBounds) {
+void setArrayEltCounts(Scheme_Object *vec,
+		       SAFEARRAYBOUND *rayBounds,long numDims) {
   Scheme_Object *currObj;
   long i;
 
   currObj = vec;
-  i = 0;
+  i = numDims - 1;
 
   do {
-    rayBounds[i++].cElements = SCHEME_VEC_SIZE(currObj);
+    rayBounds[i--].cElements = SCHEME_VEC_SIZE(currObj);
     currObj = SCHEME_VEC_ELS(currObj)[0];
   } while (SCHEME_VECTORP(currObj)); 
 }
@@ -238,7 +239,8 @@ BOOL isRegularVector(Scheme_Object *vec) {
   return TRUE;
 }
 
-void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,long *allIndices,long *currNdx,long *maxNdx) {
+void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,
+		    long *allIndices,long *currNdx) {
   VARIANT variant;
   Scheme_Object *elt;
   int len;
@@ -246,11 +248,11 @@ void doSetArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,long *allIndices,long
   
   len = SCHEME_VEC_SIZE(vec);
 
-  if (currNdx < maxNdx) {
+  if (currNdx > allIndices) {
     for (i = 0; i < len; i++) {
       elt = SCHEME_VEC_ELS(vec)[i];
       currNdx[0] = i;
-      doSetArrayElts(elt,theArray,allIndices,currNdx + 1,maxNdx);
+      doSetArrayElts(elt,theArray,allIndices,currNdx - 1);
     }
   }
   else {
@@ -268,7 +270,7 @@ void setArrayElts(Scheme_Object *vec,SAFEARRAY *theArray,long numDims) {
 
   memset(indices,0,sizeof(indices));
 
-  doSetArrayElts(vec,theArray,indices,indices,indices + numDims - 1);
+  doSetArrayElts(vec,theArray,indices,indices + numDims - 1);
 }
 
 SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *vec) {
@@ -297,7 +299,7 @@ SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *vec) {
     rayBounds[i].lLbound = 0L;
   }
 
-  setArrayEltCounts(vec,rayBounds);
+  setArrayEltCounts(vec,rayBounds,numDims);
 
   theArray = SafeArrayCreate(VT_VARIANT,numDims,rayBounds);
 

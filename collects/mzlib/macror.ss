@@ -5,7 +5,8 @@
 	 catch-errors 
 	 class-asi
 	 class*-asi
-	 opt-lambda)
+	 opt-lambda
+	 evcase)
 	 
  ;; let form where, instead of a list of name-value pairs, just
  ;; provide a list of names and they are bound to a sequence of
@@ -120,4 +121,52 @@
 				(loop (append required (list (car not-required)))
 				      (cdr not-required)
 				      (cdr defaults))))))])
-	 ,f)))))
+	 ,f))))
+
+ (define evcase 
+   (lambda (v . tests-in)
+     (let ([serror
+	    (lambda (msg at)
+	      (raise-syntax-error
+	       'evcase
+	       msg
+	       (list* 'evcase v tests-in)
+	       at))])
+       (let ([gen (gensym "evcase")])
+	 `(let ([,gen ,v])
+	    (cond
+	     ,@(let loop ([tests tests-in])
+		 (cond
+		  [(null? tests) `()]
+		  [(pair? tests)
+		   (let ([test-value (car tests)]
+			 [rest (cdr tests)])
+		     `(,(if (or (not (pair? test-value))
+				(not (pair? (cdr test-value))))
+			    (serror
+			     "bad syntax (clause is not a test-value pair)"
+			     test-value)
+			    (let ([test (car test-value)]
+				  [body (cdr test-value)])
+			      (if (and (pair? body) (list? body))
+				  #t
+				  (serror
+				   "bad syntax (improper clause body)"
+				   body))
+			      (let ([condition 
+				     (cond
+				      [(and (eq? test 'else)
+					    (not (local-expansion-time-bound? 'else)))
+				       (if (null? rest)
+					   'else
+					   (serror
+					    "bad syntax (`else' clause must be last)"
+					    test-value))]
+				      [else `(eqv? ,gen ,test)])])
+				`(,condition
+				  (begin ,@body)))))
+		       .
+		       ,(loop rest)))]
+		  [else (serror
+			 "bad syntax (body must contain a list of pairs)"
+			 tests)])))))))))

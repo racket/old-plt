@@ -14,4 +14,5 @@
 (constant catch-error)
 (constant class*-asi)
 (constant class-asi)
+(constant evcase)
 

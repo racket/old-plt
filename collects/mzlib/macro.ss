@@ -14,4 +14,5 @@
 (define-macro class-asi class-asi)
 (define-macro class*-asi class*-asi)
 (define-macro opt-lambda opt-lambda)
+(define-macro evcase evcase)
 (define-macro let+ let+)

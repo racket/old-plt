@@ -52,6 +52,8 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
     cdr = WITH_VAR_STACK(scheme_make_pair(obj, cdr));
   }
   
+  READY_TO_RETURN;
+
   return cdr;
 }
 

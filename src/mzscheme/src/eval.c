@@ -4289,7 +4289,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 static Scheme_Object *
 do_default_compile_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 {
-  return _compile(argv[0], env, SCHEME_FALSEP(argv[0]), 0, 0, 0);
+  return _compile(argv[0], env, SCHEME_FALSEP(argv[1]), 0, 0, 0);
 }
 
 /* local functions */

@@ -18,7 +18,9 @@
   ;; py-print: (listof X) -> void
   (define (py-print lst)
     (for-each (lambda (x)
-                (display (repr x)) (display #\space))
+                (display (py-gbov (if (py-is-a? x py-string%)
+                                      x
+                                      (py-repr x)))) (display #\space))
               lst)
     (newline))
 

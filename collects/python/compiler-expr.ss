@@ -329,8 +329,8 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'get-python-member) ,(send expression to-scheme)
-                                                 ,(send identifier to-scheme))))
+        (->orig-so `(,(py-so 'python-get-member) ,(send expression to-scheme)
+                                                 ',(send identifier to-scheme))))
       
       (super-instantiate ())))
   
@@ -429,7 +429,7 @@
                                  ',(send ((class-field-accessor attribute-ref% identifier) expression)
                                               to-scheme)
                                  ,@args)
-                         `(,(send expression to-scheme) ,@args)))))
+                         `(,(py-so 'py-call) ,(send expression to-scheme) (list ,@args))))))
       
       (super-instantiate ())))
   

@@ -29,7 +29,11 @@
       [else
        (error 'latex "do not know how to run latex on ~s" (system-type))])))
 
-(define slatex
+(define (slatex filename)
+  (slatex/no-latex filename)
+  (latex filename))
+
+(define slatex/no-latex
   (let ([ns (make-namespace)])
     (parameterize ([current-namespace ns])
       (require-library "slatexsrc.ss" "slatex")
@@ -44,5 +48,4 @@
 			  (if (string? base)
 			      base
 			      (current-directory))])
-	    (eval `(slatex::process-main-tex-file ,name))))
-	(latex file)))))
+	    (eval `(slatex::process-main-tex-file ,name))))))))

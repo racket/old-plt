@@ -229,6 +229,7 @@ static UINT need_trampoline_message;
 static WPARAM need_trampoline_wparam;
 static LPARAM need_trampoline_lparam;
 static WNDPROC need_trampoline_proc;
+int wx_trampolining;
 
 void MrEdDispatchEvent(MSG *msg)
 {
@@ -250,11 +251,16 @@ void MrEdDispatchEvent(MSG *msg)
     if (need_trampoline_win == msg->hwnd) {
       HWND win = need_trampoline_win;
       need_trampoline_win = 0;
+      wx_trampolining = 1;
       need_trampoline_proc(win, need_trampoline_message,
 			   need_trampoline_wparam, need_trampoline_lparam);
     }
   }
 }
+
+#ifndef WM_MOUSEWHEEL
+# define WM_MOUSEWHEEL 0x020A
+#endif
 
 int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, 
 		      LRESULT *res, WNDPROC proc)
@@ -291,6 +297,26 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     tramp = 1;
     *res = (message == WM_CLOSE);
     break;
+  case WM_RBUTTONDOWN:
+  case WM_RBUTTONUP:
+  case WM_RBUTTONDBLCLK:
+  case WM_MBUTTONDOWN:
+  case WM_MBUTTONUP:
+  case WM_MBUTTONDBLCLK:
+  case WM_LBUTTONDOWN:
+  case WM_LBUTTONUP:
+  case WM_LBUTTONDBLCLK:
+  case WM_MOUSEMOVE:
+  case WM_MOUSEWHEEL:
+  case WM_SYSKEYDOWN:
+  case WM_KEYUP:
+  case WM_KEYDOWN:
+  case WM_SYSCHAR:
+  case WM_CHAR:
+  case WM_INITMENU:
+    tramp = 1;
+    *res = 1;
+    break;
   default:
     tramp = 0;
     break;
@@ -306,6 +332,35 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     return 1;
   } else
     return 0;
+}
+
+#define wxLOG_EVENTS 0
+#if wxLOG_EVENTS
+FILE *log;
+#endif
+
+void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
+{
+#if wxLOG_EVENTS
+  if (!log)
+    log = fopen("evtlog", "w");
+  fprintf(log, "(%lx %lx %lx %s %d\n", scheme_current_thread, hWnd, message, who, tramp);
+  fflush(log);
+#endif
+
+  if (!tramp)
+    scheme_start_atomic();
+}
+
+void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
+{
+#if wsLOG_EVENTS
+  fprintf(log, " %lx %lx %lx %s %d)\n", scheme_current_thread, hWnd, message, who, tramp);
+  fflush(log);
+#endif
+
+  if (!tramp)
+    scheme_end_atomic();
 }
 
 int MrEdCheckForBreak(void)

@@ -435,14 +435,57 @@ void *wxMediaCanvas::CallAsPrimaryOwner(void *(*f)(void *), void *data)
   return r;
 }
 
+#ifdef wx_msw
+
+extern struct MrEdContext *MrEdGetContext(wxObject *w);
+extern void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
+
+Scheme_Object *on_set_focus_cb(Scheme_Object *b_cnvs, int, Scheme_Object **)
+{
+  wxMediaCanvas *c;
+  int on;
+  on = SCHEME_TRUEP(SCHEME_CAR(b_cnvs));
+  c = (wxMediaCanvas *)SCHEME_CDR(b_cnvs);
+  c->OnFocus(on);
+  return scheme_void;
+}
+
+static void QueueOnFocusCallback(wxMediaCanvas *canvas, int on)
+{
+  Scheme_Object *thunk, *b_cnvs;
+  wxWindow *tl;
+  void *context;
+
+  b_cnvs = scheme_make_pair((on ? scheme_true : scheme_false),
+			    (Scheme_Object *)canvas);
+
+  thunk = scheme_make_closed_prim((Scheme_Closed_Prim *)on_set_focus_cb, b_cnvs);
+
+  tl = canvas->GetTopLevel();
+  context = MrEdGetContext(tl);
+
+  MrEdQueueInEventspace(context, thunk);
+}
+#endif
+
 void wxMediaCanvas::OnSetFocus()
 {
+#ifdef wx_msw
+  // Need trampoline
+  QueueOnFocusCallback(this, TRUE);
+#else
   OnFocus(TRUE);
+#endif
 }
 
 void wxMediaCanvas::OnKillFocus()
 {
+#ifdef wx_msw
+  // Need trampoline
+  QueueOnFocusCallback(this, FALSE);
+#else
   OnFocus(FALSE);
+#endif
 }
 
 Bool wxMediaCanvas::IsFocusOn()

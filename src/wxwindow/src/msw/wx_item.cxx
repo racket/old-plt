@@ -227,13 +227,20 @@ void wxFindMaxSize(HWND wnd, RECT *rect)
 
 static int skip_next_return;
 
+extern void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+
 int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
-		 long *result)
+		 long *result, int tramp)
 {
+  int retval = 1;
+
   *result = 0;
   
   // If not in edit mode (or has been removed from parent), call the default proc.
   wxPanel *panel = (wxPanel *)item->GetParent();
+
+  wx_start_win_event("item", hWnd, message, tramp);
   
   if (panel && !item->isBeingDeleted) {
     /* Check PreOnChar or PreOnEvent */
@@ -242,7 +249,7 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
       /* For messages, override hittest to claim it's always in the client area */
       if (wxSubType(item->__type, wxTYPE_MESSAGE)) {
 	*result = HTCLIENT;
-	return FALSE;
+	retval = FALSE;
       }
       break;
     case WM_SETFOCUS:
@@ -324,14 +331,15 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	wxEntered(item, x, y, wParam);
 
 	if (item->CallPreOnEvent(item, &event))
-	  return 0;
+	  retval = 0;
       }
 
       break;
 
     case WM_SYSKEYDOWN:
       if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
-	return 1;
+	retval = 1;
+	break;
       }
     case WM_KEYDOWN:  /* ^^^ fallthrough */
       if (!((wParam != VK_ESCAPE) 
@@ -341,20 +349,23 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	    && (wParam != VK_DELETE))) {
 	/* Don't call pre-on-char for a ENTER press when
 	   a choice menu is dropped-down */
-	if (wx_choice_dropped)
+	if (wx_choice_dropped) {
 	  if (wParam == VK_RETURN) {
 	    skip_next_return = 1;
-	    return 1;
-	  }
-	
-	/* Otherwise, already covered by WM_CHAR */
-	return 0;
+	    retval = 1;
+	    /* Otherwise, already covered by WM_CHAR */
+	  } else
+	    retval = 0;
+	} else
+	  retval = 0;
       }
 
     case WM_SYSCHAR: /* ^^^ fallthrough */
       if (message == WM_SYSCHAR) {
-	if (wParam == VK_MENU)
-	  return 1;
+	if (wParam == VK_MENU) {
+	  retval = 1;
+	  break;
+	}
       }
     case WM_CHAR:  /* ^^^ fallthrough */
       {
@@ -367,9 +378,10 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	    case 13:
 	      if (skip_next_return) {
 		skip_next_return = 0;
-		return 0; /* Return already consumes to close popup */
-	      }
-	      id = WXK_RETURN;
+		retval = 0; /* Return already consumes to close popup */
+		id = -1;
+	      } else
+		id = WXK_RETURN;
 	      break;
 	    case 8:
 	      id = WXK_BACK;
@@ -413,25 +425,32 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	     a choice menu is dropped-down */
 	  if (wx_choice_dropped)
 	    if (event.keyCode == 13)
-	      return 1;
+	      retval = 1;
 
 	  if (item->CallPreOnChar(item, &event))
-	    return 0;
+	    retval = 0;
 	  else if (event.metaDown)
-	    return 0;
+	    retval = 0;
 	}
       }
     }
   }
 
-  return 1;
+ wx_end_win_event("item", hWnd, message, tramp);
+
+  return retval;
 }
+
+extern int wx_trampolining;
 
 // Sub-classed generic control proc
 LONG APIENTRY _EXPORT
   wxSubclassedGenericControlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   LRESULT res;
+  int tramp = wx_trampolining;
+
+  wx_trampolining = 0;
 
   /* See mredmsw.cxx: */
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxSubclassedGenericControlProc))
@@ -448,7 +467,7 @@ LONG APIENTRY _EXPORT
   }
 
   long r;
-  if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r))
+  if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
   return CallWindowProc((WNDPROC)item->oldWndProc, hWnd, message, wParam, lParam);

@@ -22,7 +22,7 @@ BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 }
 
 extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
-			long *r);
+			long *r, int tramp);
 
 typedef struct {
   FARPROC old;
@@ -30,22 +30,35 @@ typedef struct {
   int which;
 } wxRBInfo;
 
+extern int wx_trampolining;
+
+
 // Sub-classed generic control proc
 LONG APIENTRY _EXPORT
 wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  LRESULT res;
+  int tramp = wx_trampolining;
+
+  wx_trampolining = 0;
+
   if (message == WM_GETDLGCODE)
     return DLGC_WANTMESSAGE;
+
+  /* See mredmsw.cxx: */
+  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxRadioItemProc))
+    return res;
 
   wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
   if (!i) return FALSE;
 
   long r;
-  if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r))
+  if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
   if (message == WM_LBUTTONDOWN) {
+    /* assert: we've already trampolined, so no atomic lock needed */
     wxRadioBox *rb = (wxRadioBox *)i->item;
     if (rb->buttonEnabled[i->which]) {
       rb->SetSelection(i->which);

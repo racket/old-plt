@@ -1,5 +1,12 @@
 
 Version 203.4
+Changed handling of top-level and module top-level definitions
+ of identifiers that originate from a macro expansion; such
+ definitions now bind only the uses of the identifier with the
+ same expansion origin
+Added make-syntax-introducer, for creating new macro origins
+Changed generate-temporaries so that it does not use gensym,
+ but instead uses make-syntax-introducer to distinguish names
 Fixed parse problems with # in numbers, as in `1#/2' and
  `#e#x+e#s+e@-e#l-e'
 

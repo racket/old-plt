@@ -1651,6 +1651,8 @@ int namespace_val_MARK(void *p) {
 
   gcMARK(e->modvars);
 
+  gcMARK(e->marked_names);
+
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }
@@ -1677,6 +1679,8 @@ int namespace_val_FIXUP(void *p) {
   gcFIXUP(e->modchain);
 
   gcFIXUP(e->modvars);
+
+  gcFIXUP(e->marked_names);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -3793,6 +3797,7 @@ int mark_rename_table_MARK(void *p) {
   Module_Renames *rn = (Module_Renames *)p;
   gcMARK(rn->ht);
   gcMARK(rn->plus_kernel_nominal_source);
+  gcMARK(rn->marked_names);
   return
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }
@@ -3801,6 +3806,7 @@ int mark_rename_table_FIXUP(void *p) {
   Module_Renames *rn = (Module_Renames *)p;
   gcFIXUP(rn->ht);
   gcFIXUP(rn->plus_kernel_nominal_source);
+  gcFIXUP(rn->marked_names);
   return
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }

@@ -2581,11 +2581,12 @@ static void check_require_name(Scheme_Object *orig_name, Scheme_Object *name, Sc
   }
 
   /* Remember require: */
-  vec = scheme_make_vector(4, NULL);
+  vec = scheme_make_vector(5, NULL);
   SCHEME_VEC_ELS(vec)[0] = nominal_modidx;
   SCHEME_VEC_ELS(vec)[1] = modidx;
   SCHEME_VEC_ELS(vec)[2] = exname;
   SCHEME_VEC_ELS(vec)[3] = (isval ? scheme_true : scheme_false);
+  SCHEME_VEC_ELS(vec)[4] = orig_name;
   scheme_hash_set(required, name, vec);
 }
 
@@ -2601,10 +2602,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *self_modidx;
   Scheme_Comp_Env *xenv, *cenv;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
-  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var?) */
+  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var? origname) */
   Scheme_Hash_Table *provided;    /* exname -> locname-stx-or-sym */
   Scheme_Object *reprovided;      /* list of (list modidx syntax except-name ...) */
   Scheme_Object *all_defs_out;    /* list of (stx-list except-name ...) */
+  Scheme_Object *all_defs;        /* list of stxid; this is almost redundant to the syntax and toplevel
+				     tables, but it preserves the original name for exporting */
   void *tables[3], *et_tables[3];
   Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false;
   int excount, exvcount, exicount;
@@ -2681,11 +2684,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  midx = scheme_modidx_shift(midx, iim->src_modidx, nmidx);
       } else
 	midx = nmidx;
-      vec = scheme_make_vector(4, NULL);
+      vec = scheme_make_vector(5, NULL);
       SCHEME_VEC_ELS(vec)[0] = nmidx;
       SCHEME_VEC_ELS(vec)[1] = midx;
       SCHEME_VEC_ELS(vec)[2] = exsns[i];
       SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
+      SCHEME_VEC_ELS(vec)[4] = exs[i];
       scheme_hash_set(required, exs[i], vec);
     }
 
@@ -2694,11 +2698,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       numvals = kernel->num_var_provides;
       for (i = kernel->num_provides; i--; ) {
 	if (!SAME_OBJ(iim->kernel_exclusion, exs[i])) {
-	  vec = scheme_make_vector(4, NULL);
+	  vec = scheme_make_vector(5, NULL);
 	  SCHEME_VEC_ELS(vec)[0] = nmidx;
 	  SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
 	  SCHEME_VEC_ELS(vec)[2] = exs[i];
 	  SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
+	  SCHEME_VEC_ELS(vec)[4] = exs[i];
 	  scheme_hash_set(required, exs[i], vec);
 	}
       } 
@@ -2724,6 +2729,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   reprovided = scheme_null;
 
   all_defs_out = scheme_null;
+  all_defs = scheme_null;
 
   simplify_cache = scheme_new_stx_simplify_cache();
 
@@ -2790,8 +2796,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    /* Check that the name doesn't have a foreign source: */
 	    scheme_check_context(env->genv, name, e, self_modidx);
 
-	    name = scheme_tl_id_sym(env->genv, name, 1);
+	    /* Remember the original: */
+	    all_defs = scheme_make_pair(name, all_defs);
 	    
+	    name = scheme_tl_id_sym(env->genv, name, 1);
+
 	    /* Check that it's not yet defined: */
 	    if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
 	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
@@ -2842,6 +2851,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    /* Check that the name doesn't have a foreign source: */
 	    scheme_check_context(env->genv, name, e, self_modidx);
+	    
+	    /* Remember the original: */
+	    all_defs = scheme_make_pair(name, all_defs);
 	    
 	    name = scheme_tl_id_sym(env->genv, name, 1);
 	    
@@ -3272,12 +3284,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Walk through requires, check for re-providing: */
     for (i = required->size; i--; ) {
       if (required->vals[i]) {
-	Scheme_Object *nominal_modidx, *name, *modidx, *srcname;
+	Scheme_Object *nominal_modidx, *name, *modidx, *srcname, *outname;
 
 	name = required->keys[i];
 	nominal_modidx = SCHEME_VEC_ELS(required->vals[i])[0];
 	modidx = SCHEME_VEC_ELS(required->vals[i])[1];
 	srcname = SCHEME_VEC_ELS(required->vals[i])[2];
+	outname = SCHEME_VEC_ELS(required->vals[i])[4];
 
 	for (rx = reprovided; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
 	  if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
@@ -3291,7 +3304,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		exclude_hint = exns;
 	    
 	    for (; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
-	      /* Make sure excluded name was required: */
+	      /* Was this name exluded? */
 	      Scheme_Object *a;
 	      a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
 	      if (SAME_OBJ(a, name))
@@ -3300,12 +3313,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    if (SCHEME_STX_NULLP(exns)) {
 	      /* Not excluded, so provide it. */
-	      if (scheme_hash_get(provided, name))
-		scheme_wrong_syntax("module", name, SCHEME_CAR(ree), "identifier already provided");
+	      if (scheme_hash_get(provided, outname))
+		scheme_wrong_syntax("module", outname, SCHEME_CAR(ree), "identifier already provided");
 	      
-	      scheme_hash_set(provided, name, name);
+	      scheme_hash_set(provided, outname, name);
 
-	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(name, srcname))
+	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(outname, srcname))
 		reprovide_kernel++;
 	    }
 	  }
@@ -3315,7 +3328,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     /* Do all-defined provides */
     for (; !SCHEME_NULLP(all_defs_out); all_defs_out = SCHEME_CDR(all_defs_out)) {
-      Scheme_Object *exns, *ree, *exl, *name, *a;
+      Scheme_Object *exns, *ree, *exl, *name, *a, *adl, *exname;
 	    
       ree = SCHEME_CAR(all_defs_out);
       exl = SCHEME_CDR(ree);
@@ -3332,38 +3345,25 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       }
 
 
-      {
-	int i, j;
-	Scheme_Bucket **bs, *b;
+      for (adl = all_defs; SCHEME_PAIRP(adl); adl = SCHEME_CDR(adl)) {
+	name = SCHEME_CAR(adl);
+	exname = SCHEME_STX_SYM(name);
+	name = scheme_tl_id_sym(env->genv, name, 0);
 	
-	for (j = 0; j < 2; j++) {
-	  if (j) {
-	    bs = env->genv->toplevel->buckets;
-	    i = env->genv->toplevel->size;
-	  } else {
-	    bs = env->genv->syntax->buckets;
-	    i = env->genv->syntax->size;
-	  }
+	/* Was this one excluded? */
+	for (exns = exl; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
+	  a = SCHEME_STX_CAR(exns);
+	  a = scheme_tl_id_sym(env->genv, a, 0);
+	  if (SAME_OBJ(a, name))
+	    break;
+	}
 
-	  while(i--) {
-	    b = bs[i];
-	    if (b && b->val) {
-	      name = (Scheme_Object *)b->key;
-	      for (exns = exl; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
-		a = SCHEME_STX_CAR(exns);
-		a = scheme_tl_id_sym(env->genv, a, 0);
-		if (SAME_OBJ(a, name))
-		  break;
-	      }
-	      if (SCHEME_STX_NULLP(exns)) {
-		/* not excluded */
-		if (scheme_hash_get(provided, name))
-		  scheme_wrong_syntax("module", name, ree, "identifier already provided");
-		
-		scheme_hash_set(provided, name, name);
-	      }
-	    }
-	  }
+	if (SCHEME_STX_NULLP(exns)) {
+	  /* not excluded */
+	  if (scheme_hash_get(provided, exname))
+	    scheme_wrong_syntax("module", exname, ree, "identifier already provided");
+	  
+	  scheme_hash_set(provided, exname, name);
 	}
       }
     }
@@ -4008,9 +4008,10 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	  iname = exs[j];
 
 	if (SCHEME_SYM_WEIRDP(iname)) {
-	  /* Don't import a gensym or parallel symbol. The former is
-	     useless. The latter is supposed to be module-specific,
-	     and it could collide with local module-specific ids. */
+	  /* This shouldn't happen. In case it does, don't import a
+	     gensym or parallel symbol. The former is useless. The
+	     latter is supposed to be module-specific, and it could
+	     collide with local module-specific ids. */
 	  continue;
 	}
 

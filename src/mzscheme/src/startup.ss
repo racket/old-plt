@@ -1955,6 +1955,11 @@
 					       ...) ()
 			    (#(out ...) (begin e1 e2 ...))))])))))
 
+  (define counter 0)
+  (define (append-number s)
+    (set! counter (add1 counter))
+    (string->symbol (format "~a~s" s counter)))
+
   (define (generate-temporaries sl)
     (unless (stx-list? sl)
       (raise-type-error 
@@ -1962,15 +1967,18 @@
        "syntax pair"
        sl))
     (let ([l (stx->list sl)])
-      (map (lambda (x) (datum->syntax-object
-			#f
-			(cond
-			 [(or (symbol? x) (string? x))
-			  (gensym x)]
-			 [(identifier? x)
-			  (gensym (syntax-e x))]
-			 [else (gensym)])
-			#f)) l)))
+      (map (lambda (x) 
+	     ((make-syntax-introducer)
+	      (cond
+	       [(symbol? x)
+		(datum->syntax-object #f (append-number x))]
+	       [(string? x)
+		(datum->syntax-object #f (append-number x))]
+	       [(identifier? x)
+		(datum->syntax-object #f (append-number (syntax-e x)))]
+	       [else 
+		(datum->syntax-object #f (append-number 'temp))])))
+	   l)))
 
   (provide with-syntax generate-temporaries))
 

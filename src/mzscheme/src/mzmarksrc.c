@@ -642,6 +642,8 @@ namespace_val {
 
   gcMARK(e->modvars);
 
+  gcMARK(e->marked_names);
+
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }
@@ -1525,6 +1527,7 @@ mark_rename_table {
   Module_Renames *rn = (Module_Renames *)p;
   gcMARK(rn->ht);
   gcMARK(rn->plus_kernel_nominal_source);
+  gcMARK(rn->marked_names);
  size:
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }

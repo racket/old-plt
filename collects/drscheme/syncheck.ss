@@ -391,7 +391,7 @@
                 (set! arrow-vectors (make-hash-table))
                 (let ([f (get-top-level-window)])
                   (when f
-                    (send f open-status-line 'mouse-over))))
+                    (send f open-status-line 'drscheme:check-syntax:mouse-over))))
               (define/public (syncheck:clear-arrows)
                 (when (or arrow-vectors cursor-location cursor-text)
                   (set! arrow-vectors #f)
@@ -400,7 +400,7 @@
                   (invalidate-bitmap-cache)
                   (let ([f (get-top-level-window)])
                     (when f
-                      (send f close-status-line 'mouse-over)))))
+                      (send f close-status-line 'drscheme:check-syntax:mouse-over)))))
               (define/public (syncheck:add-menu text start-pos end-pos key make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
                   (add-to-range/key text start-pos end-pos make-menu key #t)))
@@ -539,7 +539,7 @@
                          (set! cursor-text #f)
                          (let ([f (get-top-level-window)])
                            (when f
-                             (send f update-status-line 'mouse-over "")))
+                             (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
                          (invalidate-bitmap-cache))
                        (super-on-event event)]
                       [(or (send event moving?)
@@ -557,12 +557,12 @@
                                                 (set! has-txt? #t)
                                                 (let ([f (get-top-level-window)])
                                                   (when f
-                                                    (send f update-status-line 'mouse-over ele)))))
+                                                    (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
                                             eles)
                                   (unless has-txt?
                                     (let ([f (get-top-level-window)])
                                       (when f
-                                        (send f update-status-line 'mouse-over ""))))))
+                                        (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
  
                               (unless (and cursor-location
                                            cursor-text
@@ -579,7 +579,7 @@
                            [else
                             (let ([f (get-top-level-window)])
                               (when f
-                                (send f update-status-line 'mouse-over "")))
+                                (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
                             (when (or cursor-location cursor-text)
                               (set! cursor-location #f)
                               (set! cursor-text #f)
@@ -863,7 +863,7 @@
                         (set-breakables old-break-thread old-kill-eventspace)
                         (enable-evaluation)
                         (send definitions-text end-edit-sequence)
-                        (close-status-line 'check-syntax))]
+                        (close-status-line 'drscheme:check-syntax))]
                      [kill-termination
                       (lambda ()
                         (unless normal-termination?
@@ -887,8 +887,8 @@
                      [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
-                        (open-status-line 'check-syntax)
-                        (update-status-line 'check-syntax status-init)
+                        (open-status-line 'drscheme:check-syntax)
+                        (update-status-line 'drscheme:check-syntax status-init)
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
                         (error-display-handler (lambda (msg exn) ;; =user=
@@ -904,9 +904,9 @@
                            (lambda (exn)
                              (uncaught-exception-raised)
                              (oh exn))))
-                        (update-status-line 'check-syntax status-teachpacks)
+                        (update-status-line 'drscheme:check-syntax status-teachpacks)
                         (drscheme:teachpack:install-teachpacks teachpacks)
-                        (update-status-line 'check-syntax status-expanding-expression)
+                        (update-status-line 'drscheme:check-syntax status-expanding-expression)
                         (set! user-custodian (current-custodian))
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])
@@ -942,18 +942,18 @@
                               (cleanup)
                               (custodian-shutdown-all user-custodian))))]
                         [else
-                         (update-status-line 'check-syntax status-eval-compile-time)
+                         (update-status-line 'drscheme:check-syntax status-eval-compile-time)
                          (eval-compile-time-part-of-top-level sexp)
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (open-status-line 'check-syntax)
-                                 (update-status-line 'check-syntax status-coloring-program)
+                                 (open-status-line 'drscheme:check-syntax)
+                                 (update-status-line 'drscheme:check-syntax status-coloring-program)
                                  (expanded-expression user-directory user-namespace sexp)
-                                 (close-status-line 'check-syntax))))))
-                         (update-status-line 'check-syntax status-expanding-expression)
+                                 (close-status-line 'drscheme:check-syntax))))))
+                         (update-status-line 'drscheme:check-syntax status-expanding-expression)
                          (loop)]))))))))
 
           ;; set-directory : text -> void

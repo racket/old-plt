@@ -210,18 +210,24 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso (regexp "^(.*)=[?]iso-8859-1[?][qQ][?](.*?)[?]=(.*)$"))
+      (define re:iso (regexp "^(.*)=[?]iso-8859-1[?]([qQbB])[?](.*?)[?]=(.*)$"))
       (define (parse-iso-8859-1 s)
 	(and s
 	     (let ([m (regexp-match re:iso s)])
 	       (if m
-		   (let ([s (qp-decode (caddr m))])
-		     ;; strip newline:
+		   (let ([s ((if (member (caddr m) '("q" "Q"))
+				 ;; quoted-printable; strip newline:
+				 (lambda (s)
+				   (let ([s (qp-decode s)])
+				     (substring s 0 (sub1 (string-length s)))))
+				 ;; base64:
+				 base64-decode)
+			     (cadddr m))])
 		     (parse-iso-8859-1
 		      (string-append
 		       (cadr m)
-		       (substring s 0 (sub1 (string-length s)))
-		       (cadddr m))))
+		       s
+		       (cadddr (cdr m)))))
 		   s))))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1740,7 +1746,7 @@
 						(let ([a (assoc "name" l)])
 						  (and a (cdr a)))))]
 				      [sz (mime:disposition-size (mime:entity-disposition ent))]
-				      [s #f])
+				      [content #f])
 				  (insert (format "[~a/~a~a~a]\r\n" 
 						  (mime:entity-type ent)
 						  (mime:entity-subtype ent)
@@ -1758,18 +1764,18 @@
 									#f
 									fn)])
 						      (when fn
-							(unless s
-							  (set! s (slurp ent)))
+							(unless content
+							  (set! content (slurp ent)))
 							(with-output-to-file fn
 							  (lambda ()
-							    (display s))
+							    (display content))
 							  'truncate/replace))))
 						  #f #f)
 					    (send t change-style url-delta s (sub1 e))))
 				  (lambda ()
-				    (unless s
-				      (set! s (slurp ent)))
-				    s)))])
+				    (unless content
+				      (set! content (slurp ent)))
+				    content)))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
                             (cond

@@ -2419,7 +2419,6 @@
 						     -re:suffix file
 						     (case (system-type)
 						       [(windows) ".dll"]
-						       [(macosx) ".dylib"]
 						       [else ".so"])))
 					#f))]
 			  [zo (and comp?

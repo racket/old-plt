@@ -364,7 +364,7 @@ void scheme_init_file(Scheme_Env *env)
   scheme_add_global_constant("file-or-directory-modify-seconds",
 			     scheme_make_prim_w_arity(file_modify_seconds,
 						      "file-or-directory-modify-seconds",
-						      1, 2), 
+						      1, 3), 
 			     env);
   scheme_add_global_constant("file-or-directory-permissions",
 			     scheme_make_prim_w_arity(file_or_dir_permissions,
@@ -3963,7 +3963,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   if (!SCHEME_PATH_STRINGP(argv[0]))
     scheme_wrong_type("file-or-directory-modify-seconds", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
-  set_time = (argc > 1);
+  set_time = ((argc > 1) && SCHEME_TRUEP(argv[1]));
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   bs = TO_PATH(argv[0]);
@@ -3981,7 +3981,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   
   if (set_time) {
     if (!SCHEME_INTP(argv[1]) && !SCHEME_BIGNUMP(argv[1])) {
-      scheme_wrong_type("file-or-directory-modify-seconds", "exact integer", 1, argc, argv);
+      scheme_wrong_type("file-or-directory-modify-seconds", "exact integer or #f", 1, argc, argv);
       return NULL;
     }
     if (!scheme_get_time_val(argv[1], &mtime)) {
@@ -3992,6 +3992,10 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
     }
   } else
     mtime = 0;
+
+  if (argc > 2) {
+    scheme_check_proc_arity("file-or-directory-modify-seconds", 0, 2, argc, argv);
+  }
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   scheme_security_check_file("file-or-directory-modify-seconds", file, 
@@ -4033,6 +4037,10 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
       }
     }
 #endif
+
+  if (argc > 2) {
+    return _scheme_tail_apply(argv[2], 0, NULL);
+  }
 
   scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "file-or-directory-modify-seconds: error %s file/directory time: %q (%e)",

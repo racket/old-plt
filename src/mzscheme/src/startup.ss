@@ -3199,9 +3199,9 @@
 		    [date-of (lambda (a modes)
 			       (ormap
 				(lambda (compiled-dir)
-				  (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
-				    (let ([a (a compiled-dir)])
-				      (cons a (file-or-directory-modify-seconds a)))))
+				  (let ([a (a compiled-dir)])
+				    (let ([v (file-or-directory-modify-seconds a #f (lambda () #f))])
+				      (and v (cons a v)))))
 				modes))]
 		    [date>=?
 		     (lambda (modes a bm)

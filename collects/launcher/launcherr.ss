@@ -248,7 +248,7 @@
   
   (define (get-maker)
     (case (system-type)
-      [(unix) make-unix-launcher]
+      [(unix beos) make-unix-launcher]
       [(windows) make-windows-launcher]
       [(macos) make-macos-launcher]))
   
@@ -264,17 +264,17 @@
   (define (make-mzscheme-program-launcher file collection dest)
     (make-mzscheme-launcher (list "-mqvL" file collection "--") dest))
   
-  (define l-home (if (eq? (system-type) 'unix)
+  (define l-home (if (memq (system-type) '(unix beos))
 		     (build-path plthome "bin")
 		     plthome))
   (define (sfx file) (case (system-type) 
-		       [(unix) (list->string
-				(map
-				 (lambda (c)
-				   (if (char-whitespace? c)
-				       #\-
-				       (char-downcase c)))
-				 (string->list file)))]
+		       [(unix beos) (list->string
+				     (map
+				      (lambda (c)
+					(if (char-whitespace? c)
+					    #\-
+					    (char-downcase c)))
+				      (string->list file)))]
 		       [(windows) (string-append file ".exe")]
 		       [else file]))
 

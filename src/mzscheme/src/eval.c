@@ -1962,6 +1962,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *name, *var, *stx, *normal;
   Scheme_Env *menv = NULL;
   GC_CAN_IGNORE char *not_allowed;
+  int looking_for_top;
 
  top:
 
@@ -2001,6 +2002,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (rec[drec].comp)
     scheme_default_compile_rec(rec, drec);
+
+  looking_for_top = 0;
 
   if (SCHEME_STX_NULLP(form)) {
     stx = app_symbol;
@@ -2053,6 +2056,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	not_allowed = "reference to top-level identifiers";
 	normal = top_expander;
 	form = find_name; /* in case it was re-mapped */
+	looking_for_top = 1;
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (var == stop_expander)
@@ -2216,6 +2220,16 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     if (!SAME_OBJ(var, normal)) {
       /* Need a new stx after all: */
       stx = scheme_datum_to_syntax(SCHEME_STX_VAL(stx), scheme_false, form, 0, 0);
+    }
+  }
+
+  if (!var && !env->genv->module && looking_for_top) {
+    /* If form is a marked name, then force #%top binding.
+       This is so temporaries can be used as defined ids. */
+    Scheme_Object *nm;
+    nm = scheme_tl_id_sym(env->genv, form, 0);
+    if (!SAME_OBJ(nm, SCHEME_STX_VAL(form))) {
+      var = top_expander;
     }
   }
 

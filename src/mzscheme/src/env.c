@@ -482,11 +482,6 @@ static void make_init_env(void)
 						      "syntax-local-introduce",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("syntax-local-module-introduce", 
-			     scheme_make_prim_w_arity(local_module_introduce,
-						      "syntax-local-module-introduce",
-						      1, 1),
-			     env);
   scheme_add_global_constant("make-syntax-introducer", 
 			     scheme_make_prim_w_arity(make_introducer,
 						      "make-syntax-introducer",
@@ -2106,7 +2101,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 
   src_find_id = find_id;
   modidx = scheme_stx_module_name(&find_id, phase, NULL, NULL, &mod_defn_phase);
-  
+
   /* Used out of context? */
   if (SAME_OBJ(modidx, scheme_undefined)) {
     if (!(flags & SCHEME_OUT_OF_CONTEXT_OK))
@@ -2420,28 +2415,21 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
   scheme_hash_set(r->ht, symbol, scheme_true);
 }
 
-void scheme_check_context(Scheme_Env *env, Scheme_Object *name, Scheme_Object *form, Scheme_Object *ok_modidx)
+int scheme_check_context(Scheme_Env *env, Scheme_Object *name, Scheme_Object *ok_modidx)
 {
   Scheme_Object *mod, *id = name;
-  int bad = 0;
 
   mod = scheme_stx_source_module(id, 0);
 
   if (mod && SCHEME_TRUEP(mod) && NOT_SAME_OBJ(ok_modidx, mod)) {
-    bad = 1;
+    return 1;
   } else {
     mod = scheme_stx_module_name(&id, env->phase, NULL, NULL, NULL);
     if (SAME_OBJ(mod, scheme_undefined))
-      bad = 2;
+      return 1;
   }
 
-  if (bad) {
-    scheme_wrong_syntax(NULL, name, form, 
-			"identifier for a %s definition already has a %s%s context",
-			ok_modidx ? "module-body" : "top-level",
-			(ok_modidx && (bad == 1)) ? "different " : "",
-			(bad == 2) ? "lexical" : "module");
-  }
+  return 0;
 }
 
 /*========================================================================*/
@@ -3021,6 +3009,8 @@ local_module_introduce(int argc, Scheme_Object *argv[])
 {
   Scheme_Comp_Env *env;
   Scheme_Object *s, *v;
+
+  return argv[0];
 
   env = scheme_current_thread->current_local_env;
   if (!env)

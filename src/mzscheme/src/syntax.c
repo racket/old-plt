@@ -781,11 +781,6 @@ void scheme_define_parse(Scheme_Object *form,
     name = SCHEME_STX_CAR(vars);
     scheme_check_identifier(NULL, name, NULL, env, form);
 
-    if (!env->genv->module) {
-      /* Check that the name doesn't have a foreign context: */
-      scheme_check_context(env->genv, name, form, NULL);
-    }
-
     vars = SCHEME_STX_CDR(vars);
 
     scheme_dup_symbol_check(&r, NULL, name, "binding", form);
@@ -804,7 +799,7 @@ defn_targets_syntax (Scheme_Object *var, Scheme_Comp_Env *env, Scheme_Compile_In
     Scheme_Object *name, *pr, *bucket;
 
     name = SCHEME_STX_CAR(var);
-    name = scheme_tl_id_sym(env->genv, name, 1);
+    name = scheme_tl_id_sym(env->genv, name, 2);
 
     if (rec[drec].resolve_module_ids || !env->genv->module) {
       bucket = (Scheme_Object *)scheme_global_bucket(name, env->genv);
@@ -3234,7 +3229,7 @@ static Scheme_Object *stx_val(Scheme_Object *name, Scheme_Object *_env)
 {
   Scheme_Env *env = (Scheme_Env *)_env;
 
-  return scheme_tl_id_sym(env, name, 1);
+  return scheme_tl_id_sym(env, name, 2);
 }
 
 static Scheme_Object *

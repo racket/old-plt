@@ -420,7 +420,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   scheme_initial_env->et_running = 1;
   scheme_initial_env->attached = 1;
 
-  rn = scheme_make_module_rename(0, 0, NULL);
+  rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, NULL);
   for (i = kernel->num_provides; i--; ) {
     scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i], 0);
   }
@@ -503,7 +503,7 @@ void scheme_require_from_original_env(Scheme_Env *env, int syntax_only)
 
   rn = env->rename;
   if (!rn) {
-    rn = scheme_make_module_rename(env->phase, 1, NULL);
+    rn = scheme_make_module_rename(env->phase, mzMOD_RENAME_TOPLEVEL, NULL);
     env->rename = rn;
   }
 
@@ -532,7 +532,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   if ((phase == 1) && scheme_sys_wraps1)
     return scheme_sys_wraps1;
 
-  rn = scheme_make_module_rename(phase, 0, NULL);
+  rn = scheme_make_module_rename(phase, mzMOD_RENAME_NORMAL, NULL);
 
   /* Add a module mapping for all kernel provides: */
   scheme_extend_module_rename_with_kernel(rn, kernel_symbol);
@@ -589,7 +589,7 @@ void scheme_save_initial_module_set(Scheme_Env *env)
   if (!initial_renames) {
     REGISTER_SO(initial_renames);
   }
-  initial_renames = scheme_make_module_rename(0, 0, NULL);
+  initial_renames = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, NULL);
   scheme_append_module_rename(env->rename, initial_renames);
 
   /* Clone variable bindings: */
@@ -621,7 +621,7 @@ void scheme_install_initial_module_set(Scheme_Env *env)
   /* Copy renamings: */
   if (!env->rename) {
     Scheme_Object *rn;
-    rn = scheme_make_module_rename(0, 1, NULL);
+    rn = scheme_make_module_rename(0, mzMOD_RENAME_TOPLEVEL, NULL);
     env->rename = rn;
   }
   scheme_append_module_rename(initial_renames, env->rename);
@@ -903,14 +903,14 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
 						 scheme_make_pair(argv[0], scheme_null)),
 				scheme_false, scheme_false, 1, 0);
   
-  rn = scheme_make_module_rename(for_exp, 1, NULL);
+  rn = scheme_make_module_rename(for_exp, mzMOD_RENAME_TOPLEVEL, NULL);
 
   (void)parse_requires(form, scheme_false, env, rn, 
 		       NULL, NULL, !etonly, etonly, NULL, 1, copy, NULL);
 
   brn = env->rename;
   if (!brn) {
-    brn = scheme_make_module_rename(for_exp, 1, NULL);
+    brn = scheme_make_module_rename(for_exp, mzMOD_RENAME_TOPLEVEL, NULL);
     env->rename = brn;
   }
 
@@ -1333,7 +1333,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	  menv->marked_names = mn_ht;
 	}
 
-	rn = scheme_make_module_rename(0, 0, mn_ht);
+	rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, mn_ht);
 
 	/* Local, provided: */
 	for (i = 0; i < m->num_provides; i++) {
@@ -1375,7 +1375,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
       }
 
       v = scheme_stx_to_rename(menv->module->rn_stx);
-      rn = scheme_make_module_rename(0, 0, NULL);
+      rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, NULL);
       scheme_append_module_rename(v, rn);
       menv->rename = rn;
     }
@@ -1404,7 +1404,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	  menv->exp_env->marked_names = mn_ht;
 	}
 
-	rn = scheme_make_module_rename(0, 0, mn_ht);
+	rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, mn_ht);
 
 	/* Required for syntax: */
 	for (l = menv->et_require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
@@ -1429,7 +1429,7 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
       }
 
       v = scheme_stx_to_rename(menv->module->et_rn_stx);
-      rn = scheme_make_module_rename(1, 0, NULL);
+      rn = scheme_make_module_rename(1, mzMOD_RENAME_NORMAL, NULL);
       scheme_append_module_rename(v, rn);
       menv->exp_env->rename = rn;
     }
@@ -2956,9 +2956,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   et_mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
   tt_mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
 
-  rn = scheme_make_module_rename(0, 0, mn_ht);
-  et_rn = scheme_make_module_rename(1, 0, et_mn_ht);
-  tt_rn = scheme_make_module_rename(-1, 0, tt_mn_ht);
+  rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, mn_ht);
+  et_rn = scheme_make_module_rename(1, mzMOD_RENAME_NORMAL, et_mn_ht);
+  tt_rn = scheme_make_module_rename(-1, mzMOD_RENAME_NORMAL, tt_mn_ht);
 
   menv->rename = rn;
   menv->et_rename = et_rn;
@@ -3348,7 +3348,7 @@ static void check_require_name(Scheme_Object *prnt_name, Scheme_Object *name, Sc
 
 static Scheme_Object *stx_sym(Scheme_Object *name, Scheme_Object *_genv)
 {
-  return scheme_tl_id_sym((Scheme_Env *)_genv, name, 1);
+  return scheme_tl_id_sym((Scheme_Env *)_genv, name, 2);
 }
 
 static Scheme_Object *add_req(Scheme_Object *imods, Scheme_Object *requires)
@@ -3384,7 +3384,7 @@ static Scheme_Object *add_lifted_defn(Scheme_Object *data, Scheme_Object *id, Sc
   self_modidx = SCHEME_VEC_ELS(data)[1];
   rn = SCHEME_VEC_ELS(data)[2];
   
-  name = scheme_tl_id_sym(env->genv, id, 1);
+  name = scheme_tl_id_sym(env->genv, id, 2);
 
   /* Create the bucket, indicating that the name will be defined: */
   scheme_add_global_symbol(name, scheme_undefined, env->genv);
@@ -3408,6 +3408,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *all_defs_out;    /* list of (cons protected? (stx-list except-name ...)) */
   Scheme_Object *all_defs;        /* list of stxid; this is almost redundant to the syntax and toplevel
 				     tables, but it preserves the original name for exporting */
+  Scheme_Object *post_ex_rn, *post_ex_et_rn; /* renames for ids introduced by expansion */
   void *tables[3], *et_tables[3], *tt_tables[3];
   Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false, *lift_data;
   char *exps;
@@ -3416,7 +3417,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   int max_let_depth;
   int all_simple_renames = 1, et_all_simple_renames = 1, tt_all_simple_renames = 1;
   Scheme_Object *redef_modname;
-  Scheme_Object *simplify_cache;
 
   if (!(env->flags & SCHEME_MODULE_FRAME))
     scheme_wrong_syntax(NULL, NULL, form, "illegal use (not a module body)");
@@ -3550,11 +3550,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   all_defs_out = scheme_null;
   all_defs = scheme_null;
 
-  simplify_cache = scheme_new_stx_simplify_cache();
-
   exp_body = scheme_null;
 
   self_modidx = env->genv->module->self_modidx;
+
+  post_ex_rn = scheme_make_module_rename(0, mzMOD_RENAME_MARKED, env->genv->marked_names);
+  post_ex_et_rn = scheme_make_module_rename(1, mzMOD_RENAME_MARKED, env->genv->exp_env->marked_names);
 
   /* For syntax-local-context, etc., in a d-s RHS: */
   rhs_env = scheme_new_comp_env(env->genv, env->insp, SCHEME_TOPLEVEL_FRAME);
@@ -3609,6 +3610,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       }
     }
     if (!e) break; /* (begin) expansion at end */
+
+    e = scheme_add_rename(e, post_ex_rn);
+    e = scheme_add_rename(e, post_ex_et_rn);
     
     if (SCHEME_STX_PAIRP(e)) {
       Scheme_Object *fst;
@@ -3627,17 +3631,16 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  scheme_define_parse(e, &vars, &val, 0, env);
 
 	  while (SCHEME_STX_PAIRP(vars)) {
-	    Scheme_Object *name;
+	    Scheme_Object *name, *orig_name;
 
 	    name = SCHEME_STX_CAR(vars);
 
-	    /* Check that the name doesn't have a foreign source: */
-	    scheme_check_context(env->genv, name, e, self_modidx);
-
+	    orig_name = name;
+	    
 	    /* Remember the original: */
 	    all_defs = scheme_make_pair(name, all_defs);
 	    
-	    name = scheme_tl_id_sym(env->genv, name, 1);
+	    name = scheme_tl_id_sym(env->genv, name, 2);
 
 	    /* Check that it's not yet defined: */
 	    if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
@@ -3661,8 +3664,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    scheme_add_global_symbol(name, scheme_undefined, env->genv);
 
 	    /* Add a renaming: */
-	    scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name, 0);
-
+	    if (!SAME_OBJ(SCHEME_STX_VAL(orig_name), name))
+	      scheme_extend_module_rename(post_ex_rn, self_modidx, name, name, self_modidx, name, 0);
+	    else
+	      scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name, 0);	      
+	    
 	    vars = SCHEME_STX_CDR(vars);
 	  }
 	
@@ -3693,17 +3699,16 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  oenv = (for_stx ? eenv : env);
 	  
 	  for (l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
-	    Scheme_Object *name;
+	    Scheme_Object *name, *orig_name;
 	    name = SCHEME_STX_CAR(l);
 
-	    /* Check that the name doesn't have a foreign source: */
-	    scheme_check_context(oenv->genv, name, e, self_modidx);
+	    orig_name = name;
 	    
 	    /* Remember the original: */
 	    if (!for_stx)
 	      all_defs = scheme_make_pair(name, all_defs);
 	    
-	    name = scheme_tl_id_sym(oenv->genv, name, 1);
+	    name = scheme_tl_id_sym(oenv->genv, name, 2);
 	    
 	    if (scheme_lookup_in_table(oenv->genv->syntax, (const char *)name)) {
 	      scheme_wrong_syntax("module", name, e, 
@@ -3731,17 +3736,17 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	      return NULL;
 	    }
 
+	    if (!SAME_OBJ(SCHEME_STX_VAL(orig_name), name))
+	      scheme_extend_module_rename(for_stx ? post_ex_et_rn : post_ex_rn, self_modidx, name, name, self_modidx, name,
+					  for_stx ? 1 : 0);
+	    else
+	      scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, name, name, self_modidx, name,
+					  for_stx ? 1 : 0);
+
 	    count++;
 	  }
 
 	  names = scheme_named_map_1(NULL, stx_sym, names, (Scheme_Object *)env->genv);
-
-	  /* Add a renaming for each name: */
-	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	    m = SCHEME_CAR(l);
-	    scheme_extend_module_rename(for_stx ? et_rn : rn, self_modidx, m, m, self_modidx, m,
-					for_stx ? 1 : 0);
-	  }
 	  
 	  mrec.comp = 1;
 	  mrec.dont_mark_local_use = 0;
@@ -5123,7 +5128,7 @@ top_level_require_execute(Scheme_Object *data)
   else
     ht = NULL;
 
-  rn = scheme_make_module_rename(for_phase, 1, NULL);
+  rn = scheme_make_module_rename(for_phase, mzMOD_RENAME_TOPLEVEL, NULL);
 
   (void)parse_requires(form, modidx, env, rn, 
 		       check_dup_require, ht, (for_phase > -1), (for_phase == 0), NULL,
@@ -5131,7 +5136,7 @@ top_level_require_execute(Scheme_Object *data)
 
   brn = env->rename;
   if (!brn) {
-    brn = scheme_make_module_rename(for_phase, 1, NULL);
+    brn = scheme_make_module_rename(for_phase, mzMOD_RENAME_TOPLEVEL, NULL);
     env->rename = brn;
   }
 
@@ -5172,7 +5177,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Hash table is for checking duplicate names in require list: */
   ht = scheme_make_hash_table(SCHEME_hash_ptr);
 
-  rn = scheme_make_module_rename(for_phase, 1, NULL);
+  rn = scheme_make_module_rename(for_phase, mzMOD_RENAME_TOPLEVEL, NULL);
 
   genv = env->genv;
 

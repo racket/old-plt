@@ -98,7 +98,7 @@ static void phase_shift_certs(Scheme_Object *o, Scheme_Object *owner_wraps, int 
 
 typedef struct Module_Renames {
   Scheme_Object so; /* scheme_rename_table_type */
-  char plus_kernel, nonmodule;
+  char plus_kernel, kind;
   long phase;
   Scheme_Object *plus_kernel_nominal_source;
   Scheme_Hash_Table *ht; /* localname ->  modidx  OR
@@ -136,8 +136,8 @@ static Module_Renames *krn;
    - A wrap-elem (vector <sym> <ht> <stx> ... <sym-or-void> ...) is a lexical rename
                          env  (sym   var      var-resolved
                               ->pos)           void => not yet computed
-                              or #f  sym => mark
-                                      check done, var-resolved is answer to replace #f
+                              or #f            sym => mark check done, 
+                                                      var-resolved is answer to replace #f
    - A wrap-elem (vector <any> <ht> <sym> ... <sym> ...) is also a lexical rename
                                     var       resolved
          where the variables have already been resolved and filtered (no mark
@@ -808,7 +808,7 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 
 /******************** module renames ********************/
 
-Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *marked_names)
+Scheme_Object *scheme_make_module_rename(long phase, int kind, Scheme_Hash_Table *marked_names)
 {
   Module_Renames *mr;
   Scheme_Hash_Table *ht;
@@ -820,7 +820,7 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_
 
   mr->ht = ht;
   mr->phase = phase;
-  mr->nonmodule = nonmodule;
+  mr->kind = kind;
   mr->marked_names = marked_names;
 
   if (!krn) {
@@ -1005,7 +1005,7 @@ Scheme_Object *scheme_stx_shift_rename(Scheme_Object *mrn,
 				       Scheme_Object *old_midx, Scheme_Object *new_midx)
 {
   Scheme_Object *nmrn;
-  nmrn = scheme_make_module_rename(0, 0, NULL);
+  nmrn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, NULL);
   do_append_module_rename(mrn, nmrn, old_midx, new_midx);
   return nmrn;
 }
@@ -1771,7 +1771,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
   Scheme_Object *modidx_shift_to = NULL, *modidx_shift_from = NULL;
   Scheme_Object *rename_stack[QUICK_STACK_SIZE];
   int stack_pos = 0;
-  int is_in_module = 0;
+  int is_in_module = 0, skip_other_mods = 0;
 
   WRAP_POS_INIT(wraps, ((Scheme_Stx *)a)->wraps);
 
@@ -1799,8 +1799,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
     } else if (SCHEME_RENAMESP(WRAP_POS_FIRST(wraps)) && w_mod) {
       /* Module rename: */
       Module_Renames *mrn = (Module_Renames *)WRAP_POS_FIRST(wraps);
-      if (!is_in_module || !mrn->nonmodule) {
-	if (!mrn->nonmodule)
+      if ((!is_in_module || (mrn->kind != mzMOD_RENAME_TOPLEVEL)) && !skip_other_mods) {
+	if (mrn->kind != mzMOD_RENAME_TOPLEVEL)
 	  is_in_module = 1;
 	
 	if (phase == mrn->phase) {
@@ -1818,6 +1818,9 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	  }
 	  
 	  if (rename) {
+	    if (mrn->kind == mzMOD_RENAME_MARKED)
+	      skip_other_mods = 1;
+
 	    /* match; set mresult, which is used in the case of no lexical capture: */
 	    if (SCHEME_PAIRP(rename))
 	      mresult = SCHEME_CAR(rename);
@@ -2000,7 +2003,7 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 {
   WRAP_POS wraps;
   Scheme_Object *result;
-  int is_in_module = 0;
+  int is_in_module = 0, skip_other_mods = 0;
 
   if (((Scheme_Stx *)a)->u.modinfo_cache)
     return ((Scheme_Stx *)a)->u.modinfo_cache;
@@ -2020,8 +2023,8 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
     } else if (SCHEME_RENAMESP(WRAP_POS_FIRST(wraps))) {
       Module_Renames *mrn = (Module_Renames *)WRAP_POS_FIRST(wraps);
 
-      if (!is_in_module || !mrn->nonmodule) {
-	if (!mrn->nonmodule)
+      if ((!is_in_module || (mrn->kind != mzMOD_RENAME_TOPLEVEL)) && !skip_other_mods) {
+	if (mrn->kind != mzMOD_RENAME_TOPLEVEL)
 	  is_in_module = 1;
 	
 	if (phase == mrn->phase) {
@@ -2038,6 +2041,8 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	    rename = scheme_hash_get(krn->ht, glob_id);
 	  
 	  if (rename) {
+	    if (mrn->kind == mzMOD_RENAME_MARKED)
+	      skip_other_mods = 1;
 	    /* match; set result: */
 	    if (SCHEME_PAIRP(rename)) {
 	      if (SCHEME_IMMUTABLEP(rename)) {
@@ -2464,6 +2469,8 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	break;
       } else {
 	v = WRAP_POS_FIRST(w);
+	if (SCHEME_VEC_SIZE(v) == 1)
+	  v = SCHEME_VEC_ELS(v)[0];
 	if ((SCHEME_VEC_SIZE(v) > 2) /* a simplified vec can be empty */
 	    && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
 	  /* Need to simplify, but do deepest first: */
@@ -2490,7 +2497,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 
     while (!WRAP_POS_REVEND_P(w)) {
       v = WRAP_POS_FIRST(w);
-
+      
       if (SCHEME_VECTORP(v)
 	  && (SCHEME_VEC_SIZE(v) > 2) /* a simplified vec can be empty */
 	  && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
@@ -2693,7 +2700,10 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       Module_Renames *mrn = (Module_Renames *)a;
       int redundant = 0;
       
-      {
+      if (mrn->kind == mzMOD_RENAME_MARKED) {
+	/* Not useful if there's no marked names. */
+	redundant = !mrn->marked_names->count;
+      } else {
 	/* Check for later [non]module rename at the same phase: */
 	long shift = 0;	
 	WRAP_POS l;
@@ -2703,7 +2713,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	for (; !WRAP_POS_END_P(l); WRAP_POS_INC(l)) {
 	  if (SCHEME_RENAMESP(WRAP_POS_FIRST(l))) {
 	    Module_Renames *lrn = (Module_Renames *)WRAP_POS_FIRST(l);
-	    if (((!!lrn->nonmodule) == (!!mrn->nonmodule))
+	    if ((lrn->kind == mrn->kind)
 		&& ((lrn->phase + shift) == mrn->phase)) {
 	      /* mrn is redundant */
 	      redundant = 1;
@@ -2719,7 +2729,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	if (just_simplify) {
 	  stack = CONS((Scheme_Object *)mrn, stack);
 	} else {
-	  if (mrn->nonmodule) {
+	  if (mrn->kind == mzMOD_RENAME_TOPLEVEL) {
 	    stack = CONS(((mrn->phase == 0)
 			  ? scheme_true
 			  : scheme_false), 
@@ -2781,6 +2791,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      } else
 		l = CONS(l, scheme_null);
 	      
+	      l = CONS((mrn->kind == mzMOD_RENAME_MARKED) ? scheme_true : scheme_false, l);
 	      l = CONS(scheme_make_integer(mrn->phase), l);
 	      if (mrn->plus_kernel) {
 		l = CONS(scheme_true,l);
@@ -3204,7 +3215,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       scheme_hash_set(rns, local_key, a);
     } else if (SCHEME_PAIRP(a)) {
       /* A rename table:
-           - (<index-num> [#t] <phase-num> #(<table-elem> ...) 
+           - ([#t] <index-num> <bool> <phase-num> #(<table-elem> ...) 
 	       . ((<sym> (<marked-list> . <target-gensym>) ...) ...)) ; <- marked_names
 	where a <table-elem> is actually two values, one of:
            - <exname> <modname>
@@ -3213,7 +3224,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       Scheme_Object *local_key, *mns;
       Module_Renames *mrn;
       Scheme_Object *p, *key;
-      int plus_kernel, i, count;
+      int plus_kernel, i, count, kind;
       long phase;
       
       local_key = SCHEME_CAR(a);
@@ -3229,10 +3240,18 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       } else
 	plus_kernel = 0;
 
+      if (!SCHEME_PAIRP(a)) return NULL;
       phase = SCHEME_INT_VAL(SCHEME_CAR(a));
       a = SCHEME_CDR(a);
 
-      mrn = (Module_Renames *)scheme_make_module_rename(phase, 0, NULL);
+      if (!SCHEME_PAIRP(a)) return NULL;
+      if (SCHEME_TRUEP(SCHEME_CAR(a)))
+	kind = mzMOD_RENAME_MARKED;
+      else
+	kind = mzMOD_RENAME_NORMAL;
+      a = SCHEME_CDR(a);
+
+      mrn = (Module_Renames *)scheme_make_module_rename(phase, kind, NULL);
       mrn->plus_kernel = plus_kernel;
       /* note: information on nominals has been dropped */
 
@@ -3342,7 +3361,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       env = scheme_get_env(NULL);
       if (!env->rename) {
 	Scheme_Object *rn;
-	rn = scheme_make_module_rename(0, 1, NULL);
+	rn = scheme_make_module_rename(0, mzMOD_RENAME_TOPLEVEL, NULL);
 	env->rename = rn;
       }
       a = env->rename;
@@ -3353,7 +3372,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       scheme_prepare_exp_env(env);
       if (!env->exp_env->rename) {
 	Scheme_Object *rn;
-	rn = scheme_make_module_rename(1, 1, NULL);
+	rn = scheme_make_module_rename(1, mzMOD_RENAME_TOPLEVEL, NULL);
 	env->exp_env->rename = rn;
       }
       a = env->exp_env->rename;

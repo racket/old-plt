@@ -549,7 +549,11 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
 
-Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *mns);
+#define mzMOD_RENAME_TOPLEVEL 0
+#define mzMOD_RENAME_NORMAL   1
+#define mzMOD_RENAME_MARKED   2
+
+Scheme_Object *scheme_make_module_rename(long phase, int kind, Scheme_Hash_Table *mns);
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname,
 				 Scheme_Object *locname, Scheme_Object *exname,
 				 Scheme_Object *nominal_src, Scheme_Object *nominal_ex,
@@ -1488,7 +1492,7 @@ void scheme_check_identifier(const char *formname, Scheme_Object *id,
 			     const char *where,
 			     Scheme_Comp_Env *env,
 			     Scheme_Object *form);
-void scheme_check_context(Scheme_Env *env, Scheme_Object *id, Scheme_Object *form, Scheme_Object *ok_modix);
+int scheme_check_context(Scheme_Env *env, Scheme_Object *id, Scheme_Object *ok_modix);
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    Scheme_Comp_Env *env,

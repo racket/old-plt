@@ -60,33 +60,77 @@
   (define (in-help-desk-navigate?)
     navigate?)
 
+  (define debug-frame-class%
+    (class frame%
+	   (inherit show)
+	   (field
+	    [panel #f])
+	   (public add-message)
+	   (define (shutdown-proc)
+	     (send this show #f))
+	   (define/override can-close?  
+	     (lambda () (shutdown-proc) #f))
+	   (define (add-message s)
+	     (instantiate message% ()
+			  (label s)
+			  (parent panel)))
+	   (super-instantiate ())
+	   (set! panel
+		 (instantiate vertical-panel% ()
+			      (parent this)
+			      (alignment '(left center))))))
+
+  (define (get-debug-frame)
+    (instantiate debug-frame-class% ()
+		 (label "Help Desk connection")
+		 (min-width 225)
+		 (stretchable-width #f)
+		 (stretchable-height #f)))
+
   (define (help-desk-navigate hd-cookie url)
     (semaphore-wait nav-mutex)
     (set! navigate? #t)
-    (let ([nav-sem (make-semaphore 0)])
+    (let* ([nav-sem (make-semaphore 0)]
+	   [debug? (get-preference 'plt:help-debug (lambda () '#f))]
+	   [frame #f]
+	   [debug-msg void])
+      (when debug?
+	    (set! frame (get-debug-frame))
+	    (set! debug-msg (lambda (s) 
+			      (send frame add-message s)))
+	    (send frame show #t))
       (letrec
 	  ([monitor-thread
 	    (thread
 	     (lambda ()
+	       (debug-msg "Starting browser-connect thread")
 	       (wait-start-semaphore)
+	       (debug-msg "Browser connected")
 	       (kill-thread timer-thread)
+	       (debug-msg "Killed timer thread")
 	       (semaphore-post nav-sem)))]
 	   [timer-thread
 	    (thread
 	     (lambda ()
+	       (debug-msg "Starting timer thread")
 	       (sleep browser-timeout)
+	       (debug-msg "Timer expired")
 	       (when (prompt-for-browser-switch hd-cookie)
 		     (set-plt-browser!)
 		     ; shutdown old server
+		     (debug-msg "Shutting down external server")
 		     ((hd-cookie->exit-proc hd-cookie))
+		     (debug-msg "Starting internal server")
 		     (internal-start-help-server hd-cookie)
+		     (debug-msg "Starting internal browser")
 		     (send-help-desk-url (hd-cookie->browser hd-cookie) url))
 	       (kill-thread monitor-thread)
 	       (semaphore-post nav-sem)))])
 	(with-handlers 
-	 ([void (lambda _ (fprintf (current-error-port)
+	 ([(lambda _ #f) (lambda _ (fprintf (current-error-port)
 				   (string-append
 				    "Help Desk browser failed.~n")))])
+	 (debug-msg "Starting Help Desk browser")
 	 (send-help-desk-url (hd-cookie->browser hd-cookie) 
 			     (build-dispatch-url hd-cookie url))
 	 (yield nav-sem)

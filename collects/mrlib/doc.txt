@@ -321,4 +321,35 @@ Whether or not the snip can be stretched in the X dimension
 
 Whether or not the snip can be stretched in the Y dimension
 
-============================================================
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                  _bitmap-constant.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+The bitmap-constant.ss library provides a `bitmap-constant' form that
+takes a filename containing a bitmap and "inlines" the bitmap into the
+program. The advantage of "inlining" the bitmap is that a stand-alone
+executable can be created that contains the bitmap and does not refer
+to the original image file.
+
+> (bitmap-constant file-spec)     SYNTACTIC FORM
+
+The `file-spec' datum must have one of the following forms:
+
+ - string: a filename
+
+ - (build-path datum ...): the filename produced by applying
+   `build-path' to the `datum's
+
+ - (lib file-string collection-string ...): the filename
+   for `file-string' in the collection identified by the sequence of
+   `collection-string's (or "mzlib" if none are provided)
+
+If the path produced by `file-spec' is relative, it is resolved with
+respect to the source-file location associated to the `file-spec'
+datum. If there is no asscoiated source file, the current
+load-relative directory is used, and if there is no current
+load-relative directory, the current directory is used.
+

@@ -18,9 +18,9 @@
      (v (lambda (x) e)
         number)
      (x variable)
-     (PC ((store (x v) ...) TC))
-     (TC (threads e ... EC e ...))
-     (EC (EC e) (v EC) (set! variable EC) (let ((x EC)) e) (+ EC e) (+ v EC) hole)))
+     (pc ((store (x v) ...) tc))
+     (tc (threads e ... ec e ...))
+     (ec (ec e) (v ec) (set! variable ec) (let ((x ec)) e) (+ ec e) (+ v ec) hole)))
   
   (define reductions
     (list

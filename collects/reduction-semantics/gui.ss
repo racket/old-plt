@@ -275,21 +275,18 @@
   (define (resizing-pasteboard-mixin pb%)
     (class pb%
       
-      (rename [super-on-interactive-resize on-interactive-resize])
-      (define/override (on-interactive-resize snip)
+      (define/augment (on-interactive-resize snip)
         (when (is-a? snip reflowing-snip<%>)
           (send snip reflow-program))
-        (super-on-interactive-resize snip))
+        #;(super on-interactive-resize snip))
       
-      (rename [super-after-interactive-resize after-interactive-resize])
-      (define/override (after-interactive-resize snip)
+      (define/augment (after-interactive-resize snip)
         (when (is-a? snip reflowing-snip<%>)
           (send snip reflow-program))
-        (super-after-interactive-resize snip))
+        #;(super after-interactive-resize snip))
       
-      (rename [super-interactive-adjust-resize interactive-adjust-resize])
       (define/override (interactive-adjust-resize snip w h)
-        (super-interactive-adjust-resize snip w h)
+        (super interactive-adjust-resize snip w h)
         (when (is-a? snip reflowing-snip<%>)
           (send snip reflow-program)))
       (super-instantiate ())))
@@ -326,7 +323,6 @@
                         (format-expr))))))))))
       
       (inherit get-extent)
-      (rename [super-draw draw])
       (define/override (draw dc x y left top right bottom dx dy draw-caret)
         (when bad?
           (let ([bw (box 0)]
@@ -339,18 +335,18 @@
             (send dc draw-rectangle x y (unbox bw) (unbox bh))
             (send dc set-pen pen)
             (send dc set-brush brush)))
-        (super-draw dc x y left top right bottom dx dy draw-caret))
+        (super draw dc x y left top right bottom dx dy draw-caret))
       
       (define/public (format-expr)
         (let* ([text (get-editor)]
-               [port (make-custom-output-port
-                      #f 
-                      (lambda (str start end buffering?)
-                        (send text insert (substring str start end)
+               [port (make-output-port
+                      'graph-port
+                      always-evt
+                      (lambda (str start end buffering? enable-breaks?)
+                        (send text insert (substring (bytes->string/utf-8 str) start end)
                               (send text last-position)
                               (send text last-position))
                         (- end start))
-                      void
                       void)])
           (send text begin-edit-sequence)
           (send text thaw-colorer)
@@ -369,7 +365,6 @@
   (define program-text%
     (class scheme:text%
       (init-field bad?)
-      (rename [super-on-paint on-paint])
       (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
         (when (and bad? before?)
           (let ([pen (send dc get-pen)]
@@ -379,7 +374,7 @@
             (send dc draw-rectangle (+ dx left) (+ dy top) (- right left) (- bottom top))
             (send dc set-pen pen)
             (send dc set-brush brush)))
-        (super-on-paint before? dc left top right bottom dx dy draw-caret))
+        (super on-paint before? dc left top right bottom dx dy draw-caret))
       (super-new)))
   
   (define lines-pen (send the-pen-list find-or-create-pen "black" 1 'solid))

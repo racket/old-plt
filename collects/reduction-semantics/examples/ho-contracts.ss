@@ -9,18 +9,18 @@
            (lib "match.ss")
            (lib "list.ss"))
   
-  ;(initial-font-size 7) (reduction-steps-cutoff 10)
-  (initial-font-size 36) (reduction-steps-cutoff 1)
+  (initial-font-size 7) (reduction-steps-cutoff 10)
+  ;(initial-font-size 36) (reduction-steps-cutoff 1)
   
   (define lang
     (language
      (p ((d ...) e))
-     (d (valrec variable : e = e))
-     (e (lambda (variable) e)
+     (d (valrec x : e = e))
+     (e (lambda (x) e)
         (e e)
-        (let ((variable e) ...) e)
-        variable
-        (fix variable e)
+        (let ((x e) ...) e)
+        x
+        (fix x e)
         number
         (aop e e)
         (rop e e)
@@ -40,6 +40,7 @@
         (dom e)
         (rng e)
         (blame e))
+     (x (variable-except valrec lambda let fix aop rop cons empty hd tl mt if true false --> contract flatp pred dom rng blame))
      
      (p-ctxt (((valrec x : v = v) ...
                (valrec x : e-ctxt = e)
@@ -53,7 +54,7 @@
               e-ctxt))
      (e-ctxt (e-ctxt e)
              (v e-ctxt)
-             (let ((variable v) ... (variable e-ctxt) (variable e) ...) e)
+             (let ((x v) ... (x e-ctxt) (x e) ...) e)
              (aop e-ctxt e)
              (aop v e-ctxt)
              (rop e-ctxt e)
@@ -74,14 +75,14 @@
              (blame e-ctxt)
              hole)
      (v (cons v v)
-        (lambda (variable) e)
+        (lambda (x) e)
         string
         number
         true
         false 
         (--> v v)
         (contract v)
-        (ob v (--> v v) variable variable)
+        (ob v (--> v v) x x)
         compile-v1
         compile-v2)
      

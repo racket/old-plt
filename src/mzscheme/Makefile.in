@@ -7,6 +7,7 @@ prefix = @prefix@
 
 # for version.mak:
 mainsrcdir = @srcdir@/..
+@INCLUDEDEP@ @srcdir@/version.mak
 
 CC = @CC@
 CPP = @CPP@
@@ -123,8 +124,6 @@ mzscheme.exe: main.o libmzgcxxxxxxx.dll libmzschxxxxxxx.dll
 	gcc -o mzscheme.exe main.o libmzschdll.a libmzgcdll.a
 
 # Mac OS ----------------------------------------
-
-@INCLUDEDEP@ @srcdir@/../mac/version.mak
 
 MZFW = PLT_MzScheme.framework/Versions/$(FWVERSION)/PLT_MzScheme
 

@@ -3,6 +3,7 @@ srcdir = @srcdir@
 
 # for version.mak:
 mainsrcdir = @srcdir@/../..
+@INCLUDEDEP@ @srcdir@/../version.mak
 
 CC = @CC@
 CPP = @CPP@
@@ -289,8 +290,6 @@ EXTRA_OBJS = ../src/gmp.@LTO@ $(FOREIGN_OBJSLIB)
 
 ../mzscheme3m@NOT_OSX@: main.@LTO@ ../libmzscheme3m.@LIBSFX@
 	@MZLINKER@ -o ../mzscheme3m main.@LTO@ ../libmzscheme3m.@LIBSFX@ $(LIBS)
-
-@INCLUDEDEP@ @srcdir@/../../mac/version.mak
 
 MZFWMMM = PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme
 

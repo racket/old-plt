@@ -4,6 +4,7 @@ prefix = @prefix@
 
 # for version.mak:
 mainsrcdir = @srcdir@/..
+@INCLUDEDEP@ @srcdir@/../mzscheme/version.mak
 
 WXDIR = $(srcdir)/../wxxt
 
@@ -100,8 +101,6 @@ mred : $(MZSCHEME) mrmain.@LTO@ $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
 
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
-
-@INCLUDEDEP@ @srcdir@/../mac/version.mak
 
 MRFW = PLT_MrEd.framework/Versions/$(FWVERSION)/PLT_MrEd
 MRFWRES = PLT_MrEd.framework/Versions/$(FWVERSION)/Resources/PLT_MrEd.rsrc

@@ -7130,8 +7130,11 @@ if test "${enable_shared}" = "yes" ; then
     fi
   fi
 
-
-  plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
+  if test "$INCLUDEDEP" = "-include" ; then
+    plt_lib_version="\$(FWVERSION)"
+  else
+    plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
+  fi
 
   AR="${LTDIR}/libtool --mode=link $CC${need_gcc_static_libgcc} -release ${plt_lib_version} -rpath ${absprefix}/lib -o"
   STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"

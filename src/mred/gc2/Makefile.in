@@ -3,6 +3,7 @@ srcdir = @srcdir@
 
 # for version.mak:
 mainsrcdir = @srcdir@/../..
+@INCLUDEDEP@ @srcdir@/../../mzscheme/version.mak
 
 WXDIR = $(srcdir)/../../wxxt
 WXMACDIR = $(srcdir)/../../wxmac/src
@@ -1345,8 +1346,6 @@ EXTRA_MZ_OBJS = ../../mzscheme/src/gmp.@LTO@ $(FOREIGN_OBJSLIB)
 
 ../mred3m@NOT_OSX@: mrmain.@LTO@ ../libmred3m.@LIBSFX@
 	$(MREDLINKER) $(MREDLDFLAGS) -o ../mred3m mrmain.@LTO@ ../libmred3m.@LIBSFX@
-
-@INCLUDEDEP@ @srcdir@/../../mac/version.mak
 
 MRFW = PLT_MrEd.framework/Versions/$(FWVERSION)_3m/PLT_MrEd
 MRFWRES = PLT_MrEd.framework/Versions/$(FWVERSION)_3m/Resources/PLT_MrEd.rsrc

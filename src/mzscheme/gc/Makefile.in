@@ -24,6 +24,10 @@ AS= @AS@ $(ABI_FLAG)
 srcdir= @srcdir@
 VPATH= $(srcdir)
 
+# for version.mak:
+mainsrcdir = @srcdir@/../..
+@INCLUDEDEP@ @srcdir@/../version.mak
+
 # compiler options; mainly used to allow importing options
 OPTIONS=@OPTIONS@ @CGCOPTIONS@
 

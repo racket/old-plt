@@ -464,3 +464,12 @@ void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
 CLSID getCLSIDFromString(const char *);
 ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
+
+// array procedures
+
+Scheme_Object *SafeArrayRowToVector(SAFEARRAY *,int,int,UINT type);
+Scheme_Object *safeArrayToVector(SAFEARRAY *,UINT);
+Scheme_Object *SafeArrayElement(SAFEARRAY *,long *,UINT);
+SAFEARRAY * mx_vectorToSafeArray(Scheme_Object *);
+
+

@@ -6,6 +6,7 @@ clean :
         -@erase comtypes.obj
         -@erase htmlevent.obj
         -@erase htmlutil.obj
+        -@erase array.obj
         -@erase mysterx.obj
 	-@erase mysterx.dll
 
@@ -30,17 +31,20 @@ LINK32_LIBS= \
 	mysc\mysc.lib 
 
 LINK32_OBJS= \
-        mysterx.obj comtypes.obj htmlevent.obj htmlutil.obj
+        mysterx.obj array.obj comtypes.obj htmlevent.obj htmlutil.obj
 
 mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
 	copy mysterx.dll ..\..\collects\mysterx\compiled\native
 	
-comtypes.obj : comtypes.cxx mysterx.h
+comtypes.obj : comtypes.cxx mysterx.h stdafx.h
 
-htmlevent.obj : htmlevent.cxx mysterx.h
+htmlevent.obj : htmlevent.cxx mysterx.h stdafx.h
 
-htmlutil.obj : htmlutil.cxx mysterx.h
+htmlutil.obj : htmlutil.cxx mysterx.h stdafx.h
 
-mysterx.obj : mysterx.cxx mysterx.h
+array.obj : array.cxx mysterx.h stdafx.h
+
+mysterx.obj : mysterx.cxx mysterx.h stdafx.h
+
 

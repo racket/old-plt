@@ -56,12 +56,10 @@
     (define (reduction/context/proc stx)
       (syntax-case stx ()
         [(_ lang-exp ctxt pattern bodies ...)
-         (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+         (let ([names (extract-names (syntax pattern))])
 	   (when (null? (syntax->list (syntax (bodies ...))))
 	     (raise-syntax-error #f "missing result expression" stx))
-           (with-syntax ([(names ...) (map (lambda (name)
-                                             (datum->syntax-object (syntax pattern) name))
-                                           names)]
+           (with-syntax ([(names ...) names]
                          [holeg (datum->syntax-object stx (gensym 'hole))]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
@@ -83,10 +81,10 @@
     (define (reduction/proc stx)
       (syntax-case stx ()
         [(_ lang-exp pattern bodies ...)
-         (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+         (let ([names (extract-names (syntax pattern))])
 	   (when (null? (syntax->list (syntax (bodies ...))))
 	     (raise-syntax-error #f "missing result expression" stx))
-           (with-syntax ([(name ...) (map (lambda (name) (datum->syntax-object (syntax pattern) name)) names)]
+           (with-syntax ([(name ...) names]
                          [hole (datum->syntax-object stx 'hole)]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
@@ -98,50 +96,47 @@
                                bodies ...)))))))]))
     
     (define (rewrite-side-conditions stx)
-      (datum->syntax-object
-       stx
-       (let loop ([term (syntax-object->datum stx)])
-         (match term
-           [`(side-condition ,pat ,exp)
-            (let ([names (extract-names pat)])
-              (with-syntax ([exp (datum->syntax-object stx exp)]
-                            [pat pat]
-                            [(names ...) (map (lambda (x) (datum->syntax-object stx x)) names)])
-                (syntax/loc stx
-                  (side-condition
-                   pat
-                   ,(lambda (bindings)
-                      (let ([names (lookup-binding bindings 'names)] ...)
-                        exp))))))]
-           [(? list?) (map loop term)]
-           [else term]))))
+      (let loop ([term stx])
+        (printf "rewrite-side-conditions: ~s\n" stx)
+        (syntax-case stx (side-condition)
+          [(side-condition pat exp)
+           (let ([names (extract-names (syntax pat))])
+             (with-syntax ([(names ...) (map (lambda (x) (datum->syntax-object stx x)) names)])
+               (syntax/loc stx
+                 (side-condition
+                  pat
+                  ,(lambda (bindings)
+                     (let ([names (lookup-binding bindings 'names)] ...)
+                       exp))))))]
+          [(terms ...) (map loop (syntax->list (syntax (terms ...))))]
+          [else term])))
     
-    
-    (define (extract-names sexp)
-      (let ([dup-names
-             (let loop ([sexp sexp]
-                        [names null])
-               (match sexp
-                 [`(name ,(and sym (? symbol?)) ,pat)
-                  (loop pat (cons sym names))]
-                 [`(in-hole* ,(and sym (? symbol?)) ,pat1 ,pat2)
-                  (loop pat1
-                        (loop pat2
-                              (cons sym names)))]
-                 [`(in-hole ,pat1 ,pat2)
-                  (loop pat1
-                        (loop pat2
-                              (cons 'hole names)))]
-                 [(? list?)
-                  (let i-loop ([sexp sexp]
-                               [names names])
-                    (cond
-                      [(null? sexp) names]
-                      [else (i-loop (cdr sexp) (loop (car sexp) names))]))]
-                 [else names]))]
-            [ht (make-hash-table)])
-        (for-each (lambda (name) (hash-table-put! ht name #f)) dup-names)
-        (hash-table-map ht (lambda (x y) x)))))  
+    (define (extract-names orig-stx)
+      (let loop ([stx orig-stx]
+                 [names null])
+        (printf "extract-names: ~s\n" names)
+        (syntax-case stx (name in-hole* in-hole)
+          [(name sym pat)
+           (identifier? (syntax sym))
+           (loop (syntax pat) (cons (syntax sym) names))]
+          [(in-hole* sym pat1 pat2)
+           (identifier? (syntax sym))
+           (loop (syntax pat1)
+                 (loop (syntax pat2)
+                       (cons (syntax sym) names)))]
+          [(in-hole pat1 pat2)
+           (loop (syntax pat1)
+                 (loop (syntax pat2)
+                       (cons (datum->syntax-object orig-stx 'hole) 
+                             names)))]
+          [(pat ...)
+           (let i-loop ([pats (syntax->list (syntax (pat ...)))]
+                        [names names])
+             (cond
+               [(null? pats) names]
+               [else (i-loop (cdr pats) (loop (car pats) names))]))]
+          [else names]))))
+
   (define-syntax (language stx)
     (syntax-case stx ()
       [(_ (name rhs ...) ...)

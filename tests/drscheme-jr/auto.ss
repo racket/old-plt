@@ -682,7 +682,7 @@
       (try '(time 1)
 	'(error "reference to undefined identifier"))
     (try '(let ([x (time 1)]) (void))
-      "cpu time: 0 real time: 0 gc time: 0"))
+      (regexp "^cpu time: [0-9]* real time: [0-9]* gc time: [0-9]*$")))
 
   ;; ;;;;;;;;;;;;;;;;;; keywords  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -709,6 +709,11 @@
      kws))
 
 
+  (try '(define #%define 10)
+       '(error "Invalid use of keyword"))
+  (try '(set! #%define 10)
+       '(error "Invalid use of keyword"))
+
   (try '(define (x define) define)
        (if mz?
 	   'void
@@ -721,6 +726,15 @@
   (try 'define
        (if mz?
 	   "10"
+	   '(error "Invalid use of keyword")))
+
+  (try '(set! lambda 12)
+       (if mz?
+	   'void
+	   '(error "Invalid use of keyword")))
+  (try 'lambda
+       (if mz?
+	   "12"
 	   '(error "Invalid use of keyword")))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

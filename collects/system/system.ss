@@ -18,9 +18,8 @@
 	(if (list? on?)
 	    (for-each turn-on on?)
 	    (turn-on on?))
-	(print-struct #t))
-	
-      (printf "turned on: ~a~n" (unbox turned-on))
+	(print-struct #t)
+	(printf "turned on: ~a~n" (unbox turned-on)))
 
       (define turn-off
 	(lambda (s) 

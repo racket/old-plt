@@ -20,7 +20,7 @@
       (rename (link-extension* link-extension))
 
 
-					; Copied from library.ss; please fix me!
+      ;; Copied from library.ss; please fix me!
       (define compiler:bad-chars
 	(string->list "#+-.*/<=>!?:$%_&~^@;^()[]{}|\\,~\"`' "))
       (define (compiler:clean-string s)

@@ -176,6 +176,8 @@
  (forward-in-browser-history "Forward")
  (home "Home")
  (browser "Browser")
+ (choose-browser "Choose a Browser")
+ (no-browser "None")
  (cannot-display-url "Cannot display URL ~s: ~a")
  (install? "Install?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "You have selected an installable package.")

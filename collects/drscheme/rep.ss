@@ -15,6 +15,29 @@
   
   (define (printf . args) (apply fprintf mred:constants:original-output-port args))
   
+
+  ;; keymap stuff that now must be here
+    (define setup-global-scheme-interaction-mode-keymap
+      (lambda (keymap)
+	(keymap:set-keymap-error-handler keymap)
+	(keymap:set-keymap-implied-shifts keymap)
+	
+	(send keymap chain-to-keymap global-scheme-mode-keymap #f)
+	
+	(send keymap add-key-function "put-previous-sexp"
+	      (lambda (edit event) 
+		(send edit copy-prev-previous-expr)))
+	(send keymap add-key-function "put-next-sexp"
+	      (lambda (edit event) 
+		(send edit copy-next-previous-expr)))
+	
+	(keymap:send-map-function-meta keymap "p" "put-previous-sexp")
+	(keymap:send-map-function-meta keymap "n" "put-next-sexp")))
+
+    (define global-scheme-interaction-mode-keymap (make-object keymap%))
+    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
+
+
   (mred:debug:printf 'invoke "drscheme:rep@")
 
   (define WELCOME-DELTA (make-object wx:style-delta%

@@ -21,11 +21,10 @@
     (class* (shared-mixin dt%) (cos<%>)
       
       (super-new)
-
       ;; from DrScheme's editor
       (inherit get-filename)
       ;; from the shared-mixin
-      (inherit make-syntax-error-handler kill-autocompile-thread set-autocompile-thread-proc!)
+      (inherit make-syntax-error-handler kill-autocompile-thread set-autocompile-thread-proc! clear-error-canvas)
       
       (define/augment (after-save-file success?)
         (when success?
@@ -43,7 +42,9 @@
                          [manager-compile-notify-handler (lambda (file)
                                                            (append-status (format "COMPILING: ~a"
                                                                                   file)))])
-            ((make-caching-managed-compile-zo) filename))))
+            ((make-caching-managed-compile-zo) filename)))
+        ;; successful compile, clear error indicators
+        (clear-error-canvas))
       
       )))
   

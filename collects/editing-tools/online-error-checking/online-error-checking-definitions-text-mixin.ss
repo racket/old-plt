@@ -21,7 +21,7 @@
         (class* (expansion-tool-definitions-text-mixin (shared-mixin dt%)) (orc<%>)
           
           ;; from the shared-mixin
-          (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler clear-error-canvas)
+          (inherit with-lock/edit-sequence kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler clear-error-canvas pos-in-last-error-range?)
           ;; from the expansion-tool-definitions-text-mixin
           (inherit buffer-directory)
           (inherit-field latest-expansion)
@@ -42,7 +42,28 @@
         (after-change))
 |#
           
+          (define/augment (after-insert start len)
+            (when (or (> len 1)
+                      (let ([char (get-character start)])
+                        (or (eq? #\space char)
+                            (eq? #\newline char)
+                            (eq? #\return char)
+                            (eq? #\) char)
+                            (eq? #\] char)
+                            (eq? #\} char)
+                            (eq? #\; char)))
+                      (pos-in-last-error-range? start))
+              (after-change)))
+;            (printf "after-insert ~a at ~a: ~v~n" len start (get-text start (+ start len))))
           
+          (define/augment (after-delete start len)
+            ;; to prevent out-of-range errors
+            (kill-autocompile-thread)
+            (when (or (> len 1)
+                      (pos-in-last-error-range? start))
+              (after-change)))
+;            (printf "after-delete ~a at ~a: ~v~n" len start (get-text start (+ start len))))
+          #|
           (define/override (on-char event)
             (super on-char event)
             ;(printf "on-char: (~v ~v ~v)~n"
@@ -61,11 +82,7 @@
             (super do-paste start time)
             (after-change))
           
-          (define/augment (after-delete start len)
-            ;; >1 to ignore the parens matcher deleting things
-            (unless (and (= 1 len)
-                         (eq? #\) (get-character start)))
-              (after-change)))
+          |#
           
           (define/private (after-change)
             ;(kill-autocompile-thread)
@@ -82,13 +99,31 @@
                (drs-expand)
                )))
           
+          (define expander-custodian (make-custodian))
+          (define expander-thread (parameterize ([current-custodian expander-custodian]) (thread void)))
+          (define expander-shutdown void)
+          (define/private (set-expander-thread&custodian t c s)
+            ;; get rid of the old expansion
+            (when (thread-running? expander-thread)
+              (parameterize ([current-custodian expander-custodian])
+                (kill-thread expander-thread))
+              (custodian-shutdown-all expander-custodian)
+              (expander-shutdown))
+            (set! expander-shutdown s)
+            (set! expander-custodian c)
+            (set! expander-thread t))
+          
           (define/private (drs-expand)
             (define text/pos (drscheme:language:make-text/pos this
                                                                 0
                                                                 (last-position)))
             
             (define these-expansions null)
+;            (define c (current-custodian))
             (define (shutdown)
+              ;; in case the GC is missing these...
+              (set! these-expansions #f)
+              (set! text/pos #f)
               (custodian-shutdown-all (current-custodian)))
             ;; sometimes by the time we're checking, the user deleted enough
             ;; characters to make our previous value of (last-position) invalid
@@ -98,21 +133,23 @@
                    ;           (printf "drs-expand: exn before exanding: ~v: ~v~n"
                    ;                   e (exn-message e))
                    ;           (raise e))])
+            ; (with-lock/edit-sequence
+            ;  (lambda ()
             (drscheme:eval:expand-program
              text/pos
              (get-next-settings)
              #t
              (lambda () ;; init, set error handlers, current directory
                (define old-handler (current-exception-handler))
-               ;(printf "init~n")
+               (define expand-thread (current-thread))
+               ;; only allow one expansion at a time.. so kill the old one
+               ;; and store data about this new one
+               (set-expander-thread&custodian expand-thread (current-custodian) shutdown)
                (current-directory (buffer-directory))
                (current-exception-handler
                 (lambda (exn)
                   ;; TODO: print the exception in some status message
-                 ; (printf "exn ~v: ~v~n" exn (exn-message exn))
-               ;  (time
-                  ;(kill-autocompile-thread)
-                 ;      )
+                  ;(printf "exn ~v: ~v~n" exn (exn-message exn))
                   (cond
                     [(exn:fail:syntax? exn) ;(printf "syntax error~n")
                      (begin ((make-syntax-error-handler this) exn)

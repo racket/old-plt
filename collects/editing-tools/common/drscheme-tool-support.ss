@@ -2,6 +2,7 @@
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "etc.ss")
+           (lib "integer-set.ss")
            (lib "framework.ss" "framework"))
   (provide shared-mixin when-debugging warn append-status)
   
@@ -19,11 +20,11 @@
                                               [callback void]
                                               [init-value "AutoCompile is ready."]
                                               [style '(multiple)])))
-  
+   
   (define (set-status msg)
     (when-debugging
      (send warnings-field set-value msg)))
-  
+   
   (define (append-status msg)
     (when-debugging
      (show-status)
@@ -75,18 +76,22 @@
         (class* dt% (shared-interface<%>)
           (super-new)
           
-          (inherit change-style set-position get-canvas find-snip get-snip-position locked-for-flow? locked-for-write? is-locked? freeze-colorer thaw-colorer)
+          (inherit change-style set-position get-canvas find-snip get-snip-position locked-for-read? locked-for-flow? locked-for-write? is-locked? freeze-colorer thaw-colorer begin-edit-sequence end-edit-sequence lock)
           
           (field [last-error-canvas #f])
           
           (define default-canvas-background (preferences:get 'framework:basic-canvas-background))
-          
+             
           (define/public (clear-error-canvas)
             (when (and last-error-canvas
                        (= (send (send last-error-canvas get-canvas-background) red) 255))
               ;; recolor the previously bad text
-              (freeze-colorer)
-              (thaw-colorer #t #f)
+              (parameterize ([current-eventspace autocompile-eventspace])
+                (queue-callback (lambda ()
+                                  (with-lock/edit-sequence
+                                   (lambda ()
+                                     (freeze-colorer)
+                                     (thaw-colorer #t #f))))))
               (send last-error-canvas set-canvas-background
                     default-canvas-background)))
           
@@ -94,7 +99,7 @@
             (super on-focus on?)
             (when (and on? (not last-error-canvas))
               (build-last-error-panel)))
-          
+            
           (define/private (build-last-error-panel)
             (let* ([editor-canvas (get-canvas)]
                    [frame (and editor-canvas (send editor-canvas get-top-level-window))]
@@ -105,12 +110,12 @@
                                                (define/override (on-event evt)
                                                  (case (send evt get-event-type)
                                                    [(left-up)
-                                                    (move-to-error)
-                                                    (send editor-canvas focus)]
+                                                    (move-to-error)]
                                                    [(right-up)
                                                     (when last-error-string
                                                       (message-box "Syntax error" last-error-string))]
                                                    [else void])
+                                                 (send editor-canvas focus)
                                                  (super on-event evt)))
                                              [parent info-panel]
                                              [min-width 20]
@@ -119,32 +124,60 @@
                                              [stretchable-width #f]))
                 (set! default-canvas-background (send last-error-canvas get-canvas-background)))))
           
+          ;; FIXME: ugh, too much state
           (define last-error-snip #f)
+          (define last-error-snip-span 0)
           (define last-error-string #f)
-          
+            
+          (define/public (pos-in-last-error-range? pos)
+            (and last-error-snip
+            (let ([snip-pos (get-snip-position last-error-snip)])
+              (and snip-pos
+              (member? pos (make-range snip-pos (+ snip-pos last-error-snip-span)))))))
+            
           ;; TODO: FIXME: don't I want "define/protected" here?
           (define/public (make-syntax-error-handler code-source)
             (lambda (exn)
               (parameterize ([current-eventspace autocompile-eventspace])
                 (queue-callback
-                 (lambda ()
-                   (for-each (lambda (expr)
-                               (when (or (eq? code-source (syntax-source expr))
-                                         (and (filename? code-source) (filename? (syntax-source expr))
+                 (lambda () ;; autocompile eventspace
+                   (with-lock/edit-sequence
+                    (lambda ()
+                      (for-each (lambda (expr)
+                                  (when (or (eq? code-source (syntax-source expr))
+                                            (and (filename? code-source) (filename? (syntax-source expr))
                                               (filename=? code-source (syntax-source expr))))
                                  ;; sub1 because text% buffers start at 0
-                                 (let ([pos (sub1 (syntax-position expr))])
-                                   (set! last-error-snip (find-snip pos 'after))
-                                   ;; TODO: try not to break DrScheme's locked/unlocked contracts.
-                                   (change-style red-delta
-                                                 pos
-                                                 (+ pos (syntax-span expr))
-                                                 #f))))
-                             (exn:fail:syntax-exprs exn))
+                                 (let* ([pos (sub1 (syntax-position expr))]
+                                        [snip (find-snip pos 'after)]
+                                        [span (syntax-span expr)]
+                                        [end (+ pos span)])
+                                   (queue-callback (lambda () ;; autocompile eventspace
+                                                     (set! last-error-snip snip)
+                                                     (set! last-error-snip-span span)
+                                                     ;(printf "lfw: ~v~n" (locked-for-write?))
+                                                     ;(printf "lff: ~v~n" (locked-for-flow?))
+                                                     ;(printf "lfr: ~v~n" (locked-for-read?))
+                                                     ;; TODO: try not to break DrScheme's locked/unlocked contracts.
+                                                     (with-lock/edit-sequence
+                                                      (lambda ()
+                                                        (change-style red-delta pos end #f))))))))
+                             (exn:fail:syntax-exprs exn))))
                    (when last-error-canvas
                      (send last-error-canvas set-canvas-background red))
                    (set! last-error-string (exn-message exn))
                    (handle-failed-syntax exn))))))
+          
+          ;; from syncheck.ss
+          (define/public (with-lock/edit-sequence thunk)
+            (let ([locked? (is-locked?)])
+              (freeze-colorer)
+              (begin-edit-sequence)
+              (lock #f)
+              (thunk)
+              (end-edit-sequence)
+              (lock locked?)
+              (thaw-colorer #f #f)))
           
           #|  Disabled until someone requests it (and suggest a better key combo)
       (define/override (on-char event)
@@ -156,13 +189,13 @@
             (move-to-error)
             (super on-char event)))
 |#
-          
+           
           (define/private (move-to-error)
             (when (and last-error-snip
                        (not (locked-for-flow?)))
               (set-position (get-snip-position last-error-snip))))
           
-          
+
           (define autocompile-custodian (make-custodian (current-custodian)))
           (define autocompile-thread-group (make-thread-group (make-thread-group (make-thread-group (make-thread-group)))))
           (define autocompile-eventspace (parameterize ([current-thread-group autocompile-thread-group])

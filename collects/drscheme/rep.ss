@@ -300,7 +300,7 @@
 					   (lambda () (cleanup #t)))])
 			  (let ([zodiac-read (reader)])
 			    (if (zodiac:eof? zodiac-read)
-				(cleanup #f)
+				(lambda () (cleanup #f))
 				(let* ([exp (call/nal
 					     zodiac:scheme-expand/nal
 					     zodiac:scheme-expand

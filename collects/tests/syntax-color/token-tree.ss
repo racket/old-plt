@@ -150,6 +150,16 @@
           (14 1 (1 2)))
         'split-before (to-list t2)))
 
-
+(send t reset-tree)
+(insert-last! t (new token-tree% (length 1) (data 1)))
+(insert-last! t (new token-tree% (length 1) (data 2)))
+(insert-last! t (new token-tree% (length 1) (data 3)))
+(test '((0 1 1) (1 1 2) (2 1 3)) 'insert-last (to-list t))
+(send t search! 2)
+(let-values (((s e t1 t2) (send t split)))
+  (test 2 'split s)
+  (test 3 'split e)
+  (test '((0 1 1) (1 1 2)) 'split (to-list t1))
+  (test '() 'split (to-list t2)))
 
 (report-errs)

@@ -145,7 +145,7 @@
 #define ALLOW_TRACE_PATH 0
 /* Support collection-based trace path callbacks */
 
-#define KEEP_DETAIL_PATH 1
+#define KEEP_DETAIL_PATH SGC_STD_DEBUGGING
 /* Keep source offsets for path traces */
 
 #define ALLOW_SET_LOCKING 0

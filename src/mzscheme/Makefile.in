@@ -119,10 +119,10 @@ mzscheme.multiboot : libmzscheme.a libgc.a main.o
 		@OSKHOME@/lib/oskit/crtn.o
 
 main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
-	$(CC) @CFLAGS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
+	$(CC) @CFLAGS@ @OPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
 
 main_ee.o: main.o
-	$(CC) @CFLAGS@ -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
+	$(CC) @CFLAGS@ @OPTIONS@ -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
 
 ee-main:
 	$(MAKE) main_ee.o

@@ -1,7 +1,7 @@
 (require-library "error.ss" "htdp")
 (reference-file "draw.ss")
 
-(define-signature hangmanS (hangman-repl hangman-list-repl))
+(define-signature hangmanS (hangman hangman-list-repl))
 
 (define hangmanU 
   (unit/sig hangmanS (import errorS plt:userspace^)
@@ -12,15 +12,16 @@
     (define TITLE "Hangman")
     (define WELCOME "Welcome to Hangman") 
     (define WINNER  "We have a winner!") 
-    (define LOSER   "This is the end, my friend.") 
+    (define LOSER   "This is the end, my friend. The word was ~a.") 
 
     (define SMALL_A (char->integer #\a))
-    (define LETTERS (build-list 26 (lambda (i) (format "~a" (integer->char (+ SMALL_A i))))))
+    (define LETTERS
+      (build-list 26 (lambda (i) (format "~a" (integer->char (+ SMALL_A i))))))
 
     (define TRUMPET
       (make-object bitmap% 
-                   (build-path (collection-path "icons") "trumpet.xbm")
-                   'xbm))
+	(build-path (collection-path "icons") "trumpet.xbm")
+	'xbm))
 
     ;; char->symbol : char -> symbol 
     (define (char->symbol c)
@@ -38,8 +39,8 @@
     ------------------------------------------------------------------
 
     Two horizontal panels: 
-      the first one with all the colors (as buttons)
-      the second is a sequence of colored buttons 
+    the first one with all the colors (as buttons)
+    the second is a sequence of colored buttons 
     |#
 
     (define frame (make-object frame% TITLE #f 100 50))
@@ -50,11 +51,13 @@
 
     (define choice (make-object choice% "Guess:" LETTERS panel void))    
 
-    (make-object message% "  " panel) ;; added for looks
+    (make-object message% "  " panel);; added for looks
     (define check (make-object button% "Check" panel 
-                               (lambda (x y)
-                                 (check-guess
-                                  (char->symbol (list-ref LETTERS (send choice get-selection)))))))
+		    (lambda (x y)
+		      (check-guess
+			(char->symbol
+			  (list-ref LETTERS
+			    (send choice get-selection)))))))
 
     (make-object message% " Status: " panel)
     (define status-message (make-object message% "___" panel))
@@ -79,7 +82,7 @@
     (define (a-loser!)
       (set! check-guess void)
       (send message-panel change-children (lambda (x) null))
-      (make-object message% LOSER message-panel))
+      (make-object message% (format LOSER (uncover chosen)) message-panel))
 
     ;; check-guess : symbol -> word 
     ;; to check whether guess occurs in the chosen word, using reveal 
@@ -94,8 +97,8 @@
            (draw-next-part (select-piece!))
            (when (the-end?) (a-loser!))]
           [else
-           (set! status result)
-           (send status-message set-label (uncover status))])))
+	    (set! status result)
+	    (send status-message set-label (uncover status))])))
     
     ;; uncover : word -> string
     ;; to translate the current word into a string, 
@@ -136,16 +139,51 @@
     ;; draw-next-part :  (symbol -> #t)
     (define (draw-next-part s)
       (error 'hangman-repl "appply hangman-repl first!"))
-    
-    ;; hangman-repl : word word (word word letter -> word) (symbol -> #t) -> void
+
+    ;; WORDS : (listof (list letter letter letter))
+    (define WORDS
+      (map (lambda (sym)
+	     (map char->symbol (string->list (symbol->string sym))))
+	'(and
+	   are
+	   but
+	   cat
+	   cow
+	   dog
+	   eat
+	   fee
+	   gal
+	   hat
+	   inn
+	   kit
+	   lit
+	   met
+	   now
+	   owl
+	   pet
+	   rat
+	   sea
+	   the
+	   usa
+	   vip
+	   was
+	   zoo)))
+
+    ;; hangman-repl :
+    ;;   (letter letter letter -> word)
+    ;;   (word word letter -> word)
+    ;;   (symbol -> #t)
+    ;;   ->
+    ;;   void
     ;; effects: set up game status, draw noose, show frame
-    (define (hangman-repl ch st rv dr)
-      (check-arg 'hangman-repl (struct? ch) "structure" '1st ch)
-      (check-arg 'hangman-repl (struct? st) "structure" '2nd st)
-      (check-proc 'hangman-repl rv 3 '3rd "3 arguments")
-      (check-proc 'hangman-repl dr 1 '4th "1 argument")
-      (set! chosen ch)
-      (set! status st)
+    ;; depends on: words are structures 
+    (define (hangman mw rv dr)
+      (check-proc 'hangman mw 3 '1st "3 arguments")
+      (check-proc 'hangman rv 3 '2nd "3 arguments")
+      (check-proc 'hangman dr 1 '3rd "1 argument")
+      (set! chosen
+	(apply mw (list-ref WORDS (random (length WORDS)))))
+      (set! status (mw '_ '_ '_))
       (set! reveal rv)
       (set! draw-next-part dr)
       ;; make uncover work for structs
@@ -157,6 +195,8 @@
 	    (struct-ref a-word 2))))
       (draw-next-part (select-piece!))
       (send frame show #t))
+
+    ;; THE FOLLOWING REQUIRES CHANGE!
 
     ;; word2 = (listof letter)
     ;; hangman-list :

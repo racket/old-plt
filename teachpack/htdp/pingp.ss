@@ -1,6 +1,6 @@
 (require-library "error.ss" "htdp")
-(reference-file "draw.ss")
 (require-library "pingp-sig.ss" "htdp")
+(reference-file "draw.ss")
 
 (define pingpU
   (unit/sig pingpS

@@ -1336,7 +1336,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
      isn't ready, even though select() says that data is ready. It
      seems to happen for at least one user, and there appears to be
      no harm in protecting against it. */
-  if (WAS_EAGAIN(errid))
+  if ((data->b.bufmax == -1) && WAS_EAGAIN(errid))
     goto top;
 
 #endif

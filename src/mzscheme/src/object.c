@@ -2683,17 +2683,23 @@ static void BuildObjectFrame(Internal_Object *obj,
     refs = NULL;
   frame->refs = refs;
 
+  /* Find all rename boxes, then make public boxes */
+
   for (cvar = sclass->ivars; cvar; cvar = cvar->next) {
-    if (ispublic(cvar)) {
-      box = scheme_make_envunbox(scheme_undefined);
-      slots[oclass->vslot_map[sclass->ivar_map[cvar->index]]] = box;
-      ivars[cvar->index] = box;
-    } else if (isprivref(cvar)) {
+    if (isprivref(cvar)) {
       Scheme_Class *superclass = sclass->superclass;
       int vp = sclass->ref_map[cvar->index];
       /* If the superclass's ivar is a cmethod, the box will contain
 	 #<undefined>. */
       refs[cvar->index] = GetIvar(obj, irec, slots, oclass, superclass, vp, 1, 1);
+    }
+  }
+
+  for (cvar = sclass->ivars; cvar; cvar = cvar->next) {
+    if (ispublic(cvar)) {
+      box = scheme_make_envunbox(scheme_undefined);
+      slots[oclass->vslot_map[sclass->ivar_map[cvar->index]]] = box;
+      ivars[cvar->index] = box;
     }
   }
 }

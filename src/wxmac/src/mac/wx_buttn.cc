@@ -306,9 +306,13 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 		 : (!isgray ? kThemeStateActive : kThemeStateInactive));
   state.value = kThemeButtonOff;
   state.adornment = focused ?  kThemeAdornmentFocus : kThemeAdornmentNone;
-  DrawThemeButton(r, kThemeRoundedBevelButton, &state, NULL, NULL /* erase */, NULL, NULL);
-  
-  buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y, patOr);
+  if (isgray) {
+    buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y, patOr);
+    DrawThemeButton(r, kThemeRoundedBevelButton, &state, NULL, NULL /* erase */, NULL, NULL);
+  } else {
+    DrawThemeButton(r, kThemeRoundedBevelButton, &state, NULL, NULL /* erase */, NULL, NULL);
+    buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y, patOr);
+  }
 }
 
 void wxButton::Paint(void)

@@ -15,12 +15,20 @@
     (define tmp-proj (build-path proj-dir "building-extension"))
     (define ext-out (build-path proj-dir (format "extension.~a" tmp-suffix)))
     (define debug-out (string-append ext-out ".xSYM"))
+    (define data-out (string-append tmp-proj " Data"))
+    (define (delete f)
+      (cond
+        [(file-exists? f) (delete-file f)]
+        [(directory-exists? f) (map (lambda (i) (delete (build-path f i))) 
+                                    (directory-list f))
+                               (delete-directory f)]
+        [else (void)]))
     
     (when (string=? (system-library-subpath) "68k-mac")
       (error name "not supported for 68k-mac"))
     
-    (delete-file dest-file)
-    (delete-file tmp-proj)
+    (delete dest-file)
+    (delete tmp-proj)
     (unless (copy-file (build-path proj-dir base-project) 
                        tmp-proj)
          (error name "couldn't create the CodeWarrior project"))
@@ -34,19 +42,21 @@
         (unless (ping-cw?)
           (sleep 1) ; wait a second...
           (unless (ping-cw?)
-            (error name "couldn't start CodeWarrior"))))
+            (error name "couldn't start CodeWarrior; try starting CW, then leave it open while compiling"))))
 	    ; Open the project
         (cw-event "aevt" "odoc" `#(file ,tmp-proj))
-    	(for-each (lambda (f) (cw "AddF" f)) src-files)
-    	(cw "Make")
+        (cw "SDfP" `#(file ,tmp-proj))
+        (cw "AddF" (map (lambda (f) `#(file ,f)) src-files))
+        (cw "Make")
     	; Clean up
     	(cw "ClsP")
     	(unless started?
           (cw-event "aevt" "quit")
           (let loop () (sleep 1) (when (ping-cw?) (loop))))))
           
-    (delete-file tmp-proj)
-    (delete-file debug-out)
+    (delete tmp-proj)
+    (delete debug-out)
+    (delete data-out)
 
     (unless (rename-file-or-directory ext-out dest-file)
       (unless (copy-file ext-out dest-file)

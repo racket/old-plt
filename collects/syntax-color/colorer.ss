@@ -51,35 +51,37 @@
           (set! colors (cdr colors))
           (color)))
       
+      (define (sync-invalid current-pos)
+        (when (and invalid-tokens (< invalid-tokens-start current-pos))
+          (let ((min-tree (search-min! invalid-tokens null)))
+            (set! invalid-tokens (node-right min-tree))
+            (Set! invalid-tokens-start (+ invalid-tokens-start
+                                          (node-token-length min-tree)))
+            (sync-invalid current-pos))))
+      
       (define (re-tokenize prefix get-token in input-start-pos current-pos)
-        (cond
-          ((and invalid-tokens (= invalid-tokens-start current-pos))
-           (set! tokens (insert-after! tokens (search-min! invalid-tokens null))))
-          (else
-           (let-values (((type data new-token-start new-token-end) (get-token in)))
-             (unless (eq? 'eof type)
-               (let ((len (- new-token-end new-token-start)))
-                 (let loop ()
-                   (cond
-                     ((and invalid-tokens (< invalid-tokens-start current-pos))
-                      (let ((min-tree (search-min! invalid-tokens null)))
-                        (set! invalid-tokens (node-right min-tree))
-                        (set! invalid-tokens-start (+ invalid-tokens-start
-                                                       (node-token-length min-tree)))
-                        (loop)))
-                     (else
-                      (set! colors (cons
-                                    (lambda ()
-                                      (change-style
-                                       (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
-                                                                                prefix
-                                                                                type)))
-                                       (sub1 (+ input-start-pos new-token-start))
-                                       (sub1 (+ input-start-pos new-token-end))
-                                       #f))
-                                    colors))
-                      (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
-                      (re-tokenize prefix get-token in input-start-pos (+ current-pos len)))))))))))
+        (let-values (((type data new-token-start new-token-end) (get-token in)))
+          (unless (eq? 'eof type)
+            (let ((len (- new-token-end new-token-start)))
+              (sync-invalid (+ len current-pos))
+              (set! colors (cons
+                            (lambda ()
+                              (change-style
+                               (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
+                                                                        prefix
+                                                                        type)))
+                               (sub1 (+ input-start-pos new-token-start))
+                               (sub1 (+ input-start-pos new-token-end))
+                               #f))
+                            colors))
+              (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+              (cond
+                ((and invalid-tokens (= invalid-tokens-start (+ len current-pos)))
+                 (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
+                 (set! invalid-tokens #f)
+                 (set! invalid-tokens-start #f))
+                (else
+                 (re-tokenize prefix get-token in input-start-pos (+ current-pos len))))))))
     
       (define/public (do-insert/delete prefix get-token edit-start-pos change-length)
         (when should-color?
@@ -93,13 +95,14 @@
                            (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
                                          (split tokens (- edit-start-pos buffer-start))))
                              (let ((in (open-input-text-editor this (+ buffer-start orig-token-start) 'end)))
-                               (set! tokens valid-tree)
                                (set! invalid-tokens invalid-tree)
+                               (set! tokens valid-tree)
                                (set! invalid-tokens-start (+ orig-token-end change-length))
                                (re-tokenize prefix get-token in
                                             (+ buffer-start orig-token-start)
                                             (+ buffer-start orig-token-start)))))))
           (channel-get sync)
+          (printf "~a~n" (to-list tokens))
           (begin-edit-sequence #f)
           (color)
           (end-edit-sequence)))

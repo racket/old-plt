@@ -1209,6 +1209,25 @@ Bool wxBitmap::Create(int w, int h, int d)
   return ok;
 }
 
+void *wxBitmap::ChangeToDIBSection()
+{
+  /* Called only when the bitmap is not selected! */
+  BITMAPINFO bmp = { { sizeof(BITMAPINFOHEADER), width, height, 1, 32 } };
+  HBITMAP bm;
+  void *pBits;
+  
+  bm = CreateDIBSection(NULL, &bmp, DIB_RGB_COLORS, &pBits, NULL, NULL);
+  
+  if (bm) {
+    if (ms_bitmap)
+      DeleteRegisteredGDIObject(ms_bitmap);
+    ms_bitmap = bm;
+    RegisterGDIObject(ms_bitmap);
+    return pBits;
+  } else
+    return NULL;
+}
+
 extern int wxsGetImageType(char *fn);
 
 Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)  
@@ -1413,7 +1432,7 @@ wxBitmap::~wxBitmap(void)
     delete bitmapColourMap;
 }
 
-Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
+Bool wxBitmap::SaveFile(char *filename, int typ, int quality, wxColourMap *cmap)
 {
   if (!ok) return FALSE;
 
@@ -1512,7 +1531,7 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
 	break;
       }
     case wxBITMAP_TYPE_JPEG:
-      return write_JPEG_file(filename, this, 75);
+      return write_JPEG_file(filename, this, quality);
       break;
     case wxBITMAP_TYPE_PNG:
       return wx_write_png(filename, this);

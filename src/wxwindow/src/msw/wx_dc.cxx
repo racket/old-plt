@@ -20,7 +20,7 @@
 
 // Declarations local to this file
 
-static wxMemoryDC *blit_dc;
+static wxMemoryDC *blit_dc, *blit_mdc;
 
 #define YSCALE(y) (yorigin - (y))
 
@@ -28,6 +28,21 @@ static HANDLE null_brush;
 static HANDLE null_pen;
 
 void RegisterGDIObject(HANDLE x);
+
+static is_nt()
+{
+  static int nt = -1;
+  if (nt < 0) {
+    OSVERSIONINFO info;
+    info.dwOSVersionInfoSize = sizeof(info);
+    GetVersionEx(&info);
+    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
+      nt = 1;
+    else
+      nt = 0;
+  }
+  return nt;
+}
 
 // Default constructor
 wxDC::wxDC(void)
@@ -454,17 +469,7 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
     else if (pw == 1) {
       if (current_pen->GetCap() != wxCAP_BUTT) {
 	/* Pen size 1: no need to forward under NT */
-	static int nt = -1;
-	if (nt < 0) {
-	  OSVERSIONINFO info;
-	  info.dwOSVersionInfoSize = sizeof(info);
-	  GetVersionEx(&info);
-	  if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
-	    nt = 1;
-	  else
-	    nt = 0;
-	}
-	forward = !nt;
+	forward = !is_nt();
       } else
 	forward = 0;
     }
@@ -531,11 +536,11 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   w = dc->LogicalToDeviceXRel(w);
   h = dc->LogicalToDeviceYRel(h);
   
-  xstart = floor(x / bw);
-  xend = floor((x + w + bw - 0.00001) / bw);
+  xstart = (int)floor(x / bw);
+  xend = (int)floor((x + w + bw - 0.00001) / bw);
 
-  ystart = floor(y / bh);
-  yend = floor((y + h + bh - 0.00001) / bh);
+  ystart = (int)floor(y / bh);
+  yend = (int)floor((y + h + bh - 0.00001) / bh);
 
   dc->SetClippingRegion(r);
 
@@ -1432,14 +1437,22 @@ float wxDC::FLogicalToDeviceYRel(float y)
 
 #define wxKEEPDEST (DWORD)0x00AA0029
 
+typedef BOOL (WINAPI *wxALPHA_BLEND)(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFUNCTION);
+static wxALPHA_BLEND wxAlphaBlend;
+static int tried_ab = 0;
+#ifndef AC_SRC_ALPHA
+# define AC_SRC_ALPHA 0x01
+#endif
+
 Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 wxBitmap *source, float xsrc, float ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
 {
-  int xdest1, ydest1, xsrc1, ysrc1;
-  HDC dc, dc_src;
-  wxMemoryDC *sel;
-  Bool success = 0;
+  int xdest1, ydest1, xsrc1, ysrc1, iw, ih;
+  HDC dc, dc_src, invented_dc, mdc = NULL;
+  wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
+  wxBitmap *invented = NULL;
+  Bool success = 1, invented_col = 0, use_alpha = 0;
   DWORD op = 0;
 
   dc = ThisDC();
@@ -1465,48 +1478,211 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   ShiftXY(xdest, ydest, &xdest1, &ydest1);
-  xsrc1 = floor(xsrc);
-  ysrc1 = floor(ysrc);
+  xsrc1 = (int)floor(xsrc);
+  ysrc1 = (int)floor(ysrc);
 
-  SetTextColor(dc, 0); /* 0 = black */
-  if (source->GetDepth() == 1) {
-    if (rop == wxSOLID) {
+  iw = (int)floor(width);
+  ih = (int)floor(height);
+
+  if (mask && ((mask->GetDepth() > 1) || !is_nt())) {
+    /* No MaskBlt in 95/98/Me, so we invent a bitmap like the source,
+       but with white where the mask has white.
+
+       Also, when AlphaBlend is available, we need to create a bitmaps
+       with alphas in it. */
+
+    if (mask == source) {
+      /* This is ok. Just use dc_src as mdc. */
+      mdc = dc_src;
+    } else {
+      msel = (wxMemoryDC *)mask->selectedInto;
+      if (msel) msel->SelectObject(NULL);
+
+      if (!blit_mdc) {
+	wxREGGLOB(blit_mdc);
+	blit_mdc = new wxMemoryDC(1);
+      }
+    
+      blit_mdc->SelectObject(mask);
+      mdc = blit_mdc->ThisDC();
+    }
+
+    invented = new wxBitmap(iw, ih, source->GetDepth() == 1);
+    if (invented->Ok()) {
+      void *pBits = NULL; /* set with use_alpha... */
+
+      if (mask->GetDepth() > 1) {
+	if (!tried_ab) {
+	  HMODULE mod;
+	  mod = LoadLibrary("Msimg32.dll");
+	  if (mod)
+	    wxAlphaBlend = (wxALPHA_BLEND)GetProcAddress(mod, "AlphaBlend");
+	  tried_ab = 1;
+	}
+	if (wxAlphaBlend)
+	  use_alpha = 1;
+	/* Otherwise, no AlphaBlend. The result is somewhat unpredictable,
+	   but somewhat as intended --- especially if we happend
+	   to be drawing onto white. :) */
+      }
+
+      if (use_alpha) {
+	pBits = invented->ChangeToDIBSection();
+	if (!pBits) {
+	  use_alpha = 0;
+	  /* half-failure... act like AlphaBlend isn't there */
+	}
+      }
+
+      invented_memdc = new wxMemoryDC();
+      invented_memdc->SelectObject(invented);
+      
+      if (invented_memdc->Ok()) {
+	invented_dc = invented_memdc->ThisDC();
+
+	/* Copy original src image here: */
+	BitBlt(invented_dc, 0, 0,
+	       iw, ih,
+	       dc_src, xsrc1, ysrc1,
+	       SRCCOPY);
+
+	if (use_alpha) {
+	  /* "Pre-compute" alpha in the invented DC */
+	  BYTE *pPixel;
+	  COLORREF mcol;
+	  int i, j, gray;
+
+	  GdiFlush();
+	  for (j = 0; j < ih; j++) {
+	    pPixel = (BYTE *) pBits + iw * 4 * (ih - j);
+	    for (i = 0; i < iw; i++) {
+	      mcol = ::GetPixel(mdc, i + xsrc1, j + ysrc1);
+	      gray = ((int)GetRValue(mcol)
+		      + (int)GetGValue(mcol)
+		      + (int)GetBValue(mcol)) / 3;
+	      pPixel[0] = pPixel[0] * (255 - gray) / 255; 
+	      pPixel[1] = pPixel[1] * (255 - gray) / 255; 
+	      pPixel[2] = pPixel[2] * (255 - gray) / 255; 
+	      pPixel[3] = (255 - gray);
+	      
+	      pPixel += 4;
+            }
+	  }
+	} else {
+	  /* Want white where mask was white,
+	     src otherwise: */
+	  BitBlt(invented_dc, 0, 0,
+		 iw, ih,
+		 mdc, xsrc1, ysrc1,
+		 SRCPAINT /* DSo */);
+
+	  /* Ignore the mask and... */
+	  mask = NULL;
+	  if (source->GetDepth() == 1) {
+	    /* Mono source: Now use invented_dc instead of src_dc,
+	       and it all works out. */
+	    xsrc1 = 0;
+	    xsrc1 = 0;
+	  } else {
+	    /* Paint on dest using mask, then "and" invented image
+	       with dest. */
+	    invented_col = 1;
+	  }
+	}
+      } else {
+	/* Failed (Rest of failure handling below since !invented_memdc) */
+	invented_memdc->SelectObject(NULL);
+	DELETE_OBJ invented_memdc;
+	invented_memdc = NULL;
+	DELETE_OBJ invented;
+      }
+    }
+
+    if (!invented_memdc) {
+      /* Failed */
+      blit_mdc->DoneDC(mdc);
+      blit_mdc->SelectObject(NULL);
+      if (msel) msel->SelectObject(mask);
+      DoneDC(dc);
+      blit_dc->DoneDC(dc_src);
+      blit_dc->SelectObject(NULL);
+      if (sel) sel->SelectObject(source);
+      return 0;
+    }
+  }
+
+  if (use_alpha) {
+    BLENDFUNCTION bf;
+
+    bf.BlendOp = AC_SRC_OVER;
+    bf.BlendFlags = 0;
+    bf.SourceConstantAlpha = 0xff;
+    bf.AlphaFormat = AC_SRC_ALPHA;
+    
+    success = wxAlphaBlend(dc, 
+			   xdest1, ydest1, iw, ih,
+			   invented_dc,
+			   0, 0, iw, ih,
+			   bf);
+  } else {
+    SetTextColor(dc, 0);     /* 0 = black */
+    if ((source->GetDepth() == 1) || invented_col)  {
+      if ((rop == wxSOLID) || invented_col) {
+	/* White pixels in the src aren't supposed to count.
+	   First, paint black everywhere where the bitmap has black.
+	   Then, below, "or" over the destination with a coloring of the image.
+	   
+	   If we're painting a color src through an invented image,
+	   use the mask instead of src for this first step. */
+	SetTextColor(dc, wxBLACK->pixel);
+	if (mask) {
+	  success = MaskBlt(dc, xdest1, ydest1, 
+			    iw, ih,
+			    dc_src, xsrc1, ysrc1,
+			    mask->ms_bitmap, xsrc1, ysrc1,
+			    MAKEROP4(wxKEEPDEST, MERGEPAINT));
+	} else {
+	  success = BitBlt(dc, xdest1, ydest1, 
+			   iw, ih,
+			   (invented_col
+			    ? mdc 
+			    : (invented_memdc 
+			       ? invented_dc 
+			       : dc_src)), 
+			   xsrc1, ysrc1,
+			   MERGEPAINT);
+	  if (invented_col) {
+	    /* zero src offset for second step, which uses the invented_dc */
+	    xsrc1 = ysrc1 = 0;
+	  }
+	}
+	op = SRCAND;
+      } else {
+	/* Straightforward copy (including white pixels) */
+	op = ((rop == wxXOR) 
+	      ? 0x00990066 /* => DSnx */
+	      : SRCCOPY);  /* opaque */
+      }
+      SetTextColor(dc, c ? c->pixel : wxBLACK->pixel);
+    } else {
+      op = SRCCOPY;
       SetTextColor(dc, wxBLACK->pixel);
+    }
+    
+    if (op && success) {
       if (mask) {
 	success = MaskBlt(dc, xdest1, ydest1, 
-			  width, height,
+			  iw, ih,
 			  dc_src, xsrc1, ysrc1,
 			  mask->ms_bitmap, xsrc1, ysrc1,
-			  MAKEROP4(wxKEEPDEST, MERGEPAINT));
+			  MAKEROP4(wxKEEPDEST, op));
       } else {
 	success = BitBlt(dc, xdest1, ydest1, 
-			 width, height,
-			 dc_src, xsrc1, ysrc1,
-			 MERGEPAINT);
+			 iw, ih,
+			 invented_memdc ? invented_dc : dc_src,
+			 xsrc1, ysrc1, 
+			 op);
       }
-      op = SRCAND;
-    } else
-      op = ((rop == wxXOR) 
-	    ? 0x00990066 /* => DSnx */
-	    : SRCCOPY);  /* opaque */
-    SetTextColor(dc, c ? c->pixel : wxBLACK->pixel);
-  } else {
-    op = SRCCOPY;		
-    SetTextColor(dc, wxBLACK->pixel);
-  }
-  
-  if (op) {
-    if (mask) {
-      success = MaskBlt(dc, xdest1, ydest1, 
-			width, height,
-			dc_src, xsrc1, ysrc1,
-			mask->ms_bitmap, xsrc1, ysrc1,
-			MAKEROP4(wxKEEPDEST, op));
-    } else {
-      success = BitBlt(dc, xdest1, ydest1, 
-		       width, height,
-		       dc_src, xsrc1, ysrc1, 
-		       op);
     }
   }
 
@@ -1514,6 +1690,17 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   blit_dc->DoneDC(dc_src);
   blit_dc->SelectObject(NULL);
   if (sel) sel->SelectObject(source);
+  if (mdc && (mdc != dc_src)) {
+    blit_mdc->DoneDC(mdc);
+    blit_mdc->SelectObject(NULL);
+    if (msel) msel->SelectObject(mask);
+  }
+  if (invented_memdc) {
+    invented_memdc->DoneDC(invented_dc);
+    invented_memdc->SelectObject(NULL);
+    DELETE_OBJ invented_memdc;
+    DELETE_OBJ invented;
+  }
 
   return success;
 }

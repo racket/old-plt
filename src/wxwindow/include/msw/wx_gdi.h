@@ -130,7 +130,7 @@ class wxBitmap: public wxObject
 
   virtual Bool Create(int width, int height, int depth = -1);
   virtual Bool LoadFile(char *name, long flags = 0, wxColour *bg = NULL);
-  virtual Bool SaveFile(char *name, int type, wxColourMap *cmap = NULL);
+  virtual Bool SaveFile(char *name, int type, int quality = 75, wxColourMap *cmap = NULL);
 
   inline Bool Ok(void) { return ok; }
   inline int GetWidth(void) { return width; }
@@ -144,6 +144,8 @@ class wxBitmap: public wxObject
   inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap; }
   inline void SetMask(wxBitmap *newmask) { mask = newmask; }
   inline wxBitmap *GetMask(void) { return mask; }
+
+  void *ChangeToDIBSection();
 };
 
 // Cursor

@@ -11,6 +11,14 @@
 
 (test null extract-current-continuation-marks 'key)
 
+(syntax-test #'with-continuation-mark)
+(syntax-test #'(with-continuation-mark))
+(syntax-test #'(with-continuation-mark 1))
+(syntax-test #'(with-continuation-mark 1))
+(syntax-test #'(with-continuation-mark 1 2))
+(syntax-test #'(with-continuation-mark 1 2 3 4))
+(syntax-test #'(with-continuation-mark 1 2 3 . 4))
+
 (test '(10) 'wcm (with-continuation-mark 'key 10 
 		   (extract-current-continuation-marks 'key)))
 (test '(11) 'wcm (with-continuation-mark 'key 10 

@@ -1616,6 +1616,13 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
   while (!SCHEME_NULLP(working[0])) {
     /* collect args to apply */
     for (i = 0; i < argc ; i++) {
+      if (!SCHEME_PAIRP(working[i])) {
+	/* There was a mutation! */
+	scheme_raise_exn(MZEXN_MISC, 
+			 "%s: argument list mutated",
+			 name);
+	return NULL;
+      }
       args[i] = SCHEME_CAR(working[i]);
       working[i] = SCHEME_CDR(working[i]);
     }

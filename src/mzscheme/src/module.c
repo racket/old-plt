@@ -110,6 +110,7 @@ static Scheme_Object *with_continuation_mark_stx;
 static Scheme_Object *letrec_syntaxes_stx;
 static Scheme_Object *fluid_let_syntax_stx;
 
+static Scheme_Env *initial_modules_env;
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
 static Scheme_Object *initial_renames;
@@ -447,6 +448,11 @@ void scheme_save_initial_module_set(Scheme_Env *env)
   int i, c, count;
   Scheme_Hash_Table *ht;
 	
+  if (!initial_modules_env) {
+    REGISTER_SO(initial_modules_env);
+  }
+  initial_modules_env = env;
+  
   ht = env->module_registry;
   c = ht->size;
 
@@ -461,22 +467,13 @@ void scheme_save_initial_module_set(Scheme_Env *env)
   if (!initial_modules) {
     REGISTER_SO(initial_modules);
   }
-  initial_modules = MALLOC_N(Scheme_Object *, 3 * count);
+  initial_modules = MALLOC_N(Scheme_Object *, count);
 
   count = 0;
   for (i = 0; i < c; i++) {
     if (ht->vals[i]) {
       initial_modules[count++] = ht->keys[i];
-      initial_modules[count++] = ht->vals[i];
-      initial_modules[count++] = NULL;
     }
-  }
-
-  /* Make sure all initial modules are running: */
-  for (i = 0; i < num_initial_modules; i++) {
-    Scheme_Module *m = (Scheme_Module *)initial_modules[(i * 3) + 1];
-    start_module(m, env, 0, m->modname);
-    initial_modules[(i * 3) + 2] = scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   }
 
   /* Clone renames: */
@@ -496,15 +493,20 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 void scheme_install_initial_module_set(Scheme_Env *env)
 {
   int i;
+  Scheme_Object *a[3];
+  Scheme_Module *m;
 
   /* Copy over module declarations and instances: */
   for (i = 0; i < num_initial_modules; i++) {
-    scheme_hash_set(env->module_registry, 
-		    initial_modules[i * 3],
-		    initial_modules[(i * 3) + 1]);
-    scheme_hash_set(MODCHAIN_TABLE(env->modchain),
-		    initial_modules[i * 3],
-		    initial_modules[(i * 3) + 2]);
+    a[0] = (Scheme_Object *)initial_modules_env;
+    a[1] = initial_modules[i];
+    a[2] = (Scheme_Object *)env;
+
+    /* Make sure module is running: */
+    m = (Scheme_Module *)scheme_hash_get(initial_modules_env->module_registry, a[1]);
+    start_module(m, initial_modules_env, 0, a[1]);
+
+    namespace_attach_module(3, a);
   }
 
   /* Copy renamings: */
@@ -756,7 +758,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   Scheme_Object *to_modchain, *from_modchain, *l;
   Scheme_Hash_Table *checked, *next_checked;
   Scheme_Module *m2;
-  int same_namespace;
+  int same_namespace, skip_notify = 0;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
     scheme_wrong_type("namespace-attach-module", "namespace", 0, argc, argv);
@@ -764,7 +766,11 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     scheme_wrong_type("namespace-attach-module", "symbol", 1, argc, argv);
 
   from_env = (Scheme_Env *)argv[0];
-  to_env = scheme_get_env(scheme_config);
+  if (argc > 2) {
+    to_env = (Scheme_Env *)argv[2];
+    skip_notify = 1;
+  } else
+    to_env = scheme_get_env(scheme_config);
 
   same_namespace = SAME_OBJ(from_env, to_env);
 
@@ -808,6 +814,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	      m2 = NULL;
 	  } else {
 	    m2 = (Scheme_Module *)scheme_hash_get(to_env->module_registry, name);
+	    if (m2 && SAME_OBJ(m2, menv->module))
+	      m2 = NULL;
 	  }
 	  
 	  if (m2)
@@ -905,16 +913,18 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     to_modchain = SCHEME_VEC_ELS(to_modchain)[1];
   }
 
-  /* Notify module name resolver of attached modules: */
-  resolver = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER);
-  while (!SCHEME_NULLP(notifies)) {
-    a[0] = scheme_false;
-    a[1] = SCHEME_CAR(notifies);
-    a[2] = scheme_false;
-    
-    name = scheme_apply(resolver, 3, a);
-
-    notifies = SCHEME_CDR(notifies);
+  if (!skip_notify) {
+    /* Notify module name resolver of attached modules: */
+    resolver = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER);
+    while (!SCHEME_NULLP(notifies)) {
+      a[0] = scheme_false;
+      a[1] = SCHEME_CAR(notifies);
+      a[2] = scheme_false;
+      
+      name = scheme_apply(resolver, 3, a);
+      
+      notifies = SCHEME_CDR(notifies);
+    }
   }
 
   return scheme_void;

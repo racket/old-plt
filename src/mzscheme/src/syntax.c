@@ -2235,25 +2235,16 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   body = scheme_add_env_renames(body, env, origenv);
   body = scheme_expand_block(body, env, depth, boundname);
 
-  if (named) {
-    Scheme_Object *fn, *nm;
-    fn = SCHEME_STX_CAR(form);
-    nm = SCHEME_STX_CDR(form);
-    nm = SCHEME_STX_CAR(nm);
-    v = icons(fn,
-	      icons(nm,
-		    icons(first, body)));
-  } else {
-    if (multi && !letstar)
-      v = SCHEME_STX_CAR(form);
-    else
-      v = scheme_datum_to_syntax((letrec 
-				  ? letrec_values_symbol 
-				  : let_values_symbol),
-				 form, scheme_sys_wraps(origenv), 
-				 0, 0);
-    v = icons(v, icons(first, body));
-  }
+  if (multi && !letstar)
+    v = SCHEME_STX_CAR(form);
+  else
+    v = scheme_datum_to_syntax((letrec 
+				? letrec_values_symbol 
+				: let_values_symbol),
+			       form, scheme_sys_wraps(origenv), 
+			       0, 0);
+
+  v = icons(v, icons(first, body));
 
   return scheme_datum_to_syntax(v, form, form, 0, 1);
 }
@@ -2927,7 +2918,16 @@ do_letrec_syntaxes(const char *where, int normal,
   else
     rhs_env = origenv;
 
-  check_form(where, bindings);
+  if (!SCHEME_STX_NULLP(bindings) && !SCHEME_STX_PAIRP(bindings)) {
+    scheme_wrong_syntax(where, bindings, forms, "bad syntax (not a binding sequence)");
+  } else
+    check_form(where, bindings);
+  if (normal) {
+    if (!SCHEME_STX_NULLP(var_bindings) && !SCHEME_STX_PAIRP(var_bindings)) {
+      scheme_wrong_syntax(where, var_bindings, forms, "bad syntax (not a binding sequence)");
+    } else
+      check_form(where, var_bindings);
+  }
 
   cnt = stx_cnt = var_cnt = 0;
 

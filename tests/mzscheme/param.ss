@@ -132,6 +132,12 @@
 			 (read p))
 		      exn:read?
 		      #f)
+		(list read-decimal-as-inexact
+		      (list #f #t)
+		      '(let ([p (open-input-string "1.0")])
+			 (list-ref '(1 2) (read p)))
+		      exn:application:type?
+		      #f)
 		(list print-graph
 		      (list #t #f)
 		      '(check-write-string display (quote (#0=(1 2) . #0#)) "(#0=(1 2) . #0#)")

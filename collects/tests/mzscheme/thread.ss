@@ -92,6 +92,12 @@
 (arity-test kill-thread 1 1)
 (err/rt-test (kill-thread 5) type?)
 
+(arity-test break-thread 1 1)
+(err/rt-test (break-thread 5) type?)
+
+(arity-test thread-wait 1 1)
+(err/rt-test (thread-wait 5) type?)
+
 (test #t thread-running? (current-thread))
 (arity-test thread-running? 1 1)
 (err/rt-test (thread-running? 5) type?)
@@ -99,6 +105,7 @@
 (arity-test sleep 0 1)
 (err/rt-test (sleep 'a) type?)
 (err/rt-test (sleep 1+3i) type?)
+(err/rt-test (sleep -1.0) type?)
 
 (define s (make-semaphore 1))
 

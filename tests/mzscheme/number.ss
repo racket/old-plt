@@ -182,6 +182,8 @@
 (test-compare 0.5 1.2 2.3)
 (test-compare 2/5 1/2 2/3)
 (test #t = 1/2 2/4)
+(test #f = 2/3 2/5)
+(test #f = 2/3 2/500000000000000000000000000)
 
 (test-compare 0.5 6/5 2.3)
 (test-compare 1 11922615739/10210200 3000)
@@ -526,6 +528,8 @@
 
 (test 1024 expt 2 10)
 (test 1/1024 expt 2 -10)
+(test 1/1024 expt 1/2 10)
+(test (/ 1 (expt 2 10000)) expt 1/2 10000)
 (arity-test expt 2 2)
 
 (test 31525197391593472 inexact->exact 31525197391593473.0)
@@ -621,6 +625,8 @@
 (test-nan.0 * +nan.0 +nan.0)
 
 (test 1/2 / 1 2)
+(test -1/3 / -1 3)
+(test -1/3 / 1 -3)
 (test 1/2 / 1/4 1/2)
 (test 0.5 / 1 2.0)
 (test 0.5 / 1.0 2)
@@ -629,6 +635,7 @@
 (test 0.5+0.0i / 1+0.0i 2)
 (test 0.25-0.0i / 1 4+0.0i)
 (test 0.25+0.0i / 1+0.0i 4+0.0i)
+(test 0 / 0 4+3i)
 
 (test +inf.0 / 1.0 0.0)
 (test -inf.0 / -1.0 0.0)
@@ -1312,6 +1319,7 @@
 (test 1 * +i -i)
 (test 2 * 1+i 1-i)
 (test +2i * 1+i 1+i)
+(test -3+4i - 3-4i)
 (test 0.5 - (+ 0.5 +i) +i)
 (test 1/2 - (+ 1/2 +i) +i)
 (test 1.0+0.0i - (+ 1 +0.5i) +1/2i)

@@ -25,6 +25,7 @@
 #include "schmach.h"
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #ifdef MZ_PRECISE_GC
 # define PTR_TO_LONG(p) scheme_hash_key(p)
@@ -694,14 +695,16 @@ long scheme_equal_hash_key(Scheme_Object *o)
     return k + SCHEME_INT_VAL(o);
 #ifdef MZ_USE_SINGLE_FLOATS
   } else if (t == scheme_float_type) {
-    float f;
-    f = SCHEME_FLOAT_VAL(o);
-    return k + *(long *)&f;
+    double d;
+    int e;
+    d = frexp(SCHEME_DBL_VAL(o), &e);
+    return k + ((long)(d * (1 << 30))) + e;
 #endif
   } else if (t == scheme_double_type) {
     double d;
-    d = SCHEME_DBL_VAL(o);
-    return k + ((long *)&d)[0] + ((long *)&d)[1];
+    int e;
+    d = frexp(SCHEME_DBL_VAL(o), &e);
+    return k + ((long)(d * (1 << 30))) + e;
   } else if (t == scheme_bignum_type) {
     int i = SCHEME_BIGLEN(o);
     bigdig *d = SCHEME_BIGDIG(o);
@@ -790,8 +793,10 @@ long scheme_equal_hash_key2(Scheme_Object *o)
     return t;
 #endif
   } else if (t == scheme_double_type) {
-    double d = SCHEME_DBL_VAL(o);
-    return ((long *)&d)[1];
+    double d;
+    int e;
+    d = frexp(SCHEME_DBL_VAL(o), &e);
+    return e;
   } else if (t == scheme_bignum_type) {
     return SCHEME_BIGDIG(o)[0];
   } else if (t == scheme_rational_type) {

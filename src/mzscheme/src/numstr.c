@@ -215,10 +215,10 @@ static double STRTOD(const char *orig_c, char **f)
       break;
     } else if (ch == '.') {
       if (found_dot)
-	return 0; /* two dots - bad! */
+	return 0; /* two dots - shouldn't happen */
       found_dot = 1;
     } else
-      return 0; /* unknown non-digit - bad! */
+      return 0; /* unknown non-digit - shouldn't happen */
   }
   
   *f = (char *)c;
@@ -593,6 +593,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     if (SAME_OBJ(n1, scheme_false) && !fdbz)
       return scheme_false;
+    /* This +nan.0 test looks unnecessary  -- Matthew, 08/14/01 */
     else if (SCHEME_FLOATP(n1)) {
       double d = SCHEME_FLOAT_VAL(n1);
       if (MZ_IS_NAN(d))
@@ -612,6 +613,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     
     if (SAME_OBJ(n2, scheme_false) && !sdbz)
       return scheme_false;
+    /* This +nan.0 test looks unnecessary  -- Matthew, 08/14/01 */
     else if (SCHEME_FLOATP(n2)) {
       double d = SCHEME_FLOAT_VAL(n2);
       if (MZ_IS_NAN(d))
@@ -686,6 +688,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
       d2 = SCHEME_FLOAT_VAL(n2);
       
+      /* This +nan.0 test looks unnecessary  -- Matthew, 08/14/01 */
       if (MZ_IS_NAN(d2))
 	return scheme_false;
 
@@ -722,6 +725,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     d1 = SCHEME_FLOAT_VAL(n1);
 
+    /* This +nan.0 test looks unnecessary  -- Matthew, 08/14/01 */
     if (MZ_IS_NAN(d1))
       return scheme_false;
 

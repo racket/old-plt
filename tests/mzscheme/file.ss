@@ -671,7 +671,7 @@
 	(parameterize ([error-print-width 40])
 	  (format "~e" (make-string 200 #\v))))
   
-  '(let()
+  (let()
     (define bads
       (let loop ([i badc-range-end])
 	(cond
@@ -691,7 +691,7 @@
     ; test for all bad tags; the string we generate shouldn't
     ;  be printed to a terminal directly because it can contain contain
     ;  control characters; censor it
-    (unless (defined? 'building-flat-tests)
+    (unless building-flat-tests?
       (with-censor
        (lambda ()
 	 (for-each (lambda (c)

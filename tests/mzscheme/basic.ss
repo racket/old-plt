@@ -211,6 +211,7 @@
 (test 1 append! 1)
 (err/rt-test (append! '(1 2 . 3) 1))
 (err/rt-test (append! '(1 2 3) 1 '(4 5 6)))
+(err/rt-test (append! (pair->immutable-pair '(1)) '(4 5 6)))
 
 (define l '(1 2))
 (define l2 '(3 4 . 7))
@@ -257,6 +258,7 @@
 (err/rt-test (list-ref '() 0) exn:application:mismatch?)
 (err/rt-test (list-ref '() 0) exn:application:mismatch?)
 (err/rt-test (list-ref '(1) -1))
+(err/rt-test (list-ref '(1) 2000000000000) exn:application:mismatch?)
 
 (test '(c d) list-tail '(a b c d) 2)
 (test '(a b c d) list-tail '(a b c d) 0)
@@ -736,7 +738,13 @@
 (arity-test string-copy 1 1)
 (arity-test string-fill! 2 2)
 (err/rt-test (string-copy 'blah))
-(err/rt-test (string-fill! "oops" 5))
+(err/rt-test (string-fill! 'sym #\1))
+(err/rt-test (string-fill! "static" #\1))
+(err/rt-test (string-fill! (string-copy "oops") 5))
+
+(test "Hello, and how are you?" string->immutable-string "Hello, and how are you?")
+(arity-test string->immutable-string 1 1)
+(err/rt-test (string->immutable-string 'hello))
 
 (define ax (string #\a #\nul #\370 #\x))
 (define abigx (string #\a #\nul #\370 #\X))
@@ -1028,6 +1036,7 @@
 (test '#(hi hi) make-vector 2 'hi)
 (test '#() make-vector 0)
 (test '#() make-vector 0 'a)
+(test 2048 vector-length (make-vector 2048 'a))
 (arity-test make-vector 1 2)
 (err/rt-test (make-vector "a" 'a))
 (err/rt-test (make-vector 1.0 'a))
@@ -1471,6 +1480,7 @@
 (err/rt-test (string->list 'hello))
 (err/rt-test (list->string 'hello))
 (err/rt-test (list->string '(#\h . #\e)))
+(err/rt-test (list->string '(#\h 1 #\e)))
 (SECTION 6 8)
 (test '(dah dah didah) vector->list '#(dah dah didah))
 (test '() vector->list '#())
@@ -1494,19 +1504,106 @@
 
 (let ([check-hash-tables
        (lambda (maybe-weak)
+	 (define-struct a (b c))
+	 
 	 (let ([h1 (apply make-hash-table maybe-weak)]
 	       [l (list 1 2 3)])
+	   (test #t eq? (eq-hash-code l) (eq-hash-code l))
+	   (test #t eq? (equal-hash-code l) (equal-hash-code l))
+	   (test #t eq? (equal-hash-code l) (equal-hash-code (list 1 2 3)))
 	   (hash-table-put! h1 l 'ok)
 	   (test 'ok hash-table-get h1 l)
-	   (test 'nope hash-table-get h1 (list 1 2 3) (lambda () 'nope)))
-
+	   (test 'nope hash-table-get h1 (list 1 2 3) (lambda () 'nope))
+	   (test '(((1 2 3) . ok)) hash-table-map h1 (lambda (k v) (cons k v)))
+	   (hash-table-remove! h1 l)
+	   (test 'nope hash-table-get h1 l (lambda () 'nope)))
+	 
 	 (let ([h1 (apply make-hash-table 'equal maybe-weak)]
-	       [l (list 1 2 3)])
-	   (hash-table-put! h1 l 'ok)
-	   (test 'ok hash-table-get h1 l)
-	   (test 'ok hash-table-get h1 (list 1 2 3))))])
+	       [l (list 1 2 3)]
+	       [v (vector 5 6 7)]
+	       [a (make-a 1 (make-a 2 3))]
+	       [b (box (list 1 2 3))])
+	   (hash-table-put! h1 l 'list)
+	   (hash-table-put! h1 "Hello World!" 'string)
+	   (hash-table-put! h1 123456789123456789123456789 'bignum)
+	   (hash-table-put! h1 3.45 'flonum)
+	   (hash-table-put! h1 3/45 'rational)
+	   (hash-table-put! h1 3+45i 'complex)
+	   (hash-table-put! h1 3+0.0i 'izi-complex)
+	   (hash-table-put! h1 v 'vector)
+	   (hash-table-put! h1 a 'struct)
+	   (hash-table-put! h1 b 'box)
+	   (test 'list hash-table-get h1 l)
+	   (test 'list hash-table-get h1 (list 1 2 3))
+	   (test 'string hash-table-get h1 "Hello World!")
+	   (test 'bignum hash-table-get h1 123456789123456789123456789)
+	   (test 'flonum hash-table-get h1 3.45)
+	   (test 'rational hash-table-get h1 3/45)
+	   (test 'complex hash-table-get h1 3+45i)
+	   (test 'izi-complex hash-table-get h1 3+0.0i)
+	   (test 'vector hash-table-get h1 v)
+	   (test 'vector hash-table-get h1 #(5 6 7))
+	   (test 'struct hash-table-get h1 a)
+	   (test 'struct hash-table-get h1 (make-a 1 (make-a 2 3)))
+	   (test 'box hash-table-get h1 b)
+	   (test 'box hash-table-get h1 #&(1 2 3))
+	   (test #t
+		 andmap
+		 (lambda (i)
+		   (and (member i 
+				(hash-table-map h1 (lambda (k v) (cons k v))))
+			#t))
+		 `(((1 2 3) . list)
+		   ("Hello World!" . string)
+		   (123456789123456789123456789 . bignum)
+		   (3.45 . flonum)
+		   (3/45 . rational)
+		   (3+45i . complex)
+		   (3+0.0i . izi-complex)
+		   (#(5 6 7) . vector)
+		   (,a . struct)
+		   (#&(1 2 3) . box)))
+	   (hash-table-remove! h1 (list 1 2 3))
+	   (test 'not-there hash-table-get h1 l (lambda () 'not-there))
+	   (let ([c 0])
+	     (hash-table-for-each h1 (lambda (k v) (set! c (add1 c))))
+	     (test 9 'count c))))])
   (check-hash-tables null)
   (check-hash-tables (list 'weak)))
+
+(err/rt-test (hash-table-put! 1 2 3))
+(err/rt-test (hash-table-get 1 2))
+(err/rt-test (hash-table-remove! 1 2))
+(err/rt-test (hash-table-get (make-hash-table) 2) exn:application:mismatch?)
+
+(arity-test make-hash-table 0 2)
+(arity-test hash-table-get 2 3)
+(arity-test hash-table-put! 3 3)
+(arity-test hash-table-remove! 2 2)
+(arity-test hash-table-map 2 2)
+(arity-test hash-table-for-each 2 2)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Misc
+
+(test #t string? (version))
+(test #t string? (banner))
+(test #t symbol? (system-type))
+(test (system-type) system-type #f)
+(test #t string? (system-type #t))
+(test #t relative-path? (system-library-subpath))
+
+(test #t 'cmdline (let ([v (current-command-line-arguments)])
+		    (and (vector? v)
+			 (andmap string? (vector->list v)))))
+(err/rt-test (current-command-line-arguments '("a")))
+(err/rt-test (current-command-line-arguments #("a" 1)))
+
+(arity-test version 0 0)
+(arity-test banner 0 0)
+(arity-test system-type 0 1)
+(arity-test system-library-subpath 0 0)
+(arity-test current-command-line-arguments 0 1)
 
 (report-errs)
 

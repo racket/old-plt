@@ -364,8 +364,6 @@ char *scheme_bignum_to_string(const Scheme_Object *n, int radix);
 Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix);
 Scheme_Object *scheme_bignum_normalize(const Scheme_Object *n);
 
-long scheme_double_to_int(const char *where, double d) ;
-
 /*========================================================================*/
 /*                              rationals                                 */
 /*========================================================================*/

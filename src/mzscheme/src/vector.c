@@ -204,7 +204,7 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
 		     name,
 		     scheme_make_provided_string(i, 0, NULL));
   
-  return scheme_void;
+  return NULL;
 }
 
 static Scheme_Object *

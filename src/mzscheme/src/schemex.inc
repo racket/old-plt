@@ -192,7 +192,6 @@
   scheme_extension_table->scheme_bignum_to_string = scheme_bignum_to_string;
   scheme_extension_table->scheme_read_bignum = scheme_read_bignum;
   scheme_extension_table->scheme_bignum_normalize = scheme_bignum_normalize;
-  scheme_extension_table->scheme_double_to_int = scheme_double_to_int;
   scheme_extension_table->scheme_make_rational = scheme_make_rational;
   scheme_extension_table->scheme_rational_to_double = scheme_rational_to_double;
   scheme_extension_table->scheme_rational_from_double = scheme_rational_from_double;

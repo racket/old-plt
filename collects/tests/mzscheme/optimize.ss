@@ -26,6 +26,9 @@
    [(expr1 expr2 same?)
     (test same? `(compile ,same? ,expr2) (comp=? (compile expr1) (compile expr2)))]))
 
+(let ([x (compile '(lambda (x) x))])
+  (test x compile x))
+
 (test-comp 5 '(if #t 5 (cons 1 2)))
 (test-comp 5 '(if #f (cons 1 2) 5))
 

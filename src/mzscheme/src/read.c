@@ -725,13 +725,15 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 	  
 	    {
 	      char lbuffer[200];
+	      int pch = ch;
 	      
-	      if (ch == EOF)
-		ch = 0;
+	      if (pch == EOF) {
+		pch = 0;
+	      }
 	      
-	      sprintf(lbuffer, "%s%c", tagbuf, ch);
+	      sprintf(lbuffer, "%s%c", tagbuf, pch);
 	      
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch,
 			      "read: bad syntax `#%s'",
 			       lbuffer);
 
@@ -1045,12 +1047,7 @@ read_list(Scheme_Object *port,
 	else
 	  SCHEME_CDR(last) = cdr;
 
-	if (infixed) {
-	  /* Assert: we're not using the list statck */
-	  list = scheme_make_pair(infixed, list);
-	  if (stxsrc)
-	    SCHEME_SET_PAIR_IMMUTABLE(list);
-	}
+	/* Assert: infixed is NULL (otherwise we raised an exception above) */
 
 	return (stxsrc
 		? scheme_make_stx_w_offset(list, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG)
@@ -1357,7 +1354,7 @@ read_number_or_symbol(Scheme_Object *port,
       rq_col = scheme_tell_column(port);
       rq_line = scheme_tell_line(port);
 
-      ch = getc_fun(port);
+      ch = getc_special_ok_fun(port);
       continue; /* <-- !!! */
     } else 
       quoted = 0;
@@ -1376,10 +1373,16 @@ read_number_or_symbol(Scheme_Object *port,
 
     buf[i++] = ch;
 
-    if (running_quote)
-      ch = getc_fun(port);
-    else
-      ch = getc_special_ok_fun(port);
+    ch = getc_special_ok_fun(port);
+  }
+
+  if (running_quote && (ch == SCHEME_SPECIAL)) {
+    scheme_get_special(port, stxsrc,
+		       scheme_tell_line(port), 
+		       scheme_tell_column(port), 
+		       scheme_tell(port));
+    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
+		    "read: non-character following \\ in symbol; started");      
   }
 
   if (ungetc_ok)

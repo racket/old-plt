@@ -152,15 +152,95 @@
     (with-syntax ([expr expr]
 		  [loc (make-loc mark)]
 		  [key key])
-      (syntax
-       (with-continuation-mark
-	   'key
-	   loc
-	 expr))))
+      (execute-point
+       mark
+       (syntax
+	(with-continuation-mark
+	    'key
+	    loc
+	  expr)))))
   
   (define key (gensym 'key))
   
   (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Execute counts
+
+  (define execute-info (make-hash-table))
+  
+  (define execute-counts-enabled (make-parameter #f))
+
+  (define (register-executed-once key)
+    (let ([i (hash-table-get execute-info key)])
+      (set-cdr! i (add1 (cdr i)))))
+
+  (define (execute-point mark expr)
+    (if (execute-counts-enabled)
+	(let ([key (gensym)])
+	  (hash-table-put! execute-info key (cons mark 0))
+	  (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+			[expr expr]
+			[register-executed-once register-executed-once]) ; <--- 3D !
+	    (syntax
+	     (begin
+	       (register-executed-once 'key)
+	       expr))))
+	expr))
+
+  (define (get-execute-counts)
+    (hash-table-map execute-info (lambda (k v) v)))
+
+  (define (annotate-executed-file name)
+    (let ([name (path->complete-path name (current-directory))])
+      (let ([here (filter (lambda (s)
+			    (and (equal? name (syntax-source (car s)))
+				 (syntax-position (car s))))
+			  (get-execute-counts))])
+	(let ([sorted (quicksort here (lambda (a b)
+					(let ([ap (syntax-position (car a))]
+					      [bp (syntax-position (car b))])
+					  (or (< ap bp) ; earlier first
+					      (and (= ap bp)
+						   (let ([as (syntax-span (car a))]
+							 [bs (syntax-span (car b))])
+						     (or (> as bs) ; wider first at same pos
+							 (and (= as bs)
+							      ; less called for same region last
+							      (> (cdr a) (cdr b))))))))))]
+	      [pic (make-string (file-size name) #\space)])
+	  ;; fill out picture:
+	  (for-each (lambda (s)
+		      (let ([pos (sub1 (syntax-position (car s)))]
+			    [span (syntax-span (car s))]
+			    [key (let ([c (cdr s)])
+				   (cond
+				    [(zero? c) #\^]
+				    [(= c 1) #\.]
+				    [else #\,]))])
+			(let loop ([p pos])
+			  (unless (= p (+ pos span))
+			    (string-set! pic p key)
+			    (loop (add1 p))))))
+		    sorted)
+	  ;; Write annotated file
+	  (with-input-from-file name
+	    (lambda ()
+	      (let loop ()
+		(let ([pos (file-position (current-input-port))]
+		      [line (read-line (current-input-port) 'any)])
+		  (unless (eof-object? line)
+		    (printf "~a~n" line)
+		    (let ([w (string-length line)])
+		      ;; Blank out leading spaces in pic:
+		      (let loop ([i 0])
+			(cond
+			 [(and (< i w)
+			       (char-whitespace? (string-ref line i)))
+			  (string-set! pic (+ pos i) (string-ref line i))
+			  (loop (add1 i))]))
+		      (printf "~a~n" (substring pic pos (+ pos w))))
+		    (loop))))))))))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Eval handler, exception handler
@@ -233,7 +313,7 @@
     (error-display-handler errortrace-error-display-handler))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Porfile printer
+  ;; Profile printer
 
   (define (output-profile-results paths? sort-time?)
     (profiling-enabled #f)
@@ -267,9 +347,15 @@
   
   (provide print-error-trace 
 	   error-context-display-depth 
+	   
 	   instrumenting-enabled 
+
 	   profiling-enabled
 	   profile-paths-enabled 
 	   get-profile-results
-	   output-profile-results))
+	   output-profile-results
+
+	   execute-counts-enabled
+	   get-execute-counts
+	   annotate-executed-file))
  

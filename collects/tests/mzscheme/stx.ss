@@ -34,6 +34,10 @@
 (err/rt-test (datum->syntax-object #f 10 '(a 11 0 13 0)))
 (err/rt-test (datum->syntax-object #f 10 '(a 11 12 0 0)))
 
+(syntax-test #'quote-syntax)
+(syntax-test #'(quote-syntax))
+(syntax-test #'(quote-syntax . 7))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test basic expansion and property propagation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

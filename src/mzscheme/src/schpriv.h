@@ -964,8 +964,6 @@ int scheme_is_complex_exact(const Scheme_Object *o);
 
 #define REAL_NUMBER_STR "real number"
 
-Scheme_Object *scheme_double_to_integer(const char *where, double d);
-
 int scheme_check_double(const char *where, double v, const char *dest);
 #ifdef MZ_USE_SINGLE_FLOATS
 int scheme_check_float(const char *where, float v, const char *dest);

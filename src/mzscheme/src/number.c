@@ -85,8 +85,6 @@ static Scheme_Object *imag_part (int argc, Scheme_Object *argv[]);
 static Scheme_Object *magnitude (int argc, Scheme_Object *argv[]);
 static Scheme_Object *angle (int argc, Scheme_Object *argv[]);
 
-static int double_to_int(const char *where, double d, long *v);
-
 static double not_a_number_val;
 
 Scheme_Object *scheme_inf_object, *scheme_minus_inf_object, *scheme_nan_object;
@@ -2048,52 +2046,6 @@ int scheme_check_float(const char *where, float f, const char *dest)
 }
 #endif
 
-static int double_to_int(const char *where, double d, long *v)
-{
-  if (scheme_check_double(where, d, "small integer")) {
-    if ((d != floor(d))
-	|| (d > 0 && ((double)(long)d) + 1 < d)
-	|| (d < 0 && ((double)(long)d) - 1 > d)) {
-      if (where)
-	scheme_raise_exn(MZEXN_APPLICATION_TYPE,
-			 scheme_make_double(d),
-			 scheme_intern_symbol("small integer"),
-			 "%s: no fixnum representation for %f",
-			 where, d);
-      return 0;
-    }
-
-    *v = (long)d;
-
-    return 1;
-  } else
-    return 0;
-}
-
-long scheme_double_to_int(const char *where, double d)
-{
-  long l;
-
-  double_to_int(where, d, &l);
-  
-  return l;
-}
-
-Scheme_Object *scheme_double_to_integer(const char *where, double d)
-{
-  long l;
-
-  if (d != floor(d))
-    return NULL;
-
-  scheme_check_double(where, d, "integer");
-
-  if (double_to_int(NULL, d, &l))
-    return scheme_make_integer_value(l);
-
-  return scheme_bignum_from_double(d);
-}
-
 GEN_BIN_PROT(bin_bitwise_and);
 GEN_BIN_PROT(bin_bitwise_or);
 GEN_BIN_PROT(bin_bitwise_xor);
@@ -2132,7 +2084,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
   v = argv[0];
   
   if (!SCHEME_EXACT_INTEGERP(v)) {
-    scheme_wrong_type("arithmetic-shift", "exact integer", 1, argc, argv);
+    scheme_wrong_type("arithmetic-shift", "exact integer", 0, argc, argv);
     ESCAPED_BEFORE_HERE;
   }
   so = argv[1];

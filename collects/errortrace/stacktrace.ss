@@ -21,10 +21,10 @@
 		      [(identifier? v) (cons v env)]
 		      [else (cons (stx-car v) (loop (stx-cdr v)))]))])
           (with-syntax ([body
-                         (profile-point 
-                          (map (lambda (e) (annotate e env trans?)) (stx->list body))
-                          name expr env
-                          trans?)]
+			 (profile-point 
+			  (map (lambda (e) (annotate e env trans?)) (stx->list body))
+			  name expr env
+			  trans?)]
                         [args args])
             (syntax (args . body)))))
       

@@ -927,27 +927,9 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
   int i, k;
   Scheme_Object *lst, *index, *bnindex;
 
-#if 0
-  if (!SCHEME_LISTP(argv[0]))
-    scheme_wrong_type(name, "list", 0, argc, argv);
-#endif
-
   if (SCHEME_BIGNUMP(argv[1])) {
     bnindex = argv[1];
     k = 0;
-#ifdef ALLOW_INEXACT_INDICES
-  } else if (SCHEME_DBLP(argv[1])) {
-    double d;
-    d = SCHEME_DBL_VAL(argv[1]);
-    bnindex = scheme_double_to_integer(name, d);
-    if (!bnindex)
-      scheme_wrong_type(name, "non-negative integer", 1, argc, argv);
-    if (SCHEME_INTP(bnindex)) {
-      k = SCHEME_INT_VAL(bnindex);
-      bnindex = NULL;
-    } else
-      k = 0;
-#endif
   } else if (!SCHEME_INTP(argv[1])) {
     scheme_wrong_type(name, "non-negative exact integer", 1, argc, argv);
     return NULL;

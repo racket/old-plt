@@ -602,7 +602,7 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
   return result;
 }
 
-static Scheme_Object *make_application(Scheme_Object *v, int final)
+static Scheme_Object *make_application(Scheme_Object *v)
 {
   Scheme_Object *o;
   Scheme_App_Rec *app;
@@ -616,8 +616,6 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
     Scheme_Type type;
     
     n++;
-    if (!SCHEME_LISTP(o))
-      scheme_wrong_syntax("application", NULL, NULL, NULL);
     type = SCHEME_TYPE(SCHEME_CAR(o));
     if (type < _scheme_compiled_values_types_)
       nv = 1;
@@ -648,9 +646,6 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
   for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
     app->args[i] = SCHEME_CAR(v);
   }
-
-  if (final)
-    scheme_finish_application(app);
 
   return (Scheme_Object *)app;
 }
@@ -1374,7 +1369,7 @@ static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *
   scheme_compile_rec_done_local(rec, drec);
   form = scheme_inner_compile_list(form, scheme_no_defines(env), rec, drec, 1);
 
-  result = make_application(form, 0);
+  result = make_application(form);
 
   if (SAME_TYPE(SCHEME_TYPE(result), scheme_application_type))
     rec[drec].max_let_depth += (len - 1);
@@ -1796,7 +1791,8 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
       return scheme_null;
     else
       return forms;
-  } else if (SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
+  } else if (!SCHEME_STX_PAIRP(form) /* will end in error */
+	     || SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
 #if 0
     /* Optimize (void) to just the value void */
     if (rec && SAME_OBJ(var, scheme_void_func) && SCHEME_NULLP(rest)) {
@@ -1928,8 +1924,8 @@ datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec
     taking_shortcut = 0;
   } else {
     c = SCHEME_STX_CDR(form);
-    if (SCHEME_NULLP(c))
-      scheme_wrong_syntax("#%datum", NULL, form, NULL);
+    /* Need datum->syntax, in case c is a list: */
+    c = scheme_datum_to_syntax(c, form, form, 0, 1);
   }
 
   return scheme_syntax_to_datum(c, 0, NULL);
@@ -1938,13 +1934,6 @@ datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec
 static Scheme_Object *
 datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *c;
-
-  c = SCHEME_STX_CDR(form);
-
-  if (SCHEME_NULLP(c))
-    scheme_wrong_syntax("#%datum", NULL, form, NULL);
-
   return form;
 }
 

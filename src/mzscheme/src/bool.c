@@ -203,8 +203,6 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
     return 0;
   else if (SCHEME_PAIRP(obj1)) {
 #   include "mzeqchk.inc"
-    if (SCHEME_NULLP(obj1) && SCHEME_NULLP(obj2))
-      return 1;
     if (scheme_equal(SCHEME_CAR(obj1), SCHEME_CAR(obj2))) {
       obj1 = SCHEME_CDR(obj1);
       obj2 = SCHEME_CDR(obj2);

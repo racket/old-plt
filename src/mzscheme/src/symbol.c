@@ -385,7 +385,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   }
 
   for (i = 0; i < len; i++) {
-    if (isspace((unsigned char)s[i]) || !isprint((unsigned char)s[i])) {
+    if (isspace((unsigned char)s[i])) { /* used to have || !isprint((unsigned char)s[i]) */
       if ((flags & SCHEME_SNF_FOR_TS) && (s[i] == ' ')) {
 	/* space is OK in type symbols */
       } else

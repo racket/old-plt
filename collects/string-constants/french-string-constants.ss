@@ -239,7 +239,16 @@
  ;;;reverting a file
  (error-reverting "DrScheme - Erreur durant le retour à l'original.")
  (could-not-read "impossible de lire \"~a\".")
- 
+ (are-you-sure-revert
+  "Etes-vous certain de vouloir retourner à la version de ce fichier qui est sur le disque dur ? Ce changement ne pourra pas être défait.")
+ (are-you-sure-revert-title
+  "Retourner ?")
+
+ ;;; saving a file
+ ; ~a is filled with the filename
+ (error-saving "Erreur durant la sauvegarde") ;; title of error message dialog
+ (error-saving-file/name "Une erreur s'est produite durant la sauvegarde de ~a.")
+
  ;;; finder dialog
  (must-specify-a-filename "Vous devez spécifier un nom de fichier.")
  (file-does-not-exist "Le fichier \"~a\" n'existe pas.")
@@ -563,19 +572,22 @@
 
  ;;; version checker
 
- (check-question "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
- (network-timeout "Expiration du compte-à-rebours lors de la connexion réseau.") 
- (cannot-connect  "Impossible de se connecter au serveur de version de PLT.")
- (collections-not-installed  "Les collections suivantes ne sont pas installées:")
- (collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant:")
- (update-check "Vérification des mises à jour.")
- (network-failure "Erreur réseau.")
- (old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour.")
- (binary-information-format "Version binaire installée: ~a (itération ~a)")
- (update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
- (binary-name "Binaire")
- (updates-available "Les mises à jour sont disponibles à")
- (latest-binary-information-format "Version la plus récente: ~a (itération ~a)")
- (connecting-version-server "Connexion au server de version de PLT en cours.")
- (update-dialog-title "Etat des mises à jour")
+ (vc-please-wait "Veuillez patienter")
+ ;(check-question "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
+ (vc-connecting-version-server "Connexion au server de version de PLT en cours.")
+ (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau.") 
+ (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT.")
+ ;(collections-not-installed "Les collections suivantes ne sont pas installées:")
+ ;(collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant:")
+ (vc-update-check "Vérification des mises à jour.")
+ (vc-network-failure "Erreur réseau.")
+ (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour.")
+ (vc-binary-information-format "Version binaire installée: ~a (itération ~a)")
+ (vc-update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
+ (vc-binary-name "Binaire")
+ (vc-updates-available "Les mises à jour sont disponibles à")
+ (vc-latest-binary-information-format "Version la plus récente: ~a (itération ~a)")
+ (vc-update-dialog-title "Etat des mises à jour")
+ (vc-need-update-string "Un ou plusieurs des logiciels PLT installés doivent être mis à jour.")
+ (vc-no-update-string "Tous les logiciels PLT installés sont à jour.")
  )

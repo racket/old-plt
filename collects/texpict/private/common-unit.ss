@@ -207,7 +207,7 @@
 
       (define (panorama p)
 	(let-values ([(x1 y1 x2 y2) (panorama-box! p)])
-	  (inset p (- x1) (- y2 (pict-height p)) (- x2 (pict-width p)) y1)))
+	  (inset p (- x1) (- y2 (pict-height p)) (- x2 (pict-width p)) (- y1))))
 
       (define (clip-descent b)
 	(let* ([w (pict-width b)]

@@ -199,7 +199,6 @@
       (cond
        [(null? args)
 	(unless (or mred:splash-frame no-show-splash?)
-	  (printf "showing defaultly~n")
 	  (mred:open-splash mred:default-splash mred:default-splash-title))
 	(load-system)
 	(when (and (eq? wx:platform 'windows))
@@ -244,7 +243,9 @@
 					    (cons (list load-with-cd fn)
 						  todo))))]
 	   [(string-ci=? "-p" arg) (use-next-2args mred:open-splash)]
-	   [(string-ci=? "-b" arg) (set! no-show-splash? #t)]
+	   [(string-ci=? "-b" arg) 
+	    (set! no-show-splash? #t)
+	    (apply mred:initialize (cdr args))]
 	   [(string-ci=? "-e" arg) (use-next-arg
 				    (lambda (s)
 				      (set! todo

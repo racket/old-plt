@@ -1884,6 +1884,8 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
   return old;
 }
 
+static int show_outline_for_inactive = 0;
+
 static wxMediaEdit *skipBox = NULL;
 static wxPen *caretPen = NULL;
 static wxPen *outlinePen = NULL;
@@ -1929,6 +1931,12 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   wxPen *savePen;
   wxBrush *saveBrush;
   Bool wl;
+
+  if (!show_outline_for_inactive) {
+    if (!wxGetResource(wxAPP_CLASS, "outlineInactiveSelection", &show_outline_for_inactive))
+      show_outline_for_inactive = 0;
+    show_outline_for_inactive = !show_outline_for_inactive ? -1 : 1;
+  }
 
   if (flowLocked)
     return;
@@ -2168,26 +2176,28 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	    hsxe = rightx;
 
 	  if (!show_xsel && (show_caret < wxSNIP_DRAW_SHOW_CARET)) {
-	    int lastHilite, firstHilite;
-	    
-	    firstHilite = (_startpos >= pcounter);
-	    lastHilite = (_endpos <= pcounter + line->len);
-	    
-	    dc->SetPen(caretPen);
-	    
-	    if (firstHilite) {
-	      dc->DrawLine(hsxs + dx, hsys + dy, hsxe + dx - 1, hsys + dy);
-	      prevwasfirst = hsxs;
-	    } else if (prevwasfirst) {
-	      dc->DrawLine(0 + dx, hsys + dy, prevwasfirst + dx, hsys + dy);
-	      prevwasfirst = 0.0;
-	    }
-	    dc->DrawLine(hsxs + dx, hsys + dy, hsxs + dx, hsye + dy - 1);
-	    dc->DrawLine(hsxe + dx - 1, hsys + dy, hsxe + dx - 1, hsye + dy - 1);
-	    if (lastHilite) {
-	      dc->DrawLine(hsxs + dx, hsye + dy, hsxe + dx - 1, hsye + dy);
-	      if (!firstHilite)
-		dc->DrawLine(hsxe + dx, hsys + dy, rightx + dx, hsys + dy);
+	    if (show_outline_for_inactive > 0) {
+	      int lastHilite, firstHilite;
+	      
+	      firstHilite = (_startpos >= pcounter);
+	      lastHilite = (_endpos <= pcounter + line->len);
+	      
+	      dc->SetPen(caretPen);
+	      
+	      if (firstHilite) {
+		dc->DrawLine(hsxs + dx, hsys + dy, hsxe + dx - 1, hsys + dy);
+		prevwasfirst = hsxs;
+	      } else if (prevwasfirst) {
+		dc->DrawLine(0 + dx, hsys + dy, prevwasfirst + dx, hsys + dy);
+		prevwasfirst = 0.0;
+	      }
+	      dc->DrawLine(hsxs + dx, hsys + dy, hsxs + dx, hsye + dy - 1);
+	      dc->DrawLine(hsxe + dx - 1, hsys + dy, hsxe + dx - 1, hsye + dy - 1);
+	      if (lastHilite) {
+		dc->DrawLine(hsxs + dx, hsye + dy, hsxe + dx - 1, hsye + dy);
+		if (!firstHilite)
+		  dc->DrawLine(hsxe + dx, hsys + dy, rightx + dx, hsys + dy);
+	      }
 	    }
 	  } else {
 	    saveBrush = dc->GetBrush();

@@ -3,7 +3,7 @@
 # 2 Nov '92
 # Version 1.0 for FWF V4.0
 # 
-# $Id: xwScrollbar.w,v 1.4 1998/09/09 16:05:14 mflatt Exp $
+# $Id: xwScrollbar.w,v 1.5 1999/08/28 16:14:52 mflatt Exp $
 
 @CLASS XfwfScrollbar (XfwfBoard)  @file = xwScrollbar
 
@@ -216,7 +216,7 @@ widgets and redirects the callbacks.
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
-	wa = ha = hslider = h;
+ 	wa = ha = hslider = h;
 	ya2 = yslider = y;
 	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
@@ -293,14 +293,14 @@ widgets and redirects the callbacks.
     if ($vertical) {
 	wa = wslider = w;
 	xa2 = xslider = x;
-	ha = 2 * (wa + 1)/3;
+	ha = wa;
 	hslider = ((int)h - 2*ha > 0) ? h - 2*ha : 10;
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
 	ha = hslider = h;
 	ya2 = yslider = y;
-	wa = 2 * (ha + 1)/3;
+	wa = ha;
 	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
 	xa2 = xslider + wslider;

@@ -321,7 +321,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
-	wa = ha = hslider = h;
+ 	wa = ha = hslider = h;
 	ya2 = yslider = y;
 	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
@@ -400,14 +400,14 @@ static void resize(self)Widget self;
     if (((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical) {
 	wa = wslider = w;
 	xa2 = xslider = x;
-	ha = 2 * (wa + 1)/3;
+	ha = wa;
 	hslider = ((int)h - 2*ha > 0) ? h - 2*ha : 10;
 	yslider = y + ha;
 	ya2 = yslider + hslider;
     } else {
 	ha = hslider = h;
 	ya2 = yslider = y;
-	wa = 2 * (ha + 1)/3;
+	wa = ha;
 	wslider = ((int)w - 2*wa > 0) ? w - 2*wa : 10;
 	xslider = x + wa;
 	xa2 = xslider + wslider;

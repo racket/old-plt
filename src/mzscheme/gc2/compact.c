@@ -1170,6 +1170,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #ifdef CHECKS
 static long the_size;
+static int just_checking;
 #endif
 
 static void init_untagged_mpage(void **p, MPage *page)
@@ -1196,7 +1197,13 @@ static void init_untagged_mpage(void **p, MPage *page)
       break;
     }
 
-#ifdef CHECKS
+#if CHECKS
+    if (0 && page->type == MTYPE_XTAGGED) {
+      just_checking = 1;
+      GC_mark_xtagged(p + 1);
+      just_checking = 0;
+    }
+
     the_size = size;
 #endif
 
@@ -1308,6 +1315,12 @@ void GC_mark(const void *p)
 {
   unsigned long g;
   MPage *map;
+
+#if CHECKS
+  if (just_checking) {
+    return;
+  }
+#endif
 
 #if MARK_STATS
   mark_calls++;

@@ -3,7 +3,7 @@
 # Contains the source for the Frame widget
 # Version 2.2.1 for FWF V4.0
 #
-# $Id: xwFrame.w,v 1.3 1998/01/31 01:16:35 mflatt Exp $
+# $Id: xwFrame.w,v 1.4 1999/07/21 17:34:57 mflatt Exp $
 
 @class XfwfFrame (XfwfCommon) @file=xwFrame
 
@@ -701,6 +701,7 @@ the frame. The contents of the GC depend on the resources
         if (DefaultDepthOfScreen(XtScreen($)) > 4
             && $darker_color($, $background_pixel, &values.foreground)) {
             mask = GCForeground;
+	    $highlightColor = values.foreground;
         } else {
             mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
             values.fill_style = FillOpaqueStippled;

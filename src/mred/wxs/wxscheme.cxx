@@ -818,7 +818,7 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
   wxColour *c;
 
 #ifdef wx_x
-  c = new wxColour("GRAY");
+  c = new wxColour(wxGREY);
 #endif
 #ifdef wx_mac
   c = new wxColour(0xE8, 0xE8, 0xE8);

@@ -260,9 +260,7 @@
 			(append details
 				(list
 				 ""
-				 ""
 				 (string-constant vc-updates-available)
-				 ""
 				 download-url-string))
 			details)
 		    ok-thunk)))))))

@@ -17,6 +17,8 @@
   (define com-get-property-type mxprims:com-get-property-type)
   (define com-set-property-type mxprims:com-set-property-type)
   (define com-event-type mxprims:com-event-type)
+  (define com-object-type mxprims:com-object-type)
+  (define com-has-type? mxprims:com-has-type?)
   (define com-help mxprims:com-help)
   (define com-register-event-handler mxprims:com-register-event-handler)
   (define com-unregister-event-handler mxprims:com-unregister-event-handler)

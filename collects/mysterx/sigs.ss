@@ -13,6 +13,8 @@
    com-get-property-type
    com-set-property-type
    com-event-type
+   com-object-type
+   com-has-type?
    com-help
    com-register-event-handler
    com-unregister-event-handler
@@ -36,6 +38,8 @@
    com-get-property-type
    com-set-property-type
    com-event-type
+   com-object-type
+   com-has-type?
    com-help
    com-register-event-handler
    com-unregister-event-handler

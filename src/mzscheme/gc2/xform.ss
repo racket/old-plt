@@ -994,6 +994,7 @@
   (get-c++-class-member var c++-class c++-class-prototyped))
 
 (define used-self? #f)
+(define important-conversion? #f)
 
 (define (new-vars->decls vars)
   (apply
@@ -1086,7 +1087,9 @@
 	(tok-line body-v)
 	(tok-file body-v)
 	(seq-close body-v)
-	(let-values ([(orig-body-e) body-e]
+	(let-values ([(orig-body-e) (begin
+				      (set! important-conversion? #f)
+				      body-e)]
 		     [(body-e live-vars)
 		      (convert-body (if c++-class
 					(let* ([new-vars-box (box null)]
@@ -1138,7 +1141,8 @@
 					null)
 				    (lambda () null)
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
-	  (if (and (null? (live-var-info-new-vars live-vars))
+	  (if (and (not important-conversion?)
+		   (null? (live-var-info-new-vars live-vars))
 		   (zero? (live-var-info-maxlive live-vars))
 		   (<= (live-var-info-num-calls live-vars) 1))
 	      ;; No conversion necessary
@@ -1208,6 +1212,7 @@
 		    paren-arrows?))]
 	   [(eq? (tok-n v) 'delete_wxobject)
 	    ;; replace with call to GC_cpp_delete()
+	    (set! important-conversion? #t)
 	    (when (brackets? (cadr e))
 	      (log-error "[DELOBJ] ~a in ~a: bad use of delete_wxobject"
 			 (tok-line v) (tok-file v)))
@@ -1221,6 +1226,7 @@
 		  paren-arrows?)]
 	   [(eq? (tok-n v) 'new)
 	    ;; Make `new' expression look like a function call
+	    (set! important-conversion? #t)
 	    (let* ([t (cadr e)]
 		   [obj? (find-c++-class (tok-n t) #f)]
 		   [atom? (memq (tok-n t) non-pointer-types)])

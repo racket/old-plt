@@ -156,13 +156,15 @@ static void register_traversers(void);
 
 typedef struct {
   Scheme_Type type;
-  char closer;
-  char suspicious_closer;
-  char multiline;
-  long start_line;
-  long last_line;
-  long max_indent;
-  long suspicious_line;
+  char closer;      /* expected close parent, bracket, etc. */
+  char suspicious_closer; /* expected closer when suspicious line found */
+  char multiline;   /* set to 1 if the match attempt spans a line */
+  long start_line;  /* opener's line */
+  long last_line;   /* current line, already checked the identation */
+  long suspicious_line; /* non-0 => first suspicious line since opener */
+  long max_indent;  /* max indentation encountered so far since opener, 
+		       not counting indentation brackets by a more neseted
+		       opener */
 } Scheme_Indent;
 
 static Scheme_Object *quote_symbol;
@@ -452,7 +454,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
   col = scheme_tell_column(port);
   pos = scheme_tell(port);
 
-  /* Track indentation: */
+  /* Found non-whitespace. Track indentation: */
   if (col >= 0) {
     if (SCHEME_PAIRP(indentation)) {
       /* Ignore if it's a comment start or spurious closer: */
@@ -462,12 +464,17 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  && ((ch != '}') || !local_curly_braces_are_parens)
 	  && ((ch != ']') || !local_square_brackets_are_parens)) {
 	Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
+	/* Already checked this line? */
 	if (line > indt->last_line) {
 	  indt->last_line = line;
 	  indt->multiline = 1;
+	  /* At least as indented as before? */
 	  if (col >= indt->max_indent)
 	    indt->max_indent = col;
 	  else if (!indt->suspicious_line) {
+	    /* Not as indented, and no suspicious line found
+	       already. Suspect that the closer should have
+	       appeared earlier. */
 	    indt->suspicious_closer = indt->closer;
 	    indt->suspicious_line = line;
 	  }
@@ -1058,6 +1065,7 @@ read_list(Scheme_Object *port,
   startline = scheme_tell_line(port);
 
   if (stxsrc) {
+    /* Push onto the indentation stack: */
     Scheme_Indent *indt;
     indt = (Scheme_Indent *)scheme_malloc_atomic_tagged(sizeof(Scheme_Indent));
     indt->type = scheme_indent_type;
@@ -1896,7 +1904,8 @@ static Scheme_Object *unexpected_closer(int ch,
 
 static void pop_indentation(Scheme_Object *indentation)
 {
-  /* propagate indentation information out */
+  /* Pop off indentation stack, and propagate 
+     suspicions if none found earlier. */
   if (SCHEME_PAIRP(indentation)) {
     Scheme_Indent *indt;
     indt = (Scheme_Indent *)SCHEME_CAR(indentation);

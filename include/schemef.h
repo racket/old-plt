@@ -662,6 +662,7 @@ MZ_EXTERN Scheme_Object *scheme_load(const char *file);
 MZ_EXTERN Scheme_Object *scheme_load_extension(const char *filename, Scheme_Env *env);
 MZ_EXTERN void scheme_register_extension_global(void *ptr, long size);
 
+MZ_EXTERN long scheme_get_seconds(void);
 MZ_EXTERN long scheme_get_milliseconds(void);
 MZ_EXTERN long scheme_get_process_milliseconds(void);
 

@@ -535,6 +535,7 @@ Scheme_Object *(*scheme_make_weak_box)(Scheme_Object *v);
 Scheme_Object *(*scheme_load)(const char *file);
 Scheme_Object *(*scheme_load_extension)(const char *filename, Scheme_Env *env);
 void (*scheme_register_extension_global)(void *ptr, long size);
+long (*scheme_get_seconds)(void);
 long (*scheme_get_milliseconds)(void);
 long (*scheme_get_process_milliseconds)(void);
 char *(*scheme_banner)(void);

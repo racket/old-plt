@@ -48,7 +48,8 @@
                ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
                 mred
                 marks
-                annotate)]
+                annotate
+                print-convert)]
         [mred-extensions : stepper:mred-extensions^
                  ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
                   mred

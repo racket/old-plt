@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.3 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Panel.cc,v 1.4 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -78,6 +78,9 @@ wxPanel::wxPanel(wxPanel *panel, int x, int y, int width, int height,
 Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
 		     int _style, char *name)
 {
+    wxWindow_Xintern *ph;
+    Widget wgt;
+
     if (!panel)
 	wxFatalError("wxPanel created without a parent!");
     parent = panel;
@@ -91,38 +94,33 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     fg            = panel->fg;
     bg            = panel->bg;
 
+    ph = parent->GetHandle();
+
     // create frame
-    X->frame = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, parent->GetHandle()->handle,
+    wgt = XtVaCreateManagedWidget
+	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  fg->GetPixel(cmap),
 	 XtNfont,        font->GetInternalFont(),
 	 XtNhighlightThickness, 0,
 	 NULL);
+    X->frame = wgt;
     // internal representation
     if (style & wxBORDER) {
-	X->handle = XtVaCreateManagedWidget
-	    ("panel", xfwfBoardWidgetClass, X->frame,
-	     XtNbackground, bg->GetPixel(cmap),
-	     XtNframeWidth, 2,
-	     XtNframeType, XfwfSunken,
-	     NULL);
-	xoff = yoff = 4; // offset for border
+      wgt = XtVaCreateManagedWidget("panel", xfwfBoardWidgetClass, X->frame,
+				    XtNbackground, bg->GetPixel(cmap),
+				    XtNframeWidth, 2,
+				    XtNframeType, XfwfSunken,
+				    NULL);
+      X->handle = wgt;
+      xoff = yoff = 4; // offset for border
     } else {
-	X->handle = XtVaCreateManagedWidget
-	    ("panel", xfwfBoardWidgetClass, X->frame,
-	     XtNbackground, bg->GetPixel(cmap),
-	     XtNhighlightThickness, 0,
-	     NULL);
+      wgt = XtVaCreateManagedWidget("panel", xfwfBoardWidgetClass, X->frame,
+				    XtNbackground, bg->GetPixel(cmap),
+				    XtNhighlightThickness, 0,
+				    NULL);
+      X->handle = wgt;
     }
-
-    // Delay until it's really needed:
-#if 0
-    // Initialize PanelDC
-    if (!(style & wxNO_DC)) {
-	CreateDC();
-    }
-#endif
 
     // position in panel/frame
     panel->PositionItem(this, x, y, width, height);
@@ -138,14 +136,18 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
 
 void wxPanel::SetBackgroundColour(wxColour *col)
 {
-    // inherit from window
-    wxWindow::SetBackgroundColour(col);
-    // change children's label background colours
-    for (wxChildNode *node = children->First(); node; node = node->Next()) {
-	wxWindow *child  = (wxWindow*)node->Data();
-	if (wxSubType(child->__type, wxTYPE_ITEM))
-	    child->ChangeColours();
-    }
+  wxChildNode * node;
+
+  // inherit from window
+  wxWindow::SetBackgroundColour(col);
+
+  // change children's label background colours
+  for (node = children->First(); node; node = node->Next()) {
+    wxWindow *child;
+    child = (wxWindow*)node->Data();
+    if (wxSubType(child->__type, wxTYPE_ITEM))
+      child->ChangeColours();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -171,10 +173,12 @@ void wxPanel::GetClientSize(int *width, int *height)
 void wxPanel::Fit(void)
 {
     int hsize=0, vsize=0;
+    wxChildNode *node;
 
     if (children) {
-	for (wxChildNode *node = children->First(); node; node = node->Next()) {
-	    wxWindow *child = (wxWindow*)(node->Data());
+	for (node = children->First(); node; node = node->Next()) {
+	    wxWindow *child;
+	    child = (wxWindow*)(node->Data());
 	    if (child) {
 		int x, y, w, h;
 		child->GetPosition(&x, &y); child->GetSize(&w, &h);
@@ -196,10 +200,11 @@ void wxPanel::Fit(void)
 
 void wxPanel::ChangeToGray(Bool gray)
 {
-  wxWindow::ChangeToGray(gray);
   wxChildNode *cn;
+  wxWindow::ChangeToGray(gray);
   for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
-    wxWindow *w = (wxWindow *)cn->Data();
+    wxWindow *w;
+    w = (wxWindow *)cn->Data();
     w->InternalEnable(!gray, TRUE);
   }
 }
@@ -256,7 +261,8 @@ void wxPanel::Tab(int pixels)
 
 void wxPanel::OnDefaultAction(wxItem *WXUNUSED(item))
 {
-  wxButton *but = GetDefaultItem();
+  wxButton *but;
+  but = GetDefaultItem();
   if (but) {
     wxCommandEvent *event;
     event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);

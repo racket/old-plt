@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.14 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Menu.cc,v 1.15 1999/11/19 22:02:38 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -91,32 +91,34 @@ extern "C" {
 
 Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 {
-  if (X)
-    return FALSE;
+    Widget wgt;
+    Position x, y, new_root_x, new_root_y;
+    XEvent xevent;
 
-    while (XtParent(in_w))
-     in_w = XtParent(in_w);
+    if (X)
+      return FALSE;
+
+    while (XtParent(in_w)) {
+      in_w = XtParent(in_w);
+   }
 
     X = new wxMenu_Widgets;
     X->shell = XtVaCreatePopupShell
 	("popup", overrideShellWidgetClass, in_w, NULL);
-    X->menu = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("menu", menuWidgetClass, X->shell,
 	 XtNmenu,       top,
 	 XtNfont,       font->GetInternalFont(),
 	 XtNforeground, fg->GetPixel(wxAPP_COLOURMAP),
 	 XtNbackground, bg->GetPixel(wxAPP_COLOURMAP),
 	 NULL);
+    X->menu = wgt;
     XtRealizeWidget(X->shell);
     XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, this);
-    /* MATTHEW: remove on non-select, also */
     XtAddCallback(X->menu, XtNonNoSelect, wxMenu::EventCallback, this);
     Xaw3dPopupMenuAtPos((MenuWidget)(X->menu), root_x, root_y);
 
-    /* MATTHEW: Get the menu started: */
-    XEvent xevent;
-
-    Position x, y, new_root_x, new_root_y;
+    /* Get the menu started: */
     XtVaGetValues(X->menu, XtNx, &x, XtNy, &y, NULL);
     XtTranslateCoords(X->menu, x, y, &new_root_x, &new_root_y);
 
@@ -138,31 +140,40 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 
 void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 {
+    menu_item *item;
+
     Stop();
   
-    menu_item *item = 0;
+    item = 0;
     // create new menu item or use topdummy
     if (topdummy) {
 	item = (menu_item*)topdummy;
 	delete item->label;
 	topdummy = 0;
     } else {
-	item = new menu_item;
-	// chain or initialize menu_item list
-	if (last) {
-	    menu_item *prev = (menu_item*)last;
-	    prev->next = item;
-	    item->prev = prev;
-	    last = (wxMenuItem*)item;
-	} else {
-	    top = last = (wxMenuItem*)item;
-	    item->prev = NULL;
-	}
+#ifdef MZ_PRECISE_GC
+      /* FIXME: needs a tag! Moves on Xt lib! */
+      item = (menu_item *)GC_malloc(sizeof(menu_item));
+#else
+      item = new menu_item;
+#endif
+      // chain or initialize menu_item list
+      if (last) {
+	menu_item *prev = (menu_item*)last;
+	prev->next = item;
+	item->prev = prev;
+	last = (wxMenuItem*)item;
+      } else {
+	top = last = (wxMenuItem*)item;
+	item->prev = NULL;
+      }
     }
     // initialize menu_item
     if ((long)help == -1) {
       /* Hack to avoid parse: */
-      item->label= copystring(label);
+      char *s;
+      s = copystring(label);
+      item->label= s;
       item->key_binding = NULL;
     } else {
       wxGetLabelAndKey(label, &item->label, &item->key_binding);
@@ -179,6 +190,8 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 
 void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
 {
+  menu_item *item;
+
   /* MATTHEW: enforce one-menu-owner: */
   if (submenu->owner)
     return;
@@ -188,7 +201,7 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   // do the same thing as if appending a "button"
   Append(id, label, help, FALSE);
   // change data for submenu
-  menu_item *item = (menu_item*)last;
+  item            = (menu_item*)last;
   item->type      = MENU_CASCADE;
   item->contents  = (menu_item*)submenu->top;
   item->user_data = (void*)submenu;
@@ -198,12 +211,14 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
 
 void wxMenu::AppendSeparator(void)
 {
+    menu_item * item;
+
     Stop();
 
     // do the same thing as if appending a "button"
     Append(-1, NULL, NULL, FALSE);
     // change data for separator
-    menu_item *item = (menu_item*)last;
+    item = (menu_item*)last;
     item->type      = MENU_SEPARATOR;
 }
 
@@ -272,8 +287,9 @@ int wxMenu::Number()
   menu_item *found;
   int n = 0;
 
-  for (found = (menu_item*)top; found; found = found->next)
+  for (found = (menu_item*)top; found; found = found->next) {
     n++;
+  }
 
   if (n && topdummy)
     --n;
@@ -287,14 +303,16 @@ int wxMenu::Number()
 
 void wxMenu::Check(long id, Bool flag)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found)
 	found->set = flag;
 }
 
 Bool wxMenu::Checked(long id)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found)
       return found->set;
     return FALSE;
@@ -302,7 +320,8 @@ Bool wxMenu::Checked(long id)
 
 void wxMenu::Enable(long id, Bool flag)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found) {
       if (!flag && found->enabled)
 	Stop();
@@ -312,7 +331,8 @@ void wxMenu::Enable(long id, Bool flag)
 
 char *wxMenu::GetHelpString(long id)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found)
       return found->help_text;
     return NULL;
@@ -320,7 +340,8 @@ char *wxMenu::GetHelpString(long id)
 
 char *wxMenu::GetLabel(long id)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found)
       return found->label;
     return NULL;
@@ -335,17 +356,18 @@ char *wxMenu::GetTitle(void)
 
 void wxMenu::SetHelpString(long id, char *help)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found)
       found->help_text = help;
 }
 
 void wxMenu::SetLabel(long id, char *label)
 {
-    menu_item *found = (menu_item*)FindItemForId(id);
+    menu_item *found;
+    found = (menu_item*)FindItemForId(id);
     if (found) {
       Stop();
-      delete found->label;
       wxGetLabelAndKey(label, &found->label, &found->key_binding);
     }
 }
@@ -353,9 +375,9 @@ void wxMenu::SetLabel(long id, char *label)
 void wxMenu::SetTitle(char *label)
 {
     if (title) {
+      menu_item *item;
       Stop();
-      menu_item *item = (menu_item*)title;
-      delete item->label;
+      item = (menu_item*)title;
       wxGetLabelAndKey(label, &item->label, &item->key_binding);
     }
 }

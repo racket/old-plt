@@ -2280,7 +2280,7 @@ static Scheme_Object *real_part (int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("imag-part", "number", 0, argc, argv);
+    scheme_wrong_type("real-part", "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o))
     return scheme_complex_real_part(o);

@@ -26,6 +26,9 @@
 #include "wx_image.h"
 #include "wx_dcps.h"
 
+/* For scheme_malloc_atomic: */
+#include "scheme.h"
+
 #include "FontDirectory.cxx"
 
 

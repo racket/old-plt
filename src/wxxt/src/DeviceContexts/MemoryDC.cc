@@ -77,7 +77,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       selected->selectedIntoDC = 0;
       selected->selectedTo = NULL;
     }
-  }
+  } else if (bitmap && bitmap->selectedTo)
+    bitmap->selectedTo->FreeGetPixelCache();
 
   // free all associated GCs
 #ifdef WX_USE_XRENDER

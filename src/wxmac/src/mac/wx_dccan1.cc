@@ -658,9 +658,10 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     break;
   case kBrushTool:
     if (cg) {
-      wxColor *c = current_brush->GetColour();
+      wxColor *c;
       int r, g, b;
 
+      c = current_brush->GetColour();
       r = c->Red();
       g = c->Green();
       b = c->Blue();
@@ -702,13 +703,14 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     break;
   case kPenTool:
     if (cg) {
-      wxColor *c = current_pen->GetColour();
-      int r, g, b;
+      wxColor *c;
+      int r, g, b, cap, join;
       double pw;
       float *dashes;
       int ndash;
       float offset;
 
+      c = current_pen->GetColour();
       r = c->Red();
       g = c->Green();
       b = c->Blue();
@@ -724,8 +726,10 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       }
       CGContextSetLineWidth(cg, pw);
 
-      CGContextSetLineJoin(cg, join_style[current_pen->GetJoin() - wxJOIN_BEVEL]);
-      CGContextSetLineCap(cg, cap_style[current_pen->GetCap() - wxCAP_ROUND]);
+      join = current_pen->GetJoin();
+      CGContextSetLineJoin(cg, join_style[join - wxJOIN_BEVEL]);
+      cap = current_pen->GetCap();
+      CGContextSetLineCap(cg, cap_style[cap - wxCAP_ROUND]);
 
       switch (current_pen->GetStyle ()) {
       case wxDOT:

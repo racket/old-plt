@@ -943,7 +943,7 @@ void wxRegion::Install(long target)
     {
 # ifdef MZ_PRECISE_GC
       PathTargetPath_t *ps;
-      ps = (PathTargetPath_t *)scheme_malloc_atomic(sizeof(PathTargetPath_t) * npaths);
+      ps = (PathTargetPath_t *)GC_malloc_atomic(sizeof(PathTargetPath_t) * npaths);
       paths = ps;
 # else
       paths = new WXGC_ATOMIC PathTargetPath_t[npaths];
@@ -1620,7 +1620,7 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse)
       int n = (t->apaths + 5) * 2;
       
 # ifdef MZ_PRECISE_GC
-      naya = (PathTargetPath_t *)scheme_malloc_atomic(sizeof(PathTargetPath_t) * n);
+      naya = (PathTargetPath_t *)GC_malloc_atomic(sizeof(PathTargetPath_t) * n);
 # else
       naya = new WXGC_ATOMIC PathTargetPath_t[n];
 # endif

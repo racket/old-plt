@@ -1194,15 +1194,6 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     if (SetCairoBrush()) {
       double xx = x, yy = y, ww = w, hh = h;
       
-      if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)) {
-	xx += 1;
-	yy += 1;
-	ww -= 2;
-	hh -= 2;
-      }
-      
       cairo_save(CAIRO_DEV);
       cairo_translate(CAIRO_DEV, xx, yy);
       cairo_scale(CAIRO_DEV, ww, hh);
@@ -1217,16 +1208,6 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     if (pw) {
       cairo_matrix_t *m;
       double xx = x, yy = y, ww = w, hh = h;
-      
-      if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)
-	  && (pw <= 1.0)) {
-	xx += 0.5;
-	yy += 0.5;
-	ww -= 1;
-	hh -= 1;
-      }
       
       m = cairo_matrix_create();
       cairo_current_matrix (CAIRO_DEV, m);
@@ -1488,31 +1469,29 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
     
 #ifdef WX_USE_CAIRO
     if (anti_alias) {
-      double pw;
-      
+      double xx = x, yy = y, ww = w, hh = h;
+
       InitCairoDev();
       if (SetCairoBrush()) {
 	cairo_new_path(CAIRO_DEV);
-	cairo_move_to(CAIRO_DEV, x, y);
-	cairo_line_to(CAIRO_DEV, x+w, y);
-	cairo_line_to(CAIRO_DEV, x+w, y+h);
-	cairo_line_to(CAIRO_DEV, x, y+h);
+	cairo_move_to(CAIRO_DEV, xx, yy);
+	cairo_line_to(CAIRO_DEV, xx+ww, yy);
+	cairo_line_to(CAIRO_DEV, xx+ww, yy+hh);
+	cairo_line_to(CAIRO_DEV, xx, yy+hh);
 	cairo_fill(CAIRO_DEV);    
       }
 
-      pw = SetCairoPen();
-      if (pw) {
-	double xx = x, yy = y, ww = w, hh = h;
+      if (SetCairoPen()) {
 	if ((anti_alias == 2)
 	    && (scale_x == 1.0)
 	    && (scale_y == 1.0)
-	    && (pw <= 1.0)) {
+	    && (current_pen->GetWidthF() <= 1.0)) {
 	  xx += 0.5;
 	  yy += 0.5;
 	  ww -= 1.0;
 	  hh -= 1.0;
 	}
-	
+      
 	cairo_new_path(CAIRO_DEV);
 	cairo_move_to(CAIRO_DEV, xx, yy);
 	cairo_line_to(CAIRO_DEV, xx+ww, yy);

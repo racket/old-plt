@@ -198,23 +198,19 @@
   ; update the given signal at the given time
   (define-struct alarm (time signal))
   
-  (define (frp:if-helper test then-thunk else-thunk)
+  (define (frp:if-helper test then-thunk else-thunk undef-thunk)
     (let* ([cached-then-thunk (weakly-cache then-thunk)]
            [cached-else-thunk (weakly-cache else-thunk)]
+           [cached-undef-thunk (weakly-cache undef-thunk)]
            [if-fun (lambda (b)
                      (cond
-                       [(undefined? b) undefined]
+                       [(undefined? b) (cached-undef-thunk)]
                        [b (cached-then-thunk)]
                        [else (cached-else-thunk)]))])
-      (if (behavior? test)
-          (switch
-           ((changes test) . ==> .
-                           if-fun)
-           (if-fun (value-now test)))
-          (cond
-            [(undefined? test) undefined]
-            [test (then-thunk)]
-            [else (else-thunk)]))))
+      (switch
+       ((changes test) . ==> .
+                       if-fun)
+       (if-fun (value-now test)))))
   
   (define (weakly-cache thunk)
     (let ([cache (make-weak-box #f)])
@@ -227,10 +223,18 @@
   
   (define-syntax frp:if
     (syntax-rules ()
-      [(_ test then)
-       (frp:if-helper test (lambda () then) void)]
-      [(_ test then else)
-       (frp:if-helper test (lambda () then) (lambda () else))]))
+      [(_ test-exp then-exp)
+       (frp:if test-exp then-exp (void))]
+      [(_ test-exp then-exp else-exp)
+       (frp:if test-exp then-exp else-exp undefined)]
+      [(_ test-exp then-exp else-exp undef-exp)
+       (let ([v test-exp])
+         (if (behavior? v)
+             (frp:if-helper v (lambda () then-exp) (lambda () else-exp) (lambda () undef-exp))
+             (cond
+               [(undefined? v) undef]
+               [v then-exp]
+               [else else-exp])))]))
   
   ; value-now : signal[a] -> a
   (define (value-now val)
@@ -515,6 +519,16 @@
          (set! last current))
        b)))
   
+  ; while-e : behavior[bool] behavior[number] -> event
+  (define (while-e b interval)
+    (rec ret (event-producer
+	(cond
+          [(value-now b) =>
+	   (lambda (v)
+                (emit v)
+                (schedule-alarm (+ (value-now interval) (current-milliseconds)) ret))])
+              b)))
+  
   ; ==> : event[a] (a -> b) -> event[b]
   (define (e . ==> . f)
     (event-processor
@@ -548,7 +562,7 @@
   (define (e . =#=> . f)
     (event-processor
      (let ([x (f the-event)])
-       (unless (nothing? x)
+       (unless (or (nothing? x) (undefined? x))
          (emit x)))
      (list e)))
   
@@ -629,7 +643,6 @@
       (syntax-case clause (=>)
         [(e => body) #'(e => body)]
         [(e body) #'(e => (lambda (_) body))]))
-    
     
     (syntax-case stx ()
       [(_ ([name expr] ...)
@@ -925,6 +938,9 @@
                              t)))
       (set-signal-value! ret ((signal-thunk ret)))
       ret))
+  
+  (define never-e
+    (changes #f))
   
   (define milliseconds (make-time-b 10))
   (define time-b milliseconds)

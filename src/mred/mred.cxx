@@ -2845,6 +2845,12 @@ char *MrEdApp::GetDefaultAboutItemName()
   return "About MrEd...";
 }
 
+#ifndef OS_X // horrible temporary hack (please please please)
+extern "C" {
+CGrafPtr GetDialogPort(DialogRef dialog);
+}
+#endif
+
 void MrEdApp::DoDefaultAboutItem()
 {
   DialogPtr dial;
@@ -2853,7 +2859,11 @@ void MrEdApp::DoDefaultAboutItem()
  
   dial = GetNewDialog(129, NULL, (WindowRef)-1);
   GetPort(&port);
+#ifdef OS_X
   SetPort(GetDialogPort(dial));
+#else
+  SetPort((GrafPort *)GetDialogPort(dial));
+#endif  
   TextFont(kFontIDGeneva);
   TextSize(10);
   SetPort(port);

@@ -1,4 +1,3 @@
-
 /********************************************************/
 /*                       Regions                        */
 /********************************************************/
@@ -592,6 +591,14 @@ void wxRegion::Subtract(wxRegion *r)
   }
 }
 
+#ifdef wx_mac
+  #ifndef OS_X
+extern "C" {
+Rect * GetRegionBounds (RgnHandle region, Rect * bounds);
+}
+  #endif
+#endif
+  
 void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
 {
   if (Empty()) {
@@ -621,7 +628,6 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
 #endif
 #ifdef wx_mac
     Rect r;
-    
     GetRegionBounds(rgn,&r);
     *x = r.left;
     *y = r.top;

@@ -160,6 +160,7 @@ class MrQueueElem {
 public:
   EventRecord event;
   RgnHandle rgn;
+  int half_done; /* e.g., window brought to front */
   MrQueueElem *next, *prev;
 };
 
@@ -707,14 +708,17 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 
 	if (window != front) {
 	  /* Handle bring-window-to-front click immediately */
-	  if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
-	    SelectWindow(window);
-	    cont_mouse_context = NULL;
-	  } else if (fc && fc->modal_window) {
-	    wxFrame *mfr;
-	    mfr = (wxFrame *)fc->modal_window;
-	    cont_mouse_context = NULL;
-	    SelectWindow(mfr->macWindow());
+	  if (!osq->half_done) {
+	    if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
+	      SelectWindow(window);
+	      cont_mouse_context = NULL;
+	    } else if (fc && fc->modal_window) {
+	      wxFrame *mfr;
+	      mfr = (wxFrame *)fc->modal_window;
+	      cont_mouse_context = NULL;
+	      SelectWindow(mfr->macWindow());
+	    }
+	    osq->half_done = 1;
 	  }
 	}
 

@@ -36,12 +36,14 @@
 	(class base% args
 	  (inherit
 	    set-size
+	    get-x
+	    get-y
 	    get-width
 	    get-height
 	    get-client-size)
 
 	  (rename
-	    [super-on-size on-size])
+	    [super-set-size set-size])
 	  
 	  (private
 	    
@@ -63,10 +65,15 @@
 	    [insert-panel
 	      (lambda (new-panel)
 		(mred:debug:printf 'container-frame-insert-panel
-		  "container-frame-insert-panel: Entering insert-panel, frame ~s" object-ID)
+		  (string-append
+		   "container-frame-insert-panel: "
+		   "Entering insert-panel, frame ~s")
+		  object-ID)
 		(mred:debug:printf 'container-frame-insert-panel
-		  "container-frame-insert-panel: Argument: ~s; panel ID ~s" new-panel
-		  (ivar new-panel object-ID))
+		  (string-append
+		   "container-frame-insert-panel: Argument: ~s; "
+		   "panel ID ~s")
+		  new-panel (ivar new-panel object-ID))
 		(unless (null? panel)
 		  (error 'insert-panel
 			 "Adding a second panel to a frame or dialog"))
@@ -80,7 +87,9 @@
 		    new-panel this))
 		(set! panel new-panel)
 		(mred:debug:printf 'container-frame-insert-panel
-		  "container-frame-insert-panel: sizing panel, forcing redraw, and quitting.")
+		  (string-append
+		   "container-frame-insert-panel: "
+		   "sizing panel, forcing redraw, and quitting."))
 		(let-values ([(client-w client-h)
 			      (get-two-int-values get-client-size)])
 		  (send panel set-size 0 0 client-w client-h))
@@ -93,11 +102,32 @@
 	    [force-redraw
 	      (lambda ()
 		(mred:debug:printf 'container-frame-force-redraw
-		  "container-frame-force-redraw: Entering force-redraw; frame ~s" object-ID)
+		  (string-append
+		   "container-frame-force-redraw: "
+		   "Entering force-redraw; frame ~s")
+		  object-ID)
 		(mred:debug:printf 'container-frame-force-redraw
-		  "container-frame-force-redraw: calling on-size with ~s ~s and quitting"
+		  (string-append
+		   "container-frame-force-redraw: "
+		   "calling on-size with ~s ~s and quitting")
 		  (get-width) (get-height))
 		(on-size (get-width) (get-height)))]
+	    
+;	    [set-size
+;	      (lambda (x y width height)
+;		(if (and (or (= x (get-x))
+;			     (= x const-default-posn))
+;		         (or (= y (get-y))
+;			     (= y const-default-posn))
+;			 (or (= width (get-width))
+;			     (= width const-default-size))
+;			 (or (= height (get-height))
+;			     (= height const-default-size)))
+;		    (unless (null? (get-panel))
+;		      (send panel set-size
+;			(send panel get-x) (send panel get-y)
+;			(send panel get-width) (send panel get-height)))
+;		    (super-set-size x y width height)))]
 	    
 	    ; on-size: ensures that size of frame matches size of content
 	    ; input: new-width/new-height: new size of frame
@@ -111,88 +141,79 @@
 	    [on-size
 	      (lambda (new-width new-height)
 		(mred:debug:printf 'container-frame-on-size
-		  "container-frame-on-size: Entered frame's on-size; args ~s ~s"
+		  (string-append
+		   "container-frame-on-size: "
+		   "Entered frame's on-size; args ~s ~s")
 		  new-width new-height)
-		(mred:debug:printf 'container-frame-on-size
-		  "container-frame-on-size: Calling super-class's on-size")
 		(unless (null? panel)
-		  (let ([p-x (box 0)]
-			[p-y (box 0)])
-		    (send panel get-client-size p-x p-y)
+		  (let ([x (box 0)]
+			[y (box 0)])
+		    (get-client-size x y)
+		    (mred:debug:printf 'container-frame-on-size
+		      (string-append
+			"container-frame-on-size: "
+			"setting panel to 0 0 ~s ~s")
+		      (unbox x) (unbox y))
+		    (send panel set-size 0 0 (unbox x) (unbox y))
+		    (send panel get-client-size x y)
 		    (let* ([panel-info (send panel get-info)]
-			   
-			   ; minimum size assumable by client area of
-			   ; panel
-			   [min-width (child-info-x-min panel-info)]
-			   [min-height (child-info-y-min panel-info)]
-			   
-			   ; panel's client size
-			   [p-client-width (unbox p-x)]
-			   [p-client-height (unbox p-y)]
-			   
-			   ; difference between panel's client & full
-			   ; sizes. 
-			   [p-delta-w (- (send panel get-width)
-					 p-client-width)]
-			   [p-delta-h (- (send panel get-height)
-					 p-client-height)]
-			   
-			   ; difference between frame's full size &
-			   ; panel's client size.
-			   [delta-w (- new-width p-client-width)]
-			   [delta-h (- new-height p-client-height)]
-			   
-			   ; new size for panel's client area
-			   [new-w (cond
-				    [(< p-client-width min-width)
-				     min-width]
-				    [(and (> p-client-width min-width)
-				       (not (child-info-x-stretch
-					      panel-info)))
-				     min-width]
-				    [else p-client-width])]
-			   [new-h (cond
-				    [(< p-client-height min-height)
-				     min-height] 
-				    [(and (> p-client-height min-height)
-				       (not (child-info-y-stretch
-					      panel-info)))
-				     min-height]
-				    [else p-client-height])]
-			   
-			   ; new frame size, computed from above
-			   ; quantities.
-			   [f-width (+ new-w delta-w)]
-			   [f-height (+ new-h delta-h)])
-		      (mred:debug:printf 'container-frame-on-size
-			"container-frame-on-size: panel client ~s x ~s"
-			p-client-width p-client-height)
-		      (mred:debug:printf 'container-frame-on-size
-			"container-frame-on-size: size differences: ~s, ~s"
-			delta-w delta-h)
-		      (mred:debug:printf 'container-frame-on-size
-			"container-frame-on-size: New size: ~s x ~s"
-			new-w new-h)
-		      (begin
-			(mred:debug:printf 'container-frame-on-size
-			  "container-frame-on-size: Resizing panel to ~s x ~s"
-			  (+ (- f-width delta-w) p-delta-w)
-			  (+ (- f-height delta-h) p-delta-h))
-			(send panel set-size const-default-posn
-			  const-default-posn
-			  (+ (- f-width delta-w) p-delta-w)
-			  (+ (- f-height delta-h) p-delta-h))
-			(mred:debug:printf 'container-frame-on-size
-			  "container-frame-on-size: Resized panel"))
-		      (unless (and (= new-width f-width)
-				(= new-height f-height))
-			(mred:debug:printf 'container-frame-on-size
-			  "container-frame-on-size: Resizing to ~s x ~s"
-			  f-width f-height)
-			(set-size const-default-posn const-default-posn
-			  f-width f-height)))))
-		(mred:debug:printf 'container-frame-on-size
-		  "container-frame-on-size: Leaving onsize at the end."))])
+
+			   ; panel's client size:
+			   [panel-client-w (unbox x)]
+			   [panel-client-h (unbox y)]
+
+			   ; frame's current size:
+			   [frame-w (get-width)]
+			   [frame-h (get-height)]
+
+			   ; difference between frame's full size & panel's
+			   ; client size:
+			   [delta-w (- frame-w panel-client-w)]
+			   [delta-h (- frame-h panel-client-h)]
+
+			   ; minimum frame size:
+			   [min-frame-w (+ delta-w
+					   (child-info-x-min panel-info))]
+			   [min-frame-h (+ delta-h
+					   (child-info-y-min panel-info))]
+
+			   ; new size for frame
+			   [new-w
+			     (cond
+			       [(< frame-w min-frame-w) min-frame-w]
+			       [(and (> frame-w min-frame-w)
+				     (not (child-info-x-stretch
+					    panel-info)))
+				min-frame-w]
+			       [else frame-w])]
+			   [new-h
+			     (cond
+			       [(< frame-h min-frame-h) min-frame-h]
+			       [(and (> frame-h min-frame-h)
+	 			     (not (child-info-y-stretch
+					    panel-info)))
+				min-frame-h]
+			       [else frame-h])])
+			   (mred:debug:printf 'container-frame-on-size
+			     "container-frame-on-size: panel client ~s x ~s"
+			     panel-client-w panel-client-h)
+			   (mred:debug:printf 'container-frame-on-size
+			     (string-append
+			       "container-frame-on-size: "
+			       "size differences: ~s, ~s")
+			     delta-w delta-h)
+			   (mred:debug:printf 'container-frame-on-size
+			     "container-frame-on-size: New size: ~s x ~s"
+			     new-w new-h)
+			   (unless (and (= frame-w new-w)
+				        (= frame-h new-h))
+			     (mred:debug:printf 'container-frame-on-size
+			       "container-frame-on-size: Resizing to ~s x ~s"
+			       new-w new-h)
+			     (set-size const-default-posn const-default-posn
+			       new-w new-h)))))
+		  (mred:debug:printf 'container-frame-on-size
+		    "container-frame-on-size: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)

@@ -141,7 +141,6 @@ static Scheme_Object *read_syntax(Scheme_Object *obj);
 static Scheme_Object *define_values_symbol, *letrec_values_symbol, *lambda_symbol;
 static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
 static Scheme_Object *letmacro_symbol, *begin_symbol;
-static Scheme_Object *let_id_macro_symbol;
 static Scheme_Object *let_exp_time_symbol;
 static Scheme_Object *let_symbol;
 
@@ -217,7 +216,6 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(quote_symbol);
   REGISTER_SO(letmacro_symbol);
   REGISTER_SO(begin_symbol);
-  REGISTER_SO(let_id_macro_symbol);
   REGISTER_SO(let_exp_time_symbol);
   REGISTER_SO(let_symbol);
   
@@ -228,8 +226,7 @@ scheme_init_eval (Scheme_Env *env)
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
   quote_symbol = scheme_intern_symbol("#%quote");
-  letmacro_symbol = scheme_intern_symbol("#%let-macro");
-  let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
+  letmacro_symbol = scheme_intern_symbol("#%let-one-syntax");
   let_exp_time_symbol = scheme_intern_symbol("#%let-expansion-time");
   begin_symbol = scheme_intern_symbol("#%begin");
   
@@ -1198,10 +1195,6 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
     /* Yep, it's a macro; expand once */
     first = scheme_expand_expr(first, env, 1);
-  } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_id_macro_type)) {
-    /* id macro */
-    first = scheme_make_pair(SCHEME_PTR_VAL(val), SCHEME_STX_CDR(first));
-    first = scheme_datum_to_syntax(first, orig);
   } else {
     if (SAME_OBJ(val, scheme_define_values_syntax)) {
       /* Check the form of the definition: can't shadow syntax bindings. */
@@ -1262,16 +1255,13 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
   Scheme_Comp_Env *save_env;
   Scheme_Process *p = scheme_current_process;
 
-  /* FIXME! */
-  Scheme_Object *rest = SCHEME_STX_CDR(form);
-
   if (!depth)
     return form; /* We've gone as deep as requested */
 
   save_env = p->current_local_env;
   p->current_local_env = env;
   form = scheme_apply_macro_to_list((Scheme_Object *)SCHEME_PTR_VAL(macro), 
-				    rest, form);
+				    scheme_make_pair(form, scheme_null), form);
   p->current_local_env = save_env;
 
   if (rec)
@@ -1402,20 +1392,11 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				   + ((rec && drec[rec].dont_mark_local_use) ? 
 				      SCHEME_DONT_MARK_USE 
 				      : 0));
-      if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
-	scheme_wrong_syntax("compile", NULL, form, 
-			    "illegal use of a macro name");
-      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))
 	scheme_wrong_syntax("compile", NULL, form, 
 			    "illegal use of a syntactic form name");
-      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
-	form = SCHEME_PTR_VAL(var);
-	if (!rec) {
-	  --depth;
-	  if (!depth)
-	    return form;
-	}	  
-	goto top;
+      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_exp_time_type))
 	scheme_wrong_syntax("compile", NULL, form, 
 			    "illegal use of an expansion-time value name");
@@ -1457,14 +1438,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     } else {
       if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
 	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
-      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
-	form = scheme_make_pair(SCHEME_PTR_VAL(var), rest);
-	if (!rec) {
-	  --depth;
-	  if (!depth)
-	    return form;
-	} 
-	goto top;
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	if (rec) {
 	  Scheme_Syntax *f;
@@ -1581,7 +1554,7 @@ static Scheme_Object *
 scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env, 
 			    Scheme_Compile_Info *rec, int drec, int depth)
 /* This ugly code parses a block of code, transforming embedded
-   define-values and define-macro into letrec and let-macro.
+   define-values and define-syntax into letrec and let-one-syntax.
    It is espcailly ugly because we have to expand macros
    before deciding what we have. */
 {
@@ -1607,7 +1580,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     result = forms;
 
     /* Check for macro expansion, which could mask the real
-       define-values, define-macro, etc.: */
+       define-values, define-syntax, etc.: */
     first = scheme_check_immediate_macro(first, env, rec, drec, depth, &gval);
 
     name = SCHEME_STX_PAIRP(first) ? SCHEME_STX_CAR(first) : scheme_void;
@@ -1703,18 +1676,14 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    "no expression after a sequence of internal definitions");
       }
     } else if (SAME_OBJ(gval, scheme_defmacro_syntax)
-	       || SAME_OBJ(gval, scheme_def_id_macro_syntax)
 	       || SAME_OBJ(gval, scheme_def_exp_time_syntax)) {
       /* Convert to let-... */
       Scheme_Object *var, *body, *rest, *let;
       char *where;
       
       if (SAME_OBJ(gval, scheme_defmacro_syntax)) {
-	where = "define-macro (internal)";
+	where = "define-syntax (internal)";
 	let = letmacro_symbol;
-      } else if (SAME_OBJ(gval, scheme_def_id_macro_syntax)) {
-	where = "define-id-macro (internal)";
-	let = let_id_macro_symbol;
       } else {
 	where = "define-non-value (internal)";
 	let = let_exp_time_symbol;

@@ -27,6 +27,7 @@ static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv);
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_to_datum_marks(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_e(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
@@ -55,6 +56,12 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_folding_prim(datum_to_syntax,
 						      "datum->syntax",
 						      2, 2, 1),
+			     env);
+
+  scheme_add_global_constant("syntax->datum/marks", 
+			     scheme_make_folding_prim(syntax_to_datum_marks,
+						      "syntax->datum/marks",
+						      1, 1, 1),
 			     env);
 
   scheme_add_global_constant("syntax-e", 
@@ -103,15 +110,15 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
   return stx;
 }
 
-static unsigned short mark_id;
+static Scheme_Object *mark_id = scheme_make_integer(0);
 
 Scheme_Object *scheme_new_mark()
 {
-  mark_id = mark_id + 1;
-  return scheme_make_pair(scheme_make_integer(mark_id), scheme_null);
+  mark_id = scheme_add1(1, &mark_id);
+  return mark_id;
 }
 
-Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m)
+Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *marks, *prev;
@@ -134,10 +141,10 @@ Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m)
   return scheme_void;
 }
 
-static void add_marks(Scheme_Object *o, Scheme_Object *ml)
+static void add_remove_marks(Scheme_Object *o, Scheme_Object *ml)
 {
   while (!SCHEME_NULLP(ml)) {
-    scheme_add_mark(o, SCHEME_CAR(ml));
+    scheme_add_remove_mark(o, SCHEME_CAR(ml));
     ml = SCHEME_CDR(ml);
   }
 }
@@ -161,18 +168,18 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
     if (SCHEME_PAIRP(v)) {
       while (SCHEME_PAIRP(v)) {
-	add_marks(SCHEME_CAR(v), ml);
+	add_remove_marks(SCHEME_CAR(v), ml);
 	v = SCHEME_CDR(v);
       }
       if (!SCHEME_NULLP(v))
-	add_marks(v, ml);
+	add_remove_marks(v, ml);
     } else if (SCHEME_BOXP(v)) {
-      add_marks(SCHEME_BOX_VAL(v), ml);
+      add_remove_marks(SCHEME_BOX_VAL(v), ml);
     } else if (SCHEME_VECTORP(v)) {
       int size = SCHEME_VEC_SIZE(v), i;
 
       for (i = 0; i < size; i++) {
-	add_marks(SCHEME_VEC_ELS(v)[i], ml);
+	add_remove_marks(SCHEME_VEC_ELS(v)[i], ml);
       }
     }
 
@@ -271,7 +278,8 @@ int scheme_stx_proper_list_length(Scheme_Object *list)
 
 #ifdef DO_STACK_CHECK
 static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o, 
-					    Scheme_Hash_Table **ht);
+					    Scheme_Hash_Table **ht,
+					    int with_marks);
 
 static Scheme_Object *syntax_to_datum_k(void)
 {
@@ -279,12 +287,13 @@ static Scheme_Object *syntax_to_datum_k(void)
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
 
-  return syntax_to_datum_inner(o, ht);
+  return syntax_to_datum_inner(o, ht, p->ku.k.i1);
 }
 #endif
 
 static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o, 
-					    Scheme_Hash_Table **ht)
+					    Scheme_Hash_Table **ht,
+					    int with_marks)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *ph, *v, *result;
@@ -298,6 +307,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 # endif
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)ht;
+      p->ku.k.i1 = with_marks;
       return scheme_handle_stack_overflow(syntax_to_datum_k);
     }
   }
@@ -320,6 +330,11 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     }
   } else 
     ph = NULL;
+
+  if (with_marks) {
+    /* Propagate marks: */
+    scheme_stx_content((Scheme_Object *)stx);
+  }
     
   v = stx->val;
   
@@ -329,7 +344,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     while (SCHEME_PAIRP(v)) {
       Scheme_Object *a;
       
-      a = syntax_to_datum_inner(SCHEME_CAR(v), ht);
+      a = syntax_to_datum_inner(SCHEME_CAR(v), ht, with_marks);
       
       p = scheme_make_pair(a, scheme_null);
       
@@ -341,13 +356,13 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
       v = SCHEME_CDR(v);
     }
     if (!SCHEME_NULLP(v)) {
-      v = syntax_to_datum_inner(v, ht);
+      v = syntax_to_datum_inner(v, ht, with_marks);
       SCHEME_CDR(last) = v;
     }
     
     result = first;
   } else if (SCHEME_BOXP(v)) {
-    v = syntax_to_datum_inner(SCHEME_BOX_VAL(v), ht);
+    v = syntax_to_datum_inner(SCHEME_BOX_VAL(v), ht, with_marks);
     result = scheme_box(v);
   } else if (SCHEME_VECTORP(v)) {
     int size = SCHEME_VEC_SIZE(v), i;
@@ -356,11 +371,13 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     r = scheme_make_vector(size, NULL);
     
     for (i = 0; i < size; i++) {
-      a = syntax_to_datum_inner(SCHEME_VEC_ELS(v)[i], ht);
+      a = syntax_to_datum_inner(SCHEME_VEC_ELS(v)[i], ht, with_marks);
       SCHEME_VEC_ELS(r)[i] = a;
     }
     
     result = r;
+  } else if (with_marks && SCHEME_SYMBOLP(v)) {
+    result = scheme_make_pair(v, stx->marks);
   } else
     result = v;
 
@@ -370,12 +387,12 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   return result;
 }
 
-Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx)
+Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks)
 {
   Scheme_Hash_Table *ht = NULL;
   Scheme_Object *v;
 
-  v = syntax_to_datum_inner(stx, &ht);
+  v = syntax_to_datum_inner(stx, &ht, with_marks);
 
   if (ht)
     v = scheme_resolve_placeholders(v, 0);
@@ -553,7 +570,15 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax->datum", "syntax", 0, argc, argv);
     
-  return scheme_syntax_to_datum(argv[0]);
+  return scheme_syntax_to_datum(argv[0], 0);
+}
+
+static Scheme_Object *syntax_to_datum_marks(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax->datum/marks", "syntax", 0, argc, argv);
+    
+  return scheme_syntax_to_datum(argv[0], 1);
 }
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)

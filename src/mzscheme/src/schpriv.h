@@ -191,7 +191,6 @@ extern Scheme_Object *scheme_void_func;
 
 extern Scheme_Object *scheme_not_prim;
 extern Scheme_Object *scheme_define_values_syntax, *scheme_defmacro_syntax;
-extern Scheme_Object *scheme_def_id_macro_syntax;
 extern Scheme_Object *scheme_def_exp_time_syntax;
 extern Scheme_Object *scheme_lambda_syntax;
 extern Scheme_Object *scheme_begin_syntax;
@@ -384,10 +383,10 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
-Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx);
+Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 
 Scheme_Object *scheme_new_mark();
-Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m);
+Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
@@ -1206,9 +1205,9 @@ Scheme_Object *scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *en
 
 void scheme_unsettable_variable(Scheme_Comp_Env *env, int which);
 
-void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
-			  Scheme_Comp_Env *env);
-void scheme_pop_constant(Scheme_Comp_Env *env);
+void scheme_add_local_syntax(Scheme_Object *name, Scheme_Comp_Env *env);
+void scheme_set_local_syntax(Scheme_Object *name, Scheme_Object *val,
+			     Scheme_Comp_Env *env);
 
 void scheme_env_make_closure_map(Scheme_Comp_Env *frame, short *size, short **map);
 

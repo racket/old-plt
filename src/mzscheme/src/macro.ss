@@ -1,3 +1,16 @@
+
+(#%define-syntax #%define-macro
+  (#%lambda (expr)
+    (#%let ([name (#%cadr (#%syntax-e expr))]
+            [f (#%caddr (#%syntax-e expr))])
+      (#%datum->syntax
+       `(#%define-syntax ,name
+          (#%lambda (expr)
+            (#%apply ,f (#%cdr (#%syntax->datum expr)))))
+       expr))))
+
+> kstop define-macro <
+
 (#%define-macro #%quasiquote
   (#%lambda (form)
     (#%let-values

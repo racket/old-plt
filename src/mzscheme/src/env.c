@@ -1003,8 +1003,8 @@ scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *f
   frame->values[index] = val;
 }
 
-void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
-			  Scheme_Comp_Env *env)
+void scheme_add_local_syntax(Scheme_Object *name, 
+			     Scheme_Comp_Env *env)
 {
   Constant_Binding *b;
   
@@ -1015,20 +1015,27 @@ void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
 
   b->next = COMPILE_DATA(env)->constants;
   b->name = name;
-  b->val = val;
+  b->val = NULL;
   b->before = env->num_bindings;
 
   COMPILE_DATA(env)->constants = b;
 }
 
-void scheme_pop_constant(Scheme_Comp_Env *env)
+void scheme_set_local_syntax(Scheme_Object *name, Scheme_Object *val,
+			    Scheme_Comp_Env *env)
 {
-  Compile_Data *data = COMPILE_DATA(env);
+  Constant_Binding *b;
+  
+  b = COMPILE_DATA(env)->constants;
+  while (b) {
+    if (scheme_stx_bound_eq(b->name, name)) {
+      b->val = val;
+      return;
+    }
+    b = b->next;
+  }
 
-  if (!data->constants)
-    scheme_signal_error("internal error: scheme_pop_constant: empty");
-
-  data->constants = data->constants->next;
+  scheme_signal_error("internal error: scheme_set_local_syntax: not found");
 }
 
 Scheme_Comp_Env *
@@ -1186,6 +1193,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     while (c) {
       if (scheme_stx_bound_eq(symbol, c->name)) {
 	val = c->val;
+	if (!val) {
+	  scheme_wrong_syntax("identifier", NULL, symbol,
+			      "variable used out of context");
+	}
 	goto found_const;
       }
       c = c->next;
@@ -1217,7 +1228,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
  found_const:
   if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
     scheme_wrong_syntax("set!", NULL, symbol,
-			"local constant cannot be mutated");
+			"local syntax identifier cannot be mutated");
     return NULL;
   }
   return val;

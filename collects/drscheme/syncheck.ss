@@ -119,6 +119,7 @@ Check Syntax separates four classes of identifiers:
           syncheck:add-mouse-over-status
           syncheck:add-jump-to-definition
           syncheck:sort-bindings-table
+          syncheck:get-bindings-table
           syncheck:jump-to-next-bound-occurrence
           syncheck:jump-to-binding-occurrence
           syncheck:jump-to-definition))
@@ -190,7 +191,8 @@ Check Syntax separates four classes of identifiers:
               
               
               ;; bindings-table : hash-table[(list text number number) -o> (listof (list text number number))]
-              (field [bindings-table (make-hash-table 'equal)])
+              ;; this is a private field
+              (define bindings-table (make-hash-table 'equal))
               (define (add-to-bindings-table start-text start-left start-right
                                              end-text end-left end-right)
                 (unless (and (object=? start-text end-text)
@@ -203,6 +205,9 @@ Check Syntax separates four classes of identifiers:
                      (cons
                       (list end-text end-left end-right)
                       (hash-table-get bindings-table key (lambda () '())))))))
+              
+              ;; for use in the automatic test suite
+              (define/public (syncheck:get-bindings-table) bindings-table)
               
               (define/public (syncheck:sort-bindings-table)
                 
@@ -230,9 +235,9 @@ Check Syntax separates four classes of identifiers:
                  (lambda (k v)
                    (hash-table-put! bindings-table k (quicksort v compare-bindings)))))
                     
-              (field (tacked-hash-table (make-hash-table)))
-              (field [cursor-location #f]
-                     [cursor-text #f])
+              (define tacked-hash-table (make-hash-table))
+              (define cursor-location #f)
+              (define cursor-text #f)
               (define (find-poss text left-pos right-pos)
                 (let ([xlb (box 0)]
                       [ylb (box 0)]
@@ -796,8 +801,7 @@ Check Syntax separates four classes of identifiers:
           
           (rename [super-disable-evaluation disable-evaluation]
                   [super-enable-evaluation enable-evaluation])
-          (field
-            [button-visible? #t])
+          (define button-visible? #t)
           
           (define/override (enable-evaluation)
             (send check-syntax-button enable #t)
@@ -807,7 +811,7 @@ Check Syntax separates four classes of identifiers:
             (send check-syntax-button enable #f)
             (super-disable-evaluation))
           
-          (field [cleanup-texts '()])
+          (define cleanup-texts '())
           (define/public (syncheck:clear-highlighting)
             (let* ([definitions (get-definitions-text)]
                    [locked? (send definitions is-locked?)])
@@ -831,10 +835,9 @@ Check Syntax separates four classes of identifiers:
 	    (send report-error-text on-close)
 	    (super-on-close))
 
-          (field
-           [report-error-parent-panel 'uninitialized-report-error-parent-panel]
-           [report-error-panel 'uninitialized-report-error-panel]
-           [report-error-text (new fw:scheme:text%)])
+          (define report-error-parent-panel 'uninitialized-report-error-parent-panel)
+          (define report-error-panel 'uninitialized-report-error-panel)
+          (define report-error-text (new fw:scheme:text%))
           (send report-error-text auto-wrap #t)
           (send report-error-text set-autowrap-bitmap #f)
           (send report-error-text lock #t)
@@ -895,12 +898,11 @@ Check Syntax separates four classes of identifiers:
             (show-error-report))
           
           (rename [super-make-root-area-container make-root-area-container])
-          (field
-           [rest-panel 'uninitialized-root]
-           [super-root 'uninitialized-super-root]
-           [docs-panel 'uninitialized-docs-panel]
-           [docs-panel-visible? #f]
-           [docs-messages 'uninitialized-docs-lines])
+          (define rest-panel 'uninitialized-root)
+          (define super-root 'uninitialized-super-root)
+          (define docs-panel 'uninitialized-docs-panel)
+          (define docs-panel-visible? #f)
+          (define docs-messages 'uninitialized-docs-lines)
           (override make-root-area-container)
           (define (make-root-area-container % parent)
             (let* ([s-root (super-make-root-area-container
@@ -1097,12 +1099,11 @@ Check Syntax separates four classes of identifiers:
           
           (super-instantiate ())
           
-          (field
-           [check-syntax-button
+          (define check-syntax-button
             (make-object button%
               (syncheck-bitmap this)
               (get-button-panel)
-              (lambda (button evt) (syncheck:button-callback)))])
+              (lambda (button evt) (syncheck:button-callback))))
           (public syncheck:get-button)
           (define (syncheck:get-button) check-syntax-button)
           (send (get-definitions-text) set-styles-fixed #t)

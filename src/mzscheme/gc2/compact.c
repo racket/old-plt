@@ -192,6 +192,7 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 #define MTYPE_OLD          0x200
 #define MTYPE_MODIFIED     0x400
 #define MTYPE_INITED       0x800
+#define MTYPE_MARK         0x1000
 
 #define OFFSET_COLOR_UNMASKED(offsets, pos) (offsets[pos])
 #define OFFSET_COLOR(offsets, pos) (offsets[pos] & COLOR_MASK)
@@ -239,7 +240,7 @@ static int skipped_pages, scanned_pages, young_pages, inited_pages;
 
 static long iterations;
 
-static long mark_maxdepth, mark_stackcount;
+static long mark_stackoflw;
 
 static int fnl_weak_link_count;
 
@@ -1174,10 +1175,9 @@ static int is_marked(void *p)
 
   map = mpage_maps[g];
   if (map) {
-    unsigned long addr = (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
     MPage *page;
 
-    page = map + addr;
+    page = map + (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
     if (page->type & MTYPE_BIGBLOCK) {
       if (page->type & MTYPE_CONTINUED)
 	return is_marked(page->o.bigblock_start);
@@ -1327,10 +1327,12 @@ static void init_all_mpages(int young)
       page->type |= MTYPE_MODIFIED;
     }
 
-    if (is_old)
+    if (is_old) {
+      page->type -= (page->type & MTYPE_MARK);
       page->type |= MTYPE_OLD;
-    else{
+    } else {
       page->type -= (page->type & MTYPE_OLD);
+      page->type |= MTYPE_MARK;
       young_pages++;
     }
       
@@ -1397,7 +1399,7 @@ static void init_all_mpages(int young)
 /* Mark: mark a block as reachable. */
 
 #if MARK_STATS
-long mark_calls, mark_hits, mark_recalls, mark_colors, mark_one, mark_many, mark_slow;
+long mark_calls, mark_hits, mark_recalls, mark_colors, mark_many, mark_slow;
 #endif
 
 void GC_mark(const void *p)
@@ -1414,34 +1416,41 @@ void GC_mark(const void *p)
 
   map = mpage_maps[g];
   if (map) {
-    unsigned long addr = (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
     MPage *page;
     mtype_t type;
 
-    page = map + addr;
+    page = map + (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
     type = page->type;
-    if (type && !(type & MTYPE_OLD)) {
+    if (type & (MTYPE_MARK | MTYPE_CONTINUED)) {
 #if MARK_STATS
       mark_hits++;
 #endif
 
       if (type & MTYPE_BIGBLOCK) {
 	if (type & MTYPE_CONTINUED) {
+	  void *p2;
+	  unsigned long g2;
 #if MARK_STATS
 	  mark_recalls++;
 #endif
-	  GC_mark(page->o.bigblock_start);
-	} else {
-	  if (!(type & COLOR_MASK)) {
+	  p2 = page->o.bigblock_start;
+	  g2 = ((unsigned long)p2 >> MAPS_SHIFT);
+	  page = mpage_maps[g2] + (((unsigned long)p2 & MAP_MASK) >> MAP_SHIFT);
+	  type = page->type;
+
+	  if (!(type & MTYPE_MARK))
+	    return;
+	}
+
+	if (!(type & COLOR_MASK)) {
 #if MARK_STATS
-	    mark_colors++;
+	  mark_colors++;
 #endif
-	    page->type |= GRAY_BIT;
-	    
-	    if (!(type & MTYPE_ATOMIC)) {
-	      page->gray_next = gray_first;
-	      gray_first = page;
-	    }
+	  page->type |= GRAY_BIT;
+	  
+	  if (!(type & MTYPE_ATOMIC)) {
+	    page->gray_next = gray_first;
+	    gray_first = page;
 	  }
 	}
       } else {
@@ -1496,6 +1505,7 @@ void GC_mark(const void *p)
 	      page->type |= GRAY_BIT;
 	      
 	      if (!(type & MTYPE_ATOMIC)) {
+		mark_stackoflw++;
 		page->gray_next = gray_first;
 		gray_first = page;
 		
@@ -1504,6 +1514,7 @@ void GC_mark(const void *p)
 	      }
 	    } else {
 	      if (!(type & MTYPE_ATOMIC)) {
+		mark_stackoflw++;
 		if (page->gray_start > offset)
 		  page->gray_start = offset;
 		if (page->gray_end < offset)
@@ -1884,10 +1895,6 @@ static void propagate_all_mpages()
 
   while (gray_first || mark_stack_pos) {
     iterations++;
-
-    if (mark_stack_pos > mark_maxdepth)
-      mark_maxdepth = mark_stack_pos;
-    mark_stackcount += mark_stack_pos;
 
     while (mark_stack_pos) {
       unsigned short type;
@@ -2632,8 +2639,7 @@ static void free_unused_mpages()
 
   for (page = first; page; page = next) {
     next = page->next;
-    if (!(page->type & COLOR_MASK)
-	&& !(page->type & MTYPE_OLD)) {
+    if (!(page->type & (COLOR_MASK | MTYPE_OLD))) {
       void *p;
       p = page->block_start;
 
@@ -3144,6 +3150,11 @@ static void gcollect(int full)
   /************* Mark and Propagate *********************/
 
   inited_pages = 0;
+  mark_stackoflw = 0;
+
+#if MARK_STATS
+  mark_calls = mark_hits = mark_recalls = mark_colors = mark_many = mark_slow = 0;
+#endif
 
   do_roots(0);
 
@@ -3151,17 +3162,23 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: roots (init:%d deep:%d) [%ld faults]: %ld\n", 
-	     inited_pages, stack_depth, post.ru_minflt - pre.ru_minflt,
+#if MARK_STATS
+# define STATS_FORMAT " {c=%ld h=%ld c=%ld r=%ld m=%ld s=%ld}"
+# define STATS_ARGS mark_calls, mark_hits, mark_colors, mark_recalls, mark_many, mark_slow,
+#else
+# define STATS_FORMAT
+# define STATS_ARGS
+#endif
+
+  PRINTTIME((STDERR, "gc: roots (init:%d deep:%d)"
+	     STATS_FORMAT
+	     " [%ld/%ld faults]: %ld\n", 
+	     inited_pages, stack_depth, 
+	     STATS_ARGS
+	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
   iterations = 0;
-  mark_stackcount = 0;
-  mark_maxdepth = 0;
-
-#if MARK_STATS
-  mark_calls = mark_hits = mark_recalls = mark_colors = mark_one = mark_many = mark_slow = 0;
-#endif
 
   /* Propagate, loop to do finalization */
   while (1) { 
@@ -3312,25 +3329,17 @@ static void gcollect(int full)
 
   }
 
-#if MARK_STATS
-# define STATS_FORMAT " {c=%ld h=%ld c=%ld r=%ld o=%ld m=%ld s=%ld}"
-# define STATS_ARGS mark_calls, mark_hits, mark_colors, mark_recalls, mark_one, mark_many, mark_slow,
-#else
-# define STATS_FORMAT
-# define STATS_ARGS
-#endif
-
 #if TIME
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: mark (init:%d cycle:%ld stkcnt:%ld stkdp:%ld)"
+  PRINTTIME((STDERR, "gc: mark (init:%d cycle:%ld stkoflw:%ld)"
 	     STATS_FORMAT
-	     " [%ld faults]: %ld\n", 
+	     " [%ld/%ld faults]: %ld\n", 
 	     inited_pages, iterations, 
-	     mark_stackcount, mark_maxdepth,
+	     mark_stackoflw,
 	     STATS_ARGS
-	     post.ru_minflt - pre.ru_minflt,
+	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
   /******************************************************/
@@ -3413,9 +3422,9 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: %s [%ld faults]: %ld\n", 
+  PRINTTIME((STDERR, "gc: %s [%ld/%ld faults]: %ld\n", 
 	     compact ? "compact" : "freelist",
-	     post.ru_minflt - pre.ru_minflt,
+	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
   /******************************************************/
@@ -3459,8 +3468,9 @@ static void gcollect(int full)
     getrusage(RUSAGE_SELF, &post);
 #endif
     
-    PRINTTIME((STDERR, "gc: fixup (%d) [%ld faults]: %ld\n", 
-	       scanned_pages,  post.ru_minflt - pre.ru_minflt,
+    PRINTTIME((STDERR, "gc: fixup (%d) [%ld/%ld faults]: %ld\n", 
+	       scanned_pages,
+	       post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	       GETTIMEREL()));
   }
 
@@ -3492,8 +3502,9 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: done with %ld (free:%d cheap:%d) [%ld faults]: %ld >>\n",
-	     memory_in_use, skipped_pages, scanned_pages, post.ru_minflt - pre.ru_minflt,
+  PRINTTIME((STDERR, "gc: done with %ld (free:%d cheap:%d) [%ld/%ld faults]: %ld >>\n",
+	     memory_in_use, skipped_pages, scanned_pages,
+	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
   during_gc = 0;

@@ -51,6 +51,7 @@ static Scheme_Object *do_raise(Scheme_Object *arg, int return_ok, int need_debug
 static Scheme_Object *newline_char;
 
 static Scheme_Object *def_err_val_proc;
+static Scheme_Object *def_error_esc_proc;
 Scheme_Object *scheme_def_exit_proc;
 
 typedef struct {
@@ -74,10 +75,15 @@ static void default_printf(char *msg, ...)
 
 void scheme_init_error_escape_proc(Scheme_Process *p)
 {
-  p->error_escape_proc = 
-    scheme_make_prim_w_arity(def_error_escape_proc,
-			     "default-error-escape-handler",
-			     0, 0);
+  if (!def_error_esc_proc) {
+    REGISTER_SO(def_error_esc_proc);
+    def_error_esc_proc =
+      scheme_make_prim_w_arity(def_error_escape_proc,
+			       "default-error-escape-handler",
+			       0, 0);
+  }
+
+  p->error_escape_proc = def_error_esc_proc;
 }
 
 void scheme_init_format_procedure(Scheme_Env *env)

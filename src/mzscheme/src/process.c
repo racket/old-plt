@@ -590,7 +590,7 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   process->error_invoked = 0;
   process->err_val_str_invoked = 0;
 
-  scheme_alloc_list_stack(process);
+  process->list_stack = NULL;
 
   SCHEME_GET_LOCK();
   if (prefix) {
@@ -1023,12 +1023,26 @@ static void remove_process(Scheme_Process *r)
       p->next = r->next;
   }
 
+#ifdef USE_SENORA_GC
   memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
+#else
+  GC_free(r->runstack_start);
+#endif
   r->runstack_start = NULL;
   for (saved = r->runstack_saved; saved; saved = saved->prev) {
+#ifdef USE_SENORA_GC
     memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
+#else
+    GC_free(saved->runstack_start);
+#endif
     saved->runstack_start = NULL;
   }
+
+#ifndef USE_SENORA_GC
+  if (r->list_stack)
+    GC_free(r->list_stack);
+#endif
+  r->list_stack = NULL;
 
   scheme_remove_managed(r->mref, (Scheme_Object *)r);
 }
@@ -1038,6 +1052,8 @@ static void start_child(Scheme_Process *child,
 			Scheme_Object *child_eval)
 {
   if (SETJMP(child)) {
+    RESETJMP(child);
+
 #ifndef MZ_REAL_THREADS
     if (return_to_process)
       scheme_swap_process(return_to_process);
@@ -1685,7 +1701,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     start = 0; /* compiler-friendly */
 
   if (!p->checking_break) {
-    int breaking;
+    int breaking = 0;
     int allow_break = scheme_can_break(p, config);
 
     if (p->external_break) {
@@ -1694,7 +1710,9 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	breaking = 1;
       } else
 	breaking = 0;
-    } else {
+    }
+#if 1
+    else {
       Scheme_Object *poll;
       
       poll = scheme_get_param(config, MZCONFIG_USER_BREAK_POLL_HANDLER);
@@ -1728,9 +1746,13 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	breaking = 0;
       }
     }
+#endif
 	
     if (breaking
-	|| (!p->next && scheme_check_for_break && scheme_check_for_break())) {
+#if 1
+	|| (!p->next && scheme_check_for_break && scheme_check_for_break())
+#endif
+	) {
       make_unblocked(p);
       scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
     }

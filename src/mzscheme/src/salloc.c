@@ -309,14 +309,14 @@ void *scheme_malloc_uncollectable_tagged(size_t s)
 typedef struct Finalization {
   void (*f)(void *o, void *data);
   void *data;
-  struct Finalization *next;
+  struct Finalization *next, *prev;
 } Finalization;
 
 typedef struct {
-  Finalization *scheme;
+  Finalization *scheme_first, *scheme_last;
   void (*ext_f)(void *o, void *data);
   void *ext_data;
-  Finalization *prim;
+  Finalization *prim_first, *prim_last;
 } Finalizations;
 
 typedef struct {
@@ -330,14 +330,18 @@ static void do_next_finalization(void *o, void *data)
   Finalizations *fns = *(Finalizations **)data;
   Finalization *fn;
 
-  if (fns->scheme) {
-    if (fns->scheme->next || fns->ext_f || fns->prim) {
+  if (fns->scheme_first) {
+    if (fns->scheme_first->next || fns->ext_f || fns->prim_first) {
       /* Re-install low-level finalizer and run a scheme finalizer */
       GC_register_eager_finalizer(o, do_next_finalization, data, NULL, NULL);
     }
 
-    fn = fns->scheme;
-    fns->scheme = fn->next;
+    fn = fns->scheme_first;
+    fns->scheme_first = fn->next;
+    if (!fn->next)
+      fns->scheme_last = NULL;
+    else
+      fn->next->prev = NULL;
 
     fn->f(o, fn->data);
     return;
@@ -346,7 +350,7 @@ static void do_next_finalization(void *o, void *data)
   if (fns->ext_f)
     fns->ext_f(o, fns->ext_data);
 
-  for (fn = fns->prim; fn; fn = fn->next)
+  for (fn = fns->prim_first; fn; fn = fn->next)
     fn->f(o, fn->data);
 }
 
@@ -410,7 +414,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 	/* Make sure it's not already here */
 	Finalization *fnx, *prev;
 	prev = NULL;
-	for (fnx = fns->prim; fnx; fnx = fnx->next) {
+	for (fnx = fns->prim_first; fnx; fnx = fnx->next) {
 	  if (fnx->f == fn->f && fnx->data == fn->data) {
 	    fn = NULL;
 	    break;
@@ -418,12 +422,20 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 	}
       }
       if (fn) {
-	fn->next = fns->prim;
-	fns->prim = fn;
+	fn->next = fns->prim_first;
+	fns->prim_first = fn;
+	if (!fn->next)
+	  fns->prim_last = fn;
+	else
+	  fn->next->prev = fn;
       }
     } else {
-      fn->next = fns->scheme;
-      fns->scheme = fn;
+      fn->next = fns->scheme_first;
+      fns->scheme_first = fn;
+      if (!fn->next)
+	fns->scheme_last = fn;
+      else
+	fn->next->prev = fn;
     }
   }
 
@@ -435,24 +447,26 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   RELEASE_FIN_LOCK();
 }
 
-static void remove_finalizer(Finalizations *fns, Finalization *rfn, int prim)
+static void remove_finalizer(Finalizations *fns, Finalization *fn, int prim)
 {
-  Finalization *fn, *prev;
-
   GET_FIN_LOCK();
 
-  prev = NULL;
-  for (fn = (prim ? fns->prim : fns->scheme); fn; fn = fn->next) {
-    if (fn == rfn) {
-      if (!prev) {
-	if (prim)
-	  fns->prim = fn->next;
-	else
-	  fns->scheme = fn->next;
-      } else
-	prev->next = fn->next;
-    }
-    prev = fn;
+  if (fn->prev)
+    fn->prev->next = fn->next;
+  else {
+    if (prim)
+      fns->prim_first = fn->next;
+    else
+      fns->scheme_first = fn->next;
+  }
+  
+  if (fn->next)
+    fn->next->prev = fn->prev;
+  else {
+    if (prim)
+      fns->prim_last = fn->prev;
+    else
+      fns->scheme_last = fn->prev;
   }
 
   RELEASE_FIN_LOCK();

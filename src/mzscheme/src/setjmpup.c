@@ -269,6 +269,11 @@ void scheme_longjmpup(Scheme_Jumpup_Buf *b)
 void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   b->stack_size = b->stack_max_size = 0;
+  if (b->stack_copy) {
+    /* Remove the finalizer, and explicit call the finalization proc */
+    GC_register_finalizer(b->stack_copy, NULL, NULL, NULL, NULL);
+    remove_cs(b->stack_copy, NULL);
+  }
   b->stack_from = b->stack_copy = NULL;
 }
 

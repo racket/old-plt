@@ -290,8 +290,8 @@ print_box(int argc, Scheme_Object *argv[])
 
 #ifdef DO_STACK_CHECK
 
-static Scheme_Object *scheme_read_inner(Scheme_Object *port, Scheme_Hash_Table **ht 
-					CURRENTPROCPRM);
+static Scheme_Object *read_inner(Scheme_Object *port, Scheme_Hash_Table **ht 
+				 CURRENTPROCPRM);
 
 static Scheme_Object *read_k(void)
 {
@@ -302,19 +302,19 @@ static Scheme_Object *read_k(void)
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return scheme_read_inner(o, 
-			   ht
+  return read_inner(o, 
+		    ht
 #ifdef MZ_REAL_THREADS
-			   , p
+		    , p
 #endif
-			   );
+		    );
 }
 #endif
 
 #define MAX_GRAPH_ID_DIGITS 8
 
 static Scheme_Object *
-scheme_read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
+read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
   int ch, ch2, depth;
 
@@ -608,7 +608,7 @@ scheme_read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      scheme_add_to_table(*ht, (const char *)vector_length, 
 				  (void *)ph, 0);
 	      
-	      SCHEME_PTR_VAL(ph) = v = scheme_read_inner(port, ht CURRENTPROCARG);
+	      SCHEME_PTR_VAL(ph) = v = read_inner(port, ht CURRENTPROCARG);
 	      
 	      return v;
 	    }
@@ -689,6 +689,9 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 Scheme_Object *
 scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENTPROCPRM)
 {
+#ifndef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   Scheme_Object *v;
   Scheme_Hash_Table *ht = NULL;
 
@@ -701,7 +704,10 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
   local_square_brackets_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS));
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
 
-  v = scheme_read_inner(port, &ht CURRENTPROCARG);
+  if (!p->list_stack)
+    scheme_alloc_list_stack(p);
+
+  v = read_inner(port, &ht CURRENTPROCARG);
 
   if (ht) {
     /* Resolve placeholders: */
@@ -767,7 +773,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
       return list ? list : scheme_null;
 
     scheme_ungetc(ch, port);
-    car = scheme_read_inner(port, ht CURRENTPROCARG);
+    car = read_inner(port, ht CURRENTPROCARG);
 
     if (use_stack) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
@@ -811,7 +817,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
 			 port,
 			 "read: illegal use of \".\" at position %ld line %ld in %s",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
-      cdr = scheme_read_inner(port, ht CURRENTPROCARG);
+      cdr = read_inner(port, ht CURRENTPROCARG);
       ch = skip_whitespace_comments (port);
       if (ch != closer)
 	scheme_raise_exn(MZEXN_READ_DOT,
@@ -883,7 +889,7 @@ read_quote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
   Scheme_Object *obj;
 
-  obj = scheme_read_inner(port, ht CURRENTPROCARG);
+  obj = read_inner(port, ht CURRENTPROCARG);
   return (scheme_make_pair(quote_symbol, 
 			   scheme_make_pair(obj, scheme_null)));
 }
@@ -1226,7 +1232,7 @@ read_quasiquote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
   Scheme_Object *quoted_obj, *ret;
   
-  quoted_obj = scheme_read_inner(port, ht CURRENTPROCARG);
+  quoted_obj = read_inner(port, ht CURRENTPROCARG);
   ret = scheme_make_pair(quasiquote_symbol, 
 			 scheme_make_pair (quoted_obj, scheme_null));
   return (ret);
@@ -1238,7 +1244,7 @@ read_unquote(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 {
   Scheme_Object *obj, *ret;
 
-  obj = scheme_read_inner(port, ht CURRENTPROCARG);
+  obj = read_inner(port, ht CURRENTPROCARG);
   ret = scheme_make_pair(unquote_symbol, 
 			 scheme_make_pair (obj, scheme_null));
   return (ret);
@@ -1250,7 +1256,7 @@ read_unquote_splicing(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM
 {
   Scheme_Object *obj, *ret;
 
-  obj = scheme_read_inner(port, ht CURRENTPROCARG);
+  obj = read_inner(port, ht CURRENTPROCARG);
   ret = scheme_make_pair(unquote_splicing_symbol, 
 			 scheme_make_pair (obj, scheme_null));
   return (ret);
@@ -1262,7 +1268,7 @@ static Scheme_Object *read_box(Scheme_Object *port, Scheme_Hash_Table **ht
 {
   Scheme_Object *o;
 
-  o = scheme_read_inner(port, ht CURRENTPROCARG);
+  o = read_inner(port, ht CURRENTPROCARG);
   
   return scheme_box(o);
 }
@@ -1461,7 +1467,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	ep = scheme_make_sized_string_input_port(s, len);
 
-	v = scheme_read_inner(ep, ht CURRENTPROCARG);
+	v = read_inner(ep, ht CURRENTPROCARG);
       }
       break;
     case CPT_SYMBOL:
@@ -1866,12 +1872,18 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht
 				    CURRENTPROCPRM)
 {
+#ifndef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
   Scheme_Object *result;
 #if USE_BUFFERING_CPORT
   CPort cp;
   long size, got;
 #endif
   CPort *rp;
+
+  if (!p->list_stack)
+    scheme_alloc_list_stack(p);
 
   if (!cpt_branch[1]) {
     int i;

@@ -724,8 +724,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   *cc_ok = 1;
 
   if (eb) {
-    /* We'll turn this on in version 53. More support is needed in MzScheme
-       to make escape continuation boundaries work right. */
+    /* Maybe we'll turn this on sometime soon... */
 #if 0
     if (old_ec_ok)
       *old_ec_ok = 0;

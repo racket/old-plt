@@ -2222,9 +2222,13 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     } else
       reason = "read or write failed";
   }
+ failed:
 #endif
 #ifdef DOS_FILE_SYSTEM
-  return CopyFile(src, dest, TRUE) ? scheme_true : scheme_false;
+  if (CopyFile(src, dest, TRUE))
+    return scheme_void;
+  
+  reason = "copy failed";
 #endif
 #ifdef MAC_FILE_SYSTEM
   { 
@@ -2294,7 +2298,6 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   }
 #endif
 
-failed:
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM_RENAME, 
 		   argv[0], argv[1],
 		   "copy-file: %s; cannot copy: %.255s to: %.255s",
@@ -3293,7 +3296,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (which == id_temp_dir) {
       char *p;
       
-      if ((p = getenv("TMPDIR"))) {
+      if ((p = getenv("TMP")) || (p = getenv("TEMP"))) {
 	p = scheme_expand_filename(p, -1, NULL, NULL);
 	if (p && scheme_directory_exists(p))
 	  return scheme_make_string(p);
@@ -3307,7 +3310,7 @@ find_system_path(int argc, Scheme_Object **argv)
 
     if (d && p) {
       char *s;
-      s = new char[strlen(d) + strlen(p) + 1];
+      s = scheme_malloc_atomic(strlen(d) + strlen(p) + 1);
       strcpy(s, d);
       strcat(s, p);
       
@@ -3319,18 +3322,24 @@ find_system_path(int argc, Scheme_Object **argv)
       home = NULL;
     
     if (!home) {
-      int i;
-      char *s;
+      char *name[1024];
       
-      p = wxTheApp->argv[0];
-      s = copystring(p);
-      
-      i = strlen(s) - 1;
-      
-      while (i && (s[i] != '\\'))
-	--i;
-      s[i] = 0;
-      home = scheme_make_string_without_copying(s);
+      if (!GetModuleFileName(NULL, name, 1024)) {
+	/* Disaster. Use CWD. */
+	home = CURRENT_WD();
+      } else {
+	int i;
+	char *s;
+	
+	s = name;
+	
+	i = strlen(s) - 1;
+	
+	while (i && (s[i] != '\\'))
+	  --i;
+	s[i] = 0;
+	home = scheme_make_string(s);
+      }
     }
     
     if ((which == id_pref_dir)

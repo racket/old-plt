@@ -21,4 +21,7 @@
       (define pause-on-errors (make-parameter #f))
 
       (define specific-collections (make-parameter null))
-      (define archives (make-parameter null)))))
+      (define archives (make-parameter null))
+
+      (define current-target-directory-getter (make-parameter current-directory)))))
+

@@ -82,8 +82,13 @@
 	(apply 
 	 append
 	 (specific-collections)
-	 (map (lambda (x) (unpack x plthome (lambda (s) (setup-printf "~a" s)))) (archives))))
-
+	 (map (lambda (x) (unpack 
+			   x 
+			   plthome 
+			   (lambda (s) (setup-printf "~a" s)) 
+			   (current-target-directory-getter))) 
+	      (archives))))
+      
       (define (done)
 	(setup-printf "Done setting up"))
 

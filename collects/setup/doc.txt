@@ -6,10 +6,10 @@ The Setup PLT executable (bin/setup-plt for Unix) performs two
 services:
 
  * Compiling and setting up all collections: When Setup PLT is run
-   without any arguments, it finds all of the current collections
-   (using the PLTHOME and PLTCOLLECTS environment variables) and
-   compiles all collections with an info.ss library that indicates how
-   the collection is compiled (see the mzc manual).
+   without any arguments, it finds all of the current collections (see
+   the MzScheme manual for information on collections) and compiles
+   all collections with an info.ss library that indicates how the
+   collection is compiled (see the mzc manual).
 
    The --clean (or -c) flag to Setup PLT causes it to delete all
    existing .zo and extension files, thus ensuring a clean build from
@@ -23,29 +23,29 @@ services:
    specify executables to be installed in the "plt" directory
    ("plt/bin" under Unix) or other installation actions.
 
- * Unpacking _.plt_ files: A .plt file is a platform-indepedent
+ * Unpacking _.plt_ files: A .plt file is a platform-independent
    distribution archive for MzScheme- and MrEd-based software.  When
    one or more file names are provided as the command line arguments
    to Setup PLT, the files contained in the .plt archive are unpacked
-   (according to specifications embedded in the .plt file; see below)
-   and only the collections specified by the plt file are compiled and
-   setup.
+   (according to specifications embedded in the .plt file) and only
+   collections specified by the plt file are compiled and setup.
 
  Compiling and Setting Up Collections
  ------------------------------------
 
 Setup PLT attempts to compile and set up any collection that:
 
- * has an info.ss library;
+ * has an info.ss library (see the mzc manual for a description of
+   info.ss);
  
- * has the 'name' info.ss field;
+ * has the 'name' field in info.ss;
 
- * is eiter a top-level collection or a sub-collection of a compilable
+ * is either a top-level collection or a sub-collection of a compilable
    collection.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described in the "compiler"
-colelction. If the -e or --extension flag is specified, then the
+collection. If the -e or --extension flag is specified, then the
 collections are also compiled using the `compile-collection-extension'
 procedure from "compiler".
 
@@ -96,202 +96,6 @@ Additional info.ss fields trigger additional setup actions:
    all files in the "compiled" subdirectory, and all of the files in
    the platform-specific subdirectory of the compiled directory
    for the current platform.
-
-
- Unpacking .plt Distribution Archives
- ------------------------------------
-
-The extension ".plt" is not required for a distribution archive; this
-convention merely helps users identify the purpose of a distribution
-file.
-
-mzc can be used to create .plt files; see the mzc manual for details.
-
-The raw format of a distribution file is described below.  This format
-is uncompressed and sensitive to communication modes (text
-vs. binary), so the distribution format is derived from the raw format
-by first compressing the file using gzip, then encoding the gzipped
-file with the MIME base64 standard (which relies only the characters
-A-Z, a-z, 0-9, +, /, and =; all other characters are ignored when a
-base64-encoded file is decoded).
-
-The raw format is
-
- * "PLT" are the first three characters.
-
- * An like procedure that takes a symbol and a failure thunk and
-   returns information about archive for recognized symbols. The
-   information symbols are:
-
-     + 'name - a human-readable string describing the archive's
-       contents. This name is used only for printing messages to the
-       user during unpacking.
-
-     + 'unpacker - a symbol indicating the expected unpacking
-       environment. Currently, the only allowed value is 'mzscheme.
-
-     + 'requires - collections required to be installed before
-       unpacking the archive, which associated versions; see the
-       documentation of `pack' for details.
-
-     + 'conflicts - collections required *not* to be installed before
-       unpacking the archive
-
-     + 'plt-relative? - a boolean; if true, then the archive's content
-       should be unpacked relative to the plt installation directory.
-
-   The procedure is extracted from the archive using MzScheme's `read'
-   and `eval' procedures (in a fresh namespace).
-
- * An unsigned unit that drives the unpacking process. The unit accepts two
-   imports: a path string for the plt directory and an `unmztar'
-   procedure. The remainder of the unpacking process consists of invoking
-   ths unit. It is expected that the unit will call `unmztar' procedure to
-   unpack directories and files that are defined in the input archive afer
-   this unit. The result of invoking the unit must be a list of collection
-   paths (where each collection path is a list of strings); once the
-   archive is unpacked, Setup PLT will compile and setup the specified
-   collections, as if it was invoked with the "-c" option, so the
-   "compiled" directories will be deleted.
-
-   The `unmztar' procedure takes one argument: a filter
-   procedure. The filter procedure is called for each directory and
-   file to be unpacked. It is called with three arguments:
-
-      + 'dir, 'file, 'file-replace - indicates whether the item to be
-        unpacked is a directory, a file, or a file to be replaced;
-
-      + a relative path string - the pathname of the directory or file
-        to be unpacked, relative to the plt directory; and
-
-      + a path string for the plt directory.
-
-   If the filter procedure returns #f for a directory or file, the
-   directory or file is not unpacked. If the filter procedure returns
-   #t and the directory or file for 'dir or 'file already exists, it
-   is not created. (The file for 'file-replace need not exist
-   already.)
-
-   When a directory is unpacked, intermediate directies are created
-   as necessary to create the specified directory. When a file is
-   unpacked, the directory must already exist.
-
-   The unit is extracted from the archive using MzScheme's `read'
-   and `eval' procedures.
-
-Assuming that the unpacking unit calls the `unmztar' procedure, the
-archive should continue with unpackables. Unpackables are extracted
-until the end-of-file is found (as indicated by an `=' in the
-base64-encoded input archive).
-
-An unpackable is one of the following:
-
- * The symbol 'dir followed by a list. The `build-path' procedure
-   will be applied to the list to obtain a relative path for the
-   directory (and the relatie path is combined with the plt directory
-   path to ge a complete path).
-
-   The 'dir symbol and list are extracted from the archive using
-   MzScheme's `read' (and the result is *not* `eval'uated).
-
- * The symbol 'file, a list, a number, an asterisk, and the file
-   data. The list specifies the file's relative path, just as for
-   directories. The number indicates the size of the file to be
-   unpacked in bytes. The asterisk indicates the start of the file
-   data; the next n bytes are written to the file, where n is the
-   specified size of the file.
-
-   The symbol, list, and number are all extracted from the archive
-   using MzScheme's `read' (and the result is *not* `eval'uated).
-   After the number is read, input characters are discarded until
-   an asterisk is found. The file data must follow this asterisk
-   immediately.
-
- * The symbol 'file-replace is treated like 'file, but if the file
-   exists on disk already, the file in the archive replaces the file
-   on disk.
-
- Making .plt archives
- --------------------
-
-mzc supports the creation of simple .plt files (see the mzc manual for
-details) but the setup collection's _pack.ss_ library provides more
-general functions to help make .plt archives:
-
-> (pack dest name paths collections [filter encode? file-mode plt-relative? requires conflicts])
-
-  Creates the .plt file specified by the pathname `dest', using the
-  string `name' as the name reported to Setup PLT as the archive's
-  description, and `collections' as the list of collection paths (to
-  be compiled) returned by the unpacking unit. The `paths' argument
-  must be a list of relative paths for directories and files; the
-  contents of these files and directories will be packed into the
-  archive.
-
-  The `filter' procedure is called with the relative path of each
-  candidate for packing. If it returns #f for some path, then that
-  file or directory is omitted from the archive. If it returns 'file
-  or 'file-replace for a file, the file is packed with that mode,
-  rather than the default mode. The default `filter' is `std-filter'
-  (defined below).
-  
-  If `encode?' is #f, then the output archive is in raw form, and
-  still must be gzipped and mime-encoded (in that order). The default
-  value is #t.
-
-  The `file-mode' argument must be 'file or 'file-replace, indicating
-  the default mode for a file in the archive. The default value is
-  'file.
-
-  If `plt-relative?', the archive's files and directores are to be
-  unpacked relative to the plt installation directory.
-
-  The `requires' argument should have the shape
-      (list (list <coll-path> <version>) ...)
-  where each <coll-path> is a non-empty list of relative-path strings,
-  and each <version> is a (possiblyempty) list of exact integers. The
-  indicated collections must be installed at unpacking time, with
-  version sequences that match as much of the version sequence
-  specified n the corresponding <version>. A collection's version is
-  inidcated by the `version' field of it's info.ss file.
-
-  The `conflicts' argument should have the shape
-       (list <coll-path> ...)
-  where each <coll-path> is a non-empty list of relative-path
-  strings. The inidicated collections must *not* be installed at
-  unpacking time.
-
-> (std-filter p) - returns #t unless `p' matches one of the following
-  regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".
-
-> (mztar path output filter file-mode) - called by `pack' to write one
-   directory/file `path' to the output port `output' using the filter
-   procedure `filter' (see `pack' for a description of `filter').  The
-   `file-mode' argument specifies the default mode for packing a file,
-   either 'file or 'file-replace.
-
- Unpacking .plt archives
- -----------------------
-
- The _plt-installer.ss_ library in the setup collection defines two
- procedures:
-
-> (run-installer filename) - run the .plt installer on the .plt file in
-  `filename' and show the output in a window.
-
-> (on-installer-run thunk) - sets the on-installer-run thunk to thunk. The
-on-installer-run thunk is run after a .plt file is installed.
-
-> (on-installer-run) - returns the on-installer-run thunk to thunk. The
-on-installer-run thunk is run after a .plt file is installed.
-
- The _plt-installer-unit.ss_ library in the setup collection returns a unit/sig
- that imports mred^ and exports setup:plt-installer^. The signature
- setup:plt-installer^ has two names: run-installer and on-installer-run, as
- above.
-
- The _plt-installer-sig.ss_ library defines the setup:plt-installer^
- signature, which has two names: run-installer and on-installer-run.
 
  Setup PLT as a Unit
  -------------------
@@ -366,15 +170,204 @@ The _getinfo.ss_ module defines the following function:
    result of the thunk in that case. If the name is not defined and no
    thunk is provided, then an exception is raised.
 
-The _info.ss syntax_
-====================
 
-The format of the "info.ss" file is documented in the mzc manual. In
-general, the format is
+_.plt_ Archive Internals
+==========================================================
 
-  (module info (lib "infotab.ss" "setup")
-     (define <identifier> <info-expr>)
-     ...)
+NOTE: mzc can be used to create .plt files; see the mzc manual for
+details. The internals of .plt archive files should be of little
+interest to most users.
 
-where <info-expr> is a highly restructed subset of Scheme expressions.
-See the mzc manual for more information.
+ Unpacking .plt Distribution Archives
+ ------------------------------------
+
+The extension ".plt" is not required for a distribution archive; this
+convention merely helps users identify the purpose of a distribution
+file.
+
+The raw format of a distribution file is described below.  This format
+is uncompressed and sensitive to communication modes (text
+vs. binary), so the distribution format is derived from the raw format
+by first compressing the file using gzip, then encoding the gzipped
+file with the MIME base64 standard (which relies only the characters
+A-Z, a-z, 0-9, +, /, and =; all other characters are ignored when a
+base64-encoded file is decoded).
+
+The raw format is
+
+ * "PLT" are the first three characters.
+
+ * An like procedure that takes a symbol and a failure thunk and
+   returns information about archive for recognized symbols. The
+   information symbols are:
+
+     + 'name - a human-readable string describing the archive's
+       contents. This name is used only for printing messages to the
+       user during unpacking.
+
+     + 'unpacker - a symbol indicating the expected unpacking
+       environment. Currently, the only allowed value is 'mzscheme.
+
+     + 'requires - collections required to be installed before
+       unpacking the archive, which associated versions; see the
+       documentation of `pack' for details.
+
+     + 'conflicts - collections required *not* to be installed before
+       unpacking the archive
+
+     + 'plt-relative? - a boolean; if true, then the archive's content
+       should be unpacked relative to the plt installation directory.
+
+   The procedure is extracted from the archive using MzScheme's `read'
+   and `eval' procedures (in a fresh namespace).
+
+ * An unsigned unit that drives the unpacking process. The unit accepts two
+   imports: a path string for the plt directory and an `unmztar'
+   procedure. The remainder of the unpacking process consists of invoking
+   this unit. It is expected that the unit will call `unmztar' procedure to
+   unpack directories and files that are defined in the input archive after
+   this unit. The result of invoking the unit must be a list of collection
+   paths (where each collection path is a list of strings); once the
+   archive is unpacked, Setup PLT will compile and setup the specified
+   collections, as if it was invoked with the "-c" option, so the
+   "compiled" directories will be deleted.
+
+   The `unmztar' procedure takes one argument: a filter
+   procedure. The filter procedure is called for each directory and
+   file to be unpacked. It is called with three arguments:
+
+      + 'dir, 'file, 'file-replace - indicates whether the item to be
+        unpacked is a directory, a file, or a file to be replaced;
+
+      + a relative path string - the pathname of the directory or file
+        to be unpacked, relative to the plt directory; and
+
+      + a path string for the plt directory.
+
+   If the filter procedure returns #f for a directory or file, the
+   directory or file is not unpacked. If the filter procedure returns
+   #t and the directory or file for 'dir or 'file already exists, it
+   is not created. (The file for 'file-replace need not exist
+   already.)
+
+   When a directory is unpacked, intermediate directories are created
+   as necessary to create the specified directory. When a file is
+   unpacked, the directory must already exist.
+
+   The unit is extracted from the archive using MzScheme's `read'
+   and `eval' procedures.
+
+Assuming that the unpacking unit calls the `unmztar' procedure, the
+archive should continue with unpackables. Unpackables are extracted
+until the end-of-file is found (as indicated by an `=' in the
+base64-encoded input archive).
+
+An unpackable is one of the following:
+
+ * The symbol 'dir followed by a list. The `build-path' procedure
+   will be applied to the list to obtain a relative path for the
+   directory (and the relative path is combined with the plt directory
+   path to get a complete path).
+
+   The 'dir symbol and list are extracted from the archive using
+   MzScheme's `read' (and the result is *not* `eval'uated).
+
+ * The symbol 'file, a list, a number, an asterisk, and the file
+   data. The list specifies the file's relative path, just as for
+   directories. The number indicates the size of the file to be
+   unpacked in bytes. The asterisk indicates the start of the file
+   data; the next n bytes are written to the file, where n is the
+   specified size of the file.
+
+   The symbol, list, and number are all extracted from the archive
+   using MzScheme's `read' (and the result is *not* `eval'uated).
+   After the number is read, input characters are discarded until
+   an asterisk is found. The file data must follow this asterisk
+   immediately.
+
+ * The symbol 'file-replace is treated like 'file, but if the file
+   exists on disk already, the file in the archive replaces the file
+   on disk.
+
+ Making .plt archives
+ --------------------
+
+mzc supports the creation of simple .plt files (see the mzc manual for
+details) but the setup collection's _pack.ss_ library provides more
+general functions to help make .plt archives:
+
+> (pack dest name paths collections [filter encode? file-mode plt-relative? requires conflicts])
+
+  Creates the .plt file specified by the pathname `dest', using the
+  string `name' as the name reported to Setup PLT as the archive's
+  description, and `collections' as the list of collection paths (to
+  be compiled) returned by the unpacking unit. The `paths' argument
+  must be a list of relative paths for directories and files; the
+  contents of these files and directories will be packed into the
+  archive.
+
+  The `filter' procedure is called with the relative path of each
+  candidate for packing. If it returns #f for some path, then that
+  file or directory is omitted from the archive. If it returns 'file
+  or 'file-replace for a file, the file is packed with that mode,
+  rather than the default mode. The default `filter' is `std-filter'
+  (defined below).
+  
+  If `encode?' is #f, then the output archive is in raw form, and
+  still must be gzipped and mime-encoded (in that order). The default
+  value is #t.
+
+  The `file-mode' argument must be 'file or 'file-replace, indicating
+  the default mode for a file in the archive. The default value is
+  'file.
+
+  If `plt-relative?', the archive's files and directories are to be
+  unpacked relative to the plt installation directory.
+
+  The `requires' argument should have the shape
+      (list (list <coll-path> <version>) ...)
+  where each <coll-path> is a non-empty list of relative-path strings,
+  and each <version> is a (possibly empty) list of exact integers. The
+  indicated collections must be installed at unpacking time, with
+  version sequences that match as much of the version sequence
+  specified in the corresponding <version>. A collection's version is
+  indicated by the `version' field of it's info.ss file.
+
+  The `conflicts' argument should have the shape
+       (list <coll-path> ...)
+  where each <coll-path> is a non-empty list of relative-path
+  strings. The indicated collections must *not* be installed at
+  unpacking time.
+
+> (std-filter p) - returns #t unless `p' matches one of the following
+  regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".
+
+> (mztar path output filter file-mode) - called by `pack' to write one
+   directory/file `path' to the output port `output' using the filter
+   procedure `filter' (see `pack' for a description of `filter').  The
+   `file-mode' argument specifies the default mode for packing a file,
+   either 'file or 'file-replace.
+
+ Unpacking .plt archives
+ -----------------------
+
+ The _plt-installer.ss_ library in the setup collection defines two
+ procedures:
+
+> (run-installer filename) - run the .plt installer on the .plt file in
+  `filename' and show the output in a window.
+
+> (on-installer-run thunk) - sets the on-installer-run thunk to
+  `thunk'. The on-installer-run thunk is run after a .plt file is
+  installed.
+
+> (on-installer-run) - returns the on-installer-run thunk. The
+  on-installer-run thunk is run after a .plt file is installed.
+
+ The _plt-installer-unit.ss_ library in the setup collection returns a unit/sig
+ that imports mred^ and exports setup:plt-installer^. The signature
+ setup:plt-installer^ has two names: run-installer and on-installer-run, as
+ above.
+
+ The _plt-installer-sig.ss_ library defines the setup:plt-installer^
+ signature, which has two names: run-installer and on-installer-run.

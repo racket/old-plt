@@ -7,9 +7,9 @@ graphing functions on the Cartesian
 plane (between -5 and 5 in both directions):
 graphics functions:
 <menu>
-<li><code>{(idx graph-fun)}</code> : (number -> number) symbol -> true; <br>
+<li><code>{(idx graph-fun)}</code> : (number -> number) symbol -> Plot; <br>
 draws a function in bulletized form with a given color
-<li><code>{(idx graph-line)}</code> : (number -> number) symbol -> true (no arguments); <br>
+<li><code>{(idx graph-line)}</code> : (number -> number) symbol -> Plot (no arguments); <br>
 draws a function in small line increments with a given color
 </menu>
 The legal color symbols are:

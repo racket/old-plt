@@ -284,9 +284,7 @@
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
-	       cleanup-transparent-io
-	       clear-undos
-	       transparent-snip set-caret-owner
+	       clear-undos set-caret-owner
 	       clear-previous-expr-positions
 	       get-end-position
 	       set-clickback
@@ -308,29 +306,9 @@
 	       scroll-to-position
 	       get-top-level-window)
       (rename
-       [super-init-transparent-io init-transparent-io]
        [super-initialize-console initialize-console]
-       [super-reset-console reset-console]
-       [super-init-transparent-io-do-work init-transparent-io-do-work])
-      
-      (override
-	[init-transparent-io
-	 (lambda (grab-focus?)
-	   (begin-edit-sequence)
-	   (super-init-transparent-io grab-focus?)
-	   (when  (eq? (current-thread) evaluation-thread)
-	     (set-caret-owner transparent-snip 'display))
-	   (end-edit-sequence))]
-	[init-transparent-io-do-work
-	 (lambda (grab-focus?)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (let ([c-locked? (locked?)])
-		 (begin-edit-sequence)
-		 (lock #f)
-		 (super-init-transparent-io-do-work grab-focus?)
-		 (lock c-locked?)
-		 (end-edit-sequence)))))])
+       [super-reset-console reset-console])
+
       (public
 	[report-exception-error
 	 (lambda (exn)
@@ -377,6 +355,7 @@
 	       (send file end-edit-sequence)
 	       (send (send file get-canvas) set-focus))))]
 	[on-set-media void])
+
       (override
 	[get-prompt (lambda () "> ")])
       (public
@@ -478,7 +457,7 @@
 	       (dynamic-wind
 		(lambda () (lock #f))
 		(lambda () (for-each display-result anss))
-		(lambda () (end-edit-sequence))))))]
+		(lambda () (lock c-locked?))))))]
 	[do-many-buffer-evals
 	 (lambda (edit start end)
 	   (unless in-evaluation?
@@ -701,8 +680,112 @@
 		   (send (get-top-level-window) not-running)))
 	     (semaphore-post running-semaphore))])
 
-      (public
-	[MAX-CACHE-TIME 4000]
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;					     ;;;
+	;;;                  I/O                     ;;;
+	;;;					     ;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	(inherit get-admin set-prompt-position get-canvases find-snip)
+	(public
+	  [transparent-edit #f]
+	  [transparent-snip #f]
+	  [this-in-char-ready? (lambda () #t)]
+	  [cleanup-transparent-io
+	   (lambda ()
+	     (when transparent-edit
+	       (set! saved-newline? #f) 
+	       (send transparent-edit shutdown)
+	       (set-position (last-position))
+	       (set-caret-owner #f)
+	       (let ([a (get-admin)])
+		 (when a
+		   (send a grab-caret)))
+	       (send transparent-edit lock #t)
+	       (set! transparent-edit #f)))]
+
+	[init-transparent-io
+	 (lambda (grab-focus?)
+	   (begin-edit-sequence)
+	   (if transparent-edit
+	       (when grab-focus?
+		 (let ([a (send transparent-edit get-admin)])
+		   (when a
+		     (send a grab-caret))))
+	       (init-transparent-io-do-work grab-focus?))
+	   (when  (eq? (current-thread) evaluation-thread)
+	     (set-caret-owner transparent-snip 'display))
+	   (end-edit-sequence))]
+
+
+	[init-transparent-io-do-work
+	 (lambda (grab-focus?)
+	   (with-parameterization drscheme:init:system-parameterization
+	     (lambda ()
+	       (let ([c-locked? (locked?)])
+		 (begin-edit-sequence)
+		 (lock #f)
+		 (let ([starting-at-prompt-mode? prompt-mode?])
+		   (send transparent-edit end-edit-sequence)  ;; wrong thing. Need to save the transparent edits that are in edit-sequences and end the sequences later.
+		   (set! transparent-edit (make-object transparent-io-edit%))
+		   (send transparent-edit begin-edit-sequence)
+		   
+		   ;; ensure that there is a newline before the snip is inserted
+		   (unless (member 'hard-newline
+				   (send (find-snip (last-position) 'before) get-flags))
+		     (insert #\newline (last-position) (last-position)))
+		   
+		   (when starting-at-prompt-mode?
+		     (set-prompt-mode #f))
+		   
+		   (unless transparent-edit
+		     (printf "transparent-edit is ~a!" transparent-edit))
+		   (send transparent-edit auto-wrap #t)
+		   (let ([snip (make-object mred:string-snip% transparent-edit)])
+		     (set! transparent-snip snip)
+		     (insert snip (last-position) (last-position))
+		     (insert (string #\newline) (last-position) (last-position))
+		     (for-each (lambda (c) (send c add-wide-snip snip))
+			       (get-canvases)))
+		   (when grab-focus?
+		     (let ([a (send transparent-edit get-admin)])
+		       (when a
+			 (send a grab-caret))))
+		   (when starting-at-prompt-mode?
+		     (insert-prompt)))
+		 (set-prompt-position (last-position))
+		 (lock c-locked?)
+		 (end-edit-sequence)))))]
+
+	  [this-in-read
+	   (lambda ()
+	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
+	       (mred:queue-callback
+		(lambda ()
+		  (init-transparent-io #t)
+		  (send transparent-edit fetch-char))
+		#f)))])
+
+
+	(public
+	  [output-delta (make-object mred:style-delta%
+			  'change-weight
+			  'bold)]
+	  [result-delta (make-object mred:style-delta%
+			  'change-weight
+			  'bold)]
+	  [error-delta (make-object mred:style-delta%
+			 'change-style
+			 'slant)])
+
+	(sequence
+	  (send error-delta set-delta-foreground "RED")
+	  (send result-delta set-delta-foreground (make-object mred:color% 0 0 175))
+	  (send output-delta set-delta-foreground (make-object mred:color% 150 0 150)))
+
+	(public
+	  [MAX-CACHE-TIME 4000]
 	  [MIN-CACHE-TIME 100]
 	  [CACHE-TIME MIN-CACHE-TIME]
 	  [TIME-FACTOR 10]
@@ -753,17 +836,6 @@
 	  
 	  
 	  [saved-newline? #f]
-
-
-	  [output-delta (make-object mred:style-delta%
-				     'change-weight
-				     'bold)]
-	  [result-delta (make-object mred:style-delta%
-				     'change-weight
-				     'bold)]
-	  [error-delta (make-object mred:style-delta%
-				    'change-style
-				    'slant)]
 
 	  [this-result-write 
 	   (lambda (s)
@@ -1148,16 +1220,15 @@
 	 (lambda ()
 	   (super-initialize-console)
 	   
-	   (let ([dd output-delta])
-	     (insert-delta "Welcome to " WELCOME-DELTA)
-	     (let-values ([(before after)
-			   (insert-delta "DrScheme" CLICK-DELTA)])
-	       (insert-delta (format ", version ~a.~n" (fw:version:version))
-			     WELCOME-DELTA)
-	       (set-clickback before after 
-			      (lambda args (drscheme:app:about-drscheme))
-			      CLICK-DELTA)))
-
+	   (insert-delta "Welcome to " WELCOME-DELTA)
+	   (let-values ([(before after)
+			 (insert-delta "DrScheme" CLICK-DELTA)])
+	     (insert-delta (format ", version ~a.~n" (fw:version:version))
+			   WELCOME-DELTA)
+	     (set-clickback before after 
+			    (lambda args (drscheme:app:about-drscheme))
+			    CLICK-DELTA))
+	 
 	   (if (or (fw:preferences:get 'drscheme:repl-always-active)
 		   (not (send (ivar (get-top-level-window) interactions-edit) get-filename)))
 	       (reset-console)
@@ -1184,7 +1255,7 @@
 		 last-position get-start-position get-end-position
 		 get-text get-snip-position
 		 get-character find-snip find-string
-		 erase get-canvas get-canvases
+		 erase
 		 invalidate-bitmap-cache
 		 get-extent get-style-list)
 	(rename [super-on-local-char on-local-char]
@@ -1198,20 +1269,6 @@
 	  [orig-stderr (current-error-port)])
 	(public
 	  [normal-delta #f])
-	
-	(sequence
-	  (let ([mult (send error-delta get-foreground-mult)]
-		[add (send error-delta get-foreground-add)])
-	    (send mult set 0 0 0)
-	    (send add set 255 0 0))
-	  (let ([mult (send result-delta get-foreground-mult)]
-		[add (send result-delta get-foreground-add)])
-	    (send mult set 0 0 0)
-	    (send add set 0 0 175))
-	  (let ([mult (send output-delta get-foreground-mult)]
-		[add (send output-delta get-foreground-add)])
-	    (send mult set 0 0 0)
-	    (send add set 150 0 150)))
 	
 	(rename [super-on-insert on-insert]
 		[super-after-insert after-insert]
@@ -1372,71 +1429,7 @@
 		 prompt-position
 		 0))]
 	  [auto-save? #f])
-	
-	(public
-	  [io-edit% transparent-io-edit%]
-	  [transparent-edit #f]
-	  [transparent-snip #f]
-	  [this-in-char-ready? (lambda () #t)]
-	  [cleanup-transparent-io
-	   (lambda ()
-	     (when transparent-edit
-	       (set! saved-newline? #f) 
-	       (send transparent-edit shutdown)
-	       (set-position (last-position))
-	       (set-caret-owner #f)
-	       (let ([a (get-admin)])
-		 (when a
-		   (send a grab-caret)))
-	       (send transparent-edit lock #t)
-	       (set! transparent-edit #f)))]
-	  [init-transparent-io-do-work
-	   (lambda (grab-focus?)
-	      (let ([starting-at-prompt-mode? prompt-mode?])
-	       (send transparent-edit end-edit-sequence)  ;; wrong thing. Need to save the transparent edits that are in edit-sequences and end the sequences later.
-	       (set! transparent-edit (make-object io-edit%))
-	       (send transparent-edit begin-edit-sequence)
-	       
-	       ;; ensure that there is a newline before the snip is inserted
-	       (unless (member 'hard-newline
-			       (send (find-snip (last-position) 'before) get-flags))
-		 (insert #\newline (last-position) (last-position)))
-	       
-	       (when starting-at-prompt-mode?
-		 (set! prompt-mode? #f))
-	       
-	       (unless transparent-edit
-		 (printf "transparent-edit is ~a!" transparent-edit))
-	       (send transparent-edit auto-wrap #t)
-	       (let ([snip (make-object mred:string-snip% transparent-edit)])
-		 (set! transparent-snip snip)
-		 (insert snip (last-position) (last-position))
-		 (insert (string #\newline) (last-position) (last-position))
-		 (for-each (lambda (c) (send c add-wide-snip snip))
-			   (get-canvases)))
-	       (when grab-focus?
-		 (let ([a (send transparent-edit get-admin)])
-		   (when a
-		     (send a grab-caret))))
-	       (when starting-at-prompt-mode?
-		 (insert-prompt)))
-	     (set! prompt-position (last-position)))]
-	  [init-transparent-io
-	   (lambda (grab-focus?)
-	     (if transparent-edit
-		 (when grab-focus?
-		   (let ([a (send transparent-edit get-admin)])
-		     (when a
-		       (send a grab-caret))))
-		 (init-transparent-io-do-work grab-focus?)))]
-	  [this-in-read
-	   (lambda ()
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (init-transparent-io #t)
-		  (send transparent-edit fetch-char))
-		#f)))])
+
 	(public
 	  [previous-expr-pos -1]
 	  [previous-expr-positions null]
@@ -1537,38 +1530,6 @@
 	   (lambda ()
 	     (insert-prompt))])
 	
-	(public
-	  [eval-str mzlib:string:eval-string]
-	  [display-result
-	   (lambda (v)
-	     (unless (void? v)
-	       (parameterize 
-		   ([mzlib:pretty-print:pretty-print-size-hook
-		     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-		    [mzlib:pretty-print:pretty-print-print-hook
-		     (lambda (x _ port) (this-result-write x))])
-		 (mzlib:pretty-print:pretty-print v this-result))))]
-	  [eval-and-display
-	   (lambda (str)
-	     (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
-	       (call-with-values 
-		(lambda ()
-		  (mzlib:thread:dynamic-enable-break
-		   (lambda ()
-		     (eval-str str))))
-		(lambda v
-		  (let ([v
-			 (let loop ([v v])
-			   (cond
-			    [(null? v) null]
-			    [(void? (car v)) (loop (cdr v))]
-			    [else (cons (car v) (loop (cdr v)))]))])
-		    (if (null? v)
-			(void)
-			(for-each (lambda (x)
-				    (display-result x))
-				  v)))))))])
-	
 	(private
 	  [only-spaces-after
 	   (lambda (pos)
@@ -1628,7 +1589,6 @@
 		    (if balanced?
 			(begin
 			  (delete start last)
-			  (cleanup-transparent-io)
 			  (do-save-and-eval prompt-position start))
 			(super-on-local-char key)))]
 		 [(< start prompt-position)
@@ -1647,7 +1607,6 @@
 	   (lambda ()
 	     (set! prompt-mode? #t)
 	     (begin-edit-sequence)
-	     (flush-console-output)
 	     (let* ([last (last-position)]
 		    [start-selection (get-start-position)]
 		    [end-selection (get-end-position)]
@@ -1664,7 +1623,7 @@
 	(public
 	  [reset-console
 	   (lambda ()
-	     (cleanup-transparent-io))])
+	     (void))])
 	(public
 	  [ready-non-prompt
 	   (lambda ()
@@ -1681,9 +1640,7 @@
 	   (lambda ()
 	     #t)])
 	(sequence
-	  (apply super-init args))
-	(sequence
-	  (set-display/write-handlers)))))
+	  (apply super-init args)))))
   
   (define make-transparent-io-edit%
     (lambda (super%)

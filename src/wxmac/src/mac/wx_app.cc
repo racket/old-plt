@@ -672,7 +672,6 @@ void wxApp::doMacKeyUpDown(Bool down)
       key = WXK_RIGHT;
       break;
     case 0x24:
-    case 0x4c:
       key = WXK_RETURN;
       break;
     case 0x30:
@@ -695,7 +694,43 @@ void wxApp::doMacKeyUpDown(Bool down)
       break;     
     case 0x79:
       key = WXK_NEXT;
-      break;     
+      break;
+    case 0x45:
+      key = WXK_ADD;
+      break;
+    case 78:
+      key = WXK_SUBTRACT;
+      break;
+    case 0x43:
+      key = WXK_MULTIPLY;
+      break;
+    case 0x4B:
+      key = WXK_DIVIDE;
+      break;
+    case 71:
+      key = WXK_SEPARATOR;
+      break;
+    case 65:
+      key = WXK_DECIMAL;
+      break;
+    case 76:
+      key = 3; /* numpad enter */
+      break;
+    case 82:
+    case 83:
+    case 84:
+    case 85:
+    case 87:
+    case 88:
+    case 89:
+      key = WXK_NUMPAD0 + (key - 82);
+      break;
+    case 91:
+      key = WXK_NUMPAD8;
+      break;
+    case 92:
+      key = WXK_NUMPAD9;
+      break;
     default:
       {
 	char cstr[3];

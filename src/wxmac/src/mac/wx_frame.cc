@@ -556,11 +556,10 @@ void wxFrame::GetSizeLimits(Rect *r)
 void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
   Rect theStrucRect;
-  Rect theContRect;
   int mbh;
 
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
-  GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
+
   cWindowX = theStrucRect.left;
   
   mbh = wxMenuBarHeight;

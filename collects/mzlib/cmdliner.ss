@@ -97,20 +97,23 @@
 		     (lambda (f)
 		       (let ([sp (open-output-string)])
 			 (for-each
-			  (lambda (line)
-			    (let loop ([flags (car line)])
-			      (let ([flag (car flags)])
-				(fprintf sp " ~a" flag)
-				(for-each
-				 (lambda (arg) (fprintf sp " <~a>" arg))
-				 (cdaddr line)))
-			      (unless (null? (cdr flags))
-				      (fprintf sp ",")
-				      (loop (cdr flags))))
-			    (fprintf sp " : ~a~n" (caaddr line)))
+			  (lambda (set)
+			    (for-each
+			     (lambda (line)
+			       (let loop ([flags (car line)])
+				 (let ([flag (car flags)])
+				   (fprintf sp " ~a" flag)
+				   (for-each
+				    (lambda (arg) (fprintf sp " <~a>" arg))
+				    (cdaddr line)))
+				 (unless (null? (cdr flags))
+					 (fprintf sp ",")
+					 (loop (cdr flags))))
+			       (fprintf sp " : ~a~n" (caaddr line)))
+			     (cdr set)))
 			  table) ; the original table
 			 (fprintf sp " --help, -h : Show this help~n")
-			 (help (get-output-string))))
+			 (help (get-output-string sp))))
 		     (list "Help")))
 	      (map
 	       (lambda (spec)

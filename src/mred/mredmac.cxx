@@ -269,7 +269,6 @@ static int WeAreFront()
 #endif
 
 static MrEdContext *cont_event_context;
-static short cont_event_context_modifiers;
 static WindowPtr cont_event_context_window;
 static Point last_mouse;
 static WindowPtr last_front_window;
@@ -440,8 +439,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	    if (!check_only && (part != inMenuBar)) {
 	      cont_event_context = foundc;
 	      cont_event_context_window = window;
-	      cont_event_context_modifiers = e->modifiers;
-	      cont_event_context_modifiers |= btnState;
 	      kill_context = 0;
 	    } else
 	      cont_event_context = NULL;
@@ -635,7 +632,20 @@ int MrEdGetNextEvent(int check_only, int current_only,
         event->when = TickCount();
         if (cont_event_context && StillDown()) {
 	  /* Dragging... */
-	  event->modifiers = cont_event_context_modifiers;
+	  KeyMap km;
+	  int mods = btnState;
+	  
+	  GetKeys(km);
+	  if (km[1] & 32768)
+	    mods |= cmdKey;
+	  if (km[1] & 1)
+	    mods |= shiftKey;
+	  if (km[1] & 4)
+	    mods |= optionKey;
+	  if (km[1] & 8)
+	    mods |= controlKey;
+	    
+	  event->modifiers = mods;
 	  event->message = 1;
 #ifdef RECORD_HISTORY
 	  fprintf(history, "drag\n");

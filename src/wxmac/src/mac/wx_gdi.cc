@@ -751,7 +751,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   selectedInto = NULL;
   WXGC_IGNORE(selectedInto);
   Rect bounds = {0, 0, height, width};
-  // Looks like we need to build a offscreen GWorld to draw the Picture in
+  // Build a offscreen GWorld to draw the Picture in
   GDHandle savegw;
   CGrafPtr saveport;
   GetGWorld(&saveport, &savegw);
@@ -835,7 +835,6 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 	if (!flags)
 	  flags = wxsGetImageType(name);
 
-#if USE_XPM_IN_MAC
 	if (flags & wxBITMAP_TYPE_XPM) {
 		XImage	*ximage;
 		XpmAttributes xpmAttr;
@@ -859,8 +858,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 		}
 		return ok;
 	}
-#endif
-#if USE_IMAGE_LOADING_IN_MAC
+
 	if (flags & wxBITMAP_TYPE_GIF) {
 		ok = wxLoadGifIntoBitmap(name, this, &colourmap);
 	} else if (flags & wxBITMAP_TYPE_PICT) {
@@ -874,38 +872,8 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 	} else {
 		ok = FALSE;
 	}
-#else
-	FILE *fp = fopen(name,"rb");
-	if (fp) {
-		fseek(fp, 0, SEEK_END);
-		int fsize = ftell(fp) - 512;
-		fseek(fp, 512, SEEK_SET);	// 0 didn't work
-		PicHandle ph = (PicHandle)NewHandle(fsize);
-		CheckMemOK(ph);
-		int rsize = fread((char *)*ph, 1, fsize, fp);
-		width = (*ph)->picFrame.right;
-		height = (*ph)->picFrame.bottom;
-		depth = wxDisplayDepth();
-		GDHandle savegd;
-		CGrafPtr saveport;
-		GetGWorld(&saveport, &savegd);
-		QDErr err;
-		GWorldPtr	newGWorld;
-		Rect	bounds = {0, 0, height, width};
-		err = NewGWorld(&x_pixmap, 0, &bounds, NULL, NULL, noNewDevice);
-		if (!err) {
-		  SetGWorld(x_pixmap, 0);
-		  DrawPicture(ph, &bounds);
-		  DisposeHandle((Handle)ph);
-		  SetGWorld(saveport, savegd);
-		  ok = TRUE;
-		} else {
-		  ok = FALSE;
-        }
-		fclose(fp);
-	} else
-		ok = FALSE;
-#endif
+
+
 	return ok;
 }
 

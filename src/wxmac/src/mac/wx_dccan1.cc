@@ -165,7 +165,9 @@ void wxCanvasDC::EndDrawing(void)
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
 //-----------------------------------------------------------------------------
 {
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	if (!Ok()) return;
+ 
+        CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if ((GrafPtr)theMacGrafPort != qd.thePort) 
 		::SetPort((GrafPtr)theMacGrafPort);
 
@@ -186,7 +188,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 void wxCanvasDC::SetCanvasClipping(void)
 //-----------------------------------------------------------------------------
 {
-	if (current_reg) ::DisposeRgn(current_reg);
+        if (current_reg) ::DisposeRgn(current_reg);
 	if (clipping || onpaint_reg) {
 		current_reg = ::NewRgn();
 		CheckMemOK(current_reg);
@@ -200,8 +202,9 @@ void wxCanvasDC::SetCanvasClipping(void)
 	else if (onpaint_reg)
 		::CopyRgn(onpaint_reg, current_reg);
 
-
-	wxObject* theCurrentUser = cMacDC->currentUser();
+	if (!Ok()) return;
+ 
+    	wxObject* theCurrentUser = cMacDC->currentUser();
 	if (theCurrentUser == this)
 	{ // must update platfrom
 		GrafPtr theOldPort = qd.thePort;
@@ -359,9 +362,11 @@ void wxCanvasDC::InstallLogicalFunction(int function)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetBackground(wxColour* color)
 {
-	current_background_color = *color;
+    current_background_color = *color;
 
-	if (cMacDC->currentUser() == this
+    if (Ok()) {
+ 
+        if (cMacDC->currentUser() == this
 		&& (cMacCurrentTool == kNoTool))
 	{ // must update platform to kNoTool
 		GrafPtr theOldPort = qd.thePort;
@@ -372,8 +377,9 @@ void wxCanvasDC::SetBackground(wxColour* color)
 
 		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
 	}
+    }
 
-	ToolChanged(kNoTool);
+    ToolChanged(kNoTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -508,7 +514,9 @@ void wxCanvasDC::wxMacSetClip(void)
 
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 {
-	SetCurrentDC();
+	if (!Ok()) return;
+ 
+    SetCurrentDC();
 
 	// mflatt: shortcut
 	if (whichTool == cMacCurrentTool)

@@ -78,7 +78,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	// This bitmap is selected into a different memoryDC
     return;
   }
-
+  
   if (selected_pixmap) {
      if (!read_only) {
 	selected_pixmap->selectedInto = NULL;
@@ -112,7 +112,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   pixmapHeight = bitmap->GetHeight();
   if (bitmap->Ok()) {
     gworldH = bitmap->x_pixmap;
-    // gworldH = MacCreateGWorld(pixmapWidth, pixmapHeight);
     if (gworldH) {
 	pixmap = ::GetGWorldPixMap(gworldH);
 	
@@ -136,14 +135,6 @@ wxBitmap* wxMemoryDC::GetObject()
 
 GWorldPtr wxMemoryDC::MacCreateGWorld(int width, int height)
 {
-	QDErr err;
-	GWorldPtr	newGWorld;
-	Rect	bounds = {0, 0, height, width};
-
-	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
-	if (err == noErr)
-		return newGWorld;
-	else
-		return NULL;
+	return NULL;
 }
 

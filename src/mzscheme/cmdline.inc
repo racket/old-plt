@@ -466,11 +466,13 @@ static int run_from_cmd_line(int argc, char *argv[],
  show_help:
   PRINTF("%s"
 # ifndef MZSCHEME_CMD_LINE
+#  ifdef wx_x
 	 " X switches (must precede all other flags):\n"
 	 "  -display <display>, -geometry <geometry>, -fn <font>, -font <font>,\n"
          "  -bg <color>, -background <color>, -fg <color>, -foreground <color>,\n"
 	 "  -iconic, -name <name>, -rv, -reverse, +rv, -selectionTimeout <timeout>,\n"
 	 "  -synchronous, -title <title>, -xnllanguage <language>, -xrm <file>\n"
+#  endif
 # endif
 	 " Startup file and expression switches:\n"
 	 "  -e <expr> : Evaluates <expr> after " PROGRAM " starts.\n"

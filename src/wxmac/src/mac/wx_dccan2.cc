@@ -39,7 +39,9 @@ extern CGrafPtr wxMainColormap;
 void wxCanvasDC::Clear(void)
 //-----------------------------------------------------------------------------
 {
-	SetCurrentDC();
+	if (!Ok()) return;
+ 
+        SetCurrentDC();
 	wxMacSetCurrentTool(kNoTool);
 
 	int w, h;
@@ -96,7 +98,9 @@ void wxCanvasDC::FloodFill(float x, float y, wxColour *col, int style)
 Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
 //=============================================================================
 {
-	RGBColor rgb;
+	if (!Ok()) return FALSE;
+ 
+        RGBColor rgb;
 
 	SetCurrentDC();
 
@@ -110,7 +114,9 @@ Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
 void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 //=============================================================================
 {
-	RGBColor rgb;
+	if (!Ok()) return;
+ 
+        RGBColor rgb;
 
 	SetCurrentDC();
 
@@ -137,6 +143,8 @@ void wxCanvasDC::IntDrawLine(int x1, int y1, int x2, int y2)
 void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 //-----------------------------------------------------------------------------
 {
+    if (!Ok()) return;
+ 
     if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
       return;
 
@@ -207,6 +215,8 @@ void wxCanvasDC::PaintStipple(wxRegion *r)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 {
+    if (!Ok()) return;
+ 
     SetCurrentDC();
 
     wxRegion *rgn;
@@ -261,6 +271,8 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 void wxCanvasDC::DrawPoint(float x, float y)
 //-----------------------------------------------------------------------------
 {
+    if (!Ok()) return;
+ 
     if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
       return;
 
@@ -274,7 +286,9 @@ void wxCanvasDC::DrawPoint(float x, float y)
 void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 								float xoffset, float yoffset, int fillStyle)
 {
-	SetCurrentDC();
+	if (!Ok()) return;
+ 
+        SetCurrentDC();
 	if (n <= 0) return;
 
     wxRegion *rgn;
@@ -326,7 +340,9 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 {
-	if (n <= 0) return;
+	if (!Ok()) return;
+ 
+        if (n <= 0) return;
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		SetCurrentDC();
@@ -359,7 +375,9 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
 {
-	if (n <= 0) return;
+	if (!Ok()) return;
+ 
+        if (n <= 0) return;
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		SetCurrentDC();
@@ -393,7 +411,9 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
 void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 //-----------------------------------------------------------------------------
 {
-	SetCurrentDC();
+    if (!Ok()) return;
+ 
+    SetCurrentDC();
 	
     wxRegion *rgn;
     if (rgn = BrushStipple()) {
@@ -427,7 +447,9 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 void wxCanvasDC::DrawRoundedRectangle
 					(float x, float y, float width, float height, float radius)
 {
-	SetCurrentDC();
+    if (!Ok()) return;
+ 
+    SetCurrentDC();
 	
     wxRegion *rgn;
     if (rgn = BrushStipple()) {
@@ -474,7 +496,9 @@ void wxCanvasDC::DrawRoundedRectangle
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 {
-	SetCurrentDC();
+     if (!Ok()) return;
+     
+     SetCurrentDC();
 	
      wxRegion *rgn;
     if (rgn = BrushStipple()) {
@@ -514,6 +538,8 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
                 wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c)
 {
+	if (!Ok() || !source->Ok()) return FALSE;
+
 	// Switch Gworld to this
 	SetGWorld(cMacDC->macGrafPort(), 0);
 	cMacDC->setCurrentUser(NULL); // macDC no longer valid
@@ -532,7 +558,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 	}
 	Bool theResult = FALSE;
 
-	if (pixmap && source->Ok())
+	if (pixmap)
 	{
 		int mode;
 		switch (rop)
@@ -591,7 +617,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 			wxBitmap *source, float xsrc, float ysrc)
 {
-  /* Non-allocating (i.e. no collectable allocation) Blit. Look like
+  /* Non-allocating (i.e. no collectable allocation) Blit. Looks like
      the normal one will work. */
 
   return Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
@@ -599,6 +625,8 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 {
+  if (!Ok()) return;
+
   SetCurrentDC();
 
   if (Colour) {

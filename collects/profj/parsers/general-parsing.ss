@@ -133,6 +133,10 @@
   ;Operators
   (define (bin-operator? token)
     (memq (get-token-name token) `(PIPE OR > < == <= >= != && + - * / & ^ % << >> >>>)))
+  (define (unary-end? token)
+    (memq (get-token-name token) `(++ --)))
+  (define (if-exp? token)
+    (eq? (get-token-name token) '?))
   (define (teaching-unary-operator? token)
     (and (symbol? token) (memq token `(! ~))))
   (define (unary-operator? token)

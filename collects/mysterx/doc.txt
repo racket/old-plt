@@ -43,7 +43,13 @@ _MysterX_
  As of PLT Scheme 200, MysterX is a module.
  Load the MysterX module with 
 
-  (require (library "mysterx.ss" "mysterx"))
+  (require (lib "mysterx.ss" "mysterx"))
+
+ Because some MysterX code relies on the PLT 
+ Scheme class system, you will likely need to
+ run 
+
+  (require (lib "class.ss"))
 
  Using the xml collection
  ------------------------

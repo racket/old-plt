@@ -2369,7 +2369,7 @@
 "(unless stx-only?"
 "(for-each"
 "(lambda(n)"
-"(namespace-variable-binding n(dynamic-require 'mzscheme n)))"
+"(namespace-set-variable-value! n(dynamic-require 'mzscheme n)))"
 " '(car "
 " cdr caar cadr cdar cddr"
 " caaar caadr cadar caddr cdaar cdadr cddar cdddr"

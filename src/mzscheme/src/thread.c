@@ -193,7 +193,7 @@ extern long GC_get_memory_use(void *c);
 extern MZ_DLLIMPORT long GC_get_memory_use();
 #endif
 
-static Scheme_Object *empty_symbol;
+static Scheme_Object *empty_symbol, *initial_symbol;
 
 static Scheme_Object *nested_exn_handler;
 
@@ -494,8 +494,10 @@ void scheme_init_thread(Scheme_Env *env)
   REGISTER_SO(namespace_options);
 
   REGISTER_SO(empty_symbol);
+  REGISTER_SO(initial_symbol);
   
   empty_symbol = scheme_intern_symbol("empty");
+  initial_symbol = scheme_intern_symbol("initial");
 }
 
 static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
@@ -3169,8 +3171,10 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   if (argc) {
     if (SAME_OBJ(argv[0], empty_symbol))
       empty = 1;
+    else if (SAME_OBJ(argv[0], initial_symbol))
+      empty = 0;
     else
-      scheme_wrong_type("make-namespace", "'empty", 0, argc, argv);
+      scheme_wrong_type("make-namespace", "'empty or 'initial", 0, argc, argv);
   }
   
   env = scheme_make_empty_env();

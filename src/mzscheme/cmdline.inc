@@ -56,6 +56,60 @@ static char *protect_quote_backslash(const char *file)
     return (char *)file;
 }
 
+static char *check_script_runner(char *prog)
+{
+  /* Check whether the program name is "...scheme-...": */
+  int i;
+
+#ifdef UNIX_FILE_SYSTEM
+# define IS_A_SEP(x) ((x) == '/')
+#endif
+#ifdef DOS_FILE_SYSTEM
+# define IS_A_SEP(x) (((x) == '/') || ((x) == '\\'))
+#endif
+#ifdef MAC_FILE_SYSTEM
+# define IS_A_SEP(x) ((x) == ':')
+#endif
+
+  for (i = 0; prog[i]; i++) {
+    if ((prog[i] == 's')
+	&& (prog[i+1] == 'c')
+	&& (prog[i+2] == 'h')
+	&& (prog[i+3] == 'e')
+	&& (prog[i+4] == 'm')
+	&& (prog[i+5] == 'e')
+	&& (prog[i+6] == '-')) {
+      /* Maybe. Check directory separators. */
+      if (!i || IS_A_SEP(prog[i-1])) {
+	int j;
+	for (j = i + 7; prog[j]; j++) {
+	  if (IS_A_SEP(prog[j]))
+	    break;
+	}
+	if (!prog[j]) {
+	  /* Yes, this is a script runner. */
+	  char *lang;
+#ifdef DOS_FILE_SYSTEM
+	  /* Remove ".exe": */
+	  j -= 4;
+#endif
+
+	  i += 7;
+	  j -= i;
+	  lang = (char *)malloc(j + 40);
+	  memcpy(lang, "(require (lib \"", 15);
+	  memcpy(lang + 15, prog + i, j);
+	  memcpy(lang + 15 + j, ".ss\" \"script-lang\"))", 24); /* gets null term */
+
+	  return lang;
+	}
+      }
+    }
+  }
+
+  return NULL;
+}
+
 static char *make_load_cd(char *file)
 {
   char *s;
@@ -135,6 +189,7 @@ typedef struct {
 #ifndef DONT_PARSE_COMMAND_LINE
   char **evals_and_loads;
   int *is_load, num_enl;
+  Scheme_Object *runner_args;
 #endif  
 #ifndef DONT_LOAD_INIT_FILE
   int no_init_file;
@@ -182,6 +237,16 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 	exit_val = 1;
 	break;
       }
+    }
+  }
+
+  if (fa->runner_args && !exit_val) {
+    if (!scheme_setjmp(scheme_error_buf)) {
+      Scheme_Object *a[1], *m;
+
+      m = scheme_eval_string("main", fa->global_env);
+      a[0] = scheme_vector_to_list(fa->runner_args);
+      (void)scheme_apply(m, 1, a);
     }
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
@@ -271,7 +336,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   Scheme_Object *sch_argv;
   int i;
 #ifndef DONT_PARSE_COMMAND_LINE
-  char **evals_and_loads, *real_switch = NULL;
+  char **evals_and_loads, *real_switch = NULL, *runner;
   int *is_load, num_enl;
   int no_more_switches = 0;
   int mute_banner = 0;
@@ -350,13 +415,36 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #ifndef DONT_PARSE_COMMAND_LINE
   if (argc && (!strcmp(argv[0], "--restore")
 	       || ((argv[0][0] == '-') && (argv[0][1] == 'R')))) {
-    PRINTF("Image loading (with --restore or -R<file>) is not supported.\n");
+    PRINTF("image loading (with --restore or -R<file>) is not supported\n");
     return 1;
   }
 
   evals_and_loads = (char **)malloc(sizeof(char *) * argc);
   is_load = (int *)malloc(sizeof(int) * argc);
   num_enl = 0;
+
+#ifndef DONT_PARSE_COMMAND_LINE
+  runner = check_script_runner(prog);
+  if (runner) {
+    if (!argc) {
+      PRINTF("%s: missing script filename to load\n",
+	     prog);
+      return 1;
+    }
+
+    evals_and_loads[0] = runner;
+    is_load[0] = 0;
+    evals_and_loads[1] = argv[0];
+    is_load[1] = 1;
+    num_enl = 2;
+    script_mode = 1;
+    no_more_switches = 1;
+    no_init_file = 1;
+    no_argv = 1;
+    argv++;
+    --argc;
+  }
+#endif
 
   while (!no_more_switches && argc && argv[0][0] == '-' && !is_number_arg(argv[0] + 1)) {
     real_switch = argv[0];
@@ -420,7 +508,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-p";
 #endif
     else if (!strcmp("--restore", argv[0])) {
-      PRINTF("--restore or -R<file> must be the first (and only) switch.\n");
+      PRINTF("--restore or -R<file> must be the first (and only) switch\n");
       goto show_need_help;
     }
     
@@ -442,7 +530,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'e':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing expression after %s switch.\n", 
+	    PRINTF("%s: missing expression after %s switch\n", 
 		   prog, real_switch);
 	    goto show_need_help;
 	  }
@@ -459,7 +547,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  no_more_switches = 1;
 	case 'f':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing file name after %s switch.\n", 
+	    PRINTF("%s: missing file name after %s switch\n", 
 		   prog, real_switch);
 	    goto show_need_help;
 	  }
@@ -473,7 +561,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  no_more_switches = 1;
 	case 'd':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing file name after %s switch.\n", 
+	    PRINTF("%s: missing file name after %s switch\n", 
 		   prog, real_switch);
 	    goto show_need_help;
 	  }
@@ -488,7 +576,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  no_more_switches = 1;
 	case 't':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing file name after %s switch.\n", 
+	    PRINTF("%s: missing file name after %s switch\n", 
 		   prog, real_switch);
 	    goto show_need_help;
 	  }
@@ -526,7 +614,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'l':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing file after %s switch.\n", 
+	    PRINTF("%s: missing file after %s switch\n", 
 		   prog, real_switch);
 	    goto show_need_help;
 	  }
@@ -538,7 +626,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'L':
 	  if (argc < 3) {
-	    PRINTF("%s: Missing %s after %s switch.\n", 
+	    PRINTF("%s: missing %s after %s switch\n", 
 		   prog, 
 		   (argc < 2) ? "file and collection" : "collection",
 		   real_switch);
@@ -554,7 +642,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'M':
 	  if (argc < 2) {
-	    PRINTF("%s: Missing collection after %s switch.\n", 
+	    PRINTF("%s: missing collection after %s switch\n", 
 		   prog, 
 		   real_switch);
 	    goto show_need_help;
@@ -572,7 +660,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'k':
 	  if (argc < 3) {
-	    PRINTF("%s: Missing %s after %s switch.\n", 
+	    PRINTF("%s: missing %s after %s switch\n", 
 		   prog, 
 		   (argc < 2) ? "starting and ending offsets" : "ending offset",
 		   real_switch);
@@ -633,7 +721,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 #endif
 	case 'R':
-	  PRINTF("--restore or -R<file> must be the first (and only) switch.\n");
+	  PRINTF("--restore or -R<file> must be the first (and only) switch\n");
 	  goto show_need_help;
 	  break;
 	default:
@@ -711,6 +799,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   fa->evals_and_loads = evals_and_loads;
   fa->is_load = is_load;
   fa->num_enl = num_enl;
+  fa->runner_args = (runner ? sch_argv : NULL);
 #endif  
 #ifndef DONT_LOAD_INIT_FILE
   fa->no_init_file = no_init_file;
@@ -828,7 +917,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
   PRINTF(prog, BANNER);
   return 0;
  bad_switch:
-  PRINTF("%s: Bad switch %s.\n", prog, real_switch);
+  PRINTF("%s: bad switch %s\n", prog, real_switch);
  show_need_help:
   PRINTF("Use the --help or -h flag for help.\n");
   return 1;

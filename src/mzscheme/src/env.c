@@ -57,7 +57,9 @@ static Scheme_Object *kernel_symbol;
 static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size);
 static void make_init_env(void);
 
-static Scheme_Object *namespace_variable_binding(int, Scheme_Object *[]);
+static Scheme_Object *namespace_identifier(int, Scheme_Object *[]);
+static Scheme_Object *namespace_variable_value(int, Scheme_Object *[]);
+static Scheme_Object *namespace_set_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
@@ -345,10 +347,22 @@ static void make_init_env(void)
 
   MARK_START_TIME();
 
-  scheme_add_global_constant("namespace-variable-binding",
-			     scheme_make_prim_w_arity(namespace_variable_binding,
-						      "namespace-variable-binding",
-						      1, 2),
+  scheme_add_global_constant("namespace-symbol->identifier",
+			     scheme_make_prim_w_arity(namespace_identifier,
+						      "namespace-identifier",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("namespace-variable-value",
+			     scheme_make_prim_w_arity(namespace_variable_value,
+						      "namespace-variable-value",
+						      1, 3),
+			     env);
+
+  scheme_add_global_constant("namespace-set-variable-value!",
+			     scheme_make_prim_w_arity(namespace_set_variable_value,
+						      "namespace-set-variable-value!",
+						      2, 3),
 			     env);
 
   scheme_add_global_constant("syntax-local-value", 
@@ -2007,34 +2021,102 @@ Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
 /*========================================================================*/
 
 static Scheme_Object *
-namespace_variable_binding(int argc, Scheme_Object *argv[])
+namespace_identifier(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  Scheme_Env *env;
+  Scheme_Object *obj;
+  Scheme_Env *genv;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("namespace-variable-binding", "symbol", 0, argc, argv);
+    scheme_wrong_type("namespace-symbol->identifier", "symbol", 0, argc, argv);
+
+  genv = scheme_get_env(scheme_config);
+
+  obj = argv[0];
+  obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
+
+  /* Renamings: */
+  if (genv->rename)
+    obj = scheme_add_rename(obj, genv->rename);
+  if (genv->exp_env && genv->exp_env->rename)
+    obj = scheme_add_rename(obj, genv->exp_env->rename);
+
+  return obj;
+}
+
+static Scheme_Object *
+namespace_variable_value(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v, *id = NULL;
+  Scheme_Env *genv;
+  int use_map;
+
+  if (!SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("namespace-variable-value", "symbol", 0, argc, argv);
+  use_map = ((argc > 0) ? SCHEME_TRUEP(argv[1]) : 1);
+  if (argc > 2)
+    scheme_check_proc_arity("namespace-variable-value", 0, 2, argc, argv);
+
+  genv = scheme_get_env(scheme_config);
+
+  if (!use_map)
+    v = scheme_lookup_global(argv[0], genv);
+  else {
+    Scheme_Comp_Env *env;
+
+    id = argv[0];
+    id = scheme_datum_to_syntax(id, scheme_false, scheme_false, 1, 0);
+    if (genv->rename)
+      id = scheme_add_rename(id, genv->rename);
+
+    env = scheme_new_comp_env(genv, SCHEME_TOPLEVEL_FRAME);
+
+    v = scheme_lookup_binding(id, env, SCHEME_RESOLVE_MODIDS);
+    if (v) {
+      if (!SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
+	use_map = -1;
+	v = NULL;
+      } else
+	v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
+    }
+  }
+  
+  if (!v) {
+    if (argc > 2)
+      return _scheme_tail_apply(argv[2], 0, NULL);
+    else if (use_map == -1) {
+      scheme_wrong_syntax("namespace-variable-value", NULL, id, "bound to syntax");
+      return NULL;
+    } else {
+      scheme_raise_exn(MZEXN_VARIABLE, argv[0],
+		       "namespace-variable-value: %S is not defined",
+		       argv[0]);
+      return NULL;
+    }
+  }
+
+  return v;
+}
+
+static Scheme_Object *
+namespace_set_variable_value(int argc, Scheme_Object *argv[])
+{
+  Scheme_Env *env;
+  Scheme_Bucket *bucket;
+
+  if (!SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("namespace-set-variable-value!", "symbol", 0, argc, argv);
 
   env = scheme_get_env(scheme_config);
 
-  if (argc > 1) {
-    Scheme_Bucket *bucket;
-
-    bucket = scheme_global_bucket(argv[0], env);
-
-    scheme_set_global_bucket("namespace-variable-binding", bucket, argv[1], 1);
-
-    return scheme_void;
-  } else {
-    v = scheme_lookup_global(argv[0], env);
-    
-    if (!v)
-      scheme_raise_exn(MZEXN_VARIABLE, argv[0],
-		       "namespace-variable-binding: %S is not defined",
-		       argv[0]);
-
-    return v;
+  bucket = scheme_global_bucket(argv[0], env);
+  
+  scheme_set_global_bucket("namespace-set-variable-value!", bucket, argv[1], 1);
+  
+  if ((argc > 2) && SCHEME_TRUEP(argv[2])) {
+    scheme_shadow(env, argv[0], 1);
   }
+
+  return scheme_void;
 }
 
 static Scheme_Object *

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.15 1999/10/04 22:14:09 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.16 1999/10/05 11:00:24 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1417,7 +1417,7 @@ void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char 
   wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
   
   if (!item)
-    return NULL;
+    return;
 
   item->screen.map[WCoordinate(weight)][SCoordinate(style)] = s;
 }
@@ -1437,7 +1437,7 @@ void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, c
   wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
-    return NULL;
+    return;
 
   item->printing.map[WCoordinate(weight)][SCoordinate(style)] = s;
 }
@@ -1457,7 +1457,7 @@ void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
   wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
 
   if (!item)
-    return NULL;
+    return;
 
   item->afm.map[WCoordinate(weight)][SCoordinate(style)] = s;
 }

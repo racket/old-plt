@@ -980,10 +980,9 @@ double wxCanvasDC::GetPenSmoothingOffset()
 {
   int pw;
   pw = current_pen->GetWidth();
+  pw = (int)(user_scale_x * pw);
   if (!pw)
     pw = 1;
-  else
-    pw = (int)(user_scale_x * pw);
   return ((pw & 1) * 0.5);
 }
 

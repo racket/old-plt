@@ -10,8 +10,11 @@
 #ifndef wx_gdih
 #define wx_gdih
 
-#include "wb_gdi.h"
+#ifndef OS_X
 #include <QDOffscreen.h>
+#endif
+
+#include "wb_gdi.h"
 
 #ifdef IN_CPROTO
 typedef       void    *wxFont ;

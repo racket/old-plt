@@ -491,10 +491,6 @@ const int kInactiveControl = 255;
 
 #define IMPLEMENT_DYNAMIC_CLASS(x, y) /* empty */
 
-#if defined(OS_X)
-#include "Quickdraw.h" // needed for def'n of GDHandle
-#endif
-
 extern GDHandle wxGetGDHandle(void);
 
 #endif // wxb_commonh

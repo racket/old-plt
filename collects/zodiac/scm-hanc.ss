@@ -1765,3 +1765,32 @@
 		env attributes vocab))))
 	(else
 	  (static-error expr "Malformed unit->unit/sig"))))))
+
+(add-micro-form 'reference-unit/sig scheme-vocabulary
+  (let* ((kwd '(reference-unit/sig))
+	  (in-pattern '(reference-unit/sig filename))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((filename (pat:pexpand 'filename p-env kwd)))
+	      (let ((f (expand-expr filename env attributes vocab)))
+		(if (and (quote-form? f)
+		      (z:string? (quote-form-expr f)))
+		  (expand-expr
+		    (structurize-syntax
+		      `(let ((v (#%load-recent
+				  ,(sexp->raw (quote-form-expr f)))))
+			 (unless (#%unit-with-signature? v)
+			   (raise (make-exn:unit:non-signed-unit
+				    "reference-unit did not yield a signed unit"
+				    ((debug-info-handler))
+				    v)))
+			 v)
+		      expr)
+		    env attributes vocab)
+		  (static-error filename "Does not yield a filename"))))))
+	(else
+	  (static-error expr "Malformed reference"))))))

@@ -1544,4 +1544,26 @@
 
   (include "shared.ss")
 
+  (add-micro-form 'reference scheme-vocabulary
+    (let* ((kwd '(reference))
+	    (in-pattern '(reference filename))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((filename (pat:pexpand 'filename p-env kwd)))
+		(let ((f (expand-expr filename env attributes vocab)))
+		  (if (and (quote-form? f)
+			(z:string? (quote-form-expr f)))
+		    (expand-expr
+		      (structurize-syntax
+			`(#%load-recent ,(sexp->raw (quote-form-expr f)))
+			expr)
+		      env attributes vocab)
+		    (static-error filename "Does not yield a filename"))))))
+	  (else
+	    (static-error expr "Malformed reference"))))))
+
   )

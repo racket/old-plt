@@ -587,7 +587,36 @@
     (invoke-open-unit-helper 'invoke-open-unit)
     (invoke-open-unit-helper '#%invoke-open-unit))
 
-					; --------------------------------------------------------------------
+  (add-micro-form 'reference-unit scheme-vocabulary
+    (let* ((kwd '(reference-unit))
+	    (in-pattern '(reference-unit filename))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((filename (pat:pexpand 'filename p-env kwd)))
+		(let ((f (expand-expr filename env attributes vocab)))
+		  (if (and (quote-form? f)
+			(z:string? (quote-form-expr f)))
+		    (expand-expr
+		      (structurize-syntax
+			`(let ((v (#%load-recent
+				    ,(sexp->raw (quote-form-expr f)))))
+			   (unless (unit? v)
+			     (raise (make-exn:unit:non-unit
+				      "reference-unit did not yield a unit"
+				      ((debug-info-handler))
+				      v)))
+			   v)
+			expr)
+		      env attributes vocab)
+		    (static-error filename "Does not yield a filename"))))))
+	  (else
+	    (static-error expr "Malformed reference"))))))
+
+  ; --------------------------------------------------------------------
 
   (extend-parsed->raw unit-form?
     (lambda (expr p->r)
@@ -734,6 +763,48 @@
 		      (static-error expr "Malformed set!")))))))))
     (set!-helper 'set!)
     (set!-helper '#%set!))
+
+  (let ((if-handler
+	  (lambda (i-kwd)
+	    (add-micro-form i-kwd unit-clauses-vocab
+	      (let* ((kwd (list i-kwd))
+		      (in-pattern-1 `(,i-kwd test then))
+		      (in-pattern-2 `(,i-kwd test then else))
+		      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+		(lambda (expr env attributes vocab)
+		  (cond
+		    ((pat:match-against m&e-1 expr env)
+		      =>
+		      (lambda (p-env)
+			(when (language<=? 'structured)
+			  (static-error expr "If must have an else clause"))
+			(expand-expr
+			  (structurize-syntax
+			    (pat:pexpand '(if test then (#%void)) p-env kwd)
+			    expr '(-1))
+			  env attributes vocab)))
+		    ((pat:match-against m&e-2 expr env)
+		      =>
+		      (lambda (p-env)
+			(let* ((top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
+				(test-exp (expand-expr
+					    (pat:pexpand 'test p-env kwd)
+					    env attributes vocab))
+				(then-exp (expand-expr
+					    (pat:pexpand 'then p-env kwd)
+					    env attributes vocab))
+				(else-exp (expand-expr
+					    (pat:pexpand 'else p-env kwd)
+					    env attributes vocab))
+				(_ (set-top-level-status attributes
+				     top-level?)))
+			  (create-if-form test-exp then-exp else-exp expr))))
+		    (else
+		      (static-error expr "Malformed if")))))))))
+    (if-handler 'if)
+    (if-handler '#%if))
 
   (add-sym-micro unit-clauses-vocab
     (lambda (expr env attributes vocab)

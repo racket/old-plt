@@ -26,6 +26,7 @@ private:
 
 public:
   CEventQueue(void);
+  ~CEventQueue(void);
 
 DECLARE_REGISTRY_RESOURCEID(IDR_EVENTQUEUE)
 
@@ -46,3 +47,7 @@ public:
 };
 
 #endif //__EVENTQUEUE_H_
+
+
+
+

@@ -418,6 +418,16 @@ void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
   scheme_register_finalizer(obj,scheme_release_simple_com_object,pIUnknown,NULL,NULL);
 }
 
+void scheme_release_document(void *doc,void *) {
+  if (((MX_Document_Object *)doc)->pIHTMLDocument2) {
+    ((MX_Document_Object *)doc)->pIHTMLDocument2->Release();
+  }
+
+  if (((MX_Document_Object *)doc)->pIEventQueue) {
+    ((MX_Document_Object *)doc)->pIEventQueue->Release();
+  }
+}
+
 char *inv_kind_string(INVOKEKIND invKind) {
   switch (invKind) {
   case INVOKE_FUNC :
@@ -3686,7 +3696,9 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   
   doc->pIHTMLDocument2 = pIHTMLDocument2;
   doc->pIEventQueue = pIEventQueue;
-  
+
+  scheme_register_finalizer(doc,scheme_release_document,NULL,NULL,NULL);
+
   return (Scheme_Object *)doc;
 }
 

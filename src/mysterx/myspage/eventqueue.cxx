@@ -29,6 +29,16 @@ CEventQueue::CEventQueue(void) {
     }
 }
 
+CEventQueue::~CEventQueue(void) { 
+    if (readSem) {
+      CloseHandle(readSem);
+    }
+
+    if (mutex) {
+      CloseHandle(mutex);
+    }
+}
+
 STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
   BOOL signalReader;
 

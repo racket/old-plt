@@ -339,7 +339,7 @@ char *wxFileSelector(char *message,
     int len;
     len = strlen(default_extension);
     def_ext = (char *)malloc(min(50, len) + 1);
-    memcpy(def_ext, default_path, min(50, len+1));
+    memcpy(def_ext, default_extension, min(50, len+1));
     def_ext[50] = 0;
   } else
     def_ext = NULL;

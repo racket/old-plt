@@ -171,14 +171,18 @@
 
     ; ----------------------------------------------------------------------
 
+    (define previous-attribute (make-attributes))
+
     (define scheme-expand
-      (opt-lambda (expr (params (current-parameterization)))
-	(let ((attr (make-attributes)))
+      (opt-lambda (expr (params (current-parameterization))
+		    (attr previous-attribute))
+	(let ((attr (or attr (make-attributes))))
 	  (expand expr attr scheme-vocabulary params))))
 
     (define scheme-expand-program
-      (opt-lambda (exprs (params (current-parameterization)))
-	(let ((attr (make-attributes)))
+      (opt-lambda (exprs (params (current-parameterization))
+		    (attr previous-attribute))
+	(let ((attr (or attr (make-attributes))))
 	  (expand-program exprs attr scheme-vocabulary params))))
 
     ; ----------------------------------------------------------------------

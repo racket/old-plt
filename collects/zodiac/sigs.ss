@@ -1,7 +1,7 @@
 (require-library "unitsig.ss")
 
 (define-signature zodiac:misc^
-  (pretty-print debug-level symbol-append))
+  (pretty-print debug-level symbol-append flush-printf))
 
 (define-signature zodiac:correlate^
   (make-correlator add-to-correlator find-in-correlator))

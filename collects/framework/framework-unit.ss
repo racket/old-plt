@@ -4,7 +4,8 @@
 
   (require "framework-sig.ss"
 	   "private/sig.ss"
-
+           
+           "private/comment-box.ss"
            "private/application.ss"
 	   "private/version.ss"
 	   "private/color-model.ss"
@@ -60,6 +61,8 @@
 	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap color-model frame scheme)]
+            [comment-box : framework:comment-box^
+                         (comment-box@ text scheme)]
 	    [finder : framework:finder^ (finder@ mred preferences keymap)]
 	    [group : framework:group^ 
                    (group@ mred application frame preferences text canvas menu)]
@@ -67,13 +70,14 @@
 	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 
 		   (frame@ mred group preferences icon handler application panel
-                           finder keymap text pasteboard editor canvas menu scheme exit)]
+                           finder keymap text pasteboard editor canvas menu scheme exit
+                           comment-box)]
 	    [handler : framework:handler^
 		     (handler@ mred finder group text preferences frame)]
 
 	    [scheme : framework:scheme^ 
-		    (scheme@ mred preferences match-cache paren
-			     scheme-paren icon keymap text editor frame)]
+		    (scheme@ mred preferences match-cache paren scheme-paren 
+                           icon keymap text editor frame comment-box)]
 	    [main : framework:main^ (main@ mred preferences exit group handler)])
       (export
        (unit menu)
@@ -94,6 +98,7 @@
        (unit editor)
        (unit pasteboard)
        (unit text)
+       (unit comment-box)
        (unit finder)
        (unit group)
        (unit canvas)

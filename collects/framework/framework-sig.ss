@@ -29,6 +29,7 @@
      [unit menu : framework:menu-class^]
      [unit frame : framework:frame-class^]
      [unit scheme : framework:scheme-class^]
+     [unit comment-box : framework:comment-box-class^]
      [unit main : framework:main-class^]))
 
   (define-signature framework^
@@ -56,4 +57,5 @@
      [unit menu : framework:menu^]
      [unit frame : framework:frame^]
      [unit scheme : framework:scheme^]
+     [unit comment-box : framework:comment-box^]
      [unit main : framework:main^])))

@@ -1597,7 +1597,7 @@
 		   
 		   #f ; => init args by position only
 			 
-		   (lambda accessors
+		   (lambda ignored
 		     (values
 		      new-methods
 		      override-methods

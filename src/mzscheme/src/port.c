@@ -1282,7 +1282,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
   /* Adjust position information: */
   ip->position += got;
   for (i = got, c = 0; i--; c++) {
-    if (buffer[got] == '\n' || buffer[got] == '\r') {
+    if (buffer[i] == '\n' || buffer[i] == '\r') {
       break;
     }
   }
@@ -1290,7 +1290,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     int n = 0;
     ip->charsSinceNewline = c + 1;
     while (i--)
-      if (buffer[got] == '\n' || buffer[got] == '\r')
+      if (buffer[i] == '\n' || buffer[i] == '\r')
 	n++;
     ip->lineNumber += n;
   } else

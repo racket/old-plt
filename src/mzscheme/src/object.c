@@ -2189,7 +2189,7 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   sclass->closure_saved = NULL;
   sclass->max_let_depth = 0;
 
-  sclass->defname = scheme_intern_symbol(name);
+  sclass->defname = scheme_intern_exact_symbol(name, strlen(name));
 
   return (Scheme_Object *)sclass;
 }
@@ -2515,7 +2515,7 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
 
   a->data.num_interfaces = num_interfaces;
 
-  a->data.defname = (name ? scheme_intern_symbol(name) : NULL);
+  a->data.defname = (name ? scheme_intern_exact_symbol(name, strlen(name)) : NULL);
 
   InitData(&a->data);
 
@@ -2565,7 +2565,7 @@ scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Sche
     a->data.names[i] = names[i];
 
   a->data.num_supers = n_supers;
-  a->data.defname = (name ? scheme_intern_symbol(name) : NULL);
+  a->data.defname = (name ? scheme_intern_exact_symbol(name, strlen(name)) : NULL);
 
   /* Sort names: */
   qsort((char *)a->data.names, n_names,

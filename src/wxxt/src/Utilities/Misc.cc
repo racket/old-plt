@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Misc.cc,v 1.2 1998/09/24 18:33:31 mflatt Exp $
+ * $Id: Misc.cc,v 1.3 1999/11/04 17:25:36 mflatt Exp $
  *
  * Purpose: miscellaneous utilities
  *
@@ -33,16 +33,4 @@
 void wxBell(void)
 {
     XBell(wxAPP_DISPLAY, 100);
-}
-
-long wxGetFreeMemory(void)
-{
-    return -1; // cannot determine amount (UNIX)
-}
-
-int wxGetOsVersion(int *majorVsn, int *minorVsn)
-{
-    if (majorVsn)  *majorVsn = X_PROTOCOL;
-    if (minorVsn)  *minorVsn = XlibSpecificationRelease;
-    return wxXT_X;
 }

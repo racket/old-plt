@@ -198,23 +198,6 @@ typedef short int WXTYPE;
 # define wxCF_DIB                4
 # define wxCF_OEMTEXT            5
 
-// defines for wxConnection
-enum {
-    wxEXECUTE = 1,
-    wxREQUEST,
-    wxPOKE,
-    wxADVISE_START,
-    wxADVISE_REQUEST,
-    wxADVISE,
-    wxADVISE_STOP,
-    wxREQUEST_REPLY,
-    wxFAIL,
-    wxCONNECT,
-    wxDISCONNECT
-};
-#define  wxGENERAL           2
-#define  wxBAD_SERVICE_NAME  3
-
 // defines for wxCursor
 enum {
     // cursors with X11 equvalents
@@ -630,30 +613,11 @@ enum wxRelationship {
 #define wxColorMap		wxColourMap
 #define wxMainColormap		wxMainColourmap
 
-// OS mnemonics -- Identify the running OS (useful for Windows)
-// [Not all platforms are currently available or supported]
-enum {
-  wxCURSES,
-  wxXVIEW_X,	// Sun's XView OpenLOOK toolkit
-  wxMOTIF_X,	// OSF Motif 1.x.x
-  wxXT_X,	// X11 Xt with PD widget set
-  wxCOSE_X,	// OSF Common Desktop Environment
-  wxNEXTSTEP,	// NeXTStep
-  wxMACINTOSH,	// Apple System 7
-  wxGEOS,	// GEOS
-  wxOS2_PM,	// OS/2 Workplace
-  wxWINDOWS,	// Windows or WfW
-  wxPENWINDOWS,	// Windows for Pen Computing
-  wxWINDOWS_NT,	// Windows NT
-  wxWIN32S,	// Windows 32S API
-  wxWIN386	// Watcom 32-bit supervisor modus
-};
-
 // Macro to cut down on compiler warnings.
 #if REMOVE_UNUSED_ARG
-#define WXUNUSED(identifier) /* identifier */
+# define WXUNUSED(identifier) /* identifier */
 #else  // stupid, broken compiler
-#define WXUNUSED(identifier) identifier
+# define WXUNUSED(identifier) identifier
 #endif
 
 #endif // wxDefines_h

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Utilities.h,v 1.3 1999/12/05 03:14:01 mflatt Exp $
+ * $Id: Utilities.h,v 1.4 2000/05/02 15:14:48 mflatt Exp $
  *
  * Purpose: common utilities
  *
@@ -89,8 +89,6 @@ void wxError(const char *msg, const char *title="wxWindows Error");
 Bool wxExecute(char **argv, Bool Async = FALSE);
 Bool wxExecute(const char *command, Bool Async = FALSE);
 void wxFatalError(const char *msg, const char *title="wxWindows Fatal Error");
-long wxGetFreeMemory(void);
-int wxGetOsVersion(int *majorVsn, int *minorVsn);
 char *wxNow(void);
 
 // read/write resources

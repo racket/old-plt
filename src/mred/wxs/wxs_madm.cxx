@@ -239,7 +239,7 @@ typedef void *(*CAPOFunc)(void*);
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
-  os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL));
+  os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL, class wxGLConfig* x9 = NULL));
   ~os_wxMediaCanvas();
   void OnChar(class wxKeyEvent* x0);
   void OnEvent(class wxMouseEvent* x0);
@@ -269,8 +269,8 @@ void os_wxMediaCanvas::gcFixup() {
 
 static Scheme_Object *os_wxMediaCanvas_class;
 
-os_wxMediaCanvas::os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8))
-CONSTRUCTOR_INIT(: wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8))
+os_wxMediaCanvas::os_wxMediaCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8, class wxGLConfig* x9))
+CONSTRUCTOR_INIT(: wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9))
 {
 }
 
@@ -1395,17 +1395,19 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
   int x6;
   int x7;
   class wxMediaBuffer* x8 INIT_NULLED_OUT;
+  class wxGLConfig* x9 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(5);
+  SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x5);
   VAR_STACK_PUSH(4, x8);
+  VAR_STACK_PUSH(5, x9);
 
   
-  if ((n < (POFFSET+1)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-canvas%", POFFSET+1, POFFSET+9, n, p, 1));
+  if ((n < (POFFSET+1)) || (n > (POFFSET+10))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-canvas%", POFFSET+1, POFFSET+10, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in editor-canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in editor-canvas%"));
@@ -1439,11 +1441,15 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
     x8 = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(p[POFFSET+8], "initialization in editor-canvas%", 1));
   } else
     x8 = NULL;
+  if (n > (POFFSET+9)) {
+    x9 = WITH_VAR_STACK(objscheme_unbundle_wxGLConfig(p[POFFSET+9], "initialization in editor-canvas%", 1));
+  } else
+    x9 = NULL;
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = WITH_VAR_STACK(new os_wxMediaCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+  realobj = WITH_VAR_STACK(new os_wxMediaCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+  WITH_VAR_STACK(realobj->gcInit_wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 #endif
   realobj->__gc_external = (void *)p[0];
   

@@ -79,6 +79,12 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     if (selected) {
       selected->selectedIntoDC = 0;
       selected->selectedTo = NULL;
+#ifdef USE_GL
+      if (X->wx_gl) {
+	X->gl_cfg = NULL;
+	X->wx_gl->Reset(NULL, 0, 0);
+      }
+#endif      
     }
   } else if (bitmap && bitmap->selectedTo) {
     bitmap->selectedTo->FreeGetPixelCache();
@@ -109,7 +115,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     if (X->wx_gl) {
       int depth;
       depth = bitmap->GetDepth();
-      X->wx_gl->Reset((depth == 1) ? 0 : (long)pm, 1);
+      X->gl_cfg = bitmap->gl_cfg;
+      X->wx_gl->Reset(bitmap->gl_cfg, (depth == 1) ? 0 : (long)pm, 1);
     }
 #endif
     // If another colourmap is associated with the bitmap,

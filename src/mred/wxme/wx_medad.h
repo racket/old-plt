@@ -369,6 +369,7 @@ class wxCanvasMediaAdmin;
 class SimpleScroll;
 class wxTimer;
 class wxAutoDragTimer;
+class wxGLConfig;
 
 class wxMediaCanvas : public wxCanvas
 {
@@ -424,7 +425,8 @@ class wxMediaCanvas : public wxCanvas
   wxMediaCanvas(wxWindow *parent, int x = -1, int y = -1,
 		int width = -1, int height = -1, char *name = "",
 		long scrollStyle = 0,
-		int scrollsPerPage = 100, wxMediaBuffer *m = NULL);
+		int scrollsPerPage = 100, wxMediaBuffer *m = NULL,
+		wxGLConfig *gl_cfg = NULL);
   ~wxMediaCanvas();
 
   Bool IsFocusOn();

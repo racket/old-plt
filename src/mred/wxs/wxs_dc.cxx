@@ -21,6 +21,7 @@
 #include "wx_dcpr.h"
 #endif
 #include "wx_rgn.h"
+#include "../../wxcommon/wxGLConfig.h"
 #include <math.h>
 
 #ifdef wx_msw
@@ -3515,6 +3516,670 @@ class wxGL *objscheme_unbundle_wxGL(Scheme_Object *obj, const char *where, int n
     return (wxGL *)o->primdata;
 }
 
+
+
+
+
+
+
+class os_wxGLConfig : public wxGLConfig {
+ public:
+
+  os_wxGLConfig CONSTRUCTOR_ARGS(());
+  ~os_wxGLConfig();
+#ifdef MZ_PRECISE_GC
+  void gcMark();
+  void gcFixup();
+#endif
+};
+
+#ifdef MZ_PRECISE_GC
+void os_wxGLConfig::gcMark() {
+  wxGLConfig::gcMark();
+}
+void os_wxGLConfig::gcFixup() {
+  wxGLConfig::gcFixup();
+}
+#endif
+
+static Scheme_Object *os_wxGLConfig_class;
+
+os_wxGLConfig::os_wxGLConfig CONSTRUCTOR_ARGS(())
+CONSTRUCTOR_INIT(: wxGLConfig())
+{
+}
+
+os_wxGLConfig::~os_wxGLConfig()
+{
+    objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLbitfield(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-bitfield in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLbitfield());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLenum(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-enum in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLenum());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLclampd(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-clampd in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLclampd());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLclampf(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-clampf in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLclampf());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLsizei(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-sizei in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLsizei());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLboolean(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-boolean in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLboolean());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLdouble(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-double in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLdouble());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLfloat(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-float in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLfloat());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLuint(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-uint in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLuint());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLint(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-int in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLint());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLushort(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-ushort in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLushort());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLshort(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-short in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLshort());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLubyte(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-ubyte in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLubyte());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxGLConfigsizeof_GLbyte(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxGLConfig_class, "sizeof-byte in gl-config%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxGLConfig *)((Scheme_Class_Object *)p[0])->primdata)->sizeof_GLbyte());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_GetdoubleBuffered(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  Bool v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-double-buffered in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-double-buffered in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::doubleBuffered;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->doubleBuffered;
+
+  return (v ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_SetdoubleBuffered(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  Bool v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-double-buffered in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-double-buffered in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-double-buffered in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->doubleBuffered = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Getstereo(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  Bool v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-stereo in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-stereo in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::stereo;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->stereo;
+
+  return (v ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Setstereo(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  Bool v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-stereo in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-stereo in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-stereo in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->stereo = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Getstencil(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-stencil-size in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-stencil-size in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::stencil;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->stencil;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Setstencil(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-stencil-size in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-stencil-size in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 256, "set-stencil-size in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->stencil = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Getaccum(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-accum-size in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-accum-size in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::accum;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->accum;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Setaccum(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-accum-size in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-accum-size in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 256, "set-accum-size in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->accum = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Getdepth(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-depth-size in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-depth-size in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::depth;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->depth;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Setdepth(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-depth-size in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-depth-size in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 256, "set-depth-size in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->depth = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Getmultisample(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxGLConfig_class, "get-multisample-size in gl-config%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-multisample-size in gl-config%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxGLConfig *)cobj->primdata)->wxGLConfig::multisample;
+  else
+    v = ((wxGLConfig *)cobj->primdata)->multisample;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxGLConfig_Setmultisample(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxGLConfig_class, "set-multisample-size in gl-config%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-multisample-size in gl-config%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 256, "set-multisample-size in gl-config%"));
+  ((wxGLConfig *)cobj->primdata)->multisample = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxGLConfig_ConstructScheme(int n,  Scheme_Object *p[])
+{
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
+  os_wxGLConfig *realobj INIT_NULLED_OUT;
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, realobj);
+
+  
+  if (n != (POFFSET+0)) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in gl-config%", POFFSET+0, POFFSET+0, n, p, 1));
+
+  
+  realobj = WITH_VAR_STACK(new os_wxGLConfig CONSTRUCTOR_ARGS(()));
+#ifdef MZ_PRECISE_GC
+  WITH_VAR_STACK(realobj->gcInit_wxGLConfig());
+#endif
+  realobj->__gc_external = (void *)p[0];
+  
+  
+  READY_TO_RETURN;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  return scheme_void;
+}
+
+void objscheme_setup_wxGLConfig(Scheme_Env *env)
+{
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+
+  wxREGGLOB(os_wxGLConfig_class);
+
+  os_wxGLConfig_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gl-config%", "object%", (Scheme_Method_Prim *)os_wxGLConfig_ConstructScheme, 26));
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-bitfield" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLbitfield, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-enum" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLenum, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-clampd" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLclampd, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-clampf" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLclampf, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-sizei" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLsizei, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-boolean" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLboolean, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-double" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLdouble, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-float" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLfloat, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-uint" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLuint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-int" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-ushort" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLushort, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-short" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLshort, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-ubyte" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLubyte, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class, "sizeof-byte" " method", (Scheme_Method_Prim *)os_wxGLConfigsizeof_GLbyte, 0, 0));
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-double-buffered" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_GetdoubleBuffered, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-double-buffered" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_SetdoubleBuffered, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-stereo" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Getstereo, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-stereo" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Setstereo, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-stencil-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Getstencil, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-stencil-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Setstencil, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-accum-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Getaccum, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-accum-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Setaccum, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-depth-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Getdepth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-depth-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Setdepth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"get-multisample-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Getmultisample, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxGLConfig_class,"set-multisample-size" " method", (Scheme_Method_Prim *)objscheme_wxGLConfig_Setmultisample, 1, 1));
+
+  WITH_VAR_STACK(scheme_made_class(os_wxGLConfig_class));
+
+
+  READY_TO_RETURN;
+}
+
+int objscheme_istype_wxGLConfig(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  REMEMBER_VAR_STACK();
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (objscheme_is_a(obj,  os_wxGLConfig_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "gl-config% object or " XC_NULL_STR: "gl-config% object", -1, 0, &obj));
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxGLConfig(class wxGLConfig *realobj)
+{
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, obj);
+  VAR_STACK_PUSH(1, realobj);
+
+  if ((sobj = WITH_VAR_STACK(objscheme_bundle_by_type(realobj, realobj->__type))))
+    { READY_TO_RETURN; return sobj; }
+  obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxGLConfig_class));
+
+  obj->primdata = realobj;
+  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  READY_TO_RETURN;
+  return (Scheme_Object *)obj;
+}
+
+class wxGLConfig *objscheme_unbundle_wxGLConfig(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  REMEMBER_VAR_STACK();
+
+  (void)objscheme_istype_wxGLConfig(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
+  if (o->primflag)
+    return (os_wxGLConfig *)o->primdata;
+  else
+    return (wxGLConfig *)o->primdata;
+}
 
 
 

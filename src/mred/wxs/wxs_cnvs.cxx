@@ -191,7 +191,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 class os_wxCanvas : public wxCanvas {
  public:
 
-  os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas"));
+  os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas", class wxGLConfig* x7 = NULL));
   ~os_wxCanvas();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -220,8 +220,8 @@ void os_wxCanvas::gcFixup() {
 
 static Scheme_Object *os_wxCanvas_class;
 
-os_wxCanvas::os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6))
-CONSTRUCTOR_INIT(: wxCanvas(x0, x1, x2, x3, x4, x5, x6))
+os_wxCanvas::os_wxCanvas CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6, class wxGLConfig* x7))
+CONSTRUCTOR_INIT(: wxCanvas(x0, x1, x2, x3, x4, x5, x6, x7))
 {
 }
 
@@ -1300,16 +1300,18 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
   int x4;
   int x5;
   string x6 INIT_NULLED_OUT;
+  class wxGLConfig* x7 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(4);
+  SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x6);
+  VAR_STACK_PUSH(4, x7);
 
   
-  if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in canvas%", POFFSET+1, POFFSET+7, n, p, 1));
+  if ((n < (POFFSET+1)) || (n > (POFFSET+8))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in canvas%", POFFSET+1, POFFSET+8, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in canvas%"));
@@ -1335,11 +1337,15 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
     x6 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+6], "initialization in canvas%"));
   } else
     x6 = "canvas";
+  if (n > (POFFSET+7)) {
+    x7 = WITH_VAR_STACK(objscheme_unbundle_wxGLConfig(p[POFFSET+7], "initialization in canvas%", 1));
+  } else
+    x7 = NULL;
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = WITH_VAR_STACK(new os_wxCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+  realobj = WITH_VAR_STACK(new os_wxCanvas CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxCanvas(x0, x1, x2, x3, x4, x5, x6));
+  WITH_VAR_STACK(realobj->gcInit_wxCanvas(x0, x1, x2, x3, x4, x5, x6, x7));
 #endif
   realobj->__gc_external = (void *)p[0];
   

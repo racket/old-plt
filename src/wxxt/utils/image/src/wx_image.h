@@ -104,6 +104,7 @@ class wxImage: public wxObject
   unsigned int  eWIDE, eHIGH;  /* size of epic */
   unsigned int  normFact;      /* factor to shrink picture by for 'norm' */
 
+  byte           r[256],g[256],b[256];  /* colormap */
   byte           rorg[256],gorg[256],borg[256];  /* ORIGINAL colormap */
 
   int            transparent_index;

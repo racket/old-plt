@@ -37,6 +37,7 @@
 
 #ifdef USE_GL
 class wxGL;
+class wxGLConfig;
 #endif
 
 // wxPoint

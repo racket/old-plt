@@ -38,6 +38,7 @@
 # include <GL/glx.h>
 # include <X11/Xcms.h>
 #endif
+#include "../../../wxcommon/wxGLConfig.h"
 
 #ifdef WX_USE_XRENDER
 # include <X11/Xcms.h>
@@ -185,10 +186,17 @@ wxGL *wxWindowDC::GetGL()
   X->wx_gl = gl;
 
   if (DRAWABLE) {
-    gl->Reset((long)DRAWABLE, __type == wxTYPE_DC_MEMORY);
+    gl->Reset(X->gl_cfg, (long)DRAWABLE, __type == wxTYPE_DC_MEMORY);
   }
 
   return gl;
+}
+
+void wxWindowDC::SetGLConfig(wxGLConfig *cfg)
+{
+  if (cfg)
+    cfg = cfg->Clone();
+  X->gl_cfg = cfg;
 }
 #endif
 
@@ -2808,7 +2816,7 @@ void wxWindowDC::Destroy(void)
 #endif
 #ifdef USE_GL
     if (X->wx_gl) {
-      X->wx_gl->Reset(0, 0);
+      X->wx_gl->Reset(NULL, 0, 0);
     }
 #endif
 }
@@ -3253,7 +3261,6 @@ void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
 #ifdef USE_GL
 static wxGL *current_gl_context = NULL;
 static int gl_registered;
-static XVisualInfo *vi, *sb_vi;
 
 typedef int (*X_Err_Handler)(Display*, XErrorEvent*);
 static int errorFlagged;
@@ -3263,125 +3270,181 @@ static int FlagError(Display*, XErrorEvent*)
   return 0;
 }
 
-Visual *wxGetGLWindowVisual()
+static XVisualInfo *GetWindowVisual(wxGLConfig *cfg, Boolean offscreen)
 {
-  if (!gl_registered) {
-    Visual *vis;      
-    GC_CAN_IGNORE XVisualInfo *visi, tmpl, *suggested_vi, *suggested_sb_vi;
-    int n, i;
-    GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
-    GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
-    X_Err_Handler old_handler;
+  XVisualInfo *vi = NULL;
+  Visual *vis;
+  GC_CAN_IGNORE XVisualInfo *visi, tmpl, *suggested_vi;
+  int n, i, ac;
+  GC_CAN_IGNORE int gl_attribs[20];
+  X_Err_Handler old_handler;
 
+  if (!gl_registered) {
     wxREGGLOB(current_gl_context); 
     gl_registered = 1;
+  }
 
-    /* Many parts of the MrEd drawing system rely on using the
-       default colormap everywhere. So we need a GL visual that
-       will have the same colormap. Get the default visual, then
-       get a list of attribute-equivalent visuals, then find the'
-       ones with the right GL properties... */
+  if (!cfg)
+    cfg = new wxGLConfig();
 
+  /* Many parts of the MrEd drawing system rely on using the
+     default colormap everywhere. So we need a GL visual that
+     will have the same colormap. Get the default visual, then
+     get a list of attribute-equivalent visuals, then find the'
+     ones with the right GL properties... */
+
+  while (1) {
+    ac = 0;
+    gl_attribs[ac++] = GLX_RGBA;
+    if (!offscreen && cfg->doubleBuffered)
+      gl_attribs[ac++] = GLX_DOUBLEBUFFER;
+    if (cfg->depth) {
+      gl_attribs[ac++] = GLX_DEPTH_SIZE;
+      gl_attribs[ac++] = cfg->depth;
+    }
+    if (cfg->stencil) {
+      gl_attribs[ac++] = GLX_STENCIL_SIZE;
+      gl_attribs[ac++] = cfg->stencil;
+    }
+    if (cfg->accum) {
+      gl_attribs[ac++] = GLX_ACCUM_RED_SIZE;
+      gl_attribs[ac++] = cfg->accum;
+      gl_attribs[ac++] = GLX_ACCUM_GREEN_SIZE;
+      gl_attribs[ac++] = cfg->accum;
+      gl_attribs[ac++] = GLX_ACCUM_BLUE_SIZE;
+      gl_attribs[ac++] = cfg->accum;
+      gl_attribs[ac++] = GLX_ACCUM_ALPHA_SIZE;
+      gl_attribs[ac++] = cfg->accum;
+    }
+    if (cfg->stereo) {
+      gl_attribs[ac++] = GLX_STEREO;
+    }
+#ifdef GL_MULTISAMPLE_SGIS
+    if (cfg->multisample)
+      gl_attribs[ac++] = GL_MULTISAMPLE_SGIS;
+#endif
+    
+    gl_attribs[ac] = None;
+    
     XSync(wxAPP_DISPLAY, FALSE);
     old_handler = XSetErrorHandler(FlagError);
     errorFlagged = 0;
-
+    
     suggested_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_attribs);
     if (errorFlagged) {
       suggested_vi = NULL;
       errorFlagged = 0;
     }
-    suggested_sb_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_sb_attribs);
-    if (errorFlagged) {
-      suggested_sb_vi = NULL;
-      errorFlagged = 0;
-    }
 
     XSetErrorHandler(old_handler);
+
+    /* If we got a vi, stop. Otherwise, try changing
+       the config until we find one. */
+    if (suggested_vi)
+      break;
+    else if (cfg->multisample)
+      cfg->multisample = 0;
+    else
+      break;
+  }
     
-    vis = wxAPP_VISUAL;
+  vis = wxAPP_VISUAL;
     
-    tmpl.visualid = XVisualIDFromVisual(vis);
-    visi = XGetVisualInfo(wxAPP_DISPLAY, VisualIDMask, &tmpl, &n);
-    memcpy(&tmpl, visi, sizeof(tmpl));
-    XFree(visi);
+  tmpl.visualid = XVisualIDFromVisual(vis);
+  visi = XGetVisualInfo(wxAPP_DISPLAY, VisualIDMask, &tmpl, &n);
+  memcpy(&tmpl, visi, sizeof(tmpl));
+  XFree(visi);
 
-    /* Equivalent visuals: */
-    visi = XGetVisualInfo(wxAPP_DISPLAY, 
-			  (VisualScreenMask
-			   | VisualDepthMask
-			   | VisualClassMask
-			   | VisualRedMaskMask
-			   | VisualGreenMaskMask
-			   | VisualBlueMaskMask
-			   | VisualColormapSizeMask
-			   | VisualBitsPerRGBMask),
-			  &tmpl, &n);
+  /* Equivalent visuals: */
+  visi = XGetVisualInfo(wxAPP_DISPLAY, 
+			(VisualScreenMask
+			 | VisualDepthMask
+			 | VisualClassMask
+			 | VisualRedMaskMask
+			 | VisualGreenMaskMask
+			 | VisualBlueMaskMask
+			 | VisualColormapSizeMask
+			 | VisualBitsPerRGBMask),
+			&tmpl, &n);
 
-    XSync(wxAPP_DISPLAY, FALSE);
-    old_handler = XSetErrorHandler(FlagError);
+  XSync(wxAPP_DISPLAY, FALSE);
+  old_handler = XSetErrorHandler(FlagError);
 
-    /* Search for double-buffered and single-buffered: */
-    {
-      int want_db;
-      
-      for (want_db = 0; want_db < 2; want_db++) {
-	for (i = 0; i < n; i++) {
-	  if (want_db) {
-	    if (suggested_vi) {
-	      if (visi[i].visualid == suggested_vi->visualid) {
-		vi = suggested_vi;
-		break;
-	      }
-	    }
-	  } else {
-	    if (suggested_sb_vi) {
-	      if (visi[i].visualid == suggested_sb_vi->visualid) {
-		sb_vi = suggested_sb_vi;
-		break;
-	      }
-	    }
-	  }
-	}
+  /* Search for double-buffered and single-buffered: */
 
-	/* The vi returned by XGetVisualInfo doesn't match our colormap.
-	   Manually search. */
-	if (i >= n) {
-	  int min_aux_match = 1000;
-	  int min_sten_match = 1000;
+  for (i = 0; i < n; i++) {
+    if (suggested_vi) {
+      if (visi[i].visualid == suggested_vi->visualid) {
+	vi = suggested_vi;
+	break;
+      }
+    }
+  }
+  
+  /* The vi returned by XGetVisualInfo doesn't match our colormap.
+     Manually search. */
+  if (i >= n) {
+    int pts, max_pts = 0;
+    int min_aux_match = 1000;
+    int min_sten_match = 1000;
+    int min_depth_match = 1000;
 	  
-	  for (i = 0; i < n; i++) {
-	    int v, v2;
-	    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_USE_GL, &v);
-	    if (v && !errorFlagged) {
-	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_LEVEL, &v);
-	      if (!v && !errorFlagged)  {
-		glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STEREO, &v);
-		if (!v && !errorFlagged)  {
-		  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DOUBLEBUFFER, &v);
-		  if ((v == want_db) && !errorFlagged) {
-		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
-		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v2);
-		    if ((v <= min_aux_match) && (v2 <= min_sten_match) && !errorFlagged) {
-		      min_aux_match = v;
-		      min_sten_match = v2;
-		      if (want_db)
-			vi = visi + i;
-		      else
-			sb_vi = visi + i;
-		    }
-		  }
-		}
+    for (i = 0; i < n; i++) {
+      int v;
+      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_USE_GL, &v);
+      if (v && !errorFlagged) {
+	glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_LEVEL, &v);
+	if (!v && !errorFlagged)  {
+	  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STEREO, &v);
+	  if ((!v == cfg->stereo) && !errorFlagged)  {
+	    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DOUBLEBUFFER, &v);
+	    if ((!v == !cfg->doubleBuffered) && !errorFlagged) {
+	      pts = 0;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
+	      if (v <= min_aux_match)
+		pts += 4;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v);
+	      if ((v <= min_sten_match) && (v >= cfg->stencil))
+		pts += 4;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DEPTH_SIZE, &v);
+	      if ((v <= min_depth_match) && (v >= cfg->depth))
+		pts += 4;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_ACCUM_RED_SIZE, &v);
+	      if (v >= cfg->accum)
+		pts++;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_ACCUM_GREEN_SIZE, &v);
+	      if (v >= cfg->accum)
+		pts++;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_ACCUM_BLUE_SIZE, &v);
+	      if (v >= cfg->accum)
+		pts++;
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_ACCUM_ALPHA_SIZE, &v);
+	      if (v >= cfg->accum)
+		pts++;
+	      if ((pts <= max_pts) && !errorFlagged) {
+		max_pts = pts;
+		vi = visi + i;
 	      }
 	    }
 	  }
 	}
       }
     }
+  }
 
-    XSetErrorHandler(old_handler);
-  }  
+  XFree(visi);
 
+  XSetErrorHandler(old_handler);
+
+  return vi;
+}
+
+Visual *wxGetGLCanvasVisual(wxGLConfig *cfg)
+{
+  XVisualInfo *vi;
+
+  vi = GetWindowVisual(cfg, FALSE);
+  
   if (vi)
     return vi->visual;
   else
@@ -3391,8 +3454,6 @@ Visual *wxGetGLWindowVisual()
 wxGL::wxGL()
 : wxObject(WXGC_NO_CLEANUP)
 {
-  /* Init visual info: */
-  wxGetGLWindowVisual();
 }
 
 wxGL::~wxGL()
@@ -3404,8 +3465,9 @@ int wxGL::Ok()
   return !!GLctx;
 }
 
-void wxGL::Reset(long d, int offscreen)
+void wxGL::Reset(wxGLConfig *cfg, long d, int offscreen)
 {
+  XVisualInfo *vi;
   draw_to = 0;
 
   if (this == current_gl_context) {
@@ -3423,11 +3485,16 @@ void wxGL::Reset(long d, int offscreen)
     glx_pm = 0;
   }
 
-  if ((offscreen ? sb_vi : vi) && d) {
+  if (d)
+    vi = GetWindowVisual(cfg, offscreen);
+  else
+    vi = NULL;
+
+  if (d) {
     GLXContext ctx;
 
     ctx = glXCreateContext(wxAPP_DISPLAY,
-			   offscreen ? sb_vi : vi,
+			   vi,
 			   NULL,
 			   offscreen ? GL_FALSE : GL_TRUE);
 
@@ -3437,7 +3504,7 @@ void wxGL::Reset(long d, int offscreen)
       if (offscreen) {
 	GLXPixmap pm;
 	
-	pm = glXCreateGLXPixmap(wxAPP_DISPLAY, sb_vi, (Drawable)d);
+	pm = glXCreateGLXPixmap(wxAPP_DISPLAY, vi, (Drawable)d);
 	glx_pm = (long)pm;
 	draw_to = (long)pm;
       } else
@@ -3482,6 +3549,8 @@ void wxGLNoContext(void)
 }
 
 #endif
+
+#include "../../../wxcommon/wxGLConfig.cxx"
 
 /********************************************************************/
 /*                         Cairo                                    */

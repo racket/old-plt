@@ -168,7 +168,8 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     char *name,
 			     long style,
 			     int scrollsPP,
-			     wxMediaBuffer *m)
+			     wxMediaBuffer *m,
+			     wxGLConfig *gl_cfg)
 : wxCanvas(parent, x, y, width, height,
 	   (((style & wxBORDER) ? wxmeBORDER : 0)
 	    + wxOVERRIDE_KEY_TRANSLATIONS 
@@ -178,7 +179,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)
 	    + (style & wxCOMBO_SIDE ? wxCOMBO_SIDE : 0)
 	    + (style & wxRESIZE_CORNER ? wxRESIZE_CORNER : 0)), 
-	   name)
+	   name, gl_cfg)
 {
   static int type_added = FALSE;
 

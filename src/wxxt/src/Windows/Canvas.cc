@@ -40,7 +40,7 @@
 
 #include "wxgl.h"
 #ifdef USE_GL
-extern Visual *wxGetGLWindowVisual();
+extern Visual *wxGetGLCanvasVisual(wxGLConfig *cfg);
 Visual *wx_common_use_visual;
 #endif
 
@@ -49,18 +49,18 @@ Visual *wx_common_use_visual;
 //-----------------------------------------------------------------------------
 
 wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
-		   int style, char *name) : wxItem()
+		   int style, char *name, wxGLConfig *gl_cfg) : wxItem()
 {
     __type = wxTYPE_CANVAS;
 
     h_size = h_units = v_size = v_units = 1;
     h_units_per_page = v_units_per_page = 50;
 
-    Create((wxPanel *)parent, x, y, width, height, style, name);
+    Create((wxPanel *)parent, x, y, width, height, style, name, gl_cfg);
 }
 
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
-		      int style, char *name)
+		      int style, char *name, wxGLConfig *gl_cfg)
 {
     wxWindow_Xintern *ph;
     Widget wgt;
@@ -139,7 +139,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     }
     // create canvas
 #ifdef USE_GL
-    wx_common_use_visual = wxGetGLWindowVisual();
+    wx_common_use_visual = wxGetGLCanvasVisual(gl_cfg);
 #endif
     wgt = XtVaCreateManagedWidget
       ("canvas", xfwfCanvasWidgetClass, X->scroll,
@@ -162,6 +162,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 
     // Initialize CanvasDC
     CreateDC();
+#ifdef USE_GL
+    dc->SetGLConfig(gl_cfg);
+#endif
     dc->SetBackground(wxWHITE); // white brush as default for canvas background
     // position in panel
     panel->PositionItem(this, x, y,

@@ -37,17 +37,18 @@ class wxKeyEvent;
 class wxMouseEvent;
 class wxPanel;
 class wxFrame;
+class wxGLConfig;
 
 class wxCanvas : public wxItem {
 public:
     wxCanvas(wxWindow *parent,
 	    int x=-1, int y=-1, int width=-1, int height=-1,
-	    int style=0, char *name="canvas");
+	    int style=0, char *name="canvas", wxGLConfig *gl = NULL);
     ~wxCanvas(void);
 
     Bool Create(wxPanel *parent,
 		int x=-1, int y=-1, int width=-1, int height=-1,
-		int style=0, char *name="canvas");
+		int style=0, char *name="canvas", wxGLConfig *gl = NULL);
 
     virtual void GetRefreshSize(int *w, int *h);
 

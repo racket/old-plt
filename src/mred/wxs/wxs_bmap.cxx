@@ -169,6 +169,7 @@ static Bool IsColor(wxBitmap *bm)
 
 
 
+
 class os_wxBitmap : public wxBitmap {
  public:
 
@@ -219,6 +220,50 @@ CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 os_wxBitmap::~os_wxBitmap()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxBitmapGetGLConfig(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxGLConfig* r;
+  objscheme_check_valid(os_wxBitmap_class, "get-gl-config in bitmap%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->GetGLConfig());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxGLConfig(r));
+}
+
+static Scheme_Object *os_wxBitmapSetGLConfig(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxBitmap_class, "set-gl-config in bitmap%", n, p);
+  class wxGLConfig* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxGLConfig(p[POFFSET+0], "set-gl-config in bitmap%", 1));
+
+  
+  WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->SetGLConfig(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxBitmapSetMask(int n,  Scheme_Object *p[])
@@ -544,8 +589,10 @@ void objscheme_setup_wxBitmap(Scheme_Env *env)
 
   wxREGGLOB(os_wxBitmap_class);
 
-  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", (Scheme_Method_Prim *)os_wxBitmap_ConstructScheme, 9));
+  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", (Scheme_Method_Prim *)os_wxBitmap_ConstructScheme, 11));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-gl-config" " method", (Scheme_Method_Prim *)os_wxBitmapGetGLConfig, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "set-gl-config" " method", (Scheme_Method_Prim *)os_wxBitmapSetGLConfig, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "set-loaded-mask" " method", (Scheme_Method_Prim *)os_wxBitmapSetMask, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-loaded-mask" " method", (Scheme_Method_Prim *)os_wxBitmapGetMask, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file" " method", (Scheme_Method_Prim *)os_wxBitmapSaveFile, 2, 3));

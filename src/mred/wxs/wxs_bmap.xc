@@ -44,4 +44,7 @@ static Bool IsColor(wxBitmap *bm)
 @ "get-loaded-mask" : wxBitmap! GetMask()
 @ "set-loaded-mask" : void SetMask(wxBitmap!)
 
+@ "set-gl-config" : void SetGLConfig(wxGLConfig^)
+@ "get-gl-config" : wxGLConfig^ GetGLConfig()
+
 @END

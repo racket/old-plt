@@ -48,8 +48,9 @@ CBOX   *freeboxes, *usedboxes;
 CCELL **ColorCells;
 
 static void assign_color(CBOX *ptr,byte *rp,byte *gp, byte *bp);
-static CCELL *create_colorcell(int r1, int g1, int b1);
-static void   map_colortable();
+static CCELL *create_colorcell(int r1, int g1, int b1,
+			       byte *r, byte *g, byte *b);
+static void   map_colortable(byte *r, byte *g, byte *b);
 
 static byte   tbl1[256],     /* tables used in F-S Dithering */
               tbl3[256],     /* contain i/16, 3i/16, 5i/16, 7i/16, */
@@ -170,7 +171,7 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
 
   /* 5b: create mapping from truncated pixel space to color table entries */
 
-  map_colortable();
+  map_colortable(r, g, b);
 
 
   /**** STEP 6: scan image, match input values to table entries */
@@ -188,7 +189,7 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
 void wxImage::get_histogram(CBOX *box)
 /****************************/
 {
-  int   i,j,r,g,b,*ptr;
+  int   i,j,rC,gC,bC,*ptr;
   byte *p;
 
   box->rmin = box->gmin = box->bmin = 999;
@@ -203,19 +204,19 @@ void wxImage::get_histogram(CBOX *box)
   p = pic24;
   for (i=0; i<HIGH; i++) {
     for (j=0; j<WIDE; j++) {
-      r = (*p++) >> (COLOR_DEPTH-B_DEPTH);
-      g = (*p++) >> (COLOR_DEPTH-B_DEPTH);
-      b = (*p++) >> (COLOR_DEPTH-B_DEPTH);
+      rC = (*p++) >> (COLOR_DEPTH-B_DEPTH);
+      gC = (*p++) >> (COLOR_DEPTH-B_DEPTH);
+      bC = (*p++) >> (COLOR_DEPTH-B_DEPTH);
 
-      if (r < box->rmin) box->rmin = r;
-      if (r > box->rmax) box->rmax = r;
+      if (rC < box->rmin) box->rmin = rC;
+      if (rC > box->rmax) box->rmax = rC;
 
-      if (g < box->gmin) box->gmin = g;
-      if (g > box->gmax) box->gmax = g;
+      if (gC < box->gmin) box->gmin = gC;
+      if (gC > box->gmax) box->gmax = gC;
 
-      if (b < box->bmin) box->bmin = b;
-      if (b > box->bmax) box->bmax = b;
-      histogram[r][g][b]++;
+      if (bC < box->bmin) box->bmin = bC;
+      if (bC > box->bmax) box->bmax = bC;
+      histogram[rC][gC][bC]++;
     }
   }
 }
@@ -503,7 +504,8 @@ static void assign_color(CBOX *ptr,byte *rp,byte *gp, byte *bp)
 
 
 /*******************************/
-CCELL *create_colorcell(int r1, int g1, int b1)
+CCELL *create_colorcell(int r1, int g1, int b1,
+			byte *r,byte *g, byte *b)
 /*******************************/
 {
   register int    i,tmp, dist;
@@ -610,7 +612,7 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 
 
 /***************************/
-static void map_colortable()
+static void map_colortable(byte *r, byte *g, byte *b)
 /***************************/
 {
   int    ir,ig,ib, *histp;
@@ -632,7 +634,8 @@ static void map_colortable()
 	  if (cell==NULL)
 	    cell = create_colorcell(ir<<(COLOR_DEPTH-B_DEPTH),
 				    ig<<(COLOR_DEPTH-B_DEPTH),
-				    ib<<(COLOR_DEPTH-B_DEPTH));
+				    ib<<(COLOR_DEPTH-B_DEPTH),
+				    r, g, b);
 
 	  dist = 9999999;
 	  for (i=0; i<cell->num_ents && dist>cell->entries[i][1]; i++) {
@@ -722,7 +725,7 @@ int wxImage::quant_fsdither()
 	        + ((g2>>(B_DEPTH-C_DEPTH)) << C_DEPTH )
 		+  (b2>>(B_DEPTH-C_DEPTH)) ) );
 	      
-	if (cell==NULL) cell = create_colorcell(r1,g1,b1);
+	if (cell==NULL) cell = create_colorcell(r1,g1,b1, r, g, b);
 
 	dist = 9999999;
 	for (ci=0; ci<cell->num_ents && dist>cell->entries[ci][1]; ci++) {

@@ -3143,6 +3143,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxPostScriptDC(global_env);
   objscheme_setup_basePrinterDC(global_env);
   objscheme_setup_wxGL(global_env);
+  objscheme_setup_wxGLConfig(global_env);
   objscheme_setup_wxCanvas(global_env);
   objscheme_setup_wxPanel(global_env);
   objscheme_setup_wxDialogBox(global_env);

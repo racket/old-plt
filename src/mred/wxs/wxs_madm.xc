@@ -58,7 +58,7 @@ typedef void *(*CAPOFunc)(void*);
 @CLASSBASE wxMediaCanvas "editor-canvas" : "canvas"
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL,wxGLConfig^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
 
 @CLASSID wxTYPE_MEDIA_CANVAS
 

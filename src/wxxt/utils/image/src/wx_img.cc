@@ -674,7 +674,7 @@ void wxImage::FloydDitherize1(XImage * /* ximage */)
   register byte   pix8, bit;
   short          *dithpic;
   int             i, j, err, bperln, order;
-  byte           *pp, *image, w, b, w8, b8;
+  byte           *pp, *image, w, blck, w8, b8;
 
 
   image  = (byte *) theImage->data;
@@ -686,8 +686,8 @@ void wxImage::FloydDitherize1(XImage * /* ximage */)
   dithpic = (short *) malloc(eWIDE * eHIGH * sizeof(short));
   if (dithpic == NULL) FatalError("not enough memory to ditherize");
 
-  w = white&0x1;  b=black&0x1;
-  w8 = w<<7;  b8 = b<<7;        /* b/w bit in high bit */
+  w = white&0x1;  blck=black&0x1;
+  w8 = w<<7;  b8 = blck<<7;        /* b/w bit in high bit */
   
   /* copy r[epic] into dithpic so that we can run the algorithm */
   pp = epic;  dp = dithpic;
@@ -726,7 +726,7 @@ void wxImage::FloydDitherize1(XImage * /* ximage */)
     else {   /* order==MSBFirst */
       bit = pix8 = 0;
       for (j=0; j < (int)eWIDE; j++,dp++) {
-	if (*dp<128) { err = *dp;     pix8 |= b; }
+	if (*dp<128) { err = *dp;     pix8 |= blck; }
 	        else { err = *dp-255; pix8 |= w; }
 
 	if (bit==7) {

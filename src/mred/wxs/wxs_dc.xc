@@ -13,6 +13,7 @@
 #include "wx_dcpr.h"
 #endif
 #include "wx_rgn.h"
+#include "../../wxcommon/wxGLConfig.h"
 #include <math.h>
 
 #ifdef wx_msw
@@ -794,6 +795,34 @@ static void *WithContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
 
 @END
 
+
+@CLASSBASE wxGLConfig "gl-config" : "object"
+
+@CREATOR ()
+
+@IVAR "double-buffered" : bool doubleBuffered
+@IVAR "stereo" : bool stereo
+@IVAR "stencil-size" : rint[0|256] stencil
+@IVAR "accum-size" : rint[0|256] accum
+@IVAR "depth-size" : rint[0|256] depth
+@IVAR "multisample-size" : rint[0|256] multisample
+
+@ "sizeof-byte" : int sizeof_GLbyte();
+@ "sizeof-ubyte" : int sizeof_GLubyte();
+@ "sizeof-short" : int sizeof_GLshort();
+@ "sizeof-ushort" : int sizeof_GLushort();
+@ "sizeof-int" : int sizeof_GLint();
+@ "sizeof-uint" : int sizeof_GLuint();
+@ "sizeof-float" : int sizeof_GLfloat();
+@ "sizeof-double" : int sizeof_GLdouble();
+@ "sizeof-boolean" : int sizeof_GLboolean();
+@ "sizeof-sizei" : int sizeof_GLsizei();
+@ "sizeof-clampf" : int sizeof_GLclampf();
+@ "sizeof-clampd" : int sizeof_GLclampd();
+@ "sizeof-enum" : int sizeof_GLenum();
+@ "sizeof-bitfield" : int sizeof_GLbitfield();
+
+@END
 
 
 #if 0

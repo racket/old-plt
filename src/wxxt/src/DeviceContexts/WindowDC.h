@@ -45,6 +45,11 @@ class wxIcon;
 class wxList;
 class wxPen;
 
+#ifdef USE_GL
+class wxGL;
+class wxGLConfig;
+#endif
+
 #ifdef Have_X_Types
 class wxWindowDC_Xinit {
 public:
@@ -73,6 +78,7 @@ public:
 
 #ifdef USE_GL
     wxGL *wx_gl;
+    wxGLConfig *gl_cfg;
 #endif
 
     /* Implement GetPixel */
@@ -187,6 +193,7 @@ public:
 
 #ifdef USE_GL
   virtual wxGL *GetGL();
+  void SetGLConfig(wxGLConfig *cfg);
 #endif
 
 #ifdef WX_USE_CAIRO
@@ -238,7 +245,7 @@ public:
 
   int Ok();
 
-  void Reset(long d, Bool offscreen);
+  void Reset(wxGLConfig *_cfg, long d, Bool offscreen);
 
   long draw_to; /* really a Drawable */
   long GLctx; /* really a GLXContext */

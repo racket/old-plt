@@ -56,6 +56,8 @@ extern int wx_write_png(char *file_name, wxBitmap *bm);
 extern void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask, 
 			int br, int bg, int bb);
 
+#include "../../../wxcommon/wxGLConfig.h"
+
 // hints for what to free in wxBitmap::Destroy()
 enum {
     __BITMAP_NORMAL,	// <-- no special data
@@ -704,6 +706,22 @@ void wxBitmap::ReleaseLabel()
       button_label_bm = NULL;
     }
   }
+}
+
+
+void wxBitmap::SetGLConfig(wxGLConfig *_gl_cfg)
+{
+  if (_gl_cfg)
+    _gl_cfg = _gl_cfg->Clone();
+  gl_cfg = _gl_cfg;
+}
+
+wxGLConfig *wxBitmap::GetGLConfig(void)
+{
+  if (gl_cfg)
+    return gl_cfg->Clone();
+  else
+    return NULL;
 }
 
 //-----------------------------------------------------------------------------

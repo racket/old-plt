@@ -77,8 +77,6 @@ static int    autogamma = 0;    /* perform gamma correction by default */
 static int    rootPattern = 0;  /* pattern used for root border */
 static char   initpath[500];
 
-byte           r[256],g[256],b[256];  /* colormap */
-
 /* used in XResource reading... */
 static char *def_str;
 static long int   def_int;
@@ -389,20 +387,11 @@ int wxImage::openPic(char *fullname)
   filetype = UNKNOWN;
   if (strncmp(magicno,"GIF87",5)==0) filetype = GIF;
 
-  /* MATTHEW */
   else if (strncmp(magicno,"GIF89",5)==0) filetype = GIF;
-
-  else if (strncmp(magicno,"VIEW",4)==0 ||
-	   strncmp(magicno,"WEIV",4)==0) filetype = PM;
-
-  else if (magicno[0] == 'P' && magicno[1]>='1' && 
-	   magicno[1]<='6') filetype = PBM;
 
   else if (strncmp(magicno,"#define",7)==0) filetype = XBM;
 
   else if (magicno[0] == 'B' && magicno[1] == 'M') filetype = BMP;
-
-  else if (magicno[0]==0x0a && magicno[1] <= 5) filetype = PCX;
 
   if (filetype == UNKNOWN) {
     goto FAILED;
@@ -411,21 +400,7 @@ int wxImage::openPic(char *fullname)
   i = 1;
   switch (filetype) {
   case GIF: i = LoadGIF(filename,ncols); break;
-#if 0
-  case PM:  i = LoadPM (filename,ncols); break;
-  case PBM: i = LoadPBM(filename,ncols); break;
-#endif
   case XBM: i = LoadXBM(filename,ncols); break;
-#if 0
-  case PCX: 
-    {
-      i = !(LoadPCX(filename, &pinfo));
-      pic   = pinfo.pic;
-      pWIDE = pinfo.w;
-      pHIGH = pinfo.h;
-      break;
-    }
-#endif
   case BMP: 
     {
       i = !(LoadBMP(filename, &pinfo));

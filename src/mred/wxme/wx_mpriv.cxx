@@ -1621,7 +1621,7 @@ Bool wxMediaEdit::CheckFlow(double maxw, wxDC *dc, double Y,
       hadNewline = FALSE;
     }
 
-	if (scheme_current_thread) SCHEME_USE_FUEL(1);
+    if (scheme_current_thread) SCHEME_USE_FUEL(1);
 
     w = 0.0;
     snip->GetExtent(dc, _totalWidth, Y, &w);
@@ -2447,6 +2447,7 @@ void wxMediaEdit::Redraw()
      determined by character position ranges, box coordinates, or
      both. If neither is specified, we have to assume that everything
      needs to be refreshed. */
+  
   if (!refreshAll && (!refreshUnset || !refreshBoxUnset)) {
     if (!refreshUnset) {
       top = y;
@@ -2573,7 +2574,6 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
   if (bgColor && !offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok() && !ps) {
     /* Need to make sure that difference between coordinates is
        integral; otherwise, roundoff error could affect drawing */
-    int v;
     unsigned char red, green, blue;
 
     red = (unsigned char)bgColor->Red();

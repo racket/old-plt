@@ -430,7 +430,6 @@ void wxCommonInit(void)
       wxDARK_GREY_PIXEL = c->GetPixel(wxAPP_COLOURMAP);
     }
     {
-      wxColour *col;
       int r, g, b, i, c;
 
       r = 0;

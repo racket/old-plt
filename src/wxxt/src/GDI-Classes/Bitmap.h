@@ -42,6 +42,8 @@ class wxCursor_Xintern;
 class wxItem;
 class wxMemoryDC;
 
+class wxGLConfig;
+
 class wxBitmap : public wxObject { // bitmap representation
 public:
     wxBitmap(void);
@@ -84,12 +86,16 @@ public:
   void *GetLabelPixmap(Bool for_button = FALSE);
   void ReleaseLabel();
 
+  void SetGLConfig(wxGLConfig *gl_cfg);
+  wxGLConfig *GetGLConfig(void);
+
 public:
     wxBitmap_Xintern *Xbitmap;
     wxColourMap      *cmap;
     wxBitmap         *loaded_mask;
     wxBitmap         *maskBit;
     wxBitmap         *label_bm, *button_label_bm;
+    wxGLConfig       *gl_cfg;
 
 public:
     int selectedIntoDC;

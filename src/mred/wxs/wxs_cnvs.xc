@@ -63,7 +63,7 @@ static void wxSetResizeCorner(wxCanvas *c, Bool v)
 @CLASSBASE wxCanvas "canvas":"window"
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas",wxGLConfig^=NULL) : : /NOZERO[3]|NOZERO[4]/ <> panel
 
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci

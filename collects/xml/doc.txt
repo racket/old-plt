@@ -194,8 +194,11 @@ Note: Xexpr is the only important one to understand.  Even then,
   Source = (make-source Location Location)
   (define-struct source (start stop))
 
-  Location = Nat
-           |  Symbol
+  Location = (make-location Nat Nat Nat) | Symbol
+  (define-struct location (line char offset))
+  Note: read-xml records location structures, while xexpr->xml inserts a
+        symbol.  Other functions that must fabricate XML Locations
+        without prior source location should use a sensible "comment" symbol.
 
 
 The PList Library

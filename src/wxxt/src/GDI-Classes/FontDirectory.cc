@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.2 1999/01/28 16:26:59 mflatt Exp $
+ * $Id: FontDirectory.cc,v 1.3 1999/07/26 15:17:10 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -514,7 +514,7 @@ int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
     return id;
 
   id = GetNewFontId();
-  s = new char[strlen(name) + 2];
+  char *s = new char[strlen(name) + 2];
   strcpy(s + 1, name);
   s[0] = '@';
   Initialize(id, family, s);

@@ -449,6 +449,8 @@
 		       peek-bytes-avail!)
 		   bstr pos progress-evt input-port pos)])
 	  (cond
+	   ;; the first two cases below are shortcuts, and not
+	   ;;  strictly necessary
 	   [(sync/timeout 0 nack) (void)]
 	   [(sync/timeout 0 progress-evt) (if poll?
 					      #f

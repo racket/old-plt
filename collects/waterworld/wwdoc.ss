@@ -68,5 +68,3 @@
     (write-xml/content
      (xexpr->xml *the-page*) html-port)
     (close-output-port html-port)))
-
-

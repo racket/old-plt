@@ -1114,6 +1114,10 @@ static void tcp_close_input(Scheme_Input_Port *port)
 
   data = (Scheme_Tcp *)port->port_data;
 
+#ifdef USE_WINSOCK_TCP
+  shutdown(data->tcp, 0);
+#endif
+
   if (--data->b.refcount)
     return;
 
@@ -1314,18 +1318,22 @@ static void tcp_close_output(Scheme_Output_Port *port)
 
   data = (Scheme_Tcp *)port->port_data;
 
+#ifdef USE_SOCKETS_TCP
+  shutdown(data->tcp, 1);
+#endif
+
   if (--data->b.refcount)
     return;
 
-#ifdef USE_UNIX_SOCKETS_TCP
-  close(data->tcp);
-#endif
-#ifdef USE_WINSOCK_TCP
-  shutdown(data->tcp, 2);
+#ifdef USE_SOCKETS_TCP
+  UNREGISTER_SOCKET(data->tcp);
+  closesocket(data->tcp);
 #endif
 #ifdef USE_MAC_TCP
   mac_tcp_close(data);
 #endif
+
+  --scheme_file_open_count;
 }
 
 static Scheme_Object *

@@ -316,15 +316,11 @@
     
     (define dialog-box%
       (class (make-top-container% mred:connections:connections-dialog-box%) args
-	(inherit
-	  centre)
-	(rename
-	  [super-show show])
 	(public
 	  
 	 [on-default-action
 	  (lambda (item)
-	    (send item on-default-action))]
+	    (send item on-default-action))])
 
 	  ; show: shows/hides the dialog and optionally centers it
 	  ; on-screen
@@ -333,10 +329,6 @@
 	  ; returns: nothing
 	  ; effects: shows or hides window; if now & center are both #t,
 	  ;   centers window on-screen as well.
-	  [show
-	   (opt-lambda (now [center #t])
-	     (when (and now center) (centre wx:const-both))
-	     (super-show now))])
 	(sequence
 	  (apply (opt-lambda (parent title
 				     [modal #f]

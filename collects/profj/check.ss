@@ -663,14 +663,17 @@
 
   ;check-var-init: expression (expression -> type) type symbol type-records -> type
   (define (check-var-init init check-e dec-type name type-recs)
-    (if (array-init? init)
-        (if (array-type? dec-type)
-            (begin
-              (send type-recs add-req (make-req 'array null))
-              (check-array-init (array-init-vals init) check-e 
-                                (array-type-type dec-type) type-recs))
-            (var-init-error name dec-type (array-init-src init)))
-        (check-e init)))
+    (let ((type (if (array-init? init)
+                    (if (array-type? dec-type)
+                        (begin
+                          (send type-recs add-req (make-req 'array null))
+                          (check-array-init (array-init-vals init) check-e 
+                                            (array-type-type dec-type) type-recs))
+                        (var-init-error 'array name dec-type #f (array-init-src init)))
+                    (check-e init))))
+      (unless (assignment-conversion dec-type type type-recs)
+        (var-init-error 'other name dec-type type (expr-src init)))
+      type))
   
   ;check-array-init (U (list array-init) (list Expression)) (expression->type) type type-records -> type
   (define (check-array-init inits check-e dec-type type-recs)
@@ -706,11 +709,16 @@
                    ((no-body) (format "method ~a has no implementation and is not abstract" method)))
                  method src))
   
-  ;var-init-error: symbol type src -> void
-  (define (var-init-error name dec-type src)
+  ;var-init-error: symbol symbol type type src -> void
+  (define (var-init-error kind name dec-type given src)
     (raise-error name
-                 (format "Expected ~a to be of declared type ~a, given an array" 
-                         name (type->ext-name dec-type))
+                 (case kind
+                   ((array)
+                    (format "Expected ~a to be of declared type ~a, given an array" 
+                            name (type->ext-name dec-type)))
+                   ((other)
+                    (format "Expected ~a to be assignable to declared type ~a, given ~a"
+                            name (type->ext-name dec-type) (type->ext-name given))))
                  name src))
 
   ;array-init-error: type type src -> void

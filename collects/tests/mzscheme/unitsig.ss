@@ -174,6 +174,16 @@
 
 (test 9 'include (invoke-unit/sig i1@))
 
+;; Nested includes, macros that expand to `(include ...)'
+(define i1.5@
+  (unit/sig 
+   ()
+   (import)
+   
+   (include "uinc3.ss")))
+
+(test 9 'include (invoke-unit/sig i1.5@))
+
 (define i2@
   (unit/sig 
    ()

@@ -735,8 +735,6 @@ typedef struct Scheme_Thread {
 
   long block_start_sleep;
 
-  int eof_on_error; /* For port operations */
-
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Thread *p);
   void *kill_data;
@@ -863,7 +861,7 @@ typedef struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  int (*getc_fun) (struct Scheme_Input_Port *port);
+  int (*getc_fun) (struct Scheme_Input_Port *port, int *nonblock, int *eof_on_error);
   int (*peekc_fun) (struct Scheme_Input_Port *port);
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);

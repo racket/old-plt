@@ -44,10 +44,6 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
      "remote-install.ss installation"
      (list->vector (cdr (vector->list argv)))
      (once-any
-      (("-i" "--installation")
-       "copy the files from a remote installation, instead of from download.plt-scheme.org"
-       (set! download.plt-scheme.org #f)))
-     (once-any
       (("-f" "--from-remote") remote-host
        "the remote host to install the binaries from"
        (set! to-remote-host remote-host))

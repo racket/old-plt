@@ -122,7 +122,7 @@
     (unit/sig->unit
      (compound-unit/sig (import)
        (link [mzlib : mzlib:core^ (mzlib:core@)]
-	     [hooks : mzlib:print-convert-hooks^ (mzlib:print-convert-hooks@)]
+	     [hooks : mzlib:print-convert-hooks^ (drscheme:print-convert-hooks@)]
 	     [print-convert : mzlib:print-convert^
                (mzlib:print-convert@ (mzlib string@) (mzlib function@) hooks)]
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]

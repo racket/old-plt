@@ -1,3 +1,13 @@
+(define drscheme:print-convert-hooks@
+  (unit/sig mzlib:print-convert-hooks^
+    (import)
+
+    (define before-test? (lambda (expr) (is-a? expr wx:image-snip%)))
+    (define before-convert (lambda (expr recur) expr))
+    
+    (define build-share-hook (lambda (x b) 'no-share))
+    (define build-share-name-hook  (lambda (x) #f))
+    (define print-convert-hook (lambda (x p) x))))
 
 (define drscheme:rep@
   (unit/sig drscheme:rep^
@@ -136,6 +146,7 @@
 	    
 	    [param #f]
 	    [current-thread-desc #f]
+	    [current-thread-directory (current-directory)]
 	    [break (lambda () 
 		     (when current-thread-desc
 		       (break-thread current-thread-desc)))]
@@ -217,6 +228,7 @@
 			      (mzlib:function@:dynamic-wind/protect-break
 			       (lambda () 
 				 (semaphore-wait s)
+				 (current-directory current-thread-directory)
 				 (set! current-thread-desc (current-thread))
 				 (before))
 			       (lambda ()
@@ -230,7 +242,8 @@
 				 (set! current-thread-desc #f)
 				 (set-escape #f)
 				 (semaphore-post s)
-				 (after user-code-error?))))))))))]
+				 (after user-code-error?)
+				 (set! current-thread-directory (current-directory)))))))))))]
 	    [do-many-buffer-evals
 	     (lambda (edit start end pre post)
 	       (let ([pre (lambda ()
@@ -340,7 +353,9 @@
 				 (current-error-port this-err)
 				 (current-input-port this-in)
 				 (current-load do-load)
-				 (current-eval userspace-eval)))
+				 (current-eval userspace-eval)
+				 (set! current-thread-directory
+				       (current-directory))))
 			     p))
 	       (super-reset-console))]
 	    [initialize-console

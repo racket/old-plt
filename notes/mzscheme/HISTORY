@@ -1,4 +1,4 @@
-Version 100alpha1, January 29, 1998
+Version 100alpha2, ??, 1998
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
  override : defines ivars already in superclass
@@ -46,6 +46,7 @@ MacOS: getenv and putenv work within MzScheme; if a file named
  "Environment" resides in MzScheme's folder, it provides the
  initial environment; see the documentation for details
 MacOS: fixed TCP problems
+Fixed read-write invariance for inexact (floating-point) numbers
 Changed handling of inexact can complex numbers towards compliance
  with Brad Lucier's proposal:
   (* 0 x) = 0 for all x

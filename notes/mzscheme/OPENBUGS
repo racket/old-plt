@@ -1,6 +1,4 @@
 
-Inexact (i.e., floating-point) numbers are not write/read invariant
-
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax' and doesn't
@@ -18,8 +16,8 @@ Under MacOS, an input expression that is longer than 256 characters
 Under Windows, the `system' procedure blocks all MzScheme threads
  (`system*' works correctly)
 
-Under AIX, write to tcp output port blocks MzScheme when the low-level
-  buffer is full
+Under AIX 3.2, write to tcp output port blocks MzScheme when the
+  low-level buffer is full
 
 On Alpha machines, floating-point overflow is not handled properly
  (so +inf.0, -inf.0, and +nan.0 are messed up)

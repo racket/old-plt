@@ -1059,9 +1059,6 @@ int scheme_pthread_semaphore_try_down(void *);
     use single-precision numbers as the result rather
     than double-precision numbers. */
 
- /* INEXACT_PRINT_DIGITS "<X>" uses <X> as the number of digits to
-     use for printing floating-points. Defaults to "14". */
-
  /* USE_INFINITY_FUNC uses infinity() to get the infinity
      floating-point constant instead of using HUGE_VAL. */
 

@@ -39,10 +39,6 @@
 # endif
 #endif
 
-#ifndef INEXACT_PRINT_DIGITS
-#define INEXACT_PRINT_DIGITS "14"
-#endif
-
 #ifdef SIXTY_FOUR_BIT_INTEGERS
 # define MAX_SHIFT_TRY 61
 # define MAX_SHIFT_EVER 64
@@ -2650,7 +2646,7 @@ number_to_string (int argc, Scheme_Object *argv[])
 static char *double_to_string (double d)
 {
   char buffer[100], *s;
-  int l, i;
+  int l, i, digits;
 
   if (MZ_IS_NAN(d))
     return not_a_number_str;
@@ -2665,7 +2661,24 @@ static char *double_to_string (double d)
       return "-0.0";
   }
 
-  sprintf (buffer, "%." INEXACT_PRINT_DIGITS "g", d);
+  /* Initial count for significant digits is 14. That's big enough to
+     get most right, small enough to avoid nonsense digits. But we'll
+     loop in case it's not precise enough to get read-write invariance: */
+  digits = 14;
+  while (digits < 30) {
+    double check;
+    char *ptr;
+
+    sprintf(buffer, "%.*g", digits, d);
+
+    /* Did we get read-write invariance, yet? */
+    check = strtod(buffer, &ptr);
+    if (check == d)
+      break;
+
+    digits++;
+  }
+
   l = strlen(buffer);
   for (i = 0; i < l; i++)
     if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.158 1998/11/03 23:55:47 mflatt Exp $
+; $Id: scm-main.ss,v 1.159 1998/11/04 19:52:54 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -223,7 +223,7 @@
 	    (static-error expr "Malformed case-lambda"))))))
 
   (add-primitivized-micro-form 'case-lambda beginner-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
-  (add-primitivized-micro-form 'case-lambda intermediate-vocabulary (make-case-lambda-micro #f proper-arglist-decls-vocab))
+  (add-primitivized-micro-form 'case-lambda intermediate-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
   (add-primitivized-micro-form 'case-lambda advanced-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
   (add-primitivized-micro-form 'case-lambda scheme-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
 
@@ -542,8 +542,19 @@
 	    (if (or non-sym-ok?
 		  (z:symbol? (cadr contents)))
 	      (create-quote-form (cadr contents) expr)
-	      (static-error expr "'~e is not a symbol"
-		(sexp->raw (cadr contents))))
+	      (let*-values ([(v) (sexp->raw (cadr contents))]
+			    [(v prefix)
+			     ;; Strip leading quotes, because user most likely typed ''x
+			     ;; instead of '(quote x)
+			     (let loop ([v v][prefix ""])
+			       (cond
+				[(and (pair? v)
+				      (eq? (car v) 'quote)
+				      (pair? (cdr v))
+				      (null? (cddr v)))
+				 (loop (cadr v) (string-append "'" prefix))]
+				[else (values v prefix)]))])
+		(static-error expr "'~a~s is not a symbol" prefix v)))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.2 1998/08/01 12:42:15 mflatt Exp $
+ * $Id: Colour.cc,v 1.3 1998/09/24 18:33:30 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -320,13 +320,13 @@ void wxColour::FreePixel(Bool del)
 
 wxColourDatabase::~wxColourDatabase (void)
 {
-    wxNode *node = First();
-    while (node) {
-	wxColour *col = (wxColour*)node->Data();
-	wxNode *next = node->Next();
-	delete col;
-	node = next;
-    }
+  wxNode *node = First();
+  while (node) {
+    wxColour *col = (wxColour*)node->Data();
+    wxNode *next = node->Next();
+    delete col;
+    node = next;
+  }
 }
 
 wxColour *wxColourDatabase::FindColour(const char *colour)
@@ -342,128 +342,128 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   uc_colour[i] = 0;
   colour = uc_colour;
 
-    if ((node = Find(colour)))
-	return (wxColour*)node->Data(); // colour already defined
+  if ((node = Find(colour)))
+    return (wxColour*)node->Data(); // colour already defined
 
-    XColor xcolor;
+  /* Define the standard set: */
+  static wxHashTable *aux = NULL;
+  if (!aux) {
+    wxColour *tmpc;
+    aux = new wxHashTable(wxKEY_STRING, 20);
+#define APPEND_C(name, c) tmpc = c; tmpc->Lock(1); aux->Put(name, tmpc);
+
+    APPEND_C ("AQUAMARINE", new wxColour (112, 219, 147));
+    APPEND_C ("BLACK", new wxColour (0, 0, 0));
+    APPEND_C ("BLUE", new wxColour (0, 0, 255));
+    APPEND_C ("BLUE VIOLET", new wxColour (159, 95, 159));
+    APPEND_C ("BROWN", new wxColour (165, 42, 42));
+    APPEND_C ("CADET BLUE", new wxColour (95, 159, 159));
+    APPEND_C ("CORAL", new wxColour (255, 127, 0));
+    APPEND_C ("CORNFLOWER BLUE", new wxColour (66, 66, 111));
+    APPEND_C ("CYAN", new wxColour (0, 255, 255));
+    APPEND_C ("DARK GREY", new wxColour (47, 47, 47));
+    APPEND_C ("DARK GREEN", new wxColour (47, 79, 47));
+    APPEND_C ("DARK OLIVE GREEN", new wxColour (79, 79, 47));
+    APPEND_C ("DARK ORCHID", new wxColour (153, 50, 204));
+    APPEND_C ("DARK SLATE BLUE", new wxColour (107, 35, 142));
+    APPEND_C ("DARK SLATE GREY", new wxColour (47, 79, 79));
+    APPEND_C ("DARK TURQUOISE", new wxColour (112, 147, 219));
+    APPEND_C ("DIM GREY", new wxColour (84, 84, 84));
+    APPEND_C ("FIREBRICK", new wxColour (142, 35, 35));
+    APPEND_C ("FOREST GREEN", new wxColour (35, 142, 35));
+    APPEND_C ("GOLD", new wxColour (204, 127, 50));
+    APPEND_C ("GOLDENROD", new wxColour (219, 219, 112));
+    APPEND_C ("GREY", new wxColour (192, 192, 192));
+    APPEND_C ("GREEN", new wxColour (0, 255, 0));
+    APPEND_C ("GREEN YELLOW", new wxColour (147, 219, 112));
+    APPEND_C ("INDIAN RED", new wxColour (79, 47, 47));
+    APPEND_C ("KHAKI", new wxColour (159, 159, 95));
+    APPEND_C ("LIGHT BLUE", new wxColour (191, 216, 216));
+    APPEND_C ("LIGHT GREY", new wxColour (168, 168, 168));
+    APPEND_C ("LIGHT STEEL BLUE", new wxColour (143, 143, 188));
+    APPEND_C ("LIME GREEN", new wxColour (50, 204, 50));
+    APPEND_C ("LIGHT MAGENTA", new wxColour (255, 0, 255));
+    APPEND_C ("MAGENTA", new wxColour (255, 0, 255));
+    APPEND_C ("MAROON", new wxColour (142, 35, 107));
+    APPEND_C ("MEDIUM AQUAMARINE", new wxColour (50, 204, 153));
+    APPEND_C ("MEDIUM GREY", new wxColour (100, 100, 100));
+    APPEND_C ("MEDIUM BLUE", new wxColour (50, 50, 204));
+    APPEND_C ("MEDIUM FOREST GREEN", new wxColour (107, 142, 35));
+    APPEND_C ("MEDIUM GOLDENROD", new wxColour (234, 234, 173));
+    APPEND_C ("MEDIUM ORCHID", new wxColour (147, 112, 219));
+    APPEND_C ("MEDIUM SEA GREEN", new wxColour (66, 111, 66));
+    APPEND_C ("MEDIUM SLATE BLUE", new wxColour (127, 0, 255));
+    APPEND_C ("MEDIUM SPRING GREEN", new wxColour (127, 255, 0));
+    APPEND_C ("MEDIUM TURQUOISE", new wxColour (112, 219, 219));
+    APPEND_C ("MEDIUM VIOLET RED", new wxColour (219, 112, 147));
+    APPEND_C ("MIDNIGHT BLUE", new wxColour (47, 47, 79));
+    APPEND_C ("NAVY", new wxColour (35, 35, 142));
+    APPEND_C ("ORANGE", new wxColour (204, 50, 50));
+    APPEND_C ("ORANGE RED", new wxColour (255, 0, 127));
+    APPEND_C ("ORCHID", new wxColour (219, 112, 219));
+    APPEND_C ("PALE GREEN", new wxColour (143, 188, 143));
+    APPEND_C ("PINK", new wxColour (188, 143, 234));
+    APPEND_C ("PLUM", new wxColour (234, 173, 234));
+    APPEND_C ("PURPLE", new wxColour (176, 0, 255));
+    APPEND_C ("RED", new wxColour (255, 0, 0));
+    APPEND_C ("SALMON", new wxColour (111, 66, 66));
+    APPEND_C ("SEA GREEN", new wxColour (35, 142, 107));
+    APPEND_C ("SIENNA", new wxColour (142, 107, 35));
+    APPEND_C ("SKY BLUE", new wxColour (50, 153, 204));
+    APPEND_C ("SLATE BLUE", new wxColour (0, 127, 255));
+    APPEND_C ("SPRING GREEN", new wxColour (0, 255, 127));
+    APPEND_C ("STEEL BLUE", new wxColour (35, 107, 142));
+    APPEND_C ("TAN", new wxColour (219, 147, 112));
+    APPEND_C ("THISTLE", new wxColour (216, 191, 216));
+    APPEND_C ("TURQUOISE", new wxColour (173, 234, 234));
+    APPEND_C ("VIOLET", new wxColour (79, 47, 79));
+    APPEND_C ("VIOLET RED", new wxColour (204, 50, 153));
+    APPEND_C ("WHEAT", new wxColour (216, 216, 191));
+    APPEND_C ("WHITE", new wxColour (255, 255, 255));
+    APPEND_C ("YELLOW", new wxColour (255, 255, 0));
+    APPEND_C ("YELLOW GREEN", new wxColour (153, 204, 50));
+  }
+
+  XColor xcolor;
   wxColour *col;
 
-    // use wxAPP_DISPLAY and wxAPP_COLOURMAP as default
-    if (XParseColor(wxAPP_DISPLAY, GETCOLORMAP(wxAPP_COLOURMAP),
-		    colour, &xcolor)) {
-      // new colour found: add to list
+  // use wxAPP_DISPLAY and wxAPP_COLOURMAP as default
+  if (XParseColor(wxAPP_DISPLAY, GETCOLORMAP(wxAPP_COLOURMAP), colour, &xcolor)) {
+    // new colour found: add to list as found, but only if it's in the standard set
+    col = (wxColour *)aux->Get(colour);
+    if (col) {
       col = DEBUG_NEW wxColour((unsigned char)(xcolor.red >> SHIFT),
 			       (unsigned char)(xcolor.green >> SHIFT),
 			       (unsigned char)(xcolor.blue >> SHIFT));
       col->Lock(1);
-    } else {
-      static wxHashTable *aux = NULL;
-      /* Make sure std set is available */
-      if (!aux) {
-	wxColour *tmpc;
-	aux = new wxHashTable(wxKEY_STRING, 20);
-#define APPEND_C(name, c) tmpc = c; tmpc->Lock(1); aux->Put(name, tmpc);
-
-	APPEND_C ("AQUAMARINE", new wxColour (112, 219, 147));
-	APPEND_C ("BLACK", new wxColour (0, 0, 0));
-	APPEND_C ("BLUE", new wxColour (0, 0, 255));
-	APPEND_C ("BLUE VIOLET", new wxColour (159, 95, 159));
-	APPEND_C ("BROWN", new wxColour (165, 42, 42));
-	APPEND_C ("CADET BLUE", new wxColour (95, 159, 159));
-	APPEND_C ("CORAL", new wxColour (255, 127, 0));
-	APPEND_C ("CORNFLOWER BLUE", new wxColour (66, 66, 111));
-	APPEND_C ("CYAN", new wxColour (0, 255, 255));
-	APPEND_C ("DARK GREY", new wxColour (47, 47, 47));
-	APPEND_C ("DARK GREEN", new wxColour (47, 79, 47));
-	APPEND_C ("DARK OLIVE GREEN", new wxColour (79, 79, 47));
-	APPEND_C ("DARK ORCHID", new wxColour (153, 50, 204));
-	APPEND_C ("DARK SLATE BLUE", new wxColour (107, 35, 142));
-	APPEND_C ("DARK SLATE GREY", new wxColour (47, 79, 79));
-	APPEND_C ("DARK TURQUOISE", new wxColour (112, 147, 219));
-	APPEND_C ("DIM GREY", new wxColour (84, 84, 84));
-	APPEND_C ("FIREBRICK", new wxColour (142, 35, 35));
-	APPEND_C ("FOREST GREEN", new wxColour (35, 142, 35));
-	APPEND_C ("GOLD", new wxColour (204, 127, 50));
-	APPEND_C ("GOLDENROD", new wxColour (219, 219, 112));
-	APPEND_C ("GREY", new wxColour (192, 192, 192));
-	APPEND_C ("GREEN", new wxColour (0, 255, 0));
-	APPEND_C ("GREEN YELLOW", new wxColour (147, 219, 112));
-	APPEND_C ("INDIAN RED", new wxColour (79, 47, 47));
-	APPEND_C ("KHAKI", new wxColour (159, 159, 95));
-	APPEND_C ("LIGHT BLUE", new wxColour (191, 216, 216));
-	APPEND_C ("LIGHT GREY", new wxColour (168, 168, 168));
-	APPEND_C ("LIGHT STEEL BLUE", new wxColour (143, 143, 188));
-	APPEND_C ("LIME GREEN", new wxColour (50, 204, 50));
-	APPEND_C ("LIGHT MAGENTA", new wxColour (255, 0, 255));
-	APPEND_C ("MAGENTA", new wxColour (255, 0, 255));
-	APPEND_C ("MAROON", new wxColour (142, 35, 107));
-	APPEND_C ("MEDIUM AQUAMARINE", new wxColour (50, 204, 153));
-	APPEND_C ("MEDIUM GREY", new wxColour (100, 100, 100));
-	APPEND_C ("MEDIUM BLUE", new wxColour (50, 50, 204));
-	APPEND_C ("MEDIUM FOREST GREEN", new wxColour (107, 142, 35));
-	APPEND_C ("MEDIUM GOLDENROD", new wxColour (234, 234, 173));
-	APPEND_C ("MEDIUM ORCHID", new wxColour (147, 112, 219));
-	APPEND_C ("MEDIUM SEA GREEN", new wxColour (66, 111, 66));
-	APPEND_C ("MEDIUM SLATE BLUE", new wxColour (127, 0, 255));
-	APPEND_C ("MEDIUM SPRING GREEN", new wxColour (127, 255, 0));
-	APPEND_C ("MEDIUM TURQUOISE", new wxColour (112, 219, 219));
-	APPEND_C ("MEDIUM VIOLET RED", new wxColour (219, 112, 147));
-	APPEND_C ("MIDNIGHT BLUE", new wxColour (47, 47, 79));
-	APPEND_C ("NAVY", new wxColour (35, 35, 142));
-	APPEND_C ("ORANGE", new wxColour (204, 165, 0));
-	APPEND_C ("ORANGE RED", new wxColour (255, 127, 0));
-	APPEND_C ("ORCHID", new wxColour (219, 112, 219));
-	APPEND_C ("PALE GREEN", new wxColour (143, 188, 143));
-	APPEND_C ("PINK", new wxColour (188, 143, 234));
-	APPEND_C ("PLUM", new wxColour (234, 173, 234));
-	APPEND_C ("PURPLE", new wxColour (176, 0, 255));
-	APPEND_C ("RED", new wxColour (255, 0, 0));
-	APPEND_C ("SALMON", new wxColour (111, 66, 66));
-	APPEND_C ("SEA GREEN", new wxColour (35, 142, 107));
-	APPEND_C ("SIENNA", new wxColour (142, 107, 35));
-	APPEND_C ("SKY BLUE", new wxColour (50, 153, 204));
-	APPEND_C ("SLATE BLUE", new wxColour (0, 127, 255));
-	APPEND_C ("SPRING GREEN", new wxColour (0, 255, 127));
-	APPEND_C ("STEEL BLUE", new wxColour (35, 107, 142));
-	APPEND_C ("TAN", new wxColour (219, 147, 112));
-	APPEND_C ("THISTLE", new wxColour (216, 191, 216));
-	APPEND_C ("TURQUOISE", new wxColour (173, 234, 234));
-	APPEND_C ("VIOLET", new wxColour (79, 47, 79));
-	APPEND_C ("VIOLET RED", new wxColour (204, 50, 153));
-	APPEND_C ("WHEAT", new wxColour (216, 216, 191));
-	APPEND_C ("WHITE", new wxColour (255, 255, 255));
-	APPEND_C ("YELLOW", new wxColour (255, 255, 0));
-	APPEND_C ("YELLOW GREEN", new wxColour (153, 204, 50));
-      }
-
-      col = (wxColour *)aux->Get(colour);
-      if (!col) {
-	wxDebugMsg("wxColourDatabase: could not find colour \"%s\"\n", colour);
-	return NULL; // no such colour
-      }
     }
+  } else {
+    col = (wxColour *)aux->Get(colour);
+  }
 
+  if (col)
     Append(colour, col);
-    return col;
+
+  return col;
 }
 
 char *wxColourDatabase::FindName(wxColour& colour)
 {
-    if (colour.Ok()) {
-	unsigned char red   = colour.Red();
-	unsigned char green = colour.Green();
-	unsigned char blue  = colour.Blue();
-
-	for (wxNode *node = First(); node; node = node->Next()) {
-	    wxColour *col = (wxColour*)node->Data ();
-	    if (col->Red()==red && col->Green()==green && col->Blue()==blue) {
-		char *found = node->key.string;
-		if (found)
-		    return found;
-	    }
-	}
+  if (colour.Ok()) {
+    unsigned char red   = colour.Red();
+    unsigned char green = colour.Green();
+    unsigned char blue  = colour.Blue();
+    
+    for (wxNode *node = First(); node; node = node->Next()) {
+      wxColour *col = (wxColour*)node->Data ();
+      if (col->Red()==red && col->Green()==green && col->Blue()==blue) {
+	char *found = node->key.string;
+	if (found)
+	  return found;
+      }
     }
-    return NULL;
+  }
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.3 1998/09/20 21:48:49 mflatt Exp $
+ * $Id: WindowDC.h,v 1.4 1998/09/23 00:11:58 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -50,7 +50,8 @@ class wxWindowDC_Xinit {
 public:
     Display* dpy;		// display of drawable
     Screen* scn;		// screen of drawable
-    Drawable drawable;		// init to 0 if drawable is not created;
+    Drawable drawable;		// init to 0 if drawable is not created
+    wxWindow *owner;
 };
 class wxWindowDC_Xintern { // X GDI data
 public:
@@ -61,6 +62,7 @@ public:
     Drawable     drawable;
     Window       draw_window;
     unsigned int width, height, depth;
+    wxWindow     *owner;
 
     /* MATTHEW: [5] Implement GetPixel */
     XImage *get_pixel_image_cache;

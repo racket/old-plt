@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.9 1998/09/23 12:53:19 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.10 1998/09/24 17:09:47 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -969,6 +969,8 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
 	DEPTH = wxDisplayDepth(); // depth is display depth
     }
     Colour = (DEPTH != 1); // accept everything else than depth one as colour display
+
+    X->owner = init->owner;
 
     XGCValues values; unsigned long mask;
     values.foreground = BlackPixelOfScreen(SCN);

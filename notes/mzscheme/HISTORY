@@ -27,6 +27,7 @@ Added raise-mismatch-error
 MacOS: getenv and putenv work within MzScheme; in a file called
  "Environment" resides in MzScheme's folder, it provides the
  initial environment
+All zero-length vectors are eq
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss

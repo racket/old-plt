@@ -50,7 +50,11 @@
 ;;; (software-type) should be set to the generic operating system type.
 ;;; UNIX, VMS, MACOS, AMIGA and MS-DOS are supported.
 
-(define (software-type) 'UNIX)
+(define (software-type)
+  (case (system-type)
+    [(unix beos) 'UNIX]
+    [(windows) 'MS-DOS]
+    [(macos) 'MACOS]))
 
 ;;; (scheme-implementation-type) should return the name of the scheme
 ;;; implementation loading this file.
@@ -66,12 +70,19 @@
 ;;; the directory where any auxillary files to your Scheme
 ;;; implementation reside.
 
-(define (implementation-vicinity)
-  (case (software-type)
-    ((UNIX)     (or (getenv "PLTHOME")
-		  "/usr/local/lib/plt"))
-    ((VMS)	"scheme$src:")
-    ((MS-DOS)	"C:\\scheme\\")))
+(define implementation-vicinity
+  (let ([path
+	 (or (getenv "PLTHOME")
+	     (with-handlers ([void (lambda (x) #f)])
+	       (let ([p (collection-path "mzlib")])
+		 (let*-values ([(base name dir?) (split-path p)]
+			       [(base name dir?) (split-path base)])
+		   (and (string? base) base))))
+	     (case (system-type)
+	       ((unix) "/usr/local/lib/plt")
+	       ((windows) "C:\\Program Files\\PLT")
+	       ((macos) "My Disk:plt:")))])
+    (lambda () path)))
 
 ;;; (library-vicinity) should be defined to be the pathname of the
 ;;; directory where files of Scheme library functions reside.
@@ -84,7 +95,6 @@
 	  ;; Use this path if your scheme does not support GETENV
 	  ;; or if SCHEME_LIBRARY_PATH is not set.
 	  (case (software-type)
-	    ((UNIX) "/home/shriram/slib/")
 	    ((UNIX) "/usr/local/lib/slib/")
 	    ((VMS) "lib$scheme:")
 	    ((MS-DOS) "C:\\SLIB\\")
@@ -273,7 +283,7 @@
 (define (-1+ n) (+ n -1))
 (define 1- -1+)
 
-(define in-vicinity string-append)
+(define in-vicinity build-path)
 
 ;;; Define SLIB:EXIT to be the implementation procedure to exit or
 ;;; return if exitting not supported.

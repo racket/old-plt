@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.4 1998/07/08 22:01:12 mflatt Exp $
+ * $Id: Choice.cc,v 1.5 1998/08/08 03:33:04 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -211,9 +211,14 @@ void wxChoice::SetSelection(int n)
     }
 }
 
-void wxChoice::SetStringSelection(char *s)
+Bool wxChoice::SetStringSelection(char *s)
 {
-    SetSelection(FindString(s));
+  int i = FindString(s);
+  if (i > -1) {
+    SetSelection(i);
+    return TRUE;
+  } else
+    return FALSE;
 }
 
 void wxChoice::Command(wxCommandEvent &event)

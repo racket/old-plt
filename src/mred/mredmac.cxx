@@ -49,7 +49,7 @@ extern "C" {
   typedef void (*HANDLE_AE)(EventRecord *e);
 }
 
-static int QueueTransferredEvent(EventRecord *e);
+static void QueueTransferredEvent(EventRecord *e);
 typedef struct MrQueueElem *MrQueueRef;
 
 typedef struct {
@@ -151,7 +151,7 @@ static MrQueueElem *first, *last;
  * 3. suspendResumeMessage. See comment at top.
  */
 
-static int QueueTransferredEvent(EventRecord *e)
+static void QueueTransferredEvent(EventRecord *e)
 {
   MrQueueElem *q;
   int done;
@@ -164,16 +164,15 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-#ifdef WX_CARBON
         RgnHandle updateRegionHandle = NewRgn();
+
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
         UnionRgn(updateRegionHandle, q->rgn, q->rgn);
-#else		
-        UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
-#endif		
+	DisposeRgn(updateRegionHandle);
+
         BeginUpdate(w);
         EndUpdate(w);
-        done = 1;
+        return;
       }
     }
   }
@@ -181,69 +180,59 @@ static int QueueTransferredEvent(EventRecord *e)
   if (e->what == kHighLevelEvent) {
     /* We have to dispatch the event immediately */
     AEProcessAppleEvent(e);
-    done = 1;
+    return;
   }
 
-  if (!done) {
-    q = new MrQueueElem;
-    memcpy(&q->event, e, sizeof(EventRecord));
-    q->next = NULL;
-    q->prev = last;
-    if (last)
-      last->next = q;
-    else
-      first = q;
-    last = q;
-      
-    q->rgn = NULL;
-      
-    if (e->what == updateEvt) {
-      WindowPtr w = (WindowPtr)e->message;
-      q->rgn = NewRgn();
+  if ((e->what == osEvt) && !(((e->message >> 24) & 0x0ff) == suspendResumeMessage))
+    return;
+
+  q = new MrQueueElem;
+  memcpy(&q->event, e, sizeof(EventRecord));
+  q->next = NULL;
+  q->prev = last;
+  if (last)
+    last->next = q;
+  else
+    first = q;
+  last = q;
+  
+  q->rgn = NULL;
+  
+  if (e->what == updateEvt) {
+    WindowPtr w = (WindowPtr)e->message;
+    q->rgn = NewRgn();
 #ifdef WX_CARBON
-      RgnHandle updateRegion = NewRgn();
-      GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
-      CopyRgn(updateRegion,q->rgn);
+    RgnHandle updateRegion = NewRgn();
+    GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
+    CopyRgn(updateRegion,q->rgn);
 #else      
-      CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
+    CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
 #endif      
-      BeginUpdate(w);
-      EndUpdate(w);
-    } else if ((e->what == osEvt)
-	       && ((e->message >> 24) & 0x0ff) == suspendResumeMessage) {
+    BeginUpdate(w);
+    EndUpdate(w);
+  } else if (e->what == osEvt) {
+    /* Must be a suspend/resume event */
+
 #ifdef SELF_SUSPEND_RESUME
-      /* Forget it; we do fg/bg ourselves. See note at top. */
-      last = q->prev;
-      if (last)
-	last->next = NULL;
-      else
-	first = NULL;
+    /* Forget it; we do fg/bg ourselves. See note at top. */
+    last = q->prev;
+    if (last)
+      last->next = NULL;
+    else
+      first = NULL;
 #else
-      int we_are_front = e->message & resumeFlag;
-      WindowPtr front = FrontWindow();
-
-# ifndef WX_CARBON
-      if (we_are_front) {     
-	TEFromScrap();
-	resume_ticks = TickCount();
-      } else {
-	ZeroScrap();
-	TEToScrap();
-      }
-#endif
+    int we_are_front = e->message & resumeFlag;
+    WindowPtr front = FrontWindow();
     
-      /* This code generates activate events; under classic MacOS, returning an 
-       * application to the foreground does not generate (de)activate events.
-       */
-        
-      q->event.what = activateEvt;
-      q->event.modifiers = we_are_front ? activeFlag : 0;
-      q->event.message = (long)front;
+    /* This code generates activate events; under classic MacOS, returning an 
+     * application to the foreground does not generate (de)activate events.
+     */
+    
+    q->event.what = activateEvt;
+    q->event.modifiers = we_are_front ? activeFlag : 0;
+    q->event.message = (long)front;
 #endif
-    }
   }
-
-  return 1;
 }
 
 /* Called by wxWindows to queue leave events: */
@@ -291,10 +280,7 @@ static int TransferQueue(int all)
   mask = everyEvent;
   
   while (WaitNextEvent(mask, &e, dispatched ? sleep_time : 0, NULL)) {
-    if (!QueueTransferredEvent(&e)) {
-      // this never happens: QueueTransferredEvent always returns 1
-      break;
-    }
+    QueueTransferredEvent(&e);
   }
   
   lastTime = TickCount();

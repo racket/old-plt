@@ -1478,7 +1478,7 @@ class os_wxPoint : public wxPoint {
 
   os_wxPoint CONSTRUCTOR_ARGS(());
 #ifndef MZ_PRECISE_GC
-  os_wxPoint CONSTRUCTOR_ARGS((float x0, float x1));
+  os_wxPoint CONSTRUCTOR_ARGS((double x0, double x1));
 #endif
   ~os_wxPoint();
 #ifdef MZ_PRECISE_GC
@@ -1504,7 +1504,7 @@ CONSTRUCTOR_INIT(: wxPoint())
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxPoint::os_wxPoint CONSTRUCTOR_ARGS((float x0, float x1))
+os_wxPoint::os_wxPoint CONSTRUCTOR_ARGS((double x0, double x1))
 CONSTRUCTOR_INIT(: wxPoint(x0, x1))
 {
 }
@@ -1518,7 +1518,7 @@ os_wxPoint::~os_wxPoint()
 static Scheme_Object *objscheme_wxPoint_Getx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxPoint_class, "get-x in point%", n, p);
@@ -1535,14 +1535,14 @@ static Scheme_Object *objscheme_wxPoint_Getx(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxPoint_Setx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxPoint_class, "set-x in point%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-x in point%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-x in point%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-x in point%"));
   ((wxPoint *)cobj->primdata)->x = v;
 
   READY_TO_RETURN;
@@ -1552,7 +1552,7 @@ static Scheme_Object *objscheme_wxPoint_Setx(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxPoint_Gety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxPoint_class, "get-y in point%", n, p);
@@ -1569,14 +1569,14 @@ static Scheme_Object *objscheme_wxPoint_Gety(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxPoint_Sety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxPoint_class, "set-y in point%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-y in point%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-y in point%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-y in point%"));
   ((wxPoint *)cobj->primdata)->y = v;
 
   READY_TO_RETURN;
@@ -1590,8 +1590,8 @@ static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
   os_wxPoint *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
-    float x0;
-    float x1;
+    double x0;
+    double x1;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
@@ -1600,8 +1600,8 @@ static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
     
     if (n != (POFFSET+2)) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in point% (xy values case)", POFFSET+2, POFFSET+2, n, p, 1));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "initialization in point% (xy values case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "initialization in point% (xy values case)"));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "initialization in point% (xy values case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "initialization in point% (xy values case)"));
 
     
     realobj = WITH_VAR_STACK(new os_wxPoint CONSTRUCTOR_ARGS((x0, x1)));
@@ -2559,10 +2559,10 @@ class os_wxPen : public wxPen {
 
   os_wxPen CONSTRUCTOR_ARGS(());
 #ifndef MZ_PRECISE_GC
-  os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, float x1, int x2));
+  os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, double x1, int x2));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxPen CONSTRUCTOR_ARGS((string x0, float x1, int x2));
+  os_wxPen CONSTRUCTOR_ARGS((string x0, double x1, int x2));
 #endif
   ~os_wxPen();
 #ifdef MZ_PRECISE_GC
@@ -2588,14 +2588,14 @@ CONSTRUCTOR_INIT(: wxPen())
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxPen::os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, float x1, int x2))
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, double x1, int x2))
 CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
 #endif
 
 #ifndef MZ_PRECISE_GC
-os_wxPen::os_wxPen CONSTRUCTOR_ARGS((string x0, float x1, int x2))
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((string x0, double x1, int x2))
 CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
@@ -2874,13 +2874,13 @@ static Scheme_Object *os_wxPenSetWidth(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPen_class, "set-width in pen%", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[POFFSET+0], 0, 255, "set-width in pen%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+0], 0, 255, "set-width in pen%"));
 
   
   WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)p[0])->primdata)->SetWidth(x0));
@@ -2895,7 +2895,7 @@ static Scheme_Object *os_wxPenGetWidthF(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxPen_class, "get-width in pen%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -2920,7 +2920,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
     string x0 INIT_NULLED_OUT;
-    float x1;
+    double x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -2932,7 +2932,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     if (n != (POFFSET+3)) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in pen% (color name case)", POFFSET+3, POFFSET+3, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in pen% (color name case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[POFFSET+1], 0, 255, "initialization in pen% (color name case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "initialization in pen% (color name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "initialization in pen% (color name case)"));
 
     
@@ -2946,7 +2946,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
     class wxColour* x0 INIT_NULLED_OUT;
-    float x1;
+    double x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -2958,7 +2958,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
     if (n != (POFFSET+3)) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in pen% (color% case)", POFFSET+3, POFFSET+3, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "initialization in pen% (color% case)", 0));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[POFFSET+1], 0, 255, "initialization in pen% (color% case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "initialization in pen% (color% case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "initialization in pen% (color% case)"));
 
     
@@ -3129,7 +3129,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxPenList_class, "find-or-create-pen in pen-list%", n, p);
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
     class wxColour* x0 INIT_NULLED_OUT;
-    float x1;
+    double x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -3141,7 +3141,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
     if (n != (POFFSET+3)) 
       WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-pen in pen-list% (color% case)", POFFSET+3, POFFSET+3, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "find-or-create-pen in pen-list% (color% case)", 0));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[POFFSET+1], 0, 255, "find-or-create-pen in pen-list% (color% case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "find-or-create-pen in pen-list% (color% case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "find-or-create-pen in pen-list% (color% case)"));
 
     
@@ -3152,7 +3152,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
     READY_TO_PRE_RETURN;
   } else  {
     string x0 INIT_NULLED_OUT;
-    float x1;
+    double x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -3164,7 +3164,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
     if (n != (POFFSET+3)) 
       WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-pen in pen-list% (color name case)", POFFSET+3, POFFSET+3, n, p, 1));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "find-or-create-pen in pen-list% (color name case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[POFFSET+1], 0, 255, "find-or-create-pen in pen-list% (color name case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "find-or-create-pen in pen-list% (color name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "find-or-create-pen in pen-list% (color name case)"));
 
     
@@ -3587,7 +3587,7 @@ class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *obj, const char *wher
 
 static void *RgnBoundingBox(wxRegion *r)
 {
-  float x, y, w, h;
+  double x, y, w, h;
   Scheme_Object *a[4];
   void *rt;
   SETUP_VAR_STACK(3);
@@ -3895,23 +3895,23 @@ static Scheme_Object *os_wxRegionSetArc(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxRegion_class, "set-arc in region%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-  float x4;
-  float x5;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+  double x4;
+  double x5;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-arc in region%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-arc in region%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-arc in region%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-arc in region%"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "set-arc in region%"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "set-arc in region%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-arc in region%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-arc in region%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "set-arc in region%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "set-arc in region%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "set-arc in region%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "set-arc in region%"));
 
   if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-arc"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetArc(x0, x1, x2, x3, x4, x5));
@@ -3929,8 +3929,8 @@ static Scheme_Object *os_wxRegionSetPolygon(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxRegion_class, "set-polygon in region%", n, p);
   int x0;
   class wxPoint* x1 INIT_NULLED_OUT;
-  float x2;
-  float x3;
+  double x2;
+  double x3;
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -3940,11 +3940,11 @@ static Scheme_Object *os_wxRegionSetPolygon(int n,  Scheme_Object *p[])
   
   x1 = NULL;
   if (n > (POFFSET+1)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-polygon in region%"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-polygon in region%"));
   } else
     x2 = 0;
   if (n > (POFFSET+2)) {
-    x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "set-polygon in region%"));
+    x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "set-polygon in region%"));
   } else
     x3 = 0;
   if (n > (POFFSET+3)) {
@@ -3966,19 +3966,19 @@ static Scheme_Object *os_wxRegionSetEllipse(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxRegion_class, "set-ellipse in region%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-ellipse in region%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-ellipse in region%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-ellipse in region%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-ellipse in region%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-ellipse in region%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-ellipse in region%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "set-ellipse in region%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "set-ellipse in region%"));
 
   if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-ellipse"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetEllipse(x0, x1, x2, x3));
@@ -3994,22 +3994,22 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxRegion_class, "set-rounded-rectangle in region%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-  float x4;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+  double x4;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-rounded-rectangle in region%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-rounded-rectangle in region%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-rounded-rectangle in region%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-rounded-rectangle in region%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-rounded-rectangle in region%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-rounded-rectangle in region%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "set-rounded-rectangle in region%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "set-rounded-rectangle in region%"));
   if (n > (POFFSET+4)) {
-    x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "set-rounded-rectangle in region%"));
+    x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "set-rounded-rectangle in region%"));
   } else
     x4 = 20.0;
 
@@ -4027,19 +4027,19 @@ static Scheme_Object *os_wxRegionSetRectangle(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxRegion_class, "set-rectangle in region%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-rectangle in region%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-rectangle in region%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-rectangle in region%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-rectangle in region%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-rectangle in region%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-rectangle in region%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "set-rectangle in region%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "set-rectangle in region%"));
 
   if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-rectangle"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetRectangle(x0, x1, x2, x3));

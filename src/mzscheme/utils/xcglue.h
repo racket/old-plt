@@ -87,7 +87,7 @@ int objscheme_istype_bool(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_integer(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_number(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_ExactLong(Scheme_Object *, const char *stopifbad);
-int objscheme_istype_float(Scheme_Object *, const char *stopifbad);
+int objscheme_istype_double(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_pair(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_string(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_bstring(Scheme_Object *, const char *stopifbad);
@@ -102,7 +102,7 @@ int objscheme_istype_closed_prim(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_proc2(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_box(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *stopifbad);
-int objscheme_istype_nonnegative_symbol_float(Scheme_Object *, const char *symname, const char *stopifbad);
+int objscheme_istype_nonnegative_symbol_double(Scheme_Object *, const char *symname, const char *stopifbad);
 
 Scheme_Object *objscheme_car(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_bundle_string(char *);
@@ -112,17 +112,17 @@ Scheme_Object *objscheme_bundle_mzstring(mzchar *);
 Scheme_Object *objscheme_bundle_pathname(char *);
 #define objscheme_bundle_epathname objscheme_bundle_pathname
 #define objscheme_bundle_xpathname objscheme_bundle_pathname
-Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname);
+Scheme_Object *objscheme_bundle_nonnegative_symbol_double(double d, const char *symname);
 
 long objscheme_unbundle_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_integer_in(Scheme_Object *, long, long, const char *);
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *);
 ExactLong objscheme_unbundle_ExactLong(Scheme_Object *, const char *);
-double objscheme_unbundle_float(Scheme_Object *, const char *);
-double objscheme_unbundle_float_in(Scheme_Object *, double, double, const char *);
-double objscheme_unbundle_nonnegative_float(Scheme_Object *, const char *);
-double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *, const char *symname, const char *);
+double objscheme_unbundle_double(Scheme_Object *, const char *);
+double objscheme_unbundle_double_in(Scheme_Object *, double, double, const char *);
+double objscheme_unbundle_nonnegative_double(Scheme_Object *, const char *);
+double objscheme_unbundle_nonnegative_symbol_double(Scheme_Object *, const char *symname, const char *);
 int objscheme_unbundle_bool(Scheme_Object *, const char *);
 char *objscheme_unbundle_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_bstring(Scheme_Object *, const char *);
@@ -150,13 +150,10 @@ mzchar objscheme_unbundle_char(Scheme_Object *, const char *);
 #define objscheme_bundle_long objscheme_bundle_integer
 #define objscheme_bundle_int objscheme_bundle_integer
 #define objscheme_bundle_ExactLong scheme_make_integer_value
-#define objscheme_bundle_float scheme_make_double
+#define objscheme_bundle_double scheme_make_double
 #define objscheme_bundle_bool(x) ((x) ? scheme_true : scheme_false)
 #define objscheme_bundle_char scheme_make_char
 #define objscheme_bundle_pair scheme_make_pair
-
-#define objscheme_bundle_double objscheme_bundle_float
-#define objscheme_unbundle_double objscheme_unbundle_float
 
 #define objscheme_unbundle_long objscheme_unbundle_integer
 #define objscheme_unbundle_int objscheme_unbundle_integer
@@ -209,7 +206,7 @@ typedef char *wnpathname;
 
 typedef long nnlong;
 typedef int nnint;
-typedef float nnfloat;
+typedef double nndouble;
 
 #define XC_SCHEME_NULL scheme_false
 #define XC_SCHEME_NULLP(x) SCHEME_FALSEP(x)

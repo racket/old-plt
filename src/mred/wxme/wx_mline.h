@@ -29,16 +29,16 @@ class wxMediaLine
   long pos;    // starting item position
   long scroll; // starting scroll step
   long parno;  // paragraph number
-  float y;     // starting y location
+  double y;     // starting y location
   
-  float maxWidth;
+  double maxWidth;
 
   wxSnip *snip, *lastSnip, *scrollSnip;
 
   long len, numscrolls;
-  float lastH, lastW; /* height/width of last snip in line */
-  float h, w; /* height/width of line */
-  float bottombase, topbase; /* bottom baseline, top baseline (relative) */
+  double lastH, lastW; /* height/width of last snip in line */
+  double h, w; /* height/width of line */
+  double bottombase, topbase; /* bottom baseline, top baseline (relative) */
 
   wxMediaLine();
   ~wxMediaLine();
@@ -49,26 +49,26 @@ class wxMediaLine
   wxMediaLine *FindLine(long line);
   wxMediaLine *FindPosition(long pos);
   wxMediaLine *FindScroll(long scroll);
-  wxMediaLine *FindLocation(float y);
+  wxMediaLine *FindLocation(double y);
   wxMediaLine *FindParagraph(long parnp);
 
   long GetLine();
   long GetPosition();
   long GetScroll();
-  float GetLocation();
+  double GetLocation();
   long GetParagraph();
 
   wxMediaParagraph *GetParagraphStyle(Bool *first = NULL);
 
-  float ScrollOffset(long p);
-  long FindExtraScroll(float y);
+  double ScrollOffset(long p);
+  long FindExtraScroll(double y);
 
   void SetLength(long len);
   void CalcLineLength();
   void SetScrollLength(long numScrolls);
-  void SetHeight(float h);
+  void SetHeight(double h);
 
-  void SetWidth(float w);
+  void SetWidth(double w);
   void MarkRecalculate();
   void MarkCheckFlow();
 
@@ -78,15 +78,15 @@ class wxMediaLine
 
   wxMediaLine *GetRoot();
 
-  Bool UpdateFlow(wxMediaLine **root, wxMediaEdit *, float maxw, wxDC *dc);
+  Bool UpdateFlow(wxMediaLine **root, wxMediaEdit *, double maxw, wxDC *dc);
   Bool UpdateGraphics(wxMediaEdit *media, wxDC *dc);
 
   long Number();
   wxMediaLine *First();
   wxMediaLine *Last();
 
-  float GetLeftLocation(float maxWidth);
-  float GetRightLocation(float maxWidth);
+  double GetLeftLocation(double maxWidth);
+  double GetRightLocation(double maxWidth);
 
  private:
   void AdjustOffsets(wxMediaLine *newchild);
@@ -109,10 +109,10 @@ const unsigned long
 class wxMediaParagraph
 {
  public:
-  float leftMarginFirst, leftMargin;
-  float rightMargin;
+  double leftMarginFirst, leftMargin;
+  double rightMargin;
   int alignment;
 
   wxMediaParagraph *Clone();
-  float GetLineMaxWidth(float maxWidth, Bool first);
+  double GetLineMaxWidth(double maxWidth, Bool first);
 };

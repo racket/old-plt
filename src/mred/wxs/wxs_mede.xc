@@ -7,7 +7,7 @@
 
 @HEADER
 
-@SET TYPE = float
+@SET TYPE = double
 @SET NOTEST = 1
 @INCLUDE list.xci
 
@@ -83,7 +83,7 @@
 
 @CLASSBASE wxMediaEdit "text" : "editor" / nofnl
 
-@CREATOR (nnfloat=1.0,float[]=NULL/bList/ubList/cList///push,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
+@CREATOR (nndouble=1.0,double[]=NULL/bList/ubList/cList///push,-int=0); : : /glueListSet[double.1.1.2.METHODNAME("text%","initialization")]//
 
 @CLASSID wxTYPE_MEDIA_EDIT
 
@@ -110,7 +110,7 @@
 @ "flash-on" : void FlashOn(nnlong,nnlong,bool=FALSE,bool=TRUE,nnlong=500);
 @ "flash-off" : void FlashOff();
 
-@ "get-top-line-base" : float GetTopLineBase(); : : : : XrZERO
+@ "get-top-line-base" : double GetTopLineBase(); : : : : XrZERO
 
 @MACRO setStringLen[i.s] = x<i> = SCHEME_CHAR_STRTAG_VAL(p[POFFSET+<s>]);
 @MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_CHAR_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+<i>]));
@@ -141,16 +141,16 @@
 			
 @ "split-snip" : void SplitSnip(nnlong);
 
-@ "find-position" : long FindPosition(float,float,bool?=NULL,bool?=NULL,float?=NULL);
-@ "find-line" : long FindLine(float,bool?=NULL);
-@ "find-position-in-line" : long FindPositionInLine(nnlong,float,bool?=NULL,bool?=NULL,float?=NULL);
+@ "find-position" : long FindPosition(double,double,bool?=NULL,bool?=NULL,double?=NULL);
+@ "find-line" : long FindLine(double,bool?=NULL);
+@ "find-position-in-line" : long FindPositionInLine(nnlong,double,bool?=NULL,bool?=NULL,double?=NULL);
 
-@ "get-between-threshold" : float GetBetweenThreshold();
-@ "set-between-threshold" : void SetBetweenThreshold(nnfloat);
+@ "get-between-threshold" : double GetBetweenThreshold();
+@ "set-between-threshold" : void SetBetweenThreshold(nndouble);
 
 @ "position-line" : long PositionLine(nnlong,bool=FALSE);
-@ "position-location" :  void PositionLocation(nnlong,float?=NULL,float?=NULL,bool=TRUE,bool=FALSE,bool=FALSE);
-@ "line-location" : float LineLocation(nnlong,bool=TRUE);
+@ "position-location" :  void PositionLocation(nnlong,double?=NULL,double?=NULL,bool=TRUE,bool=FALSE,bool=FALSE);
+@ "line-location" : double LineLocation(nnlong,bool=TRUE);
 
 @ "line-start-position" : long LineStartPosition(nnlong,bool=TRUE);
 @ "line-end-position" : long LineEndPosition(nnlong,bool=TRUE);
@@ -166,11 +166,11 @@
 @ "paragraph-end-line" : long ParagraphEndLine(nnlong);
 @ "last-paragraph" : long LastParagraph();
 
-@ "set-paragraph-margins" : void SetParagraghMargins(nnlong,nnfloat,nnfloat,nnfloat);
+@ "set-paragraph-margins" : void SetParagraghMargins(nnlong,nndouble,nndouble,nndouble);
 @ "set-paragraph-alignment" : void SetParagraghAlignment(nnlong,SYM[horizontalAlignment]);
 
-@ "get-line-spacing" : nnfloat GetLineSpacing();
-@ "set-line-spacing" : void SetLineSpacing(nnfloat);
+@ "get-line-spacing" : nndouble GetLineSpacing();
+@ "set-line-spacing" : void SetLineSpacing(nndouble);
 
 @ "get-styles-sticky" : bool GetStickyStyles();
 @ "set-styles-sticky" : void SetStickyStyles(bool);
@@ -186,7 +186,7 @@
 @ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(mzstring,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],nnlong?=NULL)
-@ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
+@ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,double?=NULL,double?=NULL);
 @ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
 @ "find-next-non-string-snip" : wxSnip^ FindNextNonTextSnip(wxSnip^)
@@ -207,8 +207,8 @@
 
 @MACRO checkNull = if (!x0) x0 = &_x0;
 
-@ "get-tabs" : float[]/bReturnList[float.0]///push GetTabs(nnint?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
-@ "set-tabs" : void SetTabs(float[]/bList/ubList/cList///push,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text%","set-tabs")]//
+@ "get-tabs" : double[]/bReturnList[double.0]///push GetTabs(nnint?=NULL,double?=NULL,bool?=NULL); : : /checkNull/
+@ "set-tabs" : void SetTabs(double[]/bList/ubList/cList///push,-int,double=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[double.0.0.1.METHODNAME("text%","set-tabs")]//
 
 @ v "can-insert?" : bool CanInsert(nnlong,nnlong);
 @ v "on-insert" : void OnInsert(nnlong,nnlong);

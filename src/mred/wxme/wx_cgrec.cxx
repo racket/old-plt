@@ -162,7 +162,7 @@ class DeleteSnipItem /* : public wxObject --- uncomment to GC */
 
   wxDeleteSnipRecord *parent;
   wxSnip *snip, *before;
-  float x, y;
+  double x, y;
 };
 
 DeleteSnipItem::~DeleteSnipItem()
@@ -194,7 +194,7 @@ wxDeleteSnipRecord::~wxDeleteSnipRecord()
 }
 
 void wxDeleteSnipRecord::InsertSnip(wxSnip *snip, wxSnip *before, 
-				    float x, float y)
+				    double x, double y)
 {
   DeleteSnipItem *item;
 
@@ -451,7 +451,7 @@ Bool wxStyleChangeSnipRecord::Undo(wxMediaBuffer *buffer)
   return continued;
 }
 
-wxMoveSnipRecord::wxMoveSnipRecord(wxSnip *s, float fx, float fy, 
+wxMoveSnipRecord::wxMoveSnipRecord(wxSnip *s, double fx, double fy, 
 				   Bool d, Bool cont)
 {
   snip = s;
@@ -475,7 +475,7 @@ Bool wxMoveSnipRecord::Undo(wxMediaBuffer *buffer)
   return continued;
 }
 
-wxResizeSnipRecord::wxResizeSnipRecord(wxSnip *s, float fx, float fy, 
+wxResizeSnipRecord::wxResizeSnipRecord(wxSnip *s, double fx, double fy, 
 				       Bool cont)
 {
   snip = s;

@@ -816,7 +816,7 @@ void wxWindow::Enable(Bool enable)
     ChangeToGray(!enable);
 }
 
-Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
+Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y)
 {
   int dev_x = (int)x;
   int dev_y = (int)y;
@@ -1837,7 +1837,6 @@ void wxWindow::WindowEventHandler(Widget w,
     case EnterNotify:
       Enter = TRUE;
     case LeaveNotify: /* ^^^^ fallthrough! */
-      wxUnhideCursor();
       win->current_state = xev->xcrossing.state;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
@@ -2041,8 +2040,8 @@ wxWindowDC *wxWindow::GetDC(void)
   return dc; 
 }
 
-void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
-			     float *ext_leading, wxFont *theFont,
+void wxWindow::GetTextExtent(const char *s, double *w, double *h, double *descent,
+			     double *ext_leading, wxFont *theFont,
 			     Bool use16bit)
 {
   if (dc) {

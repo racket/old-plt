@@ -118,10 +118,10 @@
 @CLASSBASE wxPoint "point" : "object" / nofnl
 
 @CREATOR (); <> no argument
-@CREATOR (float,float); <> xy values
+@CREATOR (double,double); <> xy values
 
-@IVAR "x" : float x
-@IVAR "y" : float y
+@IVAR "x" : double x
+@IVAR "y" : double y
 
 @END
 
@@ -201,11 +201,11 @@
 @CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour!,rfloat[0|255],SYM[penStyle]); <> color%
-@CREATOR (string,rfloat[0|255],SYM[penStyle]); <> color name
+@CREATOR (wxColour!,rdouble[0|255],SYM[penStyle]); <> color%
+@CREATOR (string,rdouble[0|255],SYM[penStyle]); <> color name
 
-@ "get-width" : float GetWidthF();
-@ "set-width" : void SetWidth(rfloat[0|255]);
+@ "get-width" : double GetWidthF();
+@ "set-width" : void SetWidth(rdouble[0|255]);
 @ "get-cap" : SYM[cap] GetCap();
 @ "set-cap" : void SetCap(SYM[cap]);
 @ "get-join" : SYM[join] GetJoin();
@@ -229,8 +229,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rfloat[0|255],SYM[penStyle]); <> color%
-@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rfloat[0|255],SYM[penStyle]); <> color name
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rdouble[0|255],SYM[penStyle]); <> color%
+@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rdouble[0|255],SYM[penStyle]); <> color name
 
 @END
 
@@ -274,7 +274,7 @@
 
 static void *RgnBoundingBox(wxRegion *r)
 {
-  float x, y, w, h;
+  double x, y, w, h;
   Scheme_Object *a[4];
   void *rt;
   SETUP_VAR_STACK(3);
@@ -309,11 +309,11 @@ static void *RgnBoundingBox(wxRegion *r)
 
 @ "get-dc" : wxDC! GetDC()
 
-@ "set-rectangle" : void SetRectangle(float, float, nnfloat, nnfloat); : : /CheckRgnLock["set-rectangle"]
-@ "set-rounded-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0); : : /CheckRgnLock["set-rounded-rectangle"]
-@ "set-ellipse" : void SetEllipse(float, float, nnfloat, nnfloat); : : /CheckRgnLock["set-ellipse"]
-@ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckRgnLock["set-polygon"]|glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
-@ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float); : : /CheckRgnLock["set-arc"]
+@ "set-rectangle" : void SetRectangle(double, double, nndouble, nndouble); : : /CheckRgnLock["set-rectangle"]
+@ "set-rounded-rectangle" : void SetRoundedRectangle(double, double, nndouble, nndouble, double=20.0); : : /CheckRgnLock["set-rounded-rectangle"]
+@ "set-ellipse" : void SetEllipse(double, double, nndouble, nndouble); : : /CheckRgnLock["set-ellipse"]
+@ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,double=0,double=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckRgnLock["set-polygon"]|glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
+@ "set-arc" : void SetArc(double, double, nndouble, nndouble, double, double); : : /CheckRgnLock["set-arc"]
 
 @ "union" : void Union(wxRegion!);  : : /CheckRgnLock["union"]|CheckRgn[0."union"]
 @ "intersect" : void Intersect(wxRegion!);  : : /CheckRgnLock["intersect"]|CheckRgn[0."intersect"]

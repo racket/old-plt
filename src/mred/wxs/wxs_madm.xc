@@ -72,7 +72,7 @@ typedef void *(*CAPOFunc)(void*);
 @ "get-lazy-refresh" : bool GetLazyRefresh();
 @ "set-lazy-refresh" : void SetLazyRefresh(bool);
 
-@ "scroll-to" : bool ScrollTo(float,float,nnfloat,nnfloat, bool,SYM[bias]=0); : : : rFALSE
+@ "scroll-to" : bool ScrollTo(double,double,nndouble,nndouble, bool,SYM[bias]=0); : : : rFALSE
 
 @ "get-x-margin" : nnint GetXMargin();
 @ "get-y-margin" : nnint GetYMargin();
@@ -129,16 +129,16 @@ typedef void *(*CAPOFunc)(void*);
 
 @ V "get-editor" : wxMediaBuffer^ GetMedia(); : : : rNULL
 @ V "get-dc" : wxDC^ GetDC(); : : : rNULL
-@ V "get-view-size" : void GetViewSize(nnfloat?, nnfloat?);
-@ V "get-view" : void GetView(float?, float?, nnfloat?, nnfloat?, wxSnip^=NULL);
-@ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,nnfloat,nnfloat, bool,SYM[bias]=0); : : : rFALSE
+@ V "get-view-size" : void GetViewSize(nndouble?, nndouble?);
+@ V "get-view" : void GetView(double?, double?, nndouble?, nndouble?, wxSnip^=NULL);
+@ V "scroll-to" : bool ScrollTo(wxSnip!, double,double,nndouble,nndouble, bool,SYM[bias]=0); : : : rFALSE
 @ V "set-caret-owner" : void SetCaretOwner(wxSnip!,SYM[focus]);
 @ V "resized" : void Resized(wxSnip!, bool);
 @ V "recounted" : bool Recounted(wxSnip!, bool); : : : rFALSE
-@ V "needs-update" : void NeedsUpdate(wxSnip!, float,float,nnfloat,nnfloat);
+@ V "needs-update" : void NeedsUpdate(wxSnip!, double,double,nndouble,nndouble);
 @ V "release-snip" : bool ReleaseSnip(wxSnip!); : : : rFALSE
 @ V "update-cursor" : void UpdateCursor();
-@ V "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxSnip!,float,float); : : CHECKMENU[METHODNAME("snip-admin%","popup-menu").0] : rFALSE
+@ V "popup-menu" : bool PopupMenu(void[]/bAnythingFromVoid/ubAnythingToVoid/cAnything///push,wxSnip!,double,double); : : CHECKMENU[METHODNAME("snip-admin%","popup-menu").0] : rFALSE
 @ V "modified" : void Modified(wxSnip!, bool);
 
 @END

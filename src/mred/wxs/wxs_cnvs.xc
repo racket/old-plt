@@ -63,7 +63,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "warp-pointer" : void WarpPointer(rint[0|10000],rint[0|10000]);  : : / PANELREDIRECT[return scheme_void]
 
-@ "scroll" : void ScrollPercent(float,float);
+@ "scroll" : void ScrollPercent(double,double);
 @ "get-scroll-pos" : int GetScrollPos(SYM[orientation]);
 @ "get-scroll-range" : int GetScrollRange(SYM[orientation]);
 @ "get-scroll-page" : int GetScrollPage(SYM[orientation]);

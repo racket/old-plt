@@ -235,16 +235,16 @@ void wxSnip::SetFlags(long new_flags)
     admin->Resized(this, TRUE);
 }
 
-void wxSnip::OnEvent(wxDC *, float, float, float, float, wxMouseEvent *)
+void wxSnip::OnEvent(wxDC *, double, double, double, double, wxMouseEvent *)
 {
 }
 
-wxCursor *wxSnip::AdjustCursor(wxDC *, float, float, float, float, wxMouseEvent *)
+wxCursor *wxSnip::AdjustCursor(wxDC *, double, double, double, double, wxMouseEvent *)
 {
   return NULL;
 }
 
-void wxSnip::OnChar(wxDC *, float, float, float, float, wxKeyEvent *)
+void wxSnip::OnChar(wxDC *, double, double, double, double, wxKeyEvent *)
 {
 }
 
@@ -274,7 +274,7 @@ void wxSnip::OwnCaret(Bool)
 {
 }
 
-void wxSnip::BlinkCaret(wxDC *, float, float)
+void wxSnip::BlinkCaret(wxDC *, double, double)
 {
 }
 
@@ -283,10 +283,10 @@ void wxSnip::SizeCacheInvalid(void)
 }
 
 void wxSnip::GetExtent(wxDC *, 
-		       float, float, 
-		       float *w, float *h, 
-		       float *descent, float *space,
-		       float *lspace, float *rspace)
+		       double, double, 
+		       double *w, double *h, 
+		       double *descent, double *space,
+		       double *lspace, double *rspace)
 {
   if (w)
     *w = 0;
@@ -302,10 +302,10 @@ void wxSnip::GetExtent(wxDC *,
     *rspace = 0;
 }
 
-float wxSnip::PartialOffset(wxDC *dc, 
-			    float x, float y, long offset)
+double wxSnip::PartialOffset(wxDC *dc, 
+			    double x, double y, long offset)
 {
-  float w;
+  double w;
 
   if (!offset)
     return 0.0;
@@ -315,9 +315,9 @@ float wxSnip::PartialOffset(wxDC *dc,
   return w;
 }
 
-void wxSnip::Draw(wxDC *, float, float,
-		  float, float, float, float, 
-		  float, float, int)
+void wxSnip::Draw(wxDC *, double, double,
+		  double, double, double, double, 
+		  double, double, int)
 {
 }
 
@@ -437,7 +437,7 @@ void wxSnip::Write(wxMediaStreamOut *)
 {
 }
 
-Bool wxSnip::Resize(float, float)
+Bool wxSnip::Resize(double, double)
 {
   return FALSE;
 }
@@ -447,12 +447,12 @@ long wxSnip::GetNumScrollSteps()
   return 1;
 }
 
-long wxSnip::FindScrollStep(float)
+long wxSnip::FindScrollStep(double)
 {
   return 0;
 }
 
-float wxSnip::GetScrollStepOffset(long)
+double wxSnip::GetScrollStepOffset(long)
 {
   return 0;
 }
@@ -590,10 +590,10 @@ void wxTextSnip::SizeCacheInvalid(void)
   w = -1.0;
 }
 
-void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
+void wxTextSnip::GetTextExtent(wxDC *dc, int count, double *wo)
 {
   wxchar save;
-  float _w, h;
+  double _w, h;
   wxFont *font;
   int i;
 
@@ -615,7 +615,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
     dc->GetTextExtent((char *)buffer, &_w, &h, NULL, NULL, font, FALSE, TRUE, dtext);
   } else {
     /* text includes null chars */
-    float ex_w;
+    double ex_w;
     int start = 0, i;
     
 #ifndef BROKEN_GET_TEXT_EXTENT 
@@ -627,7 +627,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
     for (i = 0; i <= count; i++) {
       if (!buffer[dtext + i] || (buffer[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
-	  float piece_w, h;
+	  double piece_w, h;
 	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
 	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, TRUE, dtext + start);
@@ -648,9 +648,9 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 }
 
 void wxTextSnip::GetExtent(wxDC *dc, 
-			   float WXUNUSED(x), float WXUNUSED(y), 
-			   float *wo, float *ho, float *dso, float *so,
-			   float *ls, float *rs)
+			   double WXUNUSED(x), double WXUNUSED(y), 
+			   double *wo, double *ho, double *dso, double *so,
+			   double *ls, double *rs)
 {
 
   if (w < 0) {
@@ -658,13 +658,13 @@ void wxTextSnip::GetExtent(wxDC *dc,
 	|| (count == 1 && buffer[dtext] == '\n')
 	|| (count == 1 && buffer[dtext] == '\t')) {
       if (count == 1 && buffer[dtext] == '\t') {
-	float tw;
+	double tw;
 	tw = style->GetTextWidth(dc);
 	w = tw;
       } else
 	w = 0;
     } else {
-      float ww;
+      double ww;
       GetTextExtent(dc, count, &ww);
       w = ww;
     }
@@ -673,17 +673,17 @@ void wxTextSnip::GetExtent(wxDC *dc,
   if (wo)
     *wo = w;
   if (ho) {
-    float th;
+    double th;
     th = style->GetTextHeight(dc);
     *ho = th;
   }
   if (dso) {
-    float td;
+    double td;
     td = style->GetTextDescent(dc);
     *dso = td;
   }
   if (so) {
-    float ts;
+    double ts;
     ts = style->GetTextSpace(dc);
     *so = ts;
   }
@@ -693,9 +693,9 @@ void wxTextSnip::GetExtent(wxDC *dc,
     *rs = 0.0;
 }
 
-float wxTextSnip::PartialOffset(wxDC *dc, float, float, long offset)
+double wxTextSnip::PartialOffset(wxDC *dc, double, double, long offset)
 {
-  float _w;
+  double _w;
   
   if (offset > count)
     offset = count;
@@ -705,9 +705,9 @@ float wxTextSnip::PartialOffset(wxDC *dc, float, float, long offset)
   return _w;
 }
 
-void wxTextSnip::Draw(wxDC *dc, float x, float y, 
-		      float, float, float, float, 
-		      float WXUNUSED(dx), float WXUNUSED(dy), 
+void wxTextSnip::Draw(wxDC *dc, double x, double y, 
+		      double, double, double, double, 
+		      double WXUNUSED(dx), double WXUNUSED(dy), 
 		      int)
 {
   wxchar save;
@@ -729,7 +729,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
     dc->DrawText((char *)buffer, x, y, FALSE, TRUE, dtext);
   else {
     /* text includes null chars */
-    float px, h, ex_w;
+    double px, h, ex_w;
     int start = 0, i;
 
     dc->GetTextExtent(" ", &ex_w, &h, NULL, NULL);
@@ -738,7 +738,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
     for (i = 0; i <= count; i++) {
       if (!buffer[dtext + i] || (buffer[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
-	  float piece_w, h;
+	  double piece_w, h;
 	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
 	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, TRUE, dtext + start);
@@ -764,7 +764,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 
 #ifdef wx_x
   if (style->GetUnderlined()) {
-    float descent, h;
+    double descent, h;
     
     descent = style->GetTextDescent(dc);
     h = style->GetTextHeight(dc);
@@ -1049,13 +1049,13 @@ wxTabSnip::wxTabSnip() : wxTextSnip(1)
 }
 
 void wxTabSnip::GetExtent(wxDC *dc, 
-			  float x, float y, 
-			  float *wi, float *h, 
-			  float *descent, float *space,
-			  float *lspace, float *rspace)
+			  double x, double y, 
+			  double *wi, double *h, 
+			  double *descent, double *space,
+			  double *lspace, double *rspace)
 {
-  float *tabs, oldw;
-  float tabspace;
+  double *tabs, oldw;
+  double tabspace;
   int n, i;
   Bool changed;
 
@@ -1066,11 +1066,11 @@ void wxTabSnip::GetExtent(wxDC *dc,
 
   if (changed) {
     /* w is now width of a space */
-    float mult;
+    double mult;
     wxMediaBuffer *media = NULL;
 
     if (admin && (media = admin->GetMedia()) && (media->bufferType == wxEDIT_BUFFER)) {
-      float space;
+      double space;
       Bool units;
       wxMediaEdit *edt;
 
@@ -1093,7 +1093,7 @@ void wxTabSnip::GetExtent(wxDC *dc,
     }
 
     if (i >= n) {
-      float base;
+      double base;
 
       base = tabs ? (tabs[n - 1] * mult) : 0;
       x -= base;
@@ -1109,9 +1109,9 @@ void wxTabSnip::GetExtent(wxDC *dc,
     *wi = w;
 }
 
-float wxTabSnip::PartialOffset(wxDC *dc, float x, float y, long offset)
+double wxTabSnip::PartialOffset(wxDC *dc, double x, double y, long offset)
 {
-  float _w;
+  double _w;
 
   if (!offset)
     return 0;
@@ -1122,9 +1122,9 @@ float wxTabSnip::PartialOffset(wxDC *dc, float x, float y, long offset)
   }
 }
 
-void wxTabSnip::Draw(wxDC *, float, float, 
-		     float, float, float, float, 
-		     float, float, int)
+void wxTabSnip::Draw(wxDC *, double, double, 
+		     double, double, double, double, 
+		     double, double, int)
 {
   /* Do nothing! */
 }
@@ -1165,7 +1165,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
   char *filename, *delfile = NULL, *loadfile;
   long type;
   Bool relative, inlined = FALSE;
-  float w, h, dx, dy;
+  double w, h, dx, dy;
   wxStandardSnipClassList *scl;
   Bool canInline;
 
@@ -1276,11 +1276,11 @@ void wxImageSnip::SizeCacheInvalid(void)
 
 
 void wxImageSnip::GetExtent(wxDC *,
-			    float WXUNUSED(x), 
-			    float WXUNUSED(y),
-			    float *wi, float *hi, 
-			    float *descent, float *space,
-			    float *lspace, float *rspace)
+			    double WXUNUSED(x), 
+			    double WXUNUSED(y),
+			    double *wi, double *hi, 
+			    double *descent, double *space,
+			    double *lspace, double *rspace)
 {
   if (contentsChanged) {
     if (bm && bm->Ok()) {
@@ -1320,10 +1320,10 @@ void wxImageSnip::GetExtent(wxDC *,
   ALWAYSZERO(rspace);
 }
 
-void wxImageSnip::Draw(wxDC *dc, float x, float y, 
-		       float WXUNUSED(l), float WXUNUSED(t), 
-		       float WXUNUSED(r), float WXUNUSED(b),
-		       float WXUNUSED(dx), float WXUNUSED(dy), 
+void wxImageSnip::Draw(wxDC *dc, double x, double y, 
+		       double WXUNUSED(l), double WXUNUSED(t), 
+		       double WXUNUSED(r), double WXUNUSED(b),
+		       double WXUNUSED(dx), double WXUNUSED(dy), 
 		       int)
 {
   wxBitmap *msk;
@@ -1604,7 +1604,7 @@ wxBitmap *wxImageSnip::GetSnipBitmapMask()
   return mask;
 }
 
-void wxImageSnip::SetOffset(float x, float y)
+void wxImageSnip::SetOffset(double x, double y)
 {
   viewdx = x;
   viewdy = y;
@@ -1615,7 +1615,7 @@ void wxImageSnip::SetOffset(float x, float y)
     admin->NeedsUpdate(this, 0, 0, w, h);
 }
 
-Bool wxImageSnip::Resize(float w, float h)
+Bool wxImageSnip::Resize(double w, double h)
 {
   vieww = w;
   viewh = h;
@@ -1637,14 +1637,14 @@ long wxImageSnip::GetNumScrollSteps()
   return ss ? ss : 1;
 }
 
-long wxImageSnip::FindScrollStep(float y)
+long wxImageSnip::FindScrollStep(double y)
 {
   return (long)(y / IMAGE_PIXELS_PER_SCROLL);
 }
 
-float wxImageSnip::GetScrollStepOffset(long i)
+double wxImageSnip::GetScrollStepOffset(long i)
 {
-  return ((float )i) * IMAGE_PIXELS_PER_SCROLL;
+  return ((double )i) * IMAGE_PIXELS_PER_SCROLL;
 }
 
 void wxImageSnip::SetAdmin(wxSnipAdmin *a)
@@ -1680,7 +1680,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   wxMediaSnip *snip;
   Bool border, tightFit = 0, alignTopLine = 0;
   int lm, tm, rm, bm, li, ti, ri, bi, type;
-  float w, W, h, H;
+  double w, W, h, H;
   wxStandardSnipClassList *scl;
 
   f->Get(&type);

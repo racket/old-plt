@@ -101,9 +101,9 @@ public:
     virtual void  SetSize(int width, int height)
 	{ SetSize(-1, -1, width, height, wxSIZE_USE_EXISTING); }
     // GDI (colours, colourmap, font, cursor)
-    virtual void      GetTextExtent(const char *string, float *x, float *y,
-				    float *descent = NULL,
-				    float *externalLeading = NULL,
+    virtual void      GetTextExtent(const char *string, double *x, double *y,
+				    double *descent = NULL,
+				    double *externalLeading = NULL,
 				    wxFont *theFont = NULL, Bool use16bit=FALSE);
     virtual wxCursor  *SetCursor(wxCursor *cursor);
     // Caret
@@ -138,7 +138,7 @@ public:
     virtual Bool  GetUserEditMode(void) { return user_edit_mode; }
     virtual long  GetWindowStyleFlag(void) { return style; }
     virtual void  Paint(void) { OnPaint(); }
-    virtual Bool  PopupMenu(wxMenu *menu, float x, float y);
+    virtual Bool  PopupMenu(wxMenu *menu, double x, double y);
     virtual void  Refresh(void);
     virtual void  ReleaseMouse(void);
     virtual void  SetFocus(void);

@@ -133,16 +133,16 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     }
 
     if (width < 0) {
-      float maxw = 0, labelw = 0;
+      double maxw = 0, labelw = 0;
       for (int i = 0; i < n; i++) {
-	float w, h;
+	double w, h;
 	GetTextExtent(choices[i], &w, &h, NULL, NULL, font);
 	if (w > maxw)
 	  maxw = w;
       }
       
       if (label && !vert) {
-	float w, h;
+	double w, h;
 	char *label_stripped;
 	label_stripped = wxchoice_unprotect_amp(label);
 	GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);

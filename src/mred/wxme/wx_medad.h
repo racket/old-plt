@@ -129,7 +129,7 @@ class wxMediaBuffer : public wxObject
   Bool DoOwnCaret(Bool ownit);
   Bool DoSetCaretOwner(wxSnip *, int);
 
-  Bool ReadyOffscreen(float w, float h);
+  Bool ReadyOffscreen(double w, double h);
 
   virtual void SettingAdmin(wxMediaAdmin *);
   virtual void InitNewAdmin(void); 
@@ -147,12 +147,12 @@ class wxMediaBuffer : public wxObject
   virtual void OnEvent(wxMouseEvent *event) = 0;
   virtual void OnChar(wxKeyEvent *event) = 0;
   virtual wxCursor *AdjustCursor(wxMouseEvent *event) = 0;
-  virtual void Refresh(float localx, float localy, float w, float h, 
+  virtual void Refresh(double localx, double localy, double w, double h, 
 		       Bool show_caret, wxColour *bgColor) = 0;
   virtual void OwnCaret(Bool ownit) = 0;
   virtual void BlinkCaret() = 0;
   virtual void SizeCacheInvalid(void) = 0;
-  virtual void GetExtent(float *w, float *h) = 0;
+  virtual void GetExtent(double *w, double *h) = 0;
 
   virtual void OnDefaultEvent(wxMouseEvent *event) = 0;
   virtual void OnLocalEvent(wxMouseEvent *event);
@@ -162,29 +162,29 @@ class wxMediaBuffer : public wxObject
   
   /* Callbacks for the wxSnipAdmin: */
   virtual wxDC *GetDC();
-  virtual void GetViewSize(float *h, float *w);
-  virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
-			float w, float h, Bool refresh, int bias = 0) = 0;
+  virtual void GetViewSize(double *h, double *w);
+  virtual Bool ScrollTo(wxSnip *, double localx, double localy, 
+			double w, double h, Bool refresh, int bias = 0) = 0;
   virtual void SetCaretOwner(wxSnip *, int = wxFOCUS_IMMEDIATE) = 0;
   virtual void Resized(wxSnip *, Bool redraw_now) = 0;
   virtual Bool Recounted(wxSnip *, Bool redraw_now) = 0;
-  virtual void NeedsUpdate(wxSnip *, float localx, float localy, 
-			   float w, float h) = 0;
+  virtual void NeedsUpdate(wxSnip *, double localx, double localy, 
+			   double w, double h) = 0;
   virtual Bool ReleaseSnip(wxSnip *) = 0;
 
-  virtual float ScrollLineLocation(long line) = 0;
+  virtual double ScrollLineLocation(long line) = 0;
   virtual long NumScrollLines() = 0;
-  virtual long FindScrollLine(float y) = 0;
+  virtual long FindScrollLine(double y) = 0;
 
   virtual wxMediaBuffer *CopySelf(void) = 0;
   virtual void CopySelfTo(wxMediaBuffer *b);
-  virtual float GetDescent(void) = 0;
-  virtual float GetSpace(void) = 0;
+  virtual double GetDescent(void) = 0;
+  virtual double GetSpace(void) = 0;
   virtual wxchar *GetFlattenedText(long *got = NULL) = 0;
   virtual char *GetFlattenedTextUTF8(long *got = NULL);
 
-  void GlobalToLocal(float *x, float *y);
-  void LocalToGlobal(float *x, float *y);
+  void GlobalToLocal(double *x, double *y);
+  void LocalToGlobal(double *x, double *y);
 
   /* Edit & Font menus: */
   void DoEdit(int op, Bool recursive = TRUE, long time = 0);
@@ -223,7 +223,7 @@ class wxMediaBuffer : public wxObject
   int AppendFontItems(wxMenu *font, int idOffset = 0);
 
   virtual Bool GetSnipLocation(wxSnip *thesnip, 
-			       float *x = NULL, float *y = NULL,
+			       double *x = NULL, double *y = NULL,
 			       Bool bottomRight=FALSE) = 0;
 
   virtual Bool WriteToFile(wxMediaStreamOut *) = 0;
@@ -255,21 +255,21 @@ class wxMediaBuffer : public wxObject
 
   virtual wxSnip *FindFirstSnip(void) = 0;
 
-  virtual void SetMaxWidth(float w) = 0;
-  virtual void SetMinWidth(float w) = 0;
-  virtual float GetMaxWidth() = 0;
-  virtual float GetMinWidth() = 0;
-  virtual void SetMinHeight(float w) = 0;
-  virtual void SetMaxHeight(float w) = 0;
-  virtual float GetMinHeight() = 0;
-  virtual float GetMaxHeight() = 0;
+  virtual void SetMaxWidth(double w) = 0;
+  virtual void SetMinWidth(double w) = 0;
+  virtual double GetMaxWidth() = 0;
+  virtual double GetMinWidth() = 0;
+  virtual void SetMinHeight(double w) = 0;
+  virtual void SetMaxHeight(double w) = 0;
+  virtual double GetMinHeight() = 0;
+  virtual double GetMaxHeight() = 0;
 
   virtual void OnPaint(Bool pre, wxDC *dc,
-		       float, float, float, float, 
-		       float dx, float dy,
+		       double, double, double, double, 
+		       double dx, double dy,
 		       int show_caret);
-  virtual void InvalidateBitmapCache(float x=0.0, float y=0.0,
-				     float w=-1.0, float h=-1.0) = 0;
+  virtual void InvalidateBitmapCache(double x=0.0, double y=0.0,
+				     double w=-1.0, double h=-1.0) = 0;
 
   void Print(Bool interactive=TRUE, Bool fit=FALSE, int output_mode = 0, wxWindow *parent = NULL, 
 	     Bool forcePageBBox = TRUE, Bool asEPS = FALSE);
@@ -405,9 +405,9 @@ class wxMediaCanvas : public wxCanvas
   void GetScroll(int *x, int *y);
   Bool ResetVisual(Bool reset_scroll = FALSE);
 
-  void GetView(float *fx, float *fy, float *fh, float *fw, Bool full = FALSE);
-  wxDC *GetDCAndOffset(float *fx, float *fy);
-  void Redraw(float, float, float, float);
+  void GetView(double *fx, double *fy, double *fh, double *fw, Bool full = FALSE);
+  wxDC *GetDCAndOffset(double *fx, double *fy);
+  void Redraw(double, double, double, double);
 
   void NoCustomCursor(void);
 
@@ -425,7 +425,7 @@ class wxMediaCanvas : public wxCanvas
 
   Bool IsFocusOn();
 
-  Bool ScrollTo(float, float, float, float, Bool refresh = TRUE, int bias = 0);
+  Bool ScrollTo(double, double, double, double, Bool refresh = TRUE, int bias = 0);
 
   /* Override some wxCanvas methods: */
   virtual void OnSize(int, int);
@@ -487,19 +487,19 @@ class wxStandardSnipAdmin : public wxSnipAdmin
   wxMediaBuffer *GetMedia(void);
 
   wxDC *GetDC();
-  void GetViewSize(float *h, float *w);
-  void GetView(float *x, float *y, float *h, float *w, wxSnip *snip = NULL);
-  Bool ScrollTo(wxSnip *, float localx, float localy, 
-		float w, float h, Bool refresh, int bias = 0);
+  void GetViewSize(double *h, double *w);
+  void GetView(double *x, double *y, double *h, double *w, wxSnip *snip = NULL);
+  Bool ScrollTo(wxSnip *, double localx, double localy, 
+		double w, double h, Bool refresh, int bias = 0);
   void SetCaretOwner(wxSnip *, int = wxFOCUS_IMMEDIATE);
   void Resized(wxSnip *, Bool redraw_now);
   Bool Recounted(wxSnip *, Bool redraw_now);
-  void NeedsUpdate(wxSnip *, float localx, float localy, 
-		   float w, float h);
+  void NeedsUpdate(wxSnip *, double localx, double localy, 
+		   double w, double h);
   Bool ReleaseSnip(wxSnip *);
 
   void UpdateCursor();
-  Bool PopupMenu(void *m, wxSnip *s, float x, float y);
+  Bool PopupMenu(void *m, wxSnip *s, double x, double y);
 
   void Modified(wxSnip *, Bool);
 };

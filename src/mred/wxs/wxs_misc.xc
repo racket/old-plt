@@ -153,12 +153,12 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "get-mode" : SYM[psMode] GetPrinterMode();
 @ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
 // @ "get-options" : string GetPrinterOptions();
-@ "get-scaling" : void GetPrinterScaling(nnfloat*,nnfloat*);
-@ "get-translation" : void GetPrinterTranslation(float*,float*);
+@ "get-scaling" : void GetPrinterScaling(nndouble*,nndouble*);
+@ "get-translation" : void GetPrinterTranslation(double*,double*);
 @ "get-paper-name" : nstring GetPaperName();
 @ "get-level-2" : bool GetLevel2();
 @ "get-editor-margin" : void GetEditorMargin(nnlong*,nnlong*);
-@ "get-margin" : void GetMargin(nnfloat*,nnfloat*);
+@ "get-margin" : void GetMargin(nndouble*,nndouble*);
 
 @ "set-command" : void SetPrinterCommand(string);
 @ "set-file" : void SetPrinterFile(npathname);
@@ -166,12 +166,12 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
 // @ "set-options" : void SetPrinterOptions(pstring);
-@ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);
-@ "set-translation" : void SetPrinterTranslation(float,float);
+@ "set-scaling" : void SetPrinterScaling(nndouble,nndouble);
+@ "set-translation" : void SetPrinterTranslation(double,double);
 @ "set-paper-name" : void SetPaperName(nstring);
 @ "set-level-2" : void SetLevel2(bool);
 @ "set-editor-margin" : void SetEditorMargin(nnlong,nnlong);
-@ "set-margin" : void SetMargin(nnfloat,nnfloat);
+@ "set-margin" : void SetMargin(nndouble,nndouble);
 
 @ "copy-from" : void copy(wxPrintSetupData!);
 

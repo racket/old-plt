@@ -21,9 +21,9 @@
 @SETMARK Z = d
 @INCLUDE wxs_mbuf.xci
 
-@ "insert" : void Insert(wxSnip!,float,float); <> snip% with location
+@ "insert" : void Insert(wxSnip!,double,double); <> snip% with location
 @ "insert" : void Insert(wxSnip!,wxSnip^); <> snip% with before-snip%
-@ "insert" : void Insert(wxSnip!,wxSnip^,float,float); <> snip% with before-snip% and location
+@ "insert" : void Insert(wxSnip!,wxSnip^,double,double); <> snip% with before-snip% and location
 
 @ "delete" : void Delete(); <> no argument
 @ "delete" : void Delete(wxSnip!); <> snip%
@@ -35,11 +35,11 @@
 
 @ "remove" : void Remove(wxSnip!);
 
-@ "move-to" : void MoveTo(wxSnip!,float,float);
-@ "move" : void Move(wxSnip!,float,float); <> snip%
-@ "move" : void Move(float,float); <> without snip%
+@ "move-to" : void MoveTo(wxSnip!,double,double);
+@ "move" : void Move(wxSnip!,double,double); <> snip%
+@ "move" : void Move(double,double); <> without snip%
 
-@ "resize" : bool Resize(wxSnip!, nnfloat, nnfloat);
+@ "resize" : bool Resize(wxSnip!, nndouble, nndouble);
 
 @ "raise" : void Raise(wxSnip!);
 @ "lower" : void Lower(wxSnip!);
@@ -51,28 +51,28 @@
 
 @ "set-selected" : void SetSelected(wxSnip!);
 @ "add-selected" : void AddSelected(wxSnip!); <> snip%
-@ "add-selected" : void AddSelected(float,float,nnfloat,nnfloat); <> rectangle
+@ "add-selected" : void AddSelected(double,double,nndouble,nndouble); <> rectangle
 @ "no-selected" :  void NoSelected();
 @ "remove-selected" :  void RemoveSelected(wxSnip!);
 
-@ "get-center" : void GetCenter(float*, float*);
+@ "get-center" : void GetCenter(double*, double*);
 
-@ "find-snip" : wxSnip^ FindSnip(float,float,wxSnip^=NULL);
+@ "find-snip" : wxSnip^ FindSnip(double,double,wxSnip^=NULL);
 @ "is-selected?" : bool IsSelected(wxSnip^);
 @ "find-next-selected-snip" : wxSnip^ FindNextSelectedSnip(wxSnip^);
 
-@ v "can-insert?" : bool CanInsert(wxSnip!,wxSnip^,float, float);
-@ v "on-insert" : void OnInsert(wxSnip!,wxSnip^,float, float);
-@ v "after-insert" : void AfterInsert(wxSnip!,wxSnip^,float,float);
+@ v "can-insert?" : bool CanInsert(wxSnip!,wxSnip^,double, double);
+@ v "on-insert" : void OnInsert(wxSnip!,wxSnip^,double, double);
+@ v "after-insert" : void AfterInsert(wxSnip!,wxSnip^,double,double);
 @ v "can-delete?" : bool CanDelete(wxSnip!);
 @ v "on-delete" : void OnDelete(wxSnip!);
 @ v "after-delete" :  void AfterDelete(wxSnip!);
-@ v "can-move-to?" :  bool CanMoveTo(wxSnip!,float,float,bool);
-@ v "on-move-to" :  void OnMoveTo(wxSnip!,float,float,bool);
-@ v "after-move-to" :  void AfterMoveTo(wxSnip!,float,float,bool);
-@ v "can-resize?" :  bool CanResize(wxSnip!,nnfloat,nnfloat);
-@ v "on-resize" :  void OnResize(wxSnip!,nnfloat,nnfloat);
-@ v "after-resize" :  void AfterResize(wxSnip!,nnfloat,nnfloat,bool);
+@ v "can-move-to?" :  bool CanMoveTo(wxSnip!,double,double,bool);
+@ v "on-move-to" :  void OnMoveTo(wxSnip!,double,double,bool);
+@ v "after-move-to" :  void AfterMoveTo(wxSnip!,double,double,bool);
+@ v "can-resize?" :  bool CanResize(wxSnip!,nndouble,nndouble);
+@ v "on-resize" :  void OnResize(wxSnip!,nndouble,nndouble);
+@ v "after-resize" :  void AfterResize(wxSnip!,nndouble,nndouble,bool);
 @ v "can-reorder?" :  bool CanReorder(wxSnip!,wxSnip!,bool);
 @ v "on-reorder" :  void OnReorder(wxSnip!,wxSnip!,bool);
 @ v "after-reorder" :  void AfterReorder(wxSnip!,wxSnip!,bool);
@@ -83,9 +83,9 @@
 
 @ v "on-double-click" : void OnDoubleClick(wxSnip!, wxMouseEvent!);
 
-@ v "interactive-adjust-mouse" : void InteractiveAdjustMouse(float*,float*);
-@ v "interactive-adjust-move" : void InteractiveAdjustMove(wxSnip!,float*,float*);
-@ v "interactive-adjust-resize" : void InteractiveAdjustResize(wxSnip!,nnfloat*,nnfloat*);
+@ v "interactive-adjust-mouse" : void InteractiveAdjustMouse(double*,double*);
+@ v "interactive-adjust-move" : void InteractiveAdjustMove(wxSnip!,double*,double*);
+@ v "interactive-adjust-resize" : void InteractiveAdjustResize(wxSnip!,nndouble*,nndouble*);
 
 @ v "can-interactive-move?" : bool CanInteractiveMove(wxMouseEvent!);
 @ v "on-interactive-move" : void OnInteractiveMove(wxMouseEvent!);
@@ -99,7 +99,7 @@
 @ "get-selection-visible" : bool GetSelectionVisible();
 @ "set-selection-visible" : void SetSelectionVisible(bool);
 
-@ "get-scroll-step" : float GetScrollStep();
-@ "set-scroll-step" : void SetScrollStep(nnfloat);
+@ "get-scroll-step" : double GetScrollStep();
+@ "set-scroll-step" : void SetScrollStep(nndouble);
 
 @END

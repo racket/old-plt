@@ -654,7 +654,7 @@ int objscheme_istype_number(Scheme_Object *obj, const char *stopifbad)
   return 0;
 }
 
-int objscheme_istype_float(Scheme_Object *obj, const char *stopifbad)
+int objscheme_istype_double(Scheme_Object *obj, const char *stopifbad)
 {
   if (SCHEME_DBLP(obj))
     return 1;
@@ -781,7 +781,7 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
   return 0;
 }
 
-int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
+int objscheme_istype_nonnegative_symbol_double(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
     int l;
@@ -795,7 +795,7 @@ int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sy
 
   if (objscheme_istype_number(obj, NULL)) {
     double v;
-    v = objscheme_unbundle_float(obj, where);
+    v = objscheme_unbundle_double(obj, where);
     if (v >= 0)
       return 1;
   }
@@ -850,7 +850,7 @@ Scheme_Object *objscheme_bundle_mzstring(mzchar *s)
     return scheme_make_char_string(s);
 }
 
-Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname)
+Scheme_Object *objscheme_bundle_nonnegative_symbol_double(double d, const char *symname)
 {
   if (d < 0)
     return scheme_intern_symbol(symname);
@@ -943,20 +943,20 @@ ExactLong objscheme_unbundle_ExactLong(Scheme_Object *obj, const char *where)
 }
 
 
-double objscheme_unbundle_float(Scheme_Object *obj, const char *where)
+double objscheme_unbundle_double(Scheme_Object *obj, const char *where)
 {
   (void)objscheme_istype_number(obj, where);
   if (SCHEME_DBLP(obj))
     return SCHEME_DBL_VAL(obj);
   else if (SCHEME_RATIONALP(obj))
-    return scheme_rational_to_float(obj);
+    return scheme_rational_to_double(obj);
   else if (SCHEME_BIGNUMP(obj))
-    return scheme_bignum_to_float(obj);
+    return scheme_bignum_to_double(obj);
   else
     return (double)SCHEME_INT_VAL(obj);
 }
 
-double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
+double objscheme_unbundle_nonnegative_symbol_double(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
     int l;
@@ -970,20 +970,20 @@ double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const cha
 
   if (objscheme_istype_number(obj, NULL)) {
     double v;
-    v = objscheme_unbundle_float(obj, where);
+    v = objscheme_unbundle_double(obj, where);
     if (v >= 0)
       return v;
   }
 
-  (void)objscheme_istype_nonnegative_symbol_float(obj, sym, where);
+  (void)objscheme_istype_nonnegative_symbol_double(obj, sym, where);
   return -1;
 }
 
-double objscheme_unbundle_float_in(Scheme_Object *obj, double minv, double maxv, const char *stopifbad)
+double objscheme_unbundle_double_in(Scheme_Object *obj, double minv, double maxv, const char *stopifbad)
 {
   if (objscheme_istype_number(obj, NULL)) {
     double v;
-    v = objscheme_unbundle_float(obj, stopifbad);
+    v = objscheme_unbundle_double(obj, stopifbad);
     if ((v >= minv) && (v <= maxv))
       return v;
   }
@@ -997,11 +997,11 @@ double objscheme_unbundle_float_in(Scheme_Object *obj, double minv, double maxv,
   return 0;
 }
 
-double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *where)
+double objscheme_unbundle_nonnegative_double(Scheme_Object *obj, const char *where)
 {
   if (objscheme_istype_number(obj, NULL)) {
     double v;
-    v = objscheme_unbundle_float(obj, where);
+    v = objscheme_unbundle_double(obj, where);
     if (v >= 0)
       return v;
   }

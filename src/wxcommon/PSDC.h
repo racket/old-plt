@@ -8,9 +8,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_dcps.h	1.2 5/9/94" */
-
-
 #ifndef wx_dcpsh
 #define wx_dcpsh
 
@@ -62,13 +59,13 @@ class wxPostScriptDC: public wxDC
   unsigned char currentRed;
   unsigned char currentGreen;
   unsigned char currentBlue;
-  float clipx, clipy, clipw, cliph;
+  double clipx, clipy, clipw, cliph;
 
   char *current_font_name, *next_font_name;
   double current_font_size, next_font_size;
 
-  float paper_x, paper_y, paper_w, paper_h, paper_x_scale, paper_y_scale;
-  float paper_margin_x, paper_margin_y;
+  double paper_x, paper_y, paper_w, paper_h, paper_x_scale, paper_y_scale;
+  double paper_margin_x, paper_margin_y;
   Bool landscape, resetFont, level2ok;
   char *afm_path;
 
@@ -87,50 +84,50 @@ class wxPostScriptDC: public wxDC
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;
 
-  void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE) ;
-  Bool GetPixel(float x1, float y1, wxColour *col) ;
+  void FloodFill(double x1, double y1, wxColour *col, int style=wxFLOOD_SURFACE) ;
+  Bool GetPixel(double x1, double y1, wxColour *col) ;
 
-  void DrawLine(float x1, float y1, float x2, float y2);
+  void DrawLine(double x1, double y1, double x2, double y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(float x, float y) ;
-  void DrawArc(float x1,float y1,float w,float h,float start,float end);
-  void DrawPoint(float x, float y);
+  void CrossHair(double x, double y) ;
+  void DrawArc(double x1,double y1,double w,double h,double start,double end);
+  void DrawPoint(double x, double y);
   void DrawPoint(wxPoint* point) { DrawPoint(point->x, point->y); }
-  void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
+  void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
   void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
 #ifdef wx_xt
   void IntDrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0) 
     { DrawLines(n, points, xoffset, yoffset); }
 #endif
-  void DrawLines(wxList *lines, float xoffset = 0, float yoffset = 0)
+  void DrawLines(wxList *lines, double xoffset = 0, double yoffset = 0)
 #ifdef wx_xt
     ;
 #else
   { wxbDC::DrawLines(lines, xoffset, yoffset); }
 #endif
-  void DrawPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE);
-  void DrawPolygon(wxList *lines, float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE)
+  void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
+  void DrawPolygon(wxList *lines, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE)
 #ifdef wx_xt
     ;
 #else
   { wxbDC::DrawPolygon(lines, xoffset, yoffset, fillStyle); }
 #endif
 
-  void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
+  void DrawSpline(double x1, double y1, double x2, double y2, double x3, double y3);
 
-  void DrawRectangle(float x, float y, float width, float height);
-  void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
-  void DrawEllipse(float x, float y, float width, float height);
-  void DrawText(DRAW_TEXT_CONST char *text, float x, float y, 
+  void DrawRectangle(double x, double y, double width, double height);
+  void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20);
+  void DrawEllipse(double x, double y, double width, double height);
+  void DrawText(DRAW_TEXT_CONST char *text, double x, double y, 
 		Bool combine = FALSE, Bool use16 = FALSE, 
-		int dt = 0, float angle = 0.0);
+		int dt = 0, double angle = 0.0);
 
   void Clear(void);
   void SetFont(wxFont *font);
   void SetPen(wxPen *pen);
   void SetBrush(wxBrush *brush);
   void SetBackground(wxColour *c);
-  void SetClippingRect(float x, float y, float width, float height);
+  void SetClippingRect(double x, double y, double width, double height);
   wxRegion *GetClippingRegion();
   void SetClippingRegion(wxRegion *r);
   void DestroyClippingRegion(void);
@@ -140,35 +137,35 @@ class wxPostScriptDC: public wxDC
   void StartPage(void);
   void EndPage(void);
 
-  float GetCharHeight(void);
-  float GetCharWidth(void);
-  void GetTextExtent(const char *string, float *x, float *y,
-                     float *descent = NULL, float *externalLeading = NULL, 
+  double GetCharHeight(void);
+  double GetCharWidth(void);
+  void GetTextExtent(const char *string, double *x, double *y,
+                     double *descent = NULL, double *externalLeading = NULL, 
 		     wxFont *theFont = NULL, 
 		     Bool combine = FALSE, Bool use16 = FALSE, int dt = 0);
   void SetMapMode(int mode);
-  void SetUserScale(float x, float y);
-  float DeviceToLogicalX(int x);
-  float DeviceToLogicalY(int y);
-  float DeviceToLogicalXRel(int x);
-  float DeviceToLogicalYRel(int y);
-  int LogicalToDeviceX(float x);
-  int LogicalToDeviceY(float y);
-  int LogicalToDeviceXRel(float x);
-  int LogicalToDeviceYRel(float y);
-  float FLogicalToDeviceX(float x);
-  float FLogicalToDeviceY(float y);
-  float FLogicalToDeviceXRel(float x);
-  float FLogicalToDeviceYRel(float y);
-  Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
-  Bool Blit(float xdest, float ydest, float width, float height,
-            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxMemoryDC *mask=NULL);
+  void SetUserScale(double x, double y);
+  double DeviceToLogicalX(int x);
+  double DeviceToLogicalY(int y);
+  double DeviceToLogicalXRel(int x);
+  double DeviceToLogicalYRel(int y);
+  int LogicalToDeviceX(double x);
+  int LogicalToDeviceY(double y);
+  int LogicalToDeviceXRel(double x);
+  int LogicalToDeviceYRel(double y);
+  double FLogicalToDeviceX(double x);
+  double FLogicalToDeviceY(double y);
+  double FLogicalToDeviceXRel(double x);
+  double FLogicalToDeviceYRel(double y);
+  Bool Blit(double xdest, double ydest, double width, double height,
+            wxBitmap *source, double xsrc, double ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
+  Bool Blit(double xdest, double ydest, double width, double height,
+            wxMemoryDC *source, double xsrc, double ysrc, int rop = wxSOLID, wxColour *c = NULL, wxMemoryDC *mask=NULL);
   inline Bool CanGetTextExtent(void) { return USE_AFM_FOR_POSTSCRIPT; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 
-  void GetSize(float *width, float *height);
-  void GetSizeMM(float *width, float *height);
+  void GetSize(double *width, double *height);
+  void GetSizeMM(double *width, double *height);
 
   inline void SetColourMap(wxColourMap *WXUNUSED(cmap)) {}
 
@@ -217,9 +214,9 @@ public:
     void  SetPrinterMode(int mode);
     void  SetPrinterOrientation(int orient)
 	{ printer_orient = orient; }
-    void  SetPrinterScaling(float x, float y)
+    void  SetPrinterScaling(double x, double y)
 	{ printer_scale_x = x; printer_scale_y = y; }
-    void  SetPrinterTranslation(float x, float y)
+    void  SetPrinterTranslation(double x, double y)
 	{ printer_translate_x = x; printer_translate_y = y; }
     void  SetColour(Bool col)
 	{ print_colour = col; }
@@ -227,7 +224,7 @@ public:
 	{ print_level_2 = l2; }
     void SetEditorMargin(long x, long y)
         { emargin_h = x; emargin_v = y; }
-    void SetMargin(float x, float y)
+    void SetMargin(double x, double y)
         { ps_margin_h = x; ps_margin_v = y; }
 
     inline char *GetPrinterCommand(void)
@@ -242,9 +239,9 @@ public:
 	{ return paper_name; }
     inline int GetPrinterOrientation(void)
 	{  return printer_orient; }
-    inline void GetPrinterScaling(float *x, float *y)
+    inline void GetPrinterScaling(double *x, double *y)
 	{ *x=printer_scale_x; *y=printer_scale_y; }
-    inline void GetPrinterTranslation(float *x, float *y)
+    inline void GetPrinterTranslation(double *x, double *y)
 	{ *x=printer_translate_x; *y=printer_translate_y; }
     inline int GetPrinterMode(void)
 	{ return printer_mode; }
@@ -256,7 +253,7 @@ public:
 	{ return print_level_2; }
     void GetEditorMargin(long *x, long *y)
         { *x = emargin_h; *y = emargin_v; }
-    void GetMargin(float *x, float *y)
+    void GetMargin(double *x, double *y)
         { *x = ps_margin_h; *y = ps_margin_v; }
 
 private:
@@ -267,17 +264,17 @@ private:
     char   *printer_flags;
     char   *printer_file;
     int    printer_orient;
-    float  printer_scale_x;
-    float  printer_scale_y;
-    float  printer_translate_x;
-    float  printer_translate_y;
+    double  printer_scale_x;
+    double  printer_scale_y;
+    double  printer_translate_x;
+    double  printer_translate_y;
     int    printer_mode;
     char   *afm_path;
     char   *paper_name;
     Bool   print_colour;
     Bool   print_level_2;
     long   emargin_h, emargin_v;
-    float  ps_margin_h, ps_margin_v;
+    double  ps_margin_h, ps_margin_v;
 };
 
 extern wxPrintSetupData *wxGetThePrintSetupData();

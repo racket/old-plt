@@ -40,7 +40,7 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 			 Bool border,
 			 int lm, int tm, int rm, int bm,
 			 int li, int ti, int ri, int bi,
-			 float w, float W, float h, float H)
+			 double w, double W, double h, double H)
 {
   Bool istemp;
   wxSnipClassList *scl;
@@ -164,8 +164,8 @@ wxMediaBuffer *wxMediaSnip::GetThisMedia(void)
   return me;
 }
 
-wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y, 
-				    float, float, wxMouseEvent *event)
+wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, double x, double y, 
+				    double, double, wxMouseEvent *event)
 {
   wxMSMA_SnipDrawState *save;
   wxCursor *c;
@@ -181,8 +181,8 @@ wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y,
   return c;
 }
 
-void wxMediaSnip::OnEvent(wxDC *dc, float x, float y, 
-			  float, float, wxMouseEvent *event)
+void wxMediaSnip::OnEvent(wxDC *dc, double x, double y, 
+			  double, double, wxMouseEvent *event)
 {
   wxMSMA_SnipDrawState *save;
 
@@ -194,8 +194,8 @@ void wxMediaSnip::OnEvent(wxDC *dc, float x, float y,
   myAdmin->RestoreState(save);
 }
 
-void wxMediaSnip::OnChar(wxDC *dc, float x, float y, 
-			  float, float, wxKeyEvent *event)
+void wxMediaSnip::OnChar(wxDC *dc, double x, double y, 
+			  double, double, wxKeyEvent *event)
 {
   wxMSMA_SnipDrawState *save;
 
@@ -213,7 +213,7 @@ void wxMediaSnip::OwnCaret(Bool ownit)
     me->OwnCaret(ownit);
 }
 
-void wxMediaSnip::BlinkCaret(wxDC *dc, float x, float y)
+void wxMediaSnip::BlinkCaret(wxDC *dc, double x, double y)
 {
   if (me) {
     wxMSMA_SnipDrawState *save;
@@ -278,13 +278,13 @@ wxchar *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
 
 
 void wxMediaSnip::GetExtent(wxDC *dc, 
-			    float x, float y,
-			    float *w, float *h,
-			    float *_descent, float *_space,
-			    float *lspace, float *rspace)
+			    double x, double y,
+			    double *w, double *h,
+			    double *_descent, double *_space,
+			    double *lspace, double *rspace)
 {
   wxMSMA_SnipDrawState *save;
-  float descent, space, origH, dummyH;
+  double descent, space, origH, dummyH;
 
   save = new wxMSMA_SnipDrawState;
   myAdmin->SaveState(save, dc, x, y);
@@ -367,13 +367,13 @@ void wxMediaSnip::GetExtent(wxDC *dc,
   myAdmin->RestoreState(save);
 }
 	       
-void wxMediaSnip::Draw(wxDC *dc, float x, float y, 
-		       float left, float top, float right, float bottom,
-		       float WXUNUSED(dx), float WXUNUSED(dy), 
+void wxMediaSnip::Draw(wxDC *dc, double x, double y, 
+		       double left, double top, double right, double bottom,
+		       double WXUNUSED(dx), double WXUNUSED(dy), 
 		       int show_caret)
 {
-  float w, h, r, b, orig_x, orig_y;
-  float t, l;
+  double w, h, r, b, orig_x, orig_y;
+  double t, l;
   wxColour *bgColor = wxWHITE;
 
   wxMSMA_SnipDrawState *save;
@@ -429,7 +429,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
     me->Refresh(l - x, t - y, r - l, b - t, show_caret, bgColor);
 
   if (withBorder) {
-    float mt, ml, mb, mr;
+    double mt, ml, mb, mr;
     
     l = orig_x + leftInset;
     t = orig_y + topInset;
@@ -507,38 +507,38 @@ void wxMediaSnip::Write(wxMediaStreamOut *f)
     me->WriteToFile(f);
 }
 
-void wxMediaSnip::SetMaxWidth(float w)
+void wxMediaSnip::SetMaxWidth(double w)
 {
   maxWidth = w;
   if (admin)
     admin->Resized(this, TRUE);
 }
 
-void wxMediaSnip::SetMinWidth(float w)
+void wxMediaSnip::SetMinWidth(double w)
 {
   minWidth = w;
   if (admin)
     admin->Resized(this, TRUE);
 }
 
-void wxMediaSnip::SetMaxHeight(float h)
+void wxMediaSnip::SetMaxHeight(double h)
 {
   maxHeight = h;
   if (admin)
     admin->Resized(this, TRUE);
 }
 
-void wxMediaSnip::SetMinHeight(float h)
+void wxMediaSnip::SetMinHeight(double h)
 {
   minHeight = h;
   if (admin)
     admin->Resized(this, TRUE);
 }
 
-float wxMediaSnip::GetMaxWidth(void) { return maxWidth; }
-float wxMediaSnip::GetMaxHeight(void) { return maxHeight; }
-float wxMediaSnip::GetMinWidth(void) { return minWidth; }
-float wxMediaSnip::GetMinHeight(void) { return minHeight; }
+double wxMediaSnip::GetMaxWidth(void) { return maxWidth; }
+double wxMediaSnip::GetMaxHeight(void) { return maxHeight; }
+double wxMediaSnip::GetMinWidth(void) { return minWidth; }
+double wxMediaSnip::GetMinHeight(void) { return minHeight; }
 
 Bool wxMediaSnip::GetTightTextFit(void)
 {
@@ -564,7 +564,7 @@ void wxMediaSnip::SetAlignTopLine(Bool t)
     admin->Resized(this, TRUE);
 }
 
-Bool wxMediaSnip::Resize(float w, float h)
+Bool wxMediaSnip::Resize(double w, double h)
 {
   w -= leftMargin + rightMargin;
   h -= topMargin + bottomMargin;
@@ -592,7 +592,7 @@ void wxMediaSnip::ShowBorder(Bool show)
     withBorder = (show ? TRUE : FALSE);
     if (admin) {
       wxDC *dc;
-      float w, h;
+      double w, h;
 
       dc = admin->GetDC();
       if (dc) {
@@ -639,7 +639,7 @@ void wxMediaSnip::SetInset(int lm, int tm, int rm, int bm)
 
   if (admin) {
     wxDC *dc;
-    float w, h;
+    double w, h;
 
     dc = admin->GetDC();
     if (dc) {
@@ -665,12 +665,12 @@ long wxMediaSnip::GetNumScrollSteps()
   return (me ? me->NumScrollLines() : 1);
 }
 
-long wxMediaSnip::FindScrollStep(float y)
+long wxMediaSnip::FindScrollStep(double y)
 {
   return (me ? me->FindScrollLine(y - topMargin) : 0);
 }
 
-float wxMediaSnip::GetScrollStepOffset(long i)
+double wxMediaSnip::GetScrollStepOffset(long i)
 {
   return (me ? me->ScrollLineLocation(i) + topMargin : 0);
 }
@@ -701,7 +701,7 @@ wxMediaSnipMediaAdmin::~wxMediaSnipMediaAdmin()
   state->dc = NULL;
 }
 
-wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)
+wxDC *wxMediaSnipMediaAdmin::GetDC(double *xp, double *yp)
 {
   if (state->drawing) {
     if (xp)
@@ -728,7 +728,7 @@ wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)
 }
 
 void wxMediaSnipMediaAdmin::SaveState(wxMSMA_SnipDrawState *save, wxDC *dc, 
-				      float x, float y)
+				      double x, double y)
 {
   save->drawing = state->drawing;
   save->dc = state->dc;
@@ -749,7 +749,7 @@ void wxMediaSnipMediaAdmin::RestoreState(wxMSMA_SnipDrawState *saved)
   state->y = saved->y;
 }
 
-void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h, 
+void wxMediaSnipMediaAdmin::GetView(double *x, double *y, double *w, double *h, 
 				    Bool full)
 {
   wxSnipAdmin *sadmin;
@@ -766,7 +766,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
   if (full) {
     sadmin->GetView(x, y, w, h, NULL);
   } else {
-    float sx, sy, sw, sh;
+    double sx, sy, sw, sh;
     sadmin->GetView(&sx, &sy, &sw, &sh, snip);
     if (x) {
       *x = sx - snip->leftMargin;
@@ -784,7 +784,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	/* w and h might be too big due to margins - but
 	   they might be small enough already because 
 	   part of the snip itself is not viewed. */
-	float rw, rh;
+	double rw, rh;
 	
 	/* We want the internal, non-overridden method: */
 	snip->wxMediaSnip::GetExtent(state->dc, 0, 0, &rw, &rh);
@@ -792,7 +792,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	/* remember: sx and sy are in snip coordinates */
 
 	if (w) {
-	  float leftMargin, rightMargin;
+	  double leftMargin, rightMargin;
 
 	  leftMargin = snip->leftMargin - sx;
 	  if (leftMargin < 0)
@@ -809,7 +809,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	  *w = sw;
 	}
 	if (h) {
-	  float topMargin, bottomMargin;
+	  double topMargin, bottomMargin;
 
 	  topMargin = snip->topMargin - sy;
 	  if (topMargin < 0)
@@ -833,7 +833,7 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
   }
 }
 
-Bool wxMediaSnipMediaAdmin::ScrollTo(float localx, float localy, float w, float h,
+Bool wxMediaSnipMediaAdmin::ScrollTo(double localx, double localy, double w, double h,
 				     Bool refresh, int bias)
 {
   wxSnipAdmin *sadmin;
@@ -862,8 +862,8 @@ void wxMediaSnipMediaAdmin::Resized(Bool redraw_now)
     sadmin->Resized(snip, redraw_now);
 }
 
-void wxMediaSnipMediaAdmin::NeedsUpdate(float localx, float localy, 
-					float w, float h)
+void wxMediaSnipMediaAdmin::NeedsUpdate(double localx, double localy, 
+					double w, double h)
 {
   wxSnipAdmin *sadmin;
   sadmin = snip->GetAdmin();
@@ -882,7 +882,7 @@ void wxMediaSnipMediaAdmin::UpdateCursor()
     sadmin->UpdateCursor();
 }
 
-Bool wxMediaSnipMediaAdmin::PopupMenu(void *m, float x, float y)
+Bool wxMediaSnipMediaAdmin::PopupMenu(void *m, double x, double y)
 {
   wxSnipAdmin *sadmin;
   sadmin = snip->GetAdmin();

@@ -114,41 +114,41 @@ public:
     ~wxWindowDC(void);
 
     // virtual methods, declared in wxDC
-    Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *bm,
-	       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL);
-    Bool  GCBlit(float xdest, float ydest, float w, float h, wxBitmap *bm,
-		 float xsrc, float ysrc, wxBitmap *mask=NULL);
+    Bool  Blit(double xdest, double ydest, double w, double h, wxBitmap *bm,
+	       double xsrc, double ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL);
+    Bool  GCBlit(double xdest, double ydest, double w, double h, wxBitmap *bm,
+		 double xsrc, double ysrc, wxBitmap *mask=NULL);
     Bool  CanGetTextExtent(void) { return TRUE; }
     Bool  CanDrawBitmap(void) { return TRUE; }
     void  Clear(void);
-    void  CrossHair(float x, float y);
-    void  DrawArc(float x1, float y1, float x2, float y2, float xc, float yc);
-    void  DrawEllipse(float x, float y, float w, float h);
-    void  DrawLine(float x1, float y1, float x2, float y2);
-    void  DrawLines(int n, wxPoint pts[], float xoff=0, float yoff=0);
+    void  CrossHair(double x, double y);
+    void  DrawArc(double x1, double y1, double x2, double y2, double xc, double yc);
+    void  DrawEllipse(double x, double y, double w, double h);
+    void  DrawLine(double x1, double y1, double x2, double y2);
+    void  DrawLines(int n, wxPoint pts[], double xoff=0, double yoff=0);
     void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
-    void  DrawLines(wxList *pts, float xoff=0, float yoff=0);
-    void  DrawPoint(float x, float y);
-    void  DrawPolygon(int n, wxPoint pts[], float xoff=0, float yoff=0,
+    void  DrawLines(wxList *pts, double xoff=0, double yoff=0);
+    void  DrawPoint(double x, double y);
+    void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0,
 			      int fill=wxODDEVEN_RULE);
-    void  DrawPolygon(wxList *pts, float xoff=0, float yoff=0,
+    void  DrawPolygon(wxList *pts, double xoff=0, double yoff=0,
 			      int fill=wxODDEVEN_RULE);
-    void  DrawRectangle(float x, float y, float w, float h);
-    void  DrawRoundedRectangle(float x, float y, float w, float h,
-				       float radius=20);
+    void  DrawRectangle(double x, double y, double w, double h);
+    void  DrawRoundedRectangle(double x, double y, double w, double h,
+				       double radius=20);
 
-    void  DrawText(char *text, float x, float y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, float angle = 0.0);
-    void  FloodFill(float x, float y, wxColour *col,int style=wxFLOOD_SURFACE);
-    float GetCharHeight(void);
-    float GetCharWidth(void);
-    void  GetTextExtent(const char *s, float *w, float *h, float *descent = 0,
-			float *ext_leading = 0,	wxFont *font=NULL,
+    void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
+    void  FloodFill(double x, double y, wxColour *col,int style=wxFLOOD_SURFACE);
+    double GetCharHeight(void);
+    double GetCharWidth(void);
+    void  GetTextExtent(const char *s, double *w, double *h, double *descent = 0,
+			double *ext_leading = 0,	wxFont *font=NULL,
 			Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
     void  IntDrawLine(int x1, int y1, int x2, int y2);
     void  IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
     void  SetBackground(wxColour *c);
     void  SetBrush(wxBrush *brush);
-    void  SetClippingRect(float x, float y, float w, float h);
+    void  SetClippingRect(double x, double y, double w, double h);
     void  SetClippingRegion(wxRegion*);
     wxRegion* GetClippingRegion();
     void  SetColourMap(wxColourMap *cmap);
@@ -159,15 +159,15 @@ public:
     // methods unique to wxWindowDC
     void  SetCanvasClipping(void);
 
-    virtual void GetSize(float *w, float *h);
+    virtual void GetSize(double *w, double *h);
 
     void TryColour(wxColour *src, wxColour *dest);
 
-    Bool GetPixel(float x, float y, wxColour *col);
+    Bool GetPixel(double x, double y, wxColour *col);
 
     void BeginSetPixel(int mini, int near_i, int near_j);
     void EndSetPixel();
-    void SetPixel(float x, float y, wxColour *col);
+    void SetPixel(double x, double y, wxColour *col);
   
     Bool BeginSetPixelFast(int x, int y, int w, int h);
     void EndSetPixelFast();
@@ -233,9 +233,9 @@ public:
 #endif
 
 #ifdef Have_X_Types
-void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
-		     const char *orig_s, float *_w, float *_h, float *_descent,
-		     float *_topspace, wxFont *font_to_use,
+void wxGetTextExtent(Display *dpy, double scale_x, double scale_y,
+		     const char *orig_s, double *_w, double *_h, double *_descent,
+		     double *_topspace, wxFont *font_to_use,
 		     Bool combine, Bool isUnicode, int dt);
 #endif
 

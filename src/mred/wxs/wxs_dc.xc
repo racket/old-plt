@@ -96,7 +96,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
+static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, double x, double y, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
@@ -105,7 +105,7 @@ static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxCol
     return FALSE;
 }
 
-static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c, wxBitmap* mask)
+static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, double x, double y, double dx, double dy, double dw, double dh, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
@@ -116,7 +116,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 
 static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offset)
 {
-  float w, h, d, asc;
+  double w, h, d, asc;
   Scheme_Object *a[4];
   void *r;
   SETUP_VAR_STACK(3);
@@ -140,7 +140,7 @@ static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offs
 
 static void* MyGetSize(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -162,7 +162,7 @@ static void* MyGetSize(wxDC *dc)
 
 static void* MyGetScale(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -184,7 +184,7 @@ static void* MyGetScale(wxDC *dc)
 
 static void* MyGetOrigin(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -213,12 +213,12 @@ inline static wxGL *_GetGL(wxDC *dc)
 #endif
 }
 
-static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
-  float xs, ys, xo, yo;
+  double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
@@ -261,12 +261,12 @@ static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   READY_TO_RETURN;
 }
 
-static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
-  float xs, ys, xo, yo;
+  double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
@@ -328,8 +328,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 // Also in wxWindow:
 @ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(mzstring,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
-@ Q "get-char-height" : float GetCharHeight();
-@ Q "get-char-width" : float GetCharWidth();
+@ Q "get-char-height" : double GetCharHeight();
+@ Q "get-char-width" : double GetCharWidth();
 
 @MACRO rZERO = return 0;
 @MACRO rFALSE = return FALSE;
@@ -355,14 +355,14 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @MACRO CheckSizes[p.m.who] = if (x<m> && ((x<p>->GetWidth() != x<m>->GetWidth()) || (x<p>->GetHeight() != x<m>->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap size does not match bitmap to draw: ", p[POFFSET+<p>]));
 @MACRO CheckNotSame[p.m.who] = if (WITH_VAR_STACK(dc_target(THEOBJ)) == x<p>) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "source bitmap is the same as the destination: ", p[POFFSET+<p>])); if (WITH_VAR_STACK(dc_target(THEOBJ)) == x<m>) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap is the same as the destination: ", p[POFFSET+<m>]));
 
-@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap^=NULL); : : /CheckBMOk[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckBW[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckSizes[0.9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckOk[METHODNAME("dc<%>","draw-bitmap-section")]|CheckNotSame[0.9.METHODNAME("dc<%>","draw-bitmap-section")] : : rFALSE <> with size
-@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap^=NULL); : : /CheckBMOk[5.METHODNAME("dc<%>","draw-bitmap")]|CheckBW[5.METHODNAME("dc<%>","draw-bitmap")]|CheckSizes[0.5.METHODNAME("dc<%>","draw-bitmap")]|CheckOk[METHODNAME("dc<%>","draw-bitmap")]|CheckNotSame[0.5.METHODNAME("dc<%>","draw-bitmap")]
+@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,double,double,double,double,nndouble,nndouble,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap^=NULL); : : /CheckBMOk[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckBW[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckSizes[0.9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckOk[METHODNAME("dc<%>","draw-bitmap-section")]|CheckNotSame[0.9.METHODNAME("dc<%>","draw-bitmap-section")] : : rFALSE <> with size
+@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,double,double,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap^=NULL); : : /CheckBMOk[5.METHODNAME("dc<%>","draw-bitmap")]|CheckBW[5.METHODNAME("dc<%>","draw-bitmap")]|CheckSizes[0.5.METHODNAME("dc<%>","draw-bitmap")]|CheckOk[METHODNAME("dc<%>","draw-bitmap")]|CheckNotSame[0.5.METHODNAME("dc<%>","draw-bitmap")]
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!); : : /CheckOk[METHODNAME("dc<%>","try-color")]
 
 @ Q "set-text-mode" : void SetBackgroundMode(SYM[textMode]); :  : /CheckOk[METHODNAME("dc<%>","set-text-mode")]
-@ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk[METHODNAME("dc<%>","set-scale")]
-@ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk[METHODNAME("dc<%>","set-origin")]
+@ Q "set-scale" : void SetUserScale(nndouble,nndouble); : : /CheckOk[METHODNAME("dc<%>","set-scale")]
+@ Q "set-origin" : void SetDeviceOrigin(double,double); : : /CheckOk[METHODNAME("dc<%>","set-origin")]
 
 @ m "get-scale" : void[]/CastToSO//spAnything MyGetScale(); : : /CheckOk[METHODNAME("dc<%>","get-scale")]
 @ m "get-origin" : void[]/CastToSO//spAnything MyGetOrigin(); : : /CheckOk[METHODNAME("dc<%>","get-origin")]
@@ -399,11 +399,11 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @CREATOR ()
 @ARGNAMES
 
-@ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
-@ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
+@ "get-pixel" : bool GetPixel(double,double,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
+@ "set-pixel" : void SetPixel(double,double,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
 
-@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
-@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
+@ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
+@ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("bitmap-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

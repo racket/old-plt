@@ -76,14 +76,14 @@ void wxInitStyles(void)
   wxTheStyleList = new wxStyleList;
 }
 
-void wxMultColour::Get(float *rf, float *gf, float *bf)
+void wxMultColour::Get(double *rf, double *gf, double *bf)
 {
   *rf = r;
   *gf = g;
   *bf = b;
 }
 
-void wxMultColour::Set(float rf, float gf, float bf)
+void wxMultColour::Set(double rf, double gf, double bf)
 {
   r = rf;
   g = gf;
@@ -302,8 +302,8 @@ wxStyleDelta *wxStyleDelta::SetDeltaForeground(wxColour *colour)
 
 Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 {
-  float ambr, ambb, ambg, amfr, amfb, amfg;
-  float bmbr, bmbb, bmbg, bmfr, bmfb, bmfg;
+  double ambr, ambb, ambg, amfr, amfb, amfg;
+  double bmbr, bmbb, bmbg, bmfr, bmfb, bmfg;
   short aabr, aabb, aabg, aafr, aafb, aafg;
   short babr, babb, babg, bafr, bafb, bafg;
 
@@ -462,8 +462,8 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 
 Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
 {
-  float ambr, ambb, ambg, amfr, amfb, amfg;
-  float bmbr, bmbb, bmbg, bmfr, bmfb, bmfg;
+  double ambr, ambb, ambg, amfr, amfb, amfg;
+  double bmbr, bmbb, bmbg, bmfr, bmfb, bmfg;
   short aabr, aabb, aabg, aafr, aafb, aafg;
   short babr, babb, babg, bafr, bafb, bafg;
   
@@ -538,7 +538,7 @@ void wxStyleDelta::Copy(wxStyleDelta *in)
 
 /***************************************************************/
 
-static unsigned char ColourNum(float v)
+static unsigned char ColourNum(double v)
 {
   if (v < 0)
     return 0;
@@ -579,7 +579,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   int fontid;
   int style, weight, smoothing;
   unsigned char r, g, b;
-  float rm, gm, bm;
+  double rm, gm, bm;
   short rp, gp, bp; 
   Bool match;
   wxNode *node;
@@ -919,7 +919,7 @@ void wxStyle::SwitchTo(wxDC *dc, wxStyle *oldStyle)
 
 void wxStyle::ResetTextMetrics(wxDC *dc)
 {
-  float w, h, d, s;
+  double w, h, d, s;
 
   textMetricDC = dc;
 #ifdef BROKEN_GET_TEXT_EXTENT 
@@ -932,7 +932,7 @@ void wxStyle::ResetTextMetrics(wxDC *dc)
   textSpace = s;
 }
 
-float wxStyle::GetTextWidth(wxDC *dc)
+double wxStyle::GetTextWidth(wxDC *dc)
 {
   if (dc != textMetricDC)
     ResetTextMetrics(dc);
@@ -940,7 +940,7 @@ float wxStyle::GetTextWidth(wxDC *dc)
   return textWidth;
 }
 
-float wxStyle::GetTextHeight(wxDC *dc)
+double wxStyle::GetTextHeight(wxDC *dc)
 {
   if (dc != textMetricDC)
     ResetTextMetrics(dc);
@@ -948,7 +948,7 @@ float wxStyle::GetTextHeight(wxDC *dc)
   return textHeight;
 }
 
-float wxStyle::GetTextDescent(wxDC *dc)
+double wxStyle::GetTextDescent(wxDC *dc)
 {
   if (dc != textMetricDC)
     ResetTextMetrics(dc);
@@ -956,7 +956,7 @@ float wxStyle::GetTextDescent(wxDC *dc)
   return textDescent;
 }
 
-float wxStyle::GetTextSpace(wxDC *dc)
+double wxStyle::GetTextSpace(wxDC *dc)
 {
   if (dc != textMetricDC)
     ResetTextMetrics(dc);
@@ -1619,7 +1619,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   char face[MAX_STYLE_NAME];
   short r, g, b;
   int i, isJoin, listId, nms, num;
-  float flt;
+  double flt;
   wxStyleDelta *delta;
   wxStyle *bs;
   wxStyleListLink *ssl;

@@ -24,23 +24,23 @@ class wxMediaAdmin : public wxObject
   inline wxMediaAdmin();
 
   /* Usually called by wxMediaBuffer objects: */
-  virtual wxDC *GetDC(float *x = NULL, float *y = NULL) = 0;
-  virtual void GetView(float *x, float *y, float *w, float *h, 
+  virtual wxDC *GetDC(double *x = NULL, double *y = NULL) = 0;
+  virtual void GetView(double *x, double *y, double *w, double *h, 
 		       Bool full = FALSE) = 0;
-  virtual Bool ScrollTo(float localx, float localy, float w, float h,
+  virtual Bool ScrollTo(double localx, double localy, double w, double h,
 			Bool refresh = TRUE, int bias = 0) = 0;
   virtual void GrabCaret(int = wxFOCUS_GLOBAL) = 0;
 
   virtual void Resized(Bool redraw_now) = 0;
-  virtual void NeedsUpdate(float localx, float localy, float w, float h) = 0;
+  virtual void NeedsUpdate(double localx, double localy, double w, double h) = 0;
 
   virtual void UpdateCursor() = 0;
 
-  virtual void GetMaxView(float *x, float *y, float *w, float *h, 
+  virtual void GetMaxView(double *x, double *y, double *w, double *h, 
 			  Bool full = FALSE);
   virtual Bool DelayRefresh();
 
-  virtual Bool PopupMenu(void *m, float x, float y) = 0;
+  virtual Bool PopupMenu(void *m, double x, double y) = 0;
 
   virtual void Modified(Bool) = 0;
 };
@@ -75,20 +75,20 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
   ~wxCanvasMediaAdmin();
 
   /* Usually called by wxMediaBuffer objects: */
-  wxDC *GetDC(float *x = NULL, float *y = NULL);
-  void GetView(float *x, float *y, float *h, float *w, Bool full = FALSE);
-  Bool ScrollTo(float localx, float localy, float, float, 
+  wxDC *GetDC(double *x = NULL, double *y = NULL);
+  void GetView(double *x, double *y, double *h, double *w, Bool full = FALSE);
+  Bool ScrollTo(double localx, double localy, double, double, 
 		Bool refresh = TRUE, int bias = 0);
 
   void GrabCaret(int = wxFOCUS_GLOBAL);
 
   void Resized(Bool update);
-  void NeedsUpdate(float localx, float localy, float w, float h);
+  void NeedsUpdate(double localx, double localy, double w, double h);
 
   void UpdateCursor();
-  void GetMaxView(float *x, float *y, float *h, float *w, Bool full = FALSE);
+  void GetMaxView(double *x, double *y, double *h, double *w, Bool full = FALSE);
 
-  Bool PopupMenu(void *m, float x, float y);
+  Bool PopupMenu(void *m, double x, double y);
 
   inline wxMediaCanvas *GetCanvas() { return canvas; }
 
@@ -99,7 +99,7 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
 class wxMSMA_SnipDrawState {
  public:
   Bool drawing;
-  float x, y;
+  double x, y;
   wxDC *dc;
 };
 
@@ -113,7 +113,7 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
   wxMediaSnip *snip;
 
   void RestoreState(wxMSMA_SnipDrawState *saved);
-  void SaveState(wxMSMA_SnipDrawState *save, wxDC *dc, float x, float y);
+  void SaveState(wxMSMA_SnipDrawState *save, wxDC *dc, double x, double y);
 
   wxMediaSnipMediaAdmin(wxMediaSnip *s);
 
@@ -123,20 +123,20 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
   inline wxMediaSnipMediaAdmin();
   ~wxMediaSnipMediaAdmin();
 
-  wxDC *GetDC(float *x = NULL, float *y = NULL);
-  void GetView(float *x, float *y, float *h, float *w, Bool full = FALSE);
-  Bool ScrollTo(float localx, float localy, float w, float h,
+  wxDC *GetDC(double *x = NULL, double *y = NULL);
+  void GetView(double *x, double *y, double *h, double *w, Bool full = FALSE);
+  Bool ScrollTo(double localx, double localy, double w, double h,
 			Bool refresh = TRUE, int bias = 0);
   void GrabCaret(int = wxFOCUS_GLOBAL);
 
   void Resized(Bool redraw_now);
-  void NeedsUpdate(float localx, float localy, float w, float h);
+  void NeedsUpdate(double localx, double localy, double w, double h);
 
   void UpdateCursor();
 
   virtual Bool DelayRefresh();
 
-  Bool PopupMenu(void *m, float x, float y);
+  Bool PopupMenu(void *m, double x, double y);
 
   inline wxMediaSnip* GetSnip() { return snip; }
 

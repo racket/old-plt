@@ -43,7 +43,7 @@ public:
     wxFont(void);
     wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
 	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, 
-	   Bool sip = FALSE, float Rotation = 0.0);
+	   Bool sip = FALSE, double Rotation = 0.0);
     wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, 
 	   Bool sip = FALSE);
@@ -66,15 +66,15 @@ public:
 
     Bool  ScreenGlyphAvailable(int c);
 
-    wxFont *GetRotated(float angle);
+    wxFont *GetRotated(double angle);
     int CanRotate();
 
-    void  *GetInternalFont(float scale_x = 1.0, float scale_y = 1.0, float angle = 0.0); // return type XFontStruct*
-    void  *GetInternalAAFont(float scale_x = 1.0, float scale_y = 1.0, float angle = 0.0); // return type wxFontStruct*
+    void  *GetInternalFont(double scale_x = 1.0, double scale_y = 1.0, double angle = 0.0); // return type XFontStruct*
+    void  *GetInternalAAFont(double scale_x = 1.0, double scale_y = 1.0, double angle = 0.0); // return type wxFontStruct*
 
 #ifdef WX_USE_XFT
     int HasAASubstitutions(void);
-    void *GetNextAASubstitution(int index, int cval, float scale_x, float scale_y, float angle);
+    void *GetNextAASubstitution(int index, int cval, double scale_x, double scale_y, double angle);
 #endif
 
 private:
@@ -89,7 +89,7 @@ private:
     Bool   underlined, size_in_pixels;
     int    font_id;
     int    smoothing;
-    float  rotation;
+    double  rotation;
     char   *main_screen_name;
 };
 

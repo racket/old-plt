@@ -112,13 +112,13 @@ static Bool wxIsShownToRoot(wxWindow *w)
 
 @ "drag-accept-files" : void DragAcceptFiles(bool);
 
-// @ "get-char-height" : float GetCharHeight();
-// @ "get-char-width" : float GetCharWidth();
+// @ "get-char-height" : double GetCharHeight();
+// @ "get-char-width" : double GetCharWidth();
 @ "client-to-screen" : void ClientToScreen(int*, int*);
 @ "screen-to-client" : void ScreenToClient(int*,int*);
 @ "refresh" : void Refresh();
 @ "get-parent" : wxWindow^ GetParent();
-@ "get-text-extent" : void GetTextExtent(string,float*,float*,float?=NULL,float?=NULL,wxFont^=NULL,bool=FALSE);
+@ "get-text-extent" : void GetTextExtent(string,double*,double*,double?=NULL,double?=NULL,wxFont^=NULL,bool=FALSE);
 @ "center" : void Center(SYM[direction]=wxBOTH);
 
 @ "popup-menu" : void PopupMenu(wxMenu!, rint[0|10000], rint[0|10000]);

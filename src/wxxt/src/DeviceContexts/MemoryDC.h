@@ -37,7 +37,7 @@ public:
     wxMemoryDC(Bool read_only = 0);
     ~wxMemoryDC(void);
 
-    virtual void GetSize(float *w, float *h);
+    virtual void GetSize(double *w, double *h);
 
     void SelectObject(wxBitmap *bitmap);
     wxBitmap* GetObject();

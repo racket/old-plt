@@ -187,7 +187,7 @@ wxGL *wxWindowDC::GetGL()
 
 static wxBitmap *ScaleBitmap(wxBitmap *src, 
 			     int tw, int th,
-			     float xsrc, float ysrc, float w, float h, 
+			     double xsrc, double ysrc, double w, double h, 
 			     Display *dpy, 
 			     wxBitmap **_tmp, int *retval,
 			     int forceMono, unsigned long whiteVal)
@@ -195,7 +195,7 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
   int sw, sh, i, j, ti, tj, xs, ys, mono;
   unsigned long pixel;
   wxBitmap *tmp;
-  float scale_x, scale_y;
+  double scale_x, scale_y;
 
   *retval = TRUE;
 
@@ -215,8 +215,8 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
   if (sh > h)
     sh = (int)h;
 
-  scale_x = (float)tw / sw;
-  scale_y = (float)th / sh;
+  scale_x = (double)tw / sw;
+  scale_y = (double)th / sh;
 
   mono = (src->GetDepth() == 1);
   if (forceMono && !mono)
@@ -287,14 +287,14 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 				       Region *_free_rgn,
 				       int *_tx, int *_ty,
 				       int *_scaled_width, int *_scaled_height,
-				       float *_xsrc, float *_ysrc,
+				       double *_xsrc, double *_ysrc,
 				       Display *dpy, unsigned long whiteVal)
 {
   int overlap;
   Region free_rgn = *_free_rgn, rgn = NULL;
   int tx = *_tx, ty = *_ty;
   int scaled_width = *_scaled_width, scaled_height = *_scaled_height;
-  float xsrc = *_xsrc, ysrc = *_ysrc;
+  double xsrc = *_xsrc, ysrc = *_ysrc;
 
   if (user_reg || expose_reg) {
     if (user_reg && expose_reg) {
@@ -531,8 +531,8 @@ void wxFreePicture(long p) {
 }
 #endif
 
-Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		      float xsrc, float ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
+Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *src,
+		      double xsrc, double ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
 {
     Bool retval = FALSE;
     wxPen *savePen, *apen;
@@ -911,8 +911,8 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     return retval; // #f => something wrong with the drawables
 }
 
-Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *src,
-			float xsrc, float ysrc, wxBitmap *bmask)
+Bool wxWindowDC::GCBlit(double xdest, double ydest, double w, double h, wxBitmap *src,
+			double xsrc, double ysrc, wxBitmap *bmask)
 {
   /* A non-allocating (of collectable memory) blit, but may allocate
      when bmask is non-NULL.  Note that there's no rop or color. We do
@@ -1020,10 +1020,10 @@ void wxWindowDC::Clear(void)
     }
 }
 
-void wxWindowDC::CrossHair(float x, float y)
+void wxWindowDC::CrossHair(double x, double y)
 {
   int xx, yy;
-  float w, h;
+  double w, h;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
@@ -1041,10 +1041,10 @@ void wxWindowDC::CrossHair(float x, float y)
   XDrawLine(DPY, DRAWABLE, PEN_GC, xx, 0, xx, (int)h);
 }
 
-void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float end)
+void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, double end)
 {
   int xx, yy, ww, hh;
-  float xw, yh;
+  double xw, yh;
   double degrees1, degrees2;
   int alpha1, alpha2;
 
@@ -1077,10 +1077,10 @@ void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float 
   CalcBoundingBox(x + w, y + h);
 }
 
-void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
+void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
 {
   int x1, y1, w1, h1;
-  float xw, yh;
+  double xw, yh;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
@@ -1104,7 +1104,7 @@ void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
   CalcBoundingBox(x+w, y+h);
 }
 
-void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
+void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -1118,7 +1118,7 @@ void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
     CalcBoundingBox(x2, y2);
 }
 
-void wxWindowDC::DrawLines(int n, wxPoint pts[], float xoff, float yoff)
+void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
 {
   XPoint *xpts;
 
@@ -1162,7 +1162,7 @@ void wxWindowDC::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
     XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
-void wxWindowDC::DrawLines(wxList *pts, float xoff, float yoff)
+void wxWindowDC::DrawLines(wxList *pts, double xoff, double yoff)
 {
   int n;
   XPoint *xpts;
@@ -1192,7 +1192,7 @@ void wxWindowDC::DrawLines(wxList *pts, float xoff, float yoff)
     XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
-void wxWindowDC::DrawPoint(float x, float y)
+void wxWindowDC::DrawPoint(double x, double y)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -1204,7 +1204,7 @@ void wxWindowDC::DrawPoint(float x, float y)
     CalcBoundingBox(x, y);
 }
 
-void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
+void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 			     int fill)
 {
   XPoint *xpts;
@@ -1233,7 +1233,7 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
 	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
 }
 
-void wxWindowDC::DrawPolygon(wxList *pts, float xoff, float yoff, int fill)
+void wxWindowDC::DrawPolygon(wxList *pts, double xoff, double yoff, int fill)
 {
   int n;
   XPoint *xpts;
@@ -1269,10 +1269,10 @@ void wxWindowDC::DrawPolygon(wxList *pts, float xoff, float yoff, int fill)
     XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
 }
 
-void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
+void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
 {
     int x1, y1, w1, h1;
-    float xw, yh;
+    double xw, yh;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -1294,11 +1294,11 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
     CalcBoundingBox(x+w, y+h);
 }
 
-void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
-				      float radius)
+void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
+				      double radius)
 {
   int xx, yy, ww, hh, rr, dd;
-  float xw, yh;
+  double xw, yh;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -1344,7 +1344,7 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     CalcBoundingBox(x+w, y+h);
 }
 
-void wxWindowDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y),
+void wxWindowDC::FloodFill(double WXUNUSED(x), double WXUNUSED(y),
 			   wxColour *WXUNUSED(col),int WXUNUSED(style))
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
@@ -1681,7 +1681,7 @@ void wxWindowDC::FillPrivateColor(wxColour *c)
   XGCValues values;
   int mask = 0;
   GC agc;
-  float w, h;
+  double w, h;
   Colormap cm;
 
   if (!DRAWABLE)
@@ -1865,21 +1865,21 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
 #endif
 static unsigned int cvt_buf[WX_CVT_BUF_SIZE];
 
-void wxWindowDC::DrawText(char *orig_text, float x, float y, 
+void wxWindowDC::DrawText(char *orig_text, double x, double y, 
 			  Bool combine, Bool isUnicode, int dt,
-			  float angle)
+			  double angle)
 {
   XFontStruct *fontinfo;
 #ifdef WX_USE_XFT
   wxFontStruct *xfontinfo;
 #endif
-  float       cx, cy;
+  double       cx, cy;
   int         ascent;
   int         dev_x;
   int         dev_y;
   long        textlen;
-  float       e_scale_x, e_scale_y;
-  float       ca, sa;
+  double       e_scale_x, e_scale_y;
+  double       ca, sa;
   unsigned int *text;
   
 
@@ -1907,7 +1907,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
       e_scale_x = scale_x;
       e_scale_y = scale_y;
     } else {
-      float a2;
+      double a2;
       e_scale_x = sqrt(((scale_x * ca) * (scale_x * ca)) + ((scale_y * sa) * (scale_y * sa)));
       e_scale_y = sqrt(((scale_y * ca) * (scale_y * ca)) + ((scale_x * sa) * (scale_x * sa)));
       a2 = atan2(sa * scale_y, ca * scale_x);
@@ -1929,7 +1929,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
   dev_y = YLOG2DEV(y);
 
   {
-    float tw, th, td, ts;
+    double tw, th, td, ts;
     GetTextExtent(orig_text, &tw, &th, &td, &ts, current_font, combine, isUnicode, dt);
     cx = (tw * e_scale_x);
     cy = (th * e_scale_y);
@@ -2129,9 +2129,9 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
   }
 }
 
-float wxWindowDC::GetCharHeight(void)
+double wxWindowDC::GetCharHeight(void)
 {
-  float w, h, descent, topspace;
+  double w, h, descent, topspace;
 
   if (!current_font) // no font
     return YDEV2LOGREL(12);
@@ -2141,9 +2141,9 @@ float wxWindowDC::GetCharHeight(void)
   return h;
 }
 
-float wxWindowDC::GetCharWidth(void)
+double wxWindowDC::GetCharWidth(void)
 {
-  float w, h, descent, topspace;
+  double w, h, descent, topspace;
 
   if (!current_font) // no font
     return YDEV2LOGREL(12);
@@ -2153,9 +2153,9 @@ float wxWindowDC::GetCharWidth(void)
   return w;
 }
 
-void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
-		     const char *orig_s, float *_w, float *_h, float *_descent,
-		     float *_topspace, wxFont *font_to_use,
+void wxGetTextExtent(Display *dpy, double scale_x, double scale_y,
+		     const char *orig_s, double *_w, double *_h, double *_descent,
+		     double *_topspace, wxFont *font_to_use,
 		     Bool combine, Bool isUnicode, int dt)
 {
   int         ascent, descent, space = 0;
@@ -2164,7 +2164,7 @@ void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
 #ifdef WX_USE_XFT
   wxFontStruct *xfontinfo;
 #endif
-  float w, h;
+  double w, h;
   unsigned *s;
 
 #ifdef WX_USE_XFT
@@ -2251,7 +2251,7 @@ void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
   h = ascent + descent;
   *_h = h;
   if (_descent) {
-    float d;
+    double d;
     d = descent;
     *_descent = d;
   }
@@ -2259,12 +2259,12 @@ void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
     *_topspace = space;
 }
 
-void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *_descent,
-			       float *_topspace, wxFont *_font,
+void wxWindowDC::GetTextExtent(const char *orig_s, double *_w, double *_h, double *_descent,
+			       double *_topspace, wxFont *_font,
 			       Bool combine, Bool isUnicode, int dt)
 {
   wxFont *font_to_use;
-  float v;
+  double v;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
@@ -2359,7 +2359,7 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 
 static Region empty_rgn;
 
-void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
+void wxWindowDC::SetClippingRect(double x, double y, double w, double h)
 {
   wxRegion *r;
   r = new wxRegion(this);
@@ -2397,7 +2397,7 @@ wxRegion *wxWindowDC:: GetClippingRegion()
   return clipping;
 }
 
-void wxWindowDC::GetSize(float *w, float *h)
+void wxWindowDC::GetSize(double *w, double *h)
 {
   Window wdummy; int sdummy; unsigned int udummy, width, height;
 
@@ -2468,8 +2468,8 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     // set display scaling
     width  = WidthOfScreen(SCN);
     height = HeightOfScreen(SCN);
-    mm_to_pix_x = ((float)width)  / ((float)WidthMMOfScreen(SCN));
-    mm_to_pix_y = ((float)height) / ((float)HeightMMOfScreen(SCN));
+    mm_to_pix_x = ((double)width)  / ((double)WidthMMOfScreen(SCN));
+    mm_to_pix_y = ((double)height) / ((double)HeightMMOfScreen(SCN));
 }
 
 void wxWindowDC::Destroy(void)
@@ -2526,7 +2526,7 @@ Bool wxWindowDC::Ok(void)
 }
 
 
-Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
+Bool wxWindowDC::GetPixel(double x, double y, wxColour * col)
 {
   int i, j;
   Bool mini = 1;
@@ -2677,7 +2677,7 @@ void wxWindowDC::EndSetPixel()
   }
 }
 
-void wxWindowDC::SetPixel(float x, float y, wxColour * col)
+void wxWindowDC::SetPixel(double x, double y, wxColour * col)
 {
   int i, j;
   int w, h;

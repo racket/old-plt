@@ -453,11 +453,11 @@ void wxMediaEdit::PopStreaks(void)
 
 /****************************************************************/
 
-long wxMediaEdit::_FindPositionInLine(Bool internal, long i, float x, 
+long wxMediaEdit::_FindPositionInLine(Bool internal, long i, double x, 
 				      Bool *ateol, Bool *onit,
-				      float *how_close)
+				      double *how_close)
 {
-  float w, X, topy;
+  double w, X, topy;
   wxSnip *snip;
   wxDC *dc;
   long p, sPos;
@@ -1334,7 +1334,7 @@ wxTabSnip *wxMediaEdit::OnNewTabSnip()
 /****************************************************************/
 
 Bool wxMediaEdit::GetSnipPositionAndLocation(wxSnip *thesnip, long *pos, 
-					     float *x, float *y)
+					     double *x, double *y)
 {
   wxSnip *snip;
   long p;
@@ -1362,9 +1362,9 @@ Bool wxMediaEdit::GetSnipPositionAndLocation(wxSnip *thesnip, long *pos,
   return TRUE;
 }
 
-Bool wxMediaEdit::GetSnipLocation(wxSnip *thesnip, float *x, float *y, Bool bottomRight)
+Bool wxMediaEdit::GetSnipLocation(wxSnip *thesnip, double *x, double *y, Bool bottomRight)
 {
-  float lx, ly;
+  double lx, ly;
 
   if (bottomRight) {
     if (!x)
@@ -1376,7 +1376,7 @@ Bool wxMediaEdit::GetSnipLocation(wxSnip *thesnip, float *x, float *y, Bool bott
   if (GetSnipPositionAndLocation(thesnip, NULL, x, y)) {
     if (bottomRight) {
       wxDC *dc;
-      float w, h;
+      double w, h;
       
       Bool wl = writeLocked, fl = flowLocked;
       writeLocked = TRUE;
@@ -1450,7 +1450,7 @@ void wxMediaEdit::AdjustClickbacks(long start, long end,
   }
 }
 
-wxClickback *wxMediaEdit::FindClickback(long start, float y)
+wxClickback *wxMediaEdit::FindClickback(long start, double y)
 {
   wxNode *node;
   wxClickback *click;
@@ -1464,7 +1464,7 @@ wxClickback *wxMediaEdit::FindClickback(long start, float y)
       /* We're in the right horizontal region, but maybe the mouse
 	 is above or below the clickback. */
       wxSnip *start, *end;
-      float top, bottom, dummy;
+      double top, bottom, dummy;
 
       start = FindSnip(click->start, 1);
       end = FindSnip(click->end, -1);
@@ -1473,7 +1473,7 @@ wxClickback *wxMediaEdit::FindClickback(long start, float y)
 	GetSnipLocation(start, &dummy, &top, FALSE);
 	GetSnipLocation(start, &dummy, &bottom, TRUE);
 	while (start != end) {
-	  float ntop, nbottom;
+	  double ntop, nbottom;
 	  start = start->Next();
 	  GetSnipLocation(start, &dummy, &ntop, FALSE);
 	  GetSnipLocation(start, &dummy, &nbottom, TRUE);
@@ -1557,12 +1557,12 @@ Bool wxMediaEdit::CheckRecalc(Bool need_graphic, Bool need_write, Bool no_displa
   return TRUE;
 }
 
-Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y, 
+Bool wxMediaEdit::CheckFlow(double maxw, wxDC *dc, double Y, 
 			    long startp, wxSnip *start)
   /* This method is called with writeLocked and flowLocked already TRUE */
 {
   long p, c, origc, b;
-  float _totalWidth, w;
+  double _totalWidth, w;
   wxSnip *snip;
   Bool checkingUnderflow; // no overflow => check move up from next line
   Bool checkingUnderflowAtNext;
@@ -1720,7 +1720,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 {
   wxMediaLine *line;
   wxSnip *snip;
-  float X, Y, descent, space, lineBase, old_max_width;
+  double X, Y, descent, space, lineBase, old_max_width;
   Bool _changed, resized;
 
   if (!calcGraphics)
@@ -1848,7 +1848,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 #endif
 
   if (maxWidth > 0) {
-    float w;
+    double w;
     Bool fl = flowLocked, wl = writeLocked;
     wxMediaLine *lr;
 
@@ -1939,7 +1939,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 {
   wxBitmap *old;
-  float oldWidth;
+  double oldWidth;
 
   if (flowLocked)
     return NULL;
@@ -1989,17 +1989,17 @@ static char xpattern[32] = {0x88, 0x88,
 static wxBrush *clearBrush = NULL;
 
 /* This does the actual drawing */
-void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy, 
-			 float leftx, float rightx,
-			 float dy, float dx, 
+void wxMediaEdit::Redraw(wxDC *dc, double starty, double endy, 
+			 double leftx, double rightx,
+			 double dy, double dx, 
 			 int show_caret, int show_xsel,
 			 wxColour *bgColor)
 {
   wxMediaLine *line;
   wxSnip *snip, *first, *last;
-  float x, topbase, bottombase, hxs, hxe, hsxs, hsxe, hsys, hsye, down, bottom;
-  float tleftx, tstarty, trightx, tendy;
-  float h, w, descent, space, ycounter, prevwasfirst = 0.0;
+  double x, topbase, bottombase, hxs, hxe, hsxs, hsxe, hsys, hsye, down, bottom;
+  double tleftx, tstarty, trightx, tendy;
+  double h, w, descent, space, ycounter, prevwasfirst = 0.0;
   long p, pcounter;
   long _startpos, _endpos;
   Bool posAtEol;
@@ -2333,7 +2333,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
     if (!line && extraLine)
       if (!posAtEol && _startpos == len && _endpos == _startpos
 	  && hiliteOn) {
-	float y;
+	double y;
 	y = ycounter;
 
 	savePen = dc->GetPen();
@@ -2362,10 +2362,10 @@ paint_done:
 /* This one notifies the administrator that we need to be updated. */
 void wxMediaEdit::Redraw()
 {
-  float w, h;
-  float top, bottom, height, width, left, right;
-  float x, y, origx, origy;
-  float fy, fx;
+  double w, h;
+  double top, bottom, height, width, left, right;
+  double x, y, origx, origy;
+  double fy, fx;
   Bool oneline;
   wxDC *dc;
   Bool needs_update = TRUE;
@@ -2450,7 +2450,7 @@ void wxMediaEdit::Redraw()
 	oneline = FALSE;
       if (refreshStart > -1) {
 	PositionLocation(refreshStart, 
-			 oneline ? (float *)&fx : (float *)NULL, (float *)&fy, 
+			 oneline ? (double *)&fx : (double *)NULL, (double *)&fy, 
 			 TRUE, TRUE, TRUE);
 	if (fy > top)
 	  top = (long)fy;
@@ -2460,7 +2460,7 @@ void wxMediaEdit::Redraw()
       bottom = y + h;
       if (refreshEnd > -1) {
 	PositionLocation(refreshEnd, 
-			 oneline ? (float *)&fx : (float *)NULL, (float *)&fy, 
+			 oneline ? (double *)&fx : (double *)NULL, (double *)&fy, 
 			 FALSE, FALSE, TRUE);
 	if (fy < bottom)
 	  bottom = (long)fy;
@@ -2512,10 +2512,10 @@ void wxMediaEdit::Redraw()
 }
 
 /* This one is called by the administrator: */
-void wxMediaEdit::Refresh(float left, float top, float width, float height,
+void wxMediaEdit::Refresh(double left, double top, double width, double height,
 			  int show_caret, wxColour *bgColor)
 {
-  float x, y, bottom, right, ddx, ddy;
+  double x, y, bottom, right, ddx, ddy;
   Bool ps;
   wxDC *dc;
   int show_xsel = 0;
@@ -2706,7 +2706,7 @@ void wxMediaEdit::NeedCaretRefresh(void)
 void wxMediaEdit::CalcCaretLocation(void)
 {
   if (caretLocationX < 0) {
-    float x, t, b;
+    double x, t, b;
     PositionLocation(startpos, &x, &t,
 		     TRUE, posateol, FALSE);
     caretLocationX = x;
@@ -2723,7 +2723,7 @@ Bool wxMediaEdit::CaretOff(void)
      is FALSE --- except in CaretOn(). */
 {
   wxDC *dc;
-  float dx, dy, x, y, w, h, X, T, B;
+  double dx, dy, x, y, w, h, X, T, B;
 
   if (!CheckRecalc(TRUE, FALSE))
     return FALSE;
@@ -2792,7 +2792,7 @@ static long page_width = 612, page_height = 792;
 
 #define wxGetPrinterOrientation(local) (local = wxGetThePrintSetupData(), local->GetPrinterOrientation())
 
-void wxmeGetDefaultSize(float *w, float *h)
+void wxmeGetDefaultSize(double *w, double *h)
 {
   wxPrintSetupData *psd;
 
@@ -2800,7 +2800,7 @@ void wxmeGetDefaultSize(float *w, float *h)
   *h = page_height;
 
   if (wxGetPrinterOrientation(psd) != PS_PORTRAIT)  {
-    float tmp;
+    double tmp;
     
     tmp = *h;
     *h = *w;
@@ -2824,7 +2824,7 @@ void wxSetMediaPrintMargin(long hm, long vm)
 
 class SaveSizeInfo {
 public:
-  float maxw;
+  double maxw;
   wxBitmap *bm;
 };
 
@@ -2840,7 +2840,7 @@ void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
   SizeCacheInvalid();
 
   if (fit) {
-    float w, h;
+    double w, h;
     long hm, vm;
 
     savedInfo = new SaveSizeInfo;
@@ -2903,7 +2903,7 @@ void wxMediaEdit::EndPrint(wxDC *, void *data)
 
 Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 {
-  float H, W, h;
+  double H, W, h;
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
@@ -2941,7 +2941,7 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 
 void wxMediaEdit::PrintToDC(wxDC *dc, int page)
 {
-  float H, W, FH, FW, y, h, next_h;
+  double H, W, FH, FW, y, h, next_h;
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
@@ -2959,7 +2959,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
     H = page_height;
 
     if (wxGetPrinterOrientation(psd) != PS_PORTRAIT)  {
-      float tmp;
+      double tmp;
       
       tmp = H;
       H = W;
@@ -2996,7 +2996,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
     if ((h < H) && (i < numValidLines) && (line->h > H)) {
       /* We'll have to break it up anyway. Start now? */
       int pos;
-      float py;
+      double py;
       pos = FindScrollLine(y + H);
       py = ScrollLineLocation(pos);
       if (py > y + h) {
@@ -3011,11 +3011,11 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       /* Only happens if we have something that's too big to fit on a page. */
       /* Look for internal scroll positions */
       int pos;
-      float py;
+      double py;
       pos = FindScrollLine(y + H);
       py = ScrollLineLocation(pos);
       if (py > y) {
-	float new_h = py - y;
+	double new_h = py - y;
 	next_h = h - new_h;
 	h = new_h;
       }
@@ -3056,7 +3056,7 @@ Bool wxMediaEdit::OwnXSelection(Bool on, Bool update, Bool force)
 /****************************************************************/
 /****************************************************************/
 
-void wxMediaEdit::SetParagraghMargins(long i, float firstLeft, float left, float right)
+void wxMediaEdit::SetParagraghMargins(long i, double firstLeft, double left, double right)
 {
   wxMediaLine *l;
   wxMediaParagraph *p;

@@ -163,7 +163,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 		  wxListBox::EventCallback,  (XtPointer)saferef);
 
     if (title) {
-      float w, h;
+      double w, h;
       char *label_stripped;
       label_stripped = wxchoice_unprotect_amp(title);
       GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);

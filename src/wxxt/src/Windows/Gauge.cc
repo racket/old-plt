@@ -64,7 +64,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     Widget wgt;
     wxWindow_Xintern *ph;
     Bool vert;
-    float lw, lh, lvh, lhw;
+    double lw, lh, lvh, lhw;
 
     ChainToPanel(panel, style, name);
 
@@ -167,10 +167,10 @@ void wxGauge::SetValue(int new_value)
     value = new_value;
     if (style & wxVERTICAL) {
       XfwfMoveThumb (X->handle, 0.0, 1.0);
-      XfwfResizeThumb(X->handle, 1.0, ((float)value)/((float)range));
+      XfwfResizeThumb(X->handle, 1.0, ((double)value)/((double)range));
     } else {
       XfwfMoveThumb(X->handle, 0.0, 0.0);
-      XfwfResizeThumb(X->handle, ((float)value)/((float)range), 1.0);
+      XfwfResizeThumb(X->handle, ((double)value)/((double)range), 1.0);
     }
   }
 }

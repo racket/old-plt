@@ -230,7 +230,7 @@ void wxCanvas::Scroll(int x_pos, int y_pos)
   }
 }
 
-void wxCanvas::ScrollPercent(float x, float y)
+void wxCanvas::ScrollPercent(double x, double y)
 {
   if (misc_flags & 8) {
     /* Not managing  - do nothing */

@@ -61,7 +61,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 		      int init_value, int min_value, int max_value, int length,
 		      int x, int y, long style, char *name)
 {
-    float swidth, sheight; 
+    double swidth, sheight; 
     Bool vert;
     wxWindow_Xintern *ph;
     Widget wgt;
@@ -160,7 +160,7 @@ void wxSlider::OnSize(int width, int height)
       XfwfResizeThumb(X->handle, 0.2, 1.0);
     }
   } else {
-    float swidth, sheight;
+    double swidth, sheight;
     char tempstring[80];
     Dimension length;
     int mxv, mnv;
@@ -197,10 +197,10 @@ void wxSlider::SetValue(int new_value)
       }
       if (style & wxVERTICAL)
 	XfwfMoveThumb(X->handle,
-		      0.0, ((float)value-minimum)/((float)maximum-minimum));
+		      0.0, ((double)value-minimum)/((double)maximum-minimum));
       else
 	XfwfMoveThumb(X->handle,
-		      ((float)value-minimum)/((float)maximum-minimum), 0.0);
+		      ((double)value-minimum)/((double)maximum-minimum), 0.0);
     }
 }
 

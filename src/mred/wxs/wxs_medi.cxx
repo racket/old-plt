@@ -33,7 +33,7 @@
 START_XFORM_SKIP;
 #endif
 
-static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
+static void *wxbBufferToDC(wxMediaBuffer *b, double x, double y)
 {
   Scheme_Object *a[2];
   void *r;
@@ -52,7 +52,7 @@ static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
   return r;
 }
 
-static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
+static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 {
   Scheme_Object *a[2];
   void *r;
@@ -592,8 +592,8 @@ static Scheme_Object *os_wxMediaBufferwxbDCToBuffer(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "dc-location-to-editor-location in editor<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "dc-location-to-editor-location in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "dc-location-to-editor-location in editor<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "dc-location-to-editor-location in editor<%>"));
 
   
   r = WITH_VAR_STACK(wxbDCToBuffer(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata), x0, x1));
@@ -617,8 +617,8 @@ static Scheme_Object *os_wxMediaBufferwxbBufferToDC(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "editor-location-to-dc-location in editor<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "editor-location-to-dc-location in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "editor-location-to-dc-location in editor<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "editor-location-to-dc-location in editor<%>"));
 
   
   r = WITH_VAR_STACK(wxbBufferToDC(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata), x0, x1));
@@ -1403,10 +1403,10 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "get-view-size in editor<%>", n, p);
-  nnfloat _x0;
-  nnfloat* x0 = &_x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
+  nndouble _x0;
+  nndouble* x0 = &_x0;
+  nndouble _x1;
+  nndouble* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1416,11 +1416,11 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->GetViewSize(x0, x1));
@@ -1461,10 +1461,10 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "local-to-global in editor<%>", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1474,11 +1474,11 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "local-to-global in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "local-to-global in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->LocalToGlobal(x0, x1));
@@ -1498,10 +1498,10 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "global-to-local in editor<%>", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1511,11 +1511,11 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "global-to-local in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "global-to-local in editor<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->GlobalToLocal(x0, x1));
@@ -1666,13 +1666,13 @@ static Scheme_Object *os_wxMediaBufferFindScrollLine(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(os_wxMediaBuffer_class, "find-scroll-line in editor<%>", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "find-scroll-line in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "find-scroll-line in editor<%>"));
 
   
   r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->FindScrollLine(x0));
@@ -1708,7 +1708,7 @@ static Scheme_Object *os_wxMediaBufferScrollLineLocation(int n,  Scheme_Object *
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxMediaBuffer_class, "scroll-line-location in editor<%>", n, p);
   long x0;
 
@@ -1734,10 +1734,10 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(int n,  Scheme_Object *p[]
   Bool r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-snip-location in editor<%>", n, p);
   class wxSnip* x0 INIT_NULLED_OUT;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
+  double _x1;
+  double* x1 = &_x1;
+  double _x2;
+  double* x2 = &_x2;
   Bool x3;
   Scheme_Object *sbox_tmp;
 
@@ -1751,14 +1751,14 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(int n,  Scheme_Object *p[]
     if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
   } else
     x1 = NULL;
   if (n > (POFFSET+2)) {
     if (XC_SCHEME_NULLP(p[POFFSET+2]))
     x2 = NULL;
   else
-    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-snip-location in editor<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-snip-location in editor<%>"", extracting boxed argument")));
   } else
     x2 = NULL;
   if (n > (POFFSET+3)) {
@@ -1920,13 +1920,13 @@ static Scheme_Object *os_wxMediaBufferSetMinHeight(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "set-min-height in editor<%>", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float(p[POFFSET+0], "none", "set-min-height in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_double(p[POFFSET+0], "none", "set-min-height in editor<%>"));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->SetMinHeight(x0));
@@ -1942,13 +1942,13 @@ static Scheme_Object *os_wxMediaBufferSetMaxHeight(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "set-max-height in editor<%>", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float(p[POFFSET+0], "none", "set-max-height in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_double(p[POFFSET+0], "none", "set-max-height in editor<%>"));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->SetMaxHeight(x0));
@@ -1963,7 +1963,7 @@ static Scheme_Object *os_wxMediaBufferGetMinHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-min-height in editor<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1977,14 +1977,14 @@ static Scheme_Object *os_wxMediaBufferGetMinHeight(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_double(r, "none"));
 }
 
 static Scheme_Object *os_wxMediaBufferGetMaxHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-max-height in editor<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1998,7 +1998,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxHeight(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_double(r, "none"));
 }
 
 static Scheme_Object *os_wxMediaBufferSetMinWidth(int n,  Scheme_Object *p[])
@@ -2006,13 +2006,13 @@ static Scheme_Object *os_wxMediaBufferSetMinWidth(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "set-min-width in editor<%>", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float(p[POFFSET+0], "none", "set-min-width in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_double(p[POFFSET+0], "none", "set-min-width in editor<%>"));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->SetMinWidth(x0));
@@ -2028,13 +2028,13 @@ static Scheme_Object *os_wxMediaBufferSetMaxWidth(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "set-max-width in editor<%>", n, p);
-  float x0;
+  double x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float(p[POFFSET+0], "none", "set-max-width in editor<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_double(p[POFFSET+0], "none", "set-max-width in editor<%>"));
 
   
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->SetMaxWidth(x0));
@@ -2049,7 +2049,7 @@ static Scheme_Object *os_wxMediaBufferGetMinWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-min-width in editor<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -2063,14 +2063,14 @@ static Scheme_Object *os_wxMediaBufferGetMinWidth(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_double(r, "none"));
 }
 
 static Scheme_Object *os_wxMediaBufferGetMaxWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxMediaBuffer_class, "get-max-width in editor<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -2084,7 +2084,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxWidth(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_float(r, "none"));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_nonnegative_symbol_double(r, "none"));
 }
 
 static Scheme_Object *os_wxMediaBufferNoInsertFile(int n,  Scheme_Object *p[])

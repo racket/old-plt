@@ -1127,15 +1127,15 @@ static Scheme_Object *os_wxPrintSetupDataSetMargin(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-margin in ps-setup%", n, p);
-  nnfloat x0;
-  nnfloat x1;
+  nndouble x0;
+  nndouble x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+0], "set-margin in ps-setup%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+1], "set-margin in ps-setup%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+0], "set-margin in ps-setup%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+1], "set-margin in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetMargin(x0, x1));
@@ -1220,15 +1220,15 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-translation in ps-setup%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-translation in ps-setup%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-translation in ps-setup%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-translation in ps-setup%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-translation in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterTranslation(x0, x1));
@@ -1244,15 +1244,15 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-scaling in ps-setup%", n, p);
-  nnfloat x0;
-  nnfloat x1;
+  nndouble x0;
+  nndouble x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+0], "set-scaling in ps-setup%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+1], "set-scaling in ps-setup%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+0], "set-scaling in ps-setup%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+1], "set-scaling in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterScaling(x0, x1));
@@ -1381,18 +1381,18 @@ static Scheme_Object *os_wxPrintSetupDataGetMargin(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "get-margin in ps-setup%", n, p);
-  nnfloat _x0;
-  nnfloat* x0 = &_x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
+  nndouble _x0;
+  nndouble* x0 = &_x0;
+  nndouble _x1;
+  nndouble* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-margin in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-margin in ps-setup%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-margin in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-margin in ps-setup%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-margin in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-margin in ps-setup%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-margin in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-margin in ps-setup%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->GetMargin(x0, x1));
@@ -1485,18 +1485,18 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "get-translation in ps-setup%", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-translation in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-translation in ps-setup%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-translation in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-translation in ps-setup%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-translation in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-translation in ps-setup%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-translation in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-translation in ps-setup%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->GetPrinterTranslation(x0, x1));
@@ -1516,18 +1516,18 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "get-scaling in ps-setup%", n, p);
-  nnfloat _x0;
-  nnfloat* x0 = &_x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
+  nndouble _x0;
+  nndouble* x0 = &_x0;
+  nndouble _x1;
+  nndouble* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-scaling in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-scaling in ps-setup%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-scaling in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-scaling in ps-setup%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-scaling in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-scaling in ps-setup%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-scaling in ps-setup%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-scaling in ps-setup%"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->GetPrinterScaling(x0, x1));

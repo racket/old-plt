@@ -33,18 +33,18 @@ class wxRegion : public wxObject
 
   inline wxDC *GetDC() { return dc; }
   
-  void SetRectangle(float x, float y, float width, float height);
-  void SetRoundedRectangle(float x, float y, float width, float height, float radius = 20.0);
-  void SetEllipse(float x, float y, float width, float height);
-  void SetPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0, 
+  void SetRectangle(double x, double y, double width, double height);
+  void SetRoundedRectangle(double x, double y, double width, double height, double radius = 20.0);
+  void SetEllipse(double x, double y, double width, double height);
+  void SetPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, 
 		  int fillStyle=wxODDEVEN_RULE);
-  void SetArc(float x, float y, float w, float h, float start, float end);
+  void SetArc(double x, double y, double w, double h, double start, double end);
 
   void Union(wxRegion *);
   void Intersect(wxRegion *);
   void Subtract(wxRegion *);
 
-  void BoundingBox(float *x, float *y, float *w, float *h);
+  void BoundingBox(double *x, double *y, double *w, double *h);
 
   Bool Empty();
   

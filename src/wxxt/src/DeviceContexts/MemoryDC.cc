@@ -137,10 +137,10 @@ wxBitmap *wxMemoryDC::GetObject()
   return selected;
 }
 
-void wxMemoryDC::GetSize(float *w, float *h)
+void wxMemoryDC::GetSize(double *w, double *h)
 {
   if (selected) {
-    float v;
+    double v;
     v = selected->GetWidth();
     *w = v;
     v = selected->GetHeight();

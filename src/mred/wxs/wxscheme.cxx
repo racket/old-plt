@@ -85,8 +85,8 @@ public:
 #else
   wxCanvas **canvasptr; /* weak reference */
 #endif
-  float x, y, w, h;
-  float onx, ony, offx, offy;
+  double x, y, w, h;
+  double onx, ony, offx, offy;
   wxBitmap *on, *off;
   GCBitmap *next;
 };
@@ -305,21 +305,21 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   *gcbm->canvasptr = cvs;
 #endif
 
-  gcbm->x = objscheme_unbundle_float(a[1], "register-collecting-blit");
-  gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
-  gcbm->w = objscheme_unbundle_nonnegative_float(a[3], "register-collecting-blit");
-  gcbm->h = objscheme_unbundle_nonnegative_float(a[4], "register-collecting-blit");
+  gcbm->x = objscheme_unbundle_double(a[1], "register-collecting-blit");
+  gcbm->y = objscheme_unbundle_double(a[2], "register-collecting-blit");
+  gcbm->w = objscheme_unbundle_nonnegative_double(a[3], "register-collecting-blit");
+  gcbm->h = objscheme_unbundle_nonnegative_double(a[4], "register-collecting-blit");
   gcbm->on = objscheme_unbundle_wxBitmap(a[5], "register-collecting-blit", 0);
   gcbm->off = objscheme_unbundle_wxBitmap(a[6], "register-collecting-blit", 0);
   gcbm->onx = gcbm->ony = gcbm->offx = gcbm-> offy = 0;
   if (n > 7) {
-    gcbm->onx = objscheme_unbundle_float(a[7], "register-collecting-blit");
+    gcbm->onx = objscheme_unbundle_double(a[7], "register-collecting-blit");
     if (n > 8) {
-      gcbm->ony = objscheme_unbundle_float(a[8], "register-collecting-blit");
+      gcbm->ony = objscheme_unbundle_double(a[8], "register-collecting-blit");
       if (n > 9) {
-	gcbm->offx = objscheme_unbundle_float(a[9], "register-collecting-blit");
+	gcbm->offx = objscheme_unbundle_double(a[9], "register-collecting-blit");
 	if (n > 10) {
-	  gcbm->offy = objscheme_unbundle_float(a[10], "register-collecting-blit");
+	  gcbm->offy = objscheme_unbundle_double(a[10], "register-collecting-blit");
 	}
       }
     }
@@ -1222,7 +1222,7 @@ void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
 extern void wxPostScriptGetTextExtent(const char *fontname, 
 				      const char *text, int dt, Bool combine, int use16, 
 				      double font_size,
-				      float *x, float *y, float *descent, float *topSpace,
+				      double *x, double *y, double *descent, double *topSpace,
 				      int sym_map)
 {
   if (ps_get_text_extent) {
@@ -1484,7 +1484,7 @@ wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
 			      Bool border,
 			      int lm, int tm, int rm, int bm,
 			      int li, int ti, int ri, int bi,
-			      float w, float W, float h, float H)
+			      double w, double W, double h, double H)
 {
   if (make_media_snip) {
     Scheme_Object *a[20], *r;

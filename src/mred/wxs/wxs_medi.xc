@@ -7,7 +7,7 @@
 
 @HEADER
 
-static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
+static void *wxbBufferToDC(wxMediaBuffer *b, double x, double y)
 {
   Scheme_Object *a[2];
   void *r;
@@ -26,7 +26,7 @@ static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
   return r;
 }
 
-static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
+static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 {
   Scheme_Object *a[2];
   void *r;
@@ -109,11 +109,11 @@ static void NoInsertFile(wxMediaBuffer *)
 @ W "in-edit-sequence?" : bool InEditSequence();
 @ W "locations-computed?" : bool LocationsUpToDate();
 
-@ W "get-snip-location" : bool GetSnipLocation(wxSnip!,float?=NULL,float?=NULL,bool=FALSE); : : : : XrZERO
+@ W "get-snip-location" : bool GetSnipLocation(wxSnip!,double?=NULL,double?=NULL,bool=FALSE); : : : : XrZERO
 
-@ W "scroll-line-location" : float ScrollLineLocation(long); : : : : XrZERO
+@ W "scroll-line-location" : double ScrollLineLocation(long); : : : : XrZERO
 @ W "num-scroll-lines" : long NumScrollLines(); : : : : XrZERO
-@ W "find-scroll-line" : long FindScrollLine(float); : : : : XrZERO
+@ W "find-scroll-line" : long FindScrollLine(double); : : : : XrZERO
 
 @ W "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKDCOK[0.METHODNAME("editor<%>","print-to-dc")]
 
@@ -124,11 +124,11 @@ static void NoInsertFile(wxMediaBuffer *)
 @ W "locked-for-write?" : bool IsLockedForWrite();
 @ W "locked-for-flow?" : bool IsLockedForFlow();
 
-@ "global-to-local" : void GlobalToLocal(float?,float?);
-@ "local-to-global" : void LocalToGlobal(float?,float?);
+@ "global-to-local" : void GlobalToLocal(double?,double?);
+@ "local-to-global" : void LocalToGlobal(double?,double?);
 
 @ "get-dc" : wxDC^ GetDC();
-@ "get-view-size" : void GetViewSize(nnfloat?,nnfloat?);
+@ "get-view-size" : void GetViewSize(nndouble?,nndouble?);
 
 @ "clear" : void Clear();
 @ "select-all" : void SelectAll();

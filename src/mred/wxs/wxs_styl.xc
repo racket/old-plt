@@ -11,12 +11,12 @@
 @CLASSBASE wxMultColour "mult-color" : "object" / nofnl
 @INTERFACE "mult-color"
 
-@IVAR "r" : float r
-@IVAR "g" : float g
-@IVAR "b" : float b
+@IVAR "r" : double r
+@IVAR "g" : double g
+@IVAR "b" : double b
 
-@ "get" : void Get(float*,float*,float*);
-@ "set" : void Set(float,float,float);
+@ "get" : void Get(double*,double*,double*);
+@ "set" : void Set(double,double,double);
 
 @END
 
@@ -117,7 +117,7 @@
 
 @IVAR "family" : SYM[family] family
 @IVAR "face" : nstring face
-@IVAR "size-mult" : float sizeMult
+@IVAR "size-mult" : double sizeMult
 @IVAR "size-add" : rint[0|255] sizeAdd
 @IVAR "weight-on" : SYM[weight] weightOn
 @IVAR "weight-off" : SYM[weight] weightOff
@@ -195,10 +195,10 @@
 @ "get-alignment" : SYM[align] GetAlignment();
 @ "get-transparent-text-backing" : bool GetTransparentTextBacking();
 
-@ "get-text-height" : float GetTextHeight(wxDC!);
-@ "get-text-descent" : float GetTextDescent(wxDC!);
-@ "get-text-space" : float GetTextSpace(wxDC!);
-@ "get-text-width" : float GetTextWidth(wxDC!);
+@ "get-text-height" : double GetTextHeight(wxDC!);
+@ "get-text-descent" : double GetTextDescent(wxDC!);
+@ "get-text-space" : double GetTextSpace(wxDC!);
+@ "get-text-width" : double GetTextWidth(wxDC!);
 
 @ "get-base-style" : wxStyle^ GetBaseStyle();
 @ "set-base-style" : void SetBaseStyle(wxStyle!);

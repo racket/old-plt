@@ -58,10 +58,10 @@ enum {
 class wxMultColour : public wxObject
 {
  public:
-  float r, g, b;
+  double r, g, b;
   inline wxMultColour();
-  void Get(float *r, float *g, float *b);
-  void Set(float r, float g, float b);
+  void Get(double *r, double *g, double *b);
+  void Set(double r, double g, double b);
 };
 
 inline wxMultColour::wxMultColour()
@@ -88,7 +88,7 @@ class wxStyleDelta : public wxObject
  public:
   int family;
   char *face;
-  float sizeMult;
+  double sizeMult;
   int sizeAdd;
   int weightOn; /* On == Off => Toggle */ 
   int weightOff; /* On & Off, but On != Off => Converting toggle */
@@ -149,7 +149,7 @@ class wxStyle : public wxObject
   int alignment;
 
   wxDC *textMetricDC;
-  float textWidth, textHeight, textDescent, textSpace;
+  double textWidth, textHeight, textDescent, textSpace;
 
   wxList *children;
 
@@ -190,10 +190,10 @@ class wxStyle : public wxObject
 
   void SwitchTo(wxDC *dc, wxStyle *oldStyle);
 
-  float GetTextWidth(wxDC *dc);
-  float GetTextHeight(wxDC *dc);
-  float GetTextDescent(wxDC *dc);
-  float GetTextSpace(wxDC *dc);
+  double GetTextWidth(wxDC *dc);
+  double GetTextHeight(wxDC *dc);
+  double GetTextDescent(wxDC *dc);
+  double GetTextSpace(wxDC *dc);
 };
 
 typedef void (*wxStyleNotifyFunc)(wxStyle *which, void *data);

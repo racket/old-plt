@@ -155,7 +155,7 @@ void wxInitMedia(void)
     wxmeExpandFilename = wxCallExpandPath;
 }
 
-wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs) 
+wxMediaEdit::wxMediaEdit(double spacing, double *tabstops, int numtabs) 
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_MEDIA_EDIT;
@@ -295,10 +295,10 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
 
   /* Copy parameters, such as tab settings: */
   if (tabs) {
-    float *t;
+    double *t;
 
-    t = new float[tabcount];
-    memcpy(t, tabs, sizeof(float) * tabcount);
+    t = new double[tabcount];
+    memcpy(t, tabs, sizeof(double) * tabcount);
     m->SetTabs(t, tabcount, tabSpace, tabSpaceInUnits);
   }
 
@@ -333,14 +333,14 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
 
 wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
 {
-  float scrollx, scrolly;
-  float x, y;
+  double scrollx, scrolly;
+  double x, y;
   wxSnip *snip;
   wxDC *dc;
   Bool onit;
   long pos;
   wxCursor *c;
-  float how_close;
+  double how_close;
 
   if (!iBeam) {
     arrow = new wxCursor(wxCURSOR_ARROW);
@@ -372,7 +372,7 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
     
   if (!customCursorOverrides) {
     if (caretSnip && event->Dragging()) {
-      float x, y;
+      double x, y;
       GetSnipPositionAndLocation(caretSnip, NULL, &x, &y);
       c = caretSnip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
       if (c) {
@@ -394,7 +394,7 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
       snip = NULL;
     
     if (snip) {
-      float x, y;
+      double x, y;
       GetSnipPositionAndLocation(snip, NULL, &x, &y);
       c = snip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
       if (c) {
@@ -423,8 +423,8 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
 
 void wxMediaEdit::OnEvent(wxMouseEvent *event)
 {
-  float scrollx, scrolly;
-  float x, y;
+  double scrollx, scrolly;
+  double x, y;
   wxSnip *snip;
   wxDC *dc;
   Bool onit;
@@ -452,7 +452,7 @@ void wxMediaEdit::OnEvent(wxMouseEvent *event)
     dc = NULL;
 
   if (event->ButtonDown()) {
-    float how_close;
+    double how_close;
 
     now = FindPosition(x, y, NULL, &onit, &how_close);
     if ((how_close > 0  && how_close <= betweenThreshold)
@@ -461,7 +461,7 @@ void wxMediaEdit::OnEvent(wxMouseEvent *event)
 
     if (onit) {
       /* We're in the snip's horizontal region... */
-      float top, bottom, dummy;
+      double top, bottom, dummy;
 
       snip = FindSnip(now, +1);
       
@@ -495,12 +495,12 @@ void wxMediaEdit::OnEvent(wxMouseEvent *event)
 void wxMediaEdit::OnDefaultEvent(wxMouseEvent *event)
 {
   long now;
-  float scrollx, scrolly;
-  float x, y;
+  double scrollx, scrolly;
+  double x, y;
   Bool ateol;
   wxClickback *click;
   wxDC *dc;
-  float how_close;
+  double how_close;
 
   if (!admin)
     return;
@@ -597,7 +597,7 @@ void wxMediaEdit::OnChar(wxKeyEvent *event)
 
   if (caretSnip && (caretSnip->flags & wxSNIP_HANDLES_EVENTS)) {
     wxDC *dc;
-    float scrollx, scrolly, x, y;
+    double scrollx, scrolly, x, y;
     
     dc = admin->GetDC(&scrollx, &scrolly);
     GetSnipPositionAndLocation(caretSnip, NULL, &x, &y);
@@ -719,9 +719,9 @@ void wxMediaEdit::BlinkCaret()
 {
   if (caretSnip) {
     wxDC *dc;
-    float dx, dy;
+    double dx, dy;
     if ((dc = admin->GetDC(&dx, &dy))) {
-      float x, y;
+      double x, y;
       if (GetSnipLocation(caretSnip, &x, &y))
 	caretSnip->BlinkCaret(dc, x - dx, y - dy);
     }
@@ -963,7 +963,7 @@ void wxMediaEdit::SetPositionBiasScroll(int bias, long start, long end,
 Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, Bool refresh,
 				   long end, int bias)
 {
-  float topx, botx, topy, boty, w, h;
+  double topx, botx, topy, boty, w, h;
 
   if (flowLocked)
     return FALSE;
@@ -1001,7 +1001,7 @@ Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, long end, int bias)
 
 void wxMediaEdit::GetVisiblePositionRange(long *start, long *end, Bool all)
 {
-  float x, y, h, w;
+  double x, y, h, w;
 
   if (!CheckRecalc(TRUE, FALSE))
     return;
@@ -1024,7 +1024,7 @@ void wxMediaEdit::GetVisiblePositionRange(long *start, long *end, Bool all)
 
 void wxMediaEdit::GetVisibleLineRange(long *start, long *end, Bool all)
 {  
-  float x, y, h, w;
+  double x, y, h, w;
 
   if (!CheckRecalc(TRUE, FALSE))
     return;
@@ -1050,7 +1050,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 {
   long i, start, end, extendstart, extendend;
   Bool ateol, vcursor, anchor, extend, kas;
-  float y;
+  double y;
   int leftshrink, rightshrink;
 
   if (flowLocked)
@@ -1171,8 +1171,8 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
     int cline, bias;
     /* Used when paging: */
     Bool specialScroll = (kind == wxMOVE_PAGE);
-    float scrollLeft = 0.0, scrollWidth = 0.0;
-    float scrollTop = 0.0, scrollHeight = 0.0;
+    double scrollLeft = 0.0, scrollWidth = 0.0;
+    double scrollTop = 0.0, scrollHeight = 0.0;
 
     if (code == WXK_UP) {
       if (leftshrink)
@@ -1190,7 +1190,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 	   watch out for:
 	      - especially tall lines
 	      - already at top */
-	float vy, ty;
+	double vy, ty;
 	long newtop, top;
 
 	admin->GetView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
@@ -1264,7 +1264,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 
       cline = PositionLine(end, posateol);
       if (kind == wxMOVE_PAGE) {
-	float vy;
+	double vy;
 	long newtop;
 
 	admin->GetView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
@@ -2965,7 +2965,7 @@ void wxMediaEdit::SetWordbreakMap(wxMediaWordbreakMap *map)
 
 /****************************************************************/
 
-void wxMediaEdit::SetLineSpacing(float s)
+void wxMediaEdit::SetLineSpacing(double s)
 {
   if (flowLocked)
     return;
@@ -2978,7 +2978,7 @@ void wxMediaEdit::SetLineSpacing(float s)
   }
 }
 
-float wxMediaEdit::GetMaxWidth()
+double wxMediaEdit::GetMaxWidth()
 {
   if (maxWidth <= 0)
     return 0.0;
@@ -2986,12 +2986,12 @@ float wxMediaEdit::GetMaxWidth()
     return maxWidth + wrapBitmapWidth;
 }
 
-float wxMediaEdit::GetMinWidth()
+double wxMediaEdit::GetMinWidth()
 {
   return minWidth;
 }
 
-void wxMediaEdit::SetMaxWidth(float w)
+void wxMediaEdit::SetMaxWidth(double w)
 {
   if (flowLocked)
     return;
@@ -3021,7 +3021,7 @@ void wxMediaEdit::SetMaxWidth(float w)
   AfterSetSizeConstraint();
 }
 
-void wxMediaEdit::SetMinWidth(float w)
+void wxMediaEdit::SetMinWidth(double w)
 {
   if (flowLocked)
     return;
@@ -3042,7 +3042,7 @@ void wxMediaEdit::SetMinWidth(float w)
   AfterSetSizeConstraint();
 }
 
-void wxMediaEdit::SetMinHeight(float h)
+void wxMediaEdit::SetMinHeight(double h)
 {
   if (flowLocked)
     return;
@@ -3063,7 +3063,7 @@ void wxMediaEdit::SetMinHeight(float h)
   AfterSetSizeConstraint();
 }
 
-void wxMediaEdit::SetMaxHeight(float h)
+void wxMediaEdit::SetMaxHeight(double h)
 {
   if (flowLocked)
     return;
@@ -3084,12 +3084,12 @@ void wxMediaEdit::SetMaxHeight(float h)
   AfterSetSizeConstraint();
 }
 
-float wxMediaEdit::GetMinHeight()
+double wxMediaEdit::GetMinHeight()
 {
   return minHeight;
 }
 
-float wxMediaEdit::GetMaxHeight()
+double wxMediaEdit::GetMaxHeight()
 {
   return maxHeight;
 }
@@ -3449,7 +3449,7 @@ void wxMediaEdit::SetRegionData(long WXUNUSED(start), long WXUNUSED(end),
 
 /****************************************************************/
 
-float *wxMediaEdit::GetTabs(int *count, float *space, Bool *inUnits)
+double *wxMediaEdit::GetTabs(int *count, double *space, Bool *inUnits)
 {
   if (count)
     *count = tabcount;
@@ -3463,8 +3463,8 @@ float *wxMediaEdit::GetTabs(int *count, float *space, Bool *inUnits)
   return tabs;
 }
 
-void wxMediaEdit::SetTabs(float *newtabs, int count, 
-			  float tabWidth, Bool inUnits)
+void wxMediaEdit::SetTabs(double *newtabs, int count, 
+			  double tabWidth, Bool inUnits)
 {
   if (flowLocked)
     return;
@@ -3486,15 +3486,15 @@ void wxMediaEdit::SetTabs(float *newtabs, int count,
 
 /****************************************************************/
 
-long wxMediaEdit::FindPositionInLine(long i, float x, Bool *ateol, Bool *onit,
-				     float *how_close)
+long wxMediaEdit::FindPositionInLine(long i, double x, Bool *ateol, Bool *onit,
+				     double *how_close)
 {
   return _FindPositionInLine(FALSE, i, x, ateol, onit, how_close);
 }
 
-long wxMediaEdit::_FindPositionInSnip(wxDC *dc, float X, float Y,
-				      wxSnip *snip, float x,
-				      float *how_close)
+long wxMediaEdit::_FindPositionInSnip(wxDC *dc, double X, double Y,
+				      wxSnip *snip, double x,
+				      double *how_close)
 {
   long offset, range, i;
   Bool wl, fl;
@@ -3527,7 +3527,7 @@ long wxMediaEdit::_FindPositionInSnip(wxDC *dc, float X, float Y,
   offset = 0;
 
   while (1) {
-    float dl, dr;
+    double dl, dr;
 
     if ((dl = snip->PartialOffset(dc, X, Y, offset + i)) > x)
       range = i;
@@ -3553,7 +3553,7 @@ long wxMediaEdit::_FindPositionInSnip(wxDC *dc, float X, float Y,
   return i + offset;
 }
 
-long wxMediaEdit::FindLine(float y, Bool *onit)
+long wxMediaEdit::FindLine(double y, Bool *onit)
 {
   if (onit)
     *onit = FALSE;
@@ -3576,8 +3576,8 @@ long wxMediaEdit::FindLine(float y, Bool *onit)
   }
 }
 
-long wxMediaEdit::FindPosition(float x, float y, Bool *ateol, Bool *onit,
-			       float *how_close)
+long wxMediaEdit::FindPosition(double x, double y, Bool *ateol, Bool *onit,
+			       double *how_close)
 {
   long i, p;
   Bool online;
@@ -3627,10 +3627,10 @@ long wxMediaEdit::PositionLine(long start, Bool eol)
   return line->GetLine();
 }
 
-void wxMediaEdit::PositionLocation(long start, float *x, float *y, 
+void wxMediaEdit::PositionLocation(long start, double *x, double *y, 
 				   Bool top, Bool eol, Bool wholeLine)
 {
-  float horiz, h, descent, space, topy;
+  double horiz, h, descent, space, topy;
   int align;
   wxMediaLine *line;
   wxSnip *snip;
@@ -3645,12 +3645,12 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
   if (start <= 0) {
     if (wholeLine) {
       if (x) {
-	float xl;
+	double xl;
 	xl = firstLine->GetLeftLocation(maxWidth);
 	*x = xl;
       } 
       if (y) {
-	float yl;
+	double yl;
 	yl = firstLine->GetLocation();
 	*y = yl;
 	if (!top)
@@ -3672,12 +3672,12 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
     if (wholeLine || !len) {
       if (x) {
-	float xl;
+	double xl;
 	xl = line->GetRightLocation(maxWidth);
 	*x = xl;
       }
       if (y) {
-	float yl;
+	double yl;
 	yl = lastLine->GetLocation();
 	*y = yl;
 	if (!top)
@@ -3690,7 +3690,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
     if (wholeLine) {
       if (y) {
-	float yl;
+	double yl;
 	yl = line->GetLocation();
 	*y = yl;
 	if (!top)
@@ -3726,7 +3726,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
       
       if ((start > snip->count)
 	  || ((wholeLine || start) && start == snip->count)) {
-	float v;
+	double v;
 
 	start -= snip->count;
 	if (!dc) {
@@ -3748,7 +3748,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
 
   if (x) {
-    float xv;
+    double xv;
 
     if (start && !dc) {
       dc = admin->GetDC();
@@ -3790,10 +3790,10 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
   flowLocked = fl;
 }
 
-float wxMediaEdit::LineLocation(long i, Bool top)
+double wxMediaEdit::LineLocation(long i, Bool top)
 {
   wxMediaLine *line;
-  float y;
+  double y;
 
   if (!CheckRecalc(TRUE, FALSE))
     return 0.0;
@@ -4037,7 +4037,7 @@ long wxMediaEdit::LastParagraph(void)
   return lastLine->GetParagraph() + (extraLine ? 1 : 0);
 }
 
-void wxMediaEdit::GetExtent(float *w, float *h)
+void wxMediaEdit::GetExtent(double *w, double *h)
 {
   CheckRecalc(TRUE, FALSE);
 
@@ -4047,32 +4047,32 @@ void wxMediaEdit::GetExtent(float *w, float *h)
     *h = totalHeight;
 }
 
-float wxMediaEdit::GetDescent(void)
+double wxMediaEdit::GetDescent(void)
 {
   CheckRecalc(TRUE, FALSE);
 
   return finalDescent;
 }
 
-float wxMediaEdit::GetSpace(void)
+double wxMediaEdit::GetSpace(void)
 {
   CheckRecalc(TRUE, FALSE);
 
   return initialSpace;
 }
 
-float wxMediaEdit::GetTopLineBase(void)
+double wxMediaEdit::GetTopLineBase(void)
 {
   CheckRecalc(TRUE, FALSE);
 
   return initialLineBase;
 }
 
-float wxMediaEdit::ScrollLineLocation(long scroll)
+double wxMediaEdit::ScrollLineLocation(long scroll)
 {
   wxMediaLine *line;
   long p;
-  float y;
+  double y;
   long total;
 
   if (readLocked)
@@ -4110,10 +4110,10 @@ long wxMediaEdit::NumScrollLines()
   return lastLine->GetScroll() + lastLine->numscrolls + (extraLine ? 1 : 0);
 }
 
-long wxMediaEdit::FindScrollLine(float p)
+long wxMediaEdit::FindScrollLine(double p)
 {
   wxMediaLine *line;
-  float y;
+  double y;
   long s;
 
   if (readLocked)
@@ -4335,10 +4335,10 @@ void wxMediaEdit::StyleHasChanged(wxStyle *style)
 
 /****************************************************************/
 
-Bool wxMediaEdit::ScrollTo(wxSnip *snip, float localx, float localy, 
-			   float w, float h, Bool refresh, int bias)
+Bool wxMediaEdit::ScrollTo(wxSnip *snip, double localx, double localy, 
+			   double w, double h, Bool refresh, int bias)
 {
-  float x, y;
+  double x, y;
 
   if (flowLocked)
     return FALSE;
@@ -4429,9 +4429,9 @@ Bool wxMediaEdit::ReleaseSnip(wxSnip *snip)
   return TRUE;
 }
 
-void wxMediaEdit::RefreshBox(float L, float T, float w, float h)
+void wxMediaEdit::RefreshBox(double L, double T, double w, double h)
 {
-  float B, R;
+  double B, R;
 
   B = T + h;
   R = L + w;
@@ -4456,10 +4456,10 @@ void wxMediaEdit::RefreshBox(float L, float T, float w, float h)
   drawCachedInBitmap = FALSE;
 }
 
-void wxMediaEdit::NeedsUpdate(wxSnip *snip, float localx, float localy, 
-			      float w, float h)
+void wxMediaEdit::NeedsUpdate(wxSnip *snip, double localx, double localy, 
+			      double w, double h)
 {
-  float x, y;
+  double x, y;
 
   if (!GetSnipLocation(snip, &x, &y))
     return;
@@ -4470,7 +4470,7 @@ void wxMediaEdit::NeedsUpdate(wxSnip *snip, float localx, float localy,
     Redraw();
 }
 
-void wxMediaEdit::InvalidateBitmapCache(float x, float y, float w, float h)
+void wxMediaEdit::InvalidateBitmapCache(double x, double y, double w, double h)
 {
   if (w < 0)
     w = totalWidth - x;
@@ -4496,12 +4496,12 @@ Bool wxMediaEdit::CaretHidden(void)
   return !hiliteOn;
 }
 
-float wxMediaEdit::GetBetweenThreshold()
+double wxMediaEdit::GetBetweenThreshold()
 {
   return betweenThreshold;
 }
 
-void wxMediaEdit::SetBetweenThreshold(float t)
+void wxMediaEdit::SetBetweenThreshold(double t)
 {
   if (t > 99.0)
     t = 99.0;
@@ -4514,7 +4514,7 @@ void wxMediaEdit::SetBetweenThreshold(float t)
 long wxMediaEdit::MemoryUse(void)
 {
   return ((numValidLines * sizeof(wxMediaLine))
-	  + (tabcount * sizeof(float))
+	  + (tabcount * sizeof(double))
 	  + wxMediaBuffer::MemoryUse());
 }
 #endif

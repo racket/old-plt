@@ -47,9 +47,9 @@ void wxRegion::Cleanup()
 #endif
 }
 
-void wxRegion::SetRectangle(float x, float y, float width, float height)
+void wxRegion::SetRectangle(double x, double y, double width, double height)
 {
-  float xw, yh;
+  double xw, yh;
   int ix, iy, iw, ih;
 
   Cleanup();
@@ -58,8 +58,10 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   yh = y + height;
   x = dc->FLogicalToDeviceX(x);
   y = dc->FLogicalToDeviceY(y);
-  width = dc->FLogicalToDeviceX(xw) - x;
-  height = dc->FLogicalToDeviceY(yh) - y;
+  xw = dc->FLogicalToDeviceX(xw);
+  width = xw - x;
+  yh = dc->FLogicalToDeviceY(yh);
+  height = yh - y;
 
   if (is_ps) {
     wxPSRgn *ra;
@@ -103,11 +105,11 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
 #endif
 }
 
-void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, float radius)
+void wxRegion::SetRoundedRectangle(double x, double y, double width, double height, double radius)
 {
   wxRegion *lt, *rt, *lb, *rb, *w, *h, *r;
   int ix, iy, iw, ih;
-  float xw, yh;
+  double xw, yh;
 #if defined(wx_msw) || defined(wx_mac)
   int xradius, yradius;
 #endif
@@ -117,12 +119,12 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
-    float smallest = 0.0;
+    double smallest = 0.0;
     if (width < height)
       smallest = width;
     else
       smallest = height;
-    radius = (float)(- radius * smallest);
+    radius = (double)(- radius * smallest);
   } else
     radius = dc->FLogicalToDeviceXRel(radius);
 
@@ -199,9 +201,9 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #endif
 }
 
-void wxRegion::SetEllipse(float x, float y, float width, float height)
+void wxRegion::SetEllipse(double x, double y, double width, double height)
 {
-  float xw, yh;
+  double xw, yh;
 #if defined(wx_msw) || defined(wx_mac)
   int ix, iy, iw, ih;
 #endif
@@ -257,7 +259,7 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
     int iwidth = (int)width + 2;
     int is_odd = iwidth & 0x1;
     int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
-    float w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
+    double w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
     XPoint *p;
 
 #ifdef MZ_PRECISE_GC
@@ -270,7 +272,7 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
     dy = y + height / 2;
     
     for (i = 0; i < x_extent; i++) {
-      float y = (height / width) * sqrt(w2 - (i * i));
+      double y = (height / width) * sqrt(w2 - (i * i));
       p[i].x = (int)floor(i + dx);
       p[i].y = (int)floor(y + dy);
       p[2 * x_extent - i - 1].x = (int)floor(i + dx);
@@ -295,14 +297,14 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   typedef struct { int x, y; } MyPoint;
 #endif
 
-typedef struct { float x, y; } FPoint;
+typedef struct { double x, y; } FPoint;
 
-void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
+void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffset, int fillStyle)
 {
   POINT *cpoints;
   FPoint *fpoints;
   int i, v;
-  float vf;
+  double vf;
 
   Cleanup();
 
@@ -358,12 +360,12 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 #endif
 }
 
-void wxRegion::SetArc(float x, float y, float w, float h, float start, float end)
+void wxRegion::SetArc(double x, double y, double w, double h, double start, double end)
 {
   wxRegion *r;
   static double pi;
   int saw_start = 0, saw_end = 0, closed = 0;
-  float cx, cy;
+  double cx, cy;
   wxPoint *a;
   int n;
 
@@ -602,13 +604,13 @@ void wxRegion::Subtract(wxRegion *r)
   }
 }
   
-void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
+void wxRegion::BoundingBox(double *x, double *y, double *w, double *h)
 {
   if (Empty()) {
     *x = *y = *w = *h = 0;
     return;
   } else {
-    float v;
+    double v;
 #ifdef wx_msw
     RECT r;
 

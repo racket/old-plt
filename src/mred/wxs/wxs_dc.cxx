@@ -193,7 +193,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
+static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, double x, double y, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
@@ -202,7 +202,7 @@ static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxCol
     return FALSE;
 }
 
-static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c, wxBitmap* mask)
+static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, double x, double y, double dx, double dy, double dw, double dh, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
@@ -213,7 +213,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 
 static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offset)
 {
-  float w, h, d, asc;
+  double w, h, d, asc;
   Scheme_Object *a[4];
   void *r;
   SETUP_VAR_STACK(3);
@@ -237,7 +237,7 @@ static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offs
 
 static void* MyGetSize(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -259,7 +259,7 @@ static void* MyGetSize(wxDC *dc)
 
 static void* MyGetScale(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -281,7 +281,7 @@ static void* MyGetScale(wxDC *dc)
 
 static void* MyGetOrigin(wxDC *dc)
 {
-  float w, h;
+  double w, h;
   Scheme_Object *a[2];
   void *r;
   SETUP_VAR_STACK(3);
@@ -310,12 +310,12 @@ inline static wxGL *_GetGL(wxDC *dc)
 #endif
 }
 
-static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
-  float xs, ys, xo, yo;
+  double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
@@ -358,12 +358,12 @@ static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   READY_TO_RETURN;
 }
 
-static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char *s)
+static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
   wxColour *c;
-  float xs, ys, xo, yo;
+  double xs, ys, xo, yo;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, ss);
   VAR_STACK_PUSH(1, c);
@@ -965,15 +965,15 @@ static Scheme_Object *os_wxDCSetDeviceOrigin(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "set-origin in dc<%>", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-origin in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-origin in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-origin in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-origin in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","set-origin"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetDeviceOrigin(x0, x1));
@@ -989,15 +989,15 @@ static Scheme_Object *os_wxDCSetUserScale(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "set-scale in dc<%>", n, p);
-  nnfloat x0;
-  nnfloat x1;
+  nndouble x0;
+  nndouble x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+0], "set-scale in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+1], "set-scale in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+0], "set-scale in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+1], "set-scale in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","set-scale"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetUserScale(x0, x1));
@@ -1063,8 +1063,8 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxDC_class, "draw-bitmap in dc<%>", n, p);
   class wxBitmap* x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
+  double x1;
+  double x2;
   int x3;
   class wxColour* x4 INIT_NULLED_OUT;
   class wxBitmap* x5 INIT_NULLED_OUT;
@@ -1077,8 +1077,8 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap in dc<%>", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-bitmap in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-bitmap in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-bitmap in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-bitmap in dc<%>"));
   if (n > (POFFSET+3)) {
     x3 = WITH_VAR_STACK(unbundle_symset_bitmapDrawStyle(p[POFFSET+3], "draw-bitmap in dc<%>"));
   } else
@@ -1108,12 +1108,12 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxDC_class, "draw-bitmap-section in dc<%>", n, p);
   class wxBitmap* x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
-  float x3;
-  float x4;
-  nnfloat x5;
-  nnfloat x6;
+  double x1;
+  double x2;
+  double x3;
+  double x4;
+  nndouble x5;
+  nndouble x6;
   int x7;
   class wxColour* x8 INIT_NULLED_OUT;
   class wxBitmap* x9 INIT_NULLED_OUT;
@@ -1126,12 +1126,12 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap-section in dc<%>", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-bitmap-section in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-bitmap-section in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+3], "draw-bitmap-section in dc<%>"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "draw-bitmap-section in dc<%>"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+5], "draw-bitmap-section in dc<%>"));
-  x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+6], "draw-bitmap-section in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-bitmap-section in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-bitmap-section in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-bitmap-section in dc<%>"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-bitmap-section in dc<%>"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+5], "draw-bitmap-section in dc<%>"));
+  x6 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+6], "draw-bitmap-section in dc<%>"));
   if (n > (POFFSET+7)) {
     x7 = WITH_VAR_STACK(unbundle_symset_bitmapDrawStyle(p[POFFSET+7], "draw-bitmap-section in dc<%>"));
   } else
@@ -1158,7 +1158,7 @@ static Scheme_Object *os_wxDCGetCharWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxDC_class, "get-char-width in dc<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1179,7 +1179,7 @@ static Scheme_Object *os_wxDCGetCharHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxDC_class, "get-char-height in dc<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1423,19 +1423,19 @@ static Scheme_Object *os_wxDCSetClippingRect(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "set-clipping-rect in dc<%>", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-clipping-rect in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-clipping-rect in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-clipping-rect in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-clipping-rect in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-clipping-rect in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-clipping-rect in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "set-clipping-rect in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "set-clipping-rect in dc<%>"));
 
   if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;DO_OK_CHECK(METHODNAME("dc<%>","set-clipping-rec"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetClippingRect(x0, x1, x2, x3));
@@ -1453,8 +1453,8 @@ static Scheme_Object *os_wxDCDrawPolygon(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "draw-polygon in dc<%>", n, p);
   int x0;
   class wxPoint* x1 INIT_NULLED_OUT;
-  float x2;
-  float x3;
+  double x2;
+  double x3;
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -1464,11 +1464,11 @@ static Scheme_Object *os_wxDCDrawPolygon(int n,  Scheme_Object *p[])
   
   x1 = NULL;
   if (n > (POFFSET+1)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-polygon in dc<%>"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-polygon in dc<%>"));
   } else
     x2 = 0;
   if (n > (POFFSET+2)) {
-    x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-polygon in dc<%>"));
+    x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-polygon in dc<%>"));
   } else
     x3 = 0;
   if (n > (POFFSET+3)) {
@@ -1492,8 +1492,8 @@ static Scheme_Object *os_wxDCDrawLines(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "draw-lines in dc<%>", n, p);
   int x0;
   class wxPoint* x1 INIT_NULLED_OUT;
-  float x2;
-  float x3;
+  double x2;
+  double x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1502,11 +1502,11 @@ static Scheme_Object *os_wxDCDrawLines(int n,  Scheme_Object *p[])
   
   x1 = NULL;
   if (n > (POFFSET+1)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-lines in dc<%>"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-lines in dc<%>"));
   } else
     x2 = 0;
   if (n > (POFFSET+2)) {
-    x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-lines in dc<%>"));
+    x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-lines in dc<%>"));
   } else
     x3 = 0;
 
@@ -1524,19 +1524,19 @@ static Scheme_Object *os_wxDCDrawEllipse(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-ellipse in dc<%>", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-ellipse in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-ellipse in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "draw-ellipse in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "draw-ellipse in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-ellipse in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-ellipse in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "draw-ellipse in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "draw-ellipse in dc<%>"));
 
   if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(METHODNAME("dc<%>","draw-ellipse"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawEllipse(x0, x1, x2, x3));
@@ -1552,23 +1552,23 @@ static Scheme_Object *os_wxDCDrawArc(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-arc in dc<%>", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-  float x4;
-  float x5;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+  double x4;
+  double x5;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-arc in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-arc in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "draw-arc in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "draw-arc in dc<%>"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "draw-arc in dc<%>"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-arc in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-arc in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-arc in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "draw-arc in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "draw-arc in dc<%>"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-arc in dc<%>"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "draw-arc in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","draw-arc"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawArc(x0, x1, x2, x3, x4, x5));
@@ -1585,12 +1585,12 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-text in dc<%>", n, p);
   mzxstring x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
+  double x1;
+  double x2;
   Bool x3;
   Bool x4;
   nnint x5;
-  float x6;
+  double x6;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1598,8 +1598,8 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
 
   
   x0 = (mzxstring)WITH_VAR_STACK(objscheme_unbundle_mzxstring(p[POFFSET+0], "draw-text in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-text in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-text in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-text in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-text in dc<%>"));
   if (n > (POFFSET+3)) {
     x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "draw-text in dc<%>"));
   } else
@@ -1609,7 +1609,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   } else
     x5 = 0;
   if (n > (POFFSET+5)) {
-    x6 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-text in dc<%>"));
+    x6 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "draw-text in dc<%>"));
   } else
     x6 = 0.0;
 
@@ -1627,23 +1627,23 @@ static Scheme_Object *os_wxDCDrawSpline(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-spline in dc<%>", n, p);
-  float x0;
-  float x1;
-  float x2;
-  float x3;
-  float x4;
-  float x5;
+  double x0;
+  double x1;
+  double x2;
+  double x3;
+  double x4;
+  double x5;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-spline in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-spline in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-spline in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+3], "draw-spline in dc<%>"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "draw-spline in dc<%>"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-spline in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-spline in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-spline in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-spline in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-spline in dc<%>"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-spline in dc<%>"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "draw-spline in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","draw-spline"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawSpline(x0, x1, x2, x3, x4, x5));
@@ -1659,22 +1659,22 @@ static Scheme_Object *os_wxDCDrawRoundedRectangle(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-rounded-rectangle in dc<%>", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
-  float x4;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+  double x4;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-rounded-rectangle in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-rounded-rectangle in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "draw-rounded-rectangle in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "draw-rounded-rectangle in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-rounded-rectangle in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-rounded-rectangle in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "draw-rounded-rectangle in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "draw-rounded-rectangle in dc<%>"));
   if (n > (POFFSET+4)) {
-    x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "draw-rounded-rectangle in dc<%>"));
+    x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-rounded-rectangle in dc<%>"));
   } else
     x4 = -0.25;
 
@@ -1692,19 +1692,19 @@ static Scheme_Object *os_wxDCDrawRectangle(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-rectangle in dc<%>", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-rectangle in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-rectangle in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "draw-rectangle in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "draw-rectangle in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-rectangle in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-rectangle in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "draw-rectangle in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "draw-rectangle in dc<%>"));
 
   if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(METHODNAME("dc<%>","draw-rectangle"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawRectangle(x0, x1, x2, x3));
@@ -1720,15 +1720,15 @@ static Scheme_Object *os_wxDCDrawPoint(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-point in dc<%>", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-point in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-point in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-point in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-point in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","draw-point"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawPoint(x0, x1));
@@ -1744,19 +1744,19 @@ static Scheme_Object *os_wxDCDrawLine(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-line in dc<%>", n, p);
-  float x0;
-  float x1;
-  float x2;
-  float x3;
+  double x0;
+  double x1;
+  double x2;
+  double x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-line in dc<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-line in dc<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-line in dc<%>"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+3], "draw-line in dc<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "draw-line in dc<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-line in dc<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-line in dc<%>"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-line in dc<%>"));
 
   DO_OK_CHECK(METHODNAME("dc<%>","draw-line"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawLine(x0, x1, x2, x3));
@@ -2000,8 +2000,8 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMemoryDC_class, "set-argb-pixels in bitmap-dc%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
   int x2;
   int x3;
   bstring x4 INIT_NULLED_OUT;
@@ -2011,8 +2011,8 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x4);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-argb-pixels in bitmap-dc%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-argb-pixels in bitmap-dc%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-argb-pixels in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-argb-pixels in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "set-argb-pixels in bitmap-dc%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "set-argb-pixels in bitmap-dc%"));
   x4 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
@@ -2031,8 +2031,8 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMemoryDC_class, "get-argb-pixels in bitmap-dc%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
   int x2;
   int x3;
   wbstring x4 INIT_NULLED_OUT;
@@ -2042,8 +2042,8 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x4);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "get-argb-pixels in bitmap-dc%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-argb-pixels in bitmap-dc%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "get-argb-pixels in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "get-argb-pixels in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "get-argb-pixels in bitmap-dc%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "get-argb-pixels in bitmap-dc%"));
   x4 = (wbstring)WITH_VAR_STACK(objscheme_unbundle_mutable_bstring(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
@@ -2062,8 +2062,8 @@ static Scheme_Object *os_wxMemoryDCSetPixel(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMemoryDC_class, "set-pixel in bitmap-dc%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
   class wxColour* x2 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -2071,8 +2071,8 @@ static Scheme_Object *os_wxMemoryDCSetPixel(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x2);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-pixel in bitmap-dc%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-pixel in bitmap-dc%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set-pixel in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set-pixel in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+2], "set-pixel in bitmap-dc%", 1));
 
   DO_OK_CHECK(METHODNAME("bitmap-dc%","set-pixel"))
@@ -2090,8 +2090,8 @@ static Scheme_Object *os_wxMemoryDCGetPixel(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMemoryDC_class, "get-pixel in bitmap-dc%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
   class wxColour* x2 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -2099,8 +2099,8 @@ static Scheme_Object *os_wxMemoryDCGetPixel(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x2);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "get-pixel in bitmap-dc%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-pixel in bitmap-dc%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "get-pixel in bitmap-dc%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "get-pixel in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+2], "get-pixel in bitmap-dc%", 1));
 
   DO_OK_CHECK(METHODNAME("bitmap-dc%","get-pixel"))

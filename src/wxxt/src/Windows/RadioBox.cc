@@ -83,7 +83,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     int i;
     wxWindow_Xintern *ph;
     Bool vert;
-    Dimension ww, hh; float lw, lh;
+    Dimension ww, hh;
+    double lw, lh;
     Widget wgt;
 
     if ( (num_toggles = n) <= 0 ) {
@@ -104,7 +105,6 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
     label = wxGetCtlLabel(label);
 
-    /* MATTHEW: [5] */
     if ((style & wxVERTICAL) == wxVERTICAL) {
       if (num_rows <= 0)
 	num_rows = num_toggles;
@@ -214,7 +214,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     int i;
     Bool vert;
     wxWindow_Xintern *ph;
-    Dimension ww, hh; float lw, lh;
+    Dimension ww, hh; double lw, lh;
     Widget wgt;
 
     if ( (num_toggles = n) <= 0 ) {
@@ -258,7 +258,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtNxfont,       label_font->GetInternalAAFont(),
 #endif
 			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
-			   XtNframeWidth,  0, /* MATTHEW: no frame */
+			   XtNframeWidth,  0,
 			   XtNshrinkToFit, TRUE,
 			   NULL);
     if (!(style & wxINVISIBLE))
@@ -448,7 +448,6 @@ char *wxRadioBox::GetString(int which)
 {
     char *label = NULL;
 
-    /* MATTHEW: [5] */
     if (0 <= which && which < num_toggles)
 	XtVaGetValues(TOGGLES[which], XtNlabel, &label, NULL);
     return label;

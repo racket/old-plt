@@ -486,7 +486,7 @@ wxMediaLine *wxMediaLine::FindScroll(long scroll)
   SEARCH(scroll, node->numscrolls);
 }
 
-wxMediaLine *wxMediaLine::FindLocation(float y)
+wxMediaLine *wxMediaLine::FindLocation(double y)
 {
   SEARCH(y, node->h);
 }
@@ -549,9 +549,9 @@ long wxMediaLine::GetScroll()
   SUM(scroll, _scroll, node->numscrolls, 0);
 }
 
-float wxMediaLine::GetLocation()
+double wxMediaLine::GetLocation()
 {
-  float _y;
+  double _y;
   SUM(y, _y, node->h, 0);
 }
 
@@ -637,9 +637,9 @@ void wxMediaLine::SetScrollLength(long numscrolls)
   ADJUST(numscrolls, scroll);
 }
 
-void wxMediaLine::SetHeight(float h)
+void wxMediaLine::SetHeight(double h)
 {
-  float delta;
+  double delta;
   ADJUST(h, y);
 }
 
@@ -723,7 +723,7 @@ void wxMediaLine::AdjustMaxWidth(Bool recur)
   }
 }
 
-void wxMediaLine::SetWidth(float w)
+void wxMediaLine::SetWidth(double w)
 {
   this->w = w;
   AdjustMaxWidth(TRUE);
@@ -731,7 +731,7 @@ void wxMediaLine::SetWidth(float w)
 
 /***************************************************************/
 
-float wxMediaLine::ScrollOffset(long p)
+double wxMediaLine::ScrollOffset(long p)
 {
   if (!scrollSnip)
     return 0;
@@ -742,7 +742,7 @@ float wxMediaLine::ScrollOffset(long p)
   return scrollSnip->GetScrollStepOffset(p);
 }
 
-long wxMediaLine::FindExtraScroll(float y)
+long wxMediaLine::FindExtraScroll(double y)
 {
   if (y >= h)
     return numscrolls;
@@ -844,7 +844,7 @@ wxMediaLine *wxMediaLine::GetRoot()
 /***************************************************************/
 
 Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
-			     wxMediaEdit *media, float maxWidth, wxDC *dc)
+			     wxMediaEdit *media, double maxWidth, wxDC *dc)
 {
   if (flags & WXLINE_FLOW_LEFT) {
     if (PTRNE(left, NIL) && left->UpdateFlow(root, media, maxWidth, dc))
@@ -855,7 +855,7 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
   if (flags & WXLINE_FLOW_HERE) {
     Bool firstLine;
     wxMediaParagraph *para;
-    float lineMaxWidth;
+    double lineMaxWidth;
 
     flags -= WXLINE_FLOW_HERE;
 
@@ -1011,9 +1011,9 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
   if (flags & WXLINE_CALC_HERE) {
     wxSnip *asnip, *_next;
     long maxscroll, _scroll;
-    float _y, bigwidth;
-    float _h, _w, descent, space, totalwidth;
-    float maxh, maxbase, maxdescent, maxspace, maxantidescent, maxantispace;
+    double _y, bigwidth;
+    double _h, _w, descent, space, totalwidth;
+    double maxh, maxbase, maxdescent, maxspace, maxantidescent, maxantispace;
     int align;
 
     _y = GetLocation();
@@ -1095,7 +1095,7 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
     if (maxh == this->h)
       media->RefreshBox(0, _y, bigwidth, maxh);
     else {
-      float bigheight;
+      double bigheight;
 
       SetHeight(maxh);
 
@@ -1155,9 +1155,9 @@ wxMediaLine *wxMediaLine::Last()
 
 /***************************************************************/
 
-float wxMediaLine::GetLeftLocation(float maxWidth)
+double wxMediaLine::GetLeftLocation(double maxWidth)
 {
-  float _left;
+  double _left;
   wxMediaParagraph *para;
 
   if (flags & WXLINE_STARTS_PARA) {
@@ -1170,7 +1170,7 @@ float wxMediaLine::GetLeftLocation(float maxWidth)
 
   if (para->alignment != (unsigned)WXPARA_LEFT) {
     if (maxWidth > 0) {
-      float delta = maxWidth - w;
+      double delta = maxWidth - w;
       if (delta < 0)
 	delta = 0;
       if (para->alignment == (unsigned)WXPARA_RIGHT)
@@ -1183,7 +1183,7 @@ float wxMediaLine::GetLeftLocation(float maxWidth)
   return _left;
 }
 
-float wxMediaLine::GetRightLocation(float maxWidth)
+double wxMediaLine::GetRightLocation(double maxWidth)
 {
   return GetLeftLocation(maxWidth) + w;
 }
@@ -1203,7 +1203,7 @@ wxMediaParagraph *wxMediaParagraph::Clone()
   return paragraph;
 }
 
-float wxMediaParagraph::GetLineMaxWidth(float maxWidth, Bool first)
+double wxMediaParagraph::GetLineMaxWidth(double maxWidth, Bool first)
 {
   if (maxWidth <= 0)
     return maxWidth;
@@ -1283,7 +1283,7 @@ main()
       if (i >= 0)
 	line->SetScrollLength(i);
     } else if (command[0] == 'h') {
-      float h;
+      double h;
       cout << "How tall? ";
       cin >> h;
       if (h >= 0.0)

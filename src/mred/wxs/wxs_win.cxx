@@ -166,8 +166,8 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
 
 
 
-// @ "get-char-height" : float GetCharHeight();
-// @ "get-char-width" : float GetCharWidth();
+// @ "get-char-height" : double GetCharHeight();
+// @ "get-char-width" : double GetCharWidth();
 
 
 
@@ -803,14 +803,14 @@ static Scheme_Object *os_wxWindowGetTextExtent(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxWindow_class, "get-text-extent in window%", n, p);
   string x0 INIT_NULLED_OUT;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
-  float _x3;
-  float* x3 = &_x3;
-  float _x4;
-  float* x4 = &_x4;
+  double _x1;
+  double* x1 = &_x1;
+  double _x2;
+  double* x2 = &_x2;
+  double _x3;
+  double* x3 = &_x3;
+  double _x4;
+  double* x4 = &_x4;
   class wxFont* x5 INIT_NULLED_OUT;
   Bool x6;
   Scheme_Object *sbox_tmp;
@@ -822,20 +822,20 @@ static Scheme_Object *os_wxWindowGetTextExtent(int n,  Scheme_Object *p[])
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "get-text-extent in window%"));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
-      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   if (n > (POFFSET+3)) {
     if (XC_SCHEME_NULLP(p[POFFSET+3]))
     x3 = NULL;
   else
-    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x3 = NULL;
   if (n > (POFFSET+4)) {
     if (XC_SCHEME_NULLP(p[POFFSET+4]))
     x4 = NULL;
   else
-    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+4], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+4], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x4 = NULL;
   if (n > (POFFSET+5)) {

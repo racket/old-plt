@@ -14,12 +14,12 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void OnEvent(wxMouseEvent *event);
   virtual void OnChar(wxKeyEvent *event);
   virtual wxCursor *AdjustCursor(wxMouseEvent *event);
-  virtual void Refresh(float localx, float localy, float w, float h, 
+  virtual void Refresh(double localx, double localy, double w, double h, 
 		       int show_caret, wxColour *c);
   virtual void OwnCaret(Bool ownit);
   virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
-  void GetExtent(float *w, float *h);
+  void GetExtent(double *w, double *h);
 
   virtual void OnDefaultEvent(wxMouseEvent *event);
   virtual void OnDefaultChar(wxKeyEvent *event);
@@ -27,25 +27,25 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void OnDoubleClick(wxSnip *, wxMouseEvent *event);
 
   /* Callbacks for the wxSnipAdmin: */
-  virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
-			float w, float h, Bool refresh, int bias = 0);
+  virtual Bool ScrollTo(wxSnip *, double localx, double localy, 
+			double w, double h, Bool refresh, int bias = 0);
   virtual void SetCaretOwner(wxSnip *, int = wxFOCUS_IMMEDIATE);
   virtual void Resized(wxSnip *, Bool redraw_now);
   virtual Bool Recounted(wxSnip *, Bool redraw_now);
-  virtual void NeedsUpdate(wxSnip *, float localx, float localy, 
-			   float w, float h);
+  virtual void NeedsUpdate(wxSnip *, double localx, double localy, 
+			   double w, double h);
   virtual Bool ReleaseSnip(wxSnip *);
 
-  float ScrollLineLocation(long line);
+  double ScrollLineLocation(long line);
   long NumScrollLines();
-  long FindScrollLine(float y);
+  long FindScrollLine(double y);
 
   wxMediaBuffer *CopySelf(void);
   void CopySelfTo(wxMediaBuffer *b);
-  float GetDescent(void);
-  float GetSpace(void);
+  double GetDescent(void);
+  double GetSpace(void);
   wxchar *GetFlattenedText(long *got=NULL);
-  void GetCenter(float *x, float *y);
+  void GetCenter(double *x, double *y);
 
   void Clear();
   void Cut(Bool extend=FALSE, long time=0);
@@ -61,10 +61,10 @@ class wxMediaPasteboard : public wxMediaBuffer
   void AddSelected(wxSnip *);
   void RemoveSelected(wxSnip *);
   void NoSelected();
-  void AddSelected(float x, float y, float w, float h);
+  void AddSelected(double x, double y, double w, double h);
 
-  void Insert(wxSnip *snip, wxSnip *before, float x, float y);
-  void Insert(wxSnip *snip, float x, float y);
+  void Insert(wxSnip *snip, wxSnip *before, double x, double y);
+  void Insert(wxSnip *snip, double x, double y);
   void Insert(wxSnip *snip);
   void Insert(wxSnip *snip, wxSnip *before);
 
@@ -80,7 +80,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   Bool ReallyCanEdit(int op);
 
-  Bool GetSnipLocation(wxSnip *thesnip, float *x = NULL, float *y = NULL, Bool bottomRight=FALSE);
+  Bool GetSnipLocation(wxSnip *thesnip, double *x = NULL, double *y = NULL, Bool bottomRight=FALSE);
 
   void SetFilename(char *, Bool temp = FALSE);
 
@@ -98,14 +98,14 @@ class wxMediaPasteboard : public wxMediaBuffer
   Bool InEditSequence(void);
   Bool LocationsUpToDate(void);
 
-  void SetMaxWidth(float w);
-  void SetMinWidth(float w);
-  float GetMaxWidth();
-  float GetMinWidth();
-  void SetMinHeight(float h);
-  void SetMaxHeight(float w);
-  float GetMinHeight();
-  float GetMaxHeight();
+  void SetMaxWidth(double w);
+  void SetMinWidth(double w);
+  double GetMaxWidth();
+  double GetMinWidth();
+  void SetMinHeight(double h);
+  void SetMaxHeight(double w);
+  double GetMinHeight();
+  double GetMaxHeight();
 
   virtual void PrintToDC(wxDC *print, int page = -1);
   virtual void *BeginPrint(wxDC *, Bool);
@@ -114,17 +114,17 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void AddPasteboardFunctions(wxKeymap *tab);
 
-  wxSnip *FindSnip(float x, float y, wxSnip *after=NULL);
+  wxSnip *FindSnip(double x, double y, wxSnip *after=NULL);
   wxSnip *FindFirstSnip(void);
 
   Bool IsSelected(wxSnip *asnip);
   wxSnip *FindNextSelectedSnip(wxSnip *start);
   
-  void MoveTo(wxSnip *, float x, float y);
-  void Move(wxSnip *, float x, float y);
-  void Move(float x, float y);
+  void MoveTo(wxSnip *, double x, double y);
+  void Move(wxSnip *, double x, double y);
+  void Move(double x, double y);
 
-  Bool Resize(wxSnip *, float w, float h);
+  Bool Resize(wxSnip *, double w, double h);
 
   void Raise(wxSnip *snip);
   void Lower(wxSnip *snip);
@@ -140,8 +140,8 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void SetSnipData(wxSnip *, wxBufferData *);
   virtual wxBufferData *GetSnipData(wxSnip *snip);
 
-  virtual void InvalidateBitmapCache(float x=0.0, float y=0.0,
-				     float w=-1.0, float h=-1.0);
+  virtual void InvalidateBitmapCache(double x=0.0, double y=0.0,
+				     double w=-1.0, double h=-1.0);
 
 #if ALLOW_X_STYLE_SELECTION
   virtual Bool OwnXSelection(Bool on, Bool update, Bool force);
@@ -149,18 +149,18 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   /* Override these for your own use: */
   virtual void OnChange(void);
-  virtual Bool CanInsert(wxSnip *, wxSnip *, float x, float y);
-  virtual void OnInsert(wxSnip *, wxSnip *, float x, float y);
-  virtual void AfterInsert(wxSnip *, wxSnip *, float x, float y);
+  virtual Bool CanInsert(wxSnip *, wxSnip *, double x, double y);
+  virtual void OnInsert(wxSnip *, wxSnip *, double x, double y);
+  virtual void AfterInsert(wxSnip *, wxSnip *, double x, double y);
   virtual Bool CanDelete(wxSnip *);
   virtual void OnDelete(wxSnip *);
   virtual void AfterDelete(wxSnip *);
-  virtual Bool CanMoveTo(wxSnip *, float x, float y, Bool dragging);
-  virtual void OnMoveTo(wxSnip *, float x, float y, Bool dragging);
-  virtual void AfterMoveTo(wxSnip *, float x, float y, Bool dragging);
-  virtual Bool CanResize(wxSnip *, float w, float h);
-  virtual void OnResize(wxSnip *, float w, float h);
-  virtual void AfterResize(wxSnip *, float w, float h, Bool did);
+  virtual Bool CanMoveTo(wxSnip *, double x, double y, Bool dragging);
+  virtual void OnMoveTo(wxSnip *, double x, double y, Bool dragging);
+  virtual void AfterMoveTo(wxSnip *, double x, double y, Bool dragging);
+  virtual Bool CanResize(wxSnip *, double w, double h);
+  virtual void OnResize(wxSnip *, double w, double h);
+  virtual void AfterResize(wxSnip *, double w, double h, Bool did);
   virtual Bool CanReorder(wxSnip *, wxSnip *, Bool);
   virtual void OnReorder(wxSnip *, wxSnip *, Bool);
   virtual void AfterReorder(wxSnip *, wxSnip *, Bool);
@@ -176,12 +176,12 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void OnInteractiveResize(wxSnip *snip);
   virtual void AfterInteractiveResize(wxSnip *snip);
 
-  virtual void InteractiveAdjustMouse(float *x, float *y);
-  virtual void InteractiveAdjustResize(wxSnip *s, float *x, float *y);
-  virtual void InteractiveAdjustMove(wxSnip *s, float *x, float *y);
+  virtual void InteractiveAdjustMouse(double *x, double *y);
+  virtual void InteractiveAdjustResize(wxSnip *s, double *x, double *y);
+  virtual void InteractiveAdjustMove(wxSnip *s, double *x, double *y);
 
-  void SetScrollStep(float s);
-  float GetScrollStep(void);
+  void SetScrollStep(double s);
+  double GetScrollStep(void);
 
   Bool IsLockedForWrite() { return writeLocked; }
   Bool IsLockedForFlow() { return flowLocked; }
@@ -195,25 +195,25 @@ class wxMediaPasteboard : public wxMediaBuffer
   wxStandardSnipAdmin *snipAdmin;
   
   long lastTime;
-  float startX, startY;
-  float lastX, lastY;
+  double startX, startY;
+  double lastX, lastY;
 
-  float origX, origY, origW, origH;
+  double origX, origY, origW, origH;
   
-  float maxWidth, minWidth, minHeight, maxHeight;
+  double maxWidth, minWidth, minHeight, maxHeight;
 
   Bool keepSize, dragging, rubberband;
 
   int needResize;
 
   wxSnip *resizing;
-  float sizedxm, sizedym;
+  double sizedxm, sizedym;
 
-  float scrollStep;
+  double scrollStep;
 
-  float totalWidth, totalHeight, realWidth, realHeight;
+  double totalWidth, totalHeight, realWidth, realHeight;
 
-  float updateLeft, updateRight, updateTop, updateBottom;
+  double updateLeft, updateRight, updateTop, updateBottom;
   Bool updateNonempty, noImplicitUpdate;
 
   Bool sizeCacheInvalid;
@@ -224,7 +224,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   int delayedscrollbias;
   wxSnip *delayedscrollsnip;
-  float delayedscrollX, delayedscrollY, delayedscrollW, delayedscrollH;
+  double delayedscrollX, delayedscrollY, delayedscrollW, delayedscrollH;
 
   Bool sequenceStreak;
 
@@ -235,21 +235,21 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void DoSelect(wxSnip *, Bool on);
 
-  void DoEventResize(float eventX, float eventY);
-  void DoEventMove(float eventX, float eventY);
+  void DoEventResize(double eventX, double eventY);
+  void DoEventMove(double eventX, double eventY);
 
   Bool _Delete(wxSnip *, wxDeleteSnipRecord *del);
 
   Bool InsertFile(const char *who, Scheme_Object *f, const char *filename, Bool clearStyles, Bool showErrors);
 
-  void Draw(wxDC *dc, float dx, float dy, 
-	    float cx, float cy, float cw, float ch, 
+  void Draw(wxDC *dc, double dx, double dy, 
+	    double cx, double cy, double cw, double ch, 
 	    int show_caret, wxColour *bg);
 
-  Bool FindDot(wxSnipLocation *loc, float x, float y,
-	       float *dxm, float *dym);
+  Bool FindDot(wxSnipLocation *loc, double x, double y,
+	       double *dxm, double *dym);
 
-  void Update(float x, float y, float w, float h);
+  void Update(double x, double y, double w, double h);
   void UpdateSnip(wxSnip *);
   void UpdateLocation(wxSnipLocation *);
   void UpdateSelected();
@@ -258,7 +258,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void CheckRecalc();
 
-  void RubberBand(float x, float y, float w, float h);
+  void RubberBand(double x, double y, double w, double h);
 
   void _ChangeStyle(wxStyle *style, wxStyleDelta *delta, wxSnip *snip);
 

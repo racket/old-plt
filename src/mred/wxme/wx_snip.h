@@ -141,17 +141,17 @@ class wxSnip : public wxObject
   void SetCount(long count);
   void SetFlags(long flags);
 
-  virtual void OnEvent(wxDC *dc, float x, float y, 
-		       float mediax, float mediay, 
+  virtual void OnEvent(wxDC *dc, double x, double y, 
+		       double mediax, double mediay, 
 		       wxMouseEvent *event);
-  virtual void OnChar(wxDC *dc, float x, float y, 
-		      float mediax, float mediay, 
+  virtual void OnChar(wxDC *dc, double x, double y, 
+		      double mediax, double mediay, 
 		      wxKeyEvent *event);
-  virtual wxCursor *AdjustCursor(wxDC *dc, float x, float y, 
-				 float mediax, float mediay, 
+  virtual wxCursor *AdjustCursor(wxDC *dc, double x, double y, 
+				 double mediax, double mediay, 
 				 wxMouseEvent *event);
   virtual void OwnCaret(Bool);  
-  virtual void BlinkCaret(wxDC *dc, float x, float y);  
+  virtual void BlinkCaret(wxDC *dc, double x, double y);  
   
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
   virtual Bool CanEdit(int op, Bool recursive = TRUE);
@@ -162,15 +162,15 @@ class wxSnip : public wxObject
   virtual void SizeCacheInvalid(void);
 
   virtual void GetExtent(wxDC *dc, 
-			 float x, float y,
-			 float *w = NULL, float *h = NULL, 
-			 float *descent = NULL, float *space = NULL,
-			 float *lspace = NULL, float *rspace = NULL);
-  virtual float PartialOffset(wxDC *, float x, float y, long);
+			 double x, double y,
+			 double *w = NULL, double *h = NULL, 
+			 double *descent = NULL, double *space = NULL,
+			 double *lspace = NULL, double *rspace = NULL);
+  virtual double PartialOffset(wxDC *, double x, double y, long);
 
-  virtual void Draw(wxDC *dc, float x, float y, 
-		    float,float,float,float, 
-		    float dx, float xy, 
+  virtual void Draw(wxDC *dc, double x, double y, 
+		    double,double,double,double, 
+		    double dx, double xy, 
 		    int show_caret);
   virtual void Split(long position, wxSnip **first, wxSnip **second);
   virtual wxSnip *MergeWith(wxSnip *pred);
@@ -180,11 +180,11 @@ class wxSnip : public wxObject
   virtual wxSnip *Copy();
   virtual void Write(wxMediaStreamOut *f);
 
-  virtual Bool Resize(float w, float h);
+  virtual Bool Resize(double w, double h);
 
   virtual long GetNumScrollSteps();
-  virtual long FindScrollStep(float y);
-  virtual float GetScrollStepOffset(long i);
+  virtual long FindScrollStep(double y);
+  virtual double GetScrollStepOffset(long i);
 
   virtual void SetUnmodified();
 
@@ -205,9 +205,9 @@ class wxInternalSnip : public wxSnip
 class wxTextSnip : public wxInternalSnip
 {
  protected:
-  float w; /* < 0 => need to recalc size */
+  double w; /* < 0 => need to recalc size */
 
-  void GetTextExtent(wxDC *dc, int count, float *wo);
+  void GetTextExtent(wxDC *dc, int count, double *wo);
 
   void Init(long allocsize);
 
@@ -225,14 +225,14 @@ class wxTextSnip : public wxInternalSnip
   virtual void SizeCacheInvalid(void);
 
   virtual void GetExtent(wxDC *dc,
-			 float x, float y,
-			 float *w = NULL, float *h = NULL, 
-			 float *descent = NULL, float *space = NULL,
-			 float *lspace = NULL, float *rspace = NULL);
-  virtual float PartialOffset(wxDC *, float x, float y, long);
-  virtual void Draw(wxDC *dc, float x, float y, 
-		    float,float,float,float, 
-		    float dx, float dy, int);
+			 double x, double y,
+			 double *w = NULL, double *h = NULL, 
+			 double *descent = NULL, double *space = NULL,
+			 double *lspace = NULL, double *rspace = NULL);
+  virtual double PartialOffset(wxDC *, double x, double y, long);
+  virtual void Draw(wxDC *dc, double x, double y, 
+		    double,double,double,double, 
+		    double dx, double dy, int);
   virtual void Split(long position, wxSnip **first, wxSnip **second);
   virtual wxSnip *MergeWith(wxSnip *pred);
 
@@ -260,14 +260,14 @@ class wxTabSnip : public wxTextSnip
   wxTabSnip();
   
   virtual void GetExtent(wxDC *dc, 
-			 float x, float y,
-			 float *w = NULL, float *h = NULL, 
-			 float *descent = NULL, float *space = NULL,
-			 float *lspace = NULL, float *rspace = NULL);
-  virtual float PartialOffset(wxDC *, float x, float y, long);
-  virtual void Draw(wxDC *dc, float x, float y, 
-		    float,float,float,float, 
-		    float dx, float dy, int);
+			 double x, double y,
+			 double *w = NULL, double *h = NULL, 
+			 double *descent = NULL, double *space = NULL,
+			 double *lspace = NULL, double *rspace = NULL);
+  virtual double PartialOffset(wxDC *, double x, double y, long);
+  virtual void Draw(wxDC *dc, double x, double y, 
+		    double,double,double,double, 
+		    double dx, double dy, int);
   virtual wxSnip *Copy();
 };
 
@@ -282,7 +282,7 @@ class wxImageSnip : public wxInternalSnip
   void Init(void);
 
  protected:
-  float w, h, vieww, viewh, viewdx, viewdy;
+  double w, h, vieww, viewh, viewdx, viewdy;
   Bool contentsChanged;
 
  public:
@@ -293,14 +293,14 @@ class wxImageSnip : public wxInternalSnip
   virtual void SizeCacheInvalid(void);
 
   virtual void GetExtent(wxDC *dc,
-			 float x, float y,
-			 float *w = NULL, float *h = NULL, 
-			 float *descent = NULL, float *space = NULL,
-			 float *lspace = NULL, float *rspace = NULL);
+			 double x, double y,
+			 double *w = NULL, double *h = NULL, 
+			 double *descent = NULL, double *space = NULL,
+			 double *lspace = NULL, double *rspace = NULL);
 
-  virtual void Draw(wxDC *dc, float x, float y, 
-		    float,float,float,float, 
-		    float dx, float dy, int);
+  virtual void Draw(wxDC *dc, double x, double y, 
+		    double,double,double,double, 
+		    double dx, double dy, int);
 
   virtual wxSnip *Copy(void);
 
@@ -314,12 +314,12 @@ class wxImageSnip : public wxInternalSnip
   wxBitmap *GetSnipBitmap();
   wxBitmap *GetSnipBitmapMask();
 
-  void SetOffset(float dx, float dy);
-  virtual Bool Resize(float w, float h);
+  void SetOffset(double dx, double dy);
+  virtual Bool Resize(double w, double h);
 
   virtual long GetNumScrollSteps();
-  virtual long FindScrollStep(float y);
-  virtual float GetScrollStepOffset(long i);
+  virtual long FindScrollStep(double y);
+  virtual double GetScrollStepOffset(long i);
 
   virtual void SetAdmin(wxSnipAdmin *);
 
@@ -335,19 +335,19 @@ class wxSnipAdmin : public wxObject
   virtual wxMediaBuffer *GetMedia(void) = 0;
 
   virtual wxDC *GetDC() = 0;
-  virtual void GetViewSize(float *h, float *w) = 0;
-  virtual void GetView(float *x, float *y, float *h, float *w, wxSnip *snip = NULL) = 0;
-  virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
-			float w, float h, Bool refresh, int bias = 0) = 0;
+  virtual void GetViewSize(double *h, double *w) = 0;
+  virtual void GetView(double *x, double *y, double *h, double *w, wxSnip *snip = NULL) = 0;
+  virtual Bool ScrollTo(wxSnip *, double localx, double localy, 
+			double w, double h, Bool refresh, int bias = 0) = 0;
   virtual void SetCaretOwner(wxSnip *, int = wxFOCUS_IMMEDIATE) = 0;
   virtual void Resized(wxSnip *, Bool redraw_now) = 0;
   virtual Bool Recounted(wxSnip *, Bool redraw_now) = 0;
-  virtual void NeedsUpdate(wxSnip *, float localx, float localy, 
-			   float w, float h) = 0;
+  virtual void NeedsUpdate(wxSnip *, double localx, double localy, 
+			   double w, double h) = 0;
   virtual Bool ReleaseSnip(wxSnip *) = 0;
 
   virtual void UpdateCursor() = 0;
-  virtual Bool PopupMenu(void *m, wxSnip *s, float x, float y) = 0;
+  virtual Bool PopupMenu(void *m, wxSnip *s, double x, double y) = 0;
 
   virtual void Modified(wxSnip *s, Bool mod) = 0;
 };
@@ -380,7 +380,7 @@ class wxMediaSnip : public wxInternalSnip
   int leftMargin, topMargin, rightMargin, bottomMargin;
   int leftInset, topInset, rightInset, bottomInset;
 
-  float minWidth, maxWidth, minHeight, maxHeight;
+  double minWidth, maxWidth, minHeight, maxHeight;
 
  public:
   wxMediaSnip(wxMediaBuffer *useme = NULL,
@@ -393,17 +393,17 @@ class wxMediaSnip : public wxInternalSnip
 	      int topInset = wxMSNIPBOX_YINSET,
 	      int rightInset = wxMSNIPBOX_XINSET,
 	      int bottomInset = wxMSNIPBOX_YINSET,
-	      float w = -1, float W = -1, 
-	      float h = -1, float H = -1);
+	      double w = -1, double W = -1, 
+	      double h = -1, double H = -1);
   ~wxMediaSnip();
 
   virtual void SetAdmin(wxSnipAdmin *a);
 
-  virtual void OnEvent(wxDC *, float, float, float,float, wxMouseEvent *event);
-  virtual void OnChar(wxDC *, float, float, float, float, wxKeyEvent *event);
-  virtual wxCursor *AdjustCursor(wxDC *, float, float, float,float, wxMouseEvent *event);
+  virtual void OnEvent(wxDC *, double, double, double,double, wxMouseEvent *event);
+  virtual void OnChar(wxDC *, double, double, double, double, wxKeyEvent *event);
+  virtual wxCursor *AdjustCursor(wxDC *, double, double, double,double, wxMouseEvent *event);
   virtual void OwnCaret(Bool);  
-  virtual void BlinkCaret(wxDC *dc, float x, float y);
+  virtual void BlinkCaret(wxDC *dc, double x, double y);
 
   virtual void DoEdit(int op, Bool recursive = TRUE, long time = 0);
   virtual Bool CanEdit(int op, Bool recursive = TRUE);
@@ -416,29 +416,29 @@ class wxMediaSnip : public wxInternalSnip
   virtual wxchar *GetText(long offset, long num, Bool flattened = FALSE, long *got = NULL);
 
   virtual void GetExtent(wxDC *dc, 
-			 float x, float y,
-			 float *w = NULL, float *h = NULL, 
-			 float *descent = NULL, float *space = NULL,
-			 float *lspace = NULL, float *rspace = NULL);
-  virtual void Draw(wxDC *dc, float x, float y, 
-		    float, float, float, float, float dx, float dy, 
+			 double x, double y,
+			 double *w = NULL, double *h = NULL, 
+			 double *descent = NULL, double *space = NULL,
+			 double *lspace = NULL, double *rspace = NULL);
+  virtual void Draw(wxDC *dc, double x, double y, 
+		    double, double, double, double, double dx, double dy, 
 		    int show_caret);
   virtual wxSnip *Copy(void);
 
   virtual void Write(wxMediaStreamOut *f);
 
   virtual long GetNumScrollSteps();
-  virtual long FindScrollStep(float y);
-  virtual float GetScrollStepOffset(long i);
+  virtual long FindScrollStep(double y);
+  virtual double GetScrollStepOffset(long i);
 
-  void SetMaxWidth(float);
-  void SetMaxHeight(float);
-  float GetMaxWidth(void);
-  float GetMaxHeight(void);
-  void SetMinWidth(float);
-  void SetMinHeight(float);
-  float GetMinWidth(void);
-  float GetMinHeight(void);
+  void SetMaxWidth(double);
+  void SetMaxHeight(double);
+  double GetMaxWidth(void);
+  double GetMaxHeight(void);
+  void SetMinWidth(double);
+  void SetMinHeight(double);
+  double GetMinWidth(void);
+  double GetMinHeight(void);
 
   Bool GetTightTextFit(void);
   void SetTightTextFit(Bool);
@@ -453,7 +453,7 @@ class wxMediaSnip : public wxInternalSnip
   void SetInset(int lm, int tm, int rm, int bm);
   void GetInset(int *li, int *ti, int *ri, int *bi);
 
-  virtual Bool Resize(float w, float h);
+  virtual Bool Resize(double w, double h);
 
   void SetUnmodified();
 
@@ -526,7 +526,7 @@ extern wxBufferDataClass *wxGetEditorDataClass(const char *name);
 class wxLocationBufferData : public wxBufferData
 {
  public:
-  float x, y;
+  double x, y;
 
   wxLocationBufferData();
 

@@ -23,13 +23,13 @@
 @ Y "on-event" : void OnEvent(wxMouseEvent!);
 @ Y "on-char" : void OnChar(wxKeyEvent!);
 @ Y "adjust-cursor" : wxCursor^ AdjustCursor(wxMouseEvent!); : : : : XrNULL
-@ Y "refresh" : void Refresh(float,float,nnfloat,nnfloat,SYM[caret],wxColour^);
+@ Y "refresh" : void Refresh(double,double,nndouble,nndouble,SYM[caret],wxColour^);
 @ Y "own-caret" : void OwnCaret(bool);
 @ Y "blink-caret" : void BlinkCaret(); 
 
-@ Y "get-extent" : void GetExtent(nnfloat?,nnfloat?);
-@ Y "get-descent" : float GetDescent(); : : : : XrZERO
-@ Y "get-space" : float GetSpace(); : : : : XrZERO
+@ Y "get-extent" : void GetExtent(nndouble?,nndouble?);
+@ Y "get-descent" : double GetDescent(); : : : : XrZERO
+@ Y "get-space" : double GetSpace(); : : : : XrZERO
 
 @ X "find-first-snip" : wxSnip^ FindFirstSnip();
 
@@ -45,10 +45,10 @@
 @ Z "on-display-size" : void OnDisplaySize();
 @ Z "on-display-size-when-ready" : void OnDisplaySizeWhenReady();
 
-@ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,nnfloat,nnfloat,bool,SYM[bias]=0); : : : : XrZERO
+@ Y "scroll-to" : bool ScrollTo(wxSnip!,double,double,nndouble,nndouble,bool,SYM[bias]=0); : : : : XrZERO
 @ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,SYM[focus]=wxFOCUS_IMMEDIATE);
 @ Y "resized" : void Resized(wxSnip!,bool);
-@ Y "needs-update" : void NeedsUpdate(wxSnip!,float,float,nnfloat,nnfloat);
+@ Y "needs-update" : void NeedsUpdate(wxSnip!,double,double,nndouble,nndouble);
 
 @ Y "get-snip-data" : wxBufferData^ GetSnipData(wxSnip!); : : : : XrZERO
 @ Y "set-snip-data" : void SetSnipData(wxSnip!, wxBufferData^);
@@ -68,8 +68,8 @@
 @ Z "write-headers-to-file" : bool WriteHeadersToFile(wxMediaStreamOut!);
 @ Z "write-footers-to-file" : bool WriteFootersToFile(wxMediaStreamOut!);
 
-@ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKDCOK[1.METHODNAME("editor<%>","on-paint")]
-@ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(float=0.0,float=0.0,nnfs[end]=-1.0,nnfs[end]=-1.0);
+@ Z "on-paint" : void OnPaint(bool,wxDC!,double,double,double,double,double,double,SYM[caret]);  : : /CHECKDCOK[1.METHODNAME("editor<%>","on-paint")]
+@ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(double=0.0,double=0.0,nnfs[end]=-1.0,nnfs[end]=-1.0);
 
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nxpathname,SYM[bitmapType],bool,bool);
 @ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);

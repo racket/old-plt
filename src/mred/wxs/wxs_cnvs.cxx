@@ -974,15 +974,15 @@ static Scheme_Object *os_wxCanvasScrollPercent(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxCanvas_class, "scroll in canvas%", n, p);
-  float x0;
-  float x1;
+  double x0;
+  double x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "scroll in canvas%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "scroll in canvas%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "scroll in canvas%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "scroll in canvas%"));
 
   
   WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)->ScrollPercent(x0, x1));

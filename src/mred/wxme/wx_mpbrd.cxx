@@ -63,7 +63,7 @@ static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 # define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->FindPtr(snip)->Data())
 #endif
 
-inline Bool Inbox(float lx, float x)
+inline Bool Inbox(double lx, double x)
 { 
   return ((lx - HALF_DOT_WIDTH <= x)
 	  && (lx - HALF_DOT_WIDTH + DOT_WIDTH >= x));
@@ -72,8 +72,8 @@ inline Bool Inbox(float lx, float x)
 class wxSnipLocation : public wxObject
 {
  public:
-  float x, y, w, h, r, b, hm, vm;
-  float startx, starty;
+  double x, y, w, h, r, b, hm, vm;
+  double startx, starty;
   Bool selected, needResize;
   wxSnip *snip;
 
@@ -161,12 +161,12 @@ wxMediaPasteboard::~wxMediaPasteboard()
   DELETE_OBJ snipAdmin;
 }
 
-void wxMediaPasteboard::RubberBand(float x, float y, float w, float h)
+void wxMediaPasteboard::RubberBand(double x, double y, double w, double h)
 {
   wxPen *oldPen;
   wxBrush *oldBrush;
   wxDC *dc;
-  float vx, vy, vw, vh, b, r, dx, dy;
+  double vx, vy, vw, vh, b, r, dx, dy;
 
   if (!admin)
     return;
@@ -216,8 +216,8 @@ void wxMediaPasteboard::RubberBand(float x, float y, float w, float h)
 
 wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
 {
-  float scrollx, scrolly;
-  float x, y;
+  double scrollx, scrolly;
+  double x, y;
   wxSnip *snip;
   wxDC *dc;
   wxCursor *c;
@@ -235,7 +235,7 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
   if (!customCursorOverrides) {
 
     if (caretSnip && event->Dragging()) {
-      float x, y;
+      double x, y;
       GetSnipLocation(caretSnip, &x, &y);
       c = caretSnip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
       if (c)
@@ -245,7 +245,7 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
     snip = FindSnip(x, y);
     
     if (snip && (snip == caretSnip)) {
-      float x, y;
+      double x, y;
       GetSnipLocation(caretSnip, &x, &y);
       c = snip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
       if (c)
@@ -266,7 +266,7 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
 
 void wxMediaPasteboard::OnEvent(wxMouseEvent *event)
 {
-  float x, y, scrollx, scrolly;
+  double x, y, scrollx, scrolly;
   wxSnip *snip;
   wxSnipLocation *loc;
   wxDC *dc;
@@ -303,7 +303,7 @@ void wxMediaPasteboard::OnEvent(wxMouseEvent *event)
 
 void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent *event)
 {
-  float x, y, scrollx, scrolly;
+  double x, y, scrollx, scrolly;
   wxSnip *snip;
   wxSnipLocation *loc;
   wxDC *dc;
@@ -439,7 +439,7 @@ void wxMediaPasteboard::OnDoubleClick(wxSnip *snip, wxMouseEvent *)
 
 void wxMediaPasteboard::OnChar(wxKeyEvent *event)
 {
-  float x, y, scrollx, scrolly;
+  double x, y, scrollx, scrolly;
   wxSnipLocation *loc;
   wxDC *dc;
 
@@ -525,7 +525,7 @@ void wxMediaPasteboard::FinishDragging(wxMouseEvent *e)
   BeginEditSequence();
   /* Move back without Undo and remember final */
   while ((s = FindNextSelectedSnip(s))) {
-    float x, y;
+    double x, y;
     wxSnipLocation *loc;
     loc = SnipLoc(s);
     x = loc->startx;
@@ -548,10 +548,10 @@ void wxMediaPasteboard::FinishDragging(wxMouseEvent *e)
   EndEditSequence();
 }
 
-void wxMediaPasteboard::DoEventMove(float eventX, float eventY)
+void wxMediaPasteboard::DoEventMove(double eventX, double eventY)
 {
   wxSnip *s = NULL;
-  float dx, dy;
+  double dx, dy;
   
   dx = eventX - startX;
   dy = eventY - startY;
@@ -560,7 +560,7 @@ void wxMediaPasteboard::DoEventMove(float eventX, float eventY)
 
   while ((s = FindNextSelectedSnip(s))) {
     wxSnipLocation *loc;
-    float x, y;
+    double x, y;
 
     loc = SnipLoc(s);
     x = loc->startx + dx;
@@ -572,9 +572,9 @@ void wxMediaPasteboard::DoEventMove(float eventX, float eventY)
   EndEditSequence();
 }
 
-void wxMediaPasteboard::DoEventResize(float eventX, float eventY)
+void wxMediaPasteboard::DoEventResize(double eventX, double eventY)
 {
-  float Dx, Dy, w, h, x, y;
+  double Dx, Dy, w, h, x, y;
   
   Dx = eventX - startX;
   Dy = eventY - startY;
@@ -613,7 +613,7 @@ void wxMediaPasteboard::DoEventResize(float eventX, float eventY)
   EndEditSequence();
 }
 
-void wxMediaPasteboard::InteractiveAdjustMouse(float *x, float *y)
+void wxMediaPasteboard::InteractiveAdjustMouse(double *x, double *y)
 {
   if (*x < 0)
     *x = 0;
@@ -621,12 +621,12 @@ void wxMediaPasteboard::InteractiveAdjustMouse(float *x, float *y)
     *y = 0;
 }
 
-void wxMediaPasteboard::InteractiveAdjustResize(wxSnip *, float *, float *)
+void wxMediaPasteboard::InteractiveAdjustResize(wxSnip *, double *, double *)
 {
   /* Do nothing */
 }
 
-void wxMediaPasteboard::InteractiveAdjustMove(wxSnip *, float *x, float *y)
+void wxMediaPasteboard::InteractiveAdjustMove(wxSnip *, double *x, double *y)
 {
   if (*x < 0)
     *x = 0;
@@ -674,10 +674,10 @@ void wxMediaPasteboard::RemoveSelected(wxSnip *snip)
   DoSelect(snip, FALSE);
 }
 
-void wxMediaPasteboard::AddSelected(float x, float y, float w, float h)
+void wxMediaPasteboard::AddSelected(double x, double y, double w, double h)
 {
   wxSnip *s;
-  float r, b;
+  double r, b;
 
   if (w < 0) {
     x += w;
@@ -735,7 +735,7 @@ void wxMediaPasteboard::NoSelected()
   EndEditSequence();
 }
 
-void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
+void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, double x, double y)
 {
   wxSnipLocation *loc;
   wxSnip *search;
@@ -826,14 +826,14 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   AfterInsert(snip, before, x, y);
 }
 
-void wxMediaPasteboard::Insert(wxSnip *snip, float x, float y)
+void wxMediaPasteboard::Insert(wxSnip *snip, double x, double y)
 {
   Insert(snip, snips, x, y);
 }
 
 void wxMediaPasteboard::Insert(wxSnip *snip)
 {
-  float x, y;
+  double x, y;
 
   GetCenter(&x, &y);
   Insert(snip, x, y);
@@ -841,7 +841,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip)
 
 void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before)
 {
-  float x, y;
+  double x, y;
 
   GetCenter(&x, &y);
   Insert(snip, before, x, y);
@@ -998,7 +998,7 @@ void wxMediaPasteboard::Remove(wxSnip *del_snip)
   _Delete(del_snip, NULL);
 }
 
-void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
+void wxMediaPasteboard::MoveTo(wxSnip *snip, double x, double y)
 {
   wxNode *node;
   wxSnipLocation *loc;
@@ -1060,7 +1060,7 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
   }
 }
 
-void wxMediaPasteboard::Move(wxSnip *snip, float dx, float dy)
+void wxMediaPasteboard::Move(wxSnip *snip, double dx, double dy)
 {
   wxNode *node;
   wxSnipLocation *loc;
@@ -1074,7 +1074,7 @@ void wxMediaPasteboard::Move(wxSnip *snip, float dx, float dy)
   }
 }
 
-void wxMediaPasteboard::Move(float dx, float dy)
+void wxMediaPasteboard::Move(double dx, double dy)
 {
   wxNode *node;
   wxSnipLocation *loc;
@@ -1093,11 +1093,11 @@ void wxMediaPasteboard::Move(float dx, float dy)
   EndEditSequence();
 }
 
-Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
+Bool wxMediaPasteboard::Resize(wxSnip *snip, double w, double h)
 {
   wxNode *node;
   wxSnipLocation *loc;
-  float oldw, oldh;
+  double oldw, oldh;
   Bool rv;
   
   if (!admin)
@@ -1407,8 +1407,8 @@ Bool wxMediaPasteboard::ReallyCanEdit(int op)
 
 /***************************************************************************/
 
-Bool wxMediaPasteboard::FindDot(wxSnipLocation *loc, float x, float y,
-				float *dxm, float *dym)
+Bool wxMediaPasteboard::FindDot(wxSnipLocation *loc, double x, double y,
+				double *dxm, double *dym)
 {
   if (Inbox(loc->x, x)) {
     *dxm = -1;
@@ -1444,11 +1444,11 @@ Bool wxMediaPasteboard::FindDot(wxSnipLocation *loc, float x, float y,
   return TRUE;
 }
 
-wxSnip *wxMediaPasteboard::FindSnip(float x, float y, wxSnip *after)
+wxSnip *wxMediaPasteboard::FindSnip(double x, double y, wxSnip *after)
 {
   wxSnip *snip;
   wxSnipLocation *loc;
-  float dym, dxm;
+  double dym, dxm;
 
   for (snip = snips; snip; snip = snip->next) {
     if (after) {
@@ -1511,14 +1511,14 @@ wxSnip *wxMediaPasteboard::FindNextSelectedSnip(wxSnip *start)
 
 /***************************************************************************/
 
-void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy, 
-			     float cx, float cy, float cw, float ch, 
+void wxMediaPasteboard::Draw(wxDC *dc, double dx, double dy, 
+			     double cx, double cy, double cw, double ch, 
 			     int show_caret, wxColour *bgColor)
 {
   wxSnip *snip;
   wxStyle *oldstyle = NULL;
   wxSnipLocation *loc;
-  float cr, cb, x, y, r, b, hm, vm, dcx, dcy, dcr, dcb;
+  double cr, cb, x, y, r, b, hm, vm, dcx, dcy, dcr, dcb;
 
   if (!admin)
     return;
@@ -1650,10 +1650,10 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
   --writeLocked;
 }
 
-void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h, 
+void wxMediaPasteboard::Refresh(double localx, double localy, double w, double h, 
 				int show_caret, wxColour *bgColor)
 {
-  float dx, dy, ddx, ddy;
+  double dx, dy, ddx, ddy;
   wxDC *dc;
 
   if (!admin)
@@ -1747,7 +1747,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 
 void wxMediaPasteboard::CheckRecalc()
 {
-  float r, b;
+  double r, b;
   wxDC *dc;
   wxNode *node;
   wxSnipLocation *loc;
@@ -1804,9 +1804,9 @@ void wxMediaPasteboard::CheckRecalc()
   }
 }
 
-void wxMediaPasteboard::Update(float x, float y, float w, float h)
+void wxMediaPasteboard::Update(double x, double y, double w, double h)
 {
-  float r, b;
+  double r, b;
 
   if (delayedscrollsnip && !sequence && !flowLocked) {
     wxSnip *s = delayedscrollsnip;
@@ -1900,8 +1900,8 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
   if (updateTop != updateBottom || updateLeft != updateRight) {
     /* Bizarre MSVC bug: if we inline w & h and skip the > 0 test, 
        h is wrong */
-    float w = updateRight - updateLeft + 1;
-    float h = updateBottom - updateTop + 1;
+    double w = updateRight - updateLeft + 1;
+    double h = updateBottom - updateTop + 1;
 
     if ((w > 0) && (h > 0))
       admin->NeedsUpdate(updateLeft, updateTop, w, h);
@@ -1961,7 +1961,7 @@ void wxMediaPasteboard::UpdateNeeded()
     Update(updateLeft, updateTop, 0, 0);
 }
 
-void wxMediaPasteboard::InvalidateBitmapCache(float x, float y, float w, float h)
+void wxMediaPasteboard::InvalidateBitmapCache(double x, double y, double w, double h)
 {
   Update(x, y, w, h);
 }
@@ -1980,9 +1980,9 @@ void wxMediaPasteboard::BlinkCaret()
 {
   if (caretSnip) {
     wxDC *dc;
-    float dx, dy;
+    double dx, dy;
     if ((dc = admin->GetDC(&dx, &dy))) {
-      float x, y;
+      double x, y;
       if (GetSnipLocation(caretSnip, &x, &y))
 	caretSnip->BlinkCaret(dc, x - dx, y - dy);
     }
@@ -1996,7 +1996,7 @@ void wxMediaPasteboard::SizeCacheInvalid(void)
 }
 
 
-void wxMediaPasteboard::GetExtent(float *w, float *h)
+void wxMediaPasteboard::GetExtent(double *w, double *h)
 {
   CheckRecalc();
 
@@ -2007,8 +2007,8 @@ void wxMediaPasteboard::GetExtent(float *w, float *h)
 }
 
 Bool wxMediaPasteboard::ScrollTo(wxSnip *snip, 
-				 float localx, float localy, 
-				 float w, float h, 
+				 double localx, double localy, 
+				 double w, double h, 
 				 Bool refresh, int bias)
 {
   if (sequence) {
@@ -2019,7 +2019,7 @@ Bool wxMediaPasteboard::ScrollTo(wxSnip *snip,
     delayedscrollH = h;
     return FALSE;
   } else if (admin) {
-    float x, y;
+    double x, y;
 
     GetSnipLocation(snip, &x, &y);
 
@@ -2089,10 +2089,10 @@ Bool wxMediaPasteboard::Recounted(wxSnip *snip, Bool redraw_now)
   return TRUE;
 }
 
-void wxMediaPasteboard::NeedsUpdate(wxSnip *snip, float localx, float localy, 
-				    float w, float h)
+void wxMediaPasteboard::NeedsUpdate(wxSnip *snip, double localx, double localy, 
+				    double w, double h)
 {
-  float x, y;
+  double x, y;
 
   GetSnipLocation(snip, &x, &y);
   Update(x + localx, y + localy, w, h);
@@ -2112,7 +2112,7 @@ Bool wxMediaPasteboard::ReleaseSnip(wxSnip *snip)
 
 /************************************************************************/
 
-float wxMediaPasteboard::ScrollLineLocation(long line)
+double wxMediaPasteboard::ScrollLineLocation(long line)
 {
   return line * scrollStep;
 }
@@ -2123,12 +2123,12 @@ long wxMediaPasteboard::NumScrollLines()
   return (long)((totalHeight + scrollStep - 1) / scrollStep);
 }
 
-long wxMediaPasteboard::FindScrollLine(float y)
+long wxMediaPasteboard::FindScrollLine(double y)
 {
   return (long)(y / scrollStep);
 }
 
-void wxMediaPasteboard::SetScrollStep(float s)
+void wxMediaPasteboard::SetScrollStep(double s)
 {
   if (scrollStep != s) {
     scrollStep = s;
@@ -2137,14 +2137,14 @@ void wxMediaPasteboard::SetScrollStep(float s)
   }
 }
  
-float wxMediaPasteboard::GetScrollStep(void)
+double wxMediaPasteboard::GetScrollStep(void)
 {
   return scrollStep;
 }
 
 /************************************************************************/
 
-void wxMediaPasteboard::SetMinWidth(float w)
+void wxMediaPasteboard::SetMinWidth(double w)
 {
   if (w <= 0)
     minWidth = 0.0;
@@ -2155,7 +2155,7 @@ void wxMediaPasteboard::SetMinWidth(float w)
   UpdateAll();
 }
 
-void wxMediaPasteboard::SetMaxWidth(float w)
+void wxMediaPasteboard::SetMaxWidth(double w)
 {
   if (w <= 0)
     maxWidth = 0.0;
@@ -2166,17 +2166,17 @@ void wxMediaPasteboard::SetMaxWidth(float w)
   UpdateAll();
 }
 
-float wxMediaPasteboard::GetMinWidth()
+double wxMediaPasteboard::GetMinWidth()
 {
   return minWidth;
 }
 
-float wxMediaPasteboard::GetMaxWidth()
+double wxMediaPasteboard::GetMaxWidth()
 {
   return maxWidth;
 }
 
-void wxMediaPasteboard::SetMinHeight(float h)
+void wxMediaPasteboard::SetMinHeight(double h)
 {
   if (h <= 0)
     minHeight = 0.0;
@@ -2187,7 +2187,7 @@ void wxMediaPasteboard::SetMinHeight(float h)
   UpdateAll();
 }
 
-void wxMediaPasteboard::SetMaxHeight(float h)
+void wxMediaPasteboard::SetMaxHeight(double h)
 {
   if (h <= 0)
     maxHeight = 0.0;
@@ -2198,12 +2198,12 @@ void wxMediaPasteboard::SetMaxHeight(float h)
   UpdateAll();
 }
 
-float wxMediaPasteboard::GetMinHeight()
+double wxMediaPasteboard::GetMinHeight()
 {
   return minHeight;
 }
 
-float wxMediaPasteboard::GetMaxHeight()
+double wxMediaPasteboard::GetMaxHeight()
 {
   return maxHeight;
 }
@@ -2237,20 +2237,20 @@ void wxMediaPasteboard::CopySelfTo(wxMediaBuffer *b)
   pb->SetScrollStep(GetScrollStep());
 }
 
-float wxMediaPasteboard::GetDescent(void)
+double wxMediaPasteboard::GetDescent(void)
 {
   return 0;
 }
 
 
-float wxMediaPasteboard::GetSpace(void)
+double wxMediaPasteboard::GetSpace(void)
 {
   return 0;
 }
 
-void wxMediaPasteboard::GetCenter(float *fx, float *fy)
+void wxMediaPasteboard::GetCenter(double *fx, double *fy)
 {
-  float x, y, w, h;
+  double x, y, w, h;
 
   if (!admin) {
     w = totalWidth;
@@ -2361,7 +2361,7 @@ void wxMediaPasteboard::Copy(Bool extend, long time)
 void wxMediaPasteboard::DoPaste(long time)
 {
   wxSnip *start, *snip;
-  float cx, cy, left, right, top, bottom, dx, dy;
+  double cx, cy, left, right, top, bottom, dx, dy;
   wxSnipLocation *loc;
   wxDC *dc;
 
@@ -2458,7 +2458,7 @@ void wxMediaPasteboard::Kill(long time)
 
 /************************************************************************/
 
-Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, float *x, float *y, 
+Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, double *x, double *y, 
 					Bool bottomRight)
 {
   wxNode *node;
@@ -2814,16 +2814,16 @@ void wxMediaPasteboard::OnChange(void)
 {
 }
 
-Bool wxMediaPasteboard::CanInsert(wxSnip *, wxSnip *, float, float)
+Bool wxMediaPasteboard::CanInsert(wxSnip *, wxSnip *, double, double)
 {
   return TRUE;
 }
 
-void wxMediaPasteboard::OnInsert(wxSnip *, wxSnip *, float, float)
+void wxMediaPasteboard::OnInsert(wxSnip *, wxSnip *, double, double)
 {
 }
 
-void wxMediaPasteboard::AfterInsert(wxSnip *, wxSnip *, float, float)
+void wxMediaPasteboard::AfterInsert(wxSnip *, wxSnip *, double, double)
 {
 }
 
@@ -2840,29 +2840,29 @@ void wxMediaPasteboard::AfterDelete(wxSnip *)
 {
 }
 
-Bool wxMediaPasteboard::CanMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
+Bool wxMediaPasteboard::CanMoveTo(wxSnip *, double, double, Bool WXUNUSED(dragging))
 {
   return TRUE;
 }
 
-void wxMediaPasteboard::OnMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
+void wxMediaPasteboard::OnMoveTo(wxSnip *, double, double, Bool WXUNUSED(dragging))
 {
 }
 
-void wxMediaPasteboard::AfterMoveTo(wxSnip *, float, float, Bool WXUNUSED(dragging))
+void wxMediaPasteboard::AfterMoveTo(wxSnip *, double, double, Bool WXUNUSED(dragging))
 {
 }
 
-Bool wxMediaPasteboard::CanResize(wxSnip *, float, float)
+Bool wxMediaPasteboard::CanResize(wxSnip *, double, double)
 {
   return TRUE;
 }
 
-void wxMediaPasteboard::OnResize(wxSnip *, float, float)
+void wxMediaPasteboard::OnResize(wxSnip *, double, double)
 {
 }
 
-void wxMediaPasteboard::AfterResize(wxSnip *, float, float, Bool WXUNUSED(did))
+void wxMediaPasteboard::AfterResize(wxSnip *, double, double, Bool WXUNUSED(did))
 {
 }
 
@@ -2928,7 +2928,7 @@ void wxMediaPasteboard::AfterInteractiveResize(wxSnip *)
 
 /************************************************************************/
 
-extern void wxmeGetDefaultSize(float *w, float *h);
+extern void wxmeGetDefaultSize(double *w, double *h);
 
 void *wxMediaPasteboard::BeginPrint(wxDC *, Bool)
 {
@@ -2952,7 +2952,7 @@ void wxMediaPasteboard::EndPrint(wxDC *, void *)
 
 Bool wxMediaPasteboard::HasPrintPage(wxDC *dc, int p)
 {
-  float H, W, h, w;
+  double H, W, h, w;
   long hm, vm, hcount, vcount;
 
   CheckRecalc();
@@ -2980,7 +2980,7 @@ Bool wxMediaPasteboard::HasPrintPage(wxDC *dc, int p)
 
 void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
 {
-  float H, W, FH, FW, h, w;
+  double H, W, FH, FW, h, w;
   long hm, vm, hcount, vcount, hpos, vpos, startpage, endpage, p;
 
   CheckRecalc();
@@ -3013,7 +3013,7 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
   }
 
   for (p = startpage; p <= endpage; p++) {
-    float x, y;
+    double x, y;
 
     vpos = (p - 1) / hcount;
     hpos = (p - 1) % hcount;
@@ -3043,7 +3043,7 @@ wxSnipLocation::wxSnipLocation()
 
 void wxSnipLocation::Resize(wxDC *dc)
 {
-  float ww, hh;
+  double ww, hh;
 
   ww = hh = 0.0;
   snip->GetExtent(dc, x, y, &ww, &hh);

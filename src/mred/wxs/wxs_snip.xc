@@ -109,7 +109,7 @@
 @ "get-bitmap" : wxBitmap^ GetSnipBitmap();
 @ "get-bitmap-mask" : wxBitmap^ GetSnipBitmapMask();
 
-@ "set-offset" : void SetOffset(float, float);
+@ "set-offset" : void SetOffset(double, double);
 
 @END
 

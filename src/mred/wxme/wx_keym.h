@@ -48,7 +48,7 @@ class wxKeymap : public wxObject
   int lastButton;
   int clickCount;
   long lastTime;
-  float lastX, lastY;
+  double lastX, lastY;
 
   class wxKeycode *prefix;
 

@@ -2152,16 +2152,15 @@ sub PrintBundleVar
 	print "scheme_make_integer($var)";
     } elsif ($paramtype eq 'ExactLong') {
 	print "$wvs(scheme_make_integer_value($var))";
-    } elsif (($paramtype eq 'float') 
-	     || ($paramtype eq 'nnfloat')
-	     || ($paramtype eq 'double')
+    } elsif (($paramtype eq 'double') 
+	     || ($paramtype eq 'nndouble')
 	     || ($paramtype eq 'Double')
-	     || (substr($paramtype,0,6) eq 'rfloat')) {
+	     || (substr($paramtype,0,7) eq 'rdouble')) {
 	print "$wvs(scheme_make_double($var))";
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
 	$paramtype =~ /nnfs\[(.*)\]/;
 	$symname = $1;
-	print "$wvs(objscheme_bundle_nonnegative_symbol_float($var, \"$symname\"))";
+	print "$wvs(objscheme_bundle_nonnegative_symbol_double($var, \"$symname\"))";
     } elsif (($paramtype eq 'string') || ($paramtype eq 'cstring')
 	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')) {
 	print "$wvs(objscheme_bundle_string((char *)$var))";
@@ -2242,11 +2241,10 @@ sub ParamIsPointer
 	return 0;
     } elsif ($paramtype eq 'ExactLong') {
 	return 0;
-    } elsif (($paramtype eq 'float') 
-	     || ($paramtype eq 'nnfloat')
-	     || ($paramtype eq 'double')
+    } elsif (($paramtype eq 'double') 
+	     || ($paramtype eq 'nndouble')
 	     || ($paramtype eq 'Double')
-	     || (substr($paramtype,0,6) eq 'rfloat')) {
+	     || (substr($paramtype,0,7) eq 'rdouble')) {
 	return 0;
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
 	return 0;
@@ -2365,18 +2363,18 @@ sub PrintUnbundleVar
 	$paramtype =~ /nnls\[(.*)\]/;
 	$symname = $1;
 	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer($var, \"$symname\", $stop))";
-    } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
+    } elsif (($paramtype eq 'double')
 	     || ($paramtype eq 'Double')) {
-	print "WITH_VAR_STACK(objscheme_unbundle_float($var, $stop))";
-    } elsif (($paramtype eq 'nnfloat')) {
-	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_float($var, $stop))";
-    } elsif (substr($paramtype,0,6) eq 'rfloat') {
-	$paramtype =~ /rfloat\[([^|]*)\|(.*)\]/;
-	print "WITH_VAR_STACK(objscheme_unbundle_float_in($var, $1, $2, $stop))";
+	print "WITH_VAR_STACK(objscheme_unbundle_double($var, $stop))";
+    } elsif (($paramtype eq 'nndouble')) {
+	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_double($var, $stop))";
+    } elsif (substr($paramtype,0,7) eq 'rdouble') {
+	$paramtype =~ /rdouble\[([^|]*)\|(.*)\]/;
+	print "WITH_VAR_STACK(objscheme_unbundle_double_in($var, $1, $2, $stop))";
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
 	$paramtype =~ /nnfs\[(.*)\]/;
 	$symname = $1;
-	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float($var, \"$symname\", $stop))";
+	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_double($var, \"$symname\", $stop))";
     } elsif ($paramtype eq 'string' || $paramtype eq 'cstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_string(${var}, $stop))";
     } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring') {
@@ -2480,12 +2478,12 @@ sub NormalType {
 	$paramtype = 'ExactLong';
     } elsif ($paramtype eq 'Double') {
 	$paramtype = 'double';
-    } elsif (substr($paramtype,0,6) eq 'rfloat') {
-	$paramtype = 'float';
+    } elsif (substr($paramtype,0,7) eq 'rdouble') {
+	$paramtype = 'double';
     } elsif (substr($paramtype, 0, 4) eq 'nnls') {
 	$paramtype = 'long';
     } elsif (substr($paramtype, 0, 4) eq 'nnfs') {
-	$paramtype = 'float';
+	$paramtype = 'double';
     } elsif (substr($paramtype, 0, 3) eq 'SYM') {
 	$paramtype = 'int';
     }
@@ -2738,10 +2736,9 @@ sub PrintTypecheck
 	     || ($paramtype eq 'nnint') || ($paramtype eq 'nnlong') 
 	     || ($paramtype eq 'byte') || ($paramtype eq 'ubyte')
 	     || ($paramtype eq 'short') || ($paramtype eq 'long')
-	     || ($paramtype eq 'float') || ($paramtype eq 'nnfloat') 
-	     || ($paramtype eq 'double')
+	     || ($paramtype eq 'double') || ($paramtype eq 'nndouble') 
 	     || (substr($paramtype,0,4) eq 'rint')
-	     || (substr($paramtype,0,6) eq 'rfloat')) {
+	     || (substr($paramtype,0,7) eq 'rdouble')) {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_number($var, $stop))";
     } elsif (substr($paramtype,0,4) eq 'nnls') {
 	$paramtype =~ /nnls\[(.*)\]/;
@@ -2750,13 +2747,13 @@ sub PrintTypecheck
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
 	$paramtype =~ /nnfs\[(.*)\]/;
 	$symname = $1;
-	print "WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_float($var, \"$symname\", $stop))";
+	print "WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_double($var, \"$symname\", $stop))";
     } elsif (($paramtype eq 'ExactLong')) {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_ExactLong($var, $stop))";
     } elsif (($paramtype eq 'Long')) {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_integer($var, $stop))";
     } elsif (($paramtype eq 'Double')) {
-	print "WITH_REMEMBERED_STACK(objscheme_istype_float($var, $stop))";
+	print "WITH_REMEMBERED_STACK(objscheme_istype_double($var, $stop))";
     } elsif ($paramtype eq 'string' || $paramtype eq 'cstring') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_string($var, $stop))";
     } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring') {

@@ -69,17 +69,17 @@ static Scheme_Object *os_wxMultColourSet(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMultColour_class, "set in mult-color<%>", n, p);
-  float x0;
-  float x1;
-  float x2;
+  double x0;
+  double x1;
+  double x2;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set in mult-color<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set in mult-color<%>"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "set in mult-color<%>"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "set in mult-color<%>"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "set in mult-color<%>"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "set in mult-color<%>"));
 
   
   WITH_VAR_STACK(((wxMultColour *)((Scheme_Class_Object *)p[0])->primdata)->Set(x0, x1, x2));
@@ -95,21 +95,21 @@ static Scheme_Object *os_wxMultColourGet(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMultColour_class, "get in mult-color<%>", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
+  double _x2;
+  double* x2 = &_x2;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
-      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "get in mult-color<%>")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get in mult-color<%>"", extracting boxed argument")));
 
   
   WITH_VAR_STACK(((wxMultColour *)((Scheme_Class_Object *)p[0])->primdata)->Get(x0, x1, x2));
@@ -129,7 +129,7 @@ static Scheme_Object *os_wxMultColourGet(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Getr(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-r in mult-color%", n, p);
@@ -146,14 +146,14 @@ static Scheme_Object *objscheme_wxMultColour_Getr(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Setr(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-r in mult-color%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-r in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-r in mult-color%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-r in mult-color%"));
   ((wxMultColour *)cobj->primdata)->r = v;
 
   READY_TO_RETURN;
@@ -163,7 +163,7 @@ static Scheme_Object *objscheme_wxMultColour_Setr(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Getg(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-g in mult-color%", n, p);
@@ -180,14 +180,14 @@ static Scheme_Object *objscheme_wxMultColour_Getg(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Setg(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-g in mult-color%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-g in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-g in mult-color%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-g in mult-color%"));
   ((wxMultColour *)cobj->primdata)->g = v;
 
   READY_TO_RETURN;
@@ -197,7 +197,7 @@ static Scheme_Object *objscheme_wxMultColour_Setg(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Getb(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-b in mult-color%", n, p);
@@ -214,14 +214,14 @@ static Scheme_Object *objscheme_wxMultColour_Getb(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMultColour_Setb(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-b in mult-color%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-b in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-b in mult-color%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-b in mult-color%"));
   ((wxMultColour *)cobj->primdata)->b = v;
 
   READY_TO_RETURN;
@@ -1655,7 +1655,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setface(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxStyleDelta_GetsizeMult(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  double v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-size-mult in style-delta%", n, p);
@@ -1672,14 +1672,14 @@ static Scheme_Object *objscheme_wxStyleDelta_GetsizeMult(int n,  Scheme_Object *
 static Scheme_Object *objscheme_wxStyleDelta_SetsizeMult(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  double v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-size-mult in style-delta%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-size-mult in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-size-mult in style-delta%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET], "set-size-mult in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->sizeMult = v;
 
   READY_TO_RETURN;
@@ -2829,7 +2829,7 @@ static Scheme_Object *os_wxStyleGetTextWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxStyle_class, "get-text-width in style<%>", n, p);
   class wxDC* x0 INIT_NULLED_OUT;
 
@@ -2853,7 +2853,7 @@ static Scheme_Object *os_wxStyleGetTextSpace(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxStyle_class, "get-text-space in style<%>", n, p);
   class wxDC* x0 INIT_NULLED_OUT;
 
@@ -2877,7 +2877,7 @@ static Scheme_Object *os_wxStyleGetTextDescent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxStyle_class, "get-text-descent in style<%>", n, p);
   class wxDC* x0 INIT_NULLED_OUT;
 
@@ -2901,7 +2901,7 @@ static Scheme_Object *os_wxStyleGetTextHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float r;
+  double r;
   objscheme_check_valid(os_wxStyle_class, "get-text-height in style<%>", n, p);
   class wxDC* x0 INIT_NULLED_OUT;
 

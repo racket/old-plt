@@ -130,8 +130,8 @@ class wxMediaEdit : public wxMediaBuffer
   friend class wxMediaLine;
   friend class wxMediaSnipMediaAdmin;
  public:
-  wxMediaEdit(float lineSpacing = 1.0, 
-	      float *tabstops = NULL, int numtabs = 0);
+  wxMediaEdit(double lineSpacing = 1.0, 
+	      double *tabstops = NULL, int numtabs = 0);
   ~wxMediaEdit();
 
   wxMediaBuffer *CopySelf(void);
@@ -141,7 +141,7 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void OnEvent(wxMouseEvent *event);
   virtual void OnChar(wxKeyEvent *event);
   virtual wxCursor *AdjustCursor(wxMouseEvent *event);
-  virtual void Refresh(float localx, float localy, float w, float h, 
+  virtual void Refresh(double localx, double localy, double w, double h, 
 		       int show_caret, wxColor *bgColor);
   virtual void OwnCaret(Bool ownit);
   virtual void BlinkCaret();
@@ -151,12 +151,12 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void OnDefaultChar(wxKeyEvent *event);
 
   /* Callbacks for the wxSnipAdmin: */
-  virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
-			float w, float h, Bool refresh, int bias = 0);
+  virtual Bool ScrollTo(wxSnip *, double localx, double localy, 
+			double w, double h, Bool refresh, int bias = 0);
   virtual void Resized(wxSnip *, Bool redraw_now);
   virtual Bool Recounted(wxSnip *, Bool redraw_now);
-  virtual void NeedsUpdate(wxSnip *, float localx, float localy, 
-			   float w, float h);
+  virtual void NeedsUpdate(wxSnip *, double localx, double localy, 
+			   double w, double h);
   virtual void SetCaretOwner(wxSnip *, int = wxFOCUS_IMMEDIATE);
   virtual Bool ReleaseSnip(wxSnip *);
 
@@ -254,21 +254,21 @@ class wxMediaEdit : public wxMediaBuffer
   Bool ReallyCanEdit(int op);
 
   /* Convert canvas co-ordinates to caret position */
-  long FindPosition(float x, float y, Bool 
+  long FindPosition(double x, double y, Bool 
 		    *ateol = NULL, Bool *onit = NULL,
-		    float *how_close = NULL);
-  long FindLine(float y, Bool *onit = NULL);
-  long FindPositionInLine(long i, float x, 
+		    double *how_close = NULL);
+  long FindLine(double y, Bool *onit = NULL);
+  long FindPositionInLine(long i, double x, 
 			  Bool *ateol = NULL, Bool *onit =NULL,
-			  float *how_close = NULL);
+			  double *how_close = NULL);
 
   /* Find the line or canvas co-ordinates for a caret position */
   long PositionLine(long start, Bool eol=FALSE);
   void PositionLocation(long start, 
-			float *x = NULL, float *y = NULL, 
+			double *x = NULL, double *y = NULL, 
 			Bool front = TRUE, Bool eol = FALSE,
 			Bool wholeLine = FALSE);
-  float LineLocation(long line, Bool top = TRUE);
+  double LineLocation(long line, Bool top = TRUE);
 
   /* Get first/last caret position in a line: */
   long LineStartPosition(long i, Bool visibleOnly = TRUE);
@@ -287,17 +287,17 @@ class wxMediaEdit : public wxMediaBuffer
   long LastLine(void);
   long LastParagraph(void);
   
-  void SetParagraghMargins(long i, float firstLeft, float left, float right);
+  void SetParagraghMargins(long i, double firstLeft, double left, double right);
   void SetParagraghAlignment(long i, int align);
 
-  void GetExtent(float *w, float *h);
-  float GetDescent(void);
-  float GetSpace(void);
-  float GetTopLineBase(void);
+  void GetExtent(double *w, double *h);
+  double GetDescent(void);
+  double GetSpace(void);
+  double GetTopLineBase(void);
 
-  float ScrollLineLocation(long line);
+  double ScrollLineLocation(long line);
   long NumScrollLines();
-  long FindScrollLine(float y);
+  long FindScrollLine(double y);
 
   /* Searching */
   long FindString(wxchar *str, int direction = 1, long start =-1, long end =-1,
@@ -324,8 +324,8 @@ class wxMediaEdit : public wxMediaBuffer
   wxSnip *FindNextNonTextSnip(wxSnip *snip);
   wxSnip *FindSnip(long p, int direction, long *sPos = NULL);
   Bool GetSnipPositionAndLocation(wxSnip *thesnip, long *pos, 
-				  float *x = NULL, float *y = NULL);
-  Bool GetSnipLocation(wxSnip *thesnip, float *x = NULL, float *y = NULL,
+				  double *x = NULL, double *y = NULL);
+  Bool GetSnipLocation(wxSnip *thesnip, double *x = NULL, double *y = NULL,
 		       Bool bottomRight=FALSE);
   long GetSnipPosition(wxSnip *thesnip);
 
@@ -353,10 +353,10 @@ class wxMediaEdit : public wxMediaBuffer
 
   void SplitSnip(long pos);
 
-  float *GetTabs(int *length = NULL, 
-		 float *tabInc = NULL, Bool *inUnits = NULL);
-  void SetTabs(float *tabs, int count, 
-	       float tabIncrement = wxTAB_WIDTH, Bool inUnits = TRUE);
+  double *GetTabs(int *length = NULL, 
+		 double *tabInc = NULL, Bool *inUnits = NULL);
+  void SetTabs(double *tabs, int count, 
+	       double tabIncrement = wxTAB_WIDTH, Bool inUnits = TRUE);
 
   void AddEditorFunctions(wxKeymap *keymap);
 
@@ -371,17 +371,17 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void EndPrint(wxDC *, void *);
   virtual Bool HasPrintPage(wxDC *dc, int page);
 
-  void SetMaxWidth(float w);
-  void SetMinWidth(float w);
-  float GetMaxWidth();
-  float GetMinWidth();
-  void SetMinHeight(float h);
-  void SetMaxHeight(float w);
-  float GetMinHeight();
-  float GetMaxHeight();
+  void SetMaxWidth(double w);
+  void SetMinWidth(double w);
+  double GetMaxWidth();
+  double GetMinWidth();
+  void SetMinHeight(double h);
+  void SetMaxHeight(double w);
+  double GetMinHeight();
+  double GetMaxHeight();
 
-  virtual void InvalidateBitmapCache(float x=0.0, float y=0.0,
-				     float w=-1.0, float h=-1.0);
+  virtual void InvalidateBitmapCache(double x=0.0, double y=0.0,
+				     double w=-1.0, double h=-1.0);
 
   /* You might need to call this if you're doing text changes within
      BeginEditSequence() and EndEditSequence(). Hopefully, it will
@@ -404,14 +404,14 @@ class wxMediaEdit : public wxMediaBuffer
   void HideCaret(Bool hide);
   Bool CaretHidden(void);
 
-  float GetBetweenThreshold();
-  void SetBetweenThreshold(float thresh);
+  double GetBetweenThreshold();
+  void SetBetweenThreshold(double thresh);
 
   inline Bool GetOverwriteMode(void) { return overwriteMode; }
   inline void SetOverwriteMode(Bool m) { overwriteMode = !!m; }
 
-  inline float GetLineSpacing() { return lineSpacing; }
-  void SetLineSpacing(float);
+  inline double GetLineSpacing() { return lineSpacing; }
+  void SetLineSpacing(double);
 
   inline Bool GetStickyStyles() { return stickyStyles; }
   inline void SetStickyStyles(Bool s) { stickyStyles = s; if (s) caretStyle = NULL; }
@@ -501,9 +501,9 @@ class wxMediaEdit : public wxMediaBuffer
   int lastDrawCaret;
   int lastDrawXSel;
 
-  float lineSpacing;
-  float maxWidth, minWidth, minHeight, maxHeight;
-  float wrapBitmapWidth;
+  double lineSpacing;
+  double maxWidth, minWidth, minHeight, maxHeight;
+  double wrapBitmapWidth;
 
   wxBitmap *autoWrapBitmap;
 
@@ -513,7 +513,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   long startpos, endpos;
   long extendstartpos, extendendpos; /* for extendstreak */
-  float vcursorloc; /* for vcursorStreak */
+  double vcursorloc; /* for vcursorStreak */
 
   wxMediaFlashTimer *flashTimer;
   long flashstartpos, flashendpos;
@@ -526,12 +526,12 @@ class wxMediaEdit : public wxMediaBuffer
   wxMediaLine *lineRoot, *firstLine, *lastLine; /* Line information */
   long numValidLines;
 
-  float extraLineH;
+  double extraLineH;
 
-  float totalHeight, totalWidth; /* Total height/width in canvas units */
-  float finalDescent; /* Descent of last line */
-  float initialSpace; /* Space from first line */
-  float initialLineBase; /* Inverse descent from first line */
+  double totalHeight, totalWidth; /* Total height/width in canvas units */
+  double finalDescent; /* Descent of last line */
+  double initialSpace; /* Space from first line */
+  double initialLineBase; /* Inverse descent from first line */
 
   wxStyle *caretStyle;
 
@@ -540,26 +540,26 @@ class wxMediaEdit : public wxMediaBuffer
   wxClickback *trackClickback;
 
   long refreshStart, refreshEnd;
-  float refreshL, refreshT, refreshR, refreshB;
+  double refreshL, refreshT, refreshR, refreshB;
 
-  float lastDrawL, lastDrawT, lastDrawR, lastDrawB;
+  double lastDrawL, lastDrawT, lastDrawR, lastDrawB;
 
-  float caretLocationX, caretLocationT, caretLocationB;
+  double caretLocationX, caretLocationT, caretLocationB;
 
   long delayedscroll, delayedscrollend;
   int delayedscrollbias;
   wxSnip *delayedscrollsnip;
-  float delayedscrollX, delayedscrollY, delayedscrollW, delayedscrollH;
+  double delayedscrollX, delayedscrollY, delayedscrollW, delayedscrollH;
 
   wxList *clickbacks;
 
   int fileFormat;
 
-  float betweenThreshold;
+  double betweenThreshold;
 
-  float *tabs;
+  double *tabs;
   int tabcount;
-  float tabSpace;
+  double tabSpace;
   
   long readInsert, readInsertStart;
 
@@ -594,7 +594,7 @@ class wxMediaEdit : public wxMediaBuffer
   void CheckMergeSnips(long start);
 
   void AdjustClickbacks(long start, long end, long d, wxDeleteRecord *rec);
-  wxClickback *FindClickback(long start, float y);
+  wxClickback *FindClickback(long start, double y);
   void SetClickbackHilited(wxClickback *, Bool);
 
   Bool ScrollToPosition(long start, Bool ateol, Bool refresh, long end,
@@ -607,11 +607,11 @@ class wxMediaEdit : public wxMediaBuffer
   long _FindPositionLine(long pos);
   void _CalcValidPositionLine(void);
 
-  long _FindPositionInLine(Bool internal, long i, float x, 
+  long _FindPositionInLine(Bool internal, long i, double x, 
 			   Bool *ateol = NULL, Bool *onit =NULL,
-			   float *how_close = NULL);
-  long _FindPositionInSnip(wxDC *dc, float X, float Y,
-			   wxSnip *snip, float x, float *how_close = NULL);
+			   double *how_close = NULL);
+  long _FindPositionInSnip(wxDC *dc, double X, double Y,
+			   wxSnip *snip, double x, double *how_close = NULL);
 
   void LinesInvalidAfter(long);
   void OneLineInvalid(long);
@@ -624,15 +624,15 @@ class wxMediaEdit : public wxMediaBuffer
   Bool InsertFile(const char *who, Scheme_Object *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
 
   void RecalcLines(wxDC *dc, Bool calcGraphic = TRUE);
-  Bool CheckFlow(float maxw, wxDC *dc, float Y, long startp, wxSnip *start);
+  Bool CheckFlow(double maxw, wxDC *dc, double Y, long startp, wxSnip *start);
   Bool CheckRecalc(Bool need_graphic = TRUE, Bool need_write = TRUE, Bool no_display_ok = FALSE);
-  void Redraw(wxDC *, float, float, float, float, float, float, int, int, wxColour*);
+  void Redraw(wxDC *, double, double, double, double, double, double, int, int, wxColour*);
   void Redraw();
 
   void NeedRefresh(long start, long end = -1);
-  void NeedRefresh(float, float, float, float);
+  void NeedRefresh(double, double, double, double);
   void RefreshByLineDemand(void);
-  void RefreshBox(float x, float y, float w, float h);
+  void RefreshBox(double x, double y, double w, double h);
 
   void NeedCaretRefresh(void);
   void CaretOn(void);
@@ -666,7 +666,7 @@ extern wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
 				     Bool border,
 				     int lm, int tm, int rm, int bm,
 				     int li, int ti, int ri, int bi,
-				     float w, float W, float h, float H);
+				     double w, double W, double h, double H);
 extern wxMediaEdit *wxsMakeMediaEdit();
 extern wxMediaPasteboard *wxsMakeMediaPasteboard();
 

@@ -56,7 +56,7 @@ wxPen::wxPen(void)
     locked = 0;
 }
 
-wxPen::wxPen(wxColour *col, float Width, int Style)
+wxPen::wxPen(wxColour *col, double Width, int Style)
 {
     wxColour *c;
 
@@ -75,7 +75,7 @@ wxPen::wxPen(wxColour *col, float Width, int Style)
     locked = 0;
 }
 
-wxPen::wxPen(const char *col, float Width, int Style)
+wxPen::wxPen(const char *col, double Width, int Style)
 {
     wxColour *c;
 
@@ -198,7 +198,7 @@ void wxPenList::AddPen(wxPen *Pen)
   list->Show(Pen, -1); /* so it can be collected */
 } 
 
-wxPen *wxPenList::FindOrCreatePen(wxColour *colour, float w, int style)
+wxPen *wxPenList::FindOrCreatePen(wxColour *colour, double w, int style)
 {
   wxPen *pen;
   wxChildNode *node;
@@ -228,7 +228,7 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, float w, int style)
   return pen;
 }
 
-wxPen *wxPenList::FindOrCreatePen(char *colour, float width, int style)
+wxPen *wxPenList::FindOrCreatePen(char *colour, double width, int style)
 {
   wxColour *the_colour;
   the_colour = wxTheColourDatabase->FindColour(colour);

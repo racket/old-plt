@@ -310,7 +310,7 @@ wxDC *wxMediaBuffer::GetDC()
     return NULL;
 }
 
-void wxMediaBuffer::GetViewSize(float *w, float *h)
+void wxMediaBuffer::GetViewSize(double *w, double *h)
 {
   if (admin)
     admin->GetView(NULL, NULL, w, h);
@@ -382,9 +382,9 @@ Bool wxMediaBuffer::DoSetCaretOwner(wxSnip *snip, int dist)
   return refresh;
 }
 
-static void ConvertCoords(wxMediaAdmin *admin, float *x, float *y, int toLocal)
+static void ConvertCoords(wxMediaAdmin *admin, double *x, double *y, int toLocal)
 {
-  float lx = 0, ly = 0;
+  double lx = 0, ly = 0;
 
   if (admin) {
     if (admin->__type == wxTYPE_MEDIA_SNIP_MEDIA_ADMIN) {
@@ -398,7 +398,7 @@ static void ConvertCoords(wxMediaAdmin *admin, float *x, float *y, int toLocal)
 	wxMediaBuffer *mbuf;
 	mbuf = sa->GetMedia();
 	if (mbuf) {
-	  float bx = 0, by = 0;
+	  double bx = 0, by = 0;
 	  int l, t, r, b;
 	  
 	  mbuf->LocalToGlobal(&bx, &by);
@@ -431,12 +431,12 @@ static void ConvertCoords(wxMediaAdmin *admin, float *x, float *y, int toLocal)
   }
 }
 
-void wxMediaBuffer::GlobalToLocal(float *x, float *y)
+void wxMediaBuffer::GlobalToLocal(double *x, double *y)
 {
   ConvertCoords(admin, x, y, 1);
 }
 
-void wxMediaBuffer::LocalToGlobal(float *x, float *y)
+void wxMediaBuffer::LocalToGlobal(double *x, double *y)
 {
   ConvertCoords(admin, x, y, 0);
 }
@@ -459,7 +459,7 @@ void wxMediaBuffer::SetCursor(wxCursor *c, Bool override)
 
 #define REDICULOUS_SIZE 2000
 
-Bool wxMediaBuffer::ReadyOffscreen(float width, float height)
+Bool wxMediaBuffer::ReadyOffscreen(double width, double height)
 {
   if ((width > REDICULOUS_SIZE)
       || (height > REDICULOUS_SIZE))
@@ -1995,7 +1995,7 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   m->SizeCacheInvalid();
 
   {
-    float mw, mh;
+    double mw, mh;
     mw = GetMinWidth();
     m->SetMinWidth(mw);
     mw = GetMaxWidth();
@@ -2338,9 +2338,9 @@ void wxMediaBuffer::SetInactiveCaretThreshold(int v)
 
 void wxMediaBuffer::OnPaint(Bool WXUNUSED(pre),
 			    wxDC *WXUNUSED(dc), 
-			    float WXUNUSED(l), float WXUNUSED(t), 
-			    float WXUNUSED(r), float WXUNUSED(b), 
-			    float WXUNUSED(dx), float WXUNUSED(dy),
+			    double WXUNUSED(l), double WXUNUSED(t), 
+			    double WXUNUSED(r), double WXUNUSED(b), 
+			    double WXUNUSED(dx), double WXUNUSED(dy),
 			    int WXUNUSED(show_caret))
 {
   /* Do nothing */
@@ -2544,26 +2544,26 @@ wxDC *wxStandardSnipAdmin::GetDC()
   return media->GetDC();
 }
 
-void wxStandardSnipAdmin::GetViewSize(float *w, float *h)
+void wxStandardSnipAdmin::GetViewSize(double *w, double *h)
 {
   GetView(NULL, NULL, w, h, NULL);
 }
 
-void wxStandardSnipAdmin::GetView(float *x, float *y, float *w, float *h, wxSnip *snip)
+void wxStandardSnipAdmin::GetView(double *x, double *y, double *w, double *h, wxSnip *snip)
 {
   wxMediaAdmin *admin;
   admin = media->GetAdmin();
     
   if (snip) {
     if (admin) {
-      float mx, my, mh, mw, mr, mb, sl, st, sr, sb;
+      double mx, my, mh, mw, mr, mb, sl, st, sr, sb;
 
       admin->GetView(&mx, &my, &mw, &mh, FALSE);
 
       mb = my + mh;
       mr = mx + mw;
       if (media->GetSnipLocation(snip, &sl, &st, FALSE)) {
-	float l, t, r, b;
+	double l, t, r, b;
 
 	media->GetSnipLocation(snip, &sr, &sb, TRUE);
 	
@@ -2597,8 +2597,8 @@ void wxStandardSnipAdmin::GetView(float *x, float *y, float *w, float *h, wxSnip
   if (h) *h = 0;
 }
 
-Bool wxStandardSnipAdmin::ScrollTo(wxSnip *s, float localx, float localy, 
-				   float w, float h, Bool refresh, int bias)
+Bool wxStandardSnipAdmin::ScrollTo(wxSnip *s, double localx, double localy, 
+				   double w, double h, Bool refresh, int bias)
 {
   if (s->GetAdmin() == this)
     return media->ScrollTo(s, localx, localy, w, h, refresh, bias);
@@ -2626,8 +2626,8 @@ Bool wxStandardSnipAdmin::Recounted(wxSnip *s, Bool redraw_now)
     return FALSE;
 }
 
-void wxStandardSnipAdmin::NeedsUpdate(wxSnip *s, float localx, float localy, 
-				      float w, float h)
+void wxStandardSnipAdmin::NeedsUpdate(wxSnip *s, double localx, double localy, 
+				      double w, double h)
 {
   if (s->GetAdmin() == this)
     media->NeedsUpdate(s, localx, localy, w, h);
@@ -2647,10 +2647,10 @@ void wxStandardSnipAdmin::UpdateCursor()
     media->admin->UpdateCursor();
 }
 
-Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, float x, float y)
+Bool wxStandardSnipAdmin::PopupMenu(void *m, wxSnip *snip, double x, double y)
 {
   if (media->admin) {
-    float sl, st;
+    double sl, st;
     if (media->GetSnipLocation(snip, &sl, &st, FALSE)) {
       media->admin->PopupMenu(m, x + sl, y + st);
     }

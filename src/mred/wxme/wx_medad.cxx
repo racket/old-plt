@@ -63,7 +63,7 @@ class SimpleScroll
   void Paint(int x, int y, int w, int h);
 
   void IntDrawLine(int x1, int y1, int x2, int y2);
-  void DrawRectangle(float x, float y, float w, float h);
+  void DrawRectangle(double x, double y, double w, double h);
 
   void Click(int x);
   int trackState;
@@ -735,7 +735,7 @@ void wxMediaCanvas::OnPaint(void)
 
   if (media) {
     if (!media->printing) {
-      float w, h, x, y;
+      double w, h, x, y;
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
       PaintScrolls();
 #endif
@@ -826,7 +826,7 @@ void wxMediaCanvas::NoCustomCursor(void)
   }
 }
 
-wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
+wxDC *wxMediaCanvas::GetDCAndOffset(double *fx, double *fy)
 {
   int x, y;
 
@@ -846,7 +846,7 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
 	if (h < 0)
 	  h = 0;
 	{
-	  float v;
+	  double v;
 	  v = media->ScrollLineLocation(y + scrollOffset) - ymargin;
 	  *fy = v;
 	}
@@ -860,7 +860,7 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
   return GetDC();
 }
 
-void wxMediaCanvas::GetView(float *fx, float *fy, float *fw, float *fh, 
+void wxMediaCanvas::GetView(double *fx, double *fy, double *fw, double *fh, 
 			    Bool WXUNUSED(full))
 {
   int h, w;
@@ -904,9 +904,9 @@ void wxMediaCanvas::GetView(float *fx, float *fy, float *fw, float *fh,
   }
 }
 
-void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
+void wxMediaCanvas::Redraw(double localx, double localy, double fw, double fh)
 {
-  float x, y, w, h, right, bottom;
+  double x, y, w, h, right, bottom;
 
   if (!media || media->printing)
     return;
@@ -969,13 +969,13 @@ void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
   }
 }
 
-Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
+Bool wxMediaCanvas::ScrollTo(double localx, double localy, double fw, double fh,
 			     Bool refresh, int bias)
 {
   int cy, cx, sy, sx;
-  float iw, ih;
-  float x, y;
-  float find_dy;
+  double iw, ih;
+  double x, y;
+  double find_dy;
 
   if (!media || media->printing || (!allowXScroll && !allowYScroll))
     return FALSE;
@@ -1060,10 +1060,10 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
 Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 {
   int x, y, sx, sy, lw, lh;
-  float w, h;
+  double w, h;
   int hnumScrolls, vnumScrolls, hspp, vspp;
   long tw;
-  float totalHeight, totalWidth;
+  double totalHeight, totalWidth;
   Bool retval = FALSE;
 
   if (givenHScrollsPerPage < 0) {
@@ -1118,7 +1118,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       if (vnumScrolls > 0) {
 	int numLines;
 	numLines = media->NumScrollLines() - 1;
-	vspp = (long)(((float)h * numLines) / totalHeight) - 1;
+	vspp = (long)(((double)h * numLines) / totalHeight) - 1;
 	if (vspp < 1)
 	  vspp = 1;
       } else {
@@ -1453,7 +1453,7 @@ wxCanvasMediaAdmin::~wxCanvasMediaAdmin()
   canvas = NULL;
 }
 
-wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)
+wxDC *wxCanvasMediaAdmin::GetDC(double *fx, double *fy)
 {
   if (!canvas) {
     if (!wx_canvasless_offscreen) {
@@ -1475,7 +1475,7 @@ wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)
     return canvas->GetDCAndOffset(fx, fy);
 }
 
-void wxCanvasMediaAdmin::GetView(float *fx, float *fy, float *fh, float *fw, 
+void wxCanvasMediaAdmin::GetView(double *fx, double *fy, double *fh, double *fw, 
 				 Bool full)
 {
   if (!canvas) {
@@ -1500,14 +1500,14 @@ void wxCanvasMediaAdmin::GetView(float *fx, float *fy, float *fh, float *fw,
     canvas->GetView(fx, fy, fh, fw, full);
 }
 
-void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh, 
+void wxCanvasMediaAdmin::GetMaxView(double *fx, double *fy, double *fw, double *fh, 
 				    Bool full)
 {
   if ((!nextadmin && !prevadmin) || !canvas || (canvas->media && canvas->media->printing)) {
     GetView(fx, fy, fw, fh, full);
   } else {
     wxCanvasMediaAdmin *a;
-    float cx, x, cy, y, cw, w, ch, h, cr, r, cb, b;
+    double cx, x, cy, y, cw, w, ch, h, cr, r, cb, b;
 
     a = this;
     while (a->prevadmin) {
@@ -1545,8 +1545,8 @@ void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh,
   }
 }
 
-Bool wxCanvasMediaAdmin::ScrollTo(float localx, float localy,
-				  float w, float h, Bool refresh, int bias)
+Bool wxCanvasMediaAdmin::ScrollTo(double localx, double localy,
+				  double w, double h, Bool refresh, int bias)
 {
   if (!canvas)
     return FALSE;
@@ -1575,8 +1575,8 @@ void wxCanvasMediaAdmin::GrabCaret(int dist)
   }
 }
 
-void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy, 
-				     float w, float h)
+void wxCanvasMediaAdmin::NeedsUpdate(double localx, double localy, 
+				     double w, double h)
 {
   int is_shown;
   wxWindow *win;
@@ -1652,9 +1652,9 @@ void wxCanvasMediaAdmin::UpdateCursor()
   }
 }
 
-Bool wxCanvasMediaAdmin::PopupMenu(void *m, float x, float y)
+Bool wxCanvasMediaAdmin::PopupMenu(void *m, double x, double y)
 {
-  float dx, dy;
+  double dx, dy;
   wxMenu *menu;
 
   if (canvas && canvas->media) {
@@ -1685,7 +1685,7 @@ void wxCanvasMediaAdmin::Modified(Bool modified)
   /* nothing to do */
 }
 
-void wxMediaAdmin::GetMaxView(float *fx, float *fy, float *fh, float *fw, 
+void wxMediaAdmin::GetMaxView(double *fx, double *fy, double *fh, double *fw, 
 			      Bool full)
 {
   GetView(fx, fy, fh, fw, full);
@@ -1777,7 +1777,7 @@ void SimpleScroll::IntDrawLine(int x1, int y1, int x2, int y2)
     canvas->IntDrawLine(wherex + y1, wherey + x1, wherex + y2, wherey + x2);
 }
 
-void SimpleScroll::DrawRectangle(float x, float y, float w, float h)
+void SimpleScroll::DrawRectangle(double x, double y, double w, double h)
 {
   if (horizontal)
     canvas->DrawRectangle(wherex + x, wherey + y, w, h);
@@ -1818,10 +1818,10 @@ void SimpleScroll::Paint(int x, int y, int w, int h)
       thumb_w = bar_w;
       thumb_x = arrow_w;
     } else {
-      thumb_w = (long)(((float)pageStep * bar_w) / (count + pageStep));
+      thumb_w = (long)(((double)pageStep * bar_w) / (count + pageStep));
       if ((thumb_w < MIN_THUMB_WIDTH) && (bar_w > MIN_THUMB_WIDTH))
 	thumb_w = MIN_THUMB_WIDTH;
-      thumb_x = arrow_w + (long)(((float)value * (bar_w - thumb_w - 1)) / count);
+      thumb_x = arrow_w + (long)(((double)value * (bar_w - thumb_w - 1)) / count);
     }
   }
 
@@ -1895,7 +1895,7 @@ void SimpleScroll::Click(int x)
       x = 0;
     if (x > w)
       x = w;
-    SetValue((int)(((float)(x * count) / w) + 0.5));
+    SetValue((int)(((double)(x * count) / w) + 0.5));
   }
 
   if (value != oldvalue)

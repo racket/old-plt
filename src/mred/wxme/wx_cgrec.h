@@ -84,7 +84,7 @@ class wxDeleteSnipRecord : public wxChangeRecord
   wxDeleteSnipRecord(Bool cont);
   ~wxDeleteSnipRecord();
 
-  void InsertSnip(wxSnip *, wxSnip *, float, float);
+  void InsertSnip(wxSnip *, wxSnip *, double, double);
 
   Bool Undo(wxMediaBuffer *media);
 };
@@ -124,10 +124,10 @@ class wxMoveSnipRecord : public wxChangeRecord
  private:
   Bool continued;
   wxSnip *snip;
-  float x, y;
+  double x, y;
   Bool delta;
  public:
-  wxMoveSnipRecord(wxSnip *snip, float x, float y, Bool delta, Bool cont);
+  wxMoveSnipRecord(wxSnip *snip, double x, double y, Bool delta, Bool cont);
   Bool Undo(wxMediaBuffer *media);
 };
 
@@ -136,9 +136,9 @@ class wxResizeSnipRecord : public wxChangeRecord
  private:
   Bool continued;
   wxSnip *snip;
-  float x, y;
+  double x, y;
  public:
-  wxResizeSnipRecord(wxSnip *snip, float x, float y, Bool cont);
+  wxResizeSnipRecord(wxSnip *snip, double x, double y, Bool cont);
   Bool Undo(wxMediaBuffer *media);
 };
 

@@ -43,8 +43,8 @@ class wxGL;
 class wxPoint : public wxObject {
 public:
   inline wxPoint(void);
-  inline wxPoint(float a, float b);
-  float x, y;
+  inline wxPoint(double a, double b);
+  double x, y;
 };
 
 inline wxPoint::wxPoint(void) 
@@ -53,7 +53,7 @@ inline wxPoint::wxPoint(void)
   x = y = 0.0;
 }
 
-inline wxPoint::wxPoint(float a, float b) 
+inline wxPoint::wxPoint(double a, double b) 
 : wxObject(WXGC_NO_CLEANUP)
 {
   x = a;
@@ -97,37 +97,37 @@ public:
     wxDC(void);
 
     // pure virtual methods, must be implemented for all DCs
-    virtual Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL) = 0;
+    virtual Bool  Blit(double xdest, double ydest, double w, double h, wxBitmap *src,
+		       double xsrc, double ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL) = 0;
     virtual Bool  CanGetTextExtent(void) = 0;
     virtual Bool  CanDrawBitmap(void) = 0;
     virtual void  Clear(void) = 0;
-    virtual void  CrossHair(float x, float y) = 0;
-    virtual void  DrawArc(float x, float y, float w, float h, float start, float end) = 0;
-    virtual void  DrawEllipse(float x, float y, float w, float h) = 0;
-    virtual void  DrawLine(float x1, float y1, float x2, float y2) = 0;
+    virtual void  CrossHair(double x, double y) = 0;
+    virtual void  DrawArc(double x, double y, double w, double h, double start, double end) = 0;
+    virtual void  DrawEllipse(double x, double y, double w, double h) = 0;
+    virtual void  DrawLine(double x1, double y1, double x2, double y2) = 0;
     virtual void  DrawLines(int n, wxPoint pts[],
-			    float xoff=0, float yoff=0) = 0;
+			    double xoff=0, double yoff=0) = 0;
     virtual void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0)=0;
-    virtual void  DrawLines(wxList *pts, float xoff=0, float yoff=0) = 0;
-    virtual void  DrawPoint(float x, float y) = 0;
+    virtual void  DrawLines(wxList *pts, double xoff=0, double yoff=0) = 0;
+    virtual void  DrawPoint(double x, double y) = 0;
             void  DrawPoint(wxPoint *pt)  { DrawPoint(pt->x, pt->y); }
-    virtual void  DrawPolygon(int n, wxPoint pts[], float xoff=0, float yoff=0,
+    virtual void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0,
 			      int fill=wxODDEVEN_RULE) = 0;
-    virtual void  DrawPolygon(wxList *pts, float xoff=0, float yoff=0,
+    virtual void  DrawPolygon(wxList *pts, double xoff=0, double yoff=0,
 			      int fill=wxODDEVEN_RULE) = 0;
-    virtual void  DrawRectangle(float x, float y, float w, float h) = 0;
-    virtual void  DrawRoundedRectangle(float x, float y, float w, float h,
-				       float radius=20) = 0;
+    virtual void  DrawRectangle(double x, double y, double w, double h) = 0;
+    virtual void  DrawRoundedRectangle(double x, double y, double w, double h,
+				       double radius=20) = 0;
 
-  virtual void  DrawText(char *text, float x, float y, Bool combine=FALSE,
-			   Bool use16 = FALSE, int dt = 0, float angle = 0.0) = 0;
-    virtual void  FloodFill(float x, float y, wxColour *col,
+  virtual void  DrawText(char *text, double x, double y, Bool combine=FALSE,
+			   Bool use16 = FALSE, int dt = 0, double angle = 0.0) = 0;
+    virtual void  FloodFill(double x, double y, wxColour *col,
 			    int style=wxFLOOD_SURFACE) = 0;
-    virtual float GetCharHeight(void) = 0;
-    virtual float GetCharWidth(void) = 0;
-    virtual void  GetTextExtent(const char *s, float *w, float *h,
-				float *descent = 0, float *ext_leading = 0,
+    virtual double GetCharHeight(void) = 0;
+    virtual double GetCharWidth(void) = 0;
+    virtual void  GetTextExtent(const char *s, double *w, double *h,
+				double *descent = 0, double *ext_leading = 0,
 				wxFont *font=NULL, 
 				Bool combine=FALSE, Bool use16bit=FALSE, int dt=0) = 0;
     virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
@@ -135,7 +135,7 @@ public:
 			       int xoff=0, int yoff=0) = 0;
     virtual void  SetBackground(wxColour *c) = 0;
     virtual void  SetBrush(wxBrush *brush) = 0;
-    virtual void  SetClippingRect(float x, float y, float w, float h) = 0;
+    virtual void  SetClippingRect(double x, double y, double w, double h) = 0;
     virtual void  SetClippingRegion(wxRegion *r) = 0;
     virtual wxRegion *GetClippingRegion() = 0;
     virtual void  SetColourMap(wxColourMap *cmap) = 0;
@@ -158,17 +158,17 @@ public:
 	{ auto_setting = set_auto; }
     void BeginDrawing(void)
 	{}
-    virtual float DeviceToLogicalX(int x)
+    virtual double DeviceToLogicalX(int x)
 	{ return XDEV2LOG(x); }
-    virtual float DeviceToLogicalXRel(int x)
+    virtual double DeviceToLogicalXRel(int x)
 	{ return XDEV2LOGREL(x); }
-    virtual float DeviceToLogicalY(int y)
+    virtual double DeviceToLogicalY(int y)
 	{ return YDEV2LOG(y); }
-    virtual float DeviceToLogicalYRel(int y)
+    virtual double DeviceToLogicalYRel(int y)
 	{ return YDEV2LOGREL(y); }
     void  DrawSpline(int n, wxPoint pts[]);
     void  DrawSpline(wxList *pts);
-    virtual void DrawSpline(float x1,float y1, float x2,float y2, float x3,float y3);
+    virtual void DrawSpline(double x1,double y1, double x2,double y2, double x3,double y3);
     void  EndDrawing(void)
 	{}
     wxColour *GetBackground(void);
@@ -182,13 +182,13 @@ public:
 	{ return optimize; }
     wxPen *GetPen(void)
 	{ return current_pen; }
-    Bool GetPixel(float WXUNUSED(x), float WXUNUSED(y),
+    Bool GetPixel(double WXUNUSED(x), double WXUNUSED(y),
 		  wxColour *WXUNUSED(col))
 	{ return FALSE; }
     /* MATTHEW */
-    virtual void GetSize(float *w, float *h)
-	{ *w = (float)(max_x-min_x); *h = (float)(max_y-min_y); }
-    void GetSizeMM(float *w, float *h)
+    virtual void GetSize(double *w, double *h)
+	{ *w = (double)(max_x-min_x); *h = (double)(max_y-min_y); }
+    void GetSizeMM(double *w, double *h)
 	{ GetSize(w, h); *w/=(scale_x*mm_to_pix_x); *h/=(scale_y*mm_to_pix_y); }
     int GetTextAlignment(void)
 	{ return current_text_alignment; }
@@ -196,29 +196,29 @@ public:
 	{ return current_text_bg; }
     wxColour* GetTextForeground(void)
 	{ return current_text_fg; }
-    virtual int LogicalToDeviceX(float x)
+    virtual int LogicalToDeviceX(double x)
 	{ return XLOG2DEV(x); }
-    virtual int LogicalToDeviceXRel(float x)
+    virtual int LogicalToDeviceXRel(double x)
 	{ return XLOG2DEVREL(x); }
-    virtual int LogicalToDeviceY(float y)
+    virtual int LogicalToDeviceY(double y)
 	{ return YLOG2DEV(y); }
-    virtual int LogicalToDeviceYRel(float y)
+    virtual int LogicalToDeviceYRel(double y)
 	{ return YLOG2DEVREL(y); }
-    virtual float FLogicalToDeviceX(float x)
+    virtual double FLogicalToDeviceX(double x)
 	{ return XLOG2DEV(x); }
-    virtual float FLogicalToDeviceXRel(float x)
+    virtual double FLogicalToDeviceXRel(double x)
 	{ return XLOG2DEVREL(x); }
-    virtual float FLogicalToDeviceY(float y)
+    virtual double FLogicalToDeviceY(double y)
 	{ return YLOG2DEV(y); }
-    virtual float FLogicalToDeviceYRel(float y)
+    virtual double FLogicalToDeviceYRel(double y)
 	{ return YLOG2DEVREL(y); }
-    float MaxX(void)
+    double MaxX(void)
 	{ return max_x; }
-    float MaxY(void)
+    double MaxY(void)
 	{ return max_y; }
-    float MinX(void)
+    double MinX(void)
 	{ return min_x; }
-    float MinY(void)
+    double MinY(void)
 	{ return min_y; }
     /* MATTHEW: */
     virtual Bool Ok(void)
@@ -232,14 +232,14 @@ public:
     void SetTextAlignment(int new_alignment)
 	{ current_text_alignment = new_alignment; }
     // scale and origin methods
-    void  SetDeviceOrigin(float x, float y);
-    void  SetLogicalScale(float xs, float ys);
+    void  SetDeviceOrigin(double x, double y);
+    void  SetLogicalScale(double xs, double ys);
     void  SetMapMode(int mode);
-    virtual void  SetUserScale(float xs, float ys);
+    virtual void  SetUserScale(double xs, double ys);
 
-    void GetUserScale(float *xs, float *ys)
+    void GetUserScale(double *xs, double *ys)
       { *xs = user_scale_x; *ys = user_scale_y; }
-    void GetDeviceOrigin(float *x, float *y) 
+    void GetDeviceOrigin(double *x, double *y) 
       { *x = device_origin_x; *y = device_origin_y; }
 
     virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
@@ -254,11 +254,11 @@ public:
 protected:
     Bool  auto_setting, optimize, ok;
     // everything needed for sizing
-    float mm_to_pix_x, mm_to_pix_y;
-    float scale_x, scale_y;
-    float device_origin_x, device_origin_y;
-    float logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
-    float max_x, max_y, min_x, min_y;
+    double mm_to_pix_x, mm_to_pix_y;
+    double scale_x, scale_y;
+    double device_origin_x, device_origin_y;
+    double logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
+    double max_x, max_y, min_x, min_y;
     // Tools for drawing
     wxColour*    current_background_color;
     wxBrush*     current_brush;
@@ -272,28 +272,28 @@ protected:
     wxColour*    current_text_fg;
     wxRegion     *clipping;
     // utilities for internal use
-    void  CalcBoundingBox(float x, float y);
+    void  CalcBoundingBox(double x, double y);
     void  ComputeScaleAndOrigin(void);
     // abbreviations
-    float XDEV2LOG(int x)
-      { return (float(x) / scale_x) - device_origin_x; }
-    float XDEV2LOGREL(int x)
-      { return float(float(x) / scale_x); }
-    float YDEV2LOG(int y)
-      { return (float(y) / scale_y) - device_origin_y; }
-    float YDEV2LOGREL(int y)
-      { return float(float(y) / scale_y); }
-    int XLOG2DEV(float x)
-      { float a = (x * scale_x) + device_origin_x;
+    double XDEV2LOG(int x)
+      { return (double(x) / scale_x) - device_origin_x; }
+    double XDEV2LOGREL(int x)
+      { return double(double(x) / scale_x); }
+    double YDEV2LOG(int y)
+      { return (double(y) / scale_y) - device_origin_y; }
+    double YDEV2LOGREL(int y)
+      { return double(double(y) / scale_y); }
+    int XLOG2DEV(double x)
+      { double a = (x * scale_x) + device_origin_x;
 	return (int)floor(a); }
-    int XLOG2DEVREL(float x)
-      { float a = x * scale_x;
+    int XLOG2DEVREL(double x)
+      { double a = x * scale_x;
 	return (int)floor(a); }
-    int YLOG2DEV(float y)
-      { float a = (y * scale_y) + device_origin_y;
+    int YLOG2DEV(double y)
+      { double a = (y * scale_y) + device_origin_y;
 	return (int)floor(a); }
-    int YLOG2DEVREL(float y)
-      { float a = y * scale_y;
+    int YLOG2DEVREL(double y)
+      { double a = y * scale_y;
 	return (int)floor(a); }
     // virtual function for spline drawing
     virtual void DrawOpenSpline(wxList *pts);

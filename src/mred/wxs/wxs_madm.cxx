@@ -1058,10 +1058,10 @@ static Scheme_Object *os_wxMediaCanvasScrollTo(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaCanvas_class, "scroll-to in editor-canvas%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
   Bool x4;
   int x5;
 
@@ -1069,10 +1069,10 @@ static Scheme_Object *os_wxMediaCanvasScrollTo(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "scroll-to in editor-canvas%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "scroll-to in editor-canvas%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "scroll-to in editor-canvas%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "scroll-to in editor-canvas%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "scroll-to in editor-canvas%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "scroll-to in editor-canvas%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "scroll-to in editor-canvas%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "scroll-to in editor-canvas%"));
   x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "scroll-to in editor-canvas%"));
   if (n > (POFFSET+5)) {
     x5 = WITH_VAR_STACK(unbundle_symset_bias(p[POFFSET+5], "scroll-to in editor-canvas%"));
@@ -1492,15 +1492,15 @@ class os_wxMediaAdmin : public wxMediaAdmin {
   ~os_wxMediaAdmin();
   void Modified(Bool x0);
   Bool DelayRefresh();
-  Bool PopupMenu(void* x0, float x1, float x2);
+  Bool PopupMenu(void* x0, double x1, double x2);
   void UpdateCursor();
-  void NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3);
+  void NeedsUpdate(double x0, double x1, nndouble x2, nndouble x3);
   void Resized(Bool x0);
   void GrabCaret(int x0 = wxFOCUS_GLOBAL);
-  Bool ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool x4 = TRUE, int x5 = 0);
-  void GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
-  void GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
-  class wxDC* GetDC(float* x0 = NULL, float* x1 = NULL);
+  Bool ScrollTo(double x0, double x1, nndouble x2, nndouble x3, Bool x4 = TRUE, int x5 = 0);
+  void GetMaxView(double* x0, double* x1, nndouble* x2, nndouble* x3, Bool x4 = FALSE);
+  void GetView(double* x0, double* x1, nndouble* x2, nndouble* x3, Bool x4 = FALSE);
+  class wxDC* GetDC(double* x0 = NULL, double* x1 = NULL);
 #ifdef MZ_PRECISE_GC
   void gcMark();
   void gcFixup();
@@ -1604,7 +1604,7 @@ Bool os_wxMediaAdmin::DelayRefresh()
 
 static Scheme_Object *os_wxMediaAdminPopupMenu(int n, Scheme_Object *p[]);
 
-Bool os_wxMediaAdmin::PopupMenu(void* x0, float x1, float x2)
+Bool os_wxMediaAdmin::PopupMenu(void* x0, double x1, double x2)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1681,7 +1681,7 @@ void os_wxMediaAdmin::UpdateCursor()
 
 static Scheme_Object *os_wxMediaAdminNeedsUpdate(int n, Scheme_Object *p[]);
 
-void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, nnfloat x2, nnfloat x3)
+void os_wxMediaAdmin::NeedsUpdate(double x0, double x1, nndouble x2, nndouble x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1789,7 +1789,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
 
 static Scheme_Object *os_wxMediaAdminScrollTo(int n, Scheme_Object *p[]);
 
-Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool x4, int x5)
+Bool os_wxMediaAdmin::ScrollTo(double x0, double x1, nndouble x2, nndouble x3, Bool x4, int x5)
 {
   Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1834,7 +1834,7 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, nnfloat x2, nnfloat x3, Bool 
 
 static Scheme_Object *os_wxMediaAdminGetMaxView(int n, Scheme_Object *p[]);
 
-void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4)
+void os_wxMediaAdmin::GetMaxView(double* x0, double* x1, nndouble* x2, nndouble* x3, Bool x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1871,10 +1871,10 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
-  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-max-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-max-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
      READY_TO_RETURN;
   }
@@ -1882,7 +1882,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, nnfloat* x2, nnfloat* x3,
 
 static Scheme_Object *os_wxMediaAdminGetView(int n, Scheme_Object *p[]);
 
-void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4)
+void os_wxMediaAdmin::GetView(double* x0, double* x1, nndouble* x2, nndouble* x3, Bool x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1919,10 +1919,10 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
-  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
      READY_TO_RETURN;
   }
@@ -1930,7 +1930,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bo
 
 static Scheme_Object *os_wxMediaAdminGetDC(int n, Scheme_Object *p[]);
 
-class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
+class wxDC* os_wxMediaAdmin::GetDC(double* x0, double* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v INIT_NULLED_OUT;
@@ -1963,8 +1963,8 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
-  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-dc in editor-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-dc in editor-admin%"", extracting return value via box"", extracting boxed argument")));
   
   {
      class wxDC* resval;
@@ -2031,8 +2031,8 @@ static Scheme_Object *os_wxMediaAdminPopupMenu(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxMediaAdmin_class, "popup-menu in editor-admin%", n, p);
   void* x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
+  double x1;
+  double x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2040,8 +2040,8 @@ static Scheme_Object *os_wxMediaAdminPopupMenu(int n,  Scheme_Object *p[])
 
   if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("editor-admin%","popup-menu"), "popup-menu% object", 0+POFFSET, n, p);
   x0 = ((void *)p[POFFSET+0]);
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "popup-menu in editor-admin%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "popup-menu in editor-admin%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "popup-menu in editor-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "popup-menu in editor-admin%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -2083,19 +2083,19 @@ static Scheme_Object *os_wxMediaAdminNeedsUpdate(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaAdmin_class, "needs-update in editor-admin%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "needs-update in editor-admin%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "needs-update in editor-admin%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "needs-update in editor-admin%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "needs-update in editor-admin%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "needs-update in editor-admin%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "needs-update in editor-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "needs-update in editor-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "needs-update in editor-admin%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -2168,10 +2168,10 @@ static Scheme_Object *os_wxMediaAdminScrollTo(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaAdmin_class, "scroll-to in editor-admin%", n, p);
-  float x0;
-  float x1;
-  nnfloat x2;
-  nnfloat x3;
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
   Bool x4;
   int x5;
 
@@ -2179,10 +2179,10 @@ static Scheme_Object *os_wxMediaAdminScrollTo(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "scroll-to in editor-admin%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "scroll-to in editor-admin%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "scroll-to in editor-admin%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "scroll-to in editor-admin%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "scroll-to in editor-admin%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "scroll-to in editor-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "scroll-to in editor-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "scroll-to in editor-admin%"));
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "scroll-to in editor-admin%"));
   } else
@@ -2209,14 +2209,14 @@ static Scheme_Object *os_wxMediaAdminGetMaxView(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaAdmin_class, "get-max-view in editor-admin%", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  nnfloat _x2;
-  nnfloat* x2 = &_x2;
-  nnfloat _x3;
-  nnfloat* x3 = &_x3;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
+  nndouble _x2;
+  nndouble* x2 = &_x2;
+  nndouble _x3;
+  nndouble* x3 = &_x3;
   Bool x4;
   Scheme_Object *sbox_tmp;
 
@@ -2227,19 +2227,19 @@ static Scheme_Object *os_wxMediaAdminGetMaxView(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+2]))
     x2 = NULL;
   else
-    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+3]))
     x3 = NULL;
   else
-    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-max-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-max-view in editor-admin%"", extracting boxed argument")));
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "get-max-view in editor-admin%"));
   } else
@@ -2270,14 +2270,14 @@ static Scheme_Object *os_wxMediaAdminGetView(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaAdmin_class, "get-view in editor-admin%", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  nnfloat _x2;
-  nnfloat* x2 = &_x2;
-  nnfloat _x3;
-  nnfloat* x3 = &_x3;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
+  nndouble _x2;
+  nndouble* x2 = &_x2;
+  nndouble _x3;
+  nndouble* x3 = &_x3;
   Bool x4;
   Scheme_Object *sbox_tmp;
 
@@ -2288,19 +2288,19 @@ static Scheme_Object *os_wxMediaAdminGetView(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+2]))
     x2 = NULL;
   else
-    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+3]))
     x3 = NULL;
   else
-    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in editor-admin%"", extracting boxed argument")));
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "get-view in editor-admin%"));
   } else
@@ -2332,10 +2332,10 @@ static Scheme_Object *os_wxMediaAdminGetDC(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   class wxDC* r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxMediaAdmin_class, "get-dc in editor-admin%", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -2347,14 +2347,14 @@ static Scheme_Object *os_wxMediaAdminGetDC(int n,  Scheme_Object *p[])
     if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-dc in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-dc in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-dc in editor-admin%"", extracting boxed argument")));
   } else
     x0 = NULL;
   if (n > (POFFSET+1)) {
     if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-dc in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-dc in editor-admin%"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-dc in editor-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-dc in editor-admin%"", extracting boxed argument")));
   } else
     x1 = NULL;
 
@@ -2628,16 +2628,16 @@ class os_wxSnipAdmin : public wxSnipAdmin {
   os_wxSnipAdmin CONSTRUCTOR_ARGS(());
   ~os_wxSnipAdmin();
   void Modified(class wxSnip* x0, Bool x1);
-  Bool PopupMenu(void* x0, class wxSnip* x1, float x2, float x3);
+  Bool PopupMenu(void* x0, class wxSnip* x1, double x2, double x3);
   void UpdateCursor();
   Bool ReleaseSnip(class wxSnip* x0);
-  void NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4);
+  void NeedsUpdate(class wxSnip* x0, double x1, double x2, nndouble x3, nndouble x4);
   Bool Recounted(class wxSnip* x0, Bool x1);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
-  void GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, class wxSnip* x4 = NULL);
-  void GetViewSize(nnfloat* x0, nnfloat* x1);
+  Bool ScrollTo(class wxSnip* x0, double x1, double x2, nndouble x3, nndouble x4, Bool x5, int x6 = 0);
+  void GetView(double* x0, double* x1, nndouble* x2, nndouble* x3, class wxSnip* x4 = NULL);
+  void GetViewSize(nndouble* x0, nndouble* x1);
   class wxDC* GetDC();
   class wxMediaBuffer* GetMedia();
 #ifdef MZ_PRECISE_GC
@@ -2706,7 +2706,7 @@ void os_wxSnipAdmin::Modified(class wxSnip* x0, Bool x1)
 
 static Scheme_Object *os_wxSnipAdminPopupMenu(int n, Scheme_Object *p[]);
 
-Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, float x2, float x3)
+Bool os_wxSnipAdmin::PopupMenu(void* x0, class wxSnip* x1, double x2, double x3)
 {
   Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2826,7 +2826,7 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
 
 static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n, Scheme_Object *p[]);
 
-void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
+void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, double x1, double x2, nndouble x3, nndouble x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2982,7 +2982,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
 
 static Scheme_Object *os_wxSnipAdminScrollTo(int n, Scheme_Object *p[]);
 
-Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
+Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, double x1, double x2, nndouble x3, nndouble x4, Bool x5, int x6)
 {
   Scheme_Object *p[POFFSET+7] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -3029,7 +3029,7 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, 
 
 static Scheme_Object *os_wxSnipAdminGetView(int n, Scheme_Object *p[]);
 
-void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, class wxSnip* x4)
+void os_wxSnipAdmin::GetView(double* x0, double* x1, nndouble* x2, nndouble* x3, class wxSnip* x4)
 {
   Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -3067,10 +3067,10 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
   
-  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x2) *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x3) *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   
      READY_TO_RETURN;
   }
@@ -3078,7 +3078,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, cla
 
 static Scheme_Object *os_wxSnipAdminGetViewSize(int n, Scheme_Object *p[]);
 
-void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
+void os_wxSnipAdmin::GetViewSize(nndouble* x0, nndouble* x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -3110,8 +3110,8 @@ void os_wxSnipAdmin::GetViewSize(nnfloat* x0, nnfloat* x1)
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
-  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
-  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x0) *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
+  if (x1) *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in snip-admin%"", extracting return value via box")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in snip-admin%"", extracting return value via box"", extracting boxed argument")));
   
      READY_TO_RETURN;
   }
@@ -3231,8 +3231,8 @@ static Scheme_Object *os_wxSnipAdminPopupMenu(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxSnipAdmin_class, "popup-menu in snip-admin%", n, p);
   void* x0 INIT_NULLED_OUT;
   class wxSnip* x1 INIT_NULLED_OUT;
-  float x2;
-  float x3;
+  double x2;
+  double x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3242,8 +3242,8 @@ static Scheme_Object *os_wxSnipAdminPopupMenu(int n,  Scheme_Object *p[])
   if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("snip-admin%","popup-menu"), "popup-menu% object", 0+POFFSET, n, p);
   x0 = ((void *)p[POFFSET+0]);
   x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "popup-menu in snip-admin%", 0));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "popup-menu in snip-admin%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+3], "popup-menu in snip-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "popup-menu in snip-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "popup-menu in snip-admin%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -3313,10 +3313,10 @@ static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxSnipAdmin_class, "needs-update in snip-admin%", n, p);
   class wxSnip* x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
-  nnfloat x3;
-  nnfloat x4;
+  double x1;
+  double x2;
+  nndouble x3;
+  nndouble x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -3324,10 +3324,10 @@ static Scheme_Object *os_wxSnipAdminNeedsUpdate(int n,  Scheme_Object *p[])
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "needs-update in snip-admin%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "needs-update in snip-admin%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "needs-update in snip-admin%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "needs-update in snip-admin%"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+4], "needs-update in snip-admin%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "needs-update in snip-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "needs-update in snip-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "needs-update in snip-admin%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+4], "needs-update in snip-admin%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -3433,10 +3433,10 @@ static Scheme_Object *os_wxSnipAdminScrollTo(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxSnipAdmin_class, "scroll-to in snip-admin%", n, p);
   class wxSnip* x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
-  nnfloat x3;
-  nnfloat x4;
+  double x1;
+  double x2;
+  nndouble x3;
+  nndouble x4;
   Bool x5;
   int x6;
 
@@ -3446,10 +3446,10 @@ static Scheme_Object *os_wxSnipAdminScrollTo(int n,  Scheme_Object *p[])
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "scroll-to in snip-admin%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "scroll-to in snip-admin%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "scroll-to in snip-admin%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "scroll-to in snip-admin%"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+4], "scroll-to in snip-admin%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "scroll-to in snip-admin%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "scroll-to in snip-admin%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "scroll-to in snip-admin%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+4], "scroll-to in snip-admin%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+5], "scroll-to in snip-admin%"));
   if (n > (POFFSET+6)) {
     x6 = WITH_VAR_STACK(unbundle_symset_bias(p[POFFSET+6], "scroll-to in snip-admin%"));
@@ -3473,14 +3473,14 @@ static Scheme_Object *os_wxSnipAdminGetView(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxSnipAdmin_class, "get-view in snip-admin%", n, p);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
-  nnfloat _x2;
-  nnfloat* x2 = &_x2;
-  nnfloat _x3;
-  nnfloat* x3 = &_x3;
+  double _x0;
+  double* x0 = &_x0;
+  double _x1;
+  double* x1 = &_x1;
+  nndouble _x2;
+  nndouble* x2 = &_x2;
+  nndouble _x3;
+  nndouble* x3 = &_x3;
   class wxSnip* x4 INIT_NULLED_OUT;
   Scheme_Object *sbox_tmp;
 
@@ -3492,19 +3492,19 @@ static Scheme_Object *os_wxSnipAdminGetView(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_double(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+2]))
     x2 = NULL;
   else
-    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
+    *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+2], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+3]))
     x3 = NULL;
   else
-    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-view in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view in snip-admin%"", extracting boxed argument")));
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+4], "get-view in snip-admin%", 1));
   } else
@@ -3535,10 +3535,10 @@ static Scheme_Object *os_wxSnipAdminGetViewSize(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxSnipAdmin_class, "get-view-size in snip-admin%", n, p);
-  nnfloat _x0;
-  nnfloat* x0 = &_x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
+  nndouble _x0;
+  nndouble* x0 = &_x0;
+  nndouble _x1;
+  nndouble* x1 = &_x1;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -3548,11 +3548,11 @@ static Scheme_Object *os_wxSnipAdminGetViewSize(int n,  Scheme_Object *p[])
   if (XC_SCHEME_NULLP(p[POFFSET+0]))
     x0 = NULL;
   else
-    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting boxed argument")));
+    *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+0], "get-view-size in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in snip-admin%"", extracting boxed argument")));
   if (XC_SCHEME_NULLP(p[POFFSET+1]))
     x1 = NULL;
   else
-    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(sbox_tmp, "get-view-size in snip-admin%"", extracting boxed argument")));
+    *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+1], "get-view-size in snip-admin%")), WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(sbox_tmp, "get-view-size in snip-admin%"", extracting boxed argument")));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)

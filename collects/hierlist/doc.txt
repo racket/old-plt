@@ -1,0 +1,32 @@
+
+hierlists.ss defines mred:hierlist^
+hierlistr.ss returns a unit/sig, importes mred^ and exports mred:hierlist^
+hierlist.ss invoke-opens hierlistr.ss using mred:... globals and the `mred' prefix
+
+hierlist defines three classes:
+
+ hierarchical-list%, derived from mred:media-canvas%
+   
+  New methods:
+   (get-selected) - returns #f or an instance of  hierarchical-list-item%
+   (new-item) - creates and returns a new (empty) hierarchical-list-item%
+   (new-list) - creates and returns a new (empty) hierarchical-list-compound-item%
+   (delete-item i) - delete hierarchical-list-item% i from the list
+   (select i) - called for new select of hierarchical-list-item% i
+   (double-select i) - called for double-click on i, hierarchical-list-item% or #f
+
+ hierarchical-list-item%
+
+   (get-buffer) - returns wx:media-edit% buffer containing the display representation 
+                  of the item
+   (is-selected?) - returns #t or #f
+   (select on?) - selects or deselects the item; hierarchical-list%'s select is called
+   (user-data) - returns user data; initialized to #f
+   (user-data v) - sets user data to v
+
+ hierarchical-list-compound-item%, derived from hierarchical-list-item%
+
+   (new-item) - creates and returns a new (empty) hierarchical-list-item%
+   (new-list) - creates and returns a new (empty) hierarchical-list-compound-item%
+   (delete-item i) - delete hierarchical-list-item% i from the compound item
+

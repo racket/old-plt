@@ -25,18 +25,13 @@ be GNU's `make') and around 20-30 MB of disk space.
 
 Compile MzScheme first. See plt/src/mzscheme/README.
 
-If you are compiling the Motif version of MrEd, the file
-plt/src/wxwindow/src/make.env will need to be edited as described
-below. If you are compiling the non-Motif version (a.k.a. "Xt"), edit
-plt/src/wxxt/src/make.env (the distributed file is set up for Linux).
-
-In src/make.env, some of the variables may need to be changed:
+In plt/src/wxxt/src/make.env (the distributed file is configured for
+Linux), some of the variables may need to be changed:
 
    * Set the program names, such as the C compiler
 
    * Set OPTIONS:
         * -DWXME_FOR_MRED must be preserved
-        * -DWX_NORMALIZED_PS_FONTS=1 must be ketp for Motif
         * Add -DWXME_LSB_FIRST=1 if the target machine represents
           integers with the least-significant byte in the lowest memory
           address. For example, this flag is needed for Intel machines,
@@ -44,21 +39,22 @@ In src/make.env, some of the variables may need to be changed:
           if the flag value is incorrectly chosen.
         * Add -DOPERATOR_NEW_ARRAY if the C++ compiler uses separate new
           and new[] operators. For example, this flag is needed for gcc
-          version 2.6.3, but not for version 2.5.8.
+          version 2.6.3 and later, but not for version 2.5.8.
         * Add -DWXS_CANT_ASSIGN_STRUCTURES if the C++ compiler does not
           allow an assignment to copy structures. A compile-time error
           will occur if the flag is needed but not provided.
 
-   * Probably the XLIB and/or XINCLUDE directory lists must be adjusted.
+   * Probably the XLIB and/or XINCLUDE directory lists must be
+     adjusted.
 
    * Perhaps some other flags should be changed for your local 
      configuration.
 
 Once all of the setup files are ready, go to plt/src/mred and run
-`gnumake wx'. (Did you get a Makefile error? In that case, are you
-using GNU's make?) `gnumake wx' compiles everything in
-plt/src/wxwindow or plt/src/wxxt. When that completes, run `gnumake'
-to compile MrEd.
+`gnumake wx'. (Did you get a "no targets" make error? In that case,
+are you using GNU's make, which reads "GNUmakefile"?) `gnumake wx'
+compiles everything in plt/src/wxwindow or plt/src/wxxt. When that
+completes, run `gnumake' to compile MrEd.
 
 After MrEd is built, run `gnumake install' to install the binary
 into the plt/ hierarchy.

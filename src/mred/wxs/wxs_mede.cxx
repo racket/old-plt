@@ -766,6 +766,7 @@ static Scheme_Object *bundle_symset_Bias(int v) {
 
 
 
+
 #undef l_ADDRESS
 #undef l_DEREF
 #undef l_TEST
@@ -4220,6 +4221,30 @@ static Scheme_Object *os_wxMediaEditFindString(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditSetParagraghMargins(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nnlong x0;
+  nnfloat x1;
+  nnfloat x2;
+  nnfloat x3;
+
+  
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-paragraph-margins in text%");
+  x1 = objscheme_unbundle_nonnegative_float(p[1], "set-paragraph-margins in text%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-paragraph-margins in text%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-paragraph-margins in text%");
+
+  
+  ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->SetParagraghMargins(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEditLastParagraph(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6746,7 +6771,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 131);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 132);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6789,6 +6814,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip", os_wxMediaEditFindSnip, 2, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-margins", os_wxMediaEditSetParagraghMargins, 4, 4);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "last-paragraph", os_wxMediaEditLastParagraph, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-line", os_wxMediaEditParagraphStartLine, 1, 1);

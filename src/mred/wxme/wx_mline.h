@@ -1,6 +1,8 @@
 
 #define CURSOR_WIDTH 2
 
+class wxMediaParagraph;
+
 const unsigned long
   WXLINE_RED = 0x1,
   WXLINE_BLACK = 0x2,
@@ -15,14 +17,12 @@ const unsigned long
   WXLINE_FLOW_RIGHT = 0x400,
   WXLINE_STARTS_PARA = 0x800;
 
-/* WARNING: This structure is *NOT* garbage-collected.
-   It could be, but it doesn't need to be right now. */
-
-class wxMediaLine /* : wxObject - Uncomment for GC */
+class wxMediaLine
 {
  public:
   wxMediaLine *next, *prev, *parent, *left, *right;
   long flags;
+  wxMediaParagraph *paragraph;
 
   /* relative values: */
   long line;   // line number
@@ -57,6 +57,8 @@ class wxMediaLine /* : wxObject - Uncomment for GC */
   long GetScroll();
   float GetLocation();
   long GetParagraph();
+
+  wxMediaParagraph *GetParagraphStyle(Bool *first = NULL);
 
   float ScrollOffset(long p);
   long FindExtraScroll(float y);
@@ -95,3 +97,19 @@ class wxMediaLine /* : wxObject - Uncomment for GC */
 };
 
 extern wxMediaLine *NIL;
+
+const unsigned long
+  WXPARA_LEFT = 0x0,
+  WXPARA_CENTER = 0x1,
+  WXPARA_RIGHT = 0x2;
+
+class wxMediaParagraph
+{
+ public:
+  float leftMarginFirst, leftMargin;
+  float rightMargin;
+  int alignment;
+
+  wxMediaParagraph *Clone();
+  float GetLineWidth(float maxWidth, Bool first);
+};

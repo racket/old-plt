@@ -155,6 +155,8 @@
 @ "paragraph-end-line" : long ParagraphEndLine(nnlong);
 @ "last-paragraph" : long LastParagraph();
 
+@ "set-paragraph-margins" : void SetParagraghMargins(nnlong,nnfloat,nnfloat,nnfloat);
+
 @MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
 
 @ "find-string" : long/bNegAsFalse FindString(string,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);

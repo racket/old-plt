@@ -31,40 +31,35 @@
 
 static Scheme_Object *textMode_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *textMode_wxSOLID_sym = NULL;
-static Scheme_Object *textMode_wxXOR_sym = NULL;
 
 static void init_symset_textMode(void) {
   textMode_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
   textMode_wxSOLID_sym = scheme_intern_symbol("solid");
-  textMode_wxXOR_sym = scheme_intern_symbol("xor");
 }
 
 static int unbundle_symset_textMode(Scheme_Object *v, const char *where) {
-  if (!textMode_wxXOR_sym) init_symset_textMode();
+  if (!textMode_wxSOLID_sym) init_symset_textMode();
   if (0) { }
   else if (v == textMode_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == textMode_wxSOLID_sym) { return wxSOLID; }
-  else if (v == textMode_wxXOR_sym) { return wxXOR; }
   if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_textMode(Scheme_Object *v, const char *where) {
-  if (!textMode_wxXOR_sym) init_symset_textMode();
+  if (!textMode_wxSOLID_sym) init_symset_textMode();
   if (0) { }
   else if (v == textMode_wxTRANSPARENT_sym) { return 1; }
   else if (v == textMode_wxSOLID_sym) { return 1; }
-  else if (v == textMode_wxXOR_sym) { return 1; }
   if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_textMode(int v) {
-  if (!textMode_wxXOR_sym) init_symset_textMode();
+  if (!textMode_wxSOLID_sym) init_symset_textMode();
   switch (v) {
   case wxTRANSPARENT: return textMode_wxTRANSPARENT_sym;
   case wxSOLID: return textMode_wxSOLID_sym;
-  case wxXOR: return textMode_wxXOR_sym;
   default: return NULL;
   }
 }
@@ -185,12 +180,16 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, bool big)
   float w, h, d, asc;
   Scheme_Object *a[4];
 
-  dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
+  if (!dc->Ok()) {
+   a[0] = a[1] = a[2] = a[3] = scheme_make_double(0.0);
+  } else {
+   dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
 
-  a[0] = scheme_make_double(w);
-  a[1] = scheme_make_double(h);
-  a[2] = scheme_make_double(d);
-  a[3] = scheme_make_double(asc);
+    a[0] = scheme_make_double(w);
+    a[1] = scheme_make_double(h);
+    a[2] = scheme_make_double(d);
+    a[3] = scheme_make_double(asc);
+  }
 
   return scheme_values(4, a);
 }
@@ -784,7 +783,7 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   } else
     x2 = FALSE;
 
-  DO_OK_CHECK(scheme_void)
+  
   r = MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2);
 
   

@@ -548,6 +548,17 @@ long wxMediaLine::GetParagraph()
   SUM(parno, node->StartsParagraph(), (StartsParagraph() ? 0 : -1));
 }
 
+wxMediaParagraph *wxMediaLine::GetParagraphStyle(Bool *first)
+{
+  if (flags & WXLINE_STARTS_PARA) {
+    if (first) *first = 1;
+    return paragraph;
+  } else {
+    if (first) *first = 0;
+    return (GetRoot()->FindParagraph(GetParagraph()))->paragraph;
+  }
+}
+
 /***************************************************************/
 
 #define ADJUST(what, adj)                    \
@@ -621,10 +632,19 @@ void wxMediaLine::SetStartsParagraph(Bool starts)
   if ((starts ? 1 : 0) == StartsParagraph())
     return;
 
-  if (starts)
+  if (starts) {
     flags |= WXLINE_STARTS_PARA;
-  else
+    if (!paragraph) {
+      paragraph = new wxMediaParagraph();
+      paragraph->leftMarginFirst = 0;
+      paragraph->leftMargin = 0;
+      paragraph->rightMargin = 0;
+      paragraph->alignment = WXPARA_LEFT;
+    }
+  } else {
     flags -= WXLINE_STARTS_PARA;
+    paragraph = NULL;
+  }
 
   node = this;
 
@@ -810,7 +830,12 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 
   if (flags & WXLINE_FLOW_HERE) {
     flags -= WXLINE_FLOW_HERE;
-    if (media->CheckFlow(maxWidth, dc, GetLocation(), GetPosition(), snip)) {
+
+    Bool firstLine;
+    wxMediaParagraph *para = GetParagraphStyle(&firstLine);
+    float lineMaxWidth = para->GetLineWidth(maxWidth, firstLine);
+
+    if (media->CheckFlow(lineMaxWidth, dc, GetLocation(), GetPosition(), snip)) {
       wxSnip *asnip;
 
       for (asnip = snip; PTRNE(asnip, lastSnip); asnip = asnip->next) {
@@ -1022,6 +1047,13 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
     else
       bigwidth = totalwidth;
     bigwidth += CURSOR_WIDTH;
+    
+    Bool isfirst;
+    wxMediaParagraph *para = GetParagraphStyle(&isfirst);
+    if (isfirst)
+      bigwidth += para->leftMarginFirst;
+    else
+      bigwidth += para->leftMargin;
 
     SetWidth(totalwidth);
 
@@ -1083,6 +1115,37 @@ wxMediaLine *wxMediaLine::Last()
     node = node->right;
 
   return node;  
+}
+
+/***************************************************************/
+
+wxMediaParagraph *wxMediaParagraph::Clone()
+{
+  wxMediaParagraph *paragraph = new wxMediaParagraph();
+
+  paragraph->leftMarginFirst = leftMarginFirst;
+  paragraph->leftMargin = leftMargin;
+  paragraph->rightMargin = rightMargin;
+  paragraph->alignment = alignment;
+
+  return paragraph;
+}
+
+float wxMediaParagraph::GetLineWidth(float maxWidth, Bool first)
+{
+  if (maxWidth <= 0)
+    return maxWidth;
+
+  if (first)
+    maxWidth -= leftMarginFirst;
+  else
+    maxWidth -= leftMargin;
+  maxWidth -= rightMargin;
+
+  if (maxWidth <= 0)
+    maxWidth = 1;
+
+  return maxWidth;
 }
 
 /***************************************************************/

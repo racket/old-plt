@@ -325,24 +325,21 @@ void wxMediaCanvas::OnFocus(Bool focus)
 void wxMediaCanvas::BlinkCaret()
 {
   if (focuson) {
-    wxCanvasMediaAdmin *oldadmin;
-    
     if (media) {
+      wxCanvasMediaAdmin *oldadmin;
+    
       if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
 	media->SetAdmin(admin);
       }
-    }
 
-    if (media)
       media->BlinkCaret();
-    if (focuson)
-      blinkTimer->Start(BLINK_DELAY, 1);
 
-    if (media) {
       if (PTRNE(oldadmin, admin)) {
 	media->SetAdmin(oldadmin);
       }
     }
+
+    blinkTimer->Start(BLINK_DELAY, 1);
   }
 }
 

@@ -69,7 +69,7 @@
 	    [sup? (memq* 'superscript orig-style)])
 	(let ([s-font (if (or sub? sup?)
 			  (send the-font-list find-or-create-font
-				(floor (* 3/4 (send font get-point-size)))
+				(floor (* 1/2 (send font get-point-size)))
 				(send font get-family)
 				(send font get-style)
 				(send font get-weight))
@@ -95,6 +95,39 @@
 				  (send dc draw-text string x y)
 				  (send dc set-font f)))
 			      w h (- h d) d)))))]))
+
+  (define caps-text
+    (case-lambda
+     [(string) (caps-text string '() 12)]
+     [(string style) (caps-text string style 12)]
+     [(string style size)
+      (let ([strings
+	     (let loop ([l (string->list string)][this null][results null][up? #f])
+	       (if (null? l)
+		   (reverse! (cons (reverse! this) results))
+		   (if (eq? up? (char-upper-case? (car l)))
+		       (loop (cdr l) (cons (car l) this) results up?)
+		       (loop (cdr l) (list (car l)) (cons (reverse! this) results) (not up?)))))]
+	    [cap-style
+	     (let loop ([s style])
+	       (cond
+		[(pair? s) (cons (car s) (loop (cdr s)))]
+		[(is-a? s font%) (send the-font-list find-or-create-font
+				       (floor (* 8/10 (send s get-point-size)))
+				       (send s get-family)
+				       (send s get-style)
+				       (send s get-weight))]
+		[else s]))]
+	    [cap-size (floor (* 8/10 size))])
+	(let ([picts
+	       (let loop ([l strings][up? #f])
+		 (if (null? l)
+		     null
+		     (cons (text (list->string (map char-upcase (car l)))
+				 (if up? style cap-style)
+				 (if up? size cap-size))
+			   (loop (cdr l) (not up?)))))])
+	  (apply hbl-append 0 picts)))]))
 
   (define connect
     (case-lambda

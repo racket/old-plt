@@ -5,7 +5,7 @@
 (define-signature mrpict-extra^
   (dc-for-text-size
 
-   text
+   text caps-text
    dc
 
    draw-pict))

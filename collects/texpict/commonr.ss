@@ -34,7 +34,7 @@
 	  [a (pict-ascent box)])
       (make-pict (if draw draw (pict-draw box))
 		 (+ w dw) (+ h da dd) 
-		 (+ a da) (+ d dd) 
+		 (max 0 (+ a da)) (max 0 (+ d dd))
 		 (list (make-child box dx dy)))))
 
   (define (single-pict-offset pict subbox)
@@ -112,6 +112,25 @@
     (let ([b (extend-pict box 0 0 0 0 0 #f)])
       (set-pict-children! b null)
       b))
+
+  (define (raise p n)
+    (let ([dh (- (max 0 (- n (pict-descent p))))])
+      (make-pict (pict-draw p)
+		 (pict-width p) (+ dh (pict-height p))
+		 (pict-ascent p) (max 0 (- (pict-descent p) n))
+		 (map (lambda (c)
+			(make-child 
+			 (child-pict c)
+			 (child-dx c)
+			 (+ dh (child-dy c))))
+		      (pict-children p)))))
+
+  (define (drop p n)
+    (let ([dh (- (max 0 (- n (pict-ascent p))))])
+      (make-pict (pict-draw p)
+		 (pict-width p) (+ dh (pict-height p))
+		 (max 0 (- (pict-ascent p) n)) (pict-descent p)
+		 (pict-children p))))
 
   (define (clip-descent b)
     (let* ([w (pict-width b)]
@@ -383,7 +402,7 @@
 		  ctl-superimpose
 		  cbl-superimpose)
     (let ([make-superimpose 
-	   (lambda (get-h get-v get-th)
+	   (lambda (get-h get-v get-th post-process)
 	     (lambda boxes
 	       (let ([max-w (apply max (map pict-width boxes))]
 		     [max-h (apply max (map pict-height boxes))]
@@ -393,14 +412,15 @@
 		     [max-d (apply max (map pict-descent boxes))]
 		     [max-d-complement (apply max (map (lambda (b) (- (pict-height b) (pict-descent b)))
 						       boxes))])
-		 (picture max-w (get-th max-h max-a max-d max-a-complement max-d-complement)
-			  (map (lambda (box)
-				 `(place ,(get-h max-w (pict-width box))
-					 ,(get-v max-h (pict-height box)
-						 max-d (pict-descent box)
-						 max-a-complement)
-					 ,box))
-			       boxes)))))]
+		 (let ([p (picture max-w (get-th max-h max-a max-d max-a-complement max-d-complement)
+				   (map (lambda (box)
+					  `(place ,(get-h max-w (pict-width box))
+						  ,(get-v max-h (pict-height box)
+							  max-d (pict-descent box)
+							  max-a-complement)
+						  ,box))
+					boxes))])
+		   (post-process p max-a max-d)))))]
 	  [norm (lambda (h a d ac dc) h)]
 	  [tbase (lambda (h a d ac dc) (+ a ac))] 
 	  [bbase (lambda (h a d ac dc) (+ d dc))] 
@@ -408,23 +428,34 @@
 	  [rt (lambda (m v . rest) (- m v))]
 	  [tline (lambda (m v md d mac) mac)]
 	  [bline (lambda (m v md d mac) (- md d))]
-	  [c (lambda (m v . rest) (quotient* (- m v) 2))])
+	  [c (lambda (m v . rest) (quotient* (- m v) 2))]
+	  [none (lambda (p a d) p)]
+	  [with-max-a (lambda (p a d)
+			(make-pict (pict-draw p)
+				   (pict-width p) (pict-height p)
+				   a 0
+				   (pict-children p)))]
+	  [with-max-d (lambda (p a d)
+			(make-pict (pict-draw p)
+				   (pict-width p) (pict-height p)
+				   0 d
+				   (pict-children p)))])
       (values
-       (make-superimpose lb rt norm)
-       (make-superimpose lb lb norm)
-       (make-superimpose lb c norm)
-       (make-superimpose lb tline tbase)
-       (make-superimpose lb bline bbase)
-       (make-superimpose rt rt norm)
-       (make-superimpose rt lb norm)
-       (make-superimpose rt c norm)
-       (make-superimpose rt tline tbase)
-       (make-superimpose rt bline bbase)
-       (make-superimpose c rt norm)
-       (make-superimpose c lb norm)
-       (make-superimpose c c norm)
-       (make-superimpose c tline tbase)
-       (make-superimpose c bline bbase))))
+       (make-superimpose lb rt norm none)
+       (make-superimpose lb lb norm none)
+       (make-superimpose lb c norm none)
+       (make-superimpose lb tline tbase with-max-a)
+       (make-superimpose lb bline bbase with-max-d)
+       (make-superimpose rt rt norm none)
+       (make-superimpose rt lb norm none)
+       (make-superimpose rt c norm none)
+       (make-superimpose rt tline tbase with-max-a)
+       (make-superimpose rt bline bbase with-max-d)
+       (make-superimpose c rt norm none)
+       (make-superimpose c lb norm none)
+       (make-superimpose c c norm none)
+       (make-superimpose c tline tbase with-max-a)
+       (make-superimpose c bline bbase with-max-d))))
 
   (define table
     (case-lambda
@@ -539,14 +570,13 @@
 	(make-child title 0 title-y)
 	(map (lambda (child child-y) (make-child child 0 child-y)) fields field-ys)))))
 
-  (define (picture w h commands)
+  (define (picture* w h a d commands)
     (let loop ([commands commands][translated null][children null])
       (if (null? commands)
 	  (make-pict
 	   `(picture ,w ,h
 		     ,@(reverse translated))
-	   w h
-	   h 0
+	   w h a d
 	   children)
 	  (let ([c (car commands)]
 		[rest (cdr commands)])
@@ -610,9 +640,20 @@
 				children)))]
 	      [else (loop rest (cons c translated) children)])))))
 
+  (define (picture w h commands)
+    (picture* w h h 0 commands))
+
   (define (cons-picture p commands)
     (picture
      (pict-width p) (pict-height p)
+     (cons
+      `(place 0 0 ,p)
+      commands)))
+
+  (define (cons-picture* p commands)
+    (picture*
+     (pict-width p) (pict-height p)
+     (pict-ascent p) (pict-descent p)
      (cons
       `(place 0 0 ,p)
       commands)))

@@ -27,6 +27,8 @@
                 ; w h d -> pict
 
    clip-descent   ; pict -> pict
+   raise          ; pict -> pict
+   drop           ; pict -> pict
    inset          ; pict i -> pict
                   ; pict hi vi -> pict
                   ; pict l t r b -> pict
@@ -79,9 +81,11 @@
 
    colorize ; pict color-string -> pict
 
-   picture      ; w h command-list -> pict
+   picture       ; w h command-list -> pict
+   picture*      ; w h a d command-list -> pict
 
-   cons-picture ; pict command-list -> pict
+   cons-picture  ; pict command-list -> pict
+   cons-picture* ; pict command-list -> pict
    ))
 
 (define-signature texpict-common-setup^

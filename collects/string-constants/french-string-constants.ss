@@ -1,4 +1,9 @@
 (
+ ; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
+ ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
+ ; francaise (http://www-rocq.inria.fr/qui/Philippe.Deschamp/RETIF/) a quelques longueures de
+ ; retard. http://www.can.ibm.com/francais/dico/ peut aider aussi...
+ ; Update: http://www.dicofr.com/ permet les recherches a partir du mot anglais.
  
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
@@ -22,6 +27,8 @@
  (warning "Avertissement")
  (error "Erreur")
  (close "Fermer") ;; as in, close an open window
+ (stop "Stop")   
+ (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  
  ;;; bug report form
  (cancel-bug-report? "Annuler la soumission du formulaire de bogue ?")
@@ -131,7 +138,6 @@
  (exact-match "mot exact")
  (containing-match "contenant le mot")
  (regexp-match "expression régulière")
- (stop "Stop")
  (feeling-lucky "J'ai de la chance")
  (nothing-found-for-search-key "Rien n'a été trouvé pour \"~a\".")
  (searching "Recherche en cours...")
@@ -143,6 +149,27 @@
  (nothing-found-for-empty-search "Rien n'a été trouvé pour cette recherche vide.")
  (nothing-found-for "Rien n'a été trouvé pour ~a.")
  (and "et")
+ 
+ ;; browser
+ (rewind-in-browser-history "Retourner")
+ (forward-in-browser-history "Avancer")
+ (home "Maison")
+ (browser "Navigateur")
+ (cannot-display-url "Impossible de montrer l'URL ~s: ~a")
+ (install? "Installer ?")  ;; if a .plt file is found (title of dialog)
+ ; package => paquetage, pas tres clair...
+ (you-have-selected-an-installable-package "Vous avez sélectionné un logiciel qui peut être installé.")
+ (do-you-want-to-install-it? "Voulez-vous l'installer ?")
+ (paren-file-size "(Le fichier fait ~a octets)")
+ (download-and-install "Télécharger && Installer") ;; button label
+ (download "Télécharger") ;; button label
+ (save-downloaded-file/size "Sauvegarder le fichier téléchargé (~a octets) sous le nom") ;; label for get-file dialog
+ (save-downloaded-file "Sauvegarder le fichier téléchargé sous le nom")  ;; label for get-file dialog
+ (downloading "Téléchargement") ;; dialog title
+ (downloading-file... "Téléchargement du fichier en cours...")
+ (package-was-installed "Le logiciel à été installé.")
+ (download-was-saved "Le fichier téléchargé à été sauvegardé.")
+ (getting-page "Page en cours de réception") ;; dialog title
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Installer ~a ou l'ouvrir pour édition ?")
@@ -157,10 +184,9 @@
  (parenthetical-last-language "(language précédent ~a)")
  (parenthetical-last-version/language "(version précédente ~a, language précédent ~a)")
  
- 
  ;;; save file in particular format prompting.
- (save-as-plain-text "Sauvegarder ce fichier en format texte ?")
- (save-in-drs-format "Sauvegarder ce fichier en format DrScheme (non-texte) ?")
+ (save-as-plain-text "Sauvegarder ce fichier au format texte ?")
+ (save-in-drs-format "Sauvegarder ce fichier au format DrScheme (non-texte) ?")
  (yes "Oui")
  (no "Non")
  
@@ -235,6 +261,24 @@
  (forward "En avant")
  (backward "En arrière")
  (hide "Cacher")
+ 
+ ;;; multi-file-search
+ (mfs-multi-file-search-menu-item "Chercher dans les fichiers...")
+ (mfs-string-match/graphics "Chaîne de caractères (y compris dans les fichiers avec graphiques)")
+ (mfs-regexp-match/no-graphics "Expression régulière (fichiers texts seulement)")
+ (mfs-searching... "Recherche en cours...")
+ (mfs-configure-search "Configurer la recherche") ;; dialog title
+ (mfs-files-section "Fichiers")   ;; section in config dialog
+ (mfs-search-section "Chercher") ;; section in config dialog
+ (mfs-dir "Répertoire")
+ (mfs-recur-over-subdirectories "Récursion dans les sous-répertoires")
+ (mfs-regexp-filename-filter "Filtre de nom de fichiers pour les expressions régulières")
+ (mfs-search-string "Chercher la chaîne de caractères")
+ (mfs-drscheme-multi-file-search "DrScheme - Recherche dans des fichiers multiples") ;; results window and error message title
+ (mfs-not-a-dir "\"~a\" n'est pas un répertoire")
+ (mfs-open-file "Ouvrir le fichier")
+ (mfs-stop-search "Stopper la recherche")
+ (mfs-case-sensitive-label "Différentier les lettres majuscules des minuscules.")
  
  ;;;reverting a file
  (error-reverting "DrScheme - Erreur durant le retour à l'original.")

@@ -444,6 +444,7 @@ int start_linux_fs(char *diskname, char *partname)
   printf(">> Initializing devices\n");
   oskit_dev_init();
   oskit_linux_init_ide();
+  oskit_linux_init_net();
   /* oskit_linux_init_scsi(); */
   printf(">> Probing devices\n");
   oskit_dev_probe();

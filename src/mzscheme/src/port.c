@@ -67,6 +67,9 @@ static int mzerrno = 0;
 #  include <x86/pc/direct_cons.h> 
 # endif
 #endif
+#ifdef INCLUDE_OSKIT_SOCKET
+# include <oskit/net/socket.h>
+#endif
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
@@ -6182,9 +6185,13 @@ make_tcp_output_port(void *data)
 #ifndef NO_TCP_SUPPORT
 
 # ifdef PROTOENT_IS_INT
-#  define PROTO_P_PROTO IPPROTO_TCP
+#  define PROTO_P_PROTO PROTOENT_IS_INT
 # else
 #  define PROTO_P_PROTO proto->p_proto
+# endif
+
+# ifndef MZ_PF_INET
+#  define MZ_PF_INET PF_INET
 # endif
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
@@ -6296,7 +6303,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     if (proto)
 #endif
     {
-      tcp_t s = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
+      tcp_t s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
       if (s != INVALID_SOCKET) {
 	int status, inprogress;
 #ifdef USE_WINSOCK_TCP
@@ -6468,7 +6475,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
     memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
 
-    s = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
+    s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
     if (s != INVALID_SOCKET) {
 #ifdef USE_WINSOCK_TCP
       unsigned long ioarg = 1;
@@ -6985,7 +6992,7 @@ static void default_sleep(float v, void *fds)
 
 	info = MALLOC_ONE(Tcp_Select_Info);
 
-	fake = socket(PF_INET, SOCK_STREAM, 0);
+	fake = socket(MZ_PF_INET, SOCK_STREAM, 0);
 	FD_SET(fake, ex);
 
 	info->rd = rd;

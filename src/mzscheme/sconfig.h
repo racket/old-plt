@@ -94,8 +94,11 @@
 # define FIXED_FD_LIMIT 256
 # define USE_UNIX_SOCKETS_TCP
 # define USE_FCNTL_O_NONBLOCK
+
+# define INCLUDE_OSKIT_SOCKET
 # define htons(x) x
-# define PF_INET AF_INET
+# define MZ_PF_INET OSKIT_PF_INET
+# define PROTOENT_IS_INT IPPROTO_TCP
 
 # define NO_USLEEP
 # define NO_SLEEP
@@ -330,8 +333,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define BEOS_PROCESSES
 
 # define USE_FCNTL_O_NONBLOCK
-# define PF_INET AF_INET
-# define PROTOENT_IS_INT
+# define MZ_PF_INET AF_INET
+# define PROTOENT_IS_INT IPPROTO_TCP
 # define CANT_SET_SOCKET_BUFSIZE
 # define SEND_IS_NEVER_TOO_BIG
 

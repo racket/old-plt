@@ -120,11 +120,15 @@
 		      [args args])
           (syntax (args . body))))
       
-      (define (keep-method-property orig new)
-        (let ([p (syntax-property orig 'method-arity-error)])
-          (if p
-              (syntax-property new 'method-arity-error p)
-              new)))
+      (define (keep-lambda-properties orig new)
+        (let ([p (syntax-property orig 'method-arity-error)]
+	      [p2 (syntax-property orig 'inferred-name)])
+          (let ([new (if p
+			 (syntax-property new 'method-arity-error p)
+			 new)])
+	    (if p2
+		(syntax-property new 'inferred-name p2)
+		new))))
       
       (define (annotate-let rec? trans? varsl rhsl bodyl)
         (let ([varses (syntax->list varsl)]
@@ -241,7 +245,7 @@
                                (with-syntax ([cl (annotate-lambda name expr 
                                                                   (syntax args) (syntax body) 
                                                                   trans?)])
-                                 (keep-method-property expr (syntax/loc expr (lambda . cl))))]
+                                 (keep-lambda-properties expr (syntax/loc expr (lambda . cl))))]
                               [(case-lambda [args . body] ...)
                                (with-syntax ([clauses
                                               (map
@@ -249,7 +253,7 @@
                                                  (annotate-lambda name expr args body trans?))
                                                (syntax->list (syntax (args ...))) 
                                                (syntax->list (syntax (body ...))))])
-                                 (keep-method-property expr (syntax/loc expr (case-lambda . clauses))))]
+                                 (keep-lambda-properties expr (syntax/loc expr (case-lambda . clauses))))]
                               
                               ;; Wrap RHSs and body
                               [(let-values ([vars rhs] ...) . body)

@@ -97,10 +97,8 @@ int is_marked(void *p);
 /*
   Tags for the objects defined in here
 */
-#define _num_tags			259
+#define _num_tags			260
 #define gc_weak_array_tag		256
-#define gc_finalization_tag		257
-#define gc_finalization_weak_link_tag	258
 
 
 /*
@@ -348,7 +346,7 @@ inline void *malloc_mempages(UWORD size) {
   while (i--) {
     m = malloc_pages(size, MPAGE_SIZE);
     if (m) {
-      bzero(m, size);
+      /* bzero(m, size); */
       used_pages += numpages;
       return m;
     } else garbage_collect(1);
@@ -1989,7 +1987,6 @@ void initialize_weak_subsystem() {
  */
 
 typedef struct Fnl {
-  Type_Tag type;
   char eager_level;
   char tagged;
   void *p;
@@ -2002,31 +1999,22 @@ static Fnl *fnls = NULL;
 static Fnl *run_queue = NULL;
 static Fnl *last_in_queue = NULL;
 
-int size_finalizer(void *p) {
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
-}
-
-int mark_finalizer(void *p) {
-  Fnl *fnl = (Fnl *)p;
+void mark_finalizer(Fnl *fnl) {
   gcMARK(fnl->next);
   gcMARK(fnl->data);
   /* !eager_level => queued for run: */
   if (!fnl->eager_level) {
     gcMARK(fnl->p);
   }
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
-int fixup_finalizer(void *p) {
-  Fnl *fnl = (Fnl *)p;
+void fixup_finalizer(Fnl *fnl) {
   gcFIXUP(fnl->next);
   gcFIXUP(fnl->data);
   gcFIXUP(fnl->p);
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
 }
 
 typedef struct Fnl_Weak_Link {
-  Type_Tag type;
   void *p;
   int offset;
   void *saved;
@@ -2035,21 +2023,13 @@ typedef struct Fnl_Weak_Link {
 
 Fnl_Weak_Link *fnl_weaks;
 
-int size_finalizer_weak_link(void *p) {
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
-}
-
-int mark_finalizer_weak_link(void *p) {
-  Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
+void mark_finalizer_weak_link(Fnl_Weak_Link *wl) {
   gcMARK(wl->next);
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-int fixup_finalizer_weak_link(void *p) {
-  Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
+void fixup_finalizer_weak_link(Fnl_Weak_Link *wl) {
   gcFIXUP(wl->next);
   gcFIXUP(wl->p);
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
 /* after collection we need to run through our list of finals and */
@@ -2070,11 +2050,6 @@ void clean_up_weak_finals(void) {
 }
 
 void initialize_final_subsystem() {
-  GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, 
-			 fixup_finalizer);
-  GC_register_traversers(gc_finalization_weak_link_tag, 
-			 size_finalizer_weak_link, 
-			 mark_finalizer_weak_link, fixup_finalizer_weak_link);
   GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
   GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
   GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
@@ -2456,49 +2431,8 @@ void recalculate_heap_size(void) {
   }
 }
 
-/* #define DEBUG_START_AT		1000 */
-/* static void debug_dump_heap(UWORD collection, int mark_gen, int before) { */
-/*   FILE *file; */
-/*   int i, j; */
-
-/*   if(before) { */
-/*     fprintf(stdout, "Garbage collection #%li (mark_gen = %i)\n",  */
-/* 	    collection, mark_gen); */
-/*   } */
-/*   if(collection < DEBUG_START_AT) { */
-/*     return; */
-/*   } */
-/*   file = fopen("gcdump", ((before && (collection == DEBUG_START_AT)) ? "w" : "a")); */
-
-/*   fprintf(file, "\nGarbage collection #%li (mark_gen = %i) [%s]\n",  */
-/* 	  collection, mark_gen, before ? "BEFORE" : "AFTER"); */
-/*   dump_mpage_information(file); */
-/*   for(i = 0; i < GENERATIONS; i++) { */
-/*     for(j = 0; j < 6; j++) { */
-/*       MPage *work; */
-/*       for(work = gen[i][j]; work; work = work->next) { */
-/* 	UWORD p = (UWORD)work; */
-/* 	fprintf(file, "%p:\n", work); */
-/* 	while(p < ((UWORD)work + work->size)) { */
-/* 	  int k; */
-/* 	  fprintf(file, "0x%8lx:\t", p); */
-/* 	  for(k = 0; k < 5; k++) { */
-/* 	    fprintf(file, "%08lx ", *(UWORD*)p); p += 4; */
-/* 	  } */
-/* 	  fprintf(file, "\n"); */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-
-
-/*   fflush(file); */
-/*   fclose(file); */
-/* } */
-
 void garbage_collect(int force_full) {
   static UWORD collection = 0;
-  Fnl *workrq = run_queue;
   int did_fnls;
 
   if(!gc_deny) {
@@ -2520,7 +2454,6 @@ void garbage_collect(int force_full) {
       } else mark_gen = 0;
     }
 #endif    
-/*     debug_dump_heap(collection, mark_gen, 1); */
     collection++;
 
     /* notify MzScheme that we're about to collect*/
@@ -2557,11 +2490,15 @@ void garbage_collect(int force_full) {
 				   ? GC_get_thread_stack_base() 
 				   : (UWORD)stack_base));
 
-    while(workrq) {
-      GC_mark(workrq);
-      workrq = workrq->next;
-    }
-    
+    { 
+      /* Need to do the finals here since we don't do them via tags
+         any more */
+      Fnl *f;
+      Fnl_Weak_Link *wl;
+      for(f = fnls; f; f = f->next) mark_finalizer(f);
+      for(f = run_queue; f; f = f->next) mark_finalizer(f);
+      for(wl = fnl_weaks; wl; wl = wl->next) mark_finalizer_weak_link(wl);
+    } 
     /* once we're done with this, it's on to propogation. Unfortunately*/
     /* this isn't as easy as one might think because of finalizers. To*/
     /* be honest I (Adam) don't fully understand how this works. Ask*/
@@ -2739,6 +2676,15 @@ void garbage_collect(int force_full) {
 			    (void*)(GC_get_thread_stack_base
 				    ? GC_get_thread_stack_base()
 				    : (UWORD)stack_base));
+    {
+      /* Again, do this here as they're no longer tagged */
+      Fnl *f;
+      Fnl_Weak_Link *wl;
+      for(f = fnls; f; f = f->next) fixup_finalizer(f);
+      for(f = run_queue; f; f = f->next) fixup_finalizer(f);
+      for(wl = fnl_weaks; wl; wl = wl->next) fixup_finalizer_weak_link(wl);
+    }
+
     free_dead_pages();
     protect_older_pages();
     recalculate_heap_size();
@@ -2987,9 +2933,8 @@ void GC_set_finalizer(void *p, int tagged, int level,
     return;
 
   gc_deny = 1;
-  fnl = GC_malloc_one_tagged(sizeof(Fnl));
+  fnl = GC_malloc_atomic(sizeof(Fnl));
   gc_deny = 0;
-  fnl->type = gc_finalization_tag;
   fnl->next = fnls;
   fnl->p = p;
   fnl->f = f;
@@ -3003,9 +2948,8 @@ void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
   gc_deny = 1;
-  wl = (Fnl_Weak_Link *)GC_malloc_one_tagged(sizeof(Fnl_Weak_Link));
+  wl = (Fnl_Weak_Link *)GC_malloc_atomic(sizeof(Fnl_Weak_Link));
   gc_deny = 0;
-  wl->type = gc_finalization_weak_link_tag;
   wl->p = p;
   wl->next = fnl_weaks;
   wl->offset = offset * sizeof(void*);

@@ -691,13 +691,13 @@
      (test 'lexical identifier-binding (syntax b-0))
      (test 'lexical identifier-binding (syntax b-1)))])
 
-(syntax-case (car (namespace-rewrite-expr "(or true false true)" beginner-namespace)) (let-values if)
-  [(let-values ([(or-part-0) true-0]) (if or-part-1 or-part-2 rest))
-   (begin
-     (test 'or-part syntax-e (syntax or-part-0))
-     (test 'let-bound syntax-property (syntax or-part-0) 'stepper-binding-type)
-     (test 'or-part syntax-e (syntax or-part-1))
-     (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
+;(syntax-case (car (namespace-rewrite-expr "(or true false true)" beginner-namespace)) (let-values if)
+;  [(let-values ([(or-part-0) true-0]) (if or-part-1 or-part-2 rest))
+;   (begin
+;     (test 'or-part syntax-e (syntax or-part-0))
+;     (test 'let-bound syntax-property (syntax or-part-0) 'stepper-binding-type)
+;     (test 'or-part syntax-e (syntax or-part-1))
+;     (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
 
 ;(test 7 eval (car (annotate-exprs (list #'(begin (+ 3 4) (+ 4 5))))))

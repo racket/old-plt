@@ -62,7 +62,7 @@
 (test (list 'apple 'banana) t #f 'banana)
 (test (void) t #f 'oetu)
 
-: (syntax (recon-result recon-result -> (void)) -> (
+; : (syntax (recon-result recon-result -> (void)) -> break-contract)
 (define (make-break expr action)
   (let* ([recon-call (lx (apply reconstruct:reconstruct-current _))]
          [pair-action (lambda (2-list)
@@ -218,7 +218,7 @@
 ;                 ((,highlight-placeholder) (9))))
 ;
 (parameterize ([current-namespace beginner-namespace])
-  (syntax-object->datum (expand `(or false true false))))
+  (syntax-object->datum (expand `(and false true false))))
 
 (test-beginner-sequence "(or false true false)"
                         `(((,highlight-placeholder) ((or false true false)))

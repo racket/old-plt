@@ -319,11 +319,6 @@ scheme_internal_display(Scheme_Object *obj, Scheme_Object *port)
   print_to_port("display", obj, port, 0, -1);
 }
 
-int scheme_is_writable_readable(Scheme_Object *obj)
-{
-  return 0;
-}
-
 #ifdef DO_STACK_CHECK
 static int check_cycles(Scheme_Object *, Scheme_Hash_Table *ht, PrintParams *);
 

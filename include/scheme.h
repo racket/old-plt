@@ -823,24 +823,6 @@ typedef struct Scheme_Thread {
 
   char skip_error;
 
-  /* These are used to lock in values during `print': */
-  char quick_print_struct;
-  char quick_print_graph;
-  char quick_print_box;
-  char quick_print_vec_shorthand;
-  char quick_print_hash_table;
-  char quick_can_read_pipe_quote;
-  char quick_case_sens;
-  Scheme_Object *quick_inspector;
-
-  /* Used during `display' and `write': */
-  char *print_buffer;
-  long print_position;
-  long print_allocated;
-  long print_maxlen;
-  Scheme_Object *print_port;
-  mz_jmp_buf print_escape;
-
   Scheme_Object *(*overflow_k)(void);
   Scheme_Object *overflow_reply;
 
@@ -867,7 +849,7 @@ typedef struct Scheme_Thread {
       int count;
     } multiple;
     struct {
-      void *p1, *p2, *p3, *p4;
+      void *p1, *p2, *p3, *p4, *p5;
       long i1, i2, i3;
     } k;
   } ku;
@@ -963,6 +945,7 @@ enum {
   MZCONFIG_PRINT_BOX,
   MZCONFIG_PRINT_VEC_SHORTHAND,
   MZCONFIG_PRINT_HASH_TABLE,
+  MZCONFIG_PRINT_UNREADABLE,
 
   MZCONFIG_CASE_SENS,
   MZCONFIG_SQUARE_BRACKETS_ARE_PARENS,

@@ -68,6 +68,7 @@ static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
+static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
@@ -333,6 +334,12 @@ void scheme_init_read(Scheme_Env *env)
 						       "print-hash-table",
 						       MZCONFIG_PRINT_HASH_TABLE), 
 			     env);
+  scheme_add_global_constant("print-unreadable", 
+			     scheme_register_parameter(print_unreadable,
+						       "print-unreadable",
+						       MZCONFIG_PRINT_UNREADABLE),
+			     env);
+
 }
 
 void scheme_alloc_list_stack(Scheme_Thread *p)
@@ -450,6 +457,12 @@ static Scheme_Object *
 print_hash_table(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("print-vector-length", MZCONFIG_PRINT_HASH_TABLE);
+}
+
+static Scheme_Object *
+print_unreadable(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("print-unreadable", MZCONFIG_PRINT_UNREADABLE);
 }
 
 /*========================================================================*/

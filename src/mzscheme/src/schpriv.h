@@ -1286,7 +1286,6 @@ Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *
 Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail);
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port);
-int scheme_is_writable_readable(Scheme_Object *obj);
 
 #define _scheme_eval_linked_expr(obj) scheme_do_eval(obj,-1,NULL,1)
 #define _scheme_eval_linked_expr_multi(obj) scheme_do_eval(obj,-1,NULL,-1)

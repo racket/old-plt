@@ -90,7 +90,6 @@ static Scheme_Object *sch_write (int, Scheme_Object *[]);
 static Scheme_Object *display (int, Scheme_Object *[]);
 static Scheme_Object *sch_print (int, Scheme_Object *[]);
 static Scheme_Object *newline (int, Scheme_Object *[]);
-static Scheme_Object *writable_and_readable (int, Scheme_Object *[]);
 static Scheme_Object *write_char (int, Scheme_Object *[]);
 static Scheme_Object *write_byte (int, Scheme_Object *[]);
 static Scheme_Object *load (int, Scheme_Object *[]);
@@ -551,11 +550,6 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(newline, 
 						      "newline", 
 						      0, 1), 
-			     env);
-  scheme_add_global_constant("writeable-and-readable?", 
-			     scheme_make_prim_w_arity(writable_and_readable,
-						      "writeable-and-readable?", 
-						      1, 1), 
 			     env);
 
   scheme_add_global_constant("write-char", 
@@ -3527,13 +3521,6 @@ newline (int argc, Scheme_Object *argv[])
   (void)scheme_put_byte_string("newline", port, "\n", 0, 1, 0);
 
   return scheme_void;
-}
-
-static Scheme_Object *writable_and_readable (int argc, Scheme_Object *argv[])
-{
-  return (scheme_is_writable_readable(argv[0]) 
-	  ? scheme_true 
-	  : scheme_false);
 }
 
 static Scheme_Object *

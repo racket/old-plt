@@ -488,6 +488,13 @@ static void print_this_string(Scheme_Process *p, const char *str, int autolen)
   else
     len = strlen(str);
 
+  if (!p->print_buffer) {
+    /* Just getting the length */
+    p->print_position += len;
+    return;
+  }
+
+
   if (len + p->print_position + 1 > p->print_allocated) {
     if (len + 1 >= p->print_allocated)
       p->print_allocated = 2 * p->print_allocated + len + 1;
@@ -645,14 +652,21 @@ print_substring(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table 
   save_maxl = p->print_maxlen;
   save_port = p->print_port;
   
-  p->print_allocated = 50;
-  p->print_buffer = (char *)scheme_malloc_atomic(p->print_allocated);
+  /* If result is NULL, just measure the output. */
+  if (result) {
+    p->print_allocated = 50;
+    p->print_buffer = (char *)scheme_malloc_atomic(p->print_allocated);
+  } else {
+    p->print_allocated = 0;
+    p->print_buffer = NULL;
+  }
   p->print_position = 0;
   p->print_port = NULL;
 
   closed = print(obj, escaped, compact, ht, vht, p);
 
-  *result = p->print_buffer;
+  if (result)
+    *result = p->print_buffer;
   *rlen = p->print_position;
 
   p->print_allocated = save_alloc;
@@ -1163,10 +1177,9 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       Scheme_Type t = SCHEME_TYPE(obj);
       Scheme_Object *v;
 #if USE_BUFFERING_CPORT
-      char *s;
       long slen;
 #endif
-      
+
       if (t >= _scheme_last_type_) {
 	/* Doesn't happen: */
 	scheme_signal_error("internal error: bad type with writer");
@@ -1183,10 +1196,6 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	  print_compact_number(p, t);
 	}
       } else {
-	vht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
-	vht->make_hash_indices = make_sym_vec_hash_indices;
-	vht->compare = compare_sym_vec;
-
 	print_this_string(p, "#`", 2);
 #if NO_COMPACT
 	if (t < _scheme_last_type_) {
@@ -1202,13 +1211,22 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
       if (compact)
 	closed = print(v, escaped, 1, NULL, vht, p);
       else {
+	vht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+	vht->make_hash_indices = make_sym_vec_hash_indices;
+	vht->compare = compare_sym_vec;
+
 #if USE_BUFFERING_CPORT
-	closed = print_substring(v, escaped, 1, NULL, vht, p, &s, &slen);
+	/* "print" the string once to get a measurement */
+	print_substring(v, escaped, 1, NULL, vht, p, NULL, &slen);
 	print_compact_number(p, slen);
-	print_this_string(p, s, slen);
-#else
-	closed = print(v, escaped, 1, NULL, vht, p);
+
+	/* Make vht again to ensure the same results */
+	vht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
+	vht->make_hash_indices = make_sym_vec_hash_indices;
+	vht->compare = compare_sym_vec;
 #endif
+
+	closed = print(v, escaped, 1, NULL, vht, p);
       }
     } 
   else 

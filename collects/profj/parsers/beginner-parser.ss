@@ -114,7 +114,7 @@
        [(ClassDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
        [(CLASS_BOX) 
-        (car (package-defs ((class:send $1 read-one-special  0 #f #f #f #f) 'beginner)))]
+        (car (package-defs ((class:send (class-case-box $1) read-one-special  0 #f #f #f #f) 'beginner)))]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       

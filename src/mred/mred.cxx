@@ -1648,16 +1648,6 @@ MrEdApp::MrEdApp()
 #endif
 }
 
-static int exit_status = -1;
-
-static void MrEdExit(int status)
-{
-  exit_status = status;
-  main_loop_exited = 1;
-
-  wxTheApp->ExitMainLoop();
-}
-
 extern "C" void (*GC_out_of_memory)(void);
 
 static void MrEdOutOfMemory(void)
@@ -1691,141 +1681,40 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 }
 #endif
 
-static int mred_init(int argc, char **argv)
-{
-#if 0
-  /* Turns off GC: */
-  GC_free_space_divisor = 1;
-#endif
+#include "../mzscheme/src/schvers.h"
 
-#if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
-  scheme_make_stdin = MrEdMakeStdIn;
-  scheme_make_stdout = MrEdMakeStdOut;
-  scheme_make_stderr = MrEdMakeStdErr;
-#endif
-
-#ifndef USE_SENORA_GC
-  GC_set_warn_proc(MrEdIgnoreWarnings);
-#endif
-  GC_out_of_memory = MrEdOutOfMemory;
-
-#ifdef SGC_STD_DEBUGGING
-  scheme_external_dump_info = dump_cpp_info;
-# ifdef USE_WXOBJECT_TRACE_COUNTER
-  scheme_external_dump_type = object_type_name;
-  scheme_external_dump_arg = set_trace_arg;
-# endif
-#endif
-
-#if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
-  scheme_console_printf = MrEdSchemeMessages;
-#endif
-  scheme_get_sema_callback_context = wxGetContextForFrame;
-
-  scheme_case_sensitive = 1;
-  scheme_constant_builtins = 0;
-  scheme_allow_cond_auto_else = 0;
-  
-  mred_eventspace_param = scheme_new_param();
-  mred_event_dispatch_param = scheme_new_param();
-  mred_ps_setup_param = scheme_new_param();
-
-  global_env = scheme_basic_env();
-
-  /* Temporarily add `program': */
-  {
-    char *program;
-    if (argc)
-      program = argv[0];
-    else
-      program = "MrEd";
-
-    scheme_add_global("program",
-		      scheme_make_string(program), 
-		      global_env);
-  }
-
-    scheme_eval_string("(#%current-library-collection-paths "
-		        "(#%path-list-string->path-list "
-		         "(#%or (#%getenv \"PLTCOLLECTS\") \"\")"
-		         "(#%or"
-		          "(#%ormap"
-		           "(#%lambda (f) (#%let ([p (f)]) (#%and p (#%directory-exists? p) (#%list p))))"
-		           "(#%list"
-		            "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\")))"
-		                          "(#%and v (#%build-path v \"collects\"))))"
-		            "(#%lambda () (#%find-executable-path program \"collects\"))"
 #ifdef wx_x
-		            "(#%lambda () \"/usr/local/lib/plt/collects\")"
+# define INIT_FILENAME "~/.mredrc"
+#else
+# define INIT_FILENAME "mred.rc"
 #endif
-#ifdef wx_msw
-		            "(#%lambda () \"c:\\plt\\collects\")"
+#if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
+# define PRINTF scheme_console_printf
+#else
+# define PRINTF printf
 #endif
-		          ")) #%null)))",
-		       global_env);
+#define PROGRAM "MrEd"
+#define PROGRAM_LC "mred"
+#define BANNER "MrEd version " VERSION ", Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)\n"
 
-  scheme_remove_global("program", global_env);
+#include "../mzscheme/cmdline.inc"
 
-  if ((argc > 1) && !strcmp(argv[1], "--pre")) {
-    if (argc > 2) {
-      /* Collect the rest of the arguments into argv: */
-      Scheme_Object *sch_argv = scheme_make_vector(argc - 3, scheme_null);
-      for (int i = 3; i < argc; i++)
-	SCHEME_VEC_ELS(sch_argv)[i - 3] = scheme_make_string(argv[i]);
-      scheme_add_global("argv", sch_argv, global_env);
+static FinishArgs *xfa;
 
-      if (!scheme_setjmp(scheme_error_buf)) {
-        scheme_eval_string_all(argv[2], global_env, 0);
+static int do_main_loop(FinishArgs *fa)
+{
+  xfa = fa;
 
-	for (int i = 3; i < argc; i++)
-	  argv[i - 2] = argv[i];
+  TheMrEdApp->MainLoop();
 
-	return argc - 2;
-      } else {
-#ifndef wx_x      
-	wxMessageBox("Error evaluating --pre expression.", "Error");
-#endif
-	exit(-1);
-	return 0;
-      }
-    } else {
-      scheme_console_printf("%s: --pre flag needs an expression", argv[0]);
-#ifndef wx_x      
-      wxMessageBox("--pre command-line flag needs an expression", "Error");
-#endif
-      exit(-1);
-      return 0;
-    }
-  } else
-    return argc;
+  return 0;
 }
 
-wxFrame *MrEdApp::OnInit(void)
+static Scheme_Env *setup_basic_env()
 {
-#if defined(wx_msw)
-  mred_init(argc, argv);
-#endif
+  global_env = scheme_basic_env();
 
   scheme_no_dumps("the graphics library is running");
-
-  initialized = 0;
-  edjrMode = FALSE;
-
-#ifdef LIBGPP_REGEX_HACK
-  new Regex("a", 0);
-#endif
-
-#if 0
-  {
-    unsigned long now, start = (unsigned long)scheme_get_milliseconds();
-
-    while ((now = (unsigned long)scheme_get_milliseconds()) == start);
-      
-    if (start > now) {
-      wxMessageBox("Time goes down!", "Error");
-    }
-  }
-#endif
 
   wxmeExpandFilename = CallSchemeExpand;
 
@@ -1849,22 +1738,14 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitMedia();
 
-  mred_real_main_frame = new wxFrame(NULL, "MrEd");
-  wxPanel *p = new wxPanel(mred_real_main_frame);
-  (void)(new wxButton(p, (wxFunction)MrEdExit, "Quit"));
-  p->Fit();
-  mred_real_main_frame->Fit();
-
-#if 0
-  XSynchronize(MrEdGetXDisplay(), 1);
-#endif
+  mred_real_main_frame = new wxFrame(NULL, "MrEd"); /* Just in case wxWindows needs an initial frame */
 
   wxsScheme_setup(global_env);
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
-  scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_false);
+  // scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_false);
 
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
@@ -1889,28 +1770,77 @@ wxFrame *MrEdApp::OnInit(void)
 		    scheme_make_prim(OBJDump), global_env);
 #endif
 
-  xargc = argc;
-  xargv = argv;
+  return global_env;
+}
 
-  if (xargc) {
-    /* Skip command name */
-    xargv++;
-    --xargc;
-  }
+static int mred_init(int argc, char **argv)
+{
+#if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
+  scheme_make_stdin = MrEdMakeStdIn;
+  scheme_make_stdout = MrEdMakeStdOut;
+  scheme_make_stderr = MrEdMakeStdErr;
+#endif
 
-  return mred_real_main_frame;
+#ifndef USE_SENORA_GC
+  GC_set_warn_proc(MrEdIgnoreWarnings);
+#endif
+  GC_out_of_memory = MrEdOutOfMemory;
+
+#ifdef SGC_STD_DEBUGGING
+  scheme_external_dump_info = dump_cpp_info;
+# ifdef USE_WXOBJECT_TRACE_COUNTER
+  scheme_external_dump_type = object_type_name;
+  scheme_external_dump_arg = set_trace_arg;
+# endif
+#endif
+
+#if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
+  scheme_console_printf = MrEdSchemeMessages;
+#endif
+  scheme_get_sema_callback_context = wxGetContextForFrame;
+
+  mred_eventspace_param = scheme_new_param();
+  mred_event_dispatch_param = scheme_new_param();
+  mred_ps_setup_param = scheme_new_param();
+
+  return run_from_cmd_line(argc, argv, setup_basic_env, do_main_loop);
+}
+
+wxFrame *MrEdApp::OnInit(void)
+{
+  initialized = 0;
+  edjrMode = FALSE;
+
+#ifdef LIBGPP_REGEX_HACK
+  new Regex("a", 0);
+#endif
+
+  mred_init(argc, argv);
+
+  return NULL;
+}
+
+static void do_graph_repl(void)
+{
+  scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
+}
+
+static void on_main_killed(Scheme_Process *)
+{
+  exit(0);
 }
 
 void MrEdApp::RealInit(void)
 {
-  char *s;
-  mz_jmp_buf savebuf;
-
   initialized = 1;
 
   wxMediaIOCheckLSB(/* scheme_console_printf */);
 
-  scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
+  scheme_current_process->on_kill = on_main_killed;
+  
+  finish_cmd_line_run(xfa, do_graph_repl);
+
+  exit(0);
 }
 
 #ifdef wx_mac
@@ -1941,19 +1871,8 @@ void MrEdApp::DoDefaultAboutItem()
 
 int MrEdApp::OnExit(void)
 {
-  return exit_status;
+  return 0;
 }
-
-/* Remap main: */
-#if !defined(wx_msw)
-
-#if !defined(SYSVR4) && !defined(wx_xt)
-extern "C" { 
-#endif
-  int wxEntry(int argc, char *argv[]);
-#if !defined(SYSVR4) && !defined(wx_xt)
-};
-#endif
 
 #ifdef wx_mac
 extern Scheme_Object *wxs_app_file_proc;
@@ -2026,15 +1945,15 @@ extern long wxMediaCreatorId;
 extern "C" {
 int actual_main(int argc, char **argv)
 {
-  argc = mred_init(argc, argv);
-
+#ifndef wx_msw
   TheMrEdApp = new MrEdApp;
+#endif
 
   int r = wxEntry(argc, argv);
 
   return r;
 }
-} ;
+};
 
 int main(int argc, char *argv[])
 {
@@ -2087,31 +2006,12 @@ int main(int argc, char *argv[])
   MoreMasters();
   
   Drop_GetArgs(&argc, &argv);
-  
-#if 0 /* for testing DrScheme */
-  char *vv[] = { argv[0], "-A", "drscheme" };
-  argv = vv; argc = 3;
-#endif
-
-#if 0
-  while (argc > 2 && (!strcmp(argv[1], "-r"))) {
-    char *file = argv[2];
-    int j;
-    
-    OpenResFile(CtoPstr(file));
-    
-    for (j = 1; j < argc - 2; j++)
-      argv[j] = argv[j + 2];
-    argc -= 2;
-  }  
-#endif
 #endif
   
   scheme_actual_main = actual_main;
 
   return scheme_image_main(argc, argv);
 }
-#endif
 
 /****************************************************************************/
 /*                              wxFlushDisplay                              */

@@ -82,8 +82,6 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "get-position" : void GetPosition(int*,int*);
 @ "enable" : void Enable(bool);
 
-@ "get-name" : nstring GetName();
-
 @ "get-char-height" : float GetCharHeight();
 @ "get-char-width" : float GetCharWidth();
 @ "client-to-screen" : void ClientToScreen(int*, int*);
@@ -91,8 +89,6 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "refresh" : void Refresh();
 @ "get-parent" : wxWindow^ GetParent();
 @ "get-text-extent" : void GetTextExtent(string,float*,float*,float?=NULL,float?=NULL,wxFont^=NULL,bool=FALSE);
-@ "get-grand-parent" : wxWindow^ GetGrandParent();
-@ "get-label" : nstring GetLabel();
 @ "center" : void Center(SYM[direction]=wxBOTH);
 
 @ m "get-height" : int wxSchemeWindowGetHeight();

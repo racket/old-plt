@@ -62,7 +62,7 @@
 #define SUPER_INIT "super-init"
 
 static Scheme_Object *seq_symbol;
-static Scheme_Object *pub_symbol, *pri_symbol;
+static Scheme_Object *pub_symbol, *ovr_symbol, *pri_symbol;
 static Scheme_Object *inh_symbol;
 static Scheme_Object *ren_symbol;
 
@@ -73,6 +73,7 @@ static Scheme_Object *interface_symbol;
   
 enum {
   varPUBLIC,
+  varOVERRIDE,
   varPRIVATE,
   varINHERIT,
   varRENAME,
@@ -90,7 +91,8 @@ enum {
   generic_KIND_INTERFACE
 };
 
-#define ispublic(c) (((c)->vartype == varPUBLIC))
+#define ispublic(c) (((c)->vartype == varPUBLIC) || ((c)->vartype == varOVERRIDE))
+#define isoverride(c) ((c)->vartype == varOVERRIDE)
 #define isreftype(vt) ((vt == varRENAME) || (vt == varINHERIT))
 #define isref(c) isreftype((c)->vartype)
 #define isprivref(c) ((c)->vartype == varRENAME)
@@ -766,22 +768,42 @@ static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
   ref_map = MALLOC_N_ATOMIC(short, sclass->num_ref);
 
   for (; item; item = item->next) {
-    if (isref(item)) {
+    if (isref(item) || isoverride(item)) {
       int p;
-      if ((p = FindName(superclass, item->u.source.name)) < 0) {
+      Scheme_Object *name = (isoverride(item)
+			     ? IVAR_EXT_NAME(item)
+			     : item->u.source.name);
+      if ((p = FindName(superclass, name)) < 0) {
 	const char *cl, *sc;
 
 	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
 	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
 
 	scheme_raise_exn(MZEXN_OBJECT_INHERIT,
-			 item->u.source.name,
-			 CLASS_STAR ": inherited ivar not found: %s%s%s",
-			 scheme_symbol_name(item->u.source.name),
+			 name,
+			 CLASS_STAR ": %s ivar not found: %s%s%s",
+			 isoverride(item) ? "overridden" : "inherited",
+			 scheme_symbol_name(name),
 			 sc,
 			 cl);
       } else {
-	ref_map[item->index] = superclass->public_map[p];
+	if (!isoverride(item))
+	  ref_map[item->index] = superclass->public_map[p];
+      }
+    } else if (ispublic(item)) {
+      Scheme_Object *name = IVAR_EXT_NAME(item);
+      if (FindName(superclass, name) >= 0) {
+	const char *cl, *sc;
+
+	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
+	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
+
+	scheme_raise_exn(MZEXN_OBJECT_INHERIT,
+			 name,
+			 CLASS_STAR ": superclass already includes public ivar: %s%s%s",
+			 scheme_symbol_name(name),
+			 sc,
+			 cl);
       }
     }
   }
@@ -1484,6 +1506,7 @@ static Scheme_Object *DefineClass_Link(Scheme_Object *form, Link_Info *info)
   for (ivar = data->ivars; ivar; ivar = ivar->next) {
     switch(ivar->vartype) {
     case varPUBLIC:
+    case varOVERRIDE:
     case varPRIVATE:
     case varNOTHING:
     case varINPUT:
@@ -1696,6 +1719,9 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     } else if (SAME_OBJ(tag, pub_symbol)) {
       CheckIvarList(tag, vars, check_CanRename, form);
       next = ReadItemList("public", vars, varPUBLIC, next, &ivars, form);
+    } else if (SAME_OBJ(tag, ovr_symbol)) {
+      CheckIvarList(tag, vars, check_CanRename, form);
+      next = ReadItemList("override", vars, varOVERRIDE, next, &ivars, form);
     } else if (SAME_OBJ(tag, pri_symbol)) {
       CheckIvarList(tag, vars, 0, form);
       next = ReadItemList("private", vars, varPRIVATE, next, &ivars, form);
@@ -1819,6 +1845,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
       tag = SCHEME_CAR(vars);
 
       if (SAME_OBJ(tag, pub_symbol) 
+	  || SAME_OBJ(tag, ovr_symbol) 
 	  || SAME_OBJ(tag, pri_symbol))
 	vars = expandall(vars, objenv, depth, 1, NULL);
       else if (SAME_OBJ(tag, seq_symbol))
@@ -3575,6 +3602,7 @@ void scheme_init_object(Scheme_Env *env)
 
     REGISTER_SO(seq_symbol);
     REGISTER_SO(pub_symbol);
+    REGISTER_SO(ovr_symbol);
     REGISTER_SO(pri_symbol);
     REGISTER_SO(inh_symbol);
     REGISTER_SO(ren_symbol);
@@ -3584,6 +3612,7 @@ void scheme_init_object(Scheme_Env *env)
 
     seq_symbol = scheme_intern_symbol("sequence");
     pub_symbol = scheme_intern_symbol("public");
+    ovr_symbol = scheme_intern_symbol("override");
     pri_symbol = scheme_intern_symbol("private");
     inh_symbol = scheme_intern_symbol("inherit");
     ren_symbol = scheme_intern_symbol("rename");
@@ -3716,6 +3745,7 @@ static long count_cvars(ClassVariable *cvar, Scheme_Hash_Table *ht)
 
     switch(cvar->vartype) {
     case varPUBLIC:
+    case varOVERRIDE:
     case varPRIVATE:
     case varNOTHING:
     case varINPUT:

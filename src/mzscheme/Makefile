@@ -185,7 +185,7 @@ $(GCDIR)/$(OBJDIR)/gc_cpp.o:
 $(MZSCHEME): objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o $(SPECIALIZINGOBJECTS)
 	$(CC) $(MAIN_CFLAGS_NODBG) -o $(MZSCHEME) $(OBJDIR)/main.o $(SPECIALIZINGOBJECTS) -L$(LIBDIR)/ -lmzscheme -lgc $(LIBS)
 
-$(OBJDIR)/main.o: main.c include/scheme.h sconfig.h
+$(OBJDIR)/main.o: main.c include/scheme.h sconfig.h cmdline.inc
 	$(CC) $(MAIN_CFLAGS) -c main.c -o $(OBJDIR)/main.o
 
 testext.o: testext.c

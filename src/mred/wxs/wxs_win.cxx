@@ -154,7 +154,6 @@ static Scheme_Object *bundle_symset_direction(int v) {
 
 
 
-
 class os_wxWindow : public wxWindow {
  public:
 
@@ -540,40 +539,6 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
 }
 
 #pragma argsused
-static Scheme_Object *os_wxWindowGetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  nstring r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetLabel();
-
-  
-  
-  return objscheme_bundle_string((char *)r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxWindowGetGrandParent(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxWindow* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetGrandParent();
-
-  
-  
-  return objscheme_bundle_wxWindow(r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -768,23 +733,6 @@ static Scheme_Object *os_wxWindowGetCharHeight(Scheme_Object *obj, int n,  Schem
   
   
   return scheme_make_double(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxWindowGetName(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  nstring r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetName();
-
-  
-  
-  return objscheme_bundle_string((char *)r);
 }
 
 #pragma argsused
@@ -1069,7 +1017,7 @@ void objscheme_setup_wxWindow(void *env)
 if (os_wxWindow_class) {
     objscheme_add_global_class(os_wxWindow_class, "window%", env);
 } else {
-  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 33);
+  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 30);
 
   scheme_add_method_w_arity(os_wxWindow_class,"get-class-name",objscheme_classname_os_wxWindow, 0, 0);
 
@@ -1083,8 +1031,6 @@ if (os_wxWindow_class) {
  scheme_add_method_w_arity(os_wxWindow_class, "get-width", os_wxWindowwxSchemeWindowGetWidth, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-height", os_wxWindowwxSchemeWindowGetHeight, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 0, 1);
- scheme_add_method_w_arity(os_wxWindow_class, "get-label", os_wxWindowGetLabel, 0, 0);
- scheme_add_method_w_arity(os_wxWindow_class, "get-grand-parent", os_wxWindowGetGrandParent, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-text-extent", os_wxWindowGetTextExtent, 3, 7);
  scheme_add_method_w_arity(os_wxWindow_class, "get-parent", os_wxWindowGetParent, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "refresh", os_wxWindowRefresh, 0, 0);
@@ -1092,7 +1038,6 @@ if (os_wxWindow_class) {
  scheme_add_method_w_arity(os_wxWindow_class, "client-to-screen", os_wxWindowClientToScreen, 2, 2);
  scheme_add_method_w_arity(os_wxWindow_class, "get-char-width", os_wxWindowGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "get-char-height", os_wxWindowGetCharHeight, 0, 0);
- scheme_add_method_w_arity(os_wxWindow_class, "get-name", os_wxWindowGetName, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "enable", os_wxWindowEnable, 1, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "get-position", os_wxWindowGetPosition, 2, 2);
  scheme_add_method_w_arity(os_wxWindow_class, "get-client-size", os_wxWindowGetClientSize, 2, 2);

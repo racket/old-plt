@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.2 1998/04/11 21:59:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.3 1998/08/11 14:25:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -468,167 +468,56 @@ void wxCleanUp(void)
 */
 }
 
-#ifndef _WINDLL
-
-
 // Main windows entry point
 
 extern void wxInitUserResource(char *s);
 
 static int retValue = 0;
 
-
-
-
-
-static int parse_command_line(int count, char **command, 
-
-
-							  char *buf, int maxargs)
-
-
+static int parse_command_line(int count, char **command, char *buf, int maxargs)
 {
-
-
-    char *parse, *created, *write;
-
-
-	int findquote = 0;
-
-
+  char *parse, *created, *write;
+  int findquote = 0;
+  
+  parse = created = write = buf;
+  while (*parse) {
+    while (*parse && isspace(*parse)) parse++;
+    while (*parse && (!isspace(*parse) || findquote))	{
+      if (*parse== '"') {
+	findquote = !findquote;
+      } else if (*parse== '\\') {
+	char *next;
+	for (next = parse; *next == '\\'; next++);
+	if (*next == '"') {
+	  /* Special handling: */
+	  int count = (next - parse), i;
+	  for (i = 1; i < count; i += 2)
+	    *(write++) = '\\';
+	  parse += (count - 1);
+	  if (count & 0x1) {
+	    *(write++) = '\"';
+	    parse++;
+	  }
+	}	else
+	  *(write++) = *parse;
+      } else
+	*(write++) = *parse;
+      parse++;
+    }
+    if (*parse)
+      parse++;
+    *(write++) = 0;
     
-
-
-    parse = created = write = buf;
-
-
-	while (*parse) {
-
-
-      while (*parse && isspace(*parse)) parse++;
-
-
-
-
-
-	  while (*parse && (!isspace(*parse) || findquote))	{
-
-
-        if (*parse== '"') {
-
-
-		  findquote = !findquote;
-
-
-	    } else if (*parse== '\\') {
-
-
-		  char *next;
-
-
-		  for (next = parse; *next == '\\'; next++);
-
-
-		  if (*next == '"') {
-
-
-		    /* Special handling: */
-
-
-			int count = (next - parse), i;
-
-
-			for (i = 1; i < count; i += 2)
-
-
-				*(write++) = '\\';
-
-
-			parse += (count - 1);
-
-
-			if (count & 0x1) {
-
-
-			  *(write++) = '\"';
-
-
-			  parse++;
-
-
-			}
-
-
-		  }	else
-
-
-			*(write++) = *parse;
-
-
-	    } else
-
-
-		  *(write++) = *parse;
-
-
-		parse++;
-
-
-	  }
-
-
-	  if (*parse)
-
-
-		  parse++;
-
-
-	  *(write++) = 0;
-
-
-	  
-
-
-	  if (*created)	{
-
-
-        command[count++] = created;
-
-
-		if (count == maxargs)
-
-
-			return count;
-
-
-	  }
-
-
-      created = write;
-
-
-	}
-
-
-
-
-
+    if (*created)	{
+      command[count++] = created;
+      if (count == maxargs)
 	return count;
-
-
+    }
+    created = write;
+  }
+  
+  return count;
 }
-
-
-
-#ifdef USE_SENORA_GC
-
-
-extern "C" void GC_set_stack_base(void *);
-
-
-#endif
-
-
 
 #ifdef __WATCOMC__
 //***It's really principal for Watcom that WinMain should be PASCAL,
@@ -640,35 +529,9 @@ extern "C" int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevIns
 						  int nCmdShow )
 #endif
 {
-#ifdef USE_SENORA_GC
-
-
-  {
-
-
-    int dummy;
-
-
-    GC_set_stack_base(&dummy);
-
-
-  }
-
-
-#endif
-
-
-
-
-
   wxhInstance = hInstance;
 
   wxInitialize(hInstance);
-
-  if (!wxTheApp) {
-    wxMessageBox("wxWindows error: You have to define an instance of wxApp!\n");
-    return 0;
-  }
 
   // Split command line into tokens, as in usual main(argc, argv)
   char **command = new char*[50];
@@ -744,57 +607,24 @@ extern "C" int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevIns
   count = parse_command_line(count, command, buf, 49);
   command[count] = NULL; /* argv[] is NULL terminated list! */
 
-  wxTheApp->argc = count;
-  wxTheApp->argv = command;
   wxTheApp->hInstance = hInstance;
   // store the show-mode parameter of MSW for (maybe) later use.
   // this can be used to inform the program about special show modes
   // under MSW
   wxTheApp->nCmdShow = nCmdShow; // added by steve, 27.11.94
 
-  wxTheApp->wx_frame = wxTheApp->OnInit();
-
-  if (wxTheApp->wx_frame && wxTheApp->wx_frame->handle) {
-    // show the toplevel frame, only if we are not iconized (from MS-Windows)
-    // if(nCmdShow!=SW_HIDE) wxTheApp->wx_frame->Show(TRUE);
-    wxTheApp->MainLoop();
-  }
-
-  if (wxTheApp->wx_frame)
-  {
-    // wxTheApp->wx_frame->GetEventHandler()->OnClose();
-    delete wxTheApp->wx_frame;
-  }
-  
-  wxCleanUp();
-  delete [] buf ;
-  delete [] command[0] ;
-  delete [] command ;
-  return retValue;
+  return main(count, command);
 }
 
-#else /*  _WINDLL  */
-
-extern "C"
-int APIENTRY LibMain(HINSTANCE hInstance, 
-		     WORD wDataSegment, WORD wHeapSize, 
-		     LPSTR lpszCmdLine)
+int wxEntry(int argc, char **argc)
 {
-  wxhInstance = hInstance;
-  wxInitialize(hInstance);
+  wxTheApp->argc = argc;
+  wxTheApp->argv = argv;
 
-  wxTheApp->argc = 0;
-  wxTheApp->argv = NULL;
-  wxTheApp->hInstance = hInstance;
-
-  wxTheApp->wx_frame = wxTheApp->OnInit();
-  if (wxTheApp->wx_frame && wxTheApp->wx_frame->handle) {
-    wxTheApp->wx_frame->Show(TRUE);
-  }
-
-  return 1;
+  wxTheApp->OnInit();
+  
+  return 0;
 }
-#endif // _WINDLL
 
 IMPLEMENT_DYNAMIC_CLASS(wxApp, wxObject)
 
@@ -845,8 +675,6 @@ BOOL wxApp::DoMessage(void)
     top_use = 1;
     msg = &top_msg;
   }
-
-
   if (!wxwmGetMessage(msg)) {
     retValue = msg->wParam;
     rv = FALSE;

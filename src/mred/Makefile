@@ -54,10 +54,13 @@ FTPDIR = /home/scheme/FTP/plt/staging
 
 all:  objects $(OBJDIR)
 	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
+	if [ -f wrap/mred.ss ] ; then $(MAKE) mred-wrap ; fi
 	cd wxs; $(MAKE) WXDIR='$(WXDIR)'
 	cd wxme; $(MAKE) WXDIR='$(WXDIR)'
-	cd wxme; $(MAKE) WXDIR='$(WXDIR)' $(OBJDIR)/edjr.o
 	$(MAKE) $(MRED) MRCHECK='$(MRCHECK)'
+
+mred-wrap:
+	cd wrap; $(MAKE)
 
 bin:
 	$(MAKE) $(MRED)
@@ -70,10 +73,10 @@ $(OBJDIR):
 objects:
 	mkdir objects
 
-$(MRED) : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) wxme/$(OBJDIR)/edjr.o \
+$(MRED) : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) \
           $(WXDIR)/$(LIBDIR)/libwx$(GUISUFFIX).a \
           $(MRSTATIC_STUB) $(MRCHECK)
-	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(MRED) $(LDSTARTERS) $(MREDOBJECTS) wxme/$(OBJDIR)/edjr.o $(MRCHECK) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS)
+	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(MRED) $(LDSTARTERS) $(MREDOBJECTS) $(MRCHECK) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS)
 
 sunos4-static: $(OBJDIR)/dl_stub.o
 	$(MAKE) $(MRED) MRSTATIC=-static  MRSTATIC_STUB='$(OBJDIR)/dl_stub.o' LDNONSTATICLIBS=''

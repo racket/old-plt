@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FileDialog.cc,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
+ * $Id: FileDialog.cc,v 1.2 1998/08/08 03:33:00 mflatt Exp $
  *
  * Purpose: file load and save dialogs
  *
@@ -29,23 +29,21 @@
 #include <unistd.h> // for getcwd
 #include <string.h>
 
-#define  Uses_wxDialogBox
-#define  Uses_wxStringList
-#define  Uses_wxButton
-#define  Uses_wxLayout
-#define  Uses_wxListBox
-#define  Uses_wxMessage
-#define  Uses_wxText
 #include "wx.h"
+
+extern char *wxsPrinterDialog(char *message, char *default_path, 
+			      char *default_filename, char *default_extension, 
+			      int is_put, wxWindow *parent);
 
 //-----------------------------------------------------------------------------
 // wxFileSelector
 //-----------------------------------------------------------------------------
 char *wxFileSelector(char *message, char *default_path,
-		     char *default_filename, char *WXUNUSED(default_extension),
+		     char *default_filename, char *default_extension,
 		     char *wildcard, int flags, wxWindow *parent, int x, int y)
 {
-  return NULL;
+  return wxsPrinterDialog(message, default_path, default_filename, default_extension, 
+			  (flags & wxSAVE), parent);
 }
 
 char *wxLoadFileSelector(char *WXUNUSED(what), char *extension, char *default_name,
@@ -65,5 +63,5 @@ char *wxSaveFileSelector(char *WXUNUSED(what), char *extension, char *default_na
     char wild[60];
     sprintf(wild, "*.%s", extension);
     return wxFileSelector("Save file", NULL, default_name,
-			  (char*)extension, wild, 0, parent);
+			  (char*)extension, wild, wxSAVE, parent);
 }

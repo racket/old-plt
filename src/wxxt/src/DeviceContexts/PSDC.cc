@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.3 1998/08/05 23:56:30 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.4 1998/08/10 22:01:32 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1928,207 +1928,13 @@ void wxPostScriptDC::GetSizeMM(float *WXUNUSED(width), float *WXUNUSED(height))
 #endif
 }
 
-#ifndef NO_XPRINT_DIALOG
-
-class wxPrinterDialogBox : public wxDialogBox
-{
-  public:
-  wxPrinterDialogBox (wxWindow *parent, char *title, Bool modal = FALSE,
-		      int x = -1, int y = -1, int
-		      width = -1, int height = -1);
-};
-
-wxPrinterDialogBox::wxPrinterDialogBox (wxWindow *parent, char *title, Bool isModal,
-		    int x, int y, int width, int height):
-wxDialogBox (parent, title, isModal, x, y, width, height)
-{
-}
-
-Bool wxPrinterDialogAnswer = TRUE;
-
-static void 
-wxPrinterDialogOk (wxButton & button, wxEvent & WXUNUSED(event))
-{
-  wxPrinterDialogAnswer = TRUE;
-  wxPrinterDialogBox *dialog = (wxPrinterDialogBox *) button.GetParent ();
-  dialog->Show (FALSE);
-}
-
-static void 
-wxPrinterDialogCancel (wxButton & button, wxEvent & WXUNUSED(event))
-{
-  wxPrinterDialogAnswer = FALSE;
-  wxPrinterDialogBox *dialog = (wxPrinterDialogBox *) button.GetParent ();
-  dialog->Show (FALSE);
-}
-
-#define wxSetPrintPaperName wxThePrintSetupData->SetPaperName
-#define wxGetPrintPaperName wxThePrintSetupData->GetPaperName
-
-#define COLUMN_WIDTH 150
+extern Bool wxsPrinterDialog(wxWindow *parent);
 
 Bool 
 XPrinterDialog (wxWindow *parent)
 {
-#if 0
-  wxBeginBusyCursor();
-  char buf[100];
-  wxPrinterDialogBox &dialog = *(new wxPrinterDialogBox(parent, "Printer Settings", TRUE, 
-							150, 150, 400, 400));
-
-  char *paper[4];
-  paper[0] = "A4 210 x 297 mm";
-  paper[1] = "A3 297 x 420 mm";
-  paper[2] = "Letter 8 1/2 x 11 in";
-  paper[3] = "Legal 8 1/2 x 14 in";
-  wxChoice *c = new wxChoice(&dialog, NULL, NULL, -1, -1, -1, -1, 4, paper);
-  char *pt = wxGetPrintPaperName();
-  int i;
-  for (i = 0; i < 4; i++)
-    if (!strcmp(pt, paper[i]))
-      c->SetSelection(i);
-
-  wxButton *okBut = new wxButton ((wxPrinterDialogBox *)&dialog, 
-				  (wxFunction)wxPrinterDialogOk, 
-				  wxSTR_BUTTON_OK);
-  (void) new wxButton ((wxPrinterDialogBox *)&dialog, 
-		       (wxFunction)wxPrinterDialogCancel, 
-		       wxSTR_BUTTON_CANCEL);
-  dialog.NewLine();
-  dialog.NewLine();
-  okBut->SetDefault();
-
-  dialog.SetLabelPosition(wxVERTICAL);
-
-#ifdef wx_x
-  wxText &text_prt = *(new wxText(&dialog, (wxFunction) NULL, "Printer Command: ", 
-				  wxGetPrinterCommand(), -1, -1, COLUMN_WIDTH, -1));
-
-  wxText &text0 = *(new wxText(&dialog, (wxFunction) NULL, "Printer Options: ", 
-			       wxGetPrinterOptions(), -1, -1, COLUMN_WIDTH, -1));
-  dialog.NewLine ();
-  dialog.NewLine ();
-#endif
-
-  char *orientation[2];
-  orientation[0] = "Portrait";
-  orientation[1] = "Landscape";
-  wxRadioBox &radio0 = *(new wxRadioBox((wxPrinterDialogBox *)&dialog, 
-					(wxFunction)NULL, 
-					"Orientation: ", -1, -1, COLUMN_WIDTH,- 1,
-					2, (char **)orientation, 0, wxVERTICAL));
-  radio0.SetSelection((wxGetPrinterOrientation() == PS_LANDSCAPE) ? 1 : 0);
-
-  // @@@ Configuration hook
-  if (wxGetPrintPreviewCommand() == NULL) {
-#if 0
-    wxGetResource("wxWindows", "PSView", &wxThePrintSetupData->previewCommand);
-#endif
-    wxSetPrintPreviewCommand(PS_VIEWER_PROG);
-  }
-
-  char *print_modes[3];
-  print_modes[0] = "Send to Printer";
-  print_modes[1] = "Print to File";
-  print_modes[2] = "Preview Only";
-  int features = ((wxThePrintSetupData->GetPrintPreviewCommand() 
-		   && *wxThePrintSetupData->GetPrintPreviewCommand()) 
-		  ? 3 
-		  : 2);
-  wxRadioBox &radio1 = *(new wxRadioBox((wxPrinterDialogBox *)&dialog, (wxFunction)NULL, 
-					"Destination:" , -1, -1, COLUMN_WIDTH, -1, 
-					features, (char **)print_modes, 0, wxVERTICAL));
-#if defined(wx_msw) || defined(wx_mac)
-  radio1.Enable(0, FALSE);
-  if (wxGetPrintPreviewCommand() && *wxGetPrintPreviewCommand())
-    radio1.Enable(2, FALSE);
-#endif
-  radio1.SetSelection((wxGetPrinterMode() == PS_PRINTER) 
-		      ? 0 
-		      : ((wxGetPrinterMode() == PS_FILE)
-			 ? 1
-			 : 2));
-  
-  float wx_printer_translate_x, wx_printer_translate_y;
-  float wx_printer_scale_x, wx_printer_scale_y;
-  wxGetPrinterTranslation(&wx_printer_translate_x, &wx_printer_translate_y);
-  wxGetPrinterScaling(&wx_printer_scale_x, &wx_printer_scale_y);
-
-  sprintf(buf, "%.2f", wx_printer_scale_x);
-  dialog.NewLine();
-  dialog.NewLine();
-
-  wxText &text1 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Horizontal Scaling: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  sprintf(buf, "%.2f", wx_printer_scale_y);
-  wxText &text2 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Vertical Scaling: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  dialog.NewLine();
-
-  sprintf(buf, "%.2f", wx_printer_translate_x);
-  wxText &text3 = *(new wxText((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-			       "Horizontal Translation: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  sprintf (buf, "%.2f", wx_printer_translate_y);
-  wxText &text4 = *(new wxText ((wxPrinterDialogBox *)&dialog, (wxFunction) NULL, 
-				"Vertical Translation: ", (char *)buf, -1, -1, COLUMN_WIDTH, -1));
-
-  dialog.NewLine();
-  dialog.NewLine();
-
-  wxCheckBox *l2 = new wxCheckBox(&dialog, (wxFunction)NULL, "PostScript Level2");
-  if (wxGetLevel2Ok())
-    l2->SetValue(1);
-
-  dialog.NewLine();
-  dialog.NewLine();
-
-  dialog.Fit();
-  dialog.Centre(wxBOTH);
-
-  wxEndBusyCursor();
-
-  dialog.Show(TRUE);
-
-  if (wxPrinterDialogAnswer) {
-    float x, y;
-    StringToFloat(text1.GetValue (), &x);
-    StringToFloat(text2.GetValue (), &y);
-    wxSetPrinterScaling(x, y);
-    StringToFloat(text3.GetValue (), &x);
-    StringToFloat(text4.GetValue (), &y);
-    wxSetPrinterTranslation(x, y);
-
-#ifdef wx_x
-    wxSetPrinterOptions(text0.GetValue());
-    wxSetPrinterCommand(text_prt.GetValue());
-#endif
-
-    wxSetPrinterOrientation(radio0.GetSelection() ? PS_LANDSCAPE : PS_PORTRAIT);
-
-    wxSetPrintPaperName(paper[c->GetSelection()]);
-
-    wxSetLevel2Ok(l2->GetValue());
-
-#ifdef wx_x
-    // C++ wants this
-    switch ( radio1.GetSelection() ) {
-    case 2: wxSetPrinterMode(PS_PREVIEW); break;
-    case 1:    wxSetPrinterMode(PS_FILE);    break;
-    case 0: wxSetPrinterMode(PS_PRINTER); break;
-    }
-#endif
-  }
-
-  return wxPrinterDialogAnswer;
-#endif
+  return wxsPrinterDialog(parent);
 }
-
-#endif
-
-
 
 //-----------------------------------------------------------------------------
 // wxPrintSetup implementation

@@ -1596,7 +1596,7 @@ static Scheme_Object *buttonId_2_sym = NULL;
 static Scheme_Object *buttonId_3_sym = NULL;
 
 static void init_symset_buttonId(void) {
-  buttonId_NEGATIVE_ONE_sym = scheme_intern_symbol("all");
+  buttonId_NEGATIVE_ONE_sym = scheme_intern_symbol("any");
   buttonId_1_sym = scheme_intern_symbol("left");
   buttonId_2_sym = scheme_intern_symbol("middle");
   buttonId_3_sym = scheme_intern_symbol("right");

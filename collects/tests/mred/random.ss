@@ -732,12 +732,21 @@
 			 (if (string? key)
 			     ;; Check global procs/values
 			     (for-each
-			      (lambda (name)
-				(unless (not (void? (with-handlers ([void void])
-						      (global-defined-value name))))
-				  (printf "No such procedure/value: ~a~n" name))
+			      (lambda (name method)
+				(if (void? (with-handlers ([void void])
+					     (global-defined-value name)))
+				    ;; Not there
+				    (printf "No such procedure/value: ~a~n" name)
+				    
+				    (let ([v (global-defined-value name)])
+				      (when (procedure? v)
+					;; check arity
+					(unless (equal? (arity v) (cadr method))
+					  (printf "Arity mismatch for ~a, real: ~a documented: ~a~n" 
+						  name (arity v) (cadr method))))))
+				
 				(set! in-top-level (cons name in-top-level)))
-			      names)
+			      names methods)
 			     ;; Check intf/class methods
 			     (begin
 			       (set! in-top-level (cons (cadr v) in-top-level))

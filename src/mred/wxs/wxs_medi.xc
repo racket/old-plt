@@ -180,8 +180,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @GLOBAL wxMediaGlobal
 
-@ "get-editor-print-margin" : void wxGetMediaPrintMargin(long?=NULL,long?=NULL);
-@ "set-editor-print-margin" : void wxSetMediaPrintMargin(long=-1,long=-1);
+@ "get-editor-print-margin" : void wxGetMediaPrintMargin(long?,long?);
+@ "set-editor-print-margin" : void wxSetMediaPrintMargin(long,long);
 
 @ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);
 @ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn%);

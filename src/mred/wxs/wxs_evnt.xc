@@ -169,7 +169,7 @@
 
 #define NEGATIVE_ONE (-1)
 @BEGINSYMBOLS buttonId > ONE
-@SYM "all" : NEGATIVE_ONE
+@SYM "any" : NEGATIVE_ONE
 @SYM "left" : 1
 @SYM "middle" : 2
 @SYM "right" : 3

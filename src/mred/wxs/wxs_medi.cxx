@@ -4880,14 +4880,8 @@ static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *
   long x1;
 
   
-  if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "set-editor-print-margin in editor%");
-  } else
-    x0 = -1;
-  if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "set-editor-print-margin in editor%");
-  } else
-    x1 = -1;
+  x0 = objscheme_unbundle_integer(p[0], "set-editor-print-margin in editor%");
+  x1 = objscheme_unbundle_integer(p[1], "set-editor-print-margin in editor%");
 
   
   wxSetMediaPrintMargin(x0, x1);
@@ -4907,20 +4901,14 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
   long* x1 = &_x1;
 
   
-  if (n > 0) {
-    if (XC_SCHEME_NULLP(p[0]))
+  if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
     *x0 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
-  } else
-    x0 = NULL;
-  if (n > 1) {
-    if (XC_SCHEME_NULLP(p[1]))
+  if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
     *x1 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
-  } else
-    x1 = NULL;
 
   
   wxGetMediaPrintMargin(x0, x1);
@@ -4946,7 +4934,7 @@ void objscheme_setup_wxMediaGlobal(void *env)
   scheme_install_xc_global("write-editor-global-header", scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalHeader, "write-editor-global-header", 1, 1), env);
   scheme_install_xc_global("read-editor-global-footer", scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalFooter, "read-editor-global-footer", 1, 1), env);
   scheme_install_xc_global("read-editor-global-header", scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalHeader, "read-editor-global-header", 1, 1), env);
-  scheme_install_xc_global("set-editor-print-margin", scheme_make_prim_w_arity(wxMediaGlobalwxSetMediaPrintMargin, "set-editor-print-margin", 0, 2), env);
-  scheme_install_xc_global("get-editor-print-margin", scheme_make_prim_w_arity(wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 0, 2), env);
+  scheme_install_xc_global("set-editor-print-margin", scheme_make_prim_w_arity(wxMediaGlobalwxSetMediaPrintMargin, "set-editor-print-margin", 2, 2), env);
+  scheme_install_xc_global("get-editor-print-margin", scheme_make_prim_w_arity(wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 2, 2), env);
 }
 

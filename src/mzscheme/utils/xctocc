@@ -999,9 +999,12 @@ sub PrintFunction
 	}
     }
 
+    if (!$iscreator) {
+	$justoneok{$func} = 1;
+    }
+
     if ($numfuncs == 1) {
 	if (!$iscreator) {
-	    $justoneok{$func} = 1;
 	    $justonemin{$func} = &CalcNumRequired(1);
 	    $justonemax{$func} = &CalcNumPossible(1);
 	}
@@ -1009,11 +1012,27 @@ sub PrintFunction
     } else {
 	print "  ";
 
+	if (!$iscreator) {
+	    $justonemin{$func} = 1000;
+	    $justonemax{$func} = 0;
+	}
+
 	foreach $pos (0..($numfuncs-2)) {
 	    &ReadFields($thisfuncs[$pos + 1]);
 	    @schemeparams2 = @schemeparams;
 	    @typeids2 = @typeids;
 	    &ReadFields($thisfuncs[$pos]);
+
+	    if (!$iscreator) {
+		$how_many_args_this_case = &CalcNumRequired(1);
+		if ($how_many_args_this_case < $justonemin{$func}) {
+		    $justonemin{$func} = $how_many_args_this_case;
+		}
+		$how_many_args_this_case = &CalcNumPossible(1);
+		if ($how_many_args_this_case > $justonemax{$func}) {
+		    $justonemax{$func} = $how_many_args_this_case;
+		}
+	    }
 
 	    print "if (";
 
@@ -1066,6 +1085,17 @@ sub PrintFunction
 	}
 
 	&ReadFields($thisfuncs[$numfuncs - 1]);
+
+	if (!$iscreator) {
+	    $how_many_args_this_case = &CalcNumRequired(1);
+	    if ($how_many_args_this_case < $justonemin{$func}) {
+		$justonemin{$func} = $how_many_args_this_case;
+	    }
+	    $how_many_args_this_case = &CalcNumPossible(1);
+	    if ($how_many_args_this_case > $justonemax{$func}) {
+		$justonemax{$func} = $how_many_args_this_case;
+	    }
+	}
 
 	if ($numfuncs > 1) {
 	    if ($casename eq "") {

@@ -607,7 +607,7 @@ void wxApp::doMacActivateEvt(void)
 //-----------------------------------------------------------------------------
 void wxApp::doMacUpdateEvt(void)
 {
-	WindowPtr theMacWindow = WindowPtr(cCurrentEvent.message);
+	WindowPtr theMacWindow = (WindowPtr)cCurrentEvent.message;
 	wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);
 	if (theMacWxFrame)
 	{

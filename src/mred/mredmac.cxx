@@ -108,16 +108,15 @@ static int QueueTransferredEvent(EventRecord *e)
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
 #ifdef OS_X	  
-  		// global->local coordinate problems here
         RgnHandle updateRegionHandle = NewRgn();
         GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
-		UnionRgn(updateRegionHandle, q->rgn, q->rgn);
+        UnionRgn(updateRegionHandle, q->rgn, q->rgn);
 #else		
-		UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
+        UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
 #endif		
-		BeginUpdate(w);
-		EndUpdate(w);
-		done = 1;
+        BeginUpdate(w);
+        EndUpdate(w);
+        done = 1;
       }
     }
   }
@@ -146,10 +145,9 @@ static int QueueTransferredEvent(EventRecord *e)
       q->rgn = NewRgn();
       
 #ifdef OS_X
-	  // local to global coordinate problems here.
-      RgnHandle updateRegion = NewRgn();
-      GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
-      CopyRgn(updateRegion,q->rgn);
+        RgnHandle updateRegion = NewRgn();
+        GetWindowRegion(w,kWindowUpdateRgn,updateRegion);	
+        CopyRgn(updateRegion,q->rgn);
 #else      
       CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
 #endif      
@@ -627,6 +625,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
   for (q = first; q; q = q->next) {
     switch (q->event.what) {
     case updateEvt:
+      Str255 wtitle;
+      Rect bounds;
       window = (WindowPtr)q->event.message;
       if (WindowStillHere(window)) {
 	fr = wxWindowPtrToFrame(window, c);
@@ -721,8 +721,6 @@ void MrEdDispatchEvent(EventRecord *e)
     RgnHandle rgn;
     MrQueueElem *q;
     WindowPtr w;
-    GrafPtr p; 
-    RgnHandle test;
 
     w = (WindowPtr)e->message;
 
@@ -736,7 +734,12 @@ void MrEdDispatchEvent(EventRecord *e)
     }
 
 #ifdef OS_X
-    err = InvalWindowRgn(w,rgn);  // global->local coordinate problems!
+    RgnHandle copied = NewRgn();
+    Rect windowBounds;
+    CopyRgn(rgn,copied);
+    GetWindowBounds(w,kWindowContentRgn,&windowBounds);
+    OffsetRgn(copied,-1 * windowBounds.left,-1 * windowBounds.top);
+    InvalWindowRgn(w,copied); 
 #else
  	if (!((WindowRecord *)w)->updateRgn)
  	  ((WindowRecord *)w)->updateRgn = rgn;
@@ -758,7 +761,6 @@ void MrEdDispatchEvent(EventRecord *e)
 int MrEdCheckForBreak(void)
 {
   MrQueueElem *q;
-  EventRecord event;
   
   if (!KeyOk(TRUE))
     return 0;
@@ -820,7 +822,7 @@ wxWindow *wxLocationToWindow(int x, int y)
 	return NULL;
   }
   
-  frame = (wxFrame *)GetWRefCon(win);  // wish I could verify that this is a wxFrame...
+  frame = (wxFrame *)GetWRefCon(win);  
   
   /* Mac: some frames really represent dialogs. Any modal frame is
 	 a dialog, so extract its only child. */

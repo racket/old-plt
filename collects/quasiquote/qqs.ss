@@ -5,5 +5,7 @@
   (get-chart
     get-quote
     (struct entity (name))
+    (struct stock ())
+    (struct fund ())
     stock
     fund))

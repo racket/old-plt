@@ -119,7 +119,6 @@
 	       (send file-menu append-separator))]
 	    [make-edit
 	     (lambda ()
-	       (printf "hyper making an edit~n")
 	       (make-object (get-edit%) #t))]
 	    [button% mred:container:button%])
 	  (private
@@ -158,9 +157,7 @@
 	  (public
 	    [open-file 
 	     (opt-lambda (filename [tag #f])
-	       (printf "tag: ~a~n" tag)
 	       (send canvas set-the-tag tag)
-	       (printf "super-open-file: ~a~n" filename)
 	       (super-open-file filename))])
 	  (sequence
 	    (super-init file-name #f (if group group hyper-frame-group)))
@@ -218,7 +215,6 @@
 		     (if (eq? mode 'nothing)
 			 (send edit uninstall-clickbacks)
 			 (send edit install-clickbacks))
-		     (printf "mode: ~a~n" mode)
 		     (send edit set-follow-on-click 
 			   (case mode
 			     (follow #t)
@@ -229,7 +225,6 @@
 		     (send menu-bar check nothing-item (eq? mode 'nothing))))))]
 	    [make-edit
 	     (lambda ()
-	       (printf "hyper.2 making an edit~n")
 	       (make-object (get-edit%) #f))]
 	    [make-menu-bar
 	     (lambda ()

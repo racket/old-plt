@@ -2,7 +2,7 @@
 
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'load 'startup 'invoke 'html)))
+(define mred:debug:turned-on (box (list 'load 'startup 'invoke 'html 'dv)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")]
@@ -41,6 +41,24 @@
       (define exit? #t))))
 
 (invoke-open-unit mred:debug@ mred:debug)
+
+(define-macro mred:dv
+  (lambda args
+    (when mred:debug:on?
+      (let ([string
+	     (let loop ([string ""] [args args])
+	       (cond
+		 [(null? args) string]
+		 [else 
+		  (unless (symbol? (car args))
+		    (error 'mred:dv 
+			   "only accepts symbols as arguments"))
+		  (loop 
+		   (string-append string 
+				  (symbol->string (car args))
+				  ": ~s ")
+		   (cdr args))]))])
+	`(mred:debug:printf 'dv ,string ,@args)))))
 
 (when mred:debug:on?
   (letrec* ([old-handler (current-load)]
@@ -313,3 +331,9 @@
 	     (not (directory-exists? default-path)))
 	 (unbox path-box)
 	 default-path))))
+
+(when (and (eq? wx:platform 'windows))
+  (let ([hd (getenv "HOMEDRIVE")]
+	[hp (getenv "HOMEPATH")])
+    (when (and hd hp)
+      (current-directory (build-path hd hp)))))

@@ -300,13 +300,8 @@
 			       (public
 				 [default-spacing-width 0]
 				 [default-border-width 0]))]
-		     [s-root (super-make-root-panel panel% parent)]
-		     [root%
-		      (class-asi mred:container:vertical-panel%
-			(public
-			  [default-spacing-width 0]
-			  [default-border-width 0]))]		      
-		     [root (make-object root% s-root)])
+		     [s-root (super-make-root-panel panel% parent)]		      
+		     [root (make-object % s-root)])
 		(set! super-root s-root)
 		root))])
 	  (private

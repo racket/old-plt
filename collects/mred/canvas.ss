@@ -49,7 +49,6 @@
 	  (inherit get-media edit-modified get-parent)
 	  (rename
 	    [super-on-size on-size]
-	    [super-set-size set-size]
 	    [super-edit-renamed edit-renamed]
 	    [super-force-redraw force-redraw]
 	    [super-set-media set-media]
@@ -87,6 +86,22 @@
 	       (when frame
 		 (send frame on-frame-active)))])
 	  (private
+	    [resize-edit
+	       ;; only resize the edit when the canvas is in a good state,
+	       ;; a good state is when the container classes are 
+	       ;; force redrawing or when the frame is shown.
+	     (lambda ()
+	       (let ([frame-shown?
+		      (let loop ([t (get-parent)])
+			(if (is-a? t wx:frame%)
+			    (ivar t shown)
+			    (loop (send t get-parent))))])
+		 (when frame-shown?
+		   (let ([edit (get-media)])
+		     (unless (null? edit)
+		       (mred:debug:printf 'rewrap "canvas on-size rewrapping: ~a ~a~n"
+					  must-resize-edit frame-shown?)
+		       (send edit rewrap))))))]
 	    [must-resize-edit #f])
 	  (public
 	    [force-redraw 
@@ -96,24 +111,7 @@
 	    [on-size
 	     (lambda (width height)
 	       (super-on-size width height)
-
-	       ;; only resize the edit when the canvas is in a good state,
-	       ;; a good state is when the container classes are 
-	       ;; force redrawing or when the frame is shown.
-	       (when (or must-resize-edit
-			 (let loop ([t (get-parent)])
-			   (if (is-a? t wx:frame%)
-			       (ivar t shown)
-			       (loop (send t get-parent)))))
-		 (let ([edit (get-media)])
-		   (unless (null? edit)
-		     (send edit rewrap)
-		     (set! must-resize-edit #f)))))]
-	       
-	    [set-size
-	     (lambda x
-	       '(printf "set-size: ~a~n" x)
-	       (apply super-set-size x))]
+	       (resize-edit))]
 	    [set-media
 	     (opt-lambda (m [redraw? #t])
 	       (let ([old-m (get-media)])
@@ -126,13 +124,7 @@
 		     (edit-renamed "No buffer"))
 		   (begin
 		     (send m add-canvas this)
-		     (if (ivar m auto-set-wrap?)	
-			 (let ([admin (send m get-admin)]
-			       [w-box (box 0)]
-			       [h-box (box 0)])
-			   (unless (null? admin)
-			     (send admin get-view () () w-box h-box #f)
-			     (send m set-max-width (unbox w-box)))))
+		     (resize-edit)
 		     (edit-modified (send m modified?))
 		     (edit-renamed (send m get-filename))))
 	       (set-frame-title))])

@@ -185,13 +185,13 @@
 				(make-between 'file-menu 'between-new-and-open #f)
 				(make-an-item 'file-menu:open "Open a file from disk"
 					      'mred:handler:open-file
-					      "n" "&Open" "...")
+					      "o" "&Open" "...")
 				(make-between 'file-menu 'between-open-and-save #f)
 				(make-an-item 'file-menu:revert 
 					      "Revert this file to the copy on disk"
 					      #f #f "&Revert" "")
 				(make-an-item 'file-menu:save "" #f "s" "&Save" "")
-				(make-an-item 'file-menu:save-as "" #f "n" "Save" " &As...")
+				(make-an-item 'file-menu:save-as "" #f #f "Save" " &As...")
 				(make-between 'file-menu 'between-save-and-print #t)
 				(make-an-item 'file-menu:print "" #f "p" "&Print..." "")
 				(make-between 'file-menu 'between-print-and-close #t)
@@ -205,7 +205,7 @@
 				(make-between 'file-menu 'after-quit #f)
 				
 				(make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
-				(make-an-item 'edit-menu:redo "" #f #f "&Redo" "")
+				(make-an-item 'edit-menu:redo "" #f "y" "&Redo" "")
 				(make-between 'edit-menu 'between-redo-and-cut #t)
 				(make-an-item 'edit-menu:cut "" #f "x" "Cu&t" "")
 				(make-between 'edit-menu 'between-cut-and-copy #f)
@@ -219,13 +219,13 @@
 						  "&Delete")
 					      "")
 				(make-between 'edit-menu 'between-clear-and-select-all #f)
-				(make-an-item 'edit-menu:select-all "" #f "z" "Select A&ll" "")
+				(make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
 				(make-between 'edit-menu 'between-select-all-and-find #t)
 				(make-an-item 'edit-menu:find "Search for a string in the buffer"
 					      '(lambda () (send this search))
-					      "z" "Find" "")
+					      "f" "Find" "")
 				(make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
-					      #f "z" "Replace" "")
+					      #f #f "Replace" "")
 				(make-between 'edit-menu 'between-replace-and-preferences #t)
 				(make-an-item 'edit-menu:preferences ""
 					      '(lambda () (mred:preferences:show-preferences-dialog))
@@ -253,232 +253,176 @@
     (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
 
     (define make-simple-frame%
-      (lambda (super%)
-	(class super% ([name frame-name])
-	  (inherit panel get-client-size set-icon get-menu-bar
-		   make-menu on-close show)
-	  (rename [super-on-close on-close]
-		  [super-set-title set-title])
-	  (public
-	    [WIDTH frame-width]
-	    [HEIGHT frame-height])
-
-	  (public
-	    [get-panel% (lambda () mred:panel:vertical-edit-panel%)]
-	    [title-prefix "MrEd"])
-	  
-	  (private
-	    [title ""]
-	    [do-title
-	     (lambda ()
-	       (let ([t (if (or (string=? "" title)
-				(string=? "" title-prefix))
-			    (string-append title-prefix title)
-			    (string-append title-prefix ": " title))])
-		 '(printf "setting-title to ~a~n" t)
-		 (super-set-title t)))])
-
-	  ; methods
-	  (public
-	    [on-frame-active (lambda () (void))]
-	    [get-title (lambda () title)]
-	    [set-title
-	     (lambda (t)
-	       (when (and (string? t)
-			  (not (string=? t title)))
-		 (set! title t)
-		 (do-title)))]
-	    [set-title-prefix
-	     (lambda (s)
-	       (when (and (string? s)
-			  (not (string=? s title-prefix)))
-		 (set! title-prefix s)
-		 (do-title)))]
-	    [get-canvas% (lambda () mred:canvas:simple-frame-canvas%)]
-	    [get-edit% (lambda () mred:edit:edit%)]
-	    [make-edit
-	     (lambda ()
-	       (let ([% (get-edit%)])
-		 (make-object %)))])
-
-	  (public
-	    [save-as
-	     (opt-lambda ([format wx:const-media-ff-same])
-	       (let ([file (mred:finder:put-file)])
-		 (when file
-		   (send (active-edit) save-file file format))))]
-	    [file-menu:new (lambda () (mred:handler:edit-file #f)
-				   #t)]
-	    [file-menu:revert 
-	     (lambda () 
-	       (let* ([b (box #f)]
-		      [filename (send edit get-filename b)])
-		 (if (or (null? filename) (unbox b))
-		     (wx:bell)
-		     (send edit load-file filename))
-		 #t))]
-	    [file-menu:save (lambda () (send edit save-file)
-				    #t)]
-	    [file-menu:save-as (lambda () (save-as) #t)]
-	    [file-menu:between-print-and-close
-	     (lambda (file-menu)
-	       (send file-menu append-separator)
-	       (let ([split
-		      (lambda (panel%)
-			(let ([% (class-asi panel%
-				   (public
-				     [default-spacing-width 0]
-				     [default-border-width 0]))])
-			  (lambda ()
-			    (when (active-canvas)
-			      (send panel split (active-canvas) %)))))])
-		 (send file-menu append-item "Split Horizontally" (split mred:container:horizontal-panel%))
-		 (send file-menu append-item "Split Vertically" (split mred:container:vertical-panel%))
-		 (send file-menu append-item "Collapse"
-		       (lambda ()
-			 (when (active-canvas)
-			   (send panel collapse (active-canvas))))))
-	       (send file-menu append-separator))]
-	    [file-menu:close (lambda () 
-			       (when (on-close) (show #f))
-			       #t)]
-	    [file-menu:print (lambda () (send edit print '()) #t)])
-
-
-	  (private
-	    [edit-menu:do (lambda (const)
-			    (lambda () (send edit do-edit const)
-				    #t))])
-
-	  (public
-	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
-	    [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
-	    [edit-menu:cut (edit-menu:do wx:const-edit-cut)]
-	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
-	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
-	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
-	    [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
-	    [edit-menu:replace (lambda ()
-				 (when (active-canvas)
-				   (mred:find-string:find-string
-				    (active-canvas)
-				    (active-edit)
-				    -1 -1 (list 'replace 'ignore-case))))]
-
-	    [edit-menu:between-replace-and-preferences
-	     (lambda (edit-menu)
-	       (send edit-menu append-separator)
-	       (send edit-menu append-item "Insert Text Box"
-		     (edit-menu:do wx:const-edit-insert-text-box))
-	       (send edit-menu append-item "Insert Graphic Box"
-		     (edit-menu:do wx:const-edit-insert-graphic-box))
-	       (send edit-menu append-item "Insert Image..."
-		     (edit-menu:do wx:const-edit-insert-image))
-	       (send edit-menu append-item "Toggle Wrap Text"
-		     (lambda ()
-		       (let ([edit (active-edit)])
-			 (when edit
-			   (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
-			   (send (active-canvas) force-redraw)))))
-	       (send edit-menu append-separator))])
-
-	  (sequence
-	    (mred:debug:printf 'super-init "before simple-frame%")
-	    (super-init () name -1 -1 WIDTH HEIGHT
-			(+ wx:const-default-frame wx:const-sdi)
-			name)
-	    (mred:debug:printf 'super-init "after simple-frame%"))
-
-	  (public
-	    [canvas (make-object (get-canvas%) panel)]
-	    [canvases (list canvas)]
-	    [active-canvas
-	     (let ([last-active-canvas canvas])
+      (let ([main-panel%
+	     (class-asi mred:panel:vertical-edit-panel%
+	       (public
+		 [default-spacing-width 0]
+		 [default-border-width 0]))])
+	(lambda (super%)
+	  (class super% ([name frame-name])
+	    (inherit panel get-client-size set-icon get-menu-bar
+		     make-menu on-close show)
+	    (rename [super-on-close on-close]
+		    [super-set-title set-title])
+	    (public
+	      [WIDTH frame-width]
+	      [HEIGHT frame-height])
+	    
+	    (public
+	      [get-panel%  (lambda () main-panel%)]
+	      
+	      [title-prefix "MrEd"])
+	    
+	    (private
+	      [title ""]
+	      [do-title
 	       (lambda ()
-		 (if (send last-active-canvas is-focus-on?)
-		     last-active-canvas
-		     (let ([ans
-			    (let loop ([item panel])
-			      (cond
-			       [(is-a? item wx:media-canvas%)
-				(and (send item is-focus-on?)
-				     item)]
-			       [(is-a? item wx:panel%)
-				(ormap loop
-				       (ivar item children))]
-			       [else #f]))])
-		       (when ans
-			 (set! last-active-canvas ans))
-		       ans))))]
-	    [active-edit
-	     (lambda ()
-	       (let ([c (active-canvas)])
-		 (and c
-		      (send c get-media))))])
-	  
-	  (public
-	    [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
-	    [edit (make-edit)])
-	  (sequence
-	    (send* canvas (set-frame this) (set-media edit))
-	    (when (send mred:icon:icon ok?)
-	      (set-icon mred:icon:icon))
-	    (do-title)))))
+		 (let ([t (if (or (string=? "" title)
+				  (string=? "" title-prefix))
+			      (string-append title-prefix title)
+			      (string-append title-prefix ": " title))])
+		   '(printf "setting-title to ~a~n" t)
+		   (super-set-title t)))])
+	    
+	    ; methods
+	    (public
+	      [on-frame-active (lambda () (void))]
+	      [get-title (lambda () title)]
+	      [set-title
+	       (lambda (t)
+		 (when (and (string? t)
+			    (not (string=? t title)))
+		   (set! title t)
+		   (do-title)))]
+	      [set-title-prefix
+	       (lambda (s)
+		 (when (and (string? s)
+			    (not (string=? s title-prefix)))
+		   (set! title-prefix s)
+		   (do-title)))]
+	      [get-canvas% (lambda () mred:canvas:simple-frame-canvas%)]
+	      [get-edit% (lambda () mred:edit:edit%)]
+	      [make-edit
+	       (lambda ()
+		 (let ([% (get-edit%)])
+		   (make-object %)))])
+	    
+	    (public
+	      [save-as
+	       (opt-lambda ([format wx:const-media-ff-same])
+		 (let ([file (mred:finder:put-file)])
+		   (when file
+		     (send (active-edit) save-file file format))))]
+	      [file-menu:revert 
+	       (lambda () 
+		 (let* ([b (box #f)]
+			[filename (send edit get-filename b)])
+		   (if (or (null? filename) (unbox b))
+		       (wx:bell)
+		       (send edit load-file filename))
+		   #t))]
+	      [file-menu:save (lambda () (send edit save-file)
+				#t)]
+	      [file-menu:save-as (lambda () (save-as) #t)]
+	      [file-menu:between-print-and-close
+	       (lambda (file-menu)
+		 (send file-menu append-separator)
+		 (let ([split
+			(lambda (panel%)
+			  (let ([% (class-asi panel%
+				     (public
+				       [default-spacing-width 0]
+				       [default-border-width 0]))])
+			    (lambda ()
+			      (when (active-canvas)
+				(send panel split (active-canvas) %)))))])
+		   (send file-menu append-item "Split Horizontally" (split mred:container:horizontal-panel%))
+		   (send file-menu append-item "Split Vertically" (split mred:container:vertical-panel%))
+		   (send file-menu append-item "Collapse"
+			 (lambda ()
+			   (when (active-canvas)
+			     (send panel collapse (active-canvas))))))
+		 (send file-menu append-separator))]
+	      [file-menu:print (lambda () (send edit print '()) #t)])
+	    
+	    
+	    (private
+	      [edit-menu:do (lambda (const)
+			      (lambda () (send edit do-edit const)
+				#t))])
+	    
+	    (public
+	      [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
+	      [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
+	      [edit-menu:cut (edit-menu:do wx:const-edit-cut)]
+	      [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
+	      [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
+	      [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
+	      [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
+	      [edit-menu:replace (lambda ()
+				   (when (active-canvas)
+				     (mred:find-string:find-string
+				      (active-canvas)
+				      (active-edit)
+				      -1 -1 (list 'replace 'ignore-case))))]
+	      
+	      [edit-menu:between-replace-and-preferences
+	       (lambda (edit-menu)
+		 (send edit-menu append-separator)
+		 (send edit-menu append-item "Insert Text Box"
+		       (edit-menu:do wx:const-edit-insert-text-box))
+		 (send edit-menu append-item "Insert Graphic Box"
+		       (edit-menu:do wx:const-edit-insert-graphic-box))
+		 (send edit-menu append-item "Insert Image..."
+		       (edit-menu:do wx:const-edit-insert-image))
+		 (send edit-menu append-item "Toggle Wrap Text"
+		       (lambda ()
+			 (let ([edit (active-edit)])
+			   (when edit
+			     (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
+			     (send (active-canvas) force-redraw)))))
+		 (send edit-menu append-separator))])
+	    
+	    (sequence
+	      (mred:debug:printf 'super-init "before simple-frame%")
+	      (super-init () name -1 -1 WIDTH HEIGHT
+			  (+ wx:const-default-frame wx:const-sdi)
+			  name)
+	      (mred:debug:printf 'super-init "after simple-frame%"))
+	    
+	    (public
+	      [canvas (make-object (get-canvas%) panel)]
+	      [active-canvas
+	       (let ([last-active-canvas canvas])
+		 (lambda ()
+		   (if (send last-active-canvas is-focus-on?)
+		       last-active-canvas
+		       (let ([ans
+			      (let loop ([item panel])
+				(cond
+				  [(is-a? item wx:media-canvas%)
+				   (and (send item is-focus-on?)
+					item)]
+				  [(is-a? item wx:panel%)
+				   (ormap loop
+					  (ivar item children))]
+				  [else #f]))])
+			 (when ans
+			   (set! last-active-canvas ans))
+			 ans))))]
+	      [active-edit
+	       (lambda ()
+		 (let ([c (active-canvas)])
+		   (and c
+			(send c get-media))))])
+	    
+	    (public
+	      [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
+	      [edit (make-edit)])
+	    (sequence
+	      (send* canvas (set-frame this) (set-media edit))
+	      (when (send mred:icon:icon ok?)
+		(set-icon mred:icon:icon))
+	      (do-title))))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))))
-
-
-
-	    '[remarkable-menu #f]
-	    '[init-remarkable-menu
-	     (lambda ()
-	       '(unless remarkable-menu
-		 (let ([mb (get-menu-bar)])
-		   (set! remarkable-menu (make-menu))
-		   (send mb append remarkable-menu "&Show"))))]
-		 
-	    '[add-remarkable-edit/panel
-	     (lambda (panel/edit menu-string)
-	       '(set! remarkable-edits/panels (cons panel/edit remarkable-edits/panels))
-	       '(init-remarkable-menu)
-	       '(letrec* ([remarkable-top-level (make-object mred:container:vertical-panel%
-							    remarkable-panel)]
-			 [insert-child
-			  (lambda (current-children all-children)
-			    (printf "insert-child;~n current: ~a~n     all: ~a~n" current-children all-children)
-			    (cond
-			      [(null? current-children)
-			       (printf "case 1~n")
-			       (list remarkable-top-level)]
-			      [(null? all-children)
-			       (printf "case 2~n")
-			       (list remarkable-top-level)]
-			      [(eq? (car all-children) remarkable-top-level)
-			       (printf "case 3~n")
-			       (cons remarkable-top-level current-children)]
-			      [(eq? (car current-children) (car all-children))
-			       (printf "case 4~n")
-			       (cons (car current-children) (insert-child (cdr current-children) 
-									  (cdr all-children)))]
-			      [else
-			       (printf "case 5~n")
-			       (insert-child current-children (cdr all-children))]))]
-			 [menu-id
-			  (send remarkable-menu append-item menu-string
-				(lambda ()
-				  (if (send remarkable-menu checked? menu-id)
-				      (send remarkable-panel change-children 
-					    (lambda (l)
-					      (insert-child l remarkable-children)))
-				      (send remarkable-panel change-children
-					    (lambda (l)
-					      (mzlib:function:remq remarkable-top-level l)))))
-				   "" #t)])
-		 (send remarkable-menu check menu-id #t)
-		 (set! remarkable-children (append remarkable-children
-						   (list remarkable-top-level)))
-		 (if (is-a? panel/edit wx:media-edit%)
-		     (let ([canvas (make-object (get-canvas%) remarkable-top-level)])
-		       (send canvas set-frame this)
-		       (send canvas set-media panel/edit))
-		     (panel/edit remarkable-top-level))))]

@@ -46,13 +46,13 @@
 	    [group : mred:group^ 
 		   (mred:group@ debug preferences editor-frame gui-utils
 			      exit autosave handler (core function@))]
+	    [canvas : mred:canvas^ 
+		    (mred:canvas@ debug container edit (core file@))]
+	    [panel : mred:panel^ (mred:panel@ debug container canvas (core function@))]
 	    [frame : mred:frame^ 
 		   (mred:frame@ debug preferences edit container canvas icon
 			      menu group finder find-string handler exit autosave
 			      panel gui-utils (core function@) (core file@))]
-	    [canvas : mred:canvas^ 
-		    (mred:canvas@ debug container edit (core file@))]
-	    [panel : mred:panel^ (mred:panel@ debug container canvas (core function@))]
 	    [find-string : mred:find-string^ 
 			 (mred:find-string@ debug container canvas edit frame)]
 	    [editor-frame : mred:editor-frame^ 
@@ -93,6 +93,7 @@
 	      (open find-string) (open edit) (open canvas)
 	      (open frame) (open editor-frame)
 	      (open group) (open handler) (open icon) (open keymap)
-	      (open match-cache) (open menu) (open mode) (open project)
-	      (open scheme-paren) (open scheme-mode) (open paren)
+	      (open match-cache) (open menu) (open mode) 
+	      (open panel) (open paren) (open project)
+	      (open scheme-paren) (open scheme-mode) 
 	      (open hyper-edit) (open hyper-dialog) (open hyper-frame)))))

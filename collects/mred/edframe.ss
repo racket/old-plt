@@ -26,7 +26,7 @@
 	(class super% ([filename #f][show? #t][frameset mred:group:frames])
 	  (inherit make-menu show save-as
 		   make-edit active-edit edit
-		   canvas canvases)
+		   canvas)
 	  (rename [super-on-close on-close]
 		  [super-make-menu-bar make-menu-bar]
 		  [super-on-menu-command on-menu-command]
@@ -79,9 +79,8 @@
 	       (if keep-buffers?
 		   (send frames set-active-frame this)))]
 	    [check-saved
-	     (opt-lambda (canvas [reason "Close"])
-	       (let* ([edit (send canvas get-media)]
-		      [name (send edit get-filename)]
+	     (opt-lambda (edit [reason "Close"])
+	       (let* ([name (send edit get-filename)]
 		      [name (if (string? name)
 				name
 				"Untitled")])
@@ -118,10 +117,10 @@
 	       ; filename = #f => no file, make untitled
 	       ; filename = <buffer> => use buffer
 	       ; otherwise, filename = name string
-	       (printf "open-file; test: ~a~n" (or (not check-save?)
-						   (check-saved canvas)))
+	       '(printf "open-file; test: ~a~n" (or (not check-save?)
+						   (check-saved (send canvas get-media))))
 	       (if (or (not check-save?)
-		       (check-saved canvas))
+		       (check-saved (send canvas get-media)))
 		   (let* ([filename
 			   (if (null? orig-filename)
 			       (mred:finder:get-file)
@@ -151,7 +150,6 @@
 			     (else
 			      (send buffers find-buffer-by-name 'file filename)))])
 		     ; If we didn't find a buffer, create one
-		     (printf "open-file; edit:~a~n" edit)
 		     (if (not edit)
 			 (let ([edit (make-edit)])
 			   ; Load in the file, if it exists
@@ -184,23 +182,12 @@
 					    #t)]
 		 [else (super-on-menu-command op)]))]
 	    
-	    [check-nonunique-or-saved
-	     (lambda (canvas)
-	       (let ([e (send canvas get-media)])
-		 (if (ormap
-		      (lambda (c)
-			(and (not (eq? c canvas))
-			     (eq? e (send c get-media))))
-		      canvases)
-		     #t
-		     (check-saved canvas))))]
-	    
 	    [check-all-saved-for-quit
 	     (lambda () 
 	       (check-all-saved "Quit"))]
 	    [check-all-saved
 	     (opt-lambda ([reason "Close"])
-	       (andmap (lambda (c) (check-saved c reason)) canvases))]
+	       (check-saved edit reason))]
 	    
 	    [on-close
 	     (lambda ()
@@ -209,9 +196,7 @@
 			    (send frames remove-frame this)))
 		   (if keep-buffers?
 		       (begin
-			 (for-each (lambda (canvas)
-				     (send canvas set-media '()))
-				   canvases)
+			 (send canvas set-media '())
 			 #t)
 		       (if (check-all-saved)
 			   (begin
@@ -223,12 +208,10 @@
 	    
 	    [do-autosave
 	     (lambda ()
-	       (if auto-save?
-		   (for-each (lambda (canvas)
-			       (let ([m (send canvas get-media)])
-				 (unless (null? m)
-				   (send m do-autosave))))
-			     canvases)))])
+	       (when auto-save?
+		 (let ([m (send canvas get-media)])
+		   (unless (null? m)
+		     (send m do-autosave)))))])
 
 
 	  (public

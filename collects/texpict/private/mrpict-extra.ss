@@ -202,7 +202,8 @@
 		     (let ([b (send-generic dc get-brush)]
 			   [rx (- dx (/ (cadr x) 2))]
 			   [ry (- h+top dy (/ (caddr x) 2))])
-		       (set-brush (send-generic the-brush-list find-or-create-brush "BLACK" 'transparent))
+		       (send-generic dc set-brush 
+				     (send-generic the-brush-list find-or-create-brush "BLACK" 'transparent))
 		       (let ([part (cadddr x)]
 			     [cr (send dc get-clipping-region)]
 			     [set-rect (lambda (l t r b)

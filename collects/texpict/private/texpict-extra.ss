@@ -298,9 +298,9 @@
       
       (define (parse-slope sl dh dv)
 	(if (eq? sl 'vertical)
-	    (if (negative? dh)   ; (negative? dv)
-		(values 0 -1 dv) ;(values 0 -1 (abs dh))
-		(values 0 1 dv)) ;(values 0 -1 dh)
+	    (if (negative? dv)
+		(values 0 -1 (- dv))
+		(values 0 1 dv))
 	    (let ([d (denominator sl)]
 		  [n (numerator sl)])
 	      (if (negative? dh)

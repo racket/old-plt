@@ -41,6 +41,7 @@ $key_idfield = '@IDFIELD ';
 $key_startsymbols = '@BEGINSYMBOLS ';
 $key_endsymbols = '@ENDSYMBOLS ';
 $key_sym = '@SYM ';
+$key_argnames = '@ARGNAMES ';
 
 sub ResetObjParams 
 {
@@ -49,6 +50,7 @@ sub ResetObjParams
     @vars = ();
     @ivars = ();
     @creators = ();
+    $iargnames = 'BYPOS';
     @distinct_creators = ();
     @constants = ();
     %justoneok = ();
@@ -183,6 +185,9 @@ sub ReadFile {
 	    } elsif (&StartsWithKey($_, $key_creatorx)) {
 		$creator = &SkipKey($_, $key_creatorx);
 		@creators = (@creators, $creator);
+	    } elsif (&StartsWithKey($_, $key_argnames)) {
+		$iargnames = &SkipKey($_, $key_argnames);
+		$iargnames = &Wash($iargnames);
 	    } elsif (&StartsWithKey($_, $key_macro)) {
 		$s = &Wash(&SkipKey($_, $key_macro));
 		$eqpos = index($s, '=');
@@ -1060,7 +1065,12 @@ sub DoPrintClass
 	} else {
 	    print SOUT "#f";
 	}
-	
+	if ($iargnames ne 'BYPOS') {
+	    print SOUT " ($iargnames)";
+	} else {
+	    print SOUT " #f";
+	}
+
 	@funcs = ();
 	foreach $function (@functions) {
 	    &ReadFields($function);

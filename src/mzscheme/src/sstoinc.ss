@@ -21,7 +21,7 @@
 	  (let loop ([chars (string->list s)][pos 0])
 	    (unless (null? chars)
 	      (let ([char (car chars)])
-		(printf "~a, " (char->integer char)))
+		(printf "~a," (char->integer char)))
 	      (loop (cdr chars)
 		    (if (= pos DIGS-PER-LINE)
 			(begin

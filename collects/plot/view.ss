@@ -159,12 +159,12 @@
            (pl-set-device "png") 
            (pl-set-output-file bitmap) 
            (pl-init-plot)]
-          [(eq? device 'mem)           
-           (init-colors)
-           (set! bitmap (make-u8vector (* x-size y-size 4) 255))
-           (pl-setup-memory x-size y-size bitmap)
-           (pl-set-device "mem") 
-           (pl-init-plot)]
+;          [(eq? device 'mem)           
+;           (init-colors)
+;           (set! bitmap (make-u8vector (* x-size y-size 4) 255))
+;           (pl-setup-memory x-size y-size bitmap)
+;           (pl-set-device "mem") 
+;           (pl-init-plot)]
           [else
            (error "Incorrect device specified")]))
       
@@ -173,10 +173,11 @@
         (cond
           [(eq? device 'png)
            (pl-finish-plot)
-           (load-file bitmap)]
-          [(eq? device 'mem)
-           (pl-finish-plot)
-           (set-bitmap (bits->bitmap-dc% bitmap))]
+           (load-file bitmap)
+           (delete-file bitmap)]
+;          [(eq? device 'mem)
+;           (pl-finish-plot)
+;           (set-bitmap (bits->bitmap-dc% bitmap))]
           [else
            (error "Incorrect device specified")]))
       

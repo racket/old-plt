@@ -5,6 +5,7 @@
          (lib "renderer-helpers.ss" "plot"))
 ; (number -> number) mumbo-jumbo -> 2d-renderer
 (define dashed-line
+  (make-your-own
   (r-lambda fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))    
     (let* ((dash-size (/ (- x-max x-min) segments))
            (x-lists (build-list (/ segments 2) 
@@ -19,7 +20,7 @@
       (for-each (lambda (dash)
                   (send 2dview plot-line 
                         (map (lambda (x) (vector x (fun x))) dash))) 
-                x-lists))))
+                x-lists)))))
                      ;                                  
 
 (plot (dashed-line (lambda (x) x) '((color red))))

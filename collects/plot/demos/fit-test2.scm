@@ -74,7 +74,7 @@
    '((a 40)(theta0 10) (T 15) (phi -0.5) (tau 15))
    times
    vals
-   1))
+   null))
               
   
 (plot (mix* (points (map vector times vals) '((color red) (char 16)))

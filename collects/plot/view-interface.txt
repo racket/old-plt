@@ -40,9 +40,7 @@ DESCRIPTION/METHODS
 -------------------
 
 plot-view%:
-	Provides fascilities for starting and finishing plots. The underlying c-library
-	follows and implicit sequence contract and this class will (at some point) enforce
-      	that contract.
+	Provides fascilities for starting and finishing plots. Not to be instantiated directly.
 	
 	methods:
 

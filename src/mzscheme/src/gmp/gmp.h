@@ -404,8 +404,9 @@ mpn_add_1 (res_ptr, s1_ptr, s1_size, s2_limb)
   if (res_ptr != s1_ptr)
     {
       mp_size_t i;
-      for (i = 0; i < s1_size - 1; i++)
+      for (i = 0; i < s1_size - 1; i++) {
 	res_ptr[i] = s1_ptr[i];
+      }
     }
   return 0;
 }
@@ -475,8 +476,9 @@ mpn_sub_1 (res_ptr, s1_ptr, s1_size, s2_limb)
   if (res_ptr != s1_ptr)
     {
       mp_size_t i;
-      for (i = 0; i < s1_size - 1; i++)
+      for (i = 0; i < s1_size - 1; i++) {
 	res_ptr[i] = s1_ptr[i];
+      }
     }
   return 0;
 }

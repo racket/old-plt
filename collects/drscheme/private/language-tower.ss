@@ -25,8 +25,8 @@
           front-end
 	  config-panel
 	  on-execute
+          render-value/format
           render-value
-          render-value/error
           
           get-language-position))
       
@@ -40,8 +40,8 @@
           get-module
 	  config-panel
 	  on-execute
+          render-value/format
           render-value
-          render-value/error
           
           get-language-position))
       
@@ -64,7 +64,7 @@
 	(class* object% (module-based-language<%>)
 	  (init-field simple-module-based-language)
 	  (public get-module config-panel on-execute get-language-position 
-                  render-value
+                  render-value/format render-value
                   default-settings? default-settings marshall-settings unmarshall-settings)
 	  (define the-default-settings (make-simple-settings #f 'write #f #t))
           (define (marshall-settings settings)
@@ -84,10 +84,10 @@
 	    (initialize-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
 	    (send simple-module-based-language get-language-position))
+          (define (render-value/format value settings port put-snip)
+            (simple-module-based-language-render-value/format value settings port put-snip))
           (define (render-value value settings port put-snip)
             (simple-module-based-language-render-value value settings port put-snip))
-          (define (render-value/error value settings port put-snip)
-            (simple-module-based-language-render-value/error value settings port put-snip))
 	  (super-instantiate ())))
 
       ;; settings for a simple module based language
@@ -164,18 +164,18 @@
 	     (send show-sharing get-value)
 	     (send insert-newlines get-value)))))
 
-      ;; simple-module-based-language-render-value : TST port (union #f (snip% -> void)) -> void
-      (define (simple-module-based-language-render-value value settings port put-snip)
+      ;; simple-module-based-language-render-value/format : TST settings port (union #f (snip% -> void)) -> void
+      (define (simple-module-based-language-render-value/format value settings port put-snip)
         (let ([converted-value
                (simple-module-based-language-convert-value value settings)])
           (cond
             [(simple-settings-insert-newlines settings)
-             (pretty-print converted-val port)]
+             (pretty-print converted-value port)]
             [else
-             (write value port)])))
+             (write converted-value port)])))
       
-      ;; simple-module-based-language-render-value/error : TST port (union #f (snip% -> void)) -> void
-      (define (simple-module-based-language-render-value/error value settings port put-snip)
+      ;; simple-module-based-language-render-value : TST settings port (union #f (snip% -> void)) -> void
+      (define (simple-module-based-language-render-value value settings port put-snip)
         (write (simple-module-based-language-convert-value value settings) port))
 
       ;; simple-module-based-language-convert-value : TST settings -> TST
@@ -209,7 +209,7 @@
 	(class* object% (language<%>)
 	  (init-field module-based-language)
 	  (public front-end config-panel on-execute get-language-position 
-                  render-value
+                  render-value/format render-value
                   default-settings? default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings)
             (send module-based-language marshall-settings settings))
@@ -227,6 +227,8 @@
             (send module-based-language on-execute settings run-in-user-thread))
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
+          (define (render-value/format value settings port put-snip)
+            (send module-based-language render-value/format value settings port put-snip))
           (define (render-value value settings port put-snip)
             (send module-based-language render-value value settings port put-snip))
 	  (super-instantiate ())))

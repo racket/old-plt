@@ -692,7 +692,9 @@ wxWindow *wxWindow::FindFocusWindow()
 // Main window proc
 LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  int retval = 0;
   wxWnd *wnd = (wxWnd *)GetWindowLong(hWnd, 0);
+
   if (!wnd) {
     if (wxWndHook) {
       wnd = wxWndHook;
@@ -720,9 +722,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
   if (message == WM_SETFONT)
     return 0;
   else if (message == WM_INITDIALOG)
-    return TRUE;
-
-  int retval = 0;
+    return 0;
 
   switch (message) {
   case WM_ACTIVATE:
@@ -731,48 +731,39 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
       WORD minimized = HIWORD(wParam);
       HWND hwnd = (HWND)lParam;
       wnd->OnActivate(state, minimized, hwnd);
-      retval = 0;
       break;
     }
   case WM_SETFOCUS:
     {
       HWND hwnd = (HWND)wParam;
-
-      if (wnd->OnSetFocus(hwnd))
-	retval = 0;
-      else 
-	retval = wnd->DefWindowProc(message, wParam, lParam );
+      wnd->OnSetFocus(hwnd);
       break;
     }
   case WM_KILLFOCUS:
     {
       HWND hwnd = (HWND)lParam;
-      if (wnd->OnKillFocus(hwnd))
-	retval = 0;
-      else
-	retval = wnd->DefWindowProc(message, wParam, lParam );
+      wnd->OnKillFocus(hwnd);
       break;
     }
   case WM_CREATE:
     {
       wnd->OnCreate((LPCREATESTRUCT)lParam);
-      retval = 0;
       break;
     }
   case WM_PAINT:
     {
-      if (wnd->OnPaint())
-	retval = 0;
-      else retval = wnd->DefWindowProc(message, wParam, lParam );
+      if (!wnd->OnPaint())
+	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
   case WM_QUERYDRAGICON:
     {
-      HICON hIcon = 0;
-      if (hIcon = wnd->OnQueryDragIcon())
+      HICON hIcon;
+      hIcon = wnd->OnQueryDragIcon();
+      if (hIcon)
 	retval = (LONG)hIcon;
       else 
-	retval = wnd->DefWindowProc(message, wParam, lParam );
+	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
 
@@ -856,9 +847,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
     }
   case WM_DESTROY:
     {
-      if (wnd->OnDestroy())
-	retval = 0;
-      else 
+      if (!wnd->OnDestroy())
 	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
@@ -1029,7 +1018,6 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	if (wnd->wx_window)
 	  wnd->wx_window->Show(FALSE);
       }
-      retval = 0L;
       break;
     }
   case WM_CLOSE:
@@ -1038,7 +1026,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 	if (wnd->wx_window) 
 	  wnd->wx_window->Show(FALSE);
       }
-      retval = 1L;
+      retval = 1;
       break;
     }
 	

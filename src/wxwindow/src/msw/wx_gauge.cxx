@@ -26,14 +26,13 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 		     long style, char *name)
 {
   SetName(name);
+  panel->AddChild(this);
 
   static_label = 0;
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
 
-  wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)(panel->handle);
+  wxWnd *cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);

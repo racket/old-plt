@@ -1614,9 +1614,17 @@ wxMemoryDC::~wxMemoryDC(void)
     SelectObject(NULL);
 }
 
+Bool wxMemoryDC::Ok(void)
+{
+  return (ok && selected_bitmap);
+}
+
 void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 {
   if (bitmap == selected_bitmap)
+    return;
+
+  if (!cdc)
     return;
 
   if (!bitmap)

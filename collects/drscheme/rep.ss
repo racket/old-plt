@@ -32,6 +32,14 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
+  (define syntax-checking-primitive-eval
+    (lambda (expr)
+      (drscheme:init:primitive-eval
+       (with-handlers ([(lambda (x) #t)
+			(lambda (x) (error 'syntaxx-error (exn-message x)))])
+	 (expand-defmacro expr)))))
+
+
   (define exception-reporting-rep
     (let ([edit #f])
       (case-lambda 
@@ -39,21 +47,32 @@
        [(x)
 	(set! edit x)])))
 
+  (define user-error-display-handler
+    (rec drscheme-error-display-handler
+	 (lambda (msg)
+	   (with-parameterization drscheme:init:system-parameterization
+	     (lambda ()
+	       (let ([rep (exception-reporting-rep)])
+		 (if rep
+		     (send rep report-unlocated-error msg)
+		     (mred:message-box msg "Uncaught Error"))))))))
+
   (define user-exception-handler
-    (lambda (exn)
-      (with-parameterization drscheme:init:system-parameterization
-	(lambda ()
-	  (let ([rep (exception-reporting-rep)])
-	    (if rep
-		(begin
-		  (send rep report-exception-error exn)
-		  (send rep escape))
-		(begin
-		  (mred:message-box (if (exn? exn)
-					(exn-message exn)
-					(format "~e" exn))
-				    "Uncaught Exception"))))))
-      ((error-escape-handler))))
+    (rec drscheme-exception-handler
+	 (lambda (exn)
+	   (with-parameterization drscheme:init:system-parameterization
+	     (lambda ()
+	       (let ([rep (exception-reporting-rep)])
+		 (if rep
+		     (begin
+		       (send rep report-exception-error exn)
+		       (send rep escape))
+		     (begin
+		       (mred:message-box (if (exn? exn)
+					     (exn-message exn)
+					     (format "~e" exn))
+					 "Uncaught Exception"))))))
+	   ((error-escape-handler)))))
 
   (define build-parameterization
     (lambda (user-custodian)
@@ -106,12 +125,7 @@
 				       (lambda () (unbox aries:error-box))])
 				  drs-debug-info))
 	    (current-exception-handler user-exception-handler)
-	    (error-display-handler (let ([error-display-handler
-					  (lambda (msg)
-					    (with-parameterization drscheme:init:system-parameterization
-					      (lambda ()
-						(mred:message-box msg "Uncaught Error"))))])
-				     error-display-handler))
+	    (error-display-handler user-error-display-handler)
 	    (current-namespace n)
 	    (break-enabled #t)
 	    (wx:current-eventspace bottom-eventspace)
@@ -268,7 +282,7 @@
 					     (lambda ()
 					       (with-parameterization user-param
 						 (lambda ()
-						   (drscheme:init:primitive-eval annotated))))
+						   (syntax-checking-primitive-eval annotated))))
 					     (lambda x x)))
 				      (recur))))])
 		   (apply values (process-sexp sexp z f #t))))))]
@@ -644,8 +658,9 @@
 	  [exception-handler void]
 	  [error-escape-k void]
 	  [escape-handler
-	   (lambda ()
-	     (error-escape-k (list (void)) #t))]
+	   (rec drscheme-error-escape-handler
+		(lambda ()
+		  (error-escape-k (list (void)) #t)))]
 	  [send-scheme 
 	   (lambda (expr)
 	     (let/ec k
@@ -669,7 +684,7 @@
 			      (lambda ()
 				(with-parameterization user-param
 				  (lambda ()
-				    (drscheme:init:primitive-eval expr))))
+				    (syntax-checking-primitive-eval expr))))
 			      (lambda anss
 				(values anss #f))))
 			   (lambda () 
@@ -717,7 +732,7 @@
 							    (report-exception-error exn))])
 					   (with-parameterization user-param
 					     (lambda ()
-					       (drscheme:init:primitive-eval sexp)))))
+					       (syntax-checking-primitive-eval sexp)))))
 				       (lambda x x)))
 				(recur)])))])
 		   (apply values 

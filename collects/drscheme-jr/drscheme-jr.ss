@@ -41,6 +41,7 @@
 (require-library "sigs.ss" "zodiac")
 
 (require-library "ariess.ss" "cogen")
+(require-library "params.ss" "userspce")
 (require-library "userspcs.ss" "userspce")
 
 (require-library "sig.ss" "userspce")
@@ -352,8 +353,7 @@
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:thread : mzlib:thread^]
 	    [settings : drscheme-jr:settings^])
-    (define system-parameterization (current-parameterization))
-    (define user-parameterization (current-parameterization))
+    (define user-custodian (make-custodian))
 
     (define primitive-eval (current-eval))
 
@@ -421,65 +421,53 @@
     (define (go)
       (let ([file settings:startup-file])
 	(let loop ()
-	  (let ([continue? #f]
-		[param
-		 (basis:build-parameterization
-		  null
-		  settings:setting
-		  (lambda (in-<=-at-least-two-args in-allow-improper-lists in-eq?-only-compares-symbols parameterization)
-		    (let ([u (compound-unit/sig (import)
-			       (link [params : plt:userspace:params^
-					     ((unit/sig plt:userspace:params^
-						(import)
-						(define <=-at-least-two-args in-<=-at-least-two-args)
-						(define allow-improper-lists in-allow-improper-lists)
-						(define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
-				     [U : plt:userspace^ ((require-library-unit/sig "userspcr.ss" "userspce") params)])
-			       (export (open U)))])
-		      (with-parameterization parameterization
-			(lambda ()
-			  (invoke-open-unit/sig u))))))])
+	  (let ([continue? #f])
 
-	    (with-parameterization param
-	      (lambda ()
-		(mzlib:thread:dynamic-disable-break
-		 (lambda ()
-		   (global-defined-value 'read/zodiac read/zodiac)
-		   (global-defined-value 'restart
-					 (let* ([c (current-custodian)]
-						[die (lambda ()
-						       (set! continue? #t)
-						       (custodian-shutdown-all c))])
-					   (rec restart
-						(case-lambda
-						 [(new-file)
-						  (when (or (not (string? new-file))
-							    (not (or (relative-path? new-file)
-								     (absolute-path? new-file))))
-						    (raise-type-error 'restart "path string" new-file))
-						  (set! file new-file)
-						  (die)]
-						 [() (die)]))))
-		   (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
-			   (version))
-		   (printf "Language: ~a~n"
-			   (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
-					(map list basis:level-symbols basis:level-strings))))
-
-		   (let ([repl-thread (thread
-				       (lambda ()
- 
-					 (when (string? file)
-					   (load/prompt file))
-					 
-					 (repl)))])
-		     (mzlib:thread:dynamic-enable-break
-		      (lambda ()
-			(let loop ()
-			  (with-handlers ([exn:misc:user-break? (lambda (x)
-								  (break-thread repl-thread)
-								  (loop))])
-			    (thread-wait repl-thread))))))))))
+	    (basis:initialize-parameters
+	     user-custodian
+	     null
+	     settings:setting)
+	
+	    (mzlib:thread:dynamic-disable-break
+	     (lambda ()
+	       (global-defined-value 'read/zodiac read/zodiac)
+	       (global-defined-value 'restart
+				     (let ([die (lambda ()
+						  (set! continue? #t)
+						  (custodian-shutdown-all user-custodian))])
+				       (rec restart
+					    (case-lambda
+					     [(new-file)
+					      (when (or (not (string? new-file))
+							(not (or (relative-path? new-file)
+								 (absolute-path? new-file))))
+						(raise-type-error 'restart "path string" new-file))
+					      (set! file new-file)
+					      (die)]
+					     [() (die)]))))
+	       (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
+		       (version))
+	       (printf "Language: ~a~n"
+		       (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
+				    (map (lambda (s)
+					   (list (basis:setting-vocabulary-symbol (vector-ref s 1))
+						 (vector-ref s 0)))
+					 basis:settings))))
+	       
+	       (let ([repl-thread (thread
+				   (lambda ()
+				     
+				     (when (string? file)
+				       (load/prompt file))
+				     
+				     (repl)))])
+		 (mzlib:thread:dynamic-enable-break
+		  (lambda ()
+		    (let loop ()
+		      (with-handlers ([exn:misc:user-break? (lambda (x)
+							      (break-thread repl-thread)
+							      (loop))])
+			(thread-wait repl-thread))))))))
 	    (when continue?
 	      (loop))))))
 
@@ -520,9 +508,11 @@
 	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						      (import)
 						      (define in-mzscheme? #t)))]
+	   [params : plt:userspace:params^ ((require-library-unit/sig "paramr.ss" "userspce"))]
 	   [basis : userspace:basis^
 		  ((require-library-unit/sig "basis.ss" "userspce")
 		   basis-import
+		   params
 		   drzodiac
 		   interface
 		   aries

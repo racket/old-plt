@@ -76,8 +76,7 @@
   (define prims-that-induce-procedure-calls
     '(#%apply #%map #%for-each #%andmap #%ormap #%make-promise
 	      #%dynamic-wind
-	      #%make-object #%make-parameterization-with-sharing
-	      #%call-with-values #%time-apply
+	      #%make-object #%call-with-values #%time-apply
 	      #%call-with-output-file #%call-with-input-file
 	      #%with-output-to-file #%with-input-from-file
 	      #%exit-handler #%current-eval #%current-exception-handler
@@ -87,8 +86,7 @@
 	      #%port-print-handler #%global-port-print-handler
 	      #%error-display-handler #%error-escape-handler
 	      #%port-read-handler #%error-value->string-handler
-	      #%parameterization-branch-handler #%call/ec #%call/cc
-	      #%with-parameterization #%with-new-parameterization #%hash-table-get
+	      #%call/ec #%call/cc #%hash-table-get
 	      #%hash-table-map #%hash-table-for-each #%make-input-port #%make-output-port))
 
   ;; The valueable? predicate is used to determine how many variables

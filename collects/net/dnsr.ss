@@ -66,7 +66,7 @@
   (define (make-std-query-header id question-count)
     (append
      (number->octet-pair id)
-     (list #\nul #\nul) ; Opcode & flags
+     (list #\001 #\nul) ; Opcode & flags (recusive flag set)
      (number->octet-pair question-count)
      (number->octet-pair 0)
      (number->octet-pair 0)
@@ -229,13 +229,15 @@
 
   (define (try-forwarding k nameserver)
     (let loop ([nameserver nameserver][tried (list nameserver)])
+      ; Normally the recusion is done for us, but it's technically optional
       (let-values ([(v ars auth?) (k nameserver)])
 	(or v
 	    (and (not auth?)
-		 (let ([ns (and (pair? ars)
-				(eq? (rr-type (car ars)) 'a)
-				(ip->string (rr-data (car ars))))])
-		   (printf "name: ~a~n" ns)
+		 (let* ([ns (ormap
+			     (lambda (ar)
+			       (and (eq? (rr-type ar) 'a)
+				    (ip->string (rr-data ar))))
+			     ars)])
 		   (and ns
 			(not (member ns tried))
 			(loop ns (cons ns tried)))))))))
@@ -257,7 +259,12 @@
 	   (let-values ([(auth? qds ans nss ars reply) (dns-query/cache nameserver addr 'mx 'in)])
 	     (values (let loop ([ans ans][best-pref +inf.0][exchanger #f])
 		       (cond
-			[(null? ans) exchanger]
+			[(null? ans) (or exchanger
+					 ;; Does 'soa mean that the input address is fine?
+					 (and (ormap
+					       (lambda (ns) (eq? (rr-type ns) 'soa))
+					       nss)
+					      addr))]
 			[else
 			 (let ([d (rr-data (car ans))])
 			   (let ([pref (octet-pair->number (car d) (cadr d))])
@@ -274,9 +281,11 @@
       [(unix) (with-handlers ([void (lambda (x) #f)])
 		(with-input-from-file "/etc/resolv.conf"
 		  (lambda ()
-		    (read-line)
-		    (let ([l (read-line)])
-		      (and (string? l)
-			   (let ([m (regexp-match "nameserver ([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" l)])
-			     (and m (cadr m))))))))]
+		    (let loop ()
+		      (let ([l (read-line)])
+			(or (and (string? l)
+				 (let ([m (regexp-match "nameserver ([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" l)])
+				   (and m (cadr m))))
+			    (and (not (eof-object? l))
+				 (loop))))))))]
       [else #f])))

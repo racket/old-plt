@@ -11,6 +11,7 @@ following _Internet_ (quasi-)protocols:
   POP-3
   IMAP
   Mail header reading and writing
+  DNS
 
 Shriram Krishnamurthi
 shriram@cs.rice.edu
@@ -897,3 +898,38 @@ PROCEDURES -----------------------------------------------------------
 
   Creates a header field value from a list of addresses. The addresses
   are comma-separated, and possibly broken into multiple lines.
+
+==========================================================================
+_DNS_, _domain name service_
+==========================================================================
+
+Collection: net
+Files: _dns.ss_, _dnsr.ss_, _dnss.ss_
+
+ABSTRACT -------------------------------------------------------------
+
+Implements a DNS client, based on RFC 1035
+
+PROCEDURES -----------------------------------------------------------
+
+> (dns-get-address nameserver-string address-string) -> address-string
+
+  Consults the specified nameserver (normally a numerical address like
+  "128.42.1.30") to obtain a numerical address for the given internet
+  address.
+
+  The query record sent to the DNS server includes the "recursive"
+  bit, but `dns-get-address' also implements a recursive search itself
+  in case the server does not provide this optional feature.
+
+> (dns-get-mail-exchanger nameserver-string address-string) -> address-string
+
+  Consults the specified nameserver to obtain the address for a mail
+  exchanger the given mail host address. For example, the mail
+  exchanger for "ollie.cs.rice.edu" is currently "cs.rice.edu".
+
+> (dns-find-nameserver) -> address-string or #f
+
+  Attempts to find the address of a nameserver on the present system.
+  Under Unix, this procedure parses /etc/resolv.conf to extract the
+  first nameserver address.

@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id: reader.ss,v 1.5 1999/02/03 23:07:10 mflatt Exp $
+;;  $Id: reader.ss,v 1.6 1999/02/04 14:32:54 mflatt Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -164,11 +164,10 @@
        ([port   (current-input-port)]
         [init-loc      def-init-loc]
         [skip-script   #t]
-        [first-col     def-first-col]
-	[param (current-parameterization)])
+        [first-col     def-first-col])
 
        (let*
-           ([get-token  (scan port init-loc skip-script first-col param)])
+           ([get-token  (scan port init-loc skip-script first-col)])
          
          ;; read-obj returns one of:
          ;;  z:read   zodiac object (scalar or sequence)

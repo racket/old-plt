@@ -181,22 +181,18 @@
 	      (#%lambda (msg)
 	       (#%raise (make-exn msg ((debug))
 				  (#%list* 'parameterize* params body))))])
-      (#%if (#%null? body) (fail "parameterze*: bad syntax (empty body)"))
+      (#%if (#%null? body) (fail "parameterize*: bad syntax (empty body)"))
       (#%if (#%null? params)
         `(#%begin ,@body)
 	(#%if (#%or (#%not (#%pair? params))
 		    (#%not (#%pair? (#%car params)))
 		    (#%not (#%pair? (#%cdar params)))
 		    (#%not (#%null? (#%cddar params))))
-	      (fail "dparameterze*: bad syntax")
+	      (fail "parameterize*: bad syntax")
 	      (#%let ([param (#%caar params)]
 		      [orig (#%gensym)]
 		      [pz (#%gensym)])
-		 `(#%let* ([param ,param]
-                           [,pz (if (parameter? param)
-                                    (#%in-parameterization 
-                                     (#%current-parameterization) ,param)
-                                    param)]
+		 `(#%let* ([,pz ,param]
 			   [,orig (,pz)])
 		     (#%dynamic-wind
 		        (#%lambda () (,pz ,(#%cadar params)))

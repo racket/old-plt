@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.10 1998/08/26 19:46:11 mflatt Exp $
+;;  $Id: scanner.ss,v 1.11 1998/11/04 19:52:54 mflatt Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -207,9 +207,10 @@
   ;; so *make sure* all calls to z:symbol come through here.
   
   (define text->symbol
-    (lambda (text param) 
-      (let ([obj  (if ((in-parameterization param read-case-sensitive))
-		      text (map char-downcase text))])
+    (lambda (text) 
+      (let ([obj (if (read-case-sensitive)
+		     text 
+		     (map char-downcase text))])
 	(string->symbol (text->string obj)))))
   
   (define text->char
@@ -245,8 +246,7 @@
 	([port   (current-input-port)]
 	 [init-loc      default-initial-location]
 	 [skip-script?  #t]
-	 [first-col     scan:def-first-col]
-	 [param         (current-parameterization)])
+	 [first-col     scan:def-first-col])
       
       
       ;; The Scanner's State.
@@ -395,7 +395,7 @@
 	     
 	     [scan-delim-sym
 	      (lambda ()
-		(let ([sym  (text->symbol (list char) param)])
+		(let ([sym  (text->symbol (list char))])
 		  (get-char)
 		  (z:symbol  sym  start-loc  start-loc)))]
 	     
@@ -632,7 +632,7 @@
 		(let-values ([(text  used-stick?)
 			      (scan-to-delim  delim?  text  #f)])
 		  (if  used-stick?
-		       (z:symbol (text->symbol text param)
+		       (z:symbol (text->symbol text)
 				 start-loc (prev-loc))
 		       (with-handlers
 			   ([exn:read?
@@ -649,13 +649,13 @@
 						      text)
 					     num)
 					 start-loc (prev-loc))
-			       (z:symbol (text->symbol text param)
+			       (z:symbol (text->symbol text)
 					 start-loc  (prev-loc))))))))]
 	     
 	     [symbol-only
 	      (lambda (text)
 		(let-values ([(text  foo) (scan-to-delim  delim?  text  #t)])
-		  (z:symbol  (text->symbol text param)
+		  (z:symbol  (text->symbol text)
 			     start-loc  (prev-loc))))]
 	     
 	     [number-only

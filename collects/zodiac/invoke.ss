@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.36 1998/08/31 17:26:58 mflatt Exp $
+; $Id: invoke.ss,v 1.37 1998/11/04 19:52:53 mflatt Exp $
 
 (require-library "coreu.ss")
 
@@ -37,67 +37,35 @@
 	(export (open SYSTEM) (open INTERFACE)))
       zodiac)))
 
-(define zodiac:see
+(define (zodiac:make-see expander)
   (opt-lambda ((show-raw? #t))
     (zodiac:invoke-system)
-    (let ([peval (current-eval)])
-      (let ((system-params (current-parameterization)))
-	(let ((new-params (make-parameterization)))
-	  (with-parameterization new-params
-	    (lambda ()
-	      (parameterize
-		((current-prompt-read
-		   (lambda ()
-		     (newline)
-		     (display "e> ")
-		     (flush-output)
-		     (let ([read ((zodiac:read))])
-		       (newline)
-		       (flush-output)
-		       (if (zodiac:eof? read)
-			 eof
-			 read))))
-		  (current-eval
+    (parameterize ([current-prompt-read
+		    (lambda ()
+		      (newline)
+		      (display "e> ")
+		      (flush-output)
+		      (let ([read ((zodiac:read))])
+			(newline)
+			(flush-output)
+			(if (zodiac:eof? read)
+			    eof
+			    read)))]
+		   [current-eval
 		    (lambda (in)
-		      (let ((e (car
-				 (with-parameterization system-params
-				   (lambda ()
-				     (zodiac:scheme-expand-program (list in)))))))
+		      (let ((e (car (expander in))))
 			(if show-raw?
-			  (zodiac:parsed->raw e)
-			  e)))))
-		(read-eval-print-loop)))))))))
+			    (zodiac:parsed->raw e)
+			    e)))])
+      (read-eval-print-loop))))
 
-(define zodiac:spidey-see
-  (opt-lambda ((show-raw? #t))
-    (zodiac:invoke-system)
-    (let ([peval (current-eval)])
-      (let ((system-params (current-parameterization)))
-	(let ((new-params (make-parameterization)))
-	  (with-parameterization new-params
-	    (lambda ()
-	      (parameterize
-		((current-prompt-read
-		   (lambda ()
-		     (newline)
-		     (display "e> ")
-		     (flush-output)
-		     (let ([read ((zodiac:read))])
-		       (newline)
-		       (flush-output)
-		       (if (zodiac:eof? read)
-			 eof
-			 read))))
-		  (current-eval
+(define zodiac:see (zodiac:make-see 
 		    (lambda (in)
-		      (let ((e (car
-				 (with-parameterization system-params
-				   (lambda ()
-				     (zodiac:scheme-expand-program
-				      (list in)
-				      (zodiac:make-attributes)
-				      zodiac:mrspidey-vocabulary))))))
-			(if show-raw?
-			  (zodiac:parsed->raw e)
-			  e)))))
-		(read-eval-print-loop)))))))))
+		      (zodiac:scheme-expand-program (list in)))))
+
+(define zodiac:spidey-see (zodiac:make-see 
+			   (lambda (in)
+			     (zodiac:scheme-expand-program
+			      (list in)
+			      (zodiac:make-attributes)
+			      zodiac:mrspidey-vocabulary))))

@@ -5,7 +5,7 @@
   (require "private/class-internal.ss")
   
   (provide class
-	   class* class*/names
+	   class*
            class?
 	   interface interface?
 	   object% object?
@@ -35,4 +35,5 @@
            public-final override-final augment-final
 	   field init init-field
 	   rename-super rename-inner inherit
-	   super inner))
+	   this super inner
+	   super-make-object super-instantiate super-new))

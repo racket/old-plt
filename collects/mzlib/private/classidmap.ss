@@ -20,7 +20,7 @@
 	(list* 'apply id this (reverse (cons args accum)))])))
 
   (define (find the-finder name src)
-    (let ([this-id (syntax-local-value the-finder)])
+    (let ([this-id (syntax-local-value (syntax-local-get-shadower the-finder))])
       (datum->syntax-object this-id name src)))
 
   ;; Check Syntax binding info:
@@ -221,12 +221,11 @@
 	stx))))
 
   (define super-error-map
-    (make-set!-transformer
-     (lambda (stx)
-       (raise-syntax-error 
-	'class
-	"cannot use superclass initialization form in a method"
-	stx))))
+    (lambda (stx)
+      (raise-syntax-error 
+       'class
+       "cannot use superclass initialization form in a method"
+       stx)))
 
   (define (make-with-method-map set!-stx id-stx method-stx method-obj-stx)
     (make-set!-transformer

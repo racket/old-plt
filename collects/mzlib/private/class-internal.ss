@@ -1,12 +1,14 @@
 
 (module class-internal mzscheme
   (require (lib "list.ss")
-           (lib "etc.ss"))
+           (lib "etc.ss")
+	   (lib "stxparam.ss"))
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
 		      (lib "context.ss" "syntax")
 		      (lib "define.ss" "syntax")
+		      (lib "stxparam.ss")
 		      "classidmap.ss")
 
   (define insp (current-inspector)) ; for all structures
@@ -31,76 +33,41 @@
 			 pubment overment augment
 			 public-final override-final augment-final
 			 field init init-field
-			 rename-super rename-inner inherit
-			 super inner)
+			 rename-super rename-inner inherit)
+
+  (define-syntax define/provide-context-keyword
+    (syntax-rules ()
+      [(_ (id param-id) ...)
+       (begin
+	 (begin
+	   (provide id)
+	   (define-syntax-parameter param-id 
+	     (make-set!-transformer
+	      (lambda (stx)
+		(raise-syntax-error
+		 #f
+		 "use of a class keyword is not in a class top-level"
+		 stx))))
+	   (define-syntax id
+	     (make-parameter-rename-transformer #'param-id)))
+	 ...)]))
+
+  (define/provide-context-keyword
+    [this this-param]
+    [super super-param]
+    [inner inner-param]
+    [super-make-object super-make-object-param]
+    [super-instantiate super-instantiate-param]
+    [super-new super-new-param])
 
   ;;--------------------------------------------------------------------
   ;;  class macros
   ;;--------------------------------------------------------------------
 
-  (define-syntax (class*/names stx)
+  (define-syntax (class* stx)
     ;; Start with Helper functions
 
-    ;; Parses the this/super-make/... part of a declaration
-    (define (parse-keyword-part stx this-id s)
-      (let-values ([(super-instantiate-id super-make-object-id super-new-id)
-		    (if (stx-null? s)
-			(values (quote-syntax super-instantiate)
-				(quote-syntax super-make-object)
-				(quote-syntax super-new))
-			(let ([si (stx-car s)]
-			      [s2 (stx-cdr s)])
-			  (if (stx-null? s2)
-			      (values si
-				      (quote-syntax super-make-object)
-				      (quote-syntax super-new))
-			      (let ([s3 (stx-cdr s2)])
-				(values 
-				 si
-				 (stx-car s2) 
-				 (if (stx-null? s3)
-				     (quote-syntax super-new)
-				     (begin0
-				      (stx-car s3)
-				      (unless (stx-null? (stx-cdr s3))
-					(when (and (identifier? si)
-						   (identifier? (stx-car s2))
-						   (identifier? (stx-car s3)))
-					  (raise-syntax-error
-					   #f
-					   (string-append
-					    "extra forms following identifiers for this, super-instantiate, "
-					    "super-make-object, and super-new")
-					   stx))))))))))])
-	(unless (identifier? this-id)
-	  (raise-syntax-error
-	   #f
-	   "not an identifier for `this'"
-	   stx
-	   this-id))
-	(unless (identifier? super-instantiate-id)
-	  (raise-syntax-error
-	   #f
-	   "not an identifier for `super-instantiate'"
-	   stx
-	   super-instantiate-id))
-	(unless (identifier? super-make-object-id)
-	  (raise-syntax-error
-	   #f
-	   "not an identifier for `super-make-object'"
-	   stx
-	   super-make-object-id))
-	(unless (identifier? super-new-id)
-	  (raise-syntax-error
-	   #f
-	   "not an identifier for `super-new'"
-	   stx
-	   super-new-id))
-	(values super-instantiate-id super-make-object-id super-new-id)))
-
-
-    (define (expand-all-forms stx defn-and-exprs
-			      this-id super-instantiate-id super-make-object-id super-new-id)
+    (define (expand-all-forms stx defn-and-exprs)
       (let* ([stop-forms
 	      (append
 	       (kernel-form-identifier-list (quote-syntax here))
@@ -123,12 +90,12 @@
 		(quote-syntax rename-super)
 		(quote-syntax inherit)
 		(quote-syntax rename-inner)
-		(quote-syntax as-super)
+		(quote-syntax super)
 		(quote-syntax inner)
-		this-id
-		super-instantiate-id
-		super-make-object-id
-		super-new-id))]
+		(quote-syntax this)
+		(quote-syntax super-instantiate)
+		(quote-syntax super-make-object)
+		(quote-syntax super-new)))]
 	     [expand-context (generate-class-expand-context)]
 	     [expand
 	      (lambda (defn-or-expr)
@@ -242,7 +209,7 @@
 			     [name (mk-name name)])
 		 (let ([l (syntax/loc stx 
 			    (lambda (the-obj . vars) 
-			      (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+			      (let-syntax ([the-finder (quote-syntax the-obj)])
 				body1 body ...)))])
 		   (with-syntax ([l (add-method-property l)])
 		     (syntax/loc stx 
@@ -258,7 +225,7 @@
 			     [name (mk-name name)])
 		 (let ([cl (syntax/loc stx
 			     (case-lambda [(the-obj . vars) 
-					   (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+					   (let-syntax ([the-finder (quote-syntax the-obj)])
 					     body1 body ...)] ...))])
 		   (with-syntax ([cl (add-method-property cl)])
 		     (syntax/loc stx
@@ -339,18 +306,16 @@
     ;; Start here:
 
     (syntax-case stx ()
-      [(_  (this-id . supers) super-expression (interface-expr ...)
+      [(_  super-expression (interface-expr ...)
            defn-or-expr
            ...)
        (let-values ([(defn-and-exprs) (syntax->list #'(defn-or-expr ...))]
                     [(this-id) #'this-id]
                     [(the-obj) (datum->syntax-object (quote-syntax here) (gensym 'self))]
-                    [(the-finder) (datum->syntax-object (quote-syntax here) (gensym 'find-self))]
-                    [(super-instantiate-id super-make-object-id super-new-id) (parse-keyword-part stx #'this-id #'supers)])
+                    [(the-finder) (datum->syntax-object (quote-syntax here) (gensym 'find-self))])
          
          ;; ----- Expand definitions -----
-         (let ([defn-and-exprs (expand-all-forms stx defn-and-exprs
-						 this-id super-instantiate-id super-make-object-id super-new-id)]
+         (let ([defn-and-exprs (expand-all-forms stx defn-and-exprs)]
                [bad (lambda (msg expr)
                       (raise-syntax-error #f msg stx expr))]
                [class-name (let ([s (syntax-local-infer-name stx)])
@@ -619,11 +584,6 @@
 					inherit-names
 					rename-super-names
 					rename-inner-names
-					(list 
-					 this-id
-					 super-instantiate-id
-					 super-make-object-id
-					 super-new-id)
 					(kernel-form-identifier-list
 					 (quote-syntax here)))])
 	       ;; Do the extraction:
@@ -709,8 +669,7 @@
 				       plain-init-names
 				       inherit-names
 				       rename-super-names
-				       rename-inner-names
-				       (list this-id super-instantiate-id super-make-object-id super-new-id)))])
+				       rename-inner-names))])
 		     (when dup
 		       (bad "duplicate declared identifier" dup)))
 		   
@@ -892,8 +851,7 @@
 					    [the-finder the-finder]
 					    [this-id this-id])
 				(syntax 
-				 ([(this-id
-				    inherit-field-name ...
+				 ([(inherit-field-name ...
 				    local-field ...
 				    rename-super-orig ...
 				    rename-inner-orig ...
@@ -902,9 +860,6 @@
 				    public-final-name ...
 				    pubment-name ...)
 				   (values
-				    (make-this-map (quote-syntax this-id)
-						   (quote-syntax the-finder)
-						   (quote the-obj))
 				    (make-field-map (quote-syntax the-finder)
 						    (quote the-obj)
 						    (quote-syntax inherit-field-name)
@@ -950,24 +905,15 @@
 							    (quote pubment-temp))
 				    ...)])))]
 			     [extra-init-mappings
-			      (with-syntax ([super-instantiate-id super-instantiate-id]
-					    [super-make-object-id super-make-object-id]
-					    [super-new-id super-new-id]
-					    [(init-error-map ...)
+			      (with-syntax ([(init-error-map ...)
 					     (map (lambda (x)
 						    (syntax init-error-map))
 						  plain-inits)])
 				(syntax 
-				 ([(plain-init-name ... 
-						    super-instantiate-id
-						    super-make-object-id
-						    super-new-id)
+				 ([(plain-init-name ...)
 				   (values
 				    init-error-map
-				    ...
-				    super-error-map
-				    super-error-map
-				    super-error-map)])))])
+				    ...)])))])
 			 
 			 (let ([find-method 
 				(lambda (methods)
@@ -980,8 +926,12 @@
 									    bad class-name expand-stop-names)]
 							  [extra-init-mappings extra-init-mappings])
 					      (syntax
-					       (letrec-syntaxes+values extra-init-mappings ()
-						 proc)))))
+					       (syntax-parameterize 
+						([super-instantiate-param super-error-map]
+						 [super-make-object-param super-error-map]
+						 [super-new-param super-error-map])
+						(letrec-syntaxes+values extra-init-mappings ()
+						  proc))))))
 				     methods)))]
 			       [localize-cdr (lambda (p) (localize (cdr p)))])
 			   
@@ -1028,13 +978,9 @@
 					 [(public-final-method ...) (map (find-method methods) (map car public-finals))]
 					 [mappings mappings]
 					 
-					 [extra-init-mappings extra-init-mappings]
 					 [exprs exprs]
 					 [the-obj the-obj]
 					 [the-finder the-finder]
-					 [super-instantiate-id super-instantiate-id]
-					 [super-make-object-id super-make-object-id]
-					 [super-new-id super-new-id]
 					 [name class-name]
 					 [(stx-def ...) (map cdr stx-defines)])
 			     
@@ -1074,131 +1020,123 @@
 					     rename-super-temp ... rename-super-extra-temp ...
 					     rename-inner-temp ... rename-inner-extra-temp ...
 					     method-accessor ...) ; for a local call that needs a dynamic lookup
-				      (let-syntaxes 
-				       mappings
-				       (fluid-let-syntax 
-					   ([super (lambda (stx)
-						     (syntax-case stx (rename-super-extra-orig ...)
-						       [(_ rename-super-extra-orig . args) 
-							(generate-super-call 
-							 stx
-							 (quote-syntax the-finder)
-							 (quote the-obj)
-							 (quote-syntax rename-super-extra-temp)
-							 (syntax args))]
-						       ...
-						       [(_ id . args)
-							(identifier? #'id)
-							(raise-syntax-error
-							 #f
-							 (string-append
-							  "identifier for super call does not have an override, "
-							  "override-final, or overment declaration")
-							 stx
-							 #'id)]
-						       [_else
-							(raise-syntax-error
-							 #f
-							 "expected an identifier after the keyword"
-							 stx)]))]
-					    [inner (lambda (stx)
-						     (syntax-case stx (rename-inner-extra-orig ...)
-						       [(_ default-expr rename-inner-extra-orig . args)
-							(generate-inner-call 
-							 stx
-							 (quote-syntax the-finder)
-							 (quote the-obj)
-							 (syntax default-expr)
-							 (quote-syntax rename-inner-extra-temp)
-							 (syntax args))]
-						       ...
-						       [(_ default-expr id . args)
-							(identifier? #'id)
-							(raise-syntax-error
-							 #f
-							 (string-append
-							  "identifier for inner call does not have a pubment, augment, "
-							  "or overment declaration")
-							 stx
-							 #'id)]
-						       [(_)
-							(raise-syntax-error
-							 #f
-							 "expected a default-value expression after the keyword"
-							 stx
-							 #'id)]
-						       [_else
-							(raise-syntax-error
-							 #f
-							 "expected an identifier after the keyword and default-value expression"
-							 stx)]))])
-					 stx-def ...
-					 (letrec ([private-temp private-method]
+				      (syntax-parameterize
+				       ([this-param (make-this-map (quote-syntax this-id)
+								   (quote-syntax the-finder)
+								   (quote the-obj))])
+				       (let-syntaxes 
+					mappings
+					(syntax-parameterize 
+					    ([super-param
+					      (lambda (stx)
+						(syntax-case stx (rename-super-extra-orig ...)
+						  [(_ rename-super-extra-orig . args) 
+						   (generate-super-call 
+						    stx
+						    (quote-syntax the-finder)
+						    (quote the-obj)
+						    (quote-syntax rename-super-extra-temp)
+						    (syntax args))]
 						  ...
-						  [pubment-temp pubment-method]
+						  [(_ id . args)
+						   (identifier? #'id)
+						   (raise-syntax-error
+						    #f
+						    (string-append
+						     "identifier for super call does not have an override, "
+						     "override-final, or overment declaration")
+						    stx
+						    #'id)]
+						  [_else
+						   (raise-syntax-error
+						    #f
+						    "expected an identifier after the keyword"
+						    stx)]))]
+					     [inner-param
+					      (lambda (stx)
+						(syntax-case stx (rename-inner-extra-orig ...)
+						  [(_ default-expr rename-inner-extra-orig . args)
+						   (generate-inner-call 
+						    stx
+						    (quote-syntax the-finder)
+						    (quote the-obj)
+						    (syntax default-expr)
+						    (quote-syntax rename-inner-extra-temp)
+						    (syntax args))]
 						  ...
-						  [public-final-temp public-final-method]
-						  ...)
-					   (values
-					    (list pubment-temp ... public-final-temp ... . public-methods)
-					    (list . override-methods)
-					    (list . augride-methods)
-					    ;; Initialization
-					    #, ;; Attach srcloc (useful for profiling)
-					    (quasisyntax/loc stx
-					      (lambda (the-obj super-id si_c si_inited? si_leftovers init-args)
-						(fluid-let-syntax ([the-finder (quote-syntax the-obj)])
-						  (letrec-syntax ([super-instantiate-id
-								   (lambda (stx)
-								     (syntax-case stx () 
-								       [(_ (arg (... ...)) (kw kwarg) (... ...))
-									(with-syntax ([stx stx])
-									  (syntax (-instantiate super-id stx (the-obj si_c si_inited? 
-														      si_leftovers)
-												(list arg (... ...)) 
-												(kw kwarg) (... ...))))]))]
-								  [super-new-id
-								   (lambda (stx)
-								     (syntax-case stx () 
-								       [(_ (kw kwarg) (... ...))
-									(with-syntax ([stx stx])
-									  (syntax (-instantiate super-id stx (the-obj si_c si_inited? 
-														      si_leftovers)
-												null
-												(kw kwarg) (... ...))))]))]
-								  [super-make-object-id
-								   (lambda (stx)
-								     (let ([code 
-									    (quote-syntax
-									     (lambda args
-									       (super-id the-obj si_c si_inited? si_leftovers args null)))])
-								       (if (identifier? stx)
-									   code
-									   (datum->syntax-object
-									    code
-									    (cons code
-										  (cdr (syntax-e stx)))))))])
+						  [(_ default-expr id . args)
+						   (identifier? #'id)
+						   (raise-syntax-error
+						    #f
+						    (string-append
+						     "identifier for inner call does not have a pubment, augment, "
+						     "or overment declaration")
+						    stx
+						    #'id)]
+						  [(_)
+						   (raise-syntax-error
+						    #f
+						    "expected a default-value expression after the keyword"
+						    stx
+						    #'id)]
+						  [_else
+						   (raise-syntax-error
+						    #f
+						    "expected an identifier after the keyword and default-value expression"
+						    stx)]))])
+					  stx-def ...
+					  (letrec ([private-temp private-method]
+						   ...
+						   [pubment-temp pubment-method]
+						   ...
+						   [public-final-temp public-final-method]
+						   ...)
+					    (values
+					     (list pubment-temp ... public-final-temp ... . public-methods)
+					     (list . override-methods)
+					     (list . augride-methods)
+					     ;; Initialization
+					     #, ;; Attach srcloc (useful for profiling)
+					     (quasisyntax/loc stx
+					       (lambda (the-obj super-go si_c si_inited? si_leftovers init-args)
+						 (let-syntax ([the-finder (quote-syntax the-obj)])
+						   (syntax-parameterize
+						    ([super-instantiate-param
+						      (lambda (stx)
+							(syntax-case stx () 
+							  [(_ (arg (... ...)) (kw kwarg) (... ...))
+							   (with-syntax ([stx stx])
+							     (syntax (-instantiate super-go stx (the-obj si_c si_inited? 
+													 si_leftovers)
+										   (list arg (... ...)) 
+										   (kw kwarg) (... ...))))]))]
+						     [super-new-param
+						      (lambda (stx)
+							(syntax-case stx () 
+							  [(_ (kw kwarg) (... ...))
+							   (with-syntax ([stx stx])
+							     (syntax (-instantiate super-go stx (the-obj si_c si_inited? 
+													 si_leftovers)
+										   null
+										   (kw kwarg) (... ...))))]))]
+						     [super-make-object-param
+						      (lambda (stx)
+							(let ([code 
+							       (quote-syntax
+								(lambda args
+								  (super-go the-obj si_c si_inited? si_leftovers args null)))])
+							  (if (identifier? stx)
+							      code
+							      (datum->syntax-object
+							       code
+							       (cons code
+								     (cdr (syntax-e stx)))))))])
 						    (let ([plain-init-name undefined]
 							  ...)
 						      (void) ; in case the body is empty
-						      . exprs)))))))))))
+						      . exprs))))))))))))
 				  ;; Not primitive:
 				  #f))))))))))))))]))
-
-  (define-syntax class*
-    (lambda (stx)
-      (syntax-case stx ()
-	[(form super-expression (interface-expr ...)
-	       defn-or-expr
-	       ...)
-	 (with-syntax ([this (datum->syntax-object (syntax form) 'this stx)]
-		       [super-init (datum->syntax-object (syntax form) 'super-instantiate stx)]
-		       [super-make (datum->syntax-object (syntax form) 'super-make-object stx)]
-		       [super-new (datum->syntax-object (syntax form) 'super-new stx)])
-	   (syntax/loc stx
-	    (class*/names (this super-init super-make super-new) super-expression (interface-expr ...)
-			  defn-or-expr
-			  ...)))])))
 
   (define-syntax :class
     (lambda (stx)
@@ -1206,12 +1144,11 @@
 	[(form super-expression
 	       defn-or-expr
 	       ...)
-	 (with-syntax ([class* (datum->syntax-object (syntax form) 'class* stx)])
-	   (syntax/loc stx
-	    (class* super-expression ()
-		    defn-or-expr
-		    ...)))])))
-
+	 (syntax/loc stx
+	   (class* super-expression ()
+		   defn-or-expr
+		   ...))])))
+  
   (define-syntaxes (private* public* pubment* override* overment* augride* augment*
 			     public-final* override-final* augment-final*)
     (let ([mk
@@ -1440,7 +1377,7 @@
       (for-each
        (lambda (intf)
 	 (unless (interface? intf)
-	   (obj-error 'class*/names "interface expression returned a non-interface: ~a~a" 
+	   (obj-error 'class* "interface expression returned a non-interface: ~a~a" 
 		      intf
 		      (for-class name))))
        interfaces)
@@ -1474,7 +1411,7 @@
 	  (let loop ([ids public-names][p (class-method-width super)])
 	    (unless (null? ids)
 	      (when (hash-table-get method-ht (car ids) (lambda () #f))
-		(obj-error 'class*/names "superclass already contains method: ~a~a" 
+		(obj-error 'class* "superclass already contains method: ~a~a" 
 			   (car ids)
 			   (for-class name)))
 	      (hash-table-put! method-ht (car ids) p)
@@ -1483,7 +1420,7 @@
 	  (let loop ([ids public-field-names][p (class-field-width super)])
 	    (unless (null? ids)
 	      (when (hash-table-get field-ht (car ids) (lambda () #f))
-		(obj-error 'class*/names "superclass already contains field: ~a~a" 
+		(obj-error 'class* "superclass already contains field: ~a~a" 
 			   (car ids)
 			   (for-class name)))
 	      (hash-table-put! field-ht (car ids) p)
@@ -1492,7 +1429,7 @@
 	;; Check that superclass has expected fields
 	(for-each (lambda (id)
 		    (unless (hash-table-get field-ht id (lambda () #f))
-		      (obj-error 'class*/names "superclass does not provide field: ~a~a" 
+		      (obj-error 'class* "superclass does not provide field: ~a~a" 
 				 id
 				 (for-class name))))
 		  inherit-field-names)
@@ -1505,7 +1442,7 @@
 		    (hash-table-get 
 		     method-ht id
 		     (lambda ()
-		       (obj-error 'class*/names 
+		       (obj-error 'class* 
 				  "~a does not provide an expected method for ~a: ~a~a" 
 				  (if (eq? method-ht super-method-ht) "superclass" "class")
 				  what
@@ -1533,16 +1470,16 @@
 	       (for-each
 		(lambda (var)
 		  (unless (hash-table-get method-ht var (lambda () #f))
-		    (obj-error 'class*/names 
+		    (obj-error 'class* 
 			       "interface-required method missing: ~a~a~a" 
 			       var
 			       (for-class name)
 			       (for-intf (interface-name intf)))))
 		(interface-public-ids intf)))
 	     interfaces)
-	    (let ([c (get-implement-requirement interfaces 'class*/names (for-class name))])
+	    (let ([c (get-implement-requirement interfaces 'class* (for-class name))])
 	      (when (and c (not (subclass? super c)))
-		(obj-error 'class*/names 
+		(obj-error 'class* 
 			   "interface-required implementation not satisfied~a~a"
 			   (for-class name)
 			   (let ([r (class-name c)])
@@ -1664,7 +1601,7 @@
 					(let ([vec (vector-ref (class-beta-methods super) index)])
 					  (if (positive? (vector-length vec))
 					      (or (vector-ref vec (sub1 (vector-length vec)))
-						  (obj-error 'class*/names 
+						  (obj-error 'class* 
 							     (string-append
 							      "superclass method for override, overment, "
 							      "or rename-super is not overrideable: ~a~a")
@@ -1686,7 +1623,7 @@
 								    0)
 								(if (vector-ref new-augonly index) 0 -1))])
 						  (when (negative? depth)
-						    (obj-error 'class*/names 
+						    (obj-error 'class* 
 							       (string-append
 								"superclass method for augride, augment, "
 								"or rename-inner method is not augmentable: ~a~a")
@@ -1737,7 +1674,7 @@
 			;; Override old methods:
 			(for-each (lambda (index method id)
 				    (when (eq? 'final (vector-ref meth-flags index))
-				      (obj-error 'class*/names 
+				      (obj-error 'class* 
 						 "cannot override or augment final method: ~a~a"
 						 id
 						 (for-class name)))
@@ -2674,7 +2611,7 @@
 		      new-methods
 		      override-methods
 		      null ; no augride-methods
-		      (lambda (this super-id/ignored si_c/ignored si_inited?/ignored si_leftovers/ignored init-args)
+		      (lambda (this super-go/ignored si_c/ignored si_inited?/ignored si_leftovers/ignored init-args)
 			(apply prim-init this 
 			       (if init-arg-names
 				   (extract-primitive-args this name init-arg-names init-args)
@@ -2879,8 +2816,7 @@
 		    extract-vtable
 		    extract-method-ht)
            
-           (rename :class class)
-	   class* class*/names
+           (rename :class class) class*
            class?
 	   (rename :interface interface) interface?
 	   object% object? object=?

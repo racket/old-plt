@@ -50,9 +50,9 @@
 	(let ([c (current-extension-compiler)])
 	  (and c (regexp-match #"[^g]cc$" (path->bytes c)))))
 
-      (define gcc-compile-flags (append '("-c" "-O2")
+      (define gcc-compile-flags (append '("-c" "-O2" "-fPIC")
 					(case (string->symbol (path->string (system-library-subpath)))
-					  [(parisc-hpux) '("-D_HPUX_SOURCE" "-fpic")]
+					  [(parisc-hpux) '("-D_HPUX_SOURCE")]
 					  [(ppc-macosx) '("-fno-common" "-DOS_X" )]
 					  [(ppc-darwin) '("-fno-common" "-DOS_X" "-DXONX" )]
 					  [else null])))

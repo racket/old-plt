@@ -549,6 +549,8 @@
 					       (get-output-string p))
 					     col)))
 
+		    ((and display? (path? obj)) (out (path->string obj) col))
+
 		    ;; Let symbol get printed by default case to get proper quoting
 		    ;; ((symbol? obj)      (out (symbol->string obj) col))
 

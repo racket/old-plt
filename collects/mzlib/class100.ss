@@ -4,23 +4,19 @@
 
   (require-for-syntax (lib "stx.ss" "syntax"))
 
-  (define-syntax class100*/names
+  (define-syntax super-init (make-rename-transformer #'super-make-object))
+
+  (define-syntax class100*
     (lambda (stx)
       (let ([main
 	     (lambda (stx)
 	       (syntax-case stx ()
-		 [(_ (this-id super-init-id . optional-super-inst-id)
-		     super-expr
+		 [(_ super-expr
 		     (interface-expr ...)
 		     init-vars
 		     clauses ...)
 		  (let ([se (lambda (msg expr)
 			      (raise-syntax-error #f msg stx expr))])
-		    ;; Check this and super-init:
-		    (unless (identifier? (syntax this-id))
-		      (se "not an identifier" (syntax this-id)))
-		    (unless (identifier? (syntax super-init-id))
-		      (se "not an identifier" (syntax super-init-id)))
 		    ;; Unpack init arguments, with default expressions:
 		    (let-values ([(init-ids init-defs init-rest-id)
 				  (let loop ([inits (syntax init-vars)][need-def? #f])
@@ -177,8 +173,7 @@
 								(stx-car #'optional-super-inst-id)
 								'super-instantiate)])
 			  (syntax/loc stx
-			    (class*/names 
-			     (this-id super-instantiate-id super-init-id) super-expr (interface-expr ...)
+			    (class* super-expr (interface-expr ...)
 			     init-expr ...
 			     (private . private-ids)
 			     (public . public-ipds)
@@ -193,36 +188,16 @@
 			     expr ...))))))]))])
 
 	(syntax-case stx ()
-	  [(_ (this-id super-init-id)
-	      super-expr
+	  [(_ super-expr
 	      (interface-expr ...)
 	      init-vars
 	      clauses ...)
-	   (main stx)]
-	  
-	  [(_ (this-id super-init-id super-inst-id)
-	      super-expr
-	      (interface-expr ...)
-	      init-vars
-	      clauses ...)
-	   (identifier? #'super-inst-id)
 	   (main stx)]
 	  
 	  ;; Error cases
 	  ;; --
-	  [(_ bad-this-super
-	      super-expr
-	      (interface-expr ...)
-	      init-vars
-	      clauses ...)
-	   (raise-syntax-error 
-	    #f
-	    "bad this and super bindings"
-	    stx
-	    (syntax bad-this-super))]
 	  ;; --
-	  [(_ this-super
-	      super-expr
+	  [(_ super-expr
 	      bad-interface-seq
 	      init-vars
 	      clauses ...)
@@ -232,43 +207,25 @@
 	    stx
 	    (syntax bad-interface-seq))]
 	  ;;
-	  [(_ this-super
-	      super-expr
+	  [(_ super-expr
 	      interface-seq)
 	   (raise-syntax-error 
 	    #f
 	    "missing initialization arguments"
 	    stx
 	    (syntax bad-this-super))]
-	  [(_ this-super
-	      super-expr)
+	  [(_ super-expr)
 	   (raise-syntax-error 
 	    #f
 	    "missing interface expressions"
 	    stx
 	    (syntax bad-this-super))]
-	  [(_ this-super)
+	  [(_)
 	   (raise-syntax-error 
 	    #f
-	    "missing this and super-init bindings"
+	    "missing superclass expression and interface expressions"
 	    stx
 	    (syntax bad-this-super))]))))
-  
-  (define-syntax class100*
-    (lambda (stx)
-      (syntax-case stx ()
-	[(_ super-expr
-	    (interface-expr ...)
-	    init-vars
-	    clauses ...)
-	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
-		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
-	   (syntax/loc stx
-	       (class100*/names (this super-init)
-				super-expr 
-				(interface-expr ...)
-				init-vars
-				clauses ...)))])))
 
   (define-syntax class100
     (lambda (stx)
@@ -276,31 +233,25 @@
 	[(_ super-expr
 	    init-vars
 	    clauses ...)
-	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
-		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
-	   (syntax/loc stx 
-	       (class100*/names (this super-init) super-expr () init-vars 
-				clauses ...)))])))
+	 (syntax/loc stx 
+	   (class100* super-expr () init-vars 
+		      clauses ...))])))
 
   (define-syntax class100*-asi
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super (interface ...) body ...)
-	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
-		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
-	   (syntax/loc stx 
-	     (class100*/names (this super-init) super (interface ...) args 
-			      body ... (sequence (apply super-init args)))))])))
+	 (syntax/loc stx 
+	   (class100*  super (interface ...) args 
+		       body ... (sequence (apply super-init args))))])))
 
   (define-syntax class100-asi
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super body ...)
-	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
-		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
-	   (syntax/loc stx 
-	     (class100*/names (this super-init) super () args 
-			      body ... (sequence (apply super-init args)))))])))
-  
-  (provide class100 class100* class100*/names
-	   class100-asi class100*-asi))
+	 (syntax/loc stx 
+	   (class100* super () args 
+		      body ... (sequence (apply super-init args))))])))
+
+  (provide class100 class100*
+	   class100-asi class100*-asi super-init))

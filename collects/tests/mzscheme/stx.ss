@@ -649,8 +649,8 @@
 	     exn:fail:syntax?)
 
 (let ([expr (expand-syntax #'++v)])
-  (test #f syntax-recertify-constrained? expr #f (current-inspector))
-  (let ([ctx (syntax-extend-certificate-context expr #f)])
+  (test #f syntax-recertify-constrained? expr (syntax-make-certificate-env) (current-inspector))
+  (let ([ctx (syntax-extend-certificate-env expr (syntax-make-certificate-env))])
     (test #t syntax-recertify-constrained? expr ctx (current-inspector))
     (test expr syntax-recertify expr expr (current-inspector))
     (let ([new (syntax-recertify #'no-marks expr (current-inspector))])
@@ -669,8 +669,8 @@
 				   expr (current-inspector)))))
 
 (let ([expr (expand-syntax #'(++apply-to-d ack))])
-  (test #f syntax-recertify-constrained? expr #f (current-inspector))
-  (let ([ctx (syntax-extend-certificate-context expr #f)])
+  (test #f syntax-recertify-constrained? expr (syntax-make-certificate-env) (current-inspector))
+  (let ([ctx (syntax-extend-certificate-env expr (syntax-make-certificate-env))])
     (test #t syntax-recertify-constrained? expr ctx (current-inspector))
     (test '(#%app (#%top . ack) ++d) syntax-object->datum expr)
     (let ([try (lambda (cvt? other)
@@ -782,6 +782,27 @@
 		 [current-namespace n2])
     (test 10 teval '++y-macro)
     (test 10 teval '++y-macro2)))
+
+
+(module ++/n mzscheme
+  (provide ++/get-foo)
+  (define-syntax foo #'10)
+  (define-syntax (++/get-foo stx)
+    (syntax-local-value #'foo)))
+(require ++/n)
+(test 10 values ++/get-foo)
+
+(module ++//n mzscheme
+  (provide ++//def)
+  (define-syntax foo #'17)
+  (define-syntax ++//def
+    (syntax-rules ()
+      [(_ get-foo)
+       (define-syntax (get-foo stx)
+	 (syntax-local-value #'foo))])))
+(require ++//n)
+(++//def ++//get-foo)
+(test 17 values ++//get-foo)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

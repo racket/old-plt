@@ -373,6 +373,7 @@ MZ_EXTERN void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Sch
 MZ_EXTERN Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key);
 MZ_EXTERN int scheme_hash_table_equal(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2);
 MZ_EXTERN int scheme_is_hash_table_equal(Scheme_Object *o);
+MZ_EXTERN Scheme_Hash_Table *scheme_clone_hash_table(Scheme_Hash_Table *bt);
 
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */
@@ -847,6 +848,9 @@ MZ_EXTERN Scheme_Object *scheme_make_location(Scheme_Object *src,
 					      Scheme_Object *pos,
 					      Scheme_Object *span);
 MZ_EXTERN int scheme_is_location(Scheme_Object *o);
+
+MZ_EXTERN Scheme_Object *scheme_make_inspector(Scheme_Object *superior);
+MZ_EXTERN int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 
 /*========================================================================*/
 /*                              utilities                                 */

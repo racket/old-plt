@@ -157,14 +157,6 @@
 (test-method #'augride #'to-override-class% #f #f)
 (test-method #'private #'object% #f #f)
 
-(syntax-test #'(class*/names foo object% ()))
-(syntax-test #'(class*/names (1) object% ()))
-(syntax-test #'(class*/names (ths 1) object% ()))
-(syntax-test #'(class*/names (ths sup-i 1) object% ()))
-(syntax-test #'(class*/names (ths sup-i sup-mo 1) object% ()))
-(syntax-test #'(class*/names (ths sup-i sup-mo sup-n 10) object% ()))
-(syntax-test #'(class*/names (ths sup-i sup-mo sup-n . arg) object% ()))
-
 (define (test-rename rename object%)
   (teval #`(test #t class? (class #,object% (#,rename))))
   (teval #`(err/rt-test (class #,object% (#,rename [x x])) #,exn:fail:object?))
@@ -199,8 +191,6 @@
 (class-keyword-test #'rename-super)
 (class-keyword-test #'rename-inner)
 (class-keyword-test #'inherit)
-(class-keyword-test #'super)
-(class-keyword-test #'inner)
 (class-keyword-test #'public*)
 (class-keyword-test #'private*)
 (class-keyword-test #'pubment*)
@@ -1000,33 +990,6 @@
 	      (define/public (pub y) (send this priv (* 2 y)))
 	      (super-new)))])
   (test 16 'send-using-local (send (new c%) pub 3)))
-
-;; ------------------------------------------------------------
-;; class*/names rebinds names
-
-(test #t class? (class*/names (thiss super-initt super-moo) object% ()
-                  (super-initt ())))
-
-(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
-                                (super-initt ()))))
-
-(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
-                                (apply super-moo '()))))
-
-(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
-                                thiss
-                                (super-initt ()))))
-(test #t object? (make-object (class*/names (thiss super-initt super-moo super-novel) object% ()
-                                thiss
-                                (super-novel))))
-
-(test #t boolean? 
-      (send (make-object (class*/names (thiss super-initt super-moo) object% ()
-                           (define/public (m x) x)
-                           (define/public (n x) (send thiss m x))
-                           (super-initt ())))
-            n #t))
-
 
 ;; ------------------------------------------------------------
 ;; `new' tests

@@ -109,9 +109,8 @@ static int xdoDraw(measure, font,
 	  width += overall.xOff;
 	}
 
-	ulen -= (i - start);
 	start = i;
-	if (ulen) {
+	if (start < ulen) {
 	  /* Substitute */
 	  wxExtFont sxfont;
 	  sxfont = wxFindAAFont(display, xfont, us[start]);
@@ -119,15 +118,14 @@ static int xdoDraw(measure, font,
 
 	  if (!measure) {
 	    if (gc) {
-	      XFillRectangle(display, drawable, gc, x + width, y - xfont->ascent,
-			     overall.xOff, xfont->ascent + xfont->descent);
+	      XFillRectangle(display, drawable, gc, x + width, y - sxfont->ascent,
+			     overall.xOff, sxfont->ascent + sxfont->descent);
 	    }
 	    XftDrawString32(draw, col, sxfont, x + width, y, us + start, 1);
 	  }
 
 	  width += overall.xOff;
 	  start++;
-	  ulen--;
 	} else
 	  break;
       }

@@ -832,7 +832,6 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 
   if (!(style & wxNO_THICK_FRAME) && !(style & wxNO_RESIZE_BORDER)) {
     msflags |= WS_THICKFRAME | WS_BORDER;
-    msflags |= WS_MINIMIZEBOX;
     msflags |= WS_MAXIMIZEBOX;
   }
   if (!(style & wxNO_SYSTEM_MENU))
@@ -841,8 +840,10 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (!(style & wxNO_CAPTION))
+  if (!(style & wxNO_CAPTION)) {
     msflags |= WS_CAPTION;
+    msflags |= WS_MINIMIZEBOX;
+  }
 
   if (style & wxSTAY_ON_TOP)
     extendedStyle |= WS_EX_TOPMOST;

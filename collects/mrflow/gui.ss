@@ -11,6 +11,7 @@
   (lib "arrow.ss" "drscheme")
   (lib "list.ss")
   (prefix mrflow: (lib "constraints-gen-and-prop.ss" "mrflow"))
+  (prefix sba-gui: (lib "sba-gui-interface.ss" "mrflow"))
   )
  
  (provide tool@)
@@ -66,7 +67,7 @@
          ;(init args1)
          (init-field
           [analyzed? #f]
-          [get-prims (void)]
+          [get-regions-to-color (void)]
           [get-loc (void)]
           [get-label (void)]
           [get-type (void)]
@@ -81,7 +82,7 @@
          (public*
           [run-analysis
            (lambda ()
-             (set! get-prims mrflow:get-prims)
+             (set! get-regions-to-color mrflow:get-regions-to-color)
              (set! get-loc mrflow:get-loc)
              (set! get-label mrflow:get-label)
              (set! get-type mrflow:get-type)
@@ -107,18 +108,18 @@
              ; first character of the primitives is clickable
              ; now)
              (for-each
-              (lambda (prim)
-                (let ([start (car prim)]
-                      [end (+ (cadr prim) 1)]
-                      [source (caddr prim)]
-                      [color (cadddr prim)])
+              (lambda (region-to-color)
+                (let ([start (sba-gui:region-to-color-start region-to-color)]
+                        [end (add1 (sba-gui:region-to-color-end region-to-color))]
+                        [source (sba-gui:region-to-color-source region-to-color)]
+                        [color (sba-gui:region-to-color-color region-to-color)])
                   ; only color primitives in this 
                   (when (eq? this source)
                     (case color
                       [(red) (change-style red-style start end)]
                       [(green) (change-style green-style start end)]
                       [else (void)]))))
-              (get-prims))
+              (get-regions-to-color))
 
              (end-edit-sequence)
              
@@ -415,16 +416,24 @@
             (callback
              (lambda (button evt)
                (clear-annotations)
-               (let ([start (current-milliseconds)])
+               (let ([start (current-milliseconds)]
+                     [language (frame:preferences:get
+                                (drscheme:language-configuration:get-settings-preferences-symbol))])
                  (mrflow:reset-all)
+                 ; note: we have to do this each time, because the user might have changed
+                 ; the language between analyses.
+                 ; XXX should interogate the language to get the filename
+                 (mrflow:initialize-primitive-type-schemes
+                  (build-path (collection-path "mrflow")
+                              "primitives"
+                              "r5rs.ss"))
                  (send (get-interactions-text)
                        expand-program
                        (drscheme:language:make-text/pos (get-definitions-text) 
                                                         0
                                                         (send (get-definitions-text)
                                                               last-position))
-                       (frame:preferences:get
-                        (drscheme:language-configuration:get-settings-preferences-symbol))
+                       language
                        (lambda (exception? syntax-object/exception run-in-expansion-thread loop)
                          (if exception?
                              (let ([message (car syntax-object/exception)]
@@ -451,6 +460,7 @@
                                   (message-box "unknown exception"
                                                (format "unknown exception: ~a" exn))]))
                            (unless (eof-object? syntax-object/exception)
+                             ;(printf "~a~n~n" (syntax-object->datum syntax-object/exception))
                              (mrflow:create-label-from-term syntax-object/exception '() #f '())))
                          (loop)))
                  (mrflow:check-primitive-types)
@@ -464,9 +474,6 @@
                
                (send (get-definitions-text) run-analysis))))])
          ;(sequence
-         ; XXX state is shared between instances of the tool, so we could do
-         ; this call only once, outside the mixin...
-         (mrflow:initialize-primitive-type-schemes)
          (send (get-button-panel) change-children
                (lambda (l)
                  (cons flow:analyze-button (remq flow:analyze-button l))))

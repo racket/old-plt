@@ -1,8 +1,6 @@
-
-
+; R5RS
+; When are we going to be able to compute all this directly from an S-exp version of R5RS ?
 (
- ; When are we going to be able to compute all this directly from an S-exp version of R5RS ?
- 
  ; 6.1 Equivalence predicates
  
  (eqv? (top top -> boolean))

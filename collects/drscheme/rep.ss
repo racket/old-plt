@@ -1171,8 +1171,6 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
-	     (print-struct #t)
-	     (printf "about to invoke ~s~n" library-unit)
 	     (with-handlers ([(lambda (x) #t)
 			      (lambda (y) 
 				(display (exn-message y))
@@ -1200,7 +1198,6 @@
 					     (invoke-open-unit/sig library-unit #f plt:userspace^))))
 				       userspace)])
 		  (export))))
-	     (printf "invoked~n")
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

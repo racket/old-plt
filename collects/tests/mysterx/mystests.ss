@@ -2,6 +2,8 @@
 
 (require-library "mysterx.ss" "mysterx")
 
+(define errors? #f)
+
 (define wb (make-object mx-browser% "MysTest" 230 250))
 (define doc (send wb current-document))
 
@@ -9,9 +11,41 @@
 
 (define (inv f . args) (apply com-invoke ctrl f args))
 
-(define errors? #f)
+(define (test-currency n)
+  (= n (com-currency->number (number->com-currency n))))
 
-(define tests
+(define (test-scode n)
+  (= n (com-scode->number (number->com-scode n))))
+
+(define (test-date date)
+  (equal? date (com-date->date (date->com-date date))))
+
+(for-each
+ (lambda (n)
+   (unless (test-scode n)
+	   (printf "Error in test-scode for value ~a~n" n)
+	   (set! errors? #t)))
+ '(25 -22 -1 -233344433 177000000 859489222))
+
+(print-struct #t)
+
+(let ([date (seconds->date (current-seconds))])
+  (set-date-dst?! date #f)
+  (set-date-time-zone-offset! date 0)
+  (unless (test-date date)
+	  (printf "Error in test-date~n")
+	  (set! errors? #t)))
+
+(for-each
+ (lambda (n)
+   (unless (test-currency n)
+	   (printf "Error in test-currency for value ~a~n" n)
+	   (set! errors? #t)))
+ '(25.00 -22.34 11.7832 91000000000 25034343434.9933))
+
+
+
+(define com-tests
 	`(("AddTest" (39 ,(box 420)) ,(+ 39 420))
 	  ("AddTest" (420 ,(box 39)) ,(+ 420 39))
 	  ("FloatTest" (4.7 5.2) ,(- 5.2 4.7))
@@ -28,9 +62,9 @@
 	 [expected (caddr t)])
      (unless (equal? got expected)
 	     (set! errors? #t)
-	     (printf "Expected: ~a~nGot     : ~a~n"
+	     (printf "Error in com-tests. Expected: ~a~nGot     : ~a~n"
 		     expected got))))
- tests)
+ com-tests)
 
 (define caption "SomeCaption")
 

@@ -149,15 +149,15 @@
          (for-each (lambda (str) (display str out))
                    (cdr page))]
         [else
-         (let ([str (with-handlers ([void (lambda (exn)
-                                            (if (exn? exn)
-                                                (exn-message exn)
-                                                (format "~s" exn)))])
-                      (xexpr->string page))])
-           (output-headers conn 200 "Okay"
-                           `(("Content-length: " ,(add1 (string-length str)))))
-           (display str out) ; the newline is for an IE 5.5 bug workaround
-           (newline out))])))
+         ;; TODO: make a real exception for this.
+         (with-handlers
+          ([exn? (lambda (exn)
+                   (raise exn))])
+          (let ([str (xexpr->string page)])
+            (output-headers conn 200 "Okay"
+                            `(("Content-length: " ,(add1 (string-length str)))))
+            (display str out) ; the newline is for an IE 5.5 bug workaround
+            (newline out)))])))
   
   ;; **************************************************
   ;; output-file

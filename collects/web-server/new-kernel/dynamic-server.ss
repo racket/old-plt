@@ -1,6 +1,5 @@
 (module dynamic-server mzscheme
-  (require (lib "list.ss")
-           (lib "url.ss" "net")
+  (require (lib "url.ss" "net")
            (lib "xml.ss" "xml")
            "util.ss"
            "request-parsing.ss"
@@ -67,7 +66,7 @@
   ;; determine if it is the start of a servlet or continuation of a servlet
   (define (invoke-servlet servlet-path conn req)
     (cond
-     [(embedded-continuation? (http-request-uri req))
+     [(embedded-ids? (http-request-uri req))
       => (lambda (k-ref)
            (with-handlers ([exn:servlet-instance?
                             (lambda (the-exn)
@@ -85,7 +84,7 @@
               (let/ec suspend
                 (parameterize ([current-servlet-context
                                 (make-servlet-context
-                                 inst conn
+                                 inst conn req
                                  (lambda () (suspend #t)))])
                ((hash-table-get k-table (cadr k-ref)
                                 (lambda ()
@@ -147,24 +146,10 @@
   (define (create-new-instance!)
     (let ([invoke-id next-invoke-id])
       (set! next-invoke-id (add1 next-invoke-id))
-      (make-servlet-instance invoke-id (make-hash-table) 0)))
+      (let ([inst (make-servlet-instance invoke-id (make-hash-table) 0)])
+        (hash-table-put! instance-table invoke-id inst)
+        inst)))
 
-  (define URL-PARAMS:REGEXP (regexp "([^\\*]*)\\*(.*)"))
-  
-  (define (match-url-params x) (regexp-match URL-PARAMS:REGEXP x))
-
-  ;; embedded-continuation?: url -> (union (list number number) #f)
-  ;; determine if this url encodes a continuation and extract the instance id and
-  ;; continuation id.
-  (define (embedded-continuation? a-url)
-    (let ([str (url->param a-url)])
-      (and str (cdr (match-url-params str)))))
-
-  ;; url->param: url -> (union string #f)
-  (define (url->param a-url)
-    (let ([l (filter path/param? (url-path a-url))])
-      (and (not (null? l))
-           (path/param-param (car l)))))
   
   ;; continuation-not-found: connection request -> void
   (define (continuation-not-found conn req)
@@ -178,7 +163,7 @@
                         (body
                          (p "The transaction referred to by this url is no longer active."
                             " Please "
-                            (a ([href ,(update-params (http-request-uri req)  #f)])
+                            (a ([href ,(remove-ids (http-request-uri req)  #f)])
                                "restart")
                             " the transaction.")))))))))
 
@@ -192,5 +177,5 @@
           (list (xexpr->string
                  `(html (head (title "File not found"))
                         (body
-                         (p "The file referred to this url was not found")))))))))
+                         (p "The file referred to by this url was not found")))))))))
   )

@@ -1,17 +1,33 @@
 (module servlet mzscheme
   (require (lib "url.ss" "net")
+           (lib "list.ss")
            "response-encoding.ss")
   
   (provide send/back send/forward send/finish send/suspend
            current-servlet-context
-           update-params
+
+           ;; URL manipulation
+           embed-ids
+           remove-ids
+           embedded-ids?
+
+           ;; data defs
+           ;; TODO: close? is being kept in two places
+           ;;       see if it can just be stored in the request
+           ;;       and simplify the connection struct
            (struct http-request (line uri headers close?))
            (struct servlet-context (instance connection request suspend))
-           (struct servlet-instance (invoke-id k-table next-k-id)))
+           (struct servlet-instance (invoke-id k-table next-k-id))
+
+           ;; exceptions
+           (struct exn:servlet ())
+           )
 
   (define-struct servlet-instance (invoke-id k-table next-k-id) (make-inspector))
   (define-struct servlet-context (instance connection request suspend)
     (make-inspector))
+
+  (define-struct (exn:servlet exn) ())
 
   ;; perhaps this should be in a data-def  module:
   (define-struct http-request (line uri headers close?))
@@ -38,37 +54,84 @@
            [k-table (servlet-instance-k-table inst)])
       (set-servlet-instance-next-k-id! inst (add1 next-k-id))
       (hash-table-put! k-table next-k-id k)
-      (update-params
-       (http-request-uri (servlet-context-request ctxt))
-       (format "~a*~a" (servlet-instance-invoke-id inst)  next-k-id))))
+      (embed-ids
+       (servlet-instance-invoke-id inst) next-k-id
+       (http-request-uri (servlet-context-request ctxt)))))
 
-  ;; update-params: url string -> string
-  ;; replace the path/param part of a url with a new one
+  ;; ********************************************************************************
+  ;; Parameter Embedding
+
+  (define URL-PARAMS:REGEXP (regexp "([^\\*]*)\\*(.*)"))
+  
+  (define (match-url-params x) (regexp-match URL-PARAMS:REGEXP x))
+
+  ;; embed-ids: number number url -> string
+  ;; embedd the two numbers in a url
+  (define (embed-ids invoke-id k-id in-url)
+    (insert-param
+     in-url
+     (format "~a*~a" invoke-id k-id)))
+
+  ;; embedded-ids?: url -> (union (list number number) #f)
+  ;; determine if this url encodes a continuation and extract the instance id and
+  ;; continuation id.
+  (define (embedded-ids? a-url)
+    (let ([str (url->param a-url)])
+      (and str
+           (map string->number (cdr (match-url-params str))))))
+
+  ;; url->param: url -> (union string #f)
+  (define (url->param a-url)
+    (let ([l (filter path/param? (url-path a-url))])
+      (and (not (null? l))
+           (path/param-param (car l)))))
+
+  ;; insert-param: url string -> string
+  ;; add a path/param to the path in a url
   ;; (assumes that there is only one path/param)
-  (define (update-params a-url new-param)
-    (let ([new-path
-           (let update-path ([pth (url-path a-url)])
-             (cond
-              [(null? pth)
-               (list (make-path/param "" new-param))]                      
-              [(path/param? (car pth))
-               (cons (if new-param
-                         (make-path/param
-                          (path/param-path (car pth))
-                          new-param)
-                         (path/param-path (car pth)))
-                     (cdr pth))]
-              [else (cons (car pth)
-                          (update-path (cdr pth)))]))])
+  (define (insert-param in-url new-param)
+    (replace-path
+     (lambda (old-path)
+       (for-each
+        (lambda (path-elt)
+          (when (path/param? path-elt)
+                (raise
+                 (make-exn:servlet
+                  "embed-ids: url already contains parameters"
+                  (current-continuation-marks)))))
+        old-path)
+       (if (null? old-path)
+           (list (make-path/param "" new-param))
+           (cons (make-path/param (car old-path) new-param)
+                 (cdr old-path))))
+       in-url))
+
+  ;; remove-ids: url -> string
+  ;; replace all path/params with just the path/param-path part
+  (define (remove-ids from-url)
+    (replace-path
+     (lambda (old-path)
+       (map
+        (lambda (path-elt)
+          (if (path/param? path-elt)
+              (path/param-path path-elt)
+              path-elt))
+        old-path))
+     from-url))
+
+  ;; replace-path: (url-path -> url-path) url -> url
+  ;; replace the path part of a url
+  (define (replace-path proc in-url)
+    (let ([new-path (proc (url-path in-url))])
       (url->string
        (make-url
-        (url-scheme a-url)
-        (url-user a-url)
-        (url-host a-url)
-        (url-port a-url)
+        (url-scheme in-url)
+        (url-user in-url)
+        (url-host in-url)
+        (url-port in-url)
         new-path
-        (url-query a-url)
-        (url-fragment a-url)))))
+        (url-query in-url)
+        (url-fragment in-url)))))
   
   ;; **************************************************
   ;; send/*
@@ -78,7 +141,8 @@
   (define (send/back resp)
     (output-page/port
      (servlet-context-connection (current-servlet-context))
-     resp))
+     resp)
+    ((servlet-context-suspend (current-servlet-context))))
   
   ;; send/finish: response -> void
   ;; send a response and clear the continuation table

@@ -69,7 +69,7 @@
   (current-library-collection-paths
    (cons libdir (current-library-collection-paths))))
 
-(require-library "referc.ss")
+(require-library "refer.ss")
 
 (load-relative "debug.ss")
 (load-relative "splash.ss")
@@ -81,8 +81,8 @@
 
 (define (load-system)
 
-  (require-library "corec.ss")
-  (require-library "triggerc.ss")
+  (require-library "core.ss")
+  (require-library "trigger.ss")
 
   (current-library-collection-paths
    (map normalize-path (current-library-collection-paths)))

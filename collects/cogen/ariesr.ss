@@ -2,11 +2,10 @@
 
 ;; aries adds only begin and let to the transformed source
 
-(plt:require-library "ariess.ss")
-(require-library "pretty.ss")
+; Commented out these, they must be loaded by whoever loads this file:
+;(plt:require-library "ariess.ss")
+;(require-library "pretty.ss")
 
-(define plt:aries@
-  (let ((pp pretty-print))
     (unit/sig plt:aries^
       (import [z : zodiac:system^]
 	[z:interface : zodiac:interface^])
@@ -350,4 +349,4 @@
 			  [annotated (annotate expanded)])
 		    '(begin ((global-defined-value 'pretty-print) annotated)
 		       (newline))
-		    (read-loop (cons annotated exprs))))))))))))
+		    (read-loop (cons annotated exprs))))))))))

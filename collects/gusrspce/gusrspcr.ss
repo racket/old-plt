@@ -1,16 +1,12 @@
-(require-library "core.ss")
-(require-library "trigger.ss")
-(plt:require-library "gusrspcs.ss")
-(plt:require-library "ricedefu.ss")
-(plt:require-library "graphicu.ss")
-(plt:require-library "sparams.ss")
-(plt:require-library "turtleu.ss")
+;; this file expects mred@ to be defined at the toplevel and be the result of
+;; (reference-unit/sig (build-path (getenv "PLTHOME") "mred" "system" "link.ss"))
+;; [ roughly ]
+;; if mred@ is not defined, it will re-load the library
 
-(define plt:userspace@
   (compound-unit/sig
     (import [params : plt:parameters^])
-    (link [core : mzlib:core^ (mzlib:core@)]
-	  [trigger : mzlib:trigger^ (mzlib:trigger@)]
+    (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
+	  [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
 	  [appliction : mred:application^ 
 		      ((unit/sig mred:application^
 			 (import)
@@ -21,10 +17,18 @@
 			    '() "dummy console" -1 -1 100 100))
 			 (send console show #t)
 			 (define eval-string void)))]
-	  [mred : mred^ (mred@ core trigger appliction)]
-	  [rice : ricedefs^ (ricedefs@)]
-	  [graphics : graphics^ (graphics@)]
-	  [turtle : turtle^ (turtle@ (core function@))])
+	  [mred : mred^ ((with-handlers ([void
+					  (lambda (exn)
+					    (reference-unit/sig
+					     (begin-elaboration-time
+					      (normalize-path
+					       (build-path 'up "mred" "system" "link.ss")))))])
+			   mred@) 
+			 core trigger appliction)]
+	  [rice : ricedefs^ ((reference-unit/sig "ricedefu.ss"))]
+	  [graphics : graphics^ ((reference-unit/sig "graphicu.ss"))]
+	  [turtle : turtle^ ((reference-unit/sig "turtleu.ss")
+			     (core function@))])
     (export (open (core pretty-print@))
 	    (open (core file@))
 	    (open (core function@))
@@ -33,4 +37,4 @@
 	    (open rice)
 	    (open graphics)
 	    (open turtle)
-	    (unit mred))))
+	    (unit mred)))

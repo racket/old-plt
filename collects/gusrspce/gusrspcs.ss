@@ -1,8 +1,7 @@
-(require-library "core.ss")
-(plt:require-library "ricedefs.ss")
-(plt:require-library "graphics.ss")
-(plt:require-library "sparams.ss")
-(plt:require-library "turtles.ss")
+(reference-library "cores.ss")
+(reference "ricedefs.ss")
+(reference "graphics.ss")
+(reference "turtles.ss")
 
 (define-signature plt:userspace^
   ((open mzlib:pretty-print^)

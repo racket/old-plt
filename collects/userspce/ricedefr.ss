@@ -1,6 +1,5 @@
-(plt:require-library "ricedefs.ss")
+;(plt:require-library "ricedefs.ss")
 
-(define ricedefs@
   (unit/sig ricedefs^
     (import)
     
@@ -42,4 +41,4 @@
     (define set-cdr! (make-second-checked #%set-cdr! 'set-cdr!))
     (define list* (make-last-checked #%list* 'list*))
     (define append (make-last-checked #%append 'append))
-    (define append! (make-last-checked #%append! 'append!))))
+    (define append! (make-last-checked #%append! 'append!)))

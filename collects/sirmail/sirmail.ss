@@ -160,25 +160,42 @@
 
   ;; Set Quit handler to try closing all windows --------------------
 
+  (define asking-for-quit? #f)
+
   (application-quit-handler
    (lambda ()
-     (let ([l (begin
-		(semaphore-wait exit-sema)
-		(begin0
-		 exit-eventspaces
-		 (semaphore-post exit-sema)))])
-       (for-each
-	(lambda (evtsp)
-	  (parameterize ([current-eventspace evtsp])
-	    (queue-callback
+     (if asking-for-quit?
+	 (let ([l (get-top-level-windows)])
+	   (when (pair? l)
+	     ;; Createa thread because it's probably a dialog...
+	     (thread (lambda () (send (car l) show #t)))))
+	 (dynamic-wind
+	     (lambda () (set! asking-for-quit? #t))
 	     (lambda ()
-	       (let ([f (get-top-level-edit-target-window)])
-		 (when (and f (f . is-a? . frame%))
-		   (when (send f can-close?)
-		     (send f on-close)
-		     (send f show #f)))))
-	     #f)))
-	l))))
+	       (when (= 1 (message-box/custom
+			   "Confirm Quit"
+			   "Really quit?"
+			   "Quit" "Cancel" #f
+			   #f '(default=1)
+			   2))
+		 (let ([l (begin
+			    (semaphore-wait exit-sema)
+			    (begin0
+			     exit-eventspaces
+			     (semaphore-post exit-sema)))])
+		   (for-each
+		    (lambda (evtsp)
+		      (parameterize ([current-eventspace evtsp])
+			(queue-callback
+			 (lambda ()
+			   (let ([f (get-top-level-edit-target-window)])
+			     (when (and f (f . is-a? . frame%))
+			       (when (send f can-close?)
+				 (send f on-close)
+				 (send f show #f)))))
+			 #f)))
+		    l))))
+	     (lambda () (set! asking-for-quit? #f))))))
 
   ;; We start by opening "Inbox" ----------------------------------------
   

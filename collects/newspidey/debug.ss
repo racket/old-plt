@@ -1,5 +1,8 @@
 (define *bad-apps* '())
 
+; term -> void
+; currently, just prints out error message in the 
+;  case of arity mismatch
 (define (debug-arity term)
   (cond
     [(zodiac:quote-form? term) #t]

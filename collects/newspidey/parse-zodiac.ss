@@ -2,6 +2,9 @@
 ;;(require-library "cores.ss")                      ;; for mzlib:core^
 ;;(require-library "invoke.ss" "zodiac")              ;; for zodiac:interface^ and z
 
+; use our own gensym for now
+; because real gensym generates uninterned symbols
+;  that are not eq? to symbols entered in the REPL
 (define counter 0)
 (define (gensym)
   (set! counter (add1 counter))
@@ -9,6 +12,7 @@
 
 (define *ast* '())
 
+; ???? what is type, Philippe ????
 (define (parse-zodiac defs-thunk)
     (letrec ([read-from-thunk
               (lambda (thunk)
@@ -34,6 +38,7 @@
           ))))
 
 
+; set expressions
 (define-struct Const (val))
 (define-struct Token (name))
 (define-struct Set-var (name))
@@ -44,30 +49,40 @@
 (define-struct Label (name))
 (define-struct Car (set-var))
 (define-struct Cdr (set-var))
+
+; arity information
 (define-struct Interval (lo hi))
 (define-struct Arity (req proh))
 ;;(define-struct Listexp (set-vars))
 
+; constraints
+(define-struct constraint (lo hi))
+
+; common stuff
 (define *Nullexp* (make-Const '()))
 (define *pair-token* (make-Token 'pair))
 
+; generate fresh set variable, add to table
 (define (gen-set-var)
   (let ([set-var (make-Set-var (gensym))])
     (add-set-var set-var)
     set-var))
 
-(define-struct constraint (lo hi))
-
+; (listof constraint)
 (define *the-constraints* '())
+; (hash-table-of ?????)
 (define *constraint-table* (make-hash-table))
 
+; ????? don't know the types of these
 (define *dom-interval->dom-arity-table* (make-hash-table))
 (define *dom-arity->dom-interval-table* (make-hash-table))
 (define *rng-interval->rng-arity-table* (make-hash-table))
 (define *rng-arity->rng-interval-table* (make-hash-table))
 
 (define (encode-dom n alpha)
-  (string->symbol (string-append "dom_" (number->string n) "(" (symbol->string (Set-var-name alpha)) ")")))
+  (string->symbol 
+   (string-append "dom_" (number->string n) 
+		  "(" (symbol->string (Set-var-name alpha)) ")")))
 
 (define (relate-dom-int-to-ar dom-int)
   (let* ([n (Dom-interval-pos dom-int)]
@@ -76,6 +91,7 @@
          [dom-int-list (lookup-dom-ar dom-encoding)])
     (hash-table-put! *dom-arity->dom-interval-table* dom-encoding (cons dom-int dom-int-list))))
 
+; sym -> arity
 (define (lookup-dom-ar sym)
   (hash-table-get *dom-arity->dom-interval-table* sym (lambda () '())))
 

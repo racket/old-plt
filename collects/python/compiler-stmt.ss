@@ -1,7 +1,8 @@
 (module compiler-stmt mzscheme
   (require (lib "class.ss")
 	   "compiler.ss"
-	   "compiler-expr.ss")
+	   "compiler-expr.ss"
+           "runtime-support.ss")
 
   (provide (all-defined-except bindings-mixin))
 
@@ -121,13 +122,9 @@
       (define/override (to-scheme)
         (->orig-so (if to-file?
                        `(print-to-file blah)
-                       (let ([x (gensym)])
-                         `(begin (for-each (lambda (,x)
-                                             (display ,x) (display #\space))
-                                           (list ,@(map (lambda (e)
-                                                          (send e to-scheme))
-                                                        expressions)))
-                                 (newline))))))
+                       `(py-print (list ,@(map (lambda (e)
+                                              (send e to-scheme))
+                                            expressions))))))
       
       (super-instantiate ())))
   
@@ -142,9 +139,9 @@
           (send expression set-bindings! enclosing-scope)))
       
       ;;daniel
-      (inherit ->orig-so)
-      (define/override (to-scheme)
-        (->orig-so `(return ,(send expression to-scheme))))
+      (inherit ->orig-so ->lex-so)
+      (define/override (to-scheme py-return)
+        (->orig-so `(,py-return ,(send expression to-scheme))))
       
       (super-instantiate ())))
 
@@ -269,9 +266,17 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(begin ,@(sub-stmt-map (lambda (s)
-                                             (send s to-scheme))))))
-      
+        (->orig-so (let ([py-return (syntax pyreturn)])
+                     `(call/cc (lambda (,py-return)
+                               ,@(sub-stmt-map (lambda (s)
+                                                 (if (is-a? s return%)
+                                                     (send s to-scheme py-return)
+                                                     (send s to-scheme)))))))))
+         
+         
+         ;`(py-suite (list ,@(sub-stmt-map (lambda (s)
+         ;                                    (send s to-scheme)))))))
+     ; 
       (super-instantiate ())))
   
   ;; 7.1

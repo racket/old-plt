@@ -46,4 +46,25 @@
   ;; (make-tuple list)
   (define-struct tuple (list) (make-inspector))
   
+  
+  ;; py-print: (listof X) -> void
+  (define (py-print lst)
+    (for-each (lambda (x)
+                (display x) (display #\space))
+              lst)
+    (newline))
+
+  
+  (define-syntax py-suite
+    (lambda (stx)
+      (syntax-case stx ()
+        [(_ statement-list)
+         (let ([stmts (syntax statement-list)])
+           (datum->syntax-object stmts
+                                 `(call-with-current-continuation
+                                   (lambda (py-return)
+                                     (for-each (lambda (stmt)
+                                                 (eval stmt))
+                                               ,(syntax-e stmts))))))])))
+  
   )

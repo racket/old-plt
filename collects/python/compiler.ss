@@ -31,7 +31,12 @@
       ;; to make the syntax object look like it appeared in the
       ;; source text.  This way check syntax will highlight it.
       (define/public (->orig-so datum)
-        (datum->syntax-object #f datum src-loc stx-orig-prop))        
+        (datum->syntax-object #f datum src-loc stx-orig-prop))
+      
+      ;; ->lex-so: datum context -> syntax-object
+      ;; same as ->orig-so, but with lexical information
+      (define/public (->lex-so datum context)
+        (datum->syntax-object context datum src-loc stx-orig-prop))
 
       ;; set-bindings!: (or/f fales? (is-a?/c def%) (is-a?/c class%) (is-a?/c lambda%)) ->
       ;; Compute all the bindings this statement could introduce into

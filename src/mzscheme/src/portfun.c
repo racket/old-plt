@@ -76,7 +76,7 @@ static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *port_count_lines(int, Scheme_Object **args);
 
-static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[]);
@@ -97,6 +97,8 @@ static Scheme_Object *default_write_handler;
 static Scheme_Object *default_print_handler;
 
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
+
+static short drh_cases[4] = { 1, 1, 3, 3};
 
 #define fail_err_symbol scheme_false
 
@@ -143,10 +145,24 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_print_proc = scheme_make_prim_w_arity(sch_print, 
 					       "print", 
 					       1, 2);
+  
+  /* Made as a closed prim so we can get the arity right: */
+  default_read_handler = scheme_make_closed_prim_w_arity(sch_default_read_handler,
+							 NULL,
+							 "default-port-read-handler", 
+							 1, 3);
+  /* Fixup arity: */
+  {
+    Scheme_Closed_Case_Primitive_Proc *c;
+    c = MALLOC_ONE_TAGGED(Scheme_Closed_Case_Primitive_Proc);
+    memcpy(c, default_read_handler, sizeof(Scheme_Closed_Primitive_Proc));
+    c->p.mina = -2;
+    c->p.maxa = -2;
+    c->cases = drh_cases;
+    default_read_handler = (Scheme_Object *)c;
+  }
     
-  default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
-						  "default-port-read-handler", 
-						  1, 3);
+
   default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
 						     "default-port-display-handler", 
 						     2, 2);
@@ -1447,19 +1463,16 @@ static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
   return (Scheme_Object *)o;
 }
 
-static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
+static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Object *argv[])
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *src;
 
+  if (!(argc == 1) && !(argc == 3))
+    scheme_case_lambda_wrong_count("default-port-read-handler", argc, argv, 2, 1, 1, 3, 3);
+
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);
-
-  if (argc == 2) {
-    /* FIXME: need to use case-lambda-like functionality to report the
-       error properly. */
-    scheme_wrong_count("default-port-read-handler", 3, 3, argc, argv);
-  }
 
   if (argc == 3) {
     if (!check_offset_list(argv[2]))

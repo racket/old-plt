@@ -641,7 +641,7 @@ stx_val {
 stx_off_val {
  mark:
   Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
-  gcMARK(stx->src);
+  gcMARK(o->src);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
 }

@@ -1510,6 +1510,26 @@ int stx_val_FIXUP(void *p) {
 }
 
 
+int stx_off_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
+}
+
+int stx_off_val_MARK(void *p) {
+  Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
+  gcMARK(stx->src);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
+}
+
+int stx_off_val_FIXUP(void *p) {
+  Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)p;
+  gcFIXUP(stx->src);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
+}
+
+
 int module_val_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));

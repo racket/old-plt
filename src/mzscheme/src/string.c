@@ -1527,8 +1527,9 @@ void machine_details(char *buff)
 	scheme_close_input_port(sout);
 
 	/* Remove trailing whitespace (especially newlines) */
-	while (c && isspace(((unsigned char *)buff)[c - 1]))
+	while (c && isspace(((unsigned char *)buff)[c - 1])) {
 	  buff[--c] = 0;
+	}
 
 	return;
       }

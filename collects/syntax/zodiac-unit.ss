@@ -180,6 +180,8 @@
 
       (define (syntax->zodiac stx)
 	(define slot-table (make-hash-table))
+	(define trans-slot-table (make-hash-table))
+	(define syntax-slot-table (make-hash-table))
 
 	(if (eof-object? stx)
 	    stx
@@ -206,8 +208,11 @@
 			  (if (pair? b)
 			      (cdr b)
 			      (syntax-e stx))
-			  (and (pair? b) (car b))
-			  (get-slot stx slot-table)))))]
+			  (let ([modname (and (pair? b) (car b))])
+			    (if trans?
+				(box modname)
+				modname))
+			  (get-slot stx (if trans? trans-slot-table slot-table))))))]
 
 		[(#%top . id)
 		 ;; Top-level (or module) reference:
@@ -215,8 +220,8 @@
 		  stx
 		  (mk-back)
 		  (syntax-e (syntax id))
-		  #f
-		  (get-slot (syntax id) slot-table))]
+		  (if trans? (box #f) #f)
+		  (get-slot (syntax id) (if trans? trans-slot-table slot-table)))]
 
 		[(#%datum . val)
 		 (let ([val (syntax val)])
@@ -247,7 +252,17 @@
 		 (make-define-syntaxes-form
 		  stx
 		  (mk-back)
-		  (syntax->list (syntax names))
+		  (map (lambda (stx)
+			 (let ([b (identifier-binding stx)])
+			   (make-top-level-varref
+			    stx
+			    (mk-back)
+			    (if (pair? b)
+				(cdr b)
+				(syntax-e stx))
+			    (and (pair? b) (car b))
+			    (get-slot stx syntax-slot-table))))
+		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #t))]
 		
 		[(module name init-require . body)

@@ -84,7 +84,7 @@ enum {
   scheme_bucket_table_type, /* 70 */
   scheme_subprocess_type,
   scheme_compilation_top_type,
-  scheme_envunbox_type,
+  scheme_reserved_1_type,
   scheme_eval_waiting_type,
   scheme_tail_call_waiting_type,
   scheme_undefined_type,
@@ -148,6 +148,7 @@ enum {
   scheme_rt_preallocated_object,
   scheme_thread_hop_type,
   scheme_rt_breakable,
+  scheme_rt_srcloc,
 #endif
 
   _scheme_last_type_

@@ -24,9 +24,12 @@ class wxPrinterDC: public wxCanvasDC
  public:
   TPPrPort prPort;
   THPrint  prRecHandle;
+  int close_handle;
 
-  wxPrinterDC(void);
+  wxPrinterDC(wxWindow *w = NULL);
   wxPrinterDC(THPrint); // Create a DC corresponding to a canvas
+
+  Create(THPrint);
 
   ~wxPrinterDC(void);
 

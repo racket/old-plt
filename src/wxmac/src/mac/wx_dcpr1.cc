@@ -31,18 +31,48 @@ void InstallColor(wxColour &c, int fg, Bool Colour);
 //-----------------------------------------------------------------------------
 // Default constructor
 //-----------------------------------------------------------------------------
-wxPrinterDC::wxPrinterDC(void)
+wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
 {
-  // this should never happen since the cMacDC would not be set
-  // to a printer port like below
+  THPrint pr;
+
+  ok = TRUE;
+
+  wxPrOpen();
+
+  pr = (THPrint)NewHandleClear(sizeof(TPrint));
+
+  PrintDefault(pr);
+  PrValidate(pr);
+  if (PrError() != fnfErr) {
+    if (!PrJobDialog(printData.macPrData)) {
+      ok = FALSE;
+    }
+    if (PrError())
+      ok = FALSE;
+  } else
+    ok = FALSE;
+
+  if (ok) {
+    close_handle = 1;
+    Create(pr);
+  } else {
+    DisposeHandle((Handle)pr);
+  }
 }
 
 
 //-----------------------------------------------------------------------------
 wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
 {
-	/* MATTHEW: [6] */
-	__type = wxTYPE_DC_PRINTER;
+  close_handle = 0;
+  wxPrOpen();
+  Create(pData);
+}
+
+
+void wxPrinterDC::Create(THPrint pData)
+{
+  __type = wxTYPE_DC_PRINTER;
 
     prRecHandle = pData;
     PrOpen();
@@ -126,8 +156,13 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
 //-----------------------------------------------------------------------------
 wxPrinterDC::~wxPrinterDC(void)
 {
-  if (ok)
+  if (ok) {
     PrCloseDoc(prPort);
+    if (close_handle)
+      disposeHandle((Handle)prRecHandle);
+  }
+
+  wxPrClose();
 }
 
 //-----------------------------------------------------------------------------

@@ -74,6 +74,20 @@ PrIdleUPP printIdleUPP=(PrIdleUPP)&printIdle;
 
 #endif
 
+static int popen_p;
+
+void wxPrOpen(void)
+{
+  if (!popen_p++)
+    PrOpen();
+}
+
+void wxPrClose(void)
+{
+  if (!--popen_p)
+    PrClose();
+}
+
 
 wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
  wxDialogBox((wxFrame *)p, "Printer Dialog")
@@ -112,7 +126,7 @@ void wxPrintDialog::Show(Bool flag)
   strp = (**printData.macPrData).prJob.iFstPage;
 #endif
 
-  PrOpen();
+  wxPrOpen();
 
   PrValidate( printData.macPrData);
 
@@ -122,7 +136,7 @@ void wxPrintDialog::Show(Bool flag)
     {
        (**printData.macPrData).prJob.iLstPage = 0;
        (**printData.macPrData).prJob.iFstPage = 0;
-       PrClose();
+       wxPrClose();
        return;
     }
   }
@@ -130,7 +144,7 @@ void wxPrintDialog::Show(Bool flag)
   if (PrError())
     DisposeHandle((Handle)printData.macPrData);
 
-  PrClose();
+  wxPrClose();
 
 }
 
@@ -326,7 +340,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (maxPage == 0)
     return FALSE;
 
-  PrOpen();
+  wxPrOpen();
   if (PrError() != fnfErr) {
     PrintDefault(printData.macPrData);
   }
@@ -370,7 +384,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (printData.GetFromPage() <= 0 || 
       printData.GetToPage() <= 0)
   {
-    PrClose();
+    wxPrClose();
     return FALSE;
   }
   
@@ -381,7 +395,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (!dc || !dc->Ok())
   {
     if (dc) delete dc; // PrSetError
-    PrClose();
+    wxPrClose();
     return FALSE;
   }
 
@@ -418,7 +432,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
  //   wxEndBusyCursor();
     wxMessageBox("Sorry, could not create an abort dialog.", "Print Error", wxOK, (wxFrame *)parent);
     delete dc;
-    PrClose();
+    wxPrClose();
 	return FALSE;
   }
   abortWindow = win;
@@ -480,7 +494,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
   delete dc;
   
-  PrClose();
+  wxPrClose();
 
   return TRUE;
 }

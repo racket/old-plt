@@ -191,5 +191,8 @@ class wxPrintout: public wxObject
   inline virtual void SetIsPreview(Bool p) { isPreview = p; }
 };
 
+void wxPrOpen(void);
+void wxPrClose(void);
+
 #endif // IN_CPROTO
 #endif // wx_printh

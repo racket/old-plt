@@ -3,6 +3,9 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
+CHANGE: Tokens defined with define-empty-tokens no longer have $n bound in
+the action.
+
 _lex.ss_
 NOTE: the lex-buf is gone since input ports in mzscheme have added the 
 functionality that the lex-buf used to provide.
@@ -193,19 +196,21 @@ This module provides the following syntactic form:
      expression is a semantic action which will be evaluated when the
      input is found to match its corresponding production.  Each
      action is scheme code that has the same scope as its parser's
-     definition, except that the variables $1, ..., $n are bound in the
-     expression and may hide outside bindings of $1, ... $n.  $x is
-     bound to the result of the action for the $xth grammar symbol on
-     the right of the production, if that grammar symbol is a
+     definition, except that the variables $1, ..., $n are bound in
+     the expression and may hide outside bindings of $1, ... $n.  $x
+     is bound to the result of the action for the $xth grammar symbol
+     on the right of the production, if that grammar symbol is a
      non-terminal, or the value stored in the token if the grammar
      symbol is a terminal.  Here n is the number of grammar-symbols on
      the right of the production.  If the src-pos option is present in
      the parser, variables $1-start-pos, ..., $n-start-pos and
      $1-end-pos, ..., $n-end-pos are also available and refer to the
      position structures corresponding to the start and end of the
-     corresponding grammar-symbol.  All of the productions for a given
-     non-terminal must be grouped with it, i.e. No non-terminal may
-     appear twice on the left hand side in a parser.
+     corresponding grammar-symbol.  Grammar symbols defined as
+     empty-tokens have no $n associated, but do have $n-start-pos and
+     $n-end-pos.  All of the productions for a given non-terminal must
+     be grouped with it, i.e. No non-terminal may appear twice on the
+     left hand side in a parser.
 
 The result of a parser expression is a function, f, that takes one
 argument.  This argument must be a zero argument function, t, that

@@ -125,7 +125,7 @@
   (define board (make-parameter (vector)))
   
   ;; (make-command num `(s n e w p d) list-of-package)
-  (define-struct command (bid command arg))
+  (define-struct command (bid command arg) (make-inspector))
   
   (define-struct package (id weight x y))
   

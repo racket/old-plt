@@ -14,7 +14,7 @@
 	 (lambda ()
 	   (let* ([e (wx:make-eventspace)]
 		  [f (parameterize ([wx:current-eventspace e])
-		       (make-object mred:frame% null "Spidey"))]
+		       (make-object mred:dialog-box% null "Spidey" #f))]
 		  [p (make-object mred:vertical-panel% f)]
 		  [m (make-object mred:message% p "Please wait, loading the Analysis.")])
 	     (send p stretchable-in-y #f)

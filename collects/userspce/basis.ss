@@ -228,7 +228,8 @@
   
   ;; zodiac-vocabulary? : setting -> boolean
   (define (zodiac-vocabulary? setting)
-    (not (eq? (setting-vocabulary-symbol setting) 'mzscheme)))
+    (not (or (eq? (setting-vocabulary-symbol setting) 'mzscheme)
+	     (eq? (setting-vocabulary-symbol setting) 'mred))))
   
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)

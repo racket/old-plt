@@ -1,0 +1,229 @@
+This doc.txt file is deeply speculative, and not only do I not
+guarantee that it describes the system accurately, I'm not even sure
+that it all makes sense.
+
+The _libsndfile_ collection is designed to work with the
+homogeneous-vectors library to provide simple support for reading and
+writing sound files.  It does not provide direct support for playing
+sound files (though mzscheme's play-sound works sorta okay for this).
+
+Origins
+-------
+
+The libsndfile collection, as its name suggests, is related to the
+libsndfile library by Erik de Castro Lopo.  In fact, it is essentially
+a set of scheme bindings (+ some abstraction) for that library.  That
+library may be had at <http://www.zip.com.au/~erikd/libsndfile/>.  It
+is also available for the OS X platform as part of the fink project
+(<http://fink.sourceforge.net>), and may be available as part of other
+package management systems.
+
+Before compiling and running the libsndfile collection, you will need
+to have the libsndfile library compiled and installed (for some local
+definition of 'installed').
+
+In building the libsndfile collection, I have tried to abstract away
+the more grotty and error-inducing aspects that are a part of any C
+library.  Please let me know if this abstraction prevents you from
+doing something useful.
+
+Sound File Data
+---------------
+
+The libsndfile collection reads and writes only homogeneous vectors
+(cf. SRFI 4).  Since these homogeneous vectors are explicitly
+associated with a numeric type (and in particular, a numeric type that
+generally corresponds exactly to a C numeric type), the issue of
+conversions between scheme numeric types and C numeric types is not
+one we have to deal with.
+
+Conversions
+-----------
+
+One fundamental problem in a library of this sort, and of interactions
+with C generally, is its marked propensity for code which "does the
+best it can, most of the time, sort of."  In such a situation, it is
+difficult to build a library which does not expose this imprecision.
+The libsndfile collection does the best it can by allowing the
+programmer to constrain I/O operations to those known not to cause any
+kind of conversion (through the 'sf-error-level' parameter).  On the
+other hand, one of the principal features of libsndfile is that it can
+do conversions between, say, 16-bit ints and 32-bit ints.  The problem
+is that in many situations you'd like (as a programmer) to ensure that
+no information is lost.  The 'sf-error-level' parameter approximates
+this property in an extremely conservative way.
+
+A Note on Endian-ness
+---------------------
+
+The libsndfile library's interface allows the programmer to specify
+whether data is being read or written in big-endian, little-endian,
+cpu-specific, or file-specific format.  The libsndfile collection does
+not properly address these issues, and I strongly suspect that
+problems will arise in this department.  In particular, I suspect that
+a sound file whose endianness does not match that expected by the
+homogeneous vector library will fall apart completely.  It's probably
+a very straightforward matter to enforce this conversion.  Okay, I
+should do that.
+
+A Note on Frames
+----------------
+
+In a sound file with multiple channels (say, a stereo file), each 
+frame of sample data will contain one sample for each channel. These
+are interleaved.  So, if you wish to read four frames from a stereo
+file, you must provide a buffer with room for at least eight samples.
+
+Interface
+---------
+
+The libsndfile collection provides the sf-info data structure, which
+is quite similar to a file port in the domain of file interactions.
+All of its fields are read-only (the mutators simply are not provided
+externally).
+
+There are a number of 'enumerations' needed by libsndfile, defined as
+follows:
+
+>  endian-ness-format?
+    : (symbols 'file 'little 'big 'cpu)
+
+>  major-format?
+    : (symbols 'wav 'aiff 'au 'raw 'paf 'svx 'nist 'voc 'ircam 'w64 'mat4 'mat5)
+  
+>  minor-format?
+    : (symbols 'pcm-s8 'pcm-16 'pcm-24 'pcm-32 'pcm-u8 'float 'double 'ulaw 'alaw 
+               'ima-adpcm 'ms-adpcm 'gsm610 'vox-adpcm 'g721-32 'g723-24 'g723-40
+               'dwvw-12 'dwvw-16 'dwvw-24 'dwvw-n)
+  
+
+> (sf-error-level [new-value]) : parameter?
+
+sf-error-level is a parameter.  Its possible values are
+'all-conversions and 'no-conversions.  The default value is
+'all-conversions.  When sf-error-level is set to no-conversions, the
+libsndfile collection will only allow I/O in the 'native' format of
+the given sf-info.  So, if the file is a file of 16-bit integers, only
+a s16-vector could be used to write to the file.  Otherwise, the
+system will perform the conversion by handing the number off to C for
+one of its handy-dandy "do the best it can" casts.
+
+> (sf-info? v) : (-> any? boolean?)
+
+predicate for the sf-info structure
+
+>   (sf-info-frames i) : (-> sf-info? integer?)
+>   (sf-info-samplerate i) : (-> sf-info? integer?)
+>   (sf-info-channels i) : (-> sf-info? integer?)
+>   (sf-info-endian-ness-format i) : (-> sf-info? endian-ness-format?)
+>   (sf-info-major-format i) : (-> sf-info? major-format?)
+>   (sf-info-minor-format i) : (-> sf-info? minor-format?)
+>   (sf-info-sections i) : (-> sf-info? integer?)
+>   (sf-info-seekable i) : (-> sf-info? boolean?)
+   
+field accessors for all fields of the sf-info structure except for the
+sf-port itself.
+
+>   (sf-open-for-read path mode) 
+     : (-> (string? (symbols 'read 'readwrite))
+           sf-info?)
+
+sf-open-for-read takes a path and a mode, and returns an sf-info.
+This opens the file for reading (or both reading and writing).
+   
+>   (sf-open-for-write path samplerate channels endian-ness-format major-format minor-format) 
+     : (-> (string? integer? integer? endian-ness-format? major-format? minor-format?) 
+           sf-info?)
+
+sf-open-for-write takes a path and the relevant parameters needed to
+create a new sound file and opens the file for writing.
+   
+>   (sf-seek info frames whence) 
+     : (-> sf-info? integer? (symbols 'from-beginning 'from-current 'from-end)
+           void?)
+
+sf-seek seeks to a specified frame.  Depending on the 'whence' argument, it will
+search from the beginning, from the end, or from the current file location.
+   
+>   (sf-command info ? data datasize) 
+     : (-> sf-info? (symbols 'unknown) string? integer? void?)
+
+I don't know what the sf-command procedure of the libsndfile library
+does, though I suspect that it is important.  This contract probably
+resembles the correct one, but this procedure currently simply signals
+an error.
+   
+>   (sf-close info) 
+     : (-> sf-info? void?)
+
+sf-close takes an sf-info and closes it.
+   
+>   (sf-read info storage storage-offset frames) 
+     : (-> sf-info? any? integer? integer? void?)
+
+sf-read takes an info, a buffer into which to write, an offset within
+that buffer (in frames), and a number of frames to read. It fills the
+buffer with the requested number of samples, if there is room in the
+buffer and enough data in the file.
+   
+>   (sf-write info storage storage-offset frames) 
+     : (-> sf-info? any? integer? integer? void?)
+   
+sf-write takes an info, a buffer from which to read, an offset within
+that buffer (in frames), and a number of frames to write.  It writes
+the requested number of frames to the file, if there is enough data in
+the buffer.
+
+
+>   (create-buffer-for-open-port info frames [initial-value]) 
+    : (case-> (-> sf-info? integer? any) (-> sf-info? integer? number? any)))
+
+create-buffer-for-open-port takes an info, a number of frames, and an
+optional initialization value, and creates an 'appropriate'
+homogeneous vector for reading from and writing to that info, where
+the appropriate type is drawn from the 'minor-format of the info.
+This abstraction is somewhat useless, because you have to know what
+kind of homo-vec it produces in order to do anything useful with it.
+This, as I see it, is something of a shortcoming of SRFI 4.
+
+So, here's a little tiny program which generates a tone at 440 Hz,
+panning from the left ear to the right ear at a frequency of 0.5 Hz:
+
+(require (lib "homo-vectors.ss" "homogeneous-vectors")
+         (lib "libsndfile.ss" "libsndfile"))
+
+(define sample-rate 44100)
+(define buffer-time 3)
+(define channels 2)
+
+(sf-error-level 'no-conversions)
+
+(define buffer (make-s32vector (* sample-rate buffer-time channels)))
+(define out-info (sf-open-for-write "./test.wav" sample-rate channels 'cpu 'wav 'pcm-32))
+
+(define pan-frequency 0.5)
+(define tone-frequency 400)
+
+(define sample-max (- (expt 2 31) 1))
+
+(time
+ (let loop ([i 0])
+   (when (< i (* sample-rate buffer-time))
+     (let ([pan (/ (+ 1 (sin (* 2 pi (* (/ i sample-rate) pan-frequency)))) 2)]
+           [tone (* sample-max (sin (* 2 pi (* (/ i sample-rate) tone-frequency))))])
+       (s32vector-set! buffer (* i 2) (inexact->exact (floor (* pan tone))))
+       (s32vector-set! buffer (+ (* i 2) 1) (inexact->exact (floor (* (- 1 pan) tone))))
+       (loop (+ i 1))))))
+
+(sf-write out-info buffer 0 (* sample-rate buffer-time))
+
+(sf-close out-info)
+
+; and then, if we want to play it:
+
+(play-sound "./test.wav" #f)
+
+
+
+
+

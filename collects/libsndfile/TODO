@@ -1,0 +1,5 @@
+- truncates without warning
+- endianness not dealt with at all!
+- compilation has some OS-X / fink-specific include/linking paths
+- length of file?  This might be a part of the 'command' interface...
+- automatic recompilation on scheme version change

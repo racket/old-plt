@@ -660,6 +660,14 @@ before the pattern compiler is invoked.
                     (loop (cdr sexp) (cdr path)))]))])))
 
   (define (test)
+    (define (mk-hasheq assoc-list)
+      (let ([ht (make-hash-table)])
+	(for-each
+         (lambda (a)
+	    (hash-table-put! ht (car a) (cdr a)))
+	  ht)
+	ht))
+
     (test-empty 'any 1 (list (make-bindings null)))
     (test-empty 'any 'true (list (make-bindings null)))
     (test-empty 'any "a" (list (make-bindings null)))
@@ -833,11 +841,11 @@ before the pattern compiler is invoked.
     (test-empty `(+ 1 (side-condition (name x any) ,(lambda (bindings) (eq? (lookup-binding bindings 'x) 'a))))
                 '(+ 1 b)
                 #f)
-    
+
     (run-test
      'compatible-context-language1
      (build-compatible-context-language
-      #hasheq((exp . ()) (ctxt . ())) 
+      (mk-hasheq '((exp . ()) (ctxt . ())))
       (list (make-nt 'exp
                      (list (make-rhs '(+ exp exp))
                            (make-rhs 'number)))
@@ -868,7 +876,7 @@ before the pattern compiler is invoked.
     (run-test
      'compatible-context-language2
      (build-compatible-context-language
-      #hasheq((m . ()) (v . ())) 
+      (mk-hasheq '((m . ()) (v . ())))
       (list (make-nt 'm (list (make-rhs '(m m)) (make-rhs '(+ m m)) (make-rhs 'v)))
             (make-nt 'v (list (make-rhs 'number) (make-rhs '(lambda (x) m))))))
      (list
@@ -893,7 +901,7 @@ before the pattern compiler is invoked.
     (run-test
      'compatible-context-language3
      (build-compatible-context-language
-      #hasheq((M . ()) (seven . ()))
+      (mk-hasheq '((M . ()) (seven . ())))
       (list (make-nt 'M (list (make-rhs '(M seven M)) (make-rhs 'number)))
             (make-nt 'seven (list (make-rhs 7)))))
      `(,(make-nt

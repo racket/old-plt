@@ -148,6 +148,9 @@
                                                (map id-string (name-path name))))
                      (id-string (name-id name)))))
   
+  ;build-id-name: string -> string
+  (define (build-var-name id) (format "~a-f" id))
+  
   ;build-method-name: string (list type) -> string
   (define build-method-name
     (lambda (id types)
@@ -524,7 +527,7 @@
                            (rename (super-field-values field-values))
                            (define/override (field-values)
                              (append (super-field-values)
-                                     (list ,@(map (lambda (n) (build-identifier (id-string (field-name n))))
+                                     (list ,@(map (lambda (n) (build-identifier (build-var-name (id-string (field-name n)))))
                                                   (append (accesses-public fields)
                                                           (accesses-package fields)
                                                           (accesses-protected fields)
@@ -772,7 +775,7 @@
   ;translate-parms: (list field) -> (list syntax)
   (define (translate-parms parms)
     (map (lambda (parm)
-           (translate-id (id-string (field-name parm))
+           (translate-id (build-var-name (id-string (field-name parm)))
                          (id-src (field-name parm))))
          parms))
 
@@ -792,7 +795,7 @@
         null
         (let* ((field (car fields))
                (class (build-identifier (class-name)))
-               (quote-name (build-identifier (id-string (field-name field))))
+               (quote-name (build-identifier (build-var-name (id-string (field-name field)))))
                (getter (car names))
                (final (final? (map modifier-kind (field-modifiers field)))))
           (append (cons (make-syntax #f `(define ,getter
@@ -813,7 +816,7 @@
               (field (car fields)))
           (cons (make-syntax #f
                              `(define (,name my-val)
-                                (set! ,(build-identifier (build-static-name (id-string (field-name field)))) my-val))
+                                (set! ,(build-identifier (build-var-name (build-static-name (id-string (field-name field))))) my-val))
                              #f)
                 (create-static-setters (cdr names) (cdr fields))))))
   
@@ -823,7 +826,7 @@
         null
         (let* ((field (car fields))
                (s-name (id-string (field-name field)))
-               (name (build-identifier s-name))
+               (name (build-identifier (build-var-name s-name)))
                (getter (create-get-name s-name))
                (setter (create-set-name s-name)))
           (append (list (make-syntax #f `(define (,getter my-val) ,name) (build-src (id-src (field-name field))))
@@ -833,7 +836,7 @@
   
   
   (define (make-static-field-names fields)
-    (map (lambda (f) (build-static-name (id-string (field-name f)))) fields))
+    (map (lambda (f) (build-static-name (build-var-name (id-string (field-name f))))) fields))
 
   (define (create-static-fields names fields)
     (if (null? names)
@@ -841,17 +844,16 @@
         (let ((name (car names))
               (f (car fields)))
           (cons (make-syntax #f
-                                      `(define ,(translate-id name (id-src (field-name f))) 
-                                         ,(translate-field-body (and (var-init? f) f) (field-type f)))
-                                      (build-src (if (var-init? f) (var-init-src f) (var-decl-src f))))
+                             `(define ,(translate-id name (id-src (field-name f))) 
+                                ,(translate-field-body (and (var-init? f) f) (field-type f)))
+                             (build-src (if (var-init? f) (var-init-src f) (var-decl-src f))))
                 (create-static-fields (cdr names) (cdr fields))))))
-
   
   ;translate-field: (list symbol) type-spec id (U #f var-init) src bool -> syntax
   (define translate-field
     (lambda (access type name init? src static?)
       (let ((value (translate-field-body init? type))
-            (field-name (translate-id (if static? (build-static-name (id-string name)) (id-string name))
+            (field-name (translate-id (build-var-name (if static? (build-static-name (id-string name)) (id-string name)))
                                       (id-src name))))
         (if (or static? (private? access))
             (make-syntax #f `(define ,field-name ,value) (build-src src))
@@ -1007,7 +1009,7 @@
             (source (build-src src)))
         (if (and (pair? init) (field? (car init)))
             (make-syntax #f `(letrec (,@(map (lambda (var)
-                                                        `(,(translate-id (id-string (field-name var))
+                                                        `(,(translate-id (build-var-name (id-string (field-name var)))
                                                                          (id-src (field-name var)))
                                                           ,(if (var-init? var)
                                                                (if (array-init? (var-init-init var))
@@ -1074,7 +1076,7 @@
                          (make-syntax #f 
                                         `(javaException:exception-is-a? ,class-name)
                                         (build-src var-src))))
-                    (parm (translate-id (id-string (field-name catch-var))
+                    (parm (translate-id (build-var-name (id-string (field-name catch-var)))
                                         (id-src (field-name catch-var))))
                     (block (make-syntax #f
                                           `(lambda (,parm)
@@ -1131,7 +1133,7 @@
                (translate-var
                 (lambda (var statements)
                   (let* ((is-var-init? (var-init? var))
-                         (id (translate-id (id-string (field-name var)) (id-src (field-name var)))))
+                         (id (translate-id (build-var-name (id-string (field-name var))) (id-src (field-name var)))))
                     (list (make-syntax #f 
                                          `(letrec
                                               ((,id ,(if is-var-init?
@@ -1341,7 +1343,7 @@
     (lambda (name src)
       (cond
         ((local-access? name)
-         (translate-id (id-string (local-access-name name))
+         (translate-id (build-var-name (id-string (local-access-name name)))
                        (id-src (local-access-name name))))
         ((field-access? name)
          (let* ((field-string (id-string (field-access-field name)))
@@ -1352,7 +1354,7 @@
            (cond
              ((var-access-static? access)
               (if (>= (length (var-access-class access)) 1)
-                  (translate-id (build-static-name field-string (car (var-access-class access)))
+                  (translate-id (build-var-name (build-static-name field-string (car (var-access-class access))))
                                 field-src)
                   (error 'translate-access "Internal error: Translate access given list with no elements for class name")))
              ((eq? 'array (var-access-class access))
@@ -1549,7 +1551,7 @@
                                                        ,id ,(expression id)) ,id) src-h))))
              (cond
                ((local-access? access)
-                (set-h (translate-id (id-string (local-access-name access))
+                (set-h (translate-id (build-var-name (id-string (local-access-name access)))
                                      (id-src (local-access-name access)))))
                ((field-access? access)
                 ;Come Back : loses source information
@@ -1560,9 +1562,9 @@
                        (expr (if obj (translate-expression obj))))
                   (cond
                     ((var-access-static? vaccess)
-                     (set-h (build-identifier (build-static-name field 
+                     (set-h (build-identifier (build-static-name (build-var-name field)
                                                                  (build-identifier (var-access-class access))))))
-                    ((not obj) (set-h (translate-id field field-src)))
+                    ((not obj) (set-h (translate-id (build-var-name field) field-src)))
                     (else
                      (let ((setter (create-set-name field (var-access-class vaccess)))
                            (getter (create-get-name field (var-access-class vaccess))))

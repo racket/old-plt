@@ -153,6 +153,13 @@
       (else null)))
   
 
+  (define (do-splay-tree-for-each f node offset)
+    (when node
+      (do-splay-tree-for-each f (node-left node) offset)
+      (let ((node-start (+ offset (node-left-subtree-length node))))
+        (f node-start (node-token-length node) (node-token-data node))
+        (do-splay-tree-for-each f (node-right node) (+ node-start (node-token-length node))))))
+  
   ;; --------------------- The interface to the splay tree --------------------
   
   (define-local-member-name set-root)
@@ -290,6 +297,9 @@
       
       (define/public (to-list)
         (do-to-list root))
+      
+      (define/public (for-each f)
+        (do-splay-tree-for-each f root 0))
       
       (super-instantiate ())))
 

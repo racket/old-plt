@@ -21,7 +21,7 @@
     (let ((getter (lambda () (get-token is))))
       (case level
         ((beginner) 
-         (determine-error (lambda () (find-beginner-error is))) 
+         (determine-error find-beginner-error) 
          (parse-beginner getter))
         ((intermediate) (parse-intermediate getter))
         ((advanced) (parse-advanced getter))
@@ -34,7 +34,7 @@
     (let ((getter (lambda () (get-token is))))
       (case level
         ((beginner) 
-         (determine-error (lambda () (find-beginner-error-interactions is)))
+         (determine-error find-beginner-error-interactions)
          (parse-beginner-interactions getter))
         ((intermediate) (parse-intermediate-interactions getter))
         ((advanced) (parse-advanced-interactions getter))

@@ -25,16 +25,18 @@
   (define (compile-java src dest level name port loc . type-recs)
     (when (and (eq? src 'file)
                (not (file-exists? name)))
-      (error 'compile-java "Compile-java given file that does not exist: ~a" name))
+      (error 'compile-java "compile-java given file that does not exist: ~a" name))
     (let ((type-recs (if (null? type-recs)
                          (make-object type-records)
                          (car type-recs))))
       (cond
         ((and (eq? src 'file) (eq? dest 'file))
+         (parse-error-port (lambda () (call-with-input-file name (lambda (x) x))))
          (call-with-input-file name (lambda (port) (compile-to-file port name level))))
         ((eq? dest 'file)
          (compile-to-file port loc level))
         ((eq? src 'file)
+         (parse-error-port (lambda () (call-with-input-file name (lambda (x) x))))
          (call-with-input-file 
              name
              (lambda (port) (compile-java-internal port name type-recs #f level))))

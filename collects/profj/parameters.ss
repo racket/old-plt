@@ -25,4 +25,7 @@
   ;Stores the error function to trigger for parsing
   (define determine-error (make-parameter (lambda () #t)))
   
+  ;Stores a function to get the port for parse errors
+  (define parse-error-port (make-parameter (lambda () void)))
+  
   ) 

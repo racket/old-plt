@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.27 1999/07/16 16:52:15 mflatt Exp $
+ * $Id: Window.cc,v 1.28 1999/07/17 15:27:44 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1407,16 +1407,12 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.metaDown	= xev->xkey.state & Mod1Mask;
 	wxevent.shiftDown	= xev->xkey.state & ShiftMask;
 	wxevent.timeStamp       = xev->xkey.time; /* MATTHEW */
-	Bool event_handled = FALSE; // flag, if event was handled by previous a handler
-	if (IsCursorKey(keysym)
-	||  IsKeypadKey(keysym)
-	||  IsMiscFunctionKey(keysym)
-	||  IsFunctionKey(keysym)
-	||  IsPFKey(keysym))
-	    // call function key event handler
-	    event_handled = win->GetEventHandler()->OnFunctionKey(wxevent);
 	*continue_to_dispatch_return = FALSE;
-	if (!event_handled && !win->CallPreOnChar(win, &wxevent)) {
+	if (!win->CallPreOnChar(win, &wxevent)) {
+	  /* hack: ignore SubWin for a choice item key event: */
+	  if (subWin && (win->__type == wxTYPE_CHOICE))
+	    subWin = 0;
+
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else

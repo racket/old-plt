@@ -395,8 +395,9 @@
   (let ([table (make-hash-table)])
     (lambda (string-type)
       (hash-table-get table string-type
-        (let ([new-type (make-ctype string-type #f
-                                    (lambda (x) (or x eof)))])
+        (let ([new-type (make-ctype string-type
+                          (lambda (x) (and (not (eof-object? x)) x))
+                          (lambda (x) (or x eof)))])
           (hash-table-put! table string-type new-type)
           new-type)))))
 (provide _string/eof)

@@ -181,36 +181,38 @@
       (saam:for-each-source
        gui-model-state
        (lambda (editor)
-         (set-box! known-editors (cons editor (unbox known-editors)))
-         (let ([locked? (send editor is-locked?)])
-           (send editor begin-edit-sequence #f)
-           (send editor lock #f)
-           (saam:for-each-label-in-source
-            gui-model-state
-            editor
-            (lambda (label)
-              (let ([label-left-pos (saam:get-position-from-label gui-model-state label)])
-                (send editor change-style (get-style-delta-from-label label)
-                      label-left-pos (+ label-left-pos (get-span-from-label label)) #f))))
-           (send editor lock locked?)
-           (send editor end-edit-sequence))))
+         (when editor
+           (set-box! known-editors (cons editor (unbox known-editors)))
+           (let ([locked? (send editor is-locked?)])
+             (send editor begin-edit-sequence #f)
+             (send editor lock #f)
+             (saam:for-each-label-in-source
+              gui-model-state
+              editor
+              (lambda (label)
+                (let ([label-left-pos (saam:get-position-from-label gui-model-state label)])
+                  (send editor change-style (get-style-delta-from-label label)
+                        label-left-pos (+ label-left-pos (get-span-from-label label)) #f))))
+             (send editor lock locked?)
+             (send editor end-edit-sequence)))))
       (invalidate-bitmap-cache gui-view-state)))
   
   ; text% -> void
   ; resets all colors to original style
   (define (reset-editor-style editor)
-    (let ([locked? (send editor is-locked?)])
-      (send editor begin-edit-sequence #f)
-      (send editor lock #f)
-      ; comment this out if you want to keep all the pretty colors
-      (let* ([style-list (send editor get-style-list)]
-             [standard-style (send style-list find-named-style "Standard")])
-        (when standard-style
-          (send editor change-style
-                standard-style
-                0 (send editor last-position) #f)))
-      (send editor lock locked?)
-      (send editor end-edit-sequence)))
+    (when editor
+      (let ([locked? (send editor is-locked?)])
+        (send editor begin-edit-sequence #f)
+        (send editor lock #f)
+        ; comment this out if you want to keep all the pretty colors
+        (let* ([style-list (send editor get-style-list)]
+               [standard-style (send style-list find-named-style "Standard")])
+          (when standard-style
+            (send editor change-style
+                  standard-style
+                  0 (send editor last-position) #f)))
+        (send editor lock locked?)
+        (send editor end-edit-sequence))))
   
   ; (box (listof text%)) -> void
   (define (remove-all-colors known-editors)
@@ -406,28 +408,29 @@
                 (assoc-set-for-each
                  new-terms-by-positions-by-editor
                  (lambda (editor new-terms-by-positions)
-                   (let ([locked? (send editor is-locked?)])
-                     (send editor begin-edit-sequence #t)
-                     (send editor lock #f)
-                     (for-each
-                      (lambda (position-and-new-term-pair)
-                        (let* ([position (car position-and-new-term-pair)]
-                               [new-term (cdr position-and-new-term-pair)]
-                               [labels (get-related-labels-from-drscheme-pos-and-editor gui-view-state position editor)])
-                          (let-values ([(old-ending-pos new-ending-pos)
-                                        (saam:user-change-terms gui-model-state
-                                                                labels editor
-                                                                (string-length new-term))])
-                            (send editor insert new-term position old-ending-pos)
-                            ; the styles for the different labels are hopefully the same...
-                            (send editor change-style
-                                  (get-style-delta-from-label (car labels))
-                                  position new-ending-pos #f))))
-                      (lst:quicksort (assoc-set-map new-terms-by-positions cons)
-                                     (lambda (pos&term-pair1 pos&term-pair2)
-                                       (> (car pos&term-pair1) (car pos&term-pair2)))))
-                     (send editor lock locked?)
-                     (send editor end-edit-sequence))))))
+                   (when editor
+                     (let ([locked? (send editor is-locked?)])
+                       (send editor begin-edit-sequence #t)
+                       (send editor lock #f)
+                       (for-each
+                        (lambda (position-and-new-term-pair)
+                          (let* ([position (car position-and-new-term-pair)]
+                                 [new-term (cdr position-and-new-term-pair)]
+                                 [labels (get-related-labels-from-drscheme-pos-and-editor gui-view-state position editor)])
+                            (let-values ([(old-ending-pos new-ending-pos)
+                                          (saam:user-change-terms gui-model-state
+                                                                  labels editor
+                                                                  (string-length new-term))])
+                              (send editor insert new-term position old-ending-pos)
+                              ; the styles for the different labels are hopefully the same...
+                              (send editor change-style
+                                    (get-style-delta-from-label (car labels))
+                                    position new-ending-pos #f))))
+                        (lst:quicksort (assoc-set-map new-terms-by-positions cons)
+                                       (lambda (pos&term-pair1 pos&term-pair2)
+                                         (> (car pos&term-pair1) (car pos&term-pair2)))))
+                       (send editor lock locked?)
+                       (send editor end-edit-sequence)))))))
           (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))))
   
   
@@ -436,55 +439,57 @@
   ; Adds snips of given type to given label.
   ; We could get the editor from the label, but there's no reason to bother...
   (define (add-snips gui-view-state label type editor)
-    (let ([snips-content
-           ((gui-view-state-get-snip-text-from-snip-type-and-label gui-view-state) type label)])
-      (unless (null? snips-content)
-        (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-        (let ([snip-style
-               (cdr (assq type (gui-view-state-snip-types-and-colors gui-view-state)))]
-              [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
-                                            label type editor (length snips-content))]
-              [locked? (send editor is-locked?)]
-              [modified? (send editor is-modified?)])
-          (send editor begin-edit-sequence #f)
-          (send editor lock #f)
-          (for-each (lambda (snip-content)
-                      (let* ([snip-text (make-object text%)]
-                             [snip (make-object editor-snip% snip-text)])
-                        (send snip-text insert snip-content)
-                        (send snip-text lock #t)
-                        (send editor insert snip starting-pos starting-pos)
-                        ; XXX bug here on Solaris, can be worked around
-                        ; (invalidate-bitmap-cache gui-view-state)
-                        ; see collects/test/tool2.ss
-                        (send editor change-style snip-style
-                              starting-pos (add1 starting-pos) #f)))
-                    snips-content)
-          (send editor set-modified modified?)
-          (send editor lock locked?)
-          (send editor end-edit-sequence))
-        (invalidate-bitmap-cache gui-view-state)
-        (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))))
+    (when editor
+      (let ([snips-content
+             ((gui-view-state-get-snip-text-from-snip-type-and-label gui-view-state) type label)])
+        (unless (null? snips-content)
+          (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
+          (let ([snip-style
+                 (cdr (assq type (gui-view-state-snip-types-and-colors gui-view-state)))]
+                [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
+                                              label type editor (length snips-content))]
+                [locked? (send editor is-locked?)]
+                [modified? (send editor is-modified?)])
+            (send editor begin-edit-sequence #f)
+            (send editor lock #f)
+            (for-each (lambda (snip-content)
+                        (let* ([snip-text (make-object text%)]
+                               [snip (make-object editor-snip% snip-text)])
+                          (send snip-text insert snip-content)
+                          (send snip-text lock #t)
+                          (send editor insert snip starting-pos starting-pos)
+                          ; XXX bug here on Solaris, can be worked around
+                          ; (invalidate-bitmap-cache gui-view-state)
+                          ; see collects/test/tool2.ss
+                          (send editor change-style snip-style
+                                starting-pos (add1 starting-pos) #f)))
+                      snips-content)
+            (send editor set-modified modified?)
+            (send editor lock locked?)
+            (send editor end-edit-sequence))
+          (invalidate-bitmap-cache gui-view-state)
+          (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))))
   
   ; gui-view-state label symbol text% -> void
   ; Remove snips for a given label and type.
   ; We could get the editor from the label, but there's no reason to bother...
   (define (remove-inserted-snips gui-view-state label type editor)
-    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-    (let-values ([(starting-pos ending-pos)
-                  (saam:remove-inserted-snips (gui-view-state-gui-model-state gui-view-state)
-                                              label type editor)]
-                 [(locked?) (send editor is-locked?)]
-                 [(modified?) (send editor is-modified?)])
-      ; all the snips for a given label and type are contiguous and deleted at once.
-      (send editor begin-edit-sequence #f)
-      (send editor lock #f)
-      (send editor delete starting-pos ending-pos #f)
-      (send editor set-modified modified?)
-      (send editor lock locked?)
-      (send editor end-edit-sequence))
-    (invalidate-bitmap-cache gui-view-state)
-    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))
+    (when editor
+      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
+      (let-values ([(starting-pos ending-pos)
+                    (saam:remove-inserted-snips (gui-view-state-gui-model-state gui-view-state)
+                                                label type editor)]
+                   [(locked?) (send editor is-locked?)]
+                   [(modified?) (send editor is-modified?)])
+        ; all the snips for a given label and type are contiguous and deleted at once.
+        (send editor begin-edit-sequence #f)
+        (send editor lock #f)
+        (send editor delete starting-pos ending-pos #f)
+        (send editor set-modified modified?)
+        (send editor lock locked?)
+        (send editor end-edit-sequence))
+      (invalidate-bitmap-cache gui-view-state)
+      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
   
   ; gui-view-state (-> top) -> top
   ; removes all the snips (and remembers them), runs the thunk, then puts all the snips back in...

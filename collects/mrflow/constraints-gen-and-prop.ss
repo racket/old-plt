@@ -3837,7 +3837,7 @@
                                 (set-error-for-label sba-state
                                                      label
                                                      'red
-                                                     (format "X primitive expects argument of type <pair>; given ~a"
+                                                     (format "primitive expects argument of type <pair>; given ~a"
                                                              (pp-type sba-state (get-type-from-label
                                                                                  sba-state
                                                                                  inflowing-label)

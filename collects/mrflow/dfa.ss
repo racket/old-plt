@@ -999,13 +999,17 @@
     (lambda (cls)
       (letrec
           ([get-number-args
-            (lambda (i) (lambda (cl) (vector-length (vector-ref (type-case-lambda-argss cl) i))))]
+            ;(lambda (i) (lambda (cl) (vector-length (vector-ref (type-case-lambda-argss cl) i))))]
+            (lambda (i) (lambda (cl) (vector-length (vector-ref (case-lambda-state-argss cl) i))))]
            [get-number-exps
-            (lambda (cl) (vector-length (type-case-lambda-exps cl)))]
+            ;(lambda (cl) (vector-length (type-case-lambda-exps cl)))]
+            (lambda (cl) (vector-length (case-lambda-state-exps cl)))]
            [get-rest-arg
-            (lambda (i) (lambda (cl) (vector-ref (type-case-lambda-rest-arg?s cl) i)))]
+            ;(lambda (i) (lambda (cl) (vector-ref (type-case-lambda-rest-arg?s cl) i)))]
+            (lambda (i) (lambda (cl) (vector-ref (case-lambda-state-rest-arg?s cl) i)))]
            [get-req-arg
-            (lambda (i) (lambda (cl) (vector-ref (type-case-lambda-req-args cl) i)))]
+            ;(lambda (i) (lambda (cl) (vector-ref (type-case-lambda-req-args cl) i)))]
+            (lambda (i) (lambda (cl) (vector-ref (case-lambda-state-req-args cl) i)))]
            [req-arg-gt (lambda (xs ys)
                          (cond [(and (null? xs) (null? ys)) #f]
                                [(= (car xs) (car ys)) (req-arg-gt (cdr xs) (cdr ys))]

@@ -261,8 +261,8 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 			bm->SetOk(FALSE);
 			return FALSE;
 		}
-		SetGWorld(newGWorld, 0);
 		LockPixels(GetGWorldPixMap(newGWorld));
+		SetGWorld(newGWorld, 0);
 		bm->x_pixmap = newGWorld;
 
 		RGBColor	cpix;

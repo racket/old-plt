@@ -130,25 +130,25 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 	) :
 		wxItem (parentPanel, x, y, width, height, style, windowName)
 {
-	if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
-		buttonBitmap = bitmap;
-		buttonBitmap->selectedIntoDC++;
-	} else {
-	    Create(parentPanel, function, "<bad-image>", x, y, width, height, style, windowName, objectType);
-	}
+  if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
+    buttonBitmap = bitmap;
+    buttonBitmap->selectedIntoDC++;
+  } else {
+    Create(parentPanel, function, "<bad-image>", x, y, width, height, style, windowName, objectType);
+  }
 
-	Callback(function);
-	cMacControl = NULL;
-	
-	SetCurrentMacDC();
-	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
-	cWindowHeight = bounds.bottom;
-	cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
-	if (cWindowHeight < IR_MIN_HEIGHT)
-	  cWindowHeight = IR_MIN_HEIGHT;
-        OffsetRect(&bounds,SetOriginX,SetOriginY);
-
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+  Callback(function);
+  cMacControl = NULL;
+  
+    Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
+    cWindowHeight = bounds.bottom;
+    cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
+    if (cWindowHeight < IR_MIN_HEIGHT)
+      cWindowHeight = IR_MIN_HEIGHT;
+    OffsetRect(&bounds,SetOriginX,SetOriginY);
+    
+  if (SetCurrentMacDC())
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
 }
 
 //=============================================================================

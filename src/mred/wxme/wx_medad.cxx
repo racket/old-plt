@@ -521,7 +521,11 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 	   is probably scrolling. But make sure we're shown. */
 	wxWindow *w = this;
 	while (w && w->IsShown()) {
-	  w = w->GetParent();
+	  if (wxSubType(w->__type, wxTYPE_FRAME)
+	      || wxSubType(w->__type, wxTYPE_DIALOG_BOX))
+	    w = NULL;
+	  else
+	    w = w->GetParent();
 	}
 	if (!w) {
 	  autoDragger = new wxAutoDragTimer(this, event);
@@ -1377,15 +1381,32 @@ void wxCanvasMediaAdmin::GrabCaret(int dist)
 void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy, 
 				     float w, float h)
 {
+  int is_shown;
+  wxWindow *win;
+
   if (updateBlock)
     return;
 
   updateBlock = TRUE;
 
+  is_shown = 1;
+  win = canvas;
+  while (win)  {
+    if (!win->IsShown()) {
+      is_shown = 0;
+      win = NULL;
+    } else if (wxSubType(win->__type, wxTYPE_FRAME)
+	       || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+      win = NULL;
+    else
+      win = win->GetParent();
+  }
+
   if (resetFlag) {
-    canvas->Repaint();
+    if (is_shown)
+      canvas->Repaint();
     resetFlag = FALSE;
-  } else
+  } else if (is_shown)
     canvas->Redraw(localx, localy, w, h);
 
   if (nextadmin)

@@ -110,6 +110,7 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		Rect	bounds = {0, 0, bm->GetHeight(), bm->GetWidth()};
 		err = NewGWorld(&bm->x_pixmap, 0, &bounds, NULL, NULL, noNewDevice);
 		if (!err) {
+		  LockPixels(GetGWorldPixMap(bm->x_pixmap));
 		  SetGWorld(bm->x_pixmap, 0);
 		  DrawPicture(ph, &bounds);
 		  DisposeHandle((Handle)ph);

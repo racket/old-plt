@@ -133,7 +133,7 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 /* Removing "|| defined(wx_msw)" below uses the Windows console.
    The danger is that closing that console kills MrEd without
    any chance of cancelling the kill. */
-# if defined(wx_mac) || defined(wx_msw)
+# if /* defined(wx_mac) || */ defined(wx_msw)
 #  define WINDOW_STDIO 1
 # else
 #  define WINDOW_STDIO 0
@@ -149,7 +149,7 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 #endif
 
 #ifndef REDIRECT_STDIO
-# if (defined(wx_msw) || defined(wx_mac)) && !WINDOW_STDIO && !WCONSOLE_STDIO
+# if (defined(wx_msw) /* || defined(wx_mac) */) && !WINDOW_STDIO && !WCONSOLE_STDIO
 #  define REDIRECT_STDIO 1
 # else
 #  define REDIRECT_STDIO 0

@@ -545,11 +545,15 @@ void wxPanel::SetSize(int x, int y, int width, int height, int flags)
 
 void wxPanel::MaybeMoveControls()
 {
-	// (foreach maybe-move-controls window-children)
-	wxChildNode *childNode = children->First();
-	while (childNode) {
-		((wxWindow *)childNode->Data())->MaybeMoveControls();
-		childNode = childNode->Next();
-	}
+  // (foreach maybe-move-controls window-children)
+  wxChildNode *childNode = children->First();
+  while (childNode) {
+    wxWindow *win;
+    win = (wxWindow *)childNode->Data();
+    if (win) {
+      win->MaybeMoveControls();
+      childNode = childNode->Next();
+    }
+  }
 }	
 	

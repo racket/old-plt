@@ -87,11 +87,7 @@ START_XFORM_SKIP;
 wxBitmap *wxMediaBuffer::bitmap;
 wxMemoryDC *wxMediaBuffer::offscreen = NULL;
 long wxMediaBuffer::bmHeight, wxMediaBuffer::bmWidth;
-#if defined(wx_msw) && defined(USE_SEP_WINDOW_MGR)
-# define OFFSCREEN_IN_USE_INIT TRUE  /* Until we fix Win32 bug */
-#else
 # define OFFSCREEN_IN_USE_INIT FALSE
-#endif
 Bool wxMediaBuffer::offscreenInUse = OFFSCREEN_IN_USE_INIT;
 wxMediaBuffer *wxMediaBuffer::lastUsedOffscreen = NULL;
 

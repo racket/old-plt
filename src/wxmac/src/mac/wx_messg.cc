@@ -183,43 +183,44 @@ char* wxMessage::GetLabel(void)
 //-----------------------------------------------------------------------------
 void wxMessage::SetLabel(wxBitmap *bitmap)
 {
-	if (!sBitmap || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
-	  return;
+  if (!sBitmap || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
+    return;
 
-    --sBitmap->selectedIntoDC;
-	sBitmap = bitmap;
-	sBitmap->selectedIntoDC++;
-	
-	// erase the old
-	SetCurrentDC();
-	int clientWidth, clientHeight;
-	GetClientSize(&clientWidth, &clientHeight);
-	Rect clientRect = {0, 0, clientHeight, clientWidth};
-        OffsetRect(&clientRect,SetOriginX,SetOriginY);
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+  --sBitmap->selectedIntoDC;
+  sBitmap = bitmap;
+  sBitmap->selectedIntoDC++;
+  
+  // erase the old
+  if (SetCurrentDC()) {
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    OffsetRect(&clientRect,SetOriginX,SetOriginY);
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 
-//FIXME CJC	SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
-	sBitmap->DrawMac();
+    //FIXME CJC	SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
+    sBitmap->DrawMac();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxMessage::SetLabel(char* label)
 {
-	if (sBitmap) return;
-    if (cMessage) delete [] cMessage;
-	cMessage = macCopyString0(wxItemStripLabel(label));
-	if (!cHidden) {
+  if (sBitmap) return;
+  if (cMessage) delete [] cMessage;
+  cMessage = macCopyString0(wxItemStripLabel(label));
+  if (!cHidden) {
 #if 0
-		SetCurrentDC();
-		int clientWidth, clientHeight;
-		GetClientSize(&clientWidth, &clientHeight);
-		Rect clientRect = {0, 0, clientHeight, clientWidth};
-                OffsetRect(&clientRect,SetOriginX,SetOriginY);
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+    SetCurrentDC();
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    OffsetRect(&clientRect,SetOriginX,SetOriginY);
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 #else
-		Paint();
+    Paint();
 #endif
-	}
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -227,17 +228,18 @@ void wxMessage::Paint(void)
 {
 	if (cHidden) return;
 
-	SetCurrentDC();
-	int clientWidth, clientHeight;
-	GetClientSize(&clientWidth, &clientHeight);
-	Rect clientRect = {0, 0, clientHeight, clientWidth};
-        OffsetRect(&clientRect,SetOriginX,SetOriginY);
-	::EraseRect(&clientRect);
-
-	if (sBitmap) {
-		sBitmap->DrawMac();
-	} else {
-		::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
+	if (SetCurrentDC()) {
+	  int clientWidth, clientHeight;
+	  GetClientSize(&clientWidth, &clientHeight);
+	  Rect clientRect = {0, 0, clientHeight, clientWidth};
+	  OffsetRect(&clientRect,SetOriginX,SetOriginY);
+	  ::EraseRect(&clientRect);
+	  
+	  if (sBitmap) {
+	    sBitmap->DrawMac();
+	  } else {
+	    ::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
+	  }
 	}
 }
 

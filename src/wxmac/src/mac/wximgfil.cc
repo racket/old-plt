@@ -702,8 +702,8 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	  *cport = 0;
 	  return;
 	}
-	SetGWorld(newGWorld, 0);
 	LockPixels(GetGWorldPixMap(newGWorld));
+	SetGWorld(newGWorld, 0);
 
 	RGBColor	cpix;
 	int i, j;
@@ -717,7 +717,6 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	    ::SetCPixel(j, i, &cpix);
 	  }
 	}
-	// UnlockPixels(GetGWorldPixMap(newGWorld));
 	SetGWorld(saveport, savegw);
 	*cport = newGWorld;
 }

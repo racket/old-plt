@@ -279,6 +279,7 @@ XCreateImage(Display *d, Visual *v,
 	GWorldPtr	newGWorld;
 	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
 	if (!err) {
+	  LockPixels(GetGWorldPixMap(newGWorld));
   	  SetGWorld(newGWorld, 0);
 	  ::EraseRect(&bounds);
 	  img->bitmap = newGWorld;	

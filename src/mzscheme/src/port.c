@@ -5778,7 +5778,6 @@ static void default_sleep(float v, void *fds)
   /* Clear external event flag */
   if (external_event_fd) {
     char buf[10];
-    event_fd_set = 1;
     read(external_event_fd, buf, 10);
     event_fd_set = 0;
   }
@@ -5794,8 +5793,8 @@ void scheme_signal_received(void)
 {
 #if defined(FILES_HAVE_FDS)
   if (put_external_event_fd && !event_fd_set) {
-    write(put_external_event_fd, "!", 1);
     event_fd_set = 1;
+    write(put_external_event_fd, "!", 1);
   }
 #endif
 }

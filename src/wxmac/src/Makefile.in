@@ -164,6 +164,9 @@ libwxmac.a: $(OBJS)
 	$(AR) $(ARFLAGS) libwxmac.a $(OBJS)
 	$(RANLIB) libwxmac.a
 
+clean:
+	rm -f *.o libwxmac.a
+
 wb_form.o : $(srcdir)/base/wb_form.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_form.o -c $(srcdir)/base/wb_form.cc
 wb_item.o : $(srcdir)/base/wb_item.cc
@@ -184,7 +187,7 @@ wb_types.o : $(srcdir)/base/wb_types.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_types.o -c $(srcdir)/base/wb_types.cc
 wb_canvs.o : $(srcdir)/base/wb_canvs.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_canvs.o -c $(srcdir)/base/wb_canvs.cc
-wb_gdi.o : $(srcdir)/base/wb_gdi.cc
+wb_gdi.o : $(srcdir)/base/wb_gdi.cc $(srcdir)/../../wxcommon/FontDirectory.cxx
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_gdi.o -c $(srcdir)/base/wb_gdi.cc
 wb_main.o : $(srcdir)/base/wb_main.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_main.o -c $(srcdir)/base/wb_main.cc
@@ -421,3 +424,4 @@ ALHeirarchical.o : $(ALISTDIR)/ALHeirarchical.c
 	$(CC) $(ALISTCCFLAGS) -o ALHeirarchical.o -c $(ALISTDIR)/ALHeirarchical.c
 ALSelectors.o : $(ALISTDIR)/ALSelectors.c
 	$(CC) $(ALISTCCFLAGS) -o ALSelectors.o -c $(ALISTDIR)/ALSelectors.c
+

@@ -254,14 +254,19 @@ void QueueMrEdEvent(EventRecord *e)
 
 static void GetSleepTime(int *sleep_time, int *delay_time)
 {
-#if FG_SLEEP_TIME
+#ifdef OS_X
+  /* No need to cooperate: */
+  *sleep_time = *delay_time = 0;
+#else
+# if FG_SLEEP_TIME
   if (last_was_front && Button())
     *sleep_time = 0;
   else
-#endif
+# endif
     *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
    
   *delay_time = last_was_front ? DELAY_TIME : 0;
+#endif
 }
 
 /* TransferQueue sucks all of the pending events out of the
@@ -977,6 +982,9 @@ static void *do_watch(void *fds)
 
 static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *fds)
 {
+  if (!fds)
+    return 1;
+
   if (!watch_write_fd) {
     int fds[2];
     if (!pipe(fds)) {

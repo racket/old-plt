@@ -9,8 +9,8 @@
 
 static const char sccsid[] = "%W% %G%";
 #ifndef OS_X
-  #include <Windows.h>
-  #include <Folders.h>
+# include <Windows.h>
+# include <Folders.h>
 #endif
 #include <stdlib.h>
 
@@ -54,76 +54,76 @@ extern void wxInitResources(char *s);
 //-----------------------------------------------------------------------------
 int wxEntry(int argc, char* argv[])
 {
-	// CreateApp();	// This procedure initializes the whole application
+  // CreateApp();	// This procedure initializes the whole application
 
-	if (!wxTheApp)
-	{
-		exit(0);
-	}
-
-	wxTheApp->argc = argc;
-	wxTheApp->argv = argv;
-
-	wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
-	wxREGGLOB(wxmac_startup_directory);
-	
-	FSSpec spec;
-    SInt16 vRefNum;
-    SInt32 dirID;
-    const Str255 fileName = "\p";
-#ifdef OS_X
-        static char path_divider = '/';
-#else
-        static char path_divider = ':';
-#endif
-        
-	if (FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
-	  char *home;
-	  
-      FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-	  home = scheme_mac_spec_to_path(&spec);
-	  int l = strlen(home);
-	  char *s = new char[l + 15];
-	  memcpy(s, home, l);
-	  if (s[l - 1] != path_divider) {
-	    s[l++] = path_divider;
-	  }
-	  strcpy(s + l, "mred.fnt");
-      wxInitResources(s);
+  if (!wxTheApp)
+    {
+      exit(0);
     }
 
-	wxCommonInit();
-	wxInitializePrintSetupData(1);
+  wxTheApp->argc = argc;
+  wxTheApp->argv = argv;
 
-	wxTheApp->OnInit();
-	
-	return 0;
+  wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
+  wxREGGLOB(wxmac_startup_directory);
+  
+  FSSpec spec;
+  SInt16 vRefNum;
+  SInt32 dirID;
+  const Str255 fileName = "\p";
+#ifdef OS_X
+  static char path_divider = '/';
+#else
+  static char path_divider = ':';
+#endif
+  
+  if (FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
+    char *home;
+    
+    FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
+    home = scheme_mac_spec_to_path(&spec);
+    int l = strlen(home);
+    char *s = new char[l + 15];
+    memcpy(s, home, l);
+    if (s[l - 1] != path_divider) {
+      s[l++] = path_divider;
+    }
+    strcpy(s + l, "mred.fnt");
+    wxInitResources(s);
+  }
+
+  wxCommonInit();
+  wxInitializePrintSetupData(1);
+
+  wxTheApp->OnInit();
+  
+  return 0;
 }
 
 
 //-----------------------------------------------------------------------------
 void wxCleanUp(void)
 {// Cleans up any wxWindows internal structures left lying around
-	wxCommonCleanUp();
-	wxFlushResources();
+  wxCommonCleanUp();
+  wxFlushResources();
 }
 
 //-----------------------------------------------------------------------------
 Bool wxYield(void)
 { // Yield to incoming messages
 
-    while (wxTheApp->Pending())
-      wxTheApp->Dispatch();
-      
-	return TRUE;
+  while (wxTheApp->Pending())
+    wxTheApp->Dispatch();
+  
+  return TRUE;
 }
 
 //-----------------------------------------------------------------------------
 void wxExit(void)
 {
-	int retValue = 0;
-	if (wxTheApp) retValue = wxTheApp->OnExit();
-	wxCleanUp();
+  int retValue = 0;
+  if (wxTheApp) retValue = wxTheApp->OnExit();
+  wxCleanUp();
 
-	exit(retValue);
+  exit(retValue);
 }

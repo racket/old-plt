@@ -268,9 +268,9 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Device context methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	void SetCurrentMacDCNoMargin(void); // mac platform only
-	virtual void SetCurrentMacDC(void); // mac platform only
-	virtual void SetCurrentDC(void); // mac platform only
+	int SetCurrentMacDCNoMargin(void); // mac platform only
+	int SetCurrentMacDC(void); // mac platform only
+	int SetCurrentDC(void); // mac platform only
 	virtual void MacSetBackground(void); // mac platform only
 	virtual void SetForeground(void); // mac platform only
 	virtual void SetTextInfo(void); // mac platform only

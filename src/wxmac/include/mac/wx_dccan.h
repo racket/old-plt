@@ -133,6 +133,13 @@ class wxCanvasDC: public wxbCanvasDC
   void PaintStipple(wxRegion *);
 };
 
+extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
+#define GetWhitePattern() &wx_white_pat
+#define GetBlackPattern() &wx_black_pat
+#define GetLightGrayPattern() &wx_light_gray_pat
+#define GetDarkGrayPattern() &wx_dark_gray_pat
+extern void wx_init_patterns();
+
 #endif // IN_CPROTO
 #endif // wx_dccanh
 

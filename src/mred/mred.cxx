@@ -1758,7 +1758,7 @@ public:
     {
        PreOnEvent(NULL, NULL);
 
-#ifdef wx_mac
+#ifdef wx_mac__
        if (e->metaDown && e->KeyCode() == (stdio_kills_prog ? 'q' : 'w')) {
           OnMenuCommand(77);
 	  return TRUE;
@@ -2666,7 +2666,7 @@ wxFrame *MrEdApp::OnInit(void)
 
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 
-#ifndef wx_x
+#if WINDOW_STDIO
   /* The only reason we get here is that a command-line error or
      -h occured. In either case, stick around for the sake of the
      console. */

@@ -51,174 +51,174 @@ static const char sccsid[] = "%W% %G%";
 
 //-----------------------------------------------------------------------------
 wxButton::wxButton // Constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x,
-		int			y,
-		int			width,
-		int			height,
-		long		style,
-		char*		windowName,
-		WXTYPE		objectType
-	) :
-		wxbButton (parentPanel, x, y, width, height, style, windowName)
-		
+(
+ wxPanel*	parentPanel,
+ wxFunction	function,
+ char*		label,
+ int 		x,
+ int			y,
+ int			width,
+ int			height,
+ long		style,
+ char*		windowName,
+ WXTYPE		objectType
+ ) :
+ wxbButton (parentPanel, x, y, width, height, style, windowName)
+     
 {
-	Create(parentPanel, function, label, x, y, width, height, style, windowName, objectType);
+  Create(parentPanel, function, label, x, y, width, height, style, windowName, objectType);
 }
 
 void wxButton::Create // Real constructor (given parentPanel, label)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		char*		label,
-		int 		x,
-		int			y,
-		int			width,
-		int			height,
-		long		style,
-		char*		windowName,
-		WXTYPE		objectType
-	) 	
+(
+ wxPanel*	parentPanel,
+ wxFunction	function,
+ char*		label,
+ int 		x,
+ int			y,
+ int			width,
+ int			height,
+ long		style,
+ char*		windowName,
+ WXTYPE		objectType
+ ) 	
 {
-    buttonBitmap = NULL;
-	cColorTable = NULL;
+  buttonBitmap = NULL;
+  cColorTable = NULL;
 
-	padLeft = padRight = PAD_X;
-	padTop = padBottom = PAD_Y;
-		
-	Callback(function);
+  padLeft = padRight = PAD_X;
+  padTop = padBottom = PAD_Y;
+  
+  Callback(function);
 
-	font = buttonFont; // WCH: mac platform only
-	
-	label = wxItemStripLabel(label);
+  font = buttonFont; // WCH: mac platform only
+  
+  label = wxItemStripLabel(label);
 
-	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  SetCurrentMacDC();
+  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 #ifdef OS_X
-        // First, create the control with a bogus rectangle;
-        OSErr err;
-        Rect boundsRect = {0,0,0,0};
-        ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-        CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
-        ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
-    
-        // Now, ignore the font data and let the control find the "best" size 
-        ::SetRect(&boundsRect,0,0,0,0);
-        SInt16 baselineOffset; // ignored
-        err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
-        cWindowWidth = boundsRect.right - boundsRect.left + (padLeft + padRight);
-        cWindowHeight = boundsRect.bottom - boundsRect.top + (padTop + padBottom);
-        ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
+  // First, create the control with a bogus rectangle;
+  OSErr err;
+  Rect boundsRect = {0,0,0,0};
+  ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
+  CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
+  
+  // Now, ignore the font data and let the control find the "best" size 
+  ::SetRect(&boundsRect,0,0,0,0);
+  SInt16 baselineOffset; // ignored
+  err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
+  cWindowWidth = boundsRect.right - boundsRect.left + (padLeft + padRight);
+  cWindowHeight = boundsRect.bottom - boundsRect.top + (padTop + padBottom);
+  ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
 #else
 
-	if (width <= 0 || height <= 0)
+  if (width <= 0 || height <= 0)
+    {
+      float fWidth, fHeight;
+      GetTextExtent(label, &fWidth, &fHeight, NULL, NULL, buttonFont);
+      if (width <= 0)
 	{
-		float fWidth, fHeight;
-		GetTextExtent(label, &fWidth, &fHeight, NULL, NULL, buttonFont);
-		if (width <= 0)
-		{
-			width = (int)(fWidth + BUTTON_H_SPACE);
-			if (width < MIN_BUTTON_WIDTH) width = MIN_BUTTON_WIDTH;
-			cWindowWidth = width;
-		}
-
-		if (height <= 0)
-		{
-			height = (int)(fHeight + BUTTON_V_SPACE);
-			cWindowHeight = height;
-		}
+	  width = (int)(fWidth + BUTTON_H_SPACE);
+	  if (width < MIN_BUTTON_WIDTH) width = MIN_BUTTON_WIDTH;
+	  cWindowWidth = width;
 	}
 
-	cBorderArea = new wxArea(this);
-	new wxButtonBorder(cBorderArea);
+      if (height <= 0)
+	{
+	  height = (int)(fHeight + BUTTON_V_SPACE);
+	  cWindowHeight = height;
+	}
+    }
 
-	Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
-        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-	wxMacString theMacTitle = label;
-	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
-	const short offValue = 0;
-	const short minValue = 0;
-	const short maxValue = 1;
-	short refCon = 0;
+  cBorderArea = new wxArea(this);
+  new wxButtonBorder(cBorderArea);
 
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
-			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
-	CheckMemOK(cMacControl);
-	
+  Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
+  OffsetRect(&boundsRect,SetOriginX,SetOriginY);
+  wxMacString theMacTitle = label;
+  const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
+  const short offValue = 0;
+  const short minValue = 0;
+  const short maxValue = 1;
+  short refCon = 0;
+
+  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
+			     drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
+  CheckMemOK(cMacControl);
+  
 #endif        
 
 #if 0
-	// EMBEDDING
-    if (parentPanel->cEmbeddingControl) {
-      ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-    }
+  // EMBEDDING
+  if (parentPanel->cEmbeddingControl) {
+    ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+  }
 #endif    
 
-    if (style & 1) OnSetDefault(TRUE);
+  if (style & 1) OnSetDefault(TRUE);
 
-	if (GetParent()->IsHidden())
-		DoShow(FALSE);
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
 }
 
 //-----------------------------------------------------------------------------
 wxButton::wxButton // Constructor (given parentPanel, bitmap)
-	(
-		wxPanel*	parentPanel,
-		wxFunction	function,
-		wxBitmap*	bitmap,
-		int 		x,
-		int			y,
-		int			width,
-		int			height,
-		long		style,
-		char*		windowName,
-		WXTYPE		objectType
-	) :
-		wxbButton (parentPanel, x, y, width, height, style, windowName),
-		cColorTable(NULL)
+(
+ wxPanel*	parentPanel,
+ wxFunction	function,
+ wxBitmap*	bitmap,
+ int 		x,
+ int			y,
+ int			width,
+ int			height,
+ long		style,
+ char*		windowName,
+ WXTYPE		objectType
+ ) :
+ wxbButton (parentPanel, x, y, width, height, style, windowName),
+ cColorTable(NULL)
 {
-	if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
-	  buttonBitmap = bitmap;
-	  buttonBitmap->selectedIntoDC++;
-	} else {
-	  Create(parentPanel, function, "<bad-image>", x, y, width, height, style, windowName, objectType);
-	  return;
-	}
+  if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
+    buttonBitmap = bitmap;
+    buttonBitmap->selectedIntoDC++;
+  } else {
+    Create(parentPanel, function, "<bad-image>", x, y, width, height, style, windowName, objectType);
+    return;
+  }
 
-	Callback(function);
-	
-	SetEraser(wxWHITE_BRUSH);
+  Callback(function);
+  
+  SetEraser(wxWHITE_BRUSH);
 
-	cBorderArea = new wxArea(this);
-	new wxButtonBorder(cBorderArea);
+  cBorderArea = new wxArea(this);
+  new wxButtonBorder(cBorderArea);
 
-	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  SetCurrentMacDC();
+  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 #if 0
-        // bevel buttons for bitmap buttons can wait until other things are done. ugh.
-        Rect bounds;
-        ::SetRect(&bounds,0,0,0,0)
-        cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort),&bounds,"\p",TRUE,
-                                    kControlContentIconSuiteRes...
+  // bevel buttons for bitmap buttons can wait until other things are done. ugh.
+  Rect bounds;
+  ::SetRect(&bounds,0,0,0,0)
+    cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort),&bounds,"\p",TRUE,
+			       kControlContentIconSuiteRes...);
 #endif
-	cMacControl = NULL;
+  cMacControl = NULL;
 
 
-	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
-	bounds.bottom += 2 * IB_MARGIN_Y;
-	bounds.right += 2 * IB_MARGIN_X;
-	cWindowHeight = bounds.bottom;
-	cWindowWidth = bounds.right;
-        OffsetRect(&bounds,SetOriginX,SetOriginY);
-        
-	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
-        	
-	if (GetParent()->IsHidden())
-		DoShow(FALSE);
+  Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
+  bounds.bottom += 2 * IB_MARGIN_Y;
+  bounds.right += 2 * IB_MARGIN_X;
+  cWindowHeight = bounds.bottom;
+  cWindowWidth = bounds.right;
+  OffsetRect(&bounds,SetOriginX,SetOriginY);
+  
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
+  else
+    ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
 }
 
 //=============================================================================
@@ -228,83 +228,83 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 //-----------------------------------------------------------------------------
 wxButton::~wxButton(void)
 {
-	if (buttonBitmap == NULL) {
-		if (cMacControl) ::DisposeControl(cMacControl);
-	} else
-		--buttonBitmap->selectedIntoDC;
+  if (buttonBitmap == NULL) {
+    if (cMacControl) ::DisposeControl(cMacControl);
+  } else
+    --buttonBitmap->selectedIntoDC;
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::ChangeColour(void)
 {
 #ifndef OS_X
-// all the other controls have null defns for ChangeColour, I don't see why
-// buttons can't, as well.  Particularly because Custom Color tables aren't 
-// supported for Carbon.
+  // all the other controls have null defns for ChangeColour, I don't see why
+  // buttons can't, as well.  Particularly because Custom Color tables aren't 
+  // supported for Carbon.
 
-	if (buttonBitmap)
-		return;
-	if (cColorTable == NULL)
-	{
-		cColorTable = (CCTabHandle)NewHandle(40);
-		CheckMemOK(cColorTable);
-		(**cColorTable).ccSeed = 0;
-		(**cColorTable).ccRider = 0;
-		(**cColorTable).ctSize = 2;
-		(**cColorTable).ctTable[0].value = cFrameColor;
-		(**cColorTable).ctTable[1].value = cBodyColor;
-		(**cColorTable).ctTable[2].value = cTextColor;
-		(**cColorTable).ctTable[3].value = cThumbColor;
-	}
+  if (buttonBitmap)
+    return;
+  if (cColorTable == NULL)
+    {
+      cColorTable = (CCTabHandle)NewHandle(40);
+      CheckMemOK(cColorTable);
+      (**cColorTable).ccSeed = 0;
+      (**cColorTable).ccRider = 0;
+      (**cColorTable).ctSize = 2;
+      (**cColorTable).ctTable[0].value = cFrameColor;
+      (**cColorTable).ctTable[1].value = cBodyColor;
+      (**cColorTable).ctTable[2].value = cTextColor;
+      (**cColorTable).ctTable[3].value = cThumbColor;
+    }
 
-	RGBColor whiteColor = {65535, 65535, 65535};
-	RGBColor blackColor = {0, 0, 0};
+  RGBColor whiteColor = {65535, 65535, 65535};
+  RGBColor blackColor = {0, 0, 0};
 
-	wxColour* backgroundColour = GetBackgroundColour();
-	RGBColor backgroundRGB;
-	backgroundRGB = backgroundColour ? backgroundColour->pixel : blackColor;
-	(**cColorTable).ctTable[0].rgb = backgroundRGB;
+  wxColour* backgroundColour = GetBackgroundColour();
+  RGBColor backgroundRGB;
+  backgroundRGB = backgroundColour ? backgroundColour->pixel : blackColor;
+  (**cColorTable).ctTable[0].rgb = backgroundRGB;
 
-	wxColour* buttonColour = GetButtonColour();
-	RGBColor buttonRGB;
-	buttonRGB = buttonColour ? buttonColour->pixel : whiteColor;
-	(**cColorTable).ctTable[1].rgb = buttonRGB;
+  wxColour* buttonColour = GetButtonColour();
+  RGBColor buttonRGB;
+  buttonRGB = buttonColour ? buttonColour->pixel : whiteColor;
+  (**cColorTable).ctTable[1].rgb = buttonRGB;
 
 
-	wxColour* labelColour = GetLabelColour();
-	RGBColor labelRGB;
-	labelRGB = labelColour ? labelColour->pixel : blackColor;
-	(**cColorTable).ctTable[2].rgb = labelRGB;
+  wxColour* labelColour = GetLabelColour();
+  RGBColor labelRGB;
+  labelRGB = labelColour ? labelColour->pixel : blackColor;
+  (**cColorTable).ctTable[2].rgb = labelRGB;
 
-     if (cMacControl)
-	  ::SetControlColor(cMacControl, cColorTable);
+  if (cMacControl)
+    ::SetControlColor(cMacControl, cColorTable);
 #endif          
 }
 
 //-----------------------------------------------------------------------------
 char* wxButton::GetLabel(void)
 {
-	Str255	pTitle;
-	if (buttonBitmap)
-		return NULL;
-	if (cMacControl)
-	  ::GetControlTitle(cMacControl, pTitle);
-	CopyPascalStringToC(pTitle, wxBuffer);
-    return wxBuffer;
+  Str255	pTitle;
+  if (buttonBitmap)
+    return NULL;
+  if (cMacControl)
+    ::GetControlTitle(cMacControl, pTitle);
+  CopyPascalStringToC(pTitle, wxBuffer);
+  return wxBuffer;
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::SetLabel(char* label)
 {
   if (buttonBitmap)
-		return;
+    return;
   if (label)
-  {
-	SetCurrentDC();
-  	wxMacString1 theMacString1 = wxItemStripLabel(label);
-  	if (cMacControl)
-  	  ::SetControlTitle(cMacControl, theMacString1());
-  }
+    {
+      SetCurrentDC();
+      wxMacString1 theMacString1 = wxItemStripLabel(label);
+      if (cMacControl)
+	::SetControlTitle(cMacControl, theMacString1());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -322,56 +322,56 @@ void wxButton::SetLabel(wxBitmap* bitmap)
 void wxButton::SetDefault(Bool flag) // WCH : modification of original (see below too)
 { // WCH: a panel method should be swapping default buttons
   // WCH: we would then have: void wxPanel::SetDefault(wxItem* item), NULL item allowed
-	wxPanel* panel = (wxPanel*) GetParent();
-	if (!panel) wxFatalError("No panel for wxButton::SetDefault.");
-	wxButton* currentDefault = panel->defaultItem; // WCH: let any wxItem be a default item ?
+  wxPanel* panel = (wxPanel*) GetParent();
+  if (!panel) wxFatalError("No panel for wxButton::SetDefault.");
+  wxButton* currentDefault = panel->defaultItem; // WCH: let any wxItem be a default item ?
 
-	if (flag) // this becoming default item
+  if (flag) // this becoming default item
+    {
+      if (currentDefault != this)
 	{
-		if (currentDefault != this)
-		{
-			if (currentDefault) currentDefault->OnSetDefault(FALSE);
-			panel->defaultItem = this;
-			OnSetDefault(TRUE);
-		}
+	  if (currentDefault) currentDefault->OnSetDefault(FALSE);
+	  panel->defaultItem = this;
+	  OnSetDefault(TRUE);
 	}
-	else // this no longer default item
+    }
+  else // this no longer default item
+    {
+      if (currentDefault == this)
 	{
-		if (currentDefault == this)
-		{
-			currentDefault->OnSetDefault(FALSE);
-			panel->defaultItem = NULL;
-		}
+	  currentDefault->OnSetDefault(FALSE);
+	  panel->defaultItem = NULL;
 	}
+    }
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 { // WCH: the panel should invoke the default button to distinguish itself
 #ifdef OS_X
-        if (cMacControl) {
-            char byteFlag = (char)flag;
-            SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
-        } else {
+  if (cMacControl) {
+    char byteFlag = (char)flag;
+    SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
+  } else {
 #endif                
-	if (buttonBitmap)
-		return;
-            if (flag)
-            {
-		wxMargin margin(4);
-		cBorderArea->SetMargin(margin, Direction::wxAll,
-						cWindowWidth + 8, cWindowHeight + 8,
-						cWindowX - 4, cWindowY - 4);
-            }
-            else
-            {
-		wxMargin margin(0);
-		cBorderArea->SetMargin(margin, Direction::wxAll,
-						cWindowWidth - 8, cWindowHeight - 8,
-						cWindowX + 4, cWindowY + 4);
-            }
+    if (buttonBitmap)
+      return;
+    if (flag)
+      {
+	wxMargin margin(4);
+	cBorderArea->SetMargin(margin, Direction::wxAll,
+			       cWindowWidth + 8, cWindowHeight + 8,
+			       cWindowX - 4, cWindowY - 4);
+      }
+    else
+      {
+	wxMargin margin(0);
+	cBorderArea->SetMargin(margin, Direction::wxAll,
+			       cWindowWidth - 8, cWindowHeight - 8,
+			       cWindowX + 4, cWindowY + 4);
+      }
 #ifdef OS_X
-        }
+  }
 #endif
 }
 
@@ -383,7 +383,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
   wxColour *back, *bright, *dim;
   
   if (!dark) {
-  	wxColour *norm;
+    wxColour *norm;
     norm = wxCONTROL_BACKGROUND_BRUSH->GetColour();
     
 #   define DARK_SCALE(x) (x - (x >> 2))
@@ -391,16 +391,16 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 #   define LITE_SCALE(x) 0xFF
 
     dark = new wxColour(DARK_SCALE(norm->Red()), 
-    				    DARK_SCALE(norm->Green()), 
-    				    DARK_SCALE(norm->Blue()));
-    				    
+			DARK_SCALE(norm->Green()), 
+			DARK_SCALE(norm->Blue()));
+    
     darker = new wxColour(DARKER_SCALE(norm->Red()), 
-    				      DARKER_SCALE(norm->Green()), 
-    				      DARKER_SCALE(norm->Blue()));
-    				    
+			  DARKER_SCALE(norm->Green()), 
+			  DARKER_SCALE(norm->Blue()));
+    
     lite = new wxColour(LITE_SCALE(norm->Red()), 
-    				    LITE_SCALE(norm->Green()), 
-    				    LITE_SCALE(norm->Blue()));
+			LITE_SCALE(norm->Green()), 
+			LITE_SCALE(norm->Blue()));
   }
 
   if (pressed) {
@@ -452,89 +452,91 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 
 void wxButton::Paint(void)
 {
-	if (cHidden) return;
-	SetCurrentDC();
-	Rect r = { 0, 0, cWindowHeight, cWindowWidth };
-        OffsetRect(&r,SetOriginX,SetOriginY);
-	if (buttonBitmap) {
-	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
-	} else if (cMacControl) {
-            if (!IsControlVisible(cMacControl)) {
-                ::EraseRect(&r);
-            } else {
-                ::Draw1Control(cMacControl);
-            }
-	}
-	wxWindow::Paint();
+  if (cHidden) return;
+  if (SetCurrentDC()) {
+    Rect r = { 0, 0, cWindowHeight, cWindowWidth };
+    OffsetRect(&r,SetOriginX,SetOriginY);
+    if (buttonBitmap) {
+      PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
+    } else if (cMacControl) {
+      if (!IsControlVisible(cMacControl)) {
+	::EraseRect(&r);
+      } else {
+	::Draw1Control(cMacControl);
+      }
+    }
+    wxWindow::Paint();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::DoShow(Bool show)
 {
-	if (!CanShow(show)) return;
+  if (!CanShow(show)) return;
 
-	if (!buttonBitmap && cMacControl) {
-	  SetCurrentDC();
+  if (!buttonBitmap && cMacControl) {
+    SetCurrentDC();
 
-	  if (show)
-		::ShowControl(cMacControl);
-	  else
-		::HideControl(cMacControl);
-	}
-	
-	wxWindow::DoShow(show);
+    if (show)
+      ::ShowControl(cMacControl);
+    else
+      ::HideControl(cMacControl);
+  }
+  
+  wxWindow::DoShow(show);
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::Highlight(Bool flag) // mac platform only
 {
-	if (buttonBitmap) {
-		SetCurrentDC();
-		Rect bounds = {0, 0, cWindowHeight, cWindowWidth};
-		PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
-	} else if (cMacControl) {
-		if (cEnable)
-		{
-			SetCurrentDC();
-			::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
-		}
-	}
+  if (buttonBitmap) {
+    if (SetCurrentDC()) {
+      Rect bounds = {0, 0, cWindowHeight, cWindowWidth};
+      PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
+    }
+  } else if (cMacControl) {
+    if (cEnable)
+      {
+	if (SetCurrentDC())
+	  ::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
+      }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
-	if (event->LeftDown())
-	{
-		SetCurrentDC();
-	
-		int startH, startV;
-		event->Position(&startH, &startV); // client c.s.
+  if (event->LeftDown())
+    {
+      SetCurrentDC();
+      
+      int startH, startV;
+      event->Position(&startH, &startV); // client c.s.
 
-		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
 
-		int trackResult;
-		if (::StillDown()) {
-			if (buttonBitmap == NULL && cMacControl) {
-				trackResult = ::TrackControl(cMacControl, startPt, NULL);
-                        } else {
-				trackResult = Track(startPt);
-                        }
-		} else {
-			Highlight(TRUE); // highlight button
-			long delayTicks = 4; // one tick is 1/60th of a second
-			unsigned long finalTicks;
-			Delay(delayTicks, &finalTicks);
-			Highlight(FALSE); // unhighlight button
-		
-			trackResult = 1;
-		}
-		if (trackResult)
-		{
-			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-	  		ProcessCommand(commandEvent);
-		}
+      int trackResult;
+      if (::StillDown()) {
+	if (buttonBitmap == NULL && cMacControl) {
+	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
+	} else {
+	  trackResult = Track(startPt);
 	}
+      } else {
+	Highlight(TRUE); // highlight button
+	long delayTicks = 4; // one tick is 1/60th of a second
+	unsigned long finalTicks;
+	Delay(delayTicks, &finalTicks);
+	Highlight(FALSE); // unhighlight button
+	
+	trackResult = 1;
+      }
+      if (trackResult)
+	{
+	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+	  ProcessCommand(commandEvent);
+	}
+    }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -544,35 +546,35 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-	SetCurrentDC();
-	if (buttonBitmap || !cMacControl)
-		return;
+  SetCurrentDC();
+  if (buttonBitmap || !cMacControl)
+    return;
 
-	Bool isVisible = cMacControl && IsShown();
-	Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
-	if (hideToPreventFlicker) ::HideControl(cMacControl);
+  Bool isVisible = cMacControl && IsShown();
+  Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
+  if (hideToPreventFlicker) ::HideControl(cMacControl);
 
-	if (dW || dH)
-	{
-		int clientWidth, clientHeight;
-		GetClientSize(&clientWidth, &clientHeight);
-		::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
-						clientHeight - (padTop + padBottom));
-	}
+  if (dW || dH)
+    {
+      int clientWidth, clientHeight;
+      GetClientSize(&clientWidth, &clientHeight);
+      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
+		    clientHeight - (padTop + padBottom));
+    }
 
-	if (dX || dY)
-	{
-		MaybeMoveControls();
-	}
+  if (dX || dY)
+    {
+      MaybeMoveControls();
+    }
 
-	if (hideToPreventFlicker) ::ShowControl(cMacControl);
+  if (hideToPreventFlicker) ::ShowControl(cMacControl);
 
-	if (!cHidden && (dW || dH || dX || dY))
-	{
-		int clientWidth, clientHeight;
-		GetClientSize(&clientWidth, &clientHeight);
-		Rect clientRect = {0, 0, clientHeight, clientWidth};
-        OffsetRect(&clientRect,SetOriginX,SetOriginY);
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
-	}
+  if (!cHidden && (dW || dH || dX || dY))
+    {
+      int clientWidth, clientHeight;
+      GetClientSize(&clientWidth, &clientHeight);
+      Rect clientRect = {0, 0, clientHeight, clientWidth};
+      OffsetRect(&clientRect,SetOriginX,SetOriginY);
+      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+    }
 }

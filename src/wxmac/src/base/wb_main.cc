@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_main.cc,v 1.6 2001/10/18 21:40:43 clements Exp $
+ * RCS_ID:      $Id: wb_main.cc,v 1.7 2001/11/05 06:55:00 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -27,6 +27,7 @@
 #include "wx_utils.h"
 #include "wx_gdi.h"
 #include "wx_dc.h"
+#include "wx_dccan.h"
 #include "wx_dialg.h"
 #include "wx_types.h"
 #include "wx_dcps.h"
@@ -85,6 +86,7 @@ void wxRegisterLastInstalledBar();
 
 void wxCommonInit(void)
 {
+  wx_init_patterns();
   wxREGGLOB(wxBuffer);
   wxBuffer = new char[1500];
   wxREGGLOB(wxTheColourDatabase);

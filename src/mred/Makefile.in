@@ -164,8 +164,11 @@ $(WXDIR)/libwx_xt.a:
 ../wxcommon/jpeg/libjpeg.a:
 	cd ../wxcommon/jpeg; $(MAKE) libjpeg.a
 
+CLEANDIR_wx_xt = ../wxxt/src/x
+CLEANDIR_wx_mac = ../wxmac/src
+
 clean:
-	cd ../wxxt/src/x; $(MAKE) clean
+	cd $(CLEANDIR_@WXVARIANT@); $(MAKE) clean
 	rm -f *.o core
 	rm -f gc2/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean

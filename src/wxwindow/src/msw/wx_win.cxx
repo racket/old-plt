@@ -17,6 +17,9 @@
 
 #include "fafa.h"
 
+extern "C" void scheme_start_atomic();
+extern "C" void scheme_end_atomic_no_swap();
+
 // Global variables
 wxMenu **wxCurrentPopupMenu = NULL;
 static wxWindow *current_mouse_wnd = NULL;
@@ -1159,12 +1162,15 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
   }
 
   /* See mredmsw.cxx: */
-  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
-    return res;
+  if (!tramp)
+    if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
+      return res;
 
-  scheme_start_atomic();
+  if (!tramp)
+    scheme_start_atomic();
   res = WindowProc(hWnd, message, wParam, lParam, 0, tramp);
-  scheme_end_atomic();
+  if (!tramp)
+    scheme_end_atomic_no_swap();
 
   return res;
 }
@@ -1178,12 +1184,15 @@ LONG APIENTRY wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   wx_trampolining = 0;
 
   /* See mredmsw.cxx: */
-  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxDlgProc))
-    return res;
+  if (!tramp)
+    if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxDlgProc))
+      return res;
 
-  scheme_start_atomic();
+  if (!tramp)
+    scheme_start_atomic();
   res = WindowProc(hWnd, message, wParam, lParam, 1, tramp);
-  scheme_end_atomic();
+  if (!tramp)
+    scheme_end_atomic_no_swap();
 
   return res;
 }

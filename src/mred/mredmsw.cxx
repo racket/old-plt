@@ -260,8 +260,14 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 {
   int tramp;
 
-  if (can_trampoline_win != hWnd)
-    return 0;
+#if wxLOG_EVENTS
+  if (!log)
+    log = fopen("evtlog", "w");
+  fprintf(log, "[TCHECK %lx %lx (%lx) %lx]\n", scheme_current_thread, 
+	  hWnd, can_trampoline_win, message);
+  fflush(log);
+#endif
+
 
   switch (message) {
   case WM_QUERYENDSESSION:
@@ -327,6 +333,12 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   default:
     tramp = 0;
     break;
+  }
+
+  if (can_trampoline_win != hWnd) {
+    if (tramp)
+      return 1;
+    return 0;
   }
 
   if (tramp) {

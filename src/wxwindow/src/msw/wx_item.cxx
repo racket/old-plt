@@ -17,6 +17,9 @@ FARPROC wxGenericControlSubClassProc = 0;
 wxNonlockingHashTable *wxControlHandleList = NULL;
 wxNonlockingHashTable *wxItemIdList = NULL;
 
+extern "C" void scheme_start_atomic();
+extern "C" void scheme_end_atomic_no_swap();
+
 extern int wx_choice_dropped;
 
 extern void wxEntered(wxWindow *w, int x, int y, int flags);
@@ -479,8 +482,9 @@ LONG APIENTRY _EXPORT
   wx_trampolining = 0;
 
   /* See mredmsw.cxx: */
-  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxSubclassedGenericControlProc))
-    return res;
+  if (!tramp)
+    if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxSubclassedGenericControlProc))
+      return res;
 
   if (message == WM_GETDLGCODE)
     return DLGC_WANTMESSAGE;
@@ -496,9 +500,11 @@ LONG APIENTRY _EXPORT
   if (!wxDoItemPres(item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
-  scheme_start_atomic();
+  if (!tramp)
+    scheme_start_atomic();
   res = CallWindowProc((WNDPROC)item->oldWndProc, hWnd, message, wParam, lParam);
-  scheme_end_atomic();
+  if (!tramp)
+    scheme_end_atomic_no_swap();
 
   return res;
 }

@@ -84,13 +84,16 @@
 	      (current-custodian user-custodian)
 	      (error-value->string-handler
 	       (lambda (x n)
-		 (let ([long-string 
-			(format "~s" 
-				(if (eq? (drscheme:language:setting-printing
-					  (mred:get-preference 'drscheme:settings)) 
-					 'r4rs-style)
-				    x
-				    (print-convert:print-convert x)))])
+		 (let* ([port (open-output-string)]
+			[error-value
+			 (if (eq? (drscheme:language:setting-printing
+				   (mred:get-preference 'drscheme:settings)) 
+				  'r4rs-style)
+			     x
+			     (print-convert:print-convert x))]
+			[long-string
+			 (begin (mzlib:pretty-print@:pretty-print error-value port 'infinity)
+				(get-output-string port))])
 		   (if (<= (string-length long-string) n)
 		       long-string
 		       (let ([short-string (substring long-string 0 n)]
@@ -203,12 +206,14 @@
 		   (lock locked?)		   
 		   (end-edit-sequence)))
 	       (when (is-a? file wx:media-edit%)
-		 (send (send file get-canvas) set-focus)
 		 (send file begin-edit-sequence)
 		 (send file set-position start finish)
-		 (send file scroll-to-position start
-		       #f (sub1 (send file last-position)))
-		 (send file end-edit-sequence))))])
+		 (if (is-a? file edit%)
+		     (send file scroll-to-position start
+			   #f (sub1 (send file last-position)) -1)
+		     (send file scroll-to-position start #f finish))
+		 (send file end-edit-sequence)
+		 (send (send file get-canvas) set-focus))))])
 	(public
 	  [on-set-media void]
 	  [get-prompt (lambda () "> ")]
@@ -306,15 +311,39 @@
 	  [in-evaluation? #f]
 	  [in-evaluation-semaphore (make-semaphore 1)]
 	  [in-break? #f]
+	  [should-collect-garbage? #f]
 	  [ask-about-kill? #f])
 	(public
-	  [do-eval 
+	  [insert-warning
+	   (let ([warning-style-delta
+		  (make-object wx:style-delta% wx:const-change-bold 0)])
+	     (send* warning-style-delta
+	       (set-delta-foreground "BLACK")
+	       (set-delta-background "YELLOW"))
+	     (lambda ()
+	       (insert #\newline (last-position) (last-position))
+	       (let ([start (last-position)])
+		 (insert "WARNING: Program has changed. Click Execute."
+			 start start)
+		 (let ([end (last-position)])
+		   (change-style warning-style-delta start end)))))]
+	  [do-eval
 	   (let ([count 0])
 	     (lambda (start end)
 	       (set! count (add1 count))
-	       (when (<= 5 count)
+	       '(when (<= 5 count)
 		 (collect-garbage)
 		 (set! count 0))
+	       (let* ([frame (get-frame)]
+		      [definitions-edit (ivar frame definitions-edit)]
+		      [already-warned? (ivar definitions-edit already-warned?)]
+		      [needs-execution? (ivar definitions-edit needs-execution?)])
+		 (when (if (mred:get-preference 'drscheme:execute-warning-once)
+			   (and (not already-warned?)
+				needs-execution?)
+			   needs-execution?)
+		   (send definitions-edit already-warned)
+		   (insert-warning)))
 	       (do-many-buffer-evals this start end)))]
 	  [cleanup-evaluation
 	   (opt-lambda ()
@@ -361,6 +390,9 @@
 		   (ready-non-prompt)
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
 		   (wx:begin-busy-cursor)
+		   (when should-collect-garbage?
+		     (set! should-collect-garbage? #f)
+		     (collect-garbage))
 		   (reset-break-state)
 		   (let ([evaluation-sucessful (make-semaphore 0)]
 			 [cleanup-semaphore (make-semaphore 1)])
@@ -566,7 +598,7 @@
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
 	       (custodian-shutdown-all user-custodian)
-	       (collect-garbage)
+	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
 	       (set! vocab (zodiac:create-vocabulary

@@ -52,7 +52,7 @@
 
   (define current-definitions-edit%
     (make-parameter 
-     mred:backup-autosave-edit%
+     drscheme:unit:definitions-edit%
      (lambda (x)
        (if (subclass? x wx:media-edit%)
 	   x

@@ -143,7 +143,7 @@
  (hd-home "Help Desk home") 
  (show-manuals "Show manuals") 
  (send-bug-report "Send bug report")
- (query-bug-reports "Query bug report")
+ (query-bug-reports "Query bug reports")
  ; next 3 are popup menu choices in help desk search frame
  (search-for-keyword "Keyword entry")
  (search-for-keyword-or-index "Keyword or index entry")

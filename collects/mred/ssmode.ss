@@ -61,7 +61,7 @@
 			   class class* class-asi class-asi*
 			   define-some do opt-lambda send*
 			   local catch
-			   unit unit/sig compound-unit/sig 
+			   unit unit/sig compound-unit compound-unit/sig
 			   with-handlers with-parameterization
 			   parameterize
 			   call-with-input-file with-input-from-file

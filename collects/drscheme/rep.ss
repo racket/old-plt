@@ -52,12 +52,8 @@
   (setup-scheme-interaction-mode-keymap scheme-interaction-mode-keymap)
   
   (define welcome-delta (make-object mred:style-delta% 'change-family 'decorative))
-  (define click-delta (make-object mred:style-delta%))
+  (define click-delta (fw:gui-utils:get-clickback-delta))
   (define red-delta (make-object mred:style-delta%))
-  (send* click-delta
-    (copy welcome-delta)
-    (set-delta-foreground "BLUE")
-    (set-delta 'change-underline #t))
   (send* red-delta
     (copy welcome-delta)
     (set-delta-foreground "RED"))
@@ -159,12 +155,20 @@
       not-running
       get-directory))
   
-  (define file-icon (let ([bitmap
-			   (make-object mred:bitmap%
-			     (build-path (collection-path "icons") "file.gif"))])
-		      (if (send bitmap ok?)
-			  (make-object mred:image-snip% bitmap)
-			  (make-object mred:string-snip% "[open file]"))))
+  (define file-icon
+    (let ([bitmap
+           (make-object mred:bitmap%
+             (build-path (collection-path "icons") "file.gif"))])
+      (if (send bitmap ok?)
+          (make-object mred:image-snip% bitmap)
+          (make-object mred:string-snip% "[open file]"))))
+  (define bug-icon 
+    (let ([bitmap
+           (make-object mred:bitmap%
+             (build-path (collection-path "icons") "bug09.gif"))])
+      (if (send bitmap ok?)
+          (make-object mred:image-snip% bitmap)
+          (make-object mred:string-snip% "[show history]"))))
   
   (define (no-user-evaluation-message frame)
     (mred:message-box
@@ -190,6 +194,87 @@
 	  (basis:process-sexp/zodiac sexp z fn annotate?)
 	  (basis:process-sexp/no-zodiac sexp fn))))
   
+  (define current-backtrace-window #f)
+  (define (kill-backtrace-window)
+    (when current-backtrace-window
+      (send current-backtrace-window close)
+      (set! current-backtrace-window #f)))
+  (define (show-backtrace-window dis)
+    (kill-backtrace-window)
+    (set! current-backtrace-window 
+          (make-object (drscheme:frame:basics-mixin (fw:frame:standard-menus-mixin fw:frame:basic%))
+            "Backtrace - DrScheme" #f 400 300))
+    (let* ([text (make-object mred:text%)]
+           [ec (make-object mred:editor-canvas% (send current-backtrace-window get-area-container) text)])
+      (for-each (lambda (di)
+                  (let* ([start (zodiac:zodiac-start di)]
+                         [finish (zodiac:zodiac-finish di)]
+                         [file (zodiac:location-file start)]
+                         [untitled "<<unknown>>"]
+                         [fn (cond
+                               [(string? file)
+                                file]
+                               [(is-a? file text%)
+                                (let ([c (send file get-canvas)])
+                                  (if c
+                                      (let* ([win (send c get-top-level-window)]
+                                             [def-filename (send (ivar win definitions-text) get-filename)])
+                                        (if def-filename
+                                            (format "~a's interactions" def-filename)
+                                            "interactions"))
+                                      untitled))]
+                               [(is-a? file mred:editor<%>)
+                                (or (send file get-filename)
+                                    (let ([canvas (send file get-canvas)])
+                                      (if canvas
+                                          (let ([frame (send canvas get-top-level-window)])
+                                            (if frame
+                                                (send frame get-label)
+                                                untitled))
+                                          untitled)))]
+                               [else untitled])]
+                         [start-pos (send text last-position)])
+                    (send text insert (format "~a: ~a.~a - ~a.~a" 
+                                              fn
+                                              (zodiac:location-line start)
+                                              (zodiac:location-column start)
+                                              (zodiac:location-line finish)
+                                              (+ 1 (zodiac:location-column finish))))
+                    (let ([end-pos (send text last-position)])
+                      (send text change-style click-delta start-pos end-pos)
+                      (send text set-clickback
+                            start-pos end-pos
+                            (lambda x
+                              (open-and-highlight-in-file di))))
+                    (send text insert #\newline)))
+                dis)
+      (send text lock #t)
+      (send current-backtrace-window show #t)))
+
+  (define (open-and-highlight-in-file di)
+    (let ([filename (zodiac:location-file (zodiac:zodiac-start di))])
+      (cond
+        [(string? filename)
+         (let ([fr (fw:handler:edit-file filename)])
+           (when (is-a? fr drscheme:unit:frame%)
+             (let ([definitions (ivar fr definitions-text)]
+                   [interactions (ivar fr interactions-text)])
+               (send interactions highlight-error definitions
+                     (zodiac:location-offset (zodiac:zodiac-start di))
+                     (+ 1 (zodiac:location-offset (zodiac:zodiac-finish di)))))
+             (send fr show #t)))]
+        [(is-a? filename mred:editor<%>)
+         (let ([canvas (send filename get-active-canvas)])
+           (and canvas
+                (let ([fr (send canvas get-top-level-window)])
+                  (when (is-a? fr drscheme:unit:frame%)
+                    (let ([interactions (ivar fr interactions-text)])
+                      (send interactions highlight-error filename
+                            (zodiac:location-offset (zodiac:zodiac-start di))
+                            (+ 1 (zodiac:location-offset (zodiac:zodiac-finish di)))))
+                    (send fr show #t)))))]
+        [else (mred:bell)])))
+
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
@@ -797,30 +882,34 @@
                      (basis:zodiac-vocabulary? user-setting))
                 (let* ([start (zodiac:zodiac-start (car dis))]
                        [finish (zodiac:zodiac-finish (car dis))]
-		       [error-filename (zodiac:location-file start)])
-		  (when (string? error-filename)
-		    (let ([open-callback
-			   (lambda ()
-			     (let ([fr (fw:handler:edit-file error-filename)])
-			       (when (is-a? fr drscheme:unit:frame%)
-				 (let ([definitions (ivar fr definitions-text)]
-				       [interactions (ivar fr interactions-text)])
-				   (send interactions highlight-error definitions
-					 (zodiac:location-offset (zodiac:zodiac-start (car dis)))
-					 (+ 1 (zodiac:location-offset (zodiac:zodiac-finish (car dis)))))))))]
-			  [last-pos (last-position)]
-			  [old-locked? locked?])
-		      (begin-edit-sequence)
-		      (lock #f)
-		      (insert (send file-icon copy) last-pos last-pos)
-		      (change-style (fw:gui-utils:get-clickback-delta) last-pos (last-position))
-		      (set-clickback last-pos (last-position)
-				     (lambda (text start end)
-				       (open-callback))
-				     (fw:gui-utils:get-clicked-clickback-delta))
-		      (lock old-locked?)
-		      (end-edit-sequence)))
+		       [error-filename (zodiac:location-file start)]
+                       [old-locked? locked?]
+                       [show-bug? (not (= 1 (length dis)))]
+                       [show-file? (string? error-filename)])
+                  (begin-edit-sequence)
+                  (lock #f)
                   
+		  (when show-bug?
+                    (let ([last-pos (last-position)])
+                      (insert (send bug-icon copy) last-pos last-pos)
+                      (change-style click-delta last-pos (last-position))
+                      (set-clickback last-pos (last-position)
+                                     (lambda (text start end) (show-backtrace-window dis))
+                                     (fw:gui-utils:get-clicked-clickback-delta))))
+
+                  (when (and show-file? show-bug?)
+                    (insert " " (last-position) (last-position)))
+                  
+                  (when show-file?
+                    (let ([last-pos (last-position)])
+                      (insert (send file-icon copy) last-pos last-pos)
+                      (change-style click-delta last-pos (last-position))
+                      (set-clickback last-pos (last-position)
+                                     (lambda (text start end) (open-and-highlight-in-file (car dis)))
+                                     (fw:gui-utils:get-clicked-clickback-delta))))
+                  
+                  (lock old-locked?)
+                  (end-edit-sequence)
                   (report-error start finish 'dynamic message exn))
                 (report-unlocated-error message exn))))
         (define report-unlocated-error ; =Kernel=
@@ -1025,6 +1114,7 @@
           (lambda (run-loop)  ;; (((-> void) -> void) -> void)
             (send context disable-evaluation)
             (cleanup-transparent-io)
+            (kill-backtrace-window)
             (reset-pretty-print-width)
             (ready-non-prompt)
             (set! saved-cursor (send (get-canvas) get-cursor))

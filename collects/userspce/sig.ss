@@ -70,7 +70,11 @@
 			   (lambda bindings (apply values (cons ,parser bindings))))))))
 
 (define-signature plt:init-params^
-  (initialize-parameters
+  (initial-line
+   initial-offset
+   initial-column
+   
+   initialize-parameters
    settings
    get-default-setting
    get-default-setting-name
@@ -91,10 +95,6 @@
 
    drscheme-print
 
-   initial-line
-   initial-column
-   initial-offset
-   
    format-source-loc
    
    primitive-eval

@@ -9,11 +9,17 @@
 	  [file (if text-is-file?
 		    text
 		    (or (send text get-filename)
-			"Unknown"))])
+			"Unknown"))]
+          [init-line (+ 1 (send text position-paragraph start))]
+          [init-col (+ 1 (- start
+                            (send text paragraph-start-position (send text position-paragraph start))))])
       (basis:process/zodiac
        (parameterize ([read-case-sensitive (basis:setting-case-sensitive? setting)])
 	 (zodiac:read (gui-utils:read-snips/chars-from-text text start end)
-		      (zodiac:make-location 0 0 start file)
+		      (zodiac:make-location init-line
+                                            init-col
+                                            start
+                                            file)
 		      #t 1))
        f
        annotate?)))

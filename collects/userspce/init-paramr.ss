@@ -555,7 +555,9 @@
                                              aries:w-c-m-key)])
                     (if (null? continuation-stack)
                         (let ([loc (zodiac:make-location 
-                                    initial-line initial-column initial-offset
+                                    initial-line
+                                    initial-column
+                                    initial-offset
                                     'eval)])
                           (zodiac:make-zodiac 'mzrice-eval loc loc))
                         (car continuation-stack)))]

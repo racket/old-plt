@@ -259,6 +259,7 @@
 // @SYM "spraycan" : wxCURSOR_SPRAYCAN
 // @SYM "wait" : wxCURSOR_WAIT
 @SYM "watch" : wxCURSOR_WATCH
+@SYM "blank" : wxCURSOR_BLANK
 @ENDSYMBOLS
 
 @MACRO CHECKSIXTEEN[p.who] = { if (x<p>->GetDepth() != 1) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not monochrome: ", p[POFFSET+<p>]));if ((x<p>->GetWidth() != 16) || (x<p>->GetHeight() != 16)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not 16 pixels by 16 pixels: ", p[POFFSET+<p>])); }

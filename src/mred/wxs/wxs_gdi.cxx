@@ -3307,6 +3307,7 @@ static Scheme_Object *cursor_wxCURSOR_SIZEWE_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_SIZENESW_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_SIZENWSE_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_WATCH_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_BLANK_sym = NULL;
 
 static void init_symset_cursor(void) {
   REMEMBER_VAR_STACK();
@@ -3330,12 +3331,14 @@ static void init_symset_cursor(void) {
   cursor_wxCURSOR_SIZENWSE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("size-nw/se"));
   wxREGGLOB(cursor_wxCURSOR_WATCH_sym);
   cursor_wxCURSOR_WATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("watch"));
+  wxREGGLOB(cursor_wxCURSOR_BLANK_sym);
+  cursor_wxCURSOR_BLANK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("blank"));
 }
 
 static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
+  if (!cursor_wxCURSOR_BLANK_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
   else if (v == cursor_wxCURSOR_ARROW_sym) { READY_TO_RETURN; return wxCURSOR_ARROW; }
   else if (v == cursor_wxCURSOR_BULLSEYE_sym) { READY_TO_RETURN; return wxCURSOR_BULLSEYE; }
@@ -3347,6 +3350,7 @@ static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_SIZENESW_sym) { READY_TO_RETURN; return wxCURSOR_SIZENESW; }
   else if (v == cursor_wxCURSOR_SIZENWSE_sym) { READY_TO_RETURN; return wxCURSOR_SIZENWSE; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { READY_TO_RETURN; return wxCURSOR_WATCH; }
+  else if (v == cursor_wxCURSOR_BLANK_sym) { READY_TO_RETURN; return wxCURSOR_BLANK; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   READY_TO_RETURN;
   return 0;
@@ -3355,7 +3359,7 @@ static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
 static int istype_symset_cursor(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
+  if (!cursor_wxCURSOR_BLANK_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
   else if (v == cursor_wxCURSOR_ARROW_sym) { READY_TO_RETURN; return 1; }
   else if (v == cursor_wxCURSOR_BULLSEYE_sym) { READY_TO_RETURN; return 1; }
@@ -3367,6 +3371,7 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_SIZENESW_sym) { READY_TO_RETURN; return 1; }
   else if (v == cursor_wxCURSOR_SIZENWSE_sym) { READY_TO_RETURN; return 1; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { READY_TO_RETURN; return 1; }
+  else if (v == cursor_wxCURSOR_BLANK_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   READY_TO_RETURN;
   return 0;

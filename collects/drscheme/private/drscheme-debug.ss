@@ -25,17 +25,15 @@
                     (lambda (x y)
                       (toggle-profiling-enabled)))]                  
                  
-                 [toggle-profiling-enabled 
-                  (lambda ()
-                    (profiling-record-enabled (not (profiling-record-enabled)))
-                    (sync-profiling-state))]
-                 [sync-profiling-state
+                 [toggle-profiling-enabled
                   (lambda ()
                     (send toggle-profile-button set-label "Toggling...")
                     (send toggle-profile-button enable #f)
                     (parameterize ([current-eventspace main-eventspace])
                       (queue-callback
                        (lambda ()
+			 (profiling-record-enabled
+			  (not (profiling-record-enabled)))
                          (sync-profiling-state/main-eventspace)
                          (send toggle-profile-button enable #t)))))]
                  [sync-profiling-state/main-eventspace
@@ -149,6 +147,15 @@
 
   (define (show-profiling-results)
     (define f (make-object frame% "Profile Results" #f 400 600))
+    (define mb (new menu-bar% (parent f)))
+    (define em (new menu% (label "Edit") (parent mb)))
+    (define copy (new menu-item%
+		      (label "Copy")
+		      (shortcut #\c)
+		      (parent em)
+		      (callback
+		       (lambda (x y)
+			 (send t copy)))))
     (define t (make-object text%))
     (define ec (make-object editor-canvas% f t))
     (define p (open-output-string))
@@ -163,6 +170,9 @@
       (lambda (op) (display (get-output-string p) op))
       'truncate
       'text)
+
+    (send t insert "\nsaved transcript in /home/robby/OUTPUT\n")
+
     (send t change-style (make-object style-delta% 'change-family 'modern) 0 (send t last-position))
     (send t lock #t)
     (send f show #t))

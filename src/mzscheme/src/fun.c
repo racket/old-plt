@@ -2321,6 +2321,8 @@ do_call_with_sema(const char *who, int enable_break, int argc, Scheme_Object *ar
   if (!v)
     scheme_longjmp(*savebuf, 1);
 
+  scheme_current_thread->error_buf = savebuf;
+
   return v;
 }
 
@@ -3062,7 +3064,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 				   Scheme_Object *(*jmp_handler)(void *),
 				   void * volatile data)
 {
-  mz_jmp_buf newbuf;
+  mz_jmp_buf newbuf, newbuf2;
   Scheme_Object * volatile v, ** volatile save_values;
   volatile int err;
   Scheme_Dynamic_Wind * volatile dw;
@@ -3151,7 +3153,8 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     post = NULL;
 
   if (post) {
-    if (scheme_setjmp(*p->error_buf)) {
+    p->error_buf = &newbuf2;
+    if (scheme_setjmp(newbuf2)) {
       p = scheme_current_thread;
       scheme_restore_env_stack_w_thread(dw->envss, p);
       p->current_local_env = dw->current_local_env;

@@ -230,9 +230,6 @@ static int mark_weak_box(void *p, Mark_Proc mark)
       wb->next = weak_boxes;
       weak_boxes = wb;
     }
-    
-    /* For now: */
-    gcMARK(wb->val);
   }
 
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
@@ -419,6 +416,7 @@ void gcollect(int needsize)
   char *bitmap;
   int i;
   long diff, iterations;
+  GC_Weak_Box *wb;
 
   INITTIME();
   PRINTTIME((STDERR, "gc: start: %ld\n", GETTIMEREL()));
@@ -593,12 +591,30 @@ void gcollect(int needsize)
       }
       untagged_mark = started;
     }
+ 
   }
 
   PRINTTIME((STDERR, "gc: mark/copy (%d): %ld\n", iterations, GETTIMEREL()));
 
   /******************************************************/
 
+  wb = weak_boxes;
+  while (wb) {
+    void *v;
+
+    v = GC_resolve(wb->val);
+    if (v == wb->val) {
+      wb->val = NULL;
+      if (wb->secondary_erase) {
+	((GC_Weak_Box *)wb->secondary_erase)->val = NULL;
+      }
+    } else
+      wb->val = v;
+
+    wb = wb->next;
+  }
+
+  /******************************************************/
   
 #if MAX_ERRORS
   if (alloc_size)
@@ -765,20 +781,68 @@ void GC_free(void *s) /* noop */
 {
 }
 
+typedef struct Fnl {
+  void *p;
+  void (*f)(void *p, void *data);
+  void *data;
+  struct Fnl *next;
+} Fnl;
+
+Fnl *fnls;
+
 void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
 			   void *data, void (**oldf)(void *p, void *data), 
 			   void **olddata)
 {
-  if (oldf) *oldf = NULL;
-  if (olddata) *olddata = NULL;
+  /* Used only for delete */
+  if (f) {
+    printf("Can't register regular finalizer\n");
+    exit(-1);
+  }
+  
+  GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
 }
 
 void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata)
 {
+  Fnl *fnl = fnls, *prev;
+
+  prev = NULL;
+  while (fnl) {
+    if (fnl->p == p) {
+      if (oldf) *oldf = fnl->f;
+      if (olddata) *olddata = fnl->data;
+      if (f) {
+	fnl->f = f;
+	fnl->data = data;
+      } else {
+	if (prev)
+	  prev->next = fnl->next;
+	else
+	  fnls = fnl->next;
+	free(fnl);
+	return;
+      }
+      return;
+    } else {
+      prev = fnl;
+      fnl = fnl->next;
+    }
+  }
+  
   if (oldf) *oldf = NULL;
   if (olddata) *olddata = NULL;
+
+  if (!f)
+    return;
+
+  fnl = malloc(sizeof(Fnl));
+  fnl->next = fnls;
+  fnls = fnl;
+  fnl->f = f;
+  fnl->data = data;
 }
 
 void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc)

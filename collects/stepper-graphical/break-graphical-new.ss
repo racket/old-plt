@@ -10,9 +10,18 @@
           [d : drscheme:export^])
   
   (define debugger-text%
-    (class text% args
-      (inherit dc-location-to-editor-location)
+    (class f:text:basic% args
+      (inherit dc-location-to-editor-location find-position)
       (rename [super-on-local-event on-local-event])
+      
+      (private click-callback #f)
+      (public set-click-callback! 
+              (lambda (callback)
+                (if (and (procedure? callback)
+                         (procedure-arity-includes? callback 3))
+                    (set! click-callback callback)
+                    (e:internal-error #f "set-click-callback called with invalid argument"))))
+      
       (override
         [on-local-event
          (let ([get-pos
@@ -25,9 +34,16 @@
                     (find-position x y)))])
            (lambda (event)
              (when (send event button-down? 'left)
-               (message-box "dc-location" (format "dc-location: x: ~a y: ~a~n" x y)))))])
-      (sequence (apply super-init args))))
-         
+               (when click-callback
+                 (let*-values ([(event-x) (send event get-x)]
+                               [(event-y) (send event get-y)]
+                               [(x y) (dc-location-to-editor-location
+                                       event-x event-y)]
+                               [position (find-position x y)])
+                   (click-callback x y position))))))])
+      
+      (private clickable-table (make-hash-table)
+               (sequence (apply super-init args))))
   
   (fw:preferences:set-default 'debugger-width 400 number?)
   (fw:preferences:set-default 'debugger-height 800 number?)
@@ -90,15 +106,6 @@
             "Can't copy text yet")
           (format "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
   
-  (define (highlight-location-text zodiac)
-    (when clear-highlight-thunk (clear-highlight-thunk))
-    (let* ([source (z:location-file (z:zodiac-start zodiac))])
-      (if (is-drscheme-definitions-editor? source)
-          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
-                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
-            (send source highlight-range start-offset (+ finish-offset 1) debug-highlight-color #f))
-          #f)))
-  
  (define (collapse-tree cons-tree)
     (let loop ([tree cons-tree] [result null])
       (cond 
@@ -112,14 +119,15 @@
   (define (add-to-popup popup val)
     (cond ([struct? val]
   
+       
   (define debugger%
     (class object% (drscheme-frame)
 
       (private [parsed #f]
                [needs-update #t]
-               [clear-highlight-thunks null]
                [mark-list #f]
-               
+               [text-region-table null] ; candidate for hash-table-ization, if speed is needed
+
                [show-var-values
                 (lambda (binding)
                   (let* ([values (lookup-binding-list mark-list binding)]
@@ -129,57 +137,66 @@
                               values)
                     (send f popup-menu 0 0)))]
                
-               [highlight-var
-                (lambda (z)
-                  (let* ([start (z:location-offset (z:zodiac-start z))]
-                         [finish (z:location-offset (z:zodiac-finish z))])
-                    (send editor change-style var-style start finish)
-                    (lambda ()
-                      (send editor change-style standard-style start finish))))]
+               
                
                ; highlight-vars 
-               ; to save time, highlight-vars just builds a big cons tree of
-               ; undo-highlight thunks; collapse-tree is then used to untangle
-               ; them into a list (ignoring all nulls).
                   
                [highlight-vars
                 (lambda (mark)
                   (let* ([src (mark-source mark)]
-                         [highlight-thunk-tree
-                          (let recur ([src src])
-                            (cond ; we need a z:parsed iterator...
-                              [(z:varref? src)
-                               (highlight-var src)]
-                              [(z:app? src)
-                               (map recur (cons (z:app-fun src) (z:app-args src)))]
-                              [(z:struct-form? src)
-                               (if super-expr
-                                   (recur (z:struct-form-super-expr src))
-                                   null)]
-                              [(z:if-form? src)
-                               (map recur (list (z:if-form-test src)
-                                                (z:if-form-then src)
-                                                (z:if-form-else src)))]
-                              [(z:quote-form? src)
-                               null]
-                              [(z:begin-form? src)
-                               (map recur (z:begin-form-bodies src))]
-                              [(z:begin0-form? src)
-                               (map recur (z:begin0-form-bodies src))]
-                              [(z:let-values-form? src)
-                               (cons
-                                (map (lambda (lhs)
-                                         
-                                         (apply append (z:let-values-form-vars src))
-                                (let loop ([bindings (apply append (z:let-form-bindings src))])
-                                  (unless 
+                         [mark-bindings (map mark-binding-binding (mark-bindings mark))]
+                         [maybe-highlight-var
+                          (lambda (ref binding) ; ref = (varref | binding), binding = binding
+                            (when (memq binding mark-bindings)
+                              (let* ([start (z:location-offset (z:zodiac-start ref))]
+                                     [finish (z:location-offset (z:zodiac-finish ref))])
+                                (send defns-text change-style var-style start finish)
+                                (set! text-region-table (cons (list start finish binding) text-region-table)))))])
+                    (let recur ([src src])
+                      (cond ; we need a z:parsed iterator...
+                        [(z:varref? src)
+                         (maybe-highlight-var src (z:varref-binding src))]
+                        [(z:app? src)
+                         (map recur (cons (z:app-fun src) (z:app-args src)))]
+                        [(z:struct-form? src)
+                         (when super-expr
+                           (recur (z:struct-form-super-expr src)))]
+                        [(z:if-form? src)
+                         (for-each recur (list (z:if-form-test src)
+                                               (z:if-form-then src)
+                                               (z:if-form-else src)))]
+                        [(z:quote-form? src)
+                         (void)]
+                        [(z:begin-form? src)
+                         (for-each recur (z:begin-form-bodies src))]
+                        [(z:begin0-form? src)
+                         (for-each recur (z:begin0-form-bodies src))]
+                        [(z:let-values-form? src)
+                         (for-each (lambda (binding-list)
+                                     (for-each (lambda (binding)
+                                                 (maybe-highlight-var binding binding))
+                                               binding-list))
+                                   (z:let-values-form-vars src))
+                         (for-each recur (z:let-values-form-vals src))
+                         (recur (z:let-values-form-body src))]
+                        [(z:letrec-values-form? src)
+                         (for-each (lambda (binding-list)
+                                     (for-each (lambda (binding)
+                                                 (maybe-highlight-var binding binding))
+                                               binding-list))
+                                   (z:letrec-values-form-vars src))
+                         (for-each recur (z:let-values-form-vals src))
+                         (recur (z:let-values-form-body src))]
+                        [(z:define-values-form? src)
                         
 )
       (public [set-zodiac!
                (lambda (new-parsed)
                  (if (z:parsed? new-parsed)
-                     (set! parsed new-parsed)
-                     (set! needs-update #t)
+                     (begin
+                       (set! parsed new-parsed)
+                       (set! needs-update #t)
+                       (set! text-region-table null))
                      (e:internal-error new-parsed "not a parsed zodiac value")))]
               
               [handle-breakpoint
@@ -203,7 +220,7 @@
                [area-container (send frame get-area-container)]
                [button-panel (make-object m:horizontal-panel% area-container)]
                [defns-canvas (make-object m:editor-canvas% area-container)]
-               [defns-text (make-object f:text:basic%)]
+               [defns-text (make-object debugger:text%)]
                [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]
                [var-style (let* ([style-list (send defns-text get-style-list)]
                                  [underline-delta (make-object style-delta% 'change-underline #t)]

@@ -35,7 +35,7 @@
 #ifdef SMALL_HASH_TABLES
 # define FILL_FACTOR 1.30
 #else
-# define FILL_FACTOR 2
+# define FILL_FACTOR 2.5
 #endif
 
 #ifndef MZ_PRECISE_GC
@@ -48,7 +48,7 @@ extern int GC_is_marked(void *);
 Scheme_Bucket_Table *scheme_symbol_table = NULL;
 Scheme_Bucket_Table *scheme_parallel_symbol_table = NULL;
 
-long scheme_max_found_symbol_name;
+unsigned long scheme_max_found_symbol_name;
 
 /* globals */
 int scheme_case_sensitive;
@@ -64,7 +64,8 @@ static int gensym_counter;
 
 /**************************************************************************/
 
-typedef long hash_v_t;
+typedef unsigned long hash_v_t;
+#define HASH_SEED  0xF0E1D2C3
 
 extern long scheme_hash_primes[];
 
@@ -77,8 +78,8 @@ extern long scheme_hash_primes[];
 #endif
 
 /* Special hashing for symbols: */
-static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table, 
-				    const char *key, int length,
+static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
+				    const char *key, unsigned int length,
 				    Scheme_Object *naya)
 {
   hash_v_t h, h2;
@@ -87,21 +88,25 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
   /* WARNING: key may be GC-misaligned... */
 
  rehash_key:
-
   {
-    int i;
-    h2 = h = i = 0;
+    unsigned int i;
+    i = 0;
+    h = HASH_SEED;
+    h2 = 0;
+
     while (i < length) {
       int c = key[i++];
-      h += (h << 5) + h + c;
-      h2 += c;
+       h ^= (h << 5) + (h >> 2) + c;
+       // h += (h << 5) + h + c;
+       h2 += c;
     }
+    // post hash mixing helps for short symbols
+    h ^= (h << 5) + (h >> 2) + 0xA0A0;
+    h ^= (h << 5) + (h >> 2) + 0x0505;
+
     h = h % table->size;
     h2 = h2 % table->size;
   }
-
-  if (h < 0) h = -h;
-  if (h2 < 0) h2 = -h2;
 
   if (!h2)
     h2 = 2;
@@ -135,7 +140,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
     Scheme_Bucket **old = table->buckets;
 
     newsize = scheme_hash_primes[++table->step];
-    
+
     asize = (size_t)newsize * sizeof(Scheme_Bucket *);
     {
       Scheme_Bucket **ba;
@@ -151,6 +156,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
     table->size = newsize;
 
     table->count = 0;
+
     for (i = 0; i < oldsize; i++) {
       Scheme_Bucket *cb;
       cb = old[WEAK_ARRAY_HEADSIZE + i] ;
@@ -160,7 +166,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
 
     /* Restore GC-misaligned key: */
     key = SCHEME_SYM_VAL(naya);
-    
+
     goto rehash_key;
   }
 
@@ -177,12 +183,12 @@ static void clean_one_symbol_table(Scheme_Bucket_Table *symbol_table)
   /* Clean the symbol table by removing pointers to collected
      symbols. The correct way to do this is to install a GC
      finalizer on symbol pointers, but that would be expensive. */
-     
+
   if (symbol_table) {
     Scheme_Object **buckets = (Scheme_Object **)symbol_table->buckets;
     int i = symbol_table->size;
     void *b;
-    
+
     while (i--) {
       if (buckets[WEAK_ARRAY_HEADSIZE + i] && !SAME_OBJ(buckets[WEAK_ARRAY_HEADSIZE + i], SYMTAB_LOST_CELL)
 	  && (!(b = GC_base(buckets[WEAK_ARRAY_HEADSIZE + i]))
@@ -211,7 +217,7 @@ static Scheme_Bucket_Table *init_one_symbol_table()
   Scheme_Bucket **ba;
 
   symbol_table = scheme_make_bucket_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
-  
+
   size = symbol_table->size * sizeof(Scheme_Bucket *);
 #ifdef MZ_PRECISE_GC
   ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
@@ -229,7 +235,7 @@ scheme_init_symbol_table ()
 {
   REGISTER_SO(scheme_symbol_table);
   REGISTER_SO(scheme_parallel_symbol_table);
-  
+
   scheme_symbol_table = init_one_symbol_table();
   scheme_parallel_symbol_table = init_one_symbol_table();
 
@@ -246,27 +252,27 @@ scheme_init_symbol_type (Scheme_Env *env)
 void
 scheme_init_symbol (Scheme_Env *env)
 {
-  scheme_add_global_constant("symbol?", 
-			     scheme_make_folding_prim(symbol_p_prim, 
-						      "symbol?", 
-						      1, 1, 1), 
+  scheme_add_global_constant("symbol?",
+			     scheme_make_folding_prim(symbol_p_prim,
+						      "symbol?",
+						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("string->symbol", 
+  scheme_add_global_constant("string->symbol",
 			     scheme_make_prim_w_arity(string_to_symbol_prim,
 						      "string->symbol",
 						      1, 1), env);
-  scheme_add_global_constant("string->uninterned-symbol", 
+  scheme_add_global_constant("string->uninterned-symbol",
 			     scheme_make_prim_w_arity(string_to_uninterned_symbol_prim,
 						      "string->uninterned-symbol",
-						      1, 1), 
+						      1, 1),
 			     env);
-  scheme_add_global_constant("symbol->string", 
+  scheme_add_global_constant("symbol->string",
 			     scheme_make_prim_w_arity(symbol_to_string_prim,
-						      "symbol->string", 
-						      1, 1), 
+						      "symbol->string",
+						      1, 1),
 			     env);
 
-  scheme_add_global_constant("gensym", 
+  scheme_add_global_constant("gensym",
 			     scheme_make_prim_w_arity(gensym,
 						      "gensym",
 						      0, 1),
@@ -274,12 +280,12 @@ scheme_init_symbol (Scheme_Env *env)
 }
 
 static Scheme_Object *
-make_a_symbol(const char *name, int len, int kind)
+make_a_symbol(const char *name, unsigned int len, int kind)
 {
   Scheme_Symbol *sym;
-  
+
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
-  
+
   sym->type = scheme_symbol_type;
   sym->keyex = kind;
   sym->len = len;
@@ -290,8 +296,8 @@ make_a_symbol(const char *name, int len, int kind)
     scheme_max_found_symbol_name = len;
     scheme_reset_prepared_error_buffer();
   }
-  
-  return (Scheme_Object *)(sym);
+
+  return (Scheme_Object *) sym;
 }
 
 Scheme_Object *
@@ -301,13 +307,13 @@ scheme_make_symbol(const char *name)
 }
 
 Scheme_Object *
-scheme_make_exact_symbol(const char *name, int len)
+scheme_make_exact_symbol(const char *name, unsigned int len)
 {
   return make_a_symbol(name, len, 0x1);
 }
 
 Scheme_Object *
-scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind, const char *name, int len)
+scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind, const char *name, unsigned int len)
 {
   Scheme_Object *sym;
 
@@ -317,18 +323,18 @@ scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind,
     sym = make_a_symbol(name, len, kind);
     symbol_bucket(symbol_table, name, len, sym);
   }
-   
+
   return sym;
 }
 
 Scheme_Object *
-scheme_intern_exact_symbol(const char *name, int len)
+scheme_intern_exact_symbol(const char *name, unsigned int len)
 {
   return scheme_intern_exact_symbol_in_table(scheme_symbol_table, 0, name, len);
 }
 
 Scheme_Object *
-scheme_intern_exact_parallel_symbol(const char *name, int len)
+scheme_intern_exact_parallel_symbol(const char *name, unsigned int len)
 {
   return scheme_intern_exact_symbol_in_table(scheme_parallel_symbol_table, 0x2, name, len);
 }
@@ -339,10 +345,10 @@ Scheme_Object *
 scheme_intern_symbol(const char *name)
 {
   if (!scheme_case_sensitive) {
-    long i, len;
+      unsigned long i, len;
     char *naya;
     char on_stack[MAX_SYMBOL_SIZE];
-    
+
     len = strlen(name);
     if (len >= MAX_SYMBOL_SIZE)
       naya = (char *)scheme_malloc_atomic(len + 1);
@@ -365,15 +371,15 @@ scheme_intern_symbol(const char *name)
   return scheme_intern_exact_symbol(name, strlen(name));
 }
 
-const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int flags)
+const char *scheme_symbol_name_and_size(Scheme_Object *sym, unsigned int *length, int flags)
 {
   int has_space = 0, has_special = 0, has_pipe = 0, has_upper = 0, digit_start;
-  int i, len = SCHEME_SYM_LEN(sym), dz;
-  int total_length;
+  int dz;
+  unsigned int i, len = SCHEME_SYM_LEN(sym), total_length;
   int pipe_quote;
   char buf[100];
   char *s, *result;
-  
+
   if ((flags & SCHEME_SNF_PIPE_QUOTE) || (flags & SCHEME_SNF_FOR_TS))
     pipe_quote = 1;
   else if (flags & SCHEME_SNF_NO_PIPE_QUOTE)
@@ -462,13 +468,14 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
       result[len + 1] = '|';
       result[len + 2] = 0;
     } else {
-      int i, p = 0;
-      
+      int p = 0;
+      unsigned int i = 0;
+
       result = (char *)scheme_malloc_atomic((2 * len) + 1);
 
       for (i = 0; i < len; i++) {
-	if (isspace((unsigned char)s[i]) 
-	    || isSpecial(s[i]) 
+	if (isspace((unsigned char)s[i])
+	    || isSpecial(s[i])
 	    || ((s[i] == '|') && pipe_quote)
 	    || (!i && s[0] == '#')
 	    || (has_upper && ((((unsigned char)s[i]) >= 'A')
@@ -476,7 +483,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 	  result[p++] = '\\';
 	result[p++] = s[i];
       }
-      
+
       result[p] = 0;
       total_length = p;
     }
@@ -485,10 +492,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   if (length)
     *length = total_length;
 
-  if (result == buf)
-    result = scheme_symbol_val(sym);
-
-  return result;
+  return (result == buf) ? scheme_symbol_val (sym) : result;
 }
 
 const char *scheme_symbol_name(Scheme_Object *sym)
@@ -535,7 +539,7 @@ symbol_to_string_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("symbol->string", "symbol", 0, argc, argv);
-  
+
   return scheme_make_sized_offset_string((char *)(argv[0]),
 					 SCHEME_SYMSTR_OFFSET(argv[0]),
 					 SCHEME_SYM_LEN(argv[0]),
@@ -554,7 +558,7 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
 
   if (r && !SCHEME_SYMBOLP(r) && !SCHEME_STRINGP(r))
     scheme_wrong_type("gensym", "symbol or string", 0, argc, argv);
-  
+
   if (r) {
     if (SCHEME_STRINGP(r))
       str = SCHEME_STR_VAL(r);

@@ -2827,7 +2827,8 @@ static int do_kill_thread(Scheme_Thread *p)
       scheme_weak_resume_thread(p);
     else if (p != scheme_current_thread) {
       /* Do kill stuff... */
-      remove_thread(p);
+      if (p->next)
+	remove_thread(p);
     }
   }
   if (p == scheme_current_thread)

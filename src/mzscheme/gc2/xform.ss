@@ -528,29 +528,39 @@
 	  (let-values ([(orig-maxlive) (live-var-info-maxlive live-vars)]
 		       [(body-x live-vars)
 			(let loop ([body body])
-			  (if (null? body)
-			      ;; Locally-defined arrays and records are always live.
-			      ;; Start with 0 maxlive in case we want to check whether anything
-			      ;;  was pushed in the block.
-			      (values null (make-live-var-info -1
-							       (append
-								(let loop ([vars local-vars])
-								  (cond
-								   [(null? vars) null]
-								   [(or (array-type? (cdar vars))
-									(struct-type? (cdar vars)))
-								    (cons (car vars) (loop (cdr vars)))]
-								   [else (loop (cdr vars))]))
-								(live-var-info-vars live-vars))
-							       (live-var-info-new-vars live-vars)
-							       (live-var-info-num-calls live-vars)))
-			      (let*-values ([(rest live-vars) (loop (cdr body))]
-					    [(e live-vars)
-					     (convert-function-calls (car body)
-								     vars
-								     live-vars
-								     #f)])
-				(values (cons e rest) live-vars))))])
+			  (cond
+			   [(null? body)
+			    ;; Locally-defined arrays and records are always live.
+			    ;; Start with 0 maxlive in case we want to check whether anything
+			    ;;  was pushed in the block.
+			    (values null (make-live-var-info -1
+							     (append
+							      (let loop ([vars local-vars])
+								(cond
+								 [(null? vars) null]
+								 [(or (array-type? (cdar vars))
+								      (struct-type? (cdar vars)))
+								  (cons (car vars) (loop (cdr vars)))]
+								 [else (loop (cdr vars))]))
+							      (live-var-info-vars live-vars))
+							     (live-var-info-new-vars live-vars)
+							     (live-var-info-num-calls live-vars)))]
+			   [(eq? (tok-n (caar body)) START_XFORM_SKIP)
+			    (let skip-loop ([body (cdr body)])
+			      (let*-values ([(end?) (eq? (tok-n (caar body)) END_XFORM_SKIP)]
+					    [(rest live-vars) ((if end?
+								   loop
+								   skip-loop)
+							       (cdr body))])
+				(values (if end? rest (cons (car body) rest)) live-vars)))]
+			   [else
+			    (let*-values ([(rest live-vars) (loop (cdr body))]
+					  [(e live-vars)
+					   (convert-function-calls (car body)
+								   vars
+								   live-vars
+								   #f)])
+			      (values (cons e rest) live-vars))]))])
 	    ;; Collect live vars and look for function calls in decl section:
 	    (let ([live-vars
 		   (let loop ([decls decls][live-vars live-vars])

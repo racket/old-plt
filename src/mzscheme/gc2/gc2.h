@@ -184,7 +184,8 @@ typedef int (*Fixup_Proc)(void *obj);
    for information about traversals. The return value is the size of
    the object in words. */
 
-void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup);
+void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup,
+			    int is_constant_size, int is_atomic);
 /*
    Registers a traversal procedure for a tag. Obviously, a traversal
    procedure must be installed for each tag before a collection

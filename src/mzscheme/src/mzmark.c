@@ -29,6 +29,9 @@ int variable_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home));
 }
 
+#define variable_obj_IS_ATOMIC 0
+#define variable_obj_IS_CONST_SIZE 1
+
 
 int module_var_SIZE(void *p) {
   return
@@ -54,6 +57,9 @@ int module_var_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Module_Variable));
 }
+
+#define module_var_IS_ATOMIC 0
+#define module_var_IS_CONST_SIZE 1
 
 
 int bucket_obj_SIZE(void *p) {
@@ -81,6 +87,9 @@ int bucket_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket));
 }
 
+#define bucket_obj_IS_ATOMIC 0
+#define bucket_obj_IS_CONST_SIZE 1
+
 
 int local_obj_SIZE(void *p) {
   return
@@ -96,6 +105,9 @@ int local_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Local));
 }
+
+#define local_obj_IS_ATOMIC 1
+#define local_obj_IS_CONST_SIZE 1
 
 
 int toplevel_obj_SIZE(void *p) {
@@ -113,6 +125,9 @@ int toplevel_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
 }
 
+#define toplevel_obj_IS_ATOMIC 1
+#define toplevel_obj_IS_CONST_SIZE 1
+
 
 int c_pointer_obj_SIZE(void *p) {
   return
@@ -128,6 +143,9 @@ int c_pointer_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define c_pointer_obj_IS_ATOMIC 1
+#define c_pointer_obj_IS_CONST_SIZE 1
 
 
 int second_of_cons_SIZE(void *p) {
@@ -146,6 +164,9 @@ int second_of_cons_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define second_of_cons_IS_ATOMIC 0
+#define second_of_cons_IS_CONST_SIZE 1
 
 
 int twoptr_obj_SIZE(void *p) {
@@ -167,6 +188,9 @@ int twoptr_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
+#define twoptr_obj_IS_ATOMIC 0
+#define twoptr_obj_IS_CONST_SIZE 1
+
 
 int iptr_obj_SIZE(void *p) {
   return
@@ -184,6 +208,9 @@ int iptr_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define iptr_obj_IS_ATOMIC 0
+#define iptr_obj_IS_CONST_SIZE 1
 
 
 int small_object_SIZE(void *p) {
@@ -204,6 +231,9 @@ int small_object_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
 }
+
+#define small_object_IS_ATOMIC 0
+#define small_object_IS_CONST_SIZE 1
 
 
 int app_rec_SIZE(void *p) {
@@ -241,6 +271,9 @@ int app_rec_FIXUP(void *p) {
 		    + ((r->num_args + 1) * sizeof(char))));
 }
 
+#define app_rec_IS_ATOMIC 0
+#define app_rec_IS_CONST_SIZE 0
+
 
 int seq_rec_SIZE(void *p) {
   Scheme_Sequence *s = (Scheme_Sequence *)p;
@@ -274,6 +307,9 @@ int seq_rec_FIXUP(void *p) {
 		    + ((s->count - 1) * sizeof(Scheme_Object *))));
 }
 
+#define seq_rec_IS_ATOMIC 0
+#define seq_rec_IS_CONST_SIZE 0
+
 
 int branch_rec_SIZE(void *p) {
   return
@@ -301,6 +337,9 @@ int branch_rec_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Branch_Rec));
 }
+
+#define branch_rec_IS_ATOMIC 0
+#define branch_rec_IS_CONST_SIZE 1
 
 
 int unclosed_proc_SIZE(void *p) {
@@ -332,6 +371,9 @@ int unclosed_proc_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
 }
 
+#define unclosed_proc_IS_ATOMIC 0
+#define unclosed_proc_IS_CONST_SIZE 1
+
 
 int let_value_SIZE(void *p) {
   return
@@ -358,6 +400,9 @@ int let_value_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Let_Value));
 }
 
+#define let_value_IS_ATOMIC 0
+#define let_value_IS_CONST_SIZE 1
+
 
 int let_void_SIZE(void *p) {
   return
@@ -381,6 +426,9 @@ int let_void_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Let_Void));
 }
+
+#define let_void_IS_ATOMIC 0
+#define let_void_IS_CONST_SIZE 1
 
 
 int letrec_SIZE(void *p) {
@@ -408,6 +456,9 @@ int letrec_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Letrec));
 }
 
+#define letrec_IS_ATOMIC 0
+#define letrec_IS_CONST_SIZE 1
+
 
 int let_one_SIZE(void *p) {
   return
@@ -433,6 +484,9 @@ int let_one_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Let_One));
 }
+
+#define let_one_IS_ATOMIC 0
+#define let_one_IS_CONST_SIZE 1
 
 
 int with_cont_mark_SIZE(void *p) {
@@ -462,6 +516,9 @@ int with_cont_mark_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_With_Continuation_Mark));
 }
 
+#define with_cont_mark_IS_ATOMIC 0
+#define with_cont_mark_IS_CONST_SIZE 1
+
 
 int comp_unclosed_proc_SIZE(void *p) {
   return
@@ -489,6 +546,9 @@ int comp_unclosed_proc_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
 }
+
+#define comp_unclosed_proc_IS_ATOMIC 0
+#define comp_unclosed_proc_IS_CONST_SIZE 1
 
 
 int comp_let_value_SIZE(void *p) {
@@ -518,6 +578,9 @@ int comp_let_value_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Compiled_Let_Value));
 }
 
+#define comp_let_value_IS_ATOMIC 0
+#define comp_let_value_IS_CONST_SIZE 1
+
 
 int let_header_SIZE(void *p) {
   return
@@ -541,6 +604,9 @@ int let_header_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Let_Header));
 }
+
+#define let_header_IS_ATOMIC 0
+#define let_header_IS_CONST_SIZE 1
 
 
 int prim_proc_SIZE(void *p) {
@@ -573,6 +639,9 @@ int prim_proc_FIXUP(void *p) {
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc)));
 }
+
+#define prim_proc_IS_ATOMIC 0
+#define prim_proc_IS_CONST_SIZE 0
 
 
 int closed_prim_proc_SIZE(void *p) {
@@ -614,6 +683,9 @@ int closed_prim_proc_FIXUP(void *p) {
       : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
+#define closed_prim_proc_IS_ATOMIC 0
+#define closed_prim_proc_IS_CONST_SIZE 0
+
 
 int linked_closure_SIZE(void *p) {
   Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
@@ -648,6 +720,9 @@ int linked_closure_FIXUP(void *p) {
   gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
 		    + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
+
+#define linked_closure_IS_ATOMIC 0
+#define linked_closure_IS_CONST_SIZE 0
 
 
 int case_closure_SIZE(void *p) {
@@ -685,6 +760,9 @@ int case_closure_FIXUP(void *p) {
   gcBYTES_TO_WORDS((sizeof(Scheme_Case_Lambda)
 		    + ((c->count - 1) * sizeof(Scheme_Object *))));
 }
+
+#define case_closure_IS_ATOMIC 0
+#define case_closure_IS_CONST_SIZE 0
 
 
 int cont_proc_SIZE(void *p) {
@@ -732,6 +810,9 @@ int cont_proc_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Cont));
 }
 
+#define cont_proc_IS_ATOMIC 0
+#define cont_proc_IS_CONST_SIZE 1
+
 
 int mark_dyn_wind_SIZE(void *p) {
   return
@@ -766,6 +847,9 @@ int mark_dyn_wind_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind));
 }
 
+#define mark_dyn_wind_IS_ATOMIC 0
+#define mark_dyn_wind_IS_CONST_SIZE 1
+
 
 int mark_overflow_SIZE(void *p) {
   return
@@ -791,6 +875,9 @@ int mark_overflow_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Overflow));
 }
+
+#define mark_overflow_IS_ATOMIC 0
+#define mark_overflow_IS_CONST_SIZE 1
 
 
 int escaping_cont_proc_SIZE(void *p) {
@@ -824,6 +911,9 @@ int escaping_cont_proc_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));
 }
 
+#define escaping_cont_proc_IS_ATOMIC 0
+#define escaping_cont_proc_IS_CONST_SIZE 1
+
 
 int char_obj_SIZE(void *p) {
   return
@@ -839,6 +929,9 @@ int char_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
 }
+
+#define char_obj_IS_ATOMIC 1
+#define char_obj_IS_CONST_SIZE 1
 
 
 int bignum_obj_SIZE(void *p) {
@@ -884,6 +977,9 @@ int bignum_obj_FIXUP(void *p) {
       : gcBYTES_TO_WORDS(sizeof(Small_Bignum))));
 }
 
+#define bignum_obj_IS_ATOMIC 0
+#define bignum_obj_IS_CONST_SIZE 0
+
 
 int rational_obj_SIZE(void *p) {
   return
@@ -909,6 +1005,9 @@ int rational_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Rational));
 }
+
+#define rational_obj_IS_ATOMIC 0
+#define rational_obj_IS_CONST_SIZE 1
 
 
 int float_obj_SIZE(void *p) {
@@ -938,6 +1037,9 @@ int float_obj_FIXUP(void *p) {
 #endif
 }
 
+#define float_obj_IS_ATOMIC 1
+#define float_obj_IS_CONST_SIZE 0
+
 
 int double_obj_SIZE(void *p) {
   return
@@ -953,6 +1055,9 @@ int double_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Double));
 }
+
+#define double_obj_IS_ATOMIC 1
+#define double_obj_IS_CONST_SIZE 1
 
 
 int complex_obj_SIZE(void *p) {
@@ -980,6 +1085,9 @@ int complex_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Complex));
 }
 
+#define complex_obj_IS_ATOMIC 0
+#define complex_obj_IS_CONST_SIZE 1
+
 
 int string_obj_SIZE(void *p) {
   return
@@ -1002,6 +1110,9 @@ int string_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
+#define string_obj_IS_ATOMIC 0
+#define string_obj_IS_CONST_SIZE 1
+
 
 int symbol_obj_SIZE(void *p) {
   Scheme_Symbol *s = (Scheme_Symbol *)p;
@@ -1023,6 +1134,9 @@ int symbol_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len - 3);
 }
+
+#define symbol_obj_IS_ATOMIC 1
+#define symbol_obj_IS_CONST_SIZE 0
 
 
 int cons_cell_SIZE(void *p) {
@@ -1049,6 +1163,9 @@ int cons_cell_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define cons_cell_IS_ATOMIC 0
+#define cons_cell_IS_CONST_SIZE 1
 
 
 int vector_obj_SIZE(void *p) {
@@ -1082,6 +1199,9 @@ int vector_obj_FIXUP(void *p) {
   gcBYTES_TO_WORDS((sizeof(Scheme_Vector) 
 		    + ((vec->size - 1) * sizeof(Scheme_Object *))));
 }
+
+#define vector_obj_IS_ATOMIC 0
+#define vector_obj_IS_CONST_SIZE 0
 
 
 int input_port_SIZE(void *p) {
@@ -1119,6 +1239,9 @@ int input_port_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
 }
 
+#define input_port_IS_ATOMIC 0
+#define input_port_IS_CONST_SIZE 1
+
 
 int output_port_SIZE(void *p) {
   return
@@ -1155,6 +1278,9 @@ int output_port_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));
 }
 
+#define output_port_IS_ATOMIC 0
+#define output_port_IS_CONST_SIZE 1
+
 
 
 int syntax_compiler_SIZE(void *p) {
@@ -1171,6 +1297,9 @@ int syntax_compiler_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define syntax_compiler_IS_ATOMIC 1
+#define syntax_compiler_IS_CONST_SIZE 1
 
 
 int thread_val_SIZE(void *p) {
@@ -1310,6 +1439,9 @@ int thread_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }
 
+#define thread_val_IS_ATOMIC 0
+#define thread_val_IS_CONST_SIZE 1
+
 
 int cont_mark_set_val_SIZE(void *p) {
   return
@@ -1331,6 +1463,9 @@ int cont_mark_set_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Set));
 }
+
+#define cont_mark_set_val_IS_ATOMIC 0
+#define cont_mark_set_val_IS_CONST_SIZE 1
 
 
 int sema_val_SIZE(void *p) {
@@ -1362,6 +1497,9 @@ int sema_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
 }
 
+#define sema_val_IS_ATOMIC 0
+#define sema_val_IS_CONST_SIZE 1
+
 
 int hash_table_val_SIZE(void *p) {
   return
@@ -1390,6 +1528,9 @@ int hash_table_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
 }
 
+#define hash_table_val_IS_ATOMIC 0
+#define hash_table_val_IS_CONST_SIZE 1
+
 
 int bucket_table_val_SIZE(void *p) {
   return
@@ -1415,6 +1556,9 @@ int bucket_table_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_Table));
 }
+
+#define bucket_table_val_IS_ATOMIC 0
+#define bucket_table_val_IS_CONST_SIZE 1
 
 
 int namespace_val_SIZE(void *p) {
@@ -1476,6 +1620,9 @@ int namespace_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }
 
+#define namespace_val_IS_ATOMIC 0
+#define namespace_val_IS_CONST_SIZE 1
+
 
 int random_state_val_SIZE(void *p) {
   return
@@ -1491,6 +1638,9 @@ int random_state_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Random_State));
 }
+
+#define random_state_val_IS_ATOMIC 1
+#define random_state_val_IS_CONST_SIZE 1
 
 
 int compilation_top_val_SIZE(void *p) {
@@ -1516,6 +1666,9 @@ int compilation_top_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
 }
 
+#define compilation_top_val_IS_ATOMIC 0
+#define compilation_top_val_IS_CONST_SIZE 1
+
 
 int resolve_prefix_val_SIZE(void *p) {
   return
@@ -1539,6 +1692,9 @@ int resolve_prefix_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Resolve_Prefix));
 }
+
+#define resolve_prefix_val_IS_ATOMIC 0
+#define resolve_prefix_val_IS_CONST_SIZE 1
 
 
 int comp_prefix_val_SIZE(void *p) {
@@ -1564,6 +1720,9 @@ int comp_prefix_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Comp_Prefix));
 }
 
+#define comp_prefix_val_IS_ATOMIC 0
+#define comp_prefix_val_IS_CONST_SIZE 1
+
 
 int svector_val_SIZE(void *p) {
   return
@@ -1587,6 +1746,9 @@ int svector_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
+
+#define svector_val_IS_ATOMIC 0
+#define svector_val_IS_CONST_SIZE 1
 
 
 int stx_val_SIZE(void *p) {
@@ -1618,6 +1780,9 @@ int stx_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }
 
+#define stx_val_IS_ATOMIC 0
+#define stx_val_IS_CONST_SIZE 1
+
 
 int stx_off_val_SIZE(void *p) {
   return
@@ -1637,6 +1802,9 @@ int stx_off_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Offset));
 }
+
+#define stx_off_val_IS_ATOMIC 0
+#define stx_off_val_IS_CONST_SIZE 1
 
 
 int module_val_SIZE(void *p) {
@@ -1710,6 +1878,9 @@ int module_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
 }
 
+#define module_val_IS_ATOMIC 0
+#define module_val_IS_CONST_SIZE 1
+
 
 int modidx_val_SIZE(void *p) {
   return
@@ -1739,6 +1910,9 @@ int modidx_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
+
+#define modidx_val_IS_ATOMIC 0
+#define modidx_val_IS_CONST_SIZE 1
 
 
 #endif  /* TYPE */
@@ -1794,6 +1968,9 @@ int mark_comp_env_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
 }
 
+#define mark_comp_env_IS_ATOMIC 0
+#define mark_comp_env_IS_CONST_SIZE 1
+
 
 int mark_resolve_info_SIZE(void *p) {
   return
@@ -1828,6 +2005,9 @@ int mark_resolve_info_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Resolve_Info));
 }
 
+#define mark_resolve_info_IS_ATOMIC 0
+#define mark_resolve_info_IS_CONST_SIZE 1
+
 
 
 #endif  /* ENV */
@@ -1859,6 +2039,9 @@ int mark_comp_info_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
 }
 
+#define mark_comp_info_IS_ATOMIC 0
+#define mark_comp_info_IS_CONST_SIZE 1
+
 
 int mark_saved_stack_SIZE(void *p) {
   return
@@ -1888,6 +2071,9 @@ int mark_saved_stack_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));
 }
+
+#define mark_saved_stack_IS_ATOMIC 0
+#define mark_saved_stack_IS_CONST_SIZE 1
 
 
 int mark_eval_in_env_SIZE(void *p) {
@@ -1919,6 +2105,9 @@ int mark_eval_in_env_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
 }
 
+#define mark_eval_in_env_IS_ATOMIC 0
+#define mark_eval_in_env_IS_CONST_SIZE 1
+
 
 #endif  /* EVAL */
 
@@ -1948,6 +2137,9 @@ int mark_reply_item_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(ReplyItem));
 }
+
+#define mark_reply_item_IS_ATOMIC 0
+#define mark_reply_item_IS_CONST_SIZE 1
 
 
 #endif  /* FILE */
@@ -1983,6 +2175,9 @@ int mark_closure_info_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Closure_Info));
 }
 
+#define mark_closure_info_IS_ATOMIC 0
+#define mark_closure_info_IS_CONST_SIZE 1
+
 
 int mark_dyn_wind_cell_SIZE(void *p) {
   return
@@ -2008,6 +2203,9 @@ int mark_dyn_wind_cell_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind_List));
 }
+
+#define mark_dyn_wind_cell_IS_ATOMIC 0
+#define mark_dyn_wind_cell_IS_CONST_SIZE 1
 
 
 int mark_dyn_wind_info_SIZE(void *p) {
@@ -2037,6 +2235,9 @@ int mark_dyn_wind_info_FIXUP(void *p) {
    gcBYTES_TO_WORDS(sizeof(Dyn_Wind));
 }
 
+#define mark_dyn_wind_info_IS_ATOMIC 0
+#define mark_dyn_wind_info_IS_CONST_SIZE 1
+
 
 int mark_cont_mark_chain_SIZE(void *p) {
   return
@@ -2064,6 +2265,9 @@ int mark_cont_mark_chain_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Chain));
 }
+
+#define mark_cont_mark_chain_IS_ATOMIC 0
+#define mark_cont_mark_chain_IS_CONST_SIZE 1
 
 
 #endif  /* FUN */
@@ -2098,6 +2302,9 @@ int mark_breakable_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Breakable));
 }
+
+#define mark_breakable_IS_ATOMIC 0
+#define mark_breakable_IS_CONST_SIZE 1
 
 
 int mark_load_handler_data_SIZE(void *p) {
@@ -2135,6 +2342,9 @@ int mark_load_handler_data_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }
 
+#define mark_load_handler_data_IS_ATOMIC 0
+#define mark_load_handler_data_IS_CONST_SIZE 1
+
 
 int mark_load_data_SIZE(void *p) {
   return
@@ -2165,6 +2375,9 @@ int mark_load_data_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(LoadData));
 }
 
+#define mark_load_data_IS_ATOMIC 0
+#define mark_load_data_IS_CONST_SIZE 1
+
 
 int mark_indexed_string_SIZE(void *p) {
   return
@@ -2188,6 +2401,9 @@ int mark_indexed_string_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
 }
+
+#define mark_indexed_string_IS_ATOMIC 0
+#define mark_indexed_string_IS_CONST_SIZE 1
 
 
 int mark_pipe_SIZE(void *p) {
@@ -2214,6 +2430,9 @@ int mark_pipe_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
+
+#define mark_pipe_IS_ATOMIC 0
+#define mark_pipe_IS_CONST_SIZE 1
 
 
 #endif  /* PORTFUN */
@@ -2246,6 +2465,9 @@ int mark_thread_memory_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Memory));
 }
 
+#define mark_thread_memory_IS_ATOMIC 0
+#define mark_thread_memory_IS_CONST_SIZE 1
+
 #endif
 
 int mark_input_file_SIZE(void *p) {
@@ -2270,6 +2492,9 @@ int mark_input_file_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_File));
 }
+
+#define mark_input_file_IS_ATOMIC 0
+#define mark_input_file_IS_CONST_SIZE 1
 
 
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
@@ -2302,6 +2527,9 @@ int mark_tested_input_file_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Tested_Input_File));
 }
 
+#define mark_tested_input_file_IS_ATOMIC 0
+#define mark_tested_input_file_IS_CONST_SIZE 1
+
 
 int mark_tcp_select_info_SIZE(void *p) {
   return
@@ -2317,6 +2545,9 @@ int mark_tcp_select_info_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Tcp_Select_Info));
 }
+
+#define mark_tcp_select_info_IS_ATOMIC 1
+#define mark_tcp_select_info_IS_CONST_SIZE 1
 
 #endif
 
@@ -2342,6 +2573,9 @@ int mark_output_file_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
 }
+
+#define mark_output_file_IS_ATOMIC 0
+#define mark_output_file_IS_CONST_SIZE 1
 
 
 #ifdef USING_TESTED_OUTPUT_FILE
@@ -2374,6 +2608,9 @@ int mark_tested_output_file_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
 }
 
+#define mark_tested_output_file_IS_ATOMIC 0
+#define mark_tested_output_file_IS_CONST_SIZE 1
+
 #endif
 
 #ifdef USE_FD_PORTS
@@ -2399,6 +2636,9 @@ int mark_input_fd_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
 }
+
+#define mark_input_fd_IS_ATOMIC 0
+#define mark_input_fd_IS_CONST_SIZE 1
 
 #endif
 
@@ -2426,6 +2666,9 @@ int mark_system_child_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(System_Child));
 }
 
+#define mark_system_child_IS_ATOMIC 0
+#define mark_system_child_IS_CONST_SIZE 1
+
 #endif
 
 #ifdef BEOS_PROCESSES
@@ -2443,6 +2686,9 @@ int mark_beos_process_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
+
+#define mark_beos_process_IS_ATOMIC 1
+#define mark_beos_process_IS_CONST_SIZE 1
 
 #endif
 
@@ -2472,6 +2718,9 @@ int mark_oskit_console_input_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(osk_console_input));
 }
 
+#define mark_oskit_console_input_IS_ATOMIC 0
+#define mark_oskit_console_input_IS_CONST_SIZE 1
+
 #endif
 
 int mark_subprocess_SIZE(void *p) {
@@ -2496,6 +2745,9 @@ int mark_subprocess_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
 }
+
+#define mark_subprocess_IS_ATOMIC 0
+#define mark_subprocess_IS_CONST_SIZE 1
 
 
 #endif  /* PORT */
@@ -2533,6 +2785,9 @@ int mark_listener_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(listener_t));
 }
 
+#define mark_listener_IS_ATOMIC 0
+#define mark_listener_IS_CONST_SIZE 1
+
 
 #ifdef USE_TCP
 int mark_tcp_SIZE(void *p) {
@@ -2566,6 +2821,9 @@ int mark_tcp_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
 }
 
+#define mark_tcp_IS_ATOMIC 0
+#define mark_tcp_IS_CONST_SIZE 1
+
 
 # ifdef USE_MAC_TCP
 int mark_write_data_SIZE(void *p) {
@@ -2590,6 +2848,9 @@ int mark_write_data_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(WriteData));
 }
+
+#define mark_write_data_IS_ATOMIC 0
+#define mark_write_data_IS_CONST_SIZE 1
 
 # endif
 #endif
@@ -2636,6 +2897,9 @@ int mark_config_val_FIXUP(void *p) {
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
+#define mark_config_val_IS_ATOMIC 0
+#define mark_config_val_IS_CONST_SIZE 0
+
 
 int mark_will_executor_val_SIZE(void *p) {
   return
@@ -2663,6 +2927,9 @@ int mark_will_executor_val_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(WillExecutor));
 }
+
+#define mark_will_executor_val_IS_ATOMIC 0
+#define mark_will_executor_val_IS_CONST_SIZE 1
 
 
 int mark_custodian_val_SIZE(void *p) {
@@ -2702,6 +2969,9 @@ int mark_custodian_val_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
 
+#define mark_custodian_val_IS_ATOMIC 0
+#define mark_custodian_val_IS_CONST_SIZE 1
+
 
 int mark_thread_hop_SIZE(void *p) {
   return
@@ -2726,6 +2996,9 @@ int mark_thread_hop_FIXUP(void *p) {
    gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Custodian_Hop));
 }
 
+#define mark_thread_hop_IS_ATOMIC 0
+#define mark_thread_hop_IS_CONST_SIZE 1
+
 
 int mark_namespace_option_SIZE(void *p) {
   return
@@ -2749,6 +3022,9 @@ int mark_namespace_option_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_NSO));
 }
+
+#define mark_namespace_option_IS_ATOMIC 0
+#define mark_namespace_option_IS_CONST_SIZE 1
 
 
 int mark_param_data_SIZE(void *p) {
@@ -2777,6 +3053,9 @@ int mark_param_data_FIXUP(void *p) {
   return
    gcBYTES_TO_WORDS(sizeof(ParamData));
 }
+
+#define mark_param_data_IS_ATOMIC 0
+#define mark_param_data_IS_CONST_SIZE 1
 
 
 int mark_will_SIZE(void *p) {
@@ -2808,6 +3087,9 @@ int mark_will_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(ActiveWill));
 }
 
+#define mark_will_IS_ATOMIC 0
+#define mark_will_IS_CONST_SIZE 1
+
 
 int mark_will_registration_SIZE(void *p) {
   return
@@ -2834,6 +3116,9 @@ int mark_will_registration_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
+#define mark_will_registration_IS_ATOMIC 0
+#define mark_will_registration_IS_CONST_SIZE 1
+
 
 int mark_waitable_SIZE(void *p) {
   return
@@ -2857,6 +3142,9 @@ int mark_waitable_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Waitable));
 }
+
+#define mark_waitable_IS_ATOMIC 0
+#define mark_waitable_IS_CONST_SIZE 1
 
 
 int mark_waiting_SIZE(void *p) {
@@ -2885,6 +3173,9 @@ int mark_waiting_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Waiting));
 }
+
+#define mark_waiting_IS_ATOMIC 0
+#define mark_waiting_IS_CONST_SIZE 1
 
 
 #endif  /* THREAD */
@@ -2920,6 +3211,9 @@ int mark_finalization_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Finalization));
 }
 
+#define mark_finalization_IS_ATOMIC 0
+#define mark_finalization_IS_CONST_SIZE 1
+
 
 int mark_finalizations_SIZE(void *p) {
   return
@@ -2951,6 +3245,9 @@ int mark_finalizations_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Finalizations));
 }
+
+#define mark_finalizations_IS_ATOMIC 0
+#define mark_finalizations_IS_CONST_SIZE 1
 
 
 #endif  /* SALLOC */
@@ -2986,6 +3283,9 @@ int mark_breakable_wait_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(BreakableWait));
 }
 
+#define mark_breakable_wait_IS_ATOMIC 0
+#define mark_breakable_wait_IS_CONST_SIZE 1
+
 
 int mark_sema_waiter_SIZE(void *p) {
   return
@@ -3013,6 +3313,9 @@ int mark_sema_waiter_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
 }
+
+#define mark_sema_waiter_IS_ATOMIC 0
+#define mark_sema_waiter_IS_CONST_SIZE 1
 
 
 #endif  /* SEMA */
@@ -3062,6 +3365,9 @@ int mark_struct_val_FIXUP(void *p) {
 		    + ((num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
+#define mark_struct_val_IS_ATOMIC 0
+#define mark_struct_val_IS_CONST_SIZE 0
+
 
 int mark_struct_type_val_SIZE(void *p) {
   Scheme_Struct_Type *t = (Scheme_Struct_Type *)p;
@@ -3109,6 +3415,9 @@ int mark_struct_type_val_FIXUP(void *p) {
 		    + (t->name_pos * sizeof(Scheme_Struct_Type *))));
 }
 
+#define mark_struct_type_val_IS_ATOMIC 0
+#define mark_struct_type_val_IS_CONST_SIZE 0
+
 
 int mark_struct_proc_info_SIZE(void *p) {
   return
@@ -3135,6 +3444,9 @@ int mark_struct_proc_info_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
 }
 
+#define mark_struct_proc_info_IS_ATOMIC 0
+#define mark_struct_proc_info_IS_CONST_SIZE 1
+
 
 int mark_inspector_SIZE(void *p) {
   return
@@ -3155,6 +3467,9 @@ int mark_inspector_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
 }
 
+#define mark_inspector_IS_ATOMIC 0
+#define mark_inspector_IS_CONST_SIZE 1
+
 
 int mark_struct_property_SIZE(void *p) {
   return
@@ -3174,6 +3489,9 @@ int mark_struct_property_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
+
+#define mark_struct_property_IS_ATOMIC 0
+#define mark_struct_property_IS_CONST_SIZE 1
 
 
 #endif  /* STRUCT */
@@ -3208,6 +3526,9 @@ int mark_regexp_FIXUP(void *p) {
   gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }
 
+#define mark_regexp_IS_ATOMIC 0
+#define mark_regexp_IS_CONST_SIZE 0
+
 
 #endif  /* REGEXP */
 
@@ -3236,6 +3557,9 @@ int mark_rename_table_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
 }
 
+#define mark_rename_table_IS_ATOMIC 0
+#define mark_rename_table_IS_CONST_SIZE 1
+
 
 int mark_srcloc_SIZE(void *p) {
   return
@@ -3255,6 +3579,9 @@ int mark_srcloc_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
 }
+
+#define mark_srcloc_IS_ATOMIC 0
+#define mark_srcloc_IS_CONST_SIZE 1
 
 
 int mark_wrapchunk_SIZE(void *p) {
@@ -3283,9 +3610,12 @@ int mark_wrapchunk_FIXUP(void *p) {
   gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
 }
 
+#define mark_wrapchunk_IS_ATOMIC 0
+#define mark_wrapchunk_IS_CONST_SIZE 0
+
 
 #endif  /* STXOBJ */
 
 /**********************************************************************/
 
-#define GC_REG_TRAV(type, base) GC_register_traversers(type, base ## _SIZE, base ## _MARK, base ## _FIXUP)
+#define GC_REG_TRAV(type, base) GC_register_traversers(type, base ## _SIZE, base ## _MARK, base ## _FIXUP, base ## _IS_CONST_SIZE, base ## _IS_ATOMIC)

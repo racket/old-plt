@@ -6,7 +6,7 @@ CPP = @CPP@
 CXX = @CXX@
 RANLIB = @RANLIB@
 
-CFLAGS = @CFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
+CFLAGS = @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 LIBS = @LIBS@
 
 XFORM = ../mzscheme -rq $(srcdir)/xform.ss $(srcdir)/ctok.ss "$(CPP) $(CFLAGS)"

@@ -276,6 +276,9 @@ static int bad_trav_FIXUP(void *p)
   exit(1);
 }
 
+#define bad_trav_IS_CONST_SIZE 0
+#define bad_trav_IS_ATOMIC 0
+
 static void MARK_cjs(Scheme_Continuation_Jump_State *cjs)
 {
   gcMARK(cjs->jumping_to_continuation);

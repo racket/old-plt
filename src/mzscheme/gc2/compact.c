@@ -652,8 +652,16 @@ void GC_init_type_tags(int count, int weakbox)
   weak_box_tag = weakbox;
 }
 
-void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup)
+void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup, 
+			    int is_constant_size, int is_atomic)
 {
+  if (is_constant_size) {
+    long v;
+    v = size(NULL);
+    if (v < 100)
+      size = (Size_Proc)v;
+  }
+
   size_table[tag] = size;
   mark_table[tag] = mark;
   fixup_table[tag] = fixup;
@@ -1273,7 +1281,15 @@ static void init_tagged_mpage(void **p, MPage *page)
       prev_var_stack = GC_variable_stack;
 #endif
 
-      size = size_table[tag](p);
+      {
+	Size_Proc size_proc;
+	
+	size_proc = size_table[tag];
+	if (((long)size_proc) < 100)
+	  size = (long)size_proc;
+	else
+	  size = size_proc(p);
+      }
 
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, size);
       offset += size;
@@ -2058,7 +2074,7 @@ static void propagate_all_mpages()
 #endif
 	  
 #if CHECKS
-	    if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
+	    if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	      CRASH();
 	    }
 #endif
@@ -2732,7 +2748,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
 #endif
 
 #if CHECKS
-      if ((tag < 0) || (tag >= _num_tags_) || !fixup_table[tag]) {
+      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	fflush(NULL);
 	CRASH();
       }
@@ -3276,10 +3292,10 @@ static int initialized;
 static void init(void)
 {
   if (!initialized) {
-    GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
-    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
+    GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box, 1, 0);
+    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array, 0, 0);
 #if USE_FREELIST
-    GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list);
+    GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list, 0, 0);
 #endif
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
@@ -3633,7 +3649,7 @@ static void gcollect(int full)
 	      if (f->tagged) {
 		Type_Tag tag = *(Type_Tag *)f->p;
 #if CHECKS
-		if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
+		if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 		  CRASH();
 		}
 #endif
@@ -4201,7 +4217,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   return m;
 }
 
-static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
+static inline void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
 {
   size_t size_in_words;
   void **m, **naya;
@@ -4402,8 +4418,16 @@ static long scan_tagged_mpage(void **p, MPage *page)
     if (tag == SKIP) {
       p++;
     } else {
-#endif
-      size = size_table[tag](p);
+#endif      
+      {
+	Size_Proc size_proc;
+	
+	size_proc = size_table[tag];
+	if (((long)size_proc) < 100)
+	  size = (long)size_proc;
+	else
+	  size = size_proc(p);
+      }
 
       dump_info_array[tag]++;
       dump_info_array[tag + _num_tags_] += size;

@@ -69,6 +69,11 @@
       (lambda (n)
 	(and (real? n) (not (negative? n)))))
 
+    (define same-dimension?
+      (lambda (new-dim current-dim)
+	(or (= new-dim current-dim)
+	    (= new-dim -1))))
+
     ; make-item%: creates items which are suitable for placing into
     ;  containers.
     ; input: item%: a wx:item% descendant (but see below) from which the
@@ -93,8 +98,11 @@
 	    get-height
 	    get-x
 	    get-y
-	    get-parent
-	    set-size)
+	    get-parent)
+;	    set-size)
+
+	  (rename
+	    [super-set-size set-size])
 	  
 	  (public
 	    
@@ -224,6 +232,15 @@
 		      "container-child-force-redraw: calling parent's force-redraw and quitting")
 		    (send parent force-redraw))))]
 	    
+	    ; set-size
+	    [set-size
+	      (lambda (x y width height)
+		(unless (and (same-dimension? x (get-x))
+			     (same-dimension? y (get-y))
+			     (same-dimension? width (get-width))
+			     (same-dimension? height (get-height)))
+		  (super-set-size x y width height)))]
+
 	    ; get-min-size: computes the minimum size the item can
             ;   reasonably assume.
 	    ; input: none

@@ -981,6 +981,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
   wxSnipClass *sclass;
   wxBufferData *data;
   wxSnip *snip;
+  wxList *snipsToInsert, *dataToInsert;
 
   if (!ReadHeadersFooters(f, TRUE))
     return FALSE;
@@ -1037,6 +1038,14 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 
   f->Get(&numSnips);
 
+  if (bufferType == wxEDIT_BUFFER) {  
+    snipsToInsert = new wxList(wxKEY_NONE, FALSE);
+    dataToInsert = new wxList(wxKEY_NONE, FALSE);
+  } else {
+    snipsToInsert = NULL;
+    dataToInsert = NULL;
+  }
+
   for (i = 0; i < numSnips; i++) {
     f->Get(&n);
     if (n >= 0) {
@@ -1066,8 +1075,12 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	    bs = styleList->BasicStyle();
 	    snip->style = bs;
 	  }
-	  if (!ReadInsert(snip))
-	    return FALSE;
+	  if (snipsToInsert)
+	    snipsToInsert->Append(snip);
+	  else {
+	    if (!ReadInsert(snip))
+	      return FALSE;
+	  }
 	} else
 	  return FALSE;
 
@@ -1075,7 +1088,9 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	if (!f->Ok())
 	  return FALSE;
 
-	if (data)
+	if (dataToInsert)
+	  dataToInsert->Append(data);
+	else if (data)
 	  SetSnipData(snip, data);
 
 	if (len >= 0) {
@@ -1093,6 +1108,23 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
       if (!f->Ok())
 	return FALSE;
     }
+  }
+
+  if (snipsToInsert) {
+    wxNode *sn, *dn;
+    ((wxMediaEdit *)this)->ReadInsert(snipsToInsert);
+    sn = snipsToInsert->First();
+    dn = dataToInsert->First();
+    for (; sn; sn = sn->Next(), dn = dn->Next()) {
+      data = (wxBufferData *)dn->Data();
+      if (data) {
+	snip = (wxSnip *)sn->Data();
+	SetSnipData(snip, data);
+      }
+    }
+
+    DELETE_OBJ snipsToInsert;
+    DELETE_OBJ dataToInsert;
   }
 
   if (!ReadHeadersFooters(f, FALSE))

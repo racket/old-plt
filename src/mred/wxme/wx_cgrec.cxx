@@ -286,19 +286,25 @@ Bool wxDeleteRecord::Undo(wxMediaBuffer *buffer)
   wxSnip *snip;
   wxMediaEdit *media;
   int i, count;
+  wxList *toAdd;
 
   media = (wxMediaEdit *)buffer;
 
+  toAdd = new wxList(wxKEY_NONE, FALSE);
+  
   count = deletions->Count();
-  for (i = 0; i < count; i++) {
+  for (i = count; i--; ) {
     snip = (wxSnip *)deletions->Get(i);
 
-    /* Have to turn off the owned flag; we know that it's really ours */
+    /* Have to turn off the owned flag, though we know that it's really ours */
     if (snip->flags & wxSNIP_OWNED)
       snip->flags -= wxSNIP_OWNED;
 
-    media->Insert(snip, start);
+    toAdd->Append(snip);
   }
+  media->Insert(toAdd, start);
+  DELETE_OBJ toAdd;
+
   if (clickbacks) {
     count = clickbacks->Count();
     for (i = 0; i < count; i++) {

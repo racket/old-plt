@@ -398,7 +398,7 @@ void wxMediaEdit::InitNewAdmin(void)
 
 void wxMediaEdit::EndStreaks(int exception)
 {
-  if (map && !(exception & wxSTREAK_EXCEPT_KEY_SEQUENCE))
+  if (map && !(exception & wxSTREAK_EXCEPT_KEY_SEQUENCE) && !streaksPushed)
     map->BreakSequence();
   if (flash && flashautoreset && !flashdirectoff)
     FlashOff();

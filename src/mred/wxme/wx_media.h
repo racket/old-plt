@@ -203,6 +203,7 @@ class wxMediaEdit : public wxMediaBuffer
   void Insert(wxSnip *snip, long start, long end = -1, Bool scrollOk=TRUE);
   void Insert(wxSnip *snip);
   void Insert(wxList *snips);
+  void Insert(wxList *snips, long start, long end = -1);
   void Insert(unsigned char ascii);
   void Insert(unsigned char ascii, long start, long end = -1);
   void Delete(long start, long end = -1, Bool scrollOk = TRUE);
@@ -622,6 +623,9 @@ class wxMediaEdit : public wxMediaBuffer
 
   void PushStreaks(void);
   void PopStreaks(void);
+
+ public:
+  Bool ReadInsert(wxList *snipl);
  protected:
   Bool ReadInsert(wxSnip *snip);
   void InsertPasteSnip(wxSnip *snip, wxBufferData *);

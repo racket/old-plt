@@ -160,8 +160,8 @@
   ;; (make-field-record string (list symbol) (list string) type)
   (define-struct field-record (name modifiers class type))
   
-  ;; (make-method-record string (list symbol) type (list type) (list type) string string)
-  (define-struct method-record (name modifiers rtype atypes throws mangled_name class))
+  ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
+  (define-struct method-record (name modifiers rtype atypes throws override class))
 
 ;                                                                                      
 ;                                                                            ;;        

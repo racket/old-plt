@@ -13,7 +13,7 @@
   
   ;make-so: symbol src (-> location) -> syntax-object
   (define (make-so id src parm)
-    (datum->syntax-object #f id (build-src-list parm src)))
+    (datum->syntax-object #f id (build-src-list src parm)))
   
   ;build-src-list: src (-> location) -> (U bool (list loc int int int int))
   (define (build-src-list src parm)

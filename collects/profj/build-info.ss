@@ -284,7 +284,8 @@
                       (test-mods (map modifier-kind modifiers))
                       (reqs (map (lambda (name-list)
                                    (if (= (length name-list) 1)
-                                       (make-req (car name-list) (send type-recs lookup-path (car name-list) (lambda () null)))
+                                       (make-req (car name-list) 
+                                                 (send type-recs lookup-path (car name-list) (lambda () null)))
                                        (make-req (car name-list) (cdr name-list))))
                                  (cons super-name (map name->list (header-implements info))))))
                  
@@ -314,7 +315,8 @@
                  (let*-values (((old-methods) (class-record-methods super-record))
                                ((f m) 
                                 (if (memq 'strictfp test-mods)
-                                    (process-members members old-methods cname type-recs level (find-strictfp modifiers))
+                                    (process-members members old-methods cname type-recs level 
+                                                     (find-strictfp modifiers))
                                     (process-members members old-methods cname type-recs level))))
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
@@ -619,31 +621,147 @@
                        cname 
                        (type-spec-to-type (field-type field) type-recs)))
 
+                  
   ;; process-method: method (list method-record) (list string) type-records symbol -> method-record  
   (define (process-method method inherited-methods cname type-recs level . args)
+    (let* ((name (id-string (method-name method)))
+           (parms (map (lambda (p)
+                         (type-spec-to-type (field-type p) type-recs))
+                       (method-parms method)))
+           (mods (if (null? args) (method-modifiers method) (cons (car args) (method-modifiers method))))
+           (ret (type-spec-to-type (method-type method) type-recs))
+           (throws (filter (lambda (n)
+                             (not (or (is-subclass? n runtime-exn-type type-recs))))
+                           ;(is-subclass? n error-type type-recs))))
+                           (map (lambda (t)
+                                  (let ((n (make-ref-type (id-string (name-id t))
+                                                          (map id-string (name-path t)))))
+                                    (if (is-subclass? n throw-type type-recs)
+                                        n
+                                        (throws-error (name-id t) (name-src t)))))
+                                (method-throws method))))
+           (over? (overrides? name parms inherited-methods)))
+      
+      (check-parm-names (method-parms method) name cname)
+      
+      (when #f;over?
+        (when (memq level `(advanced full))
+          (check-gtequal-access mods name parms cname over? (method-src method)))
+        
+        (unless (is-subclass? ret (method-record-rtype over?) type-recs)
+          (return-error name parms cname ret 
+                        (method-record-rtype over?)
+                        (type-spec-src (method-type method))))
+        
+        (when (memq 'final (method-record-modifiers over?))
+          (override-final-error name parms cname (method-record-class over?) 
+                                (id-src (method-name method))))
+        
+        (when (and (memq level '(advanced full))
+                   (memq 'static (method-record-modifiers over?)))
+          (override-static-error name parms cname (method-record-class over?)
+                                 (id-src (method-name method))))
+        (when (memq level '(advanced full))
+          (check-throws-same throws method cname over? type-recs)))
+      
+      (make-method-record name
+                          (check-method-modifiers level mods) ; need to add stuff about ctor
+                          ret
+                          parms
+                          throws
+                          over?
+                          cname)))
+
+  ;overrides?: string (list type) (list method-record) -> (U bool method-record)
+  (define (overrides? mname parms methods)
+    (and (not (null? methods))
+         (if (and (equal? mname
+                          (method-record-name (car methods)))
+                  (= (length parms)
+                     (length (method-record-atypes (car methods))))
+                  (andmap type=? parms (method-record-atypes (car methods))))
+             (car methods)
+             (overrides? mname parms (cdr methods)))))
     
-    (make-method-record (id-string (method-name method))
-                        (if (null? args)
-                            (check-method-modifiers level (method-modifiers method))
-                            (check-method-modifiers level (cons (car args) (method-modifiers method))))
-                        (type-spec-to-type (method-type method) type-recs)
-                        (map (lambda (ts)
-                               (type-spec-to-type ts type-recs))
-                             (map var-decl-type
-                                  (method-parms method)))
-                        (filter (lambda (n)
-                                  (not (or (is-subclass? n runtime-exn-type type-recs))))
-;                                           (is-subclass? n error-type type-recs))))
-                                (map (lambda (t)
-                                       (let ((n (make-ref-type (id-string (name-id t))
-                                                               (map id-string (name-path t)))))
-                                         (if (is-subclass? n throw-type type-recs)
-                                             n
-                                             (throws-error (name-id t) (name-src t)))))
-                                     (method-throws method)))
-                        ""
-                        cname))
-    
+  ;check-parm-names: (list field) string (list string) -> void
+  (define (check-parm-names parms meth class)
+    (or (null? parms)
+        (and (parm-member? (car parms) (cdr parms))
+             (repeated-parm-error (car parms) meth class))
+        (check-parm-names (cdr parms) meth class)))
+
+  ;parm-member? field (list field) -> bool
+  (define (parm-member? p parms)
+    (and (not (null? parms))
+         (or (equal? (id-string (field-name p))
+                     (id-string (field-name (car parms))))
+             (parm-member? p (cdr parms)))))
+  
+  ;check-gtequal-access: (list modifier) string (list type) (list string) method-record src -> void
+  (define (check-gtequal-access mods name parms class over src)
+    (let ((old-mods (method-record-modifiers over))
+          (old-class (method-record-class over)))
+    (cond
+      ((memq 'public old-mods) 
+       (unless (memq 'public (map modifier-kind mods))
+         (override-access-error 'public name parms class (method-record-class over) src)))
+      ((memq 'protected old-mods) 
+       (unless (or (memq 'public (map modifier-kind mods))
+                   (memq 'protected (map modifier-kind mods)))
+         (override-access-error 'protected name parms class (method-record-class over) src)))
+      (else 
+       (unless (memq 'public (map modifier-kind mods))
+         (override-access-error 'package name parms class (method-record-class over) src))))))
+
+  ;check-throws-same: (list type) method (list string) method-record type-records -> void
+  (define (check-throws-same throws method cname over type-recs)
+    (if (= (length throws)
+           (length (method-record-throws over)))
+        (for-each (lambda (t) 
+                    (unless (is-subclass-of1? t (method-record-throws over))
+                      (throw-over-error 'subclass 
+                                        (method-name method)
+                                        (method-parms method)
+                                        cname
+                                        (method-record-class over)
+                                        t
+                                        (id-src (find-type t (method-throws method))))))                           
+                  throws)
+        (throw-over-error 'num (method-name method) (method-parms method) cname
+                          (method-record-class over) #t (method-src method))))
+  
+  ;is-subclass-of1?: type (list type) -> bool
+  (define (is-subclass-of1? throw thrown)
+    (and (not (null? thrown))
+         (or (is-subclass? throw (car thrown))
+             (is-subclass-of1? throw (cdr thrown)))))
+  
+  ;find-type type (list name) -> src
+  (define (find-type throw throws)
+    (or (and (equal? (ref-type-class/iface throw)
+                     (id-string (name-id (car throws))))
+             (name-id (car throws)))
+        (find-type throw (cdr throws))))
+                      
+  ;return-error string (list type) (list string) type type src -> void
+  (define (return-error name parms class ret old-ret src)
+    (let ((name (string->symbol name)))
+      (raise-error name
+                   (format "Method ~a of class ~a overrides a method: return has changed from ~a to ~a"
+                           name (car class) (type->ext-name old-ret) (type->ext-name ret))
+                   name src)))
+  
+  ;override-final-error: string (list type) (list string) string src -> void
+  (define override-final-error (lambda () null))
+  ;override-static-error: string (list type) (list string) string src -> void
+  (define override-static-error (lambda () null))
+  ;repeated-parm-error: field string (list string) -> void
+  (define repeated-parm-error (lambda () null))
+  ;override-access-error: symbol string (list type) (list string) string src -> void
+  (define override-access-error (lambda () null))
+  ;throw-over-error:symbol string (list type) (list string) string type src -> void
+  (define throw-over-error (lambda () null))
+  
   ;-----------------------------------------------------------------------------------
   ;Code to check modifiers
   

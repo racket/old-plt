@@ -289,7 +289,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-dict%)
+        (->orig-so `(,(py-so 'assoc-list->py-dict%)
                      (list ,@(map (lambda (key-value-pair)
                                     (apply (lambda (key value)
                                              `(list ,(send key to-scheme)
@@ -463,8 +463,10 @@
                                                      (case op
                                                        [(+) ''__add__]
                                                        [(-) ''__sub__]
-                                                       [else `(raise (format "binary% op unsupported: ~a" 
-                                                                             ',op))])
+                                                       [(*) ''__mul__]
+                                                       [(/) ''__div__]
+                                                       [else (raise (format "binary% op unsupported: ~a" 
+                                                                             op))])
                                                      (send rhs to-scheme))))
       
       (super-instantiate ())))
@@ -482,7 +484,14 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (list op (send rhs to-scheme))))
+        (let ([s-rhs (send rhs to-scheme)])
+          (case op
+            [(+) s-rhs]
+            [(not) (->orig-so `(,(py-so 'py-not) ,s-rhs))]
+            [(-) (->orig-so (list (py-so 'python-method-call) s-rhs
+                                  ''__neg__))]
+            [(~) (raise "bitwise operation ~ not implemented yet")]
+            [else (raise (format "unary op unsupported: ~a" op))])))
       
       (super-instantiate ())))
   
@@ -501,12 +510,12 @@
                     (unless (symbol? x) (send x set-bindings! enclosing-scope)))
                   comps))
 
-  ;; scheme-op->python-op:  symbol -> symbol
-  (define (scheme-op->python-op oper)
-    (py-so (case oper
-             [(>) 'py>]
-             [(<) 'py<]
-             [else oper])))
+      ;; scheme-op->python-op:  symbol -> symbol
+      (define (scheme-op->python-op oper)
+        (py-so (case oper
+                 [(>) 'py>]
+                 [(<) 'py<]
+                 [else oper])))
       
       ;;daniel
       (inherit ->orig-so)

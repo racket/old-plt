@@ -36,14 +36,27 @@
     (and (not (== a b))
          (not (py> a b))))
   
+  (define (py-object%->bool x)
+    (cond
+      [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
+      [(py-is? x py-none) #f]
+      [else (raise "py-object%->bool only handles numbers so far")]))
+  
+  (define (py-not x)
+    (bool->py-number% (not (py-object%->bool x))))
+  
+  (define (bool->py-number% x)
+    (number->py-number% (if x 1 0)))
+  
   (define (py-compare x op y comp-lst)
+    (bool->py-number%
     (and (op x y)
          (if (null? comp-lst)
              #t
              (py-compare y
                          (car comp-lst)
                          (car (cdr comp-lst))
-                         (cdr (cdr comp-lst))))))
+                         (cdr (cdr comp-lst)))))))
   
   ;; py-print: (listof X) -> void
   (define (py-print lst)

@@ -4,7 +4,9 @@
   
   (require "private/sig.ss")
 
-  (define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^) (open space^)))
+  (define-signature xml^
+    ((open xml-structs^) (open reader^) (open writer^) (open xexpr^) (open space^)
+     syntax:read-xml))
 
   (provide xml^))
 

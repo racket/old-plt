@@ -7,7 +7,8 @@
 	  "private/reader.ss"
 	  "private/writer.ss"
 	  "private/xexpr.ss"
-	  "private/space.ss")
+	  "private/space.ss"
+          "private/syntax.ss")
 
   (provide xml@)
 
@@ -15,11 +16,14 @@
     (compound-unit/sig
      (import)
      (link
-      (S : xml-structs^ (xml-structs@))
-      (R : reader^ (reader@ S))
+      [S : xml-structs^ (xml-structs@)]
+      [SS : xml-structs^ (syntax-structs@)]
+      [R : reader^ (reader@ S)]
+      [R2 : reader^ (reader@ SS)]
       (U : writer^ (writer@ S))
       (T : xexpr^ (xexpr@ S U))
       (W : space^ (space@ S)))
-     (export (open S) (open R) (open U) (open T) (open W)))))
+     (export (open S) (open R) (var (R2 read-xml) syntax:read-xml)
+             (open U) (open T) (open W)))))
 
 

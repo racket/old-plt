@@ -42,6 +42,10 @@ Functions
        where XML content may.  See make-custom-input-port for information
        about creating ports that return non-character values.
 
+> syntax:read-xml : [Input-port] -> Syntax
+       reads in an XML document and produces a syntax object version of
+       an xexpression.
+
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently
        ignoring everything except the document's root element.

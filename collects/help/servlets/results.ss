@@ -135,10 +135,11 @@
         `(TABLE ((CELLSPACING "0")
                  (CELLPADDING "0"))
                 (TR 
-                 (TD 
-                  (A ((HREF ,href)) ,(pretty-label label ekey))
-                  " in "
-                  "\"" ,src "\""))))
+                 (TD
+		  (DIV ((ALIGN "left-outdent"))
+		       (A ((HREF ,href)) ,(pretty-label label ekey))
+		       " in "
+		       "\"" ,src "\"")))))
       
       ; page-label is #f or a string that labels an HTML anchor
       ; path is either an absolute pathname (possibly not normalized) 

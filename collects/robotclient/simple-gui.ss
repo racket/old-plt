@@ -57,13 +57,13 @@
 					       (cons (list pnum x y)
 						     acc))))))))
 			    (else (loop (read-line iport))))))
-		(else (loop (read-line ip))))))))))
+		(else (loop (read-line iport))))))))))
 
   (define (initialize-gui width height board)
-    (initialize gui% () (board board) (width width) (height height)))
+    (instantiate gui% () (board board) (width width) (height height)))
 
   (define (update-gui gui acc)
-    (send set-robots acc))
+    (send gui set-robots acc))
 
   (define gui%
     (class object%
@@ -77,9 +77,10 @@
       (send f show #t)
 
       (define (display-board b)
-        (send t select-all)
-        (send t delete)
-        (send t insert b 1))
+        (let ((s (make-object string-snip% b)))
+          (send t select-all)
+          (send t delete)
+          (send t insert b 1)))
       
       (display-board board)
       
@@ -99,4 +100,3 @@
 
   )
 
-(require simple-gui)

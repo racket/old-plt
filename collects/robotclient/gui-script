@@ -1,0 +1,3 @@
+#!/home/cs/grad/sowens/plt/bin/mred -rq
+
+(require "simple-gui.ss")

@@ -445,7 +445,8 @@
          (lambda (x)
            (parameterize ([use-numbered-names pv])
              (print-convert x))))])
+  (test '(lambda (a1) ...) (pc #f) (let ([f (lambda (x) x)]) f))
   (test 'f_1 (pc #t) (let ([f (lambda (x) x)]) f))
-  (test '(lambda (a1) ...) (pc #f) (let ([f (lambda (x) x)]) f)))
+  (test '(list f_2 f_3) (pc #t) (let ([g (lambda (y) (let ([f (lambda (x) y)]) f))]) (list (g 1) (g 2)))))
 
 (report-errs)

@@ -400,7 +400,8 @@ void wxCommonInit(void)
     wxREGGLOB(wxWHITE);
     wxWHITE = DEBUG_NEW wxColour ("WHITE");
     wxREGGLOB(wxGREY);
-    wxGREY = DEBUG_NEW wxColour (214, 214, 214); /* aka "gray 84" */
+    // wxGREY = DEBUG_NEW wxColour (214, 214, 214); /* aka "gray 84" */
+    wxGREY = DEBUG_NEW wxColour (220, 218, 213);
     wxREGGLOB(wxBUTTON_COLOR);
     wxBUTTON_COLOR = DEBUG_NEW wxColour (224, 224, 224);
     wxREGGLOB(wxRED);

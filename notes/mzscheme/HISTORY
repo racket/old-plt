@@ -5,6 +5,8 @@
 Version 299.19
 Added locale-string-encoding
 Added pipe-content-length
+Changed call-with-semaphore[/enable-break] to accept
+ extra arguments for the called function
 
 Version 299.18
 Changed permissive UTF-8 decoding to include a "?" for every

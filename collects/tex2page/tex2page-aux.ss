@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-07-22")
+(define *tex2page-version* "2003-08-03")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2116,7 +2116,7 @@
           (let ((tocdepth (get-gcount "\\tocdepth")))
             (when (and
                    write-to-toc?
-                   (not starred?)
+                   (not (and (eqv? *tex-format* 'latex) starred?))
                    (or (< tocdepth -1) (<= seclvl tocdepth)))
               (write-aux
                 `(!toc-entry

@@ -7,8 +7,8 @@
    Scheme side:
    ------------
 
-   This glue provides two new types, #<primitive-class> and
-   #<primitive-object>, and several procedures:
+   This glue provides a new type, #<primitive-class>, and several
+   procedures:
 
       (initialize-primitive-object prim-obj v ...) -
         initializes the primitive object, given initialization
@@ -18,7 +18,7 @@
         gen-value dispatcher) - prepares a class's struct-type for
         objects generated C-side; returns a constructor, predicate,
         and a struct:type for derived classes. The constructor and
-        strcut:type map the given dispatcher to the class.
+        struct:type map the given dispatcher to the class.
 
         The dispatcher takes two arguments: an object, and a
         method-specific box initially containing the method name. It
@@ -130,13 +130,13 @@ END_XFORM_SKIP;
 static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 {
   Scheme_Class *c;
-  Scheme_Class_Object *obj = (Scheme_Class_Object *)argv[0];
+  Scheme_Object *obj = argv[0];
 
   if (!SCHEME_STRUCTP(argv[0])
       || !scheme_is_struct_instance(object_struct, argv[0]))
-    scheme_wrong_type("init-primitive-object", "primitive-object", 0, argc, argv);
+    scheme_wrong_type("initialize-primitive-object", "primitive-object", 0, argc, argv);
   
-  c = (Scheme_Class *)scheme_struct_type_property_ref(object_property, (Scheme_Object *)obj);
+  c = (Scheme_Class *)scheme_struct_type_property_ref(object_property, obj);
 
   return _scheme_apply(c->initf, argc, argv);
 }
@@ -272,30 +272,6 @@ static Scheme_Object *class_find_meth(int argc, Scheme_Object **argv)
   return scheme_false;
 }
 
-static Scheme_Object *find_meth(int argc, Scheme_Object **argv)
-{
-  Scheme_Class *sclass = (Scheme_Class *)argv[0];
-  Scheme_Object *sym = argv[1];
-
-  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("find-in-primitive-class", "primitive-class", 0, argc, argv);
-  if (!SCHEME_SYMBOLP(sym))
-    scheme_wrong_type("find-in-primitive-class", "symbol", 1, argc, argv);
-  
-  while (sclass) {
-    int i;
-
-    for (i = sclass->num_installed; i--; ) {
-      if (sclass->names[i] == sym)
-	return sclass->methods[i];
-    }
-
-    sclass = (Scheme_Class *)sclass->sup;
-  }
-
-  return scheme_false;
-}
-
 static Scheme_Object *class_p(int argc, Scheme_Object **argv)
 {
   return ((SCHEME_TYPE(argv[0]) == objscheme_class_type)
@@ -305,7 +281,7 @@ static Scheme_Object *class_p(int argc, Scheme_Object **argv)
 
 Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
 {
-  Scheme_Class_Object *obj;
+  Scheme_Object *obj;
   Scheme_Object *stype;
 
   stype = ((Scheme_Class *)sclass)->struct_type;
@@ -316,9 +292,9 @@ Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
     return NULL;
   }
 
-  obj = (Scheme_Class_Object *)scheme_make_struct_instance(stype, 0, NULL);
+  obj = scheme_make_struct_instance(stype, 0, NULL);
 
-  return (Scheme_Object *)obj;  
+  return obj;  
 }
 
 /***************************************************************************/
@@ -420,7 +396,7 @@ int objscheme_is_a(Scheme_Object *o, Scheme_Object *c)
 
 typedef struct {
   void *realobj;
-  Scheme_Class_Object *obj;
+  Scheme_Object *obj;
 } ObjectHash;
 
 static ObjectHash *hash;
@@ -517,12 +493,6 @@ void objscheme_init(Scheme_Env *env)
 						    "primitive-class?",
 						    1, 1),
 			   env);
-
-  scheme_install_xc_global("find-in-primitive-class",
-			   scheme_make_prim_w_arity(find_meth,
-						    "find-in-primitive-class",
-						    2, 2),
-			   env);
 }
 
 Scheme_Object *objscheme_def_prim_class(void *global_env, 
@@ -555,11 +525,10 @@ void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)
   /* do nothing */
 }
 
-Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
+Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
 				     char *name, void **cache)
 {
   Scheme_Object *s, *m, *p[2], *dispatcher;
-  Scheme_Class_Object *obj = (Scheme_Class_Object *)_obj;
 
   if (!obj)
     return NULL;
@@ -576,7 +545,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
     *cache = s;
   }
 
-  p[0] = (Scheme_Object *)obj;
+  p[0] = obj;
   p[1] = s;
   m = scheme_apply(dispatcher, 2, p);
 
@@ -1052,12 +1021,12 @@ void objscheme_save_object(void *realobj, Scheme_Object *obj)
   }
 
   hash[i].realobj = realobj;
-  hash[i].obj = (Scheme_Class_Object *)obj;
+  hash[i].obj = obj;
 
   hashcount++;
 }
 
-Scheme_Class_Object *objscheme_find_object(void *realobj)
+Scheme_Object *objscheme_find_object(void *realobj)
 {
   int i;
 

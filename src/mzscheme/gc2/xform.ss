@@ -84,7 +84,7 @@
 ;; "AST" structures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-struct tok (n line file))
+(define-struct tok (n line file) (make-inspector))
 (define-struct (seq struct:tok) (close in))
 (define-struct (parens struct:seq) ())
 (define-struct (brackets struct:seq) ())

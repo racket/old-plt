@@ -3549,11 +3549,7 @@ mpn_sqr_basecase (prodp, up, n)
    store the product in a second limb vector. */
 
 mp_limb_t
-mpn_mul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
-     register mp_ptr res_ptr;
-     register mp_srcptr s1_ptr;
-     mp_size_t s1_size;
-     register mp_limb_t s2_limb;
+mpn_mul_1 (mp_ptr res_ptr, mp_srcptr s1_ptr, mp_size_t s1_size, mp_limb_t s2_limb)
 {
   register mp_limb_t cy_limb;
   register mp_size_t j;
@@ -3590,11 +3586,7 @@ mpn_mul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
    the product, adjusted for carry-out from the addition. */
 
 mp_limb_t
-mpn_addmul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
-     register mp_ptr res_ptr;
-     register mp_srcptr s1_ptr;
-     mp_size_t s1_size;
-     register mp_limb_t s2_limb;
+mpn_addmul_1 (mp_ptr res_ptr, mp_srcptr s1_ptr, mp_size_t s1_size, mp_limb_t s2_limb)
 {
   register mp_limb_t cy_limb;
   register mp_size_t j;
@@ -3636,11 +3628,7 @@ mpn_addmul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
  */
 
 mp_limb_t
-mpn_submul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
-     register mp_ptr res_ptr;
-     register mp_srcptr s1_ptr;
-     mp_size_t s1_size;
-     register mp_limb_t s2_limb;
+mpn_submul_1 (mp_ptr res_ptr, mp_srcptr s1_ptr, mp_size_t s1_size, mp_limb_t s2_limb)
 {
   register mp_limb_t cy_limb;
   register mp_size_t j;

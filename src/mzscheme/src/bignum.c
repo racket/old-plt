@@ -54,6 +54,9 @@
 #include <math.h>
 #include "gmp/gmp.h"
 
+/* Used by gmp: */
+void scheme_bignum_use_fuel(long n);
+
 #ifdef SIXTY_FOUR_BIT_INTEGERS
 #define FIRST_BIT_MASK 0x8000000000000000
 #define SECOND_BIT_MASK 0x4000000000000000
@@ -381,7 +384,7 @@ static int bigdig_length(bigdig* array, int alloced)
 }
 
 /* if (sub) a - b else a + b */
-Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, int sub)
+static Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, int sub)
 {
   Scheme_Object *o;
   long a_size, a_pos, b_size, b_pos, max_size;

@@ -1,5 +1,5 @@
 
-(require-library "cmdline.ss")
+(require (lib "cmdline.ss"))
 
 (define to-main-seg #f)
 (define fatal-error? #f)

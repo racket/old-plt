@@ -261,4 +261,18 @@
       (add-arrow-line arrow-size base src find-src dest find-dest thickness #f)]
      [(arrow-size base src find-src dest find-dest thickness color)
       (-add-line base src find-src dest find-dest thickness color arrow-size)]))
+
+  (define (scale p factor)
+    (let ([drawer (make-pict-drawer p)])
+      (dc
+       (lambda (dc x y)
+	 (send dc set-scale factor factor)
+	 (drawer dc
+		 (/ x factor)
+		 (/ y factor))
+	 (send dc set-scale 1 1))
+       (* (pict-width p) factor)
+       (* (pict-height p) factor)
+       (* (pict-ascent p) factor)
+       (* (pict-descent p) factor))))
   )

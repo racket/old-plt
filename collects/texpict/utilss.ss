@@ -18,4 +18,6 @@
    file-icon
 
    add-line
-   add-arrow-line))
+   add-arrow-line
+
+   scale))

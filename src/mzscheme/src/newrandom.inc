@@ -8,12 +8,12 @@
 
    54-BIT (double) IMPLEMENTATION IN C OF THE "MRG32K3A" GENERATOR
    ===============================================================
- 
+
    Sebastian.Egner@philips.com, Mar-2002, in ANSI-C and Scheme 48 0.57
 
    This code is a C-implementation of Pierre L'Ecuyer's MRG32k3a generator.
    The code uses (double)-arithmetics, assuming that it covers the range
-   {-2^53..2^53-1} exactly (!). The code of the generator is based on the 
+   {-2^53..2^53-1} exactly (!). The code of the generator is based on the
    L'Ecuyer's own implementation of the generator. Please refer to the
    file 'mrg32k3a.scm' for more information about the method.
 */
@@ -48,7 +48,7 @@ static double mrg32k3a(Scheme_Random_State *s) { /* (double), in {0..m1-1} */
 
   /* component 1 */
   x10  = a12*(s->x11) - a13n*(s->x12);
-  k10  = x10 / m1;
+  k10  = (long)(x10 / m1);
   x10 -= k10 * m1;
   if (x10 < 0.0)
     x10 += m1;
@@ -58,7 +58,7 @@ static double mrg32k3a(Scheme_Random_State *s) { /* (double), in {0..m1-1} */
 
   /* component 2 */
   x20  = a21*(s->x20) - a23n*(s->x22);
-  k20  = x20 / m2;
+  k20  = (long)(x20 / m2);
   x20 -= k20 * m2;
   if (x20 < 0.0)
     x20 += m2;
@@ -116,7 +116,7 @@ static Scheme_Object *unpack_rand_state(Scheme_Random_State *s)
 
   /* make and fill a Scheme vector with the numbers */
   result = scheme_make_vector((long)6, NULL);
-  
+
 #define SET(i, x) \
   { \
     Scheme_Object *o; \
@@ -207,16 +207,16 @@ static long sch_int_rand(long n, Scheme_Random_State *rs)
     x = mrg32k3a(rs);
   } while (x >= qn);
   xq = x / q;
-  
+
   /* return result */
-  return (long)xq;  
+  return (long)xq;
 }
 
 static double sch_double_rand(Scheme_Random_State *rs)
 {
   double  x;
   x = mrg32k3a(rs);
-  return (x + 1.0) * norm; 
+  return (x + 1.0) * norm;
 }
 
 Scheme_Object *scheme_make_random_state(long seed)
@@ -225,8 +225,8 @@ Scheme_Object *scheme_make_random_state(long seed)
 
   s = (Scheme_Random_State *)scheme_malloc_atomic_tagged(sizeof(Scheme_Random_State));
   s->so.type = scheme_random_state_type;
-  
+
   sch_srand(seed, s);
-  
+
   return (Scheme_Object *)s;
 }

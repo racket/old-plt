@@ -247,14 +247,17 @@
 		 (let ([old-load (current-load)])
 		   (lambda (f)
 		     (splash-load-handler old-load f))))]
-	   [(close-splash)
+	   [(shutdown-splash)
 	    (lambda ()
-	      (send frame show #f)
 	      (set! splash-load-handler (lambda (old-load f) (old-load f)))
 	      (unless (= splash-max-width splash-current-width)
 		(set-resource splash-width-resource splash-current-width))
 	      (unless (= splash-max-depth splash-sofar-depth)
-		(set-resource splash-depth-resource splash-sofar-depth)))])
+		(set-resource splash-depth-resource splash-sofar-depth)))]
+	   [(close-splash)
+	    (lambda ()
+	      (send frame show #f))])
 	(values
 	 change-splash-message
+	 shutdown-splash
 	 close-splash)))))

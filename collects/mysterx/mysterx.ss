@@ -67,7 +67,7 @@
 	     (semaphore-post handler-sem))]
 	   [insert-object 
 	    (lambda (object)
-	      (insert-html doc (object->html control))
+	      (insert-html doc (object->html object))
 	      (car (document-objects doc)))]
 	   [handle-events 
 	    (lambda ()

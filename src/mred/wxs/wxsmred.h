@@ -24,3 +24,7 @@ extern Scheme_Object *wxs_app_quit_proc;
 extern Bool wxSchemeYield(void *sema);
 
 extern wxWindow *wxLocationToWindow(int x, int y);
+
+extern void mred_wait_eventspace(void);
+
+extern void wxDispatchEventsUntil(int (*f)(void *), void *data);

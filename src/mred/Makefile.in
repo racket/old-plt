@@ -97,7 +97,7 @@ wx:
 mred.o :  $(srcdir)/mred.cxx $(srcdir)/wxme/wx_media.h $(srcdir)/wxme/wx_medad.h \
           $(srcdir)/wxs/wxscheme.h $(srcdir)/../mzscheme/cmdline.inc $(srcdir)/mred.h \
           $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/../mzscheme/src/schvers.h \
-          $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
+          $(srcdir)/wxs/wxsmred.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
           $(WXDIR)/src/DataStructures/Object.h $(srcdir)/../wxcommon/wxGC.h \
           $(srcdir)/../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mred.cxx -o mred.o

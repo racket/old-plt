@@ -86,6 +86,8 @@ static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box
 
 static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip, *none_symbol;
 
+static Scheme_Object *wait_symbol;
+
 #define INSTALL_COUNT 520
 
 static Scheme_Object *mred_unit_opener, *mred_sig;
@@ -1171,8 +1173,6 @@ static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **arg
 			     1, NULL, NULL, 0);
 }
 
-extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
-
 static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
 {
   return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
@@ -1223,11 +1223,19 @@ static int check_sema(void *s)
 
 Bool wxSchemeYield(void *sema)
 {
-  if (sema) {
+  if (!wait_symbol) {
+    wxREGGLOB(wait_symbol);
+    wait_symbol = scheme_intern_symbol("wait");
+  }
+
+  if (sema == wait_symbol) {
+    mred_wait_eventspace();
+    return 1;
+  } else if (sema) {
     void **s;
 
     if (!SCHEME_SEMAP((Scheme_Object *)sema))
-      scheme_wrong_type("yield", "semaphore", -1, 0, (Scheme_Object **)&sema);
+      scheme_wrong_type("yield", "semaphore or 'wait", -1, 0, (Scheme_Object **)&sema);
 
     s = new void*;
     *s = sema;

@@ -775,6 +775,51 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
   return data;
 }
 
+static int check_eventspace_inactive(void *_c)
+{
+  MrEdContext *c = (MrEdContext *)_c;
+  wxTimer *timer = mred_timers;
+
+  /* Any callbacks prepared for this eventspace? */
+  if (check_q_callbacks(0, MrEdSameContext, c, 1)
+      || check_q_callbacks(1, MrEdSameContext, c, 1)
+      || check_q_callbacks(2, MrEdSameContext, c, 1))
+    return 0;
+
+  /* Any running timers for the eventspace? */
+  while (timer) {
+    if (((MrEdContext *)timer->context) == c)
+      return 0;
+    timer = timer->next;
+  }
+
+  /* Any top-level windows visible in this eventspace */
+  {
+    MrEdContextFrames *f = c->finalized->frames;
+    wxChildNode *node;
+
+    node = f->list->First();
+
+    while (node) {
+      if (node->IsShown()) {
+	return 0;
+      }
+      node = node->Next();
+    }
+  }
+
+  return 1;
+}
+
+void mred_wait_eventspace(void)
+{
+  MrEdContext *c;
+  c = MrEdGetContext();
+  if (c && (c->handler_running == scheme_current_process)) {
+    wxDispatchEventsUntil(check_eventspace_inactive, c);
+  }
+}
+
 /****************************************************************************/
 /*                               Events                                     */
 /****************************************************************************/
@@ -2445,9 +2490,7 @@ static void dangerdanger(int)
 
 static void yield_indefinitely()
 {
-  Scheme_Object *sema;
-  sema = scheme_make_sema(0);
-  wxSchemeYield(sema);
+  mred_wait_eventspace();
 }
 
 #ifdef INCLUDE_WITHOUT_PATHS

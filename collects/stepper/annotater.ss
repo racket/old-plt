@@ -15,11 +15,15 @@
   ; the `closure-temp' symbol is used for the let which wraps created closures, so
   ; that we can stuff them into the hash table.
   
+  ; closure-temp: uninterned-symbol
+  
   (define closure-temp (gensym "closure-temp-"))
   
   ; the `if-temp' symbol is used for the temp which gets the value of the test
   ; expression.  It exists so that we can do a runtime check to insure that it's 
   ; a boolean (required in some language levels).
+  
+  ; if-temp : uninterned-symbol
   
   (define if-temp (gensym "if-temp-"))
    
@@ -57,8 +61,16 @@
       `(#%lambda () (list ,source ,@var-clauses)))) |#
   
   ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
+  ; the varref contains a name and a boolean indicating whether the binding is 
+  ; top-level.  
+  
+  ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
+  
   (define (make-debug-info vars bindings-needed source special-vars)
     (let* ([kept-vars (append special-vars (if bindings-needed vars null))]
+           ; the reason I don't need var-set-union here is that these sets are guaranteed
+           ; not to overlap.
 	   [var-clauses (map (lambda (x) 
 			       (let ([var (varref-var x)])
 				 `(cons ,var
@@ -103,6 +115,8 @@
      right here, but it means I have to COPY CODE from aries.  In particular, I need this
      arglist->ilist function. Ick.
      |#
+  
+  ; check-for-keyword/both : (bool -> (z:varref -> void))
   
   (define check-for-keyword/both
     (lambda (disallow-procedures?)
@@ -251,7 +265,7 @@
 				       (z:binding-orig-name
 					(z:bound-varref-binding expr)))]
 			   [free-vars (list (make-varref v top-level?))]
-			   [debug-info (make-debug-info free-vars on-spine? expr)]
+			   [debug-info (make-debug-info free-vars on-spine? expr null)]
 			   [annotated (if (and maybe-undef? (signal-undefined))
 					  `(#%if (#%eq? ,v ,the-undefined-value)
 					    (#%raise (,make-undefined
@@ -283,6 +297,7 @@
 		(let+
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
 		  [val arg-sym-list (build-list (length sub-exprs) get-arg-symbol)]
+                  [val arg-varrefs (map (lambda (sym) (make-varref sym #f)) arg-sym-list)]
 		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
 		  [val pile-of-values
 		       (map (lambda (expr bound) 
@@ -294,9 +309,9 @@
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-sym-list annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr)]
+		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr null)]
 		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr)]
+		  [val debug-info (make-debug-info free-vars on-spine? expr arg-varref-list)]
 		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -334,11 +349,11 @@
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
 		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
-		  [val debug-info (make-debug-info free-vars on-spine? expr)])
+		  [val debug-info (make-debug-info free-vars on-spine? expr null)])
 		 (values (wrap debug-info annotated) free-vars))]
 	       
 	       [(z:quote-form? expr)
-		(values (wrap (make-debug-info null on-spine? expr) 
+		(values (wrap (make-debug-info null on-spine? expr null) 
 			      `(#%quote ,(read->raw (z:quote-form-expr expr))))
 			null)]
 	       
@@ -372,8 +387,8 @@
 		       [annotated-bodies (map car pile-of-results)]
 		       [annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [debug-info (make-debug-info new-free-vars null on-spine? expr)]
-		       [closure-info (make-debug-info new-free-vars #t expr no-label)]
+		       [debug-info (make-debug-info new-free-vars null on-spine? expr null)]
+		       [closure-info (make-debug-info new-free-vars #t expr no-label null)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       ; that closure-table-put! thing needs to be protected
 				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)

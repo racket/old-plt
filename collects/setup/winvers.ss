@@ -20,7 +20,7 @@
 
   (define (patch-files)
     (parameterize ((current-command-line-arguments
-                    (vector (path->bytes plthome))))
+                    (vector (path->string plthome))))
       (dynamic-require `(lib "winvers-change.ss" "setup") #f)))
 
   (let ([argv (current-command-line-arguments)])

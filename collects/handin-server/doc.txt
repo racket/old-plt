@@ -341,7 +341,7 @@ The _utils.ss_ module provides utilities helpful in implementing
 > (unpack-submission string) - returns two text% objects corresponding
   to the submitted definitions and interactions windows.
 
-> (unpack-test-suite-submission string) - resturns a pasteboard%
+> (unpack-test-suite-submission string) - returns a pasteboard%
   object corresponding to the submitted test-suite window. The
   pasteboard contains a sequence of editor-snip% objects, each each
   editor-snip% contains a text% with three embedded editor-snip%s: one
@@ -350,6 +350,7 @@ The _utils.ss_ module provides utilities helpful in implementing
 
 > (is-test-suitef-submission? string) - returns #t if `string' can be
   read as a test suite, #f otherwise.
+
 
 > (make-evaluator language teachpack-paths) - returns a function of
   one argument for evaluating expressions in the designated teaching
@@ -360,11 +361,41 @@ The _utils.ss_ module provides utilities helpful in implementing
   The actual evaluation of expressions happens in a separate
   eventspace and namespace.
 
-> (evaluate-all source input-port eval) - like `load' on and input
-  ports.
+> (call-with-evaluator language teachpack-paths proc) - calls `proc'
+  with an evaluator for the given language and teachpack paths. It
+  also sets the current error-value print handler to print values in a
+  way suitable for `lang', it initializes `current-run-status' with
+  "executing your code", and it catches all exceptions to re-raise
+  them in a form suitable as a submission error.
+
+> (evaluate-all source input-port eval) - like `load' on an input
+  port.
 
 > (evaluate-submission string eval) - like `load' on a non-test-suite
   submission string.
+
+
+> (check-proc eval expect-v compare-proc proc-name arg ...) - calls
+  the function named `proc-name' using the evaluator `eval', giving it
+  the (unquoted) arguments `arg'... Let `result-v' be the result of
+  the call; unless `(compare-proc result-v expect-v)' is true, an
+  exception is raised.
+
+  Every exception or result mismatch during the call to `check-proc'
+  phrased suitably for the handin client.
+
+> (check-defined eval name) - checks whether `name' is defined in the
+  evaluator `eval', and raises an error if not (suitably phrased for
+  the handin client).
+
+> (look-for-tests text name n) - inspects the given text% object to
+  determine whether it contains at least `n' tests for the function
+  `name'. The tests must be top-level expressions.
+
+> (user-construct eval name arg ...) - like `check-proc', but with no
+  result checking. This function is often useful for calling a
+  student-defined constructor.
+
 
 > (current-run-status string-or-#f) - registers information about the
   current actions of the checker, in case the session is terminated
@@ -373,3 +404,7 @@ The _utils.ss_ module provides utilities helpful in implementing
   executed when the session ran out of memory. This status is only
   used when per-session memory limits are supported (i.e., under
   MrEd3m or MzScheme3m with memory accounting).
+
+> (reraise-exn-as-submission-problem thunk) - calls thunk in a context
+  that catches exceptions and re-raises them in a form suitable as a
+  submission error.

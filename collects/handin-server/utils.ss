@@ -2,7 +2,10 @@
   (require (lib "class.ss")
 	   (lib "mred.ss" "mred")
 	   (lib "posn.ss" "lang")
-	   "run-status.ss")
+	   "run-status.ss"
+	   (prefix pc: (lib "pconvert.ss"))
+	   (lib "pretty.ss")
+	   (lib "list.ss"))
 
   (provide unpack-submission
 	   
@@ -12,9 +15,15 @@
 	   make-evaluator
 	   evaluate-all
 	   evaluate-submission
-	   reraise-exn-as-submission-problem
 
-	   current-run-status)
+	   call-with-evaluator
+	   reraise-exn-as-submission-problem
+	   current-run-status
+
+	   check-proc
+	   check-defined
+	   look-for-tests
+	   user-construct)
 
   (define (unpack-submission str)
     (let* ([base (make-object editor-stream-in-string-base% str)]
@@ -184,6 +193,112 @@
 				 (exn-message exn)
 				 (format "~s" exn))))])
       (thunk)))
+
+  ;; ----------------------------------------
+  ;;  Auto-test utils
+
+  (define (check-defined e id)
+    (with-handlers ([exn:syntax? void]
+		    [exn:variable?
+		     (lambda (x)
+		       (error
+			(format
+			 "\"~a\" is not defined, but it must be defined for handin"
+			 (exn:variable-id x))))])
+      (e #`(#,namespace-variable-value '#,id #t))))
+
+  (define (mk-args args)
+    (let loop ([l args])
+      (if (null? l)
+	  ""
+	  (string-append " " (format "~e" (car l)) (loop (cdr l))))))
+
+  (define test-history-enabled (make-parameter #f))
+  (define test-history (make-parameter null))
+  
+  (define (format-history one-test)
+    (if (test-history-enabled)
+	(format "(begin~a)"
+		(apply string-append
+		       (map (lambda (s)
+			      (format " ~a" s))
+			    (reverse (test-history)))))
+	one-test))
+
+  (define (check-proc e result equal? f . args)
+    (let ([test (format "(~a~a)" f (mk-args args))])
+      (when (test-history-enabled)
+	(test-history (cons test (test-history))))
+      (current-run-status (format "running instructor-supplied test ~a" 
+				  (format-history test)))
+      (let-values ([(ok? val)
+		    (with-handlers ([void
+				     (lambda (x)
+				       (error
+					(format "instructor-supplied test ~a failed with an error: ~e"
+						(format-history test)
+						(exn-message x))))])
+		      (let ([val (e `(,f ,@(map value-converter args)))])
+			(values (or (eq? 'anything result)
+				    (equal? val result))
+				val)))])
+	(unless ok?
+	  (error
+	   (format "instructor-supplied test ~a should have produced ~e, instead produced ~e"
+		   (format-history)
+		   result
+		   val)))
+	val)))
+
+  (define (user-construct e func . args)
+    (apply check-proc e func 'anything eq? args))
+
+  (define (look-for-tests t name count)
+    (let ([p (open-input-text-editor t)])
+      (let loop ([found 0])
+	(let ([e (read p)])
+	  (if (eof-object? e)
+	      (when (found . < . count)
+		(error (format "found ~a test~a for ~a, need at least ~a test~a"
+			       found
+			       (if (= found 1) "" "s")
+			       name
+			       count
+			       (if (= count 1) "" "s"))))
+	      (loop (+ found
+		       (if (and (pair? e)
+				(eq? (car e) name))
+			   1
+			   0))))))))
+
+  (define list-abbreviation-enabled (make-parameter #f))
+      
+  (define (value-converter v)
+    (parameterize ([pc:booleans-as-true/false #t]
+		   [pc:abbreviate-cons-as-list (list-abbreviation-enabled)]
+		   [pc:constructor-style-printing #t])
+      (pc:print-convert v)))
+
+  (define (value-printer v)
+    (parameterize ([pretty-print-show-inexactness #t]
+		   [pretty-print-.-symbol-without-bars #t]
+		   [pretty-print-exact-as-decimal #t]
+		   [pretty-print-columns +inf.0]
+		   [read-case-sensitive #t])
+      (let ([p (open-output-string)])
+	(pretty-print (value-converter v) p)
+	(regexp-replace #rx"\n$" (get-output-string p) ""))))
+
+  (define (call-with-evaluator lang teachpacks go)
+    (parameterize ([error-value->string-handler (lambda (v s)
+						  (value-printer v))]
+		   [list-abbreviation-enabled (not (or (eq? lang 'beginner)
+						       (eq? lang 'beginner-abbr)))])
+      (reraise-exn-as-submission-problem
+       (lambda ()
+	 (let ([e (make-evaluator lang teachpacks)])
+	   (current-run-status "executing your code")
+	   (go e))))))
   
   )
 

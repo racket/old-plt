@@ -511,4 +511,8 @@ const int kInactiveControl = 255;
 extern GDHandle wxGetGDHandle(void);
 extern CGrafPtr wxGetGrafPtr(void);
 
+#define leaveEvt 42
+#define wheelEvt 43
+#define mouseMenuDown 44
+
 #endif // wxb_commonh

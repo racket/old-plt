@@ -36,6 +36,8 @@
 QDGlobals 	qd;
 #endif
 
+#define wheelEvt 43
+
 #include <stdlib.h>
 
 extern void wxDoEvents();
@@ -225,11 +227,13 @@ void wxApp::doMacDispatch(EventRecord *e)
 
   switch (e->what)
     {
+    case mouseMenuDown:
     case mouseDown:
       doMacMouseDown(); break;
     case mouseUp:
       doMacMouseUp(); break;
     case keyDown:
+    case wheelEvt:
       doMacKeyDown(); break;
     case autoKey:
       doMacAutoKey(); break;
@@ -260,7 +264,7 @@ void wxApp::doMacMouseDown(void)
   switch (windowPart)
     {
     case inMenuBar:
-      if (StillDown()) {
+      if ((cCurrentEvent.what == mouseMenuDown) || StillDown()) {
 	long menuResult;
 	WindowPtr theMacWindow = ::FrontWindow();
 
@@ -519,64 +523,73 @@ void wxApp::doMacKeyUpDown(Bool down)
   theKeyEvent.metaDown = Bool(cCurrentEvent.modifiers & cmdKey);
   theKeyEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when);
 
-  int key = (cCurrentEvent.message & keyCodeMask) >> 8;
-  /* Better way than to use hard-wired key codes? */
-  switch (key) {
-  case 0x7e:
-  case 0x3e:
-    key = WXK_UP;
-    break;
-  case 0x7d:
-  case 0x3d:
-    key = WXK_DOWN;
-    break;
-  case 0x7b:
-  case 0x3b:
-    key = WXK_LEFT;
-    break;
-  case 0x7c:
-  case 0x3c:
-    key = WXK_RIGHT;
-    break;
-  case 0x24:
-  case 0x4c:
-    key = WXK_RETURN;
-    break;
-  case 0x30:
-    key = WXK_TAB;
-    break;
-  case 0x33:
-    key = WXK_BACK;
-    break;
-  case 0x75:
-    key = WXK_DELETE;
-    break;
-  case 0x73:
-    key = WXK_HOME;
-    break;
-  case 0x77:
-    key = WXK_END;
-    break;   
-  case 0x74:
-    key = WXK_PRIOR;
-    break;     
-  case 0x79:
-    key = WXK_NEXT;
-    break;     
-  default:
-    if (!transH) {
-      transH = GetResource('KCHR', region_code);
-      HNoPurge(transH);
-    }
-    if (transH && (cCurrentEvent.modifiers & wxMacDisableMods)) {
-      /* Remove effect of anything in wxMacDisableMods: */
-      int mods = cCurrentEvent.modifiers - (cCurrentEvent.modifiers & wxMacDisableMods);
-      HLock(transH);
-      key = KeyTranslate(*transH, (key & 0x7F) | mods, &transState) & charCodeMask;
-      HUnlock(transH);
-    } else 
-      key = cCurrentEvent.message & charCodeMask;
-  } // end switch
+  int key;
+
+  if (cCurrentEvent.what == wheelEvt) {
+    if (cCurrentEvent.message)
+      key = WXK_WHEEL_UP;
+    else
+      key = WXK_WHEEL_DOWN;
+  } else {
+    key = (cCurrentEvent.message & keyCodeMask) >> 8;
+    /* Better way than to use hard-wired key codes? */
+    switch (key) {
+    case 0x7e:
+    case 0x3e:
+      key = WXK_UP;
+      break;
+    case 0x7d:
+    case 0x3d:
+      key = WXK_DOWN;
+      break;
+    case 0x7b:
+    case 0x3b:
+      key = WXK_LEFT;
+      break;
+    case 0x7c:
+    case 0x3c:
+      key = WXK_RIGHT;
+      break;
+    case 0x24:
+    case 0x4c:
+      key = WXK_RETURN;
+      break;
+    case 0x30:
+      key = WXK_TAB;
+      break;
+    case 0x33:
+      key = WXK_BACK;
+      break;
+    case 0x75:
+      key = WXK_DELETE;
+      break;
+    case 0x73:
+      key = WXK_HOME;
+      break;
+    case 0x77:
+      key = WXK_END;
+      break;   
+    case 0x74:
+      key = WXK_PRIOR;
+      break;     
+    case 0x79:
+      key = WXK_NEXT;
+      break;     
+    default:
+      if (!transH) {
+	transH = GetResource('KCHR', region_code);
+	HNoPurge(transH);
+      }
+      if (transH && (cCurrentEvent.modifiers & wxMacDisableMods)) {
+	/* Remove effect of anything in wxMacDisableMods: */
+	int mods = cCurrentEvent.modifiers - (cCurrentEvent.modifiers & wxMacDisableMods);
+	HLock(transH);
+	key = KeyTranslate(*transH, (key & 0x7F) | mods, &transState) & charCodeMask;
+	HUnlock(transH);
+      } else 
+	key = cCurrentEvent.message & charCodeMask;
+    } // end switch
+  }
 
   if (down) {
     theKeyEvent.keyCode = key;

@@ -1447,7 +1447,7 @@ static void MrEdSleep(float secs, void *fds)
 #ifdef wx_msw
   MrEdMSWSleep(secs, fds);
 #else
- #ifdef wx_mac
+# ifdef wx_mac
   MrEdMacSleep(secs, fds, mzsleep);
 # else
   mzsleep(secs, fds);

@@ -43,8 +43,6 @@ static long resume_ticks;
 
 static int dispatched = 1;
 
-#define leaveEvt 42
-
 extern "C" {
   typedef void (*HANDLE_AE)(EventRecord *e);
 }
@@ -252,7 +250,8 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 {
 #ifdef OS_X
   /* No need to cooperate: */
-  *sleep_time = *delay_time = 0;
+  *sleep_time = 0;
+  *delay_time = 0;
 #else
 # if FG_SLEEP_TIME
   if (last_was_front && Button())
@@ -263,6 +262,93 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
    
   *delay_time = DELAY_TIME;
 #endif
+}
+
+static int last_was_option_down;
+
+/* WNE: a replacement for WaitNextEvent so we can get things like
+   wheel events. */
+int WNE(EventRecord *e, double sleep_ticks)
+{
+  EventRef ref;
+
+  if (noErr == ReceiveNextEvent(0, NULL, sleep_ticks, TRUE, &ref)) {
+    Boolean ok, need_click = FALSE;
+
+    if ((GetEventClass(ref) == kEventClassKeyboard)
+	&& (GetEventKind(ref) == kEventRawKeyModifiersChanged)) {
+      /* Watch for down-up of option => convert to click at 10, 10 */
+      UInt32 modifiers;
+
+      GetEventParameter(ref, kEventParamKeyModifiers, typeUInt32, 
+			NULL, sizeof(modifiers), NULL, &modifiers);
+      
+      switch (modifiers & (shiftKey | cmdKey | controlKey | optionKey)) {
+      case optionKey:
+	last_was_option_down = 1;
+	break;
+      case 0:
+	if (last_was_option_down) {
+	  last_was_option_down = 0;
+	  need_click = TRUE;
+	}
+      default: /* fallthrough */
+	last_was_option_down = 0;
+      } 
+    } else
+      last_was_option_down = 0;
+
+    ok = ConvertEventRefToEventRecord(ref, e);
+
+    if (!ok) {
+      if (need_click) {
+	e->what = mouseMenuDown;
+	e->message = 0;
+	e->modifiers = 0;
+	e->where.h = 20;
+	e->where.v = 20;
+	ok = TRUE;
+      } else if ((GetEventClass(ref) == kEventClassMouse)
+	  && (GetEventKind(ref) == kEventMouseWheelMoved)) {
+	UInt32 modifiers;
+	EventMouseWheelAxis axis;
+	SInt32 delta;
+	Point pos;
+	
+	GetEventParameter(ref, kEventParamKeyModifiers, typeUInt32, 
+			  NULL, sizeof(modifiers), NULL, &modifiers);
+	GetEventParameter(ref, kEventParamMouseWheelAxis, 
+			  typeMouseWheelAxis, NULL, sizeof(axis), NULL, &axis);
+	GetEventParameter(ref, kEventParamMouseWheelDelta, 
+			  typeLongInteger, NULL, sizeof(delta), NULL, &delta);
+	GetEventParameter(ref, kEventParamMouseLocation,
+			  typeQDPoint, NULL, sizeof(Point), NULL, &pos);
+
+	if (axis == kEventMouseWheelAxisY) {
+	  e->what = wheelEvt;
+	  e->message = (delta > 0);
+	  e->modifiers = modifiers;
+	  e->where.h = pos.h;
+	  e->where.v = pos.v;
+	  ok = TRUE;
+	}
+      }
+
+      if (!ok)
+	SendEventToEventTarget(ref, GetEventDispatcherTarget());
+    }
+    ReleaseEvent(ref);
+
+    if (ok && (e->what == mouseDown)) {
+      /* We have to bring-to-front ourselves: */
+      ProcessSerialNumber psn;
+      GetCurrentProcess(&psn);
+      SetFrontProcess(&psn);
+    }
+
+    return ok;
+  }
+  return FALSE;
 }
 
 /* TransferQueue sucks all of the pending events out of the
@@ -283,10 +369,8 @@ static int TransferQueue(int all)
   static unsigned long lastTime;
   if (TickCount() <= lastTime + delay_time)
     return 0;
-
-  mask = everyEvent;
   
-  while (WaitNextEvent(mask, &e, dispatched ? sleep_time : 0, NULL)) {
+  while (WNE(&e, dispatched ? (60 * sleep_time) : 0)) {
     QueueTransferredEvent(&e);
   }
   
@@ -465,6 +549,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
   MrEdContext *fc;
 
   switch (e->what) {
+  case mouseMenuDown:
   case mouseDown:
     {
       WindowPtr window, front;
@@ -537,6 +622,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
       }
     }
     break;
+  case wheelEvt:
   case keyDown:
   case autoKey:
     *foundc = keyOk;
@@ -786,8 +872,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
     for (qq = first; qq && (qq != osq); qq = next) {
       next = qq->next;
       switch (qq->event.what) {
+      case mouseMenuDown:
       case mouseDown:
       case mouseUp:
+      case wheelEvt:
       case keyDown:
       case keyUp:
       case autoKey:
@@ -957,12 +1045,6 @@ int MrEdCheckForBreak(void)
 /*                                 sleep                                   */
 /***************************************************************************/
 
-/* How do you break a WaitNextEvent on some external action (i.e., a
-   file descriptor become ready)? I don't know. The only solution I
-   find is to post an event with PostEvent(). To minimize the chances
-   that the post is misinterpreted, we post a keyUp event. Then try to
-   get rid of it before continuing. */
-
 #ifdef OS_X
 #include <pthread.h>
 static volatile int thread_running, need_post;
@@ -1060,15 +1142,6 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
   } else {
     EventRecord e;
 
-    if (!msergn)
-      msergn = ::NewRgn();
-    if (msergn) {
-      Point pt;
-      GetMouse(&pt);
-      LocalToGlobal(&pt);
-      ::SetRectRgn(msergn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
-    }
-
 #ifdef OS_X
     if (!StartFDWatcher(mzsleep, secs, fds)) {
       secs = 0;
@@ -1078,7 +1151,7 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
     secs = 0.1;
 #endif
 
-    if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
+    if (WNE(&e, secs ? secs : kEventDurationForever))
       QueueTransferredEvent(&e);
 
 #ifdef OS_X

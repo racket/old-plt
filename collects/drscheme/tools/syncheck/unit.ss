@@ -764,8 +764,8 @@
 			  definitions-edit
 			  (lambda (expr recur)
 			    (cond
-			     [(drscheme:rep:process-finish? expr)
-			      (when (drscheme:rep:process-finish-error? expr)
+			     [(drscheme:basis:process-finish? expr)
+			      (when (drscheme:basis:process-finish-error? expr)
 				(send interactions-edit insert-prompt))]
 			     [else
 			      (color-loop expr)

@@ -1,4 +1,24 @@
-;(load-relative "loader.ss")
+;; uncomment for more soure location feedback
+(current-load
+ (let ([ol (current-load)]
+       [depth 0])
+   (lambda (fn)
+     (let ([pf
+	    (lambda (msg)
+	      (printf "~a~a: ~a~n"
+		      (list->string (vector->list (make-vector (* 2 depth) #\space)))
+		      msg
+		      (if (relative-path? fn)
+			  (build-path (current-directory fn))
+			  fn)))])
+       (dynamic-wind
+	(lambda ()
+	  (pf "loading")
+	  (set! depth (+ depth 1)))
+	(lambda () (ol fn))
+	(lambda ()
+	  (set! depth (- depth 1))
+	  (pf "loaded ")))))))
 
 (when (getenv "MREDCOMPILE")
   (load-relative "compsys.ss"))

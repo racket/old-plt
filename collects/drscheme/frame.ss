@@ -2,7 +2,6 @@
   (import [wx : wx^]
 	  [mred : mred^]
 	  [mzlib : mzlib:core^]
-	  [drscheme:basis : drscheme:basis^]
 	  [drscheme:setup : drscheme:setup^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]

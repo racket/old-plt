@@ -133,13 +133,12 @@
 			 (loop (cdr names))
 			 (cons x (loop (cdr names)))))]))])
    `(unit/sig drscheme:zodiac^
-      (import [mred : mred^]
-	      [beginner : zodiac:system^]
+      (import [beginner : zodiac:system^]
 	      [intermediate : zodiac:system^]
 	      [advanced : zodiac:system^]
-	      [quasi-r4rs : zodiac:system^]
-	      [basis : drscheme:basis^])
+	      [quasi-r4rs : zodiac:system^])
       
+
       (define bad-names null)
 
       ,@(let loop ([other-names non-function-names])
@@ -155,7 +154,7 @@
 	(make-parameter 
 	 'advanced
 	 (lambda (x)
-	   (if (member x basis:level-symbols)
+	   (if (member x '(core structured side-effecting advanced))
 	       (begin 
 		 ,@(let loop ([other-names non-function-names])
 		     (cond
@@ -167,9 +166,7 @@
 								      (symbol->string name))))])
 			       (cons
 				`(begin
-				   (mred:debug:printf 'zodiac.ss "updating from ~a; ~a~n" 
-						      x 
-						      ',name)
+				   '(printf "updating from ~a; ~a~n" x ',name)
 				   (set! ,name
 					 (case x
 					   [(core) ,(prefix "beginner")]
@@ -184,7 +181,7 @@
       (define make-function
 	(lambda (name core structured side-effecting advanced args)
 	  (let ([vocab (current-vocabulary)])
-	    (mred:debug:printf 'zodiac.ss "calling from ~a; ~a~n" vocab name)
+	    '(printf "calling from ~a; ~a~n" vocab name)
 	    (apply (case vocab
 		     [(core) core]
 		     [(structured) structured]

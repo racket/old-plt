@@ -111,38 +111,54 @@
 	      [skip-it? #f])
 	  (thread 
 	   (lambda ()
+	     (printf "delay-action (thread): sleeping~n")
 	     (sleep delay-time)
+	     (printf "delay-action (thread): slept~n")
 	     (semaphore-wait semaphore)
+	     (printf "delay-action (thread): checking skip-it? ~a~n" skip-it?)
 	     (unless skip-it?
 	       (set! open? #t)
 	       (open))
-	     (semaphore-post semaphore)))
+	     (semaphore-post semaphore)
+	     (printf "delay-action (thread): dying~n")))
 	  (lambda ()
+	    (printf "delay-action: closing~n")
 	    (semaphore-wait semaphore)
-	    (if open?
-		(close)
-		(set! skip-it? #t))
+	    (printf "delay-action: got semaphore~n")
+	    (set! skip-it? #t)
+	    (printf "delay-action: open? ~a~n" open?)
+	    (when open?
+	      (close))
+	    (printf "delay-action: posting semaphore~n")
 	    (semaphore-post semaphore)))))
 
     (define local-busy-cursor
       (let ([watch (make-object wx:cursor% wx:const-cursor-watch)])
 	(opt-lambda (win thunk [delay (cursor-delay)])
 	  (let* ([old-cursor #f]
-		 [cursor-off
-		  (delay-action
-		   delay
-		   (lambda ()
-		     (if win
-			 (set! old-cursor (send win set-cursor watch))
-			 (wx:begin-busy-cursor)))
-		   (lambda ()
-		     (if win
-			 (send win set-cursor old-cursor)
-			 (wx:end-busy-cursor))))])
+		 [cursor-off void])
 	    (dynamic-wind
-	     void
-	     thunk
-	     cursor-off)))))
+	     (lambda ()
+	       (printf "local-busy-cursor.1~n")
+	       (set! cursor-off
+		     (delay-action
+		      delay
+		      (lambda ()
+			(printf "local-busy-cursor turning on~n")
+			(if win
+			    (set! old-cursor (send win set-cursor watch))
+			    (wx:begin-busy-cursor)))
+		      (lambda ()
+			(printf "local-busy-cursor turning off~n")
+			(if win
+			    (send win set-cursor old-cursor)
+			    (wx:end-busy-cursor))))))
+	     (lambda ()
+	       (printf "local-busy-cursor.2~n")
+	       (thunk))
+	     (lambda ()
+	       (printf "local-busy-cursor.3~n")
+	       (cursor-off)))))))
 
     (define get-choice
       (opt-lambda (message true-choice false-choice 

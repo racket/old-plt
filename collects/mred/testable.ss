@@ -1,5 +1,5 @@
 ;;
-;; $Id: testable.ss,v 1.5 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: testable.ss,v 1.6 1998/01/27 21:54:17 robby Exp $
 ;;
 ;; Testable classes go between last wx: class and first mred: class.
 ;; Keep track of currently active frame and focused window.
@@ -27,7 +27,8 @@
     (lambda (%)
       (class-asi %
 	(rename [super-on-set-focus   on-set-focus]
-		[super-on-kill-focus  on-kill-focus])
+		[super-on-kill-focus  on-kill-focus]
+		[super-set-cursor set-cursor])
 	(public
 	  [on-set-focus
 	    (lambda ()

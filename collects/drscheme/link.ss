@@ -1,5 +1,6 @@
 (compound-unit/sig (import [I : mred:application-imports^])
-  (link [wx : wx^ (wx@)]
+  (link [wx : wx^ (wx@ ; (require-library-unit/sig "fakewx.ss" "mred")
+		   )]
 	[init : drscheme:init^ ((require-unit/sig "init.ss") wx mred)]
 	[mzlib : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
 	[mred : mred^ ((require-library-unit/sig "link.ss" "mred") mzlib)]
@@ -9,29 +10,15 @@
 			(mzlib function@))]
 	[face : drscheme:face^ ((require-unit/sig "face.ss") mred)]
 	[prefs : drscheme:prefs^ ((require-unit/sig "prefs.ss") mred)]
-	[basis : drscheme:basis^
-	       ((require-unit/sig "basis.ss")
-		wx init language mred drzodiac)]
 	[aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
 			     (drzodiac : zodiac:system^)
 			     (interface : zodiac:interface^))]
-	[language : drscheme:language^
-		  ((require-unit/sig "language.ss")
-		   wx mred 
-		   basis
-		   (export* unit)
-		   aries drzodiac
-		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
-		   ((require-unit/sig "intrface.ss") 
-		    drzodiac
-		    init
-		    mred)]
+		   ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
 	[drzodiac : drscheme:zodiac^
-		  ((require-unit/sig "zlink.ss")
-		   mred
-		   basis
-		   interface
+		  ((require-library-unit/sig "zlink.ss" "userspce")
+		   (export* basis)
+		   (interface : zodiac:interface^)
 		   (mzlib pretty-print@)
 		   (mzlib file@))]
 	[edit : drscheme:edit^ ((require-unit/sig "edit.ss") 
@@ -40,9 +27,16 @@
 	[snip : drscheme:snip^ ((require-unit/sig "snip.ss") wx mred)]
 	[export* : drscheme:export^ ((require-unit/sig "export.ss")
 				    wx mred mzlib print-convert app
-				    basis edit language setup snip
+				    edit language setup snip
 				    init interface face
 				    aries drzodiac)]
+	[language : drscheme:language^
+		  ((require-unit/sig "language.ss")
+		   wx mred 
+		   (export* unit)
+		   aries drzodiac
+		   (export* basis)
+		   (mzlib function@) print-convert)]
 	[tool : () 
 	      ((require-unit/sig "tool.ss")
 	       wx mred mzlib print-convert 
@@ -65,7 +59,6 @@
 	  (unit mred)
 	  (unit print-convert)
 	  (unit prefs drscheme:prefs)
-	  (unit basis drscheme:basis)
 	  (unit aries drscheme:aries)
 	  (unit language drscheme:language)
 	  (unit interface drscheme:interface)

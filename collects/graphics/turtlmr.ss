@@ -53,6 +53,11 @@
 	(set-menu-bar menu-bar))
       
       (public
+	[save-turtle-bitmap
+	 (lambda (fn type)
+	   (send bitmap save-file fn type))])
+
+      (public
 	[canvas (make-object canvas% this 0 0 width height)]
 	[wipe-line (let ([dc-line (ivar memory-dc draw-line)]
 			 [canvas-line (ivar canvas draw-line)]
@@ -131,7 +136,8 @@
 		turtle-window-size))
 	(set! inner-line (ivar turtles:window draw-line))
 	(set! inner-wipe-line (ivar turtles:window wipe-line))
-	(set! inner-clear-window (ivar turtles:window clear)))
+	(set! inner-clear-window (ivar turtles:window clear))
+	(set! inner-save-turtle-bitmap (ivar turtles:window save-turtle-bitmap)))
       (send turtles:window show x)]))
   
   (define clear 

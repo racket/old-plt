@@ -102,42 +102,49 @@ static void user_break_hit(int ignore)
 #endif
 
 #ifdef MACINTOSH_EVENTS
+
+static int WeAreFront()
+{
+  static int inited;
+  static ProcessSerialNumber us;
+  ProcessSerialNumber front;
+  Boolean r;
+  
+  if (!inited) {
+    GetCurrentProcess(&us);
+    inited = 1;
+  }
+  GetFrontProcess(&front);
+  SameProcess(&us, &front, &r);
+  
+  return r;
+}
+
 static int check_break_flag()
 {
-  static long last_time;
-
-  if (TickCount() > last_time + 30) {
-    QHdrPtr start;
-    EvQEl *q;
-    EventRecord event;
-  
-    start = GetEvQHdr();
-  q = (EvQEl *)start->qHead;
-  while (q) {
-    if (q->evtQWhat == keyDown) {
-      if ((((q->evtQMessage & charCodeMask) == '.') 
-	   && (q->evtQModifiers & cmdKey))
-      	  || (((q->evtQMessage & charCodeMask) == 3) 
-	      && (q->evtQModifiers & controlKey))) {
-        Dequeue((QElemPtr)q, (QHdrPtr)start);
-        return 1;
-      }
-    }
-    q = (EvQEl *)q->qLink;
-  }
 #ifdef MACINTOSH_GIVE_TIME
-  {
+  static long last_time;
+  static int front = 1;
+
+  if (TickCount() > last_time + (front ? 30 : 0)) {
       EventRecord e;
-      if (WaitNextEvent(everyEvent, &e, 10, NULL)) {
+      front = WeAreFront();
+      while (WaitNextEvent(everyEvent, &e, front ? 0 : 30, NULL)) {
+        if ((e.what == keyDown)
+            && ((((e.message & charCodeMask) == '.') 
+                 && (e.modifiers & cmdKey))
+                || (((e.message & charCodeMask) == 3)
+	                && (e.modifiers & controlKey)))) {
+	       return 1;
+	     }
 # ifdef MACINTOSH_SIOUX
         SIOUXHandleOneEvent(&e);
 # endif
-	  }
+       }
+      last_time = TickCount();
     }
-    last_time = TickCount();
-  }
 #endif
-  return 0;
+    return 0;
 }
 
 static void handle_one(EventRecord *e)

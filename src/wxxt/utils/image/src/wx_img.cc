@@ -960,7 +960,7 @@ void wxImage::CreateXImage()
   for (j = 0; j < eHIGH; j++) {
     for (i = 0; i < eWIDE; i++, pp++) {
       unsigned long pixel;
-      if (ncols <= 256)
+      if (numcols)
 	pixel = cols[*pp];
       else {
 	XColor c;

@@ -73,6 +73,7 @@ objects:
 
 $(MRED) : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) \
           $(WXDIR)/$(LIBDIR)/libwx$(GUISUFFIX).a \
+          $(WXDIR)/utils/image/$(LIBDIR)/libimage_xt.a \
           $(MRSTATIC_STUB) $(MRCHECK)
 	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(MRED) $(LDSTARTERS) $(MREDOBJECTS) $(MRCHECK) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS)
 

@@ -677,7 +677,7 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 
     wxColourMap *tempColourMap;
 
-    if (tempImage->ncols > 256)
+    if (!tempImage->numcols)
       tempColourMap = NULL;
     else
       tempColourMap = tempImage->GetColourMap();

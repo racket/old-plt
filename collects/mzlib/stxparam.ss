@@ -12,12 +12,13 @@
 	 #'(begin
 	     (define-syntax gen-id (convert-renamer init-val))
 	     (define-syntax id 
-	       (make-set!-transformer
-		(make-syntax-parameter 
-		 (lambda (stx)
-		   (let ([v (syntax-parameter-target-value #'gen-id)])
-		     (apply-transformer v stx #'set!)))
-		 ((syntax-local-certifier) #'gen-id))))))]))
+	       (let ([gen-id ((syntax-local-certifier) #'gen-id)])
+		 (make-set!-transformer
+		  (make-syntax-parameter 
+		   (lambda (stx)
+		     (let ([v (syntax-parameter-target-value gen-id)])
+		       (apply-transformer v stx #'set!)))
+		   gen-id))))))]))
 
   (define-syntax (syntax-parameterize stx)
     (syntax-case stx ()

@@ -56,6 +56,8 @@
     (define x 10)
     (define y 11)))
 
+(define exn:variable? exn:fail:contract:variable?)
+
 (err/rt-test xxxx exn:variable?)
 (test 10 "" (dot p1 x))
 (test 12 "" (dot p1 y x))

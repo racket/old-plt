@@ -1322,21 +1322,21 @@ static Scheme_Object *fail_ok_sym;
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
- *   'nonatomic, 'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the first
- *   one is the default (using scheme_malloc), the last one is for using the
- *   real malloc)
+ *   'nonatomic, 'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the last
+ *   one is for using the real malloc)
  * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
  *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
- * bytes or a type. */
+ * bytes or a type.  If no mode is specified, then scheme_malloc will be used
+ * when the type is _scheme and scheme_malloc_atomic is used otherwise. */
 #undef MYNAME
 #define MYNAME "malloc"
 static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
 {
   int i, size=0, num=0, failok=0;
   void *from = NULL, *res = NULL;
-  Scheme_Object *mode = NULL, *a;
+  Scheme_Object *mode = NULL, *a, *base = NULL;
   void *(*mf)(size_t);
   for (i=0; i<argc; i++) {
     a = argv[i];
@@ -1349,10 +1349,10 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
     } else if (SCHEME_CTYPEP(a)) {
       if (size != 0)
         scheme_signal_error(MYNAME": specifying a second type: %V", a);
-      size = ctype_sizeof(a);
-      if (size < 0)
+      if (NULL == (base = get_ctype_base(a)))
         scheme_wrong_type(MYNAME, "C-type", i, argc, argv);
-      else if (size == 0)
+      size = ctype_sizeof(a);
+      if (size <= 0)
         scheme_wrong_type(MYNAME, "non-void-C-type", i, argc, argv);
     } else if (SAME_OBJ(a, fail_ok_sym)) {
       failok = 1;
@@ -1371,7 +1371,9 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   }
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
-  if (mode == NULL)                           mf = scheme_malloc;
+  if (mode == NULL)
+    mf = (base != NULL && CTYPE_PRIMLABEL(base) == FOREIGN_scheme)
+      ? scheme_malloc : scheme_malloc_atomic;
   else if (SAME_OBJ(mode, nonatomic_sym))     mf = scheme_malloc;
   else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
   else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;

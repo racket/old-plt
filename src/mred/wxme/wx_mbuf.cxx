@@ -1288,9 +1288,12 @@ Bool wxMediaPrintout::OnPrintPage(int page)
 
 Bool wxMediaPrintout::OnBeginDocument(int startPage, int endPage)
 {
-  b->printing = GetDC();
-  data = b->BeginPrint(b->printing, fitToPage);
-  return wxPrintout::OnBeginDocument(startPage, endPage);
+  if (wxPrintout::OnBeginDocument(startPage, endPage)) {
+    b->printing = GetDC();
+    data = b->BeginPrint(b->printing, fitToPage);
+    return TRUE;
+  } else
+    return FALSE;
 }
 
 void wxMediaPrintout::OnEndDocument()

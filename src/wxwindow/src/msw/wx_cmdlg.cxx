@@ -328,6 +328,16 @@ If you put a single wild card, it works as before my modification.
   of->lStructSize = sizeof(OPENFILENAME);
   of->hwndOwner = hwnd;
 
+  // Picky, picky. Need backslashes.
+  if (default_path) {
+    int i;
+    default_path = copystring(default_path);
+    for (i = 0; default_path[i]; i++) {
+      if (default_path[i] == '/')
+	default_path[i] = '\\';
+    }
+  }
+
   if (wildcard)
   {
     of->lpstrFilter = (LPSTR)filter_buffer;

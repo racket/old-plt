@@ -995,29 +995,32 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 
       cline = PositionLine(start, posateol);
       if (kind == wxMOVE_PAGE) {
-	/* The current top line should become the bottom line.  The caret
-	   should go to line above current top line, but watch out for:
+	/* The current top line should become the next-to bottom line.
+	   The caret should go to line above current top line, but
+	   watch out for:
 	      - especially tall lines
 	      - already at top */
-	float vy;
-	long newtop;
+	float vy, ty;
+	long newtop, top;
 
 	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
 
-	/* Scroll to (vy - scrollheight) to vy. */
-	/* To get to a scroll position, we may have to
-	   go a little less: */
-	newtop = FindScrollLine(vy - scrollHeight);
+	/* Top line should be completely visible as bottom line after
+	   scrolling. */
+	top = FindScrollLine(vy);
+	ty = ScrollLineLocation(top + 1);
+	newtop = FindScrollLine(ty - scrollHeight);
 	y = ScrollLineLocation(newtop);
-	if (y < vy - scrollHeight) {
-	  float ny;
-	  ny = ScrollLineLocation(newtop + 1);
-	  if (ny < vy) {
-	    newtop++;
-	    y = ny;
-	  }
+	if (y < ty  - scrollHeight) {
+	  newtop++;
 	}
+	y = ScrollLineLocation(newtop);
 	/* y is the new top location */
+
+	if (y >= vy) {
+	  /* No or backward progess. */
+	  y = ScrollLineLocation(top - 1);
+	}
 
 	i = FindLine(y);
 	scrollTop = y;
@@ -1069,13 +1072,20 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 
 	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
 
-	/* Scroll to vy to (vy + scrollHeight). */
+	/* Last fully-visible line is the new top line */
 	newtop = FindScrollLine(vy + scrollHeight);
-	y = ScrollLineLocation(newtop);
-	if (y <= vy) {
-	  y = ScrollLineLocation(newtop + 1);
+	y = ScrollLineLocation(newtop + 1);
+	if (y > vy + scrollHeight) {
+	  newtop--;
 	}
+	y = ScrollLineLocation(newtop);
 	/* y is the new top location */
+
+	if (y <= vy) {
+	  /* No or backwards movement. Scroll back one. */
+	  newtop = FindScrollLine(vy) + 1;
+	  y = ScrollLineLocation(newtop);
+	}
 
 	i = FindLine(y);
 	if (LineLocation(i, TRUE) < y)

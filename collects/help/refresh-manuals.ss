@@ -39,34 +39,38 @@
             (set! thd (current-thread))
             (unless tmp-directory
               (error 'plt-installer "please clean out ~a" (find-system-path 'temp-dir)))
-            (download-docs docs-to-install tmp-directory)
-            (delete-docs docs-to-install)
-            (install-docs docs-to-install tmp-directory parent)
-            (delete-local-plt-files tmp-directory)
-            (display sc-clearing-cached-indicies)
-            (newline)
-            
-            ;; tell the web-server to visit the url for flushing the cache
-            ;; this is necc. because the server creates a new namespace for
-            ;; each servlet, so we have to get the webserver to visit the servlet
-            ;; in order to flush the cache. We don't, however, want to actually
-            ;; visit the page, so we just do this for its effect.
-            (let-values ([(in1 out1) (make-pipe)]
-                         [(in2 out2) (make-pipe)])
-              (thread (lambda () 
-                        (fprintf out1 "GET ~a HTTP/1.0\r\n" flush-manuals-path)
-                        (close-output-port out1)))
-              (serve-ports in1 out2) ;; spawns its own thread
-              (let loop ()
-                (let ([b (with-handlers ([exn? (lambda (x) eof)])
-                           (read-byte in2))])
-                  (unless (eof-object? b)
-                    (loop))))
-              (close-input-port in2))
-            
-            (display sc-finished-installation)
-            (newline)
-            (set! success? #t))
+            (let ([docs-error (download-docs docs-to-install tmp-directory)])
+              (cond
+                [docs-error
+                 (printf "~a\n" docs-error)]
+                [else
+                 (delete-docs docs-to-install)
+                 (install-docs docs-to-install tmp-directory parent)
+                 (delete-local-plt-files tmp-directory)
+                 (display sc-clearing-cached-indicies)
+                 (newline)
+                 
+                 ;; tell the web-server to visit the url for flushing the cache
+                 ;; this is necc. because the server creates a new namespace for
+                 ;; each servlet, so we have to get the webserver to visit the servlet
+                 ;; in order to flush the cache. We don't, however, want to actually
+                 ;; visit the page, so we just do this for its effect.
+                 (let-values ([(in1 out1) (make-pipe)]
+                              [(in2 out2) (make-pipe)])
+                   (thread (lambda () 
+                             (fprintf out1 "GET ~a HTTP/1.0\r\n" flush-manuals-path)
+                             (close-output-port out1)))
+                   (serve-ports in1 out2) ;; spawns its own thread
+                   (let loop ()
+                     (let ([b (with-handlers ([exn? (lambda (x) eof)])
+                                (read-byte in2))])
+                       (unless (eof-object? b)
+                         (loop))))
+                   (close-input-port in2))])
+              
+              (display sc-finished-installation)
+              (newline)
+              (set! success? #t)))
           (lambda ()
             (unless success?
               (delete-local-plt-files tmp-directory))
@@ -109,12 +113,20 @@
                                                         
                                                         
 
+  ;; download-docs : ... -> (union #f string)
   ;; downloads the docs to the tmp-dir
   (define download-docs
     (lambda (docs-to-install tmp-dir)
-      (for-each (lambda (known-doc) (download-doc tmp-dir (car known-doc) (cdr known-doc)))
-                docs-to-install)))
+      (let loop ([known-docs docs-to-install])
+        (cond
+          [(null? known-docs) #f]
+          [else (let* ([known-doc (car known-docs)]
+                       [resp (download-doc tmp-dir (car known-doc) (cdr known-doc))])
+                  (if (string? resp)
+                      resp
+                      (loop (cdr known-docs))))]))))
       
+  ;; download-doc : ... -> (union #f string)
   ;; stub is the `drscheme' portion of `drscheme-doc.plt'.
   (define download-doc
     (lambda (tmp-dir stub full-name)
@@ -124,9 +136,19 @@
         (newline)
         (call-with-output-file doc-name
           (lambda (out-port)
-            (call/input-url (string->url url) get-pure-port 
-                            (lambda (in-port) (copy-port in-port out-port)))))
-        (void))))
+            (call/input-url (string->url url) 
+                            get-impure-port 
+                            (lambda (in-port)
+                              (let/ec k
+                                (let* ([resp (purify-port in-port)]
+                                       [m (regexp-match #rx"HTTP/[^ ]* ([0-9]+)([^\r\n]*)" resp)])
+                                  (unless m
+                                    (k "malformed response from server ~s" resp))
+                                  (let ([code (string->number (cadr m))])
+                                    (unless (equal? code 200)
+                                      (k (format "error response from server \"~a~a\"" code (caddr m)))))
+                                  (copy-port in-port out-port)
+                                  #f)))))))))
       
       
                                           

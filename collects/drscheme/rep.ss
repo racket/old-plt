@@ -105,7 +105,7 @@
 		 get-canvas
 		 ready-non-prompt autoprompting?
 		 set-prompt-mode
-		 delete lock
+		 delete lock locked?
 		 get-text
 		 reset-console-start-position
 		 last-position
@@ -147,7 +147,11 @@
 				 (zodiac:location-column end-location)
 				 input-string))])
 	       (send frame ensure-interactions-shown)
-	       (send interactions-edit this-err-write message)
+	       (let ([locked? (ivar interactions-edit locked?)])
+		 (send* interactions-edit
+		   (lock #f)
+		   (this-err-write message)
+		   (lock locked?)))
 	       (when (is-a? file wx:media-edit%)
 		 (send (send file get-canvas) set-focus)
 		 (send file begin-edit-sequence)
@@ -271,7 +275,11 @@
 	     (send (get-frame) enable-evaluation)
 	     (reset-break-state)
 	     (if (thread-running? evaluation-thread)
-		 (insert-prompt)
+		 (begin 
+		   (let ([c-locked? locked?])
+		     (lock #f)
+		     (insert-prompt)
+		     (lock c-locked?)))
 		 (begin (lock #t)
 			(mred:message-box
 			 (format "The evaluation thread is no longer running, ~
@@ -291,13 +299,13 @@
 		   (set! in-evaluation? #t)
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
 		   (semaphore-post in-evaluation-semaphore)
+		   (send (get-frame) disable-evaluation)
+		   (ready-non-prompt)
+		   (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
+		   (wx:begin-busy-cursor)
+		   (reset-break-state)
 		   (let ([evaluation-sucessful (make-semaphore 0)]
 			 [cleanup-semaphore (make-semaphore 1)])
-		     (ready-non-prompt)
-		     (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
-		     (wx:begin-busy-cursor)
-		     (reset-break-state)
-		     (send (get-frame) disable-evaluation)
 		     (letrec ([thread-grace 
 			       (thread
 				(lambda ()
@@ -426,7 +434,10 @@
 					    (lambda ()
 					      (primitive-eval expr)))))
 				      (lambda anss
-					(for-each display-result anss)))
+					(let ([c-locked? locked?])
+					  (lock #f)
+					  (for-each display-result anss)
+					  (lock c-locked?))))
 				     #f)))
 			   (lambda () 
 			     (set! current-thread-directory (current-directory))

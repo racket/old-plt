@@ -11,10 +11,13 @@
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss") (language : plt:parameters^) mred zodiac)]
+	[aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
+			     zodiac
+			     (interface : zodiac:interface^))]
 	[language : drscheme:language^
 		  ((reference-unit/sig "language.ss")
-		   mred basis (mzlib function@)
-		   print-convert)]
+		   mred basis aries
+		   (mzlib function@) print-convert)]
 	[zodiac : zodiac:system^ ((reference-unit/sig (begin-construction-time
 						       (build-path plt:home-directory
 								   "zodiac"
@@ -23,9 +26,6 @@
 				  (language : plt:parameters^)
 				  (mzlib pretty-print@)
 				  (mzlib file@))]
-	[aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
-			     zodiac
-			     (interface : zodiac:interface^))]
 	[edit : drscheme:edit^ ((reference-unit/sig "edit.ss") mred aries zodiac)]
 	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") mred mzlib)]
 	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") mred)]

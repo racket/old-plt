@@ -48,6 +48,7 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
 @SYM "toolbar-button" : wxTOOLBAR_BUTTON
 @SYM "hide-menu-bar" : wxHIDE_MENUBAR
 @SYM "metal" : wxMETAL
+@SYM "float" : wxFLOAT_FRAME
 @ENDSYMBOLS
 
 @BEGINSYMBOLS iconKind > ONE > PRED BUNDLE

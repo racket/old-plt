@@ -215,7 +215,9 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     } else {
       // create top level shell
       X->frame = XtVaCreatePopupShell
-	(name ? name : "shell", topLevelShellWidgetClass, parent_widget, 
+	(name ? name : "shell", 
+	 (style & wxFLOAT_FRAME) ? overrideShellWidgetClass : topLevelShellWidgetClass, 
+	 parent_widget, 
 	 XtNvisual, wxAPP_VISUAL,
 	 XtNdepth, wx_visual_depth,
 	 XtNcolormap, wx_default_colormap,
@@ -245,7 +247,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 		    &WM_DELETE_WINDOW,
 		    1);
 
-    /* MATTHEW: [3] part of show-&-hide fix */
+    /* part of show-&-hide fix */
     XtAddEventHandler(X->frame, StructureNotifyMask,
 		      False, (XtEventHandler)wxFrameMapProc,
 		      (XtPointer)saferef);

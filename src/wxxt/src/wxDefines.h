@@ -396,6 +396,7 @@ enum {
 #define wxNO_DC			0x00040000
 #define wxINVISIBLE             0x00080000
 #define wxTRANSPARENT_WIN       0x00100000
+#define wxFLOAT_FRAME           0x00200000
 
 #define wxDEFAULT_FRAME		0
 #define wxDEFAULT_DIALOG_STYLE	0

@@ -2343,8 +2343,8 @@ static int translate(unsigned char *s, int len, char **result)
 	    if ((range_array[rp + 1] + 1) > last_end)
 	      last_end = range_array[rp + 1] + 1;
 	  }
-	  if (last_end <= 0x7FFFFFFF) {
-	    r = add_range(r, &j, &rs, last_end, 0x7FFFFFFF, did_alt);
+	  if (last_end <= 0x10FFFF) {
+	    r = add_range(r, &j, &rs, last_end, 0x10FFFF, did_alt);
 	    did_alt = 0;
 	  }
 	  r = make_room(r, j, 1, &rs);
@@ -2411,7 +2411,7 @@ static int translate(unsigned char *s, int len, char **result)
       r[j++] = '-';
       r[j++] = '\177';
       r[j++] = ']';
-      r = add_range(r, &j, &rs, 128, 0x7FFFFFFF, 0);
+      r = add_range(r, &j, &rs, 128, 0x10FFFF, 0);
       r = make_room(r, j, 1, &rs);
       r[j++] = ')';
       rs.i++;

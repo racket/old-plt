@@ -260,6 +260,7 @@
   font%
   brush%
   pen%
+  region%
 
   font-list%
   pen-list%
@@ -673,6 +674,7 @@
 (send font%-example-list add (make-object font% 12 'roman 'normal 'normal))
 (send brush%-example-list add (make-object brush% "GREEN" 'solid))
 (send pen%-example-list add (make-object pen% "BLUE" 1 'solid))
+(send region%-example-list add (make-object region% (send c get-dc)))
 
 (send font-list%-example-list add the-font-list)
 (send pen-list%-example-list add the-pen-list)

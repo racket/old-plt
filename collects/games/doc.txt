@@ -2,25 +2,13 @@ _Games_
 =======
 
 The "Games" (Unix: plt/bin/games) executable is created by "Setup PLT"
-(Unix: plt/bin/setup-plt). You can also start Games via Help Desk.
+(Unix: plt/bin/setup-plt). You can also start Games via Help Desk
+(search for "games").
 
 The Games program lets you select one of the following games:
 
  * _Same_ - The object is to score points by removing dots from the
-   board. To remove a dot, click on it. As long as there is another
-   dot of the same color next to the clicked dot, it will disappear
-   along with all adjacent dots of the same color. After the dots
-   disappear, dots in the rows above the deleted dots will fall into
-   the vacated spaces. If an entire column is wiped out, all of the
-   dots from the right will slide left to take up the empty column's
-   space.
-
-   Your score increases for each ball removed from the board. The
-   score for each click is a function of the number of balls that
-   disappeared. The "This Click" label shows how many points you would
-   score for clicking the dots underneath the mouse pointer. The score
-   varies quadratically with the number of balls, so eliminating many
-   balls with one click is advantageous.
+   board. Click the "Help" button in Same for more details.
 
                                               - by Robby
 
@@ -60,6 +48,11 @@ The Games program lets you select one of the following games:
  * _Minesweeper_ - A simple version of the classic tile-removing game.
 
                                               - by Matthew
+
+ * _Paint by Number_ - A logic game. Click the "Help" button in Paint
+   by Numbers for more details.
+
+                                              - by Robby
 
 You can also implement your own card games by using the "cards"
 sub-collection of the "games" collection.

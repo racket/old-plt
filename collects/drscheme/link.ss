@@ -30,7 +30,7 @@
 		   (mzlib file))]
 
         [cogen : plt:aries^
-               ((require-library-unit/sig "link.ss" "stepper")
+               ((require-library-unit/sig "link.ss" "stepper-graphical")
                 mzlib
                 framework
                 print-convert

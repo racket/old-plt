@@ -1,5 +1,8 @@
 
 Version 204.8
+Added 'addon-dir for find-system-path
+Changed default library collections path list to include
+  (build-path (find-system-path 'addons-dir) (version) "collects")
 Changed eval handler so that when it is given a syntax object, it
  does not extend the object's lexical context with top-level
  bindings from the current namespace

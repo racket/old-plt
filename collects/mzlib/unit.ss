@@ -2,7 +2,8 @@
 ;; Unit system
 
 (module unit mzscheme
-  (import-for-syntax (lib "kerncase.ss" "syntax"))
+  (import-for-syntax (lib "kerncase.ss" "syntax")
+		     "private/unitidmap.ss")
 
   (define undefined (letrec ([x x]) x))
 
@@ -233,28 +234,7 @@
 					   (lambda (varloc)
 					     (with-syntax ([(var loc) varloc])
 					       (syntax
-						[var 
-						 (set!-expander
-						  (lambda (sstx)
-						    ;; Avoiding syntax-case and other complex macros
-						    ;; here is a useful optimization, because
-						    ;; the expression below is expanded for every
-						    ;; imported and exported identifier.
-						    (cond
-						     [(identifier? sstx) (quote-syntax (unbox loc))]
-						     [(module-identifier=? 
-						       (quote-syntax set!)
-						       (car (syntax-e sstx)))
-						      (raise-syntax-error
-						       'unit
-						       "cannot set! imported or exported variables"
-						       sstx)]
-						     [else
-						      (datum->syntax
-						       (cons (quote-syntax (unbox loc))
-							     (cdr (syntax-e sstx)))
-						       sstx
-						       (quote-syntax here))])))])))
+						[var (make-id-mapper (quote-syntax (unbox loc)))])))
 					   (syntax->list 
 					    (syntax ((ivar iloc) ... (expname eloc) ...))))]
 					 [num-imports (datum->syntax 

@@ -63,7 +63,8 @@
   
   (define super-frame% 
     (drscheme:frame:make-frame%
-     mred:simple-menu-frame%))
+     (mred:make-info-frame%
+      mred:simple-menu-frame%)))
   
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)

@@ -1,3 +1,4 @@
+
 (unit/sig drscheme:rep^
   (import [wx : wx^]
 	  [mred : mred^]
@@ -55,6 +56,7 @@
   (define user-exception-handler
     (rec drscheme-exception-handler
 	 (lambda (exn)
+	   (printf "exn-message: ~a~n" (exn-message exn))
 	   (let ([rep (exception-reporting-rep)])
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
@@ -271,11 +273,12 @@
 			 (lambda (annotated recur)
 			   (if (process-finish? annotated)
 			       (if (process-finish-error? annotated)
-				   (escape)
+				   (begin (printf "userspace-eval escaping~n") (escape))
 				   answer)
 			       (begin (set! answer
 					    (call-with-values
 					     (lambda ()
+					       (printf "wptest.1: user-param ~a~n" user-param)
 					       (if (drscheme:language:use-zodiac)
 						   (with-parameterization user-param
 						     (lambda ()
@@ -318,6 +321,7 @@
 	      annotate?))]
 	  [process-file/zodiac
 	   (lambda (filename f annotate?)
+	     (printf "wptest.2: user-param: ~a~n" user-param)
 	     (let ([port (with-parameterization user-param
 			   (lambda ()
 			     (open-input-file filename)))])
@@ -664,9 +668,11 @@
 	(public
 	  [escape
 	   (lambda ()
-	     (with-parameterization user-param
-	       (lambda ()
-		 ((error-escape-handler))))
+	     (printf "wptest.3: user-param: ~a~n" user-param)
+	     (when user-param
+	       (with-parameterization user-param
+		 (lambda ()
+		   ((error-escape-handler)))))
 	     (mred:message-box "error-escape-handler didn't escape"
 			       "Error Escape")
 	     (escape-handler))]
@@ -682,6 +688,7 @@
 	       (fluid-let ([error-escape-k k])
 			  (call-with-values
 			   (lambda ()
+			     (printf "wptest.3': user-param: ~a~n" user-param)
 			     (if (drscheme:language:use-zodiac)
 				 (with-parameterization user-param
 				   (lambda ()
@@ -714,6 +721,7 @@
 	   (lambda (filename)
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
+		 (printf "wptest.5: user-param: ~a~n" user-param)
 		 (if (drscheme:language:use-zodiac)
 		     (let* ([p (with-parameterization user-param
 				 (lambda ()
@@ -728,7 +736,7 @@
 				 (cond
 				   [(process-finish? sexp)
 				    (if (process-finish-error? sexp)
-					(escape)
+					(begin (printf "userspace-load escape~n") (escape))
 					last)]
 				   [else
 				    (set! last
@@ -737,6 +745,7 @@
 					     (with-handlers ([(lambda (x) #t)
 							      (lambda (exn) 
 								(report-exception-error exn))])
+					       (printf "wptest.6: user-param: ~a~n" user-param)
 					       (if (drscheme:language:use-zodiac)
 						   (with-parameterization user-param
 						     (lambda ()
@@ -795,6 +804,15 @@
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
 
+		     (let ([dispatch-handler (wx:event-dispatch-handler)])
+		       (wx:event-dispatch-handler
+			(rec drscheme:event-dispatch-handler
+			     (lambda ()
+			       (dynamic-wind
+				(lambda () (send (get-frame) running))
+				(lambda () (dispatch-handler))
+				(lambda () (send (get-frame) not-running)))))))
+		     
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()

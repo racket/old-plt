@@ -35,9 +35,7 @@
 #   ifdef USE_FTIME
 #    include <sys/timeb.h>
 #   else
-#    ifndef USE_DIFFTIME
-#     include <sys/time.h>
-#    endif /* USE_DIFFTIME */
+#    include <sys/time.h>
 #   endif /* USE_FTIME */
 #   ifdef USE_GETRUSAGE
 #    include <sys/types.h>
@@ -117,10 +115,6 @@ typedef void (*DW_PrePost_Proc)(void *);
 static void register_traversers(void);
 #endif
 
-#ifdef USE_DIFFTIME
-static time_t base_time;
-#endif
-
 /* See call_cc: */
 typedef struct Scheme_Dynamic_Wind_List {
   MZTAG_IF_REQUIRED
@@ -139,10 +133,6 @@ scheme_init_fun (Scheme_Env *env)
 #endif
 
     REGISTER_SO(scheme_void_func);
-
-#ifdef USE_DIFFTIME
-    base_time = time(NULL);
-#endif
 
     scheme_void->type = scheme_void_type;
 
@@ -2283,19 +2273,13 @@ long scheme_get_milliseconds(void)
   MSC_IZE(ftime)(&now);
   return now.time * 1000 + now.millitm;
 # else
-#  ifdef USE_DIFFTIME
-  time_t now;
-  now = time(NULL);
-  return difftime(now, base_time) * 1000;
-#  else
-#   ifdef PALMOS_STUFF
+#  ifdef PALMOS_STUFF
   /* FIXME */
   return 0;
-#   else
+#  else
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec * 1000 + now.tv_usec / 1000;
-#   endif
 #  endif
 # endif
 #endif
@@ -2345,7 +2329,7 @@ static long get_seconds(void)
   MSC_IZE(ftime)(&now);
   return now.time;
 #  else
-#   ifdef USE_DIFFTIME
+#   ifdef USE_PLAIN_TIME
   time_t now;
   now = time(NULL);
   return now;
@@ -2493,6 +2477,14 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       tzoffset = 0;
 # ifdef USE_TIMEZONE_VAR
       tzoffset = -MSC_IZE(timezone);
+# endif
+# ifdef USE_TOD_FOR_TIMEZONE
+      {
+	  struct timezone xtz;
+	  struct timeval xtv;
+	  gettimeofday(&xtv, &xtz);
+	  tzoffset = -(xtz.tz_minuteswest * 60);
+      }
 # endif
 # ifdef USE_TIMEZONE_VAR_W_DLS
       tzoffset = -(MSC_IZE(timezone) - (dst ? 3600 : 0));

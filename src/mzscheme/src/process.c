@@ -1465,7 +1465,7 @@ static int is_stack_too_shallow(void)
   return is_stack_too_shallow2();
 }
 
-static Scheme_Object *thread_k()
+static Scheme_Object *thread_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *thunk;

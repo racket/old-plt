@@ -726,7 +726,7 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
   return v;
 }
 
-static void *scheme_internal_read_k()
+static void *scheme_internal_read_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *port = (Scheme_Object *)p->ku.k.p1;

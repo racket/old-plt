@@ -82,7 +82,7 @@ case $OS in
     make $GCOPTS LIBS='-lc -lsocket' RANLIB=':' "$@"
     ;;
   CYGWIN*)
-    make --unix cygwin-dll-setup
+    make --unix cygwin-dll-setup PERL=''
     make --unix starter
     make --unix $GCOPTS PERL='' LIBS='gmzwin.exp' INSTALLTARGET=cygwin-install "$@"
     ;;

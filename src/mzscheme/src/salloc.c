@@ -178,7 +178,7 @@ scheme_strdup_eternal(const char *str)
 
 static void (*save_oom)(void);
 
-static void raise_out_of_memory()
+static void raise_out_of_memory(void)
 {
   GC_out_of_memory = save_oom;
   scheme_raise_out_of_memory(NULL, NULL);

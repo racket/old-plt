@@ -93,15 +93,22 @@ if ($list) {
 		if ($exports && $f =~ /#ifdef USE_MZ_SETJMP/) {
 		    $suspend = 1;
 		}
+		if ($f =~ /#\s*ifdef MZ_PRECISE_GC/) {
+		    if ($precisegc) {
+			$elsesuspend = 1;
+		    } else {
+			$suspend = 1;
+		    }
+		}
 		if ($f =~ /#ifndef LINK_EXTENSIONS_BY_TABLE/) {
 		    $elsesuspend = 1;
 		}
-		if ($f =~ /#else/) {
+		if ($f =~ /#\s*else/) {
 		    $suspend = 0;
 		    $suspend = 1 if $elsesuspend;
 		    $elsesuspend = 0;
 		}
-		if ($f =~ /#endif/) {
+		if ($f =~ /#\s*endif/) {
 		    $suspend = $elsesuspend = 0;
 		}
 	    } else {

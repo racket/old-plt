@@ -52,7 +52,7 @@
 #define IZI_REAL_PART(n) (((Scheme_Complex *)(n))->r)
 
 #ifdef PALMOS_STUFF
-# pragma far_code
+# pragma segment far_code
 #endif
 
 /* globals */
@@ -1020,6 +1020,10 @@ negative_p (int argc, Scheme_Object *argv[])
 
   return NULL;
 }
+
+#ifdef PALMOS_STUFF
+# pragma segment number2
+#endif
 
 Scheme_Object *
 scheme_odd_p (int argc, Scheme_Object *argv[])
@@ -2000,6 +2004,10 @@ double TO_DOUBLE_VAL(const Scheme_Object *n)
     return TO_DOUBLE_VAL(IZI_REAL_PART(n));
 }
 
+#ifdef PALMOS_STUFF
+# pragma segment number3
+#endif
+
 static Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
 {
   if (SCHEME_DBLP(n))
@@ -2417,6 +2425,10 @@ static double sch_pow(double x, double y)
 }
 #endif
 
+#ifdef PALMOS_STUFF
+# pragma segment number5
+#endif
+
 GEN_BIN_PROT(bin_expt);
 
 # define F_EXPT(x, y) (((x < 0.0) && (y != floor(y))) \
@@ -2603,12 +2615,13 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(o)) {
       float v = SCHEME_FLT_VAL(o);
-      if (v == 0.0f) {
+      if (MZ_IS_NAN(v))
+	return single_nan_object;
+      else if (v == 0.0f) {
 	int neg;
 	neg = minus_zero_p(v);
 	v = (neg ? -1.0f : 1.0f);
-      } else if (MZ_IS_NAN(v))
-	return single_nan_object;
+      }
       if (v > 0)
 	return zeroi;
       else
@@ -2617,12 +2630,13 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #endif
     if (SCHEME_DBLP(o)) {
       double v = SCHEME_DBL_VAL(o);
-      if (v == 0.0) {
+      if (MZ_IS_NAN(v))
+	return nan_object;
+      else if (v == 0.0) {
 	int neg;
 	neg = minus_zero_p(v);
 	v = (neg ? -1.0 : 1.0);
-      } else if (MZ_IS_NAN(v))
-	return nan_object;
+      }
       if (v > 0)
 	return zeroi;
       else
@@ -3033,6 +3047,10 @@ static const char *NICE_SIZE(const char *s)
   } else
     return s;
 }
+
+#ifdef PALMOS_STUFF
+# pragma segment number4
+#endif
 
 /* Don't bother reading more than the following number of digits in a
    floating-point mantissa: */
@@ -3783,6 +3801,18 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return nzerod;
       }
     }
+
+#ifdef DOUBLE_CHECK_NEG_ZERO_UNDERFLOW
+    if (!d) {
+      if (str[0] == '-') {
+	/* Make sure it's -0.0 */
+#ifdef MZ_USE_SINGLE_FLOATS
+	if (single) return nzerof;
+#endif
+	return nzerod;
+      }
+    }
+#endif
 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (single)

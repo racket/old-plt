@@ -1094,25 +1094,24 @@
                          source)))))
   
   ;Converted
-  ;initialize-array: (list (U expression array-init)) type-spec string-> syntax
-  (define initialize-array
-    (lambda (inits type)
-      (cond
-        ((null? inits) (error 'initialize-array "Given empty list"))
-        ;Note This has the wrong type for recursive cases! must fix PROBLEM! Still PROBLEM!
-        ((array-init? (car inits))
-         (make-syntax #f
-                      `(make-java-array ,(translate-type-spec type)
-                                        0
-                                        (reverse (list ,@(map (lambda (a) (initialize-array (array-init-vals a) type))
-                                                              inits))))
-                      (build-src (array-init-src (car inits)))))
-        (else
-         (make-syntax #f
-                      `(make-java-array ,(translate-type-spec type)
-                                        0
-                                        (reverse (list ,@(map translate-expression inits))))
-                      (build-src (if (name? (car inits)) (name-src (car inits)) (expr-src (car inits)))))))))
+  ;initialize-array: (list (U expression array-init)) type-spec-> syntax
+  (define (initialize-array inits type)
+    (cond
+      ((null? inits) (error 'initialize-array "Given empty list"))
+      ;Note This has the wrong type for recursive cases! must fix PROBLEM! Still PROBLEM!
+      ((array-init? (car inits))
+       (make-syntax #f
+                    `(make-java-array ,(translate-type-spec type)
+                                      0
+                                      (reverse (list ,@(map (lambda (a) (initialize-array (array-init-vals a) type))
+                                                            inits))))
+                    (build-src (array-init-src (car inits)))))
+      (else
+       (make-syntax #f
+                    `(make-java-array ,(translate-type-spec type)
+                                      0
+                                      (reverse (list ,@(map translate-expression inits))))
+                    (build-src (if (name? (car inits)) (name-src (car inits)) (expr-src (car inits))))))))
   
   ;Converted
   ;translate-try: syntax (list catch) (U syntax boolean) src src type-records-> syntax
@@ -1296,6 +1295,10 @@
         ((array-alloc? expr)(translate-array-alloc (array-alloc-name expr)
                                                    (map translate-expression (array-alloc-size expr))
                                                    (expr-src expr)))
+        ((array-alloc-init? expr)(translate-array-alloc-init (array-alloc-init-name expr)
+                                                             (array-alloc-init-dim expr)
+                                                             (array-alloc-init-init expr)
+                                                             (expr-src expr)))
         ((cond-expression? expr) (translate-cond (translate-expression (cond-expression-cond expr))
                                                  (translate-expression (cond-expression-then expr))
                                                  (translate-expression (cond-expression-else expr))
@@ -1539,24 +1542,24 @@
                        (build-src src)))
         (error 'translate-class-alloc "does not have gj-name implemented")))
   
-  ;converted
   ;translate-array-alloc: type-spec (list syntax) src -> syntax
-  (define translate-array-alloc
-    (lambda (type sizes src)
-      (create-array sizes (translate-type-spec type) src)))
+  (define (translate-array-alloc type sizes src)
+    (create-array sizes (translate-type-spec type) src))
   
-  ;converted
   ;create-array: (list syntax) type src -> syntax
-  (define create-array
-    (lambda (sizes type src)
-      (cond
-        ((null? sizes) 
-         (error 'create-array "Internal Error: create array given a null list")) 
-        ((null? (cdr sizes))
-         (make-syntax #f `(make-java-array ,type ,(car sizes) null) (build-src src)))
-        (else
-         (make-syntax #f `(make-java-array ,type (list ,@sizes) null) (build-src src))))))
-  
+  (define (create-array sizes type src)
+    (cond
+      ((null? sizes) 
+       (error 'create-array "Internal Error: create array given a null list")) 
+      ((null? (cdr sizes))
+       (make-syntax #f `(make-java-array ,type ,(car sizes) null) (build-src src)))
+      (else
+       (make-syntax #f `(make-java-array ,type (list ,@sizes) null) (build-src src)))))
+
+  ;translate-array-alloc-init: type-spec int array-init src
+  (define (translate-array-alloc-init type dim init src)
+    (initialize-array type (array-init-vals init)))
+    
   ;converted
   ;translate-type-spec: type-spec -> syntax
   (define translate-type-spec

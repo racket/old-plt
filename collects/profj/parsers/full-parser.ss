@@ -728,10 +728,12 @@
        [(new ClassOrInterfaceType DimExprs)
         (make-array-alloc #f (build-src 3) (make-type-spec $2 0 (build-src 2 2)) (reverse $3) 0)]
        ;; 1.1
-       [(new PrimitiveType Dims ArrayInitializer) 
-        (unimplemented-1.1 (build-src 1))]
+       [(new PrimitiveType Dims ArrayInitializer) (make-array-alloc-init #f (build-src 4) $2 $3 $4)]
+;        (unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(new ClassOrInterfaceType Dims ArrayInitializer) (unimplemented-1.1 (build-src 1))])
+       [(new ClassOrInterfaceType Dims ArrayInitializer) 
+        (make-array-alloc-init #f (build-src 4) (make-type-spec $2 (build-src 2 2)) $3 $4)])
+        ;(unimplemented-1.1 (build-src 1))])
       
       (DimExprs
        [(DimExpr) (list $1)]

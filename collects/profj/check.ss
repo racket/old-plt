@@ -432,6 +432,7 @@
                          null))
       ((call? exp) (get-assigns-exp (call-expr exp)))
       ((array-alloc? exp) (apply append (map get-assigns-exp (array-alloc-size exp))))
+      ((array-alloc-init? exp) (get-init-assigns (array-init-vals (array-alloc-init-init exp))))
       ((cond-expression? exp)
        (append (get-assigns-exp (cond-expression-cond exp))
                (get-assigns-exp (cond-expression-then exp))
@@ -446,6 +447,16 @@
       ((instanceof? exp) (get-assigns-exp (instanceof-expr exp)))
       ((assignment? exp) (list exp))))
   
+  ;get-init-assigns: (list (U Expression array-init)) -> (list assignment)
+  (define (get-init-assigns inits)
+    (cond
+      ((null? inits) null)
+      ((expr? (car inits))
+       (apply append (map get-assigns-exp inits)))
+      (else
+       (apply append (map get-init-assigns (map array-init-vals inits))))))
+  
+          
   (define (get-static-assigns m l) null)
   
   ;field-set?: field (list assignment) string symbol bool -> bool
@@ -590,17 +601,17 @@
             (begin
               (send type-recs add-req (make-req 'array null))
               (check-array-init (array-init-vals init) check-e 
-                                (array-type-type dec-type) name type-recs))
+                                (array-type-type dec-type) type-recs))
             (var-init-error name dec-type (array-init-src init)))
         (check-e init)))
   
-  ;check-array-init (U (list array-init) (list Expression)) (expression->type) type symbol type-records -> type
-  (define (check-array-init inits check-e dec-type name type-recs)
+  ;check-array-init (U (list array-init) (list Expression)) (expression->type) type type-records -> type
+  (define (check-array-init inits check-e dec-type type-recs)
     (cond
       ((null? inits) (make-array-type dec-type 1))
       ((array-init? (car inits))
        (let ((array-types (map (lambda (a) 
-                                 (check-array-init (array-init-vals a) check-e dec-type name type-recs))
+                                 (check-array-init (array-init-vals a) check-e dec-type type-recs))
                                inits)))
          (make-array-type dec-type (add1 (array-type-dim (car array-types))))))
       (else
@@ -1082,6 +1093,16 @@
                                            level
                                            current-class
                                            type-recs)))
+        ((array-alloc-init? exp)
+         (set-expr-type exp
+                        (check-array-alloc-init (array-alloc-init-name exp)
+                                                (array-alloc-init-dim exp)
+                                                (array-alloc-init-init exp)
+                                                (expr-src exp)
+                                                check-sub-expr
+                                                level
+                                                current-class
+                                                type-recs)))
         ((cond-expression? exp)
          (set-expr-type exp
                         (check-cond-expr (check-sub-expr (cond-expression-cond exp))
@@ -1654,6 +1675,19 @@
                 exps)
       (make-array-type type (+ (length exps) dim))))
   
+  ;;15.10
+  ;;check-array-alloc-init type-spec int array-init src (expr->type) symbol (list string) type-records -> type
+  (define (check-array-alloc-init elt-type dim init src check-sub-exp level c-class type-recs)
+    (send type-recs add-req (make-req 'array null))
+    (let* ((type (type-spec-to-type elt-type level type-recs))
+           (a-type (check-array-init (array-init-vals init) check-sub-exp type type-recs)))
+      (when (ref-type? type)
+        (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
+      (unless (= (array-type-dim a-type) dim)
+        (array-dim-error type dim (array-type-dim a-type) src))
+      (make-array-type type dim)))
+  
+  
   ;; 15.25
   ;check-cond-expr: type type type src src symbol type-records -> type
   (define (check-cond-expr test then else-t src test-src level type-recs)
@@ -2220,7 +2254,16 @@
                    (format "Allocation of array of ~a requires an integer for the size. Given ~a"
                            a d)
                    a src)))
-    
+
+  ;Array Alloc Init error
+  ;array-dim-error: type int int src -> void
+  (define (array-dim-error type dim g-dim src)
+    (let ((t (type->ext-name (make-array-type type dim)))
+          (given (type->ext-name (make-array-type type g-dim))))
+      (raise-error t
+                   (format "Expected an array of type ~a~a, found an array of type ~a~a" t given)
+                   t src)))
+  
   ;;Conditional Expression errors
 
   ;condition-error: type src -> void

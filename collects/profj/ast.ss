@@ -99,7 +99,6 @@
   
   ;;(make-array-init (list (U expression array-init)) src)
   (p-define-struct array-init (vals src))
-
   
   ;;(make-method (list modifier) type-spec (list gj-info) id (list var-decl) (list name) Statement src)
   (p-define-struct method (modifiers type type-parms name parms throws body src))
@@ -252,6 +251,10 @@
   
   ;(make-array-alloc ?? src type-spec (list Expression) int)
   (p-define-struct (array-alloc expr) (name size dim))
+
+  ;;(make-array-alloc-init ?? src type-spec int array-init)
+  (p-define-struct (array-alloc-init expr) (name dim init))
+
   
   ;(make-cond-expression ?? src Expression Expression Expression src)
   (p-define-struct (cond-expression expr) (cond then else key-src))

@@ -872,7 +872,7 @@
                  (kind-condition-error kind t cond-src)))))
         (cond
           ((and (scheme-val? cond?) (scheme-val-type cond?)) => check)
-          ((scheme-val? cond?) (set-scheme-val-type! 'boolean))
+          ((scheme-val? cond?) (set-scheme-val-type! cond? 'boolean))
           (else (check cond?))))))
         
   ;check-ifS: type src -> void
@@ -1336,7 +1336,7 @@
           (binary-promotion (scheme-val-type t1) (scheme-val-type t2)))
          ((or (scheme-val-type t1) (scheme-val-type t2))
           (error 'internal-error "Binary promotion does not know how to handle this situation yet"))
-         (else (make-scheme-val (gensym 'unnamed) #f #f))))
+         (else (make-scheme-val (gensym 'unnamed) #f #f #f))))
       ((scheme-val? t1)
        (cond
          ((scheme-val-type t1) (binary-promotion (scheme-val-type t1) t2))
@@ -1429,13 +1429,16 @@
                   (when (is-field-restricted? fname field-class)
                     (restricted-field-access-err (field-access-field acc) field-class src)))
                 (field-record-type record)))
+             ((and (scheme-val? record) (scheme-val-instance? record))
+              (set-field-access-access! acc (make-var-access #f #t #t 'public 'unknown))
+              record)
              ((scheme-val? record)
               (add-required c-class (scheme-record-name class-rec) 
                             (cons "scheme" (scheme-record-path class-rec)) type-recs)
               (set-field-access-access! acc (make-var-access #t #t #t 'public (scheme-record-name class-rec)))
               record)
              (else 
-              (error 'internal-error "field-access given unknown form of field information")))))              
+              (error 'internal-error "field-access given unknown form of field information")))))
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))
@@ -1528,11 +1531,24 @@
        (equal? (send type-recs get-interactions-package) (cdr class1)))
       (else (equal? (cdr class1) (cdr class2)))))
   
-  ;; field-lookup: string type expression src symbol type-records -> field-record
+  ;; field-lookup: string type expression src symbol type-records -> (U field-record scheme-val)
   (define (field-lookup fname obj-type obj src level type-recs)
     (let ((obj-src (expr-src obj))
           (name (string->symbol fname)))
       (cond
+        ((and (scheme-val? obj-type) (scheme-val-type obj-type))
+         (field-lookup fname (scheme-val-type obj-type) obj src level type-recs))
+        ((scheme-val? obj-type)
+         (let ((field-c (make-scheme-val fname #t #t #f)))
+           (set-scheme-val-type! (make-unknown-ref null (list field-c)))
+           field-c))
+        ((unknown-ref? obj-type)
+         (cond
+           ((field-contract-lookup fname (unknown-ref-fields obj-type)) => (lambda (x) x))
+           (else
+            (let ((field-c (make-scheme-val fname #t #t #f)))
+              (set-unknown-ref-fields! obj-type (cons field-c (unknown-ref-fields obj-type)))
+              field-c))))
         ((reference-type? obj-type)
          (let ((obj-record (get-record (send type-recs get-class-record obj-type #f
                                              ((get-importer type-recs) obj-type type-recs level obj-src))
@@ -1958,13 +1974,13 @@
   ;; 15.25
   ;check-cond-expr: type type type src src symbol type-records -> type
   (define (check-cond-expr test then else-t src test-src level type-recs)
-    (if (scheme-val? test)
-        (if (scheme-val-type test)
-            (unless (eq? 'boolean (scheme-val-type test))
-              (condition-error (scheme-val-type test) test-src))
-            (set-scheme-val-type! 'boolean))
-        (unless (eq? 'boolean test)
-          (condition-error test test-src)))
+    (cond
+      ((and (scheme-val? test) (scheme-val-type test))
+       (unless (eq? 'boolean (scheme-val-type test))
+         (condition-error (scheme-val-type test) test-src)))
+      ((scheme-val? test) (set-scheme-val-type! test 'boolean))
+      (else 
+        (unless (eq? 'boolean test) (condition-error test test-src))))
     (cond
       ((and (or (scheme-val? then) (scheme-val? else-t))
             (or (eq? 'boolean then) (eq? 'boolean else-t)))

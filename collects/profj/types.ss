@@ -18,6 +18,7 @@
   ;;      | reference-type
   ;;      | array-type
   ;;      | scheme-val
+  ;;      | unknown-ref
 
   (define-struct ref-type (class/iface path) (make-inspector))
   (define-struct array-type (type dim))
@@ -53,7 +54,10 @@
   (define (reference-type? x)
     (if (and (scheme-val? x) (scheme-val-type x))
         (reference-type? (scheme-val-type x))
-        (or (scheme-val? x) (ref-type? x) (memq x `(null string)))))
+        (or (scheme-val? x) 
+            (unknown-ref? x)
+            (ref-type? x) 
+            (memq x `(null string)))))
 
   ;;is-string?: 'a -> boolean
   (define (is-string-type? s)
@@ -243,18 +247,14 @@
   ;;(make-scheme-record string (list string) path (list scheme-val))
   (define-struct scheme-record (name path dir provides))
   
-  ;;(make-scheme-val symbol bool (U #f type unknown-ref))
-  (define-struct scheme-val (name dynamic? type))
+  ;;(make-scheme-val symbol bool bool (U #f type unknown-ref))
+  (define-struct scheme-val (name dynamic? instance? type))
   
-  ;;(make-unknown-ref (list method-contract) (list field-contract))
+  ;;(make-unknown-ref (list method-contract) (list scheme-val))
   (define-struct unknown-ref (methods fields))
   
-  ;;(make-method-contract symbol type (list (U type #f)))
-  (define-struct method-contract (name ret args))
-  
-  ;;(make-field-contract symbol type)
-  (define-struct field-contract (name type))
-  
+  ;;(make-method-contract symbol (U type #f) (list (U type #f)))
+  (define-struct method-contract (name ret args))  
   
 ;                                                                                      
 ;                                                                            ;;        
@@ -590,7 +590,7 @@
                (namespace-variable-value var #t  (lambda () 
                                                    (current-namespace old-namespace)
                                                    (fail)))
-               (let ((val (make-scheme-val var #t #f)))
+               (let ((val (make-scheme-val var #t #f #f)))
                  (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
                  val))
              (current-namespace old-namespace)))))))
@@ -633,6 +633,13 @@
          (or (and (eq? (scheme-val-name (car known-vars)) lookup)
                   (car known-vars))
              (variable-member? (cdr known-vars) lookup))))
+
+  ;field-contract-lookup string (list scheme-val) -> (U #f scheme-val)
+  (define (field-contract-lookup name fields)
+    (and (not (null? fields))
+         (or (and (equal? (scheme-val-name (car fields)) name) 
+                  (car fields))
+             (field-contract-lookup name (cdr fields)))))
   
 ;                                          
 ;             ;                ;;          

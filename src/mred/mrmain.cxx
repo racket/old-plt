@@ -519,11 +519,67 @@ static int parse_command_line(char ***_command, char *buf)
   return count;
 }
 
+char *CreateUniqueName()
+{
+  char *desktop[MAX_PATH], *session[12], *together;
+  int dlen, slen;
+
+  {
+    // Name should be desktop unique, so add current desktop name
+    HDESK hDesk;
+    ULONG cchDesk = MAX_PATH - 1;
+
+    hDesk = GetThreadDesktop(GetCurrentThreadId());
+    
+    if (GetUserObjectInformation( hDesk, UOI_NAME, desktop, cchDesk, &cchDesk))
+      desktop[0] = 0;
+    else
+      desktop[MAX_PATH - 1]  = 0;
+  }
+
+  {
+    // Name should be session unique, so add current session id
+    HANDLE hToken = NULL;
+    // Try to open the token (fails on Win9x) and check necessary buffer size
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+      DWORD cbBytes = 0;
+      
+      if(!GetTokenInformation( hToken, TokenStatistics, NULL, cbBytes, &cbBytes ) 
+	 && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+	  PTOKEN_STATISTICS pTS;
+
+	  pTS = (PTOKEN_STATISTICS)malloc(cbBytes);
+	  
+	  if(GetTokenInformation(hToken, TokenStatistics, (LPVOID)pTS, cbBytes, &cbBytes)) {
+	    sprintf(session, "-%08x%08x-",
+		    pTS->AuthenticationId.HighPart, 
+		    pTS->AuthenticationId.LowPart);
+	  } else
+	    session[0] = 0;
+	  free(pTS);
+      } else {
+	session[0] = 0;
+      }
+    } else
+      session[0] = 0;
+  }
+
+  dlen = strlen(desktop);
+  slen =  strlen(session);
+  together = malloc(slen + dlen + 1);
+  memcpy(together, desktop, dlen);
+  memcpy(together + dlen, session, slen);
+  together[dlen + slen] = 0;
+  
+  return together;
+}
+
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored, int nCmdShow)
 {
   LPWSTR m_lpCmdLine;
   long argc, j, l;
-  char *a, **argv;
+  char *a, **argv, *b, *normalized_path = NULL;
   
   /* Get command line: */
   m_lpCmdLine = GetCommandLineW();
@@ -549,6 +605,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     } if (l < name_len) {
       a = wchar_to_char(my_name, l);
       argv[0] = a;
+      CharLowerBuffW(my_name, l);
+      normalized_path = wchar_to_char(my_name, l);
       free(my_name);
       break;
     } else {
@@ -556,6 +614,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
       name_len = name_len * 2;
     }
   }
+  if (!normalized_path)
+    normalized_path = argv[0];
 
   /* Check for an existing instance: */
   {
@@ -564,13 +624,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
 
     /* This mutex creation synchronizes multiple instances of
        the application that may have been started. */
-    j = strlen(argv[0]);
-    a = (char *)malloc(j + 50);
+    j = strlen(normalized_path);
+    b = CreateUniqueName();
+    l = strlen(b);
+    a = (char *)malloc(j + l + 50);
     memcpy(a, argv[0], j);
-    memcpy(a + j, "MrEd-" MRED_GUID, strlen(MRED_GUID) + 6);
+    memcpy(a + j, b, l);
+    memcpy(a + j + l, "MrEd-" MRED_GUID, strlen(MRED_GUID) + 6);
     mutex = CreateMutex(NULL, FALSE, a);
-    alreadyrunning = (::GetLastError() == ERROR_ALREADY_EXISTS || 
-		      ::GetLastError() == ERROR_ACCESS_DENIED);
+    alreadyrunning = (GetLastError() == ERROR_ALREADY_EXISTS || 
+		      GetLastError() == ERROR_ACCESS_DENIED);
     // The call fails with ERROR_ACCESS_DENIED if the Mutex was 
     // created in a different users session because of passing
     // NULL for the SECURITY_ATTRIBUTES on Mutex creation);

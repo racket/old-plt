@@ -66,7 +66,7 @@ void wxInitStyles(void)
 
 #ifdef WX_USE_XFT
   if (wxXRenderHere())
-    defaultSize = 10;
+    defaultSize = 9;
 #endif
 
   wxGetPreference("default-font-size", &defaultSize);

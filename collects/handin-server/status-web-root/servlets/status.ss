@@ -70,8 +70,7 @@
 				    "inactive")
 				hi
 				user)]
-	       [l (filter (lambda (f)
-			    (not (regexp-match #rx"^BACKUP-[0-9]+$" f)))
+	       [l (filter file-exists?
 			  (with-handlers ([not-break-exn? (lambda (x) null)])
 			    (directory-list dir)))])
 	  (if (pair? l)
@@ -82,7 +81,7 @@
 		 (lambda (i) `((br) ,i))
 		 (map (lambda (f)
 			 (let ([hi (build-path dir f)])
-			   `(font 
+			   `(font
 			     ()
 			     (a ((href ,(make-k k hi))) ,f)
 			     " ("

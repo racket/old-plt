@@ -22,7 +22,7 @@
 	  [basis : userspace:basis^]
 	  [drscheme:text : drscheme:text^]
           [help : help:drscheme-interface^])
-
+  
   ;; Max length of output queue (user's thread blocks if the
   ;; queue is full):
   (define output-limit-size 2000)
@@ -32,9 +32,9 @@
   ;; however, contains the current settings in the language dialog.
   ;; basis:initialize-parameters sets the value of that parameter in
   ;; the user's eventspace's thread.
-
+  
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
-
+  
   (define setup-scheme-interaction-mode-keymap
     (lambda (keymap)
       (send keymap add-function "put-previous-sexp"
@@ -43,13 +43,13 @@
       (send keymap add-function "put-next-sexp"
 	    (lambda (text event) 
 	      (send text copy-next-previous-expr)))
-
+      
       (fw:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
       (fw:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
-
+  
   (define scheme-interaction-mode-keymap (make-object mred:keymap%))
   (setup-scheme-interaction-mode-keymap scheme-interaction-mode-keymap)
-
+  
   (define welcome-delta (make-object mred:style-delta% 'change-family 'decorative))
   (define click-delta (make-object mred:style-delta%))
   (define red-delta (make-object mred:style-delta%))
@@ -64,16 +64,16 @@
   (send* warning-style-delta
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
-
+  
   (define invoke-teachpack void)
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   (fw:preferences:set-default 'drscheme:teachpack-file
-			       null
-			       (lambda (x) 
-				 (and (list? x)
-				      (andmap string? x))))
-
+                              null
+                              (lambda (x) 
+                                (and (list? x)
+                                     (andmap string? x))))
+  
   (define (build-teachpack-thunk v)
     (with-handlers
 	([(lambda (x) #t)
@@ -83,25 +83,25 @@
       (let ([new-unit (parameterize ([read-case-sensitive #t])
 			(load/cd v))])
 	(if (unit/sig? new-unit)
-					; Put the unit into a procedure that invokes it into
-					;  the current namespace
+            ; Put the unit into a procedure that invokes it into
+            ;  the current namespace
 	    (let* ([signature 
-					; exploded -> flattened
+                    ; exploded -> flattened
 		    (let ([sig (unit-with-signature-exports new-unit)])
 		      (let loop ([l (vector->list sig)][r null])
 			(cond
-			 [(null? l) r]
-			 [(symbol? (car l)) (loop (cdr l) (cons (car l) r))]
-			 [else (let ([sub (loop (vector->list (cadr l)) null)]
-				     [prefix (string-append (symbol->string (car l)) ":")])
-				 (loop (cdr l)
-				       (append
-					(map (lambda (s)
-					       (string->symbol
-						(string-append
-						 prefix
-						 (symbol->string s))))
-					     sub))))])))])
+                          [(null? l) r]
+                          [(symbol? (car l)) (loop (cdr l) (cons (car l) r))]
+                          [else (let ([sub (loop (vector->list (cadr l)) null)]
+                                      [prefix (string-append (symbol->string (car l)) ":")])
+                                  (loop (cdr l)
+                                        (append
+                                         (map (lambda (s)
+                                                (string->symbol
+                                                 (string-append
+                                                  prefix
+                                                  (symbol->string s))))
+                                              sub))))])))])
 	      (eval
 	       `(lambda ()
 		  (with-handlers ([(lambda (x) #t)
@@ -113,10 +113,10 @@
 		    (global-define-values/invoke-unit/sig
 		     ,signature
 		     (compound-unit/sig
-			 (import)
+                       (import)
 		       (link [userspace : plt:userspace^ 
 					((compound-unit/sig 
-					     (import)
+                                           (import)
 					   (link [core : mzlib:core-flat^ (,core-flat@)]
 						 [mred : mred^ (,mred:mred@)])
 					   (export (open core)
@@ -128,26 +128,26 @@
 	       "Invalid Teachpack"
 	       "loading Teachpack file does not result in a unit/sig")
 	      #f)))))
-
+  
   (fw:preferences:add-callback
    'drscheme:teachpack-file
    (lambda (p v)
      (let loop ([teachpacks v]
 		[thunk void])
        (cond
-	[(null? teachpacks)
-	 (set! invoke-teachpack thunk)]
-	[else
-	 (let ([this-thunk (build-teachpack-thunk (car teachpacks))])
-	   (if this-thunk
-	       (loop (cdr teachpacks)
-		     (lambda ()
-		       (thunk)
-		       (this-thunk)))
-	       #f))]))))
-    
+         [(null? teachpacks)
+          (set! invoke-teachpack thunk)]
+         [else
+          (let ([this-thunk (build-teachpack-thunk (car teachpacks))])
+            (if this-thunk
+                (loop (cdr teachpacks)
+                      (lambda ()
+                        (thunk)
+                        (this-thunk)))
+                #f))]))))
+  
   (define exception-reporting-rep (make-parameter #f))
-
+  
   (define (process-text/zodiac text f start end annotate? text-is-file?)
     (let ([setting (basis:current-setting)]
 	  [file (if text-is-file?
@@ -161,28 +161,28 @@
 		      #t 1))
        f
        annotate?)))
-
+  
   (define (process-text/no-zodiac text f start end)
     (let* ([buffer-thunk (fw:gui-utils:read-snips/chars-from-text text start end)]
 	   [snip-string (string->list " 'non-string-snip ")]
 	   [port-thunk (let ([from-snip null])
 			 (rec port-thunk
-			      (lambda ()
-				(if (null? from-snip)
-				    (let ([next (buffer-thunk)])
-				      (if (or (char? next) (eof-object? next))
-					  next
-					  (begin (set! from-snip snip-string)
-						 (port-thunk))))
-				    (begin0 (car from-snip)
-					    (set! from-snip (cdr from-snip)))))))]
+                           (lambda ()
+                             (if (null? from-snip)
+                                 (let ([next (buffer-thunk)])
+                                   (if (or (char? next) (eof-object? next))
+                                       next
+                                       (begin (set! from-snip snip-string)
+                                              (port-thunk))))
+                                 (begin0 (car from-snip)
+                                         (set! from-snip (cdr from-snip)))))))]
 	   [port (make-input-port port-thunk (lambda () #t) void)])
       (basis:process/no-zodiac (lambda () (read port)) f)))
-
+  
   (define-struct sexp (left right prompt))
   
   (define newline-string (string #\newline))
-    
+  
   (define console-max-save-previous-exprs 30)
   (let* ([list-of? (lambda (p?)
 		     (lambda (l)
@@ -212,15 +212,15 @@
      marshall unmarshall))
   (define (show-interactions-history)
     (let* ([f (make-object (drscheme:frame:basics-mixin fw:frame:standard-menus%)
-                           "Interactions History"
-                           #f
-                           300
-                           400)]
+                "Interactions History"
+                #f
+                300
+                400)]
            [panel (send f get-panel)]
            [text (make-object mred:text%)]
            [canvas (make-object mred:editor-canvas% panel text)])
       (send f show #t)))
-
+  
   (define error-color (make-object mred:color% "PINK"))
   (define color? (< 8 (mred:get-display-depth)))
   
@@ -228,25 +228,25 @@
     (list->string
      (let loop ([chars (string->list s)])
        (cond
-	[(null? chars) null]
-	[else
-	 (case (car chars)
-	   [(#\( #\) #\* #\+ #\? #\[ #\] #\. #\^ #\$ #\\)
-	    (cons #\\ (cons (car chars) (loop (cdr chars))))]
-	   [else (cons (car chars) (loop (cdr chars)))])]))))
-
+         [(null? chars) null]
+         [else
+          (case (car chars)
+            [(#\( #\) #\* #\+ #\? #\[ #\] #\. #\^ #\$ #\\)
+             (cons #\\ (cons (car chars) (loop (cdr chars))))]
+            [else (cons (car chars) (loop (cdr chars)))])]))))
+  
   (define (in-canvas? text)
     (let ([editor-admin (send text get-admin)])
       (cond
-       [(is-a? editor-admin mred:editor-snip-editor-admin<%>)
-	(let* ([snip (send editor-admin get-snip)]
-	       [snip-admin (send snip get-admin)])
-	  (and snip-admin
-	       (in-canvas? (send snip-admin get-editor))))]
-       [(is-a? editor-admin mred:editor-admin%)
-	(send text get-canvas)]
-       [else #f])))
-
+        [(is-a? editor-admin mred:editor-snip-editor-admin<%>)
+         (let* ([snip (send editor-admin get-snip)]
+                [snip-admin (send snip get-admin)])
+           (and snip-admin
+                (in-canvas? (send snip-admin get-editor))))]
+        [(is-a? editor-admin mred:editor-admin%)
+         (send text get-canvas)]
+        [else #f])))
+  
   (define context<%>
     (interface ()
       ensure-rep-shown
@@ -256,14 +256,14 @@
       running
       not-running
       get-directory))
-
+  
   (define file-icon (let ([bitmap
 			   (make-object mred:bitmap%
 			     (build-path (collection-path "icons") "file.gif"))])
 		      (if (send bitmap ok?)
 			  (make-object mred:image-snip% bitmap)
 			  (make-object mred:string-snip% "[open file]"))))
-
+  
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
@@ -366,14 +366,14 @@
         (unless (is-a? context context<%>)
           (error 'drscheme:rep:text% "expected an object that implements drscheme:rep:context<%> as initialization argument, got: ~e"
                  context))
-
+        
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;					     ;;;
 	;;;            User -> Kernel                ;;;
 	;;;					     ;;;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        [define protect
+        (define protect
           (lambda (proc)
             (let ([ut user-thread])
               (call-in-nested-thread
@@ -382,9 +382,9 @@
                  (begin0
                    (proc ut)
                    (break-enabled #t))) ; in case a break was queued
-               drscheme:init:system-custodian)))]
+               drscheme:init:system-custodian))))
         
-        [define queue-system-callback
+        (define queue-system-callback
           (case-lambda
            [(ut thunk) (queue-system-callback ut thunk #f)]
            [(ut thunk always?)
@@ -393,13 +393,13 @@
                (lambda ()
                  (when (or always? (eq? ut user-thread))
                    (thunk)))
-               #f))])]
+               #f))]))
         
-        [define queue-system-callback/sync
+        (define queue-system-callback/sync
           (lambda (ut thunk)
             (let ([s (make-semaphore)])
               (queue-system-callback ut (lambda () (thunk) (semaphore-post s)))
-              (semaphore-wait s)))]
+              (semaphore-wait s))))
         
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;					     ;;;
@@ -407,9 +407,9 @@
 	;;;					     ;;;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        [define transparent-text #f]
-        [define transparent-snip #f]
-        [define cleanup-transparent-io ; =Kernel=, =Handler=
+        (define transparent-text #f)
+        (define transparent-snip #f)
+        (define cleanup-transparent-io ; =Kernel=, =Handler=
           (lambda ()
             (when transparent-text
               (set! saved-newline? #f) 
@@ -421,9 +421,9 @@
                   (send a grab-caret)))
               (send transparent-text lock #t)
               (set! transparent-text #f)
-              (drop-fetcher)))]
+              (drop-fetcher))))
         
-        [define init-transparent-io ; =Kernel=, =Handler=
+        (define init-transparent-io ; =Kernel=, =Handler=
           (lambda (grab-focus?)
             (begin-edit-sequence)
             (if transparent-text
@@ -435,18 +435,18 @@
             (when  (eq? (current-thread) user-thread)
               (set-caret-owner transparent-snip 'display))
             (end-edit-sequence)
-            transparent-text)]
+            transparent-text))
         
-        [define init-transparent-input ; =Kernel=, =Handler=
+        (define init-transparent-input ; =Kernel=, =Handler=
           (lambda ()
             (let ([text (init-transparent-io #t)])
               (mred:yield) ; to flush output and set `saved-newline?'
               (when saved-newline?
                 (this-out-write "")
                 (mred:yield)) ; flush output again
-              text))]
+              text)))
         
-        [define init-transparent-io-do-work  ; =Kernel=, =Handler=
+        (define init-transparent-io-do-work  ; =Kernel=, =Handler=
           (lambda (grab-focus?)
             (let ([c-locked? (locked?)])
               (begin-edit-sequence)
@@ -476,9 +476,9 @@
                     (when a
                       (send a grab-caret)))))
               (lock c-locked?)
-              (end-edit-sequence)))]
+              (end-edit-sequence)))) 
         
-        [define make-fetcher
+        (define make-fetcher
           (lambda ()
             (make-object
                 (class object% ()
@@ -517,24 +517,24 @@
                          char-fetched
                          ; Got our char; let another reader go
                          (semaphore-post fetch-char-sema)))])
-                  (sequence (super-init)))))]
-        [define fetcher #f]
-        [define fetcher-semaphore (make-semaphore 1)]
-        [define drop-fetcher ; =Kernel=, =Handler=
+                  (sequence (super-init))))))
+        (define fetcher #f)
+        (define fetcher-semaphore (make-semaphore 1))
+        (define drop-fetcher ; =Kernel=, =Handler=
           (lambda ()
             (semaphore-wait fetcher-semaphore)
             (set! fetcher #f)
-            (semaphore-post fetcher-semaphore))]
-        [define this-in-fetch-char ; =User=
+            (semaphore-post fetcher-semaphore)))
+        (define this-in-fetch-char ; =User=
           (lambda (peek?)
             (protect
              (lambda (ut) ; =Protected-User=
                (semaphore-wait fetcher-semaphore)
                (unless fetcher (set! fetcher (make-fetcher)))
                (semaphore-post fetcher-semaphore)
-               (send fetcher fetch ut peek?))))]
+               (send fetcher fetch ut peek?)))))
         
-        [define this-in-char-ready?
+        (define this-in-char-ready?
           (lambda () ; =User=
             (protect
              (lambda (ut)  ; =Protected-User=
@@ -549,36 +549,36 @@
                  ; enable-break in case the thread dies and the callback never 
                  ;  happens:
                  (semaphore-wait/enable-break s)
-                 answer))))]
+                 answer)))))
         
-        [define this-in-read-char ; =User=
+        (define this-in-read-char ; =User=
           (lambda ()
-            (this-in-fetch-char #f))]
+            (this-in-fetch-char #f)))
         
-        [define this-in-peek-char ; =User=
+        (define this-in-peek-char ; =User=
           (lambda ()
-            (this-in-fetch-char #t))]
+            (this-in-fetch-char #t)))
         
-        [define output-delta (make-object mred:style-delta%
+        (define output-delta (make-object mred:style-delta%
                                'change-weight
-                               'bold)]
-        [define result-delta (make-object mred:style-delta%
+                               'bold))
+        (define result-delta (make-object mred:style-delta%
                                'change-weight
-                               'bold)]
-        [define error-delta (make-object mred:style-delta%
+                               'bold))
+        (define error-delta (make-object mred:style-delta%
                               'change-style
-                              'slant)]
+                              'slant))
         (send error-delta set-delta-foreground (make-object mred:color% 255 0 0))
         (send result-delta set-delta-foreground (make-object mred:color% 0 0 175))
         (send output-delta set-delta-foreground (make-object mred:color% 150 0 150))
         
-        [define flushing-event-running (make-semaphore 1)]
-        [define limiting-sema (make-semaphore output-limit-size)] ; waited once foreach in io-collected-thunks
+        (define flushing-event-running (make-semaphore 1))
+        (define limiting-sema (make-semaphore output-limit-size)) ; waited once foreach in io-collected-thunks
         
-        [define io-semaphore (make-semaphore 1)]
-        [define io-collected-thunks null] ; protected by semaphore
-        [define io-collected-texts null] ; always set in the kernel's handler thread
-        [define run-io-collected-thunks ; =Kernel=, =Handler=
+        (define io-semaphore (make-semaphore 1))
+        (define io-collected-thunks null) ; protected by semaphore
+        (define io-collected-texts null) ; always set in the kernel's handler thread
+        (define run-io-collected-thunks ; =Kernel=, =Handler=
           (lambda ()
             ;; also need to start edit-sequence in any affected
             ;; transparent io boxes.
@@ -595,9 +595,9 @@
                 (scroll-to-position (last-position)))
               (end-edit-sequence)
               
-              (set! io-collected-texts null)))]
+              (set! io-collected-texts null))))
         
-        [define wait-for-io-to-complete ; =Kernel=, =Handler=
+        (define wait-for-io-to-complete ; =Kernel=, =Handler=
           (lambda ()
             (unless (null? io-collected-thunks)
               (let ([semaphore (make-semaphore 0)])
@@ -606,8 +606,8 @@
                    (run-io-collected-thunks)
                    (semaphore-post semaphore))
                  #f)
-                (mred:yield semaphore))))]
-        [define queue-output ; =User=
+                (mred:yield semaphore)))))
+        (define queue-output ; =User=
           (lambda (thunk)
             (protect
              (lambda (ut) ; =Protected-User=
@@ -632,9 +632,9 @@
                   (lambda () ; =Kernel=, =Handler=
                     (semaphore-post flushing-event-running)
                     (run-io-collected-thunks))
-                  #t)))))]
+                  #t))))))
         
-        [define generic-write ; =Kernel=, =Handler=
+        (define generic-write ; =Kernel=, =Handler=
           (lambda (text s style-func)
             
             (let ([add-text
@@ -664,11 +664,11 @@
                 (style-func start end)
                 (send text set-prompt-position end))
               (send text lock c-locked?)
-              (send text end-edit-sequence)))]
+              (send text end-edit-sequence))))
         
-        [define generic-close void]
-        [define saved-newline? #f]
-        [define this-result-write 
+        (define generic-close void)
+        (define saved-newline? #f)
+        (define this-result-write 
           (lambda (s) ; =User=
             (queue-output
              (lambda () ; =Kernel=, =Handler=
@@ -677,8 +677,8 @@
                               s
                               (lambda (start end)
                                 (change-style result-delta
-                                              start end))))))]
-        [define this-out-write
+                                              start end)))))))
+        (define this-out-write
           (lambda (s) ; = User=
             (queue-output
              (lambda () ; =Kernel=, =Handler=
@@ -704,9 +704,9 @@
                             (send text change-style output-delta start end))))])
                  (when old-saved-newline?
                    (gw (string #\newline)))
-                 (gw s1)))))]
+                 (gw s1))))))
         
-        [define this-err-write/exn ; =User=
+        (define this-err-write/exn ; =User=
           (let* ([raw-symbol-chars "a-z/!>:%\\+\\*\\?-"]
                  [symbol-chars (format "[~a]" raw-symbol-chars)]
                  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
@@ -768,17 +768,17 @@
                            (when s
                              (loop (bind-to-help class-regexp s))))
                          (bind-to-help ivar-regexp s)
-                         (bind-to-help fallthru-regexp s))])))))))]
-        [define this-err-write ; =User=
+                         (bind-to-help fallthru-regexp s))]))))))))
+        (define this-err-write ; =User=
           (lambda (s)
-            (this-err-write/exn s #f))]
+            (this-err-write/exn s #f)))
         
-        [define this-err (make-output-port this-err-write generic-close)]
-        [define this-out (make-output-port this-out-write generic-close)]
-        [define this-in (make-input-port this-in-read-char this-in-char-ready? generic-close
-                                         this-in-peek-char)]
-        [define this-result (make-output-port this-result-write generic-close)]
-        [define set-display/write-handlers
+        (define this-err (make-output-port this-err-write generic-close))
+        (define this-out (make-output-port this-out-write generic-close))
+        (define this-in (make-input-port this-in-read-char this-in-char-ready? generic-close
+                                         this-in-peek-char))
+        (define this-result (make-output-port this-result-write generic-close))
+        (define set-display/write-handlers
           (lambda ()
             (for-each
              (lambda (port port-out-write)
@@ -811,9 +811,9 @@
                                 mzlib:pretty-print:pretty-print
                                 original-write-handler)))
              (list this-out this-err this-result)
-             (list this-out-write this-err-write this-result-write)))]
+             (list this-out-write this-err-write this-result-write))))
         
-        [define display-results ; =User=, =Handler=, =Breaks=
+        (define display-results ; =User=, =Handler=, =Breaks=
           (lambda (anss)
             (for-each 
              (lambda (v)
@@ -826,7 +826,7 @@
                                   [mzlib:pretty-print:pretty-print-print-hook
                                    (lambda (x _ port) (this-result-write x))])
                      (mzlib:pretty-print:pretty-print v this-result)))))
-             anss))]
+             anss)))
         
         
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -835,10 +835,10 @@
       ;;;                                            ;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        [define recent-error-text #f]
-        [define error-range #f]
+        (define recent-error-text #f)
+        (define error-range #f)
         
-        [define report-located-error ; =Kernel=, =Handler=
+        (define report-located-error ; =Kernel=, =Handler=
           (lambda (message di exn)
             (if (and di
                      (zodiac:zodiac? di)
@@ -868,10 +868,10 @@
 				     (fw:gui-utils:get-clicked-clickback-delta))
 		      (lock old-locked?)
 		      (end-edit-sequence)))
-
+                  
                   (report-error start finish 'dynamic message exn))
-                (report-unlocated-error message exn)))]
-        [define report-unlocated-error ; =Kernel=
+                (report-unlocated-error message exn))))
+        (define report-unlocated-error ; =Kernel=
           (lambda (message exn)
             (send context ensure-rep-shown)
             (let ([old-locked? locked?])
@@ -880,19 +880,19 @@
               (this-err-write/exn (string-append message (string #\newline))
                                   exn)
               (lock old-locked?)
-              (end-edit-sequence)))]
+              (end-edit-sequence))))
         
-        [define get-error-range
+        (define get-error-range
           (lambda ()
             (if color?
                 error-range
                 (if recent-error-text
                     (cons (send recent-error-text get-start-position)
-                          (send recent-error-text get-end-position)))))]
+                          (send recent-error-text get-end-position))))))
         
-        [define reset-highlighting void]
+        (define reset-highlighting void)
         
-        [define format-source-loc ;; =Kernel=, =Handler=
+        (define format-source-loc ;; =Kernel=, =Handler=
           (lambda (start end)
             (let ([translate-loc
                    (lambda (loc)
@@ -908,9 +908,9 @@
                (translate-loc start)
                (translate-loc end)
                (fw:preferences:get 'framework:line-offsets)
-               (fw:preferences:get 'framework:display-line-numbers))))]
+               (fw:preferences:get 'framework:display-line-numbers)))))
         
-        [define highlight-error
+        (define highlight-error
           (lambda (file start finish)
             (when (is-a? file fw:text:basic%)
               (send file begin-edit-sequence)
@@ -929,9 +929,9 @@
                   (send file set-position start finish))
               (send file scroll-to-position start #f finish)
               (send file end-edit-sequence)
-              (send file set-caret-owner #f 'global)))]
+              (send file set-caret-owner #f 'global))))
         
-        [define report-error ; =Kernel=, =Handler=
+        (define report-error ; =Kernel=, =Handler=
           (lambda (start-location end-location type input-string exn)
             (let* ([start (zodiac:location-offset start-location)]
                    [finish (add1 (zodiac:location-offset end-location))]
@@ -943,33 +943,33 @@
                                        input-string))])
               (report-unlocated-error message exn)
               (set! recent-error-text #f)
-              (highlight-error file start finish)))]
-        [define on-set-media void]
+              (highlight-error file start finish))))
+        (define on-set-media void)
         
-        [define on-insert
+        (define on-insert
           (lambda (x y)
             (reset-highlighting)
-            (super-on-insert x y))]
-        [define on-delete
+            (super-on-insert x y)))
+        (define on-delete
           (lambda (x y)
             (reset-highlighting)
-            (super-on-delete x y))]
+            (super-on-delete x y)))
         
-        [define process-text ; =User=, =Handler=, =No-Breaks=
+        (define process-text ; =User=, =Handler=, =No-Breaks=
           (lambda (text fn start end annotate? text-is-file?)
             (if (basis:zodiac-vocabulary? user-setting)
                 (process-text/zodiac text fn start end annotate? text-is-file?)
-                (process-text/no-zodiac text fn start end)))]
-        [define process-file
+                (process-text/no-zodiac text fn start end))))
+        (define process-file
           (lambda (filename fn annotate?)
             (if (basis:zodiac-vocabulary? user-setting)
                 (basis:process-file/zodiac filename fn annotate?)
-                (basis:process-file/no-zodiac filename fn)))]
-        [define process-sexp
+                (basis:process-file/no-zodiac filename fn))))
+        (define process-sexp
           (lambda (sexp z fn annotate?)
             (if (basis:zodiac-vocabulary? user-setting)
                 (basis:process-sexp/zodiac sexp z fn annotate?)
-                (basis:process-sexp/no-zodiac sexp fn)))]
+                (basis:process-sexp/no-zodiac sexp fn))))
         
         
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -978,22 +978,22 @@
       ;;;                                            ;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        [define get-prompt (lambda () "> ")]
-        [define eval-busy? (lambda () (not (and user-thread
-                                                (thread-running? user-thread))))]
+        (define get-prompt (lambda () "> "))
+        (define eval-busy? (lambda () (not (and user-thread
+                                                (thread-running? user-thread)))))
         
-        [define (get-user-setting) (fw:preferences:get 'drscheme:settings)]
-        [define user-setting (get-user-setting)]
-        [define user-custodian (make-custodian)]
-        [define user-eventspace #f]
-        [define user-namespace #f]
-        [define user-thread #f]
+        (define (get-user-setting) (fw:preferences:get 'drscheme:settings))
+        (define user-setting (get-user-setting))
+        (define user-custodian (make-custodian))
+        (define user-eventspace #f)
+        (define user-namespace #f)
+        (define user-thread #f)
         
-        [define in-evaluation? #f] ; a heursitic for making the Break button send a break
-        [define should-collect-garbage? #f]
-        [define ask-about-kill? #f]
+        (define in-evaluation? #f) ; a heursitic for making the Break button send a break
+        (define should-collect-garbage? #f)
+        (define ask-about-kill? #f)
         
-        [define insert-warning
+        (define insert-warning
           (lambda ()
             (begin-edit-sequence)
             (insert #\newline (last-position) (last-position))
@@ -1003,11 +1003,11 @@
                start start)
               (let ([end (last-position)])
                 (change-style warning-style-delta start end)))
-            (end-edit-sequence))]
+            (end-edit-sequence)))
         
         (define already-warned? #f)
-
-        [define do-eval
+        
+        (define do-eval
           (let ([count 0])
             (lambda (start end)
               (set! count (add1 count))
@@ -1021,9 +1021,9 @@
                           needs-execution?)
                   (set! already-warned? #t)
                   (insert-warning)))
-              (do-many-text-evals this start end)))]
+              (do-many-text-evals this start end))))
         
-        [define cleanup
+        (define cleanup
           (lambda ()
             (update-running #f)
             (unless (and user-thread (thread-running? user-thread))
@@ -1033,9 +1033,9 @@
                  "Warning"
                  (format "The evaluation thread is no longer running, ~
                  so no evaluation can take place until ~
-                 the next execution.")))))]
-        [define need-interaction-cleanup? #f]
-        [define cleanup-interaction ; =Kernel=, =Handler=
+                 the next execution."))))))
+        (define need-interaction-cleanup? #f)
+        (define cleanup-interaction ; =Kernel=, =Handler=
           (lambda ()
             (set! need-interaction-cleanup? #f)
             (mred:end-busy-cursor)
@@ -1050,9 +1050,9 @@
                 (lock c-locked?)))
             (cleanup)
             (end-edit-sequence)
-            (send context enable-evaluation))]
-
-	[define do-many-text-evals
+            (send context enable-evaluation)))
+        
+	(define do-many-text-evals
 	  (lambda (text start end)
 	    (do-many-evals
 	     (lambda (single-loop-eval)
@@ -1061,27 +1061,27 @@
 		text
 		(lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
 		  (cond
-		   [(basis:process-finish? expr)
-		    (void)]
-		   [else
-		    (single-loop-eval
-		     (lambda ()
-		       (call-with-values
-			(lambda ()
-			  (if (basis:zodiac-vocabulary? (basis:current-setting))
-			      (basis:syntax-checking-primitive-eval expr)
-			      (basis:primitive-eval expr)))
-			(lambda x (display-results x)))))
-		    (recur)]))
-                   start
-                   end
-                   #t
-                   #t))))]
-		    
-
+                    [(basis:process-finish? expr)
+                     (void)]
+                    [else
+                     (single-loop-eval
+                      (lambda ()
+                        (call-with-values
+                         (lambda ()
+                           (if (basis:zodiac-vocabulary? (basis:current-setting))
+                               (basis:syntax-checking-primitive-eval expr)
+                               (basis:primitive-eval expr)))
+                         (lambda x (display-results x)))))
+                     (recur)]))
+                start
+                end
+                #t
+                #t)))))
+        
+        
 	;; do-many-evals : ((((-> void) -> void) -> void) -> void)
-	[define do-many-evals ; =Kernel=, =Handler=
-
+	(define do-many-evals ; =Kernel=, =Handler=
+          
 	  ;; run-loop has the loop. It expects one argument, a procedure that
 	  ;; can be called with a thunk. The argument to run-loop maintains the right
 	  ;; breaking state and calls the thunk it was called with.
@@ -1107,26 +1107,26 @@
                   ;  returning or escaping.
                   (run-loop
 		   (lambda (thunk) ;; (-> void)
-                        ; Evaluate the user's expression. We're careful to turn on
-                        ;   breaks as we go in and turn them off as we go out.
-                        ;   (Actually, we adjust breaks however the user wanted it.)
-                        ; A continuation hop might take us out of this instance of
-                        ;   evaluation and into another one, which is fine.
-                        (dynamic-wind
-                         (lambda () 
-                           (break-enabled user-break-enabled)
-                           (set! user-break-enabled 'user))
-                         (lambda ()
-			   (thunk))
-                         (lambda () 
-                           (set! user-break-enabled (break-enabled))
-                           (break-enabled #f))))))
+                     ; Evaluate the user's expression. We're careful to turn on
+                     ;   breaks as we go in and turn them off as we go out.
+                     ;   (Actually, we adjust breaks however the user wanted it.)
+                     ; A continuation hop might take us out of this instance of
+                     ;   evaluation and into another one, which is fine.
+                     (dynamic-wind
+                      (lambda () 
+                        (break-enabled user-break-enabled)
+                        (set! user-break-enabled 'user))
+                      (lambda ()
+                        (thunk))
+                      (lambda () 
+                        (set! user-break-enabled (break-enabled))
+                        (break-enabled #f))))))
                 
                 ; Cleanup after evaluation:
                 (lambda () ; =User=, =Handler=, =No-Breaks=
-                  (queue-system-callback/sync user-thread cleanup-interaction))))))]
+                  (queue-system-callback/sync user-thread cleanup-interaction)))))))
         
-        [define shutdown-user-custodian ; =Kernel=, =Handler=
+        (define shutdown-user-custodian ; =Kernel=, =Handler=
           ; Use this procedure to shutdown when in the middle of other cleanup
           ;  operations, such as when the user clicks "Execute".
           ; Don't use it to kill a thread where other, external cleanup
@@ -1138,10 +1138,10 @@
             (semaphore-wait io-semaphore)
             (for-each (lambda (i) (semaphore-post limiting-sema)) io-collected-thunks)
             (set! io-collected-thunks null)
-            (semaphore-post io-semaphore))]
+            (semaphore-post io-semaphore)))
         
-        [define reset-break-state (lambda () (set! ask-about-kill? #f))]
-        [define break
+        (define reset-break-state (lambda () (set! ask-about-kill? #f)))
+        (define break
           (lambda () ; =Kernel=, =Handler=
             (cond
               [(not in-evaluation?)
@@ -1156,22 +1156,22 @@
                    (custodian-shutdown-all user-custodian))]
               [else
                (break-thread user-thread)
-               (set! ask-about-kill? #t)]))]
+               (set! ask-about-kill? #t)])))
         
-        [define error-escape-k void]
-        [define user-break-enabled #t]
+        (define error-escape-k void)
+        (define user-break-enabled #t)
         
-        [define eval-thread-thunks null]
-        [define eval-thread-state-sema 'not-yet-state-sema]
-        [define eval-thread-queue-sema 'not-yet-thread-sema]
+        (define eval-thread-thunks null)
+        (define eval-thread-state-sema 'not-yet-state-sema)
+        (define eval-thread-queue-sema 'not-yet-thread-sema)
         
-        [define cleanup-sucessful 'not-yet-cleanup-sucessful]
-        [define cleanup-semaphore 'not-yet-cleanup-semaphore]
-        [define thread-grace 'not-yet-thread-grace]
-        [define thread-kill 'not-yet-thread-kill]
-
-        [define thread-killed 'not-yet-thread-killed]
-        [define initialize-killed-thread ; =Kernel=
+        (define cleanup-sucessful 'not-yet-cleanup-sucessful)
+        (define cleanup-semaphore 'not-yet-cleanup-semaphore)
+        (define thread-grace 'not-yet-thread-grace)
+        (define thread-kill 'not-yet-thread-kill)
+        
+        (define thread-killed 'not-yet-thread-killed)
+        (define initialize-killed-thread ; =Kernel=
           (lambda ()
             (when (thread? thread-killed)
               (kill-thread thread-killed))
@@ -1185,9 +1185,9 @@
                           (when (eq? user-thread ut)
                             (if need-interaction-cleanup?
                                 (cleanup-interaction)
-                                (cleanup))))))))))]
+                                (cleanup)))))))))))
         
-        [define protect-user-evaluation ; =User=, =Handler=, =No-Breaks=
+        (define protect-user-evaluation ; =User=, =Handler=, =No-Breaks=
           (lambda (thunk cleanup)
             ;; We only run cleanup if thunk finishes normally or tries to
             ;; error-escape. Otherwise, it must be a continuation jump
@@ -1214,15 +1214,15 @@
                    (set! error-escape-k saved-error-escape-k)
                    (when cleanup?
                      (update-running #f)
-                     (cleanup)))))))]
+                     (cleanup))))))))
         
-        [define run-in-evaluation-thread ; =Kernel=
+        (define run-in-evaluation-thread ; =Kernel=
           (lambda (thunk)
             (semaphore-wait eval-thread-state-sema)
             (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
             (semaphore-post eval-thread-state-sema)
-            (semaphore-post eval-thread-queue-sema))]
-        [define init-evaluation-thread ; =Kernel=
+            (semaphore-post eval-thread-queue-sema)))
+        (define init-evaluation-thread ; =Kernel=
           (lambda ()
             (set! user-custodian (make-custodian))
             (set! user-eventspace (parameterize ([current-custodian user-custodian])
@@ -1282,23 +1282,23 @@
               ; Start killed-thread
               (initialize-killed-thread)
               ; Let user expressions go...
-              (semaphore-post goahead)))]
+              (semaphore-post goahead))))
         
-        [define shutting-down? #f]
-
-	[define (on-close)
+        (define shutting-down? #f)
+        
+	(define (on-close)
 	  (shutdown)
-	  (super-on-close)]
-
-        [define shutdown ; =Kernel=, =Handler=
+	  (super-on-close))
+        
+        (define shutdown ; =Kernel=, =Handler=
           (lambda ()
             (set! shutting-down? #t)
 	    (when (thread? thread-killed)
 	      (kill-thread thread-killed)
 	      (set! thread-killed #f))
-            (shutdown-user-custodian))]
+            (shutdown-user-custodian)))
         
-        [define update-running ; =User=, =Handler=, =No-Breaks=
+        (define update-running ; =User=, =Handler=, =No-Breaks=
           (lambda (on?)
             (set! in-evaluation? on?)
             (queue-system-callback
@@ -1306,7 +1306,7 @@
              (lambda ()
                (if in-evaluation?
                    (send context running)
-                   (send context not-running)))))]
+                   (send context not-running))))))
         
         
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1315,17 +1315,17 @@
 	;;;					     ;;;
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        [define insert-delta
+        (define insert-delta
           (lambda (s delta)
             (let ([before (last-position)])
               (insert s before before #f)
               (let ([after (last-position)])
                 (change-style delta before after)
-                (values before after))))]
+                (values before after)))))
         
-        [define repl-initially-active? #f]
+        (define repl-initially-active? #f)
         
-        [define initialize-parameters ; =User=
+        (define initialize-parameters ; =User=
           (lambda ()
             (let ([setting (fw:preferences:get 'drscheme:settings)])
               
@@ -1406,7 +1406,7 @@
                                       (send text on-close)))))
                          (userspace-load filename))))))
               
-		   
+              
               (basis:error-display/debug-handler
                (lambda (msg zodiac exn)
                  (queue-system-callback/sync
@@ -1487,9 +1487,9 @@
                              (primitive-dispatch-handler eventspace)]))]
                        [else 
                         ; =User=, =Non-Handler=, =No-Breaks=
-                        (primitive-dispatch-handler eventspace)])))))))]
+                        (primitive-dispatch-handler eventspace)]))))))))
         
-        [define  reset-console
+        (define  reset-console
           (lambda ()
             (when (thread? thread-killed)
               (kill-thread thread-killed))
@@ -1510,29 +1510,29 @@
             (set-prompt-mode #f)
             (set-resetting #f)
             (set-position (last-position) (last-position))
-
+            
             (insert-delta "Language: " welcome-delta)
             (insert-delta (basis:setting-name user-setting) red-delta)
             (unless (equal? (basis:find-setting-named (basis:setting-name user-setting))
                             user-setting)
               (insert-delta " Custom" red-delta))
             (insert-delta (format ".~n") welcome-delta)
-
+            
 	    (for-each
 	     (lambda (fn)
 	       (insert-delta "Teachpack: " welcome-delta)
 	       (insert-delta fn red-delta)
 	       (insert-delta (format ".~n") welcome-delta))
 	     (fw:preferences:get 'drscheme:teachpack-file))
-
+            
             (set! repl-initially-active? #t)
             (end-edit-sequence)
             
             (init-evaluation-thread)
             
-            (super-reset-console))]
-
-        [define initialize-console
+            (super-reset-console)))
+        
+        (define initialize-console
           (lambda ()
             (super-initialize-console)
             
@@ -1547,536 +1547,536 @@
             
             (reset-console)
 	    (insert-prompt)
-	    (clear-undos))]
+	    (clear-undos)))
         
         (set-display/write-handlers)
         (super-init)
         (set-styles-sticky #f))))
-
+  
   (define make-console-text%
     (lambda (super%)
       (rec console-text%
-      (class/d super% args
-	((inherit position-line position-location
-		  line-location get-admin
-		  set-position set-caret-owner
-		  clear-undos insert delete
-		  begin-edit-sequence
-		  end-edit-sequence
-		  run-after-edit-sequence
-		  change-style split-snip
-		  scroll-to-position locked? lock
-		  last-position get-start-position get-end-position
-		  get-text get-snip-position
-		  get-character find-snip find-string
-		  erase
-		  invalidate-bitmap-cache
-		  get-extent get-style-list)
-	 (rename [super-on-local-char on-local-char]
-		 [super-on-paint on-paint]
-		 [super-after-set-size-constraint after-set-size-constraint]
-		 [super-get-keymaps get-keymaps])
-	 (rename [super-can-insert? can-insert?]
-		 [super-after-insert after-insert]
-		 
-		 [super-can-delete? can-delete?]
-		 [super-after-delete after-delete]
-		 
-		 [super-can-change-style? can-change-style?]
-		 [super-after-change-style after-change-style]
-		 
-		 [super-on-edit-sequence on-edit-sequence]
-		 [super-after-edit-sequence after-edit-sequence]
-		 
-		 [super-after-set-position after-set-position])
-	 (override autosave?
-		   get-keymaps
-		   can-insert?
-		   can-delete?
-		   can-change-style?
-		   after-insert
-		   after-delete
-		   after-change-style
-		   on-edit-sequence
-		   after-edit-sequence
-		   after-set-position
-		   on-local-char)
-
-	 (public set-resetting
-		 resetting?
-
-		 copy-prev-previous-expr
-		 copy-next-previous-expr
-		 copy-previous-expr
-		 clear-previous-expr-positions
-
-		 balance-required
-
-		 initialize-console
-
-		 clear-previous-expr-positions
-		 copy-previous-expr
-		 previous-expr-pos
-		 previous-expr-positions
-		 prompt-mode?
-		 set-prompt-mode
-		 ready-non-prompt
-		 inserting-prompt
-
-		 reset-pretty-print-width
-
-		 get-prompt
-		 insert-prompt
-		 set-prompt-position
-		 prompt-position
-		 reset-console
-
-		 do-pre-eval
-		 do-eval
-		 do-post-eval
-		 eval-busy?)
-
-	 )
-
-	[define autosave? (lambda () #f)]
-
-	[define edit-sequence-count 0]
-
-	[define orig-stdout (current-output-port)]
-	[define orig-stderr (current-error-port)]
-	[define normal-delta #f]
-	
-	[define get-keymaps
-	  (lambda ()
-	    (cons scheme-interaction-mode-keymap (super-get-keymaps)))]
-
-	;; used to highlight the prompt that the caret is "in the range of".
-	;; not currently used at all.
-	[define find-which-previous-sexp
-	  (lambda ()
-	    (let*-values ([(x y) (values (get-start-position) (get-end-position))])
-	      (let loop ([sexps previous-expr-positions])
-		(cond
-		 [(null? sexps) (values #f #f)]
-		 [(pair? sexps) (let* ([hd (car sexps)]
-				       [left (car hd)]
-				       [right (cdr hd)]
-				       [tl (cdr sexps)])
-				  (if (and (<= left x right)
-					   (<= left y right))
-				      (values left right)
-				      (loop tl)))]))))]
-	[define can-something
-	  (opt-lambda (super start len)
-	    (cond
-	     [(or resetting?
-		  (not (number? prompt-position))
-		  (>= start prompt-position))
-	      (super start len)]
-	     [else #f]))]
-	[define after-something
-	  (lambda (combine start len)
-	    (when (or resetting?
-		      (and prompt-mode? (< start prompt-position)))
-	      (set! prompt-position (combine prompt-position len))))]
-
-	[define resetting? #f]
-	[define set-resetting (lambda (v) (set! resetting? v))]
-
-	[define can-insert?
-	  (lambda (start len)
-	    (can-something super-can-insert? start len))]
-	[define can-delete?
-	  (lambda (start len)
-	    (can-something super-can-delete? start len))]
-	[define can-change-style?
-	  (lambda (start len)
-	    (can-something super-can-change-style? start len))]
-	[define after-insert
-	  (lambda (start len)
-	    (after-something + start len)
-	    (super-after-insert start len))]
-	[define after-delete
-	  (lambda (start len)
-	    (after-something - start len)
-	    (super-after-delete start len))]
-	[define after-change-style
-	  (lambda (start len)
-	    (after-something (lambda (start len) start) start len)
-	    (super-after-change-style start len))]
-	[define on-edit-sequence
-	  (lambda ()
-	    (super-on-edit-sequence))]
-	[define after-edit-sequence
-	  (lambda ()
-	    (super-after-edit-sequence))]
-	[define after-set-position
-	  (lambda ()
-	    (super-after-set-position))]
-	
-	[define last-str (lambda (l)
-			   (if (null? (cdr l))
-			       (car l)
-			       (last-str (cdr l))))]
-
-	[define prompt-mode? #f]
-	[define set-prompt-mode (lambda (x) (set! prompt-mode? x))]
-	[define get-prompt (lambda () "> ")]
-	[define prompt-position 0]
-	[define set-prompt-position (lambda (v) (set! prompt-position v))]
-	[define find-prompt 
-	  (lambda (pos) 
-	    (if (> pos prompt-position)
-		prompt-position
-		0))]
-	[define auto-save? #f]
-	[define balance-required
-	  (let ([v #t])
-	    (case-lambda
-	     [() v]
-	     [(x) (set! v x)]))]
-
-	[define previous-expr-pos -1]
-	[define previous-expr-positions null]
-	[define clear-previous-expr-positions
-	  (lambda ()
-	    (set! previous-expr-positions null))]
-	[define copy-previous-expr
-	  (lambda ()
-	    (let ([snip/strings (list-ref (fw:preferences:get
-					   'mred:console-previous-exprs) 
-					  previous-expr-pos)])
-	      (begin-edit-sequence)
-	      (unless prompt-mode?
-		(insert-prompt))
-	      (delete prompt-position (last-position) #f)
-	      (for-each (lambda (snip/string)
-			  (insert (if (is-a? snip/string mred:snip%)
-				      (send snip/string copy)
-				      snip/string)
-				  prompt-position))
-			snip/strings)
-	      (set-position (last-position))
-	      (end-edit-sequence)))]
-	[define copy-next-previous-expr
-	  (lambda ()
-	    (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
-	      (unless (null? previous-exprs)
-		(set! previous-expr-pos
-		      (if (< (add1 previous-expr-pos) (length previous-exprs))
-			  (add1 previous-expr-pos)
-			  0))
-		(copy-previous-expr))))]
-	[define copy-prev-previous-expr
-	  (lambda ()
-	    (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
-	      (unless (null? previous-exprs)
-		(set! previous-expr-pos
-		      (if (<= previous-expr-pos 0)
-			  (sub1 (length previous-exprs))
-			  (sub1 previous-expr-pos)))
-		(copy-previous-expr))))]
-	
-	[define do-save-and-eval
-	  (lambda (start end)
-	    (split-snip start)
-	    (split-snip end)
-	    (let ([snips
-		   (let loop ([snip (find-snip start 'after-or-none)]
-			      [snips null])
-		     (cond
-		      [(not snip) snips]
-		      [(<= (get-snip-position snip) end)
-		       (loop (send snip next)
-			     (cons (send snip copy) snips))]
-		      [else snips]))])
-	      (set! previous-expr-positions (cons (cons start end) previous-expr-positions))
-	      (set! previous-expr-pos -1)
-	      (let* ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)]
-		     [new-previous-exprs 
-		      (let* ([trimmed-previous-exprs
-			      (if (>= (length previous-exprs) console-max-save-previous-exprs)
-				  (cdr previous-exprs)
-				  previous-exprs)])
-			(let loop ([l trimmed-previous-exprs])
-			  (if (null? l)
-			      (list snips)
-			      (cons (car l) (loop (cdr l))))))])
-		(fw:preferences:set 'mred:console-previous-exprs new-previous-exprs))
-	      (do-eval start end)))]
-	
-	[define reset-pretty-print-width
-	  (lambda ()
-	    (let* ([standard (send (get-style-list) find-named-style "Standard")])
-	      (when standard
-		(let* ([admin (get-admin)]
-		       [width
-			(let ([bw (box 0)]
-			      [b2 (box 0)])
-			  (send admin get-view b2 b2 bw b2)
-			  (unbox bw))]
-		       [dc (send admin get-dc)]
-		       [new-font (send standard get-font)]
-		       [old-font (send dc get-font)])
-		  (send dc set-font new-font)
-		  (let* ([char-width (send dc get-char-width)]
-			 [min-columns 50]
-			 [new-columns (max min-columns 
-					   (floor (/ width char-width)))])
-		    (send dc set-font old-font)
-		    (mzlib:pretty-print:pretty-print-columns new-columns))))))]
-	[define do-eval
-	  (lambda (start end)
-	    (error 'do-eval "abstract method"))]
-	[define do-pre-eval
-	  (lambda ()
-	    (ready-non-prompt))]
-	[define do-post-eval
-	  (lambda ()
-	    (insert-prompt))]
-	
-	[define only-spaces-after
-	  (lambda (pos)
-	    (let ([last (last-position)])
-	      (let loop ([pos pos])
-		(if (= pos last)
-		    #t
-		    (let ([c (get-character pos)])
-		      (if (char-whitespace? c)
-			  (loop (add1 pos))
-			  #f))))))]
-	
-	[define eval-busy? (lambda () #f)]
-
-	[define on-local-char
-	  (lambda (key)
-	    (let ([start (get-start-position)]
-		  [end (get-end-position)]
-		  [last (last-position)]
-		  [code (send key get-key-code)]
-		  [copy-to-end/set-position
-		   (lambda (start end)
-		     (split-snip start)
-		     (split-snip end)
-		     (let loop ([snip (find-snip start 'after)])
-		       (cond
-			[(not snip) (void)]
-			[(< (get-snip-position snip) end)
-			 (insert (send snip copy) (last-position))
-			 (loop (send snip next))]
-			[else (void)]))
-		     (set-position (last-position)))])
-	      (cond
-	       [(not (and (char? code) 
-			  (or (char=? code #\return) (char=? code #\newline))))
-		(super-on-local-char key)]
-	       [(and (< start end) (< end prompt-position)
-		     (not (eval-busy?)))
-		(begin-edit-sequence)
-		(when (not prompt-mode?)
-		  (insert-prompt))
-		(copy-to-end/set-position start end)
-		(end-edit-sequence)]
-	       [(and (= start last) 
-		     (not prompt-mode?)
-		     (not (eval-busy?)))
-		(insert-prompt)]
-	       [(and (< prompt-position start)
-		     (only-spaces-after start)
-		     (not (eval-busy?)))
-		(if (balance-required)
-		    (let ([balanced? (fw:scheme-paren:balanced?
-				      this
-				      prompt-position
-				      last)])
-		      (if balanced?
-			  (begin
-			    (delete start last)
-			    (do-save-and-eval prompt-position start))
-			  (super-on-local-char key)))
-		    (begin
-		      (delete start last)
-		      (do-save-and-eval prompt-position start)))]
-	       [(< start prompt-position)
-		(let ([match
-			  (fw:scheme-paren:backward-match
-			   this start 0)])
-		  (if match
-		      (begin
-			(begin-edit-sequence)
-			(copy-to-end/set-position match start)
-			(end-edit-sequence))
-		      (super-on-local-char key)))]
-	       [else (super-on-local-char key)])))]
-
-	[define inserting-prompt #f]
-	[define insert-prompt
-	  (lambda ()
-	    (set! prompt-mode? #t)
-	    (fluid-let ([inserting-prompt #t])
-	      (begin-edit-sequence)
-	      (let* ([last (last-position)]
-		     [start-selection (get-start-position)]
-		     [end-selection (get-end-position)]
-		     [last-str (if (= last 0)
-				   ""
-				   (get-text (- last 1) last))])
-		(unless (or (string=? last-str newline-string)
-			    (= last 0))
-		  (insert #\newline last))
-		(let ([last (last-position)])
-		  (insert (get-prompt) last)
-		  (change-style normal-delta last (last-position)))
-		(set! prompt-position (last-position))
-					;(clear-undos)
-		(end-edit-sequence)
-		(scroll-to-position start-selection #f (last-position) 'start))))]
-	[define reset-console
-	  (lambda ()
-	    (void))]
-	[define ready-non-prompt
-	  (lambda ()
-	    (when prompt-mode?
-	      (set! prompt-mode? #f)
-	      (let ([c-locked (locked?)])
-		(begin-edit-sequence)
-		(lock #f)
-		(insert #\newline (last-position))
-		(lock c-locked)	   
-		(end-edit-sequence))))]	  
-	[define initialize-console
-	  (lambda ()
-	    #t)]
-	(apply super-init args)))))
+        (class/d super% args
+          ((inherit position-line position-location
+                    line-location get-admin
+                    set-position set-caret-owner
+                    clear-undos insert delete
+                    begin-edit-sequence
+                    end-edit-sequence
+                    run-after-edit-sequence
+                    change-style split-snip
+                    scroll-to-position locked? lock
+                    last-position get-start-position get-end-position
+                    get-text get-snip-position
+                    get-character find-snip find-string
+                    erase
+                    invalidate-bitmap-cache
+                    get-extent get-style-list)
+           (rename [super-on-local-char on-local-char]
+                   [super-on-paint on-paint]
+                   [super-after-set-size-constraint after-set-size-constraint]
+                   [super-get-keymaps get-keymaps])
+           (rename [super-can-insert? can-insert?]
+                   [super-after-insert after-insert]
+                   
+                   [super-can-delete? can-delete?]
+                   [super-after-delete after-delete]
+                   
+                   [super-can-change-style? can-change-style?]
+                   [super-after-change-style after-change-style]
+                   
+                   [super-on-edit-sequence on-edit-sequence]
+                   [super-after-edit-sequence after-edit-sequence]
+                   
+                   [super-after-set-position after-set-position])
+           (override autosave?
+                     get-keymaps
+                     can-insert?
+                     can-delete?
+                     can-change-style?
+                     after-insert
+                     after-delete
+                     after-change-style
+                     on-edit-sequence
+                     after-edit-sequence
+                     after-set-position
+                     on-local-char)
+           
+           (public set-resetting
+                   resetting?
+                   
+                   copy-prev-previous-expr
+                   copy-next-previous-expr
+                   copy-previous-expr
+                   clear-previous-expr-positions
+                   
+                   balance-required
+                   
+                   initialize-console
+                   
+                   clear-previous-expr-positions
+                   copy-previous-expr
+                   previous-expr-pos
+                   previous-expr-positions
+                   prompt-mode?
+                   set-prompt-mode
+                   ready-non-prompt
+                   inserting-prompt
+                   
+                   reset-pretty-print-width
+                   
+                   get-prompt
+                   insert-prompt
+                   set-prompt-position
+                   prompt-position
+                   reset-console
+                   
+                   do-pre-eval
+                   do-eval
+                   do-post-eval
+                   eval-busy?)
+           
+           )
+          
+          (define autosave? (lambda () #f))
+          
+          (define edit-sequence-count 0)
+          
+          (define orig-stdout (current-output-port))
+          (define orig-stderr (current-error-port))
+          (define normal-delta #f)
+          
+          (define get-keymaps
+            (lambda ()
+              (cons scheme-interaction-mode-keymap (super-get-keymaps))))
+          
+          ;; used to highlight the prompt that the caret is "in the range of".
+          ;; not currently used at all.
+          (define find-which-previous-sexp
+            (lambda ()
+              (let*-values ([(x y) (values (get-start-position) (get-end-position))])
+                (let loop ([sexps previous-expr-positions])
+                  (cond
+                    [(null? sexps) (values #f #f)]
+                    [(pair? sexps) (let* ([hd (car sexps)]
+                                          [left (car hd)]
+                                          [right (cdr hd)]
+                                          [tl (cdr sexps)])
+                                     (if (and (<= left x right)
+                                              (<= left y right))
+                                         (values left right)
+                                         (loop tl)))])))))
+          (define can-something
+            (opt-lambda (super start len)
+              (cond
+                [(or resetting?
+                     (not (number? prompt-position))
+                     (>= start prompt-position))
+                 (super start len)]
+                [else #f])))
+          (define after-something
+            (lambda (combine start len)
+              (when (or resetting?
+                        (and prompt-mode? (< start prompt-position)))
+                (set! prompt-position (combine prompt-position len)))))
+          
+          (define resetting? #f)
+          [define set-resetting (lambda (v) (set! resetting? v))]
+          
+          [define can-insert?
+            (lambda (start len)
+              (can-something super-can-insert? start len))]
+          [define can-delete?
+            (lambda (start len)
+              (can-something super-can-delete? start len))]
+          [define can-change-style?
+            (lambda (start len)
+              (can-something super-can-change-style? start len))]
+          [define after-insert
+            (lambda (start len)
+              (after-something + start len)
+              (super-after-insert start len))]
+          [define after-delete
+            (lambda (start len)
+              (after-something - start len)
+              (super-after-delete start len))]
+          [define after-change-style
+            (lambda (start len)
+              (after-something (lambda (start len) start) start len)
+              (super-after-change-style start len))]
+          [define on-edit-sequence
+            (lambda ()
+              (super-on-edit-sequence))]
+          [define after-edit-sequence
+            (lambda ()
+              (super-after-edit-sequence))]
+          [define after-set-position
+            (lambda ()
+              (super-after-set-position))]
+          
+          [define last-str (lambda (l)
+                             (if (null? (cdr l))
+                                 (car l)
+                                 (last-str (cdr l))))]
+          
+          [define prompt-mode? #f]
+          [define set-prompt-mode (lambda (x) (set! prompt-mode? x))]
+          [define get-prompt (lambda () "> ")]
+          [define prompt-position 0]
+          [define set-prompt-position (lambda (v) (set! prompt-position v))]
+          [define find-prompt 
+            (lambda (pos) 
+              (if (> pos prompt-position)
+                  prompt-position
+                  0))]
+          [define auto-save? #f]
+          [define balance-required
+            (let ([v #t])
+              (case-lambda
+               [() v]
+               [(x) (set! v x)]))]
+          
+          [define previous-expr-pos -1]
+          [define previous-expr-positions null]
+          [define clear-previous-expr-positions
+            (lambda ()
+              (set! previous-expr-positions null))]
+          [define copy-previous-expr
+            (lambda ()
+              (let ([snip/strings (list-ref (fw:preferences:get
+                                             'mred:console-previous-exprs) 
+                                            previous-expr-pos)])
+                (begin-edit-sequence)
+                (unless prompt-mode?
+                  (insert-prompt))
+                (delete prompt-position (last-position) #f)
+                (for-each (lambda (snip/string)
+                            (insert (if (is-a? snip/string mred:snip%)
+                                        (send snip/string copy)
+                                        snip/string)
+                                    prompt-position))
+                          snip/strings)
+                (set-position (last-position))
+                (end-edit-sequence)))]
+          [define copy-next-previous-expr
+            (lambda ()
+              (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
+                (unless (null? previous-exprs)
+                  (set! previous-expr-pos
+                        (if (< (add1 previous-expr-pos) (length previous-exprs))
+                            (add1 previous-expr-pos)
+                            0))
+                  (copy-previous-expr))))]
+          [define copy-prev-previous-expr
+            (lambda ()
+              (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
+                (unless (null? previous-exprs)
+                  (set! previous-expr-pos
+                        (if (<= previous-expr-pos 0)
+                            (sub1 (length previous-exprs))
+                            (sub1 previous-expr-pos)))
+                  (copy-previous-expr))))]
+          
+          [define do-save-and-eval
+            (lambda (start end)
+              (split-snip start)
+              (split-snip end)
+              (let ([snips
+                     (let loop ([snip (find-snip start 'after-or-none)]
+                                [snips null])
+                       (cond
+                         [(not snip) snips]
+                         [(<= (get-snip-position snip) end)
+                          (loop (send snip next)
+                                (cons (send snip copy) snips))]
+                         [else snips]))])
+                (set! previous-expr-positions (cons (cons start end) previous-expr-positions))
+                (set! previous-expr-pos -1)
+                (let* ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)]
+                       [new-previous-exprs 
+                        (let* ([trimmed-previous-exprs
+                                (if (>= (length previous-exprs) console-max-save-previous-exprs)
+                                    (cdr previous-exprs)
+                                    previous-exprs)])
+                          (let loop ([l trimmed-previous-exprs])
+                            (if (null? l)
+                                (list snips)
+                                (cons (car l) (loop (cdr l))))))])
+                  (fw:preferences:set 'mred:console-previous-exprs new-previous-exprs))
+                (do-eval start end)))]
+          
+          [define reset-pretty-print-width
+            (lambda ()
+              (let* ([standard (send (get-style-list) find-named-style "Standard")])
+                (when standard
+                  (let* ([admin (get-admin)]
+                         [width
+                          (let ([bw (box 0)]
+                                [b2 (box 0)])
+                            (send admin get-view b2 b2 bw b2)
+                            (unbox bw))]
+                         [dc (send admin get-dc)]
+                         [new-font (send standard get-font)]
+                         [old-font (send dc get-font)])
+                    (send dc set-font new-font)
+                    (let* ([char-width (send dc get-char-width)]
+                           [min-columns 50]
+                           [new-columns (max min-columns 
+                                             (floor (/ width char-width)))])
+                      (send dc set-font old-font)
+                      (mzlib:pretty-print:pretty-print-columns new-columns))))))]
+          [define do-eval
+            (lambda (start end)
+              (error 'do-eval "abstract method"))]
+          [define do-pre-eval
+            (lambda ()
+              (ready-non-prompt))]
+          [define do-post-eval
+            (lambda ()
+              (insert-prompt))]
+          
+          [define only-spaces-after
+            (lambda (pos)
+              (let ([last (last-position)])
+                (let loop ([pos pos])
+                  (if (= pos last)
+                      #t
+                      (let ([c (get-character pos)])
+                        (if (char-whitespace? c)
+                            (loop (add1 pos))
+                            #f))))))]
+          
+          [define eval-busy? (lambda () #f)]
+          
+          [define on-local-char
+            (lambda (key)
+              (let ([start (get-start-position)]
+                    [end (get-end-position)]
+                    [last (last-position)]
+                    [code (send key get-key-code)]
+                    [copy-to-end/set-position
+                     (lambda (start end)
+                       (split-snip start)
+                       (split-snip end)
+                       (let loop ([snip (find-snip start 'after)])
+                         (cond
+                           [(not snip) (void)]
+                           [(< (get-snip-position snip) end)
+                            (insert (send snip copy) (last-position))
+                            (loop (send snip next))]
+                           [else (void)]))
+                       (set-position (last-position)))])
+                (cond
+                  [(not (and (char? code) 
+                             (or (char=? code #\return) (char=? code #\newline))))
+                   (super-on-local-char key)]
+                  [(and (< start end) (< end prompt-position)
+                        (not (eval-busy?)))
+                   (begin-edit-sequence)
+                   (when (not prompt-mode?)
+                     (insert-prompt))
+                   (copy-to-end/set-position start end)
+                   (end-edit-sequence)]
+                  [(and (= start last) 
+                        (not prompt-mode?)
+                        (not (eval-busy?)))
+                   (insert-prompt)]
+                  [(and (< prompt-position start)
+                        (only-spaces-after start)
+                        (not (eval-busy?)))
+                   (if (balance-required)
+                       (let ([balanced? (fw:scheme-paren:balanced?
+                                         this
+                                         prompt-position
+                                         last)])
+                         (if balanced?
+                             (begin
+                               (delete start last)
+                               (do-save-and-eval prompt-position start))
+                             (super-on-local-char key)))
+                       (begin
+                         (delete start last)
+                         (do-save-and-eval prompt-position start)))]
+                  [(< start prompt-position)
+                   (let ([match
+                             (fw:scheme-paren:backward-match
+                              this start 0)])
+                     (if match
+                         (begin
+                           (begin-edit-sequence)
+                           (copy-to-end/set-position match start)
+                           (end-edit-sequence))
+                         (super-on-local-char key)))]
+                  [else (super-on-local-char key)])))]
+          
+          [define inserting-prompt #f]
+          [define insert-prompt
+            (lambda ()
+              (set! prompt-mode? #t)
+              (fluid-let ([inserting-prompt #t])
+                (begin-edit-sequence)
+                (let* ([last (last-position)]
+                       [start-selection (get-start-position)]
+                       [end-selection (get-end-position)]
+                       [last-str (if (= last 0)
+                                     ""
+                                     (get-text (- last 1) last))])
+                  (unless (or (string=? last-str newline-string)
+                              (= last 0))
+                    (insert #\newline last))
+                  (let ([last (last-position)])
+                    (insert (get-prompt) last)
+                    (change-style normal-delta last (last-position)))
+                  (set! prompt-position (last-position))
+                  ;(clear-undos)
+                  (end-edit-sequence)
+                  (scroll-to-position start-selection #f (last-position) 'start))))]
+          [define reset-console
+            (lambda ()
+              (void))]
+          [define ready-non-prompt
+            (lambda ()
+              (when prompt-mode?
+                (set! prompt-mode? #f)
+                (let ([c-locked (locked?)])
+                  (begin-edit-sequence)
+                  (lock #f)
+                  (insert #\newline (last-position))
+                  (lock c-locked)	   
+                  (end-edit-sequence))))]	  
+          [define initialize-console
+            (lambda ()
+              #t)]
+          (apply super-init args)))))
   
   (define make-transparent-io-text%
     (lambda (super%)
       (rec transparent-io-text%
-      (class super% args
-	(inherit change-style prompt-position set-prompt-position
-		 resetting? set-resetting lock get-text
-		 set-position last-position get-character
-		 clear-undos set-cursor
-		 do-pre-eval do-post-eval balance-required)
-	(rename [super-after-insert after-insert]
-		[super-on-local-char on-local-char])
-	(private
-	  [input-delta (make-object mred:style-delta%)]
-	  [data null]
-	  [stream-start 0]
-	  [stream-end 0])
-	(sequence
-	  (let ([mult (send input-delta get-foreground-mult)]
-		[add (send input-delta get-foreground-add)])
-	    (send mult set 0 0 0)
-	    (send add set 0 150 0)))
-	(private [shutdown? #f])
-
-	(public
-	  [potential-sexps-protect (make-semaphore 1)]
-	  [potential-sexps null]
-	  [wait-for-sexp (make-semaphore 0)]
-	  
-	  [auto-set-wrap #t]
-	  [shutdown
-	   (lambda ()
-	     (set! shutdown? #t)
-	     (semaphore-post wait-for-sexp)
-	     (lock #t))]
-	  [consumed-delta 
-	   (make-object mred:style-delta% 'change-bold)]
-	  [mark-consumed
-	   (lambda (start end)
-	     (let ([old-resetting resetting?])
-	       (set-resetting #t)
-	       (change-style consumed-delta start end)
-	       (set-resetting old-resetting)))]
-	  [ibeam-cursor (make-object mred:cursor% 'ibeam)]
-	  [check-char-ready? ; =Reentrant=
-	   (lambda ()
-	     (semaphore-wait potential-sexps-protect)
-	     (begin0
-	      (cond
-	       [(not (null? potential-sexps)) #t]
-	       [(< stream-start stream-end) #t]
-	       [else #f])
-	      (semaphore-post potential-sexps-protect)))]
-	  [fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
-	   (lambda ()
-	     (let ([found-char
-		    (lambda ()
-		      (let ([s stream-start])
-			(mark-consumed s (add1 s))
-			(set! stream-start (add1 s))
-			(get-character s)))])
-	       (let loop ()
-		 (let ([ready-char #f])
-		   (dynamic-wind
-		    (lambda ()
-		      (set! ready-char #f)
-		      (semaphore-wait potential-sexps-protect))
-		    (lambda ()
-		      (cond
-			[(not (null? potential-sexps))
-			 (let ([first-sexp (car potential-sexps)])
-			   (set! potential-sexps null)
-			   (set! stream-start (car first-sexp))
-			   (set! stream-end (cdr first-sexp))
-			   (set-prompt-position (max prompt-position stream-end))
-			   (set! ready-char (found-char)))]
-			[(< stream-start stream-end)
-			 (set! ready-char (found-char))]
-			[else (void)]))
-		    (lambda ()
-		      (semaphore-post potential-sexps-protect)))
-		   (or ready-char
-		       (begin
-			 (mred:yield wait-for-sexp)
-			 (if shutdown? 
-			     eof
-			     (loop))))))))])
-
-	(override
-	  [get-prompt (lambda () "")])
-	(override
-	  [after-insert
-	   (lambda (start len)
-	     ;; We assume that the insert comes from the user. If it's printer output,
-	     ;;  the style will be changed again (so we wasted effort).
-	     ;; Since output is more common than input, there's certainly room for
-	     ;;  a significant optimization here.
-	     (super-after-insert start len)
-	     (let ([old-r resetting?])
-	       (set-resetting #t)
-	       (change-style input-delta start (+ start len))
-	       (set-resetting old-r)))])
-	(override
-	  [do-eval
-	   (lambda (start end)
-	     (do-pre-eval)
-	     (unless (balance-required)
-	       (set! end (add1 end)))
-	     (let ([new-sexps
-		    (let loop ([pos start])
-		      (cond
-			[(< pos end) 
-			 (let ([next-sexp
-				(if (balance-required)
-				    (fw:scheme-paren:forward-match this pos end)
-				    end)])
-			   (cons (cons pos next-sexp)
-				 (loop next-sexp)))]
-			[else null]))])
-	       (semaphore-wait potential-sexps-protect)
-	       (set! potential-sexps (append potential-sexps new-sexps))
-	       (semaphore-post potential-sexps-protect)
-	       (semaphore-post wait-for-sexp)
-	       (do-post-eval)))])
-	(inherit insert-prompt)
-	(sequence
-	  (apply super-init args)
-	  (insert-prompt))))))
-
+        (class super% args
+          (inherit change-style prompt-position set-prompt-position
+                   resetting? set-resetting lock get-text
+                   set-position last-position get-character
+                   clear-undos set-cursor
+                   do-pre-eval do-post-eval balance-required)
+          (rename [super-after-insert after-insert]
+                  [super-on-local-char on-local-char])
+          (private
+            [input-delta (make-object mred:style-delta%)]
+            [data null]
+            [stream-start 0]
+            [stream-end 0])
+          (sequence
+            (let ([mult (send input-delta get-foreground-mult)]
+                  [add (send input-delta get-foreground-add)])
+              (send mult set 0 0 0)
+              (send add set 0 150 0)))
+          (private [shutdown? #f])
+          
+          (public
+            [potential-sexps-protect (make-semaphore 1)]
+            [potential-sexps null]
+            [wait-for-sexp (make-semaphore 0)]
+            
+            [auto-set-wrap #t]
+            [shutdown
+             (lambda ()
+               (set! shutdown? #t)
+               (semaphore-post wait-for-sexp)
+               (lock #t))]
+            [consumed-delta 
+             (make-object mred:style-delta% 'change-bold)]
+            [mark-consumed
+             (lambda (start end)
+               (let ([old-resetting resetting?])
+                 (set-resetting #t)
+                 (change-style consumed-delta start end)
+                 (set-resetting old-resetting)))]
+            [ibeam-cursor (make-object mred:cursor% 'ibeam)]
+            [check-char-ready? ; =Reentrant=
+             (lambda ()
+               (semaphore-wait potential-sexps-protect)
+               (begin0
+                 (cond
+                   [(not (null? potential-sexps)) #t]
+                   [(< stream-start stream-end) #t]
+                   [else #f])
+                 (semaphore-post potential-sexps-protect)))]
+            [fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
+             (lambda ()
+               (let ([found-char
+                      (lambda ()
+                        (let ([s stream-start])
+                          (mark-consumed s (add1 s))
+                          (set! stream-start (add1 s))
+                          (get-character s)))])
+                 (let loop ()
+                   (let ([ready-char #f])
+                     (dynamic-wind
+                      (lambda ()
+                        (set! ready-char #f)
+                        (semaphore-wait potential-sexps-protect))
+                      (lambda ()
+                        (cond
+                          [(not (null? potential-sexps))
+                           (let ([first-sexp (car potential-sexps)])
+                             (set! potential-sexps null)
+                             (set! stream-start (car first-sexp))
+                             (set! stream-end (cdr first-sexp))
+                             (set-prompt-position (max prompt-position stream-end))
+                             (set! ready-char (found-char)))]
+                          [(< stream-start stream-end)
+                           (set! ready-char (found-char))]
+                          [else (void)]))
+                      (lambda ()
+                        (semaphore-post potential-sexps-protect)))
+                     (or ready-char
+                         (begin
+                           (mred:yield wait-for-sexp)
+                           (if shutdown? 
+                               eof
+                               (loop))))))))])
+          
+          (override
+            [get-prompt (lambda () "")])
+          (override
+            [after-insert
+             (lambda (start len)
+               ;; We assume that the insert comes from the user. If it's printer output,
+               ;;  the style will be changed again (so we wasted effort).
+               ;; Since output is more common than input, there's certainly room for
+               ;;  a significant optimization here.
+               (super-after-insert start len)
+               (let ([old-r resetting?])
+                 (set-resetting #t)
+                 (change-style input-delta start (+ start len))
+                 (set-resetting old-r)))])
+          (override
+            [do-eval
+             (lambda (start end)
+               (do-pre-eval)
+               (unless (balance-required)
+                 (set! end (add1 end)))
+               (let ([new-sexps
+                      (let loop ([pos start])
+                        (cond
+                          [(< pos end) 
+                           (let ([next-sexp
+                                  (if (balance-required)
+                                      (fw:scheme-paren:forward-match this pos end)
+                                      end)])
+                             (cons (cons pos next-sexp)
+                                   (loop next-sexp)))]
+                          [else null]))])
+                 (semaphore-wait potential-sexps-protect)
+                 (set! potential-sexps (append potential-sexps new-sexps))
+                 (semaphore-post potential-sexps-protect)
+                 (semaphore-post wait-for-sexp)
+                 (do-post-eval)))])
+          (inherit insert-prompt)
+          (sequence
+            (apply super-init args)
+            (insert-prompt))))))
+  
   (define transparent-io-text% 
     (make-transparent-io-text%
      (make-console-text%

@@ -391,8 +391,9 @@
 	  (send rep reset-console)
 	  (send rep run-in-evaluation-thread
 		(lambda ()
-		  (when collection-paths
-		    (current-library-collection-paths collection-paths))
+                  (let ([collection-paths (get-collection-paths)])
+                    (when collection-paths
+                      (current-library-collection-paths collection-paths)))
 		  
 		  (let ([ol (current-load)])
 		    (current-load

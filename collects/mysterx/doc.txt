@@ -2108,13 +2108,13 @@ _Remote COM servers_
   for more information about filters and their
   options.
 
-> set-filter! :: (send an-mx-element set-filter! flt)
+> set-filter! :: (send an-mx-element set-filter! flt opt ...)
 
-  Sets the element's CSS filter using the list
-  `flt', which is of the form (filter-name (opt
-  val) ...).  For all filters, any of its options
-  may be omitted.  The filters and their options
-  are
+  Sets the element's CSS filter using the `flt', 
+  which is a symbol.  Each option `opt' is a pair 
+  consisting of a symbol and a value.  For all filters, 
+  any of its options may be omitted.  The filters and 
+  their options are
 
   filter           option              value      
   -----            ------              -----

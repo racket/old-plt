@@ -601,6 +601,8 @@
 	  (set! total-real-time 0)
 	  (random-seed (compiler:option:seed))
 	  (set! compiler:messages null)
+	  (set! c-declares null)
+	  (set! c-lambdas null)
 	  (const:init-tables!)
 	  (compiler:init-closure-lists!)
 	  (varref:reset-module-id!)

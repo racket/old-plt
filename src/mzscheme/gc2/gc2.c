@@ -1,10 +1,11 @@
 
-/* We have two experimental GC implementations, but the copying
-   version is currently out-of-date. */
+/* We have two experimental GC implementations.
+   The copying version is mainly for debugging, since
+   it can move data on every collection. */
 
-#define USE_COPYING 0
+#define USE_DEBUGGING_COLLECTOR 1
 
-#if USE_COPYING
+#if USE_DEBUGGING_COLLECTOR
 # include "copy.c"
 #else
 # include "compact.c"

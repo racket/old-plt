@@ -33,13 +33,13 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
-#define TIME 1
-#define SEARCH 0
-#define SAFETY 0
+#define TIME 0
+#define SEARCH 1
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
 
-#define GC_EVERY_ALLOC 0
+#define GC_EVERY_ALLOC 25
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
@@ -58,7 +58,9 @@ Type_Tag weak_box_tag;
 
 #define _num_tags_ 259
 
-Traverse_Proc tag_table[_num_tags_];
+Size_Proc size_table[_num_tags_];
+Mark_Proc mark_table[_num_tags_];
+Fixup_Proc fixup_table[_num_tags_];
 
 #define STARTING_PLACE ((void *)0x400000)
 
@@ -273,19 +275,30 @@ typedef struct GC_Weak_Array {
 
 static GC_Weak_Array *weak_arrays;
 
-static int mark_weak_array(void *p, Mark_Proc mark)
+static int size_weak_array(void *p)
 {
   GC_Weak_Array *a = (GC_Weak_Array *)p;
 
-  if (mark) {
-    gcMARK(a->replace_val);
-    
-    a->next = weak_arrays;
-    weak_arrays = a;
-  }
-
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Array) 
 			  + ((a->count - 1) * sizeof(void *)));
+}
+
+static int mark_weak_array(void *p)
+{
+  /* Not used */
+  return size_weak_array(p);
+}
+
+static int fixup_weak_array(void *p)
+{
+  GC_Weak_Array *a = (GC_Weak_Array *)p;
+
+  gcFIXUP(a->replace_val);
+    
+  a->next = weak_arrays;
+  weak_arrays = a;
+
+  return size_weak_array(p);
 }
 
 void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
@@ -321,16 +334,25 @@ typedef struct GC_Weak_Box {
 
 static GC_Weak_Box *weak_boxes;
 
-static int mark_weak_box(void *p, Mark_Proc mark)
+static int size_weak_box(void *p)
 {
-  if (mark) {
-    GC_Weak_Box *wb = (GC_Weak_Box *)p;
-    
-    gcMARK(wb->secondary_erase);
-    if (wb->val) {
-      wb->next = weak_boxes;
-      weak_boxes = wb;
-    }
+  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
+}
+
+static int mark_weak_box(void *p)
+{
+  /* Not used */
+  return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
+}
+
+static int fixup_weak_box(void *p)
+{
+  GC_Weak_Box *wb = (GC_Weak_Box *)p;
+  
+  gcFIXUP(wb->secondary_erase);
+  if (wb->val) {
+    wb->next = weak_boxes;
+    weak_boxes = wb;
   }
 
   return gcBYTES_TO_WORDS(sizeof(GC_Weak_Box));
@@ -381,17 +403,26 @@ typedef struct Fnl {
 
 static Fnl *fnls, *run_queue, *last_in_queue;
 
-static int mark_finalizer(void *p, Mark_Proc mark)
+static int size_finalizer(void *p)
 {
-  if (mark) {
-    Fnl *fnl = (Fnl *)p;
-    
-    gcMARK(fnl->next);
-    gcMARK(fnl->data);
-    if (!fnl->eager_level) {
-      /* Queued for run: */
-      gcMARK(fnl->p);
-    }
+  return gcBYTES_TO_WORDS(sizeof(Fnl));
+}
+
+static int mark_finalizer(void *p)
+{
+  /* Not used */
+  return gcBYTES_TO_WORDS(sizeof(Fnl));
+}
+
+static int fixup_finalizer(void *p)
+{
+  Fnl *fnl = (Fnl *)p;
+  
+  gcFIXUP(fnl->next);
+  gcFIXUP(fnl->data);
+  if (!fnl->eager_level) {
+    /* Queued for run: */
+    gcFIXUP(fnl->p);
   }
 
   return gcBYTES_TO_WORDS(sizeof(Fnl));
@@ -479,13 +510,22 @@ typedef struct Fnl_Weak_Link {
 
 static Fnl_Weak_Link *fnl_weaks;
 
-static int mark_finalizer_weak_link(void *p, Mark_Proc mark)
+static int size_finalizer_weak_link(void *p)
 {
-  if (mark) {
-    Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
-    
-    gcMARK(wl->next);
-  }
+  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
+}
+
+static int mark_finalizer_weak_link(void *p)
+{
+  /* Not used */
+  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
+}
+
+static int fixup_finalizer_weak_link(void *p)
+{
+  Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
+  
+  gcFIXUP(wl->next);
 
   return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
@@ -608,12 +648,12 @@ static void *mark(void *p)
 	return ((void **)p)[1];
 
 #if SAFETY	
-      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	*(int *)0x0 = 1;
       }
 #endif
 	
-      size = tag_table[tag](p, NULL);
+      size = size_table[tag](p);
 #if ALIGN_DOUBLES
       if (!(size & 0x1)) {
 	if ((long)new_tagged_high & 0x4) {
@@ -709,12 +749,35 @@ static void *mark(void *p)
   }
 }
 
+void GC_mark(const void *p)
+{
+  /* Not used. */
+}
+
+void GC_fixup(void *_p)
+{
+  void *p;
+
+  p = *(void **)_p;
+
+  if (!((long)p & 0x1)
+      && (p >= GC_alloc_space)
+      && (p <= GC_alloc_top))
+    *(void **)_p = mark(p);
+}
+
 static void **o_var_stack, **oo_var_stack;
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
-			    void *limit,
-			    Mark_Proc ignored)
+			    void *limit)
+{
+  /* Not used. */
+}
+
+void GC_fixup_variable_stack(void **var_stack,
+			     long delta,
+			     void *limit)
 {
   int stack_depth;
 
@@ -743,13 +806,13 @@ void GC_mark_variable_stack(void **var_stack,
 	size -= 2;
 	a = (void **)((char *)a + delta);
 	while (count--) {
-	  gcMARK(*a);
+	  gcFIXUP(*a);
 	  a++;
 	}
       } else {
 	void **a = *p;
 	a = (void **)((char *)a + delta);
-	gcMARK(*a);
+	gcFIXUP(*a);
       }
       p++;
     }
@@ -832,10 +895,11 @@ void gcollect(int needsize)
   cycle_count++;
 
   if (!initialized) {
-    tag_table[weak_box_tag] = mark_weak_box;
-    tag_table[gc_weak_array_tag] = mark_weak_array;
-    tag_table[gc_finalization_tag] = mark_finalizer;
-    tag_table[gc_finalization_weak_link_tag] = mark_finalizer_weak_link;
+    GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
+    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
+    GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, fixup_finalizer);
+    GC_register_traversers(gc_finalization_weak_link_tag, size_finalizer_weak_link, mark_finalizer_weak_link, fixup_finalizer_weak_link);
+
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
@@ -931,14 +995,14 @@ void gcollect(int needsize)
 #endif
 
 #if SAFETY
-      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	fflush(NULL);
 	*(int *)0x0 = 1;
       }
       prev_ptr = p;
       prev_var_stack = GC_variable_stack;
 #endif
-      size = tag_table[tag](p, NULL);
+      size = size_table[tag](p);
 #if SAFETY
       if (prev_var_stack != GC_variable_stack) {
 	*(int *)0x0 = 1;
@@ -984,12 +1048,11 @@ void gcollect(int needsize)
   mark_source = FROM_STACK;
 #endif
 
-  GC_mark_variable_stack(GC_variable_stack,
-			 0,
-			 (void *)(GC_get_thread_stack_base
-				  ? GC_get_thread_stack_base()
-				  : stack_base),
-			 mark);
+  GC_fixup_variable_stack(GC_variable_stack,
+			  0,
+			  (void *)(GC_get_thread_stack_base
+				   ? GC_get_thread_stack_base()
+				   : stack_base));
 
   PRINTTIME((STDERR, "gc: stack: %ld\n", GETTIMEREL()));
 
@@ -1002,7 +1065,7 @@ void gcollect(int needsize)
     void **e = (void **)roots[i + 1];
     
     while (s < e) {
-      gcMARK(*s);
+      gcFIXUP(*s);
       s++;
     }
   }
@@ -1013,7 +1076,7 @@ void gcollect(int needsize)
 
   /* Do immobiles: */
   for (ib = immobile; ib; ib = ib->next) {
-    gcMARK(ib->p);
+    gcFIXUP(ib->p);
   }
 
   PRINTTIME((STDERR, "gc: roots: %ld\n", GETTIMEREL()));
@@ -1044,7 +1107,7 @@ void gcollect(int needsize)
 #endif
 	  
 #if SAFETY
-	  if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+	  if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	    *(int *)0x0 = 1;
 	  }
 #endif
@@ -1053,7 +1116,8 @@ void gcollect(int needsize)
 	  mark_source = tagged_mark;
 #endif
 
-	  size = tag_table[tag](tagged_mark, mark);
+	  size = size_table[tag](tagged_mark);
+	  fixup_table[tag](tagged_mark);
 	  
 #if SAFETY
 	  if (size <= 1) {
@@ -1095,17 +1159,18 @@ void gcollect(int needsize)
 	      int i;
 	      /* printf("parray: %d %lx\n", size, (long)mp); */
 	      for (i = size; i--; mp++) {
-		gcMARK(*mp);
+		gcFIXUP(*mp);
 	      }
 	    } else {
 	      /* Array of tagged */
 	      int i, elem_size;
 	      Type_Tag tag = *(Type_Tag *)mp;
 	      
-	      elem_size = tag_table[tag](mp, mark);
+	      elem_size = size_table[tag](mp);
+	      fixup_table[tag](mp);
 	      mp += elem_size;
 	      for (i = elem_size; i < size; i += elem_size, mp += elem_size)
-		tag_table[tag](mp, mark);
+		fixup_table[tag](mp);
 	    }
 	  } else
 	    mp += v + 1;
@@ -1135,7 +1200,7 @@ void gcollect(int needsize)
 #if KEEP_FROM_PTR
 	      mark_source = f;
 #endif
-	      gcMARK(f->p);
+	      gcFIXUP(f->p);
 
 	      if (prev)
 		prev->next = next;
@@ -1165,7 +1230,7 @@ void gcollect(int needsize)
 	  markit = (wp != wl->p);
 	  wp = (wp + wl->offset);
 	  if (markit)
-	    gcMARK(wl->saved);
+	    gcFIXUP(wl->saved);
 	  *(void **)wp = wl->saved;
 	}
 	
@@ -1202,14 +1267,14 @@ void gcollect(int needsize)
 	      /* Not yet marked. Do content. */
 	      Type_Tag tag = *(Type_Tag *)v;
 #if SAFETY
-	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
+	      if ((tag < 0) || (tag >= _num_tags_) || !fixup_table[tag]) {
 		*(int *)0x0 = 1;
 	      }
 #endif
 #if KEEP_FROM_PTR
 	      mark_source = FROM_FNL;
 #endif
-	      tag_table[tag](v, mark);
+	      fixup_table[tag](v);
 	    }
 	  }
 	}
@@ -1266,7 +1331,7 @@ void gcollect(int needsize)
 #if KEEP_FROM_PTR
 	  mark_source = f;
 #endif
-	  gcMARK(f->p);
+	  gcFIXUP(f->p);
 	  f = f->next;
 	}
       }
@@ -1622,9 +1687,11 @@ void GC_free(void *s) /* noop */
 {
 }
 
-void GC_register_traverser(Type_Tag tag, Traverse_Proc proc)
+void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup)
 {
-  tag_table[tag] = proc;
+  size_table[tag] = size;
+  mark_table[tag] = mark;
+  fixup_table[tag] = fixup;
 }
 
 void GC_gcollect()

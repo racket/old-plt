@@ -127,8 +127,60 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 {
   long i, j;
   char buf[100];
+#ifdef MZ_PRECISE_GC
+  /* Since we might malloc, move all pointers into a local array. */
+
+  va_list args2 = args;
+  int pp = 0;
+  void *ptrs[100];
+
+  memset(ptrs, 0, 100 * sizeof(void *));
+  for (j = 0; msg[j]; j++) {
+    if (msg[j] == '%') {
+      int type;
+
+      j++;
+      type = msg[j];
+
+      switch (type) {
+      case 'c':	  
+	(void)va_arg(args2, int);
+	break;
+      case 'd':	  
+	(void)va_arg(args2, int);
+	break;
+      case 'l':
+	(void)va_arg(args2, long);
+	break;
+      case 'f':
+	(void)va_arg(args2, double);
+	break;
+      case 'L':	  
+	(void)va_arg(args2, long);
+	break;
+      case 'S':
+      case 'V':
+      case 'T':
+      case 'Q':
+	ptrs[pp++] = va_arg(args2, Scheme_Object*);
+	break;
+      default:
+	ptrs[pp++] = va_arg(args2, char*);
+	if (type == 't') {
+	  (void)va_arg(args2, long);
+	}
+      }
+    }
+  }
+  pp = 0;
+# define va_PTR_arg(args, t) ((void)va_arg(args, t), (t)ptrs[pp++])
+#else
+# define va_PTR_arg(args, t) va_arg(args, t)
+#endif
 
   --maxlen;
+
+  scheme_malloc_atomic(4);
 
   i = j = 0;
   while ((i < maxlen) && msg[j]) {
@@ -201,14 +253,14 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'S':
 	  {
 	    Scheme_Object *sym;
-	    sym = va_arg(args, Scheme_Object*);
+	    sym = va_PTR_arg(args, Scheme_Object*);
 	    t = scheme_symbol_name_and_size(sym, &tlen, 0);
 	  }
 	  break;
 	case 'V':
 	  {
 	    Scheme_Object *o;
-	    o = va_arg(args, Scheme_Object*);
+	    o = va_PTR_arg(args, Scheme_Object*);
 	    t = scheme_make_provided_string(o, 1, &tlen);
 	  }
 	  break;
@@ -216,14 +268,14 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'Q':
 	  {
 	    Scheme_Object *str;
-	    str = va_arg(args, Scheme_Object*);
+	    str = va_PTR_arg(args, Scheme_Object*);
 	    t = SCHEME_STR_VAL(str);
 	    tlen = SCHEME_STRLEN_VAL(str);
 	  }
 	  break;
 	default:
 	  {
-	    t = va_arg(args, char*);
+	    t = va_PTR_arg(args, char*);
 	    if (type == 't') {
 	      tlen = va_arg(args, long);
 	      if (tlen < 0)

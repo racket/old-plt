@@ -63,6 +63,13 @@ static int block(void)
   return 0;
 }
 
+/* For pre-102 compilation: */
+#ifndef MZ_DECL_VAR_REG
+# define MZ_DECL_VAR_REG(x) /* empty */
+# define MZ_VAR_REG(p, x)   /* empty */
+# define MZ_CWVR(x)         x
+#endif
+
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
   Scheme_Object *a[2];

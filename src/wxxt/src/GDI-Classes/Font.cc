@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.4 1998/03/06 23:50:55 mflatt Exp $
+ * $Id: Font.cc,v 1.5 1998/09/06 01:43:30 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -44,7 +44,8 @@ static char *wx_font_spec [] = {
 
 // local function prototypes
 static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
-				    int weight, Bool underlined);
+				    int weight, Bool underlined, 
+				    int again = 1);
 static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,
 					   int style, int weight, 
 					   Bool underlined);
@@ -235,7 +236,8 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 //-----------------------------------------------------------------------------
 
 static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
-				    int weight, Bool WXUNUSED(underlined))
+				    int weight, Bool underlined, 
+				    int si_try_again)
 {
   char buffer[512];
   char *name = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
@@ -244,8 +246,17 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
     name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";
 
   sprintf(buffer, name, point_size);
+
+  XFontStruct *s = XLoadQueryFont(wxAPP_DISPLAY, buffer);
+
+  if (!s && si_try_again && ((style == wxSLANT) || (style == wxITALIC))) {
+    /* Try slant/italic instead of italic/slant: */
+    s = wxLoadQueryFont(point_size, fontid, 
+			(style == wxSLANT) ? wxITALIC : wxSLANT, 
+			weight, underlined, 0);
+  }
   
-  return XLoadQueryFont(wxAPP_DISPLAY, buffer);
+  return s;
 }
 
 static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.6 1998/09/18 22:08:57 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.7 1998/10/19 20:40:50 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -30,6 +30,7 @@
 #define  Uses_XLib
 #define  Uses_wxBitmap
 #define  Uses_wxColour
+#define  Uses_wxMemoryDC
 #include "wx.h"
 
 #if USE_XPM
@@ -457,6 +458,9 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 Bool wxBitmap::SaveFile(char *fname, int type, wxColourMap *WXUNUSED(cmap))
 {
     if (Xbitmap) {
+      if (selectedTo)
+	selectedTo->EndSetPixel();
+
 	switch (type) {
 	case wxBITMAP_TYPE_XBM:
 	    if (Xbitmap->depth == 1)

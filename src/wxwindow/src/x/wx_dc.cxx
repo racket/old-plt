@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.7 1998/12/11 01:07:21 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.8 1999/01/09 19:18:40 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -350,14 +350,14 @@ void wxCanvasDC::SetCanvasClipping(void)
   if (onpaint_reg && clipping)
     XIntersectRegion(onpaint_reg, clipping->rgn, current_reg);
   else if (clipping)
-    XIntersectRegion (clipping->rgn, clipping->rgn, current_reg);
+    XIntersectRegion(clipping->rgn, clipping->rgn, current_reg);
   else if (onpaint_reg)
-    XIntersectRegion (onpaint_reg, onpaint_reg, current_reg);
+    XIntersectRegion(onpaint_reg, onpaint_reg, current_reg);
 
   if (current_reg)
-    XSetRegion (display, gc, current_reg);
+    XSetRegion(display, gc, current_reg);
   else
-    XSetClipMask (display, gc, None);
+    XSetClipMask(display, gc, None);
 }
 
 void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
@@ -437,11 +437,11 @@ void wxCanvasDC:: CrossHair (float x, float y)
   XDrawLine (display, pixmap, gc, xx, 0, xx, (int)hh);
 }
 
-void wxCanvasDC:: FloodFill (float x, float y, wxColour * col, int style)
+void wxCanvasDC::FloodFill(float x, float y, wxColour * col, int style)
 {
 }
 
-Bool wxCanvasDC:: GetPixel (float x, float y, wxColour * col)
+Bool wxCanvasDC::GetPixel(float x, float y, wxColour * col)
 {
   int i, j;
 
@@ -1856,7 +1856,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 
   if (source->GetDepth() > 1) {
     /* rop & c don't matter; use GCBlit */
-    return GCBlit(xdest, ydest, width, height, sources, xsrc, ysrc);
+    return GCBlit(xdest, ydest, width, height, source, xsrc, ysrc);
   }
 
   FreeGetPixelCache();
@@ -1942,6 +1942,8 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
     }
 
     GC gc = XCreateGC(display, pixmap, mask, &values);
+    if (clipping)
+      XSetRegion(display, gc, clipping->rgn);
 
     if (!color || (source->GetDepth() == 1)) {
       XCopyPlane (display, source->x_pixmap, pixmap, gc,

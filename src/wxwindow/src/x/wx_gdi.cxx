@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.5 1998/09/18 23:09:52 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.6 1998/11/17 21:40:46 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -19,6 +19,7 @@ static const char sccsid[] = "@(#)wx_gdi.cc	1.2 5/9/94";
 #include "wx_utils.h"
 #include "wx_main.h"
 #include "wx_gdi.h"
+#include "wx_dcmem.h"
 
 #if USE_XPM_IN_X
 #include "wx_item.h"
@@ -40,21 +41,15 @@ extern "C" {
 
 const DISPLAY_DPI = 100;
 
-#ifdef wx_x
 XFontPool *wxFontPool = NULL;
 #include <X11/cursorfont.h>
-#endif
 
-#ifdef wx_motif
 #include "wx_frame.h"
-#endif
 
 
 #if !USE_IMAGE_PIXMAP_METHOD
-#ifdef wx_motif
 Pixmap
 XCreateInsensitivePixmap( Display *display, Pixmap pixmap );
-#endif
 #endif
 
 char *wxDecorativeFontName = copystring("helvetica");
@@ -65,7 +60,6 @@ char *wxScriptFontName = copystring("zapfchancery");
 char *wxTeletypeFontName = copystring("lucidatypewriter");
 char *wxDefaultFontName = copystring("*");
 
-#ifdef wx_motif
 /* MATTHEW: [4] Display-specific font */
 IMPLEMENT_DYNAMIC_CLASS(wxXFont, wxObject)
 
@@ -75,8 +69,6 @@ wxXFont::~wxXFont()
     XmFontListFree (mFont);
   mFont = NULL;
 }
-#endif
-
 
 IMPLEMENT_DYNAMIC_CLASS(wxFont, wxObject)
 
@@ -132,10 +124,8 @@ wxbFont (PointSize, Family, Style, Weight, Underlined)
 
 wxFont::~wxFont ()
 {
-#ifdef wx_motif
   /* MATTHEW: [4] moved work to display-specific */
   xfonts.DeleteContents(TRUE);
-#endif
 #if !WXGARBAGE_COLLECTION_ON
   wxTheFontList->DeleteObject (this);
 #endif
@@ -179,8 +169,6 @@ XmFontList wxFont::GetInternalFont (Display *display, XFontStruct **fs)
 }
 
 #ifdef wx_x
-// Pseudo-scaleable Font management under XView - a nightmare!
-// - but it works o.k.
 /* MATTHEW: [4] Use display */
 XFontInfo::XFontInfo (int the_fontid, int the_style, int the_weight, int the_point_size,
 	   Bool is_underlined, Display *a_display,
@@ -219,30 +207,25 @@ XFontStruct *
 FindFont (int fontid, int style, int weight, int point_size, Bool is_underlined, Display *display)
 {
   if (cache && cache->fontid == fontid && cache->style == style && cache->weight == weight
-   && cache->point_size == point_size && cache->underlined == is_underlined
-    && cache->display == display) /* MATTHEW: [4] Display test */
+      && cache->point_size == point_size && cache->underlined == is_underlined
+      && cache->display == display)
     return cache->font;
 
   wxNode *node = First ();
   XFontStruct *found = 0;
-  while (node && !found)
-    {
-      XFontInfo *info = (XFontInfo *) node->Data ();
-      if (info->fontid == fontid && info->style == style && info->weight == weight
-      && info->point_size == point_size && info->underlined == is_underlined
-	  && info->display == display) /* MATTHEW: [4] Display test */
-	{
-	  found = info->font;
-	  cache = info;
-	}
-      node = node->Next ();
+  while (node && !found) {
+    XFontInfo *info = (XFontInfo *) node->Data ();
+    if (info->fontid == fontid && info->style == style && info->weight == weight
+	&& info->point_size == point_size && info->underlined == is_underlined
+	&& info->display == display) {
+      found = info->font;
+      cache = info;
     }
+    node = node->Next ();
+  }
+
   return found;
 }
-
-/* MATTHEW: [4] Thoroughly revied font finding code. My previous changes
-   had actually messed up the serach algorithm. The search-store algorithm
-   wasn't right before either, as far as I can tell. */
 
 // This is really just CreateFont now...
 XFontStruct *
@@ -253,23 +236,27 @@ FindOrCreateFont (int fontid, int style, int weight,
 		  Display *display)
 {
   XFontStruct *font;
-
+  int try_again = 2;
   char *name;
   
-  name = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
-  if (!name)
-    name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";
+  while (try_again--) {
+    name = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
+    if (!name)
+      name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";
+    
+    sprintf(wxBuffer, name, point_size);
+    
+    font = XLoadQueryFont(display, wxBuffer);
 
-  sprintf (wxBuffer, name, point_size);
-  
-#ifdef wx_xview
-  font = (Xv_Font) xv_find (XV_NULL, FONT,
-			    FONT_NAME, wxBuffer,
-			    NULL);
-#else
-  Display *dpy = display; /* MATTHEW: [4] Use display */
-  font = XLoadQueryFont (dpy, wxBuffer);
-#endif
+    if (font || (style == wxDEFAULT))
+      try_again = 0;
+    else {
+      if (style == wxSLANT)
+	style = wxITALIC;
+      else
+	style = wxSLANT;
+    }
+  }
 
   return font;
 }
@@ -395,7 +382,6 @@ IMPLEMENT_DYNAMIC_CLASS(wxColourMap, wxObject)
 
 wxColourMap::wxColourMap (void)
 {
-  /* MATTHEW: [4] cmap, pix_array, destroyable only for XView */
 }
 
 wxColourMap::~wxColourMap (void)
@@ -414,10 +400,6 @@ wxColourMap::Create(const int n,
   XColor xcol;
   Display *display;
 
-#if wx_xview
-  display = wxGetDisplay();
-#endif
-#ifdef wx_motif
   wxNode *node, *next;
   
   for (node = xcolormaps.First(); node; node = next) {
@@ -427,7 +409,7 @@ wxColourMap::Create(const int n,
     Bool destroyable = c->destroyable;
     int pix_array_n = c->pix_array_n;
     display = c->display;
-#endif    
+
     if (pix_array_n > 0) {
       XFreeColors(display, cmap, pix_array, pix_array_n, 0);
       delete [] pix_array;
@@ -435,31 +417,20 @@ wxColourMap::Create(const int n,
 
     if (destroyable)
       XFreeColormap(display, cmap);
-#ifdef wx_motif
+
     next = node->Next();
     xcolormaps.DeleteNode(node);
     delete c;
   }
-#endif
   
-  if (!n) {
-#ifdef wx_xview
-    pix_array = NULL;
-#endif
+  if (!n)
     return FALSE;
-  }
 
-#ifdef wx_motif
   display = wxGetDisplay();
 
   unsigned long *pix_array;
   Colormap cmap;
   int pix_array_n;
-#endif
-
-#ifdef wx_xview
-  destroyable = FALSE;
-#endif
 
   cmap = wxGetMainColormap(display);
 
@@ -476,7 +447,6 @@ wxColourMap::Create(const int n,
     pix_array[i] = (wxAllocColor(display, cmap, &xcol) == 0) ? 0 : xcol.pixel;
   }
 
-#ifdef wx_motif
   wxXColormap *c = new wxXColormap;
 
   c->pix_array_n = pix_array_n;
@@ -485,7 +455,6 @@ wxColourMap::Create(const int n,
   c->display = display;
   c->destroyable = FALSE;
   xcolormaps.Append(c);
-#endif
 
   return TRUE;
 }
@@ -497,10 +466,8 @@ wxColourMap::TransferBitmap(void *data, int depth, int size)
   case 8:
     {
 	unsigned char *uptr = (unsigned char *)data;
-#ifdef wx_motif
 	int pix_array_n;
 	unsigned long *pix_array = GetXPixArray(wxGetDisplay(), &pix_array_n);
-#endif	
 	while(size-- > 0) {
 	  if((int)*uptr < pix_array_n)
 	    *uptr = (unsigned char)pix_array[*uptr];
@@ -527,9 +494,6 @@ Bool wxColourMap::GetRGB(const int pixel, unsigned char *red, unsigned char *gre
 /* MATTHEW: [4] Get display-specific cmap */
 Colormap wxColourMap::GetXColormap(Display *display)
 {
-#ifdef wx_xview
-  return cmap;
-#else
   if (!xcolormaps.Number())
     return wxGetMainColormap(display);
 
@@ -564,7 +528,6 @@ Colormap wxColourMap::GetXColormap(Display *display)
   xcolormaps.Append(c);
 
   return c->cmap;
-#endif
 }
 
 /* MATTHEW: [4] Get display-specific pix_array */
@@ -681,9 +644,7 @@ wxbBrush (col, Style)
 IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
 
 /* MATTHEW: [4] Display-specific cursor for Motif */
-#ifdef wx_motif
 IMPLEMENT_DYNAMIC_CLASS(wxXCursor, wxObject)
-#endif
 
 wxCursor::wxCursor (void)
 {
@@ -693,16 +654,8 @@ wxCursor::wxCursor (void)
   numColors = 0;
   x_pixmap = 0;
   ok = FALSE;
-#ifdef wx_motif
   image = 0;
   cursor_id = 0; /* MATTHEW: [4]  Init cursor_id */
-#endif
-#ifdef wx_xview
-  x_cursor = 0;  /* MATTHEW: [4] Only XView uses x_cursor now */
-  x_image = 0;
-  use_raw_x_cursor = FALSE;
-#endif
-//  wxTheCursorList->Append (this);
 }
 
 wxCursor::wxCursor (char bits[], int w, int h)
@@ -712,25 +665,9 @@ wxCursor::wxCursor (char bits[], int w, int h)
   height = 0;
   numColors = 0;
   x_pixmap = 0; 
-  /* MATTHEW: [4] Only XView uses x_cursor now */
-#ifdef wx_motif
   ok = FALSE;
   image = 0;
   cursor_id = 0; /* MATTHEW: [4]  Init cursor_id */
-#elif defined(wx_xview)
-  x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-				    XV_WIDTH, w,
-				    XV_HEIGHT, h,
-				    SERVER_IMAGE_X_BITS, bits,
-				    NULL);
-  x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, x_image, NULL);
-  use_raw_x_cursor = FALSE;
-  if (x_cursor && x_image)
-    ok = TRUE;
-  else
-    ok = FALSE;
-#endif
-//  wxTheCursorList->Append (this);
 }
 
 
@@ -741,130 +678,58 @@ wxCursor::wxCursor (const char *cursor_file, long flags, int hotSpotX, int hotSp
   height = 0;
   numColors = 0;
   x_pixmap = 0;
-#ifdef wx_motif
   image = 0;
-#elif defined(wx_xview)
-  x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-				    SERVER_IMAGE_BITMAP_FILE, cursor_file,
-				    NULL);
-  x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, x_image, NULL);
-  use_raw_x_cursor = FALSE;
-#endif
-//  wxTheCursorList->Append (this);
 }
 
 /* MATTHEW: [4] Abstract cursor lookup: (Don't miss Motif I-beam change) */
 
 static
-#ifdef wx_xview
-Xv_Cursor
-#elif defined(wx_motif)
 Cursor
-#endif
  XMakeCursor(int cursor_type, Bool& use_raw_x_cursor, Display *dpy)
 {
-  
-#ifdef wx_xview
-  Xv_Cursor x_cursor = NULL;
-#elif defined(wx_motif)
-  Cursor x_cursor = NULL;
-#endif
+  Cursor x_cursor = 0;
   
   switch (cursor_type)
     {
     case wxCURSOR_WAIT:
       {
-#ifdef wx_xview
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_SRC_CHAR, OLC_BUSY_PTR, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_watch);
-#endif
 	break;
       }
     case wxCURSOR_CROSS:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, crosshair_cursor_data, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 3, CURSOR_YHOT, 3, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_crosshair);
-#endif
 	break;
       }
     case wxCURSOR_CHAR:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, char_cursor_data, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 0, CURSOR_YHOT, 13, NULL);
-#elif defined(wx_motif)
 	// Nothing
-#endif
 	break;
       }
     case wxCURSOR_HAND:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, hand_cursor_array, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 5, CURSOR_YHOT, 0, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_hand1);
-#endif
 	break;
       }
     case wxCURSOR_BULLSEYE:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, bull_cursor_array, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 5, CURSOR_YHOT, 5, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_target);
-#endif
 	break;
       }
     case wxCURSOR_PENCIL:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-	XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, pencil_cursor_array,
-							   NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 0, CURSOR_YHOT, 14, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_pencil);
-#endif
 	break;
       }
     case wxCURSOR_MAGNIFIER:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, magnifier_cursor_array, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 6, CURSOR_YHOT, 6, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_sizing);
-#endif
 	break;
       }
     case wxCURSOR_IBEAM:
       {
-#ifdef wx_xview
-	Server_image svr_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-							   XV_WIDTH, 16, XV_HEIGHT, 16, SERVER_IMAGE_BITS, vbar_cursor_array, NULL);
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_IMAGE, svr_image,
-			      CURSOR_XHOT, 0, CURSOR_YHOT, 13, NULL);
-#elif defined(wx_motif)
 	/* MATTHEW: [4] I-beam in Motif */
 	x_cursor = XCreateFontCursor (dpy, XC_xterm);
-#endif
 	break;
       }
     case wxCURSOR_NO_ENTRY:
@@ -983,11 +848,7 @@ Cursor
     default:
     case wxCURSOR_ARROW:
       {
-#ifdef wx_xview
-	x_cursor = xv_create (XV_NULL, CURSOR, CURSOR_SRC_CHAR, OLC_BASIC_PTR, NULL);
-#elif defined(wx_motif)
 	x_cursor = XCreateFontCursor (dpy, XC_top_left_arrow);
-#endif
 	break;
       }
     case wxCURSOR_BLANK:
@@ -1038,31 +899,15 @@ wxCursor::wxCursor (int cursor_type)
 
   use_raw_x_cursor = FALSE;
 
-#ifdef wx_motif
   image = 0;
   x_pixmap = 0;
-#endif
-#ifdef wx_xview
-  x_image = 0;
-#endif
 
-#ifdef wx_motif
   cursor_id = cursor_type;
-#endif
-#ifdef wx_xview
-  x_cursor = XMakeCursor(cursor_type, use_raw_x_cursor, wxGetDisplay());
-#endif
 }
 
-/* MATTHEW: [4] Added method to get X cursor */
-#ifdef wx_motif
 Cursor
-#else
-Xv_Cursor
-#endif
   wxCursor::GetXCursor(Display *display)
 {
-#ifdef wx_motif
   wxNode *node;
 
   for (node = xcursors.First(); node; node = node->Next()) {
@@ -1083,47 +928,17 @@ Xv_Cursor
   }
 
   return x_cursor;
-#else
-  return x_cursor;
-#endif
 }
 
 wxCursor::~wxCursor (void)
 {
-#ifdef wx_motif
   xcursors.DeleteContents(TRUE);
-#endif
-#ifdef wx_xview
-  if (!use_raw_x_cursor && x_cursor)
-    xv_destroy_safe (x_cursor);
-#endif
-//  wxTheCursorList->DeleteObject (this);
 }
 
 // Global cursor setting
 void 
 wxSetCursor (wxCursor * cursor)
 {
-#ifdef wx_motif
-#endif
-#ifdef wx_xview
-  Xv_Screen screen = xv_get (xview_server, SERVER_NTH_SCREEN, 0);
-  Xv_Window root_window = xv_get (screen, XV_ROOT);
-  if (cursor && cursor->x_cursor)
-    {
-      if (cursor->use_raw_x_cursor)
-	{
-	  Display *dpy = (Display *) xv_get (root_window, XV_DISPLAY);
-	  Window win2 = xv_get (root_window, XV_XID);
-
-	  XDefineCursor (dpy, win2, cursor->x_cursor);
-	}
-      else
-	xv_set (root_window, WIN_CURSOR, cursor->x_cursor, NULL);
-    }
-
-#endif
-
   wxFlushEvents ();
 }
 
@@ -1155,7 +970,6 @@ wxDisplaySize (int *width, int *height)
 {
   Display *dpy = wxGetDisplay();
   
-#ifdef wx_motif
   if (wxTheApp->topLevel)
     {
       *width = DisplayWidth (dpy, DefaultScreen (dpy));
@@ -1167,11 +981,6 @@ wxDisplaySize (int *width, int *height)
       *width = 1024;
       *height = 768;
     }
-#endif
-#ifdef wx_xview
-  *width = DisplayWidth (dpy, DefaultScreen(dpy));
-  *height = DisplayHeight (dpy, DefaultScreen(dpy));
-#endif
 }
 
 IMPLEMENT_DYNAMIC_CLASS(wxBitmap, wxObject)
@@ -1191,16 +1000,11 @@ wxBitmap::wxBitmap (void)
   free_colors = NULL;
   free_colors_num = 0;
 
-#ifdef wx_motif
   insensPixmap = 0;
   labelPixmap = 0;
   armPixmap = 0;
   insensImage = 0;
   image = 0;
-#endif
-#ifdef wx_xview
-  x_image = 0;
-#endif
 
 #if !WXGARBAGE_COLLECTION_ON
   wxTheBitmapList->Append (this);
@@ -1219,7 +1023,6 @@ wxBitmap::wxBitmap (char bits[], int the_width, int the_height)
   free_colors = NULL;
   free_colors_num = 0;
 
-#ifdef wx_motif
   insensPixmap = 0;
   labelPixmap = 0;
   armPixmap = 0;
@@ -1233,24 +1036,7 @@ wxBitmap::wxBitmap (char bits[], int the_width, int the_height)
     ok = TRUE;
   else
     ok = FALSE;
-#endif
-#ifdef wx_xview
-  freePixmap = FALSE;
-  // Use the class variable, used by wxItem!
-  x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-				      XV_WIDTH, width,
-				      XV_HEIGHT, height,
-				      SERVER_IMAGE_X_BITS, bits,
-				      NULL);
 
-  if (x_image)
-    {
-      ok = TRUE;
-      x_pixmap = (Pixmap) xv_get (x_image, SERVER_IMAGE_PIXMAP);
-    }
-  else
-    ok = FALSE;
-#endif
 #if !WXGARBAGE_COLLECTION_ON
   wxTheBitmapList->Append (this);
 #endif
@@ -1265,7 +1051,6 @@ wxBitmap::wxBitmap (char *bitmap_file, long flags)
   free_colors_num = 0;
   numColors = 0;
   bitmapColourMap = NULL;
-#ifdef wx_motif
   display = wxGetDisplay(); /* MATTHEW: [4] Display */
   insensPixmap = 0;
   labelPixmap = 0;
@@ -1273,7 +1058,6 @@ wxBitmap::wxBitmap (char *bitmap_file, long flags)
   insensImage = 0;
   image = 0;
   bitmapColourMap = NULL;
-#endif
   width = 0;
   height = 0;
   depth = 0;
@@ -1296,13 +1080,11 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
   free_colors_num = 0;
   numColors = 0;
   bitmapColourMap = NULL;
-#ifdef wx_motif
   insensPixmap = 0;
   labelPixmap = 0;
   armPixmap = 0;
   insensImage = 0;
   image = 0;
-#endif
   width = 0;
   height = 0;
   depth = 0;
@@ -1317,7 +1099,6 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
 
   display = dpy; /* MATTHEW: [4] Remember the display */
 
-#ifdef wx_motif
   XpmColorSymbol symbolicColors[4];
   if (anItem && anItem->handle) {
 		symbolicColors[0].name = "foreground";
@@ -1331,7 +1112,6 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
 		xpmAttr.colorsymbols = symbolicColors;
 		xpmAttr.valuemask |= XpmColorSymbols;	// add flag
 	}
-#endif
 
   Pixmap  pixmap;
   int ErrorStatus = XpmCreatePixmapFromData(dpy, RootWindow(dpy, DefaultScreen(dpy)),
@@ -1533,13 +1313,11 @@ Bool wxBitmap::Create(int w, int h, int d)
 
   freePixmap = TRUE;
 
-#ifdef wx_motif
   insensPixmap = 0;
   labelPixmap = 0;
   armPixmap = 0;
   insensImage = 0;
   image = 0;
-#endif
 
   display = dpy; /* MATTHEW: [4] Remember the display */
 
@@ -1564,26 +1342,6 @@ Bool wxBitmap::Create(int w, int h, int d)
   return ok;
 }
 
-#ifdef wx_xview
-void wxBitmap::CreateServerImage(Bool savePixmap)
-{
-  if (ok)
-  {
-    x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
- 				      SERVER_IMAGE_SAVE_PIXMAP, savePixmap,
-				      SERVER_IMAGE_PIXMAP, x_pixmap,
-                                      SERVER_IMAGE_DEPTH, GetDepth(),
-						   NULL);
-    freePixmap = savePixmap;
-
-    if (x_image)
-      ok = TRUE;
-    else
-      ok = FALSE;
-  }
-}
-#endif
-
 Bool wxBitmap::LoadFile(char *filename, long flags)
 {
   if (selectedIntoDC)
@@ -1593,7 +1351,6 @@ Bool wxBitmap::LoadFile(char *filename, long flags)
 
   if (flags & wxBITMAP_TYPE_XBM)
   {
-#ifdef wx_motif
     insensPixmap = 0;
     labelPixmap = 0;
     armPixmap = 0;
@@ -1621,27 +1378,6 @@ Bool wxBitmap::LoadFile(char *filename, long flags)
     else {
       ok = TRUE;
     }
-#endif
-#ifdef wx_xview
-    freePixmap = FALSE;
-    x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-				      SERVER_IMAGE_BITMAP_FILE, filename,
-						   NULL);
-    if (x_image)
-      {
-        x_pixmap = (Pixmap) xv_get (x_image, SERVER_IMAGE_PIXMAP);
-        depth = (int) xv_get (x_image, SERVER_IMAGE_DEPTH);
-        width = (int) xv_get (x_image, XV_WIDTH);
-        height = (int) xv_get (x_image, XV_HEIGHT);
-        ok = TRUE;
-        return TRUE;
-      }
-    else
-    {
-      ok = FALSE;
-      return FALSE;
-    }
-#endif
   }
 #if USE_XPM_IN_X
   else if (flags & wxBITMAP_TYPE_XPM)
@@ -1677,10 +1413,6 @@ Bool wxBitmap::LoadFile(char *filename, long flags)
       ok = FALSE;
       return FALSE;
     }
-// ADDED JACS
-#ifdef wx_xview
-    CreateServerImage(TRUE);
-#endif
     return ok;
   }
 #endif
@@ -1702,9 +1434,6 @@ Bool wxBitmap::LoadFile(char *filename, long flags)
     }
     if (cmap)
       bitmapColourMap = cmap;
-#ifdef wx_xview
-    CreateServerImage(TRUE);
-#endif
     return success;
   }
 #endif
@@ -1773,6 +1502,9 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
 
 Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
 {
+  if (selectedTo) 
+    selectedTo->EndSetPixel();
+  
   switch (typ)
   {
 #if USE_IMAGE_LOADING_IN_X
@@ -1824,7 +1556,6 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
   return FALSE;
 }
 
-#ifdef wx_motif
 Pixmap wxBitmap::GetLabelPixmap (Widget w)
 {
   if (!image && (depth == 1))
@@ -1942,8 +1673,6 @@ Pixmap wxBitmap::GetInsensPixmap (Widget w)
 
   return insensPixmap;
 }
-
-#endif
 
 // We may need this sometime...
 #if 0

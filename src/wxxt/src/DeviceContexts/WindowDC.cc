@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.17 1998/12/15 17:23:36 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.18 1999/01/09 18:15:02 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -252,7 +252,9 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       }
 
       GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
-      
+      if (clipping)
+	XSetRegion(DPY, gc, clipping->rgn);
+
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
 	/* mono to color/mono  or  color/mono to mono */
@@ -1155,10 +1157,10 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   i = XLOG2DEV(x);
   j = YLOG2DEV(y);
 
+  
   unsigned int w, h;
-  Window wdummy; int sdummy; unsigned int udummy;
-  XGetGeometry(DPY, DRAWABLE, &wdummy, &sdummy, &sdummy,
-	       &w, &h, &udummy, &udummy);
+  w = X->width;
+  h = X->height;
 
   if (i < 0 || (unsigned int)i >= w
       || j < 0 || (unsigned int)j >= h)
@@ -1243,10 +1245,9 @@ void wxWindowDC::BeginSetPixel()
   if (X->get_pixel_image_cache)
     return;
 
-  int x, y;
   unsigned int w, h;
-  Window wdummy; unsigned int udummy;
-  XGetGeometry(DPY, DRAWABLE, &wdummy, &x, &y, &w, &h, &udummy, &udummy);
+  w = X->width;
+  h = X->height;
 
   if (X->is_window) {
     /* For now, disallow: */

@@ -146,7 +146,7 @@
 				   [(make-x e ...)
 				    (struct-decl-for (syntax make-x))
 				    (let ([decl (struct-decl-for (syntax make-x))])
-				      (with-syntax ([(setter ...) (list-ref decl 4)])
+				      (with-syntax ([(setter ...) (reverse (list-ref decl 4))])
 					(syntax
 					 (begin
 					   (setter name e) ...))))]

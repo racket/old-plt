@@ -37,6 +37,21 @@ extern "C" {
 extern void *GC_cpp_malloc(size_t);
 #endif
 
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+# ifndef WX_REGISTER_GLOBAL_MEMORY
+#  define WX_REGISTER_GLOBAL_MEMORY
+# endif
+#endif
+
+#ifdef WX_REGISTER_GLOBAL_MEMORY
+extern "C" {
+  scheme_register_extension_global(void *p, long size);
+}
+# define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
+#else
+# define wxREGGLOB(x) /* empty */
+#endif
+
 /********************* The `gc' class *************************/
 
 class gc 

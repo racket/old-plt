@@ -32,8 +32,8 @@ static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
 static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
 
 static void init_symset_fileSelMode(void) {
-  fileSelMode_wxOPEN_sym = scheme_intern_symbol("open");
-  fileSelMode_wxSAVE_sym = scheme_intern_symbol("save");
+  fileSelMode_wxOPEN_sym = scheme_intern_symbol("get");
+  fileSelMode_wxSAVE_sym = scheme_intern_symbol("put");
   fileSelMode_wxOVERWRITE_PROMPT_sym = scheme_intern_symbol("overwrite-prompt");
   fileSelMode_wxHIDE_READONLY_sym = scheme_intern_symbol("hide-readonly");
 }

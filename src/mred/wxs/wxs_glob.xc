@@ -17,8 +17,8 @@
 @HEADER
 
 @BEGINSYMBOLS fileSelMode > ONE
-@SYM "open" : wxOPEN
-@SYM "save" : wxSAVE
+@SYM "get" : wxOPEN
+@SYM "put" : wxSAVE
 @SYM "overwrite-prompt" : wxOVERWRITE_PROMPT
 @SYM "hide-readonly" : wxHIDE_READONLY
 @ENDSYMBOLS

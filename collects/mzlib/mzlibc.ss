@@ -14,6 +14,7 @@
 (require-library "datec.ss")
 (require-library "inflatec.ss")
 (require-library "cmdlinec.ss")
+(require-library "restartc.ss")
 
 (constant mzlib^)
 (constant mzlib@)

@@ -197,22 +197,29 @@
 	 [(f init l) (fold-one f init l)]
 	 [(f init l . ls) (fold-n f init (cons l ls))]))))
 
+   (define make-find
+     (lambda (name whole-list?)
+       (polymorphic
+	(lambda (f list)
+	  (unless (and (procedure? f)
+		       (procedure-arity-includes? f 1))
+		  (raise-type-error name "procedure (arity 1)" f))
+	  (let loop ([l list])
+	    (cond
+	     [(null? l) #f]
+	     [(not (pair? l)) 
+	      (raise (make-exn:application:list
+		      (format "~a: second argument must be a (proper) list; given ~e" name list)
+		      ((debug-info-handler))
+		      list))]
+	     [(f (car l)) (if whole-list? l (car l))]
+	     [else (loop (cdr l))]))))))
+
    (define assf
-     (polymorphic
-      (lambda (f list)
-	(unless (and (procedure? f)
-		     (procedure-arity-includes? f 1))
-		(raise-type-error 'assf "procedure (arity 1)" f))
-	(let loop ([l list])
-	  (cond
-	   [(null? l) #f]
-	   [(not (pair? l)) 
-	    (raise (make-exn:application:list
-		    (format "assf: second argument must be a (proper) list; given ~e" list)
-		    ((debug-info-handler))
-		    list))]
-	   [(f (car l)) (car l)]
-	   [else (loop (cdr l))])))))
+     (make-find 'assf #f))
+
+   (define memf
+     (make-find 'memf #t))
 
    (define filter
      (polymorphic

@@ -5,5 +5,5 @@
 (constant mzlib:command-line@)
 (constant mzlib:command-line^)
 
-(constant parse-command-line)
+(constant-signature-content "cmdlines.ss")
 

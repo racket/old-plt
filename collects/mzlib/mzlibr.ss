@@ -10,13 +10,16 @@
 	 [date@ : mzlib:date^ ((reference-library-unit/sig "dater.ss")
 			       (core@ function@))]
 	 [inflate@ : mzlib:inflate^ ((reference-library-unit/sig "inflater.ss"))]
-	 [command-line@ : mzlib:command-line^ ((reference-library-unit/sig "cmdliner.ss"))])
+	 [command-line@ : mzlib:command-line^ ((reference-library-unit/sig "cmdliner.ss"))]
+	 [restart@ : mzlib:restart^ ((reference-library-unit/sig "restart.ss")
+				     command-line@)])
    (export (open core@)
 	   (unit trigger@)
 	   (unit zmath@)
 	   (unit convert@)
 	   (unit date@)
 	   (unit inflate@)
-	   (unit command-line@)))
+	   (unit command-line@)
+	   (unit restart@)))
 
 	 

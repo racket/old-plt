@@ -10,3 +10,4 @@
 (require-library "date.ss")
 (require-library "inflate.ss")
 (require-library "cmdline.ss")
+(require-library "restart.ss")

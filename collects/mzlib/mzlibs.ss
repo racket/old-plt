@@ -6,6 +6,7 @@
 (reference-library "dates.ss")
 (reference-library "inflates.ss")
 (reference-library "cmdlines.ss")
+(reference-library "restarts.ss")
 
 (define-signature mzlib^
   ((open mzlib:core^)
@@ -14,4 +15,5 @@
    (unit print-convert@ : mzlib:print-convert^)
    (unit date@ : mzlib:date^)
    (unit inflate@ : mzlib:inflate^)
-   (unit command-line@ : mzlib:command-line^)))
+   (unit command-line@ : mzlib:command-line^)
+   (unit restart@ : mzlib:restart^)))

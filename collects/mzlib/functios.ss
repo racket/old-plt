@@ -28,6 +28,7 @@
    remove*
 
    assf
+   memf
 
    filter
 

@@ -163,6 +163,8 @@
 			     (cdr set)))
 			  table) ; the original table
 			 (fprintf sp " --help, -h : Show this help~n")
+			 (fprintf sp "  -- : Do not treat any remaining argument as a flag (at this level)~n")
+			 (fprintf sp " Multiple single-letter flags can be combined after one `-'.~n E.g.: `-h-' is the same as `-h --'~n")
 			 (help (get-output-string sp))))
 		     (list "Help")))
 	      (map

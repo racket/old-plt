@@ -10,7 +10,7 @@
      ((+ (^ parens))
       (values 'white-space #f (position-offset start-pos) (position-offset end-pos)))
      (parens
-      (values 'white-space (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
+      (values 'paren (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
      ((eof)
       (values 'eof #f #f #f)))))
              

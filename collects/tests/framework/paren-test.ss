@@ -21,6 +21,7 @@
     ("(()" #f (0 2) (1 2))
     ("(a()" #f (0) (1 3))
     (")" #f (0 1) (0 1))
+    ("(" #f (0 1) (0 1))
     ("())" #f (1 2) (1 3))
     ("() a)" #f (1 4) (1 5))))
 
@@ -32,12 +33,12 @@
     (test
      (string->symbol (format "unbalanced-paren-~a" expression))
      (lambda (x) (not (ormap (lambda (x) x) x)))
-     `(let ([t (make-object text%)])
+     `(let ([t (make-object scheme:text%)])
 	(send t insert ,expression)
 	(append
-	 (list (not (eq? ,balanced? (scheme-paren:balanced? t 0 (send t last-position)))))
-	 (map (lambda (n) (scheme-paren:forward-match t n (send t last-position))) ',forward-starts)
-	 (map (lambda (n) (scheme-paren:backward-match t n 0)) ',backward-starts))))))
+	 (list (not (eq? ,balanced? (send t balanced? 0 (send t last-position)))))
+	 (map (lambda (n) (send t forward-match n (send t last-position))) ',forward-starts)
+	 (map (lambda (n) (send t backward-match n 0)) ',backward-starts))))))
 
 (define (run-balanced-test test-data)
   (let ([expression (first test-data)]
@@ -46,11 +47,11 @@
     (test
      (string->symbol (format "balanced-paren-~a/~a/~a" expression start end))
      (lambda (x) (equal? x (list start end #t)))
-     `(let ([t (make-object text%)])
+     `(let ([t (make-object scheme:text%)])
 	(send t insert ,expression)
-	(list (scheme-paren:backward-match t ,end 0)
-	      (scheme-paren:forward-match t ,start (send t last-position))
-	      (scheme-paren:balanced? t 0 (send t last-position)))))))
+	(list (send t backward-match ,end 0)
+	      (send t forward-match ,start (send t last-position))
+	      (send t balanced? 0 (send t last-position)))))))
 
 (define (run-scheme-unbalanced-test test-data)
   (let ([expression (first test-data)]

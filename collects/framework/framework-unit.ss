@@ -18,9 +18,6 @@
            "private/color-prefs.ss"
 	   "private/handler.ss" 
 	   "private/keymap.ss"
-	   "private/match-cache.ss"
-	   "private/paren.ss"
-	   "private/scheme-paren.ss"
 	   "private/path-utils.ss"
 	   "private/icon.ss"
 	   "private/editor.ss"
@@ -50,14 +47,11 @@
 	    [preferences : framework:preferences^ (preferences@ mred exn exit panel frame)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences frame
                                                      scheme editor text finder group)]
-	    [match-cache : framework:match-cache^ (match-cache@)]
-	    [paren : framework:paren^ (paren@)]
-	    [scheme-paren : framework:scheme-paren^ (scheme-paren@ paren)]
 	    [path-utils : framework:path-utils^ (path-utils@)]
 	    [icon : framework:icon^ (icon@ mred)]
 
 	    [keymap : framework:keymap^
-		    (keymap@ mred preferences finder handler scheme-paren frame editor)]
+		    (keymap@ mred preferences finder handler frame editor)]
 	    [editor : framework:editor^
 		    (editor@ mred autosave finder path-utils keymap icon
 			     preferences text pasteboard frame handler)]
@@ -81,7 +75,7 @@
 		     (handler@ mred finder group text preferences frame)]
 
 	    [scheme : framework:scheme^ 
-		    (scheme@ mred preferences match-cache paren scheme-paren 
+		    (scheme@ mred preferences 
                            icon keymap text editor frame comment-box mode color color-prefs)]
 	    [main : framework:main^ (main@ mred preferences exit group handler editor color-prefs scheme)])
       (export
@@ -95,9 +89,6 @@
        (unit autosave)
        (unit handler) 
        (unit keymap)
-       (unit match-cache)
-       (unit paren)
-       (unit scheme-paren)
        (unit path-utils)
        (unit icon)
        (unit editor)

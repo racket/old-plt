@@ -121,7 +121,7 @@
       ;; If it indicates an error, the first two results give the
       ;; starting and stoping positions for error highlighting.
       ;; If all three return #f, then there was no tree to search, or 
-      ;; the position did not immediately preceed an open.
+      ;; the position did not immediately follow a close.
       (define/public (match-backward pos)
         (send tree search! (if (> pos 0) (sub1 pos) pos))
         (cond
@@ -145,6 +145,20 @@
                 (values (- pos (cdr (send tree get-root-data))) pos #t)))))
           (else
            (values #f #f #f))))
+      
+      (define/public (is-open-pos? pos)
+        (send tree search! pos)
+        (let ((d (send tree get-root-data)))
+          (and (= (send tree get-root-start-position) pos)
+               d
+               (is-open? (car d)))))
+
+      (define/public (is-close-pos? pos)
+        (send tree search! pos)
+        (let ((d (send tree get-root-data)))
+          (and (= (send tree get-root-start-position) pos)
+               d
+               (is-close? (car d)))))
       
       (define (do-match-forward node top-offset stack escape)
         (cond

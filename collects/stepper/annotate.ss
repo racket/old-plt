@@ -214,6 +214,13 @@
                         (else null)))
                 exprs)))
   
+  (define (term-is-reduced stx)
+    (syntax-case stx (quote quote-syntax #%top)
+      [(quote _) #t]
+      [(syntax-quote _) #t]
+      [(#%top . _) #t]
+      [stx (symbol? (syntax-e stx))]))
+  
   ;;;;;;;;;;
   ;;
   ;; collapse-let-values: for the purposes of the annotater, it's easier to simply collapse let's and
@@ -478,6 +485,14 @@
                                                (d->so #f `(let* ([,name ,annotated]) ,name)))
                                              annotated))]
                   
+                  
+                  
+                  l        AAAA  M    M BBBBB  DDDDD   AAAA
+                  l       A    A MM  MM B    B D    D A    A
+                  l       AAAAAA M MM M BBBBB  D    D AAAAAA
+                  l       A    A M    M B    B D    D A    A
+                  llllll  A    A M    M BBBBB  DDDDD  A    A
+                  
                   [lambda-clause-abstraction 
                    (lambda (clause)
                      (with-syntax [(args body ...) clause]
@@ -529,6 +544,12 @@
                                   [ankle-wrap? 
                                    captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
                            new-free-bindings))))]
+                  
+                  L      EEEEEE TTTTTTT
+                  L      E         T
+                  L      EEEEEE    T
+                  L      E         T
+                  LLLLLL EEEEEE    T
                     
                   ; The let transformation is complicated.
                   ; here's a sample transformation (not including 'break's):
@@ -576,7 +597,8 @@
                             [(annotated-bodies free-binding-sets-bodies)
                              (2vals-map (let-body-recur binding-list) (syntax->list (syntax bodies)))]
                             [free-bindings (varref-set-remove-bindings 
-                                            (varref-set-union (append free-binding-sets-body free-binding-sets-vals)) 
+                                            (varref-set-union (append free-binding-sets-body 
+                                                                      free-binding-sets-vals)) 
                                             binding-list)])
                        (ccond [cheap-wrap?
                                (let* ([bindings
@@ -750,6 +772,115 @@
                                  (wcm-wrap (make-debug-info-normal free-bindings) annotated)])
                          free-varrefs))]
                
+               
+               [(quote _)
+                (if (or cheap-wrap? ankle-wrap?)
+                    expr
+                    (wcm-wrap (make-debug-info-normal null) expr))]
+               
+               [(quote-syntax _)
+                (if (or cheap-wrap? ankle-wrap?)
+                    expr
+                    (wcm-wrap (make-debug-info-normal null) expr))]
+               
+               [(with-continuation-mark key mark body)
+                (let*-2vals ([(annotated-key free-varrefs-key)
+                              (non-tail-recur (syntax key))]
+                             [(annotated-mark free-varrefs-mark)
+                              (non-tail-recur (syntax mark))]
+                             [(annotated-body free-varrefs-body)
+                              (result-recur (syntax body))])
+                  (ccond [(or cheap-wrap? ankle-wrap?)
+                          (let*-2vals
+                              ([free-varrefs (varref-set-union (list free-varrefs-key free-varrefs-val free-varrefs-body))]
+                               [annotated (d->so expr `(with-continuation-mark ,annotated-key
+                                                                               ,annotated-mark
+                                                                               ,annotated-body))])
+                            (2vals (appropriate-wrap annotated free-varrefs) free-varrefs))]
+                         [foot-wrap?
+                          ;; FINISH AFTER APPLICATION
+                          ]))]
+                
+;                                  [foot-wrap? 
+;                                   (wcm-wrap debug-info annotated)])
+;                           free-bindings))]
+               
+               ; the app form's elaboration looks like this, where M0 etc. stand for expressions, and t0 etc
+               ; are temp identifiers that do not occur in the program:
+               ; (M0 ...)
+               ;
+               ; goes to
+               ;
+               ;(let ([t0 *unevaluated*]
+               ;      ...)
+               ;  (with-continuation-mark
+               ;   debug-key
+               ;   huge-value
+               ;   (set! t0 M0)
+               ;   ...
+               ;   (with-continuation-mark
+               ;    debug-key
+               ;    much-smaller-value
+               ;    (t0 ...))))
+               ; 
+               ; 'break's are not illustrated.  An optimization is possible when all expressions M0 ... are
+               ; varrefs.  In particular (where v0 ... are varrefs):
+               ; (v0 ...)
+               ;
+               ; goes to
+               ; 
+               ; (with-continuation-mark
+               ;  debug-key
+               ;  debug-value
+               ;  (v0 ...))
+               ;
+               ; in other words, no real elaboration occurs. Note that this doesn't work as-is for the
+               ; stepper, because there's nowhere to hang the breakpoint; you want to see the break
+               ; occur after all vars have been evaluated.  I suppose you could do (wcm ... (begin v0 ... (v0 ...)))
+               ; where the second set are not annotated ... but stepper runtime is not at a premium.
+               
+               [(#%app . terms)
+		(let*-2vals
+                    ([(annotated-terms free-varrefs-terms)
+                      (2vals-map non-tail-recur (syntax->list (syntax terms)))]
+                     [free-varrefs (varref-set-union free-varrefs-terms)]
+                     [annotated (d->so expr annotated-terms)])
+                  (2vals
+                   (ccond [cheap-wrap? (appropriate-wrap annotated free-varrefs)]
+                          [(or ankle-wrap? foot-wrap?)
+                           (if (and ankle-wrap?
+                                    (memq 'no-temps-for-varrefs wrap-opts)
+                                    (andmap term-is-reduced
+                                            (syntax->list (syntax terms))))
+                               
+                               ; this is the no-temps optimization:
+                               ; (won't work for stepper unless no reductions happen on the vars in the app
+                               
+                               (let ([debug-info (make-debug-info-app tail-bound free-varrefs 'called)])
+                                 (wcm-break-wrap debug-info annotated-terms))
+                               
+                               (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)] 
+                                      [let-clauses (d->so #f `((,arg-temp-syms 
+                                                                (values ,@(map (lambda (_) *unevaluated*) arg-temps)))))]
+                                      [set!-list (map (lambda (arg-symbol annotated-sub-expr)
+                                                        (d->so #f `(set! ,arg-symbol ,annotated-sub-expr)))
+                                                      arg-temps annotated-terms)]
+                                      [new-tail-bound (binding-set-union (list tail-bound arg-temps))]
+                                      [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
+                                      [final-app (break-wrap (simple-wcm-wrap app-debug-info 
+                                                                              (if (let ([fun-exp (z:app-fun expr)])
+                                                                                    (and foot-wrap?
+                                                                                         (z:top-level-varref? fun-exp)
+                                                                                         (non-annotated-proc? fun-exp)))
+                                                                                  (return-value-wrap arg-temp-syms)
+                                                                                  arg-temp-syms)))]
+                                      [debug-info (make-debug-info-app new-tail-bound
+                                                                       (varref-set-union (list free-bindings arg-temps)) ; NB using bindings as vars
+                                                                       'not-yet-called)]
+                                      [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
+                                 `(#%let-values ,let-clauses ,let-body)))])
+                   free-bindings))]                
+               
 	       ; the variable forms 
 	       
                [(z:varref? expr)
@@ -787,84 +918,7 @@
                                   (wcm-break-wrap (make-debug-info-normal free-bindings) (return-value-wrap annotated))]) 
                           free-bindings))]
                
-               ; the app form's elaboration looks like this, where M0 etc. stand for expressions, and t0 etc
-               ; are temp identifiers that do not occur in the program:
-               ; (M0 ...)
-               ;
-               ; goes to
-               ;
-               ;(let ([t0 *unevaluated*]
-               ;      ...)
-               ;  (with-continuation-mark
-               ;   debug-key
-               ;   huge-value
-               ;   (set! t0 M0)
-               ;   ...
-               ;   (with-continuation-mark
-               ;    debug-key
-               ;    much-smaller-value
-               ;    (t0 ...))))
-               ; 
-               ; 'break's are not illustrated.  An optimization is possible when all expressions M0 ... are
-               ; varrefs.  In particular (where v0 ... are varrefs):
-               ; (v0 ...)
-               ;
-               ; goes to
-               ; 
-               ; (with-continuation-mark
-               ;  debug-key
-               ;  debug-value
-               ;  (v0 ...))
-               ;
-               ; in other words, no real elaboration occurs. Note that this doesn't work as-is for the
-               ; stepper, because there's nowhere to hang the breakpoint; you want to see the break
-               ; occur after all vars have been evaluated.  I suppose you could do (wcm ... (begin v0 ... (v0 ...)))
-               ; where the second set are not annotated ... but stepper runtime is not at a premium.
-               
-               [(z:app? expr)
-		(let*-values
-                    ([(sub-exprs) (cons (z:app-fun expr) (z:app-args expr))]
-                     [(annotated-sub-exprs free-bindings-sub-exprs)
-                      (dual-map non-tail-recur sub-exprs)]
-                     [(free-bindings) (varref-set-union (cons free-bindings-sub-exprs))])
-                  (values 
-                   (ccond [cheap-wrap? (appropriate-wrap annotated-sub-exprs free-bindings)]
-                          [(or ankle-wrap? foot-wrap?)
-                           (if (and ankle-wrap?
-                                    (andmap (lambda (expr) 
-                                              (or (z:varref? expr)
-                                                  (z:quote-form? expr)))
-                                            sub-exprs)
-                                    (memq 'no-temps-for-varrefs wrap-opts))
-                               
-                               ; this is the no-temps optimization:
-                               ; (won't work for stepper unless no reductions happen on the vars in the app
-                               
-                               (let ([debug-info (make-debug-info-app tail-bound free-bindings 'called)])
-                                 (wcm-break-wrap debug-info annotated-sub-exprs))
-                               
-                               (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)]
-                                      [arg-temp-syms (map z:binding-var arg-temps)] 
-                                      [let-clauses `((,arg-temp-syms 
-                                                      (#%values ,@(map (lambda (x) *unevaluated*) arg-temps))))]
-                                      [set!-list (map (lambda (arg-symbol annotated-sub-expr)
-                                                        `(#%set! ,arg-symbol ,annotated-sub-expr))
-                                                      arg-temp-syms annotated-sub-exprs)]
-                                      [new-tail-bound (binding-set-union (list tail-bound arg-temps))]
-                                      [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                                      [final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                                              (if (let ([fun-exp (z:app-fun expr)])
-                                                                                    (and foot-wrap?
-                                                                                         (z:top-level-varref? fun-exp)
-                                                                                         (non-annotated-proc? fun-exp)))
-                                                                                  (return-value-wrap arg-temp-syms)
-                                                                                  arg-temp-syms)))]
-                                      [debug-info (make-debug-info-app new-tail-bound
-                                                                       (varref-set-union (list free-bindings arg-temps)) ; NB using bindings as vars
-                                                                       'not-yet-called)]
-                                      [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
-                                 `(#%let-values ,let-clauses ,let-body)))])
-                   free-bindings))]
+
 	       
 	       [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]
@@ -890,17 +944,6 @@
                                 null))))]
 
 	       
-	       
-	       [(z:quote-form? expr)
-                (let* ([raw (utils:read->raw (z:quote-form-expr expr))]
-                       [annotated (if (or (number? raw) (procedure? raw))
-                                      raw
-                                      `(#%quote ,raw))])
-                  (values (if (or cheap-wrap? ankle-wrap?)
-                              annotated
-                              (wcm-wrap (make-debug-info-normal null) annotated))
-                          null))]
-               
                
 
 
@@ -928,30 +971,6 @@
 	       
                 
                
-                                
-               ; the annotation for w-c-m is insufficient for
-               ; stepping: there must be an intermediate let & set!s to
-               ; allow the user to see the computed values for the key and the
-               ; value.
-               
-               [(z:with-continuation-mark-form? expr)
-                (let*-values
-                    ([(annotated-key free-bindings-key)
-                      (non-tail-recur (z:with-continuation-mark-form-key expr))]
-                     [(annotated-val free-bindings-val)
-                      (non-tail-recur (z:with-continuation-mark-form-val expr))]
-                     [(annotated-body free-bindings-body)
-                      (result-recur (z:with-continuation-mark-form-body expr))]
-                     [(free-bindings) (varref-set-union (list free-bindings-key free-bindings-val free-bindings-body))]
-                     [(debug-info) (make-debug-info-normal free-bindings)]
-                     [(annotated) `(#%with-continuation-mark
-                                    ,annotated-key
-                                    ,annotated-val
-                                    ,annotated-body)])
-                   (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
-                                  [foot-wrap? 
-                                   (wcm-wrap debug-info annotated)])
-                           free-bindings))]
                
 	       [else
 		(internal-error

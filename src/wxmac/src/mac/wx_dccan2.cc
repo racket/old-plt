@@ -363,6 +363,25 @@ void wxCanvasDC::PaintStipple(wxRegion *r)
   FillWithStipple(this, r, current_brush);
 }
 
+static void AdjustPenRect(wxPen *current_pen, Rect *theRect,
+			  double user_scale_x, double user_scale_y)
+{
+  int pw, pwx, pwy;
+  pw = current_pen->GetWidth();
+  pwx = (int)(user_scale_x * pw);
+  pwx >>= 1;
+  theRect->left -= pwx;
+  if (pwx > 0)
+    --pwx;
+  theRect->right += pwx;
+  pwy = (int)(user_scale_y * pw);
+  pwy >>= 1;
+  theRect->top -= pwy;
+  if (pwy > 0)
+    --pwy;
+  theRect->bottom += pwy;
+}
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double end)
 {
@@ -487,6 +506,7 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
   }
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     wxMacSetCurrentTool(kPenTool);
+    AdjustPenRect(current_pen, &rect, user_scale_x, user_scale_y);
     FrameArc(&rect, alpha1, alpha2);
   }
   
@@ -917,6 +937,7 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
     
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
+      AdjustPenRect(current_pen, &theRect, user_scale_x, user_scale_y);
       FrameRect(&theRect);
     }
   }
@@ -1044,6 +1065,7 @@ void wxCanvasDC::DrawRoundedRectangle
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
+      AdjustPenRect(current_pen, &theRect, user_scale_x, user_scale_y);
       FrameRoundRect(&theRect, phys_rwidth, phys_rheight);
     }
   }
@@ -1090,6 +1112,7 @@ void wxCanvasDC::DrawEllipse(double x, double y, double width, double height)
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
+      AdjustPenRect(current_pen, &theRect, user_scale_x, user_scale_y);
       FrameOval(&theRect);
     }
   }

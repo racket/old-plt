@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.203 2000/02/07 19:35:12 robby Exp $
+; $Id: scm-main.ss,v 1.204 2000/03/05 21:15:52 clements Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -333,7 +333,7 @@
   (add-primitivized-micro-form
    'case-lambda
    beginner+lambda-vocabulary
-   (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+   (make-case-lambda-micro #f lambda-nonempty-arglist-decls-vocab))
   (add-primitivized-micro-form
    'case-lambda
    beginner-vocabulary
@@ -341,15 +341,15 @@
   (add-primitivized-micro-form
    'case-lambda
    intermediate-vocabulary
-   (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+   (make-case-lambda-micro #f lambda-nonempty-arglist-decls-vocab))
   (add-primitivized-micro-form
    'case-lambda
    advanced-vocabulary
-   (make-case-lambda-micro #f full-arglist-decls-vocab))
+   (make-case-lambda-micro #f lambda-full-arglist-decls-vocab))
   (add-primitivized-micro-form
    'case-lambda
    scheme-vocabulary
-   (make-case-lambda-micro #t full-arglist-decls-vocab))
+   (make-case-lambda-micro #t lambda-full-arglist-decls-vocab))
 
   (define (make-lambda-macro begin?)
     (let* ((kwd '())

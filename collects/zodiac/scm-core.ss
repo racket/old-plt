@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.56 1999/05/06 14:01:22 mflatt Exp $
+; $Id: scm-core.ss,v 1.57 2000/03/24 14:50:29 clements Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -13,9 +13,11 @@
   (define-struct (top-level-varref/bind/unit struct:top-level-varref/bind) (unit?))
   (define-struct (bound-varref struct:varref) (binding))
   (define-struct (lexical-varref struct:bound-varref) ())
+  (define-struct (lambda-varref struct:lexical-varref) ())
   (define-struct (app struct:parsed) (fun args))
   (define-struct (binding struct:parsed) (var orig-name))
   (define-struct (lexical-binding struct:binding) ())
+  (define-struct (lambda-binding struct:lexical-binding) ())
   (define-struct (form struct:parsed) ())
 
   ; ----------------------------------------------------------------------
@@ -46,6 +48,9 @@
 
   (define create-lexical-binding+marks
     (create-binding+marks make-lexical-binding))
+  
+  (define create-lambda-binding+marks
+    (create-binding+marks make-lambda-binding))
 
   (define create-top-level-varref
     (lambda (v s)
@@ -79,6 +84,9 @@
 
   (define create-lexical-varref
     (create-bound-varref make-lexical-varref))
+  
+  (define create-lambda-varref
+    (create-bound-varref make-lambda-varref))
 
   (define create-app
     (lambda (fun args source)
@@ -789,45 +797,65 @@
       "Invalid argument list entry"
       "Invalid argument list entry"))
 
+  ; note: the only difference between the lambda-<> vocabs and the <> vocabs
+  ; is that the lambda-<> vocabs use create-lambda-binding+marks instead
+  ; of create-lexical-bindings+marks
+
   (define full-arglist-decls-vocab (make-arglist-decls-vocab))
   (define proper-arglist-decls-vocab (make-arglist-decls-vocab))
   (define nonempty-arglist-decls-vocab (make-arglist-decls-vocab))
+  (define lambda-full-arglist-decls-vocab (make-arglist-decls-vocab))
+  (define lambda-proper-arglist-decls-vocab (make-arglist-decls-vocab))
+  (define lambda-nonempty-arglist-decls-vocab (make-arglist-decls-vocab))
 
-  (add-sym-micro full-arglist-decls-vocab
-    (lambda (expr env attributes vocab)
-      (make-sym-arglist
-       (list
-	(create-lexical-binding+marks expr)))))
+  (define (setup-arglist-vocabs binding-constructor
+                                full-vocab
+                                proper-vocab
+                                nonempty-vocab)
+    (add-sym-micro full-vocab 
+                   (lambda (expr env attributes vocab)
+                    (make-sym-arglist
+                     (list
+                      (binding-constructor expr)))))
+    
+    (let ([m (lambda (expr env attributes vocab)
+               (static-error expr "Invalid argument list syntax"))])
+      (add-sym-micro proper-vocab m)
+      (add-sym-micro nonempty-vocab m))
 
-  (let ([m (lambda (expr env attributes vocab)
-	     (static-error expr "Invalid argument list syntax"))])
-    (add-sym-micro proper-arglist-decls-vocab m)
-    (add-sym-micro nonempty-arglist-decls-vocab m))
+    (let ([make-arg-list-micro
+           (lambda (null-ok?)
+             (lambda (expr env attributes vocab)
+               (let ((contents (expose-list expr)))
+                 (when (and (not null-ok?)
+                            (null? contents))
+                   (static-error expr "All procedures must take at least one argument"))
+                 (make-list-arglist
+                  (map binding-constructor contents)))))])
+      (add-list-micro nonempty-vocab (make-arg-list-micro #f))
+      (add-list-micro proper-vocab (make-arg-list-micro #t))
+      (add-list-micro full-vocab (make-arg-list-micro #t)))
 
-  (define (make-arg-list-micro null-ok?)
-    (lambda (expr env attributes vocab)
-      (let ((contents (expose-list expr)))
-	(when (and (not null-ok?)
-		   (null? contents))
-	  (static-error expr "All procedures must take at least one argument"))
-	(make-list-arglist
-	  (map create-lexical-binding+marks
-	    contents)))))
+    (let ([m (lambda (expr env attributes vocab)
+               (static-error expr "Invalid argument list syntax"))])
+      (add-ilist-micro proper-vocab m)
+      (add-ilist-micro nonempty-vocab m))
 
-  (add-list-micro nonempty-arglist-decls-vocab (make-arg-list-micro #f))
-  (add-list-micro proper-arglist-decls-vocab (make-arg-list-micro #t))
-  (add-list-micro full-arglist-decls-vocab (make-arg-list-micro #t))
-
-  (let ([m (lambda (expr env attributes vocab)
-	     (static-error expr "Invalid argument list syntax"))])
-    (add-ilist-micro proper-arglist-decls-vocab m)
-    (add-ilist-micro nonempty-arglist-decls-vocab m))
-
-  (add-ilist-micro full-arglist-decls-vocab
-    (lambda (expr env attributes vocab)
-      (make-ilist-arglist
-       (map create-lexical-binding+marks
-	    (expose-list expr)))))
+    (add-ilist-micro full-vocab
+      (lambda (expr env attributes vocab)
+        (make-ilist-arglist
+         (map binding-constructor (expose-list expr))))))
+  
+  (setup-arglist-vocabs create-lexical-binding+marks
+                        full-arglist-decls-vocab
+                        proper-arglist-decls-vocab
+                        nonempty-arglist-decls-vocab)
+  
+  (setup-arglist-vocabs create-lambda-binding+marks
+                        lambda-full-arglist-decls-vocab
+                        lambda-proper-arglist-decls-vocab
+                        lambda-nonempty-arglist-decls-vocab)
+                        
 
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

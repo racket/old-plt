@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.71 2000/01/02 23:28:26 robby Exp $
+; $Id: sigs.ss,v 1.72 2000/01/10 22:51:13 clements Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
@@ -90,7 +90,9 @@
     (struct sym-optarglist ())
     (struct list-optarglist ())
     (struct ilist-optarglist ())
-    nonempty-arglist-decls-vocab proper-arglist-decls-vocab full-arglist-decls-vocab
+    nonempty-arglist-decls-vocab lambda-nonempty-arglist-decls-vocab
+    proper-arglist-decls-vocab lambda-proper-arglist-decls-vocab
+    full-arglist-decls-vocab lambda-full-arglist-decls-vocab
     optarglist-decls-vocab
     make-optargument-list
     paroptarglist-pattern

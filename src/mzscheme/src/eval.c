@@ -2013,10 +2013,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #  define RUNSTACK_CHANGED() (MZ_RUNSTACK = runstack)
 # endif
   runstack = MZ_RUNSTACK;
+# define RESET_LOCAL_RUNSTACK() (runstack = MZ_RUNSTACK)
 #else
 # define RUNSTACK MZ_RUNSTACK
 # define UPDATE_THREAD_RSPTR() /**/
 # define RUNSTACK_CHANGED() /**/
+# define RESET_LOCAL_RUNSTACK() /**/
 #endif
 
 #define RUNSTACK_START MZ_RUNSTACK_START
@@ -2759,6 +2761,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   }
 
   if (SAME_OBJ(v, SCHEME_EVAL_WAITING)) {
+    RESET_LOCAL_RUNSTACK();
     obj = p->ku.eval.wait_expr;
 #ifdef AGRESSIVE_ZERO_FOR_GC
     p->ku.eval.wait_expr = NULL;

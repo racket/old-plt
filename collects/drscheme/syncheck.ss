@@ -3,6 +3,7 @@
   TODO:
        
      - write test suite for arrows and menus
+
 |#
 
 (module syncheck mzscheme
@@ -20,14 +21,14 @@
 
   (define o (current-output-port))
   
-  (define status-init "Check Syntax: Initializing environment for user code")
-  (define status-coloring-program "Check Syntax: coloring definitions")
-  (define status-eval-compile-time "Check Syntax: eval compile time")
-  (define status-expanding-expression "Check Syntax: expanding expression")
-  (define status-teachpacks "Check Syntax: installing teachpacks")
+  (define status-init (string-constant cs-status-init))
+  (define status-coloring-program (string-constant cs-status-coloring-program))
+  (define status-eval-compile-time (string-constant cs-status-eval-compile-time))
+  (define status-expanding-expression (string-constant cs-status-expanding-expression))
+  (define status-teachpacks (string-constant cs-status-teachpacks))
   
-  (define mouse-over-variable-import "variable ~s imported from ~s")
-  (define mouse-over-syntax-import "syntax ~s imported from ~s")
+  (define mouse-over-variable-import (string-constant cs-mouse-over-variable-import))
+  (define mouse-over-syntax-import (string-constant cs-mouse-over-syntax-import))
   
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -301,9 +302,11 @@
                       end-text end-pos-left end-pos-right))
       (define-struct (tail-arrow arrow) (from-text from-pos to-text to-pos))
       
-      (define tacked-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
+      (define tacked-var-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
+      (define var-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid))
+      (define tail-pen (send the-pen-list find-or-create-pen "orchid" 1 'solid))
+      (define tacked-tail-brush (send the-brush-list find-or-create-brush "orchid" 'solid))
       (define untacked-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
-      (define the-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid))
       
       (define syncheck-text<%>
         (interface ()
@@ -315,22 +318,36 @@
           syncheck:add-mouse-over-status))
 
       ;; clearing-text-mixin : (mixin text%)
-      ;; overrides methods that make sure the arrow go away appropriately.
+      ;; overrides methods that make sure the arrows go away appropriately.
+      ;; adds a begin/end-edit-sequence to the insertion and deletion
+      ;;  to ensure that the on-change method isn't called until after
+      ;;  the arrows are cleared.
       (define clearing-text-mixin
         (fw:mixin ((class->interface text%)) ()
           (rename [super-after-insert after-insert]
-                  [super-after-delete after-delete])
+                  [super-on-insert on-insert]
+                  [super-after-delete after-delete]
+                  [super-on-delete on-delete])
+          (inherit begin-edit-sequence end-edit-sequence)
+          (define/override (on-delete start len)
+            (begin-edit-sequence)
+            (super-on-delete start len))
           (define/override (after-delete start len)
             (super-after-delete start len)
             (let ([st (find-syncheck-text this)])
               (when st
-                (send st syncheck:clear-arrows))))
+                (send st syncheck:clear-arrows)))
+            (end-edit-sequence))
           
+          (define/override (on-insert start len)
+            (begin-edit-sequence)
+            (super-on-insert start len))
           (define/override (after-insert start len)
             (super-after-insert start len)
             (let ([st (find-syncheck-text this)])
               (when st
-                (send st syncheck:clear-arrows))))
+                (send st syncheck:clear-arrows)))
+            (end-edit-sequence))
 
 	  (super-instantiate ())))
       
@@ -395,6 +412,11 @@
                      xr 
                      yr))))
               
+              (define (update-arrow-poss arrow)
+                (cond
+                  [(var-arrow? arrow) (update-var-arrow-poss arrow)]
+                  [(tail-arrow? arrow) (update-tail-arrow-poss arrow)]))
+              
               (define (update-var-arrow-poss arrow)
                 (let-values ([(start-x start-y) (find-poss 
                                                  (var-arrow-start-text arrow)
@@ -431,13 +453,23 @@
                     (send f open-status-line 'drscheme:check-syntax:mouse-over))))
               (define/public (syncheck:clear-arrows)
                 (when (or arrow-vectors cursor-location cursor-text)
-                  (set! arrow-vectors #f)
-                  (set! cursor-location #f)
-                  (set! cursor-text #f)
-                  (invalidate-bitmap-cache)
-                  (let ([f (get-top-level-window)])
-                    (when f
-                      (send f close-status-line 'drscheme:check-syntax:mouse-over)))))
+                  (let ([any-tacked? #f])
+                    (when tacked-hash-table
+                      (let/ec k
+                        (hash-table-for-each
+                         tacked-hash-table
+                         (lambda (k v)
+                           (set! any-tacked? #t)
+                           (k (void))))))
+                    (set! tacked-hash-table #f)
+                    (set! arrow-vectors #f)
+                    (set! cursor-location #f)
+                    (set! cursor-text #f)
+                    (when any-tacked?
+                      (invalidate-bitmap-cache))
+                    (let ([f (get-top-level-window)])
+                      (when f
+                        (send f close-status-line 'drscheme:check-syntax:mouse-over))))))
               (define/public (syncheck:add-menu text start-pos end-pos key make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
                   (add-to-range/key text start-pos end-pos make-menu key #t)))
@@ -446,7 +478,7 @@
               ;; pre: start-editor, end-editor are embedded in `this' (or are `this')
               (define/public (syncheck:add-arrow start-text start-pos-left start-pos-right
                                                  end-text end-pos-left end-pos-right)
-                (let* ([arrow (make-var-arrow 0 0 0 0
+                (let* ([arrow (make-var-arrow #f #f #f #f
                                               start-text start-pos-left start-pos-right
                                               end-text end-pos-left end-pos-right)])
                   (add-to-range/key start-text start-pos-left start-pos-right arrow #f #f)
@@ -454,8 +486,9 @@
               
               ;; syncheck:add-tail-arrow : text number text number -> void
               (define/public (syncheck:add-tail-arrow from-text from-pos to-text to-pos)
-                (let ([tail-arrow (make-tail-arrow 0 0 0 0 from-text from-pos to-text to-pos)])
-                  (add-to-range/key from-text from-pos (+ from-pos 1) tail-arrow #f #f)))
+                (let ([tail-arrow (make-tail-arrow #f #f #f #f to-text to-pos from-text from-pos)])
+                  (add-to-range/key from-text from-pos (+ from-pos 1) tail-arrow #f #f)
+                  (add-to-range/key from-text to-pos (+ to-pos 1) tail-arrow #f #f)))
               
               ;; syncheck:add-mouse-over-status : text pos-left pos-right string -> void
               (define/public (syncheck:add-mouse-over-status text pos-left pos-right str)
@@ -497,6 +530,21 @@
 
               (inherit get-top-level-window)
 
+              (rename [super-on-change on-change])
+              (define/override (on-change)
+                (super-on-change)
+                (when arrow-vectors
+                  (flush-arrow-coordinates-cache)
+                  (let ([any-tacked? #f])
+                    (when tacked-hash-table
+                      (let/ec k
+                        (hash-table-for-each
+                         tacked-hash-table
+                         (lambda (k v)
+                           (set! any-tacked? #t)
+                           (k (void))))))
+                    (when any-tacked?
+                      (invalidate-bitmap-cache)))))
               
               ;; flush-arrow-coordinates-cache : -> void
               ;; pre-condition: arrow-vector is not #f.
@@ -509,71 +557,97 @@
                        (let ([eles (vector-ref arrow-vector (- n 1))])
                          (for-each (lambda (ele)
                                      (cond
-                                       [(var-arrow? ele)
-                                        (update-var-arrow-poss ele)]
-                                       [(tail-arrow? ele)
-                                        (update-tail-arrow-poss ele)]))
+                                       [(arrow? ele)
+                                        (set-arrow-start-x! ele #f)
+                                        (set-arrow-start-y! ele #f)
+                                        (set-arrow-end-x! ele #f)
+                                        (set-arrow-end-y! ele #f)]))
                                    eles))
                        (loop (- n 1)))))))
               
-              (rename [super-on-change on-change])
-              (define/override (on-change)
-                (super-on-change)
-                (when arrow-vectors
-                  (flush-arrow-coordinates-cache)
-                  (invalidate-bitmap-cache)))
-              
-              (override on-paint)
-              (define (on-paint before dc left top right bottom dx dy draw-caret)
+              (define/override (on-paint before dc left top right bottom dx dy draw-caret)
                 (super-on-paint before dc left top right bottom dx dy draw-caret)
                 (when (and arrow-vectors (not before))
                   (let ([draw-arrow2
                          (lambda (arrow)
+                           (unless (arrow-start-x arrow)
+                             (update-arrow-poss arrow))
                            (let ([start-x (arrow-start-x arrow)]
                                  [start-y (arrow-start-y arrow)]
                                  [end-x   (arrow-end-x arrow)]
                                  [end-y   (arrow-end-y arrow)])
-                             (drscheme:arrow:draw-arrow dc start-x start-y end-x end-y dx dy)))]
+                             (unless (and (= start-x end-x)
+                                          (= start-y end-y))
+                               (drscheme:arrow:draw-arrow dc start-x start-y end-x end-y dx dy))))]
                         [old-brush (send dc get-brush)]
                         [old-pen   (send dc get-pen)])
-                    (send dc set-pen the-pen)
-                    (send dc set-brush tacked-brush)
                     (hash-table-for-each tacked-hash-table
                                          (lambda (arrow v) 
                                            (when v 
+                                             (cond
+                                               [(var-arrow? arrow)
+                                                (send dc set-pen var-pen)
+                                                (send dc set-brush tacked-var-brush)]
+                                               [(tail-arrow? arrow)
+                                                (send dc set-pen tail-pen)
+                                                (send dc set-brush tacked-tail-brush)])
                                              (draw-arrow2 arrow))))
                     (when (and cursor-location
                                cursor-text)
-                      (send dc set-brush untacked-brush)
                       (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))])
                         (when arrow-vector
                           (let ([eles (vector-ref arrow-vector cursor-location)])
                             (for-each (lambda (ele) 
                                         (cond
                                           [(var-arrow? ele)
+                                           (send dc set-pen var-pen)
+                                           (send dc set-brush untacked-brush)
                                            (draw-arrow2 ele)]
                                           [(tail-arrow? ele)
-                                           (draw-tail-arrows draw-arrow2 ele)]))
+                                           (send dc set-pen tail-pen)
+                                           (send dc set-brush untacked-brush)
+                                           (for-each-tail-arrows draw-arrow2 ele)]))
                                       eles)))))
                     (send dc set-brush old-brush)
                     (send dc set-pen old-pen))))
               
-              ;; draw-tail-arrows : dc number -> void
-              (define (draw-tail-arrows draw-arrow2 tail-arrow)
-                (let ([ht (make-hash-table)])
-                  (let loop ([tail-arrow tail-arrow])
-                    (unless (hash-table-get ht tail-arrow (lambda () #f))
-                      (hash-table-put! ht tail-arrow #t)
-                      (draw-arrow2 tail-arrow)
-                      (let* ([to-pos (tail-arrow-to-pos tail-arrow)]
-                             [to-text (tail-arrow-to-text tail-arrow)]
-                             [arrow-vector (hash-table-get arrow-vectors to-text (lambda () #f))])
-                        (when arrow-vector
-                          (let ([eles (vector-ref arrow-vector to-pos)])
-                            (for-each (lambda (ele) 
-                                        (cond
-                                          [(tail-arrow? ele) (loop ele)]))
-                                      eles))))))))
+              ;; for-each-tail-arrows : (tail-arrow -> void) tail-arrow -> void
+              (define (for-each-tail-arrows f tail-arrow)
+                ;; call-f-ht ensures that `f' is only called once per arrow
+                (define call-f-ht (make-hash-table))
+
+                (define (for-each-tail-arrows/to/from tail-arrow-pos tail-arrow-text
+                                                      tail-arrow-other-pos tail-arrow-other-text)
+
+                  ;; traversal-ht ensures that we don't loop in the arrow traversal.
+                  (let ([traversal-ht (make-hash-table)])
+                    (let loop ([tail-arrow tail-arrow])
+                      (unless (hash-table-get traversal-ht tail-arrow (lambda () #f))
+                        (hash-table-put! traversal-ht tail-arrow #t)
+                        (unless (hash-table-get call-f-ht tail-arrow (lambda () #f))
+                          (hash-table-put! call-f-ht tail-arrow #t)
+                          (f tail-arrow))
+                        (let* ([next-pos (tail-arrow-pos tail-arrow)]
+                               [next-text (tail-arrow-text tail-arrow)]
+                               [arrow-vector (hash-table-get arrow-vectors next-text (lambda () #f))])
+                          (when arrow-vector
+                            (let ([eles (vector-ref arrow-vector next-pos)])
+                              (for-each (lambda (ele) 
+                                          (cond
+                                            [(tail-arrow? ele)
+                                             (let ([other-pos (tail-arrow-other-pos ele)]
+                                                   [other-text (tail-arrow-other-text ele)])
+                                               (when (and (= other-pos next-pos)
+                                                          (eq? other-text next-text))
+                                                 (loop ele)))]))
+                                        eles))))))))
+                
+                (for-each-tail-arrows/to/from tail-arrow-to-pos tail-arrow-to-text
+                                              tail-arrow-from-pos tail-arrow-from-text)
+                (for-each-tail-arrows/to/from tail-arrow-from-pos tail-arrow-from-text
+                                              tail-arrow-to-pos tail-arrow-to-text))
+              
+              
               
               ;; get-pos/text : event -> (values (union #f text%) (union number #f))
               ;; returns two #fs to indicate the event doesn't correspond to
@@ -595,105 +669,110 @@
                                  (loop (send snip get-editor))
                                  (values pos text)))]))))))
               
-              (define/override (on-event event)
-                (if arrow-vectors
-                    (cond
-                      [(send event leaving?)
-                       (when (and cursor-location cursor-text)
-                         (set! cursor-location #f)
-                         (set! cursor-text #f)
-                         (let ([f (get-top-level-window)])
-                           (when f
-                             (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
-                         (invalidate-bitmap-cache))
-                       (super-on-event event)]
-                      [(or (send event moving?)
-                           (send event entering?))
-                       (let-values ([(pos text) (get-pos/text event)])
-                         (cond
-                           [pos
-                            (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))]
-                                   [eles (and arrow-vector (vector-ref arrow-vector cursor-location))])
-
+            (define/override (on-event event)
+              (if arrow-vectors
+                  (cond
+                    [(send event leaving?)
+                     (when (and cursor-location cursor-text)
+                       (set! cursor-location #f)
+                       (set! cursor-text #f)
+                       (let ([f (get-top-level-window)])
+                         (when f
+                           (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
+                       (invalidate-bitmap-cache))
+                     (super-on-event event)]
+                    [(or (send event moving?)
+                         (send event entering?))
+                     (let-values ([(pos text) (get-pos/text event)])
+                       (cond
+                         [pos
+                          (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))]
+                                 [eles (and arrow-vector (vector-ref arrow-vector cursor-location))])
+                            
+                            (when eles
+                              (let ([has-txt? #f])
+                                (for-each (lambda (ele)
+                                            (when (string? ele)
+                                              (set! has-txt? #t)
+                                              (let ([f (get-top-level-window)])
+                                                (when f
+                                                  (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
+                                          eles)
+                                (unless has-txt?
+                                  (let ([f (get-top-level-window)])
+                                    (when f
+                                      (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
+                            
+                            (unless (and cursor-location
+                                         cursor-text
+                                         (= pos cursor-location)
+                                         (eq? cursor-text text))
+                              (set! cursor-location pos)
+                              (set! cursor-text text)
                               (when eles
-                                (let ([has-txt? #f])
-                                  (for-each (lambda (ele)
-                                              (when (string? ele)
-                                                (set! has-txt? #t)
-                                                (let ([f (get-top-level-window)])
-                                                  (when f
-                                                    (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
-                                            eles)
-                                  (unless has-txt?
-                                    (let ([f (get-top-level-window)])
-                                      (when f
-                                        (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
- 
-                              (unless (and cursor-location
-                                           cursor-text
-                                           (= pos cursor-location)
-                                           (eq? cursor-text text))
-                                (set! cursor-location pos)
-                                (set! cursor-text text)
-                                (when eles
-                                  (for-each (lambda (ele)
-                                              (cond
-                                                [(var-arrow? ele)
-                                                 (update-var-arrow-poss ele)]
-                                                [(tail-arrow? ele)
-                                                 (update-tail-arrow-poss ele)]))
-                                            eles)
-                                  (invalidate-bitmap-cache))))]
-                           [else
-                            (let ([f (get-top-level-window)])
-                              (when f
-                                (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
-                            (when (or cursor-location cursor-text)
-                              (set! cursor-location #f)
-                              (set! cursor-text #f)
-                              (invalidate-bitmap-cache))]))
-                       (super-on-event event)]
-                      [(send event button-down? 'right)
-                       (let-values ([(pos text) (get-pos/text event)])
-                         (if (and pos text)
-                             (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
-                               (when arrow-vector
-                                 (let ([vec-ents (vector-ref arrow-vector pos)])
-                                   (cond
-                                     [(null? vec-ents)
-                                      (super-on-event event)]
-                                     [else
-                                      (let ([menu (make-object popup-menu% #f)]
-                                            [arrows (filter var-arrow? vec-ents)]
-                                            [add-menus (map cdr (filter cons? vec-ents))])
-                                        (unless (null? arrows)
-                                          (make-object menu-item%
-                                            (string-constant cs-tack/untack-arrow)
-                                            menu
-                                            (lambda (item evt) (tack/untack-callback arrows)))
-                                          (make-object menu-item%
-                                            (string-constant cs-jump)
-                                            menu
-                                            (lambda (item evt) (jump-callback pos arrows))))
-                                        (for-each (lambda (f) (f menu)) add-menus)
-                                        (send (get-canvas) popup-menu menu
-                                              (+ 1 (inexact->exact (floor (send event get-x))))
-                                              (+ 1 (inexact->exact (floor (send event get-y))))))]))))
-                             (super-on-event event)))]
-                      [else (super-on-event event)])
-                    (super-on-event event)))
+                                (for-each (lambda (ele)
+                                            (cond
+                                              [(arrow? ele)
+                                               (update-arrow-poss ele)]))
+                                          eles)
+                                (invalidate-bitmap-cache))))]
+                         [else
+                          (let ([f (get-top-level-window)])
+                            (when f
+                              (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
+                          (when (or cursor-location cursor-text)
+                            (set! cursor-location #f)
+                            (set! cursor-text #f)
+                            (invalidate-bitmap-cache))]))
+                     (super-on-event event)]
+                    [(send event button-down? 'right)
+                     (let-values ([(pos text) (get-pos/text event)])
+                       (if (and pos text)
+                           (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
+                             (when arrow-vector
+                               (let ([vec-ents (vector-ref arrow-vector pos)])
+                                 (cond
+                                   [(null? vec-ents)
+                                    (super-on-event event)]
+                                   [else
+                                    (let* ([menu (make-object popup-menu% #f)]
+                                           [arrows (filter arrow? vec-ents)]
+                                           [var-arrows (filter var-arrow? arrows)]
+                                           [add-menus (map cdr (filter cons? vec-ents))])
+                                      (unless (null? arrows)
+                                        (make-object menu-item%
+                                          (string-constant cs-tack/untack-arrow)
+                                          menu
+                                          (lambda (item evt) (tack/untack-callback arrows))))
+                                      (unless (null? var-arrows)
+                                        (make-object menu-item%
+                                          (string-constant cs-jump)
+                                          menu
+                                          (lambda (item evt) (jump-callback pos arrows))))
+                                      (for-each (lambda (f) (f menu)) add-menus)
+                                      (send (get-canvas) popup-menu menu
+                                            (+ 1 (inexact->exact (floor (send event get-x))))
+                                            (+ 1 (inexact->exact (floor (send event get-y))))))]))))
+                           (super-on-event event)))]
+                    [else (super-on-event event)])
+                  (super-on-event event)))
 
               ;; tack/untack-callback : (listof arrow) -> void
               ;; callback for the tack/untack menu item
               (define (tack/untack-callback arrows)
                 (for-each 
                  (lambda (arrow)
-                   (hash-table-put! tacked-hash-table 
-                                    arrow 
-                                    (not (hash-table-get
-                                          tacked-hash-table
-                                          arrow
-                                          (lambda () #f)))))
+                   (let ([tack-single-arrow
+                          (lambda (arrow)
+                            (let ([now-tacked?
+                                   (hash-table-get
+                                    tacked-hash-table
+                                    arrow
+                                    (lambda () #f))])
+                              (hash-table-put! tacked-hash-table arrow (not now-tacked?))))])
+                     (cond
+                       [(var-arrow? arrow) (tack-single-arrow arrow)]
+                       [(tail-arrow? arrow) (for-each-tail-arrows tack-single-arrow arrow)])))
                  arrows)
                 (invalidate-bitmap-cache))
               

@@ -181,7 +181,14 @@ please adhere to these guidelines:
  (cs-rename-id "Rename Identifier")
  (cs-rename-var-to "Rename ~a to:")
  (cs-name-duplication-error "The new name you have chosen, ~s, conflicts with an already established name in this scope.")
- 
+ (cs-status-init "Check Syntax: Initializing environment for user code")
+ (cs-status-coloring-program "Check Syntax: coloring expression")
+ (cs-status-eval-compile-time "Check Syntax: eval compile time")
+ (cs-status-expanding-expression "Check Syntax: expanding expression")
+ (cs-status-teachpacks "Check Syntax: installing teachpacks")
+ (cs-mouse-over-variable-import "variable ~s imported from ~s")
+ (cs-mouse-over-syntax-import "syntax ~s imported from ~s")
+
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "GC")
  (read-only "Read only")

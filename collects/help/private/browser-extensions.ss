@@ -82,7 +82,6 @@
     
     (define (catch-url-canvas-mixin %)
       (class %
-        (rename [super-goto-url goto-url])
         (define/override (remap-url url)
           (let ([internal-url-test (hd-cookie-url-on-server-test hd-cookie)]
                 [extract-url-path (hd-cookie-extract-url-path hd-cookie)])

@@ -596,7 +596,9 @@ static Scheme_Object *
 string_append (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *naya, *s;
+  char *chars;
   int i;
+  long len;
 
   if (argc == 2) {
     Scheme_Object *s1 = argv[0], *s2 = argv[1];
@@ -607,14 +609,29 @@ string_append (int argc, Scheme_Object *argv[])
     return scheme_append_string(s1, s2);
   }
 
-  naya = zero_length_string;
+  if (!argc)
+    return zero_length_string;
+  else if (argc == 1)
+    return scheme_append_string(zero_length_string, argv[0]);
+  
+  len = 0;
   for (i = 0; i < argc; i++) {
     s = argv[i];
     if (!SCHEME_STRINGP(s))
       scheme_wrong_type("string-append", "string", i, argc, argv);
-    naya = scheme_append_string(naya, s);
+    len += SCHEME_STRLEN_VAL(s);
   }
 
+  naya = scheme_alloc_string(len, 0);
+  chars = SCHEME_STR_VAL(naya);
+
+  for (i = 0; i < argc; i++) {
+    s = argv[i];
+    len = SCHEME_STRLEN_VAL(s);
+    memcpy(chars, SCHEME_STR_VAL(s), len);
+    chars += len;
+  }
+  
   return naya;
 }
 

@@ -14,11 +14,11 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 2003-06-01,
+;Configured for Scheme dialect plt by scmxlate, v 2003-08-24,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-09-19")
+(define *tex2page-version* "2003-09-27")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2811,8 +2811,6 @@
             (let ((x (get-ctl-seq))) (* 6.5 72.27))
             (let loop ()
               (cond
-               ((eat-word "pt") 1)
-               ((eat-word "in") 72.27)
                ((eat-word "bp") (* (/ 72) 72.27))
                ((eat-word "cc") (* 12 1238 (/ 1157)))
                ((eat-word "cm") (* (/ 2.54) 72.27))
@@ -6792,21 +6790,29 @@
     (let* ((counter-name (get-peeled-group))
            (new-value (string->number (get-token-or-peeled-group))))
       (cond
-       ((string=? counter-name "secnumdepth")
-        (set-gcount!
-          "\\secnumdepth"
-          (if add? (+ new-value (get-gcount "\\secnumdepth")) new-value)))
-       ((string=? counter-name "tocdepth")
-        (set-gcount!
-          "\\tocdepth"
-          (if add? (+ new-value (get-gcount "\\tocdepth")) new-value)))
        ((table-get *dotted-counters* counter-name)
         =>
         (lambda (counter)
           (set!counter.value
             counter
             (if add? (+ new-value (counter.value counter)) new-value))))
-       (else #f)))))
+       (else
+        (let ((count-seq (string-append "\\" counter-name)))
+          (cond
+           ((section-ctl-seq? count-seq)
+            =>
+            (lambda (n)
+              (hash-table-put!
+                *section-counters*
+                n
+                (if add?
+                  (+ new-value (table-get *section-counters* n 0))
+                  new-value))))
+           ((find-count count-seq)
+            (set-gcount!
+              count-seq
+              (if add? (+ new-value (get-gcount count-seq)) new-value)))
+           (else #f))))))))
 
 (define do-tex-prim
   (lambda (z)

@@ -106,6 +106,8 @@ static Scheme_Object *let_symbol;
 
 #define cons(x,y) scheme_make_pair(x,y)
 
+typedef void (*DW_PrePost_Proc)(void *);
+
 #define TAIL_COPY_THRESHOLD 5
 
 #ifndef MZ_REAL_THREADS
@@ -2428,8 +2430,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	 continuation, execute the post-thunks */
       for (dw = p->dw; dw != common; dw = dw->prev) {
 	if (dw->post) {
+	  DW_PrePost_Proc post = dw->post;
 	  p->dw = dw->prev;
-	  dw->post(dw->data);
+	  post(dw->data);
 	}
       }
       
@@ -2803,7 +2806,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    break;
 	  default:
 	    UPDATE_THREAD_RSPTR();
-	    RUNSTACK[0] = _scheme_eval_compiled_expr_wp(lo->value, p);
+	    {
+	      Scheme_Object *val;
+	      val = _scheme_eval_compiled_expr_wp(lo->value, p);
+	      RUNSTACK[0] = val;
+	    }
 	    break;
 	  }
 

@@ -107,6 +107,10 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj);
 
 static Scheme_Object *rep;
 
+typedef void (*DW_PrePost_Proc)(void *);
+typedef Scheme_Object *(*DW_Act_Proc)(void *);
+typedef Scheme_Object *(*DW_Jmp_Handler)(void *);
+
 #define CONS(a,b) scheme_make_pair(a,b)
 
 #ifdef MZ_PRECISE_GC
@@ -1885,8 +1889,9 @@ call_cc (int argc, Scheme_Object *argv[])
       }
       for (; dwl; dwl = dwl->next) {
 	if (dwl->dw->pre) {
+	  DW_PrePost_Proc pre = dwl->dw->pre;
 	  p->dw = dwl->dw->prev;
-	  dwl->dw->pre(dwl->dw->data);
+	  pre(dwl->dw->data);
 	}
       }
     }

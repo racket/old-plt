@@ -1077,6 +1077,7 @@ static int mark_struct_val(void *p, Mark_Proc mark)
       gcMARK(s->slots[i]);
 
     gcMARK(s->stype);
+    stype = s->stype; /* In case we just moved it */
   } 
 
   return gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 

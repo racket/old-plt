@@ -4325,6 +4325,7 @@ static int mark_object_val(void *p, Mark_Proc mark)
     }
 
     gcMARK(obj->o.sclass);
+    sclass = obj->o.sclass; /* In case we just moved it */
   }
 
   return gcBYTES_TO_WORDS((sizeof(Internal_Object) 

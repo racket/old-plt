@@ -258,7 +258,7 @@ void gcollect(int needsize)
   void **tagged_mark, **untagged_mark;
   void **var_stack;
   char *bitmap;
-  int i, var_count;
+  int i, var_count, stack_depth;
 
   printf("gc\n");
 
@@ -321,17 +321,36 @@ void gcollect(int needsize)
 
   var_stack = GC_variable_stack;
   var_count = GC_variable_count;
+  stack_depth = 0;
   while (var_stack) {
     int size = var_count;
     void ***p = (void ***)(var_stack + 2);
     
     while (size--) {
-      **p = cautious_mark(**p);
+      if (!*p) {
+	/* Array */
+	long count = ((long *)p)[2];
+	void **a = ((void ***)p)[1];
+	p += 2;
+	size -= 2;
+	while (count--) {
+	  *a = cautious_mark(*a);
+	  a++;
+	}
+      } else {
+	**p = cautious_mark(**p);
+      }
       p++;
+    }
+
+    if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
+      printf("bad %d\n", stack_depth);
+      *(int *)0x0 = 1;
     }
 
     var_count = ((long *)var_stack)[1]; 
     var_stack = *var_stack;
+    stack_depth++;
   }
 
   for (i = 0; i < roots_count; i += 2) {
@@ -353,7 +372,7 @@ void gcollect(int needsize)
       if (tag == SKIP)
 	tagged_mark++;
       else {
-	size_t size;
+	long size;
 
 	/* printf("%d\n", tag); */
 
@@ -361,7 +380,13 @@ void gcollect(int needsize)
 	  *(int *)0x0 = 1;
 	}
 	size = tag_table[tag](tagged_mark, cautious_mark);
+	if (size <= 1) {
+	  *(int *)0x0 = 1;
+	}
 	tagged_mark += size;
+	if (tagged_mark < new_space) {
+	  *(int *)0x0 = 1;
+	}
       }
     }
 

@@ -1,8 +1,11 @@
 
+;; Poor man's stack-trace-on-exceptions and profiler
+;;  - Matthew
+
 (invoke-open-unit
  (unit 
    (import)
-   (export profiling-enabled profile-poll-interval get-profile-counts)
+   (export profiling-enabled profile-paths-enabled get-profile-counts)
    
    (define key (gensym 'key))
 
@@ -10,47 +13,35 @@
    (define profile-key (gensym))
 
    (define profiling-enabled (make-parameter #f))
-
-   (define init-profile-count 10)
-   (define profile-count init-profile-count)
-   (define last-profile-time (current-milliseconds))
-
-   (define (profile-now)
-     (set! profile-count (sub1 profile-count))
-     (if (zero? profile-count)
-	 (begin
-	   (set! profile-count init-profile-count)
-	   (if (and (profiling-enabled)
-		    (> (abs (- (current-milliseconds) last-profile-time))
-		       (profile-poll-interval)))
-	       (begin
-		 (set! last-profile-time (current-milliseconds))
-		 #t)
-	       #f))
-	 #f))
-
-   (define profile-poll-interval (make-parameter 1))
+   (define profile-paths-enabled (make-parameter #f))
 
    (define profile-info (make-hash-table))
 
-   (define (register-profile-info key)
+   (define (register-profile-start key)
      (let ([v (hash-table-get profile-info key)])
        (set-car! v (add1 (car v)))
-       (let ([v (cdddr v)])
-	 (set-car! v (cons (current-continuation-marks profile-key) (car v))))))
-       
+       (when (profile-paths-enabled)
+	 (let ([v (cdddr v)])
+	   (set-car! v (cons (current-continuation-marks profile-key) (car v))))))
+     (current-milliseconds))
+   
+   (define (register-profile-done key start)
+     (let ([v (cdr (hash-table-get profile-info key))])
+       (set-car! v (+ (- (current-milliseconds) start) (car v)))))
+
    (define (get-profile-counts)
      (hash-table-map profile-info (lambda (key val)
 				    (let ([count (car val)]
-					  [name (cadr val)]
-					  [file (caddr val)]
-					  [cmss (cadddr val)])
-				      (list count name file
+					  [time (cadr val)]
+					  [name (caddr val)]
+					  [file (cadddr val)]
+					  [cmss (cadddr (cdr val))])
+				      (list count time name file
 					    (map
 					     (lambda (cms)
 					       (map (lambda (k)
 						      (let ([v (hash-table-get profile-info k)])
-							(list (cadr v) (caddr v))))
+							(list (caddr v) (cadddr v))))
 						    cms))
 					     cmss))))))
 
@@ -60,17 +51,64 @@
        ,expr))
 
    (define (profile-point body name expr)
-     (if (profiling-enabled)
-	 (let ([key (gensym)])
-	   (hash-table-put! profile-info key (list 0 (or name expr) current-file null))
-	   `((#%when (,profile-now)
-		(,register-profile-info (#%quote ,key)))
-             (#%with-continuation-mark
-	      (#%quote ,profile-key) (#%quote ,key)
-	      (#%begin
-	       ,@body))))
-	 body))
+     (let ([body (map annotate body)])
+       (if (profiling-enabled)
+	   (let ([key (gensym)]
+		 [start (gensym)])
+	     (hash-table-put! profile-info key (list 0 0 (or name expr) current-file null))
+	     `((#%let ([,start (,register-profile-start (#%quote ,key))])
+		      (#%with-continuation-mark
+		       (#%quote ,profile-key) (#%quote ,key)
+		       (#%begin
+			,@(insert-at-tail*
+			   `(,register-profile-done (#%quote ,key) ,start)
+			   body))))))
+	   body)))
    
+   (define (insert-at-tail* e exprs)
+     (if (null? (cdr exprs))
+	 (list (insert-at-tail e (car exprs)))
+	 (cons (car exprs) (insert-at-tail* e (cdr exprs)))))
+
+   (define (insert-at-tail e expr)
+     (cond
+      [(not (pair? expr))
+       `(#%begin ,e ,expr)]
+      [else (case (car expr)
+	      [(#%quote)
+	       ;; expr doesn't take a significant amount of time to evaluate
+	       `(#%begin ,e ,expr)]
+	      [(#%lambda #%case-lambda
+			 #%unit #%compound-unit
+			 #%set!
+			 #%struct #%class*/names #%interface)
+	       ;; No tail effect, and we want to account for the time
+	       `(#%begin0 ,expr ,e)]
+	      [(#%let-values #%letrec-values)
+	       `(,(car expr)
+		 ,(cadr expr)
+		 ,@(insert-at-tail* e (cddr expr)))]
+	      [(#%begin #%with-continuation-mark)
+	       (insert-at-tail* e expr)]
+	      [(#%begin0)
+	       `(,@expr ,e)]
+	      [(#%if)
+	       ;; WARNING: e inserted twice!
+	       `(#%if ,(cadr expr)
+		      ,(insert-at-tail e (caddr expr))
+		      ,@(if (null? (cdddr expr))
+			    null
+			    (list (insert-at-tail e (cadddr expr)))))]
+	      [(#%cond) (#%cond)] ; it's an error, so nevermind
+	      [(#%invoke-unit)
+	       (let ([u (gensym)])
+		 `(#%let ([,u ,(cadr expr)])
+		    ,e
+		    (#%invoke-unit ,u ,@(cddr expr))))]
+	      [else
+	       ;; application; exploit guaranteed left-to-right evaluation
+	       (insert-at-tail* e expr)])]))
+
    (define (make-annotate top? name)
      (lambda (expr)
        (cond
@@ -100,14 +138,14 @@
 	    [(#%lambda)
 	     `(#%lambda ,(cadr expr)
 			,@(profile-point 
-			   (map annotate (cddr expr))
+			   (cddr expr)
 			   name expr))]
 	    [(#%case-lambda)
 	     `(#%case-lambda 
 	       ,@(map (lambda (clause)
 			`(,(car clause) 
 			  ,@(profile-point
-			     (map annotate (cdr clause))
+			     (cdr clause)
 			     name expr)))
 		      (cdr expr)))]
 	    [(#%let-values #%letrec-values)

@@ -126,13 +126,12 @@ Mac OS Classic (PowerPC only):
 
  1. Run the script `configure' (which is in the same directory as this
     README), usually with a --prefix=TARGETDIR command-line argument
-    (where TARGETDIR is an absolute path), and optionally with
-    --enable-dynlib.
+    and optionally with --enable-shared.
 
     For example, if you want to install into /usr/local/plt using
     dynamic libraries, then run
 
-        [here]configure --prefix=/usr/local/plt --enable-dynlib
+        [here]configure --prefix=/usr/local/plt --enable-shared
 
     where "[here]" is the directory path containing the `configure'
     script (possibly unnecessary, or possibly just "./", depending on
@@ -140,7 +139,7 @@ Mac OS Classic (PowerPC only):
 
     If the --prefix flag is omitted, the binaries are built for an
     in-place installation (i.e., the plt directory containing this
-    README will be used directly). Unless --enable-dynlib is used, the
+    README will be used directly). Unless --enable-shared is used, the
     plt directory can be moved later.
 
     The `configure' script generates the makefiles for building
@@ -152,10 +151,6 @@ Mac OS Classic (PowerPC only):
     `configure' from its own directory (as in the example above), but
     it's often better to pick a separate build directory that is
     otherwise empty.
-
-    The --enable-dynlib flag works only when `configure' is called
-    using an absolute path, or when an absolute path is provided with
-    --prefix.
 
     The `configure' script accepts many other flags that adjust the
     build process. Run `configure --help' for more information. In

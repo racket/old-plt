@@ -602,6 +602,7 @@ Scheme_Object *mx_element_click(int argc,Scheme_Object **argv) {
 // IHTMLStyle functions via IHTMLElement
 
 IHTMLStyle *styleInterfaceFromElement(Scheme_Object *o) {
+  HRESULT hr;
   IHTMLElement *pIHTMLElement;
   IHTMLStyle *pIHTMLStyle;
 
@@ -613,10 +614,10 @@ IHTMLStyle *styleInterfaceFromElement(Scheme_Object *o) {
 
   pIHTMLStyle = NULL;
 
-  pIHTMLElement->get_style(&pIHTMLStyle);
+  hr = pIHTMLElement->get_style(&pIHTMLStyle);
 
-  if (pIHTMLStyle == NULL) {
-    scheme_signal_error("Can't get IHTMLStyle interface from element");
+  if (hr != S_OK || pIHTMLStyle == NULL) {
+    codedComError("Can't get IHTMLStyle interface from element",hr);
   }
 
   return pIHTMLStyle;

@@ -4492,6 +4492,7 @@ void browserHwndMsgLoop(LPVOID p) {
   BROWSER_WINDOW_INIT *pBrowserWindowInit;
   LONG hasScrollBars;
   BOOL *destroy;
+  BOOL isHidden;
   
   pBrowserWindowInit = (BROWSER_WINDOW_INIT *)p;
 
@@ -4504,6 +4505,8 @@ void browserHwndMsgLoop(LPVOID p) {
     hasScrollBars = 0L;
   }
 
+  isHidden = !(pBrowserWindowInit->browserWindow.style & WS_VISIBLE);
+
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
 		      hasScrollBars | 
 		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
@@ -4513,6 +4516,14 @@ void browserHwndMsgLoop(LPVOID p) {
   
   if (hwnd == NULL) {
     scheme_signal_error("make-browser: Can't create browser window");
+  }
+
+  if (isHidden) {
+    ShowWindow(hwnd,SW_HIDE);
+  }
+  else {
+    ShowWindow(hwnd,SW_SHOW);
+    SetForegroundWindow(hwnd);
   }
 
   browserHwnd = hwnd;
@@ -4535,6 +4546,7 @@ void browserHwndMsgLoop(LPVOID p) {
     
     if (pIUnknown == NULL) {
       AtlAxGetControl(hwnd,&pIUnknown);
+
       if (pIUnknown) {
 	
 	hr = CoMarshalInterThreadInterfaceInStream(IID_IUnknown,pIUnknown,

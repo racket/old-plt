@@ -32,7 +32,9 @@
         ; Start CW
         (system "CWIE")
         (unless (ping-cw?)
-          (error name "couldn't start CodeWarrior")))
+          (sleep 1) ; wait a second...
+          (unless (ping-cw?)
+            (error name "couldn't start CodeWarrior"))))
 	    ; Open the project
         (cw-event "aevt" "odoc" `#(file ,tmp-proj))
     	(for-each (lambda (f) (cw "AddF" f)) src-files)
@@ -40,7 +42,8 @@
     	; Clean up
     	(cw "ClsP")
     	(unless started?
-          (cw-event "aevt" "quit"))))
+          (cw-event "aevt" "quit")
+          (let loop () (sleep 1) (when (ping-cw?) (loop))))))
           
     (delete-file tmp-proj)
     (delete-file debug-out)

@@ -74,7 +74,7 @@
   (define (prim-numeric-type? t)
     (cond 
       ((and (scheme-val? t) (scheme-val-type t))
-       (prim-numeroc-type? (scheme-val-type t)))
+       (prim-numeric-type? (scheme-val-type t)))
       ((scheme-val? t) #t)
       (else (or (prim-integral-type? t) (memq t `(float double))))))
   
@@ -183,7 +183,9 @@
          ((int short long byte) '(c:and/c number? exact?))
          ((long float) '(c:and/c number? inexact?))
          ((boolean) 'boolean?)
-         ((char) 'char?)))))
+         ((char) 'char?)
+         ((string) '(c:is-a?/c String))))
+      ((ref-type? type) '(c:is-a?/c ...))))
   
   ;; type-exists: string (list string) (U (list string) #f) src symbol type-records -> (U record procedure)
   (define (type-exists? name path container-class src level type-recs)

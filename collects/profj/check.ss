@@ -1959,10 +1959,10 @@
   ;check-cond-expr: type type type src src symbol type-records -> type
   (define (check-cond-expr test then else-t src test-src level type-recs)
     (if (scheme-val? test)
-        (if (scheme-val-test test)
-            (unless (eq? 'boolean (scheme-val-test test))
-              (condition-error (scheme-val-test test) test-src))
-            (set-scheme-val-test! 'boolean))
+        (if (scheme-val-type test)
+            (unless (eq? 'boolean (scheme-val-type test))
+              (condition-error (scheme-val-type test) test-src))
+            (set-scheme-val-type! 'boolean))
         (unless (eq? 'boolean test)
           (condition-error test test-src)))
     (cond
@@ -1971,12 +1971,12 @@
        (cond
          ((scheme-val? then)
           (cond
-            ((and (scheme-val-test then) (eq? 'boolean (scheme-val-test then))) 'boolean)
-            (else (set-scheme-val-test! then 'boolean) 'boolean)))
+            ((and (scheme-val-type then) (eq? 'boolean (scheme-val-type then))) 'boolean)
+            (else (set-scheme-val-type! then 'boolean) 'boolean)))
          ((scheme-val? else-t)
           (cond
-            ((and (scheme-val-test else-t) (eq? 'boolean (scheme-val-test else-t))) 'boolean)
-            (else (set-scheme-val-test! else-t 'boolean) 'boolean)))))
+            ((and (scheme-val-type else-t) (eq? 'boolean (scheme-val-type else-t))) 'boolean)
+            (else (set-scheme-val-type! else-t 'boolean) 'boolean)))))
       ((and (eq? 'boolean then) (eq? 'boolean else-t)) 'boolean)
       ((and (prim-numeric-type? then) (prim-numeric-type? else-t))
        ;; This is not entirely correct, but close enough due to using scheme ints

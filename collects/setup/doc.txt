@@ -14,7 +14,8 @@ services:
 
    The --clean (or -c) flag to Setup PLT causes it to delete
    all existing .zo and extension files, thus ensuring a clean
-   build from the source files.
+   build from the source files. (Exactly which files are deleted
+   is controlled by the info.ss file. See below for more info.)
 
    The -l flag takes one or more collection names and restricts 
    Setup PLT's action to those collections.
@@ -80,6 +81,15 @@ Additional info.ss fields trigger additional setup actions:
    collection-specific installation work.  This procedure should avoid
    unnecessary work in the case that it is called multiple times for
    the same installation.
+
+> 'clean - a list of pathnames to be deleted when the --clean or
+  -c flag is passed to setup-plt. The pathnames must be relative to
+  the collection.  If the any path names a directory, each of the
+  files in the directory and in any subdirectory are deleted, but the
+  directory structure itself is preserved. If the path names a file,
+  the file is deleted.  The default, if this flag is not specified, is
+  to delete all files in the compiled subdirectory.
+
 
  Unpacking .plt Distribution Archives
  ------------------------------------

@@ -3,6 +3,7 @@
     (basic<%>)
     get-menu%
     get-menu-item%
+    get-checkable-menu-item%
     get-file-menu
     get-edit-menu
     get-help-menu
@@ -117,6 +118,7 @@
    (sequence (apply super-init args))
    (public (get-menu% (lambda () menu%)))
    (public (get-menu-item% (lambda () menu-item%)))
+   (public (get-checkable-menu-item% (lambda () checkable-menu-item%)))
    (public
     (get-file-menu
      (let ((m
@@ -300,6 +302,7 @@
     (help-menu:about-help-string
      (lambda () "Learn something about this application")))
    (public (help-menu:after-about (lambda (menu) (void))))
+   (sequence (void))
    (sequence (void))
    (sequence (void))
    (sequence (void))

@@ -243,10 +243,6 @@
   (define (done)
     (setup-printf "Done setting up"))
 
-  ;; automatically delete .zo files when installing a .plt file.
-  (unless (null? (archives))
-    (clean #t))
-
   (unless (null? (archives))
     (when (null? x-specific-collections)
       (done)
@@ -412,12 +408,32 @@
 		      path)]))))
 
   (define (clean-collection cc)
-    (let* ([path (build-path (cc-path cc) "compiled")])
-      (when (directory-exists? path)
-	(delete-files-in-directory 
-	 path
-	 (lambda ()
-	   (setup-printf "Deleting files for ~a in ~a" (cc-name cc) path))))))
+    (let* ([info (cc-info cc)]
+	   [paths (call-info
+		   info 'clean (list "compiled")
+		   (lambda (x)
+		     (unless (and (list? x)
+				  (andmap string? x))
+		       (error 'setup-plt "expected a list of strings for 'clean, got: ~s"
+			      x))))]
+	   [printed? #f]
+	   [print-message
+	    (lambda ()
+	      (unless printed?
+		(set! printed? #t)
+		(setup-printf "Deleting files for ~a." (cc-name cc))))])
+      (for-each (lambda (path)
+		  (let ([full-path (build-path (cc-path cc) path)])
+		    (cond
+		     [(directory-exists? path)
+		      (delete-files-in-directory 
+		       path
+		       print-message)]
+		     [(file-exists? path)
+		      (delete-file path)
+		      (print-message)]
+		     [else (void)])))
+		paths)))
 
   (when (clean)
     (for-each clean-collection collections-to-compile))

@@ -224,14 +224,15 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   clipping = NULL;
 
 #ifndef wx_xt
+# ifdef wx_mac
   logical_origin_x = 0;
   logical_origin_y = 0;
+  logical_scale_x = 1.0;
+  logical_scale_y = 1.0;
+# endif
 
   device_origin_x = 0;
   device_origin_y = 0;
-
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
 
   user_scale_x = 1.0;
   user_scale_y = 1.0;

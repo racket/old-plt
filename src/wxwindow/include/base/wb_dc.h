@@ -30,6 +30,12 @@
 #define MM_POINTS      7
 #define MM_METRIC      8
 
+#define wxPIXELS_MAP    0
+#define wxPOINTS_MAP    1
+
+#define wxWINDOWS_SCALE 0
+#define wxWX_SCALE      1
+
 class wxRegion;
 class wxCanvas;
 class wxCanvasDC;
@@ -45,19 +51,14 @@ class wxbDC: public wxObject
   wxRegion *clipping;
 
   // Coordinate system variables
-  double logical_origin_x;
-  double logical_origin_y;
-
   double device_origin_x;
   double device_origin_y;
-
-  double logical_scale_x;
-  double logical_scale_y;
 
   double user_scale_x;
   double user_scale_y;
 
   int mapping_mode;
+  int scaling_mode;
 
   char *title;
 
@@ -163,10 +164,8 @@ class wxbDC: public wxObject
 
   virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
  
-  virtual void SetLogicalOrigin(double x, double y);
   virtual void SetDeviceOrigin(double x, double y);
   void GetDeviceOrigin(double *x, double *y) {*x = device_origin_x; *y = device_origin_y; }
-  virtual void SetLogicalScale(double x, double y);
   virtual void SetUserScale(double x, double y) = 0;
   void GetUserScale(double *x, double *y) {*x = user_scale_x; *y = user_scale_y; }
   virtual double DeviceToLogicalX(int x) = 0;

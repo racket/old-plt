@@ -34,8 +34,6 @@ class wxDC: public wxbDC
   int combine_status;
   int window_ext_x;
   int window_ext_y;
-  double system_scale_x;
-  double system_scale_y;
 
   wxCanvas *canvas;
   wxBitmap *selected_bitmap;
@@ -128,10 +126,9 @@ class wxDC: public wxbDC
   void StartPage(void);
   void EndPage(void);
   void SetMapMode(int mode, HDC dc = 0);
+  void SetScaleMode(int mode, HDC dc = 0);
+  void ResetMapMode(HDC dc = 0);
   void SetUserScale(double x, double y);
-  void SetSystemScale(double x, double y);
-  void SetLogicalOrigin(double x, double y);
-  void SetDeviceOrigin(double x, double y);
   double DeviceToLogicalX(int x);
   double DeviceToLogicalY(int y);
   double DeviceToLogicalXRel(int x);
@@ -202,26 +199,6 @@ class wxPrinterDC: public wxDC
 // Gets an HDC for the default printer configuration
 HDC wxGetPrinterDC(void);
 
-// Logical to device
-// Absolute
-#define XLOG2DEV(x) (x)
-
-#define YLOG2DEV(y) (y)
-
-// Relative
-#define XLOG2DEVREL(x) (x)
-#define YLOG2DEVREL(y) (y)
-
-// Device to logical
-// Absolute
-#define XDEV2LOG(x) (x)
-
-#define YDEV2LOG(y) (y)
-
-// Relative
-#define XDEV2LOGREL(x) (x)
-#define YDEV2LOGREL(y) (y)
-
 /*
  * Have the same macros as for XView but not for every operation:
  * just for calculating window/viewport extent (a better way of scaling).
@@ -229,27 +206,25 @@ HDC wxGetPrinterDC(void);
 
 // Logical to device
 // Absolute
-#define MS_XLOG2DEV(x) ((int)floor(((x) - logical_origin_x)*logical_scale_x*user_scale_x*system_scale_x + device_origin_x))
+#define MS_XLOG2DEV(x) ((int)floor((x)*logical_scale_x*user_scale_x + device_origin_x))
+#define MS_YLOG2DEV(y) ((int)floor((y)*logical_scale_y*user_scale_y + device_origin_y))
 
-#define MS_YLOG2DEV(y) ((int)floor(((y) - logical_origin_y)*logical_scale_y*user_scale_y*system_scale_y + device_origin_y))
+// Logical to device
+#define XLOG2DEV(x) MS_XLOG2DEV(x)
+#define YLOG2DEV(y) MS_YLOG2DEV(y)
 
 // Relative
-#define MS_XLOG2DEVREL(x) ((int)floor((x)*logical_scale_x*user_scale_x*system_scale_x))
-#define MS_YLOG2DEVREL(y) ((int)floor((y)*logical_scale_y*user_scale_y*system_scale_y))
+#define MS_XLOG2DEVREL(x) ((int)floor((x)*logical_scale_x*user_scale_x))
+#define MS_YLOG2DEVREL(y) ((int)floor((y)*logical_scale_y*user_scale_y))
 
 // Device to logical
 // Absolute
-// #define MS_XDEV2LOG(x) (int)(((x) - device_origin_x)/(logical_scale_x*user_scale_x*system_scale_x) + logical_origin_x)
-#define MS_XDEV2LOG(x) (((x) - device_origin_x)/(logical_scale_x*user_scale_x*system_scale_x) + logical_origin_x)
-
-//#define MS_YDEV2LOG(y) (int)(((y) - device_origin_y)/(logical_scale_y*user_scale_y*system_scale_y) + logical_origin_y)
-#define MS_YDEV2LOG(y) (((y) - device_origin_y)/(logical_scale_y*user_scale_y*system_scale_y) + logical_origin_y)
+#define MS_XDEV2LOG(x) (((x) - device_origin_x)/(logical_scale_x*user_scale_x))
+#define MS_YDEV2LOG(y) (((y) - device_origin_y)/(logical_scale_y*user_scale_y))
 
 // Relative
-//#define MS_XDEV2LOGREL(x) (int)((x)/(logical_scale_x*user_scale_x*system_scale_x))
-#define MS_XDEV2LOGREL(x) ((x)/(logical_scale_x*user_scale_x*system_scale_x))
-//#define MS_YDEV2LOGREL(y) (int)((y)/(logical_scale_y*user_scale_y*system_scale_y))
-#define MS_YDEV2LOGREL(y) ((y)/(logical_scale_y*user_scale_y*system_scale_y))
+#define MS_XDEV2LOGREL(x) ((x)/(logical_scale_x*user_scale_x))
+#define MS_YDEV2LOGREL(y) ((y)/(logical_scale_y*user_scale_y))
 
 
 class wxGL : public wxObject {

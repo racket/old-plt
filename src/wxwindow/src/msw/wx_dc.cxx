@@ -103,17 +103,13 @@ wxDC::wxDC(void)
   old_palette = 0;
   cur_rop = -1;
   font = wxNORMAL_FONT;
-  logical_origin_x = 0;
-  logical_origin_y = 0;
   device_origin_x = 0;
   device_origin_y = 0;
   logical_scale_x = 1.0;
   logical_scale_y = 1.0;
   user_scale_x = 1.0;
   user_scale_y = 1.0;
-  system_scale_x = 1.0;
-  system_scale_y = 1.0;
-  mapping_mode = 0;
+  mapping_mode = wxPIXELS_MAP;
   title = NULL;
   dont_delete = FALSE;
   cdc = NULL;
@@ -246,8 +242,13 @@ wxGL *wxDC::GetGL()
 
 void wxDC::ShiftXY(double x, double y, int *ix, int *iy)
 {
-  *ix = (int)floor(x);
-  *iy = (int)floor(y);
+  if (scaling_mode == wxWINDOWS_SCALE) {
+    *ix = (int)floor(x);
+    *iy = (int)floor(y);
+  } else {
+    *ix = MS_XLOG2DEV(x);
+    *ix = MS_XLOG2DEV(y);
+  }
 
   if (canvas) {
     wxWnd *wnd = (wxWnd *)canvas->handle;
@@ -500,7 +501,7 @@ void wxDC::ReleaseGraphics(HDC given_dc)
     else
       dc = ThisDC();
     if (dc) {
-      SetMapMode(mapping_mode, dc);
+      ResetMapMode(dc);
       DoClipping(dc);
       if (!given_dc)
 	DoneDC(dc);
@@ -552,7 +553,7 @@ void wxDC::Clear(void)
   } else
     ReleaseGraphics(dc);
   
-  SetMapMode(2, dc); /* => no scale */
+  SetScaleMode(wxWX_SCALE, dc); /* => no scale */
 
   /* Here's the actual clear operation */
   {
@@ -563,7 +564,6 @@ void wxDC::Clear(void)
     DeleteObject(brush);
   }
 
-  SetMapMode(mapping_mode, dc);
   DoneDC(dc);
 }
 
@@ -609,7 +609,7 @@ Bool wxDC::GetPixel(double x, double y, wxColour *col)
   ShiftXY(x, y, &xx1, &yy1);
 
   // get the color of the pixel
-  pixelcolor = ::GetPixel(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1));
+  pixelcolor = ::GetPixel(dc, xx1, yy1);
   
   DoneDC(dc);
 
@@ -648,6 +648,8 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
     return;
   } else
     ReleaseGraphics(dc);
+
+  SetScaleMode(wxWX_SCALE, dc);
 
   if (StartPen(dc)) {
     int xx1, yy1, xx2, yy2;
@@ -695,8 +697,8 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
       }
     }
 
-    (void)MoveToEx(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), NULL);
-    (void)LineTo(dc, (int)XLOG2DEV(xx2), (int)YLOG2DEV(yy2));
+    (void)MoveToEx(dc, xx1, yy1, NULL);
+    (void)LineTo(dc, xx2, yy2);
 
     DonePen(dc);
   }
@@ -817,6 +819,8 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
     return;
   } else
     ReleaseGraphics(dc);
+
+  SetScaleMode(wxWX_SCALE, dc);
   
   if (StippleBrush()) {
     wxRegion *r;
@@ -876,18 +880,19 @@ void wxDC::SetPixel(double x, double y, wxColour *c)
   if (!dc) return;
 
   ReleaseGraphics(dc);
+  SetScaleMode(wxWX_SCALE, dc);
 
   ShiftXY(x, y, &xx1, &yy1);
   
   if (!c) {
     c = current_pen->GetColour();
     if (StartPen(dc)) {
-      ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
+      ::SetPixelV(dc, xx1, yy1, c->pixel);
       DonePen(dc);
     }
   } else {
     SetRop(dc, wxSOLID);
-    ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
+    ::SetPixelV(dc, xx1, yy1, c->pixel);
   }
 
   DoneDC(dc);
@@ -898,6 +903,7 @@ Bool wxDC::BeginSetPixelFast(int x, int y, int w, int h)
   double ww, hh;
 
   ReleaseGraphics();
+  SetScaleMode(wxWINDOWS_SCALE, dc);
   
   GetSize(&ww, &hh);
 
@@ -986,6 +992,8 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
   } else
     ReleaseGraphics(dc);
 
+  SetScaleMode(wxWX_SCALE, dc);
+
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -1063,6 +1071,8 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
   } else
     ReleaseGraphics(dc);
 
+  SetScaleMode(wxWX_SCALE, dc);
+
   if (clipping && clipping->Empty())
     return;
 
@@ -1093,7 +1103,7 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
   
   /* Turn of GDI scale. We do it ourselves, so we can
      plot half points that scale up to full points. */
-  SetMapMode(2, dc);
+  SetScaleMode(wxWX_SCALE, dc);
 
   if (StartBrush(dc, 1)) {
     if (cnt == 1) {
@@ -1140,8 +1150,6 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
     DonePen(dc);
   }
 
-  SetMapMode(mapping_mode, dc);
-
   SetPolyFillMode(dc, prev);
 
   DoneDC(dc);
@@ -1176,6 +1184,8 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
     return;
   } else
     ReleaseGraphics(dc);
+
+  SetScaleMode(wxWX_SCALE, dc);
 
   if (StartPen(dc)) {
     int xoffset1;
@@ -1236,6 +1246,8 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
     return;
   } else
     ReleaseGraphics(dc);
+
+  SetScaleMode(wxWX_SCALE, dc);
   
   if (StippleBrush()) {
     wxRegion *r;
@@ -1253,14 +1265,11 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
     dd = 1;
 
   if (StartBrush(dc, 1)) {
-    (void)Rectangle(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
-		    (int)XLOG2DEV(x2)+dd, (int)YLOG2DEV(y2)+dd);
+    (void)Rectangle(dc, x1, y1, x2+dd, y2+dd);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)Rectangle(dc, 
-		    (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
-		    (int)XLOG2DEV(x2)-1+dd, (int)YLOG2DEV(y2)-1+dd);
+    (void)Rectangle(dc, x1, y1, x2-1+dd, y2-1+dd);
     DonePen(dc);
   }
 
@@ -1270,7 +1279,7 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
 void wxDC::DrawRoundedRectangle(double x, double y, double width, double height, double radius)
 {
   HDC dc;
-  int x1, y1, x2, y2;
+  int x1, y1, x2, y2, r1, r2;
 
   dc = ThisDC();
 
@@ -1357,17 +1366,21 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
     FillWithStipple(this, r, current_brush);
   }
 
+  SetScaleMode(wxWX_SCALE, dc);
+
   ShiftXY(x, y, &x1, &y1);
   ShiftXY(x + width, y + height, &x2, &y2);
+  r1 = MS_XLOG2DEVREL(radius);
+  r2 = MS_YLOG2DEVREL(radius);
+  if (r2 < r1)
+    r1 = r2;
 
   if (StartBrush(dc, 1)) {
-    (void)RoundRect(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), (int)XLOG2DEV(x2) + 1,
-		    (int)YLOG2DEV(y2) + 1, (int)XLOG2DEV(radius), (int)YLOG2DEV(radius));
+    (void)RoundRect(dc, x1, y1, x2 + 1, y2 + 1, radius, radius);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)RoundRect(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), (int)XLOG2DEV(x2),
-		    (int)YLOG2DEV(y2), (int)XLOG2DEV(radius), (int)YLOG2DEV(radius));
+    (void)RoundRect(dc, x1, y1, x2, y2, radius, radius);
     DonePen(dc);
   }
 
@@ -1389,6 +1402,8 @@ void wxDC::DrawEllipse(double x, double y, double width, double height)
   } else
     ReleaseGraphics(dc);
 
+  SetScaleMode(wxWX_SCALE, dc);
+
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -1400,13 +1415,11 @@ void wxDC::DrawEllipse(double x, double y, double width, double height)
   ShiftXY(x + width, y + height, &x2, &y2);
 
   if (StartBrush(dc, 1)) {
-    (void)Ellipse(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), 
-		  (int)XLOG2DEV(x2) + 1, (int)YLOG2DEV(y2) + 1);
+    (void)Ellipse(dc, x1, y1, x2 + 1, y2 + 1);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)Ellipse(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
-		  (int)XLOG2DEV(x2), (int)YLOG2DEV(y2));
+    (void)Ellipse(dc, x1, y1, x2, y2);
     DonePen(dc);
   }
 
@@ -1550,6 +1563,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   if (!dc) return;
 
   ReleaseGraphics(dc);
+  SetScaleMode(wxWINDOWS_SCALE, dc);
 
   ShiftXY(x, y, &xx1, &yy1);
 
@@ -1580,8 +1594,8 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len);
 
-  xx = XLOG2DEV(xx1);
-  yy = XLOG2DEV(yy1);
+  xx = xx1;
+  yy = yy1;
   w = h = 0;
   d = 0;
 
@@ -1595,8 +1609,8 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
     GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
 
-    w += XDEV2LOGREL(sizeRect.cx);
-    h += XDEV2LOGREL(sizeRect.cy);
+    w += sizeRect.cx;
+    h += sizeRect.cy;
 
     len -= alen;
     d += alen;
@@ -1788,7 +1802,7 @@ void wxDC::StartPage(void)
     return;
   if (cdc) {
     ::StartPage(cdc);
-    SetMapMode(mapping_mode);
+    ResetMapMode(cdc);
   }
 }
 
@@ -1815,7 +1829,7 @@ double wxDC::GetCharHeight(void)
 
   DoneDC(dc);
 
-  return (double)YDEV2LOGREL(lpTextMetric.tmHeight);
+  return (double)lpTextMetric.tmHeight;
 }
 
 double wxDC::GetCharWidth(void)
@@ -1831,7 +1845,7 @@ double wxDC::GetCharWidth(void)
 
   DoneDC(dc);
 
-  return (double)XDEV2LOGREL(lpTextMetric.tmAveCharWidth);
+  return (double)lpTextMetric.tmAveCharWidth;
 }
 
 void wxDC::GetTextExtent(const char *string, double *x, double *y,
@@ -1863,6 +1877,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
   }
 
   ReleaseGraphics(dc);
+  SetScaleMode(wxWINDOWS_SCALE, dc);
 
   ustring = convert_to_drawable_format(string, d, ucs4, &len);
 
@@ -1895,16 +1910,16 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
   DoneDC(dc);
 
-  *x = (double)XDEV2LOGREL(tx);
-  *y = (double)YDEV2LOGREL(ty);
-  if (descent) *descent = (double)YDEV2LOGREL(tm.tmDescent);
-  if (topSpace) *topSpace = (double)YDEV2LOGREL(tm.tmInternalLeading);
+  *x = (double)tx;
+  *y = (double)ty;
+  if (descent) *descent = (double)tm.tmDescent;
+  if (topSpace) *topSpace = (double)tm.tmInternalLeading;
   
   if (oldFont)
     SetFont(oldFont);
 }
 
-void wxDC::SetMapMode(int mode, HDC given_dc)
+void wxDC::ResetMapMode(HDC given_dc)
 {
   double sx, sy, ox, oy;
   HDC dc;
@@ -1946,7 +1961,7 @@ void wxDC::SetMapMode(int mode, HDC given_dc)
     }
   }
 
-  if (mode == 2) {
+  if (scaling_mode == wxWX_SCALE) {
     /* disable user xform */
     sx = 1.0;
     sy = 1.0;
@@ -1964,6 +1979,7 @@ void wxDC::SetMapMode(int mode, HDC given_dc)
 
   if ((__type != wxTYPE_DC_PRINTER)
       && (::SetGraphicsMode(dc, GM_ADVANCED) != 0)) {
+    /* Note: logical scale is used only for printers */
     XFORM xform;
     xform.eM11 = (FLOAT)sx;
     xform.eM21 = 0;
@@ -1975,15 +1991,31 @@ void wxDC::SetMapMode(int mode, HDC given_dc)
   } else {
     ::SetViewportExtEx(dc, 1000, 1000, NULL);
     ::SetWindowExtEx(dc, 
-		     (int)floor(1000*logical_scale_x*sx*system_scale_x), 
-		     (int)floor(1000*logical_scale_y*sy*system_scale_y),
+		     (int)floor(1000*logical_scale_x*sx), 
+		     (int)floor(1000*logical_scale_y*sy),
 		     NULL);
     ::SetViewportOrgEx(dc, (int)floor(ox), (int)floor(oy), NULL);
-    ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
+    ::SetWindowOrgEx(dc, (int)0, (int)0, NULL);
   }
 
   if (!given_dc)
     DoneDC(dc);
+}
+
+void wxDC::SetMapMode(int m, HDC given_dc)
+{
+  if (m != mapping_mode) {
+    mapping_mode = m;
+    ResetMapMode(given_dc);
+  }
+}
+
+void wxDC::SetScaleMode(int m, HDC given_dc)
+{
+  if (m != scaling_mode) {
+    scaling_mode = m;
+    ResetMapMode(given_dc);
+  }
 }
 
 void wxDC::SetUserScale(double x, double y)
@@ -1993,32 +2025,7 @@ void wxDC::SetUserScale(double x, double y)
   user_scale_y = y;
 
   ReleaseGraphics();
-  SetMapMode(mapping_mode);
-}
-
-void wxDC::SetSystemScale(double x, double y)
-{
-  system_scale_x = x;
-  system_scale_y = y;
-
-  ReleaseGraphics();
-  SetMapMode(mapping_mode);
-}
-
-void wxDC::SetLogicalOrigin(double x, double y)
-{
-  HDC dc;
-
-  logical_origin_x = x;
-  logical_origin_y = y;
-
-  dc = ThisDC();
-
-  if (dc) {
-    ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
-  }
-
-  DoneDC(dc);
+  ResetMapMode();
 }
 
 void wxDC::SetDeviceOrigin(double x, double y)
@@ -2026,8 +2033,8 @@ void wxDC::SetDeviceOrigin(double x, double y)
   device_origin_x = x;
   device_origin_y = y;
 
-  ReleaseGraphics();  
-  SetMapMode(mapping_mode);
+  ReleaseGraphics();
+  ResetMapMode();
 }
 
 double wxDC::DeviceToLogicalX(int x)
@@ -2116,7 +2123,8 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   if (!dc) return FALSE;
 
   ReleaseGraphics(dc);
-
+  SetScaleMode(wxWINDOWS_SCALE, dc);
+ 
   if (!blit_dc) {
     wxREGGLOB(blit_dc);
     blit_dc = new wxMemoryDC(1);
@@ -2400,8 +2408,8 @@ void wxDC::GetSize(double *width, double *height)
     return;
   }
 
-  w=::GetDeviceCaps(dc,HORZRES);
-  h=::GetDeviceCaps(dc,VERTRES);
+  w = ::GetDeviceCaps(dc,HORZRES);
+  h = ::GetDeviceCaps(dc,VERTRES);
   *width = (double)MS_XDEV2LOGREL(w);
   *height = (double)MS_YDEV2LOGREL(h);
 
@@ -2566,8 +2574,7 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
   }
   
   if (cdc) {
-    mapping_mode = 1; /* => MM_POINTS */
-    SetMapMode(mapping_mode);
+    SetMappingMode(wxPOINTS_MAP);
   }
 
   SetBrush(wxBLACK_BRUSH);
@@ -2588,8 +2595,7 @@ wxPrinterDC::wxPrinterDC(HDC theDC)
   ok = TRUE;
 
   if (cdc) {
-    mapping_mode = 1; /* => MM_POINTS */
-    SetMapMode(mapping_mode);
+    SetMappingMode(wxPOINTS_MAP);
   }
 
   SetBrush(wxBLACK_BRUSH);

@@ -140,12 +140,6 @@ wxColour *wxbDC::GetBackground(void)
   return c;
 }
 
-void wxbDC::SetLogicalOrigin(double x, double y)
-{
-  logical_origin_x = x;
-  logical_origin_y = y;
-}
-
 void wxbDC::SetDeviceOrigin(double x, double y)
 {
   device_origin_x = x;

@@ -125,7 +125,7 @@ static regexp *regcomp(char *, rxpos, int);
 #define	PLUS	11	/* node	Match this (simple) thing 1 or more times. */
 #define	STAR2	12	/* non-greedy star. */
 #define	PLUS2	13	/* non-greedy plus. */
-#define OPENN   14      /* like OPEN, but with an n >= 50 */
+#define OPENN   14      /* like OPEN, but with an n >= 50, or n == 0 means (?:...) */
 #define CLOSEN  15      /* like CLOSE, but with an n >= 50 */
 #define	OPEN	20	/* no	Mark this point in input as start of #n. */
 /*	OPEN+1 is number 1, etc. */
@@ -215,7 +215,7 @@ static long regsize;		/* Code size. */
 #ifndef STATIC
 #define	STATIC	static
 #endif
-STATIC rxpos reg(int, int *);
+STATIC rxpos reg(int, int *, int);
 STATIC rxpos regbranch(int *);
 STATIC rxpos regpiece(int *);
 STATIC rxpos regatom(int *);
@@ -279,7 +279,7 @@ regcomp(char *expstr, rxpos exp, int explen)
   regsize = 0L;
   regcode = 1;
   regc(MAGIC);
-  if (reg(0, &flags) == 0)
+  if (reg(0, &flags, 0) == 0)
     return NULL;
   
   /* Small enough for pointer-storage convention? */
@@ -305,7 +305,7 @@ regcomp(char *expstr, rxpos exp, int explen)
   regstr = (char *)r;
   regcode = (char *)r->program - (char *)r;
   regc(MAGIC);
-  if (reg(0, &flags) == 0)
+  if (reg(0, &flags, 0) == 0)
     return NULL;
   
   /* Dig out information for optimizations. */
@@ -374,7 +374,7 @@ static Scheme_Object *reg_k(void)
 
   p->ku.k.p1 = NULL;
 
-  res = reg(p->ku.k.i1, flagp);
+  res = reg(p->ku.k.i1, flagp, p->ku.k.i2);
 
   return scheme_make_integer(res);
 }
@@ -391,7 +391,7 @@ static Scheme_Object *reg_k(void)
    * follows makes it hard to avoid.
    */
 static rxpos
-reg(int paren, int *flagp)
+reg(int paren, int *flagp, int paren_set)
 {
   rxpos ret;
   rxpos br;
@@ -407,6 +407,7 @@ reg(int paren, int *flagp)
       Scheme_Object *ov;
       p->ku.k.i1 = paren;
       p->ku.k.p1 = (void *)flagp;
+      p->ku.k.i2 = paren_set;
       ov = scheme_handle_stack_overflow(reg_k);
       return SCHEME_INT_VAL(ov);
     }
@@ -417,9 +418,12 @@ reg(int paren, int *flagp)
 
   /* Make an OPEN node, if parenthesized. */
   if (paren) {
-    parno = regnpar;
-    regnpar++;
-    if (OPEN + parno >= CLOSE) {
+    if (paren_set) {
+      parno = regnpar;
+      regnpar++;
+    } else
+      parno = 0;
+    if (!paren_set || (OPEN + parno >= CLOSE)) {
       ret = regcode;
       regc(parno >> 8);
       regc(parno & 255);
@@ -454,7 +458,7 @@ reg(int paren, int *flagp)
 
   /* Make a closing node, and hook it on the end. */
   if (paren) {
-    if (OPEN + parno >= CLOSE) {
+    if (!paren_set || (OPEN + parno >= CLOSE)) {
       ender = regcode;
       regc(parno >> 8);
       regc(parno & 255);
@@ -698,7 +702,12 @@ regatom(int *flagp)
   }
   break;
   case '(':
-    ret = reg(1, &flags);
+    if ((regparsestr[regparse] == '?')
+	&& (regparsestr[regparse+1] == ':')) {
+      regparse += 2;
+      ret = reg(1, &flags, 0);
+    } else
+      ret = reg(1, &flags, 1);
     if (ret == 0)
       return 0;
     *flagp |= flags&(HASWIDTH|SPSTART);
@@ -1517,6 +1526,8 @@ regmatch(Regwork *rw, rxpos prog)
 	case OPENN:
 	  isopen = 1;
 	  no = OPLEN(OPERAND(scan));
+	  if (!no)
+	    no = -1; /* => don't set in result array */
 	  break;
 	case CLOSEN:
 	  isopen = 0;
@@ -1536,25 +1547,29 @@ regmatch(Regwork *rw, rxpos prog)
 
 	if (isopen) {
 	  if (regmatch(rw, next)) {
-	    /*
-	     * Don't set startp if some later
-	     * invocation of the same parentheses
-	     * already has.
-	     */
-	    if (rw->startp[no] == -1)
-	      rw->startp[no] = save;
+	    if (no >= 0) {
+	      /*
+	       * Don't set startp if some later
+	       * invocation of the same parentheses
+	       * already has.
+	       */
+	      if (rw->startp[no] == -1)
+		rw->startp[no] = save;
+	    }
 	    return(1);
 	  } else
 	    return(0);
 	} else {
 	  if (regmatch(rw, next)) {
-	    /*
-	     * Don't set endp if some later
-	     * invocation of the same parentheses
-	     * already has.
-	     */
-	    if (rw->endp[no] == -1)
-	      rw->endp[no] = save;
+	    if (no >= 0) {
+	      /*
+	       * Don't set endp if some later
+	       * invocation of the same parentheses
+	       * already has.
+	       */
+	      if (rw->endp[no] == -1)
+		rw->endp[no] = save;
+	    }
 	    return(1);
 	  } else
 	    return(0);

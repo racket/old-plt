@@ -4,7 +4,7 @@
 	   "compiler.ss"
 	   "compiler-target.ss"
            "empty-context.ss"
-           "primitives.ss"
+       ;    "primitives.ss"
            "runtime-context.ss")
   
   (provide (all-defined))
@@ -98,7 +98,7 @@
         (stx-err "Invalid usage of to-scheme on an expression% (I'm purely virtual)"))
       
       (super-instantiate ())))
-  
+    
   ;; 5.2.1
   (define identifier%
     (class expression%

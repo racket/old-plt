@@ -1,11 +1,11 @@
 (module compiler-stmt mzscheme
   (require (lib "class.ss")
            (lib "list.ss")
-           (lib "etc.ss")
+         ;  (lib "etc.ss")
 	   "compiler.ss"
-	   "compiler-expr.ss"
+	  ; "compiler-expr.ss"
            "compiler-target.ss"
-           "primitives.ss"
+          ; "primitives.ss"
            "runtime-context.ss"
            "empty-context.ss")
 
@@ -68,10 +68,18 @@
       ;; expression: (is-a?/c expression%)
       (init-field expression)
       ;; targets: (listof (is-a?/c target%))
-      (define targets (map (lambda (e) (send e to-target)) targ-exps))
+      (define targets (map (lambda (e)
+                             (send e to-target))
+                           targ-exps))
       
       ;;daniel
       (define scope #f)
+      
+      ;;daniel, temporary for debugging
+      (define/public (get-targs) targets)
+      
+      
+      (define/public (get-scope) scope)
       
       (define/override (set-bindings! enclosing-scope)
         (set! scope enclosing-scope)
@@ -89,7 +97,14 @@
                                  ',(send ((class-field-accessor tattribute-ref% identifier) (car targets))
                                               to-scheme)
                                  ,(send expression to-scheme))
-                           `(define ,(send (car targets) to-scheme)
+                              ;; if it's bound, and the tid is not the same obj as this one,
+                              ;; then we set the bound variable.
+                              ;; otherwise we must declare it
+                           `(,(if (and (send scope is-bound? (car targets))
+                                       (not (eq? (send scope binding-tid (car targets))
+                                                           (car targets))))
+                                  'set!
+                                  'define) ,(send (car targets) to-scheme)
                               ,(send expression to-scheme))))))
       
       (super-instantiate ())))
@@ -304,7 +319,7 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
             (->orig-so (let ([py-return (gensym 'return)])
-                         `(call-with-current-continuation
+                         `(call-with-escape-continuation
                            (lambda (,py-return)
                              ,@(sub-stmt-map (lambda (s)
                                                (if (is-a? s return%)
@@ -481,6 +496,7 @@
       
       (super-instantiate ())))
   
+  
   (define (bindings-mixin %)
     (class %
       (super-instantiate ())
@@ -493,17 +509,58 @@
            (send body collect-globals))
           ht))
       
+      ;;daniel
+      ;;  looks like global-table is a hash-table of key: symbol, value: identifier%
+      
       ;; bindings: (listof (is-a?/c tidentifier%))
       (define bindings null)
+      
+      ;;daniel
+      (define/public (get-global-table) global-table)
+      (define/public (get-bindings) bindings)
       
       (define/public (add-binding id)
         (unless (hash-table-get global-table (send id get-symbol) (lambda () #f))
           (set! bindings (cons id bindings))))
       
+      
+;      (define/public (is-global? id)
+;        (cond
+;          ((hash-table-get global-table (send id get-symbol) (lambda () #f)) #t)
+;          (else #f)))
+      ;;daniel
+      ;;  modified to return the tidentifier% in case it's in the global table
       (define/public (is-global? id)
-        (cond
-          ((hash-table-get global-table (send id get-symbol) (lambda () #f)) #t)
-          (else #f)))))
+        (hash-table-get global-table (send id get-symbol) (lambda () #f)))
+      
+      ;;daniel
+      (define/public (is-local? id)
+        (ormap (lambda (b)
+                 (and (tidentifier=? id b) b))
+               bindings))
+      
+      ;;daniel
+      (define/public (is-bound? id)
+        (or (is-global? id) (is-local? id)))
+      
+      ;;daniel
+      ;; binding-tid: (union identifier% tidentifier%) -> (union identifier% tidentifier% false)
+      ;; which tidentifier% or identifier% is the first-seen (binding) instance of this id?
+      (define/public (binding-tid id)
+        (is-bound? id))
+      
+      ))
+  
+
+  ;; daniel
+  ;;  use this as the object type of the initial empty environment for a module
+  (define module-scope%
+    (bindings-mixin
+     (class object%
+       (field [body (make-object (class object%
+                                   (define/public (collect-globals) null)
+                                   (super-instantiate ())))])
+       (super-instantiate ()))))
   
   ;; 7.5
   (define function-definition%
@@ -516,8 +573,13 @@
        ;; body: (is-a?/c suite%)
        (init-field name parms body)
        
+       ;;daniel -- moved (send name to-target) here to make set-bindings! work correctly
+       (define tname (send name to-target))
+       
        (define/override (set-bindings! es)
-         (when es (send es add-binding (send name to-target)))
+         (when es
+           (unless (send es is-local? tname)
+             (send es add-binding tname)))
          (send parms set-bindings! es)
          (send body set-bindings! this))
        
@@ -543,8 +605,13 @@
        ;; body: (is-a?/c suite%)
        (init-field name inherit-expr body)
        
+       ;; daniel -- moved send to-target here
+       (define tname (send name to-target))
+       
        (define/override (set-bindings! enclosing-scope)
-         (when enclosing-scope (send enclosing-scope add-binding (send name to-target)))
+         (when (and enclosing-scope
+                    (not (send enclosing-scope is-local? tname)))
+           (send enclosing-scope add-binding tname))
          (for-each (lambda (x) (send x set-bindings! enclosing-scope)) inherit-expr)
          (send body set-bindings! this))
        

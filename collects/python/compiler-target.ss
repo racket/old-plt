@@ -20,7 +20,8 @@
       
       (define/override (set-bindings! enclosing-scope)
         (when enclosing-scope 
-          (send enclosing-scope add-binding this)
+          (unless (send enclosing-scope is-local? this)
+            (send enclosing-scope add-binding this))
           (set! scope enclosing-scope)))
       
       ;;daniel
@@ -29,6 +30,10 @@
         (->orig-so (get-symbol)))
       
       (super-instantiate ())))
+  
+  (define (tidentifier=? a b)
+    (eq? (send a get-symbol)
+         (send b get-symbol)))
 
   (define ttuple%
     (class target%

@@ -1,6 +1,6 @@
 (module compiler mzscheme
   (require (lib "class.ss")
-           (lib "list.ss")
+          ; (lib "list.ss")
            (lib "lex.ss" "parser-tools")
            (lib "readerr.ss" "syntax"))
            
@@ -14,6 +14,7 @@
   (define new-context null)
   (define (set-context! ctx)
     (set! new-context ctx))
+  
   
   (define ast-node%
     (class object%

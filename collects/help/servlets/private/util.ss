@@ -23,7 +23,6 @@
 	   collection-doc-link
 	   fold-into-web-path
 	   color-choices
-	   password-file
 	   home-page
 	   plt-version
 	   nl
@@ -38,9 +37,6 @@
   ; servlet filenames have slashes, independent of OS
   (define (hd-servlet? path)
     (regexp-match "^/servlets/" path))
-
-  (define password-file
-    (build-path (collection-path "doc") "help" "passwd"))
 
   (define (get-pref/default pref default)
     (get-preference pref  (lambda () default)))

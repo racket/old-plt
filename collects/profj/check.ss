@@ -578,61 +578,41 @@
           exp
           (method-record-rtype method-record))))
                                                          
-      ;; 15.9
-      ;; SKIP - all checking
+
       ((class-alloc? exp)
-       (set-class-alloc-name! exp (fixup-java-name (class-alloc-name exp) env))
-       (for-each (lambda (x) (check-expr x env level type-recs current-class)) (class-alloc-args exp))
-       (let ((type (java-name->type (class-alloc-name exp) type-recs)))
-         (unless (equal? (ref-type-class/iface type) (car current-class))
-           (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
-         (set-expr-type exp type)))
-      
-      ;; 15.10
+       (set-expr-type exp
+                      (check-class-alloc (class-alloc-name exp)
+                                         (map (lambda (e)
+                                                (check-expr e env level type-recs current-class))
+                                              (class-alloc-args exp))
+                                         (expr-src exp)
+                                         type-recs
+                                         current-class)))
       ((array-alloc? exp)
-       (check-type-spec (array-alloc-name exp) env type-recs)
-       (let ((element-type (type-spec-to-type (array-alloc-name exp) type-recs)))
-         (for-each
-          (lambda (e)
-            (let ((t (check-expr e env level type-recs current-class)))
-              (if (or (not (prim-integral-type? t))
-                      (not (symbol=? (unary-promotion t) 'int)))
-                  (raise-error #f #f))))
-          (array-alloc-size exp))
-         (make-array-type element-type (+ (length (array-alloc-size exp))
-                                          (array-alloc-dim exp)))))
-      
-      ;; 15.25
+       (set-expr-type exp
+                      (check-array-alloc (array-alloc-name exp)
+                                         (array-alloc-size exp)
+                                         (array-alloc-dim exp)
+                                         (expr-src exp)
+                                         env
+                                         level
+                                         current-class
+                                         type-recs)))
       ((cond-expression? exp)
-       (let ((test-type (check-expr (cond-expression-cond exp) env level type-recs current-class))
-             (then-type (check-expr (cond-expression-then exp) env level type-recs current-class))
-             (else-type (check-expr (cond-expression-else exp) env level type-recs current-class)))
-         (cond
-           ((not (eq? 'boolean test-type))
-            (raise-error #f #f))
-           ((and (eq? 'boolean then-type) (eq? 'boolean else-type))
-            (set-expr-type exp 'boolean))
-           ((and (prim-numeric-type? then-type) (prim-numeric-type? else-type))
-            ;; This is not entirely correct
-            (set-expr-type exp (binary-promotion then-type else-type)))
-           ((and (eq? 'null then-type) (reference-type? else-type))
-            (set-expr-type else-type))
-           ((and (eq? 'null else-type) (reference-type? then-type))
-            (set-expr-type then-type))
-           ((and (reference-type? then-type) (reference-type? else-type))
-            (if (assignment-conversion then-type else-type type-recs) 
-                (set-expr-type exp then-type)
-                (if (assignment-conversion else-type then-type type-recs)
-                    (set-expr-type exp else-type))))
-           (else (raise-error #f #f)))))
-            
+       (set-expr-type exp
+                      (check-cond-expr
+                       (check-expr (cond-expression-cond exp) env level type-recs current-class)
+                       (check-expr (cond-expression-then exp) env level type-recs current-class)
+                       (check-expr (cond-expression-else exp) env level type-recs current-class)
+                       (expr-src exp)
+                       (expr-src (cond-expression-cond exp))
+                       type-recs)))
       ((array-access? exp)
        (set-expr-type exp
                       (check-array-access
                        (check-expr (array-access-name exp) env level type-recs current-class)
                        (check-expr (array-access-index exp) env level type-recs current-class)
-                       (expr-src exp))))
-       
+                       (expr-src exp))))       
       ((post-expr? exp)
        (set-expr-type exp
                       (check-pre-post-expr 
@@ -736,11 +716,56 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
+  ;;Skip check to make sure such a constructor exists, and is non-private
+  ;; 15.9
+  ;;check-class-alloc: name (list type) src type-records (list string) -> type
+  (define (check-class-alloc name args src type-recs current-class)
+    (let* ((type (java-name->type name type-recs))
+           (class-record (send type-recs get-class-record type (lambda () #f))))
+      (unless (equal? (ref-type-class/iface type) (car current-class))
+        (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
+      (when (memq 'abstract (class-record-modifiers class-record))
+        (raise-error (list (name-src name) (ref-type-class/iface type) type) class-alloc-abstract))
+      (when (class-record-class? class-record)
+        (raise-error (list (name-src name) (ref-type-class/iface type) type) class-alloc-interface))
+      type))
+  
+  ;; 15.10
+  ;;check-array-alloc type-spec (list expression) int src symbol (list string) type-records -> type
+  (define (check-array-alloc elt-type exps dim src env level current-class type-recs)
+    (let ((type (type-spec-to-type elt-type type-recs)))
+      (for-each (lambda (e)
+                  (let ((t (check-expr e env level type-recs current-class)))
+                    (unless (prim-integral-type? t)
+                      (raise-error (list (expr-src e) 'array-alloc t) array-alloc-not-int))))
+                exps)
+      (make-array-type type (+ (length exps) dim))))
+  
+  
+  ;; 15.25
+  ;check-cond-expr: type type type src src type-records -> type
+  (define (check-cond-expr test then else-t src test-src type-recs)
+    (unless (eq? 'boolean test)
+      (raise-error (list test-src '? test) cond-not-bool))
+    (cond
+      ((and (eq? 'boolean then) (eq? 'boolean else-t)) 'boolean)
+      ((and (prim-numeric-type? then) (prim-numeric-type? else-t))
+       ;; This is not entirely correct, but close enough due to using scheme ints
+       (binary-promotion then else-t))
+      ((and (eq? 'null then) (reference-type? else-t)) else-t)
+      ((and (eq? 'null else-t) (reference-type? then)) then)
+      ((and (reference-type? then) (reference-type? else-t))
+       (if (assignment-conversion then else-t type-recs) 
+           then
+           (if (assignment-conversion else-t then type-recs)
+               else-t)))
+      (else (raise-error (list src then else-t '?) cond-type-mismatch))))
+
   ;; 15.13
   ;check-array-access: type type src -> type
   (define (check-array-access ref-type idx-type src)
     (unless (array-type? ref-type)
-      (raise-error (list src ref-type) array-ac-non-array))
+      (raise-error (list src 'access ref-type) array-ac-non-array))
     (when (or (not (prim-integral-type? idx-type))
               (not (symbol=? 'int (unary-promotion idx-type))))
       (raise-error (list src idx-type 'int) array-ac-idx))
@@ -799,9 +824,9 @@
         ((and (ref-type? exp-type) (ref-type? type))
          (raise-error (list src type exp-type 'instanceof) instance-not-subtype))
         ((ref-type? exp-type)
-         (raise-error (list (type-spec-src inst-type) type) instance-type-not-ref))
+         (raise-error (list (type-spec-src inst-type) 'instanceof type) instance-type-not-ref))
         (else
-         (raise-error (list src exp-type) instance-exp-not-ref)))))     
+         (raise-error (list src 'instanceof exp-type) instance-exp-not-ref)))))     
   
   ;; 15.26
   ;; SKIP - worrying about final - doing the check for compound assignment
@@ -842,13 +867,31 @@
   (define (bin-op-eq-both op dummy left right)
     (format "~a expects arguments to be assignable to each other, ~a and ~a cannot" op left right))
 
+  ;;Class Alloc errors
+  (define (class-alloc-abstract type)
+    (format "abstract class ~a may not be constructed" type))
+  (define (class-alloc-interface type)
+    (format "interface ~a may not be constructed" type))
+
+  
+  ;;Array Alloc error
+  (define (array-alloc-not-int type)
+    (format "allocation of an array requires an integer for the size: given ~a" type))
+  
+  ;;Conditional Expression errors
+  (define (cond-not-bool type)
+    (format "conditional expression requires the first expression be a boolean, given ~a" type))
+  ;wrong-code: (list src type type)
+  (define (cond-type-mismatch then else)
+    (format "conditional expression requires then and else branch have equivalent types: given ~a and ~a"
+            then else))
+  
   ;;Array Access errors
   (define (array-ac-non-array ref-type)
     (format "array access expects an array, given ~a" ref-type))
   ;wrong-code: (list src type symbol)
   (define (array-ac-idx expt idx-type)
     (format "array access expects a ~a as index, given ~a" expt idx-type))
-
   
   ;;Unary error
   (define (unary-error op expt type)
@@ -896,17 +939,18 @@
       ((eq? type illegal-beginner-assignment)
        ;wrong-code (list op src)
        (raise-syntax-error #f (type) (make-so (car wrong-code) (cadr wrong-code))))
-      ((memq type (list instance-not-subtype cast-ref-prim cast-prim-ref))
+      ((memq type (list instance-not-subtype cast-ref-prim cast-prim-ref 
+                        cond-type-mismatch))
        ;wrong-code: (list src type type symbol)
        (raise-syntax-error #f (type (type->ext-name (cadr wrong-code))
                                     (type->ext-name (caddr wrong-code)))
                               (make-so (cadddr wrong-code) (car wrong-code))))
-      ((memq type (list instance-type-not-ref instance-exp-not-ref array-ac-non-array))       
-       ;wrong-code: (list src type)
-       (raise-syntax-error #f (type (type->ext-name (cadr wrong-code)))
-                           (make-so (if (eq? type array-ac-non-array)
-                                        'access
-                                        'instanceof) (car wrong-code))))
+      ((memq type (list instance-type-not-ref instance-exp-not-ref array-ac-non-array
+                        cond-not-bool array-alloc-not-int class-alloc-interface
+                        class-alloc-abstract))
+       ;wrong-code: (list src op type)
+       (raise-syntax-error #f (type (type->ext-name (caddr wrong-code)))
+                           (make-so (cadr wrong-code) (car wrong-code))))
       ((eq? type unary-error)
        ;wrong-code (list src type symbol symbol) (src type op expt)
        (raise-syntax-error #f
@@ -925,9 +969,17 @@
 
   ;type->ext-name: type -> (U symbol string)
   (define (type->ext-name t)
-    (if (ref-type? t)
-        (ref-type-class/iface t)
-        t))
+    (cond 
+      ((ref-type? t) (ref-type-class/iface t))
+      ((array-type? t) 
+       (format "~a~a" (type->ext-name (array-type-type t))
+                      (let ((dims ""))
+                        (let loop ((d (array-type-dim t)))
+                          (if (= d 0)
+                              dims
+                              (begin (set! dims (string-append dims "[]"))
+                                     (loop (sub1 d))))))))
+      (else t)))
 
   ;get-expected: symbol-> string
   (define (get-expected e)

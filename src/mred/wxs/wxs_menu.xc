@@ -25,24 +25,20 @@
 
 @CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback); : : ubCallbackSetup///ubCallbackCreatorFinish
 
-@ "append" : void Append(int,string,wxMenu!,nstring=NULL); : : /CHECKNEGVOID[0] <> submenu
-@ "append" : void Append(int,string,nstring=NULL,bool=FALSE); : : /CHECKNEGVOID[0] <> string item
-@ "delete" : bool Delete(int); : : /CHECKNEGFALSE[0]
-@ "delete-by-position" : bool DeleteByPosition(int); : : /CHECKNEGFALSE[0]
+@ "append" : void Append(int,string,wxMenu!,nstring=NULL); : : <> submenu
+@ "append" : void Append(int,string,nstring=NULL,bool=FALSE); : : <> string item
+@ "delete" : bool Delete(int); : :
+@ "delete-by-position" : bool DeleteByPosition(int); : :
 @ "append-separator" : void AppendSeparator();
-@ "checked?" : bool Checked(int); : : /CHECKNEGFALSE[0]
-@ "check" : void Check(int,bool); : : /CHECKNEGVOID[0]
-@ "enable" : void Enable(int,bool); : : /CHECKNEGVOID[0]
+@ "checked?" : bool Checked(int); : :
+@ "check" : void Check(int,bool); : :
+@ "enable" : void Enable(int,bool); : :
 @ "number" : int Number()
 
 @ "find-item" : int FindItem(string);
-// @ "find-item-for-id" : wxMenuItem^ FindItemForId(int);
-@ "get-help-string" : nstring GetHelpString(int); : : /CHECKNEGNULL[0]
-@ "get-label" : nstring GetLabel(int); : : /CHECKNEGNULL[0]
-@ "get-title" : nstring GetTitle();
 
-@ "set-help-string" : void SetHelpString(int, nstring); : : /CHECKNEGVOID[0]
-@ "set-label" : void SetLabel(int, string); : : /CHECKNEGVOID[0]
+@ "set-help-string" : void SetHelpString(int, nstring); : :
+@ "set-label" : void SetLabel(int, string); : :
 @ "set-title" : void SetTitle(string);
 
 @END
@@ -70,24 +66,12 @@
 
 @ "append" : void Append(wxMenu!,string);
 @ "delete" : bool Delete(wxMenu^,int=0);
-@ "check" : void Check(int,bool); : : /CHECKNEGVOID[0]
-@ "checked?" : bool Checked(int); : : /CHECKNEGFALSE[0]
-@ "enable" : void Enable(int,bool); : : /CHECKNEGVOID[0]
 @ "enable-top" : void EnableTop(int,bool); : : /CHECKNEGVOID[0]
 @ "number" : int Number()
 
 @ "find-menu-item" : int FindMenuItem(string,string);
-// @ "find-item-for-id" : wxMenuItem^ FindItemForId(int);
 
-@ "get-help-string" : nstring GetHelpString(int); : : /CHECKNEGNULL[0]
-@ "get-label" : nstring GetLabel(int); : : /CHECKNEGNULL[0]
-@ "get-label-top" : nstring GetLabelTop(int); : : /CHECKNEGNULL[0]
-@ "get-title" : nstring GetTitle();
-
-@ "set-help-string" : void SetHelpString(int, nstring); : : /CHECKNEGVOID[0]
-@ "set-label" : void SetLabel(int, string); : : /CHECKNEGVOID[0]
 @ "set-label-top" : void SetLabelTop(int, string); : : /CHECKNEGVOID[0]
-// @ "set-title" : void SetTitle(string);
 
 @END
 

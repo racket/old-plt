@@ -187,6 +187,7 @@ please adhere to these guidelines:
  (cs-rename-id "Rename Identifier")
  (cs-rename-var-to "Rename ~a to:")
  (cs-name-duplication-error "The new name you have chosen, ~s, conflicts with an already established name in this scope.")
+ (cs-rename-anyway "Rename Anyway")
  (cs-status-init "Check Syntax: Initializing environment for user code")
  (cs-status-coloring-program "Check Syntax: coloring expression")
  (cs-status-eval-compile-time "Check Syntax: eval compile time")

@@ -433,7 +433,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
     (define snip%
       (let ([f% frame%])
 	(class-asi drscheme:unit:snip%
-	  (inherit width height)
+	  (inherit width height set-width set-height)
 	  (rename [super-draw draw])
 	  (public
 	    [snipclassq compound-unit-snipclass]
@@ -443,11 +443,11 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	     (lambda (dc x y left top right bottom dx dy draw-caret)
 	       (let ([space 2])
 		 (send dc draw-rectangle x y width height)
-		 (set! width (- width (* 2 space)))
-		 (set! height (- height (* 2 space)))
+		 (set-width (- width (* 2 space)))
+		 (set-height (- height (* 2 space)))
 		 (super-draw dc (+ x space) (+ y space) left top right bottom dx dy draw-caret)
-		 (set! width (+ width (* 2 space)))
-		 (set! height (+ height (* 2 space)))))]))))
+		 (set-width (+ width (* 2 space)))
+		 (set-height (+ height (* 2 space)))))]))))
 
     (define snip-class%
       (let ([s% snip%])

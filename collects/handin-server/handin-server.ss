@@ -20,19 +20,19 @@
   (define (check-id s)
     (regexp-match ID-REGEXP s))
 
-  (define (save-submission s)
+  (define (save-submission s part)
     ;; Shift old files:
-    (when (file-exists? "handin0")
-      (when (file-exists? (format "handin~a" MAX-UPLOAD-KEEP))
-	(delete-file (format "handin~a" MAX-UPLOAD-KEEP)))
+    (when (file-exists? (format "~a0" part))
+      (when (file-exists? (format "~a~a" part MAX-UPLOAD-KEEP))
+	(delete-file (format "~a~a" part MAX-UPLOAD-KEEP)))
       (let loop ([n MAX-UPLOAD-KEEP])
 	(unless (zero? n)
-	  (when (file-exists? (format "handin~a" (sub1 n)))
+	  (when (file-exists? (format "~a~a" part (sub1 n)))
 	    (rename-file-or-directory 
-	     (format "handin~a" (sub1 n))
-	     (format "handin~a" n)))
+	     (format "~a~a" part (sub1 n))
+	     (format "~a~a" part n)))
 	  (loop (sub1 n)))))
-    (with-output-to-file "handin0"
+    (with-output-to-file (format "~a0" part)
       (lambda () (display s))))
 
   (define (accept-specific-submission user assignment r r-safe w)
@@ -60,18 +60,20 @@
 		     "error uploading (got ~s, expected ~s bytes)"
 		     (if (string? s) (string-length s) s)
 		     len))
-	    (let ([checker (build-path 'up "checker.ss")])
-	      (when (file-exists? checker)
-		((dynamic-require `(file ,(path->complete-path checker)) 'checker)
-		 user
-		 s)))
-	    (fprintf w "confirm\n")
-	    (let ([v (read (make-limited-input-port r 50))])
-	      (if (eq? v 'check)
-		  (begin
-		    (save-submission s)
-		    (fprintf w "done\n"))
-		  (error 'handin "upload not confirmed: ~s" v))))))))
+	    (let ([part
+		   (let ([checker (build-path 'up "checker.ss")])
+		     (if (file-exists? checker)
+			 ((dynamic-require `(file ,(path->complete-path checker)) 'checker)
+			  user
+			  s)
+			 "handin"))])
+	      (fprintf w "confirm\n")
+	      (let ([v (read (make-limited-input-port r 50))])
+		(if (eq? v 'check)
+		    (begin
+		      (save-submission s part)
+		      (fprintf w "done\n"))
+		    (error 'handin "upload not confirmed: ~s" v)))))))))
 
   (define orig-custodian (current-custodian))
 

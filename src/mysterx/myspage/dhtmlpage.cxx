@@ -140,7 +140,8 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
     pIHTMLEventObj->get_button(&mouseButton);
     pEvent->put_mouseButton((MOUSE_BUTTON)mouseButton);
 
-    if (eventEntry->eventType == mouseover || eventEntry->eventType == mouseout) {
+    if (eventEntry->eventType == mouseover || 
+	eventEntry->eventType == mouseout) {
     
       pIHTMLEventObj->get_fromElement(&pFromElement);
 
@@ -172,6 +173,23 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
         pToElement->Release();
       }
 
+    }
+
+    if (eventEntry->eventType == keydown || 
+	eventEntry->eventType == keypress || 
+	eventEntry->eventType == keyup) {
+      long keycode;
+      VARIANT_BOOL shiftkey,ctrlkey,altkey;
+
+      pIHTMLEventObj->get_keyCode(&keycode);
+      pIHTMLEventObj->get_shiftKey(&shiftkey);
+      pIHTMLEventObj->get_ctrlKey(&ctrlkey);
+      pIHTMLEventObj->get_altKey(&altkey);
+
+      pEvent->put_keyCode(keycode);
+      pEvent->put_shiftPressed(shiftkey);
+      pEvent->put_ctrlPressed(ctrlkey);
+      pEvent->put_altPressed(altkey);
     }
 
     SysFreeString(idAttr);

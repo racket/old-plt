@@ -13,7 +13,7 @@
 	   (let* ([e (mred:make-eventspace)]
 		  [f (parameterize ([mred:current-eventspace e])
 		       (mred:begin-busy-cursor)
-		       (make-object mred:frame% "Spidey"))]
+		       (make-object mred:frame% "MrSpidey"))]
 		  [p (make-object mred:vertical-panel% f)]
 		  [m (make-object mred:message% "Please wait, loading the Analysis." p)])
 	     (send p stretchable-height #f)

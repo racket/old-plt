@@ -326,13 +326,62 @@ The _embed.ss_ library provides a function to embed Scheme code into a
 copy of MzScheme or MrEd, thus creating a (large) _stand-alone_ Scheme
 executable.
 
-> (make-embedding-executable dest-file mred? verbose? src-file-list collect-list cmdline-list)
-  - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary
-  to `dest-file', appends the content of the files in `src-file-list',
-  appends the libraries of each colelction in `collect-list', and sets the
-  internal command line to read the appended code when the binary is
-  executed. The `cmdline-list' contains additional command-line
-  strings; '("-mvq-") should be a popular choice.
+> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list)
+  - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
+  embedding code into the copied executable to be loaded on startup.
 
-The _embedr.ss_ library provides a unit that imports nothing and
-exports `make-embedding-executable'.
+  See the mzc documentation for a simpler interface that is
+  well-suited to programs defined with `module'.
+
+  The embeddeding executable is written to `dest-file', which is
+  overwritten if it exists already.
+
+  The embedded code consists of module declaratons followed by
+  additional (arbitrary) code. When a module is embedded, every module
+  that it imports is also embedded. Library modules are embedded so
+  that they are accessible via their `lib' paths in the initial
+  namespace' except as specified in `mod-list', other modules
+  (accessed via local paths and absolte paths) are embedded with a
+  generated prefix, so that they are not directly accessible.
+
+  The `mod-list' argument designates modules to be embedded, as
+  described below. The `literal-file-list' and `literal-sexp'
+  arguments specifiy literal code to be copied into the executable:
+  the content of each file in `literal-file-list' is copied in order
+  (with no intervening space), followed by `literal-sexp'. The
+  `literal-file-list' files or `literal-sexp' can contain compiled
+  bytecode, and it's possible that the content of the
+  `literal-file-list' files only parse when concatenated; the files
+  and expression are not compiled or inspected in any way during the
+  embedding process.
+
+  The `cmdline-list' argument contains command-line strings that are
+  prefixed onto any actual command-line arguments that are provided to
+  the embedding executable. A command-line argument that evaluates an
+  expression or loads a file will be executed after the embedded code
+  is loaded.
+
+  Each element of the `mod-list' argument is a 2-item list, where the
+  first item is a prefix for the module name, and the second item is a
+  module path datum (that's in the format understood by the default
+  module name resolver). The prefix can be a symbol, #f to indicate no
+  prefix, or #t to indicate an auto-generated prefix. For example,
+
+    '((#f "m.ss"))
+
+  embeds the module `m' from the file "m.ss", without prefixing the
+  name of the module; the `literal-sexpr' argument to go with the
+  above might be '(require m).
+
+  All modules are compiled before they are embedded into the target
+  executable.
+
+  When embedding into a copy of MrEd, a "-Z" flag should usually be
+  included in the list of command-line flags, so that the target
+  executable has a chance to see an embedded declaration of (lib
+  "mred.ss" "mred"). Then, if the literal code expect to have MrEd and
+  the class library required into the top-level namespace, literal
+  `require's for thoselibraries should be included at the start.
+
+The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
+that imports nothing and exports `make-embedding-executable'.

@@ -838,6 +838,40 @@
 		    defn-or-expr
 		    ...)))])))
 
+  (define-syntaxes (define-private define-public define-override)
+    (let ([mk
+	   (lambda (who decl-form)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ binding ...)
+		  (let ([bindings (syntax->list (syntax (binding ...)))])
+		    (let ([name-exprs
+			   (map (lambda (binding)
+				  (syntax-case binding ()
+				    [(name expr)
+				     (identifier? (syntax name))
+				     (cons (syntax name) (syntax expr))]
+				    [_else
+				     (identifier? (syntax name))
+				     (raise-syntax-error
+				      who
+				      "expected an identifer and expression"
+				      stx
+				      binding)]))
+				bindings)])
+		      (with-syntax ([(name ...) (map car name-exprs)]
+				    [(expr ...) (map cdr name-exprs)]
+				    [decl-form decl-form])
+			(syntax
+			 (begin
+			   (decl-form name ...)
+			   (define name expr)
+			   ...)))))])))])
+      (values
+       (mk 'define-private (syntax private))
+       (mk 'define-public (syntax public))
+       (mk 'define-overrde (syntax override)))))
+
   ;;--------------------------------------------------------------------
   ;;  class implementation
   ;;--------------------------------------------------------------------
@@ -1869,10 +1903,11 @@
 
 
   (provide class class* class*/names class?
-	   interface interface?
+	   interface interface?	   
 	   object% object?
 	   make-object instantiate
 	   send send* make-class-field-accessor make-class-field-mutator with-method
+	   define-private define-public define-override
 	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface

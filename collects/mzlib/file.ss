@@ -31,7 +31,7 @@
 	  (error 'build-absolute-path "base path ~s is relative" p)
 	  (apply build-path p args))))
 
-					; Note that normalize-path does not normalize the case
+  ;; Note that normalize-path does not normalize the case
   (define normalize-path
     (letrec ([resolve-all
 	      (lambda (path wrt)

@@ -4,8 +4,10 @@
 
 MZC="..\..\mzc"
 HTMLHELP="C:\Program Files\HTML Help Workshop"
-SHELL32="C:\Program Files\Microsoft Visual Studio\VC98"
-REGSVR32="C:\Windows\System\REGSVR32"
+#SHELL32="C:\Program Files\Microsoft Visual Studio\VC98"
+SHELL32="F:\SBN"
+#REGSVR32="C:\Windows\System\REGSVR32"
+REGSVR32="REGSVR32"
 NEWMSHTML=1
 
 all : 

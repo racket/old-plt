@@ -96,13 +96,14 @@ static MX_PRIM mxPrims[] = {
   { mx_all_coclasses,"com-all-coclasses",0,0 },
   { mx_all_controls,"com-all-controls",0,0 },
   { mx_coclass_to_html,"coclass->html",3,4 },
+  { mx_progid_to_html,"progid->html",3,4 },
   
   // COM objects
   
   { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,2 },
   { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,2 },
   { mx_coclass,"coclass",1,1 },
-  { mx_coclass_as_progid,"coclass-as-progid",1,1 },
+  { mx_progid,"progid",1,1 },
   { mx_set_coclass,"set-coclass!",2,2 },
   { mx_set_coclass_from_progid,"set-coclass-from-progid!",2,2 },
   { mx_com_object_pred,"com-object?",1,1 },
@@ -809,6 +810,8 @@ CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
 
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
+  SysFreeString(wideProgId);
+
   if (hr != S_OK) {
     char errBuff[2048];
     sprintf(errBuff,"%s: Error retrieving CLSID from ProgID %s",
@@ -978,7 +981,7 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-Scheme_Object *mx_coclass_as_progid(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
   HRESULT hr;
   LPOLESTR wideProgId;
   CLSID clsId;
@@ -986,19 +989,19 @@ Scheme_Object *mx_coclass_as_progid(int argc,Scheme_Object **argv) {
   unsigned int len;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("coclass-as-progid","com-object",0,argc,argv);
+    scheme_wrong_type("progid","com-object",0,argc,argv);
   }
 
   clsId = MX_COM_OBJ_CLSID(argv[0]);
 
   if (isEmptyClsId(clsId)) {
-    scheme_signal_error("coclass-as-progid: No coclass for object");
+    scheme_signal_error("progid: No coclass for object");
   }
 
   hr = ProgIDFromCLSID(clsId,&wideProgId);
   
   if (hr != S_OK) {
-    scheme_signal_error("coclass-as-progid: Error finding coclass");
+    scheme_signal_error("progid: Error finding coclass");
   }
 
   len = wcslen(wideProgId);
@@ -1610,10 +1613,13 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   int i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","com-object or com-type",0,argc,argv);
+    scheme_wrong_type("com-{methods,{get,set}-properties}","com-object or com-type",0,argc,argv);
   }
   
   if (MX_COM_OBJP(argv[0])) {
+    if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
+      scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object");
+    }
     pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
   }  
   else {
@@ -3990,23 +3996,20 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)retval;
 }
 
-Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
-  char *controlName;
+// for coclass->html, progid->html
+Scheme_Object *mx_clsid_to_html(CLSID clsId,char *controlName,
+				char *fname,
+				int argc,Scheme_Object **argv ) {
   LPOLESTR clsIdString;
-  char widthBuff[20];
-  char heightBuff[20];
+  char widthBuff[25];
+  char heightBuff[25];
   char buff[512];
-  CLSID clsId;
   char *format; 
   int i;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("coclass->html","string",0,argc,argv);
-  }
-  
   for (i = 1; i <= 2; i++) { 
     if (SCHEME_INTP(argv[i]) == FALSE) {
-      scheme_wrong_type("coclass->html","int",i,argc,argv);
+      scheme_wrong_type(fname,"int",i,argc,argv);
     }
   }
 
@@ -4016,7 +4019,7 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
     char *symString;
 
     if (SCHEME_SYMBOLP(argv[3]) == FALSE) {
-      scheme_wrong_type("coclass->html","symbol",3,argc,argv);
+      scheme_wrong_type(fname,"symbol",3,argc,argv);
     }
 
     symString = SCHEME_SYM_VAL(argv[3]);
@@ -4025,28 +4028,21 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
       format = "%u%%";
     }
     else if (stricmp(symString,"pixels")) {
-      scheme_signal_error("Invalid size specifier '%s: "
-			  "must be either 'pixels or 'percent",symString);
+      scheme_signal_error("%s: Invalid size specifier '%s: "
+			  "must be either 'pixels or 'percent",
+			  fname,symString);
     }
   } 
 
-  controlName = SCHEME_STR_VAL(argv[0]);
-  
   sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
   sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
 
-  clsId = getCLSIDFromCoClass(controlName);
-  
-  if (isEmptyClsId(clsId)) {
-    scheme_signal_error("Control not found");  
-  }
-  
   StringFromCLSID(clsId,&clsIdString);
   
   *(clsIdString + wcslen(clsIdString) - 1) = L'\0'; 
   
   if (clsIdString == NULL) {
-    scheme_signal_error("Can't convert control CLSID to string");
+    scheme_signal_error("%s: Can't convert control CLSID to string",fname);
   }
   
   sprintf(buff,
@@ -4057,6 +4053,51 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
 	  clsIdString + 1);
   
   return (Scheme_Object *)scheme_make_string(buff);
+}
+
+Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
+  char *controlName;
+  CLSID clsId;
+
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("coclass->html","string",0,argc,argv);
+  }
+  
+  controlName = SCHEME_STR_VAL(argv[0]);
+  
+  clsId = getCLSIDFromCoClass(controlName);
+
+  if (isEmptyClsId(clsId)) {
+    scheme_signal_error("coclass->html: Coclass \"%s\" not found",
+			controlName);
+  }
+  
+  return mx_clsid_to_html(clsId,controlName,"coclass->html",argc,argv); 
+  
+}
+
+Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  BSTR wideProgId;
+  CLSID clsId;
+
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("progid->html","string",0,argc,argv);
+  }
+  
+  wideProgId = schemeStringToBSTR(argv[0]);
+  
+  hr = CLSIDFromProgID(wideProgId,&clsId);
+
+  if (hr != S_OK) {
+    scheme_signal_error("progid->html: ProgID \"%s\" not found",
+			SCHEME_STR_VAL(argv[0]));
+  }
+
+  SysFreeString(wideProgId);
+  
+  return mx_clsid_to_html(clsId,SCHEME_STR_VAL(argv[0]),"progid->html",
+			  argc,argv); 
 }
 
 Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,

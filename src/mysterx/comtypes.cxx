@@ -101,7 +101,6 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   mx_register_com_object((Scheme_Object *)retval,pIDispatch);
 
   return (Scheme_Object *)retval;
-
 }
 
 
@@ -117,7 +116,6 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
   mx_register_simple_com_object((Scheme_Object *)retval,pIUnknown);
 
   return (Scheme_Object *)retval;
-
 }
 
 BOOL mx_cy_pred(Scheme_Object *obj) {

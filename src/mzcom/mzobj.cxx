@@ -105,6 +105,8 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   // make sure all MzScheme calls in this thread
 
+  GC_use_registered_statics = 1;
+
   scheme_exit = exitHandler;
 
   pTg = (THREAD_GLOBALS *)args;

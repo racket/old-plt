@@ -1,5 +1,4 @@
-(require (lib "process.ss")
-	 (lib "etc.ss"))
+(require (lib "etc.ss"))
 
 (define re (regexp "[.](c|cc|cxx|cpp|h|inc)$"))
 (define re:TEXT (regexp "TEXT"))
@@ -12,14 +11,9 @@
 	 (map (lambda (f) (build-path p f))
 	      (directory-list p)))]
    [(file-exists? p)
-    (when (regexp-match re p)
-      (unless (let* ([p (process* "/Developer/Tools/GetFileInfo" "-t" p)])
-		(begin0
-		 (regexp-match re:TEXT (read-line (car p)))
-		 (close-input-port (car p))
-		 (close-output-port (cadr p))
-		 (close-input-port (cadddr p))))
+    (let-values ([(creator type) (file-creator-and-type p)])
+      (unless (string=? "TEXT" type)
 	(printf "Textifying ~a~n" p)
-	(system (format "/Developer/Tools/Rez /dev/null -t TEXT -o ~a" p))))]))
+	(file-creator-and-type creator "TEXT" p)))]))
 
 (go (build-path (this-expression-source-directory) 'up 'up))

@@ -37,7 +37,7 @@ wxCanvas::wxCanvas // Constructor (given parentFrame)
  int			height,
  long		style,
  char*		windowName,
- wxGLConfig         *gl_cfg = NULL,
+ wxGLConfig         *gl_cfg,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentFrame, x, y, width, height, style)
@@ -56,7 +56,7 @@ wxCanvas::wxCanvas // Constructor (given parentArea)
  int			height,
  long		style,
  char*		windowName,
- wxGLConfig         *gl_cfg = NULL,
+ wxGLConfig         *gl_cfg,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentArea, x, y, width, height, style)
@@ -76,7 +76,7 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
  int			height,
  long		style,
  char*		windowName,
- wxGLConfig         *gl_cfg = NULL,
+ wxGLConfig         *gl_cfg,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentWindow, x, y, width, height, style)
@@ -115,8 +115,10 @@ void wxCanvas::InitDefaults(wxGLConfig *gl_cfg)
 
   wx_dc = new wxCanvasDC(this);
 
-  gl_cfg = gl_cfg->Clone();
-  wx_dc->gl_cfg = gl_cfg;
+  if (gl_cfg) {
+    gl_cfg = gl_cfg->Clone();
+    wx_dc->gl_cfg = gl_cfg;
+  }
 
   if (cStyle & wxCONTROL_BORDER) {
     if (cStyle & wxBORDER)

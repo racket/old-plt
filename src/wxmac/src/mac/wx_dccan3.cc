@@ -815,7 +815,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	layout = layouts[delta];
 	need_size = 0;
 
-	/* Adjust color and context in layout: */
+	/* Adjust context in layout: */
 	if (use_cgctx) {
 	  GC_CAN_IGNORE ATSUAttributeTag ll_theTags[1];
 	  GC_CAN_IGNORE ByteCount ll_theSizes[1];

@@ -150,7 +150,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 			 sizeof(MenuRef), (void *)(&hDynMenu));
   ::SetControlMinimum(cMacControl, 1);
   ::SetControlMaximum(cMacControl, no_strings);
-  
+
   // Now, ignore the font data and let the control find the "best" size 
   err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
   maxdfltw = r.right - r.left;
@@ -383,3 +383,14 @@ void wxChoice::MaybeMoveControls()
     cTitle->cLabelText->MaybeMoveControls();
   wxItem::MaybeMoveControls();
 }
+
+
+#if 0
+  /* Supporting focus will look something like this: */
+  ::ClearKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()));
+  ::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
+		     cMacControl,
+		     kControlFocusNextPart);
+  if (cTitle)
+    cTitle->cLabelText->Refresh();
+#endif

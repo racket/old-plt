@@ -2531,6 +2531,8 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
   if ((width <= 0) || (height <= 0))
     return;
 
+  printf("Draw: %lf %lf\n", height, width);
+
   /* BEWARE - this same test is in BlinkCaret() and AdjustCursor(): */
   if (graphicMaybeInvalid || flowLocked || delayRefresh) {
     /* This Refresh command was not requested by us and we're busy. 

@@ -119,7 +119,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 wxCanvasDC::~wxCanvasDC(void)
 {
   if (gl) {
-    gl->Reset(NULL, 0, 0, 0);
+    gl->Reset(NULL, NULL, 0, 0, 0);
     gl = NULL;
   }
 
@@ -1055,13 +1055,16 @@ double wxCanvasDC::SmoothingXFormHL(double h, double y)
 /*                                GL                                    */
 /************************************************************************/
 
+#include "../../../wxcommon/wxGLConfig.h"
+#include "../../../wxcommon/wxGLConfig.cxx"
+
 wxGL *wxCanvasDC::GetGL()
 {
   if (!gl) {
     CGrafPtr cp;
     gl = new wxGL();
     cp = cMacDC->macGrafPort();
-    gl->Reset(cp, 0, 0, 0);
+    gl->Reset(gl_cfg, cp, 0, 0, 0);
     canvas->ResetGLView();
   }
 
@@ -1070,25 +1073,67 @@ wxGL *wxCanvasDC::GetGL()
 
 static wxGL *current_gl_context = NULL;
 #ifdef OS_X
-static AGLPixelFormat fmt;
-static AGLPixelFormat sb_fmt;
 static AGLContext dummy;
 #endif
 
+static AGLPixelFormat FindFormat(wxGLConfig *cfg, Bool offscreen)
+{
+  AGLPixelFormat fmt;
+  GLint attrib[30];
+  int a = 0, pre_samp;
+
+  attrib[a++] = AGL_RGBA;
+
+  if (offscreen)
+    attrib[a++] = AGL_OFFSCREEN;
+  else if (!cfg || cfg->doubleBuffered)
+    attrib[a++] = AGL_DOUBLEBUFFER;
+  
+  if (offscreen) {
+    attrib[a++] = AGL_PIXEL_SIZE;
+    attrib[a++] = 32;
+  }
+
+  if (cfg && cfg->depth) {
+    attrib[a++] = AGL_DEPTH_SIZE;
+    attrib[a++] = cfg->depth;
+  }
+
+  if (cfg && cfg->stencil) {
+    attrib[a++] = AGL_STENCIL_SIZE;
+    attrib[a++] = cfg->stencil;
+  }
+
+  pre_samp = a;
+
+  if (cfg && cfg->multisample) {
+    attrib[a++] = AGL_SAMPLES_ARB;
+    attrib[a++] = cfg->multisample;
+    attrib[a++] = AGL_SAMPLE_BUFFERS_ARB;
+    attrib[a++] = 1;
+  }
+
+  attrib[a] = AGL_NONE;
+
+  fmt = aglChoosePixelFormat(NULL, 0, attrib);
+  if (!fmt && (pre_samp < a)) {
+    /* try without multisampling */
+    attrib[pre_samp] = AGL_NONE;
+    fmt = aglChoosePixelFormat(NULL, 0, attrib);
+  }
+
+  return fmt;
+}
+
 void wxInitGL()
 {
-#ifdef OS_X
-  GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 1, AGL_NONE };
-  GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_OFFSCREEN, AGL_PIXEL_SIZE, 32, AGL_DEPTH_SIZE, 1, AGL_NONE };
-  
-  fmt = aglChoosePixelFormat(NULL, 0, attrib);
-  sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);
+  AGLPixelFormat fmt;
 
+  fmt = FindFormat(NULL, 0);
   if (fmt) {
     dummy = aglCreateContext(fmt, NULL);
     aglSetCurrentContext(dummy);
   }
-#endif
 
   wxREGGLOB(current_gl_context); 
 }
@@ -1117,15 +1162,19 @@ void wxGL::Reset(wxGLConfig *cfg, CGrafPtr gp, int offscreen, int w, int h)
 
   if (gp) {
     if (offscreen) {
-      if (sb_fmt) {
-	/* Note: gp has been locked by LockPixels already */
-	PixMapHandle pm;
+      /* Note: gp has been locked by LockPixels already */
+      PixMapHandle pm;
+      AGLPixelFormat fmt;
+      fmt = FindFormat(cfg, 1);
+      if (fmt) {
 	pm = GetGWorldPixMap(gp);
-	ctx = aglCreateContext(sb_fmt, NULL);	
+	ctx = aglCreateContext(fmt, NULL);	
 	if (ctx)
 	  aglSetOffScreen(ctx, w, h, GetPixRowBytes(pm), GetPixBaseAddr(pm));
       }
     } else {
+      AGLPixelFormat fmt;
+      fmt = FindFormat(cfg, 0);
       if (fmt) {
 	ctx = aglCreateContext(fmt, NULL);	
 	if (ctx)

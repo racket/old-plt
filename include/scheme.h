@@ -301,7 +301,7 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define SCHEME_CHARP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_char_type)
-
+/* SCHEME_INTP defined above */
 #define SCHEME_DBLP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_double_type)
 #ifdef MZ_USE_SINGLE_FLOATS
 # define SCHEME_FLTP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_float_type)

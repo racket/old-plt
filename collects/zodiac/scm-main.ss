@@ -1492,4 +1492,40 @@
 	  (else
 	    (static-error expr "Malformed reference-library"))))))
 
+  (add-macro-form 'define-constructor scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ sym modes ...))
+	    (m&e (pat:make-match&env in-pattern kwd))
+	    (out-pattern '(#%void)))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (static-error expr "Malformed define-constructor")))))
+
+  (add-macro-form 'define-type scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ sym type))
+	    (m&e (pat:make-match&env in-pattern kwd))
+	    (out-pattern '(#%void)))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (static-error expr "Malformed define-type")))))
+
+  (add-macro-form ': scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ expr type))
+	    (m&e (pat:make-match&env in-pattern kwd))
+	    (out-pattern 'expr))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (static-error expr "Malformed :")))))
+
+  (add-macro-form 'st:control scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ para val))
+	    (m&e (pat:make-match&env in-pattern kwd))
+	    (out-pattern '(#%void)))
+      (lambda (expr env)
+	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (static-error expr "Malformed st:control")))))
+
   )

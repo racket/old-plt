@@ -121,7 +121,7 @@
   ; --------------------------------------------------------------------
 
   (define mzscheme-libraries-provided
-    '("refer.ss" "refer"))
+    '("refer.ss" "refer" "spidey.ss" "spidey"))
 
   (define scheme-vocabulary (create-vocabulary 'scheme-vocabulary))
 

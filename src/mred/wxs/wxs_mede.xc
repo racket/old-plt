@@ -228,6 +228,8 @@
 @ v "after-split-snip" : void OnSplitSnip(nnlong);
 @ v "after-merge-snips" : void OnMergeSnips(nnlong);
 
+@ "get-revision-number" : long GetRevisionNumber();
+
 @ v "get-region-data" : wxBufferData^ GetRegionData(nnlong,nnlong);
 @ v "set-region-data" : void SetRegionData(nnlong,nnlong,wxBufferData^);
 

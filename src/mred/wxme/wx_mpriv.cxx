@@ -1218,6 +1218,8 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
       
       SnipSetAdmin(gsnip, snipAdmin);
       SnipSetAdmin(insGsnip,snipAdmin);
+
+      OnSplitSnip(start - sPos);
     }
   }
 

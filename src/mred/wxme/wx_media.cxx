@@ -1773,6 +1773,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, wxchar *str, wxList *snips
 
     len += addlen;
   }
+
+  revision_count++;
   
   AdjustClickbacks(start, start, addlen, NULL);
 
@@ -1989,6 +1991,7 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   flowLocked = TRUE;
 
   MakeSnipset(start, end);
+  revision_count++;
   
   startSnip = FindSnip(start, -2);
   endSnip = FindSnip(end, -1);
@@ -2559,6 +2562,11 @@ Bool wxMediaEdit::ReallyCanEdit(int op)
   }
 
   return TRUE;
+}
+
+long wxMediaEdit::GetRevisionNumber()
+{
+  return revision_count;
 }
 
 /****************************************************************/
@@ -4444,6 +4452,8 @@ Bool wxMediaEdit::Recounted(wxSnip *snip, Bool redraw_now)
 {
   if (writeLocked)
     return FALSE;
+
+  revision_count++;
 
   Resized(snip, redraw_now);
   

@@ -902,6 +902,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Object *);
 
 
@@ -4092,6 +4093,27 @@ static Scheme_Object *os_wxMediaEditGetRegionData(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
+}
+
+static Scheme_Object *os_wxMediaEditGetRevisionNumber(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  long r;
+  objscheme_check_valid(os_wxMediaEdit_class, "get-revision-number in text%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetRevisionNumber());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
 }
 
 static Scheme_Object *os_wxMediaEditOnMergeSnips(int n,  Scheme_Object *p[])
@@ -8482,7 +8504,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 148));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 149));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -8498,6 +8520,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-wordbreak" " method", (Scheme_Method_Prim *)os_wxMediaEditFindWordbreak, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-region-data" " method", (Scheme_Method_Prim *)os_wxMediaEditSetRegionData, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-region-data" " method", (Scheme_Method_Prim *)os_wxMediaEditGetRegionData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-revision-number" " method", (Scheme_Method_Prim *)os_wxMediaEditGetRevisionNumber, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-merge-snips" " method", (Scheme_Method_Prim *)os_wxMediaEditOnMergeSnips, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-split-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditOnSplitSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-size-constraint" " method", (Scheme_Method_Prim *)os_wxMediaEditAfterSetSizeConstraint, 0, 0));

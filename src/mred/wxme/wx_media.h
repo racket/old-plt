@@ -437,6 +437,8 @@ class wxMediaEdit : public wxMediaBuffer
   Bool IsLockedForFlow();
   Bool IsLockedForWrite();
 
+  long GetRevisionNumber();
+
  private:
 #define TF_Flag(var) unsigned var : 1
 
@@ -571,6 +573,8 @@ class wxMediaEdit : public wxMediaBuffer
 
   long prevPasteStart, prevPasteEnd;
   long savePrevPasteStart, savePrevPasteEnd;
+
+  long revision_count;
 
   wxWordbreakFunc wordBreak;
   void *wordBreakData;

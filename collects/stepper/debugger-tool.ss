@@ -98,7 +98,7 @@
                     (error-value->string-handler
                      (lambda (val len)
                        (let ([sp (open-output-string)])
-                         (send lang render-value val settings sp #f)
+                         (send lang render-value val settings sp)
                          (let ([str (get-output-string sp)])
                            (if ((string-length str) . <= . len)
                                str

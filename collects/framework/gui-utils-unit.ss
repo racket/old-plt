@@ -266,7 +266,7 @@
       (define repeated-keystroke-timeout 300)
       (define alphabetic-list-box%
         (class list-box%
-          (init-field choices)
+          (init-field choices callback)
           
           (field (chars null)
                  (last-time-stamp #f))
@@ -278,7 +278,6 @@
             (super-on-subwindow-event receiver evt))
           (define/override (on-subwindow-char receiver evt)
             (let ([code (send evt get-key-code)])
-              (printf "diff: ~s~n" (and last-time-stamp (- (send evt get-time-stamp) last-time-stamp)))
               (when (or (not (char? code))
                         (and last-time-stamp
                              ((- (send evt get-time-stamp) last-time-stamp)
@@ -287,10 +286,14 @@
                 (set! chars null))
               (set! last-time-stamp (send evt get-time-stamp))
               (cond
-                [(char? code)
+                [(and (char? code) (or (char-alphabetic? code) (char-numeric? code)))
                  (set! chars (cons code chars))
-                 (scroll-to-matching)]
+                 (scroll-to-matching)
+                 (callback this (instantiate control-event% () 
+                                  (event-type 'list-box)
+                                  (time-stamp (send evt get-time-stamp))))]
                 [else
+                 (set! chars null)
                  (super-on-subwindow-char receiver evt)])))
           
           ;; scroll-to-matching : -> void
@@ -318,4 +321,6 @@
             (set-first-visible-item n))
           (inherit set-first-visible-item)
 
-          (super-instantiate () (choices choices)))))))
+          (super-instantiate ()
+            (choices choices)
+            (callback callback)))))))

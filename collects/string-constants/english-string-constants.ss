@@ -506,7 +506,7 @@
  (intermediate-student "Intermediate Student")
  (advanced-student "Advanced Student")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
- (full-languages "Full")
+ (r5rs-like-languages "R5RS-like")
  (mred-lang-name "Graphical without debugging (MrEd)")
  (mzscheme-lang-name "Textual without debugging (MzScheme)")
  (r5rs-lang-name "R5RS without debugging")

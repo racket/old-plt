@@ -503,7 +503,6 @@
  (intermediate-student "Estudiante Intermedio")
  (advanced-student "Estudiante Avanzado")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
- (full-languages "Completo")
  (mred-lang-name "Gráfico sin depuración (MrEd)")
  (mzscheme-lang-name "Texto sin depuración (MzScheme)")
  (r5rs-lang-name "R5RS sin depuración (MzScheme)")

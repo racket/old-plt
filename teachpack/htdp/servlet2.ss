@@ -2,7 +2,7 @@
    buttons: multiple points of returns: continuation functions 
 |# 
 
-(module teachpack mzscheme
+(module servlet2 mzscheme
   (require (lib "servlet-primitives.ss" "web-server")
            (lib "servlet-helpers.ss" "web-server")
            (lib "servlet-sig.ss" "web-server")

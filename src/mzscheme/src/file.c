@@ -2008,11 +2008,9 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
-    if (!find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
-      return scheme_false;
-
-    if (FSpDelete(&spec))
-      return scheme_void;
+    if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+      if (!FSpDelete(&spec))
+        return scheme_void;
   }
 #else
   if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),

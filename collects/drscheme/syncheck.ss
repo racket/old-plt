@@ -119,13 +119,13 @@
       
       (define delta-symbols (map car prefixed-code-styles))
       
-      
       ;; all strings naming styles
       (define keyword-style-str (prefix-style/check 'keyword))
       (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
       (define bound-variable-style-str (prefix-style/check 'bound-variable))
       (define primitive-style-str (prefix-style/check 'primitive))
       (define constant-style-str (prefix-style/check 'constant))
+      (define tail-call-style-str (prefix-style/check 'tail-call))
       (define base-style-str (prefix-style/check 'base))
       
       (let ([set-default
@@ -1359,11 +1359,14 @@
                 [(lambda args bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last (syntax->list (syntax (bodies ...))))
                    (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (for-each (lambda (bodies/stx) (annotate-tail-position/last (syntax->list bodies/stx)))
+                             (syntax->list (syntax ((bodiess ...) ...))))
                    (for-each
                     (lambda (args bodies)
                       (set! binders (combine/color-binders args binders bound-variable-style-str))
@@ -1373,17 +1376,21 @@
                 [(if test then else)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position (syntax then))
+                   (annotate-tail-position (syntax else))
                    (loop (syntax test))
                    (loop (syntax else))
                    (loop (syntax then)))]
                 [(if test then)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position (syntax then))
                    (loop (syntax test))
                    (loop (syntax then)))]
                 [(begin bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last (syntax->list (syntax (bodies ...))))
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
                 [(begin0 bodies ...)
@@ -1394,6 +1401,7 @@
                 [(let-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last (syntax->list (syntax (bs ...))))
                    (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
@@ -1401,6 +1409,7 @@
                 [(letrec-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last (syntax->list (syntax (bs ...))))
                    (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
@@ -1421,6 +1430,7 @@
                 [(with-continuation-mark a b c)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-tail-position (syntax c))
                    (loop (syntax a))
                    (loop (syntax b))
                    (loop (syntax c)))]
@@ -1497,6 +1507,36 @@
                   referenced-macros
                   bound-in-sources
                   has-module?)))
+
+      ;; annotate-tail-position/last : (listof syntax) -> void
+      (define (annotate-tail-position/last stxs)
+        (unless (null? stxs)
+          (annotate-tail-position (car (last-pair stxs)))))
+      
+      ;; annotate-tail-position : syntax -> boid
+      ;; colors the parens (if any) around the argument
+      ;; to indicate this is a tail call.
+      (define (annotate-tail-position stx)
+        '(printf "annotate-tail-position.1 ~s\n" (syntax-object->datum stx))
+        '(let ([source (syntax-source stx)]
+               [pos (syntax-position stx)]
+               [span (syntax-span stx)])
+           (printf "annotate-tail-position.2 ~s ~s ~s\n" source pos span)
+           (when (and (is-a? source text%)
+                      pos 
+                      span)
+             (let* ([start-index (- pos 1)]
+                    [end-index (+ pos span -2)]
+                    [start-char (send source get-character start-index)]
+                    [end-char (send source get-character end-index)])
+               (printf "annotate-tail-position.3 ~s ~s ~s ~s\n" start-index end-index start-char end-char)
+               (when (and (paren? start-char) (paren? end-char))
+                 (color-range source start-index (+ start-index 1) tail-call-style-str)
+                 (color-range source end-index (+ end-index 1) tail-call-style-str))))))
+      
+      ;; paren? : character -> boolean
+      (define (paren? char)
+        (memq char '(#\( #\[ #\{ #\} #\] #\))))
       
       ;; annotate-bound-in-sources : (listof (cons syntax[orig] syntax[orig])) -> void
       ;; adds arrows and colors between pairs found in the 'bound-in-source syntax property.

@@ -62,7 +62,7 @@ void wxInitMedia(void)
   wxREGGLOB(arrow);
 
   /* Creates NIL: */
-  new wxMediaLine;
+  (void)(new wxMediaLine);
 
   wxInitClipboard();
   wxInitStyles();

@@ -1482,7 +1482,10 @@ static int copyingSelf;
 static void InitCutNPaste()
 {
   if (!copyRingBuffer1) {
-    wxREGGLOB(copyRing);
+    wxREGGLOB(copyRingBuffer1);
+    wxREGGLOB(copyRingBuffer2);
+    wxREGGLOB(copyRingStyle);
+    wxREGGLOB(copyRingData);
 
     copyRingBuffer1 = new wxList*[copyRingSize];
     copyRingBuffer2 = new wxList*[copyRingSize];

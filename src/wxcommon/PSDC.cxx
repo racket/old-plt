@@ -1443,7 +1443,7 @@ Bool wxPostScriptDC::StartDoc (char *message)
 
   pstream->Out("%!PS-Adobe-2.0"); /* PostScript magic strings */
   if (as_eps) {
-    pstream->Out(" EPSF-2.0\n"); /* EPS magic strings */
+    pstream->Out(" EPSF-2.0"); /* EPS magic strings */
   }
   pstream->Out("\n");
   if (title) {

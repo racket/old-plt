@@ -164,14 +164,18 @@
        (let loop ([l (multi-result-choices r)])
          (if (null? l)
              #f
-             (let ([v (try ((car l)))])
-               (if (not v)
-                   (loop (cdr l))
-                   (make-multi-result 
-                    (append (if (multi-result? v)
-                                (multi-result-choices v)
-                                (list (lambda () v)))
-                            (list (lambda () (loop (cdr l))))))))))]
+	     (let ([a ((car l))])
+	       (if (multi-result? a)
+		   (loop (append (multi-result-choices a)
+				 l))
+		   (let ([v (try a)])
+		     (if (not v)
+			 (loop (cdr l))
+			 (make-multi-result 
+			  (append (if (multi-result? v)
+				      (multi-result-choices v)
+				      (list (lambda () v)))
+				  (list (lambda () (loop (cdr l))))))))))))]
       [else (try r)]))
 
   (define (many-results l)
@@ -198,5 +202,5 @@
    (generate-string (-> string?))
    (all-of (any? (any? . -> . any) . -> . (listof any?)))
    (transitive-closure ((listof pair?) . -> . (listof (listof any?))))
-   (many-results ((listof any?) . -> . any))
+   (many-results ((listof (lambda (x) (not (multi-result? x)))) . -> . any))
    (first-result (any? . -> . any))))

@@ -814,6 +814,47 @@
      80)
    "badguy")
   
+  (test/spec-passed/result
+   'class-contract1
+   '(send
+     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+                            (class object% (define/public (m x) x) (super-instantiate ()))
+                            'pos
+                            'neg))
+     m
+     1)
+   1)
+  
+  (test/spec-failed
+   'class-contract2
+   '(contract (class-contract (m (integer? . -> . integer?)))
+              object%
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'class-contract3
+   '(send
+     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+                            (class object% (define/public (m x) x) (super-instantiate ()))
+                            'pos
+                            'neg))
+     m
+     'x)
+   "neg")
+  
+  (test/spec-failed
+   'class-contract4
+   '(send
+     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+                            (class object% (define/public (m x) 'x) (super-instantiate ()))
+                            'pos
+                            'neg))
+     m
+     1)
+   "pos")
+  
   ))
 
 (report-errs)

@@ -832,10 +832,14 @@
                   [super-meth-names (map prefix-super val-meth-names)])
              (with-syntax ([outer-args outer-args]
                            [(super-meth-name ...) super-meth-names]
-                           [(method ...) (map (lambda (a b c) (make-wrapper-method outer-args a b c))
-                                              val-meth-names
-                                              super-meth-names
-                                              build-pieces)])
+                           [(later-method ...) (map (lambda (a b c) (make-wrapper/extending-method outer-args a b c))
+                                                    val-meth-names
+                                                    super-meth-names
+                                                    build-pieces)]
+                           [(first-method ...) (map (lambda (a b c) (make-wrapper-method outer-args a b c))
+                                                    val-meth-names
+                                                    super-meth-names
+                                                    (syntax->list (syntax meth-contract ...)))])
                (foldr
                 (lambda (f stx) (f stx))
                 (syntax/loc stx
@@ -848,19 +852,26 @@
                       (unless (method-in-interface? 'meth-name class-i)
                         (raise-contract-error src-info
                                               pos-blame 
-                                              neg -blame
+                                              neg-blame
                                               "expected class to have method ~a, got: ~e"
                                               'meth-name
                                               val))
                       ...)
-                    (class* val (class-with-contracts<%>)
-                      
-                      (define/public (get-method-contracts)
-                        (list (cons meth-name meth-contract) ...))
-                      
-                      (rename [super-meth-name meth-name] ...)
-                      method ...
-                      (super-instantiate ())))
+                    (if (implementation? val class-with-contracts<%>)
+                        '(class val
+                           (define/override (get-method-contracts)
+                             (list (cons 'meth-name meth-contract) ...))
+                           (rename [super-meth-name meth-name] ...)
+                           later-method ...
+                           (super-instantiate ()))
+                        (class* val (class-with-contracts<%>)
+                          
+                          (define/public (get-method-contracts)
+                            (list (cons 'meth-name meth-contract) ...))
+                          
+                          (rename [super-meth-name meth-name] ...)
+                          first-method ...
+                          (super-instantiate ()))))
                   (lambda x (error 'impl-contract "unimplemented"))))
                 make-outer-checks))))]
         [(_ (meth-name meth-contract) ...)
@@ -875,11 +886,11 @@
                        [else (raise-syntax-error 'class-contract "bad method/contract clause" stx clz)]))
                    (syntax->list (syntax (clz ...))))]))
 
-
+    
     ;; make-wrapper-method : syntax[identifier] syntax[identifier] (syntax -> syntax) -> syntax
     ;; constructs a wrapper method that checks the pre and post-condition, and
     ;; calls the super method inbetween.
-    (define (make-wrapper-method outer-args method-name super-method-name build-piece)
+    (define (make-wrapper-method-old outer-args method-name super-method-name build-piece)
       (with-syntax ([super-method-name super-method-name]
                     [method-name method-name]
                     [(val pos-blame neg-blame src-info) outer-args]
@@ -890,6 +901,17 @@
              (let ([super-call (lambda x (super-method-name . x))])
                (lambda args
                  body)))))))
+    
+    (define (make-wrapper-method outer-args method-name super-method-name contract)
+      (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
+                    [super-method-name super-method-name]
+                    [method-name method-name]
+                    [contract contract])
+        (syntax
+         (define/override method-name
+           (let ([super-method (lambda x (super-method-name . x))])
+             (lambda args
+               (apply (check-contract super-method contract pos-blame neg-blame src-info) args)))))))
       
     ;; prefix-super : syntax[identifier] -> syntax[identifier]
     ;; adds super- to the front of the identifier
@@ -899,6 +921,18 @@
        (string->symbol
         (format 
          "super-~a"
+         (syntax-object->datum
+          stx)))))
+    
+    ;; method-name->contract-method-name : syntax[identifier] -> syntax[identifier]
+    ;; given the syntax for a method name, constructs the name of a method
+    ;; that returns the super's contract for the original method.
+    (define (method-name->contract-method-name stx)
+      (datum->syntax-object
+       #'here
+       (string->symbol
+        (format 
+         "ACK_DONT_GUESS_ME-super-contract-~a"
          (syntax-object->datum
           stx)))))
     

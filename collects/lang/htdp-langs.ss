@@ -39,7 +39,7 @@ to the original stdout of DrScheme.
           get-sharing-printing
           get-abbreviate-cons-as-list
           get-allow-sharing?
-          get-use-underscore-names?))
+          get-use-function-output-syntax?))
       
       ;; module-based-language-extension :    (implements drscheme:language:module-based-language<%>) 
       ;;                                   -> (implements drscheme:language:module-based-language<%>)
@@ -62,7 +62,7 @@ to the original stdout of DrScheme.
           
           (override config-panel)
           (rename [super-config-panel config-panel])
-          (inherit get-allow-sharing? get-use-underscore-names?)
+          (inherit get-allow-sharing? get-use-function-output-syntax?)
           (define (config-panel parent)
             (sharing/not-config-panel (get-allow-sharing?) parent))
           
@@ -85,7 +85,15 @@ to the original stdout of DrScheme.
                            [pretty-print-.-symbol-without-bars #t]
                            [drscheme:rep:use-number-snip htdp-lang-use-number-snip]
                            [pretty-print-exact-as-decimal #t]
-                           [pc:use-numbered-names (get-use-underscore-names?)])
+                           [pc:use-named/undefined-handler
+                            (lambda (x)
+                              (and (get-use-function-output-syntax?)
+                                   (procedure? x)
+                                   (object-name x)))]
+                           [pc:named/undefined-handler
+                            (lambda (x)
+                              (string->symbol
+                               (format "function:~a" (object-name x))))])
               (thunk)))
           
           ;; htdp-lang-use-number-snip : TST -> boolean
@@ -305,11 +313,11 @@ to the original stdout of DrScheme.
           (init-field sharing-printing
                       abbreviate-cons-as-list
                       allow-sharing?
-                      use-underscore-names?)
+                      use-function-output-syntax?)
           (define/public (get-sharing-printing) sharing-printing)
           (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
           (define/public (get-allow-sharing?) allow-sharing?)
-          (define/public (get-use-underscore-names?) use-underscore-names?)
+          (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
           (super-instantiate ())))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -338,7 +346,7 @@ to the original stdout of DrScheme.
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant full-language)))
-         (use-underscore-names? #f)))
+         (use-function-output-syntax? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -350,7 +358,7 @@ to the original stdout of DrScheme.
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)
-         (use-underscore-names? #f)))
+         (use-function-output-syntax? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -362,7 +370,7 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #f)
-         (use-underscore-names? #f)))
+         (use-function-output-syntax? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -374,7 +382,7 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #f)
-         (use-underscore-names? #t)))
+         (use-function-output-syntax? #t)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -386,7 +394,7 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #f)
-         (use-underscore-names? #f)))
+         (use-function-output-syntax? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -398,4 +406,4 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #f)
          (allow-sharing? #f)
-         (use-underscore-names? #f))))))
+         (use-function-output-syntax? #f))))))

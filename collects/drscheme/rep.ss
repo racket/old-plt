@@ -1643,7 +1643,7 @@
 	(rename [super-after-insert after-insert]
 		[super-on-local-char on-local-char])
 	(private
-	  [input-delta (make-object mred:style-delta% 'change-normal)]
+	  [input-delta (make-object mred:style-delta%)]
 	  [data null]
 	  [stream-start 0]
 	  [stream-end 0])

@@ -407,9 +407,13 @@
  (sort-by-position "Sort by position in file")
  (no-definitions-found "<< no definitions found >>")
  
- ;;; show menu (invariant: show-prefix and hide-prefix are the same length)
- (show-prefix "Show")
- (hide-prefix "Hide")
+ ;;; show menu
+ (hide-definitions-menu-item-label "Hide &Definitions")
+ (show-definitions-menu-item-label "Show &Definitions")
+ (definitions-menu-item-help-string "Show/Hide the definitions window")
+ (show-interactions-menu-item-label "Show &Interactions")
+ (hide-interactions-menu-item-label "Hide &Interactions")
+ (interactions-menu-item-help-string "Show/Hide the interactions window")
  
  ;;; file menu
  (definitions "Definitions")
@@ -439,10 +443,6 @@
  (reindent-all-menu-item-label "Reindent &All")
  (comment-out-menu-item-label "&Comment Out")
  (uncomment-menu-item-label "&Uncomment")
- (hide-definitions-menu-item-label "Hide &Definitions")
- (hide-definitions-menu-item-help-string "Show/Hide the definitions window")
- (interactions-menu-item-label "Show &Interactions")
- (interactions-menu-item-help-string "Show/Hide the interactions window")
  
  ;;; launcher
  (create-launcher-title "Create Launcher")

@@ -72,7 +72,8 @@
                           (hash-table-put! ht2 constant unknown-word)
                           (unless (member no-warning-cache-key (unbox already-warned))
                             (set-box! already-warned (cons no-warning-cache-key (unbox already-warned)))
-                            (printf 
+                            (fprintf
+                             (current-error-port)
                              "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n         other words may be substituted without warning.\n"
                              (sc-language-name sc1)
                              constant

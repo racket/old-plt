@@ -23,10 +23,14 @@
    program implemented by `file' in `collection': (list "-mvL-"
    file collection)
 
-(install-mred-program-launcher collection) - Calls
-   `make-mred-launcher' with the standard desitnation for
-   executables in the current PLT home directory.
+(install-mred-program-launcher collection name) - Calls
+   `make-mred-launcher' with the standard destination for
+   executables in the current PLT home directory. `name' is
+   used as the executable name. (The ".exe" suffix is automatically
+   appended for Windows.)
 
 (install-mzscheme-program-launcher file collection) - Calls
    `make-mzscheme-launcher' with the standard desitnation for
-   executables in the current PLT home directory.
+   executables in the current PLT home directory. `name' is
+   used as the executable name. (The ".exe" suffix is automatically
+   appended for Windows.)

@@ -39,7 +39,7 @@
 
   (define path-segment-regexp (regexp "([^/]*)/(.*)"))
 
-  (define rel-url-path->fs-path
+  (define file://rel-path->fs-path
     (lambda (s)
       (define translate-dir
 	(lambda (s)
@@ -54,9 +54,9 @@
 	  [(not m) s]
 	  [else
 	    (build-path (translate-dir (cadr m))
-	      (rel-url-path->fs-path (caddr m)))]))))
+	      (file://rel-path->fs-path (caddr m)))]))))
 
-  (define abs?-url-path->fs-path
+  (define file://path->fs-path
     (lambda (s)
       (cond
 	[(string=? s "") ""]
@@ -71,11 +71,11 @@
 	      (if (member first-segment root-list)
 		first-segment
 		(car root-list))
-	      (rel-url-path->fs-path
+	      (file://rel-path->fs-path
 		(substring s 1 (string-length s)))))]
-	[else (rel-url-path->fs-path s)])))
+	[else (file://rel-path->fs-path s)])))
 
-  (define unixpath->path abs?-url-path->fs-path)
+  (define unixpath->path file://path->fs-path)
 
   ;; scheme : str + #f
   ;; host : str + #f
@@ -159,7 +159,7 @@
 	      (string=? host "")
 	      (string=? host "localhost"))
 	  (open-input-file
-	    (abs?-url-path->fs-path (url-path url)))
+	    (file://path->fs-path (url-path url)))
 	  (url-error "Cannot get files from remote hosts")))))
 
   ;; get-impure-port : url [x list (str)] -> in-port
@@ -260,7 +260,7 @@
 				  (split-path base-path)]
 				[val base-dir (if must-be-dir? base-path base)]
 				[val ind-rel-path
-				  (rel-url-path->fs-path rel-path)]
+				  (file://rel-path->fs-path rel-path)]
 				[val merged (build-path base-dir
 					      ind-rel-path)])
 			  (set-url-path! relative merged)

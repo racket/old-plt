@@ -160,8 +160,9 @@
 		(log-warning "warning: unexpected response for ~a: ~a" id l)
 		(loop)])))))
 
+      ; str->arg is still not quite right.  It should use {n}crnl prefixes.
       (define (str->arg s)
-	(if (or (regexp-match " " s)
+	(if (or (regexp-match "[ *]" s)
 		(string=? s ""))
 	    (format "\"~a\"" s)
 	    s))

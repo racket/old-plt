@@ -1,0 +1,51 @@
+#define LIBNAME Arrows
+#include head.tinc
+
+<<LIBDESC>>{arrow.ss}
+
+<p>The library <code>arrow.ss</code> implements controller for moving
+pictures across a canvass. It provides three operations: 
+<menu>
+  <li> <code>control-left-right : shape number move -> true <code>:
+
+  <br> It consumes a shape, a number, and a <code>move</code> program.  The
+  move program consumes a shape and a number and re-draws the shape on
+  some canvas and produces a shape that is translated by N pixels left or
+  right. 
+  <br><br>
+
+  <li> <code>control-up-down : shape number move -> true <code>:
+
+  <br> It consumes a shape, a number, and a <code>move</code> program.  The
+  move program consumes a shape and a number and re-draws the shape on
+  some canvas and produces a shape that is translated by N pixels up or down.
+  <br><br>
+
+  <li> <code>control : shape number move-lr move-ud -> true <code>:
+
+  <br> It consumes a shape, a number, and two <code>move</code> programs.  The
+  move programs consume a shape and a number and re-draw the shape on
+  some canvas and produces a shape that is translated by N pixels left or
+  right. 
+
+</menu>
+
+<p>Example: 
+<pre>
+(define RAD 10)
+
+(define (translate sh delta)
+  (make-posn (+ (posn-x sh) delta) (posn-y sh)))
+
+(define (move sh delta)
+  (cond
+    [(and (clear-solid-disk sh RAD) (draw-solid-disk (translate sh delta) RAD))
+     (translate sh delta)]
+    [else false]))
+
+(start 100 100)
+
+(control-left-right (make-posn 10 20) 10 move)
+</pre>
+
+#include foot.tinc

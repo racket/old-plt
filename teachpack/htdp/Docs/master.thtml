@@ -1,0 +1,39 @@
+#define LIBNAME Mastermind
+#include head.tinc
+
+<<LIBDESC>>{master.ss}
+
+<p>The library <code>master.ss</code> provides the single operation
+<code>master</code>, which implements a simple GUI selecting two colors,
+evaluating the two guesses, and displaying an answer. The operation
+consumes the program <code>check-guess</code> and then plays
+TeachMasterMind. The program <code>check-guess</code> is responsible for
+comparing the color guesses of a player with the (random) choices of
+<code>master.</code> </p>
+
+<p> The library provides only one operation: 
+<menu>
+  <li><code>master : check-guess -> symbol; </code> <br>
+  It prompts users for two colors (symbols) and uses
+  <code>check-guess</code> to play mastermind. <br>
+  If the guesses completely match the set-up, <code>check-guess</code> must
+  return <code>'PerfectGuess</code>; otherwise it must return a different, 
+  informative symbol. 
+  
+ <li> Legitimate colors are: 
+      black white blue red green gold pink brown purple navy<br>
+
+</menu>
+
+<br>
+
+Sample session: First set library to <code> master.ss </code>. Execute
+and play as follows: 
+<br> 
+<pre>
+> (master check-guess)
+... 
+</pre>
+
+
+#include foot.tinc

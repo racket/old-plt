@@ -1,0 +1,16 @@
+
+#define LIBNAME Rectangles
+#include head.tinc
+
+<<LIBDESC>>{rectangle.ss}
+
+The library <code>rectangle.ss</code> provides all the operations that
+<code>draw.ss</code> provides and the following one: 
+<menu>
+  <li><code>show : (list-of (list-of COLOR)) -> void</code>
+  <br>which consumes a rectangle (a list of list of colors)
+  and draws a rectangle onto an open canvas.
+</menu>
+The use of the operation is explained in more detail in section X.Y.
+
+#include foot.tinc

@@ -1,0 +1,53 @@
+
+#define LIBNAME Protect-the-Wall
+#include head.tinc
+
+<<LIBDESC>>{protect-play.ss}
+
+The library <code>protect-play.ss</code> implements a "catch the balls"
+game. The game generates a random number of balls (between 10 and 20) that
+are moving from west to east.  The goal is to keep as many balls as
+possible from hitting the eastern wall by moving around the paddle. The
+paddle can be moved with mouse clicks.  Enjoy!
+
+<br>
+
+<p>The library provides four operations: 
+<menu>
+  <li><code> go</code> : symbol -> void; <br>
+ opens a window (the playing field)
+ <li><code> change-speed </code> : number -> void;  <br>
+ changes how quickly the game is displayed (not the speed of the balls)
+ <li><code> change-width </code> : number -> void;  <br>
+ changes the width of the playing field
+ <li><code> change-height </code> : number -> void;  <br>
+ changes the height of the playing field
+</menu>
+Also compare with <a href =
+pingp.html><code>pingp-play.ss</code></a></p>
+
+<br>
+<br>
+
+Sample session: Set library to <code> protect-play.ss </code> execute
+and play: 
+<br> <code> > (go 'MyName) </code>
+<br> <code> > (change-speed 120)
+<br> <code> > (go 'MyName) </code> </code>
+<br> <code> > (change-wind 88) </code>
+<br> <code> > (go 'MyName) </code> </code>
+
+<<LIBDESC>>{protect.ss}
+
+The library <code>protect.ss</code> also provides the graphical help
+functions for a student implementation of the protect-the-wall game: 
+<menu>
+<li><code> 
+protect (list-of ball) move-balls remove-balls-hit-paddle remove-outside-balls balls-posn -> true
+</code>
+
+<br>that is, it consumes four values and runs the game.
+</menu>
+The use of the operation is explained in more detail in subsection X.Y.
+
+#include foot.tinc

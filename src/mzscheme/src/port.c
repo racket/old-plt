@@ -1060,7 +1060,6 @@ long scheme_get_string(const char *who,
 {
   Scheme_Input_Port *ip;
   long got = 0, total_got = 0, gc, i;
-  int non_block_val, eof_on_error_val, *non_block, *eof_on_error;
   int special_ok = special_is_ok;
   Scheme_Get_String_Fun gs;
   Scheme_Peek_String_Fun ps;
@@ -1157,23 +1156,10 @@ long scheme_get_string(const char *who,
     }
 
     if (size) {
-      non_block_val = 0;
-      eof_on_error_val = 0;
-
-      if (only_avail)
-	non_block = &non_block_val;
-      else
-	non_block = NULL;
-
-      if (non_block && (got || total_got))
-	eof_on_error = &eof_on_error_val;
-      else
-	eof_on_error = NULL;
-
       if (peek && ps)
-	gc = ps(ip, buffer, offset + got, size, peek_skip, non_block, eof_on_error);
+	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2);
       else
-	gc = gs(ip, buffer, offset + got, size, non_block, eof_on_error);
+	gc = gs(ip, buffer, offset + got, size, only_avail == 2);
 
       if (gc == SCHEME_SPECIAL) {
 	if (!got && !total_got && special_ok) {
@@ -1203,16 +1189,10 @@ long scheme_get_string(const char *who,
 	  return 0;
 	}
       } else if (gc == EOF) {
-	if (eof_on_error_val) {
-	  gc = 0;
-	} if (non_block_val) {
-	  gc = 0;
-	} else {
-	  if (!got && !total_got)
-	    return EOF;
-	  gc = 0;
-	  size = 0; /* so that we stop */
-	}
+	if (!got && !total_got)
+	  return EOF;
+	gc = 0;
+	size = 0; /* so that we stop */
       }
       mzAssert(gc >= 0);
     } else
@@ -2719,7 +2699,7 @@ file_char_ready (Scheme_Input_Port *port)
 
 static long file_get_string(Scheme_Input_Port *port, 
 			    char *buffer, long offset, long size,
-			    int *nonblocking, int *eof_on_err)
+			    int rarely_block)
 {
   FILE *fp;
   Scheme_Input_File *fip;
@@ -2732,16 +2712,11 @@ static long file_get_string(Scheme_Input_Port *port,
 
   if (c == EOF) {
     if (!feof(fp)) {
-      if (eof_on_err) {
-	*eof_on_err = 1;
-	return c;
-      } else {
-	scheme_raise_exn(MZEXN_I_O_PORT_READ,
-			 port,
-			 "error reading from file port \"%q\" (%e)",
-			 port->name, errno);
-	return 0;
-      }
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		       port,
+		       "error reading from file port \"%q\" (%e)",
+		       port->name, errno);
+      return 0;
     }
 #ifndef DONT_CLEAR_FILE_EOF
     clearerr(fp);
@@ -2935,7 +2910,7 @@ fd_char_ready (Scheme_Input_Port *port)
 
 static long fd_get_string(Scheme_Input_Port *port, 
 			  char *buffer, long offset, long size,
-			  int *nonblock, int *eof_on_error)
+			  int nonblock)
 {
   Scheme_FD *fip;
   long bc;
@@ -2962,8 +2937,7 @@ static long fd_get_string(Scheme_Input_Port *port,
       /* If no chars appear to be ready, go to sleep. */
       if (!fd_char_ready(port)) {
 	if (nonblock) {
-	  *nonblock = 1;
-	  return EOF;
+	  return 0;
 	}
 
 	scheme_current_thread->block_descriptor = PORT_BLOCKED;
@@ -3127,16 +3101,11 @@ static long fd_get_string(Scheme_Input_Port *port,
 	if (fip->bufcount < 0) {
 	  fip->bufcount = 0;
 	  fip->buffpos = 0;
-	  if (eof_on_error) {
-	    *eof_on_error = 1;
-	    return EOF;
-	  } else {
-	    scheme_raise_exn(MZEXN_I_O_PORT_READ,
-			     port,
-			     "error reading from stream port \"%q\" (" FILENAME_EXN_E ")",
-			     port->name, errno);
-	    return 0;
-	  }
+	  scheme_raise_exn(MZEXN_I_O_PORT_READ,
+			   port,
+			   "error reading from stream port \"%q\" (" FILENAME_EXN_E ")",
+			   port->name, errno);
+	  return 0;
 	}
 
 	if (!fip->bufcount) {
@@ -3154,8 +3123,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	  return bc;
 	}
       } else if (nonblock) {
-	*nonblock = 1;
-	return EOF;
+	return 0;
       }
     }
   }

@@ -508,7 +508,7 @@ void scheme_init_port_fun_config(void)
 static long 
 string_get_string(Scheme_Input_Port *port, 
 		  char *buffer, long offset, long size,
-		  int *nonblock, int *eof_on_error)
+		  int nonblock)
 {
   Scheme_Indexed_String *is;
 
@@ -710,7 +710,7 @@ typedef struct User_Input_Port {
 static long 
 user_get_or_peek_string(Scheme_Input_Port *port, 
 			char *buffer, long offset, long size,
-			int *nonblock, int *eof_on_error,
+			int nonblock,
 			int peek, long peek_skip)
 {
   Scheme_Object *fun, *val, *waitable, *a[3];
@@ -732,17 +732,10 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       return EOF;
   }
 
-  if (eof_on_error) {
-    /* Can't guarantee behavior of Scheme code, so just quit
-       while we're ahead. */
-    *eof_on_error = 1;
-    return EOF;
-  }
-
   waitable = uip->waitable;
   if (SCHEME_TRUEP(waitable)) {
-    /* If we're going to block on the waitable, be prepared
-       for a close while we wait: */
+    /* If we're going to block on the waitable, but be prepared for a
+       close while we wait: */
     uip->block_count++;
     a[0] = nonblock ? scheme_make_integer(0) : scheme_false;
     a[1] = waitable;
@@ -764,8 +757,8 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       if (uip->peeked)
 	goto try_again;
     } else if (SCHEME_FALSEP(val)) {
-      *nonblock = 1;
-      return EOF;
+      /* Assert: nonblock is nonzero */
+      return 0;
     } else {
       /* Another thread closed the input port while we were waiting. */
       /* Call scheme_getc to signal the error */
@@ -813,10 +806,6 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       memcpy(buffer + offset, SCHEME_STR_VAL(a[0]), n);
       return n;
     } else {
-      if (nonblock) {
-	*nonblock = 1;
-	return EOF;
-      }
       scheme_thread_block(0.0); /* penalty for inaccuracy? */
       goto try_again;
     }
@@ -826,24 +815,24 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 static long 
 user_get_string(Scheme_Input_Port *port, 
 		char *buffer, long offset, long size,
-		int *nonblock, int *eof_on_error)
+		int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 0, 0);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 0, 0);
 }
 
 static long 
 user_peek_string(Scheme_Input_Port *port, 
 		 char *buffer, long offset, long size,
 		 long skip,
-		 int *nonblock, int *eof_on_error)
+		 int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 1, skip);
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip);
 }
 
 static int
 user_char_ready(Scheme_Input_Port *port)
 {
-  int c, nonblock = 0;
+  int c;
   char s[1];
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
@@ -852,18 +841,18 @@ user_char_ready(Scheme_Input_Port *port)
      effectively determines the result, because the peek function
      checks the waitable. */
 
-  c = user_get_or_peek_string(port, s, 0, 1, &nonblock, NULL, 1, 0);
+  c = user_get_or_peek_string(port, s, 0, 1, 1, 1, 0);
   if (c == EOF) {
-    if (!nonblock)
-      uip->peeked = scheme_true;
-    return !nonblock;
-  } else {
+    uip->peeked = scheme_true;
+    return 1;
+  } else if (c) {
     if (c == SCHEME_SPECIAL)
       uip->peeked = scheme_void;
     else
       uip->peeked = scheme_make_character(c);
     return 1;
-  }
+  } else
+    return 0;
 }
 
 static void
@@ -1063,7 +1052,7 @@ static void pipe_did_read(Scheme_Pipe *pipe)
 
 static long pipe_get_string(Scheme_Input_Port *p, 
 			    char *buffer, long offset, long size,
-			    int *nonblock, int *eof_on_error)
+			    int nonblock)
 {
   Scheme_Pipe *pipe;
   long c;
@@ -1071,10 +1060,8 @@ static long pipe_get_string(Scheme_Input_Port *p,
   pipe = (Scheme_Pipe *)(p->port_data);
 
   if ((pipe->bufstart == pipe->bufend) && !pipe->eof) {
-    if (nonblock) {
-      *nonblock = 1;
-      return EOF;
-    }
+    if (nonblock)
+      return 0;
 
     scheme_current_thread->block_descriptor = PIPE_BLOCKED;
     scheme_current_thread->blocker = (Scheme_Object *)p;

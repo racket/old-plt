@@ -1049,7 +1049,7 @@ static int tcp_char_ready (Scheme_Input_Port *port)
 
 static long tcp_get_string(Scheme_Input_Port *port, 
 			   char *buffer, long offset, long size,
-			   int *nonblock, int *eof_on_err)
+			   int nonblock)
 {
   int errid;
   Scheme_Tcp *data;
@@ -1080,10 +1080,8 @@ static long tcp_get_string(Scheme_Input_Port *port,
     }
 
   if (!tcp_char_ready(port)) {
-    if (nonblock) {
-      *nonblock = 1;
-      return EOF;
-    }
+    if (nonblock)
+      return 0;
 
 #ifdef USE_SOCKETS_TCP
     scheme_current_thread->block_descriptor = PORT_BLOCKED;
@@ -1098,6 +1096,9 @@ static long tcp_get_string(Scheme_Input_Port *port,
 #endif
     scheme_current_thread->ran_some = 1;
   }
+
+  /* We assume that no other process has access to our sockets, so
+     when we unblock, there's definitely something to read. */
 
 #ifdef USE_SOCKETS_TCP
   {
@@ -1177,15 +1178,11 @@ static long tcp_get_string(Scheme_Input_Port *port,
 #endif
   
   if (data->b.bufmax == -1) {
-    if (eof_on_err) {
-      *eof_on_err = 1;
-      return EOF;
-    } else {
-      scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		       port,
-		       "tcp-read: error reading (%e)",
-		       errid);
-    }
+    scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		     port,
+		     "tcp-read: error reading (%e)",
+		     errid);
+    return 0;
   } else if (!data->b.bufmax) {
     data->b.hiteof = 1;
     return EOF;

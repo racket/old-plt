@@ -868,11 +868,11 @@ typedef struct Scheme_Output_Port Scheme_Output_Port;
 
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port, 
 				      char *buffer, long offset, long size,
-				      int *nonblock, int *eof_on_error);
+				      int nonblock);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port, 
 				       char *buffer, long offset, long size,
 				       long skip,
-				       int *nonblock, int *eof_on_error);
+				       int nonblock);
 typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);

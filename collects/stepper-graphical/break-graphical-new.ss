@@ -262,7 +262,8 @@
       
       (private [frame (make-object debugger-frame% this)]
                [area-container (send frame get-area-container)]
-               [button-panel (make-object m:horizontal-panel% area-container)]
+               [control-panel (make-object m:horizontal-panel% area-container)]
+               [context-lbox (make-object m:listbox% control-panel)]
                [defns-canvas (make-object m:editor-canvas% area-container)]
                [defns-text (make-object debugger-text%)]
                [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]
@@ -276,8 +277,8 @@
                [break-semaphore #f])
       
       (sequence (send defns-text set-click-callback! click-callback)
-                (send button-panel stretchable-height #f)
-                (make-object m:button% "continue" button-panel continue-callback)
+                (send control-panel stretchable-height #f)
+                (make-object m:button% "continue" control-panel continue-callback)
                 (send defns-canvas set-editor defns-text))
       
       (public [can-close-frame?

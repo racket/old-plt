@@ -12,10 +12,6 @@
   (define (refresh-manuals)
     (invoke-unit/sig refresh-manuals@))
 
-  (define known-docs-plus-help
-	(cons '("help" . "PLT Help Desk")
-	      known-docs))
-  
   (define refresh-manuals@
     (unit/sig () 
       (import)
@@ -103,7 +99,7 @@
       ;; downloads the docs to the tmp-dir
       (define (download-known-docs tmp-dir)
         (for-each (lambda (known-doc) (download-known-doc tmp-dir (car known-doc) (cdr known-doc)))
-                  known-docs-plus-help))
+                  known-docs))
       
       ;; download-known-doc : string string string -> void
       ;; stub is the `drscheme' portion of `drscheme-doc.plt'.
@@ -139,7 +135,7 @@
       ;; delete-known-docs : -> void
       (define (delete-known-docs)
         (for-each (lambda (known-doc) (delete-known-doc (car known-doc) (cdr known-doc)))
-                  known-docs-plus-help))
+                  known-docs))
       
       (define (delete-known-doc doc full-name)
         (show-message (format (string-constant refresh-deleting...) full-name))
@@ -185,8 +181,7 @@
                      (show-message (format (string-constant refresh-installing...) (cdr pr)))
                      (run-single-installer (make-local-doc-filename tmp-dir (car pr))
                                            parent))
-                   known-docs-plus-help))))
+                   known-docs))))
     
       ;; go.
       (main))))
-    

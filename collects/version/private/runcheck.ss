@@ -1,6 +1,9 @@
 (module runcheck mzscheme
   (require (lib "unitsig.ss"))
-  (require (lib "string-constant.ss" "string-constants"))
+; TEMP TO BE FIXED
+; need to unquote string constants in this file
+;  (require (lib "string-constant.ss" "string-constants"))
+; END TEMP
   (require (lib "list.ss"))
   (require (lib "url.ss" "net"))
   (require (lib "getinfo.ss" "setup"))
@@ -14,13 +17,29 @@
 
       (import defs^ args^)
 
+      ; temp!!!!
+      (define strings-port 
+	(open-input-file 
+	 (build-path (collection-path "string-constants")
+		     "english-string-constants.ss")))
+
+      (define ss (read strings-port))
+      (close-input-port strings-port)
+	
+      (define (string-constant s)
+	(let ([pr (assoc s ss)])
+	  (if pr
+	      (cadr pr)
+	      "???")))
+      ; !!! end temp
+
       (define download-url-string "http://download.plt-scheme.org/")
 
       (define check-question 
-	(string-constant check-question))
+	(string-constant 'check-question))
 	
       (define star "*")
-      (define dialog-title (string-constant update-dialog-title))
+      (define dialog-title (string-constant 'update-dialog-title))
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -59,8 +78,8 @@
 	(let loop ([n 0])
 	  (if (> n timeout-value)
 	      (begin
-		(show-ok (string-constant network-timeout)
-			 (string-constant cannot-connect))
+		(show-ok (string-constant 'network-timeout)
+			 (string-constant 'cannot-connect))
 		(when the-port
                       ; will force exception on pending read
 		      (close-input-port the-port)))
@@ -155,7 +174,7 @@
 			  (if (null? bad-info)
 			      ""
 			      (string-append
-			       (string-constant collections-not-installed)
+			       (string-constant 'collections-not-installed)
 			       nl
 			       (foldr
 				comma-proc
@@ -167,7 +186,7 @@
 			       (if (null? bad-info) ; add newline
 				   ""
 				   nl)
-			       (string-constant collections-missing-version)
+			       (string-constant 'collections-missing-version)
 			       nl
 			       (foldr
 				comma-proc
@@ -178,15 +197,15 @@
 
 	      (when (or (not (null? args-vis))
 			(eq? 'yes
-			     (get-yes-no (string-constant update-check)
+			     (get-yes-no (string-constant 'update-check)
 					 check-question)))
 		    (set! the-port 
 			  (with-handlers 
 			   ((void 
 			     (lambda _ 
 			       (show-error-ok
-				(string-constant network-failure)
-				(string-constant cannot-connect))
+				(string-constant 'network-failure)
+				(string-constant 'cannot-connect))
 			       (raise 'network-error))))
 			   (get-pure-port (string->url 
 					   (make-url-string
@@ -230,14 +249,14 @@
 			   (show-ok 
 			    dialog-title
 			    (string-append
-			     (string-constant old-binaries)
+			     (string-constant 'old-binaries)
 			     nl nl
 			     (format 
-			      (string-constant binary-information-format)
+			      (string-constant 'binary-information-format)
 			      binary-version binary-iteration)
 			     nl nl
 			     (format 
-			      (string-constant latest-binary-information-format)
+			      (string-constant 'latest-binary-information-format)
 			      latest-binary-version latest-binary-iteration)
 			     nl nl
 			     "Updates are available at "
@@ -261,7 +280,7 @@
 					 (begin
 					   (set! needs-update #t)
 					   (format 
-					    (string-constant update-format)
+					    (string-constant 'update-format)
 					    package 
 					    installed-version installed-iteration 
 					    latest-version latest-iteration))]
@@ -282,7 +301,7 @@
 			      dialog-title
 			      (string-append
 			       (format up-to-format
-				       (string-constant binary-name)
+				       (string-constant 'binary-name)
 				       binary-version binary-iteration)
 			       nl
 			       (if needs-update
@@ -290,7 +309,7 @@
 				    folded-string
 				    nl nl
 				    (string-constant 
-				     updates-available)
+				     'updates-available)
 				    " "
 				    download-url-string)
 				   folded-string)))))))))))

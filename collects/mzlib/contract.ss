@@ -591,9 +591,7 @@
                         pos-blame
                         a-contract-raw
                         name))
-               ;((a-contract pos-blame neg-blame src-info) name)
-               (((contract-proc a-contract) pos-blame neg-blame src-info) name)
-               )))])))
+               (((contract-proc a-contract) pos-blame neg-blame src-info) name))))])))
   
   ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
   ;; doesn't return
@@ -1570,7 +1568,7 @@
                   [else (cons (- n i)
                               (loop (- i 1)))]))))))
 
-  ;; coerce/select-contract : (union contract? procedure-arity-1) -> contract-proc
+  ;; coerce/select-contract : id (union contract? procedure-arity-1) -> contract-proc
   ;; contract-proc = sym sym stx -> alpha -> alpha
   ;; returns the procedure for the contract after extracting it from the
   ;; struct. Coerces the argument to a flat contract if it is procedure, but first.
@@ -1653,8 +1651,10 @@
 	   printable?
            symbols
 	   is-a?/c subclass?/c implementation?/c
-           listof vectorof
-	   vector/p cons/p list/p box/p
+           listof list-immutableof 
+           vectorof vector-immutableof vector/p vector-immutable/c 
+           cons-immutable/c cons/p list-immutable/c list/p 
+           box-immutable/c box/p
 	   mixin-contract make-mixin-contract)
   
   (define (union . args)
@@ -1877,6 +1877,53 @@
 	    (andmap (lambda (ele) (test-flat-contract p ele))
 		    v)))))
   
+  (define-syntax (*-immutableof stx)
+    (syntax-case stx ()
+      [(_ predicate? fill type-name name)
+       (syntax
+        (let ([predicate?-name predicate?]
+              [fill-name fill])
+          (lambda (_p)
+            (let ([p (coerce/select-contract name _p)])
+              (make-contract
+               (lambda (pos neg src-info)
+                 (let ([p-app (p pos neg src-info)])
+                   (lambda (val)
+                     (unless (predicate?-name val)
+                       (raise-contract-error
+                        src-info
+                        pos
+                        neg
+                        "expected <~a>, given: ~e"
+                        'type-name
+                        val))
+                     (fill-name p-app val)))))))))]))
+  
+  (define (map-immutable f lst)
+    (let loop ([lst lst])
+      (cond
+        [(pair? lst)
+         (cons-immutable (f (car lst))
+                         (loop (cdr lst)))]
+        [(null? lst) null])))
+  
+  (define (immutable-list? lst)
+    (cond
+      [(and (pair? lst)
+            (immutable? lst))
+       (immutable-list? (cdr lst))]
+      [(null? lst) #t]
+      [else #f]))
+  
+  (define list-immutableof
+    (*-immutableof immutable-list? map-immutable immutable-list list-immutableof))  
+
+  (define vector-immutableof
+    (*-immutableof (lambda (x) (and (vector? x) (immutable? x)))
+                   (lambda (f v) (vector->immutable-vector (list->vector (map f (vector->list v)))))
+                   immutable-vector
+                   vector-immutableof))
+  
   (define (vectorof p)
     (unless (flat-contract/predicate? p)
       (error 'vectorof "expected a flat contract or procedure of arity 1 as argument, got: ~e" p))
@@ -1919,14 +1966,83 @@
   (define (cons/p hdp tlp)
     (unless (and (flat-contract/predicate? hdp)
                  (flat-contract/predicate? tlp))
-      (error 'cons/p "expected two flat contracts, got: ~e and ~e" hdp tlp))
+      (error 'cons/p "expected two flat contracts or procedures of arity 1, got: ~e and ~e" hdp tlp))
     (flat-named-contract
      (build-compound-type-name "cons/p" hdp tlp)
      (lambda (x)
        (and (pair? x)
             (test-flat-contract hdp (car x))
             (test-flat-contract tlp (cdr x))))))
-
+  
+  (define-syntax (*-immutable/c stx)
+    (syntax-case stx ()
+      [(_ predicate? constructor (arb? selectors ...) type-name name)
+       (eq? #f (syntax-object->datum (syntax arb?)))
+       (with-syntax ([(params ...) (generate-temporaries (syntax (selectors ...)))]
+                     [(p-apps ...) (generate-temporaries (syntax (selectors ...)))]
+                     [(procs ...) (generate-temporaries (syntax (selectors ...)))]
+                     [(selector-names ...) (generate-temporaries (syntax (selectors ...)))])
+         (syntax
+          (let ([predicate?-name predicate?]
+                [constructor-name constructor]
+                [selector-names selectors] ...)
+            (lambda (params ...)
+              (let ([procs (coerce/select-contract name params)] ...)
+                (make-contract
+                 (lambda (pos neg src-info)
+                   (let ([p-apps (procs pos neg src-info)] ...)
+                     (lambda (v)
+                       (if (and (immutable? v)
+                                (predicate?-name v))
+                           (constructor-name (p-apps (selector-names v)) ...)
+                           (raise-contract-error
+                            src-info
+                            pos
+                            neg
+                            "expected <~a>, given: ~e"
+                            'type-name
+                            v)))))))))))]
+      [(_ predicate? constructor (arb? selector) correct-size type-name name)
+       (eq? #t (syntax-object->datum (syntax arb?)))
+       (syntax
+        (let ([predicate?-name predicate?]
+              [constructor-name constructor]
+              [selector-name selector])
+          (lambda params
+            (let ([procs (map (lambda (param) (coerce/select-contract name param)) params)])
+              (make-contract
+               (lambda (pos neg src-info)
+                 (let ([p-apps (map (lambda (proc) (proc pos neg src-info)) procs)]
+                       [count (length params)])
+                   (lambda (v)
+                     (if (and (immutable? v)
+                              (predicate?-name v)
+                              (correct-size count v))
+                         (apply constructor-name 
+                                (let loop ([p-apps p-apps]
+                                           [i 0])
+                                  (cond
+                                    [(null? p-apps) null]
+                                    [else (let ([p-app (car p-apps)])
+                                            (cons (p-app (selector-name v i))
+                                                  (loop (cdr p-apps) (+ i 1))))])))
+                         (raise-contract-error
+                          src-info
+                          pos
+                          neg
+                          "expected <~a>, given: ~e"
+                          'type-name
+                          v))))))))))]))
+  
+  (define cons-immutable/c (*-immutable/c pair? cons (#f car cdr) immutable-cons cons-immutable/c))
+  (define box-immutable/c (*-immutable/c box? box (#f unbox) immutable-box box-immutable/c))
+  (define vector-immutable/c (*-immutable/c vector?
+                                            vector
+                                            (#t (lambda (v i) (vector-ref v i)))
+                                            (lambda (n v) (= n (vector-length v)))
+                                            immutable-vector
+                                            vector-immutable/c))
+       
   (define (list/p . args)
     (unless (andmap flat-contract/predicate? args)
       (error 'list/p "expected flat contracts, got: ~a"
@@ -1939,8 +2055,26 @@
                         (loop (cdr args)))]))))
     (let loop ([args args])
       (cond
-	[(null? args) null?]
+	[(null? args) (flat-contract null?)]
 	[else (cons/p (car args) (loop (cdr args)))])))
+  
+  (define (list-immutable/c . args)
+    (unless (andmap (lambda (x) (or (contract? x)
+                                    (and (procedure? x)
+                                         (procedure-arity-includes? x 1))))
+                    args)
+      (error 'list/p "expected flat contracts or procedures of arity 1, got: ~a"
+             (let loop ([args args]) 
+               (cond
+                 [(null? args) ""]
+                 [(null? (cdr args)) (format "~e" (car args))]
+                 [else (string-append
+                        (format "~e " (car args))
+                        (loop (cdr args)))]))))
+    (let loop ([args args])
+      (cond
+	[(null? args) (flat-contract null?)]
+	[else (cons-immutable/c (car args) (loop (cdr args)))])))
 
   (define (syntax/p c)
     (unless (flat-contract/predicate? c)
@@ -1955,7 +2089,7 @@
     (or (flat-contract? pred)
         (and (procedure? pred)
              (procedure-arity-includes? pred 1))))
-
+  
   (define (build-compound-type-name name . fs)
     (let ([strs (map contract->type-name fs)])
       (format "(~a~a)" 

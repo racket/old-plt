@@ -678,15 +678,38 @@
 
 (add-list-micro cu/s-unit-path-extract-final-sig-vocab
   (let* ((kwd '(:))
-	  (in-pattern-1 '(tag : sig))
-	  (in-pattern-2 '(tag id ...))
-	  (in-pattern-3 '((tag id ...) : sig))
+	  (in-pattern-1 '((tag id ...) : sig))
+	  (in-pattern-2 '(tag : sig))
+	  (in-pattern-3 '(tag id ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
     (lambda (expr env attributes vocab)
       (cond
 	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
+	      (valid-syntactic-id? tag)
+	      (map valid-syntactic-id? ids)
+	      (let ((initial-sig
+		      (tag-table-entry-signature
+			(cu/s-tag-table-lookup/static-error
+			  (extract-cu/s-tag-table attributes) tag))))
+		(let ((final-sig
+			(extract-sub-unit-signature initial-sig ids))
+		       (small-sig
+			 (expand-expr sig env attributes sig-vocab)))
+		  (verify-signature-match 'compound-unit/sig
+		    #f
+		    (format "signature ~s" (signature-name small-sig))
+		    (signature-exploded small-sig)
+		    (format "signature ~s" (signature-name final-sig))
+		    (signature-exploded final-sig))
+		  small-sig)))))
+	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -705,7 +728,7 @@
 		  (format "signature ~s" (signature-name big-sig))
 		  (signature-exploded big-sig))
 		small-sig))))
-	((pat:match-against m&e-2 expr env)
+	((pat:match-against m&e-3 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -719,29 +742,6 @@
 		(let ((final-sig
 			(extract-sub-unit-signature initial-sig ids)))
 		  final-sig)))))
-	((pat:match-against m&e-3 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd)))
-	      (valid-syntactic-id? tag)
-	      (map valid-syntactic-id? ids)
-	      (let ((initial-sig
-		      (tag-table-entry-signature
-			(cu/s-tag-table-lookup/static-error
-			  (extract-cu/s-tag-table attributes) tag))))
-		(let ((final-sig
-			(extract-sub-unit-signature initial-sig ids))
-		       (small-sig
-			 (expand-expr sig env attributes tag)))
-		  (verify-signature-match 'compound-unit/sig
-		    #f
-		    (format "signature ~s" (signature-name small-sig))
-		    (signature-exploded small-sig)
-		    (format "signature ~s" (signature-name final-sig))
-		    (signature-exploded final-sig))
-		  small-sig)))))
 	(else
 	  (static-error expr "Malformed unit path element"))))))
 
@@ -759,15 +759,39 @@
 
 (add-list-micro cu/s-unit-path-linkage-vocab
   (let* ((kwd '(:))
-	  (in-pattern-1 '(tag : sig))
-	  (in-pattern-2 '(tag id ...))
-	  (in-pattern-3 '((tag id ...) : sig))
+	  (in-pattern-1 '((tag id ...) : sig))
+	  (in-pattern-2 '(tag : sig))
+	  (in-pattern-3 '(tag id ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
     (lambda (expr env attributes vocab)
       (cond
 	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
+	      (valid-syntactic-id? tag)
+	      (map valid-syntactic-id? ids)
+	      (let ((initial-sig
+		      (tag-table-entry-signature
+			(cu/s-tag-table-lookup/static-error
+			  (extract-cu/s-tag-table attributes) tag))))
+		(let ((final-sig
+			(extract-sub-unit-signature initial-sig ids))
+		       (small-sig
+			 (expand-expr sig env attributes sig-vocab)))
+		  (verify-signature-match 'compound-unit/sig
+		    #f
+		    (format "signature ~s" (signature-name small-sig))
+		    (signature-exploded small-sig)
+		    (format "signature ~s" (signature-name final-sig))
+		    (signature-exploded final-sig))
+		  (cons (z:read-object tag)
+		    (signature-exploded small-sig)))))))
+	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -787,7 +811,7 @@
 		  (signature-exploded big-sig))
 		(cons (z:read-object tag)
 		  (signature-exploded small-sig))))))
-	((pat:match-against m&e-2 expr env)
+	((pat:match-against m&e-3 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -802,30 +826,6 @@
 			(extract-sub-unit-signature initial-sig ids)))
 		  (cons (z:read-object tag)
 		    (signature-exploded final-sig)))))))
-	((pat:match-against m&e-3 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd)))
-	      (valid-syntactic-id? tag)
-	      (map valid-syntactic-id? ids)
-	      (let ((initial-sig
-		      (tag-table-entry-signature
-			(cu/s-tag-table-lookup/static-error
-			  (extract-cu/s-tag-table attributes) tag))))
-		(let ((final-sig
-			(extract-sub-unit-signature initial-sig ids))
-		       (small-sig
-			 (expand-expr sig env attributes tag)))
-		  (verify-signature-match 'compound-unit/sig
-		    #f
-		    (format "signature ~s" (signature-name small-sig))
-		    (signature-exploded small-sig)
-		    (format "signature ~s" (signature-name final-sig))
-		    (signature-exploded final-sig))
-		  (cons (z:read-object tag)
-		    (signature-exploded small-sig)))))))
 	(else
 	  (static-error expr "Malformed unit path element"))))))
 
@@ -853,15 +853,38 @@
 
 (add-list-micro cu/s-unit-path-prim-links-vocab
   (let* ((kwd '(:))
-	  (in-pattern-1 '(tag : sig))
-	  (in-pattern-2 '(tag id ...))
-	  (in-pattern-3 '((tag id ...) : sig))
+	  (in-pattern-1 '((tag id ...) : sig))
+	  (in-pattern-2 '(tag : sig))
+	  (in-pattern-3 '(tag id ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
     (lambda (expr env attributes vocab)
       (cond
 	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
+	      (let ((small-sig
+		      (expand-expr sig env attributes sig-vocab)))
+		(let ((tag-table-entry (cu/s-tag-table-lookup/internal-error
+					 (extract-cu/s-tag-table attributes)
+					 tag)))
+		  (cond
+		    ((tag-table-import-entry? tag-table-entry)
+		      (cu/s-build-link-names small-sig
+			(cu/s-build-link-prefix ids)))
+		    ((tag-table-link-entry? tag-table-entry)
+		      (list
+			(cons (z:read-object tag)
+			  (cu/s-build-link-names small-sig
+			    (cu/s-build-link-prefix ids)))))
+		    (else
+		      (internal-error tag-table-entry
+			"Illegal tag-table entry"))))))))
+	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -884,7 +907,7 @@
 		    (else
 		      (internal-error tag-table-entry
 			"Illegal tag-table entry"))))))))
-	((pat:match-against m&e-2 expr env)
+	((pat:match-against m&e-3 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -910,29 +933,6 @@
 		      (else
 			(internal-error tag-table-entry
 			  "Illegal tag-table entry")))))))))
-	((pat:match-against m&e-3 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd)))
-	      (let ((small-sig
-		      (expand-expr sig env attributes tag)))
-		(let ((tag-table-entry (cu/s-tag-table-lookup/internal-error
-					 (extract-cu/s-tag-table attributes)
-					 tag)))
-		  (cond
-		    ((tag-table-import-entry? tag-table-entry)
-		      (cu/s-build-link-names small-sig
-			(cu/s-build-link-prefix ids)))
-		    ((tag-table-link-entry? tag-table-entry)
-		      (list
-			(cons (z:read-object tag)
-			  (cu/s-build-link-names small-sig
-			    (cu/s-build-link-prefix ids)))))
-		    (else
-		      (internal-error tag-table-entry
-			"Illegal tag-table entry"))))))))
 	(else
 	  (static-error expr "Malformed unit path element"))))))
 
@@ -949,9 +949,9 @@
 
 (add-list-micro cu/s-unit-path-tag+build-prefix-vocab
   (let* ((kwd '(:))
-	  (in-pattern-1 '(tag : sig))
-	  (in-pattern-2 '(tag id ...))
-	  (in-pattern-3 '((tag id ...) : sig))
+	  (in-pattern-1 '((tag id ...) : sig))
+	  (in-pattern-2 '(tag : sig))
+	  (in-pattern-3 '(tag id ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
@@ -960,14 +960,9 @@
 	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd)))
-	      (cons (z:read-object tag)
-		""))))
-	((pat:match-against m&e-2 expr env)
-	  =>
-	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd)))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (cons (z:read-object tag)
 		(apply symbol-append
 		  (let loop ((ids ids))
@@ -977,12 +972,17 @@
 			(cons (z:read-object (car ids))
 			  (cons ":"
 			    (loop (cdr ids))))))))))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd)))
+	      (cons (z:read-object tag)
+		""))))
 	((pat:match-against m&e-3 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd))
-		   (sig (pat:pexpand 'sig p-env kwd)))
+		   (ids (pat:pexpand '(id ...) p-env kwd)))
 	      (cons (z:read-object tag)
 		(apply symbol-append
 		  (let loop ((ids ids))
@@ -1005,26 +1005,15 @@
 
 (add-list-micro cu/s-unit-path-tag-vocab
   (let* ((kwd '(:))
-	  (in-pattern-1 '(tag : sig))
-	  (in-pattern-2 '(tag id ...))
-	  (in-pattern-3 '((tag id ...) : sig))
+	  (in-pattern-1 '((tag id ...) : sig))
+	  (in-pattern-2 '(tag : sig))
+	  (in-pattern-3 '(tag id ...))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
     (lambda (expr env attributes vocab)
       (cond
 	((pat:match-against m&e-1 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd)))
-	      (z:read-object tag))))
-	((pat:match-against m&e-2 expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((tag (pat:pexpand 'tag p-env kwd))
-		   (ids (pat:pexpand '(id ...) p-env kwd)))
-	      (z:read-object tag))))
-	((pat:match-against m&e-3 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
@@ -1039,6 +1028,17 @@
 			(cons (z:read-object (car ids))
 			  (cons ":"
 			    (loop (cdr ids))))))))))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd)))
+	      (z:read-object tag))))
+	((pat:match-against m&e-3 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd)))
+	      (z:read-object tag))))
 	(else
 	  (static-error expr "Malformed unit path element"))))))
 

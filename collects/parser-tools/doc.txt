@@ -3,6 +3,8 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
+CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
+
 CHANGE: Regular expression of the form (symbol) are no longer valid and symbol
 regular expressions alway refer to abbreviations and do not match the string of
 characters in the symbol anymore.
@@ -101,6 +103,7 @@ This gives you the following syntactic forms:
 
 > (token-name token) returns the token's name.
 > (token-value token) returns the token's value.
+> (token? val) returns #t if val is a token and #f otherwise.
 
 HINT: Token definitions are usually necessary for interoperating with
 a generated parser, but may not be the right choice when using the

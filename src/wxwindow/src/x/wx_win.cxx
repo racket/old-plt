@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.3 1998/04/10 15:08:16 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.4 1998/04/11 13:58:23 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -988,21 +988,21 @@ void wxWindow::WindowEventHandler(Widget WXUNUSED(w),
       KeySym keySym;
       XComposeStatus compose;
       XLookupString((XKeyEvent *)xev, wxBuffer, 20, &keySym, &compose);
-      int id = CharCodeXToWX (keySym);
+      int id = CharCodeXToWX(keySym);
       
-      wxKeyEvent *e = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-      
-      if (xev->xkey.state & ShiftMask)
-	e->shiftDown = TRUE;
-      if (xev->xkey.state & ControlMask)
-	e->controlDown = TRUE;
-      if (xev->xkey.state & Mod1Mask)
-	e->metaDown = TRUE;
-      e->eventObject = win;
-      e->keyCode = id;
-      e->SetTimestamp(xev->xkey.time);
-
       if (id > -1) {
+	wxKeyEvent *e = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+	
+	if (xev->xkey.state & ShiftMask)
+	  e->shiftDown = TRUE;
+	if (xev->xkey.state & ControlMask)
+	  e->controlDown = TRUE;
+	if (xev->xkey.state & Mod1Mask)
+	  e->metaDown = TRUE;
+	e->eventObject = win;
+	e->keyCode = id;
+	e->SetTimestamp(xev->xkey.time);
+	
 	if (win->CallPreOnChar(win, e)) {
 	  *continue_to_dispatch_return = 0;
 	  return;

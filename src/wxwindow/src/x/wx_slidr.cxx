@@ -16,6 +16,7 @@
 #include "common.h"
 #include "wx_utils.h"
 #include "wx_privt.h"
+#include "wx_main.h"
 #include "wx_slidr.h"
 
 #ifdef wx_motif
@@ -243,7 +244,7 @@ void wxSlider::GetSize (int *width, int *height)
   wxItem::GetSize (width, height);
 }
 
-void wxSlider::SetSize (int x, int y, int width, int height, int sizeFlags)
+void wxSlider::SetSize (int x, int y, int width, int height, int /* sizeFlags */)
 {
   Widget sliderWidget = (Widget) handle;
 

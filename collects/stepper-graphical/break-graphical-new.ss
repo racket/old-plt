@@ -8,20 +8,20 @@
           [e : zodiac:interface^]
           [fw : framework^]
           [d : drscheme:export^]
-          [utils : stepper:utils^])
+          [utils : stepper:cogen-utils^])
   
   (define debugger-text%
-    (class f:text:basic% args
+    (class fw:text:basic% args
       (inherit dc-location-to-editor-location find-position)
       (rename [super-on-local-event on-local-event])
       
-      (private click-callback #f)
-      (public set-click-callback! 
-              (lambda (callback)
-                (if (and (procedure? callback)
-                         (procedure-arity-includes? callback 3))
-                    (set! click-callback callback)
-                    (e:internal-error #f "set-click-callback called with invalid argument"))))
+      (private [click-callback #f])
+      (public [set-click-callback! 
+               (lambda (callback)
+                 (if (and (procedure? callback)
+                          (procedure-arity-includes? callback 3))
+                     (set! click-callback callback)
+                     (e:internal-error #f "set-click-callback called with invalid argument")))])
       
       (override
         [on-local-event
@@ -32,7 +32,7 @@
                              [(event-y) (send event get-y)]
                              [(x y) (dc-location-to-editor-location
                                      event-x event-y)]
-                             [position (find-position x y)])
+                             [(position) (find-position x y)])
                  (click-callback x y position)))))])
       
       (sequence (apply super-init args))))
@@ -74,20 +74,20 @@
   ; ----------------------------------------------------------------
   
   (define (add-to-popup pm val)
-    (cond [(closure? val)
-           (make-object menu-item% "(closure)" pm (void))]
-          [(structure? val)
-           (make-object menu-item% "(structure)" pm (void))]
+    (cond [(procedure? val)
+           (make-object m:menu-item% "(closure)" pm (void))]
+          [(struct? val)
+           (make-object m:menu-item% "(structure)" pm (void))]
           [(class? val)
-           (make-object menu-item% "(class)" pm (void))]
+           (make-object m:menu-item% "(class)" pm (void))]
           [(object? val)
-           (make-object menu-item% "(object)" pm (void))]
+           (make-object m:menu-item% "(object)" pm (void))]
           [(unit? val)
-           (make-object menu-item% "(unit)" pm (void))]
+           (make-object m:menu-item% "(unit)" pm (void))]
           [else
            (let ([sp (open-output-string)])
-             (write (print-convert val) sp)
-             (make-object menu-item% (get-output-string sp) pm (void)))]))
+             (write (pc:print-convert val) sp)
+             (make-object m:menu-item% (get-output-string sp) pm (void)))]))
 
   (define debugger%
     (class object% (drscheme-frame)
@@ -112,12 +112,12 @@
                 
                [show-var-values
                 (lambda (binding x y)
-                  (let* ([values (lookup-binding-list stored-mark-list binding)]
-                         [pm (make-object popup-menu%)])
+                  (let* ([values (marks:lookup-binding-list stored-mark-list binding)]
+                         [pm (make-object m:popup-menu%)])
                     (for-each (lambda (val)
                                 (add-to-popup pm val))
                               values)
-                    (send f popup-menu x y)))]
+                    (send frame popup-menu x y)))]
                
                [clear-highlights
                 (lambda ()
@@ -129,8 +129,8 @@
                   
                [highlight-vars
                 (lambda (mark)
-                  (let* ([src (mark-source mark)]
-                         [mark-bindings (map mark-binding-binding (mark-bindings mark))]
+                  (let* ([src (marks:mark-source mark)]
+                         [mark-bindings (map marks:mark-binding-binding (marks:mark-bindings mark))]
                          [highlight-var ; (parsed [binding | slot | top-level-varref] -> (void))
                           (lambda (ref binding)
                             (let* ([start (z:location-offset (z:zodiac-start ref))]
@@ -145,15 +145,15 @@
                       (ccond ; we need a z:parsed iterator...
                         [(z:varref? src)
                          (if (z:top-level-varref? src)
-                             (if (utils:unit-bound-varref? src)
-                                 (maybe-highlight-bound-var src (z:top-level-varrref-slot src))
+                             (if (utils:is-unit-bound? src)
+                                 (maybe-highlight-bound-var src (z:top-level-varref/bind-slot src))
                                  (highlight-var src src))
-                             (maybe-highlight-bound-var src (z:varref-binding src)))]
+                             (maybe-highlight-bound-var src (z:bound-varref-binding src)))]
                         [(z:app? src)
                          (map recur (cons (z:app-fun src) (z:app-args src)))]
                         [(z:struct-form? src)
-                         (when super-expr
-                           (recur (z:struct-form-super-expr src)))]
+                         (when (z:struct-form-super src)
+                           (recur (z:struct-form-super src)))]
                         [(z:if-form? src)
                          (for-each recur (list (z:if-form-test src)
                                                (z:if-form-then src)
@@ -184,8 +184,8 @@
                          (for-each recur (z:define-values-form-vars src))
                          (recur (z:define-values-form-val src))]
                         [(z:set!-form? src)
-                         (recur (z:define-values-form-var src))
-                         (recur (z:define-values-form-val src))]
+                         (recur (z:set!-form-var src))
+                         (recur (z:set!-form-val src))]
                         [(z:case-lambda-form? src)
                          (for-each 
                           (lambda (arglist)
@@ -194,9 +194,9 @@
                           (z:case-lambda-form-args src))
                          (for-each recur (z:case-lambda-form-bodies src))]
                         [(z:with-continuation-mark-form? src)
-                         (recur (z:with-continuation-mark-from-key src))
-                         (recur (z:with-continuation-mark-from-val src))
-                         (recur (z:with-continuation-mark-from-body src))]
+                         (recur (z:with-continuation-mark-form-key src))
+                         (recur (z:with-continuation-mark-form-val src))
+                         (recur (z:with-continuation-mark-form-body src))]
                         [(z:unit-form? src)
                          ; imports and exports can never be highlighted, same as lambda and let bindings
                          (for-each recur (z:unit-form-clauses src))]
@@ -214,7 +214,7 @@
                          (for-each recur (z:class*/names-form-interfaces src))
                          (for-each (lambda (arg)
                                      (when (pair? arg)
-                                       (recur (cdr element))))
+                                       (recur (cdr arg))))
                                    (z:paroptarglist-vars (z:class*/names-form-init-vars src)))
                          (for-each (lambda (clause)
                                      (ccond [(z:public-clause? src)
@@ -242,6 +242,7 @@
               
               [handle-breakpoint
                (lambda (mark-list semaphore)
+                 (printf "entering handle-breakpoint~n")
                  (set! break-semaphore semaphore)
                  (set! stored-mark-list mark-list)
                  (if needs-update
@@ -252,16 +253,17 @@
                  (for-each highlight-vars mark-list)
                  (send frame show #t))])
                  
+      (sequence (printf "initializing~n"))
       (sequence (super-init))
       
       (private [frame (make-object debugger-frame% this)]
                [area-container (send frame get-area-container)]
                [button-panel (make-object m:horizontal-panel% area-container)]
                [defns-canvas (make-object m:editor-canvas% area-container)]
-               [defns-text (make-object debugger:text%)]
+               [defns-text (make-object debugger-text%)]
                [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]
                [var-style (let* ([style-list (send defns-text get-style-list)]
-                                 [underline-delta (make-object style-delta% 'change-underline #t)]
+                                 [underline-delta (make-object m:style-delta% 'change-underline #t)]
                                  [underline-blue-delta (send underline-delta set-delta-foreground "blue")])
                             (send style-list find-or-create-style standard-style underline-blue-delta))]
                [break-semaphore #f])
@@ -269,13 +271,9 @@
       (sequence (send defns-text set-click-callback! click-callback)
                 (send button-panel stretchable-height #f)
                 (make-object m:button% "continue" button-panel continue-callback)
-                (send interactions-canvas set-editor value-text))
+                (send defns-canvas set-editor defns-text))
       
-      (public [on-size-frame
-               (lambda ()
-                 (send value-text reset-pretty-print-width))]
-              
-              [can-close-frame?
+      (public [can-close-frame?
                (lambda ()
                  (if break-semaphore
                      (begin 
@@ -297,7 +295,7 @@
          [get-debugger
           (lambda ()
             (when (not debugger)
-              (set! debugger (make-object debugger%)))
+              (set! debugger (make-object debugger% this)))
             debugger)]))))
   
   ; ----------------------------------------------------------------
@@ -332,9 +330,17 @@
   
   ; ----------------------------------------------------------------
   
+  (define (is-drscheme-definitions-editor? editor)
+    (and (is-a? editor m:editor<%>)
+         (send editor get-canvas)
+         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
+  
+  (define (get-drscheme-frame editor)
+    (and (is-drscheme-definitions-editor? editor)
+         (send (send editor get-canvas) get-top-level-window)))
   
   (define (break)
-    (let* ([mark-list (current-continuation-marks)]
+    (let* ([mark-list (marks:extract-mark-list (current-continuation-marks))]
            [new-semaphore (make-semaphore)])
       (when (null? mark-list)
         (error 'breakpoint "no marks to debug (could be in No Debugging mode?)"))
@@ -347,8 +353,8 @@
                                         (error "no drscheme marks to hang the debugger from")
                                         (or (get-drscheme-frame (z:location-file
                                                                  (z:zodiac-start
-                                                                  (frame-info-source (car frame-info-list)))))
-                                            (loop (cdr frame-info-list)))))]
+                                                                  (marks:mark-source (car mark-list)))))
+                                            (loop (cdr mark-list)))))]
                   [debugger (send drscheme-frame get-debugger)])
              (send debugger handle-breakpoint mark-list new-semaphore))))
         (semaphore-wait new-semaphore)

@@ -45,7 +45,7 @@
                            marks
                            annotate)]
         [break : (break)
-               ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
+               ((require-library-unit/sig "break-graphical-new.ss" "stepper-graphical")
                 core
                 mred
                 marks
@@ -54,7 +54,8 @@
                 zodiac
                 error
                 framework
-                drscheme)]
+                drscheme
+                utils)]
         [mred-extensions : stepper:mred-extensions^
                  ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
                   mred

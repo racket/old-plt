@@ -8,23 +8,23 @@
   
   ;; ----- debugger startup
   
-  ; this will be used to channel the parsed zodiac to the right debugger.
-  
-  (define parent-drscheme-frame 
-    (make-parameter #f (lambda (frame)
-                         (if (is-a? frame mred:frame%)
-                             frame
-                             (e:internal-error #f "non-frame given to parent-drscheme-frame parameter")))))
-  
-  (drscheme:get/extend:extend-unit-frame
-   (lambda (super%)
-     (class super% args
-       (rename [super-execute-callback execute-callback])
-       (override [execute-callback
-                  (lambda ()
-                    (parent-drscheme-frame this)
-                    (super-execute-callback))])
-       (sequence (apply super-init args)))))
+;  ; this will be used to channel the parsed zodiac to the right debugger.
+;  
+;  (define parent-drscheme-frame 
+;    (make-parameter #f (lambda (frame)
+;                         (if (is-a? frame mred:frame%)
+;                             frame
+;                             (e:internal-error #f "non-frame given to parent-drscheme-frame parameter")))))
+;  
+;  (drscheme:get/extend:extend-unit-frame
+;   (lambda (super%)
+;     (class super% args
+;       (rename [super-execute-callback execute-callback])
+;       (override [execute-callback
+;                  (lambda ()
+;                    (parent-drscheme-frame this)
+;                    (super-execute-callback))])
+;       (sequence (apply super-init args)))))
 
   ;; ----- stepper startup
   

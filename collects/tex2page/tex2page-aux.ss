@@ -8908,6 +8908,8 @@
 
 (tex-let-prim "\\hookaction" "\\addtolength")
 
+(tex-let-prim "\\manpage" "\\addtolength")
+
 (tex-def-prim "\\enlargethispage" (lambda () (eat-star) (get-group)))
 
 (tex-def-prim "\\parbox" (lambda () (get-bracketed-text-if-any) (get-group)))

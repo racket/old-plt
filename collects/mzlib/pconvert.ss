@@ -148,6 +148,7 @@
       (string->symbol
        (string-append "-" (s:expr->string name) "-"))))
 
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; prints an expression given that it has already been hashed. This
   ;; does not include the list of shared items.
@@ -166,6 +167,15 @@
 		     [ans (and info
 			       (share-info-shared? info))])
 		ans))]
+
+           ;; make-syntax-name : -> string
+           ;; creates a distinctive symbol print-converting syntax.
+           [make-syntax-name
+            (let ([n 0])
+              (lambda ()
+                (set! n (+ n 1))
+                (string->symbol (format "=~a=" n))))]
+
 	   [make-list
 	    (lambda (f n)
 	      (letrec ([helper
@@ -271,7 +281,17 @@
 			  (cons (recur (car expr)) (recur (cdr expr)))]
                          [(self-quoting? expr) expr]
 			 [else `(,'unquote ,((print #f first-time) expr))]))]
-		     [guard
+
+                     [syntax-style
+                      (lambda ()
+                        (cond
+                          [(or (pair? expr)
+                               (null? expr))
+                           ((print in-quasiquote? #f) (datum->syntax-object #f expr))]
+                          [else
+                           (void)]))]
+                          
+		     [guard/quasiquote
 		      (lambda (f)
 			(cond
 			 [use-quasi-quote?
@@ -297,16 +317,17 @@
 			   expr
 			   (lambda (expr)
 			     (cond
-			      [(null? expr) (guard (lambda () 'empty))]
+			      [(null? expr) (guard/quasiquote (lambda () 'empty))]
 			      [(and (list? expr)
 				    (abbreviate-cons-as-list)
 				    (or (and first-time
 					     (doesnt-contain-shared-conses (cdr expr)))
 					(doesnt-contain-shared-conses expr)))
-			       (guard (lambda ()
-					`(list ,@(map recur expr))))]
+			       (guard/quasiquote
+                                (lambda ()
+                                  `(list ,@(map recur expr))))]
 			      [(pair? expr)
-			       (guard
+			       (guard/quasiquote
 				(lambda ()
 				  `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
 			      [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
@@ -325,7 +346,31 @@
 					`(case-lambda . ,(make-lambda-helper arity))
 					`(lambda ,(make-lambda-helper arity) ...)))))]
 			      [(regexp? expr) `(regexp ...)]
-                              [(syntax? expr) `(syntax ,(syntax-object->datum expr))]
+                              [(syntax? expr) 
+                               (let* ([objs null]
+                                      [names null]
+                                      [datum
+                                       (let loop ([expr expr])
+                                         (cond
+                                           [(syntax? expr)
+                                            (let ([datum (syntax-e expr)])
+                                              (cond
+                                                [(null? datum) null]
+                                                [(self-quoting? datum) datum]
+                                                [(pair? datum) (improper-map loop datum)]
+                                                [else 
+                                                 (let ([name (make-syntax-name)])
+                                                   (set! names (cons name names))
+                                                   (set! objs (cons (recur datum)
+                                                                    objs))
+                                                   name)]))]
+                                           [else (recur expr)]))])
+                                 (if (null? objs)
+                                     `(syntax ,datum)
+                                     `(with-syntax (,@(map (lambda (obj name) `[,name ,obj])
+                                                           (reverse objs)
+                                                           (reverse names)))
+                                        (syntax ,datum))))]
 			      [(module-path-index? expr) 
                                (let-values ([(left right) (module-path-index-split expr)])
                                  `(module-path-index-join ,(recur left) ,(recur right)))]
@@ -393,6 +438,15 @@
 				(quasi-style))
 			    (constructor-style)))))))])
 	((print #f unroll-once?) expr))))
+
+  ;; type (improper-list a) = (union (cons (improper-list a) (improper-list a)) null a)
+  ;; improper-map : (a -> b) -> (improper-list a) -> (improper-list b)
+  (define (improper-map f x)
+    (cond
+      [(pair? x) (cons (f (car x)) (improper-map f (cdr x)))]
+      [(null? x) null]
+      [else (f x)]))
+
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; these functions get the list of shared items.  If just-circular is

@@ -1408,7 +1408,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     Scheme_Object *prefix, *modname;
 
-    modname= SCHEME_STX_VAL(nm);
+    modname = SCHEME_STX_VAL(nm);
     prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
     
     if (SCHEME_SYMBOLP(prefix))

@@ -39,6 +39,17 @@
 	      (null? (syntax-e p))
 	      #f))))
 
+  ;; null if a syntax null?, else escape
+  (define-values (stx-null/esc)
+    (lambda (p esc)
+      (if (null? p)
+	  null
+	  (if (syntax? p) 
+	      (if (null? (syntax-e p))
+		  null
+		  (esc #f))
+	      (esc #f)))))
+
   ;; a syntax pair?
   (define-values (stx-pair?)
     (lambda (p)
@@ -70,6 +81,18 @@
       (if (pair? p)
 	  (car p)
 	  (car (syntax-e p)))))
+
+  ;; car of a syntax pair or escape
+  (define-values (stx-car/esc)
+    (lambda (p esc)
+      (if (pair? p)
+	  (car p)
+	  (if (syntax? p)
+	      (let ([v (syntax-e p)])
+		(if (pair? v)
+		    (car v)
+		    (esc #f)))
+	      (esc #f)))))
 
   ;; cdr of a syntax pair
   (define-values (stx-cdr)
@@ -103,8 +126,8 @@
 			      flat-end))))
 		e)))))
 
-  (provide identifier? stx-null? stx-pair? stx-list?
-	   stx-car stx-cdr stx->list))
+  (provide identifier? stx-null? stx-null/esc stx-pair? stx-list?
+	   stx-car stx-car/esc stx-cdr stx->list))
 
 ;;----------------------------------------------------------------------
 ;; quasiquote
@@ -705,17 +728,12 @@
 		(if just-vars?
 		    (append match-head match-tail)
 		    `(lambda (e esc)
-		       (if  (stx-pair? e)
-			    ,(app-append (app-esc match-head '(stx-car e))
-					 (app-esc match-tail '(stx-cdr e)))
-			    (esc #f)))))))]
+		       ,(app-append (app-esc match-head '(stx-car/esc e esc))
+				    (app-esc match-tail '(stx-cdr e))))))))]
        [(stx-null? p)
 	(if just-vars?
 	    null
-	    `(lambda (e esc)
-	       (if (stx-null? e)
-		   null
-		   (esc #f))))]
+	    'stx-null/esc)]
        [(identifier? p)
 	(if (stx-memq p k)
 	    (if just-vars?
@@ -969,7 +987,9 @@
 				       (raise-syntax-error
 					'syntax
 					"incompatible ellipsis match counts"
-					(quote-syntax ,p))))))))
+					(quote ,p)
+					;; This is a trick to minimize the syntax structure we keep:
+					(quote-syntax ,(datum->syntax-object #f '... p)))))))))
 			   (lambda ()
 			     (let ([v ,main])
 			       (lambda () v)))
@@ -1251,68 +1271,77 @@
 			      (lambda (p) (datum->syntax-object p (gensym) #f))
 			      pattern-vars))
 			   ;; Here's the result expression for one match:
-			   (list
-			    (quote-syntax let)
-			    ;; Bind try-next to try next case
-			    (list (list (quote try-next)
-					(list (quote-syntax lambda)
-					      (list)
-					      rest)))
-			    ;; Do match, bind result to rslt:
-			    (list (quote-syntax let)
-				  (list 
-				   (list rslt
-					 (list* (datum->syntax-object
-						 (quote-syntax here)
-						 (make-match&env
-						  pattern
-						  (stx->list kws)
-						  (not lit-comp-is-mod?))
-						 pattern)
-						arg
-						(if lit-comp-is-mod?
-						    null
-						    (list lit-comp)))))
-				  ;; If match succeeded...
-				  (list 
-				   (quote-syntax if)
-				   rslt
-				   ;; Extract each name binding into a temp variable:
-				   (list
-				    (quote-syntax let) 
-				    (map (lambda (pattern-var temp-var)
-					   (list
-					    temp-var
-					    (list
-					     (quote-syntax list-ref)
-					     rslt
-					     (stx-memq-pos pattern-var pattern-vars))))
-					 pattern-vars temp-vars)
-				    ;; Tell nested `syntax' forms about the
-				    ;;  pattern-bound variables:
-				    (list
-				     (quote-syntax letrec-syntaxes) 
-				     (map (lambda (pattern-var unflat-pattern-var temp-var)
-					    (list (list pattern-var)
+			   (let* ([do-try-next (if (car fenders)
+						   (list (quote-syntax try-next))
+						   rest)]
+				  [m
+				   ;; Do match, bind result to rslt:
+				   (list (quote-syntax let)
+					 (list 
+					  (list rslt
+						(list* (datum->syntax-object
+							(quote-syntax here)
+							(make-match&env
+							 pattern
+							 (stx->list kws)
+							 (not lit-comp-is-mod?))
+							pattern)
+						       arg
+						       (if lit-comp-is-mod?
+							   null
+							   (list lit-comp)))))
+					 ;; If match succeeded...
+					 (list 
+					  (quote-syntax if)
+					  rslt
+					  ;; Extract each name binding into a temp variable:
+					  (list
+					   (quote-syntax let) 
+					   (map (lambda (pattern-var temp-var)
 						  (list
-						   (quote-syntax make-syntax-mapping)
-						   ;; Tell it the shape of the variable:
-						   (let loop ([var unflat-pattern-var][d 0])
-						     (if (syntax? var)
-							 d
-							 (loop (car var) (add1 d))))
-						   ;; Tell it the variable name:
+						   temp-var
 						   (list
-						    (quote-syntax quote-syntax)
-						    temp-var))))
-					  pattern-vars unflat-pattern-vars
-					  temp-vars)
-				     (if fender
-					 (list (quote-syntax if) fender
-					       answer
-					       (list (quote-syntax try-next)))
-					 answer)))
-				   (list (quote-syntax try-next)))))))])))
+						    (quote-syntax list-ref)
+						    rslt
+						    (stx-memq-pos pattern-var pattern-vars))))
+						pattern-vars temp-vars)
+					   ;; Tell nested `syntax' forms about the
+					   ;;  pattern-bound variables:
+					   (list
+					    (quote-syntax letrec-syntaxes) 
+					    (map (lambda (pattern-var unflat-pattern-var temp-var)
+						   (list (list pattern-var)
+							 (list
+							  (quote-syntax make-syntax-mapping)
+							  ;; Tell it the shape of the variable:
+							  (let loop ([var unflat-pattern-var][d 0])
+							    (if (syntax? var)
+								d
+								(loop (car var) (add1 d))))
+							  ;; Tell it the variable name:
+							  (list
+							   (quote-syntax quote-syntax)
+							   temp-var))))
+						 pattern-vars unflat-pattern-vars
+						 temp-vars)
+					    (if fender
+						(list (quote-syntax if) fender
+						      answer
+						      do-try-next)
+						answer)))
+					  do-try-next))])
+			     (if fender
+				 (list
+				  (quote-syntax let)
+				  ;; Bind try-next to try next case
+				  (list (list (quote try-next)
+					      (list (quote-syntax lambda)
+						    (list)
+						    rest)))
+				  ;; Try one match
+				  m)
+				 ;; Match try already embed the rest case
+				 m))))])))
 	     x))))))
 
   (define-syntax syntax
@@ -1626,6 +1655,8 @@
   (define-syntax parameterize
     (lambda (stx)
       (syntax-case stx ()
+	[(_ () expr1 expr ...)
+	 (syntax (let () expr1 expr ...))]
 	[(_ ([param val] ...) expr1 expr ...)
 	 (with-syntax ([(pz ...) (generate-temporaries (syntax (param ...)))]
 		       [(save ...) (generate-temporaries (syntax (param ...)))])

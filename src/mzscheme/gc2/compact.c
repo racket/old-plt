@@ -3995,9 +3995,9 @@ unsigned long GC_get_stack_base(void)
 
 static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
-static void scan_tagged_mpage(void **p, MPage *page)
+static long scan_tagged_mpage(void **p, MPage *page)
 {
-  void **top;
+  void **top, **bottom = p;
 
   top = p + MPAGE_WORDS;
   
@@ -4008,7 +4008,7 @@ static void scan_tagged_mpage(void **p, MPage *page)
     tag = *(Type_Tag *)p;
 
     if (tag == TAGGED_EOM) {
-      break;
+      return (p - bottom);
     }
 
 #if ALIGN_DOUBLES
@@ -4026,11 +4026,13 @@ static void scan_tagged_mpage(void **p, MPage *page)
     }
 #endif
   }
+
+  return MPAGE_WORDS;
 }
 
-static void scan_untagged_mpage(void **p, MPage *page)
+static long scan_untagged_mpage(void **p, MPage *page)
 {
-  void **top;
+  void **top, **bottom = p;
 
   top = p + MPAGE_WORDS;
 
@@ -4040,13 +4042,15 @@ static void scan_untagged_mpage(void **p, MPage *page)
     size = *(long *)p + 1;
 
     if (size == UNTAGGED_EOM) {
-      break;
+      return (p - bottom);
     }
 
     dump_info_array[size - 1] += 1;
 
     p += size;
   } 
+
+  return MPAGE_WORDS;
 }
 
 /* HACK! */
@@ -4055,6 +4059,7 @@ extern char *scheme_get_type_name(Type_Tag t);
 void GC_dump(void)
 {
   int i;
+  long waste = 0;
 
   fprintf(stderr, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
   fprintf(stderr, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
@@ -4162,6 +4167,7 @@ void GC_dump(void)
       int kind, i;
       char *name;
       MPage *page;
+      long used, total;
 
       switch (j) {
       case 1: kind = MTYPE_ARRAY; name = "array"; break;
@@ -4174,12 +4180,17 @@ void GC_dump(void)
       for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++)
 	dump_info_array[i] = 0;
 
+      total = 0;
+
       for (page = first; page; page = page->next) {
 	if ((page->type == kind) && !(page->flags & MFLAG_BIGBLOCK)) {
 	  if (j >= NUM_TAGGED_SETS)
-	    scan_untagged_mpage(page->block_start, page); /* gets size counts */
+	    used = scan_untagged_mpage(page->block_start, page); /* gets size counts */
 	  else
-	    scan_tagged_mpage(page->block_start, page); /* gets tag counts */
+	    used = scan_tagged_mpage(page->block_start, page); /* gets tag counts */
+
+	  total += used;
+	  waste += (MPAGE_WORDS - used);
 	}
       }
 
@@ -4201,7 +4212,7 @@ void GC_dump(void)
 	fprintf(stderr, "Tag counts and sizes:\n");
 	for (i = 0; i < _num_tags_; i++) {
 	  if (dump_info_array[i]) {
-	    char *tn;
+	    char *tn, buf[256];
 	    switch(i) {
 	    case gc_finalization_tag: tn = "finalization"; break;
 	    case gc_finalization_weak_link_tag: tn = "finalization-weak-link"; break;
@@ -4209,13 +4220,39 @@ void GC_dump(void)
 	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
 	    default:
 	      tn = scheme_get_type_name((Type_Tag)i);
-	      if (!tn) tn = "unknown";
+	      if (!tn) {
+		sprintf(buf, "unknown,%d", i);
+		tn = buf;
+	      }
 	      break;
 	    }
 	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
 	  }
 	}
       }
+
+      {
+	int did_big = 0;
+	for (page = first; page; page = page->next) {
+	  if ((page->type == kind) && (page->flags & MFLAG_BIGBLOCK) && !(page->flags & MFLAG_CONTINUED)) {
+	    if (!did_big) {
+	      fprintf(stderr, "    ");
+	      did_big = 1;
+	    }
+	    if (j >= NUM_TAGGED_SETS)
+	      fprintf(stderr, " [+%ld]", page->u.size);
+	    else
+	      fprintf(stderr, " %d:[+%ld]", (int)*(Type_Tag *)(page->block_start), page->u.size);
+	    
+	    total += (page->u.size >> LOG_WORD_SIZE);
+	    waste += ((page->u.size >> LOG_WORD_SIZE)  & (MPAGE_WORDS - 1));
+	  }
+	}
+	if (did_big)
+	  fprintf(stderr, "\n");
+      }
+
+      fprintf(stderr, " Total %s: %ld\n", name, total << LOG_WORD_SIZE);
     }
   }
 
@@ -4228,6 +4265,8 @@ void GC_dump(void)
   fprintf(stderr, "Memory high point: %ld\n", max_memory_use);
 
   fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
+  fprintf(stderr, "Memory wasted: %ld (%.2f%%)\n", waste << LOG_WORD_SIZE, 
+	  (100.0 * (waste << LOG_WORD_SIZE)) / memory_in_use);
   fprintf(stderr, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
 	  page_allocations - memory_in_use + FREE_LIST_DELTA,
 	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,

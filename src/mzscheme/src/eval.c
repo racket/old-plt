@@ -1292,6 +1292,7 @@ scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *env,
 					  Scheme_Compile_Info *rec, int drec)
 {
+  Scheme_Object *result;
   int len;
 
   len = scheme_stx_proper_list_length(form);
@@ -1302,9 +1303,12 @@ static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *
   scheme_compile_rec_done_local(rec, drec);
   form = scheme_inner_compile_list(form, scheme_no_defines(env), rec, drec, 1);
 
-  rec[drec].max_let_depth += (len - 1);
+  result = make_application(form, 0);
 
-  return make_application(form, 0);
+  if (SAME_TYPE(SCHEME_TYPE(result), scheme_application_type))
+    rec[drec].max_let_depth += (len - 1);
+  
+  return result;
 }
 
 Scheme_Object *

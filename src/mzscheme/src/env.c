@@ -619,7 +619,7 @@ scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
     ((Scheme_Bucket_With_Home *)b)->home = env;
     if (constant && scheme_defining_primitives) {
       ((Scheme_Bucket_With_Flags *)b)->id = builtin_ref_counter++;
-      ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_HAS_REF_ID;
+      ((Scheme_Bucket_With_Flags *)b)->flags |= (GLOB_HAS_REF_ID | GLOB_IS_CONST);
     }
   } else
     scheme_add_to_table(env->syntax, (char *)sym, obj, constant);

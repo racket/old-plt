@@ -264,15 +264,17 @@ scheme_init_string (Scheme_Env *env)
 						      2, 2),
 			     env);
   
+  /* Don't make these folding, since they're platform-specific: */
+
   scheme_add_global_constant("system-type", 
-			     scheme_make_folding_prim(system_type,
+			     scheme_make_prim_w_arity(system_type,
 						      "system-type", 
-						      0, 0, 1),
+						      0, 0),
 			     env);
   scheme_add_global_constant("system-library-subpath",
-			     scheme_make_folding_prim(system_library_subpath,
+			     scheme_make_prim_w_arity(system_library_subpath,
 						      "system-library-subpath",
-						      0, 0, 1),
+						      0, 0),
 			     env);
 }
 

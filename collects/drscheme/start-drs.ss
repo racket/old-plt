@@ -1,3 +1,8 @@
+
+(begin-elaboration-time
+ (require-library "invoke.ss")
+ (require-relative-library "drsig.ss"))
+
 (define (start-drscheme)
   (let-values ([(shutdown-splash close-splash)
 		((require-library "splash.ss" "framework")
@@ -8,7 +13,9 @@
     (require-relative-library "drsig.ss")
     (let ([unit (require-relative-library "link.ss")])
       (shutdown-splash)
-      ; Was invoke-open; needs define-values/invoke-unit for debugging:
-      (invoke-unit/sig unit (program argv))
+      (global-define-values/invoke-unit/sig ((unit fw : framework^))
+		unit
+		#f
+		(program argv))
       (close-splash))))
 

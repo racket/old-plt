@@ -760,7 +760,8 @@ int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, wxMediaStreamInBase *b, Bool s
       && strcmp(s->read_version, "01")
       && strcmp(s->read_version, "02")
       && strcmp(s->read_version, "03")
-      && strcmp(s->read_version, "04")) {
+      && strcmp(s->read_version, "04")
+      && strcmp(s->read_version, "05")) {
     if (showErrors)
       wxmeError("load-file: unknown version number in editor<%> file format");
     return 0;
@@ -1811,6 +1812,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   } else {
     char *str;
     long len;
+    int got_wxme;
 
     if (!pasteTextOnly && (str = wxTheClipboard->GetClipboardData("WXME", &len, time))) {
       wxMediaStreamInStringBase *b;
@@ -1830,8 +1832,13 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
 	    }
 	}
 	wxReadMediaGlobalFooter(mf);
-      }
-    } else {
+	got_wxme = 1;
+      } else
+	got_wxme = 0;
+    } else
+      got_wxme = 0;
+
+    if (!got_wxme) {
       wxBitmap *bm = NULL;
       
       if (!pasteTextOnly)

@@ -142,7 +142,8 @@
 	[get-editor (lambda () (send snip get-item-buffer))]
 	[is-selected? (lambda () (send snip is-selected?))]
 	[select (lambda (on?) (send snip select on?))]
-	[user-data (case-lambda [() data][(x) (set! data x)])])))
+	[user-data (case-lambda [() data][(x) (set! data x)])])
+      (sequence (super-init))))
 
   (define hierarchical-list-compound-item<%>
     (interface (hierarchical-list-item<%>)

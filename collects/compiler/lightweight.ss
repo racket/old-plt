@@ -194,7 +194,8 @@
 	   [unit-form-action default-action]
 	   [compound-unit-form-action default-action]
 	   [invoke-unit-form-action default-action] 
-	   [invoke-open-unit-form-action default-action])))
+	   [invoke-open-unit-form-action default-action])
+	  (sequence (super-init))))
 
  (define generic-default-action (make-generic zactor% default-action))
  (define generic-if-form-action (make-generic zactor% if-form-action))
@@ -896,7 +897,8 @@
 	   [unit-form-folder default-folder]
 	   [compound-unit-form-folder default-folder]
 	   [invoke-unit-form-folder default-folder]
-	   [invoke-open-unit-form-folder default-folder])))
+	   [invoke-open-unit-form-folder default-folder])
+	  (sequence (super-init))))
 
  (define generic-default-folder (make-generic zolder% default-folder))
  (define generic-if-form-folder (make-generic zolder% if-form-folder))

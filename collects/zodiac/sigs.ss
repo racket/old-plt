@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.76 2000/06/08 19:52:30 mflatt Exp $
+; $Id: sigs.ss,v 1.77 2000/06/08 22:35:33 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
@@ -64,6 +64,7 @@
     advanced-vocabulary
     full-vocabulary
     scheme-vocabulary
+    extended-scheme-vocabulary
     reset-previous-attribute
     set-top-level-status get-top-level-status at-top-level?
     set-internal-define-status get-internal-define-status at-internal-define?

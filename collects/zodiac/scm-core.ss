@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.64 2000/06/09 02:13:51 mflatt Exp $
+; $Id: scm-core.ss,v 1.65 2000/06/15 03:39:48 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -164,6 +164,10 @@
   (define scheme-vocabulary
     (create-vocabulary 'scheme-vocabulary
 		       common-vocabulary))
+
+  (define extended-scheme-vocabulary
+    (create-vocabulary 'extended-scheme-vocabulary
+      scheme-vocabulary))
 
   (define (check-for-signature-name expr attributes)
     (let ([sig-space (get-attribute attributes 'sig-space)])

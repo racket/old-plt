@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.42 2000/05/28 03:47:30 shriram Exp $
+; $Id: invoke.ss,v 1.43 2000/05/30 19:50:26 shriram Exp $
 
 (begin-elaboration-time
  (require-library "cores.ss"))
@@ -77,13 +77,15 @@
       #f)))
 
 (define zodiac:see
-  (opt-lambda ((print-as-sexp? #t) (vocab zodiac:scheme-vocabulary))
-    ((zodiac:make-see 
-       (lambda (in)
-	 (zodiac:scheme-expand-program
-	   (list in)
-	   (zodiac:make-attributes)
-	   vocab)))
+  (opt-lambda ((print-as-sexp? #t) (vocab zodiac:extended-scheme-vocabulary))
+    (parameterize ([current-namespace (make-namespace)])
+      (zodiac:prepare-current-namespace-for-vocabulary vocab)
+      ((zodiac:make-see 
+	 (lambda (in)
+	   (zodiac:scheme-expand-program
+	     (list in)
+	     (zodiac:make-attributes)
+	     vocab))))
       print-as-sexp?)))
 
 (define zodiac:spidey-see (zodiac:make-see 

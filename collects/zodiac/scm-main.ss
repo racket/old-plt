@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.222 2000/07/26 20:29:04 shriram Exp $
+; $Id: scm-main.ss,v 1.223 2000/08/10 16:42:42 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -862,6 +862,10 @@
    scheme-vocabulary
    (make-local-micro #t full-local-extract-vocab))
 
+  (add-primitivized-micro-form 'local
+    extended-scheme-vocabulary
+    (make-local-micro #t full-local-extract-vocab))
+
   (let* ((kwd '())
 	 (in-pattern-1 `(_ (var ...) val))
 	 (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
@@ -1498,9 +1502,7 @@
   (add-primitivized-macro-form 'or advanced-vocabulary (make-or-macro #f #f))
   (add-primitivized-macro-form 'or scheme-vocabulary (make-or-macro #f #t))
 
-  (add-primitivized-macro-form
-    'nor
-    beginner-vocabulary
+  (define nor-macro
     (let* ((kwd '())
 	   (in-pattern '(_ e0 e1 ...))
 	   (out-pattern '(#%not (#%or e0 e1 ...)))
@@ -1510,6 +1512,9 @@
 	    (static-error
 	      "nor" 'kwd:nor
 	      expr "malformed expression")))))
+
+  (add-primitivized-macro-form 'nor beginner-vocabulary nor-macro)
+  (add-primitivized-macro-form 'nor extended-scheme-vocabulary nor-macro)
 
   (define (make-and-macro boolean-result? one-or-zero-ok?)
     (let* ((kwd '())
@@ -1543,9 +1548,7 @@
   (add-primitivized-macro-form 'and advanced-vocabulary (make-and-macro #f #f))
   (add-primitivized-macro-form 'and scheme-vocabulary (make-and-macro #f #t))
 
-  (add-primitivized-macro-form
-   'nand
-   beginner-vocabulary
+  (define nand-macro
    (let* ((kwd '())
 	  (in-pattern '(_ e0 e1 ...))
 	  (out-pattern '(#%not (#%and e0 e1 ...)))
@@ -1555,6 +1558,9 @@
 	   (static-error
 	     "nand" 'kwd:nand
 	     expr "malformed expression")))))
+
+  (add-primitivized-macro-form 'nand beginner-vocabulary nand-macro)
+  (add-primitivized-macro-form 'nand extended-scheme-vocabulary nand-macro)
 
   (define recur-macro
       (let* ((kwd '())
@@ -1569,6 +1575,7 @@
 
   (add-primitivized-macro-form 'recur advanced-vocabulary recur-macro)
   (add-on-demand-form 'macro 'recur common-vocabulary recur-macro)
+  (add-primitivized-macro-form 'recur extended-scheme-vocabulary recur-macro)
 
   (define rec-macro
       (let* ((kwd '())
@@ -1592,6 +1599,7 @@
 
   (add-primitivized-macro-form 'rec advanced-vocabulary rec-macro)
   (add-on-demand-form 'macro 'rec common-vocabulary rec-macro)
+  (add-primitivized-macro-form 'rec extended-scheme-vocabulary rec-macro)
 
   (define-struct cond-clause (text question answer else? =>? or?))
 
@@ -1810,6 +1818,7 @@
 
   (add-primitivized-macro-form 'evcase advanced-vocabulary evcase-macro)
   (add-on-demand-form 'macro 'evcase common-vocabulary evcase-macro)
+  (add-primitivized-macro-form 'evcase extended-scheme-vocabulary evcase-macro)
 
   (define when-macro
       (let* ((kwd '())
@@ -2084,16 +2093,19 @@
   (define (norm-path p) ; normalizes ending slash or not
     (and p
 	 (let-values ([(base name dir?) (split-path p)])
-	   (build-path base name))))
+	   (if base			; base is #f if path is root
+	     (build-path base name)
+	     name))))
   (define (get-on-demand-form name vocab)
     (let ([dir (norm-path (current-load-relative-directory))])
-      (and dir
-	   (equal?
-	     (normalize-path (normal-case-path dir))
-	     (normalize-path
-	       (normal-case-path
-		 (with-handlers ([void void])
-		   (norm-path (collection-path "mzlib"))))))
+      (and
+	dir
+	(equal?
+	  (normalize-path (normal-case-path dir))
+	  (normalize-path
+	    (normal-case-path
+	      (with-handlers ([void void])
+		(norm-path (collection-path "mzlib"))))))
 	(find-on-demand-form name vocab))))
 
   (add-primitivized-micro-form 'define-macro common-vocabulary

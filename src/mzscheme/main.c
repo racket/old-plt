@@ -367,10 +367,18 @@ int actual_main(int argc, char *argv[])
   return run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
 }
 
+/**************** OSKIT stuff START **********************/
 #if defined(OSKIT) && !defined(OSKIT_TEST)
+
+# include <oskit/fs/bmodfs.h> 
 # include <oskit/dev/clock.h> 
 # include <oskit/c/sys/time.h> 
-# include <oskit/x86/pc/direct_cons.h> 
+# include <oskit/x86/pc/dev.h>
+# ifdef USE_OSKIT_CONSOLE
+#  include <oskit/x86/pc/direct_cons.h> 
+# else
+#  include <oskit/dev/freebsd.h> 
+# endif
 void start_clock()
 {
 # define LOCAL_TO_GMT(t) /* (t)->tv_sec += secondswest */
@@ -384,7 +392,78 @@ void start_clock()
   
   set_system_clock(clock);
 }
-#endif
+
+# ifdef OSK_LINUX_FILESYSTEMS
+#  include <oskit/dev/dev.h>
+#  include <oskit/fs/filesystem.h> 
+#  include <oskit/fs/dir.h> 
+#  include <oskit/diskpart/diskpart.h> 
+#  include <oskit/fs/linux.h> 
+#  include <oskit/dev/linux.h> 
+#  include <oskit/principal.h>
+static oskit_principal_t *cur_principal;
+int start_linux_fs(char *diskname, char *partname)
+{
+  int err;
+  oskit_identity_t id;
+  oskit_blkio_t *disk;
+  oskit_blkio_t *part;
+  oskit_filesystem_t *fs;
+  oskit_dir_t *root;
+# define MAX_PARTS 30
+  diskpart_t part_array[MAX_PARTS];
+
+# define CHECK(what, f) \
+  if ((err = f)) { printf("filesystem init error at " what ": %d\n", err); return 0; }
+
+  printf(">> Initializing devices\n");
+  oskit_dev_init();
+  oskit_linux_init_ide();
+  oskit_linux_init_scsi();
+  oskit_dev_probe();
+  CHECK("fsinit", fs_linux_init());
+
+  id.uid = 0;
+  id.gid = 0;
+  id.ngroups = 0;
+  id.groups = 0;
+  CHECK("makeprinciple", oskit_principal_create(&id, &cur_principal));
+
+  printf(">> Opening disk\n");
+  CHECK("diskopen", oskit_linux_block_open(diskname, OSKIT_DEV_OPEN_ALL, &disk));
+
+  printf(">> Reading partitions\n");
+  (void)diskpart_blkio_get_partition(disk, part_array, MAX_PARTS);
+  if (diskpart_blkio_lookup_bsd_string(part_array, partname, disk, &part) == 0) {
+    printf("can't find partition %s\n", partname);
+    return 0;
+  }
+
+  printf(">> Mounting filesystem\n");
+  CHECK("mount", fs_linux_mount(part, 0, &fs));
+  CHECK("getroot", oskit_filesystem_getroot(fs, &root));
+
+  fs_init(root);
+
+  return 1;
+}
+
+oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if)
+{
+  if (memcmp(iid, &oskit_iunknown_iid, sizeof(*iid)) == 0 ||
+      memcmp(iid, &oskit_principal_iid, sizeof(*iid)) == 0) {
+    *out_if = cur_principal;
+    oskit_principal_addref(cur_principal);
+    return 0;
+  }
+  
+  *out_if = 0;
+  return OSKIT_E_NOINTERFACE;
+}
+# endif
+
+#endif /* OSKIT */
+/**************** OSKIT stuff END **********************/
 
 int main(int argc, char **argv)
 {
@@ -409,14 +488,40 @@ int main(int argc, char **argv)
   DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
 #endif
 
-#ifdef OSKIT
-# ifndef OSKIT_TEST
+  /******* OSKIT init START *******/
+#if defined(OSKIT) && !defined(OSKIT_TEST)
   oskit_init_libc();
+
+# ifdef OSK_LINUX_FILESYSTEMS
+  if (argc > 2) {
+    start_linux_fs(argv[1], argv[2]);
+    argv[2] = argv[0];
+    argv += 2;
+    argc -= 2;
+  } else {
+    printf("No disk or partition specified; using in-memory filesystem.\n");
+    fs_init(oskit_bmod_init());
+  }
+# else
   fs_init(oskit_bmod_init());
-  direct_cons_set_flags(DC_NONBLOCK);
-  start_clock();
 # endif
+
+# ifdef USE_OSKIT_CONSOLE
+  /* We talk to console directly */
+  direct_cons_set_flags(DC_NONBLOCK);
+# else
+  /* C library handles console */
+  /* THIS DOESN'T WORK. I don't know why. */
+#  ifndef OSK_LINUX_FILESYSTEMS
+  oskit_dev_init();
+#  endif
+  oskit_freebsd_init_sc();
+  oskit_console_init();
+# endif
+
+  start_clock();
 #endif
+  /******* OSKIT init END *******/
 
   scheme_actual_main = actual_main;
 

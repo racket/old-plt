@@ -28,4 +28,22 @@ fi
 
 LANG="-DNO_TCP_SUPPORT"
 
-MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG" $TARGET
+# Talk to console directly?
+if [ "y" ] ; then
+  CS="-DUSE_OSKIT_CONSOLE"
+else
+  CS=""
+  OSK_DEV_LIB="-loskit_freebsd_dev"
+  export OSK_DEV_LIB
+fi
+
+# Use Linux FS drivers?
+if [ "" ] ; then
+  FS="-DOSK_LINUX_FILESYSTEMS"
+  EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart"
+  export EXTRA_OSK_LIBS
+else
+  FS=""
+fi
+
+MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG $FS $CS" $TARGET

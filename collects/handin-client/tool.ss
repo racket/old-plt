@@ -7,6 +7,7 @@
 	   (lib "file.ss")
 	   (lib "framework.ss" "framework")
 	   (lib "sendurl.ss" "net")
+           (lib "bitmap-label.ss" "mrlib")
 	   "client.ss"
 	   "info.ss"
 	   ;; Temporary hack for test suite in separate window:
@@ -482,7 +483,7 @@
       (define phase2 void)
 
       (define tool-button-label
-	(drscheme:unit:make-bitmap
+	(bitmap-label-maker
 	 "Handin"
 	 handin-icon))
 

@@ -6,6 +6,7 @@
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "list.ss")
+           (lib "bitmap-label.ss" "mrlib")
            "debugger-sig.ss"
            "private/debugger-vc.ss"
            "private/debugger-model.ss"
@@ -24,7 +25,7 @@
       (define debugger-initial-height 500)
       
       (define debugger-bitmap
-        (drscheme:unit:make-bitmap
+        (bitmap-label-maker
          "Debug"
          (build-path (collection-path "icons") "foot.png")))
 

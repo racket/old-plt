@@ -413,38 +413,7 @@
    
    "Opens a drscheme frame that displays \\var{filename},"
    "or nothing if \\var{filename} is \\rawscm{\\#f} or not supplied.")
-  
-  (drscheme:unit:make-bitmap
-   (case->
-    (string?
-     . -> .
-     ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%))))
-    (string? 
-     (union path? (is-a?/c bitmap%))
-     . -> . 
-     ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%)))))
-   
-   ((button-name) (text filename-or-bitmap))
-   
-   "This function constructs a bitmap for a button label. It is"
-   "used for the buttons on the top row of DrScheme's frame."
-   ""
-   "When one argument is supplied, this function"
-   "constructs a button from the image in the \\File{icons}"
-   "collection named by the \\var{button-name} with {\\tt .bmp}"
-   "added to the end of the name."
-   "The button's label is also \\var{button-name},"
-   "but with the first letter capitalized."
-   ""
-   "When two arguments are supplied, constructs a button with"
-   "\\var{text} as the button's label and where \\var{filename-or-bitmap}"
-   "specifies the full path to the bitmap or an immediate bitmap."
-   ""
-   "The \\iscmintf{area-container} argument is used to"
-   "find the font for the label."
-   ""
-   "If the bitmap isn't found, this function returns a string"
-   "to be used as the button's label.")
+
   
   
   ;                                            

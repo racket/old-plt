@@ -437,11 +437,11 @@
 		 (> (length l) 2))
 	    (datum->syntax
 	     (list (quote-syntax if)
-		   (stx-car (stx-cdr x))
+		   (cadr l)
 		   (quote-syntax (void))
 		   (list*
 		    (quote-syntax begin)
-		    (stx-cdr (stx-cdr x))))
+		    (cddr l)))
 	     x
 	     (quote-syntax here))
 	    (raise-syntax-error

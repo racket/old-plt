@@ -1107,6 +1107,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, int subs,
     w = SCHEME_CDR(w);
   }
 
+  /* Create a key for this wrap set: */
   a = scheme_make_integer(rns->count);
   scheme_add_to_table(rns, (const char *)w_in, a, 0);
   
@@ -1282,6 +1283,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
   if (SCHEME_INTP(w))
     return scheme_lookup_in_table(rns, (const char *)w);
 
+
   stack = scheme_null;
 
   wraps_key = SCHEME_CAR(w);
@@ -1298,9 +1300,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 			 "read (compiled): unknown rename table index: %d",
 			 SCHEME_INT_VAL(a));
       }
+      stack = scheme_make_pair(a, stack);
     } else if (SCHEME_PAIRP(a) 
 	       && SCHEME_NULLP(SCHEME_CDR(a))
 	       && SCHEME_NUMBERP(SCHEME_CAR(a))) {
+      /* Mark */
       Scheme_Object *n;
 
       a = SCHEME_CAR(a);
@@ -1310,8 +1314,10 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
       else
 	a = scheme_intern_symbol(scheme_number_to_string(10, a));
 
+      /* Picked a mapping yet? */
       n = scheme_lookup_in_table(rns, (const char *)a);
       if (!n) {
+	/* Map marshalled mark to a new mark. */
 	n = scheme_new_mark();
 	scheme_add_to_table(rns, (const char *)a, n, 0);
       }
@@ -1353,8 +1359,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 
       stack = scheme_make_pair(vec, stack);
     } else if (SCHEME_PAIRP(a)) {
-      /* A rename table, one of:
-           - (<index-num>) ; could be env rename
+      /* A rename table:
            - (<index-num> <table-elem> ...)
 	where a <table-elem> is one of
            - (<modname> . <exname/defname>)

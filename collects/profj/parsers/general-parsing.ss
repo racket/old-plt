@@ -8,10 +8,6 @@
   
   (provide (all-defined))
 
-  ;;Definitions used by all parsers
-  
-  (define file-name (make-parameter null))
-  
   ;;Methods used by all parsers
   (define-syntax (build-src stx)
     (syntax-case stx ()

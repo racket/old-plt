@@ -4,8 +4,7 @@
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
            "parsers/beginner-parser.ss"
-           "parsers/lexer.ss"
-           "parsers/general-parsing.ss")
+           "parsers/lexer.ss")
   
   (require (lib "lex.ss" "parser-tools"))
   
@@ -16,7 +15,6 @@
   ;parse: port string symbol -> package
   (define (parse is filename level)
     (port-count-lines! is)
-    (file-name filename)
     (file-path filename)
     (let ((getter (lambda () (get-token is))))
       (case level
@@ -28,7 +26,6 @@
   ;parse-interactions: port string symbol -> (U Statement Expression)
   (define (parse-interactions is loc level)
     (port-count-lines! is)
-    (file-name loc)
     (file-path loc)
     (let ((getter (lambda () (get-token is))))
       (case level

@@ -19,7 +19,7 @@
      (tokens java-vals Keywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
               (raise-read-error (format "Parse error near <~a:~a>" name val)
-                                (file-name)
+                                (file-path)
                                 (position-line start-pos)
                                 (position-col start-pos)
                                 (+ (position-offset start-pos) (interactions-offset))
@@ -110,7 +110,17 @@
                         $4
                         (build-src 1)
                         (build-src 4)
-                        (file-name)
+                        (file-path)
+                        null)]
+       [(abstract class IDENTIFIER Super ClassBody)
+        (make-class-def (make-header (make-id $3 (build-src 3 3))
+                                     (list (make-modifier 'public #f)
+                                           (make-modifier 'abstract #f))
+                                     $4 null null (build-src 4))
+                        $5
+                        (build-src 2 2)
+                        (build-src 5)
+                        (file-path)
                         null)])
       
       (Super

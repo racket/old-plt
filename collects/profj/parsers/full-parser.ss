@@ -24,7 +24,7 @@
      (tokens java-vals Keywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
               (raise-read-error (format "Parse error near <~a:~a>" name val)
-                                (file-name)
+                                (file-path)
                                 (position-line start-pos)
                                 (position-col start-pos)
                                 (+ (position-offset start-pos) (interactions-offset))
@@ -134,11 +134,11 @@
        [(TypeImportOnDemandDeclaration) $1])
       
       (SingleTypeImportDeclaration
-       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-name))])
+       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))])
       
       (TypeImportOnDemandDeclaration
        [(import Name PERIOD * SEMI_COLON)
-	(make-import $2 #t (build-src 1) (build-src 5) (file-name))])
+	(make-import $2 #t (build-src 1) (build-src 5) (file-path))])
       
       (TypeDeclaration
        [(ClassDeclaration) $1]
@@ -170,14 +170,14 @@
                             $6
                             (build-src 2 2)
                             (build-src 6)
-                            (file-name)
+                            (file-path)
                             null)]
        [(class IDENTIFIER Super Interfaces ClassBody)
 	(make-class-def (make-header (make-id $2 (build-src 2 2)) null $3 $4 null (build-src 4))
                             $5
                             (build-src 1)
                             (build-src 5)
-                            (file-name)
+                            (file-path)
                             null)])
       
       (Super
@@ -357,28 +357,28 @@
                                 $5
                                 (build-src 2 2)
                                 (build-src 5)
-                                (file-name)
+                                (file-path)
                                 null)]
        [(Modifiers interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $3 (build-src 3 3)) $1 null null null (build-src 3))
                                 $4
                                 (build-src 2 2)
                                 (build-src 4)
-                                (file-name)
+                                (file-path)
                                 null)]
        [(interface IDENTIFIER ExtendsInterfaces InterfaceBody)
        	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null $3 null null (build-src 3))
                                 $4
                                 (build-src 1)
                                 (build-src 4)
-                                (file-name)
+                                (file-path)
                                 null)]
        [(interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $2 (build-src 2 2)) null null null null (build-src 2))
                                 $3
                                 (build-src 1)
                                 (build-src 3)
-                                (file-name)
+                                (file-path)
                                 null)])
        
       

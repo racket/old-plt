@@ -16,7 +16,7 @@
 @CLASSBASE wxEvent "wx:event":"wx:object"
 
 @IVAR "event-class" : SYM[eventClass] eventClass
-@IVAR "event-object" : wxObject! eventObject
+@IVAR "event-object" : wxObject^ eventObject
 
 @END
 
@@ -49,14 +49,14 @@
 @CREATOR (int)
 
 @ "get-selection" : int GetSelection();
-@ "get-string" : string GetString();
+@ "get-string" : nstring GetString();
 @ "checked?" : bool Checked();
 @ "is-selection?" : bool IsSelection();
 
 @IVAR "event-type" : SYM[commandType] eventType
 @IVAR "extra-long" : long extraLong
 @IVAR "command-int" : int commandInt
-@IVAR "command-string" : string commandString
+@IVAR "command-string" : nstring commandString
 
 @END
 

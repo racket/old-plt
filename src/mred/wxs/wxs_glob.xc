@@ -163,9 +163,17 @@ extern void wxBell(void);
 @ "wx:set-display" : bool wxSetDisplay(nstring);
 @ "wx:get-display-name" : nstring wxGetDisplayName();
 
-@ "wx:file-selector" : string wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^=NULL,int=-1,int=-1);
-@ "wx:message-box" : SYM[messageReply] wxMessageBox(string, string="Message",SYM[messageStyle]=wxOK|wxCENTER,wxWindow^=NULL,int=-1,int=-1);
-@ "wx:get-text-from-user" : string wxGetTextFromUser(string,string="Input text",string="",wxWindow^=NULL,int=-1,int=-1,bool=TRUE);
+extern int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK);
+extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char *where, int nullOK);
+extern int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK);
+extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char *where, int nullOK);
+
+@MACRO ubFrameDialog[who] = (SCHEME_NULLP({x}) ? (wxWindow *)NULL : (objscheme_istype_wxFrame({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame({x}, NULL, 0) : (objscheme_istype_wxDialogBox({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox({x}, NULL, 0) : (scheme_wrong_type(<who>, "wx:frame% or wx:dialog-box%", -1, 0, &{x}), (wxWindow *)NULL))))
+@MACRO cFrameDialog = (objscheme_istype_wxFrame({x}, NULL, 1) || objscheme_istype_wxDialogBox({x}, NULL, 1))
+
+@ "wx:file-selector" : nstring wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["wx:file-selector"]/cFrameDialog=NULL,int=-1,int=-1);
+@ "wx:message-box" : SYM[messageReply] wxMessageBox(string, string="Message",SYM[messageStyle]=wxOK|wxCENTER,wxWindow^//ubFrameDialog["wx:message-box"]/cFrameDialog=NULL,int=-1,int=-1);
+@ "wx:get-text-from-user" : nstring wxGetTextFromUser(string,string="Input text",string="",wxWindow^//ubFrameDialog["wx:get-text-from-user"]/cFrameDialog=NULL,int=-1,int=-1,bool=TRUE);
 
 @SET TYPE = string
 @SET NOTEST = 1
@@ -215,11 +223,11 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 
 @MACRO checkSameLength[n.m.who] = if (scheme_proper_list_length(p[<n>]) != scheme_proper_list_length(p[<m>])) { scheme_signal_error("%s: choice and data lists are different lengths", <who>); }
 
-@ "wx:get-multiple-choice" : int wxGetMultipleChoice(string,string,-int,string[]/bList/ubList/cList,int,int[]//ubMutArray,wxWindow^=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-multiple-choice"]/glueCleanup[3]|mutArrayFinish/
+@ "wx:get-multiple-choice" : int wxGetMultipleChoice(string,string,-int,string[]/bList/ubList/cList,int,int[]//ubMutArray,wxWindow^//ubFrameDialog["wx:get-multiple-choice"]/cFrameDialog=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-multiple-choice"]/glueCleanup[3]|mutArrayFinish/
 
-@ "wx:get-single-choice" : string wxGetSingleChoice(string,string,-int,string[]/bList/ubList/cList,wxWindow^=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-single-choice"]/glueCleanup[3]/
-@ "wx:get-single-choice-index" : int wxGetSingleChoiceIndex(string,string,-int,string[]/bList/ubList/cList,wxWindow^=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-single-choice-index"]/glueCleanup[3]/
-@ "wx:get-single-choice-data" : string wxGetSingleChoiceData(string,string,-int,string[]/bList/ubList/cList,string[]/bList/ubList/cList,wxWindow^=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /checkSameLength[2.3."wx:get-single-choice-data"]|glueListSet[string.2.3.2."wx:get-single-choice-data"]|glueListSet[string.3.4.2."wx:get-single-choice-data"]/glueCleanup[3] | glueCleanup[4] /
+@ "wx:get-single-choice" : nstring wxGetSingleChoice(string,string,-int,string[]/bList/ubList/cList,wxWindow^//ubFrameDialog["wx:get-single-choice"]/cFrameDialog=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-single-choice"]/glueCleanup[3]/
+@ "wx:get-single-choice-index" : int wxGetSingleChoiceIndex(string,string,-int,string[]/bList/ubList/cList,wxWindow^//ubFrameDialog["wx:get-single-choice-index"]/cFrameDialog=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /glueListSet[string.2.3.2."wx:get-single-choice-index"]/glueCleanup[3]/
+@ "wx:get-single-choice-data" : nstring wxGetSingleChoiceData(string,string,-int,string[]/bList/ubList/cList,string[]/bList/ubList/cList,wxWindow^//ubFrameDialog["wx:get-single-choice-data"]/cFrameDialog=NULL,int=-1,int=-1,bool=TRUE,int=150,int=200); : /// : /checkSameLength[2.3."wx:get-single-choice-data"]|glueListSet[string.2.3.2."wx:get-single-choice-data"]|glueListSet[string.3.4.2."wx:get-single-choice-data"]/glueCleanup[3] | glueCleanup[4] /
 
 @ "wx:colour-display?" : bool wxColourDisplay();
 @ "wx:display-depth" : int wxDisplayDepth();

@@ -1,4 +1,13 @@
 
+# !!! Don't forget to use gnumake or gmake !!!
+ifndef WXDIR
+ ifdef PLTWXDIR
+  WXDIR=$(shell pwd)/../../$(PLTWXDIR)
+ else
+  WXDIR=$(shell pwd)/../../$(shell if [ -d ../../wxxt ] ; then echo wxxt ; else echo wxwindow ; fi)
+ endif
+endif
+
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
 
 LOCALFLAGS = 
@@ -34,10 +43,11 @@ names:
 	$(MAKE) $(DOCDIR)/names.tex
 
 test-file:
-	$(MAKE) ../tests/tests.ss
+	rm -f ../../../tests/mred/tests.ss
+	$(MAKE) ../../../tests/mred/tests.ss
 
-../tests/tests.ss: $(SCRIPTS) danger.tst
-	../../mzscheme/utils/xctotest danger.tst *.xc > ../tests/tests.ss
+../../../tests/mred/tests.ss: $(SCRIPTS) danger.tst
+	../../mzscheme/utils/xctotest danger.tst *.xc > ../../../tests/mred/tests.ss
 
 $(DOCDIR)/names.tex: $(SCRIPTS)
 	../../mzscheme/utils/xctotex *.xc > $(DOCDIR)/names.tex

@@ -94,7 +94,7 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "get-parent" : wxWindow^ GetParent();
 @ "get-text-extent" : void GetTextExtent(string,float*,float*,float?=NULL,float?=NULL,wxFont^=NULL,bool=FALSE);
 @ "get-grand-parent" : wxWindow^ GetGrandParent();
-@ "get-label" : string GetLabel();
+@ "get-label" : nstring GetLabel();
 @ "center" : void Center(SYM[direction]=wxBOTH);
 
 @ m "get-height" : int wxSchemeWindowGetHeight();

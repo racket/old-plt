@@ -2488,7 +2488,7 @@ return NULL;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxDC(v, "wx:snip-admin%::get-dc"", extracting return value", 0);
+  return objscheme_unbundle_wxDC(v, "wx:snip-admin%::get-dc"", extracting return value", 1);
   }
 }
 

@@ -187,7 +187,7 @@
 @CREATOR ();
 
 @ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,SYM[brushStyle]); <> wx:colour%
-@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(string,SYM[brushStyle]); <> color name
+@ "find-or-create-brush" : wxBrush^ FindOrCreateBrush(string,SYM[brushStyle]); <> color name
 
 @CONSTANT "wx:the-brush-list" : wxBrushList! wxTheBrushList
 
@@ -247,7 +247,7 @@
 @CREATOR ();
 
 @ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,SYM[penStyle]); <> wx:colour%
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(string,nnint,SYM[penStyle]); <> color name
+@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,nnint,SYM[penStyle]); <> color name
 
 @CONSTANT "wx:the-pen-list" : wxPenList! wxThePenList
 

@@ -132,7 +132,7 @@ static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
 @ "global-to-local" : void GlobalToLocal(float*,float*);
 @ "local-to-global" : void LocalToGlobal(float*,float*);
 
-@ v "get-dc" : wxDC! GetDC();
+@ v "get-dc" : wxDC^ GetDC();
 @ v "get-view-size" : void GetViewSize(float?,float?);
 
 @ "clear" : void Clear();
@@ -152,7 +152,7 @@ static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
 @ m "do-edit-command" : void DoEditCommand(SYM[editOp],bool=TRUE,long=0);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
-@ "get-keymap" : wxKeymap! GetKeymap();
+@ "get-keymap" : wxKeymap^ GetKeymap();
 
 @ "add-buffer-functions" : void AddBufferFunctions(wxKeymap!);
 

@@ -31,7 +31,7 @@
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
 
 @ "fit" : void Fit();
-@ "get-default-item" : wxButton! GetDefaultItem()
+@ "get-default-item" : wxButton^ GetDefaultItem()
 @ "get-item-cursor" : void GetCursor(int*,int*);
 @ "set-item-cursor" : void SetItemCursor(int,int);
 

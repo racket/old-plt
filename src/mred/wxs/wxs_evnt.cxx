@@ -115,7 +115,7 @@ static Scheme_Object *objscheme_wxEvent_SeteventObject(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-event-object", 1, 1, n, p);
 
-  v = objscheme_unbundle_wxObject(p[0], "wx:event%::event-object", 0);
+  v = objscheme_unbundle_wxObject(p[0], "wx:event%::event-object", 1);
   ((wxEvent *)cobj->primdata)->eventObject = v;
 
   return scheme_void;
@@ -334,7 +334,7 @@ static Scheme_Object *os_wxCommandEventChecked(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxCommandEventGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
 
   
@@ -457,7 +457,7 @@ static Scheme_Object *objscheme_wxCommandEvent_SetcommandInt(Scheme_Object *obj,
 static Scheme_Object *objscheme_wxCommandEvent_GetcommandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  string v;
+  nstring v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-command-string", 0, 0, n, p);
@@ -474,11 +474,11 @@ static Scheme_Object *objscheme_wxCommandEvent_SetcommandString(Scheme_Object *o
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  string v;
+  nstring v;
 
   if (n != 1) scheme_wrong_count("set-command-string", 1, 1, n, p);
 
-  v = (string)objscheme_unbundle_string(p[0], "wx:command-event%::command-string");
+  v = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:command-event%::command-string");
   ((wxCommandEvent *)cobj->primdata)->commandString = v;
 
   return scheme_void;

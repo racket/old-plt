@@ -126,7 +126,7 @@ typedef void *(*CAPOFunc)(void*);
 @CLASSID wxTYPE_MEDIA_SNIP_ADMIN
 
 @ V "get-media" : wxMediaBuffer^ GetMedia(); : : : rNULL
-@ V "get-dc" : wxDC! GetDC(); : : : rNULL
+@ V "get-dc" : wxDC^ GetDC(); : : : rNULL
 @ V "get-view-size" : void GetViewSize(float?, float?);
 @ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);
 @ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,float,float, bool,int=0); : : : rFALSE

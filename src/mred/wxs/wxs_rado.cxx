@@ -508,7 +508,7 @@ static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Obj
 static Scheme_Object *os_wxRadioBoxGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
   int x0;
 

@@ -14,3 +14,4 @@ wx:media-edit% get-file
 wx:media-edit% put-file
 wx:media-pasteboard% get-file
 wx:media-pasteboard% put-file
+wx:style-list clear

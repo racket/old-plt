@@ -46,7 +46,7 @@
 @ "number" : int Number()
 @ "set-string-selection" : void SetStringSelection(string);
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
-@ "get-string" : string GetString(int);  : : /RANGERET[0.scheme_null]
+@ "get-string" : nstring GetString(int);  : : /RANGERET[0.scheme_null]
 
 @ "enable" : void Enable(int,bool); : : /RANGE[0] <> single-button
 @ "enable" : void Enable(bool); <> all-buttons

@@ -327,6 +327,8 @@ void wxSnip::GetText(char *s, long offset, long num)
 {
   char *str;
 
+  if (num <= 0)
+    return "";
   str = GetText(offset, num, FALSE);
   if (!str)
     memset(s, '.', num);
@@ -337,6 +339,8 @@ void wxSnip::GetText(char *s, long offset, long num)
 char *wxSnip::GetText(long offset, long num, 
 		      Bool WXUNUSED(flattened), long *got)
 {
+  if (num <= 0)
+    return "";
   if (offset < 0)
     offset = 0;
   if (offset > count)

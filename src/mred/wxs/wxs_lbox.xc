@@ -48,8 +48,8 @@
 @ "deselect" : void Deselect(int); : : /RANGE[0]
 @ "set-selection" : void SetSelection(int,bool=TRUE); : : /RANGE[0]
 @ "selected?" : bool Selected(int); : : /RANGE[0]
-@ "get-string-selection" : string GetStringSelection();
-@ "get-client-data" : string/bAnythingFromString GetClientData(int); : : /RANGERET[0.scheme_null]
+@ "get-string-selection" : nstring GetStringSelection();
+@ "get-client-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.scheme_null]
 @ "set-client-data" : void SetClientData(int, string//ubAnythingToString/cAnything); : : /RANGE[0]
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
@@ -79,7 +79,7 @@ Scheme_Object *MakeIntList(int *v, int c)
 @ "set-first-item" : void SetFirstItem(int); : : /RANGE[0] <> index
 @ "set-first-item" : void SetFirstItem(string); <> string
 @ "set-string-selection" : void SetStringSelection(string);
-@ "get-string" : string GetString(int); : : /RANGERET[0.scheme_null]
+@ "get-string" : nstring GetString(int); : : /RANGERET[0.scheme_null]
 @ "set-string" : void SetString(int,string); : : /RANGE[0]
 
 @END

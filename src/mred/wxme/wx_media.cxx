@@ -2735,6 +2735,8 @@ Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f, long start, long end)
     start = 0;
   if (end < 0)
     end = len;
+  if (end < start)
+    end = start;
     
   startSnip = FindSnip(start, +1);
   endSnip = FindSnip(end, +2);

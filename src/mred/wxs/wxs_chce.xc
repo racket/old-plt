@@ -29,10 +29,10 @@
 @ "number" : int Number()
 @ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
-@ "get-string-selection" : string GetStringSelection();
+@ "get-string-selection" : nstring GetStringSelection();
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
 @ "set-string-selection" : void SetStringSelection(string);
-@ "get-string" : string GetString(int); : : /RANGERET[0.scheme_null]
+@ "get-string" : nstring GetString(int); : : /RANGERET[0.scheme_null]
 
 @END
 

@@ -1757,13 +1757,13 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
     
     
   } else if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_string(p[1], NULL)) {
-    long x0;
+    nnint x0;
     string x1;
 
     
     if (n != 2) 
       scheme_wrong_count("wx:media-stream-out%::put (length and string case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out%::put (length and string case)");
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:media-stream-out%::put (length and string case)");
     x1 = (string)objscheme_unbundle_string(p[1], "wx:media-stream-out%::put (length and string case)");
 
     

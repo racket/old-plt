@@ -5,8 +5,8 @@
 @ s "partial-offset" : float PartialOffset(wxDC!,float,float,long); : : /CHECKOK[0."wx:snip%::partial-offset"]
 @ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,int); : : /CHECKOK[0."wx:snip%::draw"]
 @ s "split" : void Split(long,wxSnip!*,wxSnip!*);
-@ s "merge-with" : wxSnip! MergeWith(wxSnip!);
-@ s "get-text" : string/makeNoCopyString[_x3] GetText(long,long,bool=FALSE,-long*=NULL);
+@ s "merge-with" : wxSnip^ MergeWith(wxSnip!);
+@ s "get-text" : string/makeNoCopyString[_x3] GetText(long,nnlong,bool=FALSE,-long*=NULL);
 @ s "copy" : wxSnip! Copy();
 @ s "size-cache-invalid" : void SizeCacheInvalid();
 

@@ -449,7 +449,7 @@ static Scheme_Object *os_wxListBoxSetString(Scheme_Object *obj, int n,  Scheme_O
 static Scheme_Object *os_wxListBoxGetString(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
   int x0;
 
@@ -673,7 +673,7 @@ static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
   int x0;
 
@@ -692,7 +692,7 @@ static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *os_wxListBoxGetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   objscheme_check_valid(obj);
 
   

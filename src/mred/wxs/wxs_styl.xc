@@ -168,7 +168,7 @@
 @ "get-text-space" : float GetTextSpace(wxDC!);
 @ "get-text-width" : float GetTextWidth(wxDC!);
 
-@ "get-base-style" : wxStyle! GetBaseStyle();
+@ "get-base-style" : wxStyle^ GetBaseStyle();
 @ "set-base-style" : void SetBaseStyle(wxStyle!);
 
 @ "get-delta" : void GetDelta(wxStyleDelta%);
@@ -176,7 +176,7 @@
 
 @ "is-join?" : bool IsJoin();
 
-@ "get-shift-style" :  wxStyle! GetShiftStyle();
+@ "get-shift-style" :  wxStyle^ GetShiftStyle();
 @ "set-shift-style" : void SetShiftStyle(wxStyle!);
 
 @ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0."wx:style%::switch-to"]
@@ -199,7 +199,7 @@
 
 @ "find-or-create-style" : wxStyle! FindOrCreateStyle(wxStyle^,wxStyleDelta!);
 @ "find-or-create-join-style" : wxStyle! FindOrCreateJoinStyle(wxStyle^,wxStyle!);
-@ "find-named-style" : wxStyle! FindNamedStyle(string);
+@ "find-named-style" : wxStyle^ FindNamedStyle(string);
 @ "new-named-style" : wxStyle! NewNamedStyle(string,wxStyle^);
 @ "replace-named-style" : wxStyle! ReplaceNamedStyle(string,wxStyle^);
 

@@ -151,7 +151,7 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @CREATOR (wxMediaStreamOutBase%);
 
-@ "put" : wxMediaStreamOut% Put(long////long,string); <> length and string
+@ "put" : wxMediaStreamOut% Put(nnint////long,string); <> length and string
 @ "put" : wxMediaStreamOut% Put(string); <> string without length
 @ "put" : wxMediaStreamOut% Put(Long////long); <> exact number
 @ "put" : wxMediaStreamOut% Put(Double); <> inexact number

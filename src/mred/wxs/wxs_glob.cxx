@@ -299,6 +299,12 @@ extern void wxBell(void);
 
 
 
+extern int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK);
+extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char *where, int nullOK);
+extern int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK);
+extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char *where, int nullOK);
+
+
 
 #undef l_ADDRESS
 #undef l_DEREF
@@ -1352,7 +1358,7 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxGetSingleChoiceData(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   string x0;
   string x1;
   int x2;
@@ -1370,10 +1376,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoiceData(int n,  Scheme_Object *p[])
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice-data");
   x3 = NULL;
   x4 = NULL;
-  if (n > 4) {
-    x5 = objscheme_unbundle_wxWindow(p[4], "::wx:get-single-choice-data", 1);
-  } else
-    x5 = NULL;
+  x5 = (SCHEME_NULLP(p[4]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[4], NULL, 0) : (objscheme_istype_wxDialogBox(p[4], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[4], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-data", "wx:frame% or wx:dialog-box%", -1, 0, &p[4]), (wxWindow *)NULL))));
   if (n > 5) {
     x6 = objscheme_unbundle_integer(p[5], "::wx:get-single-choice-data");
   } else
@@ -1423,10 +1426,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoiceIndex(int n,  Scheme_Object *p[]
   x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-single-choice-index");
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice-index");
   x3 = NULL;
-  if (n > 3) {
-    x4 = objscheme_unbundle_wxWindow(p[3], "::wx:get-single-choice-index", 1);
-  } else
-    x4 = NULL;
+  x4 = (SCHEME_NULLP(p[3]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice-index", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x5 = objscheme_unbundle_integer(p[4], "::wx:get-single-choice-index");
   } else
@@ -1460,7 +1460,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoiceIndex(int n,  Scheme_Object *p[]
 static Scheme_Object *wxsGlobalwxGetSingleChoice(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   string x0;
   string x1;
   int x2;
@@ -1476,10 +1476,7 @@ static Scheme_Object *wxsGlobalwxGetSingleChoice(int n,  Scheme_Object *p[])
   x0 = (string)objscheme_unbundle_string(p[0], "::wx:get-single-choice");
   x1 = (string)objscheme_unbundle_string(p[1], "::wx:get-single-choice");
   x3 = NULL;
-  if (n > 3) {
-    x4 = objscheme_unbundle_wxWindow(p[3], "::wx:get-single-choice", 1);
-  } else
-    x4 = NULL;
+  x4 = (SCHEME_NULLP(p[3]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-single-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x5 = objscheme_unbundle_integer(p[4], "::wx:get-single-choice");
   } else
@@ -1533,10 +1530,7 @@ static Scheme_Object *wxsGlobalwxGetMultipleChoice(int n,  Scheme_Object *p[])
   x3 = NULL;
   x4 = objscheme_unbundle_integer(p[3], "::wx:get-multiple-choice");
   x5 = __CopyIntArray(p[4], p[2]);
-  if (n > 5) {
-    x6 = objscheme_unbundle_wxWindow(p[5], "::wx:get-multiple-choice", 1);
-  } else
-    x6 = NULL;
+  x6 = (SCHEME_NULLP(p[5]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[5], NULL, 0) : (objscheme_istype_wxDialogBox(p[5], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[5], NULL, 0) : (scheme_wrong_type("wx:get-multiple-choice", "wx:frame% or wx:dialog-box%", -1, 0, &p[5]), (wxWindow *)NULL))));
   if (n > 6) {
     x7 = objscheme_unbundle_integer(p[6], "::wx:get-multiple-choice");
   } else
@@ -1570,7 +1564,7 @@ static Scheme_Object *wxsGlobalwxGetMultipleChoice(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxGetTextFromUser(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   string x0;
   string x1;
   string x2;
@@ -1589,10 +1583,7 @@ static Scheme_Object *wxsGlobalwxGetTextFromUser(int n,  Scheme_Object *p[])
     x2 = (string)objscheme_unbundle_string(p[2], "::wx:get-text-from-user");
   } else
     x2 = "";
-  if (n > 3) {
-    x3 = objscheme_unbundle_wxWindow(p[3], "::wx:get-text-from-user", 1);
-  } else
-    x3 = NULL;
+  x3 = (SCHEME_NULLP(p[3]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:get-text-from-user", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x4 = objscheme_unbundle_integer(p[4], "::wx:get-text-from-user");
   } else
@@ -1636,10 +1627,7 @@ static Scheme_Object *wxsGlobalwxMessageBox(int n,  Scheme_Object *p[])
     x2 = unbundle_symset_messageStyle(p[2], "::wx:message-box");
   } else
     x2 = wxOK|wxCENTER;
-  if (n > 3) {
-    x3 = objscheme_unbundle_wxWindow(p[3], "::wx:message-box", 1);
-  } else
-    x3 = NULL;
+  x3 = (SCHEME_NULLP(p[3]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[3], NULL, 0) : (objscheme_istype_wxDialogBox(p[3], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[3], NULL, 0) : (scheme_wrong_type("wx:message-box", "wx:frame% or wx:dialog-box%", -1, 0, &p[3]), (wxWindow *)NULL))));
   if (n > 4) {
     x4 = objscheme_unbundle_integer(p[4], "::wx:message-box");
   } else
@@ -1661,7 +1649,7 @@ static Scheme_Object *wxsGlobalwxMessageBox(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
+  nstring r;
   string x0;
   nstring x1;
   nstring x2;
@@ -1694,10 +1682,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
     x5 = unbundle_symset_fileSelMode(p[5], "::wx:file-selector");
   } else
     x5 = wxOPEN;
-  if (n > 6) {
-    x6 = objscheme_unbundle_wxWindow(p[6], "::wx:file-selector", 1);
-  } else
-    x6 = NULL;
+  x6 = (SCHEME_NULLP(p[6]) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("wx:file-selector", "wx:frame% or wx:dialog-box%", -1, 0, &p[6]), (wxWindow *)NULL))));
   if (n > 7) {
     x7 = objscheme_unbundle_integer(p[7], "::wx:file-selector");
   } else
@@ -1940,10 +1925,10 @@ void objscheme_setup_wxsGlobal(void *env)
   scheme_install_xc_global("wx:make-meta-file-placeable", scheme_make_prim_w_arity(wxsGlobalwxMakeMetaFilePlaceable, "wx:make-meta-file-placeable", 6, 6), env);
   scheme_install_xc_global("wx:display-depth", scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "wx:display-depth", 0, 0), env);
   scheme_install_xc_global("wx:colour-display?", scheme_make_prim_w_arity(wxsGlobalwxColourDisplay, "wx:colour-display?", 0, 0), env);
-  scheme_install_xc_global("wx:get-single-choice-data", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoiceData, "wx:get-single-choice-data", 4, 10), env);
-  scheme_install_xc_global("wx:get-single-choice-index", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoiceIndex, "wx:get-single-choice-index", 3, 9), env);
-  scheme_install_xc_global("wx:get-single-choice", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoice, "wx:get-single-choice", 3, 9), env);
-  scheme_install_xc_global("wx:get-multiple-choice", scheme_make_prim_w_arity(wxsGlobalwxGetMultipleChoice, "wx:get-multiple-choice", 5, 11), env);
+  scheme_install_xc_global("wx:get-single-choice-data", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoiceData, "wx:get-single-choice-data", 5, 10), env);
+  scheme_install_xc_global("wx:get-single-choice-index", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoiceIndex, "wx:get-single-choice-index", 4, 9), env);
+  scheme_install_xc_global("wx:get-single-choice", scheme_make_prim_w_arity(wxsGlobalwxGetSingleChoice, "wx:get-single-choice", 4, 9), env);
+  scheme_install_xc_global("wx:get-multiple-choice", scheme_make_prim_w_arity(wxsGlobalwxGetMultipleChoice, "wx:get-multiple-choice", 6, 11), env);
   scheme_install_xc_global("wx:get-text-from-user", scheme_make_prim_w_arity(wxsGlobalwxGetTextFromUser, "wx:get-text-from-user", 1, 7), env);
   scheme_install_xc_global("wx:message-box", scheme_make_prim_w_arity(wxsGlobalwxMessageBox, "wx:message-box", 1, 6), env);
   scheme_install_xc_global("wx:file-selector", scheme_make_prim_w_arity(wxsGlobalwxFileSelector, "wx:file-selector", 1, 9), env);

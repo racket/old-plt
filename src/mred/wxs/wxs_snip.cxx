@@ -105,7 +105,7 @@ class os_wxSnip : public wxSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetText(long x0, long x1, Bool x2 = FALSE, long* x3 = NULL);
+  string GetText(long x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(long x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -545,7 +545,7 @@ return wxSnip::Copy();
   }
 }
 
-string os_wxSnip::GetText(long x0, long x1, Bool x2, long* x3)
+string os_wxSnip::GetText(long x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -611,7 +611,7 @@ return wxSnip::MergeWith(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:snip%::merge-with"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "wx:snip%::merge-with"", extracting return value", 1);
   }
 }
 
@@ -1118,14 +1118,14 @@ static Scheme_Object *os_wxSnipGetText(Scheme_Object *obj, int n,  Scheme_Object
   string r;
   objscheme_check_valid(obj);
   long x0;
-  long x1;
+  nnlong x1;
   Bool x2;
   long _x3;
   long* x3 = &_x3;
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:snip%::get-text");
-  x1 = objscheme_unbundle_integer(p[1], "wx:snip%::get-text");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:snip%::get-text");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:snip%::get-text");
   } else
@@ -1722,7 +1722,7 @@ class os_wxTextSnip : public wxTextSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetText(long x0, long x1, Bool x2 = FALSE, long* x3 = NULL);
+  string GetText(long x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(long x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -2162,7 +2162,7 @@ return wxTextSnip::Copy();
   }
 }
 
-string os_wxTextSnip::GetText(long x0, long x1, Bool x2, long* x3)
+string os_wxTextSnip::GetText(long x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -2228,7 +2228,7 @@ return wxTextSnip::MergeWith(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:text-snip%::merge-with"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "wx:text-snip%::merge-with"", extracting return value", 1);
   }
 }
 
@@ -2746,14 +2746,14 @@ static Scheme_Object *os_wxTextSnipGetText(Scheme_Object *obj, int n,  Scheme_Ob
   string r;
   objscheme_check_valid(obj);
   long x0;
-  long x1;
+  nnlong x1;
   Bool x2;
   long _x3;
   long* x3 = &_x3;
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:text-snip%::get-text");
-  x1 = objscheme_unbundle_integer(p[1], "wx:text-snip%::get-text");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:text-snip%::get-text");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:text-snip%::get-text");
   } else
@@ -3136,7 +3136,7 @@ class os_wxTabSnip : public wxTabSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetText(long x0, long x1, Bool x2 = FALSE, long* x3 = NULL);
+  string GetText(long x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(long x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -3576,7 +3576,7 @@ return wxTabSnip::Copy();
   }
 }
 
-string os_wxTabSnip::GetText(long x0, long x1, Bool x2, long* x3)
+string os_wxTabSnip::GetText(long x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -3642,7 +3642,7 @@ return wxTabSnip::MergeWith(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:tab-snip%::merge-with"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "wx:tab-snip%::merge-with"", extracting return value", 1);
   }
 }
 
@@ -4115,14 +4115,14 @@ static Scheme_Object *os_wxTabSnipGetText(Scheme_Object *obj, int n,  Scheme_Obj
   string r;
   objscheme_check_valid(obj);
   long x0;
-  long x1;
+  nnlong x1;
   Bool x2;
   long _x3;
   long* x3 = &_x3;
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:tab-snip%::get-text");
-  x1 = objscheme_unbundle_integer(p[1], "wx:tab-snip%::get-text");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:tab-snip%::get-text");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:tab-snip%::get-text");
   } else
@@ -4546,7 +4546,7 @@ class os_wxImageSnip : public wxImageSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetText(long x0, long x1, Bool x2 = FALSE, long* x3 = NULL);
+  string GetText(long x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(long x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -4986,7 +4986,7 @@ return wxImageSnip::Copy();
   }
 }
 
-string os_wxImageSnip::GetText(long x0, long x1, Bool x2, long* x3)
+string os_wxImageSnip::GetText(long x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -5052,7 +5052,7 @@ return wxImageSnip::MergeWith(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:image-snip%::merge-with"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "wx:image-snip%::merge-with"", extracting return value", 1);
   }
 }
 
@@ -5635,14 +5635,14 @@ static Scheme_Object *os_wxImageSnipGetText(Scheme_Object *obj, int n,  Scheme_O
   string r;
   objscheme_check_valid(obj);
   long x0;
-  long x1;
+  nnlong x1;
   Bool x2;
   long _x3;
   long* x3 = &_x3;
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:image-snip%::get-text");
-  x1 = objscheme_unbundle_integer(p[1], "wx:image-snip%::get-text");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:image-snip%::get-text");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:image-snip%::get-text");
   } else
@@ -6064,7 +6064,7 @@ class os_wxMediaSnip : public wxMediaSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetText(long x0, long x1, Bool x2 = FALSE, long* x3 = NULL);
+  string GetText(long x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(long x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -6504,7 +6504,7 @@ return wxMediaSnip::Copy();
   }
 }
 
-string os_wxMediaSnip::GetText(long x0, long x1, Bool x2, long* x3)
+string os_wxMediaSnip::GetText(long x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
@@ -6570,7 +6570,7 @@ return wxMediaSnip::MergeWith(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:media-snip%::merge-with"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "wx:media-snip%::merge-with"", extracting return value", 1);
   }
 }
 
@@ -7362,14 +7362,14 @@ static Scheme_Object *os_wxMediaSnipGetText(Scheme_Object *obj, int n,  Scheme_O
   string r;
   objscheme_check_valid(obj);
   long x0;
-  long x1;
+  nnlong x1;
   Bool x2;
   long _x3;
   long* x3 = &_x3;
 
   
   x0 = objscheme_unbundle_integer(p[0], "wx:media-snip%::get-text");
-  x1 = objscheme_unbundle_integer(p[1], "wx:media-snip%::get-text");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:media-snip%::get-text");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:media-snip%::get-text");
   } else

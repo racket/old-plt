@@ -19,7 +19,11 @@
 			  (let ([cmd (build-path d "cmd.exe")])
 			    (if (file-exists? cmd)
 				cmd
-				(build-path d "command.com"))))])
+				(let ([cmd (build-path d "command.com")])
+				  (if (file-exists? cmd)
+				      cmd
+				      ;; One last try: up a dir
+				      (build-path d '.. "command.com"))))))])
 		   (list cmd
 			 'exact
 			 (format "~a /c ~a" cmd argstr))))

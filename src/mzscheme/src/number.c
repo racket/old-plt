@@ -2034,6 +2034,8 @@ atan_prim (int argc, Scheme_Object *argv[])
       v2 = SCHEME_DBL_VAL(n2);
     else if (SCHEME_BIGNUMP(n2))
       v2 = scheme_bignum_to_double(n2);
+    else if (SCHEME_RATIONALP(n2))
+      v2 = scheme_rational_to_double(n2);
     else {
       scheme_wrong_type("atan", REAL_NUMBER_STR, 1, argc, argv);
       return NULL;

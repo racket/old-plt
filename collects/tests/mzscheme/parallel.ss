@@ -3,7 +3,7 @@
 ;;  thread creates a directory sub<n> to run in, so that filesystem
 ;;  tests don't collide.
 
-(with-handlers ([not-break-exn?
+(with-handlers ([exn:fail?
 		 (lambda (exn)
 		   (namespace-set-variable-value!
 		    'parallel-load

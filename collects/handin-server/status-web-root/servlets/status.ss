@@ -16,7 +16,7 @@
   (define inactive-dir (build-path handin-dir "inactive"))
 
   (define master-password 
-    (with-handlers ([not-break-exn? (lambda (x) #f)])
+    (with-handlers ([exn:fail? (lambda (x) #f)])
       (cadr (assq 'master-password 
 		  (with-input-from-file (build-path handin-dir "config.ss")
 		    read)))))
@@ -70,7 +70,7 @@
 				    "inactive")
 				hi
 				user)]
-	       [l (with-handlers ([not-break-exn? (lambda (x) null)])
+	       [l (with-handlers ([exn:fail? (lambda (x) null)])
                     (parameterize ([current-directory dir])
                       (filter (lambda (f)
                                 (and (file-exists? f) (not (equal? f "grade"))))
@@ -150,7 +150,7 @@
       (define (all-status-page status)
 	(let ([l (quicksort
 		  (append (directory-list "active")
-			  (with-handlers ([not-break-exn? (lambda (x) null)])
+			  (with-handlers ([exn:fail? (lambda (x) null)])
 			    (directory-list "inactive")))
 		  (lambda (a b)
 		    (let ([am (regexp-match re:base a)]
@@ -178,10 +178,9 @@
 
       (define (download status tag)
 	;; Make sure the user is allowed to read the requested file:
-	(with-handlers ([not-break-exn? (lambda (exn) 
-					  (make-page 
-					   "Error"
-					   "Illegal file access"))])
+	(with-handlers ([exn:fail?
+                         (lambda (exn)
+                           (make-page "Error" "Illegal file access"))])
 	  (let ([who (get-status status 'user (lambda () "???"))])
 	    (let-values ([(base name dir?) (split-path tag)])
 	      ;; Any file name is ok...

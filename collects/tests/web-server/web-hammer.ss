@@ -21,7 +21,7 @@
 	      (thread
 	       (lambda ()
 		 (let request ()
-		   (with-handlers ([not-break-exn? void])
+		   (with-handlers ([exn:fail? void])
 		     (parameterize ([current-custodian (make-custodian)])
 		       (let ([port (get-pure-port url)])
 			 (let discard-all ()

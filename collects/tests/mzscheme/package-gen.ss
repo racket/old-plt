@@ -102,7 +102,7 @@
 		  (namespace-attach-module ns m)
 		  (let ([done? #f]
 			[mode "top-level"])
-		    (with-handlers ([not-break-exn?
+		    (with-handlers ([exn:fail?
 				     (lambda (x)
 				       (printf "At ~a:~n" mode)
 				       (pretty-print form)

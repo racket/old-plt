@@ -948,8 +948,12 @@ wxBitmap::wxBitmap(void)
   WXGC_IGNORE(this, selectedInto);
 }
 
+static char *map;
+
 wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 {
+  int i, j;
+
   COUNT_P(bitmap_count);
 
   __type = wxTYPE_BITMAP;
@@ -966,12 +970,28 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   else
     offset = 0;
 
+  if (!map) {
+    wxREGGLOB(map);
+    map = new char[256];
+    for (i = 0; i < 256; i++) {
+      j = (((i & 0x1) << 7)
+	   | ((i & 0x2) << 5)
+	   | ((i & 0x4) << 3)
+	   | ((i & 0x8) << 1)
+	   | ((i & 0x10) >> 1)
+	   | ((i & 0x20) >> 3)
+	   | ((i & 0x40) >> 5)
+	   | ((i & 0x80) >> 6));
+      j = 0xFF ^ j;
+      map[i] = (char)j;
+    }
+  }
+
   char *copy = new char[(rowwidth + offset) * height], *sp, *cp;
   sp = bits; cp = copy;
-  int i, j;
   for (i = 0; i < height; i++) {
     for (j = 0; j < rowwidth; j++, sp++, cp++) {
-      *cp = 0xFF ^ *sp;
+      *cp = map[*(unsigned char *)sp];
     }
     cp += offset;
   }

@@ -1,4 +1,4 @@
-; $Id: quasi.ss,v 1.7 1998/11/04 21:09:23 mflatt Exp $
+; $Id: quasi.ss,v 1.8 1999/02/03 23:07:10 mflatt Exp $
 
 ; Fix the null? in qq-normalize.
 
@@ -116,6 +116,6 @@
 	(else
 	  (static-error expr "Malformed quasiquote"))))))
 
-(add-primitivized-micro-form 'quasiquote intermediate-vocabulary quasiquote-micro)
+(add-primitivized-micro-form 'quasiquote advanced-vocabulary quasiquote-micro)
 (add-primitivized-micro-form 'quasiquote scheme-vocabulary quasiquote-micro)
 

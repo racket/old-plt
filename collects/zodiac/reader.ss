@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id: reader.ss,v 1.4 1998/11/04 19:52:53 mflatt Exp $
+;;  $Id: reader.ss,v 1.5 1999/02/03 23:07:10 mflatt Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -117,6 +117,11 @@
    (define allow-improper-lists (make-parameter #t))
    (define allow-reader-quasiquote (make-parameter #t))
 
+   (define (dot-err s)
+     (if (allow-improper-lists)
+	 s
+	 "misuse of `.' (improper lists are not allowed)"))
+
    (define pack-imp-list 
      (lambda (open-token  close-token  head  len  dot)
        (let ([obj  (zodiac:make-improper-list
@@ -126,7 +131,7 @@
                      head  len  dot '())])
          (if (allow-improper-lists)
              obj 
-             (z:r-s-e  obj  "Misuse of `.': improper lists are not allowed")))))
+             (z:r-s-e  obj  (dot-err ""))))))
 
    ;; convert  (a . (b . ())) ==> (a b)  if parameter set
    ;; and obj after dot is list or imp-list.
@@ -242,9 +247,9 @@
                           (if (eq?  type  'list)
                               (if (= len 0)
                                   (z:r-s-e  obj
-                                            "can't put `.' as first item in list")
+                                            (dot-err "can't put `.' as first item in list"))
                                   (finish-imp-list token obj (cdr sent) p len))
-                              (z:r-s-e obj "can't use `.' inside vector"))]
+                              (z:r-s-e obj (dot-err "can't use `.' inside vector")))]
                          [(eof?  obj)
                           (z:r-s-e  token  "missing close paren")]
                          [else 
@@ -259,6 +264,8 @@
               
               [finish-imp-list
                (lambda (token  dot  head  p  len)
+		 (unless (allow-improper-lists)
+		   (z:r-s-e  dot (dot-err "")))
                  (let ([obj  (read-obj)])
                    (cond 
                      [(zodiac:read?  obj)
@@ -364,7 +371,7 @@
                    (cond
                      [(or (zodiac:read? obj) (eof? obj))  obj]
                      [(period?  obj)
-                      (z:r-s-e  obj  "can't use `.' outside list")]
+                      (z:r-s-e  obj  (dot-err "can't use `.' outside list"))]
                      [(z:endseq?  obj)
                       (z:r-s-e  obj  "too many close parens")]
                      [else

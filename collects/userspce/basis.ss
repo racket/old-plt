@@ -78,7 +78,7 @@
 				   (allow-set!-on-undefined? #f)
 				   (unmatched-cond/case-is-error? #t)
 				   (allow-improper-lists? #f)
-				   (allow-reader-quasiquote? #t)
+				   (allow-reader-quasiquote? #f)
 				   (sharing-printing? #f)
 				   (abbreviate-cons-as-list? #f)
 				   (signal-undefined #t)

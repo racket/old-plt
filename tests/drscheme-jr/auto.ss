@@ -99,6 +99,10 @@
     (read-line err)
     (expect-prompt))
 
+  (define (flush-out)
+    (read-line out)
+    (expect-prompt))
+
   (define-values (out copy-out) (make-pipe))
   (define-values (err copy-err) (make-pipe))
   (define-values (copy-in in) (make-pipe))
@@ -134,24 +138,29 @@
   ;;                       Configurations                         ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define print-convert? (not (string=? language "MzSchemeDebug")))
-  (define case-sens? (not (string=? language "MzSchemeDebug")))
-  (define cond-bool? (member language '("Beginner" "Intermediate")))
-  (define empty-lambda? (member language '("Advanced" "MzSchemeDebug")))
-  (define one-arm-if? (member language '("Advanced" "MzSchemeDebug")))
-  (define gen-quote? (member language '("Advanced" "MzSchemeDebug")))
-  (define fall-through? (string=? language "MzSchemeDebug"))
-  (define mzscheme? (string=? language "MzSchemeDebug"))
-  (define quasiquote? (not (string=? language "Beginner")))
-  (define let? (not (string=? language "Beginner")))
-  (define named-let? (member language '("Advanced" "MzSchemeDebug")))
-  (define local? (and let? (not mzscheme?)))
-  (define imperative? (member language '("Advanced" "MzSchemeDebug")))
-  (define symbol-apps? (member language '("Beginner" "Intermediate")))
-  (define proper-list? (member language '("Beginner" "Intermediate" "Advanced")))
-  (define define-struct? (not (string=? language "Beginner")))
-  (define explicit-inexact? (member language '("Beginner" "Intermediate")))
-  (define abbrev-list? (not (member language '("Beginner" "Intermediate"))))
+  (define mz? (string=? language "MzSchemeDebug"))
+  (define beg? (string=? language "Beginner"))
+  (define beg/inter? (member language '("Beginner" "Intermediate")))
+  (define adv/mz? (member language '("Advanced" "MzSchemeDebug")))
+
+  (define print-convert? (not mz?))
+  (define case-sens? (not mz?))
+  (define cond-bool? beg/inter?)
+  (define empty-lambda? adv/mz?)
+  (define one-arm-if? adv/mz?)
+  (define gen-quote? adv/mz?)
+  (define fall-through? mz?)
+  (define quasiquote? adv/mz?)
+  (define let? (not beg?))
+  (define named-let? adv/mz?)
+  (define local? (and let? (not mz?)))
+  (define imperative? adv/mz?)
+  (define symbol-apps? beg/inter?)
+  (define proper-list? (not mz?))
+  (define define-struct? (not beg?))
+  (define explicit-inexact? beg/inter?)
+  (define abbrev-list? (not beg/inter?))
+  (define mzscheme? mz?)
 
   (define (mk-diff flag?)
     (lambda (x other)
@@ -222,6 +231,9 @@
   (try "'(1 . 2)" (pl-diff '(error "improper lists are not allowed")
 			   (pc-diff "(cons 1 2)"
 				    "(1 . 2)")))
+  (when proper-list?
+    (flush-out)
+    (flush-err))
   
   (try "null" (pc-diff "empty" "()"))
   (try "(cons 1 null)" (al-diff (pc-diff "(list 1)" "(1)")

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.170 1999/02/01 22:39:10 mflatt Exp $
+; $Id: scm-main.ss,v 1.171 1999/02/03 23:07:10 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1851,13 +1851,13 @@
   (define unquote-micro
     (lambda (expr env)
       (static-error expr "Unquote outside quasiquote")))
-  (add-primitivized-macro-form 'unquote intermediate-vocabulary unquote-micro)
+  (add-primitivized-macro-form 'unquote advanced-vocabulary unquote-micro)
   (add-primitivized-macro-form 'unquote scheme-vocabulary unquote-micro)
 
   (define unquote-splicing-micro
     (lambda (expr env)
       (static-error expr "Unquote-splicing outside quasiquote")))
-  (add-primitivized-macro-form 'unquote-splicing intermediate-vocabulary unquote-splicing-micro)
+  (add-primitivized-macro-form 'unquote-splicing advanced-vocabulary unquote-splicing-micro)
   (add-primitivized-macro-form 'unquote-splicing scheme-vocabulary unquote-splicing-micro)
 
   (include "quasi.ss")

@@ -2,6 +2,28 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.6
+An exception handler or dynamic-wind pre/post thunk can
+ re-enable breaks through the break-enabled parameter
+Breaks are initially disabled for with-handlers predicates
+ and handlers
+While an exception handler is called, the current exception
+ handler is reset to the default handler; similarly,
+ the error display and escape handlers are called by the
+ default exception handler in a context that resets the
+ corresponding parameters to the default handlers
+An exception handler can handle exceptions that are raised
+ during the handler (by using with-handlers or setting the
+ current-exception-handler parameter)
+During the evaluation of dynamic-wind pre and post thunks,
+ the current continuation marks and parameterization are reset
+ to those active at the time of the dynamic-wind call
+ (except that the parameterization is extended to disable
+ breaks)
+Added current-parameterization and call-with-parameterization
+Added current-compile parameter, which is used by compile
+ and by the default evaluation handler
+
 Version 299.5
 Changed object-name for input ports and output ports
 Changed read-syntax to make the source name optional (defaults

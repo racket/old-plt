@@ -119,17 +119,18 @@
 	 (load-system)
 	 (set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
 	 ;(constant-name 'mred:plt-home-directory)
-	 (when (and (eq? wx:platform 'windows))
-	   (let ([hd (getenv "HOMEDRIVE")]
-		 [hp (getenv "HOMEPATH")])
-	     (when (and hd hp)
-	       (current-directory (build-path hd hp)))))
+
 	 (user-break-poll-handler wx:check-for-break)
 
 	 (mred:change-splash-message "Command Line...")	 
 	 (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
 	 
 	 (current-directory mred:mred-startup-directory)
+	 (when (and (eq? wx:platform 'windows))
+	   (let ([hd (getenv "HOMEDRIVE")]
+		 [hp (getenv "HOMEPATH")])
+	     (when (and hd hp)
+	       (current-directory (build-path hd hp)))))
 
 	 (mred:invoke)
 	 (mred:build-spidey-unit)

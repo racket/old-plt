@@ -32,10 +32,18 @@
       (lambda (x)
 	(apply make-setting (cdr (vector->list (struct->vector x))))))
 
-    (mred:set-preference-default 'drscheme:settings (copy-setting (second (car (reverse settings)))))
+    (define (get-default)
+      (copy-setting (second (car (reverse settings)))))
+    (mred:set-preference-default 'drscheme:settings
+				 (get-default)
+				 setting?)
     (mred:set-preference-un/marshall 'drscheme:settings
 				     (compose cdr vector->list struct->vector)
-				     (lambda (x) (apply make-setting x)))
+				     (lambda (x) 
+				       (if (and (list? x)
+						(= (arity make-setting) (length x)))
+					(apply make-setting x)
+					(get-default))))
 
     (define set-printer-style/get-number
       (lambda (printing-setting)

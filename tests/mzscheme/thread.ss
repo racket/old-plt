@@ -396,11 +396,12 @@
     (test #f semaphore-try-wait? s2)))
 
 (let ([s (make-semaphore)]
-      [s-t (make-semaphore)])
+      [s-t (make-semaphore)]
+      [portnum (+ 40000 (random 100))]) ; so parallel tests work ok
   (let ([t (thread
 	    (lambda ()
 	      (object-wait-multiple #f s-t)))]
-	[l (tcp-listen 40001 5 #t)]
+	[l (tcp-listen portnum 5 #t)]
 	[orig-thread (current-thread)])
     (let-values ([(r w) (make-pipe)])
       
@@ -442,7 +443,7 @@
 
       (set! t (thread (lambda () (semaphore-wait (make-semaphore)))))
 
-      (let-values ([(cr cw) (tcp-connect "localhost" 40001)])
+      (let-values ([(cr cw) (tcp-connect "localhost" portnum)])
 	(test l object-wait-multiple #f s t l r)
 	(test l object-wait-multiple #f s t l r)
 
@@ -471,6 +472,7 @@
 	  (test cr object-wait-multiple #f s t l sr cr)
 
 	  (close-output-port cw)
-	  (test sr object-wait-multiple #f s t l sr))))))
+	  (test sr object-wait-multiple #f s t l sr))))
+    (tcp-close l)))
 
 (report-errs)

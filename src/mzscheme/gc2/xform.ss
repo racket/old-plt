@@ -74,7 +74,7 @@
 (close-output-port (cadr cpp-process))
 
 (define ctok-process
-  (process (build-path (current-load-relative-directory) "ctok")))
+  (process (build-path (current-directory) "ctok")))
 
 (define (mk-error-thread proc)
   (thread (lambda ()

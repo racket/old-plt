@@ -1,23 +1,21 @@
-<< (define LIBNAME "Arrows GUI")
-   (define FILENAME "arrow-gui.ss")
-   (include "head.tinc") >>
+{ (define LIBNAME "Arrows GUI")
+  (define FILENAME "arrow-gui.ss")
+  (include "head.tinc") }
 
-<p>The teachpack <code>arrow-gui.ss</code> implements three functions: 
+<p>The teachpack <code>arrow-gui.ss</code> implements three functions:
 <menu>
-<li> <code>control : -> symbol</code> 
-     <br> to read out the current state of the message field 
+<li> <code>{(idx control)} : -> symbol</code> <br>
+     to read out the current state of the message field
 
-<li> <code>view : (union string symbol) -> true </code>
-     <br> to display its argument in the message field
+<li> <code>{(idx view)} : (union string symbol) -> true</code> <br>
+     to display its argument in the message field
 
-<li> <code>modelT = (button% event% -> true)</code>
-     <br>
-     <code>connect : modelT modelT modelT modelT -> true</code>
-     <br> to connect four controllers with the four directions in the arrow window
+<li> <code>modelT = (button% event% -> true)</code> <br>
+     <code>{(idx connect)} : modelT modelT modelT modelT -> true</code> <br>
+     to connect four controllers with the four directions in the arrow window
 </menu>
 
-
-<p>Example: 
+<p>Example:
 <pre>
 > (define (make-model dir)
    (lambda (b e)
@@ -29,9 +27,9 @@
    (make-model "left")
    (make-model "right")
    (make-model "up")
-   (make-model "down"))  
+   (make-model "down"))
 </pre>
 Now click on the four arrows. The message field will contain the current
-direction, the print-out the prior contents of the message field. 
+direction, the print-out the prior contents of the message field.
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

@@ -1,5 +1,5 @@
 #!/bin/sh
-string=? ; exec mzscheme -qr $0 "$@"
+string=? ; exec mzscheme -qgr $0 "$@"
 
 (current-directory
  (build-path (dynamic-require '(lib "plthome.ss" "setup") 'plthome)
@@ -40,7 +40,7 @@ string=? ; exec mzscheme -qr $0 "$@"
 ;; Get list of (cons name file) for library names
 (define lib-names
   (map (lambda (s)
-         (cons (cadr (or (regexp-match "\\(define *LIBNAME *\"(.*?)\"\\)"
+         (cons (cadr (or (regexp-match #rx"\\(define *LIBNAME *\"(.*?)\"\\)"
                                        (open-input-file s))
                          (error 'mkdocs "LIBNAME not found in ~s" s)))
                s))
@@ -66,18 +66,34 @@ string=? ; exec mzscheme -qr $0 "$@"
 (define (thtml-name->html s)
   (regexp-replace "[.]thtml$" s ".html"))
 
-(define |LIBLINKS|
+(define LIBLINKS
   (map (lambda (lib)
          (let ([file (thtml-name->html (cdr (assoc lib lib-names)))])
            (format "<li> <a href=~s>~a</a>\n" file lib)))
        libraries))
 
-;; Make html files
+;; Stuff for the preprocessed files
 (require (lib "mzpp.ss" "preprocessor"))
+(beg-mark "{") (end-mark "}")
+(define index-entries '())
+(define FILENAME #f)
+(define LIBNAME  #f)
+(define HTMLNAME #f)
+(define-syntax idx
+  (syntax-rules ()
+    [(_ x)
+     (begin (set! index-entries (cons (list FILENAME LIBNAME HTMLNAME `x)
+                                      index-entries))
+            (list "<a name=\""`x"\">"`x"</a>"))]))
+
+;; Make html files
 (for-each (lambda (thtml)
-            (define html (build-path dest-dir (thtml-name->html thtml)))
+            (define html (thtml-name->html thtml))
             (printf "Processing ~a...\n" thtml)
-            (with-output-to-file html (lambda () (preprocess thtml)) 'replace))
+            (set! HTMLNAME html)
+            (with-output-to-file (build-path dest-dir html)
+              (lambda () (preprocess thtml))
+              'replace))
           src-files)
 
 ;; Make hdindex file:
@@ -86,19 +102,13 @@ string=? ; exec mzscheme -qr $0 "$@"
   (with-output-to-file ifile
     (lambda ()
       (define (writeln x) (printf "~s\n" x))
+      (define (do-entry filename libname html entry)
+        (let ([entry (format "~a" entry)]
+              [title (format "~a teachpack" libname)])
+          (writeln `(,entry ,html ,entry ,title))))
       (printf "(\n")
       (let ([title "Teachpacks for \"How to Design Programs\""])
         (writeln `(,title "index.html" "HtDP" ,title)))
-      (for-each
-       (lambda (lib-name)
-         (let* ([src (cdr lib-name)]
-                [title (car lib-name)]
-                [filename
-                 (cadr (or (regexp-match "\\(define *FILENAME *\"(.*?)\"\\)"
-                                         (open-input-file src))
-                           (error 'mkdocs "Didn't find FILENAME in ~s" src)))])
-           (writeln `(,filename ,(thtml-name->html src) ,filename
-                                ,(format "~a teachpack" title)))))
-       lib-names)
+      (for-each (lambda (x) (apply do-entry x)) (reverse index-entries))
       (printf ")\n"))
     'truncate))

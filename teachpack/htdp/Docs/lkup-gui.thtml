@@ -1,28 +1,26 @@
-<< (define LIBNAME "Lkup GUI")
-   (define FILENAME "lkup-gui.ss")
-   (include "head.tinc") >>
+{ (define LIBNAME "Lkup GUI")
+  (define FILENAME "lkup-gui.ss")
+  (include "head.tinc") }
 
-<p>The teachpack <code>lkup-gui.ss</code> implements three functions: 
+<p>The teachpack <code>lkup-gui.ss</code> implements three functions:
 <menu>
-<li> <code>control : -> symbol</code> 
-     <br> to read out the name that a user typed into the query field 
+<li> <code>{(idx control)} : -> symbol</code> <br>
+     to read out the name that a user typed into the query field
 
-<li> <code>view : (union string symbol) -> true </code>
-     <br> to display its argument in the message panel 
+<li> <code>{(idx view)} : (union string symbol) -> true</code> <br>
+     to display its argument in the message panel
 
-<li> <code>modelT = (button% event% -> true)</code>
-     <br>
-     <code>connect : modelT -> true</code>
-     <br> to connect a controller with the Check button
-     <br> displays frame 
+<li> <code>modelT = (button% event% -> true)</code> <br>
+     <code>{(idx connect)} : modelT -> true</code> <br>
+     to connect a controller with the Check button displays frame
 </menu>
 
-<p>Example: 
+<p>Example:
 <pre>
-(connect 
+(connect
  (lambda (e b)
    (view (control))))
 </pre>
-This example simply mirrors what the user types in to the message field. 
+This example simply mirrors what the user types in to the message field.
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

@@ -1,51 +1,51 @@
-<< (define LIBNAME "Simple Drawing Exercises")
-   (define FILENAME "draw.ss")
-   (include "head.tinc") >>
+{ (define LIBNAME "Simple Drawing Exercises")
+  (define FILENAME "draw.ss")
+  (include "head.tinc") }
 
-The teachpack <code>draw.ss</code> provides a miniscule collection of 
+The teachpack <code>draw.ss</code> provides a miniscule collection of
 graphics functions:
 <menu>
-<li><code> start</code> : Number Number -> true; <br>
+<li><code>{(idx start)}</code> : Number Number -> true; <br>
 opens a canvas of specified size
-<li><code> start/cartesian-plane</code> : Number Number -> true; <br>
+<li><code>{(idx start/cartesian-plane)}</code> : Number Number -> true; <br>
 opens a canvas of specified size and draws a Cartesian plane
-<li><code> stop </code> : -> true (no arguments);  <br>
+<li><code>{(idx stop)}</code> : -> true (no arguments);  <br>
 closes the canvas
-<li><code> draw-circle</code> : Posn Number Symbol -> true; <br> 
+<li><code>{(idx draw-circle)}</code> : Posn Number Symbol -> true; <br>
 draws a circle at posn with given radius and color
-<li><code> draw-solid-disk</code> : Posn Number Symbol -> true; <br> 
+<li><code>{(idx draw-solid-disk)}</code> : Posn Number Symbol -> true; <br>
 draws a disk at posn with given radius and color
-<li><code> draw-solid-rect</code> : Posn Number Number Symbol -> true; <br>
+<li><code>{(idx draw-solid-rect)}</code> : Posn Number Number Symbol -> true; <br>
 draws a rectangle at posn with given width, height, and color
-<li><code> draw-solid-line</code> : Posn Posn Symbol -> true; <br>
+<li><code>{(idx draw-solid-line)}</code> : Posn Posn Symbol -> true; <br>
 draws a line from one posn to other
-<li><code> draw-solid-string</code> : Posn String -> true; <br>
+<li><code>{(idx draw-solid-string)}</code> : Posn String -> true; <br>
 draws a string at posn
-<li><code> wait-for-mouse-click</code> : -> Posn; <br>
-waits for the user to click on the mouse, within the window (the operation 
+<li><code>{(idx wait-for-mouse-click)}</code> : -> Posn; <br>
+waits for the user to click on the mouse, within the window (the operation
 is a quasi-constructor for posns)
-<li><code> get-key-event</code> : -> false or Character or Symbol ; <br>
-checks whether the user has pressed a key within the window; its result is 
-<ol> 
- <li><code>false</code>, if the user didn't press a key;  
- <li><code>Character</code>, if the user pressed an alphanumeric key; 
- <li><code>Symbol</code>, if the user pressed, for example, an arror key: 
+<li><code>{(idx get-key-event)}</code> : -> false or Character or Symbol ; <br>
+checks whether the user has pressed a key within the window; its result is
+<ol>
+ <li><code>false</code>, if the user didn't press a key;
+ <li><code>Character</code>, if the user pressed an alphanumeric key;
+ <li><code>Symbol</code>, if the user pressed, for example, an arror key:
  <code>'up</code> <code>'down</code>  <code>'left</code> <code>'right</code>
 </ol>
 <br>
-<li><code> sleep-for-a-while</code> : Number -> true; <br>
-suspends evaluation for the given number of seconds 
+<li><code>{(idx sleep-for-a-while)}</code> : Number -> true; <br>
+suspends evaluation for the given number of seconds
 <br>
-<li>The following symbols are recognized as colors: 
+<li>The following symbols are recognized as colors:
 <blockquote>
-<code> 'white</code>
-<code> 'yellow</code>
-<code> 'red</code>
-<code> 'blue</code>
-<code> 'green</code>
-<code> 'black</code>
+<code>'white</code>
+<code>'yellow</code>
+<code>'red</code>
+<code>'blue</code>
+<code>'green</code>
+<code>'black</code>
 </blockquote>
-Applying the functions to any other symbol triggers an error. 
+Applying the functions to any other symbol triggers an error.
 </menu>
 <br>
 <br>
@@ -56,9 +56,9 @@ The teachpack also provides <code>clear-</code> operations for each
 <br>
 <br>
 <br>
-The color argument for all functions are optional. 
+The color argument for all functions are optional.
 
-<p>Sample session: Set teachpack to <code> draw.ss </code> and execute:
+<p>Sample session: Set teachpack to <code>draw.ss</code> and execute:
 <br> <code> > (start 500 500) </code>
 <br> <code> > (draw-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
@@ -72,11 +72,11 @@ The color argument for all functions are optional.
 <br> <code> > (stop) </code>
 <br> <code> > </code>
 <br>
-This session opens a window, draws a red disk, clears it, sleeps for a second, 
-and then repeats. The last expression closes the canvas. 
+This session opens a window, draws a red disk, clears it, sleeps for a second,
+and then repeats. The last expression closes the canvas.
 
 See <tt>http://www.ccs.neu.edu/home/matthias/HtDP/Extended/</tt>
-for an example on how to use <code>get-key-event</code>. The program is 
+for an example on how to use <code>get-key-event</code>. The program is
 the basis for an extended exercise under development.
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

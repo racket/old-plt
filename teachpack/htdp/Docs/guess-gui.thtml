@@ -1,28 +1,28 @@
-<< (define LIBNAME "Guess GUI")
-   (define FILENAME "guess-gui.ss")
-   (include "head.tinc") >>
+{ (define LIBNAME "Guess GUI")
+  (define FILENAME "guess-gui.ss")
+  (include "head.tinc") }
 
-<p>The teachpack <code>guess-gui.ss</code> implements three functions: 
+<p>The teachpack <code>guess-gui.ss</code> implements three functions:
 <menu>
-<li> <code>control : N -> symbol</code> 
+<li> <code>{(idx control)} : N -> symbol</code>
      <br> to read out the i-th guess choice, starting with 0
 
-<li> <code>view : (union string symbol) -> true </code>
-     <br> to display its argument in the message panel 
+<li> <code>{(idx view)} : (union string symbol) -> true </code>
+     <br> to display its argument in the message panel
 
 <li> <code>modelT = (button% event% -> true)</code>
      <br>
-     <code>connect : modelT -> true</code>
+     <code>{(idx connect)} : modelT -> true</code>
      <br> to connect a controller with the Check button
-     <br> displays frame 
+     <br> displays frame
 </menu>
 
 <p>Example:
 <pre>
 (connect (lambda (e b)
-           (begin 
+           (begin
              (printf "0th digit: ~s~n" (control 0))
              (view (control 0)))))
 </pre>
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

@@ -1,9 +1,9 @@
-<< (define LIBNAME "Show Queen")
-   (define FILENAME "show-queen.ss")
-   (include "head.tinc") >>
+{ (define LIBNAME "Show Queen")
+  (define FILENAME "show-queen.ss")
+  (include "head.tinc") }
 
 <p>The teachpack <code>show-queen.ss</code> provides the
-operation <code>show-queen</code>. It implements a GUI for
+operation <code>{(idx show-queen)}</code>. It implements a GUI for
 exploring the n-queens problem.</p>
 
 <p>The function <code>show-queen</code> consumes a list of
@@ -13,10 +13,10 @@ lists must have the same length as the outer list. The
 and the <code>false</code>s correspond to empty squares. The
 function returns nothing.
 
-In the GUI window that <code>show-queen</code> opens, the
+<p>In the GUI window that <code>show-queen</code> opens, the
 red and orange dots show where the queens are. The green dot
 shows where the mouse cursor is. Each queen that threatens
 the green spot is shown in red, and the queens that do not
 threaten the green spot are shown in orange.
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

@@ -6,6 +6,6 @@
 <h1>Teachpacks for How to Design Programs</h1>
 
 <ul>
-<< LIBLINKS ; libraries should be set before processing this file >></ul>
+{ LIBLINKS ; libraries should be set before processing this file }</ul>
 
-<<(include "foot.tinc")>>
+{(include "foot.tinc")}

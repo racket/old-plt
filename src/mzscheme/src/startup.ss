@@ -2436,9 +2436,9 @@
 (module #%define #%kernel
   (require-for-syntax #%kernel #%stxcase-scheme #%stx #%qqstx)
 
-  (provide define define-syntax)
+  (provide define define-syntax define-for-syntax begin-for-syntax)
 
-  (define-syntaxes (define define-syntax)
+  (define-syntaxes (define define-syntax define-for-syntax)
     (let ([mk
 	   (lambda (define-values-stx)
 	     (lambda (stx)
@@ -2542,7 +2542,56 @@
 		       stx))
 		    (quasisyntax/loc stx (#,define-values-stx (#,id) #,(mk-rhs #'body))))])))])
       (values (mk #'define-values)
-	      (mk #'define-syntaxes)))))
+	      (mk #'define-syntaxes)
+	      (mk #'define-values-for-syntax))))
+
+  (define-syntaxes (begin-for-syntax)
+    (lambda (stx)
+      (unless (memq (syntax-local-context) '(module top-level))
+	(raise-syntax-error #f "allowed only at the top-level or a module top-level" stx))
+      (syntax-case stx ()
+	[(_) #'(begin)]
+	[(_ elem elems ...)
+	 ;; We peel off just the first one so that someone else can
+	 ;; worry about the fact that properly expanding the second
+	 ;; things might depend somehow on the first thing.
+	 (with-syntax ([elem  
+			(let ([e (local-transformer-expand
+				  #'elem
+				  (syntax-local-context)
+				  (syntax->list
+				   #'(begin
+				       define-values
+				       define-syntaxes
+				       define-values-for-syntax
+				       set!
+				       let-values
+				       let*-values
+				       letrec-values
+				       lambda
+				       case-lambda
+				       if
+				       quote
+				       letrec-syntaxes+values
+				       fluid-let-syntax
+				       with-continuation-mark
+				       #%app
+				       #%top
+				       #%datum)))])
+			  (syntax-case* e (begin define-values require require-for-template) 
+					module-transformer-identifier=?
+			    [(begin v ...)
+			     #'(begin-for-syntax v ...)]
+			    [(define-values (id ...) expr)
+			     #'(define-values-for-syntax (id ...) expr)]
+			    [(require v ...)
+			     #'(require-for-syntax v ...)]
+			    [(require-for-template v ...)
+			     #'(require v ...)]
+			    [other 
+			     #'(define-values-for-syntax () (begin other (values)))]))]
+		       [rest (syntax/loc stx (begin-for-syntax elems ...))])
+	   (syntax/loc stx (begin elem rest)))]))))
 
 ;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax

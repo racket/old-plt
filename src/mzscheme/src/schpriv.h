@@ -1514,7 +1514,8 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
 #define MODULE_EXPD        7
 #define REQUIRE_EXPD       8
 #define QUOTE_SYNTAX_EXPD  9
-#define _COUNT_EXPD_       10
+#define DEFINE_FOR_SYNTAX_EXPD 10
+#define _COUNT_EXPD_       11
 
 #define scheme_register_syntax(i, fr, fv, fe, pa) \
      (scheme_syntax_resolvers[i] = fr, \
@@ -1652,6 +1653,7 @@ Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_make_empty_env(void);
 void scheme_prepare_exp_env(Scheme_Env *env);
+void scheme_prepare_template_env(Scheme_Env *env);
 
 int scheme_used_app_only(Scheme_Comp_Env *env, int which);
 int scheme_used_ever(Scheme_Comp_Env *env, int which);
@@ -1722,17 +1724,19 @@ struct Scheme_Env {
   /* First two are passed from module to module-begin: */
   Scheme_Object *rename;    /* module rename record */
   Scheme_Object *et_rename; /* exp-time rename record */
+  Scheme_Object *tt_rename; /* template-time rename record */
 
   Scheme_Bucket_Table *syntax;
   struct Scheme_Env *exp_env;
+  struct Scheme_Env *template_env;
 
   Scheme_Hash_Table *shadowed_syntax; /* top level only */
 
   /* Per-instance: */
   long phase;
   Scheme_Object *link_midx;
-  Scheme_Object *require_names, *et_require_names; /* for namespace-attach */
-  char running, et_running, lazy_syntax, attached;
+  Scheme_Object *require_names, *et_require_names, *tt_require_names; /* resolved */
+  char running, et_running, tt_running, lazy_syntax, attached;
 
   Scheme_Bucket_Table *toplevel;
   Scheme_Object *modchain; /* Vector of:
@@ -1760,6 +1764,7 @@ typedef struct Scheme_Module
 
   Scheme_Object *et_requires; /* list of module access paths */
   Scheme_Object *requires;    /* list of module access paths */
+  Scheme_Object *tt_requires; /* list of module access paths */
 
   Scheme_Invoke_Proc prim_body;
   Scheme_Invoke_Proc prim_et_body;
@@ -1767,8 +1772,7 @@ typedef struct Scheme_Module
   Scheme_Object *body;        /* or data, if prim_body */
   Scheme_Object *et_body;     /* list of (vector list-of-names expr depth-int resolve-prefix) */
 
-  int functional;
-  int et_functional;
+  int functional, et_functional, tt_functional;
 
   Scheme_Object **provides;          /* symbols (extenal names) */
   Scheme_Object **provide_srcs;      /* module access paths, #f for self */
@@ -1797,7 +1801,7 @@ typedef struct Scheme_Module
 
   Scheme_Env *primitive;
 
-  Scheme_Object *rn_stx, *et_rn_stx;
+  Scheme_Object *rn_stx, *et_rn_stx, *tt_rn_stx;
 } Scheme_Module;
 
 typedef struct Scheme_Modidx {

@@ -670,15 +670,18 @@ namespace_val {
 
   gcMARK(e->rename);
   gcMARK(e->et_rename);
+  gcMARK(e->tt_rename);
 
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
+  gcMARK(e->template_env);
 
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
   gcMARK(e->require_names);
   gcMARK(e->et_require_names);
+  gcMARK(e->tt_require_names);
 
   gcMARK(e->toplevel);
   gcMARK(e->modchain);
@@ -789,6 +792,7 @@ module_val {
 
   gcMARK(m->rn_stx);
   gcMARK(m->et_rn_stx);
+  gcMARK(m->tt_rn_stx);
 
   gcMARK(m->primitive);
  size:

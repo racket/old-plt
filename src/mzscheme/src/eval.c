@@ -147,6 +147,7 @@ static Scheme_Object *compile(int argc, Scheme_Object *argv[]);
 static Scheme_Object *compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand(int argc, Scheme_Object **argv);
 static Scheme_Object *local_expand(int argc, Scheme_Object **argv);
+static Scheme_Object *local_transformer_expand(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_to_top_form(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
@@ -342,6 +343,11 @@ scheme_init_eval (Scheme_Env *env)
   scheme_add_global_constant("local-expand", 
 			     scheme_make_prim_w_arity(local_expand, 
 						      "local-expand",
+						      3, 3), 
+			     env);
+  scheme_add_global_constant("local-transformer-expand", 
+			     scheme_make_prim_w_arity(local_transformer_expand, 
+						      "local-transformer-expand",
 						      3, 3), 
 			     env);
   scheme_add_global_constant("expand-once", 
@@ -4344,7 +4350,7 @@ Scheme_Object *scheme_get_stop_expander(void)
 }
 
 static Scheme_Object *
-local_expand(int argc, Scheme_Object **argv)
+do_local_expand(const char *name, int for_stx, int argc, Scheme_Object **argv)
 {
   Scheme_Comp_Env *env;
   Scheme_Object *l, *local_mark;
@@ -4353,7 +4359,12 @@ local_expand(int argc, Scheme_Object **argv)
   env = scheme_current_thread->current_local_env;
 
   if (!env)
-    scheme_raise_exn(MZEXN_FAIL_CONTRACT, "local-expand: not currently transforming");
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, "%s: not currently transforming", name);
+
+  if (for_stx) {
+    scheme_prepare_exp_env(env->genv);
+    env = scheme_new_comp_env(env->genv->exp_env, 0);
+  }
 
   if (SAME_OBJ(argv[1], module_symbol))
     kind = SCHEME_MODULE_BEGIN_FRAME;
@@ -4364,7 +4375,7 @@ local_expand(int argc, Scheme_Object **argv)
   else if (scheme_proper_list_length(argv[1]) > 0)
     kind = SCHEME_INTDEF_FRAME;
   else  {
-    scheme_wrong_type("local-expand", 
+    scheme_wrong_type(name,
 		      "'expression, 'module, 'top-level, or non-empty list",
 		      1, argc, argv);
     return NULL;
@@ -4394,7 +4405,7 @@ local_expand(int argc, Scheme_Object **argv)
     
     i = SCHEME_CAR(l);
     if (!SCHEME_STX_SYMBOLP(i)) {
-      scheme_wrong_type("local-expand", "list of identifier syntax", 2, argc, argv);
+      scheme_wrong_type(name, "list of identifier syntax", 2, argc, argv);
       return NULL;
     }
     
@@ -4402,7 +4413,7 @@ local_expand(int argc, Scheme_Object **argv)
       scheme_set_local_syntax(pos++, i, stop_expander, env);
   }
   if (!SCHEME_NULLP(l)) {
-    scheme_wrong_type("local-expand", "list of identifier syntax", 2, argc, argv);
+    scheme_wrong_type(name, "list of identifier syntax", 2, argc, argv);
     return NULL;
   }
 
@@ -4427,6 +4438,18 @@ local_expand(int argc, Scheme_Object **argv)
   }
 
   return l;
+}
+
+static Scheme_Object *
+local_expand(int argc, Scheme_Object **argv)
+{
+  return do_local_expand("local-expand", 0, argc, argv);
+}
+
+static Scheme_Object *
+local_transformer_expand(int argc, Scheme_Object **argv)
+{
+  return do_local_expand("local-transformer-expand", 1, argc, argv);
 }
 
 static Scheme_Object *

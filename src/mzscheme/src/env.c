@@ -66,6 +66,7 @@ static Scheme_Object *namespace_set_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *namespace_undefine_variable(int, Scheme_Object *[]);
 static Scheme_Object *namespace_mapped_symbols(int, Scheme_Object *[]);
 static Scheme_Object *namespace_module_registry(int, Scheme_Object *[]);
+static Scheme_Object *now_transforming(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
@@ -430,6 +431,11 @@ static void make_init_env(void)
 			     env);
 
 
+  scheme_add_global_constant("syntax-transforming?", 
+			     scheme_make_prim_w_arity(now_transforming,
+						      "syntax-transforming?",
+						      0, 0),
+			     env);
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
 						      "syntax-local-value",
@@ -653,6 +659,36 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     eenv->modchain = modchain;
 
     env->exp_env = eenv;
+    eenv->template_env = env;
+  }
+}
+
+void scheme_prepare_template_env(Scheme_Env *env)
+{
+  if (!env->template_env) {
+    Scheme_Env *eenv;
+    Scheme_Object *modchain;
+
+    eenv = make_env(NULL, -1, 7);
+    eenv->phase = env->phase - 1;
+
+    eenv->module = env->module;
+    eenv->module_registry = env->module_registry;
+
+    modchain = SCHEME_VEC_ELS(env->modchain)[2];
+    if (SCHEME_FALSEP(modchain)) {
+      Scheme_Hash_Table *prev_modules;
+
+      prev_modules = scheme_make_hash_table(SCHEME_hash_ptr);
+      modchain = scheme_make_vector(3, scheme_false);
+      SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)prev_modules;
+      SCHEME_VEC_ELS(env->modchain)[2] = modchain;
+      SCHEME_VEC_ELS(modchain)[1] = env->modchain;
+    }
+    eenv->modchain = modchain;
+
+    env->template_env = eenv;
+    eenv->exp_env = env;
   }
 }
 
@@ -733,8 +769,14 @@ void scheme_clean_dead_env(Scheme_Env *env)
   Scheme_Object *modchain, *next;
 
   if (env->exp_env) {
+    env->exp_env->template_env = NULL;
     scheme_clean_dead_env(env->exp_env);
     env->exp_env = NULL;
+  }
+  if (env->template_env) {
+    env->template_env->exp_env = NULL;
+    scheme_clean_dead_env(env->template_env);
+    env->template_env = NULL;
   }
 
   env->modvars = NULL;
@@ -2636,6 +2678,14 @@ static Scheme_Object *namespace_module_registry(int argc, Scheme_Object **argv)
     scheme_wrong_type("namespace-module-registry", "namespace", 0, argc, argv);
 
   return (Scheme_Object *)((Scheme_Env *)argv[0])->module_registry;
+}
+
+static Scheme_Object *
+now_transforming(int argc, Scheme_Object *argv[])
+{
+  return (scheme_current_thread->current_local_env
+	  ? scheme_true
+	  : scheme_false);
 }
 
 static Scheme_Object *

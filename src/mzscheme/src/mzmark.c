@@ -1734,15 +1734,18 @@ int namespace_val_MARK(void *p) {
 
   gcMARK(e->rename);
   gcMARK(e->et_rename);
+  gcMARK(e->tt_rename);
 
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
+  gcMARK(e->template_env);
 
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
   gcMARK(e->require_names);
   gcMARK(e->et_require_names);
+  gcMARK(e->tt_require_names);
 
   gcMARK(e->toplevel);
   gcMARK(e->modchain);
@@ -1763,15 +1766,18 @@ int namespace_val_FIXUP(void *p) {
 
   gcFIXUP(e->rename);
   gcFIXUP(e->et_rename);
+  gcFIXUP(e->tt_rename);
 
   gcFIXUP(e->syntax);
   gcFIXUP(e->exp_env);
+  gcFIXUP(e->template_env);
 
   gcFIXUP(e->shadowed_syntax);
 
   gcFIXUP(e->link_midx);
   gcFIXUP(e->require_names);
   gcFIXUP(e->et_require_names);
+  gcFIXUP(e->tt_require_names);
 
   gcFIXUP(e->toplevel);
   gcFIXUP(e->modchain);
@@ -2006,6 +2012,7 @@ int module_val_MARK(void *p) {
 
   gcMARK(m->rn_stx);
   gcMARK(m->et_rn_stx);
+  gcMARK(m->tt_rn_stx);
 
   gcMARK(m->primitive);
   return
@@ -2042,6 +2049,7 @@ int module_val_FIXUP(void *p) {
 
   gcFIXUP(m->rn_stx);
   gcFIXUP(m->et_rn_stx);
+  gcFIXUP(m->tt_rn_stx);
 
   gcFIXUP(m->primitive);
   return

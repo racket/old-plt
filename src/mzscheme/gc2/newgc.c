@@ -1605,9 +1605,11 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark,
   fixup_table[tag] = fixup;
   atomic_table[tag] = is_atomic;
 #ifdef NEWGC_ACCNT
-  thread_marker = mark;
-  mark_table[tag] = (Mark_Proc)size;
-  atomic_table[tag] = 1;
+  if(tag == scheme_thread_type) {
+    thread_marker = mark;
+    mark_table[tag] = (Mark_Proc)size;
+    atomic_table[tag] = 1;
+  }
 #endif
 }
 
@@ -2408,7 +2410,7 @@ static void gc_collect(int force_full) {
     if(GC_collect_start_callback) GC_collect_start_callback();
 
     gc_prepare();
-/*     printf("Collection #%li (topgen %i, tla_heap %p, tla_regions %p)\n",  */
+/*     printf("Collection #%li (topgen %i, tla_heap %p, tla_regions %p)\n",   */
 /* 	   gc_numcollects, gc_topgen, tla_heap, tla_regions); fflush(stdout); */
 /*     debug_dump_heap(); */
     rq_mark();
@@ -2568,6 +2570,7 @@ void flush_freed_pages(void)
 #ifndef MAP_ANON
 int fd, fd_created;
 #endif
+static int page_size; /* OS page size */
 
 /* Instead of immediaately freeing pages with munmap---only to mmap
    them again---we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
@@ -2707,8 +2710,6 @@ void *malloc_pages(size_t len, size_t alignment)
     r = real_r;
   }
 
-  page_allocations += len;
-
   return r;
 }
 
@@ -2719,8 +2720,6 @@ void free_pages(void *p, size_t len)
   /* Round up to nearest page: */
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
-
-  page_allocations -= len;
 
   /* Try to free pages in larger blocks, since the OS may be slow. */
 

@@ -190,7 +190,6 @@
 					(zodiac:parsed->raw expanded))]
 			 [_ '(printf "annotated: ~a~n~n" annotated)])
 		    annotated)))])
-	(pretty-print annotated) (newline)
 	(primitive-eval annotated)))))
 
 (define mzrice-eval

@@ -488,16 +488,14 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
   s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
 
-  if (w > w2) {
-    ispan = (w / w2) - 1;    
-  } else {
+  if (w <= w2)
     ispan = 0;
-  }
-  if (h > h2) {
-    jspan = (h / h2) - 1;
-  } else {
+  else
+    ispan = (w / w2) - 1;
+  if (h <= h2)
     jspan = 0;
-  }
+  else
+    jspan = (h / h2) - 1;
   span = ((ispan + jspan) / 2) + 1;
 
 #ifdef wx_msw
@@ -544,9 +542,9 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
       for (xj = startj; xj <= endj; xj++) {
 	for (xi = starti; xi <= endi; xi++) {
-	  dx = ((xi * xs) - i);
-	  dy = ((xj * ys) - j);
-	  wt = ((double)1 / (0.001 + (approx_dist(dx, dy) / span)));
+	  dx = ((xi * xs) - i - (ispan >> 1));
+	  dy = ((xj * ys) - j - (jspan >> 1));
+	  wt = span / (0.001 + approx_dist(dx, dy));
 	  p = ((xj * w) + xi) * 4;
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);

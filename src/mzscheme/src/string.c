@@ -364,7 +364,7 @@ long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **a
 
 /* locals */
 
-Scheme_Object *
+static Scheme_Object *
 string_p (int argc, Scheme_Object *argv[])
 {
   return (SCHEME_STRINGP(argv[0]) ? scheme_true : scheme_false);

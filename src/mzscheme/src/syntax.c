@@ -393,8 +393,8 @@ scheme_make_compiled_syntax(Scheme_Syntax *proc,
   else
     syntax = scheme_alloc_stubborn_object();
   syntax->type = scheme_syntax_compiler_type;
-  SCHEME_SYNTAX(syntax) = proc;
-  SCHEME_SYNTAX_EXP(syntax) = eproc;
+  SCHEME_SYNTAX(syntax) = (Scheme_Object *)proc;
+  SCHEME_SYNTAX_EXP(syntax) = (Scheme_Object *)eproc;
 
   if (!scheme_starting_up)
     scheme_end_stubborn_change((void *)syntax);

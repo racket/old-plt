@@ -129,10 +129,6 @@
                (else
                 (do-match-forward (node-right node) (+ start (node-token-length node)) new-stack escape)))))))
       
-      
-      (define/public (match-backward pos)
-        (values #f #f #f))
-      
       (define/public (print)
         (for-each (lambda (x) (display (cons (vector-ref x 0) (car (vector-ref x 2)))))
                   (to-list tree))

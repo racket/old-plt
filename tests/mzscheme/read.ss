@@ -81,6 +81,8 @@
 (err/rt-test (readstr "( . 8)") (readerrtype exn:read?))
 (err/rt-test (readstr "(0 . 8 9)") (readerrtype exn:read?))
 (err/rt-test (readstr "( . 8 9)") (readerrtype exn:read?))
+(err/rt-test (readstr "(1 . 2 3 . 4)") (readerrtype exn:read?))
+(err/rt-test (readstr "(1 . 2 . 3 . 4)") (readerrtype exn:read?))
 (err/rt-test (readstr "#(8 . )") (readerrtype exn:read?))
 (err/rt-test (readstr "#( . )") (readerrtype exn:read?))
 (err/rt-test (readstr "#( . 8)") (readerrtype exn:read?))
@@ -88,12 +90,17 @@
 (err/rt-test (readstr "#( . 8 9)") (readerrtype exn:read?))
 (err/rt-test (readstr "#( 8 . 9)") (readerrtype exn:read?))
 (err/rt-test (readstr "#( 8 . (9))") (readerrtype exn:read?))
+(err/rt-test (readstr "#(1 . 2 . 3)") (readerrtype exn:read?))
 
 (err/rt-test (readstr "#Q") (readerrtype exn:read?))
 (err/rt-test (readstr "##") (readerrtype exn:read?))
 (err/rt-test (readstr "#?") (readerrtype exn:read?))
 (err/rt-test (readstr "#-1()") (readerrtype exn:read?))
 (err/rt-test (readstr "#<a>") (readerrtype exn:read?))
+
+(test '(1 2 3) readstr "(2 . 1 . 3)")
+(test '(1 2 3 4) readstr "(2 . 1 . 3 4)")
+(test '(1 2 3 4) readstr "(2 3 . 1 . 4)")
 
 (test 2 vector-length (readstr "#2()"))
 (test 0 vector-ref (readstr "#2()") 1)

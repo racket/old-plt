@@ -70,7 +70,7 @@
   
   (define (compile-zo path)
     ((trace) (format "~acompiling: ~a" (indent) path))
-    (parameterize ([indent (string-append "  " indent)])
+    (parameterize ([indent (string-append "  " (indent))])
       (let ([zo-name (string-append (get-compilation-path path) ".zo")])
         (cond
          [(and (file-exists? zo-name) (trust-existing-zos)) (touch zo-name)]

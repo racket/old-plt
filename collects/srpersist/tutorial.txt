@@ -81,15 +81,18 @@ using the existing connection handle:
 We'll see that we can reuse this statement handle
 for several SQL queries.
 
-The database system may contain several databases.
-SQL has the USE statement to choose among them.
-In SrPersist, we write:
+When you connected to the database system, you 
+chose some particular database.  The database system 
+may contain several databases.  SQL has the USE statement 
+to choose among them.  In SrPersist, we write:
 
     (prepare hstmt "USE test_db")
     (execute hstmt)
 
-You can think of prepare as performing a compilation
-step; execute runs the resulting code.
+Note that some database systems, such as Microsoft Access, 
+do not allow you to switch databases in this way.  You can 
+think of prepare as performing a compilation step; execute 
+runs the resulting code.
 
 Now suppose the database test_db contains a table 
 "people" that has columns for name, a string, and 

@@ -324,12 +324,13 @@
 		       [ll locals-list]
 		       [bl globals-list])
 	  (fprintf c-port
-		   "static ~a ~a_~a(Scheme_Env * env~a)~n{~n"
+		   "static ~a ~a_~a(Scheme_Env * env~a~a)~n{~n"
 		   (if return? "Scheme_Object *" "void")
 		   kind i
+		   (if (or per-load? module) ", Scheme_Per_Load_Statics *PLS" "")
 		   (if module
 		       (format ", Scheme_Object *self_modidx, Scheme_Per_Invoke_Statics_~a *PMIS" module)
-		       (if per-load? ", Scheme_Per_Load_Statics *PLS" "")))
+		       ""))
 	  (when (> max-arity 0)
 	    (fprintf c-port
 		     "~aScheme_Object * arg[~a];~n"
@@ -1122,9 +1123,11 @@
 			(lambda (target val process-val?)
 			  (let ([sym
 				 (vm->c:make-symbol-const-string 
-				  (compiler:get-symbol-const! #f (zodiac:varref-var target)))])
-			    (emit "scheme_install_macro(scheme_global_keyword_bucket(~a, SCHEME_CURRENT_ENV(pr)), "
-				  sym)
+				  (compiler:get-symbol-const! #f (zodiac:varref-var target)))]
+				[in-module? (varref:has-attribute? target varref:in-module)])
+			    (emit "scheme_install_macro(scheme_global_keyword_bucket(~a, ~a), "
+				  sym
+				  (if in-module? "env" "SCHEME_CURRENT_ENV(pr)"))
 			    (if process-val? 
 				(process val indent-level #f #t)
 				(emit val))

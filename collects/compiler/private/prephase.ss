@@ -459,7 +459,8 @@
 		      (zodiac:make-define-syntaxes-form 
 		       (zodiac:zodiac-stx ast)
 		       (zodiac:parsed-back ast)
-		       (zodiac:define-syntaxes-form-names ast)
+		       (map (lambda (e) (prephase! e in-mod? #t #f))
+			    (zodiac:define-syntaxes-form-names ast))
 		       (prephase! (zodiac:define-syntaxes-form-expr ast)
 				  in-mod?
 				  #t (zodiac:define-syntaxes-form-names ast)))]

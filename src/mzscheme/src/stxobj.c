@@ -222,9 +222,15 @@ Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
   return v;
 }
 
-Scheme_Object *scheme_make_module_rename()
+Scheme_Object *scheme_make_module_rename(int for_top)
 {
-  return (Scheme_Object *)scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  Scheme_Hash_Table *ht;
+
+  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  if (for_top)
+    scheme_add_to_table(ht, (const char *)scheme_make_integer(0), scheme_false, 0);
+  
+  return (Scheme_Object *)ht;
 }
 
 void scheme_extend_module_rename(Scheme_Object *mrn,
@@ -414,17 +420,22 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
     } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && !lexonly) {
       /* Module rename: */
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      Scheme_Object *rename;
-
-      rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
-      if (rename) {
-	/* Match: set result for the case of no lexical capture: */
-	result = SCHEME_CAR(rename);
-      } else {
-	rename = scheme_lookup_in_table(ht, (const char *)scheme_false);
+      if (SCHEME_FALSEP(result) 
+	  /* A 0 in the table is a flag: this is a top-level rename,
+	     which doesn't override a later one. */
+	  || !scheme_lookup_in_table(ht, (const char *)scheme_make_integer(0))) {
+	Scheme_Object *rename;
+	
+	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
 	if (rename) {
-	  /* Match on default: */
+	  /* Match: set result for the case of no lexical capture: */
 	  result = SCHEME_CAR(rename);
+	} else {
+	  rename = scheme_lookup_in_table(ht, (const char *)scheme_false);
+	  if (rename) {
+	    /* Match on default: */
+	    result = SCHEME_CAR(rename);
+	  }
 	}
       }
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
@@ -462,24 +473,32 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *result;
 
-  result = always ? SCHEME_STX_VAL(a) : NULL;
+  result = NULL;
 
   while (1) {
-    if (SCHEME_NULLP(wraps))
-      return result; /* top-level */
-    else if (SCHEME_HASHTP(SCHEME_CAR(wraps))) {
-      /* Module rename: */
+    if (SCHEME_NULLP(wraps)) {
+      if (!result && always)
+	return SCHEME_STX_VAL(a);
+      else
+	return result;
+    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps))) {
       Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      Scheme_Object *rename;
-
-      rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
-      if (rename) {
-	/* Match: set result: */
-	result = SCHEME_CDR(rename);
-      } else if (always) {
-	if (scheme_lookup_in_table(ht, (const char *)scheme_false)) {
-	  /* There's a default module mapping: */
-	  result = SCHEME_STX_VAL(a);
+      if (!result
+	  /* A 0 in the table is a flag: this is a top-level rename,
+	     which doesn't override a later one. */
+	  || !scheme_lookup_in_table(ht, (const char *)scheme_make_integer(0))) {
+	/* Module rename: */
+	Scheme_Object *rename;
+	
+	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
+	if (rename) {
+	  /* Match: set result: */
+	  result = SCHEME_CDR(rename);
+	} else {
+	  if (scheme_lookup_in_table(ht, (const char *)scheme_false)) {
+	    /* There's a default module mapping: */
+	    result = SCHEME_STX_VAL(a);
+	  }
 	}
       }
     }

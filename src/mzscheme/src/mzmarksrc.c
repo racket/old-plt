@@ -9,7 +9,9 @@ variable_obj {
   gcMARK(b->val);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
+  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
 local_obj {

@@ -307,13 +307,19 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func f);
 #define GLOB_IS_PRIMITIVE 4
 #define GLOB_IS_PERMANENT 8
 #define GLOB_HAS_REF_ID 16
+#define GLOB_HAS_HOME_PTR 32
 
 typedef struct {
   Scheme_Bucket bucket;
   short flags, id;
-} Scheme_Bucket_With_Const_Flag;
+} Scheme_Bucket_With_Flags;
 
-typedef Scheme_Bucket_With_Const_Flag Scheme_Bucket_With_Ref_Id;
+typedef Scheme_Bucket_With_Flags Scheme_Bucket_With_Ref_Id;
+
+typedef struct {
+  Scheme_Bucket_With_Ref_Id bucket;
+  Scheme_Env *home;
+} Scheme_Bucket_With_Home;
 
 Scheme_Object *
 scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
@@ -399,7 +405,7 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
-Scheme_Object *scheme_make_module_rename();
+Scheme_Object *scheme_make_module_rename(int for_top);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
@@ -1120,7 +1126,7 @@ typedef struct Scheme_Comp_Env
   short flags; /* used for expanding/compiling */
   Scheme_Object *uid; /* renaming symbol for syntax */
   Scheme_Env *genv; /* run-time environment */
-  Scheme_Env *eenv; /* expansion-time environment */
+  Scheme_Hash_Table *ok_modules; /* available modules, or NULL if all ok */
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
   struct Scheme_Object **renames;

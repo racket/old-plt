@@ -259,13 +259,15 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
   } else {
     size_t bsize;
 
+    if (table->with_home)
+      bsize = sizeof(Scheme_Bucket_With_Home);
 #ifndef MZ_PRECISE_GC
-    if (!table->has_constants)
+    else if (!table->has_constants)
       bsize = sizeof(Scheme_Bucket);
     else if (table->has_constants != 2)
-      bsize = sizeof(Scheme_Bucket_With_Const_Flag);
-    else
+      bsize = sizeof(Scheme_Bucket_With_Flags);
 #endif
+    else
       bsize = sizeof(Scheme_Bucket_With_Ref_Id);
 
 #if USE_FOREVER
@@ -277,8 +279,8 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 
     bucket->type = scheme_variable_type;
 
-    if (table->has_constants)
-      ((Scheme_Bucket_With_Const_Flag *)bucket)->flags = 0;
+    if (bsize == sizeof(Scheme_Bucket_With_Home))
+      ((Scheme_Bucket_With_Flags *)bucket)->flags = GLOB_HAS_HOME_PTR;
 
     if (table->weak) {
 #ifdef MZ_PRECISE_GC
@@ -346,7 +348,7 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
 #endif
 
   if (table->has_constants
-      && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
+      && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
       && b->val)
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
 		     "define: cannot redefine constant %S", 
@@ -355,7 +357,7 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
   if (val)
     b->val = val;
   if (constant && table->has_constants)
-    ((Scheme_Bucket_With_Const_Flag *)b)->flags |= GLOB_IS_CONST;
+    ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_IS_CONST;
 }
 
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b)

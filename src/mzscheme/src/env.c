@@ -443,6 +443,8 @@ static Scheme_Env *make_env(Scheme_Env *base)
   Scheme_Env *env;
 
   toplevel = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
+  toplevel->with_home = 1;
+
   syntax = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
   if (base)
     modules = base->modules;
@@ -473,7 +475,6 @@ static Scheme_Env *make_env(Scheme_Env *base)
   env->init->num_bindings = 0;
   env->init->next = NULL;
   env->init->genv = env;
-  env->init->eenv = env;
   init_compile_data(env->init);
 
   return env;
@@ -496,14 +497,13 @@ scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
 			    Scheme_Object *obj, 
 			    int valvar, int constant)
 {
-  Scheme_Hash_Table *toplevel;
-
-  if (valvar)
-    toplevel = env->toplevel;
-  else
-    toplevel = env->syntax;
-
-  scheme_add_to_table(toplevel, (char *)sym, obj, constant);
+  if (valvar) {
+    Scheme_Bucket *b;
+    b = scheme_bucket_from_table(env->toplevel, (const char *)sym);
+    b->val = obj;
+    ((Scheme_Bucket_With_Home *)b)->home = env;
+  } else
+    scheme_add_to_table(env->syntax, (char *)sym, obj, constant);
 }
 
 void
@@ -583,7 +583,7 @@ Scheme_Object **scheme_make_builtin_references_table(void)
 
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
-    if (b && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_HAS_REF_ID))
+    if (b && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_REF_ID))
       t[((Scheme_Bucket_With_Ref_Id *)b)->id] = (Scheme_Object *)b->val;
   }
 
@@ -603,8 +603,8 @@ Scheme_Hash_Table *scheme_map_constants_to_globals(void)
 
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
-    if (b && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
-	&& (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_KEYWORD))
+    if (b && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
+	&& (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_KEYWORD))
       scheme_add_to_table(result, (const char *)b->val, b, 0);
   }
 
@@ -667,7 +667,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->flags = flags | (base->flags & SCHEME_PRIM_GLOBALS_ONLY);
   frame->next = base;
   frame->genv = base->genv;
-  frame->eenv = base->eenv;
+  frame->ok_modules = base->ok_modules;
 
   init_compile_data(frame);
 
@@ -1008,9 +1008,12 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   modname = scheme_stx_module_name(&symbol);
-  if (modname)
-    genv = scheme_module_load(modname, env->genv);
-  else
+  if (modname) {
+    if (SAME_OBJ(modname, env->genv->modname))
+      genv = env->genv;
+    else
+      genv = scheme_module_load(modname, env->genv);
+  } else
     genv = env->genv;
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
@@ -1020,20 +1023,33 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       return val;
   }
 
-  if ((flags & SCHEME_NULL_FOR_UNBOUND) && !modname)
+  /* Not syntax -- still ok to use? */
+  if (modname && env->ok_modules) {
+    if (!scheme_lookup_in_table(env->ok_modules, (const char *)modname)) {
+      scheme_wrong_syntax("compile", NULL, symbol,
+			  "variable used out of context");
+      return NULL;
+    }
+  }
+
+  if ((flags & SCHEME_NULL_FOR_UNBOUND)
+      && (!modname || SAME_OBJ(modname, env->genv->modname)))
     return NULL;
 
   b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 
-      && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
+      && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
       && !(flags & SCHEME_GLOB_ALWAYS_REFERENCE))
     return (Scheme_Object *)b->val;
 
+  if (!((Scheme_Bucket_With_Home *)b)->home)
+    ((Scheme_Bucket_With_Home *)b)->home = genv;
+  
   return (Scheme_Object *)b;
 
  found_const:
   if (!val) {
-    scheme_wrong_syntax("identifier", NULL, symbol,
+    scheme_wrong_syntax("compile", NULL, symbol,
 			"variable used out of context");
     return NULL;
   }
@@ -1312,15 +1328,30 @@ int scheme_link_info_lookup_anchor(Link_Info *info, int pos)
 
 
 Scheme_Object *
-scheme_lookup_global (Scheme_Object *symbol, Scheme_Env *env)
+scheme_lookup_global(Scheme_Object *symbol, Scheme_Env *env)
 {
-  return (Scheme_Object *)scheme_lookup_in_table(env->toplevel, (char *)symbol);
+  Scheme_Bucket *b;
+    
+  b = scheme_bucket_or_null_from_table(env->toplevel, (char *)symbol, 0);
+  if (b) {
+    if (!((Scheme_Bucket_With_Home *)b)->home)
+      ((Scheme_Bucket_With_Home *)b)->home = env;
+    return (Scheme_Object *)b->val;
+  }
+
+  return NULL;
 }
 
 Scheme_Bucket *
 scheme_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
 {
-  return scheme_bucket_from_table(env->toplevel, (char *)symbol);
+  Scheme_Bucket *b;
+    
+  b = scheme_bucket_from_table(env->toplevel, (char *)symbol);
+  if (!((Scheme_Bucket_With_Home *)b)->home)
+    ((Scheme_Bucket_With_Home *)b)->home = env;
+    
+  return b;
 }
 
 Scheme_Bucket *

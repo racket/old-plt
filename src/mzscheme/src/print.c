@@ -1152,7 +1152,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_this_string(p, scheme_symbol_val(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)
-	   && (((Scheme_Bucket_With_Const_Flag *)obj)->flags & GLOB_HAS_REF_ID))
+	   && (((Scheme_Bucket_With_Flags *)obj)->flags & GLOB_HAS_REF_ID))
     {
       int pos;
       pos = ((Scheme_Bucket_With_Ref_Id *)obj)->id;

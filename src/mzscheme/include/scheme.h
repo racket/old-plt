@@ -462,7 +462,7 @@ typedef struct Scheme_Hash_Table
   MZ_HASH_KEY_EX
   int size, count, step;
   Scheme_Bucket **buckets;
-  char has_constants, forever, weak;
+  char has_constants, forever, weak, with_home;
   void (*make_hash_indices)(void *v, long *h1, long *h2);
   int (*compare)(void *v1, void *v2);
 #ifdef MZ_REAL_THREADS
@@ -484,6 +484,7 @@ typedef struct Scheme_Env
 
   Scheme_Object *modname;
   Scheme_Object *rename;  /* module rename record */
+  Scheme_Object *et_imports; /* list of module names */
   Scheme_Object *imports; /* list of module names */
 
   Scheme_Object *body;

@@ -449,13 +449,13 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
 void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
 			      int set_undef)
 {
-  if ((((Scheme_Bucket_With_Const_Flag *)b)->flags & (GLOB_IS_CONST | GLOB_IS_KEYWORD))
+  if ((((Scheme_Bucket_With_Flags *)b)->flags & (GLOB_IS_CONST | GLOB_IS_KEYWORD))
       && b->val) {
     Scheme_Object *key = (Scheme_Object *)b->key;
     scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
 		     "%s: cannot redefine %s: %S", 
 		     who,
-		     (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
+		     (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST)
 		     ? "constant"
 		     : "keyword",
 		     (Scheme_Object *)key);
@@ -2310,7 +2310,7 @@ defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
 
   scheme_defmacro_parse(form, &name, &code, env);
 
-  val = scheme_compile_expr(code, env->eenv->init, rec, drec);
+  val = scheme_compile_expr(code, env->genv->init, rec, drec);
   name = (Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_SYM(name),
 						       env->genv);
 
@@ -2385,7 +2385,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = scheme_add_env_renames(a, env, origenv);
     
-    a = scheme_eval(a, env->eenv);
+    a = scheme_eval(a, env->genv);
 
     macro = scheme_alloc_stubborn_small_object();
     macro->type = scheme_macro_type;

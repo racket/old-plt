@@ -123,6 +123,21 @@
   
   (define debug-key (gensym "debug-key-"))
   
+  (define (list-take n a-list)
+    (if (= 0 n)
+        null
+        (cons (car a-list)
+              (list-take (- n 1)
+                         (cdr a-list)))))
+  
+  (define (flatten-take n a-list)
+    (apply append (list-take n a-list)))
+  
+  (define (interlace a b)
+    (foldr (lambda (built a b)
+             ;;;;;; I AM RIGHT HERE
+             
+  
   (define (read-exprs text)
     (let ([reader (z:read text)])
       (let read-loop ([new-expr (reader)])
@@ -136,14 +151,12 @@
           (else
            null)))
   
+  (define (top-defs exprs)
+    (map find-defined-vars exprs))
+  
   (define all-defs-list-sym (gensym "all-defs-list-"))
   (define current-def-sym (gensym "current-def-"))
-  
-  (define (top-defs exprs)
-    (let ([all-defs (map find-defined-vars exprs)])
-      `((#%define-values (,all-defs-list-sym ,current-def-sym)
-         (values (#%quote ,all-defs) #f)))))
-  
+    
   (define (current-def-setter num)
     `(#%set! ,current-def-sym ,num))
            
@@ -260,13 +273,16 @@
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
 	 ; an annotated expression, and a list of varref's.	 
 	 
-	 ; annotate/inner: (z:zodiac bool -> sexp (listof varref))
+	 ; annotate/inner: (z:zodiac bool (list-of sym) -> sexp (listof varref))
 	 
-	 (define (annotate/inner expr on-spine?)
+	 (define (annotate/inner expr on-spine? top-env)
 	   
 	   ; translate-varref: (bool bool -> sexp (listof varref))
 	   
-	   (let ([translate-varref
+	   (let ([tail-recur (lambda (expr) (annotate/inner expr on-spine? top-env))]
+                 [non-tail-recur (lambda (expr) (annotate/inner expr #f null))]
+                 [lambda-body-recur (lambda (expr) (annotate/inner expr #t null))]                 
+                 [translate-varref
 		  (lambda (maybe-undef? top-level?)
 		    (let* ([v (z:varref-var expr)]
 			   [real-v (if (z:top-level-varref? expr)
@@ -298,7 +314,7 @@
 		 (not (never-undefined? (z:bound-varref-binding expr)))
 		 #f)]
 	       
-	       [(z:top-level-varref? expr)
+               `	       [(z:top-level-varref? expr)
 		(if (is-unit-bound? expr)
 		    (translate-varref #t #f)
 		    (begin
@@ -313,7 +329,7 @@
 		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
 		  [val pile-of-values
 		       (map (lambda (expr bound) 
-			      (let-values ([(annotated free) (annotate/inner expr #f)])
+			      (let-values ([(annotated free) (non-tail-recur expr)])
 				(list annotated free)))
 			    sub-exprs)]
 		  [val annotated-sub-exprs (map car pile-of-values)]
@@ -333,7 +349,7 @@
 		      [raw-fields (map read->raw (z:struct-form-fields expr))])
 		  (if super-expr
 		      (let+ ([val (values annotated-super-expr free-vars-super-expr) 
-				  (annotate/inner super-expr #f)]
+				  (non-tail-recur super-expr)]
 			     [val annotated
 				  `(#%struct 
 				    ,(list raw-type annotated-super-expr)
@@ -347,11 +363,11 @@
 	       [(z:if-form? expr) 
 		(let+
 		 ([val (values annotated-test free-vars-test) 
-		       (annotate/inner (z:if-form-test expr) #f)]
+		       (non-tail-recur (z:if-form-test expr))]
 		  [val (values annotated-then free-vars-then) 
-		       (annotate/inner (z:if-form-then expr) on-spine?)]
+		       (tail-recur (z:if-form-then expr))]
 		  [val (values annotated-else free-vars-else) 
-		       (annotate/inner (z:if-form-else expr) on-spine?)]
+		       (tail-recur (z:if-form-else expr))]
 		  ; in beginner-mode, we must insert the boolean-test
 		  [val annotated `(#%let (,if-temp ,annotated-test)
 				   (#%if (#%boolean? ,if-temp)
@@ -379,8 +395,14 @@
 		(let+ ([val vars (z:define-values-form-vars expr)]
 		       [val _ (map check-for-keyword vars)]
 		       [val var-names (map z:varref-var vars)]
-		       [val (values annotated-val free-vars-val)
-			    (annotate/inner (z:define-values-form-val expr) on-spine?)]
+                       
+                       ; NB: this next recurrence is NOT really tail, but we cannot
+                       ; mark define-values itself, so we mark the sub-expr as
+                       ; if it was in tail posn (i.e., we must hold on to 
+                       ; bindings).
+		       
+                       [val (values annotated-val free-vars-val)
+			    (tail-recur (z:define-values-form-val expr))]
 		       [val free-vars (remq* var-names free-vars-val)]
 		       [val annotated `(#%define-values ,var-names ,annotated-val)])
 		      (values annotated free-vars))]
@@ -392,7 +414,7 @@
 			(lambda (arglist body)
 			  (let ([var-list (z:arglist-vars arglist)])
 			    (let-values ([(annotated free-vars)
-					  (annotate/inner body #t)])
+					  (lambda-body-recur body #t)])
 			      (let ([new-free-vars (remq* var-list free-vars)]
 				    [new-annotated (list (arglist->ilist arglist) annotated)])
 				(list new-annotated new-free-vars)))))]
@@ -403,7 +425,7 @@
 		       [annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
 		       [debug-info (make-debug-info new-free-vars null on-spine? expr null)]
-		       [closure-info (make-debug-info new-free-vars #t expr no-label null)]
+		       [closure-info (make-debug-info new-free-vars #t expr null)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       ; that closure-table-put! thing needs to be protected
 				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
@@ -423,8 +445,15 @@
          
          ; body of local
          
-         (let* ([annotated-exprs (map (lambda (expr) (annotate/inner expr #t)) parsed-exprs)]
-                [top-defines (top-defs parsed-exprs)]
+         (let* ([defined-top-vars (top-defs parsed-exprs)]
+                [top-environments (cons null
+                                        (build-list (- (length top-defs) 1) 
+                                                    (lambda (n) (flatten-take n defined-top-vars))))]
+                [annotated-exprs (map (lambda (expr top-env) (annotate/inner expr #t top-env)) 
+                                      parsed-exprs
+                                      top-environments)]
+                [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
+                                        (values (#%quote ,defined-top-vars) #f)))]
                 [current-def-setters (build-list (length exprs) current-def-setter)]
                 [top-annotated-exprs (foldr (lambda (setter expr built)
                                               (cons setter (cons expr built)))

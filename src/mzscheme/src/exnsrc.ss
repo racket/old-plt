@@ -63,8 +63,10 @@ instantiated.
 			     "formatting tags without corresponding arguments; \\scm{application-value} is the format string")
 			    (*argument-type
 			     [expected "symbol" "type expected by formatting tag"]
-			     "argument does not match type expected by formatting tag; \\scm{application-value} is the bad value")))
-
+			     "argument does not match type expected by formatting tag; \\scm{application-value} is the bad value"))
+		  (*macos:typestring []
+				     "string is not a four-character string, so it does not specify a MacOS application signature or file type; raised by \\scmfirst{system}, \\scmfirst{execute}, \\scmfirst{send-event}"))
+     
      (*else [] "fall-through in \\scmfirst{cond} or \\scmfirst{case}")
 
      (*struct [] -
@@ -185,6 +187,7 @@ instantiated.
 	   (*hash-table [key "anything" "key for failed lookup"] "failed hash table lookup")
 	   (*regexp [] "all regular expression errors")
 	   (*process [] "error executing an operating system process")
+	   (*send-event [] "error sending an event to another system process")
 	   (*dynamic-extension [name "string" "dynamic extension pathname"] -
 			       (*open [] "cannot open dynamic extension")
 			       (*version [] "dynamic extension is wrong version")

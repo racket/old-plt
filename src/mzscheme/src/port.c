@@ -323,12 +323,6 @@ static Scheme_Object *default_display_handler;
 static Scheme_Object *default_write_handler;
 static Scheme_Object *default_print_handler;
 
-#ifdef MACINTOSH_EVENTS
-# define MAX_PROCESS_STAR_ARGS 1
-#else
-# define MAX_PROCESS_STAR_ARGS -1
-#endif
-
 #include "schwinfd.h"
 
 void 
@@ -738,21 +732,21 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("process*", 
 			     scheme_make_prim_w_arity(sch_process_star,
 						      "process*",
-						      1, MAX_PROCESS_STAR_ARGS), 
+						      1, -1), 
 			     env);
   scheme_add_global_constant("system*", 
 			     scheme_make_prim_w_arity(sch_system_star,
 						      "system*",
-						      1, MAX_PROCESS_STAR_ARGS), 
+						      1, -1), 
 			     env);
   scheme_add_global_constant("execute*", 
 			     scheme_make_prim_w_arity(sch_execute_star,
 						      "execute*", 
-						      1, MAX_PROCESS_STAR_ARGS), 
+						      1, -1), 
 			     env);
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
-						      "execute*", 
+						      "send-event", 
 						      3, -1), 
 			     env);
 
@@ -4141,6 +4135,13 @@ static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
 static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
 {
 #ifdef MACINTOSH_EVENTS
+  if (c != 1) {
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "system*: extra arguments after the application pathname are "
+		     "not supported for this platform");
+    return NULL;
+  }
+
   return (scheme_mac_start_app("system*", 0, args[0])
 	  ? scheme_true
 	  : scheme_false);
@@ -4152,6 +4153,13 @@ static Scheme_Object *sch_system_star(int c, Scheme_Object *args[])
 static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[])
 {
 #ifdef MACINTOSH_EVENTS
+  if (c != 1) {
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "execute*: extra arguments after the application pathname are "
+		     "not supported for this platform");
+    return NULL;
+  }
+
   if (scheme_mac_start_app("execute*", 0, args[0]))
     exit(0);
 
@@ -4194,13 +4202,14 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 #ifdef MACINTOSH_EVENTS
   OSErr err;
   Scheme_Object *result;
-  if (scheme_mac_send_event("send-event", c, args, &result, &err)) {
+  if (scheme_mac_send_event("send-event", c, args, &result, &err))
     return result;
-  } else
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed: %d", (int)err);
+  else
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%d)", (int)err);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");
+  return NULL;
 #endif
 }
 

@@ -5579,7 +5579,7 @@ static int stop_listener(Scheme_Object *o)
     listener_t *l = (listener_t *)o;
     int i, count = l->count;
     Scheme_Tcp **datas = l->datas;
-    if (!datas)
+    if (!datas || !l->count)
       was_closed = 1;
     else {
       l->count = 0;
@@ -5757,7 +5757,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
       
       if (!(errid = mac_tcp_listen(l->portid, &data))) {
 	/* new listener at the end of the queue: */
-	memcpy(datas + i, datas + i + 1, count - i);
+	memcpy(datas + i, datas + i + 1, count - i - 1);
 	datas[count - 1] = data;
 
 	scheme_file_open_count++;

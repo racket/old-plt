@@ -33,7 +33,7 @@ requires Internet Explorer 4 to be installed.
   (require-library "mysterxu.ss" "mysterx")
 
  binds `mysterx@' to the unit, with signature `mysterx^',
- which is defined in the file `sigs.ss' in the MysterX collection.
+ which is defined in the file `sigs.ss' in the mysterx collection.
  This unit can be invoked or imported into other units as needed.
 
  Documents
@@ -93,15 +93,23 @@ requires Internet Explorer 4 to be installed.
 
   Kills the thread currently handling events for the document.
 
-> insert-object :: (send an-mx-document insert-object coclass)
+> insert-object :: (send an-mx-document insert-object coclass width height [size])
 
   Inserts a COM object with class `coclass' at the beginning of the 
-  document.  An instance of <com-object> is returned.
+  document.  `width' and `height' are fixnum integers.  The optional 
+  `size' argument gives an interpretation for the width and height.  
+  By default, size is 'pixels, but may also be 'percent, indicating that 
+  the width and height are a fixed percentage of the document window size.
+  An instance of <com-object> is returned.
 
 > append-object :: (send an-mx-document append-object coclass)
 
-  Append a COM object with class `coclass' to the end of the document.  An 
-  instance of <com-object> is returned.
+  Append a COM object with class `coclass' to the end of the document.  
+  `width' and `height' are fixnum integers.  The optional 
+  `size' argument gives an interpretation for the width and height.  
+  By default, size is 'pixels, but may also be 'percent, indicating that 
+  the width and height are a fixed percentage of the document window size.
+  An instance of <com-object> is returned.
 
 > find-element :: (send an-mx-document find-element tag id)
 
@@ -364,11 +372,15 @@ the ITypeInfo interface.
   HTML and Dynamic HTML support
   -----------------------------
 
-> (coclass->html name)
+> (coclass->html name width height [size])
 
   Returns a string containing HTML which when inserted into a document loads
   the COM object given by `name'.  This procedure is suitable for placing
-  ActiveX controls within complex HTML.
+  ActiveX controls within complex HTML.  `width' and `height' are
+  fixnum integers.  The optional `size' argument gives an interpretation 
+  for the width and height.  By default, size is 'pixels, but may also 
+  be 'percent, indicating that the width and height are a fixed percentage 
+  of the document window size.
 
   HTML elements 
   -------------
@@ -410,14 +422,22 @@ the ITypeInfo interface.
 
   Places the text given by the string `txt' after the HTML element.
   
-> insert-object :: (send an-mx-element insert-object coclass)
+> insert-object :: (send an-mx-element insert-object coclass width height [size])
 
   Inserts a COM object with class `coclass' before the HTML element.
+  `width' and `height' are fixnum integers.  The optional `size' argument 
+  gives an interpretation for the width and height.  By default, size 
+  is 'pixels, but may also be 'percent, indicating that the width and 
+  height are a fixed percentage of the document window size.
   An instance of <com-object> is returned.
 
-> append-object :: (send an-mx-element append-object coclass)
+> append-object :: (send an-mx-element append-object coclass width height [size])
 
   Places a COM object with class `coclass' after the HTML element.  
+  `width' and `height' are fixnum integers.  The optional `size' argument 
+  gives an interpretation for the width and height.  By default, size 
+  is 'pixels, but may also be 'percent, indicating that the width and 
+  height are a fixed percentage of the document window size.
   An instance of <com-object> is returned.
 
 > attribute :: (send an-mx-element attribute attr)

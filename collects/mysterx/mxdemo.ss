@@ -11,7 +11,7 @@
 	 "<p>"
 	 "<hr>"
 	 "<p>"
-	 (coclass->html "Calendar Control 8.0")
+	 (coclass->html "Calendar Control 8.0" 300 200)
 	 "<p>"
 	 "<H3 id=\"event-header\"></H3>"))
 

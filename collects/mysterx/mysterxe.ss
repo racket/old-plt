@@ -67,12 +67,14 @@
 	     (lambda (s)
 	       (mxprims:element-append-text elt s))]
 	    [insert-object 
-	     (lambda (object)
+	     (opt-lambda (object width height [size 'pixels])
 	       (dynamic-wind
 		html-wait
 		(lambda () 
 		  (let ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-insert-html elt (coclass->html object))
+		    (mxprims:element-insert-html 
+		     elt 
+		     (coclass->html object width height size))
 		       (let* ([new-objects (mxprims:document-objects doc)]
 			      [obj (car (remove* old-objects new-objects
 						 com-object-eq?))])
@@ -80,12 +82,14 @@
 			 obj)))
 		html-post))]
 	    [append-object 
-	     (lambda (object)
+	     (opt-lambda (object width height [size 'pixels])
 	       (dynamic-wind
 		html-wait
 		(lambda ()
 		  (let* ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-append-html elt (coclass->html object))
+		    (mxprims:element-append-html 
+		     elt 
+		     (coclass->html object width height size))
 		       (let* ([new-objects (mxprims:document-objects doc)]
 			      [obj (car (remove* old-objects
 						 new-objects
@@ -751,19 +755,23 @@
 		      (hash-table-remove! handler-table key))))
 		handler-post))]
 	    [insert-object 
-	     (lambda (object)
+	     (opt-lambda (object width height [size 'pixels])
 	       (dynamic-wind 
 		html-wait
 		(lambda ()
-		  (mxprims:document-insert-html doc (coclass->html object))
+		  (mxprims:document-insert-html 
+		   doc 
+		   (coclass->html object width height size))
 		  (car (mxprims:document-objects doc)))
 		html-post))]
 	    [append-object 
-	     (lambda (object)
+	     (opt-lambda (object width height [size 'pixels])
 	       (dynamic-wind
 		html-wait
 		(lambda ()
-		  (mxprims:document-append-html doc (coclass->html object))
+		  (mxprims:document-append-html 
+		   doc 
+		   (coclass->html object width height size))
 		  (car (last-pair (mxprims:document-objects doc))))
 		html-post))]
 	    [handle-events 

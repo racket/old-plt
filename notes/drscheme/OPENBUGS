@@ -14,6 +14,9 @@ The yellow execute warning in the interactions window does not go away
 
 Backup files don't preserve file permissions.
 
+There are restrictions on using launchers created for 68K Macs.
+See doc.txt in the launcher collection for more information.
+
 For a more complete listing of known bugs, see our
 <a href="http://www.cs.rice.edu/CS/PLT/Bugs/query-pr.shtml">
 online bug report database</a>

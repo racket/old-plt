@@ -768,7 +768,7 @@ extern "C"
 {
 #endif
 
-void gc_mark_external_invalid(void *sobj)
+void objscheme_mark_external_invalid(void *sobj)
 {
   Scheme_Class_Object *obj = (Scheme_Class_Object *)sobj;
 

@@ -32,9 +32,9 @@ case $OS in
     ;;
   AIX)
     if [ "${AIXUSEGCC}" = "yes" ]; then
-      `which make` "$@" $GCOPTS RANLIB=':'
+      `which make` "$@" $GCOPTS RANLIB=':' BINTARGET=rs6kbin
     else
-      make "$@" $GCOPTS RANLIB=':' CC='cc' WARN='' 
+      make "$@" $GCOPTS RANLIB=':' CC='cc' WARN='' BINTARGET=rs6kbin
     fi
     ;;
   FreeBSD)

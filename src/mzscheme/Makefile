@@ -76,6 +76,9 @@ INSTALLTARGET = normal-install
 # output file for the OSKit-based MzScheme
 MZOSKDEST = mzscheme.multiboot
 
+# Here for old AIX handling
+BINTARGET = xbin
+
 ################################################################################
 
 # Export string for making src & GC
@@ -89,11 +92,10 @@ XMAKE = $(MAKE) $(EXPORT)
 bin: 
 	$(XMAKE) g-c
 	$(XMAKE) dynlib
-	./ifaix $(XMAKE) rs6kbin
-	./ifnotaix $(XMAKE) xbin
+	$(XMAKE) $(BINTARGET)
 
 rs6kbin:
-	./ifaix $(XMAKE) aixdl
+	$(XMAKE) aixdl
 	$(XMAKE) LIBS='$(LIBS) -ldl -lld -Wl,-bE:include/mzscheme.exp' xbin
 
 xbin:
@@ -107,7 +109,6 @@ oskit:
 	$(XMAKE) MZOSKDEST='$(MZOSKDEST)' $(MZOSKDEST)
 
 mzschemelib: 
-	./ifaix $(XMAKE) aixdl
 	$(XMAKE) g-c 
 	$(XMAKE) mzlibrary 
 

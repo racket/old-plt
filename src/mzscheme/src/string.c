@@ -3618,16 +3618,18 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	  } else {
 # ifdef WINDOWS_UNICODE_SUPPORT
 	    /* We allow a surrogate by itself, but don't allow
-	       two in a row, otherwise multiple encodings can
+	       a 0xDC00 after a 0xD800, otherwise multiple encodings can
 	       map to the same thing. */
 	    if ((v >= 0xD800) && (v <= 0xDFFF)) {
-	      if (utf16 == 2) {
+	      if ((utf16 == 2) && ((v & 0xDC00) == 0xDC00)) {
 		if (permissive)
 		  v = permissive;
 		else
 		  ENCFAIL;
-	      } else
+	      } else if ((v & 0xDC00) == 0xD800)
 		utf16 = 2;
+	      else
+		utf16 = 1;
 	    } else
 	      utf16 = 1;
 # endif
@@ -3814,8 +3816,10 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed, unless this is Windows. */
 # ifdef WINDOWS_UNICODE_SUPPORT
-	  if ((i + 1 >= end)
-	      || (((((unsigned short *)us)[i+1]) & 0xF800) != 0xD800)) {
+	  if ((wc & 0xFC00) != 0xD800) {
+	    /* Count as one */
+	  } else if ((i + 1 >= end)
+		     || (((((unsigned short *)us)[i+1]) & 0xFC00) != 0xDC00)) {
 	  } else 
 # endif
 	    {
@@ -3852,8 +3856,10 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed on non-Windows platforms. */
 # ifdef WINDOWS_UNICODE_SUPPORT
-	  if ((i + 1 >= end)
-	      || (((((unsigned short *)us)[i+1]) & 0xF800) != 0xD800)) {
+	  if ((wc & 0xFC00) != 0xD800) {
+	    /* Let the misplaced surrogate through */
+	  } else if ((i + 1 >= end)
+		     || (((((unsigned short *)us)[i+1]) & 0xFC00) != 0xDC00)) {
 	    /* Let the misplaced surrogate through */
 	  } else
 # endif

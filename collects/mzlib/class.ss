@@ -424,32 +424,36 @@
 				       (values (reverse! ms) (reverse! pms) (reverse! es))
 				       (syntax-case (car exprs) (define-values)
 					 [(define-values (id ...) expr)
-					  ;; method defn if any id in the list of privates/publics/overrides
-					  (ormap (lambda (id)
-						   (unless (identifier? id)
-						     (bad "not an identifier for definition" id))
-						   (ormap (lambda (i) (bound-identifier=? i id))
-							  local-method-names))
-						 (syntax->list (syntax (id ...))))
 					  (let ([ids (syntax->list (syntax (id ...)))])
-					    (unless (null? (cdr ids))
-					      (bad "each method variable needs its own definition"
-						   (car exprs)))
-					    (let ([expr (proc-shape #f (syntax expr) #f)]
-						  [public? (ormap (lambda (i) (bound-identifier=? i (car ids)))
-								  local-public-names)])
-					      (loop (cdr exprs) 
-						    (if public?
-							(cons (cons (car ids) expr) ms)
-							ms)
-						    (if public?
-							pms
-							(cons (cons (car ids) expr) pms))
-						    es)))]
-					 [(define-values (id ...) expr)
-					  ;; Non-method defn:
-					  (andmap identifier? (syntax->list (syntax (id ...))))
-					  (loop (cdr exprs) ms pms (cons (car exprs) es))]
+					    ;; Check form:
+					    (for-each (lambda (id)
+							(unless (identifier? id)
+							  (bad "not an identifier for definition" id)))
+						      ids)
+					    ;; method defn? (id in the list of privates/publics/overrides?)
+					    (if (ormap (lambda (id)
+							 (ormap (lambda (i) (bound-identifier=? i id))
+								local-method-names))
+						       ids)
+						;; Yes, it's a method:
+						(begin
+						  (unless (null? (cdr ids))
+						    (bad "each method variable needs its own definition"
+							 (car exprs)))
+						  (let ([expr (proc-shape #f (syntax expr) #f)]
+							[public? (ormap (lambda (i) 
+									  (bound-identifier=? i (car ids)))
+									local-public-names)])
+						    (loop (cdr exprs) 
+							  (if public?
+							      (cons (cons (car ids) expr) ms)
+							      ms)
+							  (if public?
+							      pms
+							      (cons (cons (car ids) expr) pms))
+							  es)))
+						;; Non-method defn:
+						(loop (cdr exprs) ms pms (cons (car exprs) es))))]
 					 [(define-values . _)
 					  (bad "ill-formed definition" (car exprs))]
 					 [_else

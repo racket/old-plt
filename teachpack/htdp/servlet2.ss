@@ -311,7 +311,9 @@
     (let* ([tag (first x)]
            [fe  (second x)]
            [rad (lambda (x)
-                  `(div ,x " " (input ([type "radio"][name ,tag][value ,x]))))])
+                  `(td (input ([type "radio"][name ,tag][value ,x])) " " ,x))]
+           [make-radio
+            (lambda (loq) `(td (table (tr ,@(map rad loq)))))])
       (cond
         [(string? fe) 
          `(tr (td ,fe) (td (input ([type "text"][name ,tag][value ""]))))]
@@ -321,19 +323,17 @@
         [(numeric? fe)
          `(tr (td ,(fe-question fe)) 
               (td (input ([type "text"][name ,tag]))))]
-        [(yes-no? fe)
-         `(tr (td ,(fe-question fe))
-              (td ,(rad (yes-no-positive fe))) 
-              (td ,(rad (yes-no-negative fe))))]
         [(check? fe)
          `(tr (td ,(fe-question fe))
               (td (input ([type "checkbox"][name ,tag][value ,(fe-question fe)]))))]
-        [(radio? fe)
+        [(yes-no? fe) 
          `(tr (td ,(fe-question fe))
-              ,@(map (lambda (x) (cons 'td (cdr (rad x)))) (radio-labels fe)))]
+              ,(make-radio (list (yes-no-positive fe) (yes-no-negative fe))))]
+        [(radio? fe)
+         `(tr (td ,(fe-question fe)) ,(make-radio (radio-labels fe)))]
         [(button? fe)
-        `(tr (td) 
-             (td (input ([type "submit"][name ,tag][value ,(fe-question fe)]))))]
+         `(tr (td) 
+              (td (input ([type "submit"][name ,tag][value ,(fe-question fe)]))))]
         [else (error 'build-row "can't happen: ~e" fe)])))
   
   ; (listof Forms) -> (union Empty (list SUBMIT-BUTTON))

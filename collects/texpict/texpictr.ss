@@ -520,6 +520,83 @@
      (make-superimpose c tline tbase)
      (make-superimpose c bline bbase))))
 
+(define table
+  (case-lambda
+   [(ncol cells row-seps col-seps) (table ncol cells row-seps col-seps (lambda (c r) cc-superimpose))]
+   [(ncol cells row-seps col-seps get-cell-superimpose)
+    (unless (positive? ncol)
+	    (raise-type-error 'table "positive column count" ncol))
+    (let ([count (length cells)])
+      (unless (zero? (remainder count ncol))
+	      (error 'table "cell count isn't divisble by the provided column count"))
+      (let* ([w ncol]
+	     [h (/ count w)]
+	     [cells (let rloop ([r h][cells cells][r-acc null])
+		      (if (zero? r)
+			  (list->vector (reverse r-acc))
+			  (let loop ([c w][cells cells][one-acc null])
+			    (if (zero? c)
+				(rloop (sub1 r) cells (cons (list->vector (reverse one-acc)) r-acc))
+				(loop (sub1 c) (cdr cells) (cons (car cells) one-acc))))))]
+	     [imp-list->vector (lambda (l n)
+				 (let ([v (make-vector n)])
+				   (let loop ([l l][n n])
+				     (unless (zero? n)
+				       (vector-set! v
+						    (sub1 n)
+						    (if (pair? l)
+							(car l)
+							l))
+				       (loop (if (pair? l) (cdr l) l) (sub1 n))))
+				   v))]
+	     [rsep (imp-list->vector row-seps h)]
+	     [csep (imp-list->vector col-seps w)]
+	     [get-cell (lambda (c r) (vector-ref (vector-ref cells r) c))]
+	     [nmap (lambda (f w)
+		     (let loop ([n w][acc null])
+		       (if (zero? n)
+			   acc
+			   (loop (sub1 n) (cons (f (sub1 n)) acc)))))]
+	     [rowmap (lambda (f) (nmap f h))]
+	     [colmap (lambda (f) (nmap f w))]
+	     [max-widths (list->vector
+			  (colmap
+			   (lambda (c)
+			     (apply max 
+				    (rowmap 
+				     (lambda (r)
+				       (pict-width (get-cell c r))))))))]
+	     [max-heights (list->vector
+			   (rowmap
+			    (lambda (r)
+			      (apply max
+				     (colmap
+				      (lambda (c)
+					(pict-height (get-cell c r))))))))])
+	; No space after the last one
+	(vector-set! rsep (sub1 h) 0)
+	(vector-set! csep (sub1 w) 0)
+
+	(apply
+	 vl-append
+	 0
+	 (rowmap
+	  (lambda (r)
+	    (vl-append
+	     0
+	     (apply
+	      ht-append
+	      0
+	      (colmap (lambda (c)
+			(ht-append
+			 0
+			 ((get-cell-superimpose c r)
+			  (empty (vector-ref max-widths c)
+				 (vector-ref max-heights r))
+			  (get-cell c r))
+			 (empty (vector-ref csep c) 0)))))
+	     (empty 0 (vector-ref rsep r))))))))]))
+
 (define (record title . fields)
   (let* ([totalwidth (apply max (pict-width title) (map pict-width fields))]
 	 [linespace (if (null? fields) 0 recordseplinespace)]

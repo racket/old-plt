@@ -118,6 +118,8 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 				wx_temp_visual_info,
 				NULL,
 				GL_TRUE);
+      XFree(wx_temp_visual_info);
+      wx_temp_visual_info = NULL;
     }
 #endif
     // Initialize CanvasDC
@@ -160,6 +162,7 @@ wxCanvas::~wxCanvas(void)
     glXMakeCurrent(XtDisplay(X->handle), None, NULL);
   }
   if (GLctxt) {
+    printf("here\n");
     glXDestroyContext(XtDisplay(X->handle), GLctxt);
     GLctxt = NULL;
   }

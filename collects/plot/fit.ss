@@ -12,7 +12,7 @@
                              std-error
                              std-error-percent
                              function
-                             ))
+                             ) (make-inspector))
   
   
   

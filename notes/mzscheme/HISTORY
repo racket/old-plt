@@ -2,6 +2,41 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.19:
+
+ * Removed `make-hash-table-weak', and changed `make-hash-table' to
+   accept up to two flag arguments: 'weak and/or 'equal. The 'weak
+   flag causes the hash table to use weakly-held keys, and the 'equal
+   flag causes the hash table to compare keys with `equal?' instead of
+   `eq?'.
+
+ * Added `eq-hash-code' and `equal-hash-code', which consume an
+   arbitrary value and generate hash codes corresponding to `eq?' and
+   `equal?' comparisons, respectively.
+
+ * Removed the optional `get-special-proc' optional argument to
+   `make-input-port' (recently introduced), and instead changed the
+   `read-char-proc' and `peek-char-proc' arguments to allow
+   non-character results. See the documentation for details. Added
+   `peek-char-or-special' and `read-char-or-special'.
+
+ * Added `syntax-span', and changed the reader to track the span (in
+   characters) of read syntax objects. Also added a `span' field to
+   exn:read, and changed the last optional argument of
+   `datum->syntax-object' to support spans.
+
+ * Added `set!-transformer?', to go with `make-set!-transformer'.
+
+ * Added `public*', `override*', `private*', `define/public',
+   `define/override', and `define/private' to "class.ss". Each form
+   expands to some combination of `public'/`override'/'private' and
+   `define'.
+
+ * Changed syntax error messages to use GNU format:
+     <file>:<line>:<col>: <message>
+   If <file>'s path starts with the current directory, that part of
+   the path is removed.
+
 Version 199.18:
 
  * Quoted portions of a symbol (using | or \) preserve their case,
@@ -259,16 +294,19 @@ Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code
 Changed the error display handler to take a raised value (usually
-   an exception record) as a second argument
+ an exception record) as a second argument
+Removed make-hash-table-weak and changed make-hash-table to
+ accept up to two flag arguments: 'weak and/or 'equal
+Added eq-hash-code and equal-hash-code
 Added port-count-lines!, which enables line-couting for a port
+Extended customports to support non-char input, added
+ read-char-or-special and peek-char-or-special
 Quoted portions of a symbol (using | or \) preserve their case,
 Added read-dot-as-symbol and read-accept-quasiquote parameters
 Changed quoted parts of a symbol (with | or \) to always preserve case
 Added an optional third argument to tcp-listen to reuse addresses
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
-Inside MzScheme: "process" names changed to "thread", and
- "manager" names changed to "custodian"
 Default for pconvert.ss's whole/fractional-exact-numbers parameter
  changed to #f
 Renamed "2k" to "3m" (for "moving memory manager")

@@ -1,6 +1,6 @@
 
 MzScheme version 200 is different from previous versions of MzScheme
-in several important ways:
+in several significant ways:
 
  * There is a new module system that supports only top-level,
    first-order modules. The library-collection system now works with
@@ -17,10 +17,10 @@ in several important ways:
  * The core syntax system is hygienic; `define-macro' has been
    replaced by `define-syntax'.
 
-   In general, there is no easy way to convert a `define-macro' macro
-   to `define-syntax'; re-writing an old-style macro with
-   `define-syntax' and `syntax-case' is usually quite easy. The
-   following works sometimes, though:
+   In general, there is no easy way to convert a `define-macro'
+   definition to `define-syntax', but re-writing an old-style macro
+   with `define-syntax' and `syntax-case' is usually easy. In some
+   cases, the following works:
 
       (define-syntax define-macro
         (lambda (stx)
@@ -67,13 +67,34 @@ in several important ways:
    
    The `send' form works as before, but there is no `ivar' form.
    Field values are accessed through procedures constructed with
-   `make-class-field-accessor'. Instances are contructed with either
+   `make-class-field-accessor'. Instances are constructed with either
    `make-object' or the new `instantiate' form; the latter supports
    by-name initialization arguments. See the MzLib documentation for
    details.
 
    The "class-old.ss" library in MzLib implements precisely the old
    MzScheme class syntax, but it cannot be used with MrEd classes.
+
+ * Modules can replace units where units are used merely for namespace
+   control, but `unit' still has its own place:
+
+    - Implementing parameterized components: The `unit' form separates
+      interface from implementation, unlike `module'.
+
+    - Encapsulating a program that has "global" state: A unitized
+      program can be instantiated multiple times.
+
+    - Mutually dependent components: A unit linking graph can be
+      cyclic, while the module dependency graph must form a DAG.
+
+   A unit or unit signature is typically defined within a module. The
+   module must import the MzLib "unitsig.ss" or "unit.ss" library.
+
+   The "unit.ss" and "unitsig.ss" libraries implement essentially the
+   same forms as in previous versions of MzScheme, except that
+   variables exported from a unit cannot be mutated, and units can
+   contain references to top-level variables (since `module' already
+   catches free variables).
 
  * The `struct' form is gone, replaced by a more flexible
    `make-struct-type' form. 

@@ -5106,7 +5106,6 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #ifdef USE_ITIMER
       /* Turn off the timer. */
       struct itimerval t, old;
-      int tries = 0;
       sigset_t sigs;
   
       t.it_value.tv_sec = 0;
@@ -5118,31 +5117,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       
       START_XFORM_SKIP;
       while (!sigpending(&sigs)) {
-	/* Clear already-queued signal: */
+	/* Clear already-queued signal, if any: */
 	if (sigismember(&sigs, SIGPROF)) {
 	  sigemptyset(&sigs);
 	  sigaddset(&sigs, SIGPROF);	  
-	  MZ_SIGSET(SIGPIPE, SIG_IGN);
-	  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-	  /* Hopefully, the signal is delivered here. */
-	  if (tries) {
-	    /* Stubborn OS (e.g.,MacOS X) that doesn't deliver the signal during sleep(0) */
-	    /* Worse: !@#$ library bug; this doesn't work right if the stack is aligned wrong */
-#ifdef OS_X
-# ifndef MZ_PRECISE_GC
-	    int unused = 0;
-# endif
-#endif
-	    struct timeval time;
-
-	    time.tv_sec = (long)0;
-	    time.tv_usec = (long)1000;
-	    
-	    select(0, NULL, NULL, NULL, &time);
-	  } else
-	    sleep(0);
-	  sigprocmask(SIG_BLOCK, &sigs, NULL);
-	  tries++;
+	  sigsuspend(&sigs);
 	} else
 	  break;
       }

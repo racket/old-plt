@@ -3,8 +3,8 @@ The Compiler
 ============
 
 To use the compiler within a Scheme program, require _compile.ss_:
-  (require-library "compile.ss" "compiler")
-The compile.ss library defines the following functions (plus a few
+  (require (lib "compiler.ss" "compiler"))
+The _compiler.ss_ library defines the following functions (plus a few
 signatures).  Options that control the compiler are documented in the
 next section.
 
@@ -246,13 +246,15 @@ which contains these options. The _sig.ss_ library defines the
 The Compiler as a Unit
 ======================
 
-The _compiler.ss_ library is a unit/sig matching the signature
+The _compiler-unit.ss_ library provides a unit/sig 
+>      compiler@
+matching the signature
 >      compiler^ 
-which provides the compile.ss functions.  This signature and all
-auxilliary signatures needed by compiler.ss are defined by the
+which provides the compiler.ss functions.  This signature and all
+auxilliary signatures needed by compiler@ are defined by the
 _sig.ss_ library.
 
-The compiler.ss signed unit requires the following imports:
+The signed unit requires the following imports:
 
    compiler:option^ - From sig.ss
    dynext:compile^ - From the `dynext' collection

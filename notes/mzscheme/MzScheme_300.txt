@@ -39,8 +39,11 @@ in several significant ways:
    communicating with an ispell subprocess, adding a newline at the
    end of a command previously would have been enough to send the
    command to ispell. Now, the output must be flushed explicitly
-   (using `flush-output') or the buffer mode must be explicitly change
-   to by-line (using `file-stream-muffer-mode').
+   (using `flush-output') or the buffer mode must be explicitly
+   changed to by-line (using `file-stream-muffer-mode').
+
+   TCP ports are not file-stream ports, and TCP output remains
+   unbuffered.
 
  * The class system has changed slightly. The `rename' keyword has
    been changed to `rename-super', but the new `super' expression form

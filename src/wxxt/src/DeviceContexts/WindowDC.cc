@@ -33,6 +33,11 @@
 #define  Uses_wxList
 #include "wx.h"
 
+#ifdef WX_USE_XRENDER
+# include <X11/Xcms.h>
+# include <X11/extensions/Xrender.h>
+#endif
+
 #define  UseXtRegions
 #include "wx_rgn.h"
 
@@ -433,6 +438,11 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
   return bmask;
 }
 
+#ifdef WX_USE_XRENDER
+static int xrender_here = -1;
+static XRenderPictFormat *format, *mask_format, *alpha_format;
+#endif
+
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 		      float xsrc, float ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
 {
@@ -441,7 +451,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     wxColor *saveBack;
     int scaled_width;
     int scaled_height;
+    int tx, ty;
     wxBitmap *tmp = NULL, *tmp_mask = NULL;
+    int should_xrender = 0;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
@@ -449,7 +461,51 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     if (!src->Ok())
       return FALSE;
 
-    /* Handle scaling by creating a new, tmeporary bitmap: */
+    if (src->selectedTo)
+      src->selectedTo->EndSetPixel();
+    if (mask && mask->selectedTo)
+      mask->selectedTo->EndSetPixel();
+    
+#ifdef WX_USE_XRENDER
+    /* Decide whether to use Xrender before scaling...
+
+       Non-monochrome masks require the Xrender extension. We expect
+       that Xrender it's also better when we have a monochrome mask.
+
+       Use Xrender extension when:
+
+         - It's available at compile time and run time
+	 - There's a mask
+	 - The destination (this DC) is non-monochrome
+	 - One of:
+             * the rop is ignored (because the src is not mono)
+             * the rop is wxSOLID (not wxSTIPPLE, which means "opaque")
+	 - One of:
+             * the color is ignored (because the src is not mono)
+	     * the color is black/unspecified
+
+      Under other circumstances, it doesn't work right. */
+    
+    if (xrender_here < 0) {
+      /* Check whether Xrender is present at run time */
+      int event_base, error_base;
+      if (XRenderQueryExtension(wxAPP_DISPLAY, &event_base, &error_base) &&
+	  (XRenderFindVisualFormat (wxAPP_DISPLAY, DefaultVisual(wxAPP_DISPLAY, 
+								 DefaultScreen(wxAPP_DISPLAY))) != 0)) {
+	xrender_here = 1;
+      } else
+	xrender_here = 0;
+    }
+    
+    should_xrender= (xrender_here
+		     && mask
+		     && Colour
+		     && ((src->GetDepth() > 1)
+			 || ((rop == wxSOLID)
+			     && (!dcolor || (!dcolor->Red() && !dcolor->Green() && !dcolor->Blue())))));
+#endif
+
+    /* Handle scaling by creating a new, temporary bitmap: */
     if ((scale_x != 1) || (scale_y != 1)) {
       int retval;
       src = ScaleBitmap(src, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
@@ -457,7 +513,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	return retval;
       if (mask) {
 	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval, 
-			   1, WhitePixelOfScreen(SCN));
+			   !should_xrender, WhitePixelOfScreen(SCN));
 	if (!mask) {
 	  DELETE_OBJ tmp;
 	  return retval;
@@ -465,107 +521,245 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       }
     }
 
-    if (src->selectedTo)
-      src->selectedTo->EndSetPixel();
-    if (mask && mask->selectedTo)
-      mask->selectedTo->EndSetPixel();
-    
-    if (src->GetDepth() > 1) {
-      /* Neither rop nor dcolor matter. Use GCBlit. */
-      retval = GCBlit(xdest, ydest, w, h, src, xsrc, ysrc, mask);
-
-      if (tmp)
-	DELETE_OBJ tmp;
-      if (tmp_mask)
-	DELETE_OBJ tmp_mask;
-
-      return retval;
-    }
-
-    /* This is mono to mono/color */
-
-    FreeGetPixelCache();
-
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
-
-    savePen = current_pen;
-    saveBack = new wxColour(current_background_color);
-    /* Pen GC used for blit: */
-    apen = wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop);
-    SetPen(apen);
-
+    
     scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
     scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
-    if (DRAWABLE && src->Ok()) {
-      int tx, ty;
-      Region free_rgn = NULL;
+    tx = (int)XLOG2DEV(xdest);
+    ty = (int)YLOG2DEV(ydest);
 
-      tx = XLOG2DEV(xdest);
-      ty = YLOG2DEV(ydest);
+#ifdef WX_USE_XRENDER
+    if (should_xrender) {
+      /* Using Xrender... */
+      Picture destp, srcp, maskp;
+      wxBitmap *free_bmp = NULL;
 
-      if (mask)
-	tmp_mask = IntersectBitmapRegion(PEN_GC, EXPOSE_REG, USER_REG, mask,
-					 &free_rgn,
-					 &tx, &ty,
-					 &scaled_width, &scaled_height,
-					 &xsrc, &ysrc,
-					 DPY, WhitePixelOfScreen(SCN));
+      /* Create format records, if not done already: */
+      if (!format) {
+	Visual *visual;
+	XRenderPictFormat pf;
 
-      // Check if we're copying from a mono bitmap
-      retval = TRUE;
-      if ((rop == wxSOLID) || (rop == wxXOR) || (rop == wxCOLOR)) {
-	/* Seems like the easiest way to implement transparent backgrounds is to
-	   use a stipple. */
-	XGCValues values;
-	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
-	values.stipple = GETPIXMAP(src);
-	values.fill_style = FillStippled;
-	values.ts_x_origin = ((tx - (long)xsrc) % src->GetWidth());
-	values.ts_y_origin = ((ty - (long)ysrc) % src->GetHeight());
-	XChangeGC(DPY, PEN_GC, mask, &values);
-	XFillRectangle(DPY, DRAWABLE, PEN_GC, tx, ty, scaled_width, scaled_height);
+	visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
+						   DefaultColormapOfScreen(wxAPP_SCREEN)));
+	format = XRenderFindVisualFormat(wxAPP_DISPLAY, visual);
+	
+	pf.type = PictTypeDirect;
+	pf.depth = 1;
+	pf.direct.alpha = 0;
+	pf.direct.alphaMask = 1;
+	mask_format = XRenderFindFormat (wxAPP_DISPLAY,
+					 (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
+					 &pf,
+					 0);
 
-	/* Restore pen: */
-	values.fill_style = FillSolid;
-	XChangeGC(DPY, PEN_GC, GCFillStyle, &values);
-      } else {
-	Pixmap pm;
-	pm = GETPIXMAP(src);
-	XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
-		   (long)xsrc, (long)ysrc,
-		   scaled_width, scaled_height,
-		   tx, ty, 1);
+	pf.type = PictTypeDirect;
+	pf.depth = 8;
+	pf.direct.alpha = 0;
+	pf.direct.alphaMask = 0xFF;
+	alpha_format = XRenderFindFormat (wxAPP_DISPLAY,
+					  (PictFormatType|PictFormatDepth|PictFormatAlpha|PictFormatAlphaMask),
+					  &pf,
+					  0);
       }
-      CalcBoundingBox(xdest, ydest);
-      CalcBoundingBox(xdest + w, ydest + h);
       
-      /* restore pen: */
-      if (mask)
-	SetCanvasClipping();
+      /* Create an Xrender picture for each X pixmap: */
+      destp = XRenderCreatePicture(wxAPP_DISPLAY,
+				   DRAWABLE,
+				   Colour ? format : mask_format,
+				   0,
+				   NULL);
+      srcp = XRenderCreatePicture(wxAPP_DISPLAY,
+				  GETPIXMAP(src),
+				  (src->GetDepth() == 1) ? mask_format : format,
+				  0,
+				  NULL);
+
+      /* Mask case is more difficult if it's not 1 bit: */
+      if (mask) {
+	if (mask->GetDepth() == 1) {
+	  /* Easy: */
+	  maskp = XRenderCreatePicture(wxAPP_DISPLAY,
+				       GETPIXMAP(mask),
+				       mask_format,
+				       0,
+				       NULL);
+	} else {
+	  /* Difficult. Need to create an 8-bit alpha (grayscale)
+	     pixmap by reading pixels of the mask pixmap. Note that we
+	     don't worry about a colormap for this pixmap; it will be
+	     interpreted as graysacle by Xrender. */
+	  wxBitmap *bm;
+	  wxMemoryDC *tmp;
+	  wxColour *c;
+	  int mw, mh, v;
+
+	  mw = scaled_width;
+	  mh = scaled_height;
+	  
+	  bm = new wxBitmap();
+	  bm->Create(mw, mh, 8);
+
+	  if (bm->Ok()) {
+	    XImage *img;
+	    int i, j;
+	  
+	    tmp = new wxMemoryDC(1);
+	    tmp->SelectObject(mask);
+	    
+	    c = new wxColour(0, 0, 0);
+	    img = XGetImage(wxAPP_DISPLAY, GETPIXMAP(bm), 0, 0, mw, mh, AllPlanes, ZPixmap);
+	    
+	    for (i = 0; i < mw; i++) {
+	      for (j = 0; j < mh; j++) {
+		tmp->GetPixel(i, j, c);
+		v = c->Red() + c->Green() + c->Blue();
+		v = v / 3;
+		XPutPixel(img, i, j, 255 - v);
+	      }
+	    }
+
+	    tmp->SelectObject(NULL);
+
+	    {
+	      GC agc;
+	      agc = XCreateGC(DPY, GETPIXMAP(bm), 0, NULL);
+	      XPutImage(wxAPP_DISPLAY, GETPIXMAP(bm), agc, img, 0, 0, 0, 0, mw, mh);
+	      XFreeGC(DPY, agc);
+	    }
+
+	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,
+					 GETPIXMAP(bm),
+					 alpha_format,
+					 0,
+					 NULL);
+	    
+	    free_bmp = bm;
+	  } else
+	    maskp = 0;
+	}
+      } else
+	maskp = 0;
+
+      /* Need to install clipping region, if any: */
+      if (CURRENT_REG) {
+	XRenderSetPictureClipRegion(wxAPP_DISPLAY, destp, CURRENT_REG);
+      }
+
+      /* This is the actual blit. */
+      XRenderComposite(wxAPP_DISPLAY,
+		       (mask || (src->GetDepth() == 1)) ? PictOpOver : PictOpSrc,
+		       srcp,
+		       mask ? maskp : ((src->GetDepth() == 1) ? srcp : 0),
+		       destp,
+		       (long)xsrc, (long)ysrc,
+		       (long)xsrc, (long)ysrc,
+		       tx, ty,
+		       scaled_width,
+		       scaled_height);
       
-      if (free_rgn)
-	XDestroyRegion(free_rgn);
+      retval = 1; /* or so we assume */
+
+      /* Free temporary data */
+      XRenderFreePicture(wxAPP_DISPLAY, destp);
+      XRenderFreePicture(wxAPP_DISPLAY, srcp);
+      if (maskp)
+	XRenderFreePicture(wxAPP_DISPLAY, maskp);
+
+      if (free_bmp)
+	DELETE_OBJ free_bmp;
+    } else {
+#endif
+      /* Non-Xrender mode... */
+
+      if (src->GetDepth() > 1) {
+	/* This is color to mono/color.
+	   Neither rop nor dcolor matter, so use GCBlit. */
+	retval = GCBlit(xdest, ydest, w, h, src, xsrc, ysrc, mask);
+      } else {
+
+	/* This is mono to mono/color */
+
+	FreeGetPixelCache();
+
+	savePen = current_pen;
+	saveBack = new wxColour(current_background_color);
+	/* Pen GC used for blit: */
+	apen = wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop);
+	SetPen(apen);
+
+	if (DRAWABLE && src->Ok()) {
+	  Region free_rgn = NULL;
+
+	  if (mask)
+	    tmp_mask = IntersectBitmapRegion(PEN_GC, EXPOSE_REG, USER_REG, mask,
+					     &free_rgn,
+					     &tx, &ty,
+					     &scaled_width, &scaled_height,
+					     &xsrc, &ysrc,
+					     DPY, WhitePixelOfScreen(SCN));
+
+	  // Check if we're copying from a mono bitmap
+	  retval = TRUE;
+	  if ((rop == wxSOLID) || (rop == wxXOR)) {
+	    /* Seems like the easiest way to implement transparent backgrounds is to
+	       use a stipple. */
+	    XGCValues values;
+	    unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	    values.stipple = GETPIXMAP(src);
+	    values.fill_style = FillStippled;
+	    values.ts_x_origin = ((tx - (long)xsrc) % src->GetWidth());
+	    values.ts_y_origin = ((ty - (long)ysrc) % src->GetHeight());
+	    XChangeGC(DPY, PEN_GC, mask, &values);
+	    XFillRectangle(DPY, DRAWABLE, PEN_GC, tx, ty, scaled_width, scaled_height);
+
+	    /* Restore pen: */
+	    values.fill_style = FillSolid;
+	    XChangeGC(DPY, PEN_GC, GCFillStyle, &values);
+	  } else {
+	    /* Opaque (i.e., white pixels transferred as background) */
+	    Pixmap pm;
+	    pm = GETPIXMAP(src);
+	    XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
+		       (long)xsrc, (long)ysrc,
+		       scaled_width, scaled_height,
+		       tx, ty, 1);
+	  }
+	  CalcBoundingBox(xdest, ydest);
+	  CalcBoundingBox(xdest + w, ydest + h);
+	  
+	  /* restore pen: */
+	  if (mask)
+	    SetCanvasClipping();
+	  
+	  if (free_rgn)
+	    XDestroyRegion(free_rgn);
+	}
+
+	SetPen(savePen);
+	SetBackground(saveBack);
+      }
+#ifdef WX_USE_XRENDER
     }
-
-    SetPen(savePen);
-    SetBackground(saveBack);
-
+#endif
+    
     if (tmp) {
       DELETE_OBJ tmp;
     }
     if (tmp_mask) {
       DELETE_OBJ tmp_mask;
     }
-      
+
     return retval; // #f => something wrong with the drawables
 }
 
 Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *src,
 			float xsrc, float ysrc, wxBitmap *bmask)
 {
-  /* A non-allocating (of collectable memory) blit, but may allocate when bmask is non-NULL */
+  /* A non-allocating (of collectable memory) blit, but may allocate
+     when bmask is non-NULL.  Note that there's no rop or color. We do
+     the simplest thing (wxSOLID with black) always. */
   Bool retval = FALSE;
   int scaled_width;
   int scaled_height;
@@ -643,7 +837,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	DELETE_OBJ tmp_mask;
     }
 
-    return retval; // someting wrong with the drawables
+    return retval; // !retval => something is wrong with the drawables
 }
 
 void wxWindowDC::Clear(void)

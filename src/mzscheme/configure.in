@@ -380,6 +380,7 @@ case $OS in
       OSX=""
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install
+      enable_xft=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else

@@ -214,6 +214,8 @@ static Scheme_Object *actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = NULL;
 static Scheme_Object *actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = NULL;
 static Scheme_Object *actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = NULL;
 static Scheme_Object *actionType_wxEVENT_TYPE_MENU_SELECT_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_MENU_POPDOWN_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym = NULL;
 
 static void init_symset_actionType(void) {
   REMEMBER_VAR_STACK();
@@ -237,12 +239,16 @@ static void init_symset_actionType(void) {
   actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("text-field-enter"));
   wxREGGLOB(actionType_wxEVENT_TYPE_MENU_SELECT_sym);
   actionType_wxEVENT_TYPE_MENU_SELECT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu"));
+  wxREGGLOB(actionType_wxEVENT_TYPE_MENU_POPDOWN_sym);
+  actionType_wxEVENT_TYPE_MENU_POPDOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu-popdown"));
+  wxREGGLOB(actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym);
+  actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu-popdown-none"));
 }
 
 static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) WITH_VAR_STACK(init_symset_actionType());
+  if (!actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym) WITH_VAR_STACK(init_symset_actionType());
   if (0) { }
   else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return wxEVENT_TYPE_BUTTON_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return wxEVENT_TYPE_CHECKBOX_COMMAND; }
@@ -254,12 +260,14 @@ static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
   else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return wxEVENT_TYPE_MENU_SELECT; }
+  else if (v == actionType_wxEVENT_TYPE_MENU_POPDOWN_sym) { return wxEVENT_TYPE_MENU_POPDOWN; }
+  else if (v == actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym) { return wxEVENT_TYPE_MENU_POPDOWN_NONE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "actionType symbol", -1, 0, &v));
   return 0;
 }
 
 static Scheme_Object *bundle_symset_actionType(int v) {
-  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
+  if (!actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym) init_symset_actionType();
   switch (v) {
   case wxEVENT_TYPE_BUTTON_COMMAND: return actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym;
   case wxEVENT_TYPE_CHECKBOX_COMMAND: return actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym;
@@ -271,6 +279,8 @@ static Scheme_Object *bundle_symset_actionType(int v) {
   case wxEVENT_TYPE_RADIOBOX_COMMAND: return actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym;
   case wxEVENT_TYPE_TEXT_ENTER_COMMAND: return actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym;
   case wxEVENT_TYPE_MENU_SELECT: return actionType_wxEVENT_TYPE_MENU_SELECT_sym;
+  case wxEVENT_TYPE_MENU_POPDOWN: return actionType_wxEVENT_TYPE_MENU_POPDOWN_sym;
+  case wxEVENT_TYPE_MENU_POPDOWN_NONE: return actionType_wxEVENT_TYPE_MENU_POPDOWN_NONE_sym;
   default: return NULL;
   }
 }

@@ -95,8 +95,8 @@ Bool wxMenuBar::Create(wxPanel *panel)
     X->frame = wgt;
     wgt = XtVaCreateWidget
 	("menubar", menuWidgetClass, X->frame,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhMargin,     4,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNmenu,        top,

@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.9 1999/10/05 13:32:17 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -319,7 +318,7 @@ enum {
     wxEVENT_TYPE_LISTBOX_COMMAND        = 0x0004,
     wxEVENT_TYPE_RESERVED2              = 0x0005,
     wxEVENT_TYPE_TEXT_COMMAND           = 0x0006,
-    wxEVENT_TYPE_MULTITEXT_COMMAND      = 0x0007,
+    wxEVENT_TYPE_MENU_POPDOWN_NONE      = 0x0007,
     wxEVENT_TYPE_MENU_COMMAND           = 0x0008,
     wxEVENT_TYPE_SLIDER_COMMAND         = 0x0009,
     wxEVENT_TYPE_RADIOBOX_COMMAND       = 0x000a,
@@ -327,7 +326,7 @@ enum {
     wxEVENT_TYPE_SET_FOCUS              = 0x000c,
     wxEVENT_TYPE_KILL_FOCUS             = 0x000d,
     wxEVENT_TYPE_SCROLLBAR_COMMAND      = 0x000e,
-    wxEVENT_TYPE_VIRT_LISTBOX_COMMAND   = 0x000f,
+    wxEVENT_TYPE_MENU_POPDOWN           = 0x000f,
     wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND = 0x0010,
     wxEVENT_TYPE_MENU_SELECT            = 0x0011,
     // Scrollbar event identifiers

@@ -46,8 +46,6 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
     X    = NULL;
 
     font = wxSYSTEM_FONT;
-    fg   = wxBLACK;
-    bg   = wxGREY;
     callback = _func;
     top = topdummy = title = last = 0;
     // if a title is associated with a menu, it may not be removed
@@ -135,8 +133,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	("menu", menuWidgetClass, X->shell,
 	 XtNmenu,       top,
 	 XtNfont,       font->GetInternalFont(),
-	 XtNforeground, fg->GetPixel(wxAPP_COLOURMAP),
-	 XtNbackground, bg->GetPixel(wxAPP_COLOURMAP),
+	 XtNforeground, wxBLACK_PIXEL,
+	 XtNbackground, wxGREY_PIXEL,
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);
@@ -503,15 +501,19 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     DELETE_OBJ menu->X;
     menu->X=NULL;
 
-    if (item && (item->ID != -1)) {
+    if (item && (item->ID == -1))
+      item = NULL;
+
+    {
       wxPopupEvent *event;
 
-      if (item->type == MENU_TOGGLE)
-	item->set = (!item->set);
+      if (item)
+	if (item->type == MENU_TOGGLE)
+	  item->set = (!item->set);
       
       event = new wxPopupEvent();
       
-      event->menuId = item->ID;
+      event->menuId = (item ? item->ID : 0);
 
       // call callback function
       if (menu->callback)

@@ -97,8 +97,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       title,
 	 XtNalignment,   vert ? XfwfTop : XfwfTopLeft,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 NULL);
     X->frame = wgt;
@@ -106,7 +106,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     wgt = XtVaCreateManagedWidget
 	("viewport", xfwfScrolledWindowWidgetClass, X->frame,
 	 XtNhideHScrollbar, TRUE,
-	 XtNbackground, bg->GetPixel(cmap), /* MATTHEW */
+	 XtNbackground, wxGREY_PIXEL,
 	 XtNdoScroll, FALSE,
 	 XtNhighlightThickness, 2,
 	 NULL);
@@ -114,8 +114,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     // create multi list
     wgt = XtVaCreateManagedWidget
 	("list", xfwfMultiListWidgetClass, X->scroll,
-	 XtNbackground,     bg->GetPixel(cmap),
-	 XtNforeground,     fg->GetPixel(cmap),
+	 XtNbackground,     wxGREY_PIXEL,
+	 XtNforeground,     wxBLACK_PIXEL,
 	 XtNfont,           font->GetInternalFont(),
 	 XtNborderWidth,    0,
 	 XtNshadeSurplus,   FALSE,
@@ -165,10 +165,6 @@ wxListBox::~wxListBox(void)
 //-----------------------------------------------------------------------------
 // override parent methods
 //-----------------------------------------------------------------------------
-
-void wxListBox::ChangeColours(void)
-{
-}
 
 void wxListBox::SetSize(int x, int y, int width, int height, int flags)
 {

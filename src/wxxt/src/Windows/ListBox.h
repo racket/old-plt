@@ -42,7 +42,6 @@ public:
     ~wxListBox(void);
 
     // override parent methods
-    virtual void ChangeColours(void);
     virtual void SetSize(int width, int height) { SetSize(-1, -1, width, height); }
     virtual void SetSize(int x, int y, int width, int height, int flags=wxSIZE_AUTO);
     // handle the contents of the list

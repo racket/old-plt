@@ -100,16 +100,11 @@ public:
     virtual void  SetSize(int width, int height)
 	{ SetSize(-1, -1, width, height, wxSIZE_USE_EXISTING); }
     // GDI (colours, colourmap, font, cursor)
-    virtual void      ChangeColours(void);
-    virtual wxColour  *GetBackgroundColour(void) { return bg; }
-    virtual wxColour  *GetForegroundColour(void) { return fg; }
     virtual void      GetTextExtent(const char *string, float *x, float *y,
 				    float *descent = NULL,
 				    float *externalLeading = NULL,
 				    wxFont *theFont = NULL, Bool use16bit=FALSE);
-    virtual void      SetBackgroundColour(wxColour *col);
     virtual wxCursor  *SetCursor(wxCursor *cursor);
-    virtual void      SetForegroundColour(wxColour *col);
     // Caret
     virtual void  CreateCaret(int WXUNUSED(w), int WXUNUSED(h)) {};
     virtual void  CreateCaret(wxBitmap *WXUNUSED(bitmap)) {};
@@ -201,7 +196,6 @@ protected:
     wxWindow *parent;
     wxChildList   *children;
     // GDI objects
-    wxColour    *fg, *bg;
     wxColourMap *cmap;
     wxCursor    *cursor;
     wxFont      *font;

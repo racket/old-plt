@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.6 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Message.cc,v 1.7 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -76,8 +76,8 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
     // create frame
     wgt = XtVaCreateWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
@@ -89,8 +89,8 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
     wgt = XtVaCreateManagedWidget
 	("message", xfwfLabelWidgetClass, X->frame,
 	 XtNlabel,       message,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNalignment,   wxALIGN_LEFT,
 	 XtNshrinkToFit, TRUE,
@@ -134,8 +134,8 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
     // create frame
     wgt = XtVaCreateManagedWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
@@ -147,8 +147,8 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
     wgt = XtVaCreateManagedWidget
 	("Message", xfwfLabelWidgetClass, X->frame,
 	 XtNpixmap,      pm,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNalignment,   wxALIGN_LEFT,
 	 XtNshrinkToFit, TRUE,

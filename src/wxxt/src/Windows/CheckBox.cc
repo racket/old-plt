@@ -77,8 +77,8 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     // create frame
     wgt = XtVaCreateManagedWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
@@ -87,8 +87,8 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     wgt = XtVaCreateManagedWidget
 	("checkbox", xfwfToggleWidgetClass, X->frame,
 	 XtNlabel,       label,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
@@ -130,8 +130,8 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     // create frame
     wgt = XtVaCreateManagedWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
@@ -141,8 +141,8 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     wgt = XtVaCreateManagedWidget
 	("checkbox", xfwfToggleWidgetClass, X->frame,
 	 XtNpixmap,      pm,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,

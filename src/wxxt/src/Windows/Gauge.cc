@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.7 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Gauge.cc,v 1.8 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -80,8 +80,8 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNtraversalOn, FALSE,
 	 XtNframeType,   XfwfSunken,
@@ -91,9 +91,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     // create the slider widget
     wgt = XtVaCreateManagedWidget
 	("gauge", xfwfSlider2WidgetClass, X->frame,
-	 XtNbackground,    bg->GetPixel(cmap),
-	 XtNforeground,    fg->GetPixel(cmap),
-	 XtNthumbColor,    bg->GetPixel(cmap),
+	 XtNbackground,    wxGREY_PIXEL,
+	 XtNforeground,    wxBLACK_PIXEL,
+	 XtNthumbColor,    wxGREY_PIXEL,
 	 XtNminsize,	   0,
 	 XtNframeType,     XfwfRaised,
 	 XtNframeWidth,    0,

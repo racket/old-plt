@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.cc,v 1.6 1999/11/23 17:29:57 mflatt Exp $
+ * $Id: Item.cc,v 1.7 1999/11/25 20:47:00 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -40,7 +40,6 @@
 wxItem::wxItem(void) : wxWindow()
 { 
     __type = wxTYPE_ITEM;
-    label_fg = wxBLACK;
     label_font = wxSYSTEM_FONT;
     callback = NULL;
 };
@@ -57,43 +56,9 @@ void wxItem::ChainToPanel(wxPanel *panel, long _style, char *name)
     parent->AddChild(this);
 
     style       = _style;
-    fg         = panel->GetButtonColour();
-    bg         = panel->GetBackgroundColour();
     font       = panel->GetButtonFont();
-    label_fg   = panel->GetLabelColour();
     label_font = panel->GetLabelFont();
 }
-
-void wxItem::ChangeColours(void)
-{
-    if (X->frame && X->frame != X->handle) {
-      wxColour *bgc;
-      bgc = parent->GetBackgroundColour();
-      if (bgc) {
-	unsigned long pixel;
-	pixel = bgc->GetPixel(cmap);
-	XtVaSetValues(X->frame, XtNbackground, pixel, NULL);
-      }
-      if (label_fg)
-	XtVaSetValues(X->frame, XtNforeground,
-		      label_fg->GetPixel(cmap), NULL);
-    }
-    if (X->handle) {
-	if (bg)
-	    XtVaSetValues(X->handle, XtNbackground,
-			  bg->GetPixel(cmap), NULL);
-	if (fg)
-	    XtVaSetValues(X->handle, XtNforeground,
-			  fg->GetPixel(cmap), NULL);
-    }
-}
-
-#if 0
-void wxItem::SetLabelColour(wxColour *col)
-{
-    label_fg = col; ChangeColours();
-}
-#endif
 
 //-----------------------------------------------------------------------------
 // functions to execute item

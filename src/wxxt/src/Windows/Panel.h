@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.h,v 1.4 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Panel.h,v 1.5 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -50,14 +50,9 @@ public:
     virtual void  Fit(void);
     virtual void  Layout(void);
     // data retrieved from wxItem and it's children
-    wxColour  *GetButtonColour(void)	{ return button_colour; }
     wxFont    *GetButtonFont(void)      { return font; }
-    wxColour  *GetLabelColour(void)     { return label_colour; }
     wxFont    *GetLabelFont(void)       { return label_font; }
-    void      SetBackgroundColour(wxColour *col);
-    void      SetButtonColour(wxColour *col)   { button_colour = col; }
     void      SetButtonFont(wxFont *fnt)      { font = fnt; }
-    void      SetLabelColour(wxColour *col)    { label_colour = col; }
     void      SetLabelFont(wxFont *font)       { label_font = font; }
     // position of labels
     int   GetLabelPosition(void)           { return label_pos; }
@@ -83,8 +78,6 @@ protected:
     friend class wxButton;	// allow access to default_item
 
     wxButton  *default_item;	// executed on default action
-    wxColour  *button_colour;   // colour for buttons
-    wxColour  *label_colour;    // colour for labels
     wxFont    *label_font;	// font for labels
     int       label_pos;	// where to put the label
     int       cursor_x, cursor_y,

@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Frame.h,v 1.7 1999/07/08 16:10:42 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -57,7 +56,6 @@ public:
 			  int WXUNUSED(flags=wxSIZE_AUTO))
 		{ Configure(x, y, width, height); }
     // status line
-    /* MATTHEW: */
     void  CreateStatusLine(int number=1, char *name = "status_line");
     void  SetStatusText(char *text, int number=0);
     Bool  StatusLineExists(void);
@@ -75,11 +73,8 @@ public:
     Bool  Show(Bool show);
     // virtual event functions
     virtual void  OnMenuSelect(long id);
+    virtual void  OnMenuClick();
 
-    void SetToolBar(wxToolBar*);
-    wxToolBar *GetToolBar(void);
-
-    /* MATTHEW */
     void *context;
 
 protected:

@@ -233,16 +233,6 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
   noloop = FALSE;
 
-#ifdef wx_xt
-  SetBackgroundColour(wxWHITE);
-#else
-  {
-    wxDC *dc;
-    dc = GetDC();
-    dc->SetBackground(wxWHITE);
-  }
-#endif
-
   {
     wxCanvasMediaAdmin *cma;
     cma = new wxCanvasMediaAdmin(this);

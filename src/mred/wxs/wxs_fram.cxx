@@ -159,6 +159,7 @@ class os_wxFrame : public wxFrame {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
+  void OnMenuClick();
   void OnMenuCommand(ExactLong x0);
   Bool OnClose();
   void OnActivate(Bool x0);
@@ -377,6 +378,35 @@ void os_wxFrame::OnKillFocus()
 
   v = WITH_VAR_STACK(scheme_apply(method, 0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
+  
+  }
+}
+
+void os_wxFrame::OnMenuClick()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-menu-click", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxFrame::OnMenuClick();
+  } else {
+  
+  
+
+  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
+  
   
   }
 }
@@ -626,6 +656,29 @@ static Scheme_Object *os_wxFrameOnKillFocus(Scheme_Object *obj, int n,  Scheme_O
     WITH_VAR_STACK(((os_wxFrame *)((Scheme_Class_Object *)obj)->primdata)->wxFrame::OnKillFocus());
   else
     WITH_VAR_STACK(((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus());
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxFrameOnMenuClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    WITH_VAR_STACK(((os_wxFrame *)((Scheme_Class_Object *)obj)->primdata)->wxFrame::OnMenuClick());
+  else
+    WITH_VAR_STACK(((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->OnMenuClick());
 
   
   
@@ -1067,7 +1120,7 @@ void objscheme_setup_wxFrame(void *env)
 
   wxREGGLOB(os_wxFrame_class);
 
-  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21));
+  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2));
@@ -1075,6 +1128,7 @@ void objscheme_setup_wxFrame(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-size", os_wxFrameOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-set-focus", os_wxFrameOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-kill-focus", os_wxFrameOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-click", os_wxFrameOnMenuClick, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command", os_wxFrameOnMenuCommand, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-close", os_wxFrameOnClose, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-activate", os_wxFrameOnActivate, 1, 1));

@@ -82,6 +82,7 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 @INCLUDE wxs_fram.xci
 
 @ v "on-menu-command" : void OnMenuCommand(ExactLong)
+@ v "on-menu-click" : void OnMenuClick()
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

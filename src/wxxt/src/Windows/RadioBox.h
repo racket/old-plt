@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.h,v 1.4 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: RadioBox.h,v 1.5 1999/11/18 16:35:08 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -70,7 +70,6 @@ public:
     Bool  Show(int item, Bool show);
     char  *GetString(int which);
     // root methods to parent class
-    virtual void  ChangeColours(void);
     virtual void  Enable(Bool enable)	{ wxItem::Enable(enable); }
     virtual char  *GetLabel(void)	{ return wxItem::GetLabel(); }
     virtual void  SetLabel(char *label)	{ wxItem::SetLabel(label); }

@@ -117,8 +117,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
 				  XtNlabel,       label,
 				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
-				  XtNbackground,  bg->GetPixel(cmap),
-				  XtNforeground,  label_fg->GetPixel(cmap),
+				  XtNbackground,  wxGREY_PIXEL,
+				  XtNforeground,  wxBLACK_PIXEL,
 				  XtNfont,        label_font->GetInternalFont(),
 				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 				  XtNframeWidth,  0,
@@ -132,7 +132,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 				  XtNstoreByRow,     FALSE,
 				  XtNlabel,          NULL,
 				  XtNframeWidth,     0,
-				  XtNbackground,     bg->GetPixel(cmap),
+				  XtNbackground,     wxGREY_PIXEL,
 				  XtNrows,           num_rows,
 				  XtNshrinkToFit,    (width < 0 || height < 0),
 				  NULL);
@@ -148,8 +148,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	tlabel = wxGetCtlLabel(choices[i]);
 	wgt = XtVaCreateManagedWidget(num_name, xfwfToggleWidgetClass, X->handle,
 				      XtNlabel,         tlabel,
-				      XtNbackground,    bg->GetPixel(cmap),
-				      XtNforeground,    fg->GetPixel(cmap),
+				      XtNbackground,    wxGREY_PIXEL,
+				      XtNforeground,    wxBLACK_PIXEL,
 				      XtNfont,          font->GetInternalFont(),
 				      XtNshrinkToFit,   TRUE,
 				      NULL);
@@ -229,8 +229,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
 				  XtNlabel,       label,
 				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
-				  XtNbackground,  bg->GetPixel(cmap),
-				  XtNforeground,  label_fg->GetPixel(cmap),
+				  XtNbackground,  wxGREY_PIXEL,
+				  XtNforeground,  wxBLACK_PIXEL,
 				  XtNfont,        label_font->GetInternalFont(),
 				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 				  XtNframeWidth,  0, /* MATTHEW: no frame */
@@ -245,8 +245,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 				  XtNstoreByRow,     FALSE,
 				  XtNlabel,          NULL,
 				  XtNframeWidth,     0,
-				  XtNbackground,     bg->GetPixel(cmap), /* MATTHEW */
-				  XtNrows,           num_rows,/* MATTHEW: [5] */
+				  XtNbackground,     wxGREY_PIXEL,
+				  XtNrows,           num_rows,
 				  XtNshrinkToFit,    TRUE,
 				  NULL);
     X->handle = wgt;
@@ -287,8 +287,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
 	wgt = XtVaCreateManagedWidget(num_name, xfwfToggleWidgetClass, X->handle,
 				      kind,             label,
-				      XtNbackground,    bg->GetPixel(cmap),
-				      XtNforeground,    fg->GetPixel(cmap),
+				      XtNbackground,    wxGREY_PIXEL,
+				      XtNforeground,    wxBLACK_PIXEL,
 				      XtNfont,          font->GetInternalFont(),
 				      XtNshrinkToFit,   TRUE,
 				      NULL);
@@ -469,23 +469,6 @@ Bool wxRadioBox::Show(int item, Bool show)
 void wxRadioBox::Command(wxCommandEvent *event)
 {
   ProcessCommand(event);
-}
-
-//-----------------------------------------------------------------------------
-// override parent methods
-//-----------------------------------------------------------------------------
-
-void wxRadioBox::ChangeColours(void)
-{
-    wxItem::ChangeColours();
-    for (int i=0; i < num_toggles; ++i) {
-	if (bg)
-	    XtVaSetValues(TOGGLES[i], XtNbackground,
-			  bg->GetPixel(cmap), NULL);
-	if (fg)
-	    XtVaSetValues(TOGGLES[i], XtNforeground,
-			  fg->GetPixel(cmap), NULL);
-    }
 }
 
 //-----------------------------------------------------------------------------

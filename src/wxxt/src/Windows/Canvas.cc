@@ -62,8 +62,8 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     // create frame
     wgt = XtVaCreateManagedWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNtraversalTranslationDone, TRUE,
 	 XtNhighlightThickness, 0,
@@ -82,24 +82,20 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNshadowScheme, XfwfBlack,
 	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 2 : 0),
 	 XtNspacing, 0,
-	 XtNbackground,  bg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
 	 NULL);
     X->scroll = wgt;
     // create canvas
-    {
-      unsigned long pixel;
-      pixel = wxWHITE->GetPixel();
-      wgt = XtVaCreateManagedWidget
-	("canvas", xfwfCanvasWidgetClass, X->scroll,
-	 XtNbackingStore, (style & wxBACKINGSTORE) ? Always : NotUseful,
-	 XtNborderWidth,  0,
-	 XtNbackground,  pixel,
-	 XtNhighlightThickness, 0,
-	 XtNframeWidth, 0,
-	 XtNtraversalOn, FALSE,
-	 NULL);
-      X->handle = wgt;
-    }
+    wgt = XtVaCreateManagedWidget
+      ("canvas", xfwfCanvasWidgetClass, X->scroll,
+       XtNbackingStore, (style & wxBACKINGSTORE) ? Always : NotUseful,
+       XtNborderWidth,  0,
+       XtNbackground,  wxWHITE_PIXEL,
+       XtNhighlightThickness, 0,
+       XtNframeWidth, 0,
+       XtNtraversalOn, FALSE,
+       NULL);
+    X->handle = wgt;
     // Initialize CanvasDC
     CreateDC();
     dc->SetBackground(wxWHITE); // white brush as default for canvas background
@@ -315,27 +311,6 @@ void wxCanvas::WarpPointer(int x, int y)
 {
   /* MATTHEW: [5] scroll => handle */
   XWarpPointer(XtDisplay(X->handle), None, XtWindow(X->handle), 0, 0, 0, 0, x, y);
-}
-
-//-----------------------------------------------------------------------------
-// misc
-//-----------------------------------------------------------------------------
-
-void wxCanvas::ChangeColours(void)
-{
-    wxItem::ChangeColours();
-    if (X->scroll) {
-      wxColour *bgc;
-      bgc = parent->GetBackgroundColour();
-      if (bgc) {
-	unsigned long pixel;
-	pixel = bgc->GetPixel(cmap);
-	XtVaSetValues(X->scroll, XtNbackground, pixel, NULL);
-      }
-      if (label_fg)
-	XtVaSetValues(X->scroll, XtNforeground,
-		      label_fg->GetPixel(cmap), NULL);
-    }
 }
 
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.cc,v 1.4 1999/11/19 22:02:37 mflatt Exp $
+ * $Id: GlobalData.cc,v 1.5 1999/11/21 00:08:47 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -122,6 +122,10 @@ wxPen* wxBLACK_DASHED_PEN = 0;
 wxPen* wxGREY_PEN = 0;
 wxPen* wxMEDIUM_GREY_PEN = 0;
 wxPen* wxLIGHT_GREY_PEN = 0;
+
+unsigned long wxWHITE_PIXEL;
+unsigned long wxBLACK_PIXEL;
+unsigned long wxGREY_PIXEL;
 
 //-- Types --------------------------------------------------------------------
 

@@ -79,8 +79,6 @@ public:
     void  SetTitle(char *title);
     // set font & colour
     void  SetFont(wxFont *newfont)            { if (newfont) font = newfont; }
-    void  SetBackgroundColour(wxColour *col)  { if (col) bg = col; }
-    void  SetForegroundColour(wxColour *col)  { if (col) fg = col; }
     // miscellaneous
     void  *GetClientData(void) { return client_data; }
     void  SetClientData(void *data) { client_data = data; }
@@ -102,8 +100,6 @@ private:
     wxFunction callback;
     // font & colours
     wxFont*   font;
-    wxColour* fg;
-    wxColour* bg;
     // internal representation
     wxMenuItem* title;		// title, if specified with constructor
     wxMenuItem* top;		// first menu item

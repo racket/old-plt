@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.5 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Canvas.h,v 1.6 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -60,8 +60,6 @@ public:
 			       Bool setVirtualSize = TRUE);
     void ViewStart(int *x, int *y);
     void WarpPointer(int x, int y);
-    // override parent methods
-    virtual void ChangeColours(void);
     // overriden callback methods
     virtual void OnChar(wxKeyEvent *event);
 private:

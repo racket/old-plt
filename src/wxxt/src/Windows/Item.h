@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.h,v 1.3 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Item.h,v 1.4 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -41,20 +41,10 @@ public:
 
     // chain panel<->item, copy colours, fonts, and style
     void ChainToPanel(wxPanel *parent, long style=0, char *name=NULL);
-    // change colours and fonts
-    virtual void      ChangeColours(void);
-    // virtual wxColour  *GetButtonColour(void)  { return GetForegroundColour(); }
-    // virtual wxFont    *GetButtonFont(void)    { return GetFont(); }
-    // virtual wxColour  *GetLabelColour(void)   { return label_fg; }
-    // virtual wxFont    *GetLabelFont(void)     { return label_font; }
-    // virtual void      SetButtonColour(wxColour *col) { SetForegroundColour(col); }
-    // virtual void      SetLabelColour(wxColour *col);
-    // functions to execute item
     virtual void  Command(wxCommandEvent *event);
             void  ProcessCommand(wxCommandEvent *event);
 protected:
     wxFunction callback;
-    wxColour   *label_fg;
     wxFont     *label_font;
 };
 

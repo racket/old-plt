@@ -48,7 +48,6 @@ wxPanel::wxPanel(void) : wxWindow()
 
     default_item = NULL;
     label_font = wxSYSTEM_FONT;
-    button_colour = label_colour = wxBLACK;
     label_pos = wxHORIZONTAL;
     cursor_x = PANEL_HMARGIN;
     cursor_y = PANEL_VMARGIN;
@@ -64,7 +63,6 @@ wxPanel::wxPanel(wxWindow *panel, int x, int y, int width, int height,
 
     default_item = NULL;
     label_font = wxSYSTEM_FONT;
-    button_colour = label_colour = wxBLACK;
     label_pos = wxHORIZONTAL;
     cursor_x = PANEL_HMARGIN;
     cursor_y = PANEL_VMARGIN;
@@ -86,20 +84,16 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     parent->AddChild(this);
 
     style         = _style;
-    button_colour = panel->GetButtonColour();
-    label_colour  = panel->GetLabelColour();
     label_font    = panel->GetLabelFont();
     font          = panel->font;
-    fg            = panel->fg;
-    bg            = panel->bg;
 
     ph = parent->GetHandle();
 
     // create frame
     wgt = XtVaCreateManagedWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNhighlightThickness, 0,
 	 NULL);
@@ -107,7 +101,7 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     // internal representation
     if (style & wxBORDER) {
       wgt = XtVaCreateManagedWidget("panel", xfwfBoardWidgetClass, X->frame,
-				    XtNbackground, bg->GetPixel(cmap),
+				    XtNbackground, wxGREY_PIXEL,
 				    XtNframeWidth, 2,
 				    XtNframeType, XfwfSunken,
 				    NULL);
@@ -115,7 +109,7 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
       xoff = yoff = 4; // offset for border
     } else {
       wgt = XtVaCreateManagedWidget("panel", xfwfBoardWidgetClass, X->frame,
-				    XtNbackground, bg->GetPixel(cmap),
+				    XtNbackground, wxGREY_PIXEL,
 				    XtNhighlightThickness, 0,
 				    NULL);
       X->handle = wgt;
@@ -127,26 +121,6 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     AddEventHandlers();
     // ready
     return TRUE;
-}
-
-//-----------------------------------------------------------------------------
-// if setting own background, change colours of item labels
-//-----------------------------------------------------------------------------
-
-void wxPanel::SetBackgroundColour(wxColour *col)
-{
-  wxChildNode * node;
-
-  // inherit from window
-  wxWindow::SetBackgroundColour(col);
-
-  // change children's label background colours
-  for (node = children->First(); node; node = node->Next()) {
-    wxWindow *child;
-    child = (wxWindow*)node->Data();
-    if (wxSubType(child->__type, wxTYPE_ITEM))
-      child->ChangeColours();
-  }
 }
 
 //-----------------------------------------------------------------------------

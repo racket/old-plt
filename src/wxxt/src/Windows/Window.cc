@@ -84,8 +84,6 @@ wxWindow::wxWindow(void)
     wxLC_MEM(constraints->height, AsIs());
     xoff = yoff = 0;
     // GDI objects
-    fg     = wxBLACK;
-    bg     = wxGREY;
     cmap   = wxAPP_COLOURMAP;
     cursor = NULL /* wxSTANDARD_CURSOR */;
     font   = wxSYSTEM_FONT;
@@ -451,40 +449,8 @@ void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(flags))
 }
 
 //-----------------------------------------------------------------------------
-// GDI objects (colours, colourmap, font, cursor)
+// GDI objects (font, cursor)
 //-----------------------------------------------------------------------------
-
-void wxWindow::ChangeColours(void)
-{
-  if (X->frame) {
-    if (bg)
-      XtVaSetValues(X->frame, XtNbackground,
-		    bg->GetPixel(cmap), NULL);
-    if (fg)
-      XtVaSetValues(X->frame, XtNforeground,
-		    fg->GetPixel(cmap), NULL);
-  }
-  if (X->handle) {
-    if (bg)
-      XtVaSetValues(X->handle, XtNbackground,
-		    bg->GetPixel(cmap), NULL);
-    if (fg)
-      XtVaSetValues(X->handle, XtNforeground,
-		    fg->GetPixel(cmap), NULL);
-  }
-}
-
-// merged with DC-method: float wxWindow::GetCharHeight(void)
-// merged with DC-method: float wxWindow::GetCharWidth(void)
-// merged with DC-method: wxFont *GetFont(void)
-// merged with DC-method: void wxWindow::GetTextExtent()
-
-void wxWindow::SetBackgroundColour(wxColour *col)
-{
-    bg = col; ChangeColours();
-}
-
-// merged with DC-method: void wxWindow::SetColourMap(wxColourMap *new_cmap)
 
 wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 {
@@ -509,13 +475,6 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
   }
   
   return previous;
-}
-
-// merged with DC-method: void wxWindow::SetFont(wxFont *new_font)
-
-void wxWindow::SetForegroundColour(wxColour *col)
-{
-    fg = col; ChangeColours();
 }
 
 //-----------------------------------------------------------------------------
@@ -1651,10 +1610,15 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin) {
 	    *continue_to_dispatch_return = TRUE;
 	  } else {
-	    if (Press 
-		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
-		&& !wxSubType(win->__type, wxTYPE_PANEL))
-	      win->SetFocus();
+	    if (Press) {
+	      if (wxSubType(win->__type, wxTYPE_MENU_BAR)) {
+		wxFrame *f;
+		f = (wxFrame *)(win->GetParent());
+		f->OnMenuClick();
+	      } else if (!wxSubType(win->__type, wxTYPE_PANEL)) {
+		win->SetFocus();
+	      }
+	    }
 
 	    /* It's possible that the window has become disabled... */
 	    if (!win->IsGray())

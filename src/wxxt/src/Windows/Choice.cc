@@ -78,8 +78,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  label_fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 NULL);
@@ -88,8 +88,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     wgt = XtVaCreateManagedWidget
 	("choice", xfwfLabelWidgetClass, X->frame,
 	 XtNlabel,       n > 0 ? choices[0] : "",
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  fg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNframeWidth,  2,
 	 XtNalignment,   XfwfLeft,
@@ -101,8 +101,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     // arrow widget which pops up a menu
     button = XtVaCreateManagedWidget
 	("choice_button", xfwfArrowWidgetClass, X->handle,
-	 XtNbackground,  bg->GetPixel(cmap),
-	 XtNforeground,  bg->GetPixel(cmap),
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxGREY_PIXEL,
 	 XtNdirection,   XfwfBottom,
 	 XtNrepeat,      FALSE,
 	 XtNlocation,    "0 0 14 1.0",
@@ -318,8 +318,6 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 
     choice->choice_menu->SetClientData(choice);
     choice->choice_menu->SetFont(choice->font);
-    choice->choice_menu->SetBackgroundColour(choice->bg);
-    choice->choice_menu->SetForegroundColour(choice->fg);
 
     // popup menu below "button"
     XtVaGetValues(choice->X->handle, XtNheight, &hh, NULL);

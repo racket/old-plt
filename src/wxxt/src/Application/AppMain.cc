@@ -299,6 +299,10 @@ void wxCommonInit(void)
     wxREGGLOB(wxLIGHT_GREY);
     wxLIGHT_GREY = DEBUG_NEW wxColour ("LIGHT GRAY");
 
+    wxWHITE_PIXEL = wxWHITE->GetPixel(wxAPP_COLOURMAP);
+    wxBLACK_PIXEL = wxBLACK->GetPixel(wxAPP_COLOURMAP);;
+    wxGREY_PIXEL = wxGREY->GetPixel(wxAPP_COLOURMAP);;
+
     wxREGGLOB(wxSTANDARD_CURSOR);
     wxSTANDARD_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_ARROW);
     wxREGGLOB(wxHOURGLASS_CURSOR);

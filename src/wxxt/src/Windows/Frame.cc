@@ -203,7 +203,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     wgt = XtVaCreateManagedWidget(
 	name, xfwfBoardWidgetClass, X->frame,
 	XtNhighlightThickness, 0,
-	XtNbackground, bg->GetPixel(cmap),
+	XtNbackground, wxGREY_PIXEL,
 	NULL);
     X->handle = wgt;
     AddEventHandlers();
@@ -564,11 +564,6 @@ void wxFrame::OnMenuSelect(long id)
   SetStatusText(menubar->GetHelpString(id));
 }
 
-
-
-void wxFrame::SetToolBar(wxToolBar *){
-}
-
-wxToolBar *wxFrame::GetToolBar(void){
-  return NULL;
+void wxFrame::OnMenuClick()
+{
 }

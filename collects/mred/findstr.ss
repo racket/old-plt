@@ -315,7 +315,7 @@
 				  (let ([last-pos (+ first-pos (* searching-direction 
 								  (string-length string)))])
 				    (send* edit 
-				      (set-caret-owner null wx:focus-display)
+				      (set-caret-owner null wx:const-focus-display)
 				      (set-position
 					  (min first-pos last-pos)
 					  (max first-pos last-pos)))

@@ -22,6 +22,9 @@
   (define *failure* (build-path (collection-path "test-suite") "private" "icons" "cross.jpeg"))
   ;(define *error* (build-path (collection-path "icons") "bug09.gif"))
   
+  (define original-output-port (current-output-port))
+  (define (oprintf . args) (apply fprintf original-output-port args))
+  
   (define case@
     (unit/sig case^
       (import drscheme:tool^)
@@ -65,31 +68,36 @@
             (send io-text lock #t)
             (send io-text end-edit-sequence))
           
-          ;; set-actual ((is-a?/c expand-program%) any? . -> . void?)
+          ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
-          (define/private (set-actual expander value)
+          (define/private (set-actuals expander values)
             (send* actual
               (lock false)
               (begin-edit-sequence)
               (erase))
             (send (send (get-admin) get-editor) begin-edit-sequence)
-            (unless (equal? value (void))
-              (let ([lang (send expander get-language)]
-                    [last false])
-                (send (drscheme:language-configuration:language-settings-language lang)
-                      render-value/format
-                      value
-                      (drscheme:language-configuration:language-settings-settings lang)
+            (unless (andmap void? values)
+              (let* ([lang (send expander get-language)]
+                     [last false]
+                     [port
                       (make-custom-output-port
                        false
                        (lambda (s start end block?)
                          (when last (send actual insert last))
                          (set! last s)
                          (string-length s))
-                       void void)
-                      (lambda (snip)
-                        (send actual insert snip))
-                      false)
+                       void 
+                       void)])
+                (for-each
+                 (lambda (value)
+                   (send (drscheme:language-configuration:language-settings-language lang)
+                         render-value/format
+                         value
+                         (drscheme:language-configuration:language-settings-settings lang)
+                         port
+                         (lambda (snip) (send actual insert snip))
+                         false))
+                 values)
                 (unless (equal? "\n" last)
                   (send actual insert last))))
             (send (send (get-admin) get-editor) end-edit-sequence)
@@ -151,18 +159,20 @@
                                                        [expected-error-port expected-error-port])
                                                        
                                            (syntax
-                                            (let ([call-value 
+                                            (let ([call-values
                                                    (parameterize ([current-output-port call-output-port]
                                                                   [current-error-port call-error-port])
-                                                     call)]
-                                                  [expected-value 
+                                                     (call-with-values (lambda () call) list))]
+                                                  [expected-values
                                                    (parameterize ([current-output-port expected-output-port]
                                                                   [current-error-port expected-error-port])
-                                                     expected)])
-                                              (cons call-value
-                                                    (#%app test call-value expected-value)))))
+                                                     (call-with-values (lambda () expected) list))])
+                                              (cons call-values
+                                                    (if (= (length call-values) (length expected-values))
+                                                        (#%app andmap test call-values expected-values)
+                                                        #f)))))
                                          (lambda (call/test-value) ; =drscheme-eventspace=
-                                           (set-actual expander (car call/test-value))
+                                           (set-actuals expander (car call/test-value))
                                            (set-icon (and (cdr call/test-value)
                                                           (equal? (get-string/style-desc call-io)
                                                                   (get-string/style-desc expected-io))))

@@ -2,9 +2,9 @@
   (require "board.ss"
 	   "client-parameters.ss"
            (lib "list.ss"))
-  (provide compute-baseline-move)
+  (provide compute-baseline-move path)
   
-  (define MAX_BFS 20000)
+  (define MAX_BFS 10000)
 
   (define (compute-drops)
     (filter (lambda (x) x)
@@ -25,7 +25,7 @@
                                                (package-weight b))))))
         (cond
           ((null? picks) null)
-          ((< (package-weight (car picks)) remaining-weight)
+          ((<= (package-weight (car picks)) remaining-weight)
            (cons (car picks)
                  (loop (- remaining-weight (package-weight (car picks)))
                        (cdr picks))))
@@ -143,11 +143,16 @@
         (else
          (let ((picks (compute-picks packages)))
            (cond
-	    ((not (null? picks))
+             ((not (null? picks))
 	      (make-command 1 'p picks))
              (else
               (cond
-                ((or (null? (path)) (null? (cdr (path))))
+                ((or (null? (path))
+		     (null? (cdr (path)))
+		     (not (= (get-player-x) (caar (path))))
+		     (not (= (get-player-y) (cdar (path)))))
+                 (printf "~a~n" (path))
+                 (printf "~a,~a~n" (get-player-x) (get-player-y))
                  (path
                   (compute-path (get-player-x)
                                 (get-player-y)
@@ -167,5 +172,4 @@
               (begin0
                 (make-command 1 (get-move-from-path (path)) null)
                 (path (cdr (path)))))))))))
-                
   )

@@ -863,7 +863,7 @@ scheme_make_byte_string_input_port(const char *str)
 static long
 string_write_bytes(Scheme_Output_Port *port, 
 		    const char *str, long d, long len, 
-		    int rarely_block)
+		    int rarely_block, int enable_break)
 {
   Scheme_Indexed_String *is;
 
@@ -1034,7 +1034,10 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 	} else {
 	  /* Sync on the given evt. */
 	  a[0] = val;
-	  val = scheme_sync(1, a);
+	  if (nonblock < 0)
+	    val = scheme_sync(1, a);
+	  else
+	    val = scheme_sync_enable_break(1, a);
 	  
 	  /* Port may have been closed while we were syncing: */
 	  if (port->closed) {
@@ -1095,6 +1098,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
   Scheme_Object *fun, *val, *a[2], *bstr;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
   long r;
+  Scheme_Cont_Frame_Data cframe;
 
   if (peek)
     fun = uip->peek_proc;
@@ -1113,8 +1117,15 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     }
     a[0] = bstr;
     a[1] = peek_skip;
+
+    /* Disable breaks while calling the port's function: */
+    scheme_push_break_enable(&cframe, 0, 0);
+
+    /* Call the read/peek function: */
     val = scheme_apply(fun, peek ? 2 : 1, a);
     
+    scheme_pop_break_enable(&cframe, 0);
+
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
 	&& (SCHEME_INTP(val) || SCHEME_EOFP(val) || SCHEME_PAIRP(val))) {
       uip->reuse_str = bstr;
@@ -1131,9 +1142,10 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
       return r;
     }
     
-    scheme_thread_block(0.0); /* penalty for inaccuracy? */
+    scheme_thread_block_enable_break(0.0, nonblock < 0); /* penalty for inaccuracy? */
+    scheme_current_thread->ran_some = 1;
     /* but don't loop forever due to inaccurracy */
-    if (nonblock) {
+    if (nonblock > 0) {
       if (sinfo)
 	sinfo->spin = 1;
       return 0;
@@ -1393,7 +1405,7 @@ user_write_ready(Scheme_Output_Port *port)
 
 static long
 user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
-		  Scheme_Object *val, int rarely_block, long len)
+		  Scheme_Object *val, int rarely_block, int enable_break, long len)
 {
   Scheme_Object *p[2];
 
@@ -1430,7 +1442,10 @@ user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
       } else {
 	/* Sync on the given evt. */
 	p[0] = val;
-	val = scheme_sync(1, p);
+	if (enable_break)
+	  val = scheme_sync_enable_break(1, p);
+	else
+	  val = scheme_sync(1, p);
 	  
 	/* Port may have been closed while we were syncing: */
 	if (port->closed)
@@ -1455,13 +1470,19 @@ user_write_result(const char *who, Scheme_Output_Port *port, int evt_ok,
 
 static long
 user_write_bytes(Scheme_Output_Port *port, const char *str, long offset, long len, 
-		  int rarely_block)
+		  int rarely_block, int enable_break)
 {
   /* As always, rarely_block => flush, !len => flush,
      rarely_block == 1 => len > 0 */
-  Scheme_Object *p[4], *to_write, *val;
+  Scheme_Object *p[5], *to_write, *val;
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
-  int n;
+  int n, re_enable_break;
+  Scheme_Cont_Frame_Data cframe;
+
+  if (enable_break)
+    re_enable_break = 1;
+  else
+    re_enable_break = scheme_can_break(scheme_current_thread);
 
   to_write = scheme_make_sized_offset_byte_string((char *)str, offset, len, 1);
   p[0] = to_write;
@@ -1469,18 +1490,26 @@ user_write_bytes(Scheme_Output_Port *port, const char *str, long offset, long le
   p[1] = scheme_make_integer(0);
   p[2] = scheme_make_integer(len);
   p[3] = (rarely_block ? scheme_true : scheme_false);
+  p[4] = (re_enable_break ? scheme_true : scheme_false);
 
   while (1) {
-    val = scheme_apply(uop->write_proc, 4, p);
 
+    /* Disable breaks while calling the port's function: */
+    scheme_push_break_enable(&cframe, 0, 0);
+
+    val = scheme_apply(uop->write_proc, 5, p);
+
+    scheme_pop_break_enable(&cframe, 0);
+    
     n = user_write_result("user port write", port,
-			  1, val, rarely_block, len);
+			  1, val, rarely_block, enable_break, len);
     
     if (n || (rarely_block != 1))
       return n;
     
     /* rarely_block == 1, and we haven't written anything. */
     scheme_thread_block(0.0);
+    scheme_current_thread->ran_some = 1;
   }
 }
 
@@ -1495,7 +1524,7 @@ static Scheme_Object *user_write_evt_wrapper(void *d, int argc, struct Scheme_Ob
   val = argv[0];
 
   r = user_write_result("user port write-evt", (Scheme_Output_Port *)port, 
-			0, val, 1, len);
+			0, val, 1, 0, len);
 
   if (!r && len) {
     /* Port must have been closed */
@@ -1641,11 +1670,12 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
   pipe = (Scheme_Pipe *)(p->port_data);
 
   if ((pipe->bufstart == pipe->bufend) && !pipe->eof) {
-    if (nonblock)
+    if (nonblock > 0)
       return 0;
 
-    scheme_block_until((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
-		       NULL, (Scheme_Object *)p, 0.0);
+    scheme_block_until_enable_break((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
+				    NULL, (Scheme_Object *)p, 0.0,
+				    nonblock);
 
     if (p->closed) {
       /* Another thread closed the input port while we were syncing. */
@@ -1731,7 +1761,7 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 	my_sema = scheme_make_sema(0);
 	wp = scheme_make_pair(my_sema, pipe->wakeup_on_write);
 	pipe->wakeup_on_write = wp;
-	scheme_wait_sema(my_sema, 0);
+	scheme_wait_sema(my_sema, (nonblock < 0) ? -1 : 0);
       }
     }
   }
@@ -1768,7 +1798,7 @@ static long pipe_peek_bytes(Scheme_Input_Port *p,
 
 static long pipe_write_bytes(Scheme_Output_Port *p, 
 			      const char *str, long d, long len, 
-			      int rarely_block)
+			      int rarely_block, int enable_break)
 {
   Scheme_Pipe *pipe;
   long avail, firstpos, firstn, secondn, endpos;
@@ -1799,7 +1829,7 @@ static long pipe_write_bytes(Scheme_Output_Port *p,
       Scheme_Object *my_sema;
 
       /* First, write as much as seems immediately possible. */
-      xavail = pipe_write_bytes(p, str, d, xavail, rarely_block);
+      xavail = pipe_write_bytes(p, str, d, xavail, rarely_block, enable_break);
       wrote += xavail;
       d += xavail;
       len -= xavail;
@@ -1826,7 +1856,7 @@ static long pipe_write_bytes(Scheme_Output_Port *p,
 	  pipe->wakeup_on_read = wp;
 	}
 	
-	scheme_wait_sema(my_sema, 0);
+	scheme_wait_sema(my_sema, enable_break ? -1 : 0);
       }
       /* Doesn't get here */
     }
@@ -2147,7 +2177,7 @@ make_output_port (int argc, Scheme_Object *argv[])
   if (!scheme_is_evt(argv[1])) {
     scheme_wrong_type("make-output-port", "evt", 1, argc, argv);
   }
-  scheme_check_proc_arity("make-output-port", 4, 2, argc, argv); /* write */
+  scheme_check_proc_arity("make-output-port", 5, 2, argc, argv); /* write */
   scheme_check_proc_arity("make-output-port", 0, 3, argc, argv); /* close */
   if (argc > 4)
     scheme_check_proc_arity2("make-output-port", 2, 4, argc, argv, 1); /* write-special */
@@ -3097,6 +3127,18 @@ sch_peek_string_bang(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+read_bytes_bang_break(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_bytes(1, "read-bytes-avail!/enable-break", argc, argv, 0, -1, 0, 0);
+}
+
+static Scheme_Object *
+peek_bytes_bang_break(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_bytes(1, "peek-bytes-avail!/enable-break", argc, argv, 0, -1, 1, 0);
+}
+
+static Scheme_Object *
 read_bytes_avail_evt(int argc, Scheme_Object *argv[])
 {
   return do_general_read_bytes(1, "read-bytes-avail!-evt", argc, argv, 0, 1, 0, 1);
@@ -3165,6 +3207,12 @@ static Scheme_Object *
 write_bytes_avail(int argc, Scheme_Object *argv[])
 {
   return do_write_bytes_avail(1, "write-bytes-avail", argc, argv, 1, 0);
+}
+
+static Scheme_Object *
+write_bytes_avail_break(int argc, Scheme_Object *argv[])
+{
+  return do_write_bytes_avail(1, "write-bytes-avail", argc, argv, -1, 0);
 }
 
 static Scheme_Object *
@@ -3271,43 +3319,16 @@ write_special_evt(int argc, Scheme_Object *argv[])
 Scheme_Object *
 scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[])
 {
-  Scheme_Config *config;
   Scheme_Cont_Frame_Data cframe;
   Scheme_Object *v; 
 
-  config = scheme_extend_config(scheme_current_config(),
-				MZCONFIG_ENABLE_BREAK, 
-				scheme_true);
-
-  scheme_push_continuation_frame(&cframe);
-  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
-
-  /* Need to check for a break, in case one was queued and we just enabled it: */
-  scheme_check_break_now();
+  scheme_push_break_enable(&cframe, 1, 1);
 
   v = prim(argc, argv);
 
-  scheme_pop_continuation_frame(&cframe);
+  scheme_pop_break_enable(&cframe, 0);
 
   return v;
-}
-
-static Scheme_Object *
-read_bytes_bang_break(int argc, Scheme_Object *argv[])
-{
-  return scheme_call_enable_break(read_bytes_bang, argc, argv);
-}
-
-static Scheme_Object *
-peek_bytes_bang_break(int argc, Scheme_Object *argv[])
-{
-  return scheme_call_enable_break(peek_bytes_bang, argc, argv);
-}
-
-static Scheme_Object *
-write_bytes_avail_break(int argc, Scheme_Object *argv[])
-{
-  return scheme_call_enable_break(write_bytes_avail, argc, argv);
 }
 
 static Scheme_Object *

@@ -292,6 +292,7 @@ static int mark_eventspace_val(void *p)
 
   gcMARK_TYPED(Scheme_Config *, c->main_config);
   gcMARK_TYPED(Scheme_Thread_Cell_Table *, c->main_cells);
+  gcMARK_TYPED(Scheme_Thread_Cell_Table *, c->main_break_cell);
 
   gcMARK_TYPED(wxTimer *, c->timer);
 
@@ -324,6 +325,7 @@ static int fixup_eventspace_val(void *p)
 
   gcFIXUP_TYPED(Scheme_Config *, c->main_config);
   gcFIXUP_TYPED(Scheme_Thread_Cell_Table *, c->main_cells);
+  gcFIXUP_TYPED(Scheme_Thread_Cell_Table *, c->main_break_cell);
 
   gcFIXUP_TYPED(wxTimer *, c->timer);
 
@@ -687,6 +689,7 @@ static MrEdContext *MakeContext(MrEdContext *c)
 {
   MrEdContextFrames *frames;
   Context_Custodian_Hop *mr_hop;
+  Scheme_Object *break_cell;
   Scheme_Config *config;
   Scheme_Thread_Cell_Table *cells;
 
@@ -744,6 +747,8 @@ static MrEdContext *MakeContext(MrEdContext *c)
   c->main_config = config;
   cells = scheme_inherit_cells(NULL);
   c->main_cells = cells;
+  break_cell = scheme_current_break_cell();
+  c->main_break_cell = break_cell;
 
 #ifdef MZ_PRECISE_GC
   /* Override destructor-based finalizer: */
@@ -1160,7 +1165,7 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
     Scheme_Object *a[2], *r;
     a[0] = scheme_make_integer(0);
     a[1] = alt_wait;
-    r = scheme_object_wait_multiple(2, a);
+    r = scheme_sync_timeout(2, a);
 
     if (r) {
       /* Do nothing, since alt fired. */
@@ -1198,19 +1203,18 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
 
     if (alt_wait) {
       Nested_Wait *nw;
-      Scheme_Object *a[3], *v;
+      Scheme_Object *a[2], *v;
 
       nw = (Nested_Wait *)scheme_malloc_tagged(sizeof(Nested_Wait));
       nw->so.type = mred_nested_wait_type;
       nw->wait_on = (Scheme_Object *)c;
 
-      a[0] = scheme_false;
-      a[1] = alt_wait;
-      a[2] = (Scheme_Object *)nw;
+      a[0] = alt_wait;
+      a[1] = (Scheme_Object *)nw;
 
       /* Running arbitrary Scheme code here. */
       BEGIN_ESCAPEABLE(reset_nested_wait, c);
-      v = scheme_object_wait_multiple(3, a);
+      v = scheme_sync(2, a);
       END_ESCAPEABLE();
 
       if (!SAME_OBJ(v, a[2]))
@@ -1407,7 +1411,7 @@ static void event_found(MrEdContext *c)
 
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
     cust = scheme_get_thread_param(c->main_config, c->main_cells, MZCONFIG_CUSTODIAN);
-    scheme_thread_w_details(cp, c->main_config, c->main_cells, (Scheme_Custodian *)cust, 0);
+    scheme_thread_w_details(cp, c->main_config, c->main_cells, c->main_break_cell, (Scheme_Custodian *)cust, 0);
   }
 }
 
@@ -1553,6 +1557,7 @@ void wxDoEvents()
       user_main_thread = (Scheme_Thread *)scheme_thread_w_details(cp, 
 								  c->main_config,
 								  c->main_cells,
+								  c->main_break_cell,
 								  NULL, 0);
       cp = scheme_intern_symbol("mred");
       user_main_thread->name = cp;
@@ -1596,10 +1601,9 @@ Scheme_Object *wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data,
     /* This is not the handler thread or an event still hasn't been
        dispatched. Wait. */
     if (w) {
-      Scheme_Object *a[2];
-      a[0] = scheme_false;
-      a[1] = w;
-      result = scheme_object_wait_multiple(2, a);
+      Scheme_Object *a[1];
+      a[0] = w;
+      result = scheme_sync(1, a);
     } else {
       scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, 0.0);
     }
@@ -2491,7 +2495,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
   return (Scheme_Object *)ip;
 }
 
-static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
+static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block, int enable_break)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   if (l)
@@ -2963,14 +2967,14 @@ static Scheme_Env *setup_basic_env()
   }
 #endif
 
-  scheme_add_waitable(mred_eventspace_type,
-		      (Scheme_Ready_Fun)check_eventspace_inactive,
-		      NULL,
-		      NULL, 0);
-  scheme_add_waitable(mred_nested_wait_type,
-		      CAST_BLKCHK check_for_nested_event,
-		      NULL,
-		      NULL, 0);
+  scheme_add_evt(mred_eventspace_type,
+		 (Scheme_Ready_Fun)check_eventspace_inactive,
+		 NULL,
+		 NULL, 0);
+  scheme_add_evt(mred_nested_wait_type,
+		 CAST_BLKCHK check_for_nested_event,
+		 NULL,
+		 NULL, 0);
 
   scheme_add_custodian_extractor(mred_eventspace_hop_type,
 				 CAST_EXT extract_eventspace_from_hop);

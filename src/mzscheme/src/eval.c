@@ -370,9 +370,9 @@ scheme_init_eval (Scheme_Env *env)
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-enabled", 
-			     scheme_register_parameter(enable_break, 
-						       "break-enabled",
-						       MZCONFIG_ENABLE_BREAK), 
+			     scheme_make_prim_w_arity(enable_break, 
+						      "break-enabled",
+						      0, 1), 
 			     env);
   scheme_add_global_constant("current-eval",
 			     scheme_register_parameter(current_eval, 
@@ -4508,22 +4508,18 @@ static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv)
 static Scheme_Object *
 enable_break(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
-  Scheme_Thread *p = scheme_current_thread;
-
-  v = scheme_param_config("break-enabled", 
-			  scheme_make_integer(MZCONFIG_ENABLE_BREAK),
-			  argc, argv,
-			  -1, NULL, NULL, 1);
-
-  if (argc == 1) { /* might have turned on breaking... */
-    if (p->external_break && scheme_can_break(p)) {
-      scheme_thread_block_w_thread(0.0, p);
-      p->ran_some = 1;
+  if (argc == 1) {
+    scheme_set_can_break(SCHEME_TRUEP(argv[0]));
+    if (SCHEME_TRUEP(argv[0])) {
+      if (scheme_current_thread->external_break && scheme_can_break(scheme_current_thread)) {
+	scheme_thread_block(0.0);
+	scheme_current_thread->ran_some = 1;
+      }
     }
+    return scheme_void;
+  } else {
+    return scheme_can_break(scheme_current_thread) ? scheme_true : scheme_false;
   }
-
-  return v;
 }
 
 /*========================================================================*/

@@ -59,6 +59,7 @@ typedef struct MrEdContext {
 
   Scheme_Config *main_config;
   Scheme_Thread_Cell_Table *main_cells;
+  Scheme_Object *main_break_cell;
 
   short ready_to_go;
 

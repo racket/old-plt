@@ -46,6 +46,8 @@ extern int objscheme_istype_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
+extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
+extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern int objscheme_istype_wxStyleDelta(Scheme_Object *, const char *, int);

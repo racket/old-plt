@@ -357,6 +357,7 @@ struct Scheme_Config {
 };
 
 extern Scheme_Object *scheme_parameterization_key;
+extern Scheme_Object *scheme_break_enabled_key;
 
 extern void scheme_flatten_config(Scheme_Config *c);
 
@@ -840,6 +841,7 @@ typedef struct Scheme_Cont {
   void *stack_start;
   void *o_start;
   Scheme_Config *init_config;
+  Scheme_Object *init_break_cell;
   struct Scheme_Overflow *save_overflow;
   struct Scheme_Comp_Env *current_local_env;
   mz_jmp_buf *savebuf; /* save old error buffer here */

@@ -766,7 +766,9 @@ typedef struct Scheme_Thread {
 
   Scheme_Thread_Cell_Table *cell_values;
   Scheme_Config *init_config;
-  Scheme_Config *config_at_swap;
+
+  Scheme_Object *init_break_cell;
+  int can_break_at_swap;
 
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
@@ -933,8 +935,6 @@ enum {
   MZCONFIG_OUTPUT_PORT,
   MZCONFIG_ERROR_PORT,
 
-  MZCONFIG_ENABLE_BREAK,
-
   MZCONFIG_ERROR_DISPLAY_HANDLER,
   MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
 
@@ -1040,7 +1040,7 @@ typedef Scheme_Object *(*Scheme_Write_String_Evt_Fun)(Scheme_Output_Port *,
 						      const char *str, long offset, long size);
 typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 					const char *str, long offset, long size,
-					int rarely_block);
+					int rarely_block, int enable_break);
 typedef int (*Scheme_Out_Ready_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Close_Output_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Need_Wakeup_Output_Fun)(Scheme_Output_Port *, void *);

@@ -20,6 +20,7 @@
   scheme_extension_table->scheme_set_thread_param = scheme_set_thread_param;
   scheme_extension_table->scheme_get_env = scheme_get_env;
   scheme_extension_table->scheme_inherit_cells = scheme_inherit_cells;
+  scheme_extension_table->scheme_current_break_cell = scheme_current_break_cell;
 #ifndef LINK_EXTENSIONS_BY_TABLE
   scheme_extension_table->scheme_current_thread = scheme_current_thread;
   scheme_extension_table->scheme_fuel_counter = scheme_fuel_counter;
@@ -33,11 +34,13 @@
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
   scheme_extension_table->scheme_break_thread = scheme_break_thread;
   scheme_extension_table->scheme_thread_block = scheme_thread_block;
+  scheme_extension_table->scheme_thread_block_enable_break = scheme_thread_block_enable_break;
   scheme_extension_table->scheme_swap_thread = scheme_swap_thread;
   scheme_extension_table->scheme_making_progress = scheme_making_progress;
   scheme_extension_table->scheme_weak_suspend_thread = scheme_weak_suspend_thread;
   scheme_extension_table->scheme_weak_resume_thread = scheme_weak_resume_thread;
   scheme_extension_table->scheme_block_until = scheme_block_until;
+  scheme_extension_table->scheme_block_until_enable_break = scheme_block_until_enable_break;
   scheme_extension_table->scheme_in_main_thread = scheme_in_main_thread;
   scheme_extension_table->scheme_cancel_sleep = scheme_cancel_sleep;
   scheme_extension_table->scheme_make_thread_cell = scheme_make_thread_cell;
@@ -66,6 +69,9 @@
   scheme_extension_table->scheme_close_should_force_port_closed = scheme_close_should_force_port_closed;
   scheme_extension_table->scheme_push_kill_action = scheme_push_kill_action;
   scheme_extension_table->scheme_pop_kill_action = scheme_pop_kill_action;
+  scheme_extension_table->scheme_set_can_break = scheme_set_can_break;
+  scheme_extension_table->scheme_push_break_enable = scheme_push_break_enable;
+  scheme_extension_table->scheme_pop_break_enable = scheme_pop_break_enable;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;
   scheme_extension_table->scheme_raise_exn = scheme_raise_exn;
   scheme_extension_table->scheme_warning = scheme_warning;

@@ -900,6 +900,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Object *);
 
 
@@ -4429,6 +4430,30 @@ static Scheme_Object *os_wxMediaEditGetText(int n,  Scheme_Object *p[])
   return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x4, 0));
 }
 
+static Scheme_Object *os_wxMediaEditFindNextNonTextSnip(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxSnip* r;
+  objscheme_check_valid(os_wxMediaEdit_class, "find-next-non-string-snip in text%", n, p);
+  class wxSnip* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "find-next-non-string-snip in text%", 1));
+
+  
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindNextNonTextSnip(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
+}
+
 static Scheme_Object *os_wxMediaEditGetSnipPosition(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7871,7 +7896,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 140));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 141));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -7910,6 +7935,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaEditReadFromFile, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetText, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-next-non-string-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditFindNextNonTextSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPosition, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPositionAndLocation, 2, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditFindSnip, 2, 3));

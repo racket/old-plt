@@ -69,6 +69,8 @@ MZ_EXTERN Scheme_Env *scheme_get_env(Scheme_Config *config);
 
 MZ_EXTERN Scheme_Thread_Cell_Table *scheme_inherit_cells(Scheme_Thread_Cell_Table *cells);
 
+MZ_EXTERN Scheme_Object *scheme_current_break_cell();
+
 /*========================================================================*/
 /*                                threads                                 */
 /*========================================================================*/
@@ -87,12 +89,14 @@ MZ_EXTERN Scheme_Object *scheme_thread(Scheme_Object *thunk);
 MZ_EXTERN Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk, 
 						 Scheme_Config *init_config,
 						 Scheme_Thread_Cell_Table *copy_from,
+						 Scheme_Object *break_cell,
 						 Scheme_Custodian *owning_custodian, 
 						 int suspend_to_kill);
 MZ_EXTERN void scheme_kill_thread(Scheme_Thread *p);
 MZ_EXTERN void scheme_break_thread(Scheme_Thread *p);
 
 MZ_EXTERN void scheme_thread_block(float sleep_time);
+MZ_EXTERN void scheme_thread_block_enable_break(float sleep_time, int enable);
 MZ_EXTERN void scheme_swap_thread(Scheme_Thread *process);
 MZ_EXTERN void scheme_making_progress();
 
@@ -100,6 +104,8 @@ MZ_EXTERN void scheme_weak_suspend_thread(Scheme_Thread *p);
 MZ_EXTERN void scheme_weak_resume_thread(Scheme_Thread *p);
 
 MZ_EXTERN int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
+MZ_EXTERN int scheme_block_until_enable_break(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, 
+					      float, int enable);
 
 MZ_EXTERN int scheme_in_main_thread(void);
 
@@ -147,6 +153,10 @@ MZ_EXTERN int scheme_close_should_force_port_closed();
 
 MZ_EXTERN void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
 MZ_EXTERN void scheme_pop_kill_action();
+
+MZ_EXTERN void scheme_set_can_break(int on);
+MZ_EXTERN void scheme_push_break_enable(Scheme_Cont_Frame_Data *cframe, int on, int pre_check);
+MZ_EXTERN void scheme_pop_break_enable(Scheme_Cont_Frame_Data *cframe, int post_check);
 
 /*========================================================================*/
 /*                              error handling                            */

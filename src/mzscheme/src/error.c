@@ -566,7 +566,7 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     mz_jmp_buf savebuf;
     Scheme_Object *p[2], *display_handler, *escape_handler, *v;
     Scheme_Config *config, *orig_config;
-    Scheme_Cont_Frame_Data cframe;
+    Scheme_Cont_Frame_Data cframe, cframe2;
 
     /* For last resort: */
     memcpy((void *)&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
@@ -586,12 +586,10 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     config = scheme_extend_config(config,
 				  MZCONFIG_ERROR_DISPLAY_HANDLER,
 				  default_display_handler);
-    config = scheme_extend_config(config,
-				  MZCONFIG_ENABLE_BREAK,
-				  scheme_false);
     
     scheme_push_continuation_frame(&cframe);
     scheme_install_config(config);
+    scheme_push_break_enable(&cframe2, 0, 0);
 
     p[0] = scheme_make_immutable_sized_utf8_string(buffer, len);
     p[1] = exn;
@@ -611,15 +609,18 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     config = scheme_extend_config(config,
 				  MZCONFIG_ERROR_ESCAPE_HANDLER,
 				  def_error_esc_proc);
-    config = scheme_extend_config(config,
-				  MZCONFIG_ENABLE_BREAK,
-				  scheme_false);
         
+    scheme_pop_break_enable(&cframe2, 0);
+    scheme_pop_continuation_frame(&cframe);
+
+    scheme_push_continuation_frame(&cframe);
     scheme_install_config(config);
+    scheme_push_break_enable(&cframe2, 0, 0);
 
     /* Typically jumps out of here */
     scheme_apply_multi(escape_handler, 0, NULL);
 
+    scheme_pop_break_enable(&cframe2, 0);
     scheme_pop_continuation_frame(&cframe);
 
     /* Uh-oh; record the error and fall back to the default escaper */
@@ -742,7 +743,7 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
     return s;
   } else {
     Scheme_Config *config;
-    Scheme_Cont_Frame_Data cframe;
+    Scheme_Cont_Frame_Data cframe, cframe2;
 
     args[0] = v;
     args[1] = scheme_make_integer(len);
@@ -750,15 +751,14 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
     config = scheme_extend_config(scheme_current_config(),
 				  MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
 				  def_err_val_proc);
-    config = scheme_extend_config(config,
-				  MZCONFIG_ENABLE_BREAK,
-				  scheme_false);
 
     scheme_push_continuation_frame(&cframe);
     scheme_install_config(config);
-
+    scheme_push_break_enable(&cframe2, 0, 0);
+ 
     o = _scheme_apply(o, 2, args);
 
+    scheme_pop_break_enable(&cframe2, 0);
     scheme_pop_continuation_frame(&cframe);
 
     if (SCHEME_CHAR_STRINGP(o)) {
@@ -2155,7 +2155,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 {
  Scheme_Object *v, *p[1], *h;
  Scheme_Config *config;
- Scheme_Cont_Frame_Data cframe;
+ Scheme_Cont_Frame_Data cframe, cframe2;
 
  if (scheme_current_thread->skip_error) {
    scheme_longjmp (scheme_error_buf, 1);
@@ -2179,16 +2179,15 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  config = scheme_extend_config(config,
 			       MZCONFIG_EXN_HANDLER,
 			       v);
- config = scheme_extend_config(config,
-			       MZCONFIG_ENABLE_BREAK,
-			       scheme_false);
 
  scheme_push_continuation_frame(&cframe);
  scheme_install_config(config);
+ scheme_push_break_enable(&cframe2, 0, 0);
 
  p[0] = arg;
  v = scheme_apply(h, 1, (Scheme_Object **)p);
 
+ scheme_pop_break_enable(&cframe2, 0);
  scheme_pop_continuation_frame(&cframe);
 
  if (return_ok)

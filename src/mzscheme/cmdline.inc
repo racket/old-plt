@@ -924,7 +924,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
   fa->global_env = global_env;
 
-  scheme_set_param(scheme_current_config(), MZCONFIG_ENABLE_BREAK, scheme_true);
+  scheme_set_can_break(1);
 
   return cont_run(fa);
 

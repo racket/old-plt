@@ -287,7 +287,7 @@ static void register_port_wait();
 #ifdef MZ_FDS
 static long flush_fd(Scheme_Output_Port *op,
 		     const char * volatile bufstr, volatile unsigned long buflen,
-		     volatile unsigned long offset, int immediate_only);
+		     volatile unsigned long offset, int immediate_only, int enable_break);
 static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
 #endif
 
@@ -1170,8 +1170,16 @@ long scheme_get_byte_string(const char *who,
   /* back-door argument: */
   special_is_ok = 0;
 
-  if (!size)
+  if (!size) {
+    if (only_avail == -1) {
+      /* We might need to break. */
+      if (scheme_current_thread->external_break) {
+	scheme_thread_block_enable_break(0.0, 1);
+	scheme_current_thread->ran_some = 1;
+      }
+    }
     return 0;
+  }
   if (!peek_skip)
     peek_skip = scheme_make_integer(0);
 
@@ -1184,6 +1192,14 @@ long scheme_get_byte_string(const char *who,
     SCHEME_USE_FUEL(1);
 
     CHECK_PORT_CLOSED(who, "input", port, ip->closed);
+
+    if (only_avail == -1) {
+      /* We might need to break. */
+      if (scheme_current_thread->external_break) {
+	scheme_thread_block_enable_break(0.0, 1);
+	scheme_current_thread->ran_some = 1;
+      }
+    }
 
     if ((ip->ungotten_count || pipe_char_count(ip->peeked_read))
 	&& (!total_got || !peek)) {
@@ -1262,7 +1278,7 @@ long scheme_get_byte_string(const char *who,
       return SCHEME_SPECIAL;
     }
 
-    if (got && (only_avail == 1))
+    if (got && ((only_avail == 1) || (only_avail == -1)))
       only_avail = 2;
 
     /* If we get this far in peek mode, ps is NULL, peek_skip is non-zero, and
@@ -1274,6 +1290,8 @@ long scheme_get_byte_string(const char *who,
       char *tmp;
       int v, pcc;
       long skip;
+      Scheme_Cont_Frame_Data cframe;
+
 
 #     define MAX_SKIP_TRY_AMOUNT 65536
 
@@ -1286,9 +1304,21 @@ long scheme_get_byte_string(const char *who,
 
       tmp = (char *)scheme_malloc_atomic(skip);
       pcc = pipe_char_count(ip->peeked_read);
+
+      if (only_avail == -1) {
+	/* To implement .../enable-break, we enable
+	   breaks during the skip-ahead peek. */
+	scheme_push_break_enable(&cframe, 1, 1);
+      }
+
       v = scheme_get_byte_string(who, port, tmp, 0, skip,
 				 (only_avail == 2) ? 2 : 0,
 				 1, scheme_make_integer(ip->ungotten_count + pcc));
+
+      if (only_avail == -1) {
+	scheme_pop_break_enable(&cframe, 0);
+      }
+
       if (v == EOF)
 	return EOF;
       else if (v == SCHEME_SPECIAL) {
@@ -1302,6 +1332,15 @@ long scheme_get_byte_string(const char *who,
     }
 
     if (size) {
+      int nonblock;
+
+      if (only_avail == 2)
+	nonblock = 1;
+      else if (only_avail == -1)
+	nonblock = -1;
+      else
+	nonblock = 0;
+
       if (ip->pending_eof > 1) {
 	ip->pending_eof = 1;
 	gc = EOF;
@@ -1502,7 +1541,7 @@ long scheme_get_byte_string(const char *who,
     got = 0; /* for next round, if any */
 
     if (!size
-	|| (total_got && (only_avail == 1))
+	|| (total_got && ((only_avail == 1) || (only_avail == -1)))
 	|| (only_avail == 2))
       break;
 
@@ -2366,10 +2405,24 @@ scheme_put_byte_string(const char *who, Scheme_Object *port,
   Scheme_Output_Port *op = (Scheme_Output_Port *)port;
   Scheme_Write_String_Fun ws;
   long out, llen, oout;
+  int enable_break;
 
   CHECK_PORT_CLOSED(who, "output", port, op->closed);
 
   ws = op->write_string_fun;
+
+  if (rarely_block == -1) {
+    enable_break = 1;
+    rarely_block = 1;
+  } else
+    enable_break = 0;
+
+  if (enable_break) {
+    if (scheme_current_thread->external_break) {
+      scheme_thread_block_enable_break(0.0, 1);
+      scheme_current_thread->ran_some = 1;
+    }
+  }
 
   if ((rarely_block == 1) && !len)
     /* By definition, a partial-progress write on a 0-length string is
@@ -2379,7 +2432,7 @@ scheme_put_byte_string(const char *who, Scheme_Object *port,
   llen = len;
   oout = 0;
   while (llen || !len) {
-    out = ws(op, str, d, llen, rarely_block);
+    out = ws(op, str, d, llen, rarely_block, enable_break);
     
     /* If out is 0, it might be because the port got closed: */
     if (!out) {
@@ -3299,7 +3352,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       long n = SCHEME_INT_VAL(argv[1]), lv;
 
       if (SCHEME_OUTPORTP(argv[0])) {
-	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0, 0, 0);
+	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0, 0, 0, 0);
       }
 
 # ifdef WINDOWS_FILE_HANDLES
@@ -3521,10 +3574,10 @@ scheme_file_buffer(int argc, Scheme_Object *argv[])
 	go = (fd->flush == MZ_FLUSH_NEVER);
 	fd->flush = MZ_FLUSH_BY_LINE;
 	if (go)
-	  flush_fd(op, NULL, 0, 0, 0);
+	  flush_fd(op, NULL, 0, 0, 0, 0);
       } else {
 	fd->flush = MZ_FLUSH_ALWAYS;
-	flush_fd(op, NULL, 0, 0, 0);
+	flush_fd(op, NULL, 0, 0, 0, 0);
       }
     }
 #endif
@@ -3545,7 +3598,7 @@ file_byte_ready (Scheme_Input_Port *port)
 
 static long file_get_string(Scheme_Input_Port *port,
 			    char *buffer, long offset, long size,
-			    int rarely_block)
+			    int nonblock)
 {
   FILE *fp;
   Scheme_Input_File *fip;
@@ -3785,13 +3838,14 @@ static long fd_get_string(Scheme_Input_Port *port,
 
       /* If no chars appear to be ready, go to sleep. */
       if (!fd_byte_ready(port)) {
-	if (nonblock) {
+	if (nonblock > 0) {
 	  return 0;
 	}
 
-	scheme_block_until((Scheme_Ready_Fun)fd_byte_ready,
-			   (Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
-			   (Scheme_Object *)port, 0.0);
+	scheme_block_until_enable_break((Scheme_Ready_Fun)fd_byte_ready,
+					(Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
+					(Scheme_Object *)port, 0.0,
+					nonblock);
       }
 
       if (port->closed) {
@@ -3979,7 +4033,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 
 	  return bc;
 	}
-      } else if (nonblock) {
+      } else if (nonblock > 0) {
 	return 0;
       }
     }
@@ -4318,18 +4372,18 @@ osk_byte_ready (Scheme_Input_Port *port)
 
 static int osk_get_string(Scheme_Input_Port *port,
 			  char *buffer, int offset, int size,
-			  int *nonblock, int *eof_on_error)
+			  int nonblock, int *eof_on_error)
 {
   int c;
   osk_console_input *osk;
 
   if (!osk_byte_ready(port)) {
-    if (nonblock) {
-      *nonblock = 1;
-      return EOF;
+    if (nonblock > 0) {
+      return 0;
     }
-
-    scheme_block_until(osk_byte_ready, NULL, (Scheme_Object *)port, 0.0);
+    
+    scheme_block_until_enable_break(osk_byte_ready, NULL, (Scheme_Object *)port, 0.0,
+				    nonblock);
   }
 
   if (port->closed) {
@@ -4443,7 +4497,7 @@ static void file_flush(Scheme_Output_Port *port)
 static long
 file_write_string(Scheme_Output_Port *port,
 		  const char *str, long d, long llen,
-		  int rarely_block)
+		  int rarely_block, int enable_break)
 {
   FILE *fp;
   long len = llen;
@@ -4537,9 +4591,10 @@ fd_flush_done(Scheme_Object *port)
   return !fop->flushing;
 }
 
-static void wait_until_fd_flushed(Scheme_Output_Port *op)
+static void wait_until_fd_flushed(Scheme_Output_Port *op, int enable_break)
 {
-  scheme_block_until(fd_flush_done, NULL, (Scheme_Object *)op, 0.0);
+  scheme_block_until_enable_break(fd_flush_done, NULL, (Scheme_Object *)op, 
+				  0.0, enable_break);
 }
 
 #ifdef WINDOWS_FILE_HANDLES
@@ -4692,7 +4747,7 @@ static void release_flushing_lock(void *_fop)
 
 static long flush_fd(Scheme_Output_Port *op,
 		     const char * volatile bufstr, volatile unsigned long buflen, volatile unsigned long offset,
-		     int immediate_only)
+		     int immediate_only, int enable_break)
      /* immediate_only == 1 => write at least one character, then give up;
 	immediate_only == 2 => never block */
 {
@@ -4708,7 +4763,7 @@ static long flush_fd(Scheme_Output_Port *op,
     if (immediate_only == 2)
       return 0;
 
-    wait_until_fd_flushed(op);
+    wait_until_fd_flushed(op, enable_break);
 
     if (op->closed)
       return 0;
@@ -5047,9 +5102,10 @@ static long flush_fd(Scheme_Output_Port *op,
 	  }
 
 	  BEGIN_ESCAPEABLE(release_flushing_lock, fop);
-	  scheme_block_until(fd_write_ready,
-			     fd_write_need_wakeup,
-			     (Scheme_Object *)op, 0.0);
+	  scheme_block_until_enable_break(fd_write_ready,
+					  fd_write_need_wakeup,
+					  (Scheme_Object *)op, 0.0,
+					  enable_break);
 	  END_ESCAPEABLE();
 	} else {
 	  fop->flushing = 0;
@@ -5074,7 +5130,7 @@ static long flush_fd(Scheme_Output_Port *op,
 static long
 fd_write_string(Scheme_Output_Port *port,
 		const char *str, long d, long len,
-		int rarely_block)
+		int rarely_block, int enable_break)
 {
   /* Note: !flush => !rarely_block, !len => flush */
 
@@ -5086,7 +5142,7 @@ fd_write_string(Scheme_Output_Port *port,
 
   if (!len) {
     if (fop->bufcount)
-      flush_fd(port, NULL, 0, 0, rarely_block);
+      flush_fd(port, NULL, 0, 0, rarely_block, enable_break);
 
     if (fop->bufcount)
       return -1;
@@ -5096,13 +5152,13 @@ fd_write_string(Scheme_Output_Port *port,
 
   if (!fop->bufcount && flush) {
     /* Nothing buffered. Write directly. */
-    return flush_fd(port, str, d + len, d, rarely_block);
+    return flush_fd(port, str, d + len, d, rarely_block, enable_break);
   }
 
   if (fop->flushing) {
     if (rarely_block == 2)
       return -1; /* -1 means 0 written && still have unflushed */
-    wait_until_fd_flushed(port);
+    wait_until_fd_flushed(port, enable_break);
   }
 
   /* Might have been closed while we waited */
@@ -5115,7 +5171,7 @@ fd_write_string(Scheme_Output_Port *port,
     fop->bufcount += len;
   } else {
     if (fop->bufcount) {
-      flush_fd(port, NULL, 0, 0, (rarely_block == 2) ? 2 : 0);
+      flush_fd(port, NULL, 0, 0, (rarely_block == 2) ? 2 : 0, enable_break);
       if (rarely_block && fop->bufcount)
 	return -1; /* -1 means 0 written && still have unflushed */
     }
@@ -5124,19 +5180,19 @@ fd_write_string(Scheme_Output_Port *port,
       memcpy(fop->buffer, str + d, len);
       fop->bufcount = len;
     } else
-      return flush_fd(port, str, len + d, d, rarely_block);
+      return flush_fd(port, str, len + d, d, rarely_block, enable_break);
   }
 
   /* If we got this far, !rarely_block. */
 
   if ((flush || (fop->flush == MZ_FLUSH_ALWAYS)) && fop->bufcount) {
-    flush_fd(port, NULL, 0, 0, 0);
+    flush_fd(port, NULL, 0, 0, 0, enable_break);
   } else if (fop->flush == MZ_FLUSH_BY_LINE) {
     long i;
 
     for (i = len; i--; ) {
       if (str[d] == '\n' || str[d] == '\r') {
-	flush_fd(port, NULL, 0, 0, 0);
+	flush_fd(port, NULL, 0, 0, 0, enable_break);
 	break;
       }
       d++;
@@ -5152,10 +5208,10 @@ fd_close_output(Scheme_Output_Port *port)
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
 
   if (fop->bufcount)
-    flush_fd(port, NULL, 0, 0, 0);
+    flush_fd(port, NULL, 0, 0, 0, 0);
 
   if (fop->flushing && !scheme_force_port_closed)
-    wait_until_fd_flushed(port);
+    wait_until_fd_flushed(port, 0);
 
 #ifdef WINDOWS_FILE_HANDLES
   if (fop->oth) {

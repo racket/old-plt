@@ -302,6 +302,7 @@ cont_proc {
   gcMARK(c->cont_mark_stack_copied);
   gcMARK(c->cont_mark_stack_owner);
   gcMARK(c->init_config);
+  gcMARK(c->init_break_cell);
   
   MARK_jmpup(&c->buf);
   MARK_cjs(&c->cjs);
@@ -519,7 +520,7 @@ thread_val {
 
   gcMARK(pr->cell_values);
   gcMARK(pr->init_config);
-  gcMARK(pr->config_at_swap);
+  gcMARK(pr->init_break_cell);
 
   {
     Scheme_Object **rs = pr->runstack_start;

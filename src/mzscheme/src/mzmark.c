@@ -806,6 +806,7 @@ int cont_proc_MARK(void *p) {
   gcMARK(c->cont_mark_stack_copied);
   gcMARK(c->cont_mark_stack_owner);
   gcMARK(c->init_config);
+  gcMARK(c->init_break_cell);
   
   MARK_jmpup(&c->buf);
   MARK_cjs(&c->cjs);
@@ -828,6 +829,7 @@ int cont_proc_FIXUP(void *p) {
   gcFIXUP(c->cont_mark_stack_copied);
   gcFIXUP(c->cont_mark_stack_owner);
   gcFIXUP(c->init_config);
+  gcFIXUP(c->init_break_cell);
   
   FIXUP_jmpup(&c->buf);
   FIXUP_cjs(&c->cjs);
@@ -1377,7 +1379,7 @@ int thread_val_MARK(void *p) {
 
   gcMARK(pr->cell_values);
   gcMARK(pr->init_config);
-  gcMARK(pr->config_at_swap);
+  gcMARK(pr->init_break_cell);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -1464,7 +1466,7 @@ int thread_val_FIXUP(void *p) {
 
   gcFIXUP(pr->cell_values);
   gcFIXUP(pr->init_config);
-  gcFIXUP(pr->config_at_swap);
+  gcFIXUP(pr->init_break_cell);
 
   {
     Scheme_Object **rs = pr->runstack_start;

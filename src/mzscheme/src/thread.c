@@ -179,6 +179,7 @@ static Scheme_Custodian *last_custodian;
 static Scheme_Object *scheduled_kills;
 
 Scheme_Object *scheme_parameterization_key;
+Scheme_Object *scheme_break_enabled_key;
 
 long scheme_total_gc_time;
 static long start_this_gc_time;
@@ -717,7 +718,9 @@ void scheme_init_parameterization(Scheme_Env *env)
   Scheme_Env *newenv;
 
   REGISTER_SO(scheme_parameterization_key);
+  REGISTER_SO(scheme_break_enabled_key);
   scheme_parameterization_key = scheme_make_symbol("paramz");
+  scheme_break_enabled_key = scheme_make_symbol("break-on?");
   
   v = scheme_intern_symbol("#%paramz");
   newenv = scheme_primitive_module(v, env);
@@ -725,11 +728,16 @@ void scheme_init_parameterization(Scheme_Env *env)
   scheme_add_global_constant("parameterization-key", 
 			     scheme_parameterization_key,
 			     newenv);
+  scheme_add_global_constant("break-enabled-key", 
+			     scheme_break_enabled_key,
+			     newenv);
+
   scheme_add_global_constant("extend-parameterization", 
 			     scheme_make_prim_w_arity(extend_parameterization,
 						      "extend-parameterization", 
 						      1, -1), 
 			     newenv);
+
   scheme_add_global_constant("check-for-break", 
 			     scheme_make_prim_w_arity(check_break_now,
 						      "check-for-break", 
@@ -1787,6 +1795,7 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 
 static Scheme_Thread *make_thread(Scheme_Config *config, 
 				  Scheme_Thread_Cell_Table *cells,
+				  Scheme_Object *init_break_cell,
 				  Scheme_Custodian *mgr)
 {
   Scheme_Thread *process;
@@ -1850,6 +1859,14 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
   } else {
     process->init_config = config;
     process->cell_values = cells;
+  }
+
+  if (init_break_cell) {
+    process->init_break_cell = init_break_cell;
+  } else {
+    Scheme_Object *v;
+    v = scheme_make_thread_cell(scheme_false, 1);
+    process->init_break_cell = v;
   }
 
   if (!mgr)
@@ -1974,7 +1991,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
 Scheme_Thread *scheme_make_thread()
 {
   /* Makes the initial process. */
-  return make_thread(NULL, NULL, NULL);
+  return make_thread(NULL, NULL, NULL, NULL);
 }
 
 static void scheme_check_tail_buffer_size(Scheme_Thread *p)
@@ -2090,9 +2107,9 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 
     /* We're leaving... */
     {
-      Scheme_Config *config;
-      config = scheme_current_config();
-      scheme_current_thread->config_at_swap = config;
+      int cb;
+      cb = scheme_can_break(scheme_current_thread);
+      scheme_current_thread->can_break_at_swap = cb;
     }
     if (scheme_current_thread->cc_ok) {
       scheme_current_thread->cc_ok_save = *(scheme_current_thread->cc_ok);
@@ -2371,6 +2388,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 				      void *child_start, 
 				      Scheme_Config *config,
 				      Scheme_Thread_Cell_Table *cells,
+				      Scheme_Object *break_cell,
 				      Scheme_Custodian *mgr,
 				      int normal_kill)
 {
@@ -2385,13 +2403,15 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
     config = scheme_current_config();
   if (!cells)
     cells = scheme_inherit_cells(NULL);
+  if (!break_cell)
+    break_cell = scheme_current_break_cell();
 
   config = scheme_init_error_escape_proc(config);
   config = scheme_extend_config(config, MZCONFIG_EXN_HANDLER,
 				scheme_get_thread_param(config, cells,
 							MZCONFIG_INIT_EXN_HANDLER));
   
-  child = make_thread(config, cells, mgr);
+  child = make_thread(config, cells, break_cell, mgr);
 
   /* Use child_thunk name, if any, for the thread name: */
   {
@@ -2433,7 +2453,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 
 Scheme_Object *scheme_thread(Scheme_Object *thunk)
 {
-  return scheme_thread_w_details(thunk, NULL, NULL, NULL, 0);
+  return scheme_thread_w_details(thunk, NULL, NULL, NULL, NULL, 0);
 }
 
 static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
@@ -2449,7 +2469,7 @@ static Scheme_Object *sch_thread_nokill(int argc, Scheme_Object *args[])
   scheme_check_proc_arity("thread/suspend-to-kill", 0, 0, argc, args);
   scheme_custodian_check_available(NULL, "thread/suspend-to-kill", "thread");
 
-  return scheme_thread_w_details(args[0], NULL, NULL, NULL, 1);
+  return scheme_thread_w_details(args[0], NULL, NULL, NULL, NULL, 1);
 }
 
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[])
@@ -2561,7 +2581,7 @@ static int is_stack_too_shallow(void)
 static Scheme_Object *thread_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *thunk, *result;
+  Scheme_Object *thunk, *result, *break_cell;
   Scheme_Config *config;
   Scheme_Custodian *mgr;
   Scheme_Thread_Cell_Table *cells;
@@ -2573,7 +2593,8 @@ static Scheme_Object *thread_k(void)
   thunk = (Scheme_Object *)p->ku.k.p1;
   config = (Scheme_Config *)p->ku.k.p2;
   mgr = (Scheme_Custodian *)p->ku.k.p3;
-  cells = (Scheme_Thread_Cell_Table *)p->ku.k.p4;
+  cells = (Scheme_Thread_Cell_Table *)SCHEME_CAR((Scheme_Object *)p->ku.k.p4);
+  break_cell = SCHEME_CDR((Scheme_Object *)p->ku.k.p4);
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
@@ -2586,7 +2607,7 @@ static Scheme_Object *thread_k(void)
 #else
 			   (void *)&dummy, 
 #endif
-			   config, cells, mgr, !suspend_to_kill);
+			   config, cells, break_cell, mgr, !suspend_to_kill);
 
   /* Don't get rid of `result'; it keeps the
      Precise GC xformer from "optimizing" away
@@ -2599,6 +2620,7 @@ static Scheme_Object *thread_k(void)
 Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk, 
 				       Scheme_Config *config, 
 				       Scheme_Thread_Cell_Table *cells,
+				       Scheme_Object *break_cell,
 				       Scheme_Custodian *mgr, 
 				       int suspend_to_kill)
 {
@@ -2620,7 +2642,7 @@ Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk,
     p->ku.k.p1 = thunk;
     p->ku.k.p2 = config;
     p->ku.k.p3 = mgr;
-    p->ku.k.p4 = cells;
+    p->ku.k.p4 = scheme_make_pair((Scheme_Object *)cells, break_cell);
     p->ku.k.i1 = suspend_to_kill;
 
     return scheme_handle_stack_overflow(thread_k);
@@ -2633,7 +2655,7 @@ Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk,
 #else
 			   (void *)&dummy, 
 #endif
-			   config, cells, mgr, !suspend_to_kill);
+			   config, cells, break_cell, mgr, !suspend_to_kill);
 
   /* Don't get rid of `result'; it keeps the
      Precise GC xformer from "optimizing" away
@@ -2753,8 +2775,6 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   {
     Scheme_Config *config;
     config = scheme_current_config();
-    p->config_at_swap = config;
-
     config = scheme_init_error_escape_proc(config);
     if (!nested_exn_handler) {
       REGISTER_SO(nested_exn_handler);
@@ -2765,6 +2785,11 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     config = scheme_extend_config(config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
     np->init_config = config;
+  }
+  {
+    int cb;
+    cb = scheme_can_break(p);
+    p->can_break_at_swap = cb;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
@@ -3071,20 +3096,37 @@ static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok,
   sinfo->sleep_end = sleep_end;
 }
 
+Scheme_Object *scheme_current_break_cell()
+{
+  return scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
+}
+
 int scheme_can_break(Scheme_Thread *p)
 {
   if (!p->suspend_break) {
-    Scheme_Config *config;
     if (p == scheme_current_thread) {
-      config = scheme_current_config();
-    } else {
-      config = p->config_at_swap;
-      if (!config)
-	config = p->init_config; /* Presuambly never swapped in, so far */
-    }
-    return SCHEME_TRUEP(scheme_get_thread_param(config, p->cell_values, MZCONFIG_ENABLE_BREAK));
+      Scheme_Object *v;
+      
+      v = scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
+      
+      v = scheme_thread_cell_get(v, p->cell_values);
+      
+      return SCHEME_TRUEP(v);
+    } else
+      return p->can_break_at_swap;
   }
+
   return 0;
+}
+
+void scheme_set_can_break(int on)
+{
+  Scheme_Object *v;
+      
+  v = scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
+
+  scheme_thread_cell_set(v, scheme_current_thread->cell_values, 
+			 (on ? scheme_true : scheme_false));
 }
 
 void scheme_check_break_now(void) {
@@ -3100,6 +3142,25 @@ static Scheme_Object *check_break_now(int argc, Scheme_Object *args[])
 {
   scheme_check_break_now();
   return scheme_void;
+}
+
+
+void scheme_push_break_enable(Scheme_Cont_Frame_Data *cframe, int on, int post_check)
+{
+  Scheme_Object *v;
+
+  v = scheme_make_thread_cell(on ? scheme_true : scheme_false, 1);
+  scheme_push_continuation_frame(cframe);
+  scheme_set_cont_mark(scheme_break_enabled_key, v);
+  if (post_check)
+    scheme_check_break_now();    
+}
+
+void scheme_pop_break_enable(Scheme_Cont_Frame_Data *cframe, int post_check)
+{
+  scheme_pop_continuation_frame(cframe);
+  if (post_check)
+    scheme_check_break_now();    
 }
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
@@ -3596,6 +3657,34 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
   p->ran_some = 1;
 
   return result;
+}
+
+int scheme_block_until_enable_break(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
+				    Scheme_Object *data, float delay, int enable_break)
+{
+  if (enable_break) {
+    int v;
+    Scheme_Cont_Frame_Data cframe;
+
+    scheme_push_break_enable(&cframe, 1, 1);
+    v = scheme_block_until(_f, fdf, data, delay);
+    scheme_pop_break_enable(&cframe, 0);
+
+    return v;
+  } else
+    return scheme_block_until(_f, fdf, data, delay);
+}
+
+void scheme_thread_block_enable_break(float sleep_time, int enable_break)
+{
+  if (enable_break) {
+    Scheme_Cont_Frame_Data cframe;
+    
+    scheme_push_break_enable(&cframe, 1, 1);
+    scheme_thread_block(sleep_time);
+    scheme_pop_break_enable(&cframe, 0);
+  } else
+    scheme_thread_block(sleep_time);
 }
 
 void scheme_start_atomic(void)
@@ -4863,7 +4952,6 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
   float timeout = -1.0;
   double start_time;
   Scheme_Cont_Frame_Data cframe;
-  Scheme_Config *orig_config = NULL;
 
   if (with_timeout) {
     if (!SCHEME_FALSEP(argv[0])) {
@@ -4907,18 +4995,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
     evt_set = make_evt_set(name, argc, argv, with_timeout);
 
   if (with_break) {
-    Scheme_Config *config;
-
-    orig_config = scheme_current_config();
-    config = scheme_extend_config(orig_config,
-				  MZCONFIG_ENABLE_BREAK, 
-				  scheme_true);
-    
-    scheme_push_continuation_frame(&cframe);
-    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
-
-    /* Need to check for a break, in case one was queued and we just enabled it: */
-    scheme_check_break_now();
+    scheme_push_break_enable(&cframe, 1, 1);
   }
 
   /* Check for another special case: syncing on a set of semaphores
@@ -4939,7 +5016,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
       scheme_check_break_now();
 
       if (with_break) {
-	scheme_pop_continuation_frame(&cframe);
+	scheme_pop_break_enable(&cframe, 0);
       }
 
       if (i)
@@ -4967,7 +5044,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
   post_syncing_nacks(syncing);
 
   if (with_break) {
-    scheme_pop_continuation_frame(&cframe);
+    scheme_pop_break_enable(&cframe, 0);
   }
 
   if (with_break) {
@@ -4978,7 +5055,6 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
   if (syncing->result) {
     /* Apply wrap functions to the selected evt: */
     Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
-    Scheme_Config *config;
     int to_call_is_cont = 0;
 
     o = evt_set->argv[syncing->result - 1];
@@ -5000,18 +5076,11 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 	      args[0] = o;
 
 	      /* Call wrap proc with breaks disabled */
-	      if (!orig_config)
-		orig_config = scheme_current_config();
-	      config = scheme_extend_config(orig_config,
-					    MZCONFIG_ENABLE_BREAK, 
-					    scheme_false);
-	      
-	      scheme_push_continuation_frame(&cframe);
-	      scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+	      scheme_push_break_enable(&cframe, 0, 0);
 
 	      o = scheme_apply(to_call, 1, args);
 
-	      scheme_pop_continuation_frame(&cframe);
+	      scheme_pop_break_enable(&cframe, 0);
 	    }
 	    to_call = a;
 	  } else if (SAME_TYPE(scheme_thread_suspend_type, SCHEME_TYPE(a))
@@ -5027,14 +5096,8 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 	  /* If to_call is still a wrap-evt (not a cont-evt),
 	     then set the config one more time: */
 	  if (!to_call_is_cont) {
-	    if (!orig_config)
-	      orig_config = scheme_current_config();
-	    config = scheme_extend_config(orig_config,
-					  MZCONFIG_ENABLE_BREAK, 
-					  scheme_false);
-	    if (!tailok)
-	      scheme_push_continuation_frame(&cframe);
-	    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+	    scheme_push_break_enable(&cframe, 0, 0);
+	    tailok = 0;
 	  }
 
 	  if (tailok) {
@@ -5042,7 +5105,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 	  } else {
 	    o = scheme_apply(to_call, 1, args);
 	    if (!to_call_is_cont)
-	      scheme_pop_continuation_frame(&cframe);
+	      scheme_pop_break_enable(&cframe, 1);
 	    return o;
 	  }
 	}
@@ -5557,7 +5620,6 @@ static void make_initial_config(Scheme_Thread *p)
 
   p->init_config = config;
   
-  init_param(cells, paramz, MZCONFIG_ENABLE_BREAK, scheme_false);
   init_param(cells, paramz, MZCONFIG_CAN_READ_GRAPH, scheme_true);
   init_param(cells, paramz, MZCONFIG_CAN_READ_COMPILED, scheme_false);
   init_param(cells, paramz, MZCONFIG_CAN_READ_BOX, scheme_true);

@@ -528,23 +528,13 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *synci
 	v = try_channel(sema, syncing, 0, NULL);
       }
     } else {
-      Scheme_Config *config;
       Scheme_Cont_Frame_Data cframe;
 
-      config = scheme_extend_config(scheme_current_config(),
-				    MZCONFIG_ENABLE_BREAK, 
-				    scheme_true);
-
-      scheme_push_continuation_frame(&cframe);
-      scheme_install_config(config);
-      
-      /* Need to check for a break, in case one was queued and we just
-         enabled it: */
-      scheme_check_break_now();
+      scheme_push_break_enable(&cframe, 1, 1);
 
       scheme_wait_sema((Scheme_Object *)sema, 0);
 
-      scheme_pop_continuation_frame(&cframe);
+      scheme_pop_break_enable(&cframe, 0);
 
       return 1;
     }

@@ -2528,7 +2528,7 @@
 
 (module #%more-scheme #%kernel
   (require #%small-scheme #%define #%paramz)
-  (require-for-syntax #%kernel #%stx #%stxcase-scheme)
+  (require-for-syntax #%kernel #%stx #%stxcase-scheme #%qqstx)
 
   ;; From Dybvig:
   (define-syntax case
@@ -2631,11 +2631,9 @@
 		 (extend-parameterization
 		  (continuation-mark-set-first #f parameterization-key)
 		  p/v ...)
-	       (begin
-		 (check-for-break)
-		 (let ()
-		   expr1
-		   expr ...)))))])))
+	       (let ()
+		 expr1
+		 expr ...))))])))
 
   (define (current-parameterization)
     (extend-parameterization (continuation-mark-set-first #f parameterization-key)))
@@ -2649,46 +2647,101 @@
     (with-continuation-mark
 	parameterization-key
 	paramz
-      (begin
-	(check-for-break)
-	(thunk))))
+      (thunk)))
 
-  (define-syntax with-handlers
+  (define-syntax parameterize-break
     (lambda (stx)
       (syntax-case stx ()
-	[(_ () expr1 expr ...) (syntax/loc stx (let () expr1 expr ...))]
-	[(_ ([pred handler] ...) expr1 expr ...)
-	 (syntax/loc
-	  stx
-	  (let ([l (list (cons pred handler) ...)]
-		[body (lambda () expr1 expr ...)])
-	    ;; Capture current parameterization, so we can use it to
-	    ;;  evaluate the body
-	    (let ([pz (current-parameterization)])
-	      ;; Disable breaks here, so that when the exception handler jumps
-	      ;;  to run a handler, breaks are disabled for the handler
-	      (parameterize ([break-enabled #f])
-		((call/ec 
-		  (lambda (k)
-		    ;; Restore the captured parameterization for
-		    ;;  evaluating the `with-handlers' body
-		    (with-continuation-mark 
-			parameterization-key
-			pz
-		      (parameterize ([current-exception-handler
-				      (lambda (e)
-					(k
-					 (lambda ()
-					   (let loop ([l l])
-					     (cond
-					      [(null? l)
-					       (raise e)]
-					      [((caar l) e)
-					       ((cdar l) e)]
-					      [else
-					       (loop (cdr l))])))))])
-			(call-with-values body
-			  (lambda args (lambda () (apply values args)))))))))))))])))
+	[(_ bool-expr expr1 expr ...)
+	 (syntax/loc stx
+	   (with-continuation-mark
+	       break-enabled-key
+	       (make-thread-cell (and bool-expr #t))
+	     (begin
+	       (check-for-break)
+	       (let ()
+		 expr1
+		 expr ...))))])))
+  
+  (define-values (struct:break-paramz make-break-paramz break-paramz? break-paramz-ref break-paramz-set!)
+    (make-struct-type 'break-parameterization #f 1 0 #f))
+
+  (define-struct break-parameterization (cell))
+  
+  (define (current-break-parameterization)
+    (make-break-paramz (continuation-mark-set-first #f break-enabled-key)))
+  
+  (define (call-with-break-parameterization paramz thunk)
+    (unless (break-paramz? paramz)
+      (raise-type-error 'call-with-break-parameterization "break parameterization" 0 paramz thunk))
+    (unless (and (procedure? thunk)
+		 (procedure-arity-includes? thunk 0))
+      (raise-type-error 'call-with-parameterization "procedure (arity 0)" 1 paramz thunk))
+    (begin0
+     (with-continuation-mark
+	 break-enabled-key
+	 (break-paramz-ref paramz 0)
+       (begin
+	 (check-for-break)
+	 (thunk)))
+     (check-for-break)))
+
+  (define-syntaxes (with-handlers with-handlers*)
+    (let ([wh 
+	   (lambda (disable-break?)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ () expr1 expr ...) (syntax/loc stx (let () expr1 expr ...))]
+		 [(_ ([pred handler] ...) expr1 expr ...)
+		  (quasisyntax/loc stx
+		    (let ([l (list (cons pred handler) ...)]
+			  [body (lambda () expr1 expr ...)])
+		      ;; Capture current break parameterization, so we can use it to
+		      ;;  evaluate the body
+		      (let ([bpz (continuation-mark-set-first #f break-enabled-key)])
+			;; Disable breaks here, so that when the exception handler jumps
+			;;  to run a handler, breaks are disabled for the handler
+			(with-continuation-mark
+			    break-enabled-key
+			    (make-thread-cell #f)
+			  ((call/ec 
+			    (lambda (k)
+			      ;; Restore the captured break parameterization for
+			      ;;  evaluating the `with-handlers' body. In this
+			      ;;  special case, no check for breaks is needed,
+			      ;;  because bpz is quickly restored past call/ec.
+			      ;;  Thus, `with-handlers' can evaluate its body in
+			      ;;  tail position.
+			      (with-continuation-mark 
+				  break-enabled-key
+				  bpz
+				(parameterize ([current-exception-handler
+						(lambda (e)
+						  (k
+						   (lambda ()
+						     (let loop ([l l])
+						       (cond
+							[(null? l)
+							 (raise e)]
+							[((caar l) e)
+							 #,(if disable-break?
+							       #'(begin0
+								  ((cdar l) e)
+								  (with-continuation-mark 
+								      break-enabled-key
+								      bpz
+								    (check-for-break)))
+							       #'(with-continuation-mark 
+								     break-enabled-key
+								     bpz
+								   (begin
+								     (check-for-break)
+								     ((cdar l) e))))]
+							[else
+							 (loop (cdr l))])))))])
+				  (call-with-values body
+				    (lambda args (lambda () (apply values args)))))))))))))])))])
+      (values (wh #t) (wh #f))))
 
   (define-syntax set!-values
     (lambda (stx)
@@ -2763,7 +2816,8 @@
 
   (provide case do delay force promise?
 	   parameterize current-parameterization call-with-parameterization
-	   with-handlers set!-values
+	   parameterize-break current-break-parameterization call-with-break-parameterization
+	   with-handlers with-handlers* set!-values
 	   let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------

@@ -2446,6 +2446,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_thread(cont->ss, p);
   cont->init_config = p->init_config;
+  cont->init_break_cell = p->init_break_cell;
 
   {
     Scheme_Overflow *overflow;
@@ -2508,6 +2509,7 @@ call_cc (int argc, Scheme_Object *argv[])
     p->stack_start = cont->stack_start;
     p->o_start = cont->o_start;
     p->init_config = cont->init_config;
+    p->init_break_cell = cont->init_break_cell;
 
     p->suspend_break = cont->suspend_break;
     
@@ -2785,7 +2787,8 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   last_pos = ((Scheme_Cont_Mark_Set *)argv[0])->cmpos + 2;
   key = argv[1];
 
-  if (key == scheme_parameterization_key) {
+  if ((key == scheme_parameterization_key)
+      || (key == scheme_break_enabled_key)) {
     scheme_signal_error("continuation-mark-set->list: secret key leaked!");
     return NULL;
   }
@@ -2854,6 +2857,9 @@ scheme_extract_one_cc_mark(Scheme_Object *mark_set, Scheme_Object *key)
   if (key == scheme_parameterization_key) {
     return (Scheme_Object *)scheme_current_thread->init_config;
   }
+  if (key == scheme_break_enabled_key) {
+    return (Scheme_Object *)scheme_current_thread->init_break_cell;
+  }
   
   return NULL;
 }
@@ -2889,23 +2895,18 @@ typedef struct {
 
 static void pre_post_dyn_wind(Scheme_Object *prepost)
 {
-  Scheme_Config *config;
   Scheme_Cont_Frame_Data cframe;
 
   /* Cancel internal suspend in eval or dyn-wind, because we convert
      it to a parameterize. */
   --scheme_current_thread->suspend_break;
 
-  config = scheme_extend_config(scheme_current_config(),
-				MZCONFIG_ENABLE_BREAK, 
-				scheme_false);
-  scheme_push_continuation_frame(&cframe);
-  scheme_install_config(config);
+  scheme_push_break_enable(&cframe, 0, 0);
 
   /* Here's the main call: */
   (void)_scheme_apply_multi(prepost, 0, NULL);
 
-  scheme_pop_continuation_frame(&cframe);
+  scheme_pop_break_enable(&cframe, 0);
 
   /* Restore internal suspend: */
   scheme_current_thread->suspend_break++;

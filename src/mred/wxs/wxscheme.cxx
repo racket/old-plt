@@ -465,10 +465,10 @@ static void release_context_lock(void *c)
   scheme_post_sema(context_sema);
 }
 
-void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
+void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_evt, int eb)
 {
   Scheme_Object **a, *wa[3], *glo, *v;
-  int waitables;
+  int evts;
 
   if (!context_sema) {
     wxREGGLOB(context_sema);
@@ -479,28 +479,27 @@ void *wxWithGLContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
   glo = objscheme_bundle_wxGL(gl);
 
   a[0] = (Scheme_Object *)thunk;
-  a[1] = (Scheme_Object *)alt_waitable;
+  a[1] = (Scheme_Object *)alt_evt;
 
   scheme_check_proc_arity("call-as-current in gl-context<%>", 
 			  0, 0, 
-			  (alt_waitable ? 2 : 1), a);
-  if (alt_waitable) {
-    if (!scheme_is_waitable((Scheme_Object *)alt_waitable)) {
-      scheme_wrong_type("call-as-current in gl-context<%>", "waitable", 1, 2, a);
+			  (alt_evt ? 2 : 1), a);
+  if (alt_evt) {
+    if (!scheme_is_evt((Scheme_Object *)alt_evt)) {
+      scheme_wrong_type("call-as-current in gl-context<%>", "evt", 1, 2, a);
       return NULL;
     }
-    waitables = 3;
-    wa[2] = a[1];
+    evts = 2;
+    wa[1] = a[1];
   } else
-    waitables = 2;
+    evts = 1;
 
-  wa[0] = scheme_false;
-  wa[1] = context_sema;
+  wa[0] = context_sema;
 
   if (eb)
-    v = scheme_object_wait_multiple_enable_break(waitables, wa);
+    v = scheme_sync_enable_break(evts, wa);
   else
-    v = scheme_object_wait_multiple(waitables, wa);
+    v = scheme_sync(evts, wa);
 
   if (v == context_sema) {
     a[0] = (Scheme_Object *)thunk;
@@ -1989,8 +1988,8 @@ void *wxSchemeYield(void *sema)
     mred_wait_eventspace();
     return scheme_true;
   } else if (sema) {
-    if (!scheme_is_waitable((Scheme_Object *)sema))
-      scheme_wrong_type("yield", "waitable or 'wait", -1, 0, (Scheme_Object **)&sema);
+    if (!scheme_is_evt((Scheme_Object *)sema))
+      scheme_wrong_type("yield", "evt or 'wait", -1, 0, (Scheme_Object **)&sema);
 
     return wxDispatchEventsUntilWaitable((wxDispatch_Check_Fun)NULL, NULL, (Scheme_Object *)sema);
   } else {

@@ -1043,6 +1043,25 @@ wxSnip *wxMediaEdit::FindSnip(long p, int direction, long *sPos)
     return NULL;
 }
 
+wxSnip *wxMediaEdit::FindNextNonTextSnip(wxSnip *snip)
+{
+  if (snip) {
+    if (snip->GetAdmin() != snipAdmin)
+      return NULL;
+    snip = snip->next;
+  } else if (!len)
+    return NULL;
+  else
+    snip = snips;
+  
+  while (snip && ((snip->__type == wxTYPE_TEXT_SNIP)
+		  || (snip->__type == wxTYPE_TAB_SNIP))) {
+    snip = snip->next;
+  }
+
+  return snip;
+}
+
 void wxMediaEdit::MakeSnipset(long start, long end) 
 {
   long sPos;

@@ -189,6 +189,8 @@
 @ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
 @ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
+@ "find-next-non-string-snip" : wxSnip^ FindNextNonTextSnip(wxSnip^)
+
 @MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
 
 @ "get-text" : mzstring/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);

@@ -1148,6 +1148,8 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 	saveALLock = _ALSetHandleLock((Handle) hAL, true);
 	pAL = *hAL;
 
+	pAL->lastClickCell.h = pAL->lastClickCell.v = -1;
+
 #if ALIST_FOR_WX_WINDOWS
 	part = local_ALFindControl( mouseLoc, pAL, &whichControl );
 #else
@@ -1221,7 +1223,7 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 	// Must have hit a non-active scroll bar or the grow zone, or beyond the end of the list.
 	if (edge == kCaretNotInCell) {
 		pAL->clickCount = 0;
-		ALSetSelectNone(true, hAL);
+		// ALSetSelectNone(true, hAL);
 		goto cleanup;
 	}
 

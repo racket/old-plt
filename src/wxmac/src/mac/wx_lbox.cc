@@ -285,6 +285,7 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     Point startPt;
     int modifiers = 0;
     Bool doubleclick;
+    ALCell cell;
 
     event->Position(&startH,&startV); // client c.s.
 
@@ -306,7 +307,9 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     
     ReleaseCurrentDC();
     
-    {
+    ALLastClick(&cell, cListReference);
+
+    if (cell.v > -1) {
       wxCommandEvent *commandEvent;
       
       if (cellWasClicked && doubleclick)
@@ -621,15 +624,22 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 
 void wxListBox::SetFirstItem(int N)
 {
-  LongPt desired = {N,0}; // cell = {row, col}
-  Point dest;
+  int vi, fi;
+
+  vi = NumberOfVisibleItems();
+  fi = GetFirstItem();
+  
+  if (N > no_items - vi)
+    N = no_items - vi;
+  if (N < 0)
+    return;
+
+  if (N == fi)
+    return;
 
   SetCurrentDC();
 
-  dest.v = VIEW_RECT_OFFSET + 1 + SetOriginY;
-  dest.h = VIEW_RECT_OFFSET + SetOriginX;
-
-  ALAutoScroll(dest,&desired,cListReference);
+  ALScrollCells(0, fi - N, cListReference);
 
   ReleaseCurrentDC();
 }

@@ -817,7 +817,7 @@
   (test/spec-passed/result
    'class-contract1
    '(send
-     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
                             (class object% (define/public (m x) x) (super-instantiate ()))
                             'pos
                             'neg))
@@ -827,7 +827,7 @@
   
   (test/spec-failed
    'class-contract2
-   '(contract (class-contract (m (integer? . -> . integer?)))
+   '(contract (class-contract (public m (integer? . -> . integer?)))
               object%
               'pos
               'neg)
@@ -836,7 +836,7 @@
   (test/spec-failed
    'class-contract3
    '(send
-     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
                             (class object% (define/public (m x) x) (super-instantiate ()))
                             'pos
                             'neg))
@@ -847,13 +847,39 @@
   (test/spec-failed
    'class-contract4
    '(send
-     (make-object (contract (class-contract (m (integer? . -> . integer?)))
+     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
                             (class object% (define/public (m x) 'x) (super-instantiate ()))
                             'pos
                             'neg))
      m
      1)
    "pos")
+  
+  (test/spec-failed
+   'class-contract=>1
+   '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
+                         (class object% (define/public (m x) x) (super-instantiate ()))
+                         'pos-c
+                         'neg-c)]
+           [d% (contract (class-contract (override m ((>=/c 15) . -> . (>=/c 5))))
+                         (class c% (define/override (m x) x) (super-instantiate ()))
+                         'pos-d
+                         'neg-d)])
+      (send (make-object d%) m 12))
+   "pos-d")
+  
+  (test/spec-failed
+   'class-contract=>2
+   '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
+                         (class object% (define/public (m x) x) (super-instantiate ()))
+                         'pos-c
+                         'neg-c)]
+           [d% (contract (class-contract (override m ((>=/c 15) . -> . (>=/c 5))))
+                         (class c% (define/override (m x) 8) (super-instantiate ()))
+                         'pos-d
+                         'neg-d)])
+      (send (make-object d%) m 100))
+   "pos-d")
   
   ))
 

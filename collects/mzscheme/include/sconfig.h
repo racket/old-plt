@@ -399,6 +399,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define BSTRING_INCLUDE
 
+# define DEFEAT_FP_COMP_OPTIMIZATION
 # define POW_HANDLES_INF_CORRECTLY
 
 # define NO_INLINE_KEYWORD
@@ -500,7 +501,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 #endif
 
-  /************** HP/UX with gcc ****************/
+  /************** HP/UX with cc ****************/
 
 #if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
 
@@ -518,6 +519,9 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_DIVIDE_MAKE_INFINITY
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
+# define ZERO_MINUS_ZERO_IS_POS_ZERO
+
+# define NO_INLINE_KEYWORD
 
 # define USE_ULIMIT
 
@@ -1079,6 +1083,10 @@ int scheme_pthread_semaphore_try_down(void *);
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity. */
 
+ /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
+    converts (a == a) to TRUE, even if `a' is floating-point. Used
+    only when USE_[SCO_]IEEE_FP_PREDS is not defined. */
+
  /* IGNORE_BY_CONTROL_387 turns off floating-point error for
     Intel '387 with _control87. DONT_IGNORE_PIPE_SIGNAL can be on or
     off. */
@@ -1099,6 +1107,12 @@ int scheme_pthread_semaphore_try_down(void *);
     equality comparisons with +nan.0 always return #t. Currently
     used for MSVC++ */
     
+ /* ZERO_MINUS_ZERO_IS_POS_ZERO indicates that something (compiler?
+    machine? fp flags?) is broken so that 0.0 - 0.0 = 0.0 instead of
+    -0.0. This flag doesn't fix MzScheme completely, since (- 0.0) is
+    still 0.0, but at least it lets MzScheme read and print 0.0 and
+    -0.0 accurately. Currently used for HP/UX. */
+
  /* NAN_LT_COMPARISON_WRONG indicates that +nan.0 is not handled correctly
     by < or <=. Probably the compiler implements < as !>. */
 

@@ -990,7 +990,7 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int ltn,
 
   name[total] = 0;
 
-  return scheme_intern_symbol(name);
+  return scheme_intern_exact_symbol(name, total);
 }
 
 /************************************************************************/

@@ -29,7 +29,7 @@
    used as the executable name. (The ".exe" suffix is automatically
    appended for Windows.)
 
-(install-mzscheme-program-launcher file collection) - Calls
+(install-mzscheme-program-launcher file collection name) - Calls
    `make-mzscheme-launcher' with the standard desitnation for
    executables in the current PLT home directory. `name' is
    used as the executable name. (The ".exe" suffix is automatically

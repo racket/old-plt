@@ -1947,7 +1947,7 @@ static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
 #ifdef wx_msw
   w->OnPaint();
 #else
-  ((wxCanvas *)w)->OnPaint();
+  ((wxCanvas *)w)->DoPaint();
 #endif
   return scheme_void;
 }

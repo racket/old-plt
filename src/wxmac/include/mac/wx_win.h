@@ -104,7 +104,7 @@ class wxWindow: public wxbWindow
   ControlHandle cMacControl;
 
   ControlHandle cPaintControl;
-  int           control_inset_extent;
+  int           control_inset_extent, control_opaque;
 
   /*============================================================================= */
   /* Public methods */
@@ -368,7 +368,7 @@ class wxWindow: public wxbWindow
 
   void FlushDisplay(void);
 
-  void CreatePaintControl(int inset_extent = -1);
+  void CreatePaintControl(int inset_extent = -1, Bool opaque = FALSE);
   void GetPaintControlRegion(RgnHandle rgn, Bool opaquePart);
 	
  protected:

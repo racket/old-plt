@@ -20,7 +20,7 @@ extern "C" {
 			 long *ipos, char utf16, int permissive);
 };
 
-static ATSUStyle theATSUstyle;
+static ATSUStyle theATSUstyle, theATSUqdstyle;
 
 static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
@@ -439,6 +439,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   CGContextRef cgctx;
   Rect portRect;
   RGBColor eraseColor;
+  ATSUStyle style;
   int use_cgctx = (always_use_atsu 
 		   && ((smoothing != wxSMOOTHING_PARTIAL) || (scale_x != scale_y)));
 # define xOS_X_ONLY(x) x
@@ -448,8 +449,23 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 #endif
 
   if (!theATSUstyle) {
+    /* For some reason, toggling kAllTypographicFeaturesType makes
+       text drawing slower and slower. So we have separate styles,
+       one with typographic features and one without. */
+    ATSUFontFeatureType types[1];
+    ATSUFontFeatureSelector sels[1];
+
     ATSUCreateStyle(&theATSUstyle);
+    ATSUCreateStyle(&theATSUqdstyle);
+
+    types[0] = kAllTypographicFeaturesType;
+    sels[0] = 0;
+    ATSUSetFontFeatures(theATSUstyle, 1, types, sels);
+    sels[0] = 1;
+    ATSUSetFontFeatures(theATSUqdstyle, 1, types, sels);
   }
+
+  style = (qd_spacing ? theATSUqdstyle : theATSUstyle);
 
   if (ucs4) {
     int i, extra, v;
@@ -554,21 +570,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
   if (!again) {
     if (given_font)
-      atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, smoothing, 
+      atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
 				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y);
     else
-      atsuSetStyleFromGrafPtr(theATSUstyle, smoothing, angle, 
+      atsuSetStyleFromGrafPtr(style, smoothing, angle, 
 			      (use_cgctx || just_meas) ? 1.0 : scale_y);
-  }
-
-  {
-    ATSUFontFeatureType types[1];
-    ATSUFontFeatureSelector sels[1];
-
-    types[0] = kAllTypographicFeaturesType;
-    sels[0] = (qd_spacing ? 1 : 0); /* kAllTypographicFeatures{Off,On}Selector */
-    
-    ATSUSetFontFeatures(theATSUstyle, 1, types, sels);
   }
 
   /********************* BEGIN NO-GC RANGE **********************/
@@ -581,7 +587,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				  ulen,
 				  1,
 				  &ulen,
-				  &theATSUstyle,
+				  &style,
 				  &layout);
 
   if (qd_spacing || use_cgctx) {

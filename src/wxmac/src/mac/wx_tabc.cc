@@ -113,9 +113,13 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   padTop = TAB_TOP_SPACE;
 #endif
 
+  padLeft = padRight = padBottom = 2;
+
   phantom_height = -1;
 
-  ::SizeControl(cMacControl, cWindowWidth, (style & wxBORDER) ? cWindowHeight : TAB_CONTROL_HEIGHT);
+  ::SizeControl(cMacControl, 
+		cWindowWidth - (padLeft + padRight), 
+		(style & wxBORDER) ? (cWindowHeight - padBottom) : TAB_CONTROL_HEIGHT);
 
   ::EmbedControl(cMacControl, GetRootControl());
   
@@ -309,8 +313,8 @@ void wxTabChoice::Append(char *s)
   
   r.top = padTop + ox;
   r.bottom = r.top + TAB_CONTROL_HEIGHT;
-  r.left = oy;
-  r.right = r.left + cWindowWidth;
+  r.left = oy + padLeft;
+  r.right = r.left + cWindowWidth - (padLeft + padRight);
 
   naya = MakeTabs(cMacDC->macGrafPort(), tab_count, tab_labels, &r);
 

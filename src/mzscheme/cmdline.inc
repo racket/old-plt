@@ -212,6 +212,7 @@ typedef struct {
 #endif
 #ifdef CMDLINE_STDIO_FLAG
   int alternate_rep;
+  int no_front;
 #endif
   Scheme_Env *global_env;
 } FinishArgs;
@@ -380,6 +381,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
 #ifdef CMDLINE_STDIO_FLAG
   int alternate_rep = 0;
+  int no_front = 0;
 #endif
   int no_lib_path = 0;
   FinishArgs *fa;
@@ -587,6 +589,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # ifdef CMDLINE_STDIO_FLAG
     else if (!strcmp("--stdio", argv[0]))
       argv[0] = "-z";
+    else if (!strcmp("--back", argv[0]))
+      argv[0] = "-G";
 # endif
 # ifdef VERSION_YIELD_FLAG
     else if (!strcmp("--yield", argv[0]))
@@ -798,8 +802,12 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 #endif
 #ifdef CMDLINE_STDIO_FLAG
-	case 'z':
+       	case 'z':
 	  alternate_rep = 1;
+	  no_front = 1;
+	  break;
+	case 'G':
+	  no_front = 1;
 	  break;
 #endif
 #if defined(_IBMR2)
@@ -910,6 +918,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
 #ifdef CMDLINE_STDIO_FLAG
   fa->alternate_rep = alternate_rep;
+  fa->no_front = no_front;
 #endif
   fa->global_env = global_env;
 
@@ -947,7 +956,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -Z, --nogui : Skip \"class.ss\" & \"mred.ss\" require, load handler set.\n"
 # endif
 # ifdef CMDLINE_STDIO_FLAG
-	 "  -z, --stdio : Show version, use read-eval-print-loop, not graphical-....\n"
+	 "  -z, --stdio : Show version, use read-eval-print-loop (not graphical-...).\n"
+	 "  -G, --back : Don't bring application to the foreground (Mac OS X).\n"
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"

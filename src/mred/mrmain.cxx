@@ -194,6 +194,12 @@ static int do_main_loop(FinishArgs *fa)
   wxREGGLOB(xfa);
   xfa = fa;
 
+  if (!fa->no_front) {
+    ProcessSerialNumber psn;
+    GetCurrentProcess(&psn);    
+    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
+  }
+
   wxDoMainLoop();
 
   return 0;

@@ -154,6 +154,7 @@ private:
 	void SetScrollPos(int dir, int val);
 
 	virtual void Paint(void);
+	void DoPaint(void);
 	virtual void OnPaint(void);
         
 	virtual void OnSetFocus(void);

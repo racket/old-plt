@@ -202,30 +202,6 @@ int wxScrollBar::GetMaxValue(void)
 //-----------------------------------------------------------------------------
 void wxScrollBar::Paint(void)
 {
-  if (cHidden) return;
-  
-  SetCurrentDC();
-  // GRW
-  if (IsControlVisible(cMacControl))
-    {
-      ::Draw1Control(cMacControl);
-    }
-  else
-    {
-      // Draw outline of hidden scrollbar (since we're clipping DrawGrowIcon)
-      Rect controlRect;
-      PenState oldPenState;
-      Rect r;
-      
-      controlRect = *GetControlBounds(cMacControl,NULL);
-      ::GetPenState(&oldPenState);
-      ::PenNormal();
-      r = controlRect;
-      OffsetRect(&r,SetOriginX,SetOriginY);
-      ::FrameRect(&r);
-      ::SetPenState(&oldPenState);
-    }
-  // GRW
 }
 
 //-----------------------------------------------------------------------------

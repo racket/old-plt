@@ -19,7 +19,7 @@
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
 
-extern void wxCallOnPaintOrQueue(wxCanvas *win);
+extern void wxCallDoPaintOrQueue(wxCanvas *win);
 extern void MrEdQueuePaint(wxWindow *wx_window);
 
 //=============================================================================
@@ -142,7 +142,7 @@ void wxCanvas::InitDefaults(void)
 
   if (!(cStyle & wxFLAT)) {
     cStyle |= wxHIDE_MENUBAR;
-    CreatePaintControl();
+    CreatePaintControl(-1, !(cStyle & wxTRANSPARENT_WIN));
   }
 
   {
@@ -492,12 +492,11 @@ void wxCanvas::SetScrollData
       theDC->device_origin_x += -dH;
       theDC->device_origin_y += -dV;
 
-      /* FIXME: the Paint() call below doesn't immediately paint anymore */
       if (need_repaint) {
 	if (evnt)
 	  MrEdQueuePaint(this);
 	else
-	  Paint();
+	  DoPaint();
       }
     }
   }
@@ -789,20 +788,31 @@ int wxCanvas::GetScrollRange(int dir)
 			 : wxWhatScrollData::wxSizeH);
 }
 
-void wxCanvas::Paint(void)
+void wxCanvas::DoPaint(void)
 {
   if (!cHidden) {
     if (!(cStyle & wxTRANSPARENT_WIN)
 	&& !(cStyle & wxNO_AUTOCLEAR)) {
       Rect itemRect;
+      ThemeDrawingState s;
+      SetCurrentDC();
+      GetThemeDrawingState(&s);
       GetControlBounds(cPaintControl, &itemRect);
       BackColor(whiteColor);
       BackPat(GetWhitePattern());
       EraseRect(&itemRect);
+      SetThemeDrawingState(s, TRUE);
     }
     
+    OnPaint();
+  }
+}
+
+void wxCanvas::Paint(void)
+{
+  if (!cHidden) {
     /* In wx_frame.cc: */
-    wxCallOnPaintOrQueue(this);
+    wxCallDoPaintOrQueue(this);
   }
 }
 

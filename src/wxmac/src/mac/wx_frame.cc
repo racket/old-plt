@@ -29,10 +29,9 @@ static wxMenuBar *close_menu_bar;
 extern int mred_current_thread_is_handler(void *ctx);
 extern int mred_in_restricted_context();
 extern int wxMenuBarHeight;
+extern int wx_activate_anyway;
 
 extern void MrEdQueuePaint(wxWindow *wx_window);
-
-static int showed_something = 0;
 
 //=============================================================================
 // Public constructors
@@ -74,6 +73,8 @@ wxFrame::wxFrame // Constructor (for frame window)
   int metal = (style & wxMETAL);
   
   InitDefaults();
+
+  cActive = FALSE;
 
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
@@ -266,12 +267,12 @@ static int DoPaint(void *_c)
 {
   wxCanvas *c = (wxCanvas *)_c;
   
-  c->OnPaint();
+  c->DoPaint();
 
   return 0;
 }
 
-void wxCallOnPaintOrQueue(wxCanvas *win)
+void wxCallDoPaintOrQueue(wxCanvas *win)
 {
   wxFrame *f;
 
@@ -847,13 +848,6 @@ void wxFrame::Show(Bool show)
   WindowPtr theMacWindow;
   wxChildList *tlw;
 
-  if (!showed_something) {
-    ProcessSerialNumber psn;
-    GetCurrentProcess(&psn);    
-    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
-    showed_something = 1;
-  }
-
   if (!show == cUserHidden) {
     if (show) {
       CGrafPtr graf;
@@ -883,6 +877,20 @@ void wxFrame::Show(Bool show)
 
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
+    // If we're foremost, then activate before we show,
+    // instead of waiting for the activate event. Otherwise,
+    // showing an inactive window looks strange.
+    {
+      ProcessSerialNumber us, front;
+      Boolean r = 0;
+      GetCurrentProcess(&us);
+      GetFrontProcess(&front);
+      SameProcess(&us, &front, &r);
+      if (r) {
+	wx_activate_anyway = 1;
+	Activate(TRUE);
+      }
+    }
 #ifdef OS_X
     if (cSheetParent && !cSheetParent->sheet
 	&& !(cSheetParent->GetWindowStyleFlag() & wxHIDE_MENUBAR)) {

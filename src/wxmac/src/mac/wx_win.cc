@@ -50,6 +50,8 @@ extern void MrEdQueueOnSize(wxWindow *wx_window);
 
 static HIObjectClassRef paintControlClass = NULL;
 
+int wx_activate_anyway;
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Geometry methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -542,7 +544,7 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
   return err;
 }
 
-void wxWindow::CreatePaintControl(int inset) 
+void wxWindow::CreatePaintControl(int inset, Bool opaque) 
 {
   ControlHandle pane;
   Rect boundsRect;
@@ -551,6 +553,7 @@ void wxWindow::CreatePaintControl(int inset)
   int ox, oy;
 
   control_inset_extent = inset;
+  control_opaque = opaque;
   
   if (!paintControlClass) {
     GC_CAN_IGNORE EventTypeSpec eventList[] = {
@@ -608,7 +611,7 @@ void wxWindow::GetPaintControlRegion(RgnHandle hrgn, Bool opaquePart)
 {
   Rect bounds;
  
-  if (!opaquePart || (cStyle & wxNO_AUTOCLEAR)) {
+  if (!opaquePart || control_opaque) {
     GetControlBounds(cPaintControl, &bounds);
     bounds.right -= bounds.left;
     bounds.bottom -= bounds.top;
@@ -1660,20 +1663,15 @@ void wxWindow::Activate(Bool flag) // mac platform only
     }
 
     /* Don't activate unless it's still frontmost */
-    if (FrontWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
+    if ((FrontWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
+	&& !wx_activate_anyway)
       return;
+
+    wx_activate_anyway = 0;
   }
 
   cActive = flag;
   ShowAsActive(flag);
-
-  if (cPaintControl) {
-    if (!flag) {
-      DeactivateControl(cPaintControl);
-    } else {
-      ActivateControl(cPaintControl);
-    }
-  }
 
   areaNode = cAreas->First();
   while (areaNode) {

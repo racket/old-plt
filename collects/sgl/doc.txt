@@ -1,5 +1,5 @@
 
-GL bindings for PLT Scheme
+_GL_/_OpenGL_ bindings for PLT Scheme
 
 Sgl provides access to the system's GL library, version 1.3 and
 earlier.  The GL library and hence the sgl binding do not address the
@@ -16,7 +16,7 @@ The invocation of a function from version x raises an exception
 constants from version x have values of -1 on systems with previous
 versions.
 
-The sgl bindings has two layers.  The gl and gl-unsafe libraries
+The sgl binding has two layers.  The gl and gl-unsafe libraries
 provide access to the C-language style GL API.  The sgl library
 provides access to the GL API through a more Scheme-like interface.
 Sgl also includes a homogeneous vector extension to support GL

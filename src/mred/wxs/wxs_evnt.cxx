@@ -1123,6 +1123,8 @@ static Scheme_Object *keyCode_WXK_NUMLOCK_sym = NULL;
 static Scheme_Object *keyCode_WXK_SCROLL_sym = NULL;
 static Scheme_Object *keyCode_WXK_WHEEL_UP_sym = NULL;
 static Scheme_Object *keyCode_WXK_WHEEL_DOWN_sym = NULL;
+static Scheme_Object *keyCode_WXK_PRESS_sym = NULL;
+static Scheme_Object *keyCode_WXK_RELEASE_sym = NULL;
 
 static void init_symset_keyCode(void) {
   REMEMBER_VAR_STACK();
@@ -1262,12 +1264,16 @@ static void init_symset_keyCode(void) {
   keyCode_WXK_WHEEL_UP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("wheel-up"));
   wxREGGLOB(keyCode_WXK_WHEEL_DOWN_sym);
   keyCode_WXK_WHEEL_DOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("wheel-down"));
+  wxREGGLOB(keyCode_WXK_PRESS_sym);
+  keyCode_WXK_PRESS_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("press"));
+  wxREGGLOB(keyCode_WXK_RELEASE_sym);
+  keyCode_WXK_RELEASE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("release"));
 }
 
 static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!keyCode_WXK_WHEEL_DOWN_sym) WITH_VAR_STACK(init_symset_keyCode());
+  if (!keyCode_WXK_RELEASE_sym) WITH_VAR_STACK(init_symset_keyCode());
   if (0) { }
   else if (SCHEME_CHARP(v)) { return SCHEME_CHAR_VAL(v); }
   else if (v == keyCode_WXK_ESCAPE_sym) { return WXK_ESCAPE; }
@@ -1338,12 +1344,14 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_SCROLL_sym) { return WXK_SCROLL; }
   else if (v == keyCode_WXK_WHEEL_UP_sym) { return WXK_WHEEL_UP; }
   else if (v == keyCode_WXK_WHEEL_DOWN_sym) { return WXK_WHEEL_DOWN; }
+  else if (v == keyCode_WXK_PRESS_sym) { return WXK_PRESS; }
+  else if (v == keyCode_WXK_RELEASE_sym) { return WXK_RELEASE; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "keyCode symbol", -1, 0, &v));
   return 0;
 }
 
 static Scheme_Object *bundle_symset_keyCode(int v) {
-  if (!keyCode_WXK_WHEEL_DOWN_sym) init_symset_keyCode();
+  if (!keyCode_WXK_RELEASE_sym) init_symset_keyCode();
   switch (v) {
   case WXK_ESCAPE: return keyCode_WXK_ESCAPE_sym;
   case WXK_START: return keyCode_WXK_START_sym;
@@ -1413,6 +1421,8 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
   case WXK_SCROLL: return keyCode_WXK_SCROLL_sym;
   case WXK_WHEEL_UP: return keyCode_WXK_WHEEL_UP_sym;
   case WXK_WHEEL_DOWN: return keyCode_WXK_WHEEL_DOWN_sym;
+  case WXK_PRESS: return keyCode_WXK_PRESS_sym;
+  case WXK_RELEASE: return keyCode_WXK_RELEASE_sym;
   default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);
   }
 }
@@ -1483,6 +1493,39 @@ static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(int n,  Scheme_Object *p[]
 
   v = WITH_VAR_STACK(unbundle_symset_keyCode(p[POFFSET], "set-key-code in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->keyCode = v;
+
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxKeyEvent_GetkeyUpCode(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxKeyEvent_class, "get-key-release-code in key-event%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-key-release-code in key-event%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxKeyEvent *)cobj->primdata)->wxKeyEvent::keyUpCode;
+  else
+    v = ((wxKeyEvent *)cobj->primdata)->keyUpCode;
+
+  return WITH_REMEMBERED_STACK(bundle_symset_keyCode(v));
+}
+
+static Scheme_Object *objscheme_wxKeyEvent_SetkeyUpCode(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxKeyEvent_class, "set-key-release-code in key-event%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-key-release-code in key-event%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(unbundle_symset_keyCode(p[POFFSET], "set-key-release-code in key-event%"));
+  ((wxKeyEvent *)cobj->primdata)->keyUpCode = v;
 
   return scheme_void;
 }
@@ -1760,11 +1803,13 @@ void objscheme_setup_wxKeyEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxKeyEvent_class);
 
-  os_wxKeyEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 14));
+  os_wxKeyEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 16));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-code" " method", objscheme_wxKeyEvent_GetkeyCode, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-key-code" " method", objscheme_wxKeyEvent_SetkeyCode, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-release-code" " method", objscheme_wxKeyEvent_GetkeyUpCode, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-key-release-code" " method", objscheme_wxKeyEvent_SetkeyUpCode, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-shift-down" " method", objscheme_wxKeyEvent_GetshiftDown, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"set-shift-down" " method", objscheme_wxKeyEvent_SetshiftDown, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-control-down" " method", objscheme_wxKeyEvent_GetcontrolDown, 0, 0));

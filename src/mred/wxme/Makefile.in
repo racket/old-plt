@@ -42,7 +42,7 @@ ALLHEADERS = $(srcdir)/wx_ptreq.h $(srcdir)/wx_mtype.h \
 HEADERS = $(srcdir)/wx_media.h $(srcdir)/wx_medad.h $(srcdir)/wx_cgrec.h \
           $(srcdir)/wx_medio.h $(srcdir)/wx_style.h \
           $(ALLHEADERS) $(srcdir)/../../wxxt/src/Windows/Window.h \
-          $(srcdir)/../../wxxt/src/DeviceContexts/DC.h
+          $(srcdir)/../../wxxt/src/DeviceContexts/DC.h $(srcdir)/../../wxxt/src/EventHandling/wx_stdev.h
 
 libwxme.a: $(OBJECTS)
 	$(AR) $(ARFLAGS) libwxme.a $(OBJECTS)

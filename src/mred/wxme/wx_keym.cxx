@@ -638,6 +638,7 @@ Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event)
 
   if (event->keyCode == WXK_SHIFT
       || event->keyCode == WXK_CONTROL
+      || event->keyCode == WXK_RELEASE
       || !event->keyCode)
     return TRUE;
 

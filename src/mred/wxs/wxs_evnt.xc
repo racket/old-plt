@@ -215,6 +215,8 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int 
 @SYM "scroll" : WXK_SCROLL
 @SYM "wheel-up" : WXK_WHEEL_UP
 @SYM "wheel-down" : WXK_WHEEL_DOWN
+@SYM "press" : WXK_PRESS
+@SYM "release" : WXK_RELEASE
 @ENDSYMBOLS
 
 @CLASSBASE wxKeyEvent=wxKeyEvent_ext "key-event":"event" / nofnl
@@ -223,6 +225,7 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int 
 @ARGNAMES [key-code #\nul] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [x 0] [y 0] [time-stamp 0]
 
 @IVAR "key-code" : SYM[keyCode] keyCode
+@IVAR "key-release-code" : SYM[keyCode] keyUpCode
 @IVAR "shift-down" : bool shiftDown
 @IVAR "control-down" : bool controlDown
 @IVAR "meta-down" : bool metaDown

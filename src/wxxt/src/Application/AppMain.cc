@@ -35,6 +35,10 @@
 #include "wx.h"
 #include "widgets.h" // for X11/StringDefs.h
 
+#ifndef NO_XKB_LIB_PRESENT
+# include <X11/XKBlib.h>
+#endif
+
 //-----------------------------------------------------------------------------
 // wxApp implementation
 //-----------------------------------------------------------------------------
@@ -192,6 +196,8 @@ int wxEntry(int argc, char *argv[])
 
 void wxCommonInit(void)
 {
+    Bool supported;
+  
     wxAPP_DISPLAY   = XtDisplay(wxAPP_TOPLEVEL);
     wxAPP_SCREEN    = XtScreen(wxAPP_TOPLEVEL);
     wxAPP_ROOT	    = RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
@@ -204,6 +210,10 @@ void wxCommonInit(void)
 
     wxREGGLOB(wxResourceCache);
     wxResourceCache = new wxList(wxKEY_STRING);
+
+#ifndef NO_XKB_LIB_PRESENT
+    XkbSetDetectableAutoRepeat(wxAPP_DISPLAY, 1, &supported);
+#endif
 
     wxInitPopupMgr();
 

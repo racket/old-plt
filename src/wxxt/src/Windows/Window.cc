@@ -1509,7 +1509,35 @@ void wxWindow::WindowEventHandler(Widget w,
   subWin = (w != win->X->handle) && (w != win->X->frame);
 
     switch (xev->xany.type) {
-    case KeyPress: {
+    case KeyRelease:
+        {
+	  KeySym	   keysym;
+
+	  *continue_to_dispatch_return = FALSE;
+	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG) {
+	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+
+	    (void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
+	    if (wxIsAlt(keysym)) {
+	      /* Find frame. */
+	      wxWindow *p = win;
+	      while (p) {
+		if (wxSubType(p->__type, wxTYPE_FRAME)) {
+		  wxMenuBar *mb;
+		  mb = ((wxFrame *)p)->GetMenuBar();
+		  if (mb) {
+		    ((wxFrame *)p)->OnMenuClick();
+		    mb->SelectAMenu();
+		  }
+		  break;
+		}
+		p = p->GetParent();
+	      }
+	    }
+	    break;
+	  }
+	}
+    case KeyPress: { /* ^^^ fallthrough !!!! ^^^ */
 	wxKeyEvent *wxevent;
 	KeySym	   keysym;
 	long       kc;
@@ -1542,10 +1570,12 @@ void wxWindow::WindowEventHandler(Widget w,
 	    status = DEFAULT_XMB_STATUS;
 	  }
 
-	if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
-	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
-	else if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
-	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
+	if (xev->xany.type == KeyPress) {
+	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+	  else if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
+	    win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
+	}
 
 	if (XMB_KC_STATUS(status))
 	  kc = CharCodeXToWX(keysym);
@@ -1554,7 +1584,8 @@ void wxWindow::WindowEventHandler(Widget w,
 
 	// set wxWindows event structure
 	wxevent->eventHandle	= (char*)xev;
-	wxevent->keyCode	= kc;
+	wxevent->keyCode	= (xev->xany.type == KeyPress) ? kc : WXK_RELEASE;
+	wxevent->keyUpCode	= (xev->xany.type == KeyRelease) ? kc : WXK_PRESS;
 	wxevent->x		= xev->xkey.x;
 	wxevent->y		= xev->xkey.y;
 	wxevent->altDown	= /* xev->xkey.state & Mod3Mask */ FALSE;
@@ -1585,37 +1616,9 @@ void wxWindow::WindowEventHandler(Widget w,
 	      win->OnChar(wxevent);
 	  }
 	}
-	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
+	wxevent->eventHandle = NULL;
         /* Event was handled by OnFunctionKey and/or OnChar */ }
 	break;
-    case KeyRelease:
-        {
-	  KeySym	   keysym;
-
-	  *continue_to_dispatch_return = FALSE;
-	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG) {
-	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
-
-	    (void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
-	    if (wxIsAlt(keysym)) {
-	      /* Find frame. */
-	      wxWindow *p = win;
-	      while (p) {
-		if (wxSubType(p->__type, wxTYPE_FRAME)) {
-		  wxMenuBar *mb;
-		  mb = ((wxFrame *)p)->GetMenuBar();
-		  if (mb) {
-		    ((wxFrame *)p)->OnMenuClick();
-		    mb->SelectAMenu();
-		  }
-		  break;
-		}
-		p = p->GetParent();
-	      }
-	    }
-	  }
-	}
-        break;
     case ButtonPress:
       /* X grab doesn't work the way we'd like for panels (since they
 	 have children), unless a grab cursor is installed.

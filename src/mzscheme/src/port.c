@@ -303,6 +303,8 @@ static Scheme_Object *all_symbol, *non_elaboration_symbol, *none_symbol;
 
 static Scheme_Object *fail_err_symbol;
 
+static int force_port_closed;
+
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
@@ -363,6 +365,10 @@ static Scheme_Object *port_write_handler(int, Scheme_Object **args);
 static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
 
+#ifdef USE_FD_PORTS
+void flush_original_output_fds(void);
+#endif
+
 static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_system(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_execute(int c, Scheme_Object *args[]);
@@ -405,6 +411,8 @@ static Scheme_Object *make_fd_output_port(int fd);
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
 #endif
+
+static void force_close_output_port(Scheme_Object *port);
 
 static Scheme_Object *default_read_handler;
 static Scheme_Object *default_display_handler;
@@ -584,6 +592,9 @@ scheme_init_port (Scheme_Env *env)
 			       );
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
 		     scheme_orig_stdout_port);
+#ifdef USE_FD_PORTS
+    atexit(flush_original_output_fds);
+#endif
 
     {
       Scheme_Object *dlh;
@@ -1344,7 +1355,7 @@ scheme_make_output_port(Scheme_Object *subtype,
     Scheme_Manager_Reference *mref;
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)op, 
-			      (Scheme_Close_Manager_Client *)scheme_close_output_port, 
+			      (Scheme_Close_Manager_Client *)force_close_output_port, 
 			      NULL, must_close);
     op->mref = mref;
   } else
@@ -1773,17 +1784,27 @@ scheme_close_output_port (Scheme_Object *port)
   BEGIN_LOCK_PORT(op->sema);
 
   if (!op->closed) {
-    if (op->mref)
-      scheme_remove_managed(op->mref, (Scheme_Object *)op);
-
+    /* call close function first; it might raise an exception */
     if (op->close_fun) {
       Close_Fun_o f = op->close_fun;
       f(op);
     }
+
+    if (op->mref)
+      scheme_remove_managed(op->mref, (Scheme_Object *)op);
+
     op->closed = 1;
   }
 
   END_LOCK_PORT(op->sema);
+}
+
+static void
+force_close_output_port(Scheme_Object *port)
+{
+  force_port_closed = 1;
+  scheme_close_output_port(port);
+  force_port_closed = 0;
 }
 
 /* file input ports */
@@ -1859,8 +1880,13 @@ static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile in
   Scheme_FD *fop = (Scheme_FD *)op->port_data;
   volatile int offset = 0;
 
-  if (fop->flushing)
+  if (fop->flushing) {
+    if (force_port_closed) {
+      /* Give up */
+      return;
+    }
     wait_until_fd_flushed(op);
+  }
 
   if (!bufstr) {
     bufstr = fop->buffer;
@@ -1884,7 +1910,10 @@ static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile in
       fcntl(fop->fd, F_SETFL, flags);
 
       if (len < 0) {
-	if (errsaved == EAGAIN) {
+	if (force_port_closed) {
+	  /* Don't signal exn or wait. Just give up. */
+	  return;
+	} else if (errsaved == EAGAIN) {
 	  /* Need to block; messy because we're holding a lock. */
 	  mz_jmp_buf savebuf;
 	  
@@ -3286,9 +3315,9 @@ fd_close_output(Scheme_Output_Port *port)
   if (fop->bufcount)
     flush_fd(port, NULL, 0);
 
-  if (fop->flushing)
+  if (fop->flushing && !force_port_closed)
     wait_until_fd_flushed(port);
-
+  
   close(fop->fd);
 }
 
@@ -3314,6 +3343,14 @@ make_fd_output_port(int fd)
 						  fd_write_string,
 						  fd_close_output,
 						  1);
+}
+
+extern void scheme_start_atomic(void);
+
+void flush_original_output_fds(void)
+{
+  scheme_start_atomic();
+  flush_orig_outputs();
 }
 
 #endif

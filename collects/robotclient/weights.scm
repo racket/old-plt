@@ -68,6 +68,9 @@
 	   [(eq? mtype 'm)
 	    (let*
 		([spot (get-spot (board) x y)]
+		 [no-packages (if (null? (search-player-packages (player-cur)))
+				    1
+				    0)]
 		 [weight (if (= 1 (get-valid spot))
 			     (get-weight spot)
 			     (let ([new-weight
@@ -93,15 +96,15 @@
 					(if (water? (board) x y)
 					    (water-value)
 					    (if (home? (board) x y)
-						(home-value)))))
+						(* (home-value) no-packages)))))
 				(* (next-water-value) (next-to-water? (board) x y))
 				(* (destination-value) (destination? x y (search-player-packages (player-cur))))
 				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages (player-cur))))
 				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages (player-cur))))
 				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages (player-cur))))
-				(* (one-home-value) (one-away-base? (board) x y))
-				(* (two-home-value) (two-away-base? (board) x y))
-				(* (three-home-value) (three-away-base? (board) x y)))])
+				(* (one-home-value) (one-away-base? (board) x y) no-packages)
+				(* (two-home-value) (two-away-base? (board) x y) no-packages)
+				(* (three-home-value) (three-away-base? (board) x y) no-packages))])
 			       (begin
 				 (set-weight new-weight (get-spot (board) x y))
 				 (set-valid (get-spot (board) x y))

@@ -117,7 +117,7 @@
 /* Automatically implies TERSE_MEMORY_TRACING, DUMP_BLOCK_COUNTS,
    and DUMP_SECTOR_MAP */
 
-#define DETAIL_MEMORY_TRACING 1
+#define DETAIL_MEMORY_TRACING SGC_STD_DEBUGGING
 /* Automatically implies STD_MEMORY_TRACING, DUMP_BLOCK_MAPS, 
    STAMP_AND_REMEMBER_SOURCE, and KEEP_DETAIL_PATH */
 
@@ -569,7 +569,7 @@ static MemoryChunk *sys_malloc_others;
 int GC_dl_entries;
 int GC_fo_entries;
 
-void (*GC_push_other_roots)(void);
+void (*GC_push_last_roots)(void);
 
 typedef struct DisappearingLink {
   void *watch;
@@ -3270,6 +3270,19 @@ static void push_collect(unsigned long start, unsigned long end, unsigned long s
   } else \
     push_collect(s, e + 1 - PTR_ALIGNMENT, src);
 
+#define LOCAL_PUSH_COLLECT(s, e, src) \
+  if (local_collect_stack_count < local_collect_stack_size) { \
+    local_collect_stack[local_collect_stack_count++] = s; \
+    local_collect_stack[local_collect_stack_count++] = e + 1 - PTR_ALIGNMENT; \
+    PUSH_SRC(src) \
+  } else { \
+    collect_stack_count = local_collect_stack_count; \
+    push_collect(s, e + 1 - PTR_ALIGNMENT, src); \
+    local_collect_stack = collect_stack; \
+    local_collect_stack_count = collect_stack_count; \
+    local_collect_stack_size = collect_stack_size; \
+  }
+
 #if ALLOW_TRACE_COUNT
 
 typedef struct {
@@ -3348,301 +3361,20 @@ static int collect_end_path_elem;
 
 #endif
 
-static void collect()
-{
-  int stack_cycle = 0;
-  int offset = 0; /* for interior */
-  
-  while (collect_stack_count) {
-    unsigned long s, end;
-#if KEEP_DETAIL_PATH
-    unsigned long source;
-#endif
-    int interior;
+#define COLLECT collect_follow_interior
+#define FOLLOW_INTERIOR 1
+#include "collect.inc"
 
-#if ALLOW_TRACE_COUNT
-    if (collect_stack_count == collect_start_tracing) {
-      void *tracing_for_object;
-      GC_count_tracer count_tracer;
-      int size;
+#undef COLLECT
+#undef FOLLOW_INTERIOR
 
-      tracing_for_object = (void *)POP_WAIT_TRACE();
-      count_tracer = (GC_count_tracer)POP_WAIT_TRACE();
-      size = POP_WAIT_TRACE();
-
-      /* Push current trace onto the stack: */
-      PUSH_TRACE(collect_end_tracing);
-      PUSH_TRACE(collect_trace_count);
-      PUSH_TRACE(count_tracer);
-      PUSH_TRACE(tracing_for_object);
-
-      collect_trace_count = size;
-  
-      collect_end_tracing = collect_start_tracing - COLLECT_STACK_FRAME_SIZE;
-
-      collect_start_tracing = POP_WAIT_TRACE();
-    }
-#endif
-
-    if (collect_stack_count == collect_end_stackbased) {
-      interior = 1;
-
-#if KEEP_DETAIL_PATH
-      source = collect_stack[collect_stack_count - (COLLECT_STACK_FRAME_SIZE - 2)];
-#endif
-      end = collect_stack[collect_stack_count - (COLLECT_STACK_FRAME_SIZE - 1)];
-      s = collect_stack[collect_stack_count - COLLECT_STACK_FRAME_SIZE];
-
-#if PRINT && 0
-      FPRINTF(STDERR, "stack at %ld: [%lx,%lx]\n", collect_end_stackbased, s, end);
-#endif
-
-      /* do everything twice, backing up one pointer alignment 
-	 to catch references just past the end of an array. */
-      if (stack_cycle || NO_STACK_OFFBYONE) {
-	collect_stack_count -= COLLECT_STACK_FRAME_SIZE;
-	collect_end_stackbased -= COLLECT_STACK_FRAME_SIZE;
-#if NO_STACK_OFFBYONE
-	offset = 0;
+#if CHECK_SIMPLE_INTERIOR_POINTERS
+# define collect collect_follow_interior
 #else
-	offset = -PTR_ALIGNMENT;
+# define COLLECT collect
+# define FOLLOW_INTERIOR 0
+# include "collect.inc"
 #endif
-	stack_cycle = 0;
-      } else {
-	offset = 0;
-	stack_cycle = 1;
-      }
-    } else {
-      interior = CHECK_SIMPLE_INTERIOR_POINTERS;
-      offset = 0;
-#if KEEP_DETAIL_PATH
-      source = collect_stack[--collect_stack_count];
-#endif
-      end = collect_stack[--collect_stack_count];
-      s = collect_stack[--collect_stack_count];
-    }
-
-#if ALLOW_TRACE_PATH
-    if (collecting_with_trace_path) {
-      PUSH_PATH_ELEM(collect_end_path_elem);
-      PUSH_PATH_ELEM(s);
-# if KEEP_DETAIL_PATH
-      PUSH_PATH_ELEM(source);
-# else
-      PUSH_PATH_ELEM(0);
-# endif
-      collect_end_path_elem = collect_stack_count;
-    }
-#endif
-
-    for (; s < end; s += PTR_ALIGNMENT) {
-      void *d = *(void **)INT_TO_PTR(s);
-      unsigned long p = PTR_TO_INT(d) + offset;
-
-      if (p >= low_plausible && p < high_plausible) {
-	SectorPage *pagetable = sector_pagetables[SECTOR_LOOKUP_PAGETABLE(p)];
-	if (pagetable) {
-	  SectorPage *page = pagetable + SECTOR_LOOKUP_PAGEPOS(p);
-	  long kind = page->kind;
-	  
-	  if (kind == sector_kind_block) {
-	    /* Found common block: */
-	    MemoryBlock *block = (MemoryBlock *)INT_TO_PTR(page->start);
-	    int size = block->size;
-	    int diff = p - block->start;
-	    int pos = (diff / size);
-	    
-	    if ((diff >= 0) && (p < block->top) 
-		&& ((diff == pos * size) || interior)) {
-	      int bpos;
-	      int bit;
-#if DISTINGUISH_FREE_FROM_UNMARKED
-	      int fbit;
-#endif
-	      
-	      bpos = POS_TO_UNMARK_INDEX(pos);
-	      bit = POS_TO_UNMARK_BIT(pos);
-#if DISTINGUISH_FREE_FROM_UNMARKED
-	      fbit = POS_TO_FREE_BIT(pos);
-#endif
-	      
-	      if (NOT_MARKED(block->free[bpos] & bit)
-		  && _NOT_FREE(block->free[bpos] & fbit)) {
-#if ALLOW_TRACE_COUNT
-		if (collecting_with_trace_count) {
-		  GC_count_tracer count_tracer;
-		  if ((count_tracer = common_sets[block->set_no]->count_tracer)) {
-		    void *o;
-		    if (interior)
-		      p = block->start + (pos * size);
-		    o = INT_TO_PTR(p);
-		    if (block->atomic) {
-		      void *s = o;
-#if PAD_BOUNDARY_BYTES
-		      s = PAD_FORWARD(s);
-#endif
-		      count_tracer(s, size); 
-		      mem_traced += size;
-		    } else {
-		      /* Push new trace onto the stack: */
-		      PUSH_WAIT_TRACE(collect_start_tracing);
-		      PUSH_WAIT_TRACE(size);
-		      PUSH_WAIT_TRACE(count_tracer);
-		      PUSH_WAIT_TRACE(o);
-		      collect_start_tracing = collect_stack_count + COLLECT_STACK_FRAME_SIZE;
-		    }
-		  } else
-		    collect_trace_count += size;
-		}
-#endif
-#if ALLOW_TRACE_PATH
-		if (collecting_with_trace_path) {
-		  GC_path_tracer path_tracer;
-		  if ((path_tracer = common_sets[block->set_no]->path_tracer)) {
-		    void *o;
-		    if (interior)
-		      p = block->start + (pos * size);
-		    o = INT_TO_PTR(p);
-#if PAD_BOUNDARY_BYTES
-		    o = PAD_FORWARD(o);
-#endif
-		    path_tracer(o, s, &collect_trace_path_stack);
-		  }
-		}
-#endif
-		
-#if PRINT && 0
-		if (interior && (diff % size))
-		  FPRINTF(STDERR,
-			  "inexact block: %d for %lx[%d], %d=(%d, %d) {%d} %lx -> %lx\n", 
-			  diff % size, block, size, pos, bpos, bit,
-			  block->free[bpos], p, block->start + (pos * size));
-#endif
-		
-		block->free[bpos] -= bit;
-		
-		mem_use += size;
-		
-		if (!block->atomic) {
-		  if (interior)
-		    p = block->start + (pos * size);
-		  PUSH_COLLECT(p, p + size, s);
-		}
-		
-#if STAMP_AND_REMEMBER_SOURCE
-		if (!block->low_marker || (s < block->low_marker))
-		  block->low_marker = s;
-		if (!block->high_marker || (s > block->high_marker))
-		  block->high_marker = s;
-#endif
-	      }
-	    }
-	  } else if (kind == sector_kind_chunk) {
-	    MemoryChunk *c = (MemoryChunk *)INT_TO_PTR(page->start);
-	    
-	    if (((p == c->start) 
-		 || (interior && (p > c->start) && (p < c->end)))
-		&& !c->marked) {
-#if ALLOW_TRACE_COUNT
-	      if (collecting_with_trace_count) {
-		GC_count_tracer count_tracer;
-		int size = (c->end - c->start);
-		if ((count_tracer = common_sets[c->set_no]->count_tracer)) {
-		  void *o;
-		  o = INT_TO_PTR(c->start);
-		  if (c->atomic) {
-		    void *s = o;
-#if PAD_BOUNDARY_BYTES
-		    s = PAD_FORWARD(s);
-#endif
-		    count_tracer(s, size); 
-		    mem_traced += size;
-		  } else {
-		    /* Push new trace onto the stack: */
-		    PUSH_WAIT_TRACE(collect_start_tracing);
-		    PUSH_WAIT_TRACE(size);
-		    PUSH_WAIT_TRACE(count_tracer);
-		    PUSH_WAIT_TRACE(o);
-		    collect_start_tracing = collect_stack_count + COLLECT_STACK_FRAME_SIZE;
-		  }
-		} else
-		  collect_trace_count += size;
-	      }
-#endif
-#if ALLOW_TRACE_PATH
-	      if (collecting_with_trace_path) {
-		GC_path_tracer path_tracer;
-		if ((path_tracer = common_sets[c->set_no]->path_tracer)) {
-		  void *o;
-		  o = INT_TO_PTR(c->start);
-#if PAD_BOUNDARY_BYTES
-		  o = PAD_FORWARD(o);
-#endif
-		  path_tracer(o, s, &collect_trace_path_stack);
-		}
-	      }
-#endif
-
-#if PRINT && 0
-	      if (interior && (p != c->start))
-		FPRINTF(STDERR, "inexact chunk: %lx != %lx\n", p, c->start);
-#endif
-#if PRINT && 0
-	      FPRINTF(STDERR,
-		      "push %ld (%ld) from %ld\n",
-		      p, (c->end - c->start), s);
-#endif
-	      c->marked = 1;
-	      mem_use += (c->end - c->start);
-	      if (!c->atomic) {
-		PUSH_COLLECT(c->start, c->end, s);
-	      }
-#if STAMP_AND_REMEMBER_SOURCE
-	      c->marker = s;
-#endif
-	    }
-	  }
-	}
-      }
-    }
-
-#if ALLOW_TRACE_COUNT
-    while (collect_stack_count == collect_end_tracing) {
-      void *tracing_for_object, *s;
-      GC_count_tracer count_tracer;
-      
-      tracing_for_object = (void *)POP_TRACE();
-      count_tracer = (GC_count_tracer)POP_TRACE();
-
-      s = tracing_for_object;
-#if PAD_BOUNDARY_BYTES
-      s = PAD_FORWARD(s);
-#endif
-      count_tracer(s, collect_trace_count);
-      mem_traced += collect_trace_count;
-
-      collect_trace_count = POP_TRACE();
-      collect_end_tracing = POP_TRACE();
-    }
-#endif
-#if ALLOW_TRACE_PATH
-    if (collecting_with_trace_path) {
-      while (PATH_ELEM_STACK_NONEMPTY() && (collect_stack_count == collect_end_path_elem)) {
-	(void)POP_PATH_ELEM(); /* source */
-	(void)POP_PATH_ELEM(); /* obj */
-	collect_end_path_elem = POP_PATH_ELEM();
-      }
-    }
-#endif
-  }
-
-#if ALLOW_TRACE_COUNT && CHECK
-  if (collect_trace_stack.count)
-    FPRINTF(STDERR, "BOO-BOO: trace stack not emty: %d\n", collect_trace_stack.count);
-  if (collect_wait_trace_stack.count)
-    FPRINTF(STDERR, "BOO-BOO: wait trace stack not emty: %d\n", collect_wait_trace_stack.count);
-#endif
-}
 
 static jmp_buf buf;
 
@@ -4388,7 +4120,9 @@ void do_GC_gcollect(void *stack_now)
   for (j = 0; j < roots_count; j += 2) {
     collect_stack[collect_stack_count++] = roots[j];
     collect_stack[collect_stack_count++] = roots[j + 1];
+#if KEEP_DETAIL_PATH
     collect_stack[collect_stack_count++] = 0;
+#endif
   }
 
   PRINTTIME((STDERR, "gc: root collect start: %ld\n", scheme_get_process_milliseconds()));
@@ -4436,12 +4170,12 @@ void do_GC_gcollect(void *stack_now)
 
   PRINTTIME((STDERR, "gc: stack collect start: %ld\n", scheme_get_process_milliseconds()));
 
-  collect();
+  collect_follow_interior();
 
   PRINTTIME((STDERR, "gc: \"other roots\" start: %ld\n", scheme_get_process_milliseconds()));
 
-  if (GC_push_other_roots) {
-    GC_push_other_roots();
+  if (GC_push_last_roots) {
+    GC_push_last_roots();
     collect_end_stackbased = collect_stack_count;
   }
 
@@ -4449,7 +4183,7 @@ void do_GC_gcollect(void *stack_now)
   current_trace_source = "xstack";
 # endif
 
-  collect();
+  collect_follow_interior();
 
 # if ALLOW_TRACE_COUNT
   traced_from_stack = collect_trace_count;
@@ -4682,6 +4416,7 @@ void GC_store_path(void *v, unsigned long src, void *path_data)
 
 void **GC_get_next_path(void **prev, int *len)
 {
+#if ALLOW_TRACE_PATH
   void **p;
 
   if (!prev)
@@ -4694,14 +4429,19 @@ void **GC_get_next_path(void **prev, int *len)
     return NULL;
 
   return p + 1;
+#else
+  return NULL;
+#endif
 }
 
 void GC_clear_paths(void)
 {
+#if ALLOW_TRACE_PATH
   int i;
 
   for (i = 0; i < TRACE_PATH_BUFFER_SIZE; i++)
     trace_path_buffer[i] = NULL;
+#endif
 }
 
 /**********************************************************************/

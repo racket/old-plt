@@ -27,6 +27,7 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b);
 int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *start, 
 			     Scheme_Jumpup_Buf *cont);
 void scheme_longjmpup(Scheme_Jumpup_Buf *b);
+void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
 
 #ifdef USE_MZ_SETJMP
 int scheme_setjmp(mz_jmp_buf b);

@@ -2441,12 +2441,8 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 				       SCHEME_STRTAG_VAL(result),
 				       &next,
 				       &isdir);
-	  if (!SCHEME_STRINGP(next) || SAME_OBJ(file, up_symbol)) {
-	    /* If result is a root or file is up, we can't eliminate the .. */
-	    Scheme_Object *a[2];
-	    a[0] = result;
-	    a[1] = up_symbol;
-	    result = scheme_build_pathname(2, a);
+	  if (!SCHEME_STRINGP(next)) {
+	    /* If result is already a root, we just drop the .. */
 	  } else
 	    result = next;
 	}

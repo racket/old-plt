@@ -1451,7 +1451,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_listener_type:
     s = sizeof(Scheme_Small_Object);
     break;
-  case scheme_reserved_4_type:
+  case scheme_reserved_1_type:
+  case scheme_reserved_2_type:
+  case scheme_reserved_3_type:
     s = 0; /* Not yet used */
     break;
   case scheme_eval_waiting_type:

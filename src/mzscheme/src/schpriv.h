@@ -452,6 +452,8 @@ extern Scheme_Object *scheme_def_exp_time_syntax;
 extern Scheme_Object *scheme_lambda_syntax;
 extern Scheme_Object *scheme_begin_syntax;
 
+extern Scheme_Object *scheme_def_exit_proc;
+
 Scheme_Object *scheme_named_map_1(char *, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), Scheme_Object *lst, Scheme_Object *form);
 
 extern Scheme_Object *scheme_orig_stdout_port;
@@ -1018,5 +1020,9 @@ int scheme_string_has_null(Scheme_Object *o);
 int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err, char **stage);
 #endif
+
+Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
+
+void scheme_init_setjumpup(void);
 
 #endif /* __mzscheme_private__ */

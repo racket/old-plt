@@ -48,7 +48,7 @@ $(OBJDIR):
 objects:
 	mkdir objects
 
-$(OBJDIR)/sgc.o: sgc.c
+$(OBJDIR)/sgc.o: sgc.c collect.inc
 	$(CC) $(CFLAGS) -c sgc.c -o $(OBJDIR)/sgc.o
 
 $(OBJDIR)/test.o: test.c

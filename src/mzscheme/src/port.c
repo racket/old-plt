@@ -3978,6 +3978,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   char *command;
   int to_subprocess[2], from_subprocess[2], err_subprocess[2];
   int i, pid;
+  int def_exit_on;
   char **argv;
   Scheme_Object *in, *out, *subpid, *err, *thunk;
 #ifdef UNIX_PROCESSES
@@ -4020,6 +4021,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     command = argv[0];
   }
 
+  def_exit_on = SAME_OBJ(scheme_def_exit_proc,
+			 scheme_get_param(scheme_config, MZCONFIG_EXIT_HANDLER));
   
   if (!synchonous) {
     if (MSC_IZE(pipe)(to_subprocess _EXTRA_PIPE_ARGS))
@@ -4052,7 +4055,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     if (!synchonous)
       type = _P_NOWAIT;
-    else if (!as_child)
+    else if (!as_child && def_exit_on)
       type = _P_OVERLAY;
     else 
       type = _P_NOWAIT; /* We'll implement waiting ourselves */
@@ -4088,7 +4091,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       
       if (spawn_status != -1)
         sc = (void *)pid;
-    } else if (spawn_status != -1) {
+    } else if ((spawn_status != -1) && !as_child) {
       DWORD w;
 
       sc = (void *)spawn_status;
@@ -4105,10 +4108,13 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   }
 
   if (!as_child) {
-    _exit(0);
+    if (spawn_status != -1)
+      scheme_do_exit(0, NULL);
+    else
+      return scheme_void;
   }
 #else
-  if (as_child) {
+  if (as_child || !def_exit_on) {
     sigset_t sigs;
 
     {
@@ -4149,7 +4155,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 		       "%s: fork failed", name);
       return scheme_false;
 
-    case 0:			/* child */
+    case 0: /* child */
 
       /* Ignore signals here */
       MZ_SIGSET(SIGCHLD, SIG_IGN);
@@ -4182,7 +4188,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	if (!(v & 0xFF))
 	  v = v >> 8;
 
-	if (as_child)
+	if (as_child || !def_exit_on || !v)
 	  _exit(v);
 	else
 	  return scheme_void;
@@ -4193,13 +4199,13 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 	/* If we get here it failed; give up */
 
-	if (as_child)
+	if (as_child || !def_exit_on)
 	  _exit(err ? err : -1);
 	else
 	  return scheme_void;
       }
 
-    default:		/* parent */
+    default: /* parent */
 
       break;
     }
@@ -4237,12 +4243,18 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     status = spawn_status;
 #else
 #ifdef UNIX_PROCESSES
-    {
+    if (!as_child) {
+      /* exec Sucess => (exit) */
+      /* exec Failure => (void) */
+      /* But how do we know whether it succeeded? */
+      scheme_do_exit(0, NULL);
+      status = 0; /* Doesn't get here */
+    } else {
       scheme_block_until(subp_done, NULL, (void *)sc, 0);
       status = !sc->status;
     }
 #else
- -->> Configuration error <<--
+    -->> Configuration error <<--
 #endif
 #endif
 
@@ -4292,7 +4304,7 @@ static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[])
   }
 
   if (scheme_mac_start_app("execute*", 0, args[0]))
-    exit(0);
+    scheme_do_exit(0, NULL);
 
   return scheme_void;
 #else
@@ -4320,7 +4332,7 @@ static Scheme_Object *sch_execute(int c, Scheme_Object *args[])
 {
 #ifdef MACINTOSH_EVENTS
   if (scheme_mac_start_app("execute", 1, args[0]))
-    exit(0);
+    scheme_do_exit(0, NULL);
 
   return scheme_void;
 #else

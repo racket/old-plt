@@ -54,6 +54,9 @@ static struct roots static_roots[MAX_ROOT_SETS];
 
 static int n_root_sets = 0;
 
+/* MATTHEW: hook for last roots; need to mark copies of the stack */
+void (*GC_push_last_roots)() = 0;
+
 	/* static_roots[0..n_root_sets) contains the valid root sets. */
 
 # if !defined(NO_DEBUGGING)
@@ -461,5 +464,7 @@ bool all;
 #   endif
     if (GC_push_other_roots != 0) (*GC_push_other_roots)();
     	/* In the threads case, this also pushes thread stacks.	*/
+    /* MATTHEW: hook for last roots; need to mark copies of the stack */
+    if (GC_push_last_roots != 0) (*GC_push_last_roots)();
 }
 

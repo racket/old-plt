@@ -153,6 +153,8 @@ Scheme_Env *scheme_basic_env ()
   GC_INIT();
 #endif
 
+  scheme_init_setjumpup();
+
 #ifdef TIME_STARTUP_PROCESS
    printf("#if 0\nbasic @ %ld\n", scheme_get_process_milliseconds());
 #endif

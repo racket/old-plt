@@ -1,6 +1,7 @@
 #define scheme_init_jmpup_buf (scheme_extension_table->scheme_init_jmpup_buf)
 #define scheme_setjmpup_relative (scheme_extension_table->scheme_setjmpup_relative)
 #define scheme_longjmpup (scheme_extension_table->scheme_longjmpup)
+#define scheme_reset_jmpup_buf (scheme_extension_table->scheme_reset_jmpup_buf)
 #ifdef USE_MZ_SETJMP
 #define scheme_setjmp (scheme_extension_table->scheme_setjmp)
 #define scheme_longjmp (scheme_extension_table->scheme_longjmp)

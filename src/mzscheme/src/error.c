@@ -45,13 +45,13 @@ static Scheme_Object *def_error_escape_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_display_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_value_string_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_exit_handler_proc(int, Scheme_Object *[]);
-static Scheme_Object *sch_exit (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *do_raise(Scheme_Object *arg, int return_ok, int need_debug);
 
 static Scheme_Object *newline_char;
 
 static Scheme_Object *def_err_val_proc;
+Scheme_Object *scheme_def_exit_proc;
 
 typedef struct {
   int args;
@@ -131,7 +131,7 @@ void scheme_init_error(Scheme_Env *env)
 						       MZCONFIG_ERROR_PRINT_WIDTH), 
 			     env);
   scheme_add_global_constant("exit", 
-			     scheme_make_prim_w_arity(sch_exit, 
+			     scheme_make_prim_w_arity(scheme_do_exit, 
 						      "exit", 
 						      0, 1), 
 			     env);
@@ -140,12 +140,13 @@ void scheme_init_error(Scheme_Env *env)
     Scheme_Config *config = scheme_config;
 
     newline_char = scheme_make_char('\n');
-    
-    scheme_set_param(config, MZCONFIG_EXIT_HANDLER,
-		     scheme_make_prim_w_arity(def_exit_handler_proc, 
-					      "default-exit-handler",
-					      1, 1));
 
+    REGISTER_SO(scheme_def_exit_proc);
+    scheme_def_exit_proc = scheme_make_prim_w_arity(def_exit_handler_proc, 
+						    "default-exit-handler",
+						    1, 1);
+    scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
+    
     scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER,
 		     scheme_make_prim_w_arity(def_error_display_proc,
 					      "default-error-display-handler",
@@ -160,6 +161,20 @@ void scheme_init_error(Scheme_Env *env)
   }
 }
 
+static void
+scheme_inescapeable_error(const char *a, const char *b)
+{
+  int al, bl;
+  char *t;
+
+  al = strlen(a);
+  bl = strlen(b);
+  t = scheme_malloc_atomic(al + bl + 1);
+  memcpy(t, a, al);
+  memcpy(t + al, b, bl + 1);
+
+  scheme_console_printf("%s", t);
+}
 
 #define RAISE_RETURNED "exception handler did not escape"
 
@@ -172,10 +187,10 @@ call_error(char *buffer, int len)
   if (scheme_current_process->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_process->error_invoked == 1) {
-    scheme_console_printf("error trying to display error: %s\n", buffer);
+    scheme_inescapeable_error("error trying to display error: ", buffer);
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_process->error_invoked == 2) {
-    scheme_console_printf("error trying to escape from error: %s\n", buffer);
+    scheme_inescapeable_error("error trying to escape from error: ", buffer);
     scheme_longjmp(scheme_error_buf, 1);
   } else {
     scheme_current_process->error_invoked = 1;
@@ -190,8 +205,8 @@ call_error(char *buffer, int len)
       scheme_current_process->error_invoked = 2;
       /* Typically jumps out of here */
       scheme_apply_multi(scheme_current_process->error_escape_proc, 0, NULL);
-      /* Uh-oh - fall back to the default */
-      scheme_console_printf("error escape handler did not escape\n");
+      /* Uh-oh; record the error fall back to the default escaper */
+      scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
       scheme_current_process->error_invoked = 0;
       scheme_longjmp(savebuf, 1); /* force an exit */
     }
@@ -972,8 +987,8 @@ def_exit_handler_proc(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-static Scheme_Object *
-sch_exit(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_do_exit(int argc, Scheme_Object *argv[])
 {
   long status;
   Scheme_Object *handler;
@@ -1146,19 +1161,33 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
      } else
        s = "exception raised [message field is not a string]";
    } else
-     s = "raise called";
+     s = "raise called (with non-exception value)";
    call_error(s, -1);
  }
 
  if (scheme_current_process->exn_raised) {
    long len;
-   char *buffer = init_buf(&len);
+   char *buffer = init_buf(&len), *msg, *raisetype;
 
-   sprintf(buffer, "exception %s raised by %s",
-	   error_write_to_string_w_max(arg, len, NULL),
+   if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
+       && scheme_is_struct_instance(exn_table[MZEXN].type, arg)) {
+     Scheme_Object *str = ((Scheme_Structure *)arg)->slots[0];
+     raisetype = "exception raised";
+     if (SCHEME_STRINGP(str))
+       msg = SCHEME_STR_VAL(str);
+     else
+       msg = "[exception message field is not a string]";
+   } else {
+     msg = error_write_to_string_w_max(arg, len, NULL);
+     raisetype = "raise called (with non-exception value)";
+   }
+
+   sprintf(buffer, "%s by %s: %s",
+	   raisetype,
 	   (scheme_current_process->exn_raised < 2) 
 	   ? "exception handler"
-	   : "debug info handler");
+	   : "debug info handler",
+	   msg);
 
    call_error(buffer, -1);
 

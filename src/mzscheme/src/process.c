@@ -134,14 +134,8 @@ static int process_ended_with_activity;
 
 static int tls_pos = 0;
 
-#ifndef USE_SENORA_GC
-extern void GC_free(void*);
-#endif
 extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
-#ifndef MZ_REAL_THREADS
-extern void (*GC_push_other_roots)(void);
-#endif
 static void get_ready_for_GC(void);
 static void done_with_GC(void);
 
@@ -240,11 +234,11 @@ static Scheme_NSO *namespace_options = NULL;
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
 # define LONGJMP(p) 0
-# define CLEARJMP(p)
+# define RESETJMP(p)
 #else /* not USE_REAL_THREADS */
 # define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p->stack_start)
 # define LONGJMP(p) scheme_longjmpup(&p->jmpup_buf)
-# define CLEARJMP(p) scheme_init_jmpup_buf(&p->jmpup_buf)
+# define RESETJMP(p) scheme_reset_jmpup_buf(&p->jmpup_buf)
 #endif
 
 #ifdef MZ_REAL_THREADS
@@ -265,10 +259,6 @@ static void *will_mutex;
 static void *cust_mutex;
 #define GET_CUST_LOCK() SCHEME_LOCK_MUTEX(cust_mutex)
 #define RELEASE_CUST_LOCK()  SCHEME_UNLOCK_MUTEX(cust_mutex)
-#endif
-
-#ifndef MZ_REAL_THREADS
-static void push_other_stacks(void);
 #endif
 
 #ifdef WIN32_THREADS
@@ -503,10 +493,6 @@ void scheme_init_process(Scheme_Env *env)
 
     GC_collect_start_callback = get_ready_for_GC;
     GC_collect_end_callback = done_with_GC;
-
-#ifndef MZ_REAL_THREADS
-    GC_push_other_roots = push_other_stacks;
-#endif
   }
 }
 
@@ -1000,16 +986,12 @@ Scheme_Process *scheme_get_current_process()
 
 #ifndef MZ_REAL_THREADS
 
-extern void GC_free(void *);
 void scheme_swap_process(Scheme_Process *new_process)
 {
   scheme_zero_unneeded_rands(scheme_current_process);
 
   if (SETJMP(scheme_current_process)) {
-#ifndef USE_SENORA_GC
-    GC_free(scheme_current_process->jmpup_buf.stack_copy);
-#endif
-    CLEARJMP(scheme_current_process);
+    RESETJMP(scheme_current_process);
     /* We're back! */
   } else {
     /* We're leaving... */
@@ -3606,29 +3588,3 @@ int scheme_sproc_mutex_try_down(void *s)
 
 #endif /* MZ_USE_IRIX_SPROCS */
 
-/**********************************************************************/
-
-#ifndef MZ_REAL_THREADS
-extern GC_push_all_stack(void *, void *);
-static void push_other_stacks(void)
-{
-  Scheme_Process *p;
-  Scheme_Overflow *o;
-  
-  /* Explicitly push saved stacks. This is needed
-     because the saved stack may contain pointers to the
-     interior of collectable objects. */
-
-#define PUSH_JMPUPBUF(b) { if ((b).stack_size) GC_push_all_stack((b).stack_copy, ((char *)(b).stack_copy) + (b).stack_size); }
-
-  p = scheme_first_process;
-  while (p) {
-    if (p != scheme_current_process)
-      PUSH_JMPUPBUF(p->jmpup_buf);
-    for (o = p->overflow; o; o = o->prev)
-      PUSH_JMPUPBUF(o->cont);
-
-    p = p->next;
-  }
-}
-#endif

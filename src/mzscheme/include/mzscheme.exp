@@ -2,6 +2,7 @@
 scheme_init_jmpup_buf
 scheme_setjmpup_relative
 scheme_longjmpup
+scheme_reset_jmpup_buf
 scheme_setjmp
 scheme_longjmp
 scheme_make_config

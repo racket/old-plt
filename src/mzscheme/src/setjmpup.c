@@ -19,6 +19,7 @@
 
 #include "schpriv.h"
 #include "schmach.h"
+#include "schgc.h"
 
 #ifdef STACK_GROWS_UP
 #define DEEPPOS(b) ((unsigned long)(b)->stack_from+(unsigned long)(b)->stack_size)
@@ -34,6 +35,115 @@
 #ifdef memcpy
 #undef memcpy
 #endif
+
+/**********************************************************************/
+
+/* When we copy the stack, we must set up GC to specially traverse the
+   stack copy to account for pointers to the interior of collectable
+   objects. */     
+
+extern GC_push_all_stack(void *, void *);
+extern void (*GC_push_last_roots)(void);
+#ifdef USE_SENORA_GC
+#define GC_is_marked(p) GC_base(p)
+#else
+extern int GC_is_marked(void *);
+#endif
+
+#define get_copy(s_c) ((CopiedStack *)s_c)->stack_copy
+
+#define MALLOC_LINK() MALLOC_ONE_ATOMIC(CopiedStack*)
+
+typedef struct CopiedStack {
+  void *stack_copy; /* The actual data */
+  long size;
+  int pushed;
+  struct CopiedStack **next, **prev;
+} CopiedStack;
+
+static CopiedStack **first_copied_stack;
+int scheme_num_copied_stacks = 0;
+
+static void push_copied_stacks(void)
+{
+  /* This is called after everything else is marked.
+     Mark from those stacks that are still reachable. If
+     we mark from a stack, we need to go back though the list
+     all over to check the previously unmarked stacks. */
+  CopiedStack *cs;
+  int pushed_one;
+
+  for (cs = *first_copied_stack; cs; cs = *cs->next) {
+    if (cs->stack_copy)
+      cs->pushed = 0;
+    else
+      cs->pushed = 1;
+  }
+
+  do {
+    pushed_one = 0;
+    for (cs = *first_copied_stack; cs; cs = *cs->next)
+      if (!cs->pushed && GC_is_marked(cs->stack_copy)) {
+	pushed_one = 1;
+	cs->pushed = 1;
+	GC_push_all_stack(cs->stack_copy, cs->stack_copy + cs->size);
+      }
+  } while (pushed_one);
+}
+
+void scheme_init_setjumpup(void)
+{
+  REGISTER_SO(first_copied_stack);
+  first_copied_stack = MALLOC_LINK();
+
+  GC_push_last_roots = push_copied_stacks;
+}
+
+static void remove_cs(void *_cs, void *unused)
+{
+  CopiedStack *cs = (CopiedStack *)_cs;
+
+  if (*cs->prev)
+    *(*cs->prev)->next = *cs->next;
+  else
+    *first_copied_stack = *cs->next;
+
+  if (*cs->next)
+    *(*cs->next)->prev = *cs->prev;
+
+  if (cs->stack_copy) {
+#ifndef USE_SENORA_GC
+    GC_free(cs->stack_copy);
+#endif
+    cs->stack_copy = NULL;
+  }
+
+  --scheme_num_copied_stacks;
+}
+
+void *make_stack_copy_rec(long size)
+{
+  CopiedStack *cs;
+
+  cs = MALLOC_ONE(CopiedStack);
+  cs->size = size;
+  cs->next = MALLOC_LINK();
+  cs->prev = MALLOC_LINK();
+
+  *cs->next = *first_copied_stack;
+  if (*first_copied_stack)
+    *(*first_copied_stack)->prev = cs;
+  *cs->prev = NULL;
+  *first_copied_stack = cs;
+
+  GC_register_finalizer(cs, remove_cs, NULL, NULL, NULL);
+
+  scheme_num_copied_stacks++;
+
+  return (void *)cs;
+}
+
+/**********************************************************************/
 
 #define memcpy(dd, ss, ll) \
 {  stack_val *d, *s; long l; \
@@ -60,12 +170,13 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
-    b->stack_copy = scheme_malloc(size);
-    b->stack_max_size = size;    
+    b->stack_copy = make_stack_copy_rec(size);
+    get_copy(b->stack_copy) = scheme_malloc_atomic(size);
+    b->stack_max_size = size;
   }
   b->stack_size = size;
   
-  memcpy(b->stack_copy,
+  memcpy(get_copy(b->stack_copy),
 	 b->stack_from,
 	 size);
 }
@@ -94,7 +205,7 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   c = b;
   while (c) {
     memcpy(c->stack_from,
-	   c->stack_copy,
+	   get_copy(c->stack_copy),
 	   c->stack_size);
     c = c->cont;
   }
@@ -155,6 +266,17 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   b->stack_size = b->stack_max_size = 0;
   b->stack_from = b->stack_copy = NULL;
+}
+
+void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
+{
+  if (b->stack_copy) {
+#ifndef USE_SENORA_GC
+    GC_free(get_copy(b->stack_copy));
+#endif
+    get_copy(b->stack_copy) = NULL;
+    scheme_init_jmpup_buf(b);
+  }
 }
 
 void scheme_ensure_stack_start(Scheme_Process *p, void *d)

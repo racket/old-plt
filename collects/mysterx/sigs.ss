@@ -270,5 +270,6 @@
    block-until-event
    process-win-events
    com-omit
+   com-terminate	
    release-type-table))
 

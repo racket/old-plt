@@ -838,6 +838,7 @@
 	(make-global-value-list))
        (collect-garbage)
        (mxprims:release-type-table)
+       (mxprims:com-terminate)
        (old-exit-handler arg)))))
 
 

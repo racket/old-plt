@@ -2721,7 +2721,7 @@ lexical_syntax_link(Scheme_Object *obj, Link_Info *info)
 static Scheme_Object *
 lexical_syntax_resolve(Scheme_Object *obj, Resolve_Info *info)
 {
-  scheme_simplify_stx(SCHEME_CDR(obj), info->simplify_rns);
+  scheme_simplify_stx(SCHEME_CDR(obj), info->simplify_cache);
 
   return scheme_make_syntax_resolved(QUOTE_SYNTAX_EXPD, obj);
 }

@@ -996,7 +996,9 @@
 			    local-top)))
 			(check-not-pattern p proto-r)
 			`(lambda (r) (quote-syntax ,p)))))
-		(hash! p)))]
+		(unless (and (eq? (syntax-e p) '...)
+			     use-ellipses?)
+		  (hash! p))))]
        [(null? p) 
 	;; Not syntax, so avoid useless syntax info
 	(if proto-r 
@@ -1222,13 +1224,23 @@
 	   [else (loop (cdr proto-r))]))]
        [else (loop (cdr proto-r))])))
 
+  (define (no-ellipses? stx)
+    (let loop ([stx stx])
+      (cond
+       [(stx-pair? stx)
+	(and (no-ellipses? (stx-car stx))
+	     (no-ellipses? (stx-cdr stx)))]
+       [(identifier? stx)
+	(not (eq? (syntax-e stx) '...))]
+       [else #t])))
+
   ;; Structure for communicating first-order pattern variable information:
   (define-struct syntax-mapping (depth valvar))
 
   (provide make-match&env get-match-vars make-pexpand
 	   make-syntax-mapping syntax-mapping?
 	   syntax-mapping-depth syntax-mapping-valvar
-	   stx-memq-pos))
+	   stx-memq-pos no-ellipses?))
 
 ;;----------------------------------------------------------------------
 ;; syntax-case and syntax
@@ -1415,6 +1427,7 @@
 
   (define-syntax syntax
     (lambda (x)
+      (define here-stx (quote-syntax here))
       (unless (and (stx-pair? x)
 		   (let ([rest (stx-cdr x)])
 		     (and (stx-pair? rest)
@@ -1424,7 +1437,7 @@
 	 "bad form"
 	 x))
       (datum->syntax-object
-       (quote-syntax here)
+       here-stx
        (let ([pattern (stx-car (stx-cdr x))])
 	 (let ([unique-vars (make-pexpand pattern #f null #f)])
 	   (let ([var-bindings
@@ -1434,8 +1447,9 @@
 			    (and (syntax-mapping? v)
 				 v))))
 		   unique-vars)])
-	     (if (or (null? var-bindings)
-		     (not (ormap (lambda (x) x) var-bindings)))
+	     (if (and (or (null? var-bindings)
+			  (not (ormap (lambda (x) x) var-bindings)))
+		      (no-ellipses? pattern))
 		 ;; Constant template:
 		 (list (quote-syntax quote-syntax) pattern)
 		 ;; Non-constant:
@@ -1480,7 +1494,7 @@
 			 (car r)
 			 ;; General case:
 			 (list (datum->syntax-object
-				(quote-syntax here)
+				here-stx
 				build-from-template
 				pattern)
 			       (cons (quote-syntax list) r)

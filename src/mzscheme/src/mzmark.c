@@ -1684,7 +1684,7 @@ int mark_resolve_info_SIZE(void *p) {
 int mark_resolve_info_MARK(void *p) {
   Resolve_Info *i = (Resolve_Info *)p;
   
-  gcMARK(i->simplify_rns);
+  gcMARK(i->simplify_cache);
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
   gcMARK(i->flags);
@@ -1697,7 +1697,7 @@ int mark_resolve_info_MARK(void *p) {
 int mark_resolve_info_FIXUP(void *p) {
   Resolve_Info *i = (Resolve_Info *)p;
   
-  gcFIXUP(i->simplify_rns);
+  gcFIXUP(i->simplify_cache);
   gcFIXUP(i->old_pos);
   gcFIXUP(i->new_pos);
   gcFIXUP(i->flags);

@@ -437,7 +437,9 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 					Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col, long pos);
-void scheme_simplify_stx(Scheme_Object *stx, Scheme_Hash_Table *simplify_rns);
+
+Scheme_Object *scheme_new_stx_simplify_cache();
+void scheme_simplify_stx(Scheme_Object *stx, Scheme_Object *simplify_cache);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
 				      Scheme_Object *stx_wraps, 
@@ -1215,7 +1217,7 @@ typedef struct Resolve_Info
 {
   MZTAG_IF_REQUIRED
   int size, oldsize, count, pos;
-  Scheme_Hash_Table *simplify_rns;
+  Scheme_Object *simplify_cache;
   short *old_pos;
   short *new_pos;
   int *flags;
@@ -1362,7 +1364,7 @@ Scheme_Object *scheme_link_letrec(Scheme_Object *form, Link_Info *info);
 
 Scheme_Object *scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info);
 
-Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns);
+Resolve_Info *scheme_resolve_info_create(Scheme_Object *simplify_cache);
 Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapcount);
 void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int flags);
 int scheme_resolve_info_flags(Resolve_Info *info, int pos);

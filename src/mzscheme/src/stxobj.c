@@ -708,6 +708,12 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       } else
 	i--;
     } else {
+      if (SCHEME_VECTORP(a)
+	  && ((SCHEME_VEC_SIZE(a) <= 2)
+	      || SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2]))) {
+	*(long *)0x0 = 1; /* crash */
+      }
+
       if (mutable) {
 	a = scheme_make_pair(a, ((Scheme_Stx *)o)->wraps);
 	((Scheme_Stx *)o)->wraps = a;
@@ -1392,25 +1398,41 @@ static int same_list(Scheme_Object *a, Scheme_Object *b)
   return SCHEME_NULLP(a) && SCHEME_NULLP(b);
 }
 
-static void simplify_lex_renames(Scheme_Object *w)
+static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 {
   Scheme_Object *stack = scheme_null, *prev = NULL;
   Scheme_Object *v, *v2, *stx, *name;
   long size, vsize, psize, i, j, pos;
 
+  /* Although it makes no sense to simplify the rename table itself,
+     we can simplify it in the context of a particular wrap suffix.
+     (But don't mutate the wrap list, because that will stomp on
+     tables that might be needed by a propoagation.)
+     
+     A lex_cache maps wrap starts w to simplified tables. A lex_cache
+     is read and modified by this function, only. */
+
   while (!SCHEME_NULLP(w)) {
     if (SCHEME_VECTORP(SCHEME_CAR(w))) {
+      v = scheme_hash_get(lex_cache, w);
 
-      v = SCHEME_CAR(w);
-      if ((SCHEME_VEC_SIZE(v) > 2) /* a simplified vec can be empty */
-	  && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
-	/* Need to simplify, but do deepest first: */
-	stack = scheme_make_pair(w, stack);
-      } else {
-	if (!prev)
-	  prev = v;
+      if (v) {
+	/* This table is already simplified. */
+	prev = v;
 	/* No non-simplified table can follow a simplified one */
 	break;
+      } else {
+	v = SCHEME_CAR(w);
+	if ((SCHEME_VEC_SIZE(v) > 2) /* a simplified vec can be empty */
+	    && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
+	  /* Need to simplify, but do deepest first: */
+	  stack = scheme_make_pair(w, stack);
+	} else {
+	  if (!prev)
+	    prev = v;
+	  /* No non-simplified table can follow a simplified one */
+	  break;
+	}
       }
     }
     
@@ -1506,7 +1528,7 @@ static void simplify_lex_renames(Scheme_Object *w)
     SCHEME_VEC_ELS(v2)[0] = scheme_false;
     SCHEME_VEC_ELS(v2)[1] = scheme_false;
 
-    SCHEME_CAR(w) = v2;
+    scheme_hash_set(lex_cache, w, v2);
 
     prev = v2;
 
@@ -1519,6 +1541,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 				     int just_simplify)
 {
   Scheme_Object *stack, *a, *w = w_in;
+  Scheme_Hash_Table *lex_cache;
   int did_lex_rename = 0;
 
   a = scheme_hash_get(rns, w_in);
@@ -1531,7 +1554,14 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 
   stack = scheme_null;
 
-  simplify_lex_renames(w);
+  lex_cache = (Scheme_Hash_Table *)scheme_hash_get(rns, scheme_void);
+  if (!lex_cache) {
+    lex_cache = scheme_make_hash_table(SCHEME_hash_ptr);
+    scheme_hash_set(rns, scheme_void, (Scheme_Object *)lex_cache);
+  }
+
+  /* Ensures that all lexical tables in w have been simplified */
+  simplify_lex_renames(w, lex_cache);
 
   while (!SCHEME_NULLP(w)) {
     a = SCHEME_CAR(w);
@@ -1546,6 +1576,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     } else if (SCHEME_VECTORP(a)) {
       if (!did_lex_rename) {
 	if (SCHEME_VEC_SIZE(a) > 2) {
+
+	  if (!SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2])) {
+	    /* a is not a simplified table; look it up */
+	    a = scheme_hash_get(lex_cache, w);
+	    /* assert: a is not NULL; see the simplify_lex_rename() call above */
+	  }
+	  
 	  if (just_simplify) {
 	    stack = scheme_make_pair(a, stack);
 	  } else {
@@ -1571,6 +1608,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 
 	did_lex_rename = 1;
       }
+      /* else redundant lexical rename; the simplifed covers it */
     } else if (SCHEME_RENAMESP(a)) {
       Module_Renames *mrn = (Module_Renames *)a;
       int redundant = 0;
@@ -1922,7 +1960,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
   Scheme_Object *stack, *a, *wraps_key;
 
   /* rns maps numbers (table indices) to renaming tables, and negative
-     numbers (negated fixnum marks) and symbols (interned marks) to marks */
+     numbers (negated fixnum marks) and symbols (interned marks) to marks.*/
 
   if (SCHEME_INTP(w))
     return scheme_hash_get(rns, w);
@@ -2302,12 +2340,14 @@ static void simplify_syntax_inner(Scheme_Object *o,
     else
       scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)scheme_true);
   }
-
+ 
   /* Propagate wraps: */
   scheme_stx_content((Scheme_Object *)stx);
-  
-  v = wraps_to_datum(stx->wraps, rns, 1);
-  stx->wraps = v;
+
+  if (rns) {
+    v = wraps_to_datum(stx->wraps, rns, 1);
+    stx->wraps = v;
+  }
 
   v = stx->val;
   
@@ -2330,11 +2370,18 @@ static void simplify_syntax_inner(Scheme_Object *o,
   }
 }
 
-void scheme_simplify_stx(Scheme_Object *stx, Scheme_Hash_Table *rns)
+Scheme_Object *scheme_new_stx_simplify_cache()
 {
-  if (rns) {
-    Scheme_Hash_Table *ht = NULL;
-    
+  return (Scheme_Object *)scheme_make_hash_table(SCHEME_hash_ptr);
+}
+
+void scheme_simplify_stx(Scheme_Object *stx, Scheme_Object *cache)
+{
+  if (cache) {
+    Scheme_Hash_Table *rns, *ht = NULL;
+
+    rns = (Scheme_Hash_Table *)cache;
+
     simplify_syntax_inner(stx, rns, &ht);
   }
 }

@@ -264,7 +264,9 @@ make_a_symbol(const char *name, int len)
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
   
   sym->type = scheme_symbol_type;
+#ifdef MZ_PRECISE_GC
   sym->keyex = 0;
+#endif
   sym->len = len;
   memcpy(sym->s, name, len);
   sym->s[len] = 0;

@@ -1490,7 +1490,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 /* See eval.c for information about the compilation phases. */
 
-Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns)
+Resolve_Info *scheme_resolve_info_create(Scheme_Object *simplify_cache)
 {
   Resolve_Info *naya;
 
@@ -1498,7 +1498,7 @@ Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns)
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
-  naya->simplify_rns = simplify_rns;
+  naya->simplify_cache = simplify_cache;
   naya->count = 0;
   naya->next = NULL;
 
@@ -1516,7 +1516,7 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
-  naya->simplify_rns = info->simplify_rns;
+  naya->simplify_cache = info->simplify_cache;
   naya->next = info;
   naya->size = size;
   naya->oldsize = oldsize;

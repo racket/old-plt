@@ -141,9 +141,9 @@ typedef struct Scheme_Object
 
   /* For precise GC, the keyex field is used for all object types to
      store a hash key extension. The low bit is not used for this
-     purpose, though. For string and pair values in all variants of
-     MzScheme, the low bit is set to 1 to indicate that the string is
-     immutable. */
+     purpose, though. For string, pair, vector, and box values in all
+     variants of MzScheme, the low bit is set to 1 to indicate that
+     the object is immutable. */
   short keyex;
 
   union
@@ -188,7 +188,7 @@ typedef struct {
 
 typedef struct Scheme_Symbol {
   Scheme_Type type;
-  short keyex; /* See `keyex' in Scheme_Object; flag here is for non-hygenic ids */
+  MZ_HASH_KEY_EX
   int len;
   char s[4]; /* Really, a number of chars to match `len' */
 } Scheme_Symbol;

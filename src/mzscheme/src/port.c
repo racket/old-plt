@@ -5292,7 +5292,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #endif
 	END_XFORM_SKIP;
 
-	return scheme_void;
+	_exit(1);
       }
 
     default: /* parent */

@@ -220,9 +220,20 @@
 		      (format "~a: second argument must be a (proper) list; given ~e" name list)
 		      (current-continuation-marks)
 		      list))]
-	     [(f (car l)) (if whole-list? l (car l))]
-	     [else (loop (cdr l))]))))))
-  
+	     [else (let ([a (car l)])
+		     (if whole-list?
+			 (if (f a)
+			     l
+			     (loop (cdr l)))
+			 (if (pair? a)
+			     (if (f (car a))
+				 a
+				 (loop (cdr l)))
+			     (raise-mismatch-error
+			      name
+			      "found a non-pair in the list: "
+			      a))))]))))))
+
   (define assf
     (let ([a (make-find 'assf #f)])
       (polymorphic
@@ -249,11 +260,9 @@
 	      (if keep?
 		  (cons (car l) (loop (cdr l)))
 		  (loop (cdr l))))]
-	   [else (raise-type-error
+	   [else (raise-mismatch-error
 		  'filter
-		  "proper list"
-		  1 ; i.e., 2nd argument
-		  f
+		  "expects a proper list: "
 		  list)])))))
   
   (define first (polymorphic (lambda (x) 

@@ -2387,83 +2387,91 @@
 
   (define -re:suffix (regexp "\\..?.?.?$"))
 	  
-  (define -core-load/use-compiled
-    (let ([resolve (lambda (s)
-		     (if (complete-path? s)
-			 s
-			 (let ([d (current-load-relative-directory)])
-			   (if d (path->complete-path s d) s))))]
-	  [date>=?
-	   (lambda (a bm)
-	     (and a
-		  (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
-			      (file-or-directory-modify-seconds a))])
-		    (or (and (not bm) am) (and am bm (>= am bm))))))])
-      (case-lambda 
-       [(path) (-core-load/use-compiled path #f)]
-       [(path expect-module)
-	(unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
-	  (raise-type-error 'load/use-compiled "pathname string" path))
-	(let*-values ([(path) (resolve path)]
-		      [(base file dir?) (split-path path)]
-		      [(base) (if (eq? base 'relative) 'same base)]
-		      [(mode) (use-compiled-file-kinds)]
-		      [(comp?) (not (eq? mode 'none))])
-	  (let* ([get-so (lambda (file)
-			   (if comp?
-			       (build-path base
-					   "compiled"
-					   "native"
-					   (system-library-subpath)
-					   (regexp-replace 
-					    -re:suffix file
-					    (case (system-type)
-					      [(windows) ".dll"]
-					      [else ".so"])))
-			       #f))]
-		 [zo (and comp?
-			  (build-path base
-				      "compiled"
-				      (regexp-replace -re:suffix file ".zo")))]
-		 [so (get-so file)]
-		 [_loader-so (get-so "_loader.ss")]
-		 [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
-			   (file-or-directory-modify-seconds path))]
-		 [with-dir (lambda (t) 
-			     (parameterize ([current-load-relative-directory 
-					     (if (string? base) base (current-directory))])
-			       (t)))])
-	    (cond
-	     [(and (date>=? _loader-so path-d)
-		   (let ([getter (load-extension _loader-so)])
-		     (let-values ([(loader modname) (getter (string->symbol (regexp-replace -re:suffix file "")))])
-		       (and loader
-			    (begin
-			      (when expect-module
-				(unless (eq? modname expect-module)
-				  (raise
-				   (make-exn:module
-				    (string->immutable-string
-				     (format "load-extension: expected module declaration for `~a', found ~a through loader: ~~e"
-					     expect-module
-					     (if modname 
-						 (format "module declaration for `~a'" modname)
-						 "none")
-					     _loader-so))))))
-			      loader)))))
-	      => (lambda (loader) (with-dir loader))]
-	     [(date>=? so path-d)
-	      (with-dir (lambda () ((current-load-extension) so expect-module)))]
-	     [(date>=? zo path-d)
-	      (with-dir (lambda () ((current-load) zo expect-module)))]
-	     [else
-	      (with-dir (lambda () ((current-load) path expect-module)))])))])))
+  (define current-load/use-compiled
+    (make-parameter
+     (let ([default-load/use-compiled
+	     (let ([resolve (lambda (s)
+			      (if (complete-path? s)
+				  s
+				  (let ([d (current-load-relative-directory)])
+				    (if d (path->complete-path s d) s))))]
+		   [date>=?
+		    (lambda (a bm)
+		      (and a
+			   (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
+				       (file-or-directory-modify-seconds a))])
+			     (or (and (not bm) am) (and am bm (>= am bm))))))])
+	       (lambda (path expect-module)
+		 (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
+		   (raise-type-error 'load/use-compiled "pathname string" path))
+		 (let*-values ([(path) (resolve path)]
+			       [(base file dir?) (split-path path)]
+			       [(base) (if (eq? base 'relative) 'same base)]
+			       [(mode) (use-compiled-file-kinds)]
+			       [(comp?) (not (eq? mode 'none))])
+		   (let* ([get-so (lambda (file)
+				    (if comp?
+					(build-path base
+						    "compiled"
+						    "native"
+						    (system-library-subpath)
+						    (regexp-replace 
+						     -re:suffix file
+						     (case (system-type)
+						       [(windows) ".dll"]
+						       [else ".so"])))
+					#f))]
+			  [zo (and comp?
+				   (build-path base
+					       "compiled"
+					       (regexp-replace -re:suffix file ".zo")))]
+			  [so (get-so file)]
+			  [_loader-so (get-so "_loader.ss")]
+			  [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
+				    (file-or-directory-modify-seconds path))]
+			  [with-dir (lambda (t) 
+				      (parameterize ([current-load-relative-directory 
+						      (if (string? base) base (current-directory))])
+					(t)))])
+		     (cond
+		      [(and (date>=? _loader-so path-d)
+			    (let ([getter (load-extension _loader-so)])
+			      (let-values ([(loader modname) (getter (string->symbol (regexp-replace -re:suffix file "")))])
+				(and loader
+				     (begin
+				       (when expect-module
+					 (unless (eq? modname expect-module)
+					   (raise
+					    (make-exn:module
+					     (string->immutable-string
+					      (format "load-extension: expected module declaration for `~a', found ~a through loader: ~~e"
+						      expect-module
+						      (if modname 
+							  (format "module declaration for `~a'" modname)
+							  "none")
+						      _loader-so))))))
+				       loader)))))
+		       => (lambda (loader) (with-dir loader))]
+		      [(date>=? so path-d)
+		       (with-dir (lambda () ((current-load-extension) so expect-module)))]
+		      [(date>=? zo path-d)
+		       (with-dir (lambda () ((current-load) zo expect-module)))]
+		      [else
+		       (with-dir (lambda () ((current-load) path expect-module)))])))))])
+       default-load/use-compiled)
+     (lambda (p)
+       (unless (and (procedure? p)
+		    (procedure-arity-includes? p 2))
+	 (raise-type-error 'current-load/use-compiled
+			   "procedure (arity 2)"
+			   p))
+       p)))
 
   (define (collection-path collection . collection-path) 
     (-check-collection 'collection-path collection collection-path)
     (-find-col 'collection-path collection collection-path))
 
-  (define (load/use-compiled f) (-core-load/use-compiled f #f))
+  (define (load/use-compiled f) ((current-load/use-compiled) f #f))
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
   (define -re:auto (regexp "^,"))
@@ -2579,7 +2587,7 @@
 			(let ([prefix (string->symbol abase)])
 			  (with-continuation-mark -loading-filename filename
 			    (parameterize ([current-module-name-prefix prefix])
-			      (-core-load/use-compiled filename (string->symbol no-sfx)))))
+			      ((current-load/use-compiled) filename (string->symbol no-sfx)))))
 			(hash-table-put! ht modname #t))
 		      ;; Result is the module name:
 		      modname))))))
@@ -2686,7 +2694,7 @@
 	   load/cd
 	   load-relative load-relative-extension
 	   path-list-string->path-list find-executable-path
-	   collection-path load/use-compiled
+	   collection-path load/use-compiled current-load/use-compiled
 	   port? not-break-exn?
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment

@@ -8,7 +8,7 @@
 #   Linux binary is built for testing using as much
 #   of the OSKit configuration for MzScheme as possible.
 
-OSKHOME=/usr/local
+OSKHOME=${OSKHOME:-/usr/local}
 STDINC=/usr/include
 
 if [ "$1" = '-t' ] ; then

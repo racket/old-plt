@@ -3376,15 +3376,16 @@
 						 ""))
 		     s)))
 	      ;; At this point, filename is a complete path
-	      (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
+	      (let* ([filename (simplify-path (expand-path filename))]
+		     [normal-filename (normal-case-path filename)])
 		(let-values ([(base name dir?) (split-path filename)])
-		  (let ([no-sfx (bytes->string/latin-1 
-				 (path->bytes
-				  (path-replace-suffix name #"")))]
-			[abase (format ",~a" (bytes->string/latin-1 (path->bytes base)))])
+		  (let* ([no-sfx (path-replace-suffix name #"")]
+			 [no-sfx-string (bytes->string/latin-1 (path->bytes no-sfx))]
+			 [abase (format ",~a" (bytes->string/latin-1 (path->bytes (normal-case-path base))))])
 		    (let ([modname (string->symbol (string-append
 						    abase
-						    no-sfx))]
+						    (bytes->string/latin-1
+						     (path->bytes (normal-case-path no-sfx)))))]
 			  [ht (hash-table-get
 			       -module-hash-table-table
 			       (namespace-module-registry (current-namespace))
@@ -3415,7 +3416,7 @@
 				[ns (current-namespace)])
 			    (for-each
 			     (lambda (s)
-			       (when (and (equal? (cdr s) filename)
+			       (when (and (equal? (cdr s) normal-filename)
 					  (eq? (car s) ns))
 				 (error
 				  'standard-module-name-resolver
@@ -3424,11 +3425,11 @@
 				  (map cdr (reverse (cons s l))))))
 			     l))
 			  (let ([prefix (string->symbol abase)])
-			    (with-continuation-mark -loading-filename (cons (current-namespace) filename)
+			    (with-continuation-mark -loading-filename (cons (current-namespace) normal-filename)
 			      (parameterize ([current-module-name-prefix prefix])
 				((current-load/use-compiled) 
 				 filename 
-				 (string->symbol no-sfx)))))
+				 (string->symbol no-sfx-string)))))
 			  (hash-table-put! ht modname suffix)))
 		      ;; Result is the module name:
 		      modname))))))]

@@ -82,14 +82,24 @@ void wxInitClipboard(void)
   }
 
   if (!wxTheClipboard) {
+    int cts;
+    
     wxREGGLOB(wxTheClipboard);
     wxREGGLOB(wxTheSelection);
-    wxTheClipboard = new wxClipboard;
+
     wxTheSelection = new wxClipboard;
     wxTheSelection->is_sel = 1;
-
-    wxTheClipboard->frame = clipboard_frame;
     wxTheSelection->frame = selection_frame;
+
+    if (!wxGetPreference("selection-as-clipboard", &cts))
+      cts = 0;
+
+    if (cts) {
+      wxTheClipboard = wxTheSelection;
+    } else {
+      wxTheClipboard = new wxClipboard;
+      wxTheClipboard->frame = clipboard_frame;      
+    }
   }
 
   xa_utf8 = ATOM("UTF8_STRING");

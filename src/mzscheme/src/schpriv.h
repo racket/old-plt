@@ -363,12 +363,6 @@ typedef struct Scheme_Sema_Callback {
   struct Scheme_Sema_Callback *next;
 } Scheme_Sema_Callback;
 
-typedef struct Scheme_Sema_From_Port {
-  Scheme_Sema *sema;
-  Scheme_Object *port;
-  struct Scheme_Sema_From_Port *next;
-} Scheme_Sema_From_Port;
-
 typedef struct Scheme_Local {
   Scheme_Type type;
   short position;
@@ -440,7 +434,6 @@ typedef struct Scheme_Promise {
 } Scheme_Promise;
 
 void scheme_add_sema_callback(Scheme_Sema_Callback *);
-void scheme_add_sema_from_port(Scheme_Sema_From_Port *);
 
 #define NOT_BLOCKED 0
 #define PIPE_BLOCKED 1

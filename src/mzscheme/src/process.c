@@ -148,7 +148,6 @@ static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
 static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
 
 static Scheme_Sema_Callback *sema_callbacks = NULL;
-static Scheme_Sema_From_Port *port_semas = NULL;
 
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 
@@ -471,7 +470,6 @@ void scheme_init_process(Scheme_Env *env)
     REGISTER_SO(config_map);
     REGISTER_SO(namespace_options);
     REGISTER_SO(sema_callbacks);
-    REGISTER_SO(port_semas);
     REGISTER_SO(param_ext_recs);
 
 #ifdef MZ_REAL_THREADS
@@ -1079,7 +1077,7 @@ static void start_child(Scheme_Process *child,
     process_ended_with_activity = 1;
     
     if (scheme_notify_multithread && !scheme_first_process->next
-	&& !sema_callbacks && !port_semas) {
+	&& !sema_callbacks) {
       scheme_notify_multithread(0);
       have_activity = 0;
     }
@@ -1155,8 +1153,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   Scheme_Process *child, *return_to_process;
   int turn_on_multi;
  
-  turn_on_multi = !scheme_first_process->next && !sema_callbacks
-    && !port_semas;
+  turn_on_multi = !scheme_first_process->next && !sema_callbacks;
   
   scheme_ensure_stack_start(scheme_current_process, child_start);
   
@@ -1348,23 +1345,8 @@ void scheme_add_sema_callback(Scheme_Sema_Callback *cb)
   }
   SCHEME_RELEASE_LOCK();
 #ifndef MZ_REAL_THREADS
-  if (!scheme_first_process->next && !port_semas
+  if (!scheme_first_process->next
       && scheme_notify_multithread) {
-    scheme_notify_multithread(1);
-    have_activity = 1;
-  }
-#endif
-}
-
-void scheme_add_sema_from_port(Scheme_Sema_From_Port *pt)
-{
-  SCHEME_GET_LOCK();
-  pt->next = port_semas;
-  port_semas = pt;
-  SCHEME_RELEASE_LOCK();
-#ifndef MZ_REAL_THREADS
-  if (!scheme_first_process->next && !sema_callbacks 
-      && scheme_notify_multithread ) {
     scheme_notify_multithread(1);
     have_activity = 1;
   }
@@ -1375,60 +1357,17 @@ int scheme_count_sema_callbacks(int kind)
 {
   int count = 0;
 
-  if (kind) {
-    Scheme_Sema_From_Port *pt;
-    for (pt = port_semas; pt; pt = pt->next)
-      count++;
-  } else {
-    Scheme_Sema_Callback *c;
-    for (c = sema_callbacks; c; c = c->next)
-      count++;
-  }
+  Scheme_Sema_Callback *c;
+  for (c = sema_callbacks; c; c = c->next)
+    count++;
 
   return count;
-}
-
-static void port_sema_check(void) 
-{  
-  Scheme_Sema_From_Port *pt, *pprev;
-  
-  SCHEME_GET_LOCK();
-  pt = port_semas;
-  pprev = NULL;
-  while (pt) {
-    if (scheme_char_ready(pt->port)) {
-      if (pprev)
-	pprev->next = pt->next;
-      else {
-	port_semas = pt->next;
-#ifndef MZ_REAL_THREADS
-	if (!port_semas
-	    && !scheme_first_process->next
-	    && !sema_callbacks
-	    && scheme_notify_multithread) {
-	  scheme_notify_multithread(0);
-	  have_activity = 0;
-	}
-#endif
-      }
-      
-#ifndef MZ_REAL_THREADS
-      pt->sema->value++;
-#else
-      SCHEME_SEMA_UP(pt->sema->sema);
-#endif
-    } else
-      pprev = pt;
-    pt = pt->next;
-  }
-  SCHEME_RELEASE_LOCK();
 }
 
 #ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now)
 {
   Scheme_Process *p, *p2;
-  Scheme_Sema_From_Port *pt;
   int end_with_act;
   
 #if defined(USING_FDS)
@@ -1517,12 +1456,6 @@ static int check_sleep(int need_activity, int sleep_now)
       p = p->next;
     }
     
-    pt = port_semas;
-    while (pt) {
-      scheme_need_wakeup(pt->port, fds);
-      pt = pt->next;
-    }
-    
     if (sleep_now)
       scheme_sleep(max_sleep_time, fds);
     else
@@ -1540,8 +1473,6 @@ void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int 
   Scheme_Sema_Callback *cb, *prev;
   mz_jmp_buf savebuf;
   
-  port_sema_check();
-
   cb = sema_callbacks;
   while (cb) {
     int passed;
@@ -1580,7 +1511,6 @@ void *scheme_check_sema_callbacks(int (*test)(void *, void *), void *cdata, int 
 #ifndef MZ_REAL_THREADS
 	if (!sema_callbacks 
 	    && !scheme_first_process->next
-	    && !port_semas
 	    && scheme_notify_multithread) {
 	  scheme_notify_multithread(0);
 	  have_activity = 0;
@@ -1839,8 +1769,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     }
   }
 
-  port_sema_check();
-  
 #ifndef MZ_REAL_THREADS
   if (!scheme_do_atomic && (sleep_time >= 0.0)) {
     /* Find the next process. Skip processes that are definitely

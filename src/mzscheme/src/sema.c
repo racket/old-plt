@@ -289,18 +289,10 @@ static Scheme_Object *sema_callback(int n, Scheme_Object **p)
 
 static Scheme_Object *sema_input_port(int n, Scheme_Object **p)
 {
-  Scheme_Sema_From_Port *cb;
-
   if (!SCHEME_INPORTP(p[0]))
     scheme_wrong_type("input-port-post-semaphore", "input port", 0, n, p);
   if (!SCHEME_SEMAP(p[1]))
     scheme_wrong_type("input-port-post-semaphore", "semaphore", 1, n, p);
-
-  cb = (Scheme_Sema_From_Port*)scheme_malloc(sizeof(Scheme_Sema_From_Port));
-  cb->sema = (Scheme_Sema *)p[1];
-  cb->port = p[0];
-  
-  scheme_add_sema_from_port(cb);
 
   return scheme_void;
 }

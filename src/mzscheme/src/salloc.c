@@ -752,11 +752,6 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
       scheme_console_printf("%30.30s %10ld          -          -\n",
 			    "semaphore-callback", c);
       total_count += c;
-
-      c = scheme_count_sema_callbacks(1);
-      scheme_console_printf("%30.30s %10ld          -          -\n",
-			    "input-port-post-semaphore", c);
-      total_count += c;
     }
 
     scheme_console_printf("%30.30s          - %10ld          -\n",

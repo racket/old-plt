@@ -21,7 +21,7 @@
   
   (provide/contract 
    (serve (opt->*
-           (configuration?)
+	   ()
            ((and/f number? integer? exact? positive?)
             (union string? false?)
             (make-mixin-contract frame%))
@@ -36,8 +36,7 @@
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
   ;; that simulate their behavior without using the network.
   (define serve
-    (opt-lambda (configuration
-                 [port (configuration-port configuration)]
+    (opt-lambda ([port (configuration-port configuration)]
                  [only-from-host #f]
                  [hyper-frame-extension (lambda (x) x)])
       (invoke-unit/sig

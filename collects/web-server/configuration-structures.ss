@@ -4,16 +4,12 @@
   (provide (struct timeouts (default-servlet password servlet-connection file-per-byte file-base))
            (struct paths (host-base log htdocs servlet)))
   
-  ; configuration = (make-configuration nat nat num (str -> host-configuration))
-  (provide-define-struct
-   configuration
-   (port max-waiting initial-connection-timeout virtual-hosts))
-  
+  ; configuration is now a unit.  See sig.ss
+
   ; host = (make-host (listof str) (str str -> (U #f str)) (str str sym url str -> str)
   ;                   passwords resopnders timeouts paths (U oport #f))
   (provide-define-struct
-   host
-   (indices servlet-path log-message passwords responders timeouts paths))
+   host (indices servlet-path log-message passwords responders timeouts paths))
   
   ; passwords = (listof (list* relm:str protected-dir-regexp:str
   ;                            (listof (list user:sym password:str))))

@@ -1,22 +1,15 @@
+; This file is misnamed since it does not define unit signatures
+; directly anymore.  See "sig.ss" for signatures.  This file's purpose
+; is to provide the minimum stuff that a servlet needs.  The file
+; "servlet-helpers.ss" includes more functions that servlets often use.
 (module servlet-sig mzscheme
-  (provide web-server^
-           servlet^
-           (struct response/full (code message seconds mime extras body))
+  (require "sig.ss")
+  (provide (struct response/full (code message seconds mime extras body))
            (struct response/incremental ())
            (struct request (method uri headers host-ip client-ip))
            (rename request-bindings request-bindings/raw)
-           (rename get-parsed-bindings request-bindings))
-  (require (lib "unitsig.ss"))
-
-  (define-signature web-server^
-    (serve
-     ; for servlet-helpers
-     extract-user-pass
-     ; for environment:
-     server-loop))
-  
-  (define-signature servlet^
-    (initial-request send/suspend send/finish send/back send/forward adjust-timeout!))
+           (rename get-parsed-bindings request-bindings)
+	   (all-from "sig.ss"))
   
   ; more here - these should really have a common super type, but I don't want to break
   ; the existing interface.

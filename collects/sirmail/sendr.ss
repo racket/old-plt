@@ -448,8 +448,9 @@
                                                  [(7bit) (lf->crlf content)]))))])
                                  (send (send i get-editor) insert (enclosure-name enc))
                                  (send i user-data enc)
-                                 (unless (memq enclosure-list (send mailer-frame get-children))
-                                   (send (send mailer-frame get-area-container) add-child enclosure-list)))))))))
+				 (let ([p (send mailer-frame get-area-container)])
+				   (unless (memq enclosure-list (send p get-children))
+				     (send p add-child enclosure-list))))))))))
 	(make-object separator-menu-item% file-menu)
 	(make-object (class menu% 
 		       (inherit get-items)

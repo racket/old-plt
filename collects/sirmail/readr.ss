@@ -1205,10 +1205,12 @@
               [(send evt button-up?)
 	       (when dragging-item
                  (send (get-editor) set-cursor plain-cursor)
-		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))]
+			      [(ditem) dragging-item])
+		   (set! dragging-item #f)
 		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
 		     (if (string? mailbox-name)
-                         (let* ([user-data (send dragging-item user-data)]
+                         (let* ([user-data (send ditem user-data)]
                                 [item (assoc user-data mailbox)])
                            (when item
 			     (header-changing-action
@@ -1221,8 +1223,7 @@
 				     (copy-messages-to (list item) mailbox-name)
 				     (purge-messages (list item))))
 				 void)))))
-                         (status ""))))
-                 (set! dragging-item #f))]
+                         (status "")))))]
               [else
                (when (and dragging-item
 			  (not (and (or (send evt leaving?)

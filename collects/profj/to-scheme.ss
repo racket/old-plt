@@ -16,7 +16,7 @@
   
   ;(make-compilation-unit (list string) (list syntax) (list location) (list (list string)))
   (define-struct compilation-unit (contains code locations depends))
-
+  
   
   ;File takes java AST as defined by ast.ss and produces
   ;semantically (hopefully) equivalent scheme code
@@ -39,17 +39,18 @@
     (lambda (oddness sexpression source)
       (datum->syntax-object (or oddness (syntax-location)) sexpression source)))
   
-  ;------------------------------------------------------------------------------------------------------------------------------------
+  ;-------------------------------------------------------------------------------------------------------------
   
   ;Type abbreviation
   
-  ;The value of this will vary based on information I have at a given time, as well as whether location is from source file or not
+  ;The value of this will vary based on information I have at a given time, 
+  ;as well as whether location is from source file or not
   ;SrcList  => boolean
   ;         |  (list symbol int)
   ;         |  (list symbol int int int)
   
   
-  ;-----------------------------------------------------------------------------------------------------------------------------
+  ;------------------------------------------------------------------------------------------------------------
   ;Helper functions
   ;Functions which are used throughout the transformation
   
@@ -59,7 +60,7 @@
       (cond
         ((symbol? name) name)
         ((string? name) (string->symbol name))
-        ;;PROBLEM!!! This is not a good method. Just a temporary solution until I figure out how the different directories will be laid out!!!
+        ;PROBLEM might not be best method
         ((pair? name) (string->symbol (apply string-append (map (lambda (s) (string-append s ".")) name))))
         (else 
          (error 'build-identifier (format "Given ~s" name))
@@ -103,7 +104,7 @@
   (define create-set-name
     (lambda (name . args)
       (build-identifier (format "~a-~a-set!" (if (null? args) (class-name) (car args)) name))))
-
+  
   ;Methods to determine member restrictions
   ;make-mod-test: symbol -> (list -> bool)
   (define (make-mod-test acc) (lambda (m) (memq acc m)))
@@ -113,7 +114,7 @@
   (define static? (make-mod-test 'static))
   (define abstract? (make-mod-test 'abstract))
   (define final? (make-mod-test 'final))
-
+  
   ;retrieves static members from non-static
   ;get-statics: (list member) -> (list member)
   (define get-statics
@@ -139,14 +140,14 @@
           (create-syntax #f
                          (build-identifier (get-class-string name))
                          (build-src (name-src name))))))
-
+  
   ;get-class-string: name -> string
   (define get-class-string
     (lambda (name)
       (format "~a~a" (apply string-append (map (lambda (s)
                                                  (string-append s "."))
                                                (map id-string (name-path name))))
-                     (id-string (name-id name)))))
+              (id-string (name-id name)))))
   
   ;build-id-name: string -> string
   (define (build-var-name id) (format "~a-f" id))
@@ -256,7 +257,7 @@
              (in-cycle? 
               (lambda (def)
                 (eq? 'in-cycle (hash-table-get cycle def (not-found def 'not-in-cycle cycle)))))
-  
+             
              ;find-cycle: def -> void
              (find-cycle 
               (lambda (def)
@@ -267,7 +268,7 @@
                                (hash-table-put! cycle reqD 'in-cycle)
                                (find-cycle def))))
                           (filter (lambda (x) x) (map find (def-uses def))))))
-               
+             
              ;exists-path-to-cycle: def -> bool
              (exists-path-to-cycle? 
               (lambda (def)
@@ -280,7 +281,7 @@
                                              (filter (lambda (x) x) (map find (def-uses def))))))
                   (and (not (null? reqs-in-cycle))
                        (hash-table-put! cycle def 'in-cycle)))))
-
+             
              ;dependence-on-cycle: req -> bool
              (dependence-on-cycle
               (lambda (reqD)
@@ -293,7 +294,7 @@
               (lambda (reqD def)
                 (member (make-req (id-string (def-name def)) (get-package def type-recs))
                         (def-uses reqD))))
-  
+             
              ;find: req -> (U #f def)
              (find 
               (lambda (req)
@@ -321,7 +322,7 @@
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))
-
+  
   
   (define (make-composite-name d)
     (build-identifier (string-append (id-string (header-id (if (class-def? d)
@@ -349,21 +350,24 @@
            (reqs (filter-reqs group-reqs defs type-recs)))
       (values (if (> (length translated-defs) 1)
                   (cons (make-syntax #f `(module ,(module-name) mzscheme
-                                                    (require (lib "class.ss")
-                                                             (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
-                                                             ,@(translate-require reqs type-recs))
-                                                    ,@(map car translated-defs))
-                                              #f)
+                                           (require (lib "class.ss")
+                                                    (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
+                                                    ,@(translate-require reqs type-recs))
+                                           ,@(map car translated-defs))
+                                     #f)
                         (map cadr translated-defs))
-                  (list (make-syntax #f `(module ,(build-identifier (regexp-replace "-composite" (symbol->string (module-name)) ""))
-                                                    mzscheme
-                                                    (require (lib "class.ss")
-                                                             (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
-                                                             ,@(translate-require (map (lambda (r) (list (def-file (car defs)) r))
-                                                                                       (def-uses (car defs)))
-                                                                                  type-recs))
-                                                    ,(car (car translated-defs)))
-                                              #f)))
+                  (list (make-syntax #f 
+                                     `(module ,(build-identifier (regexp-replace "-composite" 
+                                                                                 (symbol->string (module-name)) 
+                                                                                 ""))
+                                        mzscheme
+                                        (require (lib "class.ss")
+                                                 (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
+                                                 ,@(translate-require (map (lambda (r) (list (def-file (car defs)) r))
+                                                                           (def-uses (car defs)))
+                                                                      type-recs))
+                                        ,(car (car translated-defs)))
+                                     #f)))
               (filter (lambda (req) (not (member req reqs)))
                       (map (lambda (r-pair) (cadr r-pair)) group-reqs)))))
   
@@ -419,7 +423,7 @@
                              (cons (req-class req) (req-path req))
                              err))
                 (translate-require (cdr reqs) type-recs)))))
-        
+  
   ;translate-implements: (list name) -> (list syntax)
   (define (translate-implements imp)
     (map (lambda (i)
@@ -431,7 +435,7 @@
                  (create-syntax #f (build-identifier (append (map id-string path) (list st)))
                                 (build-src (name-src i))))))
          imp))
-
+  
   
   ;Converted
   ;translate-class: class-def type-records -> (list syntax syntax)
@@ -453,7 +457,7 @@
         (class-override-table (make-hash-table))
         
         (send type-recs set-location! (loc))
-
+        
         (let* ((class (translate-id (class-name) 
                                     (id-src (header-id header))))
                (overridden-methods (get-overridden-methods (append (accesses-public methods) 
@@ -479,7 +483,7 @@
                                    ,@(map build-identifier static-field-names)
                                    ,@static-field-setters
                                    ,@field-getters/setters)))
-                    
+          
           (list `(begin ,provides
                         ,(create-local-names (append (make-method-names (accesses-private methods)
                                                                         (get-statics (accesses-private methods))
@@ -550,7 +554,9 @@
                                                                            (map modifier-kind (field-modifiers f)))))
                                                          (accesses-static fields)))
                         ,@(create-static-methods (append static-method-names
-                                                         (make-static-method-names (get-statics (accesses-private methods)) type-recs))
+                                                         (make-static-method-names 
+                                                          (get-statics (accesses-private methods)) 
+                                                          type-recs))
                                                  (append (accesses-static methods)
                                                          (get-statics (accesses-private methods)))
                                                  type-recs)
@@ -565,8 +571,8 @@
                                                                  type-recs))
                                (members-static-init class-members)))
                 (make-syntax #f
-                                      `(module ,(build-identifier (class-name)) mzscheme (require ,(module-require)) ,provides)
-                                      #f))))))
+                             `(module ,(build-identifier (class-name)) mzscheme (require ,(module-require)) ,provides)
+                             #f))))))
   
   ;Code to separate different member types for easier access
   ;(make-accesses (list member) (list member) (list member) ...)
@@ -615,7 +621,7 @@
                                   ((public? modifiers) (update set-accesses-public! current accesses-public h))
                                   (else (update set-accesses-package! current accesses-package h)))))))))
       separate))
-             
+  
   ;separate-methods: (list method) accesses -> accesses
   (define separate-methods (make-access-separator method-modifiers))  
   ;separate-fields: (list field) accesses -> accesses
@@ -642,7 +648,7 @@
     (map (lambda (n)
            (if (null? (name-path n))
                (translate-id (id-string (name-id n))
-                            (id-src (name-id n)))
+                             (id-src (name-id n)))
                (create-syntax #f (build-identifier (append (map id-string (name-path n))
                                                            (list (id-string (name-id n)))))
                               (build-src (name-src n)))))
@@ -659,14 +665,14 @@
              (source (build-src (interface-def-src class)))
              (interface (create-syntax #f 'interface (build-src (interface-def-key-src class))))
              (members (separate-members (interface-def-members class))))
-
+        
         (loc (interface-def-file class))
         (class-name (id-string (header-id header)))
         (send type-recs set-location! (loc))
         
         (let* ((static-field-names (make-static-field-names (members-field members)))
                (provides `(provide ,name ,@static-field-names)))
-        
+          
           (list `(begin ,provides
                         (define ,syntax-name (,interface ,(translate-parents (header-extends header))
                                               ,@(make-method-names (members-method members) null type-recs)))
@@ -676,8 +682,9 @@
   ;override?: symbol type-records -> bool
   (define (override? method-name type-recs)
     (let* ((internal-error (lambda () (error 'override "Internal Error class or it's parent not in class record table")))
-           (class-record (send type-recs get-class-record (make-ref-type (class-name)
-                                                                         (send type-recs lookup-path (class-name) internal-error))
+           (class-record (send type-recs get-class-record 
+                               (make-ref-type (class-name)
+                                              (send type-recs lookup-path (class-name) internal-error))
                                internal-error))
            (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) internal-error)))
       (memq method-name
@@ -705,7 +712,7 @@
                                                     (map field-type (method-parms m)))))
                             type-recs)))
             methods))
-
+  
   ;make-method-names: (list methods) (list methods) type-records -> (list symbol)
   (define (make-method-names methods minus-methods type-recs)
     (if (null? methods)
@@ -717,16 +724,13 @@
                                                             (map field-type (method-parms (car methods))))))
                   (make-method-names (cdr methods) minus-methods type-recs)))))
   
-  ;Type is passed in for possible future name mangling
   ;translate-method: type-spec (list symbol) id (list parm) statement src type-records -> syntax
   (define (translate-method type modifiers id parms block src type-recs)
     (let* ((final (final? modifiers))
-           (method-string ((if (constructor? (id-string id))
-                                           build-constructor-name
-                                           build-method-name)
-                                       (id-string id)
-                                       (map (lambda (t) (type-spec-to-type t 'full type-recs))
-                                            (map field-type parms))))
+           (method-string ((if (constructor? (id-string id)) build-constructor-name build-method-name)
+                           (id-string id)
+                           (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                                (map field-type parms))))
            (method-name (translate-id method-string (id-src id)))
            (over? (overrider? (build-identifier method-string) type-recs))
            (definition (cond
@@ -735,9 +739,10 @@
                          (final 'define/public-final)
                          (else 'define/public))))
       (create-syntax #f
-                     `(,definition ,method-name ,(translate-method-body parms block type-recs))
+                     `(,definition ,method-name 
+                       ,(translate-method-body method-string parms block modifiers type type-recs))
                      (build-src src))))
-
+  
   ;make-static-method-names: (list method) type-recs -> (list string)
   (define (make-static-method-names methods type-recs)
     (map (lambda (m)
@@ -754,23 +759,47 @@
               (method (car methods)))
           (cons (create-syntax #f
                                `(define ,(translate-id name (id-src (method-name method)))
-                                  ,(translate-method-body (method-parms method)
+                                  ,(translate-method-body name
+                                                          (method-parms method)
                                                           (method-body method)
+                                                          (map modifier-kind (method-modifiers method))
+                                                          (method-type method)
                                                           type-recs))
                                (build-src (method-src method)))
                 (create-static-methods (cdr names) (cdr methods) type-recs)))))
   
-  ;translate-method-body (list field) statement type-record -> syntax
-  (define (translate-method-body parms block type-recs)
-    (if block
-        (make-syntax #f
-                     `(lambda ,(translate-parms parms)
-                        (let/ec return-k
-                          ,(translate-statement block type-recs)))
-                     #f)
-        (make-syntax #f 
-                     `(lambda ,(translate-parms parms) (void))
-                     #f)))
+  ;translate-method-body (list field) statement (list symbol) type-spec type-record -> syntax
+  (define (translate-method-body method-name parms block modifiers rtype type-recs)
+    (let ((parms (translate-parms parms))
+          (void? (eq? (type-spec-name rtype) 'void))
+          (native? (memq 'native modifiers))
+          (static? (memq 'static modifiers)))
+      (make-syntax #f
+                   (cond
+                     ((and block void?)
+                      `(lambda ,parms 
+                         (let/ec return-k
+                           ,(translate-statement block type-recs)
+                           (void))))
+                     ((and block (not void?))
+                      `(lambda ,parms
+                         (let/ec return-k
+                           ,(translate-statement block type-recs))))
+                     ((and (not block) native? void? (not static?))
+                      `(lambda ,parms
+                         (,(build-identifier (string-append method-name "-native")) this ,@parms)
+                         (void)))
+                     ((and (not block) native? (not static?))
+                      `(lambda ,parms
+                         (,(build-identifier (string-append method-name "-native")) this ,@parms)))
+                     ((and (not block) native? void? static?)
+                      `(lambda ,parms
+                         (,(build-identifier (string-append method-name "-native")) ,@parms)
+                         (void)))
+                     ((and (not block) native? static?)
+                      `(lambda ,parms
+                         (,(build-identifier (string-append method-name "-native")) ,@parms))))
+                   #f)))
   
   ;translate-parms: (list field) -> (list syntax)
   (define (translate-parms parms)
@@ -778,7 +807,7 @@
            (translate-id (build-var-name (id-string (field-name parm)))
                          (id-src (field-name parm))))
          parms))
-
+  
   ;make-field-accessor-names: (list fields) -> (list symbol)
   (define (make-field-accessor-names fields)
     (if (null? fields)
@@ -805,10 +834,10 @@
                                                      (class-field-mutator ,class ,quote-name)) #f))
                             null))
                   (create-field-accessors (if final (cdr names) (cddr names)) (cdr fields))))))
-
+  
   (define (make-static-field-setters-names fields) 
     (map (lambda (f) (create-set-name (id-string (field-name f)))) fields))
-
+  
   (define (create-static-setters names fields)
     (if (null? names)
         null
@@ -816,7 +845,8 @@
               (field (car fields)))
           (cons (make-syntax #f
                              `(define (,name my-val)
-                                (set! ,(build-identifier (build-var-name (build-static-name (id-string (field-name field))))) my-val))
+                                (set! ,(build-identifier (build-var-name (build-static-name (id-string (field-name field))))) 
+                                      my-val))
                              #f)
                 (create-static-setters (cdr names) (cdr fields))))))
   
@@ -830,14 +860,15 @@
                (getter (create-get-name s-name))
                (setter (create-set-name s-name)))
           (append (list (make-syntax #f `(define (,getter my-val) ,name) (build-src (id-src (field-name field))))
-                        (make-syntax #f `(define (,setter m-obj my-val) (set! ,name my-val)) (build-src (id-src (field-name field)))))
+                        (make-syntax #f `(define (,setter m-obj my-val) (set! ,name my-val)) 
+                                     (build-src (id-src (field-name field)))))
                   (create-private-setters/getters (cdr fields))))))
-                                           
+  
   
   
   (define (make-static-field-names fields)
     (map (lambda (f) (build-static-name (build-var-name (id-string (field-name f))))) fields))
-
+  
   (define (create-static-fields names fields)
     (if (null? names)
         null
@@ -858,7 +889,7 @@
         (if (or static? (private? access))
             (make-syntax #f `(define ,field-name ,value) (build-src src))
             (make-syntax #f `(field (,field-name ,value)) (build-src src))))))
-
+  
   ;translate-field-body (U bool var-init) type -> syntax
   (define (translate-field-body init? type)
     (if init?
@@ -873,7 +904,7 @@
     (translate-block (block-stmts body) (block-src body) type-recs))
   
   
-  ;-----------------------------------------------------------------------------------------------------------------------------------------------
+  ;-------------------------------------------------------------------------------------------------------------------------
   ;translate-statement
   ;translates a Java statement into a Scheme expresion. 
   ;raises an error if it has no implementation for a statement type
@@ -978,23 +1009,23 @@
   (define translate-while
     (lambda (cond body src)
       (make-syntax #f `(let/ec break-k
-                           (let loop ()
-                             (when ,cond
-                               ,body
-                               (loop))))
-                     (build-src src))))
+                         (let loop ()
+                           (when ,cond
+                             ,body
+                             (loop))))
+                   (build-src src))))
   
   ;Converted
   ;translate-do: syntax syntax src -> syntax
   (define translate-do
     (lambda (body cond src)
       (make-syntax #f `(begin ,body
-                                (let/ec break-k
-                                  (let loop ()
-                                    (when ,cond
-                                      ,body
-                                      (loop)))))
-                     (build-src src))))
+                              (let/ec break-k
+                                (let loop ()
+                                  (when ,cond
+                                    ,body
+                                    (loop)))))
+                   (build-src src))))
   
   ;Converted
   ;translate-for: (U (list statement) (list field)) syntax (list syntax) syntax src type-records-> syntax
@@ -1009,20 +1040,20 @@
             (source (build-src src)))
         (if (and (pair? init) (field? (car init)))
             (make-syntax #f `(letrec (,@(map (lambda (var)
-                                                        `(,(translate-id (build-var-name (id-string (field-name var)))
-                                                                         (id-src (field-name var)))
-                                                          ,(if (var-init? var)
-                                                               (if (array-init? (var-init-init var))
-                                                                   (initialize-array (array-init-vals (var-init-init var)) 
-                                                                                     (field-type var))
-                                                                   (translate-expression (var-init-init var)))
-                                                               (get-default-value (field-type var))))) 
-                                                      init))
-                                        ,loop) source)
+                                               `(,(translate-id (build-var-name (id-string (field-name var)))
+                                                                (id-src (field-name var)))
+                                                 ,(if (var-init? var)
+                                                      (if (array-init? (var-init-init var))
+                                                          (initialize-array (array-init-vals (var-init-init var)) 
+                                                                            (field-type var))
+                                                          (translate-expression (var-init-init var)))
+                                                      (get-default-value (field-type var))))) 
+                                             init))
+                               ,loop) source)
             (make-syntax #f `(begin
-                                 ,@(map (lambda (s) (translate-statement s type-recs)) init)
-                                 ,loop)
-                           source)))))
+                               ,@(map (lambda (s) (translate-statement s type-recs)) init)
+                               ,loop)
+                         source)))))
   
   ;Converted
   ;initialize-array: (list (U expression array-init)) type-spec string-> syntax
@@ -1051,14 +1082,14 @@
     (lambda (block catches finally key src type-recs)
       (let* ((handle (create-syntax #f 'with-handlers (build-src key)))
              (handlers (make-syntax #f `(,handle [ ,@(make-predicates catches type-recs) ]
-                                                  ,block)
-                                             (build-src src))))
+                                         ,block)
+                                    (build-src src))))
         (if finally
             (make-syntax #f
-                                  `(dynamic-wind void
-                                                 (lambda () ,handlers)
-                                                 (lambda () ,finally))
-                                  #f)
+                         `(dynamic-wind void
+                                        (lambda () ,handlers)
+                                        (lambda () ,finally))
+                         #f)
             handlers))))
   
   ;Converted
@@ -1074,22 +1105,22 @@
                      (if isRuntime?
                          (make-syntax #f `exn? (build-src var-src))
                          (make-syntax #f 
-                                        `(javaException:exception-is-a? ,class-name)
-                                        (build-src var-src))))
+                                      `(javaException:exception-is-a? ,class-name)
+                                      (build-src var-src))))
                     (parm (translate-id (build-var-name (id-string (field-name catch-var)))
                                         (id-src (field-name catch-var))))
                     (block (make-syntax #f
-                                          `(lambda (,parm)
-                                             ,(translate-statement (catch-body catch) type-recs))
-                                          (build-src (catch-src catch)))))
+                                        `(lambda (,parm)
+                                           ,(translate-statement (catch-body catch) type-recs))
+                                        (build-src (catch-src catch)))))
                (make-syntax #f `(,type                       
-                                          ,(if isRuntime?
-                                               `(lambda (exn)
-                                                  (if (javaException:supported-runtime-exception? exn)
-                                                      (,block (javaException:exception-to-class exn))
-                                                      (raise exn)))
-                                               block))
-                                     (build-src (catch-src catch)))))
+                                 ,(if isRuntime?
+                                      `(lambda (exn)
+                                         (if (javaException:supported-runtime-exception? exn)
+                                             (,block (javaException:exception-to-class exn))
+                                             (raise exn)))
+                                      block))
+                            (build-src (catch-src catch)))))
            catches)))
   
   ;Determines if the given type represents a class that is a descendent of the RuntimeException class
@@ -1105,16 +1136,16 @@
   (define translate-switch
     (lambda (expr cases src type-recs)
       (make-syntax #f
-                     `(case ,expr
-                        ,@(map (lambda (case) 
-                                 (if (eq? (caseS-constant case) 'default)
-                                     (if (null? (caseS-body case))
-                                         `(else (void))
-                                         `(else ,(translate-block (caseS-body case) (caseS-src case) type-recs)))
-                                     `((,(translate-expression (caseS-constant case))
-                                        ,(translate-block (caseS-body case) (caseS-src case) type-recs)))))
-                               cases))
-                     (build-src src))))
+                   `(case ,expr
+                      ,@(map (lambda (case) 
+                               (if (eq? (caseS-constant case) 'default)
+                                   (if (null? (caseS-body case))
+                                       `(else (void))
+                                       `(else ,(translate-block (caseS-body case) (caseS-src case) type-recs)))
+                                   `((,(translate-expression (caseS-constant case))
+                                      ,(translate-block (caseS-body case) (caseS-src case) type-recs)))))
+                             cases))
+                   (build-src src))))
   
   ;Converted
   ;translate-block: (list (U Statement (U var-decl var-init))) src type-recs -> syntax
@@ -1135,19 +1166,19 @@
                   (let* ((is-var-init? (var-init? var))
                          (id (translate-id (build-var-name (id-string (field-name var))) (id-src (field-name var)))))
                     (list (make-syntax #f 
-                                         `(letrec
-                                              ((,id ,(if is-var-init?
-                                                         (if (array-init? (var-init-init var))
-                                                             (initialize-array (array-init-vals (var-init-init var))
-                                                                               (field-type var))
-                                                             (translate-expression (var-init-init var)))
-                                                         (get-default-value (field-type var)))))
-                                            ,@(if (null? statements)
-                                                  (list `(void))
-                                                  (translate statements)))
-                                         (build-src (if is-var-init?
-                                                        (var-init-src var)
-                                                        (var-decl-src var)))))))))
+                                       `(letrec
+                                            ((,id ,(if is-var-init?
+                                                       (if (array-init? (var-init-init var))
+                                                           (initialize-array (array-init-vals (var-init-init var))
+                                                                             (field-type var))
+                                                           (translate-expression (var-init-init var)))
+                                                       (get-default-value (field-type var)))))
+                                          ,@(if (null? statements)
+                                                (list `(void))
+                                                (translate statements)))
+                                       (build-src (if is-var-init?
+                                                      (var-init-src var)
+                                                      (var-decl-src var)))))))))
         (if (null? statements)
             (make-syntax #f `void (build-src src))
             (make-syntax #f `(begin ,@(translate statements)) (build-src src))))))
@@ -1167,27 +1198,27 @@
       (if (not id)
           (make-syntax #f `(break-k (loop)) (build-src src))
           (make-syntax #f `(,(translate-id (string-append (id-string id) "-k") (id-src id)) 
-                                     (,(build-identifier (string-append (id-string id) "-continue"))))
-                                (build-src src)))))
+                            (,(build-identifier (string-append (id-string id) "-continue"))))
+                       (build-src src)))))
   
   ;translate-label: id syntax src -> syntax
   ;NOTE: probably does not have correct behavior
   (define translate-label
     (lambda (label stmt src)
       (make-syntax #f
-                     `(let/ec ,(translate-id (string-append (id-string label) "-k") (id-src label))
-                        (letrec ((,(build-identifier (string-append (id-string label) "-continue"))
-                                  (lambda () ,stmt)))
-                          (,(build-identifier (string-append (id-string label) "-continue")))))
-                     (build-src src))))
+                   `(let/ec ,(translate-id (string-append (id-string label) "-k") (id-src label))
+                      (letrec ((,(build-identifier (string-append (id-string label) "-continue"))
+                                (lambda () ,stmt)))
+                        (,(build-identifier (string-append (id-string label) "-continue")))))
+                   (build-src src))))
   
   ;translate-synchronized: syntax syntax src -> syntax
   ;PROBLEM! Does nothing
   (define translate-synchronized
     (lambda (expr stmt src)
       (make-syntax #f
-                     `(begin ,expr ,stmt)
-                     (build-src src))))
+                   `(begin ,expr ,stmt)
+                   (build-src src))))
   
   ;------------------------------------------------------------------------------------------------------------------------
   ;translate-expression
@@ -1312,11 +1343,14 @@
           ((+)
            (cond 
              ((and (is-string-type? type) (is-string-type? left-type))
-              (make-syntax #f `(send ,left |concat_java.lang.String| (javaRuntime:convert-to-string ,right)) source))
+              (make-syntax #f `(send ,left concat_java.lang.String (javaRuntime:convert-to-string ,right)) source))
              ((and (is-string-type? type) (is-string-type? right-type))
-              (make-syntax #f `(send (javaRuntime:convert-to-string ,left) |concat_java.lang.String| ,right) source))
+              (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String ,right) source))
              ((is-string-type? type)
-              (make-syntax #f `(send (javaRuntime:convert-to-string ,left) |concat_java.lang.String| (javaRuntime:convert-to-string ,right)) source))
+              (make-syntax #f 
+                           `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String 
+                                  (javaRuntime:convert-to-string ,right)) 
+                           source))
              (else
               (create-syntax #f `(,op-syntax ,left ,right) source))))
           ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
@@ -1353,10 +1387,8 @@
                 (expr (if obj (translate-expression obj))))
            (cond
              ((var-access-static? access)
-              (if (>= (length (var-access-class access)) 1)
-                  (translate-id (build-var-name (build-static-name field-string (car (var-access-class access))))
-                                field-src)
-                  (error 'translate-access "Internal error: Translate access given list with no elements for class name")))
+              (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
+                            field-src))
              ((eq? 'array (var-access-class access))
               (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src)))
              (else
@@ -1382,10 +1414,11 @@
           ((special-name? method-name) 
            (create-syntax #f
                           `(send ,(if expr expression 'this) 
-                                 ,(build-identifier (build-constructor-name (if (equal? (special-name-name method-name) "super")
-                                                                                (parent-name)
-                                                                                (class-name)) 
-                                                                            (method-record-atypes method-record)))
+                                 ,(build-identifier (build-constructor-name 
+                                                     (if (equal? (special-name-name method-name) "super")
+                                                         (parent-name)
+                                                         (class-name)) 
+                                                     (method-record-atypes method-record)))
                                  ,@args) 
                           (build-src src)))
           
@@ -1399,7 +1432,8 @@
              (cond 
                ((special-name? expr)
                 (create-syntax #f
-                               `(send this ,(translate-id (if (and (equal? (special-name-name expr) "super") (overridden? m-name))
+                               `(send this ,(translate-id (if (and (equal? (special-name-name expr) "super") 
+                                                                   (overridden? m-name))
                                                               (format "super.~a" m-name)
                                                               m-name)
                                                           (id-src method-name))
@@ -1456,20 +1490,20 @@
   (define translate-type-spec
     (lambda (type)
       (make-syntax #f
-                     `(make-runtime-type ,(if (symbol? (type-spec-name type))
-                                              `(quote ,(type-spec-name type))
-                                              ;Come Back : losses src locations
-                                              (build-identifier (append (map id-string (name-path (type-spec-name type)))
-                                                                        (list (id-string (name-id (type-spec-name type)))))))
-                                         ,(type-spec-dim type))
-                     (build-src (type-spec-src type)))))
+                   `(make-runtime-type ,(if (symbol? (type-spec-name type))
+                                            `(quote ,(type-spec-name type))
+                                            ;Come Back : losses src locations
+                                            (build-identifier (append (map id-string (name-path (type-spec-name type)))
+                                                                      (list (id-string (name-id (type-spec-name type)))))))
+                                       ,(type-spec-dim type))
+                   (build-src (type-spec-src type)))))
   
   ;converted
   ;translate-array-access: syntax syntax src -> syntax
   (define translate-array-access
     (lambda (array index src)
       (make-syntax #f `(send ,array access ,index) 
-                     (build-src src))))
+                   (build-src src))))
   
   ;converted
   ;translate-cond: syntax syntax syntax src -> syntax
@@ -1482,32 +1516,32 @@
   (define translate-post-expr
     (lambda (expr op key src)
       (make-syntax #f `(begin0
-                           ,expr
-                           (set! ,expr ( ,(create-syntax #f (if (eq? op '++) 'add1 'sub1) (build-src key))
-                                         ,expr)))
-                     (build-src src))))
+                         ,expr
+                         (set! ,expr ( ,(create-syntax #f (if (eq? op '++) 'add1 'sub1) (build-src key))
+                                       ,expr)))
+                   (build-src src))))
   
   ;converted
   ;translate-pre-expr: symbol syntax src src -> syntax
   (define translate-pre-expr
     (lambda (op expr key src)
       (make-syntax #f
-                     `(begin
-                        (set! ,expr (,(create-syntax #f (if (eq? op '++) 'add1 'sub1) (build-src key))
-                                     ,expr))
-                        ,expr)
-                     (build-src src))))
+                   `(begin
+                      (set! ,expr (,(create-syntax #f (if (eq? op '++) 'add1 'sub1) (build-src key))
+                                   ,expr))
+                      ,expr)
+                   (build-src src))))
   
   ;converted
   ;translate-unary: symbol syntax src src -> syntax
   (define translate-unary
     (lambda (op expr key src)
       (make-syntax #f  (case op
-                           ((-) `(,(create-syntax #f '- (build-src key)) ,expr))
-                           ((!) `(,(create-syntax #f 'not (build-src key)) ,expr))
-                           ((~) `(,(create-syntax #f '- (build-src key)) (- ,expr) 1))
-                           ((+) (error 'translate-unary "translate unary given +, which I don't know how to deal with at this time")))
-                     (build-src src))))
+                         ((-) `(,(create-syntax #f '- (build-src key)) ,expr))
+                         ((!) `(,(create-syntax #f 'not (build-src key)) ,expr))
+                         ((~) `(,(create-syntax #f '- (build-src key)) (- ,expr) 1))
+                         ((+) expr))
+                   (build-src src))))
   
   ;converted
   ;translate-cast: type-spec syntax src
@@ -1516,10 +1550,12 @@
       (if (symbol? (type-spec-name type))
           (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type))) (build-src src))
           (make-syntax #f `(if (is-a? ,expr ,(get-class-name type))
-                                        ,expr
-                                        (raise (make-exn (format "MissCastClassException: ~s" (send (send ,expr |toString|) get-mzscheme-string))
-                                                         (current-continuation-marks))))
-                                (build-src src)))))
+                               ,expr
+                               (raise (make-exn 
+                                       (format "MissCastClassException: ~s" 
+                                               (send (send ,expr toString) get-mzscheme-string))
+                                       (current-continuation-marks))))
+                       (build-src src)))))
   
   ;converted
   ;translate-instanceof: syntax type-spec src -> syntax
@@ -1548,7 +1584,7 @@
                   (set-h 
                    (lambda (id)
                      (make-syntax #f `(begin (,(create-syntax #f 'set! (build-src key))
-                                                       ,id ,(expression id)) ,id) src-h))))
+                                              ,id ,(expression id)) ,id) src-h))))
              (cond
                ((local-access? access)
                 (set-h (translate-id (build-var-name (id-string (local-access-name access)))
@@ -1569,9 +1605,9 @@
                      (let ((setter (create-set-name field (var-access-class vaccess)))
                            (getter (create-get-name field (var-access-class vaccess))))
                        (make-syntax #f `(begin 
-                                            (,setter ,expr ,(expression `(,getter ,expr)))
-                                            (,getter ,expr))
-                                      src-h)))))))))))))
+                                          (,setter ,expr ,(expression `(,getter ,expr)))
+                                          (,getter ,expr))
+                                    src-h)))))))))))))
   
   ;converted
   ;translate-array-mutation: array-access (syntax -> (list symbol syntax syntax)) expression src -> syntax
@@ -1580,10 +1616,10 @@
       (let ((array-name (translate-expression (array-access-name array)))
             (array-index (translate-expression (array-access-index array))))
         (make-syntax #f
-                       `(begin 
-                          (send ,array-name set ,array-index ,(expression `(send ,array-name access ,array-index)))
-                          (send ,array-name access ,array-index))
-                       (build-src src)))))
+                     `(begin 
+                        (send ,array-name set ,array-index ,(expression `(send ,array-name access ,array-index)))
+                        (send ,array-name access ,array-index))
+                     (build-src src)))))
   
   ;translate-id: string src -> syntax
   (define translate-id

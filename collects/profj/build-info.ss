@@ -62,7 +62,8 @@
       
       ;Add all defs in this file to environment
       (for-each (lambda (def)
-                  (let ((defname (cons (id-string (def-name def)) pname)))
+                  (let ((defname (cons (id-string (def-name def)) pname))
+                        (native-name (cons (string-append (id-string (def-name def)) "-native-methods") pname)))
                     (send type-recs add-to-env (car defname) pname current-loc)
                     (when (execution?)
                       (send type-recs add-to-env (car defname) pname 'interactions))
@@ -72,6 +73,12 @@
                                                 pname 
                                                 (find-directory pname (lambda () (list (build-path 'same))))
                                                 #t))
+                    (send type-recs add-class-req native-name #f current-loc)
+                    (send type-recs add-require-syntax native-name
+                          (build-require-syntax (car native-name)
+                                                pname
+                                                (find-directory pname (lambda () (list (build-path 'same))))
+                                                #f))
                     (send type-recs add-to-records defname
                           (lambda () (process-class/iface def pname type-recs (null? args) level)))))
                   (package-defs prog))
@@ -632,7 +639,8 @@
          (or (and (equal? (method-record-name method)
                           (method-record-name (car methods)))
                   (or (or (eq? level 'beginner) (eq? level 'intermediate))
-                      (andmap type=? (method-record-atypes method) (method-record-atypes (car methods))))
+                      (and (= (length (method-record-atypes method)) (length (method-record-atypes (car methods))))
+                           (andmap type=? (method-record-atypes method) (method-record-atypes (car methods)))))
                   (not (type=? (method-record-rtype method) (method-record-rtype (car methods)))))
              (method-conflicts? method (cdr methods) level))))                              
 
@@ -1025,7 +1033,9 @@
          ((final) 
           (format "Final classes may never be extended, therefore final class ~a may not be extended by ~a" s n))
          ((implement) 
-          (format "A class may only declare an implemented interface once, this class declares it is implementing ~a more than once" s))
+          (format 
+           "A class may only declare an implemented interface once, this class declares it is implementing ~a more than once"
+           s))
          ((ifaces) 
           (format "An interface may only declare each extended interface once, ~a declares this interface more than once" s))
          ((iface-class) 
@@ -1043,7 +1053,9 @@
        m-name
        (case kind
          ((illegal-abstract)
-          (format "Abstract method ~a is not allowed in non-abstract class ~a, abstract methods must be in abstract classes" m-name class))
+          (format 
+           "Abstract method ~a is not allowed in non-abstract class ~a, abstract methods must be in abstract classes" 
+           m-name class))
          ((repeated)
           (format "~a ~a has already been written in this class (~a) and cannot be written again" 
                   (if ctor? "Constructor" "Method") m-name class))
@@ -1059,11 +1071,13 @@
   ;not-ctor-error: string string src -> void
   (define (not-ctor-error meth class src)
     (let ((n (string->symbol meth)))
-      (raise-error n
-                   (format "Method ~a has no return type and does not have the same name as the class, ~a.~n
-                   Only constructors may have no return type, but must have the name of the class"
-                           n class)
-                   n src)))
+      (raise-error 
+       n
+       (format "~a~n~a"
+               (format "Method ~a has no return type and does not have the same name as the class, ~a"
+                       n class)
+               "Only constructors may have no return type, but must have the name of the class")
+       n src)))
 
   ;beginner-ctor-error: id src -> void
   (define (beginner-ctor-error class src) 
@@ -1090,16 +1104,22 @@
   
   ;inherited-throw-error:symbol string (list type) (list string) string type src -> void
   (define (inherited-throw-error kind m-name parms class parent throw src)
-    (raise-error 'throws
-                 (case kind
-                   ((num) 
-                    (format "Method ~a in ~a overrides a method from ~a: Method in ~a should throw no types if original doesn't"
-                            (method-name->ext-name m-name parms) (car class) parent (car class)))
-                   ((subclass)
-                    (format "Method ~a in ~a overrides from a method from ~a~n
-                             All types thrown by overriding method in ~a must be subtypes of original throws: ~a is not"
-                            (method-name->ext-name m-name parms) (car class) parent (car class) (type->ext-name throw))))
-                 'throws src))
+    (raise-error 
+     'throws
+     (case kind
+       ((num) 
+        (format 
+         "Method ~a in ~a overrides a method from ~a: Method in ~a should throw no types if original doesn't"
+         (method-name->ext-name m-name parms) (car class) parent (car class)))
+       ((subclass)
+        (let ((line1 (format "Method ~a in ~a overrides from a method from ~a"
+                             (method-name->ext-name m-name parms) (car class) parent))
+              (line2 
+               (format 
+                "All types thrown by overriding method in ~a must be subtypes of original throws: ~a is not"
+                (car class) (type->ext-name throw))))
+          (format "~a~n~a" line1 line2))))
+     'throws src))
                       
   ;return-error string (list type) (list string) type type src -> void
   (define (override-return-error name parms class ret old-ret src)
@@ -1107,9 +1127,11 @@
           (m-name (method-name->ext-name name parms)))
       (raise-error 
        name
-       (format "Method ~a of class ~a overrides an inherited method, in overriding the return type must remain the same~n
-                ~a's return has changed from ~a to ~a"
-               m-name (car class) m-name (type->ext-name old-ret) (type->ext-name ret))
+       (format 
+        "~a~n~a"
+        (format "Method ~a of class ~a overrides an inherited method, in overriding the return type must remain the same"
+                m-name (car class))
+        (format "~a's return has changed from ~a to ~a" m-name (type->ext-name old-ret) (type->ext-name ret)))
        name src)))
   
   ;override-access-error symbol symbol string (list type) (list string) string src -> void
@@ -1120,8 +1142,9 @@
                    (case kind
                      ((final) 
                       (if (eq? level 'full)
-                          (format "Method ~a in ~a attempts to override final method from ~a, final methods may not be overridden"
-                                  m-name (car class) parent)
+                          (format 
+                           "Method ~a in ~a attempts to override final method from ~a, final methods may not be overridden"
+                           m-name (car class) parent)
                           (format "Method ~a from ~a cannot be overridden in ~a" m-name parent (car class))))
                      ((static)
                       (format "Method ~a in ~a attempts to override static method from ~a, which is not allowed"
@@ -1130,8 +1153,9 @@
                       (format "Method ~a in ~a must be public to override public method from ~a, ~a is not public" 
                               m-name (car class) parent m-name))
                      ((protected) 
-                      (format "Method ~a in ~a must be public or protected to override protected method from ~a, it is neither"
-                              m-name (car class) parent))
+                      (format 
+                       "Method ~a in ~a must be public or protected to override protected method from ~a, it is neither"
+                       m-name (car class) parent))
                      ((package) 
                       (format "Method ~a in ~a must be public, or have no access modifier, to override method from ~a"
                               m-name (car class) parent)))
@@ -1141,8 +1165,9 @@
   (define (repeated-parm-error parm meth class)
     (let ((name (id->ext-name (field-name parm))))
       (raise-error name
-                   (format "Method parameters may not share names, ~a in ~a cannot have multiple parameters with the name ~a"
-                           meth (car class) name)
+                   (format 
+                    "Method parameters may not share names, ~a in ~a cannot have multiple parameters with the name ~a"
+                    meth (car class) name)
                    name (id-src (field-name parm)))))
 
   ;field-name-error: symbol id symbol src -> void
@@ -1151,7 +1176,9 @@
       (raise-error n
                    (case kind
                      ((field) 
-                      (format "Each field in a class must have a unique name. Multiple fields have been declared with the name ~a" n))
+                      (format 
+                       "Each field in a class must have a unique name. Multiple fields have been declared with the name ~a" 
+                       n))
                      ((method) 
                       (format "~a has been declared as a field and a method, which is not allowed" n))
                      ((class) 

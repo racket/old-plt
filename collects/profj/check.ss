@@ -459,6 +459,9 @@
                        'void
                        (type-spec-to-type (method-type method) level type-recs))))
       (when iface? (set! mods (cons 'abstract mods)))
+      (when (memq 'native mods)
+        (send type-recs add-req (make-req (string-append (car c-class) "-native-methods")
+                                          (send type-recs lookup-path (car c-class) (lambda () null)))))
       (if (or (memq 'abstract mods) (memq 'native mods))
           (when body
             (method-error (if (memq 'abstract mods) 'abstract 'native)
@@ -566,9 +569,11 @@
                  (case kind
                    ((no-reachable) (format "method ~a does not have a reachable return" method))
                    ((abstract)
-                    (format "abstract method ~a has an implementation, abstract methods maynot have implementations.~n
-                             Either a ';' should come after the header, or the method should not be abstract"
-                            method))
+                    (let ((line1 
+                           (format "abstract method ~a has an implementation, abstract methods maynot have implementations"
+                                   method))
+                          (line2 "Either a ';'should come after the header, or the method should not be abstract"))
+                      (format "~a~n~a" line1 line2)))
                    ((native) (format "native method ~a has an implementation which is not allowed" method)))
                  method src))
   
@@ -817,11 +822,12 @@
   
   ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) symbol type-records -> void
   (define (check-block stmts env check-s check-e level type-recs)
-    (let loop ((stmts stmts) (block-env env) (check-e (lambda (e) (check-e env))))
+    (let loop ((stmts stmts) (block-env env) (c-e (lambda (e) (check-e e env))))
       (cond 
         ((null? stmts) (void))
         ((field? (car stmts))
-         (loop (cdr stmts) (check-local-var (car stmts) block-env check-e level type-recs)
+         (loop (cdr stmts) 
+               (check-local-var (car stmts) block-env c-e level type-recs)
                (lambda (e) (check-e e block-env))))
         (else
          (check-s (car stmts) block-env)
@@ -883,8 +889,11 @@
        'return
        (case kind
          ((not-equal)
-          (format "type of returned expression must be equal to or a subclass of the declared return ~a: given ~a which does not meet the criteria"
-                  e g))
+          (let ((line1 
+                 (format "The return expression's type must be equal to or a subclass of the method's return ~a." e))
+                (line2
+                 (format "The given expression has type ~a which is not equivalent to the declared return" g)))
+            (format "~a~n~a" line1 line2)))
          ((void) "No value should be returned from void method, found a returned value")
          ((val)
           (format "Expected a return value assignable to ~a. No value was given" e)))
@@ -893,9 +902,10 @@
   ;illegal-redefinition: id src -> void
   (define (illegal-redefinition field src)
     (let ((f (id->ext-name field)))
-      (raise-error f
-                   (format "Variable name ~a has already been used and may not be reused. Another name must be chosen" f)
-                   f src)))
+      (raise-error 
+       f
+       (format "Variable name ~a has already been used and may not be reused. Another name must be chosen" f)
+       f src)))
   
   ;variable-type-error: id type type src -> void
   (define (variable-type-error field given expt src)
@@ -1192,7 +1202,7 @@
                                   (expr-src exp)
                                   (make-field-access #f
                                                      (cadr acc)
-                                                     (make-var-access #t null first-acc)))
+                                                     (make-var-access #t #f #f first-acc)))
                      (cddr acc)))
                    ((and first-binding (properties-local? (var-type-properties first-binding)))
                     (build-field-accesses
@@ -1204,7 +1214,7 @@
                          (make-access #f (expr-src exp)
                                       (make-field-access #f
                                                          (car acc)
-                                                         (make-var-access #t null c-class)))
+                                                         (make-var-access #t #f #f c-class)))
                          (cdr acc))
                         (if interactions?
                             (build-field-accesses (make-access #f (expr-src exp) (make-local-access (car acc)))
@@ -1238,8 +1248,9 @@
                              (lambda () 
                                (let* ((class? (member fname (send type-recs get-class-env)))
                                       (method? (not (null? (get-method-records fname obj-record)))))
-                                 (field-lookup-error (if class? 'class-name 
-                                                         (if method? 'method-name 'not-found)) name obj-type src))))))
+                                 (field-lookup-error 
+                                  (if class? 'class-name 
+                                      (if method? 'method-name 'not-found)) name obj-type src))))))
         ((array-type? obj-type)
          (unless (equal? fname "length")
            (field-lookup-error 'array name obj-type src))
@@ -1395,7 +1406,8 @@
                (class? (member (id-string name) (send type-recs get-class-env)))
                (field? (cond
                          ((array-type? exp-type) (equal? (id-string name) "length"))
-                         ((null? rec) (member (id-string name) (map field-record-name (send type-recs get-interactions-fields))))
+                         ((null? rec) 
+                          (member (id-string name) (map field-record-name (send type-recs get-interactions-fields))))
                          (else (member (id-string name) (get-field-records rec)))))
                (sub-kind (if class? 'class-name (if field? 'field-name 'not-found))))
         (cond 
@@ -1569,15 +1581,14 @@
   ;check-cast: type type-spec src symbol (list string) type-records -> type
   (define (check-cast exp-type cast-type src level current-class type-recs)
     (let ((type (type-spec-to-type cast-type level type-recs)))
-      (unless (equal? (car current-class) (ref-type-class/iface type))
-        (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
+      (when (reference-type? type)
+        (unless (equal? (car current-class) (ref-type-class/iface type))
+          (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
       (cond
         ((and (reference-type? exp-type) (reference-type? type)) type)
         ((and (not (reference-type? exp-type)) (not (reference-type? type))) type)
-        ((reference-type? exp-type)
-         (cast-error 'from-prim exp-type type src))
-        (else
-         (cast-error 'from-ref exp-type type src)))))
+        ((reference-type? exp-type) (cast-error 'from-prim exp-type type src))
+        (else (cast-error 'from-ref exp-type type src)))))
 
   ;; 15.20.2
   ;check-instanceof type type-spec src symbol (list string) type-records -> type
@@ -1586,9 +1597,11 @@
       (unless (equal? (car current-class) (ref-type-class/iface type))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (cond 
-        ((and (ref-type? exp-type) (ref-type? type) (is-eq-subclass? exp-type type type-recs)) 'boolean)
+        ((and (ref-type? exp-type) (ref-type? type) 
+              (or (is-eq-subclass? exp-type type type-recs)
+                  (is-eq-subclass? type exp-type type-recs))) 'boolean)
         ((and (ref-type? exp-type) (ref-type? type))
-         (instanceof-error 'not-subtype type exp-type src))
+         (instanceof-error 'not-related-type type exp-type src))
         ((ref-type? exp-type)
          (instanceof-error 'not-class type exp-type src))
         (else
@@ -1725,8 +1738,11 @@
        (case kind
          ((not-found) (format "reference to undefined identifier ~a" name))
          ((class-name) (format "class named ~a cannot be used as a variable, which is how it is used here" name))
-         ((method-name) (format "method named ~a cannot be used as a variable, which is how it is used here~n
-                                 A call to a method should be followed by () and any arguments to the method" name)))
+         ((method-name) 
+          (let ((line1
+                 (format "method named ~a cannot be used as a variable, which is how it is used here." name))
+                (line2 "A call to a method should be followed by () and any arguments to the method"))
+            (format "~a~n~a" line1 line2))))
        name src)))
   
   ;field-lookup-error: symbol symbol type src -> void
@@ -1739,8 +1755,10 @@
          ((class-name)
           (format "Class named ~a is being erroneously accessed as a field" field))
          ((method-name)
-          (format "Method ~a is being erroneously accessed as a field for class ~a~n
-                   A call to a method chould be followed by () and any arguments to the method" field t))
+          (let ((line1
+                 (format "Method ~a is being erroneously accessed as a field for class ~a." field t))
+                (line2 "A call to a method chould be followed by () and any arguments to the method"))
+            (format "~a~n~a" line1 line2)))
          ((array)
           (format "~a only has a length field, attempted to access ~a" t field))
          ((primitive)
@@ -1774,35 +1792,40 @@
   (define (prim-call-error exp name src level)
     (let ((n (id->ext-name name))
           (t (type->ext-name exp)))
-      (raise-error n
-                   (format "attempted to call method ~a on ~a which does not have methods.~n
-                            Only values with ~a types have methods"
-                           n t
-                           (case level 
-                             ((beginner) "class")
-                             ((intermediate) "class or interface")
-                             (else "class, interface, or array")))
-                   n src)))
+      (raise-error
+       n
+       (format "attempted to call method ~a on ~a which does not have methods. ~nOnly values with ~a types have methods"
+               n t
+               (case level 
+                 ((beginner) "class")
+                 ((intermediate) "class or interface")
+                 (else "class, interface, or array")))
+       n src)))
   
   ;no-method-error: symbol symbol type id src -> void
   (define (no-method-error kind sub-kind exp name src)
     (let ((t (type->ext-name exp))
           (n (id->ext-name name)))
-      (raise-error n
-                   (case sub-kind
-                     ((not-found) (format "~a does not contain a method named ~a"
-                                          (case kind
-                                            ((class) t)
-                                            ((super) "This class's super class")
-                                            ((this) "The current class"))
-                                          n))
-                     ((class-name)
-                      (format "Class ~a is inappropriately being used as a method.~n
-                               Since parenthesis typically follow a class name in creating an instance of the class, perhaps 'new' was forgotten"
+      (raise-error 
+       n
+       (case sub-kind
+         ((not-found) (format "~a does not contain a method named ~a"
+                              (case kind
+                                ((class) t)
+                                ((super) "This class's super class")
+                                ((this) "The current class"))
                               n))
-                     ((field-name)
-                      (format "Field ~a is being inappropriately used as a method, parentheses are not used in interacting with a field" n)))                     
-                   n src)))
+         ((class-name)
+          (let ((line1 
+                 (format "Class ~a is inappropriately being used as a method." n))
+                (line2
+                 "Parenthesis typically follow the class name when creating an instance, perhaps 'new' was forgotten"))
+          (format "~a~n~a" line1 line2)))
+         ((field-name)
+          (format 
+           "Field ~a is being inappropriately used as a method, parentheses are not used in interacting with a field"
+           n)))                     
+       n src)))
   
   ;restricted-method-call id (list string) src -> void
   (define (restricted-method-call name class src)
@@ -1972,18 +1995,20 @@
 
   ;condition-mismatch-error: type type src -> void
   (define (condition-mismatch-error then else src)
-    (raise-error '?
-                 (format "? requires that the then and else branches have equivalent types: given ~a and ~a which are not equivalent"
-                         (type->ext-name then) (type->ext-name else))
-                 '? src))
+    (raise-error 
+     '?
+     (format "? requires that the then and else branches have equivalent types: given ~a and ~a which are not equivalent"
+             (type->ext-name then) (type->ext-name else))
+     '? src))
     
   ;;Array Access errors
   ;illegal-array-access: type src -> void
   (define (illegal-array-access type src)
     (let ((n (type->ext-name type)))
-      (raise-error n
-                   (format "Expression of type ~a accessed as if it were an array, only arrays may be accessed with [N]" n)
-                   n src)))
+      (raise-error 
+       n
+       (format "Expression of type ~a accessed as if it were an array, only arrays may be accessed with [N]" n)
+       n src)))
   
   ;array-access-error: type type src -> void
   (define (array-access-error array idx src)
@@ -2004,17 +2029,20 @@
   ;;Cast errors
   ;cast-error: symbol type type src -> void
   (define (cast-error kind cast exp src)
-    (raise-error 'cast
-                 (case kind
-                   ((from-prim) 
-                    (format "Illegal cast from primitive, ~a, to class or interface ~a~n
-                             Non-class or interface types may not be cast to class or interface types"
-                            (type->ext-name exp) (type->ext-name cast)))
-                   ((from-ref)
-                    (format "Illegal cast from class or interface ~a to primitive, ~a~n
-                             Class or interface types may not be cast to non-class or interface types"
-                            (type->ext-name exp) (type->ext-name cast))))
-                 'cast src))
+    (raise-error 
+     'cast
+     (case kind
+       ((from-prim)
+        (let ((line1 (format "Illegal cast from primitive, ~a, to class or interface ~a."
+                             (type->ext-name exp) (type->ext-name cast)))
+              (line2 "Non-class or interface types may not be cast to class or interface types"))
+          (format "~a~n~a" line1 line2)))
+       ((from-ref)
+        (let ((line1 (format "Illegal cast from class or interface ~a to primitive, ~a."
+                             (type->ext-name exp) (type->ext-name cast)))
+              (line2 "Class or interface types may not be cast to non-class or interface types"))
+          (format "~a~n~a" line1 line2))))
+     'cast src))
   
   ;;Instanceof errors
   ;instanceof-error: symbol type type src -> void
@@ -2024,12 +2052,14 @@
       (raise-error 
        'instanceof
        (case kind
-         ((not-subtype)
-          (format "instanceof requires that its expression be a subtype of the given type: ~a is not a subtype of ~a"
-                  e i))
+         ((not-related-type)
+          (let ((line1 "instanceof requires that its expression be related to the given type")
+                (line2 (format "~a is not a subtype of ~a, and ~a is not a subtype of ~a" e i i e)))
+            (format "~a~n~a" line1 line2)))
          ((not-class)
-          (format "instanceof requires its expression to be compared to a class or interface: Given ~a which is neither a class or interface"
-                  i))
+          (format 
+           "instanceof requires its expression to be compared to a class or interface: Given ~a which is neither"
+           i))
          ((not-ref)
           (format "instanceof requires the expression, compared to ~a, to be a class or interface: Given ~a"
                   i e)))

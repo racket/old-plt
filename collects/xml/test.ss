@@ -1,5 +1,5 @@
 ;; run these tests with:
-;;  % mzscheme -i test.ss
+;;  % mzscheme --require test.ss
 
 (module test mzscheme
   (require (lib "xml.ss" "xml"))

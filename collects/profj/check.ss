@@ -297,8 +297,11 @@
                       exn-env
                       type-recs))
         ((return? statement)
-         (when (not (assignment-conversion return (check-e (return-expr statement) env exn-env) type-recs))
-           (raise-error #f #f)))
+         (check-return (return-expr statement)
+                       return
+                       (lambda (e) (check-e e env exn-env))
+                       (return-src statement)
+                       type-recs))
         ((while? statement)
          (check-e (while-cond statement) env exn-env)
          (check-s (while-loop statement) env exn-env))
@@ -355,6 +358,17 @@
          (raise-statement-error exp-type src 'throw thrown-not-declared)))
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
+
+  (define (check-return ret-expr return check src type-recs)
+    (cond
+      ((and ret-expr (not (eq? 'void return)))
+       (let ((ret-type (check ret-expr)))
+         (unless (assignment-conversion return ret-type type-recs)
+           (raise-statement-error (list ret-type return) (expr-src ret-expr) 'return return-not-match))))
+      ((and ret-expr (eq? 'void return))
+       (raise-statement-error return (expr-src ret-expr) 'return return-on-void))
+      ((and (not ret-expr) (not (eq? 'void return)))
+       (raise-statement-error return src 'return no-val-to-return))))
   
   ;Statement error messages
   
@@ -366,12 +380,24 @@
   (define (thrown-not-declared given)
     (format "thrown type ~a must be declared in the throws clause or in a catch clause of the surrounding try block"
             given))
+
+  (define (return-not-match given expected)
+    (format "type ~a of returned expression must be equal to or a subclass of declared return ~a"
+            given expected))
+  (define (return-on-void given)
+    "No value is expected to be returned from void method. Value found")
+  (define (no-val-to-return expected)
+    (format "Expected a return value of type ~a, no value was given" expected))
   
   ;raise-statement-error: ast src symbol ( 'a -> string) -> void
   (define (raise-statement-error code src kind msg)
-    (cond
-      ((type? code) (raise-syntax-error kind (msg (type->ext-name code)) (make-so kind src)))
-      (else (error 'raise-statement-error "Given ~a" code)))) 
+    (match code
+      ;Covers if-cond-not-bool throw-not-throwable thrown-not-declared
+      ((? type? c) (raise-syntax-error kind (msg (type->ext-name c)) (make-so kind src)))
+      ;Covers return-not-match
+      (((? type? fst) (? type? snd)) 
+       (raise-syntax-error kind (msg (type->ext-name fst) (type->ext-name snd)) (make-so kind src)))
+      (_ (error 'raise-statement-error "Given ~a" code)))) 
                                         
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

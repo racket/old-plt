@@ -33,8 +33,14 @@
                              (let-values ([(misc1 end-of-file) (read-misc in pos)])
                                (unless (eof-object? end-of-file)
                                  (let ([loc-after (pos)])
-                                   (parse-error (list (list (location-offset loc-before)
-                                                            (location-offset loc-after)))
+                                   (parse-error (list-immutable
+                                                 (make-srcloc
+                                                  (object-name in)
+                                                  #f
+                                                  #f
+                                                  (location-offset loc-before)
+                                                  (- (location-offset loc-after)
+                                                     (location-offset loc-before))))
                                                 "extra stuff at end of document ~a"
                                                 end-of-file)))
                                misc1))))))
@@ -51,7 +57,13 @@
         (cond
           [(start-tag? start) (read-element start in pos)]
           [(element? start) start]
-          [else (parse-error (list (list 1 (location-offset (pos))))
+          [else (parse-error (list-immutable
+                              (make-srcloc
+                               (object-name in)
+                               #f
+                               #f
+                               1
+                               (- (location-offset (pos)) 1)))
                              "expected root element - received ~a"
                              start)]))
       
@@ -79,8 +91,14 @@
             (let ([x (lex in pos)])
               (cond
                 [(eof-object? x)
-                 (parse-error (list (list (location-offset (source-start start))
-                                          (location-offset (source-stop start))))
+                 (parse-error (list-immutable
+                               (make-srcloc
+                                (object-name in)
+                                #f
+                                #f
+                                (location-offset (source-start start))
+                                (- (location-offset (source-stop start))
+                                   (location-offset (source-start start)))))
                               "unclosed `~a' tag at [~a ~a]"
                               name
                               (format-source a)
@@ -94,10 +112,17 @@
                  (let ([end-loc (source-stop x)])
                    (unless (eq? name (end-tag-name x))
                      (parse-error
-                      (list (list (location-offset a)
-                                  (location-offset b))
-                            (list (location-offset (source-start x))
-                                  (location-offset end-loc)))
+                      (list-immutable
+                       (make-srcloc (object-name in)
+                                    #f
+                                    #f
+                                    (location-offset a)
+                                    (- (location-offset b) (location-offset a)))
+                       (make-srcloc (object-name in)
+                                    #f
+                                    #f
+                                    (location-offset (source-start x))
+                                    (- (location-offset end-loc) (location-offset (source-start x)))))
                       "start tag `~a' at [~a ~a] doesn't match end tag `~a' at [~a ~a]"
                       name
                       (format-source a)
@@ -398,7 +423,7 @@
              (make-location line column offset)))))
       
       ;; locs : (listof (list number number))
-      (define-struct (exn:xml exn) (locs))
+      (define-struct (exn:xml exn:fail:read) ())
       
       ;; lex-error : Input-port String (-> Location) TST* -> alpha
       ;; raises a lexer error, using exn:xml
@@ -407,17 +432,24 @@
                [offset (location-offset the-pos)])
           (raise
            (make-exn:xml
-            (format "read-xml: lex-error: at position ~a: ~a" 
-                    (format-source the-pos)
-                    (apply format str rest))
+            (string->immutable-string
+             (format "read-xml: lex-error: at position ~a: ~a" 
+                     (format-source the-pos)
+                     (apply format str rest)))
             (current-continuation-marks)
-            (list (list offset (+ offset 1)))))))
+            (list-immutable (make-srcloc 
+                             (object-name in)
+                             #f
+                             #f
+                             offset
+                             1))))))
       
-      ;; parse-error : (listof (cons number number string)) (listof TST) *-> alpha
+      ;; parse-error : (listof srcloc) (listof TST) *-> alpha
       ;; raises a parsing error, using exn:xml
       (define (parse-error src fmt . args)
         (raise (make-exn:xml
-                (apply format (string-append "read-xml: parse-error: " fmt) args)
+                (string->immutable-string
+                 (apply format (string-append "read-xml: parse-error: " fmt) args))
                 (current-continuation-marks)
                 src)))
       

@@ -32,7 +32,7 @@
      read-xml/element
      read-comments
      collapse-whitespace
-     (struct exn:xml (locs))))
+     (struct exn:xml ())))
 
   (define-signature xexpr^
     (xml->xexpr

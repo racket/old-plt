@@ -47,9 +47,9 @@ in several important ways:
    `unit' and `module' syntax, using `define' for method and private
    field declarations.
 
-   The "class100.ss" library in MzLib supplies a `class100' form whose
-   syntax is similar to the old `class' form and whose semantics
-   matches the new `class' form. 
+   The "class100.ss" library in MzLib supplies a `class100' form with a
+   syntax similar to the old `class' form, but with a semantics that
+   matches the new `class' form.
 
    To make old code work with the new class system:
 
@@ -62,7 +62,7 @@ in several important ways:
 
       3. Loop until there are no more syntax errors:
          - Try to load the code
-         - Read the error message (with source location info)
+         - Read the error message (which provides a source location)
          - Fix the problem
    
    The `send' form works as before, but there is no `ivar' form.

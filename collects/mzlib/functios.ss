@@ -24,6 +24,8 @@
    boolean=?
    symbol=?
 
+   char->string
+
    identity
    compose
    foldl

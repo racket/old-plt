@@ -311,6 +311,11 @@
       (raise-type-error 'symbol=? "symbol"
 			(if (symbol? x) y x)))
     (eq? x y))
+
+  (define (char->string c)
+    (unless (char? c)
+      (raise-type-error 'char->string "character" c))
+    (string c))
   
   (define cons? (lambda (x) (pair? x)))
   (define empty? (lambda (x) (null? x)))

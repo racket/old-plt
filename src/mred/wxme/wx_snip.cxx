@@ -676,9 +676,14 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 	  px += piece_w;
 	}
 	if (i < count) {
+	  /* In case there's a background, draw a space: */
+	  dc->DrawText(" ", px, y);
+
+	  /* Draw box for nul: */
 	  if (!text[i])
 	    if (h > 2 && ex_w > 2)
 	      dc->DrawRectangle(px + 1, y + 1, ex_w - 2, h - 2);
+
 	  start = i + 1;
 	  px += ex_w;
 	}

@@ -155,9 +155,9 @@
 
 
 (drscheme:debug:make-debug-error-display-handler
- ((string? (union any? exn?) . -> . void?)
+ ((string? (union any? exn?) . -> . any)
   . -> .
-  (string? (union any? exn?) . -> . void?))
+  (string? (union any? exn?) . -> . any))
 
  (oedh)
  

@@ -21,7 +21,8 @@
    com-all-coclasses
    com-all-controls
    coclass->html
-   cocreate-instance
+   cocreate-instance-from-coclass
+   cocreate-instance-from-progid
    com-object-eq?
    com-object?	
    com-omit
@@ -53,7 +54,8 @@
    com-all-coclasses
    com-all-controls
    coclass->html
-   cocreate-instance
+   cocreate-instance-from-coclass
+   cocreate-instance-from-progid
    com-object-eq?
    com-object?	
    com-register-object

@@ -6,6 +6,6 @@ typedef int (*wxDispatch_Check_Fun)(void *);
 typedef void (*wxDispatch_Needs_Wakeup_Fun)(void *, void *);
 
 extern void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data);
-extern void wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Object *w);
+extern Scheme_Object *wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Object *w);
 
 #endif

@@ -1072,7 +1072,7 @@ static void reset_nested_wait(MrEdContext *c)
   c->alt_data = NULL;
 }
 
-static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altdata, Scheme_Object *alt_wait)
+static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altdata, Scheme_Object *alt_wait)
 {
   wxTimer *timer;
   MrEdEvent evt;
@@ -1087,7 +1087,7 @@ static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altda
   if (alt) {
     if (alt(altdata)) {
       /* Do nothing, since alt fired. */
-      return 1;
+      return scheme_void;
     }
   }
   if (alt_wait) {
@@ -1096,9 +1096,9 @@ static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altda
     a[1] = alt_wait;
     r = scheme_object_wait_multiple(2, a);
 
-    if (SCHEME_TRUEP(r)) {
+    if (r) {
       /* Do nothing, since alt fired. */
-      return 1;
+      return r;
     }
   }
 
@@ -1122,7 +1122,7 @@ static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altda
     c->q_callback = 1;
     DoTheEvent(c);
   } else if (c != mred_main_context) {
-    int result = 0;
+    Scheme_Object *result = NULL;
 
     c->ready = 1;
     c->waiting_for_nested = 1;
@@ -1148,7 +1148,7 @@ static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altda
       END_ESCAPEABLE();
 
       if (!SAME_OBJ(v, a[2]))
-	result = 1;
+	result = v;
     } else {
       scheme_block_until((Scheme_Ready_Fun)do_check_for_nested_event, NULL,
 			 (Scheme_Object *)c, 0.0);
@@ -1161,13 +1161,13 @@ static int MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altda
       /* Alternate condition fired. Clear waiting flag. */
       c->ready = 0;
       c->waiting_for_nested = 0;
-      result = 1;
+      result = scheme_void;
     }
 
     return result;
   }
 
-  return 0;
+  return NULL;
 }
 
 void wxDoNextEvent()
@@ -1499,9 +1499,11 @@ void wxDoEvents()
   }
 }
 
-void wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Object *w)
+Scheme_Object *wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Object *w)
 {
   MrEdContext *c;
+  Scheme_Object *result = scheme_void;
+
   c = MrEdGetContext();
 
   if (c->ready_to_go
@@ -1512,17 +1514,20 @@ void wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Ob
       Scheme_Object *a[2];
       a[0] = scheme_false;
       a[1] = w;
-      scheme_object_wait_multiple(2, a);
+      result = scheme_object_wait_multiple(2, a);
     } else {
       scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, 0.0);
     }
   } else {
     /* This is the main thread. Handle events */
     do {
-      if (MrEdDoNextEvent(c, f, data, w))
+      result = MrEdDoNextEvent(c, f, data, w);
+      if (result)
 	break;
     } while (1);
   }
+
+  return result;
 }
 
 void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data)

@@ -235,6 +235,7 @@ static Scheme_Object *make_thread_resume(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_thread_dead(int argc, Scheme_Object *args[]);
 static void register_thread_wait();
 
+static Scheme_Object *sch_object_wait_multiple(int argc, Scheme_Object *args[]);
 static Scheme_Object *object_waitable_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *args[]);
 
@@ -568,7 +569,7 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("object-wait-multiple", 
-			     scheme_make_prim_w_arity(scheme_object_wait_multiple,
+			     scheme_make_prim_w_arity(sch_object_wait_multiple,
 						      "object-wait-multiple", 
 						      2, -1), 
 			     env);
@@ -3861,7 +3862,7 @@ static void post_waiting_nacks(Waiting *waiting)
   }
 }
 
-static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Object *argv[], int with_break)
+static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Object *argv[], int with_break, int tailok)
 {
   Waitable_Set *waitable_set;
   Waiting *waiting;
@@ -3925,7 +3926,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
       if (i)
 	return waitable_set->argv[i - 1];
       else
-	return scheme_false;
+	return (tailok ? scheme_false : NULL);
     }
   }
 
@@ -3968,23 +3969,33 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
 
 	if (to_call) {
 	  args[0] = o;
-	  return _scheme_tail_apply(to_call, 1, args);
+	  if (tailok)
+	    return _scheme_tail_apply(to_call, 1, args);
+	  else
+	    return scheme_apply(to_call, 1, args);
 	}
       }
     }
     return o;
-  } else
+  } else if (tailok)
     return scheme_false;
+  else
+    return NULL;
+}
+
+Scheme_Object *sch_object_wait_multiple(int argc, Scheme_Object *argv[])
+{
+  return object_wait_multiple("object-wait-multiple", argc, argv, 0, 1);
 }
 
 Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
 {
-  return object_wait_multiple("object-wait-multiple", argc, argv, 0);
+  return object_wait_multiple("object-wait-multiple", argc, argv, 0, 0);
 }
 
 Scheme_Object *do_object_wait_multiple_break(int argc, Scheme_Object *argv[])
 {
-  return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 1);
+  return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 1, 1);
 }
 
 Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object *argv[])
@@ -4004,7 +4015,7 @@ Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object 
   if (SCHEME_FALSEP(v))
     return scheme_call_enable_break(do_object_wait_multiple_break, argc, argv);
   else
-    return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 0);
+    return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 0, 1);
 }
 
 static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *argv[])

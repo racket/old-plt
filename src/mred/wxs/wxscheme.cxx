@@ -1599,7 +1599,7 @@ static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-Bool wxSchemeYield(void *sema)
+void *wxSchemeYield(void *sema)
 {
   if (!wait_symbol) {
     wxREGGLOB(wait_symbol);
@@ -1608,16 +1608,18 @@ Bool wxSchemeYield(void *sema)
 
   if (sema == wait_symbol) {
     mred_wait_eventspace();
-    return 1;
+    return scheme_true;
   } else if (sema) {
     if (!scheme_is_waitable((Scheme_Object *)sema))
       scheme_wrong_type("yield", "waitable or 'wait", -1, 0, (Scheme_Object **)&sema);
 
-    wxDispatchEventsUntilWaitable((wxDispatch_Check_Fun)NULL, NULL, (Scheme_Object *)sema);
-
-    return 1;
-  } else
-    return wxYield();
+    return wxDispatchEventsUntilWaitable((wxDispatch_Check_Fun)NULL, NULL, (Scheme_Object *)sema);
+  } else {
+    if (wxYield())
+      return scheme_true;
+    else
+      return scheme_false;
+  }
 }
 
 static Scheme_Object *wxSchemeCheckForBreak(int, Scheme_Object **)

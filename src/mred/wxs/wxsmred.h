@@ -29,7 +29,7 @@ extern Scheme_Object *wxs_app_quit_proc;
 extern Scheme_Object *wxs_app_about_proc;
 extern Scheme_Object *wxs_app_pref_proc;
 
-extern Bool wxSchemeYield(void *sema);
+extern void *wxSchemeYield(void *sema);
 
 extern wxWindow *wxLocationToWindow(int x, int y);
 

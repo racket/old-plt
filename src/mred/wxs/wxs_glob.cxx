@@ -156,7 +156,7 @@ static Scheme_Object *bundle_symset_fileSelMode(int v) {
 
 #define USE_PRINTER 1
 
-extern Bool wxSchemeYield(void *sema);
+extern void *wxSchemeYield(void *sema);
 
 extern void wxFlushDisplay(void);
 
@@ -256,6 +256,7 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
+  void* r;
   void* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -269,11 +270,11 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
     x0 = NULL;
 
   
-  WITH_VAR_STACK(wxSchemeYield(x0));
+  r = WITH_VAR_STACK(wxSchemeYield(x0));
 
   
   
-  return scheme_void;
+  return (Scheme_Object *)r;
 }
 
 static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])

@@ -46,7 +46,7 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 
 #define USE_PRINTER 1
 
-extern Bool wxSchemeYield(void *sema);
+extern void *wxSchemeYield(void *sema);
 
 extern void wxFlushDisplay(void);
 
@@ -115,9 +115,10 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @ "write-resource" : bool wxWriteResource(string,string,ExactLong,wnpathname=NULL); <> number
 
 @MACRO BundleVoidStar = (void *){x}
+@MACRO UnbundleVoidStar = (Scheme_Object *){x}
 @MACRO spSema = semaphore
 
-@ "yield" : void wxSchemeYield(void[]=NULL//BundleVoidStar///spSema/push);
+@ "yield" : void[]/UnbundleVoidStar wxSchemeYield(void[]=NULL//BundleVoidStar///spSema/push);
 @ "flush-display" : void wxFlushDisplay();
 
 @ "fill-private-color" : void wxsFillPrivateColor(wxDC!, wxColour!);

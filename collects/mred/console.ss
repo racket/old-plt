@@ -451,7 +451,9 @@
 		[takeover-output
 		 (lambda ()
 		   (when (and (void? old-stdout)
-			      (not (eq? 'no-takeover mred:debug:on?)))
+			      (not (eq? 'no-takeover mred:debug:on?))
+			      (not (and (list? mred:debug:on?)
+					(member 'no-takeover mred:debug:on?))))
 		     (set! old-stdout (current-output-port))
 		     (set! old-stderr (current-error-port))
 		     (set! old-stdin (current-input-port))

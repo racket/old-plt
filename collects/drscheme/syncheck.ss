@@ -1,10 +1,6 @@
 #|
 
   TODO:
-  
-     - see if timing can be improved for checking this file.
-       maybe making a ht for binding occurrances will help.
-     - run test suite for colors
      - write test suite for arrows and menus
 |#
 
@@ -725,13 +721,20 @@
                             (set! err-termination? #t)
                             (syncheck:clear-highlighting)
                             (report-error (car sexp) (cdr sexp)))
-                          (let-values ([(new-binders pre-new-varrefs new-tops
-                                                     requires referenced-macros)
+                          (let-values ([(new-binders
+                                         pre-new-varrefs
+                                         new-tops
+                                         requires
+                                         require-for-syntaxes
+                                         referenced-macros)
                                         (annotate-basic sexp run-in-expansion-thread)])
                             (let ([new-varrefs
                                    (if requires
-                                       (annotate-require-vars pre-new-varrefs requires referenced-macros)
-                                       pre-new-varrefs)])
+                                       (annotate-require-vars pre-new-varrefs 
+                                                              requires
+                                                              require-for-syntaxes
+                                                              referenced-macros)
+                                       (map cdr pre-new-varrefs))])
                               (set! binders (append new-binders binders))
                               (set! varrefs (append new-varrefs varrefs))
                               (set! tops (append new-tops tops)))))
@@ -763,29 +766,40 @@
        ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
-      ;; annotate-require-vars :    (listof syntax) (listof syntax) (listof syntax[original])
+      ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
+      ;;                            (listof syntax)
+      ;;                            (listof syntax)
+      ;;                            (listof (cons boolean syntax[original]))
       ;;                         -> (listof syntax)
       ;; returns the sublist of `varrefs' that did not come from module imports.
       ;; effect: colors all require-bound ids from `varrefs' and draws arrow for them. 
-      (define (annotate-require-vars varrefs requires referenced-macros)
-        (let* ([req/tags (map (lambda (x) 
-                                (make-req/tag x 
-                                              (syntax-object->datum x)
-                                              #f))
-                              requires)]
+      (define (annotate-require-vars varrefs/levels requires require-for-syntaxes referenced-macros)
+        (let* ([maker (lambda (x) (make-req/tag x (syntax-object->datum x) #f))]
+               [req/tags (map maker requires)]
+               [req-syn/tags (map maker require-for-syntaxes)]
                [reduced-varrefs
-                (let loop ([varrefs varrefs])
+                (let loop ([varrefs/levels varrefs/levels])
                   (cond
-                    [(null? varrefs) null]
-                    [else (let ([varref (car varrefs)])
-                            (if (annotate-require-var req/tags varref)
-                                (loop (cdr varrefs))
-                                (cons varref (loop (cdr varrefs)))))]))])
-          (for-each (annotate-macro req/tags) referenced-macros)
+                    [(null? varrefs/levels) null]
+                    [else (let* ([varref/level (car varrefs/levels)]
+                                 [high-level? (car varref/level)]
+                                 [varref (cdr varref/level)]
+                                 [include?
+                                  (if high-level?
+                                      (annotate-require-var req-syn/tags varref)
+                                      (annotate-require-var req/tags varref))])
+                            (if include?
+                                (loop (cdr varrefs/levels))
+                                (cons varref (loop (cdr varrefs/levels)))))]))])
+          (for-each (annotate-macro req/tags)
+                    (map cdr (filter (lambda (x) (not (car x))) referenced-macros)))
+          (for-each (annotate-macro req-syn/tags) 
+                    (map cdr (filter car referenced-macros)))
           (for-each annotate-unused-require req/tags)
+          (for-each annotate-unused-require req-syn/tags)
           reduced-varrefs))
       
-      ;; update-usage : (listof req/tag) -> syntax[original] -> void
+      ;; annotate-macro : (listof req/tag) -> syntax[original] -> void
       (define (annotate-macro req/tags)
         (lambda (stx)
           (let ([mod-req-path (get-module-req-path stx)])
@@ -818,7 +832,7 @@
                             (connect-syntaxes (req/tag-req-stx req/tag) varref)))
                         #t))))))
       
-      ;; get-module-req-path : syntax -> (union #f require-sexp)
+      ;; get-module-req-path : syntax[identifier] -> (union #f require-sexp)
       (define (get-module-req-path stx)
         (let ([binding (identifier-binding stx)])
           (and (pair? binding)
@@ -919,26 +933,29 @@
       
       ;; connect-syntaxes : syntax[original] syntax[original] -> void
       ;; adds an arrow from `from' to `to', unless they have the same source loc. 
-      ;; Passes `rename-name' and `rename-same-stxs' to syncheck:add-arrow
       (define (connect-syntaxes from to)
         (let* ([from-source (syntax-source from)]
-               [from-pos-left (- (syntax-position from) 1)]
-               [from-pos-right (+ from-pos-left (syntax-span from))]
-               [to-source (syntax-source to)]
-               [to-pos-left (- (syntax-position to) 1)]
-               [to-pos-right (+ to-pos-left (syntax-span to))])
-          (when (and (eq? from-source to-source)
-                     (is-a? from-source syncheck-text<%>))
-            (unless (= from-pos-left to-pos-left)
-              (send from-source syncheck:add-arrow
-                    from-pos-left from-pos-right
-                    to-pos-left to-pos-right)))))
+	       [to-source (syntax-source to)])
+	  (when (and (eq? from-source to-source)
+		     (is-a? from-source syncheck-text<%>)
+		     (syntax-position from)
+		     (syntax-span from)
+		     (syntax-position to)
+		     (syntax-span to))
+	    (let* ([from-pos-left (- (syntax-position from) 1)]
+		   [from-pos-right (+ from-pos-left (syntax-span from))]
+		   [to-pos-left (- (syntax-position to) 1)]
+		   [to-pos-right (+ to-pos-left (syntax-span to))])
+	      (unless (= from-pos-left to-pos-left)
+		(send from-source syncheck:add-arrow
+		      from-pos-left from-pos-right
+		      to-pos-left to-pos-right))))))
       
       ;; annotate-basic : syntax -> (values (listof syntax)
-      ;;                                    (listof syntax)
+      ;;                                    (listof (cons boolean syntax))
       ;;                                    (listof syntax)
       ;;                                    (union #f (listof syntax))
-      ;;                                    (listof syntax[original]))
+      ;;                                    (listof (cons boolean syntax[original])))
       ;; annotates the lexical structure of the program `sexp', except
       ;; for the variables in the program. returns the variables in several
       ;; lists -- the first is the ones that occur in binding positions
@@ -946,160 +963,174 @@
       ;; is those that occur in #%top's. The next value is #f if there was
       ;; no module, or all of the require expressions if there was one.
       ;; the last is the list of all original macro references.
+      ;;
+      ;; the booleans in the lists indicate if the variables or macro references
+      ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
       (define (annotate-basic sexp run-in-expansion-thread)
         (let ([binders null]
               [varrefs null]
               [tops null]
               [has-module? #f]
               [requires null]
+              [require-for-syntaxes null]
               [referenced-macros null])
-          (let loop ([sexp sexp])
-            (annotate-original-keywords sexp)            
-            (set! referenced-macros (append (get-referenced-macros sexp) referenced-macros))
-            (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
-                                quote quote-syntax with-continuation-mark 
-                                #%app #%datum #%top #%plain-module-begin
-                                define-values define-syntaxes module
-                                require require-for-syntax provide)
-              [(lambda args bodies ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (set! binders (combine-binders (syntax args) binders))
-                 (for-each loop (syntax->list (syntax (bodies ...)))))]
-              [(case-lambda [argss bodiess ...]...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each
-                  (lambda (args bodies)
-                    (set! binders (combine-binders args binders))
-                    (for-each loop (syntax->list bodies)))
-                  (syntax->list (syntax (argss ...)))
-                  (syntax->list (syntax ((bodiess ...) ...)))))]
-              [(if test then else)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (loop (syntax test))
-                 (loop (syntax else))
-                 (loop (syntax then)))]
-              [(if test then)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (loop (syntax test))
-                 (loop (syntax then)))]
-              [(begin bodies ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each loop (syntax->list (syntax (bodies ...)))))]
-              
-              [(begin0 bodies ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each loop (syntax->list (syntax (bodies ...)))))]
-              
-              [(let-values (((xss ...) es) ...) bs ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each (lambda (x) (set! binders (combine-binders x binders)))
-                           (syntax->list (syntax ((xss ...) ...))))
-                 (for-each loop (syntax->list (syntax (es ...))))
-                 (for-each loop (syntax->list (syntax (bs ...)))))]
-              [(letrec-values (((xss ...) es) ...) bs ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each (lambda (x) (set! binders (combine-binders x binders)))
-                           (syntax->list (syntax ((xss ...) ...))))
-                 (for-each loop (syntax->list (syntax (es ...))))
-                 (for-each loop (syntax->list (syntax (bs ...)))))]
-              [(set! var E)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (set! varrefs (cons (syntax var) varrefs))
-                 (loop (syntax E)))]
-              [(quote datum)
-               (begin 
-                 (when (syntax-original? sexp)
-                   (annotate-raw-keyword sexp))
-                 (when (syntax-original? (syntax datum))
-                   (color (syntax datum) constant-style-str)))]
-              [(quote-syntax datum)
-               (begin 
-                 (when (syntax-original? sexp)
-                   (annotate-raw-keyword sexp))
-                 (when (syntax-original? (syntax datum))
-                   (color (syntax datum) constant-style-str)))]
-              [(with-continuation-mark a b c)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (loop (syntax a))
-                 (loop (syntax b))
-                 (loop (syntax c)))]
-              [(#%app pieces ...)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (for-each loop (syntax->list (syntax (pieces ...)))))]
-              [(#%datum . datum)
-               (begin
-                 (when (syntax-original? sexp)
-                   (color sexp constant-style-str)))]
-              [(#%top . var)
-               (begin
-                 (set! tops (cons (syntax var) tops)))]
-              
-              [(define-values vars b)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (set! binders (combine-binders (syntax vars) binders))
-                 (loop (syntax b)))]
-              [(define-syntaxes names exp)
-               (begin
-                 (annotate-raw-keyword sexp)
-                 (set! binders (combine-binders (syntax names) binders))
-                 (loop (syntax exp)))]
-              [(module m-name lang (#%plain-module-begin bodies ...))
-               (begin
-                 (set! has-module? #t)
-                 ((annotate-require-open run-in-expansion-thread) (syntax lang))
-                 (set! requires (cons (syntax lang) requires))
-                 (annotate-raw-keyword sexp)
-                 (for-each loop (syntax->list (syntax (bodies ...)))))]
-              
-              ; top level or module top level only:
-              [(require require-specs ...)
-               (begin
+          (let level-loop ([sexp sexp]
+                           [high-level? #f])
+            (annotate-original-keywords sexp)
+            (set! referenced-macros (append (get-referenced-macros high-level? sexp) referenced-macros))
+            (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
+              (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
+                                  quote quote-syntax with-continuation-mark 
+                                  #%app #%datum #%top #%plain-module-begin
+                                  define-values define-syntaxes module
+                                  require require-for-syntax provide)
+                [(lambda args bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! binders (combine-binders (syntax args) binders))
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                [(case-lambda [argss bodiess ...]...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each
+                    (lambda (args bodies)
+                      (set! binders (combine-binders args binders))
+                      (for-each loop (syntax->list bodies)))
+                    (syntax->list (syntax (argss ...)))
+                    (syntax->list (syntax ((bodiess ...) ...)))))]
+                [(if test then else)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax test))
+                   (loop (syntax else))
+                   (loop (syntax then)))]
+                [(if test then)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax test))
+                   (loop (syntax then)))]
+                [(begin bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                [(begin0 bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                [(let-values (((xss ...) es) ...) bs ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                             (syntax->list (syntax ((xss ...) ...))))
+                   (for-each loop (syntax->list (syntax (es ...))))
+                   (for-each loop (syntax->list (syntax (bs ...)))))]
+                [(letrec-values (((xss ...) es) ...) bs ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                             (syntax->list (syntax ((xss ...) ...))))
+                   (for-each loop (syntax->list (syntax (es ...))))
+                   (for-each loop (syntax->list (syntax (bs ...)))))]
+                [(set! var E)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! varrefs (cons (cons high-level? (syntax var)) varrefs))
+                   (loop (syntax E)))]
+                [(quote datum)
+                 (begin 
+                   (when (syntax-original? sexp)
+                     (annotate-raw-keyword sexp))
+                   (when (syntax-original? (syntax datum))
+                     (color (syntax datum) constant-style-str)))]
+                [(quote-syntax datum)
+                 (begin 
+                   (when (syntax-original? sexp)
+                     (annotate-raw-keyword sexp))
+                   (when (syntax-original? (syntax datum))
+                     (color (syntax datum) constant-style-str)))]
+                [(with-continuation-mark a b c)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax a))
+                   (loop (syntax b))
+                   (loop (syntax c)))]
+                [(#%app pieces ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (pieces ...)))))]
+                [(#%datum . datum)
+                 (begin
+                   (when (syntax-original? sexp)
+                     (color sexp constant-style-str)))]
+                [(#%top . var)
+                 (begin
+                   (set! tops (cons (syntax var) tops)))]
+                
+                [(define-values vars b)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! binders (combine-binders (syntax vars) binders))
+                   (loop (syntax b)))]
+                [(define-syntaxes names exp)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! binders (combine-binders (syntax names) binders))
+                   (level-loop (syntax exp) #t))]
+                [(module m-name lang (#%plain-module-begin bodies ...))
+                 (begin
+                   (set! has-module? #t)
+                   ((annotate-require-open run-in-expansion-thread) (syntax lang))
+                   (set! requires (cons (syntax lang) requires))
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                ; top level or module top level only:
+                [(require require-specs ...)
                  (let ([new-specs (map trim-require-prefix
                                        (syntax->list (syntax (require-specs ...))))])
                    (for-each (annotate-require-open run-in-expansion-thread) new-specs)
-                   (set! requires (append new-specs requires)))
-                 (annotate-raw-keyword sexp))]
-              [(require-for-syntax require-spec)
-               (begin
-                 (annotate-raw-keyword sexp))]
-              
-              ; module top level only:
-              [(provide vars)
-               (begin
-                 (annotate-raw-keyword sexp))]
-              
-              [_
-               identifier?
-               (set! varrefs (cons sexp varrefs))]
-              [_
-               (begin
-;;                        (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-;;                                 sexp
-;;                                 (and (syntax? sexp)
-;;                                      (syntax-object->datum sexp))
-;;                                 (and (syntax? sexp)
-;;                                      (syntax-source sexp)))
-                    (void))]))
-          (values binders varrefs tops (and has-module? requires) referenced-macros)))
+                   (set! requires (append new-specs requires))
+                   (annotate-raw-keyword sexp))]
+                [(require-for-syntax require-specs ...)
+                 (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
+                   (for-each (annotate-require-open run-in-expansion-thread) new-specs)
+                   (set! require-for-syntaxes (append new-specs require-for-syntaxes))
+                   (annotate-raw-keyword sexp))]
+                
+                ; module top level only:
+                [(provide vars ...)
+                 (begin
+                   (annotate-raw-keyword sexp))]
+                
+                [id
+                 (identifier? (syntax id))
+                 (set! varrefs (cons (cons high-level? sexp) varrefs))]
+                [_
+                 (begin
+                   '(printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+                            sexp
+                            (and (syntax? sexp)
+                                 (syntax-object->datum sexp))
+                            (and (syntax? sexp)
+                                 (syntax-source sexp)))
+                   (void))])))
+          (values binders 
+                  varrefs
+                  tops
+                  (and has-module? requires)
+                  (and has-module? require-for-syntaxes)
+                  referenced-macros)))
       
       ;; annotate-require-open : ((-> void) -> stx -> void)
       (define (annotate-require-open run-in-expansion-thread)
         (lambda (require-spec)
           (when (syntax-original? require-spec)
             (let ([source (syntax-source require-spec)])
-              (when (is-a? source syncheck-text<%>)
+              (when (and (is-a? source syncheck-text<%>)
+			 (syntax-position require-spec)
+			 (syntax-span require-spec))
                 (let* ([start (- (syntax-position require-spec) 1)]
                        [end (+ start (syntax-span require-spec))]
                        [datum (syntax-object->datum require-spec)]
@@ -1145,8 +1176,8 @@
                                  test)))
                         possible-suffixes)))))
 
-      ;; get-referenced-macros : sexp -> syntax[original]
-      (define (get-referenced-macros sexp)
+      ;; get-referenced-macros : boolean sexp -> (listof (cons boolean syntax[original]))
+      (define (get-referenced-macros high-level? sexp)
         (let ([origin (syntax-property sexp 'origin)])
           (if origin
               (let loop ([origin origin]
@@ -1154,7 +1185,7 @@
                 (cond
                   [(cons? origin) (loop (car origin) (loop (cdr origin) stxs))]
                   [(syntax? origin) (if (syntax-original? origin)
-                                        (cons origin stxs)
+                                        (cons (cons high-level? origin) stxs)
                                         stxs)]
                   [else stxs]))
               null)))
@@ -1183,8 +1214,8 @@
               (cons stx incoming))))
       
       
-          ;; annotate-original-keywords : syntax -> void
-          ;; annotates the origin of the stx with style-name's style.
+      ;; annotate-original-keywords : syntax -> void
+      ;; annotates the origin of the stx with style-name's style.
       (define (annotate-original-keywords stx)
         (let* ([origin (syntax-property stx 'origin)])
           (when origin
@@ -1197,10 +1228,10 @@
                  (when (syntax-original? origin)
                    (color origin keyword-style-str))])))))
       
-          ;; annotate-raw-keyword : syntax -> void
-          ;; annotates keywords when they were never expanded. eg.
-          ;; if someone just types `(lambda (x) x)' it has no 'origin
-          ;; field, but there still are keywords.
+      ;; annotate-raw-keyword : syntax -> void
+      ;; annotates keywords when they were never expanded. eg.
+      ;; if someone just types `(lambda (x) x)' it has no 'origin
+      ;; field, but there still are keywords.
       (define (annotate-raw-keyword stx)
         (unless (syntax-property stx 'origin)
           (let ([lst (syntax-e stx)])

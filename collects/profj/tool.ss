@@ -401,13 +401,33 @@
 	    (if (syntax? s)
 		(namespace-syntax-introduce s)
 		s))
-
+          
           (define/private (process-extras extras)
             (cond
               ((null? extras) null)
               ((test-case? (car extras))
                (cons 
-                (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f))) syn)
+                (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f)))
+                  (syntax-case syn ()
+                    ((test-case equal? exp1 exp2 exp3 exp4) 
+                     (syntax-case (syntax exp1) (begin require)
+                       ((begin (require req ...) exp)
+                        (syntax-case (syntax exp2) (begin require)
+                          ((begin (require req2 ...) new-exp2) 
+                           (syntax (begin
+                                     (require req ... req2 ...)
+                                     (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp new-exp2 exp3 exp4))))
+                          (else 
+                           (syntax (begin (require req ...)
+                                          (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp exp2 exp3 exp4))))))
+                       (else 
+                        (syntax-case (syntax exp2) (begin require)
+                          ((begin (require req2 ...) new-exp2)
+                           (syntax (begin (require req2 ...)
+                                          (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp1 new-exp2 exp3 exp4))))
+                          (else 
+                           (syntax (test-case (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?) exp1 exp2 exp3 exp4)))))))
+                    (else syn)))
                 (process-extras (cdr extras))))
               ((interact-case? (car extras))
                (send (interact-case-box (car extras)) set-level level)

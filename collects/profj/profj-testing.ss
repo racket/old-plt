@@ -30,6 +30,10 @@
       ((and (not (object? v1)) (not (object? v2))) (equal? v1 v2))
       (else #f)))
   
+  (provide java-values-equal?)
+  (define (java-values-equal? v1 v2)
+    (java-equal? v1 v2 null null))
+  
   ;already-seen?: 'a 'a (list 'a) (list 'a)-> bool
   (define (already-seen? v1 v2 visited-v1 visited-v2)
     (cond

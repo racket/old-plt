@@ -1270,6 +1270,13 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(p, ">", 0, 1);
       }
     }
+  else if (SCHEME_THREADP(obj) && (((Scheme_Thread *)obj)->name))
+    {
+      Scheme_Thread *t = (Scheme_Thread *)obj;
+      print_this_string(p, "#<thread:", 0, 9);
+      print_this_string(p, scheme_symbol_val(t->name), 0, SCHEME_SYM_LEN(t->name));
+      print_this_string(p, ">", 0, 1);
+    }
   else if (SCHEME_INPORTP(obj))
     {
       if (compact) {

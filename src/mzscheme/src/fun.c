@@ -1574,6 +1574,8 @@ Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a)
 }
 
 const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
+     /* for_error > 0 => get name for an error message;
+	for_error < 0 => symbol result ok set *len to -1 */
 {
   Scheme_Type type;
   int dummy;
@@ -1607,8 +1609,13 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 	  return NULL;
       }
 
-      *len = SCHEME_SYM_LEN(n);
-      s = scheme_symbol_val(n);
+      if (for_error < 0) {
+	s = (char *)n;
+	*len = -1;
+      } else {
+	*len = SCHEME_SYM_LEN(n);
+	s = scheme_symbol_val(n);
+      }
     } else
       return NULL;
   } else if (type == scheme_proc_struct_type) {
@@ -1634,13 +1641,18 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 
     data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
     if (data->name) {
-      *len = SCHEME_SYM_LEN(data->name);
-      s = scheme_symbol_val(data->name);
+      if (for_error < 0) {
+	s = (char *)data->name;
+	*len = -1;
+      } else {
+	*len = SCHEME_SYM_LEN(data->name);
+	s = scheme_symbol_val(data->name);
+      }
     } else
       return NULL;
   }
 
-  if (for_error) {
+  if (for_error > 0) {
     char *r;
     
     r = (char *)scheme_malloc_atomic((*len) + 11);
@@ -1693,9 +1705,13 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
     const char *s;
     int len;
 
-    s = scheme_get_proc_name(a, &len, 0);
-    if (s) 
-      return scheme_intern_exact_symbol(s, len);
+    s = scheme_get_proc_name(a, &len, -1);
+    if (s) {
+      if (len < 0)
+	return (Scheme_Object *)s;
+      else
+	return scheme_intern_exact_symbol(s, len);
+    }
   } else if (SCHEME_STRUCT_TYPEP(a)) {
     return ((Scheme_Struct_Type *)a)->name;
   } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_struct_property_type)) {
@@ -1706,10 +1722,15 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
     if (s)
       return s;
   } else if (SCHEME_INPORTP(a)) {
-      Scheme_Input_Port *ip = (Scheme_Input_Port *)a;
-      if (ip->name) {
-	  return scheme_make_immutable_sized_string(ip->name, -1, 0);
-      }
+    Scheme_Input_Port *ip = (Scheme_Input_Port *)a;
+    if (ip->name) {
+      return scheme_make_immutable_sized_string(ip->name, -1, 0);
+    }
+  } else if (SCHEME_THREADP(a)) {
+    Scheme_Thread *t = (Scheme_Thread *)a;
+    if (t->name) {
+      return t->name;
+    }
   }
 
   return scheme_false;

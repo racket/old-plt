@@ -37,6 +37,9 @@
 ;;   e means a list of tokens, often ending in a '|;| token
 ;;   -e means a reversed list of tokens
 
+;; Simplifies build (no need to install non-3m first):
+(use-compiled-file-kinds 'none)
+
 ;; Make sure we can find MzLib:
 (unless (with-handlers ([not-break-exn? (lambda (x) #f)])
 	  (collection-path "mzlib"))

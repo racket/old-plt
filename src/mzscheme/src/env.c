@@ -459,6 +459,8 @@ static void make_init_env(void)
 						      1, 1),
 			     env);
 
+  scheme_current_thread->name = scheme_intern_symbol("mzscheme");
+
   DONE_TIME(env);
 
   scheme_install_type_writer(scheme_toplevel_type, write_toplevel);

@@ -447,6 +447,7 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
       startPt.h = startH + SetOriginX;
 
       if (::StillDown()) {
+	wxTracking();
 	if (buttonBitmap == NULL && cMacControl) {
 	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
 	} else {

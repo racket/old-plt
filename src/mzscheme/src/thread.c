@@ -242,6 +242,7 @@ static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[]);
+static Scheme_Object *custodian_to_list(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[]);
 
@@ -299,6 +300,8 @@ typedef struct Scheme_Thread_Custodian_Hop {
   Scheme_Thread *p; /* really an indirection with precise gc */
 } Scheme_Thread_Custodian_Hop;
 
+static Scheme_Custodian_Extractor *extractors;
+
 typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Object *key;
@@ -343,7 +346,7 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("vector-set-performance-stats!",
 			     scheme_make_prim_w_arity(current_stats,
 						      "vector-set-performance-stats!",
-						      1, 1),
+						      1, 2),
 			     env);
 
 
@@ -455,6 +458,11 @@ void scheme_init_thread(Scheme_Env *env)
 			     scheme_make_prim_w_arity(custodian_close_all,
 						      "custodian-shutdown-all",
 						      1, 1),
+			     env);
+  scheme_add_global_constant("custodian-managed-list",
+			     scheme_make_prim_w_arity(custodian_to_list,
+						      "custodian-managed-list",
+						      2, 2),
 			     env);
   scheme_add_global_constant("current-custodian", 
 			     scheme_register_parameter(current_custodian,
@@ -1187,6 +1195,101 @@ static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
+
+static Scheme_Object *extract_thread(Scheme_Object *o)
+{
+  return (Scheme_Object *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
+}
+
+void scheme_add_custodian_extractor(Scheme_Type t, Scheme_Custodian_Extractor e)
+{
+  if (!extractors) {
+    int n;
+    n = scheme_num_types();
+    REGISTER_SO(extractors);
+    extractors = MALLOC_N_ATOMIC(Scheme_Custodian_Extractor, n);
+    memset(extractors, 0, sizeof(Scheme_Custodian_Extractor) * n);
+    extractors[scheme_thread_hop_type] = extract_thread;
+  }
+
+  if (t) {
+    extractors[t] = e;
+  }
+}
+
+static Scheme_Object *custodian_to_list(int argc, Scheme_Object *argv[])
+{
+  Scheme_Custodian *m, *m2, *c;
+  Scheme_Object **hold, *o;
+  int i, j, cnt, kids;
+  Scheme_Type type;
+  Scheme_Custodian_Extractor ex;
+
+  if (!SCHEME_CUSTODIANP(argv[0]))
+    scheme_wrong_type("custodian-managed-list", "custodian", 0, argc, argv);
+  if (!SCHEME_CUSTODIANP(argv[1]))
+    scheme_wrong_type("custodian-managed-list", "custodian", 1, argc, argv);
+
+  m = (Scheme_Custodian *)argv[0];
+  m2 = (Scheme_Custodian *)argv[1];
+
+  /* Check that the second manages the first: */
+  c = CUSTODIAN_FAM(m->parent);
+  while (c && NOT_SAME_OBJ(m2, c)) {
+    c = CUSTODIAN_FAM(c->parent);
+  }
+  if (!c) {
+    scheme_arg_mismatch("custodian-managed-list",
+			"the second custodian does not "
+			"manage the first custodian: ",
+			argv[0]);
+  }
+
+  /* Init extractors: */
+  scheme_add_custodian_extractor(0, NULL);
+
+  /* Count children: */
+  kids = 0;
+  for (c = CUSTODIAN_FAM(m->children); c; c = CUSTODIAN_FAM(c->sibling)) {
+    kids++;
+  }
+
+  /* Do all allocation first, since custodian links are weak.
+     Furthermore, allocation may trigger collection of an otherwise
+     unreferenced custodian, folding its items into this one,
+     so loop until we've allocated enough. */
+  do {
+    cnt = m->count;
+    hold = MALLOC_N(Scheme_Object *, cnt + kids);
+  } while (cnt < m->count);
+  
+  /* Put managed items into hold array: */
+  for (i = m->count, j = 0; i--; ) {
+    if (m->boxes[i]) {
+      o = xCUSTODIAN_FAM(m->boxes[i]);
+      
+      type = SCHEME_TYPE(o);
+      ex = extractors[type];
+      if (ex) {
+	o = ex(o);
+      }
+
+      if (o) {
+	hold[j] = o;
+	j++;
+      }
+    }
+  }
+  /* Add kids: */
+  for (c = CUSTODIAN_FAM(m->children); c; c = CUSTODIAN_FAM(c->sibling)) {
+    hold[j] = (Scheme_Object *)c;
+    j++;
+  }
+
+  /* Convert the array to a list: */
+  return scheme_build_list(j, hold);
+}
+
 static Scheme_Object *current_custodian(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("current-custodian", 
@@ -1250,6 +1353,27 @@ static void check_scheduled_kills()
     k = SCHEME_CAR(scheduled_kills);
     scheduled_kills = SCHEME_CDR(scheduled_kills);
     scheme_close_managed((Scheme_Custodian *)k);
+  }
+}
+
+static void check_current_custodian_allows(const char *who, 
+					   Scheme_Custodian_Reference *mref, 
+					   Scheme_Object *o)
+{
+  Scheme_Custodian *m, *current;
+
+  /* Check management of the thread: */
+  current = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+  m = CUSTODIAN_FAM(mref);
+
+  while (NOT_SAME_OBJ(m, current)) {
+    m = CUSTODIAN_FAM(m->parent);
+    if (!m) {
+      scheme_arg_mismatch(who,
+			  "the current custodian does not "
+			  "manage the specified object: ",
+			  o);
+    }
   }
 }
 
@@ -1762,6 +1886,22 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   child = make_thread(NULL, config, mgr);
 
+  /* Use child_thunk name, if any, for the thread name: */
+  {
+    Scheme_Object *sym;
+    const char *s;
+    int len;
+    
+    s = scheme_get_proc_name(child_thunk, &len, -1);
+    if (s)  {
+      if (len < 0)
+	sym = (Scheme_Object *)s;
+      else
+	sym = scheme_intern_exact_symbol(s, len);
+      child->name = sym;
+    }
+  }
+
   if (!normal_kill)
     child->suspend_to_kill = 1;
 
@@ -2060,7 +2200,6 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->runstack_size = p->runstack_size;
   np->runstack_saved = p->runstack_saved;
   np->stack_start = p->stack_start;
-  np->stack_end = p->stack_end;
   np->current_local_env = p->current_local_env;
   np->engine_weight = p->engine_weight;
   {
@@ -2994,7 +3133,6 @@ void scheme_kill_thread(Scheme_Thread *p)
 
 static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
 {
-  Scheme_Custodian *m, *current;
   Scheme_Thread *p = (Scheme_Thread *)argv[0];
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
@@ -3003,19 +3141,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
 
-  /* Check management of the thread: */
-  current = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
-  m = CUSTODIAN_FAM(p->mref);
-
-  while (NOT_SAME_OBJ(m, current)) {
-    m = CUSTODIAN_FAM(m->parent);
-    if (!m) {
-      scheme_raise_exn(MZEXN_MISC,
-		       "kill-thread: the current custodian does not "
-		       "manage the specified thread");
-      return NULL;
-    }
-  }
+  check_current_custodian_allows("kill-thread", p->mref, (Scheme_Object *)p);
 
   scheme_kill_thread(p);
 
@@ -3071,6 +3197,8 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
     scheme_wrong_type("thread-suspend", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
+
+  check_current_custodian_allows("thread-suspend", p->mref, (Scheme_Object *)p);
 
   suspend_thread(p);
 
@@ -4918,34 +5046,109 @@ END_XFORM_SKIP;
 
 static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 {
-  long cpuend, end, gcend;
   Scheme_Object *v;
+  Scheme_Thread *t = NULL;
   
   v = argv[0];
 
   if (!SCHEME_MUTABLE_VECTORP(v))
     scheme_wrong_type("vector-set-performance-stats!", "mutable vector", 0, argc, argv);
+  if (argc > 1) {
+    if (!SCHEME_FALSEP(argv[1])) {
+      if (!SCHEME_THREADP(argv[1]))
+	scheme_wrong_type("vector-set-performance-stats!", "thread or #f", 0, argc, argv);
+      t = (Scheme_Thread *)argv[1];
+    }
+  }
+  
+  if (t) {
+    switch (SCHEME_VEC_SIZE(v)) {
+    default:
+    case 4:
+      {
+	/* Stack size: */
+	long sz = 0;
 
-  cpuend = scheme_get_process_milliseconds();
-  end = scheme_get_milliseconds();
-  gcend = scheme_total_gc_time;
+	if (MZTHREAD_STILL_RUNNING(t->running)) {
+	  Scheme_Overflow *overflow;
+	  Scheme_Saved_Stack *runstack_saved;
+	  
+	  /* C stack */
+	  if (t == scheme_current_thread) {
+	    void *stk_start, *stk_end;
+	    stk_start = t->stack_start;
+	    stk_end = (void *)&stk_end;
+#         ifdef STACK_GROWS_UP
+	    sz = (long)stk_end - (long)stk_start;
+#         endif
+#         ifdef STACK_GROWS_DOWN
+	    sz = (long)stk_start - (long)stk_end;
+#         endif
+	  } else {
+	    if (t->jmpup_buf.stack_copy)
+	      sz = t->jmpup_buf.stack_size;
+	  }
+	  for (overflow = t->overflow; overflow; overflow = overflow->prev) {
+	    sz += overflow->cont.stack_size;
+	  }
+	  
+	  /* Scheme stack */
+	  {
+	    int ssz;
+	    if (t == scheme_current_thread) {
+	      ssz = (scheme_current_runstack_start + t->runstack_size) - scheme_current_runstack;
+	    } else {
+	      ssz = (t->runstack_start + t->runstack_size) - t->runstack;
+	    }
+	    for (runstack_saved = t->runstack_saved; runstack_saved; runstack_saved = runstack_saved->prev) {
+	      ssz += runstack_saved->runstack_size;
+	    }
+	    sz += sizeof(Scheme_Object *) * ssz;
+	  }
+	  
+	  /* Mark stack */
+	  if (t == scheme_current_thread) {
+	    sz += ((long)scheme_current_cont_mark_pos >> 1) * sizeof(Scheme_Cont_Mark);
+	  } else {
+	    sz += ((long)t->cont_mark_pos >> 1) * sizeof(Scheme_Cont_Mark);
+	  }
+	}
 
-  switch (SCHEME_VEC_SIZE(v)) {
-  default:
-  case 6:
-    SCHEME_VEC_ELS(v)[5] = scheme_make_integer(scheme_overflow_count);
-  case 5:
-    SCHEME_VEC_ELS(v)[4] = scheme_make_integer(thread_swap_count);
-  case 4:
-    SCHEME_VEC_ELS(v)[3] = scheme_make_integer(did_gc_count);
-  case 3:
-    SCHEME_VEC_ELS(v)[2] = scheme_make_integer(gcend);
-  case 2:
-    SCHEME_VEC_ELS(v)[1] = scheme_make_integer(end);
-  case 1:
-    SCHEME_VEC_ELS(v)[0] = scheme_make_integer(cpuend);
-  case 0:
-    break;
+	SCHEME_VEC_ELS(v)[3] = scheme_make_integer(sz);
+      }
+    case 3:
+      SCHEME_VEC_ELS(v)[2] = (t->block_descriptor ? scheme_true : scheme_false);
+    case 2:
+      SCHEME_VEC_ELS(v)[1] = thread_dead_p(1, (Scheme_Object **)&t);
+    case 1:
+      SCHEME_VEC_ELS(v)[0] = thread_running_p(1, (Scheme_Object **)&t);
+    case 0:
+      break;
+    }
+  } else {
+    long cpuend, end, gcend;
+
+    cpuend = scheme_get_process_milliseconds();
+    end = scheme_get_milliseconds();
+    gcend = scheme_total_gc_time;
+    
+    switch (SCHEME_VEC_SIZE(v)) {
+    default:
+    case 6:
+      SCHEME_VEC_ELS(v)[5] = scheme_make_integer(scheme_overflow_count);
+    case 5:
+      SCHEME_VEC_ELS(v)[4] = scheme_make_integer(thread_swap_count);
+    case 4:
+      SCHEME_VEC_ELS(v)[3] = scheme_make_integer(did_gc_count);
+    case 3:
+      SCHEME_VEC_ELS(v)[2] = scheme_make_integer(gcend);
+    case 2:
+      SCHEME_VEC_ELS(v)[1] = scheme_make_integer(end);
+    case 1:
+      SCHEME_VEC_ELS(v)[0] = scheme_make_integer(cpuend);
+    case 0:
+      break;
+    }
   }
 
   return scheme_void;

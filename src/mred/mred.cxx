@@ -149,6 +149,7 @@ extern "C" {
 # define CAST_DW_RUN (DW_RUN_PTR)
 # define CAST_DW_POST (DW_POST_PTR)
 # define CAST_SUSPEND (ON_SUSPEND_PTR)
+# define CAST_EXT (Scheme_Custodian_Extractor)
 #else
 # define CAST_SCP /* empty */
 # define CAST_GCP /* empty */
@@ -170,6 +171,7 @@ extern "C" {
 # define CAST_DW_RUN /* empty */
 # define CAST_DW_POST /* empty */
 # define CAST_SUSPEND /* empty */
+# define CAST_EXT /* empty */
 #endif
 
 /* Set by mrmain.cxx: */
@@ -619,6 +621,11 @@ static void kill_eventspace(Scheme_Object *ec, void *)
   }
 
   remove_q_callbacks(c);
+}
+
+static Scheme_Object *extract_eventspace_from_hop(Scheme_Object *ec)
+{
+  return (Scheme_Object *)WEAKIFIED(((Context_Custodian_Hop *)ec)->context);
 }
 
 static void CollectingContext(void *cfx, void *)
@@ -1306,6 +1313,8 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 #endif
 
   this_thread = scheme_current_thread;
+  if (!this_thread->name)
+    this_thread->name = scheme_intern_symbol("handler");
   c->handler_running = this_thread;
   this_thread->on_kill = CAST_TOK on_handler_killed;
   this_thread->kill_data = c;
@@ -1360,8 +1369,8 @@ static void event_found(MrEdContext *c)
 
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
     scheme_thread_w_custodian(cp, c->main_config,
-			    (Scheme_Custodian *)scheme_get_param(c->main_config, 
-							       MZCONFIG_CUSTODIAN));
+			      (Scheme_Custodian *)scheme_get_param(c->main_config, 
+								   MZCONFIG_CUSTODIAN));
   }
 }
 
@@ -1503,6 +1512,7 @@ void wxDoEvents()
       cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
       wxREGGLOB(user_main_thread);
       user_main_thread = (Scheme_Thread *)scheme_thread(cp, c->main_config);
+      user_main_thread->name = scheme_intern_symbol("mred");
     }
 
 #if WINDOW_STDIO
@@ -2869,6 +2879,9 @@ static Scheme_Env *setup_basic_env()
 		      NULL,
 		      NULL, 0);
 
+  scheme_add_custodian_extractor(mred_eventspace_hop_type,
+				 CAST_EXT extract_eventspace_from_hop);
+
   wxsScheme_setup(global_env);
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
@@ -2887,6 +2900,8 @@ static Scheme_Env *setup_basic_env()
 
   mred_only_context = NULL;
 
+  /* This handler_running pointer gets reset later. Do
+     we really need to set it now? */
   mred_main_context->handler_running = scheme_current_thread;
 
   mzsleep = scheme_sleep;
@@ -2952,8 +2967,8 @@ wxFrame *MrEdApp::OnInit(void)
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
   mred_nested_wait_type = scheme_make_type("<eventspace-nested-wait>");
-#ifdef MZ_PRECISE_GC
   mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
+#ifdef MZ_PRECISE_GC
   GC_register_traversers(mred_eventspace_type, 
 			 size_eventspace_val, 
 			 mark_eventspace_val, 

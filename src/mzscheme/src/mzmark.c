@@ -1431,6 +1431,8 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
 
+  gcMARK(pr->name);
+
   gcMARK(pr->transitive_resumes);
 
   gcMARK(pr->suspended_box);
@@ -1503,6 +1505,8 @@ int thread_val_FIXUP(void *p) {
   
   gcFIXUP(pr->mr_hop);
   gcFIXUP(pr->mref);
+
+  gcFIXUP(pr->name);
 
   gcFIXUP(pr->transitive_resumes);
 

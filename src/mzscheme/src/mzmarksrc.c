@@ -569,6 +569,8 @@ thread_val {
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
 
+  gcMARK(pr->name);
+
   gcMARK(pr->transitive_resumes);
 
   gcMARK(pr->suspended_box);

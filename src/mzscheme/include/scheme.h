@@ -624,8 +624,9 @@ typedef struct Scheme_Cont_Frame_Data {
 /*                              threads                                   */
 /*========================================================================*/
 
-typedef void Scheme_Close_Custodian_Client(Scheme_Object *o, void *data);
+typedef void (Scheme_Close_Custodian_Client)(Scheme_Object *o, void *data);
 typedef void (*Scheme_Exit_Closer_Func)(Scheme_Object *, Scheme_Close_Custodian_Client *, void *);
+typedef Scheme_Object *(*Scheme_Custodian_Extractor)(Scheme_Object *o);
 
 #ifdef MZ_PRECISE_GC
 typedef struct Scheme_Object Scheme_Custodian_Reference;
@@ -783,6 +784,8 @@ typedef struct Scheme_Thread {
   struct Scheme_Thread_Custodian_Hop *mr_hop;
   Scheme_Custodian_Reference *mref;
   Scheme_Object *transitive_resumes; /* A hash table of running-boxes */
+
+  Scheme_Object *name;
 } Scheme_Thread;
 
 #if !SCHEME_DIRECT_EMBEDDED

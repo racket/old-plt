@@ -48,9 +48,10 @@ int scheme_starting_up;
 Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 
 static Scheme_Env *initial_env;
+static Scheme_Object *kernel_symbol;
 
 /* locals */
-static Scheme_Env *make_env(Scheme_Env *base);
+static Scheme_Env *make_env(Scheme_Env *base, int semi);
 static void make_init_env(void);
 static Scheme_Object *list_globals(int argc, Scheme_Object *argv[]);
 static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
@@ -61,6 +62,8 @@ static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
+static Scheme_Object *write_module_variable(Scheme_Object *obj);
+static Scheme_Object *read_module_variable(Scheme_Object *obj);
 static Scheme_Object *write_local(Scheme_Object *obj);
 static Scheme_Object *read_local(Scheme_Object *obj);
 static Scheme_Object *read_local_unbox(Scheme_Object *obj);
@@ -302,7 +305,7 @@ static void make_init_env(void)
   long startt;
 #endif
 
-  env = make_env(NULL);
+  env = make_env(NULL, 0);
 
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
@@ -407,10 +410,15 @@ static void make_init_env(void)
 
   scheme_install_type_writer(scheme_variable_type, write_variable);
   scheme_install_type_reader(scheme_variable_type, read_variable);
+  scheme_install_type_writer(scheme_module_variable_type, write_module_variable);
+  scheme_install_type_reader(scheme_module_variable_type, read_module_variable);
   scheme_install_type_writer(scheme_local_type, write_local);
   scheme_install_type_reader(scheme_local_type, read_local);
   scheme_install_type_writer(scheme_local_unbox_type, write_local);
   scheme_install_type_reader(scheme_local_unbox_type, read_local_unbox);
+
+  REGISTER_SO(kernel_symbol);
+  kernel_symbol = scheme_intern_symbol(".kernel");
 
   MARK_START_TIME();
 
@@ -432,10 +440,10 @@ static void make_init_env(void)
 
 Scheme_Env *scheme_make_empty_env(void)
 {
-  return make_env(NULL);
+  return make_env(NULL, 0);
 }
 
-static Scheme_Env *make_env(Scheme_Env *base)
+static Scheme_Env *make_env(Scheme_Env *base, int semi)
 {
   Scheme_Hash_Table *toplevel, *syntax, *module_registry, *modules;
   Scheme_Env *env;
@@ -443,35 +451,44 @@ static Scheme_Env *make_env(Scheme_Env *base)
   toplevel = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
   toplevel->with_home = 1;
 
-  syntax = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
-  if (base) {
-    modules = base->modules;
-    module_registry = base->module_registry;
+  if (semi) {
+    syntax = NULL;
+    modules = NULL;
+    module_registry = NULL;
   } else {
-    modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
-    module_registry = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+    syntax = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+    if (base) {
+      modules = base->modules;
+      module_registry = base->module_registry;
+    } else {
+      modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+      module_registry = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+    }
   }
 
   env = MALLOC_ONE_TAGGED(Scheme_Env);
   env->type = scheme_namespace_type;
 
   env->toplevel = toplevel;
-  env->syntax = syntax;
-  env->modules = modules;
-  env->module_registry = module_registry;
 
-  {
-    Scheme_Comp_Env *me;
-    me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
-    env->init = me;
-  }
+  if (!semi) {
+    env->syntax = syntax;
+    env->modules = modules;
+    env->module_registry = module_registry;
+
+    {
+      Scheme_Comp_Env *me;
+      me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+      env->init = me;
+    }
 #ifdef MZTAG_REQUIRED
-  env->init->type = scheme_rt_comp_env;
+    env->init->type = scheme_rt_comp_env;
 #endif
-  env->init->num_bindings = 0;
-  env->init->next = NULL;
-  env->init->genv = env;
-  init_compile_data(env->init);
+    env->init->num_bindings = 0;
+    env->init->next = NULL;
+    env->init->genv = env;
+    init_compile_data(env->init);
+  }
 
   return env;
 }
@@ -481,10 +498,11 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m)
 {
   Scheme_Env *menv;
 
-  menv = make_env(env);
+  menv = make_env(env, !m->modname); /* no name => just for read */
 
   menv->module = m;
-  menv->init->flags |= SCHEME_MODULE_FRAME;
+  if (menv->init)
+    menv->init->flags |= SCHEME_MODULE_FRAME;
 
   return menv;
 }
@@ -493,7 +511,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 {
   if (!env->exp_env) {
     Scheme_Env *eenv;
-    eenv = make_env(NULL);
+    eenv = make_env(NULL, 0);
     eenv->phase = env->phase + 1;
 
     eenv->module = env->module;
@@ -1594,24 +1612,43 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
 
   env = scheme_get_env(scheme_config);
 
-  if (SCHEME_SYMBOLP(obj)) {
-    return (Scheme_Object *)scheme_global_bucket(obj, env);
-  } else {
-    /* Find variable from module: */
-    env = scheme_module_access(SCHEME_CAR(obj), env);
-    
-    if (!env) {
-      scheme_wrong_syntax("read", NULL, NULL, 
-			  "broken compiled code, no declaration for module"
-			  ": %S containing variable: %S",
-			  SCHEME_CAR(obj), SCHEME_CDR(obj));
-      return NULL;
+  if (!SCHEME_SYMBOLP(obj)) {
+    /* Find variable from module. */
+    Scheme_Object *modname, *varname;
+
+    modname = SCHEME_CAR(obj);
+    varname = SCHEME_CDR(obj);
+
+    if (SAME_OBJ(modname, kernel_symbol))
+      return (Scheme_Object *)scheme_global_bucket(varname, initial_env);
+    else {
+      obj = scheme_alloc_object();
+      obj->type = scheme_module_variable_type;
+      SCHEME_PTR1_VAL(obj) = modname;
+      SCHEME_PTR2_VAL(obj) = varname;
+
+      return obj;
     }
-
-    scheme_check_accessible_in_module(env, SCHEME_CDR(obj), NULL);
-
-    return (Scheme_Object *)scheme_bucket_from_table(env->toplevel, (char *)SCHEME_CDR(obj));
   }
+
+  return (Scheme_Object *)scheme_global_bucket(obj, env);
+}
+
+static Scheme_Object *write_module_variable(Scheme_Object *obj)
+{
+  return scheme_make_pair(SCHEME_PTR1_VAL(obj), SCHEME_PTR2_VAL(obj));
+}
+
+static Scheme_Object *read_module_variable(Scheme_Object *obj)
+{
+  Scheme_Object *r;
+
+  r = scheme_alloc_object();
+  r->type = scheme_module_variable_type;
+  SCHEME_PTR1_VAL(r) = SCHEME_CAR(obj);
+  SCHEME_PTR2_VAL(r) = SCHEME_CDR(obj);
+  
+  return r;
 }
 
 static Scheme_Object *write_local(Scheme_Object *obj)

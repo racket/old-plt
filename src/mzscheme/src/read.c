@@ -2096,13 +2096,14 @@ static Scheme_Object *read_marshalled(int type,
   l = read_compact(port, ht, 1 CURRENTPROCARG);
   STACK_END(r);
 
-  if (!scheme_type_readers[type])
-      scheme_raise_exn(MZEXN_READ,
-		       port,
-		       "read (compiled): bad #` type number: %d at %ld",
-		       type, CP_TELL(port));
-
   reader = scheme_type_readers[type];
+
+  if (!reader)
+    scheme_raise_exn(MZEXN_READ,
+		     port,
+		     "read (compiled): bad #` type number: %d at %ld",
+		     type, CP_TELL(port));
+  
   return reader(l);
 }
 

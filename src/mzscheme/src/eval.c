@@ -557,7 +557,8 @@ int scheme_get_eval_type(Scheme_Object *obj)
     return SCHEME_EVAL_LOCAL;
   else if (SAME_TYPE(type, scheme_local_unbox_type))
     return SCHEME_EVAL_LOCAL_UNBOX;
-  else if (SAME_TYPE(type, scheme_variable_type))
+  else if (SAME_TYPE(type, scheme_variable_type)
+	   || SAME_TYPE(type, scheme_module_variable_type))
     return SCHEME_EVAL_GLOBAL;
   else
     return SCHEME_EVAL_GENERAL;
@@ -1016,6 +1017,27 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
   return v;  
 }
 
+static Scheme_Object *link_module_variable(Scheme_Object *modname,
+					   Scheme_Object *varname,
+					   Link_Info *info)
+{
+  Scheme_Env *menv;
+
+  menv = scheme_module_access(modname, info);
+  
+  if (!menv) {
+    scheme_wrong_syntax("link", NULL, varname,
+			"broken compiled code, no declaration for module"
+			": %S", modname);
+    return NULL;
+  }
+
+  if (!SAME_OBJ(menv, info))
+    scheme_check_accessible_in_module(menv, varname, NULL);
+      
+  return (Scheme_Object *)scheme_global_bucket(varname, menv);
+}
+
 Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 {
   Scheme_Type type = SCHEME_TYPE(expr);
@@ -1027,22 +1049,16 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 
       if (!info || !b->home->module)
 	return (Scheme_Object *)b;
-      else {
-	Scheme_Env *m;
-	
-	m = scheme_module_access(b->home->module->modname, info);
-
-	if (!m) {
-	  scheme_wrong_syntax("import", NULL, (Scheme_Object *)b->bucket.bucket.key, 
-			      "broken compiled code (link): cannot find prepared module");
-	  return NULL;
-	}
-
-	if (!SAME_OBJ(m, info))
-	  scheme_check_accessible_in_module(m, (Scheme_Object *)b->bucket.bucket.key, NULL);
-
-	return (Scheme_Object *)scheme_global_bucket((Scheme_Object *)b->bucket.bucket.key, m);
-      }
+      else
+	return link_module_variable(b->home->module->modname,
+				    (Scheme_Object *)b->bucket.bucket.key,
+				    info);
+    }
+  case scheme_module_variable_type:
+    {
+      return link_module_variable(SCHEME_PTR1_VAL(expr),
+				  SCHEME_PTR2_VAL(expr),
+				  info);
     }
   case scheme_syntax_type:
     {
@@ -1333,6 +1349,11 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
 
   if (SAME_TYPE(SCHEME_TYPE(form), scheme_compilation_top_type))
     return form;
+
+  if (SCHEME_STXP(form)) {
+    if (SAME_TYPE(SCHEME_TYPE(SCHEME_STX_VAL(form)), scheme_compilation_top_type))
+      return SCHEME_STX_VAL(form);
+  }
 
   p->ku.k.p1 = form;
   p->ku.k.p2 = env->init;

@@ -79,6 +79,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_local_type, "<local-code>");
   set_name(scheme_local_unbox_type, "<local-unbox-code>");
   set_name(scheme_variable_type, "<variable-code>");
+  set_name(scheme_module_variable_type, "<module-variable-code>");
   set_name(scheme_application_type, "<application-code>");
   set_name(scheme_compiled_unclosed_procedure_type, "<procedure-semi-code>");
   set_name(scheme_unclosed_procedure_type, "<procedure-code>");

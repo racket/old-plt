@@ -983,11 +983,6 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
   }
   
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)) {
-  } else {
-    if (ENV_PRIM_GLOBALS_ONLY(env)) {
-      scheme_wrong_syntax("set!", NULL, form,
-			  "cannot mutate a global from within a unit");
-    }
   } 
 
   set_undef = SCHEME_TRUEP(scheme_get_param(scheme_config,

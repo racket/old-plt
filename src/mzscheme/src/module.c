@@ -515,7 +515,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart)
 
   menv->running = 1;
 
-  body = scheme_link_list(m->body, menv);
+  body = m->body;
 
   for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
     e = scheme_link_expr(SCHEME_CAR(body), menv);
@@ -600,7 +600,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
   
-  m->modname = SCHEME_STX_VAL(nm);
+  m->modname = SCHEME_STX_VAL(nm); /* must set before calling new_module_env */
   menv = scheme_new_module_env(env->genv, m);
 
   {
@@ -1748,9 +1748,7 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   Scheme_Object *l, *v;
   int i, count;
 
-  l = m->modname;
-
-  l = cons(m->et_imports, l);
+  l = m->et_imports;
   l = cons(m->imports, l);
 
   l = cons(m->body, l);
@@ -1789,6 +1787,8 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   }
   l = cons(v, l);
 
+  l = cons(m->modname, l);
+
   return l;
 }
 
@@ -1801,7 +1801,9 @@ static Scheme_Object *read_module(Scheme_Object *obj)
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
-  
+  m->modname = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
   ie = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   nie = SCHEME_CAR(obj);
@@ -1856,10 +1858,7 @@ static Scheme_Object *read_module(Scheme_Object *obj)
 
   m->imports = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
-  m->et_imports = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-
-  m->modname = obj;
+  m->et_imports = obj;
 
   return (Scheme_Object *)m;
 }

@@ -1,5 +1,8 @@
 ;;; mysterxu.ss
 
+(require-library "macro.ss")
+(require-library "cores.ss")
+
 (require-library "sigs.ss" "mysterx")
 
 (define mysterx@

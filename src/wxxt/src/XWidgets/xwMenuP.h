@@ -35,8 +35,9 @@ typedef struct _menu_state {
     Position	       x;
     Position	       y;
     int	               delta, scrolled, can_go_down, arrow_start;
-    struct _menu_item *scroll_top;
-    int             too_tall;
+    struct _menu_item  *scroll_top;
+    int                too_tall;
+    long               timer;
     Dimension	       w;
     Dimension	       h;
     Dimension	       wLeft;

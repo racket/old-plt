@@ -38,6 +38,8 @@ SOFTWARE.
 #include <xwTools3d.h>
 #include <xwTabString.h>
 
+#include <wxtimeout.h>
+
 #define XtNtopShadowPixmap       "topShadowPixmap"
 #define XtCTopShadowPixmap       "TopShadowPixmap"
 #define XtNbottomShadowPixmap    "bottomShadowPixmap"
@@ -197,6 +199,14 @@ MenuClassRec menuClassRec = {
 };
 
 WidgetClass menuWidgetClass = (WidgetClass) &menuClassRec;
+
+void FreeTimer(long timer)
+{
+  if (timer) {
+    wxRemoveTimeOut(timer);
+  }
+}
+
 
 /******************************************************************************
  *
@@ -233,6 +243,7 @@ static void MenuInitialize(request, new, args, num_args)
     mw->menu.state->prev     = NULL;
     mw->menu.state->delta    = 0;
     mw->menu.state->scrolled = 0;
+    mw->menu.state->timer    = 0;
 
     mw->menu.moused_out = 0;
     mw->menu.grabbed = FALSE;
@@ -299,15 +310,17 @@ static void MenuDestroy(w)
 	XDestroyWindow(XtDisplay(mw), ms->win);
 	last = ms;
 	ms   = ms->prev;
+	FreeTimer(last->timer);
 	XtFree((char*)last);
     }
+    FreeTimer(ms->timer);
     XtFree((char*)ms); /* free menu_state of widget's window */
 }
 
 #define CHANGED_bg_  (new->core.background_pixel != old->core.background_pixel)
-#define CHANGED(val) (new->menu.##val != old->menu.##val)
-#define NEW(val)     (new->menu.##val)
-#define OLD(val)     (old->menu.##val)
+#define CHANGED(val) (new->menu.val != old->menu.val)
+#define NEW(val)     (new->menu.val)
+#define OLD(val)     (old->menu.val)
 
 /* ARGUSED */
 static Boolean MenuSetValues(gcurrent, grequest, gnew)
@@ -442,14 +455,14 @@ static void Drag(w, event, params, num_params)
     XSync(XtDisplay(mw), FALSE);
     /* allow motion events to be generated again */
     if (ev->is_hint
-    && XQueryPointer(XtDisplay(mw), ev->window,
-		     &ev->root, &ev->subwindow,
-		     &ev->x_root, &ev->y_root,
-		     &ev->x, &ev->y, &ev->state)
-    && ev->state == state
-    && (ev->x_root != x || ev->y_root != y)) {
-	HandleMotionEvent(mw, ev);
-	XSync(XtDisplay(mw), FALSE);
+	&& XQueryPointer(XtDisplay(mw), ev->window,
+			 &ev->root, &ev->subwindow,
+			 &ev->x_root, &ev->y_root,
+			 &ev->x, &ev->y, &ev->state)
+	&& ev->state == state
+	&& (ev->x_root != x || ev->y_root != y)) {
+      HandleMotionEvent(mw, ev);
+      XSync(XtDisplay(mw), FALSE);
     }
 }
 
@@ -1165,10 +1178,16 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
     int        mask;
     XSetWindowAttributes xswa;
 
+    if (mw->menu.state->timer) {
+      FreeTimer(mw->menu.state->timer);
+      mw->menu.state->timer = 0;
+    }
+
     /* Create new menu_state, initialize it and compute menu size */
     new->menu      = item->contents;
     new->selected  = NULL;
     new->prev      = prev;
+    new->timer     = 0;
     mw->menu.state = new;
     ComputeMenuSize(mw, new);
     new->delta     = (new->too_tall ? TOO_TALL_SCROLL_HEIGHT : 0);
@@ -1248,10 +1267,24 @@ static void UnhighlightItem(MenuWidget mw, menu_state *ms, menu_item *item)
 	    XDestroyWindow(XtDisplay(mw), state->win);
 	    last  = state;
 	    state = state->prev;
+	    FreeTimer(last->timer);
 	    XtFree((char*)last);
 	}
 	mw->menu.state = ms;
     }
+}
+
+static void timer_callback(XtPointer client_data, XtIntervalId * timer)
+{
+  MenuWidget mw = (MenuWidget)client_data;
+  XMotionEvent ev;
+
+  XQueryPointer(XtDisplay(mw), XtWindow(mw),
+		&ev.root, &ev.subwindow,
+		&ev.x_root, &ev.y_root,
+		&ev.x, &ev.y, &ev.state);
+
+  HandleMotionEvent(mw, &ev);
 }
 
 static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
@@ -1261,6 +1294,11 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
     Dimension  pushright = 0;
     Boolean    foundone = 0;
     int        scroll = 0;
+
+    if (mw->menu.state->timer) {
+      FreeTimer(mw->menu.state->timer);
+      mw->menu.state->timer = 0;
+    }
 
     /* find menu_state belonging to event */
     if (ev) {
@@ -1311,8 +1349,8 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 	} else {
 	  if (ms->can_go_down) {
 	    ms->scrolled += 1;
-	    ms->scroll_top = ms->scroll_top->next;
 	    ms->delta -= (ms->scroll_top->end - ms->scroll_top->start);
+	    ms->scroll_top = ms->scroll_top->next;
 	  }  else
 	    scroll = 0;
 	}
@@ -1322,6 +1360,9 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 			 mw->menu.erase_GC,
 			 0, 0, ms->w, ms->h);
 	  DisplayMenu(mw, mw->menu.state);
+
+	  ms->timer = wxAppAddTimeOut(XtWidgetToApplicationContext((Widget)mw),
+				      100, timer_callback, mw);
 	}
       }
       return 0;

@@ -61,10 +61,6 @@
 (test-values '(1 2) (lambda () (with-handlers ([void void])
 					      (values 1 2))))
 
-(test 45 'with-handlers-internal-defns (with-handlers ([void void])
-					 (define x 45)
-					 x))
-
 (SECTION 4 1 2)
 (test '(quote a) 'quote (quote 'a))
 (test '(quote a) 'quote ''a)
@@ -488,8 +484,27 @@
 (let ([wrap
        (lambda (val body)
 	 (teval `(test ,val 'let-begin (let () ,@body)))
+	 (teval `(test ,val 'let-begin (let ([xyzw 12]) ,@body)))
 	 (teval `(test ,val (lambda () ,@body)))
-	 (teval `(test 12 'begin0-begin (begin0 12 ,@body))))])
+	 (teval `(test ,val 'parameterize-begin
+		       (parameterize () ,@body)))
+	 (teval `(test ,val 'parameterize-begin
+		       (parameterize ([current-directory (current-directory)])
+			 ,@body)))
+	 (teval `(test ,val 'with-handlers-begin
+		       (with-handlers () ,@body)))
+	 (teval `(test ,val 'with-handlers-begin
+		       (with-handlers ([void void]) ,@body)))
+	 (teval `(test ,val 'fluid-let-begin (fluid-let () ,@body)))
+	 (teval `(test ,val 'fluid-let-begin (fluid-let ([x 20]) ,@body)))
+	 (syntax-test `(when (positive? 1) ,@body))
+	 (syntax-test `(unless (positive? -1) ,@body))
+	 (syntax-test `(cond [(positive? 1) ,@body][else #f]))
+	 (syntax-test `(cond [(positive? -1) 0][else ,@body]))
+	 (syntax-test `(case (positive? 1) [(#t) ,@body][else -12]))
+	 (syntax-test `(cond [#t ,@body]))
+	 (syntax-test `(do ((x 1)) (#t ,@body) ,@body))
+	 (syntax-test `(begin0 12 ,@body)))])
   (wrap 5 '((begin (define x 5)) x))
   (wrap 5 '((begin (define x 5) x)))
   (wrap 15 '((begin (define x 5)) (begin (define y (+ x 10)) y)))
@@ -711,10 +726,6 @@
   (error-test '(define-values (x y) 3) exn:application:arity?)
   (error-test '(define-values (x y) (values 1 2 3)) exn:application:arity?))
 
-(define ed-t0 0)
-(test 0 'begin0-define (begin0 0 (define x 5) (set! ed-t0 x)))
-(test 5 'begin0-define ed-t0)
-
 (begin (define ed-t1 1) (define ed-t2 2))
 (test 1 'begin-define ed-t1)
 (test 2 'begin-define ed-t2)
@@ -770,9 +781,9 @@
 
 (SECTION 4 2 4)
 (test '#(0 1 2 3 4) 'do (do ((vec (make-vector 5))
-			    (i 0 (+ i 1)))
-			   ((= i 5) vec)
-			 (vector-set! vec i i)))
+			     (i 0 (+ i 1)))
+			    ((= i 5) vec)
+			  (vector-set! vec i i)))
 (test 25 'do (let ((x '(1 3 5 7 9)))
 	       (do ((x x (cdr x))
 		    (sum 0 (+ sum (car x))))

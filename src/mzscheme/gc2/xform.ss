@@ -814,7 +814,7 @@
 				     (tok-n s))))]
 	[seps (list '|,| '* semi)])
     (and (eq? (tok-n (cadr e)) 'struct)
-	 (braces? (cadddr e))
+	 (brackets? (cadddr e))
 	 (once (caddr e))
 	 (let loop ([e (cddddr e)])
 	   (cond

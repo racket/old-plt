@@ -1092,7 +1092,7 @@ inline struct mpage *find_page(void *p) {
 /* Allocation routines                                                       */
 /*****************************************************************************/
 
-/* inline int gen0_member_p(void *p) { */
+/* int gen0_member_p(void *p) { */
 /*   return (((unsigned long)p >= (unsigned long)gen0_heap) */
 /*           && ((unsigned long)p < (unsigned long)gen0_region_p)); */
 /* } */
@@ -1528,14 +1528,14 @@ static int fixup_weak_box(void *p) {
 static int size_weak_array(void *p) {
   struct weak_array *wa = (struct weak_array *)p;
   return gcBYTES_TO_WORDS(sizeof(struct weak_array)
-                          + ((wa->count - 1) * sizeof(void)));
+                          + ((wa->count - 1) * sizeof(void*)));
 }
 
 static int mark_weak_array(void *p) {
   struct weak_array *wa = (struct weak_array *)p;
   gcMARK(wa->replace_val);
   return gcBYTES_TO_WORDS(sizeof(struct weak_array)
-                          + ((wa->count - 1) * sizeof(void)));
+                          + ((wa->count - 1) * sizeof(void*)));
 }
 
 static int fixup_weak_array(void *p) {
@@ -1550,7 +1550,7 @@ static int fixup_weak_array(void *p) {
     } else if(data[i]) gcFIXUP(data[i]);
   }
   return gcBYTES_TO_WORDS(sizeof(struct weak_array)
-                          + ((wa->count - 1) * sizeof(void)));
+                          + ((wa->count - 1) * sizeof(void*)));
 }
 
 /*****************************************************************************/

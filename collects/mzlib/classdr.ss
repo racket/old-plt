@@ -52,10 +52,10 @@
 								     (symbol? (cadr x))))
 							      (cdr x)))))
       
-      (define (class/d* super-f interfaces init-args clauses . def/exps)
+      (define (class/d*-f super interfaces init-args clauses . def/exps)
 	(apply class/d*/names '(this super-init) super interfaces init-args clauses def/exps))
 
-      (define (class/d super-f init-args clauses . def/exps)
+      (define (class/d-f super init-args clauses . def/exps)
 	(apply class/d* super '() init-args clauses def/exps))
 
       (define (class/d*/names-f local-names super interfaces init-args clauses . def/exps)

@@ -2086,7 +2086,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     exss = iim->provide_srcs;
     numvals = iim->num_var_provides;
     for (i = iim->num_provides; i--; ) {
-      midx = (exss ? exss[i] : nmidx);
+      if (exss) {
+	midx = exss[i];
+	if (SCHEME_FALSEP(midx))
+	  midx = nmidx;
+      } else
+	midx = nmidx;
       vec = scheme_make_vector(4, NULL);
       SCHEME_VEC_ELS(vec)[0] = nmidx;
       SCHEME_VEC_ELS(vec)[1] = midx;
@@ -2596,7 +2601,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       }
       if (SCHEME_NULLP(l)) {
 	/* Didn't require the named module */
-	scheme_wrong_syntax("provide", midx, ((Scheme_Modidx *)midx)->path,
+	Scheme_Object *name;
+	name = SCHEME_CAR(rx);
+	name = SCHEME_STX_CDR(name);
+	name = SCHEME_STX_CAR(name);
+	scheme_wrong_syntax("provide", 
+			    SCHEME_SYMBOLP(midx) ? midx : ((Scheme_Modidx *)midx)->path, 
+			    name,
 			    "no `require' matching the module name");
       }
 

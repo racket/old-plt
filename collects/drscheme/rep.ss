@@ -54,7 +54,7 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
-  (define library-unit #f)
+  (define library-invoker #f)
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   (fw:preferences:set-default 'drscheme:library-file
@@ -71,13 +71,54 @@
        (if v
 	   (let ([new-unit (load/cd v)])
 	     (if (unit/sig? new-unit)
-		 (set! library-unit new-unit)
+		 ; Put the unit into a procedure that invokes it into
+		 ;  the current namespace
+		 (let* ([signature 
+			 ; exploded -> flattened
+			 ; [Why doesn't MzScheme provide this?]
+			 (let ([sig (unit-with-signature-exports new-unit)])
+			   (let loop ([l (vector->list sig)][r null])
+			     (cond
+			      [(null? l) r]
+			      [(symbol? (car l)) (loop (cdr l) (cons (car l) r))]
+			      [else (let ([sub (loop (vector->list (cadr l)) null)]
+					  [prefix (string-append (symbol->string (car l)) ":")])
+				      (loop (cdr l)
+					    (append
+					     (map (lambda (s)
+						    (string->symbol
+						     (string-append
+						      prefix
+						      (symbol->string s))))
+						  sub))))])))])
+		   (set! library-invoker
+			 (eval
+			  `(lambda ()
+			     (with-handlers ([(lambda (x) #t)
+					      (lambda (x)
+						((error-display-handler)
+						 (format
+						  "Invalid Library:~n~a"
+						  (if (exn? x) (exn-message x) x))))])
+			       (global-define-values/invoke-unit/sig
+				,signature
+				(compound-unit/sig
+				 (import)
+				 (link [userspace : plt:userspace^ 
+						  ((compound-unit/sig 
+						    (import)
+						    (link [core : mzlib:core-flat^ (,core-flat@)]
+							  [mred : mred^ (,mred:mred@)])
+						    (export (open core)
+							    (open mred))))]
+				       [library : ,signature (,new-unit userspace)])
+				 (export (open library)))))))))
 		 (begin
 		   (mred:message-box 
 		    "Invalid Library"
 		    "Library file does not contain a unit")
 		   #f)))
-	   (set! library-unit #f)))))
+	   (set! library-invoker #f)))))
     
   (define exception-reporting-rep (make-parameter #f))
 
@@ -1110,30 +1151,7 @@
       (private
 	[initialize-parameters ; =User=
 	 (lambda ()
-	   (let ([setting (fw:preferences:get 'drscheme:settings)]
-		 [library-unit
-		  '(compound-unit/sig
-		      (import)
-		    (link [userspace : plt:userspace^ 
-				     ((compound-unit/sig 
-					  (import)
-					(link [core : mzlib:core-flat^ (core-flat@)]
-					      [mred : mred^ (mred:mred@)])
-					(export (open core)
-						(open mred))))]
-			  [library : () ((unit/sig ()
-					   (import plt:userspace^)
-					   (when library-unit
-					     (with-handlers ([(lambda (x) #t)
-							      (lambda (x)
-								((error-display-handler)
-								 (format
-								  "Invalid Library:~n~a"
-								  (if (exn? x) (exn-message x) x))
-								 "Invalid Library"))])
-					       (invoke-open-unit/sig library-unit #f plt:userspace^))))
-					 userspace)])
-		    (export))])
+	   (let ([setting (fw:preferences:get 'drscheme:settings)])
 
 	     (basis:initialize-parameters
 	      user-custodian
@@ -1240,12 +1258,8 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
-	     '(with-handlers ([(lambda (x) #t)
-			       (lambda (y) 
-				 (display (exn-message y))
-				 (newline))])
-		(invoke-unit/sig
-		 library-unit))
+	     (when library-invoker
+	       (library-invoker))
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

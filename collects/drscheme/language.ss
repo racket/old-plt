@@ -257,7 +257,7 @@
 		    'up 'up "lib")])
       (if (directory-exists? lib-dir)
 	  lib-dir
-	  null)))
+	  #f)))
 
   (define (fill-language-menu language-menu)
     (make-object mred:menu-item%

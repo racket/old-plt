@@ -1,6 +1,6 @@
-(unless (equal? (version) "100/31")
+(unless (equal? (version) "100/32")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/31, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/32, not version ~a"
          (version)))
 (define-signature
   mred-interfaces^
@@ -44,6 +44,7 @@
            image-snip%
            horizontal-panel%
            horizontal-pane%
+           grow-box-spacer-pane%
            gauge%
            frame%
            font-list%
@@ -112,6 +113,7 @@
    image-snip<%>
    horizontal-panel<%>
    horizontal-pane<%>
+   grow-box-spacer-pane<%>
    gauge<%>
    frame<%>
    font-list<%>

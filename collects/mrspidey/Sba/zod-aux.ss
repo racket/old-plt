@@ -51,6 +51,8 @@
 		       (zodiac:make-set!-form o s f b (cl-fn var) (cl-fn val))]
 		      [($ zodiac:begin-form o s f b bodies)
 		       (zodiac:make-begin-form o s f b (map cl-fn bodies))]
+		      [($ zodiac:begin0-form o s f b bodies)
+		       (zodiac:make-begin0-form o s f b (map cl-fn bodies))]
 		      [($ zodiac:let-values-form o s f b  varss vals body)
 		       (let ([varss (map (lambda (vars) (map cl-fn vars))
 					 varss)])

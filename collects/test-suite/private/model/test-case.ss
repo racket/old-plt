@@ -67,6 +67,8 @@
       
       ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
       ;; execute the test case
+      ;; status: set-actual should really be called from within the test as a 3D value but I couldn't
+      ;;         get it to work
       (define/public (execute expander continue)
         (let ([call-with-test
                (lambda (f)
@@ -75,22 +77,27 @@
                      (f (syntax equal?))))])
           (send expander expand-text call
                 (lambda (call-syntax)
-                  (send expander expand-text expected
-                        (lambda (expected-syntax)
-                          (call-with-test
-                           (lambda (test-syntax)
-                             (send expander eval-syntax
-                                   (with-syntax ([call call-syntax]
-                                                 [expected expected-syntax]
-                                                 [test test-syntax])
-                                     (syntax (#%app test call expected)))
-                                   (lambda (test-value) ; =drscheme-eventspace=
-                                     (set-icon test-value)
-                                     (let ([next-case (next)])
-                                       (if next-case
-                                           (send next-case execute expander continue)
-                                           (continue)))))))))))))
-        
+                  (send expander eval-syntax call-syntax
+                        (lambda (call-value)
+                          (send expander user-format call-value
+                                (lambda (call-string)
+                                  (set-actual call-string)
+                                  (send expander expand-text expected
+                                        (lambda (expected-syntax)
+                                          (call-with-test
+                                           (lambda (test-syntax)
+                                             (send expander eval-syntax
+                                                   (with-syntax ([call call-syntax]
+                                                                 [expected expected-syntax]
+                                                                 [test test-syntax])
+                                                     (syntax (#%app test call expected)))
+                                                   (lambda (test-value) ; =drscheme-eventspace=
+                                                     (set-icon test-value)
+                                                     (let ([next-case (next)])
+                                                       (if next-case
+                                                           (send next-case execute expander continue)
+                                                           (continue)))))))))))))))))
+      
       (super-instantiate ()
         (stretchable-width true)
         (stretchable-height false)

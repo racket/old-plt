@@ -11,7 +11,7 @@
    "itest-suite-window.ss"
    "language-menu.ss"
    "error-panel.ss"
-   "button-panel.ss"
+   "user-interface.ss"
    "program-panel.ss")
   
   (provide/contract
@@ -76,7 +76,7 @@
     (language-menu-mixin
      (error-panel-mixin
       (program-panel-mixin
-       (interface-mixin
+       (user-interface-mixin
         (core-test-window-mixin
          frame:standard-menus%))))))
   )

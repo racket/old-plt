@@ -2860,9 +2860,14 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 		   name, msg, filename,
 		   pre, rel, post,
 		   err,
-		   (((err == EMFILE) || (err == ENFILE)) 
+#ifdef EMFILE
+		   ((err == EMFILE) || (err == ENFILE)
 		    ? " - too many files open" 
-		    : ""));
+		    : "")
+#else
+		    ""
+#endif
+		    );
 }
 
 static Scheme_Object *

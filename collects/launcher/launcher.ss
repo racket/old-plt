@@ -5,9 +5,7 @@
   (require (lib "compile-sig.ss" "dynext")
 	   (lib "compile.ss" "dynext")
 	   (lib "link-sig.ss" "dynext")
-	   (lib "link.ss" "dynext")
-	   (lib "xml-sig.ss" "xml")
-	   (lib "xml.ss" "xml"))
+	   (lib "link.ss" "dynext"))
   
   (require "launcher-sig.ss"
 	   "launcher-unit.ss")
@@ -16,7 +14,6 @@
     launcher@
     #f
     dynext:compile^
-    dynext:link^
-    xml^)
+    dynext:link^)
 
   (provide-signature-elements launcher^))

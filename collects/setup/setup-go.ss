@@ -7,7 +7,6 @@
   (require "option-sig.ss")
   (require "setup-unit.ss")
   (require "option-unit.ss")
-  (require (lib "xml-unit.ss" "xml"))
 
   (define-values/invoke-unit/sig setup-option^
     setup:option@)
@@ -68,8 +67,7 @@
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : setup-option^))
-    (link [launcher : launcher^ (launcher@ dcompile dlink xml-unit)]
-	  [xml-unit : xml^ (xml@)]
+    (link [launcher : launcher^ (launcher@ dcompile dlink)]
 	  [dcompile : dynext:compile^ (dynext:compile@)]
 	  [dlink : dynext:link^ (dynext:link@)]
 	  [dfile : dynext:file^ (dynext:file@)]

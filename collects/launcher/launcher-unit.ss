@@ -4,7 +4,9 @@
 
   (require (lib "compile-sig.ss" "dynext"))
   (require (lib "link-sig.ss" "dynext"))
-  (require (lib "xml-sig.ss" "xml"))
+
+  (require (lib "process.ss"))
+  (require (lib "plist.ss" "xml"))
 
   (require "launcher-sig.ss")
 
@@ -13,8 +15,7 @@
   (define launcher@
     (unit/sig launcher^
       (import [c : dynext:compile^]
-	      [l : dynext:link^]
-	      xml^)
+	      [l : dynext:link^])
 
       ;; NOTE: evil name dependencies here:
       
@@ -290,16 +291,6 @@
       
       ;; OS X launcher code:
      
-      (define (make-starter-info-xml executable-name arg-list)
-        (make-document (make-prolog (make-pi #f #f 'xml "version=\"1.0\" encoding=\"UTF-8\"") #f)
-		       (xexpr->xml `(plist ((version "0.9"))
-					   (dict (key "executable name")
-						 (string ,executable-name)
-						 (key "stored arguments")
-						 (array ,@(map (lambda (arg)
-								`(string ,arg))
-							      arg-list)))))))
-
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind flags dest)
 	(if (eq? kind 'mzscheme) 
@@ -308,18 +299,31 @@
 	      (unless plthome
 		      (error 'make-unix-launcher 
 			     "unable to locate PLTHOME"))
-	      (install-template dest 'mred 'bad-file-name "Starter.app")
-	      (with-output-to-file (build-path dest "Contents" "Resources" "starter-info")
-		(lambda (port)
-		  (write-xml (make-starter-info-xml (build-path plthome 
-								"bin"
-								"MrEd.app"
-								"Contents"
-								"MacOS"
-								"MrEd")
-						    flags) 
-			     port))
-		'truncate))))
+	      ;; have to roll my own install-template, because Apps are
+	      ;; really directories.
+	      (let* ([dest (string-append dest ".app")]
+		     [src (build-path (collection-path "launcher")
+				      "Starter.app")])
+		;(system (string-append "CpMac -r " src " " dest))
+		(unless (directory-exists? dest)
+			(system* "/Developer/Tools/CpMac" "-r" src dest))
+		(call-with-output-file (build-path dest 
+						   "Contents" 
+						   "Resources" 
+						   "starter-info")
+		  (lambda (port)
+		    (write-plist 
+		     `(dict (assoc-pair "executable name"
+					,(build-path plthome 
+						     "bin"
+						     "MrEd.app"
+						     "Contents"
+						     "MacOS"
+						     "MrEd"))
+			    (assoc-pair "stored arguments"
+					(array ,@flags)))
+		     port))
+		  'truncate)))))
         
       
       ;; lazy install-aliases code for mac added by jbc 2000-6:
@@ -425,7 +429,6 @@
 						(char-downcase c)))
 					  (string->list file)))]
 			   [(windows) (string-append file ".exe")]
-			   [(macosx) (string-append file ".app")]
 			   [else file]))
 
       (define (mred-program-launcher-path name)

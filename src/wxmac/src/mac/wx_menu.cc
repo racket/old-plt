@@ -113,6 +113,17 @@ wxMenuBar::~wxMenuBar(void)
   delete[] titles;
 }
 
+
+static void wxInvalMenuBar(void)
+{
+  CGrafPtr savep;
+  GDHandle savegd;
+  ::GetGWorld(&savep, &savegd);  
+  ::SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
+  ::DrawMenuBar();
+  ::SetGWorld(savep, savegd);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Menus
 ///////////////////////////////////////////////////////////////////////////////
@@ -565,7 +576,7 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
       Install();
     } else {
       ::InsertMenu(menu->cMacMenu, 0);
-      ::InvalMenuBar();
+      wxInvalMenuBar();
     }
   }
 
@@ -604,7 +615,7 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
       Install();
     } else {
       ::DeleteMenu(menu->cMacMenuId);
-      ::InvalMenuBar();
+      wxInvalMenuBar();
     }
   }
 
@@ -677,7 +688,7 @@ void wxMenuBar::Install(void)
 	  ::EnableMenuItem(menu->MacMenu(), 0);
       }
     }
-  ::InvalMenuBar();
+  wxInvalMenuBar();
   last_installed_bar = this;
 }
 
@@ -928,7 +939,7 @@ void wxMenu::Enable(Bool Flag)
 		    EnableMenuItem(cMacMenu, 0);
 		  else
 		    DisableMenuItem(cMacMenu, 0);
-		  ::InvalMenuBar();
+		  wxInvalMenuBar();
 		  CheckHelpHack();
 		}
 	    }

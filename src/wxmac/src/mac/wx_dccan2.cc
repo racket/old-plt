@@ -16,6 +16,7 @@
 #include "wx_dccan.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
+#include "wx_area.h"
 #include "wx_rgn.h"
 #include "wx_privt.h"
 
@@ -539,13 +540,8 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
   ReleaseCurrentDC();
 }
 
-/*-----------------------------------
-  Ideally, Blit() should munged its args and call the Mac ToolBox 
-  CopyBits() function. 
-  We also have to be aware that the 'source' arg could actually be a
-  wxMemoryDC and we may have to switch GWorlds. 
-  I.e if (this->device != source->device)
-  */
+static int noDCSet = 0; /* back door for GCBlit */
+
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		      wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c,
 		      wxBitmap *mask)
@@ -555,18 +551,20 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   if (!Ok() || !cMacDC || !source->Ok()) return FALSE;
   if (mask && !mask->Ok()) return FALSE;
 
-  SetCurrentDC();
+  if (!noDCSet) {
+    SetCurrentDC();
   
-  if (source->GetDepth() == 1) {
-    wxMacSetCurrentTool(kColorBlitTool);
-    if (rop == wxSOLID) BackColor(whiteColor);
-    if (c)
-      InstallColor(c, TRUE);
-    else
-      ForeColor(blackColor);
-  } else {
-    wxMacSetCurrentTool(kBlitTool);
-    rop = wxSTIPPLE;
+    if (source->GetDepth() == 1) {
+      wxMacSetCurrentTool(kColorBlitTool);
+      if (rop == wxSOLID) BackColor(whiteColor);
+      if (c)
+	InstallColor(c, TRUE);
+      else
+	ForeColor(blackColor);
+    } else {
+      wxMacSetCurrentTool(kBlitTool);
+      rop = wxSTIPPLE;
+    }
   }
 
   {
@@ -589,11 +587,13 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     int iysrc = (int)floor(ysrc);
     
     if (ixsrc > source->GetWidth()) {
-      ReleaseCurrentDC();
+      if (!noDCSet)
+	ReleaseCurrentDC();
       return TRUE;
     }
     if (iysrc > source->GetHeight()) {
-      ReleaseCurrentDC();
+      if (!noDCSet)
+	ReleaseCurrentDC();
       return TRUE;
     }
 
@@ -625,12 +625,13 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
       err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
       if (err != noErr) {
 	DisposeRgn(maskRgn);
-	ReleaseCurrentDC();
+	if (!noDCSet)
+	  ReleaseCurrentDC();
 	return FALSE;
       }
       OffsetRgn(maskRgn, destr.left, destr.top);
     }
-    
+
     ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
 
     if (maskRgn)
@@ -640,7 +641,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     CalcBoundingBox(xdest + width, ydest + height);
   }
 
-  ReleaseCurrentDC();
+  if (!noDCSet)
+    ReleaseCurrentDC();
 
   return TRUE;
 }
@@ -649,9 +651,53 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 			wxBitmap *source, float xsrc, float ysrc)
 {
   /* Non-allocating (i.e. no collectable allocation) Blit. Looks like
-     the normal one will work. */
+     the normal one will work, but we need to be careful about shifting the
+     current drawing port. So we do the setup manually here and restore it
+     completely. */
+  Bool ok;
+  CGrafPtr savep;
+  GDHandle savegd;
+  ThemeDrawingState state;
+  long ox, oy;
+  
+  ::GetGWorld(&savep, &savegd);  
 
-  return Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
+  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  if (IsPortOffscreen(theMacGrafPort)) {
+    ::SetGWorld(theMacGrafPort, NULL);
+  } else {
+    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+  }
+
+  ox = SetOriginX;
+  oy = SetOriginY;
+  SetOriginX = SetOriginY = 0;
+  if (canvas)
+    canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+
+  GetThemeDrawingState(&state);
+
+  noDCSet = 1;
+
+  ForeColor(blackColor);
+  BackColor(whiteColor);
+  BackPat(GetWhitePattern());
+  PenMode(patCopy);
+
+  Rect largestClipRect = {-32767, -32767, 32767, 32767};
+  ::ClipRect(&largestClipRect);
+
+  ok = Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
+
+  noDCSet = 0;
+
+  SetThemeDrawingState(state, TRUE);
+  SetOriginX = ox;
+  SetOriginY = oy;
+
+  ::SetGWorld(savep, savegd);
+  
+  return ok;
 }
 
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)

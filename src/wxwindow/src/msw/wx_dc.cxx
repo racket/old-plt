@@ -899,8 +899,7 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 
 void wxDC::DrawRectangle(double x, double y, double width, double height)
 {
-  int x1, y1, x2, y2;
-  Bool do_brush, do_pen;
+  int x1, y1, x2, y2, dd;
   HDC dc;
 
   dc = ThisDC();
@@ -917,15 +916,20 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
   ShiftXY(x, y, &x1, &y1);
   ShiftXY(x + width, y + height, &x2, &y2);
 
+  if (::GetGraphicsMode(dc) == GM_ADVANCED)
+    dd = 0;
+  else
+    dd = 1;
+
   if (StartBrush(dc, 1)) {
     (void)Rectangle(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
-		    (int)XLOG2DEV(x2) + 1, (int)YLOG2DEV(y2) + 1);
+		    (int)XLOG2DEV(x2)+dd, (int)YLOG2DEV(y2)+dd);
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
     (void)Rectangle(dc, 
 		    (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
-		    (int)XLOG2DEV(x2), (int)YLOG2DEV(y2));
+		    (int)XLOG2DEV(x2)-1+dd, (int)YLOG2DEV(y2)-1+dd);
     DonePen(dc);
   }
 
@@ -1704,7 +1708,7 @@ Bool wxDC::Blit(double xdest, double ydest, double width, double height,
   int xdest1, ydest1, xdest2, ydest2, xsrc1, ysrc1, iw, ih;
   HDC dc, dc_src, invented_dc, mdc = NULL;
   wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
-  float selxs = 1.0, selys = 1.0, mselxs = 1.0, mselys = 1.0;
+  double selxs = 1.0, selys = 1.0, mselxs = 1.0, mselys = 1.0;
   wxBitmap *invented = NULL;
   Bool success = 1, invented_col = 0, use_alpha = 0;
   DWORD op = 0;

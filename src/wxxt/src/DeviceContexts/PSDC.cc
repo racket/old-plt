@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.24 1999/09/22 20:58:55 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.25 1999/09/22 21:43:28 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -277,7 +277,7 @@ PSStream& PSStream::operator<<(float n) {
 PSStream& PSStream::operator<<(long l) {
   if (int_width > 0) {
     char buffer[50];
-    sprintf(buffer, "%%%d.%dld", int_width, int_width);
+    sprintf(buffer, "%%+%d.%dld", int_width, int_width);
     fprintf(f, buffer, l);
     int_width = 0;
   } else
@@ -1330,8 +1330,8 @@ Bool wxPostScriptDC::StartDoc (char *message)
 
   boundingboxpos = pstream->tellp();
 
-  *pstream << "%%BoundingBox: -0000 -0000 -0000 -0000\n";
-  *pstream << "%%Pages: -0000\n";
+  *pstream << "%%BoundingBox: -00000 -00000 -00000 -00000\n";
+  *pstream << "%%Pages: -00000\n";
   *pstream << "%%EndComments\n\n";
 
   *pstream << wxPostScriptHeaderEllipse;

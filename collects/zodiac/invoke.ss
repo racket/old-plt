@@ -1,4 +1,7 @@
 (reference-library "coreu.ss")
+(reference-library "match.ss")
+(begin-elaboration-time (reference-library "match.ss"))
+(begin-construction-time (reference-library "match.ss"))
 
 (reference-library "sparams.ss" "backward")
 

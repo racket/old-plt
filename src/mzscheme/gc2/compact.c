@@ -941,7 +941,7 @@ static void *mark(void *p)
     MPage *page;
 
     page = map + addr;
-    if (page->type && !UNMODIFIED_OLD(page)) {
+    if (page->type && !(page->type & MPAGE_OLD)) {
       if (page->type & MTYPE_BIGBLOCK) {
 	if (!(page->type & COLOR_MASK))
 	  page->type |= GRAY_BIT;
@@ -1409,7 +1409,7 @@ static void compact_all_mpages()
 
       for (j = 0; j < MAP_SIZE; j++) {
 	page = map + j;
-	if (page->type && !UNMODIFIED_OLD(page)) {
+	if (page->type && !(page->type & MTYPE_OLD)) {
 	  if (!(page->type & MTYPE_BIGBLOCK)) {
 	    long p;
 
@@ -1631,7 +1631,7 @@ static void free_unused_mpages()
 	page = map + j;
 	if (page->type) {
 	  if (!(page->type & (COLOR_MASK | MTYPE_CONTINUED))
-	      && !UNMODIFIED_OLD(page)) {
+	      && !(page->type & MTYPE_OLD)) {
 	    long p;
 	    p = (i << MAPS_SHIFT) | (j << MAP_SHIFT);
 	    if (page->type & MTYPE_BIGBLOCK) {

@@ -22,6 +22,10 @@ static ATSUStyle theATSUstyle;
 static TextToUnicodeInfo t2uinfo;
 
 static OSStatus atsuSetStyleFromGrafPtr( ATSUStyle iStyle );
+static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace);
+static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
+				 int just_meas, int given_font, 
+				 short txFont, short txSize, short txFace);
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
@@ -123,48 +127,119 @@ void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16)
     /* it's all ASCII, where MacRoman == Latin-1 */
     ::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
   } else {
-    ATSUTextLayout layout;
-    ByteCount ubytes, converted, usize;
-    UniCharCount ulen;
-    ATSUStyle style;
-    char *unicode;
+    (void)DrawMeasLatin1Text(text, d, theStrlen, bit16, 0, 0, 0, 0, 0);
+  }
+}
 
-    if (!theATSUstyle) {
-      CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
-      ATSUCreateStyle(&theATSUstyle);
-    }
+void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
+			short txFont, short txSize, short txFace,
+			int bit16, float scale,
+			float* x, float* y,
+			float* descent, float* externalLeading)
+{
+  FontInfo fontInfo;
+  const char *meas = NULL;
+  int i;
 
-    usize = theStrlen * 2;
-    unicode = new WXGC_ATOMIC char[usize];
-    ulen = theStrlen;
+  if (theStrlen < 0)
+    theStrlen = strlen(text+d);
+  
+  /* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
+  for (i = 0; i < theStrlen; i++) {
+    if (((unsigned char *)text)[i + d] > 127)
+      break;
+  }
 
-    ConvertFromTextToUnicode(t2uinfo, theStrlen, text + d, 0,
-			     0, NULL,
-			     NULL, NULL,
-			     usize, &converted, &ubytes,
-			     (UniCharArrayPtr)unicode);
+  if (i >= theStrlen) {
+    meas = text;
+  }
+  
+  *x = wxTextFontInfo(txFont,
+		      (int)floor(txSize * scale),
+		      txFace,
+		      &fontInfo, (char *)meas);
 
+  if (meas) {
+    /* it's all ASCII, where MacRoman == Latin-1 */
+    /* so *x is right */
+  } else {
+    *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
+			    1, 1, 
+			    txFont, (int)floor(txSize * scale), txFace);
+  }
+
+  *y = fontInfo.ascent + fontInfo.descent; // height
+  if (descent) *descent = fontInfo.descent;
+  if (externalLeading) *externalLeading = fontInfo.leading;
+}
+
+static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
+				 int just_meas, int given_font, 
+				 short txFont, short txSize, short txFace)
+{
+  ATSUTextLayout layout;
+  ByteCount ubytes, converted, usize;
+  UniCharCount ulen;
+  ATSUStyle style;
+  char *unicode;
+  double result = 0;
+
+  if (!theATSUstyle) {
+    CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
+    ATSUCreateStyle(&theATSUstyle);
+  }
+
+  usize = theStrlen * 2;
+  unicode = new WXGC_ATOMIC char[usize];
+  ulen = theStrlen;
+
+  ConvertFromTextToUnicode(t2uinfo, theStrlen, text + d, 0,
+			   0, NULL,
+			   NULL, NULL,
+			   usize, &converted, &ubytes,
+			   (UniCharArrayPtr)unicode);
+
+  if (given_font)
+    atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace);
+  else
     atsuSetStyleFromGrafPtr(theATSUstyle);
 
-    style = theATSUstyle;
+  style = theATSUstyle;
 
-    ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
-				    kATSUFromTextBeginning,
-				    kATSUToTextEnd,
-				    theStrlen,
-				    1,
-				    &ulen,
-				    &style,
-				    &layout);
+  ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
+				  kATSUFromTextBeginning,
+				  kATSUToTextEnd,
+				  theStrlen,
+				  1,
+				  &ulen,
+				  &style,
+				  &layout);
 
+  if (!just_meas) {
     ATSUDrawText(layout, 
 		 kATSUFromTextBeginning,
 		 kATSUToTextEnd,
 		 kATSUUseGrafPortPenLoc,
 		 kATSUUseGrafPortPenLoc);
+  } else {
+    ATSTrapezoid bounds;
+    ItemCount actual;
 
-    ATSUDisposeTextLayout(layout);
+    ATSUGetGlyphBounds(layout,
+		       0, 0,
+		       kATSUFromTextBeginning,
+		       kATSUToTextEnd,
+		       kATSUseDeviceOrigins,
+		       1,
+		       &bounds,
+		       &actual);
+    
+    result = Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x);
   }
+
+  ATSUDisposeTextLayout(layout);
+
+  return result;
 }
 
 /************************************************************************/
@@ -196,10 +271,9 @@ atsuFONDtoFontID( short    iFONDNumber,
 #define apple_require(x, y) if (!(x)) return status;
 
 static OSStatus
-atsuSetStyleFromGrafPtr( ATSUStyle iStyle )
+atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace)
 {
  OSStatus status = noErr;
- GrafPtr iGrafPtr;
  
  ATSUAttributeTag  theTags[] = { kATSUFontTag,
            kATSUSizeTag,
@@ -223,15 +297,8 @@ atsuSetStyleFromGrafPtr( ATSUStyle iStyle )
  Fixed    atsuSize;
  RGBColor   textColor;
  Boolean    isBold, isItalic, isUnderline, isCondensed, isExtended;
- short    txFont, txSize;
- SInt16    txFace, intrinsicStyle;
+ SInt16    intrinsicStyle;
  
- 
- GetPort( &iGrafPtr );
-
- txFont = GetPortTextFont(iGrafPtr);
- txSize = GetPortTextSize(iGrafPtr);
- txFace = GetPortTextFace(iGrafPtr);
  
  status = atsuFONDtoFontID( txFont, txFace, &atsuFont, &intrinsicStyle );
  apple_require( status == noErr, EXIT );
@@ -266,3 +333,20 @@ atsuSetStyleFromGrafPtr( ATSUStyle iStyle )
 
  return status;
 }
+
+static OSStatus
+atsuSetStyleFromGrafPtr( ATSUStyle iStyle )
+{
+ short    txFont, txSize;
+ SInt16   txFace;
+ GrafPtr iGrafPtr;
+
+ GetPort( &iGrafPtr );
+
+ txFont = GetPortTextFont(iGrafPtr);
+ txSize = GetPortTextSize(iGrafPtr);
+ txFace = GetPortTextFace(iGrafPtr);
+ 
+ return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace);
+}
+

@@ -235,7 +235,7 @@ wxFont::~wxFont()
 #endif
 }
 
-static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *str)
+long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str)
 {
   static int fn, sz = -1, fc;
   static FontInfo fontInfo;
@@ -274,7 +274,7 @@ static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *st
 float wxFont::GetCharHeight(void)
 {
   FontInfo fontInfo;
-  ::TextFontInfo(GetMacFontNum(),
+  wxTextFontInfo(GetMacFontNum(),
 		 point_size,
 		 GetMacFontStyle(),
 		 &fontInfo, NULL);
@@ -285,7 +285,7 @@ float wxFont::GetCharHeight(void)
 float wxFont::GetCharWidth(void)
 {
   FontInfo fontInfo;
-  ::TextFontInfo(GetMacFontNum(),
+  wxTextFontInfo(GetMacFontNum(),
 		 point_size,
 		 GetMacFontStyle(),
 		 &fontInfo, NULL);
@@ -297,14 +297,10 @@ void wxFont::GetTextExtent(char* string, float* x, float* y,
 			   float* descent, float* externalLeading, Bool use16,
 			   float scale)
 {
-  FontInfo fontInfo;
-  *x = ::TextFontInfo(GetMacFontNum(),
-		      floor(point_size * scale),
-		      GetMacFontStyle(),
-		      &fontInfo, string);
-  *y = fontInfo.ascent + fontInfo.descent; // height
-  if (descent) *descent = fontInfo.descent;
-  if (externalLeading) *externalLeading = fontInfo.leading;
+  GetLatin1TextWidth(string, 0, -1,
+		     GetMacFontNum(), point_size, GetMacFontStyle(),
+		     use16, scale,
+		     x, y, descent, externalLeading);
 }
 
 //-----------------------------------------------------------------------------

@@ -605,7 +605,8 @@ scheme_make_integer_value_from_unsigned(unsigned long i)
 {
   Scheme_Object *o = scheme_make_integer(i);
   
-  if (((unsigned long)SCHEME_INT_VAL(o)) == i)
+  if ((SCHEME_INT_VAL(o) >= 0)
+      && ((unsigned long)SCHEME_INT_VAL(o)) == i)
     return o;
   else
     return scheme_make_bignum_from_unsigned(i);
@@ -2908,7 +2909,17 @@ string_to_number (int argc, Scheme_Object *argv[])
 			    radix, 0, NULL, NULL);
 }
 
-/* Exponent threshold for obvious infinity: */
+/* Don't bother reading more than the following number of digits in a
+   floating-point mantissa: */
+#define MAX_FLOATREAD_PRECISION_DIGITS 50
+
+/* We'd like to use strtod() for the common case, but we don't trust
+   it entirely. */
+#define MAX_FAST_FLOATREAD_LEN 50
+
+/* Exponent threshold for obvious infinity. Must be at least
+   max(MAX_FAST_FLOATREAD_LEN, MAX_FLOATREAD_PRECISION_DIGITS) more
+   than the larget possible FP exponent. */
 #define CHECK_INF_EXP_THRESHOLD 400
 
 #ifdef USE_EXPLICT_FP_FORM_CHECK
@@ -3483,7 +3494,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   /* When possible, use the standard floating-point parser */
   if (!is_not_float && (is_float || decimal_means_float) 
       && !has_slash && !has_hash && (radix == 10) 
-      && (has_decimal || has_expt)) {
+      && (has_decimal || has_expt)
+      && (len <= MAX_FAST_FLOATREAD_LEN)) {
     double d;
     const char *strcpy;
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
@@ -3523,6 +3535,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   if (has_decimal || has_expt || has_hash) {
     Scheme_Object *mantissa, *exponent, *power, *n;
     Scheme_Object *args[2];
+    int result_is_float= (is_float || (!is_not_float && decimal_means_float));
 
     if (has_expt) {
       char *substr;
@@ -3551,14 +3564,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (!has_expt)
       has_expt = len;
 
-    if (!has_hash && (radix == 10) 
-	&& (!has_decimal 
-	    /* ... or it's ok to return a float: */
-	    || is_float
-	    || (!is_not_float && decimal_means_float))) {
+    if (has_slash) {
+      /* Mantissa is a fraction. */
       char *s;
       int dbz;
-
+      
       s = (char *)scheme_malloc_atomic(has_expt + 1);
       memcpy(s, str, has_expt);
       s[has_expt] = 0;
@@ -3567,6 +3577,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				    0, 0, 1,
 				    radix, 1, next_complain,
 				    &dbz);
+
       if (SCHEME_FALSEP(mantissa)) {
 	if (dbz) {
 	  if (div_by_zero)
@@ -3581,8 +3592,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
     } else {
-      int extra_power = 0, dcp = 0, num_ok;
+      /* Mantissa is not a fraction. */
       char *digits;
+      int extra_power = 0, dcp = 0, num_ok;
 
       digits = (char *)scheme_malloc_atomic(has_expt + 1);
 
@@ -3625,6 +3637,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
       }
 
+      /* Reduce unnecessary mantissa-reading work for inexact results.
+         This is also necessary to make the range check on `exponent'
+         correct. */
+      if (result_is_float && (dcp > MAX_FLOATREAD_PRECISION_DIGITS)) {
+	extra_power -= (dcp - MAX_FLOATREAD_PRECISION_DIGITS);
+	dcp = MAX_FLOATREAD_PRECISION_DIGITS;
+      }
+
       digits[dcp] = 0;
       mantissa = scheme_read_bignum(digits, radix);
       if (SCHEME_FALSEP(mantissa)) {
@@ -3637,37 +3657,19 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
       if (extra_power)
 	exponent = scheme_bin_minus(exponent, scheme_make_integer(extra_power));
-    }
     
-    /* Don't perform a huge exponential if we're returning a float: */
-    if (is_float || (!is_not_float && decimal_means_float)) {
-      if (scheme_bin_gt(exponent, scheme_make_integer(CHECK_INF_EXP_THRESHOLD))) {
-	if (SCHEME_TRUEP(negative_p(1, &mantissa))) {
-#ifdef MZ_USE_SINGLE_FLOATS
-	  if (single)
-	    return single_minus_inf_object;
-#endif	  
-	  return minus_inf_object;
-	} else {
-#ifdef MZ_USE_SINGLE_FLOATS
-	  if (single)
-	    return single_inf_object;
-#endif	  
-	  return inf_object;
-	}
-      } else if (scheme_bin_lt(exponent, scheme_make_integer(-CHECK_INF_EXP_THRESHOLD))) {
-	if (SCHEME_TRUEP(negative_p(1, &mantissa))) {
-#ifdef MZ_USE_SINGLE_FLOATS
-	  if (single)
-	    return nzerof;
-#endif
-	  return nzerod;
-	} else {
-#ifdef MZ_USE_SINGLE_FLOATS
-	  if (single)
-	    return zerof;
-#endif
-	  return zerod;
+      /* Don't calculate a huge exponential if we're returning a float: */
+      if (result_is_float) {
+	if (scheme_bin_gt(exponent, scheme_make_integer(CHECK_INF_EXP_THRESHOLD))) {
+	  if (SCHEME_TRUEP(negative_p(1, &mantissa)))
+	    return CHECK_SINGLE(minus_inf_object, single);
+	  else
+	    return CHECK_SINGLE(inf_object, single);
+	} else if (scheme_bin_lt(exponent, scheme_make_integer(-CHECK_INF_EXP_THRESHOLD))) {
+	  if (SCHEME_TRUEP(negative_p(1, &mantissa)))
+	    return CHECK_SINGLE(nzerod, single);
+	  else
+	    return CHECK_SINGLE(zerod, single);
 	}
       }
     }
@@ -3678,7 +3680,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     n = scheme_bin_mult(mantissa, power);
 
-    if (is_float || (!is_not_float && decimal_means_float))
+    if (result_is_float)
       n = CHECK_SINGLE(TO_DOUBLE(n), single);
     else
       n = CHECK_SINGLE(n, single);

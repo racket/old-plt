@@ -3,7 +3,7 @@
   (require (lib "file.ss")
 	   (lib "process.ss"))
 
-  (provide slatex latex)
+  (provide slatex latex slatex/no-latex)
 
   (define (filename->latex-filename input-file)
     (cond

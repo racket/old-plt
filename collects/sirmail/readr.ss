@@ -609,7 +609,7 @@
       (send vertical-line-snipclass set-version 1)
       (send vertical-line-snipclass set-classname "sirmail:vertical-line%")
       (send (get-the-snip-class-list) add vertical-line-snipclass)
-      (define body-pen (send the-pen-list find-or-create-pen "forest green" 0 'solid))
+      (define body-pen (send the-pen-list find-or-create-pen "blue" 0 'solid))
       (define body-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
       (define vertical-line-snip%
 	(class snip%
@@ -723,22 +723,29 @@
                         (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2) line-space)
                         y))
                   
-                (send dc draw-line 
-                      (+ x FROM-WIDTH (/ first-gap 2))
-                      y
-                      (+ x FROM-WIDTH (/ first-gap 2))
-                      (+ y h))
-                (send dc draw-line 
-                      (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
-                      y
-                      (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
-                      (+ y h)))))
+		(let ([p (send dc get-pen)])
+		  (send dc set-pen body-pen)
+		  (send dc draw-line 
+			(+ x FROM-WIDTH (/ first-gap 2))
+			y
+			(+ x FROM-WIDTH (/ first-gap 2))
+			(+ y h))
+		  (send dc draw-line 
+			(+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
+			y
+			(+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
+			(+ y h))
+		  (send dc set-pen p)))))
 
           (inherit get-style)
           (define/override (get-extent dc x y wb hb db sb lb rb)
-            (let-values ([(w h _1 _2) (send dc get-text-extent "yX" (send (get-style) get-font))])
+            (let-values ([(w h d s) (send dc get-text-extent "yX" (send (get-style) get-font))])
               (set-box/f! hb h)
-              (set-box/f! wb (get-width))))
+              (set-box/f! wb (get-width))
+	      (set-box/f! db d)
+	      (set-box/f! sb s)
+	      (set-box/f! lb 0)
+	      (set-box/f! rb 0)))
 
           (inherit get-admin)
           
@@ -787,7 +794,7 @@
       ;; supports clicks to change the sort order
       (define sorting-list%
         (class hierarchical-list%
-          (inherit get-editor selectable)
+          (inherit get-editor selectable set-no-sublists)
           
           (define/private (find-sorting-key evt)
             (let loop ([editor (get-editor)])
@@ -849,7 +856,8 @@
 	       (reset-sorting-tracking)]))
 
           (super-instantiate ())
-	(selectable #f)))
+	  (set-no-sublists #t)
+	  (selectable #f)))
            
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  GUI: Frame, Menus, & Key Bindings                      ;;
@@ -1548,7 +1556,7 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  GUI: Rest of Frame                                     ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      
       (define sizing-panel (make-object panel:vertical-dragable% (send main-frame get-area-container)))
       (define top-half (make-object vertical-panel% sizing-panel))
       (define button-panel (make-object horizontal-panel% top-half))
@@ -1562,6 +1570,7 @@
       (define message (make-object editor-canvas% sizing-panel))
       (send header-list min-height 20)
       (send header-list stretchable-height #t)
+      (send header-list set-no-sublists #t)
       (send main-frame reflow-container)
       (send sizing-panel set-percentages (list 1/3 2/3))
       (let ([e (make-object display-text%)])
@@ -1847,7 +1856,7 @@
       
       (define no-sort-style-delta (make-object style-delta% 'change-normal))
       (define sort-style-delta (make-object style-delta% 'change-bold))
-      (send sort-style-delta set-delta-foreground "Indigo")
+      (send sort-style-delta set-delta-foreground "blue")
       (define tracking-style-delta (make-object style-delta%))
       (send tracking-style-delta set-delta-background "Gray")
       (define not-tracking-style-delta (make-object style-delta%))

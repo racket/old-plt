@@ -27,16 +27,21 @@ New methods:
 >  new-item :: (send a-list new-item) - creates and returns a new
      (empty) hierarchical-list-item<%>
 
->  new-item :: (send a-list-item new-item mixin) - creates and returns
+>  new-item :: (send a-list new-item mixin) - creates and returns
      a new (empty) hierarchical-list-item<%>, but first, applies
      `mixin' to a class implemeting hierarchical-list-item<%> and uses
      the result as the class for the new hierarchical-list-item<%>
      object.
 
+> set-no-sublists :: (send a-list set-no-sublists no-sublists?) - 
+     avoids space to the left of the list that would normally align
+     non-list items with list items; this method can be called only
+     when the list is empty
+
 >  new-list :: (send a-list new-list) - creates and returns a new
      (empty) hierarchical-list-compound-item<%>
 
->  new-list :: (send a-list-item new-list mixin) - creates and returns
+>  new-list :: (send a-list new-list mixin) - creates and returns
      a new (empty) hierarchical-list-compound-item<%>, but first,
      applies `mixin' to a class implemeting
      hierarchical-list-compound-item<%> and uses the result as the
@@ -138,6 +143,11 @@ New methods:
      `mixin' to a class implemeting hierarchical-list-item<%> and uses
      the result as the class for the new hierarchical-list-item<%>
      object.
+
+> set-no-sublists :: (send a-list set-no-sublists no-sublists?) - 
+     avoids space to the left of the list that would normally align
+     non-list items with list items; this method can be called only
+     when the list is empty
 
 >  new-list :: (send a-list-item new-list) - creates and returns a new
      (empty) hierarchical-list-compound-item<%>

@@ -1152,6 +1152,9 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	 Then hash. */
       Scheme_Object *a, *key, *val;
 
+      /* Make it immutable before we might hash on it */
+      SCHEME_SET_IMMUTABLE(obj);
+
       l = resolve_references(l, port, mkstx);
 
       if (mkstx)
@@ -1165,10 +1168,10 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	
 	scheme_hash_set(t, key, val);
       }
+    } else {
+      /* Make it immutable: */
+      SCHEME_SET_IMMUTABLE(obj);
     }
-
-    /* Make it immutable: */
-    SCHEME_SET_IMMUTABLE(obj);
   }
 
   return result;

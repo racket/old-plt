@@ -1274,7 +1274,14 @@ static void for_each_managed(Scheme_Type type, Scheme_For_Each_Func cf)
 	if (SAME_TYPE(SCHEME_TYPE(o), type)) {
 	  if (SAME_TYPE(type, scheme_thread_hop_type)) {
 	    /* We've added an indirection and made it weak. See mr_hop note above. */
-	    o = (Scheme_Object *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
+	    Scheme_Thread *t;
+	    t = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
+	    if (SAME_OBJ(t->mref, m->mrefs[i]))
+	      o = (Scheme_Object *)t;
+	    else {
+	      /* The main custodian for this thread is someone else */
+	      continue;
+	    }
 	  }
 
 	  cf(o);

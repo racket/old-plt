@@ -86,6 +86,8 @@ public:
     int   FindItem(char *label, int strip = 1);
 
     void Stop(void);
+    void Unpop(void);
+
 private:
     // allow callback and menubar access to private data
     friend class wxMenuBar;
@@ -114,6 +116,9 @@ private:
     void *client_data;
     void *saferef;
 };
+
+extern void wxInitPopupMgr(void);
+extern void wxUnpopMenu(void);
 
 #ifdef MZ_PRECISE_GC
 extern char *copystring_xt(const char *s);

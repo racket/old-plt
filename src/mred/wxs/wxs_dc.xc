@@ -122,7 +122,7 @@ static void* MyGetSize(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
-@MACRO CheckStringIndex[n.s.i] = if (x<i> >= SCHEME_STRLEN_VAL(p[<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[<i>]));
+@MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[<i>]));
 
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"

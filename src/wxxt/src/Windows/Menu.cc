@@ -34,6 +34,8 @@
 #define  Uses_MenuWidget
 #include "widgets.h"
 
+static wxMenu *popped_up_menu;
+
 //-----------------------------------------------------------------------------
 // constructor and destructor
 //-----------------------------------------------------------------------------
@@ -77,6 +79,9 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
 wxMenu::~wxMenu(void)
 {
     menu_item *item = (menu_item*)top;
+
+    if (popped_up_menu == this)
+      popped_up_menu = NULL;
 
     while (item) {
 	menu_item *temp = item;
@@ -122,6 +127,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     if (X)
       return FALSE;
 
+    wxUnpopMenu();
+
     while (XtParent(in_w)) {
       in_w = XtParent(in_w);
    }
@@ -154,6 +161,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     XtAddGrab(X->shell, TRUE, FALSE);
     wxAddGrab(X->shell);
     XtCallActionProc(X->menu, "start", &xevent, NULL, 0);
+
+    popped_up_menu = this;
 
     return TRUE;
 }
@@ -491,6 +500,9 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
   menu_item *item  = (menu_item*)dcall;
 
   if (menu) {
+    if (popped_up_menu == menu)
+      popped_up_menu = NULL;
+
     /* MATTHEW: remove grab */
     XtRemoveGrab(menu->X->shell);
     wxRemoveGrab(menu->X->shell);
@@ -536,6 +548,12 @@ void wxMenu::Stop()
   /* No way to get to menu bar right now... */
 }
 
+void wxMenu::Unpop()
+{
+  if (X)
+    XtCallActionProc(X->menu, "select", NULL, NULL, 0);
+}
+
 
 #ifdef MZ_PRECISE_GC
 char *copystring_xt(const char *s)
@@ -553,3 +571,15 @@ char *copystring_xt(const char *s)
   return r;
 }
 #endif
+
+void wxInitPopupMgr(void)
+{
+  wxREGGLOB(popped_up_menu);
+}
+
+void wxUnpopMenu(void)
+{
+  if (popped_up_menu)
+    popped_up_menu->Unpop();
+  popped_up_menu = NULL;
+}

@@ -916,7 +916,7 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   } else
     x3 = 0;
 
-  if (x3 >= SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[3]));
+  if (x3 > SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[3]));
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3));
 
   
@@ -1296,7 +1296,7 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   } else
     x4 = 0;
 
-  if (x4 >= SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[4]));DO_OK_CHECK(scheme_void)
+  if (x4 > SCHEME_STRLEN_VAL(p[0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[4]));DO_OK_CHECK(scheme_void)
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawText(x0, x1, x2, x3, x4));
 
   

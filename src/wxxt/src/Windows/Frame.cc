@@ -528,6 +528,7 @@ Bool wxFrame::Show(Bool show)
   
   if (show == IsShown()) { // do nothing if state doesn't change
     if (show) {
+      wxUnpopMenu();
       /* Make sure window isn't iconized: */
       Iconize(FALSE);
       XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
@@ -546,6 +547,7 @@ Bool wxFrame::Show(Bool show)
   
   SetShown(show);
   if (show) {
+    wxUnpopMenu();
     XtMapWidget(X->frame);
     XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
     ForceFocus(X->frame);

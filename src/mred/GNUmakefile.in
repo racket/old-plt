@@ -9,7 +9,7 @@ include Make.env
 # system name for installation
 INSTALLSYS = `$(srcdir)/../../bin/archsys`
 
-MREDLDFLAGS = $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib
+MREDLDFLAGS = -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src
 MREDLDLIBS = -lmzscheme -lgc -lwxscheme -lwxme -lwx_xt -lXpm -limage_xt $(LDLIBS) $(LDNONSTATICLIBS)
 
 MREDOBJECTS = mred.o mredx.o wxGC.o

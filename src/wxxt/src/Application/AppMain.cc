@@ -31,6 +31,7 @@
 #define  Uses_wxGDI
 #define  Uses_wxPrintSetup
 #define  Uses_wxTypeTree
+#define  Uses_wxMenu
 #include "wx.h"
 #include "widgets.h" // for X11/StringDefs.h
 
@@ -203,6 +204,8 @@ void wxCommonInit(void)
 
     wxREGGLOB(wxResourceCache);
     wxResourceCache = new wxList(wxKEY_STRING);
+
+    wxInitPopupMgr();
 
     wxREGGLOB(wxAllTypes);
     wxAllTypes = new wxTypeTree;

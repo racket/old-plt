@@ -431,6 +431,9 @@ void wxPostScriptDC::Clear(void)
 {
   unsigned char red, blue, green;
 
+  if (!pstream)
+    return;
+
   red = current_background_color->Red();
   blue = current_background_color->Blue();
   green = current_background_color->Green();
@@ -559,6 +562,9 @@ void wxPostScriptDC::DrawSpline(float x1, float y1, float x2, float y2, float x3
 {
   float x21, y21, x22, y22;
   float xm1, ym1, xm2, ym2;
+
+  if (!pstream)
+    return;
 
   pstream->Out("newpath\n");
 

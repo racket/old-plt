@@ -43,6 +43,14 @@ _MysterX_
  which is defined in the file `sigs.ss' in the mysterx collection.
  This unit can be invoked or imported into other units as needed.
 
+ Using the xml collection
+ ------------------------
+
+ Several MysterX procedures take HTML strings as input.  
+ The xml collection provides procedures that convert Scheme
+ syntax into XML strings.  You may find using these procedures 
+ useful in creating HTML strings for use by MysterX. 
+ 
  Documents
  ---------
 

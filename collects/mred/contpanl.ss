@@ -43,22 +43,39 @@
 	  
 	(public
 	  
+	  ; list-diff: computes the difference between two lists
+	  ; input: l1, l2: two lists
+	  ; returns:  a list of all elements in l1 which are not in l2.
+	  ; note: all comparisons made with eq?; algorithm suggested by
+	  ; robby (note that it's O(N), not O(N^2)).
+ 	  [list-diff
+	   (lambda (l1 l2)
+	     (let ([table (make-hash-table)])
+	       (for-each
+		(lambda (item)
+		  (hash-table-put! table item #t))
+		l2)
+	       (let loop ([l l1])
+		 (cond
+		   [(null? l) null]
+		   [(hash-table-get table (car l) (lambda () #f))
+		    (loop (cdr l))]
+		   [else (cons (car l) (loop (cdr l)))]))))]
+
 	  ; list of panel's contents.
 	  [children null]
 	  
 	  ; add-child: adds an existing child to the panel.
 	  ; input: new-child: item% descendant to add
-	  ;        show?: #t to show child immediately, else #f.
 	  ; returns: nothing
 	  ; effects: adds new-child to end of list of children.
 	  [add-child
-	   (opt-lambda (new-child [show? #t])
+	   (lambda (new-child)
 	     (unless (memq new-child children)
 	       (unless (eq? this (send new-child get-parent))
 		 (error 'add-child
 		   "Attempted to add child ~s to panel ~s (not child's parent)"
 		   new-child this))
-	       (send new-child show show?)
 	       (change-children
 		 (lambda (l)
 		   (append l (list new-child))))))]
@@ -83,6 +100,13 @@
 		   (string-append "Not all members of the new list are "
 		     "children of this panel ~s~nlist: ~s")
 		   this new-children))
+	       ; show all new children, hide all deleted children.
+	       (let ([added-children (list-diff new-children children)]
+		     [removed-children (list-diff children new-children)])
+		 (for-each (lambda (child) (send child show #t))
+			   added-children)
+		 (for-each (lambda (child) (send child show #f))
+			   removed-children))
 	       (set! children new-children)
 	       (force-redraw)))]
 	  
@@ -497,6 +521,7 @@
       (class panel% args
 	
 	(inherit
+	  list-diff
 	  object-ID
 	  children
 	  force-redraw)
@@ -516,7 +541,8 @@
 
 	  [add-child
 	   (lambda (new-child)
-	     (super-add new-child #f))]
+	     (super-add new-child)
+	     (send new-child show #f))]
 
 	  ; if the child is active, make the next child active (null if
 	  ; child was last in list)
@@ -542,6 +568,12 @@
 		    this new-children))
 		(unless (memq (active-child) new-children)
 		  (active-child null))
+		(let ([added-children (list-diff new-children children)]
+		     [removed-children (list-diff children new-children)])
+		 (for-each (lambda (child) (send child show #t))
+			   added-children)
+		 (for-each (lambda (child) (send child show #f))
+			   removed-children))
 		(set! children new-children)
 		(force-redraw)))]
 

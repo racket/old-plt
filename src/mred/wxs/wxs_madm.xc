@@ -135,10 +135,10 @@ typedef void *(*CAPOFunc)(void*);
 @IVAR "classname" : string classname
 @IVAR "version" : int version
 
-@ V "read" : wxSnip^ Read(wxMediaStreamIn%); : : : rNULL
-@ v "read-header" : bool ReadHeader(wxMediaStreamIn%);
+@ V "read" : wxSnip^ Read(wxMediaStreamIn!); : : : rNULL
+@ v "read-header" : bool ReadHeader(wxMediaStreamIn!);
 @ v "read-done" : void ReadDone();
-@ v "write-header" : bool WriteHeader(wxMediaStreamOut%);
+@ v "write-header" : bool WriteHeader(wxMediaStreamOut!);
 @ v "write-done" : void WriteDone();
 
 @END
@@ -197,8 +197,8 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @MACRO ubAnythingToVoid = ((void *){x})
 @MACRO cAnything = 1
 
-@ v "handle-key-event" : bool HandleKeyEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxKeyEvent%);
-@ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxMouseEvent%);
+@ v "handle-key-event" : bool HandleKeyEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxKeyEvent!);
+@ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxMouseEvent!);
 @ "break-sequence" : void BreakSequence();
 @ "map-function" : void MapFunction(string,string);
 @ "add-function" : void AddFunction(string,wxKMFunction/bCallback/ubCallbackKM/cCallback//spCallbackKM,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
@@ -206,7 +206,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @ "remove-grab-key-function" : void RemoveGrabKeyFunction()
 @ "set-grab-mouse-function" : void SetGrabMouseFunction(wxGrabMouseFunction/bCallback/ubCallbackGrabMouse/cCallback//spCallbackGrabMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-mouse-function" : void RemoveGrabMouseFunction()
-@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxEvent%,bool=FALSE);
+@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxEvent!,bool=FALSE);
 @ "set-break-sequence-callback" : void SetBreakSequenceCallback(wxBreakSequenceFunction/bCallback/ubCallbackBreak/cCallback//spCallbackBreak,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "chain-to-keymap" : void ChainToKeymap(wxKeymap!,bool);
 @ "remove-chained-keymap" : void RemoveChainedKeymap(wxKeymap!);

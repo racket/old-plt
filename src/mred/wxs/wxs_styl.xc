@@ -138,12 +138,12 @@
 
 @ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(string); <> color name
-@ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour%); <> colour%
+@ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour!); <> colour%
 @ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(string); <> color name
-@ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(wxColour%); <> colour%
+@ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(wxColour!); <> colour%
 
-@ "equal?" : bool Equal(wxStyleDelta%);
-@ "collapse" : bool Collapse(wxStyleDelta%);
+@ "equal?" : bool Equal(wxStyleDelta!);
+@ "collapse" : bool Collapse(wxStyleDelta!);
 @ "copy" : void Copy(wxStyleDelta!);
 
 @END
@@ -162,8 +162,8 @@
 @ "get-style" : SYM[style] GetStyle();
 @ "get-underlined" : bool GetUnderlined();
 @ "get-font" : wxFont! GetFont();
-@ "get-foreground" : wxColour% GetForeground();
-@ "get-background" : wxColour% GetBackground();
+@ "get-foreground" : wxColour! GetForeground();
+@ "get-background" : wxColour! GetBackground();
 @ "get-alignment" : SYM[align] GetAlignment();
 @ "get-transparent-text-backing" : bool GetTransparentTextBacking();
 
@@ -175,8 +175,8 @@
 @ "get-base-style" : wxStyle^ GetBaseStyle();
 @ "set-base-style" : void SetBaseStyle(wxStyle!);
 
-@ "get-delta" : void GetDelta(wxStyleDelta%);
-@ "set-delta" : void SetDelta(wxStyleDelta%);
+@ "get-delta" : void GetDelta(wxStyleDelta!);
+@ "set-delta" : void SetDelta(wxStyleDelta!);
 
 @ "is-join?" : bool IsJoin();
 

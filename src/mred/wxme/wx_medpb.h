@@ -11,9 +11,9 @@ class wxMediaPasteboard : public wxMediaBuffer
   wxMediaPasteboard();
   ~wxMediaPasteboard();
 
-  virtual void OnEvent(wxMouseEvent &event);
-  virtual void OnChar(wxKeyEvent &event);
-  virtual wxCursor *AdjustCursor(wxMouseEvent &event);
+  virtual void OnEvent(wxMouseEvent *event);
+  virtual void OnChar(wxKeyEvent *event);
+  virtual wxCursor *AdjustCursor(wxMouseEvent *event);
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       int show_caret);
   virtual void OwnCaret(Bool ownit);
@@ -21,10 +21,10 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void SizeCacheInvalid(void);
   void GetExtent(float *w, float *h);
 
-  virtual void OnDefaultEvent(wxMouseEvent &event);
-  virtual void OnDefaultChar(wxKeyEvent &event);
+  virtual void OnDefaultEvent(wxMouseEvent *event);
+  virtual void OnDefaultChar(wxKeyEvent *event);
 
-  virtual void OnDoubleClick(wxSnip *, wxMouseEvent &event);
+  virtual void OnDoubleClick(wxSnip *, wxMouseEvent *event);
 
   /* Callbacks for the wxSnipAdmin: */
   virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
@@ -82,8 +82,8 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void SetFilename(char *, Bool temp = FALSE);
 
-  Bool WriteToFile(wxMediaStreamOut &);
-  Bool ReadFromFile(wxMediaStreamIn &, Bool overwritestyle = FALSE);
+  Bool WriteToFile(wxMediaStreamOut *);
+  Bool ReadFromFile(wxMediaStreamIn *, Bool overwritestyle = FALSE);
   Bool LoadFile(char *filename = NULL, int format = wxMEDIA_FF_STD, Bool showErrors = TRUE);
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_STD, Bool showErrors = TRUE);
   Bool InsertFile(char *filename, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);

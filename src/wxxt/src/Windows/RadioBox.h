@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.h,v 1.3 1998/10/16 15:55:55 mflatt Exp $
+ * $Id: RadioBox.h,v 1.4 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -75,7 +75,7 @@ public:
     virtual char  *GetLabel(void)	{ return wxItem::GetLabel(); }
     virtual void  SetLabel(char *label)	{ wxItem::SetLabel(label); }
     virtual Bool  Show(Bool show)	{ return wxItem::Show(show); }
-    void Command(wxCommandEvent &event);
+    void Command(wxCommandEvent *event);
     void SetSelectedButtonFocus();
 
     int ButtonFocus(int which);

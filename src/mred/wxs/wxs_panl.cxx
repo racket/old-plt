@@ -442,7 +442,7 @@ static Scheme_Object *os_wxPanelOnChar(Scheme_Object *obj, int n,  Scheme_Object
   x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in panel%", 0);
 
   
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
 
   
   
@@ -460,7 +460,7 @@ static Scheme_Object *os_wxPanelOnEvent(Scheme_Object *obj, int n,  Scheme_Objec
   x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-event in panel%", 0);
 
   
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
 
   
   

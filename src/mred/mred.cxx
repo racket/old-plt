@@ -1288,7 +1288,7 @@ static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdCon
 					 MrEdContext *tdata, int check_only)
 {
   Q_Callback_Set *cs = q_callbacks + hi;
-  Q_Callback *cb;
+  Q_Callback * volatile cb;
   mz_jmp_buf savebuf;
 
   cb = cs->first;

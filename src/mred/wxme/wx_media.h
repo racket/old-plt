@@ -130,17 +130,17 @@ class wxMediaEdit : public wxMediaBuffer
   void CopySelfTo(wxMediaBuffer *b);
   
   /* Usually called by wxMediaAdmin */
-  virtual void OnEvent(wxMouseEvent &event);
-  virtual void OnChar(wxKeyEvent &event);
-  virtual wxCursor *AdjustCursor(wxMouseEvent &event);
+  virtual void OnEvent(wxMouseEvent *event);
+  virtual void OnChar(wxKeyEvent *event);
+  virtual wxCursor *AdjustCursor(wxMouseEvent *event);
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       int show_caret);
   virtual void OwnCaret(Bool ownit);
   virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
 
-  virtual void OnDefaultEvent(wxMouseEvent &event);
-  virtual void OnDefaultChar(wxKeyEvent &event);
+  virtual void OnDefaultEvent(wxMouseEvent *event);
+  virtual void OnDefaultChar(wxKeyEvent *event);
 
   /* Callbacks for the wxSnipAdmin: */
   virtual Bool ScrollTo(wxSnip *, float localx, float localy, 
@@ -313,10 +313,10 @@ class wxMediaEdit : public wxMediaBuffer
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_SAME, Bool showErrors = TRUE);
   Bool InsertFile(char *filename, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
 
-  Bool ReadFromFile(wxMediaStreamIn &, long start, Bool overwritestyle = FALSE);
-  Bool ReadFromFile(wxMediaStreamIn &, Bool overwritestyle = FALSE);
-  Bool WriteToFile(wxMediaStreamOut &, long start, long end = -1);
-  Bool WriteToFile(wxMediaStreamOut &);
+  Bool ReadFromFile(wxMediaStreamIn *, long start, Bool overwritestyle = FALSE);
+  Bool ReadFromFile(wxMediaStreamIn *, Bool overwritestyle = FALSE);
+  Bool WriteToFile(wxMediaStreamOut *, long start, long end = -1);
+  Bool WriteToFile(wxMediaStreamOut *);
 
   void SetFilename(char *, Bool temp = FALSE);
   int GetFileFormat(void);
@@ -577,7 +577,7 @@ class wxMediaEdit : public wxMediaBuffer
 		      long start, long end, long **positions, 
 		      Bool, Bool, Bool);
   
-  Bool InsertFile(FILE *f, char *filename, int& format, Bool clearStyles, Bool showErrors);
+  Bool InsertFile(FILE *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
 
   void RecalcLines(wxDC *dc, Bool calcGraphic = TRUE);
   Bool CheckFlow(float maxw, wxDC *dc, float Y, long startp, wxSnip *start);

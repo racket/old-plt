@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.6 1998/10/30 00:01:39 mflatt Exp $
+ * $Id: DC.h,v 1.7 1999/11/04 17:25:33 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -80,7 +80,7 @@ public:
     virtual void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0)=0;
     virtual void  DrawLines(wxList *pts, float xoff=0, float yoff=0) = 0;
     virtual void  DrawPoint(float x, float y) = 0;
-            void  DrawPoint(wxPoint &pt)  { DrawPoint(pt.x, pt.y); }
+            void  DrawPoint(wxPoint *pt)  { DrawPoint(pt->x, pt->y); }
     virtual void  DrawPolygon(int n, wxPoint pts[], float xoff=0, float yoff=0,
 			      int fill=wxODDEVEN_RULE) = 0;
     virtual void  DrawPolygon(wxList *pts, float xoff=0, float yoff=0,
@@ -163,10 +163,10 @@ public:
 	{ GetSize(w, h); *w/=(scale_x*mm_to_pix_x); *h/=(scale_y*mm_to_pix_y); }
     int GetTextAlignment(void)
 	{ return current_text_alignment; }
-    wxColour& GetTextBackground(void)
-	{ return current_text_bg; }
-    wxColour& GetTextForeground(void)
-	{ return current_text_fg; }
+    wxColour* GetTextBackground(void)
+	{ return &current_text_bg; }
+    wxColour* GetTextForeground(void)
+	{ return &current_text_fg; }
     virtual int LogicalToDeviceX(float x)
 	{ return XLOG2DEV(x); }
     virtual int LogicalToDeviceXRel(float x)

@@ -87,7 +87,7 @@ wxSnipClass::wxSnipClass()
   mapPosition = -1;
 }
 
-Bool wxSnipClass::ReadHeader(wxMediaStreamIn &)
+Bool wxSnipClass::ReadHeader(wxMediaStreamIn *)
 {
   return TRUE;
 }
@@ -96,7 +96,7 @@ void wxSnipClass::ReadDone(void)
 {
 }
 
-Bool wxSnipClass::WriteHeader(wxMediaStreamOut &)
+Bool wxSnipClass::WriteHeader(wxMediaStreamOut *)
 {
   return TRUE;
 }
@@ -229,16 +229,16 @@ void wxSnip::SetFlags(long new_flags)
     (*admin_ptr)->Resized(this, TRUE);
 }
 
-void wxSnip::OnEvent(wxDC *, float, float, float, float, wxMouseEvent &)
+void wxSnip::OnEvent(wxDC *, float, float, float, float, wxMouseEvent *)
 {
 }
 
-wxCursor *wxSnip::AdjustCursor(wxDC *, float, float, float, float, wxMouseEvent &)
+wxCursor *wxSnip::AdjustCursor(wxDC *, float, float, float, float, wxMouseEvent *)
 {
   return NULL;
 }
 
-void wxSnip::OnChar(wxDC *, float, float, float, float, wxKeyEvent &)
+void wxSnip::OnChar(wxDC *, float, float, float, float, wxKeyEvent *)
 {
 }
 
@@ -397,7 +397,7 @@ void wxSnip::Copy(wxSnip *snip)
   snip->style = style;
 }
 
-void wxSnip::Write(wxMediaStreamOut &)
+void wxSnip::Write(wxMediaStreamOut *)
 {
 }
 
@@ -447,8 +447,8 @@ class TextSnipClass : public wxSnipClass
  public:
   TextSnipClass(void);
 
-  virtual wxSnip *Read(wxMediaStreamIn &);
-  wxSnip *Read(wxTextSnip *, wxMediaStreamIn &);
+  virtual wxSnip *Read(wxMediaStreamIn *);
+  wxSnip *Read(wxTextSnip *, wxMediaStreamIn *);
 };
 
 static TextSnipClass TheTextSnipClass;
@@ -460,21 +460,21 @@ TextSnipClass::TextSnipClass(void)
   required = TRUE;
 }
 
-wxSnip *TextSnipClass::Read(wxMediaStreamIn &f)
+wxSnip *TextSnipClass::Read(wxMediaStreamIn *f)
 {
   return Read(new wxTextSnip(0), f);
 }
 
-wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn &f)
+wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn *f)
 {
   long flags;
   long count, pos;
 
-  f >> flags;
+  f->Get(&flags);
 
-  pos = f.Tell();
-  f >> count;
-  f.JumpTo(pos);
+  pos = f->Tell();
+  f->Get(&count);
+  f->JumpTo(pos);
 
   snip->Read(count, f);
 
@@ -864,7 +864,7 @@ void wxTextSnip::Copy(wxTextSnip *snip)
   snip->w = -1.0;
 }
 
-void wxTextSnip::Write(wxMediaStreamOut &f)
+void wxTextSnip::Write(wxMediaStreamOut *f)
 {
   long writeFlags;
 
@@ -876,11 +876,11 @@ void wxTextSnip::Write(wxMediaStreamOut &f)
   if (writeFlags & wxSNIP_CAN_SPLIT)
     writeFlags -= wxSNIP_CAN_SPLIT;
 
-  f << writeFlags;
-  f.Put(count, text);
+  f->Put(writeFlags);
+  f->Put(count, text);
 }
 
-void wxTextSnip::Read(long len, wxMediaStreamIn &f)
+void wxTextSnip::Read(long len, wxMediaStreamIn *f)
 {
   if (len <= 0)
     return;
@@ -891,7 +891,7 @@ void wxTextSnip::Read(long len, wxMediaStreamIn &f)
     buffer = STRALLOC(allocated + 1);
   }
 
-  f.Get((long *)&len, text = buffer);
+  f->Get((long *)&len, text = buffer);
   count = len;
   w = -1.0;
 }
@@ -910,7 +910,7 @@ class TabSnipClass : public TextSnipClass
  public:
   TabSnipClass(void);
 
-  virtual wxSnip *Read(wxMediaStreamIn &);
+  virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
 static TabSnipClass TheTabSnipClass;
@@ -922,7 +922,7 @@ TabSnipClass::TabSnipClass(void)
   required = TRUE;
 }
 
-wxSnip *TabSnipClass::Read(wxMediaStreamIn &f)
+wxSnip *TabSnipClass::Read(wxMediaStreamIn *f)
 {
   return TextSnipClass::Read(new wxTabSnip(), f);
 }
@@ -1037,7 +1037,7 @@ class ImageSnipClass : public wxSnipClass
  public:
   ImageSnipClass(void);
 
-  virtual wxSnip *Read(wxMediaStreamIn &);
+  virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
 static ImageSnipClass TheImageSnipClass;
@@ -1049,7 +1049,7 @@ ImageSnipClass::ImageSnipClass(void)
   required = FALSE;
 }
 
-wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
+wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
 {
   wxImageSnip *snip;
   char *filename, *delfile = NULL, *loadfile;
@@ -1058,13 +1058,13 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
   float w, h, dx, dy;
   Bool canInline = (wxTheSnipClassList.ReadingVersion(this) > 1);
 
-  filename = f.GetString(NULL);
-  f >> type;
-  f >> w;
-  f >> h;
-  f >> dx;
-  f >> dy;
-  f >> relative;
+  filename = f->GetString(NULL);
+  f->Get(&type);
+  f->Get(&w);
+  f->Get(&h);
+  f->Get(&dx);
+  f->Get(&dy);
+  f->Get(&relative);
 
   loadfile = filename;
 
@@ -1072,7 +1072,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
     /* read inlined image */
 
     long len;
-    f.GetFixed(len);
+    f->GetFixed(&len);
 
     if (len) {
       char *fname = wxGetTempFileName("img", NULL);
@@ -1086,7 +1086,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
 	
 	while (len--) {
 	  c = IMG_MOVE_BUF_SIZE + 1;
-	  f.Get(&c, buffer);
+	  f->Get(&c, buffer);
 	  
 	  c = fwrite(buffer, 1, c, fi);
 	}
@@ -1234,34 +1234,34 @@ wxSnip *wxImageSnip::Copy(void)
   return (wxSnip *)snip;
 }
 
-void wxImageSnip::Write(wxMediaStreamOut &f)
+void wxImageSnip::Write(wxMediaStreamOut *f)
 {
   int writeBm = 0, writePm = 0;
 
-  f << (filename ? filename : (char *)"");
+  f->Put((filename ? filename : (char *)""));
   if (filename)
-    f << filetype;
+    f->Put(filetype);
   else {
     if (!bm)
-      f << 0;
+      f->Put(0);
     else if (bm->GetDepth() == 1) {
-      f << 1;
+      f->Put(1);
       writeBm = 1;
     } else {
-      f << 2;
+      f->Put(2);
       writePm = 1;
     }
   }
-  f << vieww;
-  f << viewh;
-  f << viewdx;
-  f << viewdy;
-  f << relativePath;
+  f->Put(vieww);
+  f->Put(viewh);
+  f->Put(viewdx);
+  f->Put(viewdy);
+  f->Put(relativePath);
 
   /* inline the image */
   if (writeBm || writePm) {
-    long lenpos = f.Tell(), numlines = 0;
-    f.PutFixed(0);
+    long lenpos = f->Tell(), numlines = 0;
+    f->PutFixed(0);
 
     char *fname = wxGetTempFileName("img", NULL);
 
@@ -1277,7 +1277,7 @@ void wxImageSnip::Write(wxMediaStreamOut &f)
 	c = fread(buffer, 1, IMG_MOVE_BUF_SIZE, fi);
 	if (c) {
 	  numlines++;
-	  f.Put(c, buffer);
+	  f->Put(c, buffer);
 	} else 
 	  break;
       }
@@ -1287,10 +1287,10 @@ void wxImageSnip::Write(wxMediaStreamOut &f)
     wxRemoveFile(fname);
     delete[] fname;
 
-    long end = f.Tell();
-    f.JumpTo(lenpos);
-    f.PutFixed(numlines);
-    f.JumpTo(end);
+    long end = f->Tell();
+    f->JumpTo(lenpos);
+    f->PutFixed(numlines);
+    f->JumpTo(end);
   }
 }
 
@@ -1508,7 +1508,7 @@ class MediaSnipClass : public wxSnipClass
  public:
   MediaSnipClass(void);
 
-  virtual wxSnip *Read(wxMediaStreamIn &);
+  virtual wxSnip *Read(wxMediaStreamIn *);
 };
 
 static MediaSnipClass TheMediaSnipClass;
@@ -1520,7 +1520,7 @@ MediaSnipClass::MediaSnipClass(void)
   required = TRUE;
 }
 
-wxSnip *MediaSnipClass::Read(wxMediaStreamIn &f)
+wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
 {
   wxMediaBuffer *media;
   wxMediaSnip *snip;
@@ -1528,11 +1528,23 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn &f)
   int lm, tm, rm, bm, li, ti, ri, bi, type;
   float w, W, h, H;
 
-  f >> type >> border >> lm >> tm >> rm >> bm >> li >> ti >> ri >> bi
-    >> w >> W >> h >> H;
+  f->Get(&type);
+  f->Get(&border);
+  f->Get(&lm);
+  f->Get(&tm);
+  f->Get(&rm);
+  f->Get(&bm);
+  f->Get(&li);
+  f->Get(&ti);
+  f->Get(&ri);
+  f->Get(&bi);
+  f->Get(&w);
+  f->Get(&W);
+  f->Get(&h);
+  f->Get(&H);
   
   if (wxTheSnipClassList.ReadingVersion(this) > 1)
-    f >> tightFit;
+    f->Get(&tightFit);
   
   if (!type)
     media = NULL;
@@ -1648,26 +1660,26 @@ void wxStandardSnipClassList::ResetHeaderFlags(int doneMsg)
   }
 }
 
-Bool wxStandardSnipClassList::Write(wxMediaStreamOut &f)
+Bool wxStandardSnipClassList::Write(wxMediaStreamOut *f)
 {
   wxNode *node;
   wxSnipClass *sclass;
   short i;
 
-  f << Number();
+  f->Put(Number());
 
   for (i = 0, node = First(); node; node = node->Next(), i++) {
     sclass = (wxSnipClass *)node->Data();
-    f << sclass->classname;
-    f << sclass->version;
-    f << sclass->required;
+    f->Put(sclass->classname);
+    f->Put(sclass->version);
+    f->Put(sclass->required);
     sclass->mapPosition = i;
   }
 
   return TRUE;
 }
 
-Bool wxStandardSnipClassList::Read(wxMediaStreamIn &f)
+Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 {
   int count, i;
   long n;
@@ -1676,7 +1688,7 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn &f)
   int version;
   Bool required;
 
-  f >> count;
+  f->Get(&count);
 
   buffer[255] = 0;
 
@@ -1689,10 +1701,10 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn &f)
 
   for (i = 0; i < count; i++) {
     n = 255;
-    f.Get((long *)&n, (char *)buffer);
-    f >> version;
-    f >> required;
-    if (!f.Ok())
+    f->Get((long *)&n, (char *)buffer);
+    f->Get(&version);
+    f->Get(&required);
+    if (!f->Ok())
       return FALSE;
     sclass = Find(buffer);
     if (!sclass || (sclass->version < version)) {
@@ -1771,7 +1783,7 @@ class LocationBufferDataClass : public wxBufferDataClass
 {
  public:
   LocationBufferDataClass();
-  wxBufferData *Read(wxMediaStreamIn &);
+  wxBufferData *Read(wxMediaStreamIn *);
 };
 
 LocationBufferDataClass::LocationBufferDataClass()
@@ -1780,13 +1792,13 @@ LocationBufferDataClass::LocationBufferDataClass()
   required = 1;
 }
 
-wxBufferData *LocationBufferDataClass::Read(wxMediaStreamIn &f)
+wxBufferData *LocationBufferDataClass::Read(wxMediaStreamIn *f)
 {
   wxLocationBufferData *data;
 
   data = new wxLocationBufferData;
-  f >> data->x;
-  f >> data->y;
+  f->Get(&data->x);
+  f->Get(&data->y);
 
   return data;
 }
@@ -1799,10 +1811,10 @@ wxLocationBufferData::wxLocationBufferData()
   dataclass = &TheLocationBufferDataClass;
 }
 
-Bool wxLocationBufferData::Write(wxMediaStreamOut &f)
+Bool wxLocationBufferData::Write(wxMediaStreamOut *f)
 {
-  f << x;
-  f << y;
+  f->Put(x);
+  f->Put(y);
   return TRUE;
 }
 
@@ -1868,38 +1880,38 @@ wxBufferDataClass *wxBufferDataClassList::Nth(int n)
     return (wxBufferDataClass *)o->Data();
 }
 
-Bool wxBufferDataClassList::Write(wxMediaStreamOut &f)
+Bool wxBufferDataClassList::Write(wxMediaStreamOut *f)
 {
   wxNode *node;
   wxBufferDataClass *sclass;
   short i;
 
-  f << Number();
+  f->Put(Number());
 
   for (i = 0, node = First(); node; node = node->Next(), i++) {
     sclass = (wxBufferDataClass *)node->Data();
-    f << sclass->classname;
+    f->Put(sclass->classname);
     sclass->mapPosition = i + 1;
   }
 
   return TRUE;
 }
 
-Bool wxBufferDataClassList::Read(wxMediaStreamIn &f)
+Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
 {
   int count, i;
   long n;
   wxBufferDataClass *sclass;
   char buffer[256];
 
-  f >> count;
+  f->Get(&count);
 
   buffer[255] = 0;
 
   for (i = 0; i < count; i++) {
     n = 255;
-    f.Get((long *)&n, (char *)buffer);
-    if (!f.Ok())
+    f->Get((long *)&n, (char *)buffer);
+    if (!f->Ok())
       return FALSE;
     sclass = Find(buffer);
     if (!sclass) {

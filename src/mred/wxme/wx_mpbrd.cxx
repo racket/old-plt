@@ -192,7 +192,7 @@ void wxMediaPasteboard::RubberBand(float x, float y, float w, float h)
   dc->SetBrush(oldBrush);;
 }
 
-wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent &event)
+wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
 {
   float scrollx, scrolly;
   float x, y;
@@ -207,12 +207,12 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent &event)
   if (!dc)
     return NULL;
 
-  x = event.x + scrollx;
-  y = event.y + scrolly;
+  x = event->x + scrollx;
+  y = event->y + scrolly;
 
   if (!customCursorOverrides) {
 
-    if (caretSnip && event.Dragging()) {
+    if (caretSnip && event->Dragging()) {
       float x, y;
       GetSnipLocation(caretSnip, &x, &y);
       c = caretSnip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
@@ -240,7 +240,7 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent &event)
   return arrow;
 }
 
-void wxMediaPasteboard::OnEvent(wxMouseEvent &event)
+void wxMediaPasteboard::OnEvent(wxMouseEvent *event)
 {
   float x, y, scrollx, scrolly;
   wxSnip *snip;
@@ -250,10 +250,10 @@ void wxMediaPasteboard::OnEvent(wxMouseEvent &event)
   if (!admin)
     return;
 
-  if (event.ButtonDown() || caretSnip) {
+  if (event->ButtonDown() || caretSnip) {
     /* First, find clicked-on snip: */
-    x = event.x;
-    y = event.y;
+    x = event->x;
+    y = event->y;
     
     dc = admin->GetDC(&scrollx, &scrolly);
     y += scrolly;
@@ -263,7 +263,7 @@ void wxMediaPasteboard::OnEvent(wxMouseEvent &event)
     dc = NULL;
   }
 
-  if (event.ButtonDown())
+  if (event->ButtonDown())
     snip = FindSnip(x, y);
   else
     snip = caretSnip;
@@ -277,7 +277,7 @@ void wxMediaPasteboard::OnEvent(wxMouseEvent &event)
   OnLocalEvent(event);
 }
 
-void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
+void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent *event)
 {
   float x, y, scrollx, scrolly;
   wxSnip *snip;
@@ -289,8 +289,8 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
     return;
 
   /* First, find clicked-on snip: */
-  x = event.x;
-  y = event.y;
+  x = event->x;
+  y = event->y;
   
   dc = admin->GetDC(&scrollx, &scrolly);
   y += scrolly;
@@ -298,9 +298,9 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 
   InteractiveAdjustMouse(&x, &y);
 
-  if (event.ButtonDown() 
-      || (event.Moving() && !event.Dragging())
-      || event.ButtonUp()) {
+  if (event->ButtonDown() 
+      || (event->Moving() && !event->Dragging())
+      || event->ButtonUp()) {
     Bool update = FALSE;
 
     keepSize = FALSE;
@@ -318,7 +318,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	EndEditSequence();
 	resizing = NULL;
       } else {
-	FinishDragging(&event);
+	FinishDragging(event);
       }
     }
     if (rubberband) {
@@ -334,9 +334,9 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
   }
 
   click = FALSE;
-  if (event.ButtonDown())
+  if (event->ButtonDown())
     click = TRUE;
-  if (event.Dragging() && !dragging && !rubberband)
+  if (event->Dragging() && !dragging && !rubberband)
     click = TRUE;
 
   if (click) {
@@ -350,29 +350,29 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	origW = loc->w;
 	origH = loc->h;
 	if (!loc->selected) {
-	  if (!event.shiftDown)
+	  if (!event->shiftDown)
 	    NoSelected();
 	  SetCaretOwner(NULL);
 	  AddSelected(snip);
-	  InitDragging(&event);
+	  InitDragging(event);
 	} else {
 	  long interval;
 
-	  interval = event.timeStamp - lastTime;
+	  interval = event->timeStamp - lastTime;
 	  if (interval < 0)
 	    interval = -interval;
-	  if (event.ButtonDown() && (interval < (map ? map->GetDoubleClickInterval() : wxmeGetDoubleClickThreshold())))
+	  if (event->ButtonDown() && (interval < (map ? map->GetDoubleClickInterval() : wxmeGetDoubleClickThreshold())))
 	    OnDoubleClick(snip, event);
 	  else {
 	    if (FindDot(loc, x, y, &sizedxm, &sizedym))
 	      resizing = snip;
-	    InitDragging(&event);
+	    InitDragging(event);
 	  }
 	}
-        if (event.ButtonDown())
-	  lastTime = event.timeStamp;
+        if (event->ButtonDown())
+	  lastTime = event->timeStamp;
       } else {
-	if (!event.shiftDown)
+	if (!event->shiftDown)
 	  NoSelected();
 	SetCaretOwner(NULL);
 	rubberband = TRUE;
@@ -386,7 +386,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
   }
 
   if (dragable) {
-    if (event.Dragging()) {
+    if (event->Dragging()) {
       if (rubberband) {
 	/* Erase old */
 	RubberBand(startX, startY, lastX - startX, lastY - startY);
@@ -405,7 +405,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
   }
 }
 
-void wxMediaPasteboard::OnDoubleClick(wxSnip *snip, wxMouseEvent&)
+void wxMediaPasteboard::OnDoubleClick(wxSnip *snip, wxMouseEvent *)
 {
   if (snip->flags & wxSNIP_HANDLES_EVENTS) {
     NoSelected();
@@ -413,7 +413,7 @@ void wxMediaPasteboard::OnDoubleClick(wxSnip *snip, wxMouseEvent&)
   }
 }
 
-void wxMediaPasteboard::OnChar(wxKeyEvent &event)
+void wxMediaPasteboard::OnChar(wxKeyEvent *event)
 {
   float x, y, scrollx, scrolly;
   wxSnipLocation *loc;
@@ -422,8 +422,8 @@ void wxMediaPasteboard::OnChar(wxKeyEvent &event)
   if (!admin)
     return;
   
-  x = event.x;
-  y = event.y;
+  x = event->x;
+  y = event->y;
 
   dc = admin->GetDC(&scrollx, &scrolly);
   y += scrolly;
@@ -438,14 +438,14 @@ void wxMediaPasteboard::OnChar(wxKeyEvent &event)
   OnLocalChar(event);
 }
 
-void wxMediaPasteboard::OnDefaultChar(wxKeyEvent &event)
+void wxMediaPasteboard::OnDefaultChar(wxKeyEvent *event)
 {
   long code;
 
   if (!admin)
     return;
 
-  code = event.KeyCode();
+  code = event->KeyCode();
 
   switch(code) {
     case WXK_BACK:
@@ -2500,11 +2500,14 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
     fread((char *)wxme_current_read_version, 1, MRED_VERSION_STR_LEN, f);
 
     if (wxmeCheckFormatAndVersion()) {
-      wxMediaStreamInFileBase b(f);
-      wxMediaStreamIn mf(b);
+      wxMediaStreamInFileBase *b;
+      wxMediaStreamIn *mf;
+
+      b = new wxMediaStreamInFileBase(f);
+      mf = new wxMediaStreamIn(b);
       
       if (wxReadMediaGlobalHeader(mf)) {
-	if (mf.Ok())
+	if (mf->Ok())
 	  fileerr = !ReadFromFile(mf, clearStyles);
 	else
 	  fileerr = TRUE;
@@ -2514,7 +2517,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
     
       styleList->NewNamedStyle(STD_STYLE, NULL);
       
-      fileerr = fileerr || !mf.Ok();
+      fileerr = fileerr || !mf->Ok();
     } else
       fileerr = TRUE;
   }
@@ -2587,17 +2590,20 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
   fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
 
-  wxMediaStreamOutFileBase b(f);
-  wxMediaStreamOut mf(b);
+  wxMediaStreamOutFileBase *b;
+  wxMediaStreamOut *mf;
+
+  b = new wxMediaStreamOutFileBase(f);
+  mf = new wxMediaStreamOut(b);
   
   wxWriteMediaGlobalHeader(mf);
-  if (mf.Ok())
+  if (mf->Ok())
     fileerr = !WriteToFile(mf);
   else
     fileerr = TRUE;
   wxWriteMediaGlobalFooter(mf);
   
-  fileerr = fileerr || !mf.Ok();
+  fileerr = fileerr || !mf->Ok();
 
   fclose(f);
 
@@ -2617,9 +2623,9 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   return !fileerr;
 }
 
-Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut &f)
+Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut *f)
 {
-  if (wxMediaFileIOReady != (void *)&f) {
+  if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File writing has not been initialized for this stream.");
     return FALSE;
   }
@@ -2636,12 +2642,12 @@ Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut &f)
 }
 
 
-Bool wxMediaPasteboard::ReadFromFile(wxMediaStreamIn &f, Bool overwritestyle)
+Bool wxMediaPasteboard::ReadFromFile(wxMediaStreamIn *f, Bool overwritestyle)
 {
   if (userLocked || writeLocked)
     return FALSE;
 
-  if (wxMediaFileIOReady != (void *)&f) {
+  if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File reading has not been initialized for this stream.");
     return FALSE;
   }

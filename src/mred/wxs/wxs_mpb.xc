@@ -78,7 +78,7 @@
 @ v "on-select" : void OnSelect(wxSnip!, bool);
 @ v "after-select" :  void AfterSelect(wxSnip!, bool);
 
-@ v "on-double-click" : void OnDoubleClick(wxSnip!, wxMouseEvent%);
+@ v "on-double-click" : void OnDoubleClick(wxSnip!, wxMouseEvent!);
 
 @ v "interactive-adjust-mouse" : void InteractiveAdjustMouse(float*,float*);
 @ v "interactive-adjust-move" : void InteractiveAdjustMove(wxSnip!,float*,float*);

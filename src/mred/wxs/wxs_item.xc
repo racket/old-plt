@@ -12,7 +12,7 @@
 
 @CLASSID wxTYPE_ITEM
 
-@ "command" : void Command(wxCommandEvent%);
+@ "command" : void Command(wxCommandEvent!);
 
 // @INCLUDE wxs_icol.xci
 

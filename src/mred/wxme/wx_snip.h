@@ -24,7 +24,7 @@ enum {
 };
 
 #define WRITE_FUNC \
-   Bool wxmbWriteSnipsToFile(class wxMediaStreamOut &, \
+   Bool wxmbWriteSnipsToFile(class wxMediaStreamOut *, \
 			     class wxStyleList *, \
 			     class wxList *, class wxSnip *, \
 			     class wxSnip *, wxList *, \
@@ -56,12 +56,12 @@ class wxSnipClass : public wxObject
   
   wxSnipClass();
 
-  virtual class wxSnip *Read(wxMediaStreamIn &) = 0;
+  virtual class wxSnip *Read(wxMediaStreamIn *) = 0;
 
-  virtual Bool ReadHeader(wxMediaStreamIn &);
+  virtual Bool ReadHeader(wxMediaStreamIn *);
   virtual void ReadDone(void);
 
-  virtual Bool WriteHeader(wxMediaStreamOut &);
+  virtual Bool WriteHeader(wxMediaStreamOut *);
   virtual void WriteDone(void);
 };
 
@@ -94,8 +94,8 @@ class wxStandardSnipClassList : public wxSnipClassList
   wxStandardSnipClassList(void);
 
   void ResetHeaderFlags(int doneMsg = wxRESET_NO_MSG);
-  Bool Write(wxMediaStreamOut &f);
-  Bool Read(wxMediaStreamIn &f);
+  Bool Write(wxMediaStreamOut *f);
+  Bool Read(wxMediaStreamIn *f);
   wxSnipClass *FindByMapPosition(short n);
 };
 
@@ -147,13 +147,13 @@ class wxSnip : public wxObject
 
   virtual void OnEvent(wxDC *dc, float x, float y, 
 		       float mediax, float mediay, 
-		       wxMouseEvent &event);
+		       wxMouseEvent *event);
   virtual void OnChar(wxDC *dc, float x, float y, 
 		      float mediax, float mediay, 
-		      wxKeyEvent &event);
+		      wxKeyEvent *event);
   virtual wxCursor *AdjustCursor(wxDC *dc, float x, float y, 
 				 float mediax, float mediay, 
-				 wxMouseEvent &event);
+				 wxMouseEvent *event);
   virtual void OwnCaret(Bool);  
   virtual void BlinkCaret(wxDC *dc, float x, float y);  
   
@@ -179,7 +179,7 @@ class wxSnip : public wxObject
   virtual void GetText(char *s, long offset, long num);
   virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy();
-  virtual void Write(wxMediaStreamOut &f);
+  virtual void Write(wxMediaStreamOut *f);
 
   virtual Bool Resize(float w, float h);
 
@@ -232,11 +232,11 @@ class wxTextSnip : public wxInternalSnip
   virtual wxSnip *MergeWith(wxSnip *pred);
 
   virtual void Insert(char *str, long len, long pos = 0);
-  virtual void Read(long len, wxMediaStreamIn &f);
+  virtual void Read(long len, wxMediaStreamIn *f);
   virtual void GetText(char *s, long offset, long num);
   virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy(void);
-  virtual void Write(wxMediaStreamOut &f);
+  virtual void Write(wxMediaStreamOut *f);
 
 
 #ifdef MEMORY_USE_METHOD
@@ -297,7 +297,7 @@ class wxImageSnip : public wxInternalSnip
 
   virtual wxSnip *Copy(void);
 
-  virtual void Write(wxMediaStreamOut &f);
+  virtual void Write(wxMediaStreamOut *f);
 
   void LoadFile(char *name, long type, Bool relative = FALSE, Bool inlineImg = TRUE);
   char *GetFilename(Bool *relative);
@@ -379,9 +379,9 @@ class wxMediaSnip : public wxInternalSnip
 
   virtual void SetAdmin(wxSnipAdmin *a);
 
-  virtual void OnEvent(wxDC *, float, float, float,float, wxMouseEvent &event);
-  virtual void OnChar(wxDC *, float, float, float, float, wxKeyEvent &event);
-  virtual wxCursor *AdjustCursor(wxDC *, float, float, float,float, wxMouseEvent &event);
+  virtual void OnEvent(wxDC *, float, float, float,float, wxMouseEvent *event);
+  virtual void OnChar(wxDC *, float, float, float, float, wxKeyEvent *event);
+  virtual wxCursor *AdjustCursor(wxDC *, float, float, float,float, wxMouseEvent *event);
   virtual void OwnCaret(Bool);  
   virtual void BlinkCaret(wxDC *dc, float x, float y);
 
@@ -404,7 +404,7 @@ class wxMediaSnip : public wxInternalSnip
 		    int show_caret);
   virtual wxSnip *Copy(void);
 
-  virtual void Write(wxMediaStreamOut &f);
+  virtual void Write(wxMediaStreamOut *f);
 
   virtual long GetNumScrollSteps();
   virtual long FindScrollStep(float y);
@@ -447,7 +447,7 @@ class wxBufferDataClass : public wxObject
   friend class wxBufferDataClassList;
   friend class wxMediaBuffer;
   friend WRITE_FUNC;
-  friend Bool wxmbWriteBufferData(wxMediaStreamOut&, wxBufferData *data);
+  friend Bool wxmbWriteBufferData(wxMediaStreamOut *, wxBufferData *data);
 
   int mapPosition;
  public:
@@ -456,7 +456,7 @@ class wxBufferDataClass : public wxObject
 
   wxBufferDataClass();
 
-  virtual class wxBufferData *Read(wxMediaStreamIn &) = 0;
+  virtual class wxBufferData *Read(wxMediaStreamIn *) = 0;
 };
 
 class wxBufferData : public wxObject
@@ -468,7 +468,7 @@ class wxBufferData : public wxObject
   wxBufferData();
   ~wxBufferData();
 
-  virtual Bool Write(wxMediaStreamOut &) = 0;
+  virtual Bool Write(wxMediaStreamOut *) = 0;
 };
 
 class wxBufferDataClassList : public /* should be private */ wxList
@@ -486,8 +486,8 @@ class wxBufferDataClassList : public /* should be private */ wxList
   int Number(void);
   wxBufferDataClass *Nth(int);
 
-  Bool Write(wxMediaStreamOut &f);
-  Bool Read(wxMediaStreamIn &f);
+  Bool Write(wxMediaStreamOut *f);
+  Bool Read(wxMediaStreamIn *f);
   wxBufferDataClass *FindByMapPosition(short n);
 };
 
@@ -504,7 +504,7 @@ class wxLocationBufferData : public wxBufferData
 
   wxLocationBufferData();
 
-  Bool Write(wxMediaStreamOut &);
+  Bool Write(wxMediaStreamOut *);
 };
 
 #endif /* __WX_SNIP__ */

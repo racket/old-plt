@@ -170,9 +170,9 @@ class os_wxCanvas : public wxCanvas {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
-  void OnScroll(class wxScrollEvent& x0);
-  void OnChar(class wxKeyEvent& x0);
-  void OnEvent(class wxMouseEvent& x0);
+  void OnScroll(class wxScrollEvent* x0);
+  void OnChar(class wxKeyEvent* x0);
+  void OnEvent(class wxMouseEvent* x0);
   void OnPaint();
 };
 
@@ -320,7 +320,7 @@ void os_wxCanvas::OnKillFocus()
   }
 }
 
-void os_wxCanvas::OnScroll(class wxScrollEvent& x0)
+void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -332,7 +332,7 @@ void os_wxCanvas::OnScroll(class wxScrollEvent& x0)
     wxCanvas::OnScroll(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxScrollEvent(&x0);
+  p[0] = objscheme_bundle_wxScrollEvent(x0);
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
@@ -341,7 +341,7 @@ void os_wxCanvas::OnScroll(class wxScrollEvent& x0)
   }
 }
 
-void os_wxCanvas::OnChar(class wxKeyEvent& x0)
+void os_wxCanvas::OnChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -353,7 +353,7 @@ void os_wxCanvas::OnChar(class wxKeyEvent& x0)
     wxCanvas::OnChar(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
@@ -362,7 +362,7 @@ void os_wxCanvas::OnChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxCanvas::OnEvent(class wxMouseEvent& x0)
+void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -374,7 +374,7 @@ void os_wxCanvas::OnEvent(class wxMouseEvent& x0)
     wxCanvas::OnEvent(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
@@ -545,9 +545,9 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { return scheme_void; }
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnScroll(*x0);
+    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnScroll(x0);
   else
-    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnScroll(*x0);
+    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnScroll(x0);
 
   
   
@@ -857,9 +857,9 @@ static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnChar(*x0);
+    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnChar(x0);
   else
-    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
 
   
   
@@ -878,9 +878,9 @@ static Scheme_Object *os_wxCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnEvent(*x0);
+    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnEvent(x0);
   else
-    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
 
   
   

@@ -90,7 +90,7 @@ class wxPostScriptDC: public wxDC
   void CrossHair(float x, float y) ;
   void DrawArc(float x1,float y1,float w,float h,float start,float end);
   void DrawPoint(float x, float y);
-  void DrawPoint(wxPoint& point) { DrawPoint(point.x, point.y); }
+  void DrawPoint(wxPoint* point) { DrawPoint(point->x, point->y); }
   void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
   void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
 #ifdef wx_xt
@@ -196,8 +196,7 @@ public:
     wxPrintSetupData(void);
     ~wxPrintSetupData(void);
 
-    void operator = (wxPrintSetupData& data);
-    void copy (wxPrintSetupData& data);
+    void copy (wxPrintSetupData* data);
 
     void  SetPrinterCommand(char *cmd);
     void  SetPaperName(char *paper);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.28 1999/10/08 04:33:18 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.29 1999/11/04 17:25:33 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -676,7 +676,7 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 
     values.fill_style = FillSolid;
     // wxXOR shall work the correct way
-    unsigned long pixel = brush->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
+    unsigned long pixel = brush->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
     if (brush->GetStyle() == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
@@ -761,7 +761,7 @@ void wxWindowDC::SetPen(wxPen *pen)
     int scale = // needed for dash-scaling
     values.line_width = XLOG2DEVREL(pen->GetWidth());
     // wxXOR shall work the correct way
-    unsigned long pixel = pen->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
+    unsigned long pixel = pen->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
     int style = pen->GetStyle();
     int xor = 0;
 

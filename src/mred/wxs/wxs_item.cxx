@@ -98,7 +98,7 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
   x0 = objscheme_unbundle_wxCommandEvent(p[0], "command in item%", 0);
 
   
-  ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->Command(*x0);
+  ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->Command(x0);
 
   
   

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.7 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.8 1999/11/12 17:27:47 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -42,7 +42,7 @@ wxPen::wxPen(void)
     __type = wxTYPE_PEN;
 
     stipple = NULL;
-    colour  = *wxBLACK;
+    colour.CopyFrom(wxBLACK);
     style   = wxSOLID;
     join    = wxJOIN_ROUND;
     cap     = wxCAP_ROUND;
@@ -52,11 +52,11 @@ wxPen::wxPen(void)
     locked = 0;
 }
 
-wxPen::wxPen(wxColour &col, int Width, int Style)
+wxPen::wxPen(wxColour *col, int Width, int Style)
 {
     __type = wxTYPE_PEN;
 
-    colour  = col;
+    colour.CopyFrom(col);
     width   = Width;
     style   = Style;
     stipple = NULL;
@@ -71,7 +71,7 @@ wxPen::wxPen(const char *col, int Width, int Style)
 {
     __type = wxTYPE_PEN;
 
-    colour  = col;
+    colour.CopyFrom(col);
     width   = Width;
     style   = Style;
     stipple = NULL;
@@ -109,17 +109,17 @@ wxBrush::wxBrush(void)
 {
     __type = wxTYPE_BRUSH;
 
-    colour  = *wxWHITE;
+    colour.CopyFrom(wxWHITE);
     stipple = NULL;
     style   = wxSOLID;
     locked = 0;
 }
 
-wxBrush::wxBrush(wxColour &col, int Style)
+wxBrush::wxBrush(wxColour *col, int Style)
 {
     __type = wxTYPE_BRUSH;
 
-    colour  = col;
+    colour.CopyFrom(col);
     style   = Style;
     stipple = NULL;
     locked = 0;
@@ -129,7 +129,7 @@ wxBrush::wxBrush(const char *col, int Style)
 {
     __type = wxTYPE_BRUSH;
 
-    colour  = col;
+    colour.CopyFrom(col);
     style   = Style;
     stipple = NULL;
     locked = 0;
@@ -188,13 +188,13 @@ wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
     if (each_pen &&
 	each_pen->GetWidth() == w &&
 	each_pen->GetStyle() == style &&
-	each_pen->GetColour().Red() == colour->Red() &&
-	each_pen->GetColour().Green() == colour->Green() &&
-	each_pen->GetColour().Blue() == colour->Blue())
+	each_pen->GetColour()->Red() == colour->Red() &&
+	each_pen->GetColour()->Green() == colour->Green() &&
+	each_pen->GetColour()->Blue() == colour->Blue())
       return each_pen;
   }
   
-  pen = new wxPen(*colour, w, style);
+  pen = new wxPen(colour, w, style);
   pen->Lock(1);
   AddPen(pen);
   
@@ -242,13 +242,13 @@ wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)
     wxBrush *each_brush = (wxBrush*)node->Data();
     if (each_brush &&
 	each_brush->GetStyle() == style &&
-	each_brush->GetColour().Red() == colour->Red() &&
-	each_brush->GetColour().Green() == colour->Green() &&
-	each_brush->GetColour().Blue() == colour->Blue())
+	each_brush->GetColour()->Red() == colour->Red() &&
+	each_brush->GetColour()->Green() == colour->Green() &&
+	each_brush->GetColour()->Blue() == colour->Blue())
       return each_brush;
   }
 
-  brush = new wxBrush(*colour, style);
+  brush = new wxBrush(colour, style);
   brush->Lock(1);
   AddBrush(brush);
   

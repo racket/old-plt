@@ -92,7 +92,7 @@ wxs_chce.cxx : wxs_chce.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_chce.xc
 wxs_ckbx.cxx : wxs_ckbx.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_ckbx.xc
-wxs_cnvs.cxx : wxs_cnvs.xc wxs_win.xci wxs_cnvs.xci $(XCDEPEND)
+wxs_cnvs.cxx : wxs_cnvs.xc wxs_win.xci wxs_cnvs.xci wxs_char.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_cnvs.xc
 wxs_cstr.cxx : wxs_cstr.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_cstr.xc
@@ -165,11 +165,11 @@ $(OBJDIR)/wxscomon.o : wxscomon.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxscomon.cxx -o $(OBJDIR)/wxscomon.o
 $(OBJDIR)/wxs_bmap.o : wxs_bmap.cxx $(WXSCHEMEHEADERS)
 	$(WXSCC) wxs_bmap.cxx -o $(OBJDIR)/wxs_bmap.o
-$(OBJDIR)/wxs_butn.o : wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_butn.o : wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../../wxxt/src/Windows/Button.h
 	$(WXSCC) wxs_butn.cxx -o $(OBJDIR)/wxs_butn.o
 $(OBJDIR)/wxs_chce.o : wxs_chce.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_chce.cxx -o $(OBJDIR)/wxs_chce.o
-$(OBJDIR)/wxs_ckbx.o : wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_ckbx.o : wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../../wxxt/src/Windows/CheckBox.h
 	$(WXSCC) wxs_ckbx.cxx -o $(OBJDIR)/wxs_ckbx.o
 $(OBJDIR)/wxs_cnvs.o : wxs_cnvs.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_cnvs.cxx -o $(OBJDIR)/wxs_cnvs.o

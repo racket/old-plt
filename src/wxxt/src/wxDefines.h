@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.8 1999/08/14 00:38:10 mflatt Exp $
+ * $Id: wxDefines.h,v 1.9 1999/10/05 13:32:17 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -45,7 +45,7 @@ typedef int Bool;
 // typedef for wxWindows callback functions
 class wxObject;
 class wxCommandEvent;
-typedef void (*wxFunction)(wxObject&, wxCommandEvent&);
+typedef void (*wxFunction)(wxObject*, wxCommandEvent*);
 
 // defines for port
 #define wx_x

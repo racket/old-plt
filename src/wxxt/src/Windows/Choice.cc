@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.16 1999/10/22 14:41:54 mflatt Exp $
+ * $Id: Choice.cc,v 1.17 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -287,7 +287,7 @@ Bool wxChoice::SetStringSelection(char *s)
     return FALSE;
 }
 
-void wxChoice::Command(wxCommandEvent &event)
+void wxChoice::Command(wxCommandEvent *event)
 {
   ProcessCommand(event);
 }
@@ -316,31 +316,34 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     choice->PopupMenu(choice->choice_menu, 0, (int)hh);
 }
 
-void wxChoice::OnEvent(wxMouseEvent &e)
+void wxChoice::OnEvent(wxMouseEvent *e)
 {
-  if (e.ButtonDown())
+  if (e->ButtonDown())
     EventCallback(0, (XtPointer)this, 0);
 }
 
-void wxChoice::MenuEventCallback(wxObject& obj, wxCommandEvent& ev)
+void wxChoice::MenuEventCallback(wxObject* obj, wxCommandEvent* ev)
 {
-    wxChoice       *choice = (wxChoice*)((wxMenu&)obj).GetClientData();
+    wxChoice       *choice;
     wxPopupEvent *pu = (wxPopupEvent *)&ev;
+    wxCommandEvent *event;
+
+    choice = (wxChoice*)((wxMenu *)obj)->GetClientData();
 
     if (!choice->Number())
       return;
 
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+    event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
 
     choice->SetSelection(pu->menuId);
-    choice->ProcessCommand(*event);
+    choice->ProcessCommand(event);
 }
 
-void wxChoice::OnChar(wxKeyEvent &e)
+void wxChoice::OnChar(wxKeyEvent *e)
 {
   int delta = 0;
 
-  switch (e.keyCode) {
+  switch (e->keyCode) {
   case WXK_UP:
     delta = -1;
     break;
@@ -353,8 +356,9 @@ void wxChoice::OnChar(wxKeyEvent &e)
     int s = GetSelection();
     SetSelection(s + delta);
     if (s != GetSelection()) {
-      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-      ProcessCommand(*event);
+      wxCommandEvent *event;
+      event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      ProcessCommand(event);
     }
   }
 }

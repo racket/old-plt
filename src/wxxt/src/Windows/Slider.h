@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.h,v 1.4 1998/09/06 01:54:03 mflatt Exp $
+ * $Id: Slider.h,v 1.5 1999/11/04 17:25:39 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -45,7 +45,7 @@ public:
 
     int   GetValue(void) { return value; }
     void  SetValue(int value);
-    void Command(wxCommandEvent &event);
+    void Command(wxCommandEvent *event);
 
     void OnSize(int width, int height);
 

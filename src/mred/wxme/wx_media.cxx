@@ -284,7 +284,7 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
 
 /******************************************************************/
 
-wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent &event)
+wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
 {
   float scrollx, scrolly;
   float x, y;
@@ -307,15 +307,15 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent &event)
   if (!dc)
     return NULL;
 
-  x = event.x + scrollx;
-  y = event.y + scrolly;
+  x = event->x + scrollx;
+  y = event->y + scrolly;
 
   if (tracking)
     return customCursor ? customCursor : arrow;
   
   if (!customCursorOverrides) {
 
-    if (caretSnip && event.Dragging()) {
+    if (caretSnip && event->Dragging()) {
       float x, y;
       GetSnipPositionAndLocation(caretSnip, NULL, &x, &y);
       c = caretSnip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
@@ -351,7 +351,7 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent &event)
   return FindClickback(pos, y) ? arrow : iBeam;
 }
 
-void wxMediaEdit::OnEvent(wxMouseEvent &event)
+void wxMediaEdit::OnEvent(wxMouseEvent *event)
 {
   float scrollx, scrolly;
   float x, y;
@@ -364,13 +364,13 @@ void wxMediaEdit::OnEvent(wxMouseEvent &event)
   if (!admin)
     return;
 
-  if (!event.Moving())
+  if (!event->Moving())
     EndStreaks(wxSTREAK_KEY_SEQUENCE);
 
-  if (event.ButtonDown() || caretSnip) {
+  if (event->ButtonDown() || caretSnip) {
     /* First, find clicked-on snip: */
-    x = event.x;
-    y = event.y;
+    x = event->x;
+    y = event->y;
     
     dc = admin->GetDC(&scrollx, &scrolly);
     y += scrolly;
@@ -381,7 +381,7 @@ void wxMediaEdit::OnEvent(wxMouseEvent &event)
   } else
     dc = NULL;
 
-  if (event.ButtonDown()) {
+  if (event->ButtonDown()) {
     float how_close;
 
     now = FindPosition(x, y, NULL, &onit, &how_close);
@@ -413,7 +413,7 @@ void wxMediaEdit::OnEvent(wxMouseEvent &event)
     EndEditSequence();
 }
 
-void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
+void wxMediaEdit::OnDefaultEvent(wxMouseEvent *event)
 {
   long now;
   float scrollx, scrolly;
@@ -426,8 +426,8 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
   if (!admin)
     return;
 
-  x = event.x;
-  y = event.y;
+  x = event->x;
+  y = event->y;
   dc = admin->GetDC(&scrollx, &scrolly);
   y += scrolly;
   x += scrollx;
@@ -439,7 +439,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
   if (how_close > 0  && how_close <= betweenThreshold)
     now++;
 
-  if (event.ButtonDown()) {
+  if (event->ButtonDown()) {
     tracking = FALSE;
     if ((click = FindClickback(now, y))) {
       if (click->callOnDown) {
@@ -454,7 +454,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
     } else {
       dragstart = now;
       dragging = TRUE;
-      if (event.ShiftDown()) {
+      if (event->ShiftDown()) {
 	if (dragstart > startpos)
 	  dragstart = startpos;
 	else
@@ -465,7 +465,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
       else
 	SetPositionBiasScroll(2, dragstart, now, ateol);
     }
-  } else if (event.Dragging()) {
+  } else if (event->Dragging()) {
     now = FindPosition(x, y, &ateol);
     if (dragging) {
       if (now < dragstart) {
@@ -478,7 +478,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
     } else if (tracking) {
       SetClickbackHilited(trackClickback, !!FindClickback(now, y));
     }
-  } else if (event.ButtonUp()) {
+  } else if (event->ButtonUp()) {
     if (dragging)
       dragging = FALSE;
     else if (tracking) {
@@ -491,7 +491,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
       if (admin)
 	admin->UpdateCursor();
     }
-  } else if (event.Moving()) {
+  } else if (event->Moving()) {
     dragging = FALSE;
     if (tracking) {
       tracking = FALSE;
@@ -506,7 +506,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
   }
 }
 
-void wxMediaEdit::OnChar(wxKeyEvent &event)
+void wxMediaEdit::OnChar(wxKeyEvent *event)
 {
   if (!admin)
     return;
@@ -525,7 +525,7 @@ void wxMediaEdit::OnChar(wxKeyEvent &event)
   OnLocalChar(event);
 }
 
-void wxMediaEdit::OnDefaultChar(wxKeyEvent &event)
+void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
 {
   long code;
   int ok = 0;
@@ -533,7 +533,7 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent &event)
   if (!admin)
     return;
 
-  code = event.KeyCode();
+  code = event->KeyCode();
 
   switch(code) {
   case WXK_BACK:
@@ -548,7 +548,7 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent &event)
   case WXK_END:
   case WXK_PRIOR:
   case WXK_NEXT:
-    MovePosition(code, event.ShiftDown());
+    MovePosition(code, event->ShiftDown());
     break;
   case WXK_RETURN:
   case WXK_TAB:
@@ -2686,7 +2686,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (format == wxMEDIA_FF_SAME)
     format = fileFormat;
 
-  Bool fileerr = !InsertFile(f, file, format, loadoverwritesstyles, showErrors);
+  Bool fileerr = !InsertFile(f, file, &format, loadoverwritesstyles, showErrors);
 
   fileFormat = format;
 
@@ -2717,28 +2717,28 @@ Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
   if (!f)
     return FALSE;
 
-  return InsertFile(f, file, format, FALSE, showErrors);
+  return InsertFile(f, file, &format, FALSE, showErrors);
 }
 
-Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool clearStyles, Bool showErrors)
+Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool clearStyles, Bool showErrors)
 {
   long n;
   const int BUF_SIZE = 1000;
   char buffer[BUF_SIZE];
   Bool fileerr;
 
-  if (format == wxMEDIA_FF_GUESS) {
+  if (*format == wxMEDIA_FF_GUESS) {
     n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
     buffer[MRED_START_STR_LEN] = 0;
     if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR))
-      format = wxMEDIA_FF_TEXT;
+      *format = wxMEDIA_FF_TEXT;
     else
-      format = wxMEDIA_FF_STD;
+      *format = wxMEDIA_FF_STD;
     fseek(f, 0, 0);
   }
 
 #ifdef READ_TEXT_WITH_TEXT_FILE_MODE
-  if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
+  if (*format == wxMEDIA_FF_TEXT || *format == wxMEDIA_FF_TEXT_FORCE_CR) {
     if (fclose(f)) {
       if (showErrors)
 	wxmeError("There was an error closing the file.");
@@ -2756,24 +2756,27 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
 
   fileerr = FALSE;
 
-  if (format == wxMEDIA_FF_STD) {
+  if (*format == wxMEDIA_FF_STD) {
     n = fread((char *)buffer, 1, MRED_START_STR_LEN, f);
     buffer[MRED_START_STR_LEN] = 0;
     if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
       if (showErrors)
 	wxmeError("This is not a MrEd file.");
       fseek(f, 0, 0);
-      format = wxMEDIA_FF_TEXT;
+      *format = wxMEDIA_FF_TEXT;
     } else {
       fread((char *)wxme_current_read_format, 1, MRED_FORMAT_STR_LEN, f);
       fread((char *)wxme_current_read_version, 1, MRED_VERSION_STR_LEN, f);
       
       if (wxmeCheckFormatAndVersion()) {
-	wxMediaStreamInFileBase b(f);
-	wxMediaStreamIn mf(b);
+	wxMediaStreamInFileBase *b;
+	wxMediaStreamIn *mf;
+
+	b = new wxMediaStreamInFileBase(f);
+	mf = new wxMediaStreamIn(b);
 
 	if (wxReadMediaGlobalHeader(mf)) {
-	  if (mf.Ok())
+	  if (mf->Ok())
 	    fileerr = !ReadFromFile(mf, clearStyles);
 	  else
 	    fileerr = TRUE;
@@ -2784,13 +2787,13 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
 	/* If STD_STYLE wasn't loaded, re-create it: */
 	styleList->NewNamedStyle(STD_STYLE, NULL);
 	
-	fileerr = fileerr || !mf.Ok();
+	fileerr = fileerr || !mf->Ok();
       } else
 	fileerr = TRUE;
     }
   }
 
-  if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
+  if (*format == wxMEDIA_FF_TEXT || *format == wxMEDIA_FF_TEXT_FORCE_CR) {
     int savecr = 0;
     while (!ferror(f) && !feof(f)) {
       buffer[0] = '\r';
@@ -2915,15 +2918,18 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
     fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
     fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
 
-    wxMediaStreamOutFileBase b(f);
-    wxMediaStreamOut mf(b);
+    wxMediaStreamOutFileBase *b;
+    wxMediaStreamOut *mf;
+
+    b = new wxMediaStreamOutFileBase(f);
+    mf = new wxMediaStreamOut(b);
 
     wxWriteMediaGlobalHeader(mf);
-    if (mf.Ok())
+    if (mf->Ok())
       fileerr = !WriteToFile(mf);
     wxWriteMediaGlobalFooter(mf);
 
-    fileerr = fileerr || !mf.Ok();
+    fileerr = fileerr || !mf->Ok();
 
     if (fclose(f)) {
       if (showErrors)
@@ -2949,12 +2955,12 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   return !fileerr;
 }
 
-Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, long start, Bool overwritestyle)
+Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, long start, Bool overwritestyle)
 {
   if (writeLocked)
     return FALSE;
 
-  if (wxMediaFileIOReady != (void *)&f) {
+  if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File reading has not been initialized for this stream.");
     return FALSE;
   }
@@ -2976,7 +2982,7 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, long start, Bool overwritesty
   return result;
 }
 
-Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, Bool owrs)
+Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, Bool owrs)
 {
   return ReadFromFile(f, -1, owrs);
 }
@@ -2992,14 +2998,14 @@ Bool wxMediaEdit::ReadInsert(wxSnip *snip)
   return TRUE;
 }
 
-Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f, long start, long end)
+Bool wxMediaEdit::WriteToFile(wxMediaStreamOut *f, long start, long end)
 {
   wxSnip *startSnip, *endSnip;
 
   if (readLocked)
     return FALSE;
 
-  if (wxMediaFileIOReady != (void *)&f) {
+  if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File writing has not been initialized for this stream.");
     return FALSE;
   }
@@ -3027,7 +3033,7 @@ Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f, long start, long end)
   return TRUE;
 }
 
-Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f)
+Bool wxMediaEdit::WriteToFile(wxMediaStreamOut *f)
 {
   return WriteToFile(f, -1);
 }
@@ -3834,7 +3840,7 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 	  
 	  newStyle = newList->FindOrCreateJoinStyle(map[baseIndex], map[shiftIndex]);
 	} else {
-	  style->GetDelta(delta);
+	  style->GetDelta(&delta);
 	  
 	  newStyle = newList->FindOrCreateStyle(map[baseIndex], &delta);
 	}

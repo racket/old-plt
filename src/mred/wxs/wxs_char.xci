@@ -1,2 +1,2 @@
 
-@ c "on-char" : void OnChar(wxKeyEvent%); : JMPDECL/SETJMP/RESETJMP
+@ c "on-char" : void OnChar(wxKeyEvent!); : JMPDECL/SETJMP/RESETJMP

@@ -10,16 +10,16 @@
 @ s "copy" : wxSnip! Copy();
 @ s "size-cache-invalid" : void SizeCacheInvalid();
 
-@ s "on-event" : void OnEvent(wxDC!,float,float,float,float,wxMouseEvent%); : : /CHECKDCOK[0.METHODNAME("snip%","on-event")]
-@ s "on-char" : void OnChar(wxDC!,float,float,float,float,wxKeyEvent%); : : /CHECKDCOK[0.METHODNAME("snip%","on-char")]
-@ s "adjust-cursor" : wxCursor^ AdjustCursor(wxDC!,float,float,float,float,wxMouseEvent%); : : /CHECKDCOK[0.METHODNAME("snip%","adjust-cursor")]
+@ s "on-event" : void OnEvent(wxDC!,float,float,float,float,wxMouseEvent!); : : /CHECKDCOK[0.METHODNAME("snip%","on-event")]
+@ s "on-char" : void OnChar(wxDC!,float,float,float,float,wxKeyEvent!); : : /CHECKDCOK[0.METHODNAME("snip%","on-char")]
+@ s "adjust-cursor" : wxCursor^ AdjustCursor(wxDC!,float,float,float,float,wxMouseEvent!); : : /CHECKDCOK[0.METHODNAME("snip%","adjust-cursor")]
 @ s "own-caret" : void OwnCaret(bool); 
 @ s "blink-caret" : void BlinkCaret(wxDC!,float,float); 
 
 @ s "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
 @ s "match?" : bool Match(wxSnip!);
 
-@ s "write" : void Write(wxMediaStreamOut%);
+@ s "write" : void Write(wxMediaStreamOut!);
 
 @ s "resize" : bool Resize(nnfloat, nnfloat);
 

@@ -379,7 +379,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1, nnfloat* x2);
   void InteractiveAdjustMove(class wxSnip* x0, float* x1, float* x2);
   void InteractiveAdjustMouse(float* x0, float* x1);
-  void OnDoubleClick(class wxSnip* x0, class wxMouseEvent& x1);
+  void OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x1);
   void AfterSelect(class wxSnip* x0, Bool x1);
   void OnSelect(class wxSnip* x0, Bool x1);
   Bool CanSelect(class wxSnip* x0, Bool x1);
@@ -411,10 +411,10 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
-  Bool WriteFootersToFile(class wxMediaStreamOut& x0);
-  Bool WriteHeadersToFile(class wxMediaStreamOut& x0);
-  Bool ReadFooterFromFile(class wxMediaStreamIn& x0, string x1);
-  Bool ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1);
+  Bool WriteFootersToFile(class wxMediaStreamOut* x0);
+  Bool WriteHeadersToFile(class wxMediaStreamOut* x0);
+  Bool ReadFooterFromFile(class wxMediaStreamIn* x0, string x1);
+  Bool ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1);
   void SetFilename(nstring x0, Bool x1 = FALSE);
   Bool ReleaseSnip(class wxSnip* x0);
   void SetModified(Bool x0);
@@ -427,17 +427,17 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
-  void OnDefaultChar(class wxKeyEvent& x0);
-  void OnDefaultEvent(class wxMouseEvent& x0);
-  void OnLocalChar(class wxKeyEvent& x0);
-  void OnLocalEvent(class wxMouseEvent& x0);
+  void OnDefaultChar(class wxKeyEvent* x0);
+  void OnDefaultEvent(class wxMouseEvent* x0);
+  void OnLocalChar(class wxKeyEvent* x0);
+  void OnLocalEvent(class wxMouseEvent* x0);
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
-  class wxCursor* AdjustCursor(class wxMouseEvent& x0);
-  void OnChar(class wxKeyEvent& x0);
-  void OnEvent(class wxMouseEvent& x0);
+  class wxCursor* AdjustCursor(class wxMouseEvent* x0);
+  void OnChar(class wxKeyEvent* x0);
+  void OnEvent(class wxMouseEvent* x0);
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 };
@@ -659,7 +659,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
   }
 }
 
-void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent& x1)
+void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -672,7 +672,7 @@ void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent& x
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
-  p[1] = objscheme_bundle_wxMouseEvent(&x1);
+  p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -1389,7 +1389,7 @@ void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, 
   }
 }
 
-Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut& x0)
+Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1401,7 +1401,7 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut& x0)
     return wxMediaPasteboard::WriteFootersToFile(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1411,7 +1411,7 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut& x0)
   }
 }
 
-Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut& x0)
+Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1423,7 +1423,7 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut& x0)
     return wxMediaPasteboard::WriteHeadersToFile(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1433,7 +1433,7 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut& x0)
   }
 }
 
-Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
+Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -1445,7 +1445,7 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn& x0, string 
     return wxMediaPasteboard::ReadFooterFromFile(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   p[1] = objscheme_bundle_string((char *)x1);
   
 
@@ -1456,7 +1456,7 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn& x0, string 
   }
 }
 
-Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
+Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -1468,7 +1468,7 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn& x0, string 
     return wxMediaPasteboard::ReadHeaderFromFile(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   p[1] = objscheme_bundle_string((char *)x1);
   
 
@@ -1746,7 +1746,7 @@ void os_wxMediaPasteboard::OnFocus(Bool x0)
   }
 }
 
-void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent& x0)
+void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1758,7 +1758,7 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent& x0)
     wxMediaPasteboard::OnDefaultChar(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1767,7 +1767,7 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent& x0)
+void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1779,7 +1779,7 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent& x0)
     wxMediaPasteboard::OnDefaultEvent(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1788,7 +1788,7 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent& x0)
   }
 }
 
-void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent& x0)
+void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1800,7 +1800,7 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent& x0)
     wxMediaPasteboard::OnLocalChar(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1809,7 +1809,7 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent& x0)
+void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1821,7 +1821,7 @@ void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent& x0)
     wxMediaPasteboard::OnLocalEvent(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1916,7 +1916,7 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
   }
 }
 
-class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent& x0)
+class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1928,7 +1928,7 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent& x0)
     return wxMediaPasteboard::AdjustCursor(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1938,7 +1938,7 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent& x0)
   }
 }
 
-void os_wxMediaPasteboard::OnChar(class wxKeyEvent& x0)
+void os_wxMediaPasteboard::OnChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1950,7 +1950,7 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent& x0)
     wxMediaPasteboard::OnChar(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1959,7 +1959,7 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaPasteboard::OnEvent(class wxMouseEvent& x0)
+void os_wxMediaPasteboard::OnEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1971,7 +1971,7 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent& x0)
     wxMediaPasteboard::OnEvent(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -2360,9 +2360,9 @@ static Scheme_Object *os_wxMediaPasteboardOnDoubleClick(Scheme_Object *obj, int 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDoubleClick(x0, *x1);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDoubleClick(x0, x1);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDoubleClick(x0, *x1);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDoubleClick(x0, x1);
 
   
   
@@ -3707,9 +3707,9 @@ static Scheme_Object *os_wxMediaPasteboardWriteFootersToFile(Scheme_Object *obj,
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::WriteFootersToFile(*x0);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::WriteFootersToFile(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteFootersToFile(*x0);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteFootersToFile(x0);
 
   
   
@@ -3729,9 +3729,9 @@ static Scheme_Object *os_wxMediaPasteboardWriteHeadersToFile(Scheme_Object *obj,
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::WriteHeadersToFile(*x0);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::WriteHeadersToFile(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteHeadersToFile(*x0);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteHeadersToFile(x0);
 
   
   
@@ -3753,9 +3753,9 @@ static Scheme_Object *os_wxMediaPasteboardReadFooterFromFile(Scheme_Object *obj,
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ReadFooterFromFile(*x0, x1);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ReadFooterFromFile(x0, x1);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadFooterFromFile(*x0, x1);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadFooterFromFile(x0, x1);
 
   
   
@@ -3777,9 +3777,9 @@ static Scheme_Object *os_wxMediaPasteboardReadHeaderFromFile(Scheme_Object *obj,
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ReadHeaderFromFile(*x0, x1);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::ReadHeaderFromFile(x0, x1);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadHeaderFromFile(*x0, x1);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadHeaderFromFile(x0, x1);
 
   
   
@@ -3798,7 +3798,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteToFile(Scheme_Object *obj, int n,
   x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-to-file in pasteboard%", 0);
 
   
-  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(*x0);
+  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(x0);
 
   
   
@@ -3822,7 +3822,7 @@ static Scheme_Object *os_wxMediaPasteboardReadFromFile(Scheme_Object *obj, int n
     x1 = FALSE;
 
   
-  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadFromFile(*x0, x1);
+  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ReadFromFile(x0, x1);
 
   
   
@@ -4129,9 +4129,9 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultChar(Scheme_Object *obj, int 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDefaultChar(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDefaultChar(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(x0);
 
   
   
@@ -4150,9 +4150,9 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultEvent(Scheme_Object *obj, int
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDefaultEvent(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDefaultEvent(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(x0);
 
   
   
@@ -4171,9 +4171,9 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalChar(Scheme_Object *obj, int n,
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLocalChar(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLocalChar(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLocalChar(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLocalChar(x0);
 
   
   
@@ -4192,9 +4192,9 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLocalEvent(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnLocalEvent(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLocalEvent(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnLocalEvent(x0);
 
   
   
@@ -4319,9 +4319,9 @@ static Scheme_Object *os_wxMediaPasteboardAdjustCursor(Scheme_Object *obj, int n
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::AdjustCursor(*x0);
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::AdjustCursor(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(*x0);
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0);
 
   
   
@@ -4340,9 +4340,9 @@ static Scheme_Object *os_wxMediaPasteboardOnChar(Scheme_Object *obj, int n,  Sch
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnChar(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnChar(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
 
   
   
@@ -4361,9 +4361,9 @@ static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Sc
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnEvent(*x0);
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnEvent(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
 
   
   

@@ -51,7 +51,7 @@ class SimpleScroll
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
   void DoCallback(void);
 
-  void Event(int x, int y, int w, int h, wxMouseEvent &);
+  void Event(int x, int y, int w, int h, wxMouseEvent *);
   void Paint(int x, int y, int w, int h);
 
   void IntDrawLine(int x1, int y1, int x2, int y2);
@@ -128,7 +128,7 @@ class wxAutoDragTimer : public wxTimer
     wxYield(); /* In case we get too much time */
     if (canvas) {
       event->timeStamp += AUTO_DRAG_DELAY;
-      canvas->OnEvent(*event);
+      canvas->OnEvent(event);
     }
   }
   void Kill(void) {
@@ -398,7 +398,7 @@ void wxMediaCanvas::ForceDisplayFocus(Bool on)
     Repaint();
 }
 
-void wxMediaCanvas::OnEvent(wxMouseEvent &event)
+void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 {
   /* Turn of auto-dragger if there is one. */
   if (autoDragger) {
@@ -406,28 +406,28 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
     autoDragger = NULL;
   }
 
-  last_x = event.x;
-  last_y = event.y;
+  last_x = event->x;
+  last_y = event->y;
 
 #ifdef wx_msw
-  if (!focuson && event.ButtonDown())
+  if (!focuson && event->ButtonDown())
     SetFocus();
 #endif
   
   if (media && !media->printing) {
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-    if ((!event.Dragging() 
+    if ((!event->Dragging() 
 	 || (vscroll && vscroll->scrolling) 
 	 || (hscroll && hscroll->scrolling))
 	// Dragging into/outof window gives enter/leave events
-	&& !(event.ButtonIsDown(-1) && (event.Leaving() || event.Entering()))) {
+	&& !(event->ButtonIsDown(-1) && (event->Leaving() || event->Entering()))) {
       int h, w;
       GetClientSize(&w, &h);
       if (!fakeYScroll) {
 	if (vscroll->scrolling
 	    || ((fakeXScroll || !hscroll->scrolling)
-		&& (event.x > w - SB_WIDTH) 
-		&& (event.y < h - (fakeXScroll ? 0 : SB_WIDTH)))) {
+		&& (event->x > w - SB_WIDTH) 
+		&& (event->y < h - (fakeXScroll ? 0 : SB_WIDTH)))) {
 	  NoCustomCursor();
 	  vscroll->Event(w - SB_WIDTH, 0, SB_WIDTH, h - SB_WIDTH, event);
 	  return;
@@ -435,15 +435,15 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
       }
       if (!fakeXScroll) {
 	if (hscroll->scrolling
-	    || ((event.y > h - SB_WIDTH) 
-		&& (event.x < w - (fakeYScroll ? SB_WIDTH : 0)))) {
+	    || ((event->y > h - SB_WIDTH) 
+		&& (event->x < w - (fakeYScroll ? SB_WIDTH : 0)))) {
 	  NoCustomCursor();
 	  hscroll->Event(0, h - SB_WIDTH, w - SB_WIDTH, SB_WIDTH, event);
 	  return;
 	}
       }
       if (!fakeXScroll && !fakeYScroll)
-	if ((event.y > h - SB_WIDTH) || (event.x > w - SB_WIDTH)) {
+	if ((event->y > h - SB_WIDTH) || (event->x > w - SB_WIDTH)) {
 	  NoCustomCursor();
 	  return;
 	}
@@ -465,17 +465,17 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
       media->SetAdmin(oldadmin);
     }
 
-    if (event.Dragging()) {
+    if (event->Dragging()) {
       int ch, cw;
       GetClientSize(&cw, &ch);
-      if (event.x < 0 || event.y < 0 || event.x > cw || event.y > ch) {
+      if (event->x < 0 || event->y < 0 || event->x > cw || event->y > ch) {
 	/* Dragging outside the canvas: auto-generate more events because the buffer
 	   is probably scrolling. But make sure we're shown. */
 	wxWindow *w = this;
 	while (w && w->IsShown())
 	  w = w->GetParent();
 	if (!w)
-	  autoDragger = new wxAutoDragTimer(this, &event);
+	  autoDragger = new wxAutoDragTimer(this, event);
       }
     }
   }
@@ -483,10 +483,12 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
 
 void wxMediaCanvas::UpdateCursorNow(void)
 {
+  wxMouseEvent *event;
+
   if (!media)
     return;
 
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
+  event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
   
   event->x = last_x;
   event->y = last_y;
@@ -497,13 +499,13 @@ void wxMediaCanvas::UpdateCursorNow(void)
   if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin))
     media->SetAdmin(admin);
   
-  SetCustomCursor(media->AdjustCursor(*event));
+  SetCustomCursor(media->AdjustCursor(event));
     
   if (PTRNE(oldadmin, admin))
     media->SetAdmin(oldadmin);
 }
 
-void wxMediaCanvas::OnChar(wxKeyEvent &event)
+void wxMediaCanvas::OnChar(wxKeyEvent *event)
 {
   if (media && !media->printing) {
     wxCanvasMediaAdmin *oldadmin;
@@ -1054,7 +1056,7 @@ void wxMediaCanvas::GetScroll(int *x, int *y)
 #endif
 }
 
-void wxMediaCanvas::OnScroll(wxScrollEvent &)
+void wxMediaCanvas::OnScroll(wxScrollEvent *)
 {
   if (noloop)
     return;
@@ -1572,10 +1574,10 @@ public:
   || trackState == ss_PAGE_UP \
   || trackState == ss_PAGE_DOWN)
 
-void SimpleScroll::Event(int x, int y, int w, int h, wxMouseEvent &event)
+void SimpleScroll::Event(int x, int y, int w, int h, wxMouseEvent *event)
 {
-  x = (long)event.x - x;
-  y = (long)event.y - y;
+  x = (long)event->x - x;
+  y = (long)event->y - y;
 
   if (!horizontal) {
     int oldvalue = x;
@@ -1586,10 +1588,10 @@ void SimpleScroll::Event(int x, int y, int w, int h, wxMouseEvent &event)
     h = oldvalue;
   }
 
-  if (event.ButtonDown() && !scrolling) {
+  if (event->ButtonDown() && !scrolling) {
     if (x < arrow_w || x > w - arrow_w)
       trackState = ss_CLICK;
-    else if (event.MiddleDown()) {
+    else if (event->MiddleDown()) {
       thumb_drag_offset = (thumb_w / 2);
       trackState = ss_THUMB;
     } else {
@@ -1606,17 +1608,17 @@ void SimpleScroll::Event(int x, int y, int w, int h, wxMouseEvent &event)
     if (SS_USE_TIMER(trackState))
       (new SSTimer(x, this))->Start(SS_TIMER_FIRST_DELAY, TRUE);
     scrolling = TRUE;
-  } else if (event.Dragging()) {
+  } else if (event->Dragging()) {
     if (SS_USE_TIMER(trackState))
       return;
-  } else if (event.ButtonUp()) {
+  } else if (event->ButtonUp()) {
     trackState = 0;
     scrolling = FALSE;
   } else
     return;
 
   /* In case mouse-up gets lost: */
-  if (scrolling && !event.leftDown && !event.rightDown && !event.middleDown) {
+  if (scrolling && !event->leftDown && !event->rightDown && !event->middleDown) {
     trackState = 0;
     scrolling = FALSE;
   }

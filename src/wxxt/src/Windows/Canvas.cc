@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.10 1999/07/21 17:34:57 mflatt Exp $
+ * $Id: Canvas.cc,v 1.11 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -334,13 +334,13 @@ void wxCanvas::ChangeColours(void)
 // handle scrolling with keys
 //-----------------------------------------------------------------------------
 
-void wxCanvas::OnChar(wxKeyEvent &event)
+void wxCanvas::OnChar(wxKeyEvent *event)
 {
     int start_x, start_y;
 
     ViewStart(&start_x, &start_y);
 
-    switch (event.KeyCode()) {
+    switch (event->KeyCode()) {
     case WXK_PRIOR:
 	Scroll(start_x, max(0, start_y-v_units_per_page));
 	break;
@@ -355,7 +355,7 @@ void wxCanvas::OnChar(wxKeyEvent &event)
 	Scroll(start_x, start_y + 1);
 	break;
     case WXK_LEFT:
-	if (event.ControlDown()) {
+	if (event->ControlDown()) {
 	    Scroll(max(0, start_x-h_units_per_page), start_y);
 	} else {
 	    if (start_x >= 1)
@@ -363,7 +363,7 @@ void wxCanvas::OnChar(wxKeyEvent &event)
 	}
 	break;
     case WXK_RIGHT:
-	if (event.ControlDown())
+	if (event->ControlDown())
 	    Scroll(start_x + h_units_per_page, start_y);
 	else
 	    Scroll(start_x + 1, start_y);

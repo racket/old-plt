@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.4 1998/08/18 20:03:39 mflatt Exp $
+ * $Id: EvtHandler.h,v 1.5 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -45,27 +45,15 @@ public:
     inline virtual void OnActivate(Bool WXUNUSED(active)) {};
     inline virtual void OnChangeFocus(wxItem *WXUNUSED(from),
 				      wxItem *WXUNUSED(to)) {};
-    inline virtual void OnChar(wxKeyEvent& WXUNUSED(event)) {};
-    inline virtual Bool OnCharHook(wxKeyEvent& WXUNUSED(event)) { return FALSE; }
+    inline virtual void OnChar(wxKeyEvent* WXUNUSED(event)) {};
+    inline virtual Bool OnCharHook(wxKeyEvent* WXUNUSED(event)) { return FALSE; }
     inline virtual Bool OnClose(void) { return TRUE; };
-    inline virtual void OnCommand(wxWindow& WXUNUSED(win),
-				  wxCommandEvent& WXUNUSED(event)) {};
+    inline virtual void OnCommand(wxWindow* WXUNUSED(win),
+				  wxCommandEvent* WXUNUSED(event)) {};
     inline virtual void OnDefaultAction(wxItem *WXUNUSED(initiatingItem)) {};
     inline virtual void OnDropFile(char *WXUNUSED(file)) {};
-    inline virtual void OnEvent(wxMouseEvent& WXUNUSED(event)) {};
-    inline virtual Bool OnFunctionKey(wxKeyEvent &WXUNUSED(event)) { return FALSE; };
-    inline virtual void OnItemEvent(wxItem *WXUNUSED(item),
-				    wxMouseEvent& WXUNUSED(event)) {};
-    inline virtual void OnItemLeftClick(wxItem *WXUNUSED(item), int WXUNUSED(x),
-					int WXUNUSED(y), int WXUNUSED(keys)) {};
-    inline virtual void OnItemMove(wxItem *WXUNUSED(item),
-				   int WXUNUSED(x), int WXUNUSED(y)) {};
-    inline virtual void OnItemRightClick(wxItem *WXUNUSED(item), int WXUNUSED(x),
-					 int WXUNUSED(y), int WXUNUSED(keys)) {};
-    inline virtual void OnItemSelect(wxItem *WXUNUSED(item),
-				     Bool WXUNUSED(select)) {};
-    inline virtual void OnItemSize(wxItem *WXUNUSED(item),
-				   int WXUNUSED(w), int WXUNUSED(h)) {};
+    inline virtual void OnEvent(wxMouseEvent* WXUNUSED(event)) {};
+    inline virtual Bool OnFunctionKey(wxKeyEvent* WXUNUSED(event)) { return FALSE; };
     inline virtual void OnKillFocus(void) {};
     inline virtual void OnLeftClick(int WXUNUSED(x), int WXUNUSED(y),
 				    int WXUNUSED(keys)) {};
@@ -75,7 +63,7 @@ public:
     inline virtual void OnPaint(void) {};
     inline virtual void OnRightClick(int WXUNUSED(x), int WXUNUSED(y),
 				     int WXUNUSED(keys)) {};
-    inline virtual void OnScroll(wxScrollEvent& WXUNUSED(event)) {};
+    inline virtual void OnScroll(wxScrollEvent* WXUNUSED(event)) {};
     inline virtual void OnSelect(Bool WXUNUSED(select)) {};
     inline virtual void OnSetFocus(void) {};
     inline virtual void OnSize(int WXUNUSED(width), int WXUNUSED(height)) {};

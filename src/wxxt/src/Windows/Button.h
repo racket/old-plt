@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Button.h,v 1.2 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -53,7 +53,7 @@ public:
 		long style=0, char *name="button");
 
     void AllowResize(Bool allow);
-    void Command(wxCommandEvent& event);
+    void Command(wxCommandEvent* event);
     void SetAlignment(long alignment);
     void SetDefault(void);
     void SetLabel(char *label);

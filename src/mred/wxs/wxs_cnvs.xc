@@ -60,7 +60,7 @@ static void FillZero(int *a, int *b) {
 @ "set-scroll-range" : void SetScrollRange(SYM[orientation], rint[0|10000]);
 @ "set-scroll-page" : void SetScrollPage(SYM[orientation], rint[1|10000]);
 
-@ v "on-scroll" : void OnScroll(wxScrollEvent%); : JMPDECL/SETJMP/RESETJMP : / PANELREDIRECT[return scheme_void]
+@ v "on-scroll" : void OnScroll(wxScrollEvent!); : JMPDECL/SETJMP/RESETJMP : / PANELREDIRECT[return scheme_void]
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

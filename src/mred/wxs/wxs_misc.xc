@@ -136,7 +136,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "set-level-2" : void SetLevel2(bool);
 @ "set-editor-margin" : void SetEditorMargin(nnlong,nnlong);
 
-@ "copy-from" : void copy(wxPrintSetupData%);
+@ "copy-from" : void copy(wxPrintSetupData!);
 
 @END
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.h,v 1.2 1998/09/06 01:54:02 mflatt Exp $
+ * $Id: Item.h,v 1.3 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -50,8 +50,8 @@ public:
     // virtual void      SetButtonColour(wxColour *col) { SetForegroundColour(col); }
     // virtual void      SetLabelColour(wxColour *col);
     // functions to execute item
-    virtual void  Command(wxCommandEvent &event);
-            void  ProcessCommand(wxCommandEvent &event);
+    virtual void  Command(wxCommandEvent *event);
+            void  ProcessCommand(wxCommandEvent *event);
 protected:
     wxFunction callback;
     wxColour   *label_fg;

@@ -102,27 +102,20 @@ class wxMediaStreamIn : public wxObject
   void Typecheck(char);
 
  public:
-  wxMediaStreamIn(wxMediaStreamInBase &base);
+  wxMediaStreamIn(wxMediaStreamInBase *base);
   ~wxMediaStreamIn();
   
-  wxMediaStreamIn& Get(long *n, char *str);
-  wxMediaStreamIn& Get(long&);
-  wxMediaStreamIn& Get(short&);
-  wxMediaStreamIn& Get(int&);
-  wxMediaStreamIn& Get(char&);
-  wxMediaStreamIn& Get(float&);
-  wxMediaStreamIn& Get(double&);
+  wxMediaStreamIn* Get(long *n, char *str);
+  wxMediaStreamIn* Get(long*);
+  wxMediaStreamIn* Get(short*);
+  wxMediaStreamIn* Get(int*);
+  wxMediaStreamIn* Get(char*);
+  wxMediaStreamIn* Get(float*);
+  wxMediaStreamIn* Get(double*);
 
-  wxMediaStreamIn& GetFixed(long&);
+  wxMediaStreamIn* GetFixed(long*);
 
   char *GetString(long *n);
-
-  wxMediaStreamIn& operator>>(long&);
-  wxMediaStreamIn& operator>>(short&);
-  wxMediaStreamIn& operator>>(int&);
-  wxMediaStreamIn& operator>>(char&);
-  wxMediaStreamIn& operator>>(float&);
-  wxMediaStreamIn& operator>>(double&);
 
   void SetBoundary(long n);
   void RemoveBoundary();
@@ -142,26 +135,18 @@ class wxMediaStreamOut : public wxObject
   void Typeset(char);
 
  public:
-  wxMediaStreamOut(wxMediaStreamOutBase& s);
+  wxMediaStreamOut(wxMediaStreamOutBase *s);
   
-  wxMediaStreamOut& Put(long n, char *str);
-  wxMediaStreamOut& Put(char *);
-  wxMediaStreamOut& Put(long);
-  wxMediaStreamOut& Put(short);
-  wxMediaStreamOut& Put(int);
-  wxMediaStreamOut& Put(char);
-  wxMediaStreamOut& Put(float);
-  wxMediaStreamOut& Put(double);
+  wxMediaStreamOut* Put(long n, char *str);
+  wxMediaStreamOut* Put(char *);
+  wxMediaStreamOut* Put(long);
+  wxMediaStreamOut* Put(short);
+  wxMediaStreamOut* Put(int);
+  wxMediaStreamOut* Put(char);
+  wxMediaStreamOut* Put(float);
+  wxMediaStreamOut* Put(double);
 
-  wxMediaStreamOut& PutFixed(long);
-
-  wxMediaStreamOut& operator<<(char *);
-  wxMediaStreamOut& operator<<(long);
-  wxMediaStreamOut& operator<<(short);
-  wxMediaStreamOut& operator<<(int);
-  wxMediaStreamOut& operator<<(char);
-  wxMediaStreamOut& operator<<(float);
-  wxMediaStreamOut& operator<<(double);
+  wxMediaStreamOut* PutFixed(long);
 
   long Tell(void);
   void JumpTo(long pos);

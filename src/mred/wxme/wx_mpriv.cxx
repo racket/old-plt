@@ -2065,7 +2065,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	dc->Blit(maxWidth + dx - 1, bottombase - h + dy, 
 		 wrapBitmapWidth, h,
 		 autoWrapBitmap, 0, 0,
-		 wxSOLID, &oldStyle->GetForeground());
+		 wxSOLID, oldStyle->GetForeground());
       }
     }
 
@@ -2421,8 +2421,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
-    fg = dc->GetTextForeground();
-    bg = dc->GetTextBackground();
+    fg.CopyFrom(dc->GetTextForeground());
+    bg.CopyFrom(dc->GetTextBackground());
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;

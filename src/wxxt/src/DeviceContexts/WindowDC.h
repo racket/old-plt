@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.8 1999/04/23 19:00:31 mflatt Exp $
+ * $Id: WindowDC.h,v 1.9 1999/11/04 17:25:33 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -113,7 +113,6 @@ public:
     void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
     void  DrawLines(wxList *pts, float xoff=0, float yoff=0);
     void  DrawPoint(float x, float y);
-    void  DrawPoint(wxPoint &pt)  { DrawPoint(pt.x, pt.y); }
     void  DrawPolygon(int n, wxPoint pts[], float xoff=0, float yoff=0,
 			      int fill=wxODDEVEN_RULE);
     void  DrawPolygon(wxList *pts, float xoff=0, float yoff=0,

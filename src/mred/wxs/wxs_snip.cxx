@@ -458,14 +458,14 @@ class os_wxSnip : public wxSnip {
   nnlong GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(nnfloat x0, nnfloat x1);
-  void Write(class wxMediaStreamOut& x0);
+  void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
-  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
-  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
-  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
+  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
+  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5);
+  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
   string GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
@@ -600,7 +600,7 @@ Bool os_wxSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
-void os_wxSnip::Write(class wxMediaStreamOut& x0)
+void os_wxSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -612,7 +612,7 @@ void os_wxSnip::Write(class wxMediaStreamOut& x0)
     wxSnip::Write(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -710,7 +710,7 @@ void os_wxSnip::OwnCaret(Bool x0)
   }
 }
 
-class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -727,7 +727,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -737,7 +737,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   }
 }
 
-void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5)
+void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -754,7 +754,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxKeyEvent(&x5);
+  p[5] = objscheme_bundle_wxKeyEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -763,7 +763,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   }
 }
 
-void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -780,7 +780,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -1146,9 +1146,9 @@ static Scheme_Object *os_wxSnipWrite(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::Write(*x0);
+    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::Write(x0);
   else
-    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   
@@ -1277,9 +1277,9 @@ static Scheme_Object *os_wxSnipAdjustCursor(Scheme_Object *obj, int n,  Scheme_O
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   else
-    r = ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -1308,9 +1308,9 @@ static Scheme_Object *os_wxSnipOnChar(Scheme_Object *obj, int n,  Scheme_Object 
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnChar(x0, x1, x2, x3, x4, *x5);
+    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnChar(x0, x1, x2, x3, x4, x5);
   else
-    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, *x5);
+    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -1339,9 +1339,9 @@ static Scheme_Object *os_wxSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Object
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((os_wxSnip *)((Scheme_Class_Object *)obj)->primdata)->wxSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   else
-    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -1955,14 +1955,14 @@ class os_wxTextSnip : public wxTextSnip {
   nnlong GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(nnfloat x0, nnfloat x1);
-  void Write(class wxMediaStreamOut& x0);
+  void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
-  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
-  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
-  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
+  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
+  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5);
+  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
   string GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
@@ -2097,7 +2097,7 @@ Bool os_wxTextSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
-void os_wxTextSnip::Write(class wxMediaStreamOut& x0)
+void os_wxTextSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -2109,7 +2109,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut& x0)
     wxTextSnip::Write(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -2207,7 +2207,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
   }
 }
 
-class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -2224,7 +2224,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -2234,7 +2234,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   }
 }
 
-void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5)
+void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -2251,7 +2251,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxKeyEvent(&x5);
+  p[5] = objscheme_bundle_wxKeyEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -2260,7 +2260,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   }
 }
 
-void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -2277,7 +2277,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -2501,7 +2501,7 @@ static Scheme_Object *os_wxTextSnipRead(Scheme_Object *obj, int n,  Scheme_Objec
   x1 = objscheme_unbundle_wxMediaStreamIn(p[1], "read in string-snip%", 0);
 
   
-  ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, *x1);
+  ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->Read(x0, x1);
 
   
   
@@ -2654,9 +2654,9 @@ static Scheme_Object *os_wxTextSnipWrite(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::Write(*x0);
+    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::Write(x0);
   else
-    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   
@@ -2785,9 +2785,9 @@ static Scheme_Object *os_wxTextSnipAdjustCursor(Scheme_Object *obj, int n,  Sche
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   else
-    r = ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -2816,9 +2816,9 @@ static Scheme_Object *os_wxTextSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obj
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnChar(x0, x1, x2, x3, x4, *x5);
+    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnChar(x0, x1, x2, x3, x4, x5);
   else
-    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, *x5);
+    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -2847,9 +2847,9 @@ static Scheme_Object *os_wxTextSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((os_wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTextSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   else
-    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((wxTextSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -3273,14 +3273,14 @@ class os_wxTabSnip : public wxTabSnip {
   nnlong GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(nnfloat x0, nnfloat x1);
-  void Write(class wxMediaStreamOut& x0);
+  void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
-  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
-  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
-  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
+  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
+  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5);
+  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
   string GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
@@ -3415,7 +3415,7 @@ Bool os_wxTabSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
-void os_wxTabSnip::Write(class wxMediaStreamOut& x0)
+void os_wxTabSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -3427,7 +3427,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut& x0)
     wxTabSnip::Write(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -3525,7 +3525,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
   }
 }
 
-class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -3542,7 +3542,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -3552,7 +3552,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   }
 }
 
-void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5)
+void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -3569,7 +3569,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxKeyEvent(&x5);
+  p[5] = objscheme_bundle_wxKeyEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -3578,7 +3578,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   }
 }
 
-void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -3595,7 +3595,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -3927,9 +3927,9 @@ static Scheme_Object *os_wxTabSnipWrite(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::Write(*x0);
+    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::Write(x0);
   else
-    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   
@@ -4058,9 +4058,9 @@ static Scheme_Object *os_wxTabSnipAdjustCursor(Scheme_Object *obj, int n,  Schem
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   else
-    r = ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -4089,9 +4089,9 @@ static Scheme_Object *os_wxTabSnipOnChar(Scheme_Object *obj, int n,  Scheme_Obje
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnChar(x0, x1, x2, x3, x4, *x5);
+    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnChar(x0, x1, x2, x3, x4, x5);
   else
-    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, *x5);
+    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -4120,9 +4120,9 @@ static Scheme_Object *os_wxTabSnipOnEvent(Scheme_Object *obj, int n,  Scheme_Obj
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((os_wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->wxTabSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   else
-    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((wxTabSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -4610,14 +4610,14 @@ class os_wxImageSnip : public wxImageSnip {
   nnlong GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(nnfloat x0, nnfloat x1);
-  void Write(class wxMediaStreamOut& x0);
+  void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
-  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
-  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
-  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
+  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
+  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5);
+  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
   string GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
@@ -4760,7 +4760,7 @@ Bool os_wxImageSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
-void os_wxImageSnip::Write(class wxMediaStreamOut& x0)
+void os_wxImageSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -4772,7 +4772,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut& x0)
     wxImageSnip::Write(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -4870,7 +4870,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
   }
 }
 
-class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -4887,7 +4887,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -4897,7 +4897,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   }
 }
 
-void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5)
+void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -4914,7 +4914,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxKeyEvent(&x5);
+  p[5] = objscheme_bundle_wxKeyEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -4923,7 +4923,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   }
 }
 
-void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -4940,7 +4940,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -5388,9 +5388,9 @@ static Scheme_Object *os_wxImageSnipWrite(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::Write(*x0);
+    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::Write(x0);
   else
-    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   
@@ -5519,9 +5519,9 @@ static Scheme_Object *os_wxImageSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   else
-    r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -5550,9 +5550,9 @@ static Scheme_Object *os_wxImageSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnChar(x0, x1, x2, x3, x4, *x5);
+    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnChar(x0, x1, x2, x3, x4, x5);
   else
-    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, *x5);
+    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -5581,9 +5581,9 @@ static Scheme_Object *os_wxImageSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((os_wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->wxImageSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   else
-    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -6044,14 +6044,14 @@ class os_wxMediaSnip : public wxMediaSnip {
   nnlong GetNumScrollSteps();
   void SetAdmin(class wxSnipAdmin* x0);
   Bool Resize(nnfloat x0, nnfloat x1);
-  void Write(class wxMediaStreamOut& x0);
+  void Write(class wxMediaStreamOut* x0);
   Bool Match(class wxSnip* x0);
   void DoEdit(int x0, Bool x1 = TRUE, long x2 = 0);
   void BlinkCaret(class wxDC* x0, float x1, float x2);
   void OwnCaret(Bool x0);
-  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
-  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5);
-  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5);
+  class wxCursor* AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
+  void OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5);
+  void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
   string GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
@@ -6186,7 +6186,7 @@ Bool os_wxMediaSnip::Resize(nnfloat x0, nnfloat x1)
   }
 }
 
-void os_wxMediaSnip::Write(class wxMediaStreamOut& x0)
+void os_wxMediaSnip::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -6198,7 +6198,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut& x0)
     wxMediaSnip::Write(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -6296,7 +6296,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
   }
 }
 
-class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -6313,7 +6313,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -6323,7 +6323,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   }
 }
 
-void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent& x5)
+void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, class wxKeyEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -6340,7 +6340,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxKeyEvent(&x5);
+  p[5] = objscheme_bundle_wxKeyEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -6349,7 +6349,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   }
 }
 
-void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent& x5)
+void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5)
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
@@ -6366,7 +6366,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
   p[4] = scheme_make_double(x4);
-  p[5] = objscheme_bundle_wxMouseEvent(&x5);
+  p[5] = objscheme_bundle_wxMouseEvent(x5);
   
 
   v = scheme_apply(method, 6, p);
@@ -7028,9 +7028,9 @@ static Scheme_Object *os_wxMediaSnipWrite(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::Write(*x0);
+    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::Write(x0);
   else
-    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   
@@ -7159,9 +7159,9 @@ static Scheme_Object *os_wxMediaSnipAdjustCursor(Scheme_Object *obj, int n,  Sch
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","adjust-cursor"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::AdjustCursor(x0, x1, x2, x3, x4, x5);
   else
-    r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, *x5);
+    r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -7190,9 +7190,9 @@ static Scheme_Object *os_wxMediaSnipOnChar(Scheme_Object *obj, int n,  Scheme_Ob
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-char"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnChar(x0, x1, x2, x3, x4, *x5);
+    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnChar(x0, x1, x2, x3, x4, x5);
   else
-    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, *x5);
+    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -7221,9 +7221,9 @@ static Scheme_Object *os_wxMediaSnipOnEvent(Scheme_Object *obj, int n,  Scheme_O
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("snip%","on-event"), "bad device context: ", p[0]);
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((os_wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->wxMediaSnip::OnEvent(x0, x1, x2, x3, x4, x5);
   else
-    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, *x5);
+    ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0, x1, x2, x3, x4, x5);
 
   
   
@@ -7751,7 +7751,7 @@ class os_wxBufferDataClass : public wxBufferDataClass {
 
   os_wxBufferDataClass(Scheme_Object * obj);
   ~os_wxBufferDataClass();
-  class wxBufferData* Read(class wxMediaStreamIn& x0);
+  class wxBufferData* Read(class wxMediaStreamIn* x0);
 };
 
 Scheme_Object *os_wxBufferDataClass_class;
@@ -7769,7 +7769,7 @@ os_wxBufferDataClass::~os_wxBufferDataClass()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn& x0)
+class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -7781,7 +7781,7 @@ class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn& x0)
     return NULL;
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -7804,9 +7804,9 @@ static Scheme_Object *os_wxBufferDataClassRead(Scheme_Object *obj, int n,  Schem
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxBufferDataClass *)((Scheme_Class_Object *)obj)->primdata)->Read(*x0);
+    r = ((os_wxBufferDataClass *)((Scheme_Class_Object *)obj)->primdata)->Read(x0);
   else
-    r = ((wxBufferDataClass *)((Scheme_Class_Object *)obj)->primdata)->Read(*x0);
+    r = ((wxBufferDataClass *)((Scheme_Class_Object *)obj)->primdata)->Read(x0);
 
   
   
@@ -8139,7 +8139,7 @@ class os_wxBufferData : public wxBufferData {
 
   os_wxBufferData(Scheme_Object * obj);
   ~os_wxBufferData();
-  Bool Write(class wxMediaStreamOut& x0);
+  Bool Write(class wxMediaStreamOut* x0);
 };
 
 Scheme_Object *os_wxBufferData_class;
@@ -8157,7 +8157,7 @@ os_wxBufferData::~os_wxBufferData()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-Bool os_wxBufferData::Write(class wxMediaStreamOut& x0)
+Bool os_wxBufferData::Write(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -8169,7 +8169,7 @@ Bool os_wxBufferData::Write(class wxMediaStreamOut& x0)
     return 0;
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -8210,9 +8210,9 @@ static Scheme_Object *os_wxBufferDataWrite(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxBufferData *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    r = ((os_wxBufferData *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
   else
-    r = ((wxBufferData *)((Scheme_Class_Object *)obj)->primdata)->Write(*x0);
+    r = ((wxBufferData *)((Scheme_Class_Object *)obj)->primdata)->Write(x0);
 
   
   

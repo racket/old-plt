@@ -20,9 +20,9 @@
 @ Y "copy-self" : wxMediaBuffer! CopySelf(); : : : : XrZERO
 @ Y "copy-self-to" : void CopySelfTo(wxMediaBuffer!);
 
-@ Y "on-event" : void OnEvent(wxMouseEvent%);
-@ Y "on-char" : void OnChar(wxKeyEvent%);
-@ Y "adjust-cursor" : wxCursor^ AdjustCursor(wxMouseEvent%); : : : : XrNULL
+@ Y "on-event" : void OnEvent(wxMouseEvent!);
+@ Y "on-char" : void OnChar(wxKeyEvent!);
+@ Y "adjust-cursor" : wxCursor^ AdjustCursor(wxMouseEvent!); : : : : XrNULL
 @ Y "refresh" : void Refresh(float,float,nnfloat,nnfloat,SYM[caret]);
 @ Y "own-caret" : void OwnCaret(bool);
 @ Y "blink-caret" : void BlinkCaret(); 
@@ -30,10 +30,10 @@
 
 @ X "find-first-snip" : wxSnip^ FindFirstSnip();
 
-@ Z "on-local-event" : void OnLocalEvent(wxMouseEvent%);
-@ Z "on-local-char" : void OnLocalChar(wxKeyEvent%);
-@ Y "on-default-event" : void OnDefaultEvent(wxMouseEvent%);
-@ Y "on-default-char" : void OnDefaultChar(wxKeyEvent%);
+@ Z "on-local-event" : void OnLocalEvent(wxMouseEvent!);
+@ Z "on-local-char" : void OnLocalChar(wxKeyEvent!);
+@ Y "on-default-event" : void OnDefaultEvent(wxMouseEvent!);
+@ Y "on-default-char" : void OnDefaultChar(wxKeyEvent!);
 
 @ Z "on-focus" : void OnFocus(bool);
 
@@ -55,13 +55,13 @@
 
 @ Y "set-filename" : void SetFilename(nstring,bool=FALSE);
 
-@ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,bool=FALSE); <> without position
-@ X "write-to-file" : bool WriteToFile(wxMediaStreamOut%); <> without position
+@ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,bool=FALSE); <> without position
+@ X "write-to-file" : bool WriteToFile(wxMediaStreamOut!); <> without position
 
-@ Z "read-header-from-file" : bool ReadHeaderFromFile(wxMediaStreamIn%,string);
-@ Z "read-footer-from-file" : bool ReadFooterFromFile(wxMediaStreamIn%,string);
-@ Z "write-headers-to-file" : bool WriteHeadersToFile(wxMediaStreamOut%);
-@ Z "write-footers-to-file" : bool WriteFootersToFile(wxMediaStreamOut%);
+@ Z "read-header-from-file" : bool ReadHeaderFromFile(wxMediaStreamIn!,string);
+@ Z "read-footer-from-file" : bool ReadFooterFromFile(wxMediaStreamIn!,string);
+@ Z "write-headers-to-file" : bool WriteHeadersToFile(wxMediaStreamOut!);
+@ Z "write-footers-to-file" : bool WriteFootersToFile(wxMediaStreamOut!);
 
 @ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKDCOK[1.METHODNAME("editor<%>","on-paint")]
 @ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(float=0.0,float=0.0,nnfs[end]=-1.0,nnfs[end]=-1.0);

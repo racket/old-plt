@@ -1030,7 +1030,7 @@ static Scheme_Object *os_wxStyleDeltaCollapse(Scheme_Object *obj, int n,  Scheme
   x0 = objscheme_unbundle_wxStyleDelta(p[0], "collapse in style-delta%", 0);
 
   
-  r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->Collapse(*x0);
+  r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->Collapse(x0);
 
   
   
@@ -1049,7 +1049,7 @@ static Scheme_Object *os_wxStyleDeltaEqual(Scheme_Object *obj, int n,  Scheme_Ob
   x0 = objscheme_unbundle_wxStyleDelta(p[0], "equal? in style-delta%", 0);
 
   
-  r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->Equal(*x0);
+  r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->Equal(x0);
 
   
   
@@ -1084,7 +1084,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(Scheme_Object *obj, int 
     x0 = objscheme_unbundle_wxColour(p[0], "set-delta-foreground in style-delta% (colour% case)", 0);
 
     
-    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaForeground(*x0);
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaForeground(x0);
 
     
     
@@ -1121,7 +1121,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(Scheme_Object *obj, int 
     x0 = objscheme_unbundle_wxColour(p[0], "set-delta-background in style-delta% (colour% case)", 0);
 
     
-    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaBackground(*x0);
+    r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaBackground(x0);
 
     
     
@@ -2076,7 +2076,7 @@ static Scheme_Object *os_wxStyleSetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   x0 = objscheme_unbundle_wxStyleDelta(p[0], "set-delta in style<%>", 0);
 
   
-  ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(*x0);
+  ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0);
 
   
   
@@ -2094,7 +2094,7 @@ static Scheme_Object *os_wxStyleGetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   x0 = objscheme_unbundle_wxStyleDelta(p[0], "get-delta in style<%>", 0);
 
   
-  ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetDelta(*x0);
+  ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetDelta(x0);
 
   
   
@@ -2256,7 +2256,7 @@ static Scheme_Object *os_wxStyleGetBackground(Scheme_Object *obj, int n,  Scheme
   
 
   
-  r = &((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetBackground();
+  r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetBackground();
 
   
   
@@ -2273,7 +2273,7 @@ static Scheme_Object *os_wxStyleGetForeground(Scheme_Object *obj, int n,  Scheme
   
 
   
-  r = &((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetForeground();
+  r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetForeground();
 
   
   

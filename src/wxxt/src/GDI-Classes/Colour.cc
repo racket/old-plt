@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.7 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: Colour.cc,v 1.8 1999/11/10 03:46:20 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -75,18 +75,18 @@ wxColour::wxColour(void)
     locked = 0;
 }
 
-wxColour::wxColour(wxColour& col)
+wxColour::wxColour(wxColour *col)
 : wxObject(COLOR_CLEANUP)
 {
-    __type = wxTYPE_COLOUR;
-
-    locked = 0;
-
-    if (col.Ok()) {
-	X  = new wxColour_Xintern; // create new X representation
-	*X = *(col.X);		   // assign data
-    } else
-	X = NULL; // not Ok
+  __type = wxTYPE_COLOUR;
+  
+  locked = 0;
+  
+  if (col->Ok()) {
+    X  = new wxColour_Xintern; // create new X representation
+    *X = *(col->X);		   // assign data
+  } else
+    X = NULL; // not Ok
 }
 
 wxColour::wxColour(const char *col)
@@ -125,31 +125,34 @@ wxColour::~wxColour(void)
 
 //--- assignment -------------------------------------------------------------
 
-wxColour& wxColour::operator = (wxColour& col)
+wxColour* wxColour::CopyFrom(wxColour *col)
 {
-    FreePixel(TRUE); // free pixel before assignment
+  FreePixel(TRUE); // free pixel before assignment
 	
-    if (col.Ok()) {
-	X  = new wxColour_Xintern; // create new X representation;
-	*X = *(col.X);		   // assign data
-	X->have_pixel = FALSE;
-    }
-    return *this;
+  if (col->Ok()) {
+    X  = new wxColour_Xintern; // create new X representation;
+    *X = *(col->X);	       // assign data
+    X->have_pixel = FALSE;
+  }
+
+  return this;
 }
 
-wxColour& wxColour::operator = (const char *col)
+wxColour* wxColour::CopyFrom(const char *col)
 {
-    FreePixel(TRUE); // free pixel before assignment
-    
-    wxColour *the_colour
-	= wxTheColourDatabase->FindColour(col); // find colour by name
+  wxColour *the_colour;
 
-    if (the_colour) {
-	X  = new wxColour_Xintern; // create new X representation
-	*X = *(the_colour->X);	   // assign data
-	X->have_pixel = FALSE;
-    }
-    return (*this);
+  FreePixel(TRUE); // free pixel before assignment
+  
+  the_colour = wxTheColourDatabase->FindColour(col); // find colour by name
+  
+  if (the_colour) {
+    X  = new wxColour_Xintern; // create new X representation
+    *X = *(the_colour->X);	   // assign data
+    X->have_pixel = FALSE;
+  }
+
+  return this;
 }
 
 //--- get and set RGB values --------------------------------------------------
@@ -443,12 +446,12 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   return col;
 }
 
-char *wxColourDatabase::FindName(wxColour& colour)
+char *wxColourDatabase::FindName(wxColour *colour)
 {
-  if (colour.Ok()) {
-    unsigned char red   = colour.Red();
-    unsigned char green = colour.Green();
-    unsigned char blue  = colour.Blue();
+  if (colour->Ok()) {
+    unsigned char red   = colour->Red();
+    unsigned char green = colour->Green();
+    unsigned char blue  = colour->Blue();
     
     for (wxNode *node = First(); node; node = node->Next()) {
       wxColour *col = (wxColour*)node->Data ();

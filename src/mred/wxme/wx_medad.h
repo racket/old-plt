@@ -101,10 +101,10 @@ class wxMediaBuffer : public wxObject
 
   int inactiveCaretThreshold;
 
-  Bool DoWriteHeadersFooters(wxMediaStreamOut &f, Bool headers);
-  Bool ReadHeadersFooters(wxMediaStreamIn &f, Bool headers);
+  Bool DoWriteHeadersFooters(wxMediaStreamOut *f, Bool headers);
+  Bool ReadHeadersFooters(wxMediaStreamIn *f, Bool headers);
 
-  Bool ReadSnipsFromFile(wxMediaStreamIn &f, int overstyle);
+  Bool ReadSnipsFromFile(wxMediaStreamIn *f, int overstyle);
 
   virtual Bool ReadInsert(wxSnip *snip) = 0;
 
@@ -119,9 +119,9 @@ class wxMediaBuffer : public wxObject
   virtual void InsertPasteSnip(wxSnip *snip, wxBufferData *) = 0;
   virtual void InsertPasteString(char *str) = 0;
 
-  void PerformUndos(wxChangeRecord **, int& start, int& end);
+  void PerformUndos(wxChangeRecord **, int *start, int *end);
   void PerformUndoList(wxList *);
-  void AppendUndo(wxChangeRecord *, wxChangeRecord **, int& start, int& end);
+  void AppendUndo(wxChangeRecord *, wxChangeRecord **, int *start, int *end);
 
   Bool DoOwnCaret(Bool ownit);
   Bool DoSetCaretOwner(wxSnip *, int);
@@ -141,9 +141,9 @@ class wxMediaBuffer : public wxObject
   void SetAdmin(wxMediaAdmin *admin);
   wxMediaAdmin *GetAdmin(void);
 
-  virtual void OnEvent(wxMouseEvent &event) = 0;
-  virtual void OnChar(wxKeyEvent &event) = 0;
-  virtual wxCursor *AdjustCursor(wxMouseEvent &event) = 0;
+  virtual void OnEvent(wxMouseEvent *event) = 0;
+  virtual void OnChar(wxKeyEvent *event) = 0;
+  virtual wxCursor *AdjustCursor(wxMouseEvent *event) = 0;
   virtual void Refresh(float localx, float localy, float w, float h, 
 		       Bool show_caret) = 0;
   virtual void OwnCaret(Bool ownit) = 0;
@@ -151,11 +151,11 @@ class wxMediaBuffer : public wxObject
   virtual void SizeCacheInvalid(void) = 0;
   virtual void GetExtent(float *w, float *h) = 0;
 
-  virtual void OnDefaultEvent(wxMouseEvent &event) = 0;
-  virtual void OnLocalEvent(wxMouseEvent &event);
+  virtual void OnDefaultEvent(wxMouseEvent *event) = 0;
+  virtual void OnLocalEvent(wxMouseEvent *event);
 
-  virtual void OnDefaultChar(wxKeyEvent &event) = 0;
-  virtual void OnLocalChar(wxKeyEvent &event);
+  virtual void OnDefaultChar(wxKeyEvent *event) = 0;
+  virtual void OnLocalChar(wxKeyEvent *event);
   
   /* Callbacks for the wxSnipAdmin: */
   virtual wxDC *GetDC();
@@ -219,19 +219,19 @@ class wxMediaBuffer : public wxObject
 			       float *x = NULL, float *y = NULL,
 			       Bool bottomRight=FALSE) = 0;
 
-  virtual Bool WriteToFile(wxMediaStreamOut &) = 0;
-  virtual Bool ReadFromFile(wxMediaStreamIn &, Bool owrs = FALSE) = 0;
+  virtual Bool WriteToFile(wxMediaStreamOut *) = 0;
+  virtual Bool ReadFromFile(wxMediaStreamIn *, Bool owrs = FALSE) = 0;
 
   /* Override this to put more information in the file. Make
      sure that you follow the rules for extra header data. */
-  virtual Bool ReadHeaderFromFile(wxMediaStreamIn &, char *headerName);
-  virtual Bool ReadFooterFromFile(wxMediaStreamIn &, char *headerName);
-  virtual Bool WriteHeadersToFile(wxMediaStreamOut &);
-  virtual Bool WriteFootersToFile(wxMediaStreamOut &);
+  virtual Bool ReadHeaderFromFile(wxMediaStreamIn *, char *headerName);
+  virtual Bool ReadFooterFromFile(wxMediaStreamIn *, char *headerName);
+  virtual Bool WriteHeadersToFile(wxMediaStreamOut *);
+  virtual Bool WriteFootersToFile(wxMediaStreamOut *);
   /* Use these functions for adding custom header data: */
-  Bool BeginWriteHeaderFooterToFile(wxMediaStreamOut &, char *headerName,
+  Bool BeginWriteHeaderFooterToFile(wxMediaStreamOut *, char *headerName,
 				    long *dataBuffer);
-  Bool EndWriteHeaderFooterToFile(wxMediaStreamOut &, long dataBuffer);
+  Bool EndWriteHeaderFooterToFile(wxMediaStreamOut *, long dataBuffer);
   
   void SetKeymap(wxKeymap *keymap = NULL);
   wxKeymap *GetKeymap(void);
@@ -327,13 +327,13 @@ class wxMediaBuffer : public wxObject
   int numExtraHeaders;
 };
 
-Bool wxReadMediaGlobalHeader(wxMediaStreamIn &f);
-Bool wxReadMediaGlobalFooter(wxMediaStreamIn &f);
-Bool wxWriteMediaGlobalHeader(wxMediaStreamOut &f);
-Bool wxWriteMediaGlobalFooter(wxMediaStreamOut &f);
+Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f);
+Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f);
+Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f);
+Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f);
 wxStyle *wxmbStyleByIndex(int index);
 
-Bool wxmbWriteSnipsToFile(wxMediaStreamOut &, wxStyleList *, 
+Bool wxmbWriteSnipsToFile(wxMediaStreamOut *, wxStyleList *, 
 			  wxList *, wxSnip *, wxSnip *, wxList *,
 			  wxMediaBuffer *);
 
@@ -397,10 +397,10 @@ class wxMediaCanvas : public wxCanvas
 
   /* Override some wxCanvas methods: */
   virtual void OnSize(int, int);
-  virtual void OnEvent(wxMouseEvent &event);
-  virtual void OnChar(wxKeyEvent &event);
+  virtual void OnEvent(wxMouseEvent *event);
+  virtual void OnChar(wxKeyEvent *event);
   virtual void OnPaint(void);
-  virtual void OnScroll(wxScrollEvent& event);
+  virtual void OnScroll(wxScrollEvent *event);
   virtual void OnSetFocus();
   virtual void OnKillFocus();
   virtual void OnFocus(Bool focus);

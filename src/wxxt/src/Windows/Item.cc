@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.cc,v 1.3 1998/12/05 01:08:21 mflatt Exp $
+ * $Id: Item.cc,v 1.4 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -95,18 +95,18 @@ void wxItem::SetLabelColour(wxColour *col)
 // functions to execute item
 //-----------------------------------------------------------------------------
 
-void wxItem::Command(wxCommandEvent &WXUNUSED(event))
+void wxItem::Command(wxCommandEvent *WXUNUSED(event))
 {
 }
 
-void wxItem::ProcessCommand(wxCommandEvent &event)
+void wxItem::ProcessCommand(wxCommandEvent *event)
 {
-    if (callback) {
-	(void)(*callback)(*this, event);
-    } else {
-	if (parent)
-	    parent->GetEventHandler()->OnCommand(*this, event);
-    }
+  if (callback) {
+    callback(this, event);
+  } else {
+    if (parent)
+      parent->GetEventHandler()->OnCommand(this, event);
+  }
 }
 
 char *wxGetCtlLabel(char *label)

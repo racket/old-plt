@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.32 1999/11/10 03:46:20 mflatt Exp $
+ * $Id: Window.cc,v 1.33 1999/11/17 14:21:25 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -937,10 +937,10 @@ _XFUNCPROTOEND
 //
 //-- DIRTY -- DIRTY -- DIRTY -- DIRTY -- DIRTY --
 
-void wxWindow::OnChar(wxKeyEvent& wxevent)
+void wxWindow::OnChar(wxKeyEvent* wxevent)
 {
     XEvent onstack;
-    XEvent *xev = (XEvent*)wxevent.eventHandle; // X event
+    XEvent *xev = (XEvent*)wxevent->eventHandle; // X event
     if (!xev) {
      xev = &onstack;
      xev->xkey.type = KeyPress;
@@ -958,33 +958,33 @@ void wxWindow::OnChar(wxKeyEvent& wxevent)
     if (X->handle->core.tm.translations
 	&& (X->translations_eventmask & _XtConvertTypeToMask(xev->type))) {
       // translate wxKeyEvent to XEvent
-      KeySym keysym = CharCodeWXToX(wxevent.keyCode);
+      KeySym keysym = CharCodeWXToX(wxevent->keyCode);
       if (keysym != 0) {
 	xev->xkey.keycode = XKeysymToKeycode(xev->xkey.display, keysym);
-	xev->xkey.x	 = (int)wxevent.x;
-	xev->xkey.y	 = (int)wxevent.y;
+	xev->xkey.x	 = (int)wxevent->x;
+	xev->xkey.y	 = (int)wxevent->y;
 	xev->xkey.state &= ~(ShiftMask | ControlMask | Mod1Mask | Mod3Mask);
-	xev->xkey.state |= (wxevent.altDown     ? Mod3Mask    : 0) |
-			   (wxevent.controlDown ? ControlMask : 0) |
-			   (wxevent.metaDown    ? Mod1Mask    : 0) |
-			   (wxevent.shiftDown   ? ShiftMask   : 0);
+	xev->xkey.state |= (wxevent->altDown     ? Mod3Mask    : 0) |
+			   (wxevent->controlDown ? ControlMask : 0) |
+			   (wxevent->metaDown    ? Mod1Mask    : 0) |
+			   (wxevent->shiftDown   ? ShiftMask   : 0);
 	// call Widget methods to handle this event
 	_XtTranslateEvent(X->handle, xev);
       }
     }
 }
 
-void wxWindow::OnCommand(wxWindow& win, wxCommandEvent& event)
+void wxWindow::OnCommand(wxWindow* win, wxCommandEvent* event)
 {
     // OnCommand events are routed to the parent by default
     if (parent && parent->GetEventHandler())
 	parent->GetEventHandler()->OnCommand(win, event);
 }
 
-void wxWindow::OnEvent(wxMouseEvent& wxevent)
+void wxWindow::OnEvent(wxMouseEvent* wxevent)
 {
   EventMask  mask;
-  XEvent    *xev = (XEvent*)wxevent.eventHandle; // X event
+  XEvent    *xev = (XEvent*)wxevent->eventHandle; // X event
 
   if (!xev) return;
 
@@ -1053,7 +1053,7 @@ void wxWindow::OnPaint(void)
     XfwfCallExpose(X->handle, X->expose_event, X->expose_region);
 }
 
-void wxWindow::OnScroll(wxScrollEvent&)
+void wxWindow::OnScroll(wxScrollEvent*)
 {
 }
 
@@ -1395,9 +1395,9 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
       break;
     }
 
-    win->GetEventHandler()->OnScroll(*wxevent);
+    win->GetEventHandler()->OnScroll(wxevent);
 
-    wxevent.eventHandle = NULL;
+    wxevent->eventHandle = NULL;
   }
 }
 
@@ -1452,7 +1452,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnChar(*wxevent);
+	    win->GetEventHandler()->OnChar(wxevent);
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
@@ -1537,7 +1537,7 @@ void wxWindow::WindowEventHandler(Widget w,
 		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
 		&& !wxSubType(win->__type, wxTYPE_PANEL))
 	      win->SetFocus();
-	    win->GetEventHandler()->OnEvent(*wxevent);
+	    win->GetEventHandler()->OnEvent(wxevent);
 	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
@@ -1583,7 +1583,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
 	if (!win->CallPreOnEvent(win, wxevent))
-	  win->GetEventHandler()->OnEvent(*wxevent);
+	  win->GetEventHandler()->OnEvent(wxevent);
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
       break;
@@ -1617,7 +1617,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnEvent(*wxevent);
+	    win->GetEventHandler()->OnEvent(wxevent);
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }

@@ -93,13 +93,13 @@ class wxStyleDelta : public wxObject
   wxStyleDelta *SetDelta(int changeCommand, int param = 0);
   wxStyleDelta *SetDeltaFace(char *name);
   wxStyleDelta *SetDeltaBackground(char *name);
-  wxStyleDelta *SetDeltaBackground(wxColour& colour);
+  wxStyleDelta *SetDeltaBackground(wxColour *colour);
   wxStyleDelta *SetDeltaForeground(char *name);
-  wxStyleDelta *SetDeltaForeground(wxColour& colour);
+  wxStyleDelta *SetDeltaForeground(wxColour *colour);
 
-  Bool Collapse(wxStyleDelta &delta);
+  Bool Collapse(wxStyleDelta *delta);
 
-  Bool Equal(wxStyleDelta &delta);
+  Bool Equal(wxStyleDelta *delta);
 
   void Copy(wxStyleDelta *delta);
 };
@@ -148,8 +148,8 @@ class wxStyle : public wxObject
   int GetStyle();
   Bool GetUnderlined();
   wxFont *GetFont();
-  wxColour &GetForeground();
-  wxColour &GetBackground();
+  wxColour *GetForeground();
+  wxColour *GetBackground();
   int GetAlignment();
   Bool GetTransparentTextBacking();
 
@@ -158,8 +158,8 @@ class wxStyle : public wxObject
 
   Bool IsJoin(void);
 
-  void GetDelta(wxStyleDelta &delta);
-  void SetDelta(wxStyleDelta &delta);
+  void GetDelta(wxStyleDelta *delta);
+  void SetDelta(wxStyleDelta *delta);
 
   wxStyle *GetShiftStyle();
   void SetShiftStyle(wxStyle *);
@@ -222,7 +222,7 @@ class wxStyleList : public wxList /* should be private */
   void AdjustUsage(Bool newUser);
   Bool IsUsed(void);
 
-  Bool WriteToFile(class wxMediaStreamOut &f);
+  Bool WriteToFile(class wxMediaStreamOut *f);
   wxStyle *MapIndexToStyle(int i);
 };
 
@@ -230,11 +230,11 @@ extern wxStyleList *wxTheStyleList;
 
 void wxInitStyles(void);
 
-wxStyleList *wxReadStyleList(class wxMediaStreamIn &f);
+wxStyleList *wxReadStyleList(class wxMediaStreamIn *f);
 
 /* Internal use only */
-Bool wxmbWriteStylesToFile(wxStyleList *styleList, class wxMediaStreamOut &f);
-wxStyleList *wxmbReadStylesFromFile(wxStyleList *, class wxMediaStreamIn &f, Bool overwritename);
+Bool wxmbWriteStylesToFile(wxStyleList *styleList, class wxMediaStreamOut *f);
+wxStyleList *wxmbReadStylesFromFile(wxStyleList *, class wxMediaStreamIn *f, Bool overwritename);
 void wxmbSetupStyleReadsWrites(void);
 void wxmbDoneStyleReadsWrites(void);
 

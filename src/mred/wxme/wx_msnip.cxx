@@ -146,7 +146,7 @@ wxMediaBuffer *wxMediaSnip::GetThisMedia(void)
 }
 
 wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y, 
-				    float, float, wxMouseEvent &event)
+				    float, float, wxMouseEvent *event)
 {
   if (!me) 
     return NULL;
@@ -162,7 +162,7 @@ wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y,
 }
 
 void wxMediaSnip::OnEvent(wxDC *dc, float x, float y, 
-			  float, float, wxMouseEvent &event)
+			  float, float, wxMouseEvent *event)
 {
   if (!me) return;
 
@@ -174,7 +174,7 @@ void wxMediaSnip::OnEvent(wxDC *dc, float x, float y,
 }
 
 void wxMediaSnip::OnChar(wxDC *dc, float x, float y, 
-			  float, float, wxKeyEvent &event)
+			  float, float, wxKeyEvent *event)
 {
   if (!me) return;
 
@@ -422,16 +422,25 @@ wxSnip *wxMediaSnip::Copy(void)
   return ms;
 }
 
-void wxMediaSnip::Write(wxMediaStreamOut &f)
+void wxMediaSnip::Write(wxMediaStreamOut *f)
 {
   Bool wb = withBorder, tf = tightFit;
 
-  f << (me ? me->bufferType : 0)
-    << wb
-    << leftMargin << topMargin << rightMargin << bottomMargin
-    << leftInset << topInset << rightInset << bottomInset
-    << minWidth << maxWidth
-    << minHeight << maxHeight << tf;
+  f->Put((me ? me->bufferType : 0));
+  f->Put(wb);
+  f->Put(leftMargin);
+  f->Put(topMargin);
+  f->Put(rightMargin);
+  f->Put(bottomMargin);
+  f->Put(leftInset);
+  f->Put(topInset);
+  f->Put(rightInset);
+  f->Put(bottomInset);
+  f->Put(minWidth);
+  f->Put(maxWidth);
+  f->Put(minHeight);
+  f->Put(maxHeight);
+  f->Put(tf);
 
   if (me)
     me->WriteToFile(f);
@@ -807,7 +816,7 @@ extern wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *, const char*,
 #define GET_EDIT(vb) objscheme_unbundle_wxMediaEdit((Scheme_Object *)vb, NULL, 0)
 
 #define edf(name, action) \
-     static Bool ed_##name(void *vb, wxEvent &, void *) \
+     static Bool ed_##name(void *vb, wxEvent *, void *) \
      { wxMediaEdit *b = GET_EDIT(vb); \
        if (!b) return FALSE; \
        b->action; return TRUE; } \
@@ -845,7 +854,7 @@ edf(delete, Delete())
 
 edf(pastenext, PasteNext())
 
-static Bool ed_deletenext(void *vb, wxEvent &, void *)
+static Bool ed_deletenext(void *vb, wxEvent *, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -859,7 +868,7 @@ static Bool ed_deletenext(void *vb, wxEvent &, void *)
   return TRUE;
 }
 
-static Bool ed_deletenextword(void *vb, wxEvent &event, void *)
+static Bool ed_deletenextword(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -871,7 +880,7 @@ static Bool ed_deletenextword(void *vb, wxEvent &event, void *)
   return TRUE;
 }
 
-static Bool ed_deleteprevword(void *vb, wxEvent &event, void *)
+static Bool ed_deleteprevword(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -883,7 +892,7 @@ static Bool ed_deleteprevword(void *vb, wxEvent &event, void *)
   return TRUE;
 }
 
-static Bool ed_deleteline(void *vb, wxEvent &event, void *)
+static Bool ed_deleteline(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;

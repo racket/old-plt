@@ -878,7 +878,7 @@ static Scheme_Object *os_wxColourOk(Scheme_Object *obj, int n,  Scheme_Object *p
 }
 
 #pragma argsused
-static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxColour* r;
@@ -889,7 +889,7 @@ static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Schem
   x0 = objscheme_unbundle_wxColour(p[0], "copy-from in color%", 0);
 
   if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("color%","copy-from"), "color", "color");
-  r = &((wxColour *)((Scheme_Class_Object *)obj)->primdata)->operator=(*x0);
+  r = ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->CopyFrom(x0);
 
   
   
@@ -958,7 +958,7 @@ if (os_wxColour_class) {
  scheme_add_method_w_arity(os_wxColour_class, "red", os_wxColourRed, 0, 0);
  scheme_add_method_w_arity(os_wxColour_class, "set", os_wxColourSet, 3, 3);
  scheme_add_method_w_arity(os_wxColour_class, "ok?", os_wxColourOk, 0, 0);
- scheme_add_method_w_arity(os_wxColour_class, "copy-from", os_wxColouroperatorEQUAL, 1, 1);
+ scheme_add_method_w_arity(os_wxColour_class, "copy-from", os_wxColourCopyFrom, 1, 1);
 
 
   scheme_made_class(os_wxColour_class);
@@ -1426,7 +1426,7 @@ class os_wxBrush : public wxBrush {
  public:
 
   os_wxBrush(Scheme_Object * obj);
-  os_wxBrush(Scheme_Object * obj, class wxColour& x0, int x1);
+  os_wxBrush(Scheme_Object * obj, class wxColour* x0, int x1);
   os_wxBrush(Scheme_Object * obj, string x0, int x1);
   ~os_wxBrush();
 };
@@ -1441,7 +1441,7 @@ os_wxBrush::os_wxBrush(Scheme_Object * o)
   objscheme_note_creation(o);
 }
 
-os_wxBrush::os_wxBrush(Scheme_Object * o, class wxColour& x0, int x1)
+os_wxBrush::os_wxBrush(Scheme_Object * o, class wxColour* x0, int x1)
 : wxBrush(x0, x1)
 {
   __gc_external = (void *)o;
@@ -1546,7 +1546,7 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
     x0 = objscheme_unbundle_wxColour(p[0], "set-color in brush% (color% case)", 0);
 
     if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
-    ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
+    ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
     
@@ -1595,7 +1595,7 @@ static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Obj
   
 
   
-  r = &((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->GetColour();
+  r = ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->GetColour();
 
   
   
@@ -1631,7 +1631,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = unbundle_symset_brushStyle(p[1], "initialization in brush% (color% case)");
 
     
-    realobj = new os_wxBrush(obj, *x0, x1);
+    realobj = new os_wxBrush(obj, x0, x1);
     
     
   } else  {
@@ -2050,7 +2050,7 @@ class os_wxPen : public wxPen {
  public:
 
   os_wxPen(Scheme_Object * obj);
-  os_wxPen(Scheme_Object * obj, class wxColour& x0, int x1, int x2);
+  os_wxPen(Scheme_Object * obj, class wxColour* x0, int x1, int x2);
   os_wxPen(Scheme_Object * obj, string x0, int x1, int x2);
   ~os_wxPen();
 };
@@ -2065,7 +2065,7 @@ os_wxPen::os_wxPen(Scheme_Object * o)
   objscheme_note_creation(o);
 }
 
-os_wxPen::os_wxPen(Scheme_Object * o, class wxColour& x0, int x1, int x2)
+os_wxPen::os_wxPen(Scheme_Object * o, class wxColour* x0, int x1, int x2)
 : wxPen(x0, x1, x2)
 {
   __gc_external = (void *)o;
@@ -2170,7 +2170,7 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
     x0 = objscheme_unbundle_wxColour(p[0], "set-color in pen% (color% case)", 0);
 
     if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
-    ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
+    ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
     
@@ -2219,7 +2219,7 @@ static Scheme_Object *os_wxPenGetColour(Scheme_Object *obj, int n,  Scheme_Objec
   
 
   
-  r = &((wxPen *)((Scheme_Class_Object *)obj)->primdata)->GetColour();
+  r = ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->GetColour();
 
   
   
@@ -2364,7 +2364,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     x2 = unbundle_symset_penStyle(p[2], "initialization in pen% (color% case)");
 
     
-    realobj = new os_wxPen(obj, *x0, x1, x2);
+    realobj = new os_wxPen(obj, x0, x1, x2);
     
     
   } else  {

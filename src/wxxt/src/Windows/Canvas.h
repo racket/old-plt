@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.3 1999/04/08 16:12:10 mflatt Exp $
+ * $Id: Canvas.h,v 1.4 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -76,7 +76,7 @@ public:
     // override parent methods
     virtual void ChangeColours(void);
     // overriden callback methods
-    virtual void OnChar(wxKeyEvent &event);
+    virtual void OnChar(wxKeyEvent *event);
 private:
     int	h_size, h_units, h_units_per_page,
 	v_size, v_units, v_units_per_page;

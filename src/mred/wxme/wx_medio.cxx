@@ -231,9 +231,9 @@ void wxMediaStreamOutStringBase::Write(char *data, long l)
 
 /****************************************************************/
 
-wxMediaStreamIn::wxMediaStreamIn(wxMediaStreamInBase& s)
+wxMediaStreamIn::wxMediaStreamIn(wxMediaStreamInBase *s)
 {
-  f = &s;
+  f = s;
   boundalloc = 10;
   boundcount = 0;
   boundaries = new long[boundalloc];
@@ -281,30 +281,30 @@ void wxMediaStreamIn::Typecheck(char v)
 #endif
 }
 
-wxMediaStreamIn& wxMediaStreamIn::GetFixed(long& v)
+wxMediaStreamIn *wxMediaStreamIn::GetFixed(long *v)
 {
   Typecheck(st_FIXED);
 
   if (bad) {
-    v = 0;
-    return *this;
+    *v = 0;
+    return this;
   }
 
   if (!lsb_first) {
-    f->Read((char *)&v, sizeof(long));
+    f->Read((char *)v, sizeof(long));
   } else {
     if (WXME_VERSION_ONE())
-      f->Read((char *)&v, sizeof(long));
+      f->Read((char *)v, sizeof(long));
     else {
       unsigned char bl[4];
       
       f->Read((char *)bl, 4);
-      v = (((long)bl[0]) << 24) + (((long)bl[1]) << 16)
-	+ (((long)bl[2]) << 8) + bl[3];
+      *v = ((((long)bl[0]) << 24) + (((long)bl[1]) << 16)
+	    + (((long)bl[2]) << 8) + bl[3]);
     }
   }
 
-  return *this;
+  return this;
 }
 
 char *wxMediaStreamIn::GetString(long *n)
@@ -318,7 +318,7 @@ char *wxMediaStreamIn::GetString(long *n)
     return NULL;
   }
 
-  Get(m);
+  Get(&m);
 
   Typecheck(st_STRING);
 
@@ -331,16 +331,16 @@ char *wxMediaStreamIn::GetString(long *n)
   return r;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(long *n, char *str)
+wxMediaStreamIn *wxMediaStreamIn::Get(long *n, char *str)
 {
   long m;
 
   if (bad) {
     *n = 0;
-    return *this;
+    return this;
   }
 
-  Get(m);
+  Get(&m);
 
   Typecheck(st_STRING);
 
@@ -352,10 +352,10 @@ wxMediaStreamIn& wxMediaStreamIn::Get(long *n, char *str)
   }
   *n = m;
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(long &v)
+wxMediaStreamIn* wxMediaStreamIn::Get(long *v)
 {
   char b;
   
@@ -363,8 +363,8 @@ wxMediaStreamIn& wxMediaStreamIn::Get(long &v)
   Typecheck(st_NUMBER);
 
   if (bad) {
-    v = 0;
-    return *this;
+    *v = 0;
+    return this;
   }
 
   f->Read((char *)&b, sizeof(char));
@@ -373,104 +373,97 @@ wxMediaStreamIn& wxMediaStreamIn::Get(long &v)
       if (b & 0x1) {
 	signed char bv;
 	f->Read((char *)&bv, 1);
-	v = bv;
+	*v = bv;
       } else if (b & 0x2) {
 	unsigned char bl[2];
 	f->Read((char *)bl, 2);
-	v = (((int)((signed char *)bl)[0]) << 8) + bl[1];
+	*v = (((int)((signed char *)bl)[0]) << 8) + bl[1];
       } else {
 	unsigned char bl[4];
 	f->Read((char *)bl, 4);
-	v = (((long)((signed char *)bl)[0]) << 24) 
+	*v = (((long)((signed char *)bl)[0]) << 24) 
 	  + (((long)bl[1]) << 16)
 	  + (((long)bl[2]) << 8) + bl[3];
       }
     } else {
       unsigned char b2;
       f->Read((char *)&b2, sizeof(char));
-      v = (((int)(b & 0x3F)) << 8) | b2;
+      *v = (((int)(b & 0x3F)) << 8) | b2;
     }
   } else
-    v = b;
+    *v = b;
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(short &v)
+wxMediaStreamIn* wxMediaStreamIn::Get(short *v)
 {
   long lv;
 
-  Get(lv);
-  v = lv;
+  Get(&lv);
+  *v = lv;
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(int &v)
+wxMediaStreamIn* wxMediaStreamIn::Get(int *v)
 {
   long lv;
 
-  Get(lv);
-  v = lv;
+  Get(&lv);
+  *v = lv;
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(char &v)
+wxMediaStreamIn* wxMediaStreamIn::Get(char *v)
 {
   long lv;
 
-  Get(lv);
-  v = lv;
+  Get(&lv);
+  *v = lv;
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(double &v)
+wxMediaStreamIn *wxMediaStreamIn::Get(double *v)
 {
   Typecheck(st_FLOAT);
 
   if (bad) {
-    v = 0.0;
-    return *this;
+    *v = 0.0;
+    return this;
   }
 
   if (!lsb_first) {
-    f->Read((char *)&v, sizeof(double));
+    f->Read((char *)v, sizeof(double));
   } else {
     if (WXME_VERSION_ONE())
-      f->Read((char *)&v, sizeof(double));
+      f->Read((char *)v, sizeof(double));
     else {
       char num[sizeof(double)], num2[sizeof(double)];
       int i, j;
       
       f->Read((char *)num, sizeof(double));
-      for (i = 0, j = sizeof(double); i < sizeof(double); )
+      for (i = 0, j = sizeof(double); i < (int)sizeof(double); )
 	num2[i++] = num[--j];
       
-      memcpy((char *)&v, num2, sizeof(double));
+      memcpy((char *)v, num2, sizeof(double));
     }
   }
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamIn& wxMediaStreamIn::Get(float &v)
+wxMediaStreamIn* wxMediaStreamIn::Get(float *v)
 {
   double lv;
 
-  Get(lv);
-  v = lv;
+  Get(&lv);
+  *v = lv;
 
-  return *this;
+  return this;
 }
-
-wxMediaStreamIn& wxMediaStreamIn::operator>>(long &v) { return Get(v); }
-wxMediaStreamIn& wxMediaStreamIn::operator>>(short &v) { return Get(v); }
-wxMediaStreamIn& wxMediaStreamIn::operator>>(int &v) { return Get(v); }
-wxMediaStreamIn& wxMediaStreamIn::operator>>(char &v) { return Get(v); }
-wxMediaStreamIn& wxMediaStreamIn::operator>>(float &v) { return Get(v); }
-wxMediaStreamIn& wxMediaStreamIn::operator>>(double &v) { return Get(v); }
 
 void wxMediaStreamIn::SetBoundary(long n)
 {
@@ -512,9 +505,9 @@ Bool wxMediaStreamIn::Ok(void)
 
 /*********************************************************************/
 
-wxMediaStreamOut::wxMediaStreamOut(wxMediaStreamOutBase& s)
+wxMediaStreamOut::wxMediaStreamOut(wxMediaStreamOutBase *s)
 {
-  f = &s;
+  f = s;
   bad = FALSE;
 }
 
@@ -535,7 +528,7 @@ void wxMediaStreamOut::Typeset(char v)
 #endif
 }
 
-wxMediaStreamOut& wxMediaStreamOut::PutFixed(long v)
+wxMediaStreamOut *wxMediaStreamOut::PutFixed(long v)
 {
   Typeset(st_FIXED);
 
@@ -551,10 +544,10 @@ wxMediaStreamOut& wxMediaStreamOut::PutFixed(long v)
     f->Write(lb, 4);
   }
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(long n, char *str)
+wxMediaStreamOut* wxMediaStreamOut::Put(long n, char *str)
 {
   Put(n);
 
@@ -562,15 +555,15 @@ wxMediaStreamOut& wxMediaStreamOut::Put(long n, char *str)
 
   f->Write(str, n);
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(char *v)
+wxMediaStreamOut *wxMediaStreamOut::Put(char *v)
 {
   return Put(strlen(v) + 1, v);
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(long v)
+wxMediaStreamOut *wxMediaStreamOut::Put(long v)
 {
   Typeset(st_NUMBER);
 
@@ -611,25 +604,25 @@ wxMediaStreamOut& wxMediaStreamOut::Put(long v)
     }
   }
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(short v)
+wxMediaStreamOut* wxMediaStreamOut::Put(short v)
 {
   return Put((long)v);
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(int v)
+wxMediaStreamOut* wxMediaStreamOut::Put(int v)
 {
   return Put((long)v);
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(char v)
+wxMediaStreamOut* wxMediaStreamOut::Put(char v)
 {
   return Put((long)v);
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(double v)
+wxMediaStreamOut* wxMediaStreamOut::Put(double v)
 {
   Typeset(st_FLOAT);
 
@@ -640,27 +633,19 @@ wxMediaStreamOut& wxMediaStreamOut::Put(double v)
     int i, j;
     
     memcpy(num2, (char *)&v, sizeof(double));
-    for (i = 0, j = sizeof(double); i < sizeof(double); )
+    for (i = 0, j = sizeof(double); i < (int)sizeof(double); )
       num[i++] = num2[--j];
     
     f->Write((char *)num, sizeof(double));
   }
 
-  return *this;
+  return this;
 }
 
-wxMediaStreamOut& wxMediaStreamOut::Put(float v)
+wxMediaStreamOut* wxMediaStreamOut::Put(float v)
 {
   return Put((double)v);
 }
-
-wxMediaStreamOut& wxMediaStreamOut::operator<<(char *str) { return Put(str); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(long v) {return Put(v); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(short v) {return Put(v); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(int v) {return Put(v); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(char v) {return Put(v); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(float v) {return Put(v); }
-wxMediaStreamOut& wxMediaStreamOut::operator<<(double v) {return Put(v); }
 
 long wxMediaStreamOut::Tell(void)
 {

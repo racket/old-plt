@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.2 1999/03/09 14:17:52 mflatt Exp $
+ * $Id: Panel.cc,v 1.3 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -256,11 +256,12 @@ void wxPanel::Tab(int pixels)
 
 void wxPanel::OnDefaultAction(wxItem *WXUNUSED(item))
 {
-    wxButton *but = GetDefaultItem();
-    if (but) {
-	wxCommandEvent event(wxEVENT_TYPE_BUTTON_COMMAND);
-	but->Command(event);
-    }
+  wxButton *but = GetDefaultItem();
+  if (but) {
+    wxCommandEvent *event;
+    event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+    but->Command(event);
+  }
 }
 
 //-----------------------------------------------------------------------------

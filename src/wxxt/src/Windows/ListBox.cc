@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.15 1999/10/22 14:41:55 mflatt Exp $
+ * $Id: ListBox.cc,v 1.16 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -506,7 +506,7 @@ void wxListBox::SetString(int n, char *s)
   }
 }
 
-void wxListBox::Command(wxCommandEvent &event)
+void wxListBox::Command(wxCommandEvent *event)
 {
   ProcessCommand (event);
 }
@@ -520,21 +520,22 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
 {
     wxListBox                 *lbox   = (wxListBox*)dclient;
     XfwfMultiListReturnStruct *rs     = (XfwfMultiListReturnStruct*)dcall;
-    wxCommandEvent            *_event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-    wxCommandEvent            &event = *_event;
+    wxCommandEvent            *event;
+
+    event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
 
     if (rs->action == XfwfMultiListActionDClick 
 	&& lbox->allow_dclicks)
-      event.eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
+      event->eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
 
     lbox->ProcessCommand(event);
 }
 
-void wxListBox::OnChar(wxKeyEvent &e)
+void wxListBox::OnChar(wxKeyEvent *e)
 {
   int delta = 0;
 
-  switch (e.keyCode) {
+  switch (e->keyCode) {
   case WXK_UP:
     delta = -1;
     break;
@@ -557,8 +558,9 @@ void wxListBox::OnChar(wxKeyEvent &e)
 
       SetSelection(s + delta);
       if (s != GetSelection()) {
-	wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-	ProcessCommand(*event);
+	wxCommandEvent *event;
+	event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	ProcessCommand(event);
       }
     }
   }

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.31 1999/11/05 02:41:26 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cxx,v 1.1 1999/11/12 17:21:41 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -140,21 +140,19 @@ class PSStream : public wxObject {
     return !!f;
   }
 
-  PSStream& operator<<(char s) {
+  void Out(char s) {
     fprintf(f, "%c", s);
-    return *this;
   }
-  PSStream& operator<<(const char *s) {
+  void Out(const char *s) {
     fwrite(s, strlen(s), 1, f);
-    return *this;
   }
-  PSStream& operator<<(float n);
-  PSStream& operator<<(double d) {
-    return *this << (float)d;
+  void Out(float n);
+  void Out(double d) {
+    Out((float)d);
   }
-  PSStream& operator<<(long l);
-  PSStream& operator<<(int i) {
-    return *this << (long)i;
+  void Out(long l);
+  void Out(int i) {
+    Out((long)i);
   }
 
   long tellp(void) {
@@ -169,16 +167,17 @@ class PSStream : public wxObject {
   }
 };
 
-PSStream& PSStream::operator<<(float n) {
+void PSStream::Out(float n)
+{
   if (int_width > 0) {
     if ((float)(long)n == n)
-      return *this << (long)n;
+      Out((long)n);
   }
   fprintf(f, "%f", n);
-  return *this;
 }
 
-PSStream& PSStream::operator<<(long l) {
+void PSStream::Out(long l)
+{
   if (int_width > 0) {
     char buffer[50];
     sprintf(buffer, "%%+%d.%dld", int_width, int_width);
@@ -186,7 +185,6 @@ PSStream& PSStream::operator<<(long l) {
     int_width = 0;
   } else
     fprintf(f, "%ld", l);
-  return *this;
 }
 
 wxPostScriptDC::wxPostScriptDC (void)
@@ -394,14 +392,14 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
   if (clipping) {
     clipping = NULL;
-    *pstream << "initclip\n";
+    pstream->Out("initclip\n");
   }
 
   if (r) {
-    *pstream << "newpath\n";
+    pstream->Out("newpath\n");
     if (r->ps) /* => non-empty region */
-      *pstream << r->ps->Lift()->GetString();
-    *pstream << "clip\n";
+      pstream->Out(r->ps->Lift()->GetString());
+    pstream->Out("clip\n");
 
     clipping = r;
   }
@@ -417,14 +415,14 @@ void wxPostScriptDC::Clear(void)
   float greenPS = (float) (((int) green) / 255.0);
   
   /* Fill with current background */
-  *pstream << "gsave newpath\n";
-  *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
-  *pstream << 0 << " " << 0 << " moveto\n";
-  *pstream << 0 << " " << paper_h << " lineto\n";
-  *pstream << paper_w << " " << paper_h << " lineto\n";
-  *pstream << paper_w << " " << 0 << " lineto\n";
-  *pstream << "closepath\n";
-  *pstream << "fill grestore\n";
+  pstream->Out("gsave newpath\n");
+  pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+  pstream->Out(0); pstream->Out(" "); pstream->Out(0); pstream->Out(" moveto\n");
+  pstream->Out(0); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
+  pstream->Out(paper_w); pstream->Out(" "); pstream->Out(paper_h); pstream->Out(" lineto\n");
+  pstream->Out(paper_w); pstream->Out(" "); pstream->Out(0); pstream->Out(" lineto\n");
+  pstream->Out("closepath\n");
+  pstream->Out("fill grestore\n");
 }
 
 void wxPostScriptDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
@@ -453,10 +451,10 @@ void wxPostScriptDC::DrawLine (float x1, float y1, float x2, float y2)
     return;
   if (current_pen)
     SetPen (current_pen);
-  *pstream << "newpath\n";
-  *pstream << XSCALE(x1) << " " << YSCALE (y1) << " moveto\n";
-  *pstream << XSCALE(x2) << " " << YSCALE (y2) << " lineto\n";
-  *pstream << "stroke\n";
+  pstream->Out("newpath\n");
+  pstream->Out(XSCALE(x1)); pstream->Out(" "); pstream->Out(YSCALE (y1)); pstream->Out(" moveto\n");
+  pstream->Out(XSCALE(x2)); pstream->Out(" "); pstream->Out(YSCALE (y2)); pstream->Out(" lineto\n");
+  pstream->Out("stroke\n");
   CalcBoundingBox(XSCALEBND(x1), YSCALEBND(y1));
   CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
 }
@@ -482,34 +480,34 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     float a1 = start * (180 / pie);
     float a2 = end * (180 / pie);
 
-    *pstream << "gsave\n";
-    *pstream << (x + w/2) << " " << (paper_h - (y + h/2)) << " translate\n";
-    *pstream << xscale << " " << 1 << " scale\n";
+    pstream->Out("gsave\n");
+    pstream->Out((x + w/2)); pstream->Out(" "); pstream->Out((paper_h - (y + h/2))); pstream->Out(" translate\n");
+    pstream->Out(xscale); pstream->Out(" "); pstream->Out(1); pstream->Out(" scale\n");
 
     if (current_brush && current_brush->GetStyle () != wxTRANSPARENT) {
       SetBrush(current_brush);
       
-      *pstream << "newpath\n";
-      *pstream << cos(start)*radius << " " << sin(start)*radius << " moveto\n";
-      *pstream << "0 0 " << radius << " " << a1 << " " << a2 << " arc\n";
+      pstream->Out("newpath\n");
+      pstream->Out(cos(start)*radius); pstream->Out(" "); pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
+      pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" "); pstream->Out(a1); pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
 
-      *pstream << "0 0 lineto\n";
+      pstream->Out("0 0 lineto\n");
 
-      *pstream << "closepath\n";
+      pstream->Out("closepath\n");
 
-      *pstream << "fill\n";
+      pstream->Out("fill\n");
     }
     if (current_pen && current_pen->GetStyle () != wxTRANSPARENT) {
       SetPen(current_pen);
 
-      *pstream << "newpath\n";
-      *pstream << cos(start)*radius << " " << sin(start)*radius << " moveto\n";
-      *pstream << "0 0 " << radius << " "
-	<< a1 << " " << a2 << " arc\n";
-      *pstream << "stroke\n";
+      pstream->Out("newpath\n");
+      pstream->Out(cos(start)*radius); pstream->Out(" "); pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
+      pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" ");
+      pstream->Out(a1); pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
+      pstream->Out("stroke\n");
     }
 
-    *pstream << "grestore\n";
+    pstream->Out("grestore\n");
   }
 }
 
@@ -519,10 +517,10 @@ void wxPostScriptDC::DrawPoint (float x, float y)
     return;
   if (current_pen)
     SetPen (current_pen);
-  *pstream << "newpath\n";
-  *pstream << XSCALE(x) << " " << YSCALE (y) << " moveto\n";
-  *pstream << XSCALE(x+1) << " " << YSCALE (y) << " lineto\n";
-  *pstream << "stroke\n";
+  pstream->Out("newpath\n");
+  pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
+  pstream->Out(XSCALE(x+1)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
+  pstream->Out("stroke\n");
   CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
 }
 
@@ -535,11 +533,11 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float 
       if (current_brush && current_brush->GetStyle () != wxTRANSPARENT)
 	{
 	  SetBrush (current_brush);
-	  *pstream << "newpath\n";
+	  pstream->Out("newpath\n");
 
 	  float xx = points[0].x + xoffset;
 	  float yy = (points[0].y + yoffset);
-	  *pstream << XSCALE(xx) << " " << YSCALE(yy) << " moveto\n";
+	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
 	  int i;
@@ -547,20 +545,20 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float 
 	    {
 	      xx = points[i].x + xoffset;
 	      yy = (points[i].y + yoffset);
-	      *pstream << XSCALE(xx) << " " << YSCALE(yy) << " lineto\n";
+	      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
 	      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 	    }
-	  *pstream << ((fillStyle == wxODDEVEN_RULE) ? "eofill\n" : "fill\n");
+	  pstream->Out(((fillStyle == wxODDEVEN_RULE) ? "eofill\n" : "fill\n"));
 	}
 
       if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
 	{
 	  SetPen (current_pen);
-	  *pstream << "newpath\n";
+	  pstream->Out("newpath\n");
 
 	  float xx = points[0].x + xoffset;
 	  float yy = (points[0].y + yoffset);
-	  *pstream << XSCALE(xx) << " " << YSCALE(yy) << " moveto\n";
+	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
 	  int i;
@@ -568,17 +566,17 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float 
 	    {
 	      xx = points[i].x + xoffset;
 	      yy = (points[i].y + yoffset);
-	      *pstream << XSCALE(xx) << " " << YSCALE(yy) << " lineto\n";
+	      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
 	      CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 	    }
 
 	  // Close the polygon
 	  xx = points[0].x + xoffset;
 	  yy = (points[0].y + yoffset);
-	  *pstream << XSCALE(xx) << " " << YSCALE(yy) << " lineto\n";
+	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
 
 	  // Output the line
-	  *pstream << "stroke\n";
+	  pstream->Out("stroke\n");
 	}
     }
 }
@@ -592,11 +590,11 @@ void wxPostScriptDC::DrawLines (int n, wxIntPoint points[], int xoffset, int yof
       if (current_pen)
 	SetPen (current_pen);
 
-      *pstream << "newpath\n";
+      pstream->Out("newpath\n");
 
       float xx = (float) (points[0].x + xoffset);
       float yy = (float) (points[0].y + yoffset);
-      *pstream << XSCALE(xx) << " " << YSCALE(yy) << " moveto\n";
+      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
       CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
       int i;
@@ -604,10 +602,10 @@ void wxPostScriptDC::DrawLines (int n, wxIntPoint points[], int xoffset, int yof
 	{
 	  xx = (float) (points[i].x + xoffset);
 	  yy = (float) (points[i].y + yoffset);
-	  *pstream << XSCALE(xx) << " " << YSCALE(yy) << " lineto\n";
+	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 	}
-      *pstream << "stroke\n";
+      pstream->Out("stroke\n");
     }
 }
 
@@ -620,11 +618,11 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], float xoffset, float yo
       if (current_pen)
 	SetPen (current_pen);
 
-      *pstream << "newpath\n";
+      pstream->Out("newpath\n");
 
       float xx = points[0].x + xoffset;
       float yy = (points[0].y + yoffset);
-      *pstream << XSCALE(xx) << " " << YSCALE(yy) << " moveto\n";
+      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
       CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 
       int i;
@@ -632,10 +630,10 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], float xoffset, float yo
 	{
 	  xx = points[i].x + xoffset;
 	  yy = (points[i].y + yoffset);
-	  *pstream << XSCALE(xx) << " " << YSCALE(yy) << " lineto\n";
+	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
 	  CalcBoundingBox(XSCALEBND(xx), YSCALEBND(yy));
 	}
-      *pstream << "stroke\n";
+      pstream->Out("stroke\n");
     }
 }
 
@@ -681,13 +679,13 @@ void wxPostScriptDC::DrawRectangle (float x, float y, float width, float height)
     {
       SetBrush (current_brush);
 
-      *pstream << "newpath\n";
-      *pstream << XSCALE(x) << " " << YSCALE (y) << " moveto\n";
-      *pstream << XSCALE(x + width) << " " << YSCALE (y) << " lineto\n";
-      *pstream << XSCALE(x + width) << " " << YSCALE (y + height) << " lineto\n";
-      *pstream << XSCALE(x) << " " << YSCALE (y + height) << " lineto\n";
-      *pstream << "closepath\n";
-      *pstream << "fill\n";
+      pstream->Out("newpath\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
+      pstream->Out(XSCALE(x + width)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x + width)); pstream->Out(" "); pstream->Out(YSCALE (y + height)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + height)); pstream->Out(" lineto\n");
+      pstream->Out("closepath\n");
+      pstream->Out("fill\n");
 
       CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
@@ -696,13 +694,13 @@ void wxPostScriptDC::DrawRectangle (float x, float y, float width, float height)
     {
       SetPen (current_pen);
 
-      *pstream << "newpath\n";
-      *pstream << XSCALE(x) << " " << YSCALE (y) << " moveto\n";
-      *pstream << XSCALE(x + width) << " " << YSCALE (y) << " lineto\n";
-      *pstream << XSCALE(x + width) << " " << YSCALE (y + height) << " lineto\n";
-      *pstream << XSCALE(x) << " " << YSCALE (y + height) << " lineto\n";
-      *pstream << "closepath\n";
-      *pstream << "stroke\n";
+      pstream->Out("newpath\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
+      pstream->Out(XSCALE(x + width)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x + width)); pstream->Out(" "); pstream->Out(YSCALE (y + height)); pstream->Out(" lineto\n");
+      pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + height)); pstream->Out(" lineto\n");
+      pstream->Out("closepath\n");
+      pstream->Out("stroke\n");
 
       CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox(XSCALEBND(x + width),  YSCALEBND(y + height));
@@ -732,25 +730,30 @@ void wxPostScriptDC::DrawRoundedRectangle (float x, float y, float width, float 
     {
       SetBrush (current_brush);
       // Draw rectangle anticlockwise
-      *pstream << "newpath\n";
+      pstream->Out("newpath\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " << YSCALE(y) << " moveto\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(YSCALE(y)); pstream->Out(" moveto\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " 
-	<< YSCALE(y) - ASCALEREL(radius) << " " << ASCALEREL(radius) << " 90 180 arc\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 90 180 arc\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " 
-	<< YSCALE(y + height) + ASCALEREL(radius) << " " << ASCALEREL(radius) << " 180 270 arc\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y + height) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 180 270 arc\n");
 
-      *pstream << XSCALE(x + width) - ASCALEREL(radius) << " " 
-	<< YSCALE(y + height) + ASCALEREL(radius) << " " << ASCALEREL(radius) << " 270 0 arc\n";
+      pstream->Out(XSCALE(x + width) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y + height) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 270 0 arc\n");
 
-      *pstream << XSCALE(x + width) - ASCALEREL(radius) << " " 
-	<< YSCALE(y) - ASCALEREL(radius) << " " << ASCALEREL(radius) << " 0 90 arc\n";
+      pstream->Out(XSCALE(x + width) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 0 90 arc\n");
 
-      *pstream << "closepath\n";
+      pstream->Out("closepath\n");
 
-      *pstream << "fill\n";
+      pstream->Out("fill\n");
 
       CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
@@ -759,25 +762,30 @@ void wxPostScriptDC::DrawRoundedRectangle (float x, float y, float width, float 
     {
       SetPen (current_pen);
       // Draw rectangle anticlockwise
-      *pstream << "newpath\n";
+      pstream->Out("newpath\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " << YSCALE(y) << " moveto\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(YSCALE(y)); pstream->Out(" moveto\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " 
-	<< YSCALE(y) - ASCALEREL(radius) << " " << ASCALEREL(radius) << " 90 180 arc\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y) - ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 90 180 arc\n");
 
-      *pstream << XSCALE(x) + ASCALEREL(radius) << " " 
-	<< YSCALE(y + height) + ASCALEREL(radius) << " " << ASCALEREL(radius) << " 180 270 arc\n";
+      pstream->Out(XSCALE(x) + ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y + height) + ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 180 270 arc\n");
 
-      *pstream << XSCALE(x + width) - ASCALEREL(radius) << " " 
-	<< YSCALE(y + height) + ASCALEREL(radius) << " " << ASCALEREL(radius) << " 270 0 arc\n";
+      pstream->Out(XSCALE(x + width) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y + height) + ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 270 0 arc\n");
 
-      *pstream << XSCALE(x + width) - ASCALEREL(radius) << " " 
-	<< YSCALE(y) - ASCALEREL(radius) << " " << ASCALEREL(radius) << " 0 90 arc\n";
+      pstream->Out(XSCALE(x + width) - ASCALEREL(radius)); pstream->Out(" ");
+      pstream->Out(YSCALE(y) - ASCALEREL(radius)); pstream->Out(" "); 
+      pstream->Out(ASCALEREL(radius)); pstream->Out(" 0 90 arc\n");
 
-      *pstream << "closepath\n";
+      pstream->Out("closepath\n");
 
-      *pstream << "stroke\n";
+      pstream->Out("stroke\n");
 
       CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
@@ -792,10 +800,10 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
     {
       SetBrush (current_brush);
 
-      *pstream << "newpath\n";
-      *pstream << XSCALE(x + width / 2) << " " << YSCALE(y + height / 2) << " ";
-      *pstream << XSCALEREL(width / 2) << " " << YSCALEREL(height / 2) << " 0 360 ellipse\n";
-      *pstream << "fill\n";
+      pstream->Out("newpath\n");
+      pstream->Out(XSCALE(x + width / 2)); pstream->Out(" "); pstream->Out(YSCALE(y + height / 2)); pstream->Out(" ");
+      pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
+      pstream->Out("fill\n");
 
       CalcBoundingBox(XSCALEBND(x - width), YSCALEBND(y - height));
       CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
@@ -804,10 +812,10 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
     {
       SetPen (current_pen);
 
-      *pstream << "newpath\n";
-      *pstream << XSCALE(x + width / 2) << " " << YSCALE(y + height / 2) << " ";
-      *pstream << XSCALEREL(width / 2) << " " << YSCALEREL(height / 2) << " 0 360 ellipse\n";
-      *pstream << "stroke\n";
+      pstream->Out("newpath\n");
+      pstream->Out(XSCALE(x + width / 2)); pstream->Out(" "); pstream->Out(YSCALE(y + height / 2)); pstream->Out(" ");
+      pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
+      pstream->Out("stroke\n");
 
       CalcBoundingBox (XSCALEBND(x - width), YSCALEBND(y - height));
       CalcBoundingBox (XSCALEBND(x + width), YSCALEBND(y + height));
@@ -833,8 +841,8 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   if (!name)
     name = "Times-Roman";
 
-  *pstream << "/" << name << " findfont\n";
-  *pstream << YSCALEREL(current_font->GetPointSize()) << " scalefont setfont\n";
+  pstream->Out("/"); pstream->Out(name); pstream->Out(" findfont\n");
+  pstream->Out(YSCALEREL(current_font->GetPointSize())); pstream->Out(" scalefont setfont\n");
 }
 
 static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
@@ -844,21 +852,20 @@ static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int
   width = bm->GetWidth();
   height = bm->GetHeight();
 
-  (*pstream 
-   << "8 dict\n"
-   << "dup\n"
-   << "begin\n"
-   << " /PatternType 1 def\n"
-   << " /PaintType 1 def\n"
-   << " /TilingType 1 def\n"
-   << " /BBox [ 0 0 " << width << " " << height << " ] def\n"
-   << " /XStep " << width << " def\n"
-   << " /YStep " << height << " def\n");
+  pstream->Out("8 dict\n");
+  pstream->Out("dup\n");
+  pstream->Out("begin\n");
+  pstream->Out(" /PatternType 1 def\n");
+  pstream->Out(" /PaintType 1 def\n");
+  pstream->Out(" /TilingType 1 def\n");
+  pstream->Out(" /BBox [ 0 0 "); pstream->Out(width); pstream->Out(" "); pstream->Out(height); pstream->Out(" ] def\n");
+  pstream->Out(" /XStep "); pstream->Out(width); pstream->Out(" def\n");
+  pstream->Out(" /YStep "); pstream->Out(height); pstream->Out(" def\n");
 
   dc->Blit(0, 0, width, height, bm, 0, 0, -rop - 1, col);
 
-  (*pstream << "end\n"
-   << " matrix makepattern setpattern\n");
+  pstream->Out("end\n");
+  pstream->Out(" matrix makepattern setpattern\n");
 }
 
 void wxPostScriptDC::SetPen (wxPen * pen)
@@ -874,12 +881,12 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     return;			/* NIL */
 
   // Line width
-  *pstream << pen->GetWidth () << " setlinewidth\n";
+  pstream->Out(pen->GetWidth ()); pstream->Out(" setlinewidth\n");
 
   if (level2ok) {
     wxBitmap *stipple = pen->GetStipple();
     if (stipple && stipple->Ok()) {
-      set_pattern(this, pstream, stipple, pen->GetStyle(), &pen->GetColour());
+      set_pattern(this, pstream, stipple, pen->GetStyle(), pen->GetColour());
       resetFont |= RESET_COLOR;
       return;
     }
@@ -922,12 +929,12 @@ void wxPostScriptDC::SetPen (wxPen * pen)
       break;
     }
   if (oldPen != pen)
-    *pstream << psdash << " setdash\n";
+    pstream->Out(psdash); pstream->Out(" setdash\n");
 
   // Line colour
-  unsigned char red = pen->GetColour ().Red ();
-  unsigned char blue = pen->GetColour ().Blue ();
-  unsigned char green = pen->GetColour ().Green ();
+  unsigned char red = pen->GetColour()->Red();
+  unsigned char blue = pen->GetColour()->Blue();
+  unsigned char green = pen->GetColour()->Green();
 
   if (!Colour)
     {
@@ -947,7 +954,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     float bluePS = (float) (((int) blue) / 255.0);
     float greenPS = (float) (((int) green) / 255.0);
 
-    *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
     
     currentRed = red;
     currentBlue = blue;
@@ -977,16 +984,16 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   if (level2ok) {
     wxBitmap *stipple = brush->GetStipple();
     if (stipple && stipple->Ok()) {
-      set_pattern(this, pstream, stipple, brush->GetStyle(), &brush->GetColour());
+      set_pattern(this, pstream, stipple, brush->GetStyle(), brush->GetColour());
       resetFont |= RESET_COLOR;
       return;
     }
   }
 
   // Brush colour
-  unsigned char red = brush->GetColour().Red();
-  unsigned char blue = brush->GetColour().Blue();
-  unsigned char green = brush->GetColour().Green();
+  unsigned char red = brush->GetColour()->Red();
+  unsigned char blue = brush->GetColour()->Blue();
+  unsigned char green = brush->GetColour()->Green();
 
   if (!Colour) {
     // Anything not black is white
@@ -1025,27 +1032,27 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   float greenPS = (float) (((int) green) / 255.0);
 
   if (hatch_id > -1) {
-    (*pstream 
-     << "7 dict\n"
-     << "dup\n"
-     << "begin\n"
-     << " /PatternType 1 def\n"
-     << " /PaintType 1 def\n"
-     << " /TilingType 1 def\n"
-     << " /BBox [ 0 0 8 8 ] def\n"
-     << " /XStep 8 def\n"
-     << " /YStep 8 def\n"
-     << " /PaintProc { begin gsave \n");
+    pstream->Out("7 dict\n");
+    pstream->Out("dup\n");
+    pstream->Out("begin\n");
+    pstream->Out(" /PatternType 1 def\n");
+    pstream->Out(" /PaintType 1 def\n");
+    pstream->Out(" /TilingType 1 def\n");
+    pstream->Out(" /BBox [ 0 0 8 8 ] def\n");
+    pstream->Out(" /XStep 8 def\n");
+    pstream->Out(" /YStep 8 def\n");
+    pstream->Out(" /PaintProc { begin gsave \n");
 
-    *pstream << " 0 setlinewidth\n";
-    *pstream << " [] 0 setdash\n";
-    *pstream << " " << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+    pstream->Out(" 0 setlinewidth\n");
+    pstream->Out(" [] 0 setdash\n");
+    pstream->Out(" "); pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); 
+    pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
 
-    *pstream << " " << ps_brush_hatch[hatch_id] << " lineto closepath stroke \n";
+    pstream->Out(" "); pstream->Out(ps_brush_hatch[hatch_id]); pstream->Out(" lineto closepath stroke \n");
     
-    *pstream << "grestore\n } def \n";
+    pstream->Out("grestore\n } def \n");
     
-    *pstream << "end\n" << " matrix makepattern setpattern\n";
+    pstream->Out("end\n"); pstream->Out(" matrix makepattern setpattern\n");
 
     resetFont |= RESET_COLOR;
 
@@ -1054,7 +1061,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 
   if (!(red == currentRed && green == currentGreen && blue == currentBlue)
       || (resetFont & RESET_COLOR)) {
-    *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
     currentRed = red;
     currentBlue = blue;
     currentGreen = green;
@@ -1081,14 +1088,14 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
     float bluePS = (float) (((int) blue) / 255.0);
     float greenPS = (float) (((int) green) / 255.0);
 
-    *pstream << "gsave newpath\n";
-    *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
-    *pstream << XSCALE(x) << " " << YSCALE (y) << " moveto\n";
-    *pstream << XSCALE(x + tw) << " " << YSCALE (y) << " lineto\n";
-    *pstream << XSCALE(x + tw) << " " << YSCALE (y + th) << " lineto\n";
-    *pstream << XSCALE(x) << " " << YSCALE (y + th) << " lineto\n";
-    *pstream << "closepath\n";
-    *pstream << "fill grestore\n";
+    pstream->Out("gsave newpath\n");
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
+    pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
+    pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
+    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
+    pstream->Out("closepath\n");
+    pstream->Out("fill grestore\n");
   }
 
   if (current_text_foreground.Ok ()) {
@@ -1111,7 +1118,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
       float redPS = (float) (((int) red) / 255.0);
       float bluePS = (float) (((int) blue) / 255.0);
       float greenPS = (float) (((int) green) / 255.0);
-      *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+      pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
       
       currentRed = red;
       currentBlue = blue;
@@ -1124,20 +1131,20 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     size = current_font->GetPointSize();
 
-  *pstream << XSCALE(x) << " " << YSCALE (y + size) << " moveto\n";
+  pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + size)); pstream->Out(" moveto\n");
 
-  *pstream << "(";
+  pstream->Out("(");
   int len = strlen (text);
   int i;
   for (i = 0; i < len; i++)
     {
       char ch = text[i];
       if (ch == ')' || ch == '(' || ch == '\\')
-	*pstream << "\\";
-      *pstream << ch;
+	pstream->Out("\\");
+      pstream->Out(ch);
     }
 
-  *pstream << ")" << " show\n";
+  pstream->Out(")"); pstream->Out(" show\n");
 
   CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
   CalcBoundingBox(XSCALEBND(x + tw), YSCALEBND(y + th));
@@ -1210,31 +1217,31 @@ Bool wxPostScriptDC::StartDoc (char *message)
     ok = TRUE;
   }
 
-  *pstream << "%!PS-Adobe-2.0 EPSF-2.0\n";	/* PostScript magic strings */
+  pstream->Out("%!PS-Adobe-2.0 EPSF-2.0\n");	/* PostScript magic strings */
   if (title)
-    *pstream << "%%Title: " << title << "\n";
-  *pstream << "%%Creator: " << "wxWindows (MrEd)" << "\n";
-  *pstream << "%%CreationDate: " << wxNow() << "\n";
+    pstream->Out("%%Title: "); pstream->Out(title); pstream->Out("\n");
+  pstream->Out("%%Creator: "); pstream->Out("wxWindows (MrEd)"); pstream->Out("\n");
+  pstream->Out("%%CreationDate: "); pstream->Out(wxNow()); pstream->Out("\n");
 
   // User Id information
   char userID[256];
   if (wxGetEmailAddress(userID, sizeof(userID))) {
-    *pstream << "%%For: " << (char *)userID;
+    pstream->Out("%%For: "); pstream->Out((char *)userID);
     char userName[245];
     if (wxGetUserName(userName, sizeof(userName)))
-      *pstream << " (" << (char *)userName << ")";
-    *pstream << "\n";
+      pstream->Out(" ("); pstream->Out((char *)userName); pstream->Out(")");
+    pstream->Out("\n");
   } else if ( wxGetUserName(userID, sizeof(userID))) {
-    *pstream << "%%For: " << (char *)userID << "\n";
+    pstream->Out("%%For: "); pstream->Out((char *)userID); pstream->Out("\n");
   }
 
   boundingboxpos = pstream->tellp();
 
-  *pstream << "%%BoundingBox: -00000 -00000 -00000 -00000\n";
-  *pstream << "%%Pages: -00000\n";
-  *pstream << "%%EndComments\n\n";
+  pstream->Out("%%BoundingBox: -00000 -00000 -00000 -00000\n");
+  pstream->Out("%%Pages: -00000\n");
+  pstream->Out("%%EndComments\n\n");
 
-  *pstream << wxPostScriptHeaderEllipse;
+  pstream->Out(wxPostScriptHeaderEllipse);
 
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
@@ -1256,7 +1263,7 @@ void wxPostScriptDC::EndDoc (void)
     return;
   if (clipping) {
     clipping = FALSE;
-    *pstream << "grestore\n";
+    pstream->Out("grestore\n");
   }
 
   // Compute the bounding box.  Note that it is in the default user
@@ -1282,18 +1289,18 @@ void wxPostScriptDC::EndDoc (void)
   // The Adobe specifications call for integers; we round as to make
   // the bounding larger.
   pstream->seekp(boundingboxpos);
-  *pstream << "%%BoundingBox: ";
+  pstream->Out("%%BoundingBox: ");
   pstream->width(5);
-  *pstream << floor(llx) << " ";
+  pstream->Out(floor(llx)); pstream->Out(" ");
   pstream->width(5);
-  *pstream << floor(lly) << " ";
+  pstream->Out(floor(lly)); pstream->Out(" ");
   pstream->width(5);
-  *pstream << ceil(urx)  << " ";
+  pstream->Out(ceil(urx) ); pstream->Out(" ");
   pstream->width(5);
-  *pstream << ceil(ury) << "\n";
-  *pstream << "%%Pages: ";
+  pstream->Out(ceil(ury)); pstream->Out("\n");
+  pstream->Out("%%Pages: ");
   pstream->width(5);
-  *pstream << (page_number - 1) << "\n";
+  pstream->Out((page_number - 1)); pstream->Out("\n");
 
   delete pstream;
   pstream = NULL;
@@ -1337,17 +1344,17 @@ void wxPostScriptDC::StartPage (void)
 {
   if (!pstream)
     return;
-  *pstream << "%%Page: " << page_number++ << "\n";
+  pstream->Out("%%Page: "); pstream->Out(page_number++); pstream->Out("\n");
 
-  *pstream << (paper_x + (landscape ? (paper_h * paper_y_scale) : 0)) 
-    << " " << paper_y << " translate\n";
+  pstream->Out((paper_x + (landscape ? (paper_h * paper_y_scale) : 0)));
+  pstream->Out(" "); pstream->Out(paper_y); pstream->Out(" translate\n");
   if (landscape) {
-    *pstream << paper_y_scale << " " << paper_x_scale << " scale\n";
-    *pstream << "90 rotate\n";
+    pstream->Out(paper_y_scale); pstream->Out(" "); pstream->Out(paper_x_scale); pstream->Out(" scale\n");
+    pstream->Out("90 rotate\n");
   } else {
-    *pstream << paper_x_scale << " " << paper_y_scale << " scale\n";
+    pstream->Out(paper_x_scale); pstream->Out(" "); pstream->Out(paper_y_scale); pstream->Out(" scale\n");
   }
-  *pstream << "2 setlinecap\n";
+  pstream->Out("2 setlinecap\n");
 
   resetFont = RESET_FONT | RESET_COLOR;
 
@@ -1359,7 +1366,7 @@ void wxPostScriptDC::EndPage (void)
 {
   if (!pstream)
     return;
-  *pstream << "showpage\n";
+  pstream->Out("showpage\n");
 }
 
 
@@ -1382,7 +1389,7 @@ static void printhex(PSStream *pstream, int v)
   else
     s[1] = 'a' + (l - 10);
 
-  *pstream << s;
+  pstream->Out(s);
 }
 
 
@@ -1403,39 +1410,39 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   y = (long)floor(ysrc);
 
   /* Allocate space: */
-  (*pstream << "/DataString " 
-   << (width * (asColour ? 3 : 1) * ((rop < 0) ? height : 1))
-   << " string def\n");
+  pstream->Out("/DataString " );
+  pstream->Out((width * (asColour ? 3 : 1) * ((rop < 0) ? height : 1)));
+  pstream->Out(" string def\n");
 
   if (rop < 0) {
-    *pstream << " /PaintProc { begin \n";
+    pstream->Out(" /PaintProc { begin \n");
   }
 
   /* PostScript setup: */
-  *pstream << "gsave\n";
+  pstream->Out("gsave\n");
   if (rop >= 0) {
-    *pstream << XSCALE(xdest) << " " << YSCALE(ydest) - fheight << " translate\n";
+    pstream->Out(XSCALE(xdest)); pstream->Out(" "); pstream->Out(YSCALE(ydest) - fheight); pstream->Out(" translate\n");
   }
-  *pstream << fwidth << " " << fheight << " scale\n";
-  *pstream << width << " " << height << " 8 [ ";
-  *pstream << width << " 0 0 " << (-height) << " 0 " << height;
-  *pstream << " ]\n";
+  pstream->Out(fwidth); pstream->Out(" "); pstream->Out(fheight); pstream->Out(" scale\n");
+  pstream->Out(width); pstream->Out(" "); pstream->Out(height); pstream->Out(" 8 [ ");
+  pstream->Out(width); pstream->Out(" 0 0 "); pstream->Out((-height)); pstream->Out(" 0 "); pstream->Out(height);
+  pstream->Out(" ]\n");
   if (rop >= 0) {
-    *pstream << "{\n";
-    *pstream << "  currentfile DataString readhexstring pop\n";
-    *pstream << "} bind";
+    pstream->Out("{\n");
+    pstream->Out("  currentfile DataString readhexstring pop\n");
+    pstream->Out("} bind");
   } else {
-    *pstream << " { DataString } ";
+    pstream->Out(" { DataString } ");
   }
   if (asColour) {
-    *pstream << " false 3 colorimage\n";
+    pstream->Out(" false 3 colorimage\n");
   } else {
-    *pstream << " image\n";
+    pstream->Out(" image\n");
   }
   
   if (rop < 0) {
-    (*pstream << "grestore\n } def \n"
-     << " { currentfile DataString readhexstring pop pop } exec\n");
+    pstream->Out("grestore\n } def \n");
+    pstream->Out(" { currentfile DataString readhexstring pop pop } exec\n");
   }
 
   /* Output data as hex digits: */
@@ -1491,11 +1498,11 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 	printhex(pstream, pixel);
       }
     }
-    *pstream << "\n";
+    pstream->Out("\n");
   }
 
   if (rop >= 0) {
-    *pstream << "grestore\n";
+    pstream->Out("grestore\n");
   }
 
   if (rop >= 0) {
@@ -1990,28 +1997,23 @@ void wxPrintSetupData::SetAFMPath(char *f)
 	afm_path = NULL;
 }
 
-void wxPrintSetupData::operator=(wxPrintSetupData& data)
+void wxPrintSetupData::copy(wxPrintSetupData* data)
 {
-    float x, y;
-
-    SetPrinterCommand(data.GetPrinterCommand());
-    SetPrintPreviewCommand(data.GetPrintPreviewCommand());
-    SetPrinterOptions(data.GetPrinterOptions());
-    SetPrinterOrientation(data.GetPrinterOrientation());
-    SetPrinterMode(data.GetPrinterMode());
-    SetAFMPath(data.GetAFMPath());
-    SetPaperName(data.GetPaperName());
-    SetColour(data.GetColour());
-
-    data.GetPrinterTranslation(&x, &y);
-    SetPrinterTranslation(x, y);
-    data.GetPrinterScaling(&x, &y);
-    SetPrinterScaling(x, y);
-}
-
-void wxPrintSetupData::copy(wxPrintSetupData& data)
-{
-  *this = data;
+  float x, y;
+  
+  SetPrinterCommand(data->GetPrinterCommand());
+  SetPrintPreviewCommand(data->GetPrintPreviewCommand());
+  SetPrinterOptions(data->GetPrinterOptions());
+  SetPrinterOrientation(data->GetPrinterOrientation());
+  SetPrinterMode(data->GetPrinterMode());
+  SetAFMPath(data->GetAFMPath());
+  SetPaperName(data->GetPaperName());
+  SetColour(data->GetColour());
+  
+  data->GetPrinterTranslation(&x, &y);
+  SetPrinterTranslation(x, y);
+  data->GetPrinterScaling(&x, &y);
+  SetPrinterScaling(x, y);
 }
 
 //-----------------------------------------------------------------------------

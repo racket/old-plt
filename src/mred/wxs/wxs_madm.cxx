@@ -348,8 +348,8 @@ class os_wxMediaCanvas : public wxMediaCanvas {
 
   os_wxMediaCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
   ~os_wxMediaCanvas();
-  void OnChar(class wxKeyEvent& x0);
-  void OnEvent(class wxMouseEvent& x0);
+  void OnChar(class wxKeyEvent* x0);
+  void OnEvent(class wxMouseEvent* x0);
   void OnPaint();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -374,7 +374,7 @@ os_wxMediaCanvas::~os_wxMediaCanvas()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
+void os_wxMediaCanvas::OnChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -386,7 +386,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
     wxMediaCanvas::OnChar(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
@@ -395,7 +395,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
+void os_wxMediaCanvas::OnEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -407,7 +407,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
     wxMediaCanvas::OnEvent(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
 
   v = scheme_apply(method, 1, p);
@@ -577,9 +577,9 @@ static Scheme_Object *os_wxMediaCanvasOnChar(Scheme_Object *obj, int n,  Scheme_
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnChar(*x0);
+    ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnChar(x0);
   else
-    ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+    ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
 
   
   
@@ -598,9 +598,9 @@ static Scheme_Object *os_wxMediaCanvasOnEvent(Scheme_Object *obj, int n,  Scheme
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnEvent(*x0);
+    ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnEvent(x0);
   else
-    ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+    ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
 
   
   
@@ -2547,10 +2547,10 @@ class os_wxSnipClass : public wxSnipClass {
   os_wxSnipClass(Scheme_Object * obj);
   ~os_wxSnipClass();
   void WriteDone();
-  Bool WriteHeader(class wxMediaStreamOut& x0);
+  Bool WriteHeader(class wxMediaStreamOut* x0);
   void ReadDone();
-  Bool ReadHeader(class wxMediaStreamIn& x0);
-  class wxSnip* Read(class wxMediaStreamIn& x0);
+  Bool ReadHeader(class wxMediaStreamIn* x0);
+  class wxSnip* Read(class wxMediaStreamIn* x0);
 };
 
 Scheme_Object *os_wxSnipClass_class;
@@ -2588,7 +2588,7 @@ void os_wxSnipClass::WriteDone()
   }
 }
 
-Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut& x0)
+Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -2600,7 +2600,7 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut& x0)
     return wxSnipClass::WriteHeader(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -2630,7 +2630,7 @@ void os_wxSnipClass::ReadDone()
   }
 }
 
-Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
+Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -2642,7 +2642,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
     return wxSnipClass::ReadHeader(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -2652,7 +2652,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
   }
 }
 
-class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn& x0)
+class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -2664,7 +2664,7 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn& x0)
     return NULL;
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -2706,9 +2706,9 @@ static Scheme_Object *os_wxSnipClassWriteHeader(Scheme_Object *obj, int n,  Sche
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::WriteHeader(*x0);
+    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::WriteHeader(x0);
   else
-    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->WriteHeader(*x0);
+    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->WriteHeader(x0);
 
   
   
@@ -2747,9 +2747,9 @@ static Scheme_Object *os_wxSnipClassReadHeader(Scheme_Object *obj, int n,  Schem
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::ReadHeader(*x0);
+    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->wxSnipClass::ReadHeader(x0);
   else
-    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->ReadHeader(*x0);
+    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->ReadHeader(x0);
 
   
   
@@ -2769,9 +2769,9 @@ static Scheme_Object *os_wxSnipClassRead(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->Read(*x0);
+    r = ((os_wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->Read(x0);
   else
-    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->Read(*x0);
+    r = ((wxSnipClass *)((Scheme_Class_Object *)obj)->primdata)->Read(x0);
 
   
   
@@ -3163,8 +3163,8 @@ class os_wxKeymap : public wxKeymap {
 
   os_wxKeymap(Scheme_Object * obj);
   ~os_wxKeymap();
-  Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1);
-  Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent& x1);
+  Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1);
+  Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1);
 };
 
 Scheme_Object *os_wxKeymap_class;
@@ -3182,7 +3182,7 @@ os_wxKeymap::~os_wxKeymap()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1)
+Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -3195,7 +3195,7 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1)
   } else {
   
   p[0] = ((Scheme_Object *)x0);
-  p[1] = objscheme_bundle_wxMouseEvent(&x1);
+  p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -3205,7 +3205,7 @@ Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1)
   }
 }
 
-Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent& x1)
+Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -3218,7 +3218,7 @@ Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent& x1)
   } else {
   
   p[0] = ((Scheme_Object *)x0);
-  p[1] = objscheme_bundle_wxKeyEvent(&x1);
+  p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -3306,7 +3306,7 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
     x3 = FALSE;
 
   
-  r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->CallFunction(x0, x1, *x2, x3);
+  r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->CallFunction(x0, x1, x2, x3);
 
   
   
@@ -3455,9 +3455,9 @@ static Scheme_Object *os_wxKeymapHandleMouseEvent(Scheme_Object *obj, int n,  Sc
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->wxKeymap::HandleMouseEvent(x0, *x1);
+    r = ((os_wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->wxKeymap::HandleMouseEvent(x0, x1);
   else
-    r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->HandleMouseEvent(x0, *x1);
+    r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->HandleMouseEvent(x0, x1);
 
   
   
@@ -3479,9 +3479,9 @@ static Scheme_Object *os_wxKeymapHandleKeyEvent(Scheme_Object *obj, int n,  Sche
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->wxKeymap::HandleKeyEvent(x0, *x1);
+    r = ((os_wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->wxKeymap::HandleKeyEvent(x0, x1);
   else
-    r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->HandleKeyEvent(x0, *x1);
+    r = ((wxKeymap *)((Scheme_Class_Object *)obj)->primdata)->HandleKeyEvent(x0, x1);
 
   
   

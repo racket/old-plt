@@ -84,7 +84,7 @@
 @CREATOR (ubyte,ubyte,ubyte); <> rgb values
 @CREATOR (string); <> color name
 
-@ "copy-from" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color".METHODNAME("color%","copy-from")]
+@ "copy-from" : wxColour! CopyFrom(wxColour!);  : : /CHECKMUT[wxColour."color".METHODNAME("color%","copy-from")]
 // @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 @ "ok?" : bool Ok();
 @ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color".METHODNAME("color%","set")]
@@ -147,11 +147,11 @@
 @CLASSBASE wxBrush "brush" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,SYM[brushStyle]); <> color%
+@CREATOR (wxColour!,SYM[brushStyle]); <> color%
 @CREATOR (string,SYM[brushStyle]); <> color name
 
-@ "get-color" : wxColour% GetColour();
-@ "set-color" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color%
+@ "get-color" : wxColour! GetColour();
+@ "set-color" : void SetColour(wxColour!); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color%
 @ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color name
 @ "set-color" : void SetColour(ubyte,ubyte,ubyte); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
 
@@ -206,7 +206,7 @@
 @CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,rint[0|255],SYM[penStyle]); <> color%
+@CREATOR (wxColour!,rint[0|255],SYM[penStyle]); <> color%
 @CREATOR (string,rint[0|255],SYM[penStyle]); <> color name
 
 @ "get-width" : int GetWidth();
@@ -216,8 +216,8 @@
 @ "get-join" : SYM[join] GetJoin();
 @ "set-join" : void SetJoin(SYM[join]);
 
-@ "get-color" : wxColour% GetColour();
-@ "set-color" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
+@ "get-color" : wxColour! GetColour();
+@ "set-color" : void SetColour(wxColour!);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
 @ "set-color" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
 @ "set-color" : void SetColour(ubyte,ubyte,ubyte);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
 

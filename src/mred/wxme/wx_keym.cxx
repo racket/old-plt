@@ -41,7 +41,7 @@ class wxKMFunc
   void *data;
 
   wxKMFunc(char *name, wxKMFunction, void *);
-  Bool Call(UNKNOWN_OBJ , wxEvent &);
+  Bool Call(UNKNOWN_OBJ , wxEvent *);
 };
 
 class wxKeycode
@@ -608,11 +608,11 @@ void wxKeymap::RemoveGrabKeyFunction(void)
   grabKeyData = NULL;
 }
 
-Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event)
+Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event)
 {
-  if (event.keyCode == WXK_SHIFT
-      || event.keyCode == WXK_CONTROL
-      || !event.keyCode)
+  if (event->keyCode == WXK_SHIFT
+      || event->keyCode == WXK_CONTROL
+      || !event->keyCode)
     return TRUE;
 
   int score = GetBestScore(event);
@@ -620,16 +620,16 @@ Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event)
   return ChainHandleKeyEvent(media, event, NULL, NULL, 0, score) ? TRUE : FALSE;
 }
 
-int wxKeymap::GetBestScore(wxKeyEvent &event)
+int wxKeymap::GetBestScore(wxKeyEvent *event)
 {
-  return GetBestScore(event.keyCode,
-		      event.shiftDown,
-		      event.controlDown,
-		      event.altDown,
-		      event.metaDown);
+  return GetBestScore(event->keyCode,
+		      event->shiftDown,
+		      event->controlDown,
+		      event->altDown,
+		      event->metaDown);
 }
 
-int wxKeymap::OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
+int wxKeymap::OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
 				  wxGrabKeyFunction grab, void *grabData,
 				  int try_state, int score)
 {
@@ -647,13 +647,13 @@ int wxKeymap::OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
   return result;
 }
 
-int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
+int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
 				  wxGrabKeyFunction grab, void *grabData,
 				  int try_state, int score)
 {
   char *fname;
 
-  lastTime = event.timeStamp;
+  lastTime = event->timeStamp;
   lastButton = 0;
 
   if (grabKeyFunction) {
@@ -674,11 +674,11 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
   } else if (prefix && (try_state < 0))
     return OtherHandleKeyEvent(media, event, grab, grabData, -1, score);
 
-  if (HandleEvent(event.keyCode,
-		  event.shiftDown,
-		  event.controlDown,
-		  event.altDown,
-		  event.metaDown,
+  if (HandleEvent(event->keyCode,
+		  event->shiftDown,
+		  event->controlDown,
+		  event->altDown,
+		  event->metaDown,
 		  score,
 		  &fname)) {
     if (fname) {
@@ -726,43 +726,43 @@ void wxKeymap::RemoveGrabMouseFunction(void)
   grabMouseData = NULL;
 }
 
-Bool wxKeymap::HandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event)
+Bool wxKeymap::HandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event)
 {
   int score = GetBestScore(event);
 
   return ChainHandleMouseEvent(media, event, NULL, NULL, 0, score) ? TRUE : FALSE;
 }
 
-int wxKeymap::GetBestScore(wxMouseEvent &event)
+int wxKeymap::GetBestScore(wxMouseEvent *event)
 {
   long code;
 
-  if (!event.ButtonDown())
+  if (!event->ButtonDown())
     return -1;
 
-  if (event.RightDown())
+  if (event->RightDown())
     code = WXK_MOUSE_RIGHT;
-  else if (event.LeftDown())
+  else if (event->LeftDown())
     code = WXK_MOUSE_LEFT;
-  else if (event.MiddleDown())
+  else if (event->MiddleDown())
     code = WXK_MOUSE_MIDDLE;
   else
     return -1;
 
-  if (code == lastButton && event.x == lastX && event.y == lastY) {
-    if (Abs(event.timeStamp - lastTime) < doubleInterval) {
+  if (code == lastButton && event->x == lastX && event->y == lastY) {
+    if (Abs(event->timeStamp - lastTime) < doubleInterval) {
       code += WXK_CLICK_ADDER * clickCount;
     }
   }
   
   return GetBestScore(code,
-		      event.shiftDown,
-		      event.controlDown,
-		      event.altDown,
-		      event.metaDown);
+		      event->shiftDown,
+		      event->controlDown,
+		      event->altDown,
+		      event->metaDown);
 }
 
-int wxKeymap::OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
+int wxKeymap::OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 				    wxGrabMouseFunction grab, void *grabData,
 				    int try_state, int score)
 {
@@ -780,7 +780,7 @@ int wxKeymap::OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
   return result;
 }
 
-int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
+int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 				    wxGrabMouseFunction grab, void *grabData,
 				    int try_state, int score)
 {
@@ -805,10 +805,10 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
   } else if (prefix && (try_state < 0))
     return OtherHandleMouseEvent(media, event, grab, grabData, -1, score);
 
-  if (!event.ButtonDown()) {
+  if (!event->ButtonDown()) {
     Bool v;
 
-    if (!event.Dragging() && !event.ButtonUp()) {
+    if (!event->Dragging() && !event->ButtonUp()) {
       /* We must have missed the button-up */
       active_mouse_function = NULL;
     }
@@ -819,24 +819,24 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
       v = 1;
     else
       v = CallFunction(active_mouse_function, media, event);
-    if (event.ButtonUp())
+    if (event->ButtonUp())
       active_mouse_function = NULL;
     return v;
   }
 
-  if (event.RightDown())
+  if (event->RightDown())
     code = WXK_MOUSE_RIGHT;
-  else if (event.LeftDown())
+  else if (event->LeftDown())
     code = WXK_MOUSE_LEFT;
-  else if (event.MiddleDown())
+  else if (event->MiddleDown())
     code = WXK_MOUSE_MIDDLE;
   else
     return 0;
 
   origCode = code;
 
-  if (code == lastButton && event.x == lastX && event.y == lastY) {
-    if (Abs(event.timeStamp - lastTime) < doubleInterval) {
+  if (code == lastButton && event->x == lastX && event->y == lastY) {
+    if (Abs(event->timeStamp - lastTime) < doubleInterval) {
       code += WXK_CLICK_ADDER * clickCount;
       clickCount++;
     } else
@@ -845,16 +845,16 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
     lastButton = code;
     clickCount = 1;
   }
-  lastTime = event.timeStamp;
-  lastX = event.x;
-  lastY = event.y;
+  lastTime = event->timeStamp;
+  lastX = event->x;
+  lastY = event->y;
 
   do {
     if (HandleEvent(code,
-		    event.shiftDown,
-		    event.controlDown,
-		    event.altDown,
-		    event.metaDown,
+		    event->shiftDown,
+		    event->controlDown,
+		    event->altDown,
+		    event->metaDown,
 		    score,
 		    &fname)) {
       if (fname) {
@@ -897,7 +897,7 @@ void wxKeymap::AddFunction(char *name, wxKMFunction func, void *data)
   functions->Put(f->name, (wxObject *)f);
 }
   
-Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxEvent &event,
+Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxEvent *event,
 			    Bool try_chained)
 {
   wxKMFunc *f;
@@ -1014,7 +1014,7 @@ wxKMFunc::wxKMFunc(char *fname, wxKMFunction func, void *d)
   data = d;
 }
 
-Bool wxKMFunc::Call(UNKNOWN_OBJ media, wxEvent &event)
+Bool wxKMFunc::Call(UNKNOWN_OBJ media, wxEvent *event)
 {
   return f(media, event, data);
 }

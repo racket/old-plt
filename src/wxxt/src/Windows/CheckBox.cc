@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: CheckBox.cc,v 1.4 1998/12/05 01:08:21 mflatt Exp $
+ * $Id: CheckBox.cc,v 1.5 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: check box panel item
  *
@@ -207,7 +207,7 @@ void wxCheckBox::SetValue(Bool state)
     XtVaSetValues(X->handle, XtNon, Boolean(state), NULL);
 }
 
-void wxCheckBox::Command(wxCommandEvent &event)
+void wxCheckBox::Command(wxCommandEvent *event)
 {
   ProcessCommand (event);
 }
@@ -220,7 +220,9 @@ void wxCheckBox::OnEventCallback(Widget WXUNUSED(w),
 				 XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
     wxCheckBox     *checkbox = (wxCheckBox*)clientData;
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
+    wxCommandEvent *event;
 
-    checkbox->ProcessCommand(*event);
+    event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
+
+    checkbox->ProcessCommand(event);
 }

@@ -107,33 +107,33 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 static long GetExact(wxMediaStreamIn *s)
 {
   long l;
-  s->Get(l);
+  s->Get(&l);
   return l;
 }
 static double GetInexact(wxMediaStreamIn *s)
 {
   double d;
-  s->Get(d);
+  s->Get(&d);
   return d;
 }
 
 @CLASSBASE wxMediaStreamIn "editor-stream-in" : "object"
 
-@CREATOR (wxMediaStreamInBase%);
+@CREATOR (wxMediaStreamInBase!);
   
-@ "get" : wxMediaStreamIn% Get(Long+////long); <> exact number
-@ "get" : wxMediaStreamIn% Get(Double+); <> inexact number
+@ "get" : wxMediaStreamIn! Get(Long*////long); <> exact number
+@ "get" : wxMediaStreamIn! Get(Double*); <> inexact number
 
 @MACRO alwaysPassPtr = x0 = &_x0;
 
 @ "get-string" : nstring/makeSizedString GetString(nnlong?=NULL); : : /alwaysPassPtr/
-@ "get-fixed" : wxMediaStreamIn% GetFixed(long+);
+@ "get-fixed" : wxMediaStreamIn! GetFixed(long*);
 
 @ m "get-exact" : long GetExact();
 @ m "get-inexact" : double GetInexact();
 
-@ ">>" : wxMediaStreamIn% operator>>(Long+); <> exact
-@ ">>" : wxMediaStreamIn% operator>>(Double+); <> inexact
+@ ">>" : wxMediaStreamIn! Get(Long*); <> exact
+@ ">>" : wxMediaStreamIn! Get(Double*); <> inexact
 
 @ "set-boundary" : void SetBoundary(nnlong);
 @ "remove-boundary" : void RemoveBoundary();
@@ -149,18 +149,18 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @CLASSBASE wxMediaStreamOut "editor-stream-out" : "object"
 
-@CREATOR (wxMediaStreamOutBase%);
+@CREATOR (wxMediaStreamOutBase!);
 
-@ "put" : wxMediaStreamOut% Put(nnint////long,string); <> length and string
-@ "put" : wxMediaStreamOut% Put(string); <> string without length
-@ "put" : wxMediaStreamOut% Put(Long////long); <> exact number
-@ "put" : wxMediaStreamOut% Put(Double); <> inexact number
+@ "put" : wxMediaStreamOut! Put(nnint////long,string); <> length and string
+@ "put" : wxMediaStreamOut! Put(string); <> string without length
+@ "put" : wxMediaStreamOut! Put(Long////long); <> exact number
+@ "put" : wxMediaStreamOut! Put(Double); <> inexact number
 
-@ "put-fixed" : wxMediaStreamOut% PutFixed(long);
+@ "put-fixed" : wxMediaStreamOut! PutFixed(long);
 
-@ "<<" : wxMediaStreamOut% operator<<(string); <> string
-@ "<<" : wxMediaStreamOut% operator<<(Double); <> inexact number
-@ "<<" : wxMediaStreamOut% operator<<(Long); <> exact number
+@ "<<" : wxMediaStreamOut! Put(string); <> string
+@ "<<" : wxMediaStreamOut! Put(Double); <> inexact number
+@ "<<" : wxMediaStreamOut! Put(Long); <> exact number
 
 @ "tell" : long Tell();
 @ "jump-to" : void JumpTo(nnlong);

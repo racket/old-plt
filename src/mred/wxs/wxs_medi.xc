@@ -77,8 +77,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ X "set-max-height" : void SetMaxHeight(nnfs[none]);
 @ X "set-min-height" : void SetMinHeight(nnfs[none]);
 
-@ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn%); : : : : XrZERO
-@ X "write-to-file" : bool WriteToFile(wxMediaStreamOut%); : : : : XrZERO
+@ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn!); : : : : XrZERO
+@ X "write-to-file" : bool WriteToFile(wxMediaStreamOut!); : : : : XrZERO
 
 @ X "style-has-changed" : void StyleHasChanged(wxStyle^);
 
@@ -146,8 +146,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 
 @ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0);
 
-@ "begin-write-header-footer-to-file" : bool BeginWriteHeaderFooterToFile(wxMediaStreamOut%,string,long*);
-@ "end-write-header-footer-to-file" : bool EndWriteHeaderFooterToFile(wxMediaStreamOut%,long);
+@ "begin-write-header-footer-to-file" : bool BeginWriteHeaderFooterToFile(wxMediaStreamOut!,string,long*);
+@ "end-write-header-footer-to-file" : bool EndWriteHeaderFooterToFile(wxMediaStreamOut!,long);
 
 @ "get-focus-snip" : wxSnip^ GetFocusSnip();
 
@@ -166,10 +166,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ "get-editor-print-margin" : void wxGetMediaPrintMargin(nnlong?,nnlong?);
 @ "set-editor-print-margin" : void wxSetMediaPrintMargin(nnlong,nnlong);
 
-@ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);
-@ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn%);
-@ "write-editor-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut%);
-@ "write-editor-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut%);
+@ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn!);
+@ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn!);
+@ "write-editor-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut!);
+@ "write-editor-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut!);
 
 @ "add-editor-keymap-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
 @ "add-text-keymap-functions" : void wxAddMediaEditorFunctions(wxKeymap!);

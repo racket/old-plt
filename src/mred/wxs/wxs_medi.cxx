@@ -544,10 +544,10 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
-  Bool WriteFootersToFile(class wxMediaStreamOut& x0);
-  Bool WriteHeadersToFile(class wxMediaStreamOut& x0);
-  Bool ReadFooterFromFile(class wxMediaStreamIn& x0, string x1);
-  Bool ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1);
+  Bool WriteFootersToFile(class wxMediaStreamOut* x0);
+  Bool WriteHeadersToFile(class wxMediaStreamOut* x0);
+  Bool ReadFooterFromFile(class wxMediaStreamIn* x0, string x1);
+  Bool ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1);
   void SetFilename(nstring x0, Bool x1 = FALSE);
   Bool ReleaseSnip(class wxSnip* x0);
   void SetModified(Bool x0);
@@ -560,17 +560,17 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
-  void OnDefaultChar(class wxKeyEvent& x0);
-  void OnDefaultEvent(class wxMouseEvent& x0);
-  void OnLocalChar(class wxKeyEvent& x0);
-  void OnLocalEvent(class wxMouseEvent& x0);
+  void OnDefaultChar(class wxKeyEvent* x0);
+  void OnDefaultEvent(class wxMouseEvent* x0);
+  void OnLocalChar(class wxKeyEvent* x0);
+  void OnLocalEvent(class wxMouseEvent* x0);
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
   void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
-  class wxCursor* AdjustCursor(class wxMouseEvent& x0);
-  void OnChar(class wxKeyEvent& x0);
-  void OnEvent(class wxMouseEvent& x0);
+  class wxCursor* AdjustCursor(class wxMouseEvent* x0);
+  void OnChar(class wxKeyEvent* x0);
+  void OnEvent(class wxMouseEvent* x0);
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 };
@@ -901,7 +901,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   }
 }
 
-Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut& x0)
+Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -913,7 +913,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut& x0)
     return wxMediaBuffer::WriteFootersToFile(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -923,7 +923,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut& x0)
   }
 }
 
-Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut& x0)
+Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -935,7 +935,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut& x0)
     return wxMediaBuffer::WriteHeadersToFile(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamOut(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -945,7 +945,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut& x0)
   }
 }
 
-Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
+Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -957,7 +957,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
     return wxMediaBuffer::ReadFooterFromFile(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   p[1] = objscheme_bundle_string((char *)x1);
   
 
@@ -968,7 +968,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
   }
 }
 
-Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
+Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -980,7 +980,7 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
     return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
+  p[0] = objscheme_bundle_wxMediaStreamIn(x0);
   p[1] = objscheme_bundle_string((char *)x1);
   
 
@@ -1258,7 +1258,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   }
 }
 
-void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent& x0)
+void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1270,7 +1270,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent& x0)
     return;
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1279,7 +1279,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent& x0)
+void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1291,7 +1291,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent& x0)
     return;
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1300,7 +1300,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent& x0)
   }
 }
 
-void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent& x0)
+void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1312,7 +1312,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent& x0)
     wxMediaBuffer::OnLocalChar(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1321,7 +1321,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent& x0)
+void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1333,7 +1333,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent& x0)
     wxMediaBuffer::OnLocalEvent(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1428,7 +1428,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   }
 }
 
-class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent& x0)
+class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1440,7 +1440,7 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent& x0)
     return NULL;
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1450,7 +1450,7 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent& x0)
   }
 }
 
-void os_wxMediaBuffer::OnChar(class wxKeyEvent& x0)
+void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1462,7 +1462,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent& x0)
     return;
   } else {
   
-  p[0] = objscheme_bundle_wxKeyEvent(&x0);
+  p[0] = objscheme_bundle_wxKeyEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1471,7 +1471,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent& x0)
   }
 }
 
-void os_wxMediaBuffer::OnEvent(class wxMouseEvent& x0)
+void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -1483,7 +1483,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent& x0)
     return;
   } else {
   
-  p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1642,7 +1642,7 @@ static Scheme_Object *os_wxMediaBufferEndWriteHeaderFooterToFile(Scheme_Object *
   x1 = objscheme_unbundle_integer(p[1], "end-write-header-footer-to-file in editor<%>");
 
   
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->EndWriteHeaderFooterToFile(*x0, x1);
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->EndWriteHeaderFooterToFile(x0, x1);
 
   
   
@@ -1666,7 +1666,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(Scheme_Object
       *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>"), "begin-write-header-footer-to-file in editor<%>"", extracting boxed argument");
 
   
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BeginWriteHeaderFooterToFile(*x0, x1, x2);
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BeginWriteHeaderFooterToFile(x0, x1, x2);
 
   
   if (n > 2)
@@ -2521,7 +2521,7 @@ static Scheme_Object *os_wxMediaBufferWriteToFile(Scheme_Object *obj, int n,  Sc
   x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-to-file in editor<%>", 0);
 
   
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(*x0);
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(x0);
 
   
   
@@ -2545,7 +2545,7 @@ static Scheme_Object *os_wxMediaBufferReadFromFile(Scheme_Object *obj, int n,  S
     x1 = FALSE;
 
   
-  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadFromFile(*x0, x1);
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadFromFile(x0, x1);
 
   
   
@@ -3229,9 +3229,9 @@ static Scheme_Object *os_wxMediaBufferWriteFootersToFile(Scheme_Object *obj, int
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::WriteFootersToFile(*x0);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::WriteFootersToFile(x0);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteFootersToFile(*x0);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteFootersToFile(x0);
 
   
   
@@ -3251,9 +3251,9 @@ static Scheme_Object *os_wxMediaBufferWriteHeadersToFile(Scheme_Object *obj, int
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::WriteHeadersToFile(*x0);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::WriteHeadersToFile(x0);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteHeadersToFile(*x0);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteHeadersToFile(x0);
 
   
   
@@ -3275,9 +3275,9 @@ static Scheme_Object *os_wxMediaBufferReadFooterFromFile(Scheme_Object *obj, int
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::ReadFooterFromFile(*x0, x1);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::ReadFooterFromFile(x0, x1);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadFooterFromFile(*x0, x1);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadFooterFromFile(x0, x1);
 
   
   
@@ -3299,9 +3299,9 @@ static Scheme_Object *os_wxMediaBufferReadHeaderFromFile(Scheme_Object *obj, int
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::ReadHeaderFromFile(*x0, x1);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadHeaderFromFile(*x0, x1);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ReadHeaderFromFile(x0, x1);
 
   
   
@@ -3608,9 +3608,9 @@ static Scheme_Object *os_wxMediaBufferOnDefaultChar(Scheme_Object *obj, int n,  
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultChar(x0);
 
   
   
@@ -3629,9 +3629,9 @@ static Scheme_Object *os_wxMediaBufferOnDefaultEvent(Scheme_Object *obj, int n, 
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDefaultEvent(x0);
 
   
   
@@ -3650,9 +3650,9 @@ static Scheme_Object *os_wxMediaBufferOnLocalChar(Scheme_Object *obj, int n,  Sc
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLocalChar(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLocalChar(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLocalChar(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLocalChar(x0);
 
   
   
@@ -3671,9 +3671,9 @@ static Scheme_Object *os_wxMediaBufferOnLocalEvent(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLocalEvent(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnLocalEvent(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLocalEvent(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnLocalEvent(x0);
 
   
   
@@ -3798,9 +3798,9 @@ static Scheme_Object *os_wxMediaBufferAdjustCursor(Scheme_Object *obj, int n,  S
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(*x0);
+    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0);
   else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(*x0);
+    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->AdjustCursor(x0);
 
   
   
@@ -3819,9 +3819,9 @@ static Scheme_Object *os_wxMediaBufferOnChar(Scheme_Object *obj, int n,  Scheme_
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnChar(x0);
 
   
   
@@ -3840,9 +3840,9 @@ static Scheme_Object *os_wxMediaBufferOnEvent(Scheme_Object *obj, int n,  Scheme
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
   else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(*x0);
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnEvent(x0);
 
   
   
@@ -4321,7 +4321,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalFooter(int n,  Scheme_Objec
   x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-footer in editor%", 0);
 
   
-  r = wxWriteMediaGlobalFooter(*x0);
+  r = wxWriteMediaGlobalFooter(x0);
 
   
   
@@ -4339,7 +4339,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalHeader(int n,  Scheme_Objec
   x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-header in editor%", 0);
 
   
-  r = wxWriteMediaGlobalHeader(*x0);
+  r = wxWriteMediaGlobalHeader(x0);
 
   
   
@@ -4357,7 +4357,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalFooter(int n,  Scheme_Object
   x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-footer in editor%", 0);
 
   
-  r = wxReadMediaGlobalFooter(*x0);
+  r = wxReadMediaGlobalFooter(x0);
 
   
   
@@ -4375,7 +4375,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
   x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-header in editor%", 0);
 
   
-  r = wxReadMediaGlobalHeader(*x0);
+  r = wxReadMediaGlobalHeader(x0);
 
   
   

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.h,v 1.2 1998/01/29 15:52:59 mflatt Exp $
+ * $Id: Pen+Brush.h,v 1.3 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -37,16 +37,16 @@ typedef unsigned char wxDash;
 class wxBrush : public wxObject { // brush representation
 public:
     wxBrush(void);
-    wxBrush(wxColour& col, int style);
+    wxBrush(wxColour* col, int style);
     wxBrush(const char *col, int style);
     ~wxBrush(void);
 
-    wxColour&  GetColour(void)       { return colour; }
+    wxColour*  GetColour(void)       { return &colour; }
     wxBitmap   *GetStipple(void)     { return stipple; }
     int        GetStyle(void)        { return style; }
 
-    void SetColour(wxColour& col)          { colour = col; }
-    void SetColour(const char *col)        { colour = col; }
+    void SetColour(wxColour* col)          { colour.CopyFrom(col); }
+    void SetColour(const char *col)        { colour.CopyFrom(col); }
     void SetColour(char r, char g, char b) { colour.Set(r, g, b); }
     void SetStipple(wxBitmap *s);
     void SetStyle(int s)                   { style = s; }
@@ -64,12 +64,12 @@ private:
 class wxPen : public wxObject { // pen representation
 public:
     wxPen(void);
-    wxPen(wxColour& col, int width, int style);
+    wxPen(wxColour* col, int width, int style);
     wxPen(const char *col, int width, int style);
     ~wxPen(void);
 
     int       GetCap(void)          { return cap; }
-    wxColour& GetColour(void)       { return colour; }
+    wxColour* GetColour(void)       { return &colour; }
     int       GetDashes(wxDash **p) { *p = dash; return nb_dash; }
     int       GetJoin(void)         { return join; }
     wxBitmap  *GetStipple(void)     { return stipple; }
@@ -77,8 +77,8 @@ public:
     int       GetWidth(void)        { return width; }
 
     void SetCap(int c)                     { cap = c; }
-    void SetColour(wxColour& col)          { colour = col; }
-    void SetColour(const char *col)        { colour = col; }
+    void SetColour(wxColour* col)          { colour.CopyFrom(col); }
+    void SetColour(const char *col)        { colour.CopyFrom(col); }
     void SetColour(char r, char g, char b) { colour.Set(r, g, b); }
     void SetDashes(int n, wxDash *d)       { nb_dash = n; dash = d; }
     void SetJoin(int j)                    { join = j; }

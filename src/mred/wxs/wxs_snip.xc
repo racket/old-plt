@@ -66,7 +66,7 @@
 @INCLUDE wxs_snip.xci
 
 @ "insert" : void Insert(string,nnlong,nnlong=0);
-@ "read" : void Read(nnlong,wxMediaStreamIn%);
+@ "read" : void Read(nnlong,wxMediaStreamIn!);
 
 @END
 
@@ -152,7 +152,7 @@
 
 @IVAR "classname" : string classname
 
-@ V "read" : wxBufferData^ Read(wxMediaStreamIn%); : : : : rNULL
+@ V "read" : wxBufferData^ Read(wxMediaStreamIn!); : : : : rNULL
 
 @END
 
@@ -191,7 +191,7 @@ static void SetNextNoCycle(wxBufferData *dest, wxBufferData *naya)
 @IVAR "dataclass" : wxBufferDataClass^ dataclass
 @IVAR r "next" : wxBufferData^ next
 
-@ V "write" : bool Write(wxMediaStreamOut%); : : : : rZERO
+@ V "write" : bool Write(wxMediaStreamOut!); : : : : rZERO
 @ m "set-next" : void SetNextNoCycle(wxBufferData^)
 
 @END

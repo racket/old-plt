@@ -827,7 +827,7 @@ static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme
   x0 = objscheme_unbundle_wxPrintSetupData(p[0], "copy-from in ps-setup%", 0);
 
   
-  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->copy(*x0);
+  ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->copy(x0);
 
   
   

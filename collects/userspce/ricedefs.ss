@@ -6,6 +6,6 @@
    2vector-init 2vector-print
    build-vector build-string build-list tabulate
    ; atom? cons? 
-   cons set-cdr! list? list* append append!))
+   cons set-cdr! list* append append!))
    
    

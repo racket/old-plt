@@ -1410,8 +1410,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 
   if (!val) {
     return first;
-  } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
-      || SAME_TYPE(SCHEME_TYPE(val), scheme_id_macro_type)) {
+  } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
     /* Yep, it's a macro; expand once */
     first = scheme_expand_expr(first, env, 1, boundname);
   } else {
@@ -1449,7 +1448,6 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					   + SCHEME_ENV_CONSTANTS_OK);
 	    if (sdval
 		&& (SAME_TYPE(SCHEME_TYPE(sdval), scheme_macro_type)
-		    || SAME_TYPE(SCHEME_TYPE(sdval), scheme_id_macro_type)
 		    || SAME_TYPE(SCHEME_TYPE(sdval), scheme_syntax_compiler_type))) {
 	      scheme_wrong_syntax("define-values (in unit or internal)",
 				  binding, orig,
@@ -1548,6 +1546,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			   int app_position)
 {
   Scheme_Object *name, *var, *rest, *stx;
+  GC_CAN_IGNORE char *not_allowed;
 
 #ifdef DO_STACK_CHECK
 # include "mzstkchk.h"
@@ -1576,6 +1575,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (SCHEME_STX_NULLP(form)) {
     stx = app_symbol;
+    not_allowed = "function application";
   } else if (!SCHEME_STX_PAIRP(form)) {
     if (SCHEME_STX_SYMBOLP(form)) {
       var = scheme_static_distance(form, env, 
@@ -1597,6 +1597,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       if (!var) {
 	/* Unbound variable */
 	stx = unbound_symbol;
+	not_allowed = "reference to top-level identifiers";
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (var == stop_expander)
@@ -1605,8 +1606,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    scheme_wrong_syntax("compile", NULL, form, "bad syntax");
 	    return NULL;
 	  }
-	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-		   || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
+	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
 	  return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
 	
 	if (rec) {
@@ -1615,8 +1615,10 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	} else
 	  return form;
       }
-    } else
+    } else {
       stx = datum_symbol;
+      not_allowed = "literal data";
+    }
   } else {
     name = SCHEME_STX_CAR(form);
     rest = SCHEME_STX_CDR(form);
@@ -1641,8 +1643,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  || SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
 	/* apply to local variable: compile it normally */
       } else {
-	if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-	    || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
+	if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
 	  return scheme_compile_expand_macro_app(name, var, form, env, rec, drec, depth, boundname);
 	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (rec) {
@@ -1661,6 +1662,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     stx = app_symbol;
+    not_allowed = "function application";
   }
 
   /* Compile/expand as application, datum, or unbound: */
@@ -1670,7 +1672,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_DONT_MARK_USE);
   if (var && (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-	      || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))) {
     if (SAME_OBJ(var, stop_expander)) {
       /* Return original: */
@@ -1694,7 +1695,10 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   } else {
     /* Not allowed this context! */
-    scheme_wrong_syntax("compile", NULL, form, "bad syntax (no %S syntax expander)",
+    scheme_wrong_syntax("compile", NULL, form, 
+			"bad syntax; %s is not allowed, "
+			"because no %S syntax transformer is bound",
+			not_allowed,
 			SCHEME_STX_VAL(stx));
     return NULL;
   }

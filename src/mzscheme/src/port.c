@@ -836,11 +836,12 @@ Scheme_Object *scheme_make_port_type(const char *name)
 Scheme_Input_Port *
 _scheme_make_input_port(Scheme_Object *subtype,
 			void *data,
-			int (*getc_fun) (Scheme_Input_Port*),
-			int (*peekc_fun) (Scheme_Input_Port*),
-			int (*char_ready_fun) (Scheme_Input_Port*),
-			void (*close_fun) (Scheme_Input_Port*),
-			void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+			Getc_Fun getc_fun,
+			Peekc_Fun peekc_fun,
+			Char_Ready_Fun char_ready_fun,
+			Close_Fun_i close_fun,
+			Need_Wakeup_Fun need_wakeup_fun,
+			Get_Special_Fun get_special_fun,
 			int must_close)
 {
   Scheme_Input_Port *ip;
@@ -854,6 +855,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->char_ready_fun = char_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
+  ip->get_special_fun = get_special_fun;
   ip->name = "stdin";
   ip->ungotten = NULL;
   ip->ungotten_count = 0;
@@ -887,16 +889,17 @@ _scheme_make_input_port(Scheme_Object *subtype,
 Scheme_Input_Port *
 scheme_make_input_port(Scheme_Object *subtype,
 		       void *data,
-		       int (*getc_fun) (Scheme_Input_Port*),
-		       int (*peekc_fun) (Scheme_Input_Port*),
-		       int (*char_ready_fun) (Scheme_Input_Port*),
-		       void (*close_fun) (Scheme_Input_Port*),
-		       void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+		       Getc_Fun getc_fun,
+		       Peekc_Fun peekc_fun,
+		       Char_Ready_Fun char_ready_fun,
+		       Close_Fun_i close_fun,
+		       Need_Wakeup_Fun need_wakeup_fun,
+		       Get_Special_Fun get_special_fun,
 		       int must_close)
 {
   return _scheme_make_input_port(subtype, data,
 				 getc_fun, peekc_fun, char_ready_fun, close_fun, 
-				 need_wakeup_fun, must_close);
+				 need_wakeup_fun, get_special_fun, must_close);
 }
 
 Scheme_Output_Port *
@@ -1443,6 +1446,69 @@ scheme_char_ready (Scheme_Object *port)
   END_LOCK_PORT(ip->sema);
 
   return retval;
+}
+
+Scheme_Object *scheme_get_special(Scheme_Object *port)
+{
+  Get_Special_Fun f;
+  Scheme_Object *r, *val, *pd;
+  Scheme_Input_Port *ip;
+  long pos_delta;
+  
+  SCHEME_USE_FUEL(1);
+
+  ip = (Scheme_Input_Port *)port;
+
+  BEGIN_LOCK_PORT(ip->sema);
+
+  /* Only `read' should call this function. It should ensure that
+     there are no ungotten characters, and at least two characters
+     have been read since the last tab or newline. */
+
+  if (ip->ungotten_count) {
+    scheme_signal_error("ungotten characters at get-special");
+    return NULL;
+  }
+   
+  CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);
+  f = ip->get_special_fun;
+  r = f(ip);
+
+  /* Should be multiple values: */
+  if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {
+    if (scheme_multiple_count != 2) {
+      scheme_wrong_return_arity("port read-special result", 
+				2, scheme_multiple_count, scheme_multiple_array,
+				NULL);
+      return NULL;
+    }
+    val = scheme_multiple_array[0];
+    pd = scheme_multiple_array[1];
+
+    if (SCHEME_INTP(pd) && SCHEME_INT_VAL(pd) >= 0) {
+      pos_delta = SCHEME_INT_VAL(pd) - 2;
+    } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
+      pos_delta = -2; /* FIXME - what to do with reading overflows? */
+    } else {
+      scheme_wrong_type("port read-special result", 
+			"exact non-negative integer", 1, 
+			-scheme_multiple_count, scheme_multiple_array);
+      return NULL;
+    }
+  } else {
+    scheme_wrong_return_arity("port read-special result", 
+			      2, 1, (Scheme_Object **)r,
+			      NULL);
+    return NULL;
+  }
+
+  ip->position += pos_delta;
+  ip->column += pos_delta;
+  ip->charsSinceNewline += pos_delta;
+
+  END_LOCK_PORT(ip->sema);
+
+  return val;
 }
 
 void
@@ -2600,6 +2666,7 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename,
 			       file_char_ready,
 			       file_close_input,
 			       file_need_wakeup,
+			       NULL,
 			       1);
 
   {
@@ -2804,6 +2871,7 @@ make_fd_input_port(int fd, const char *filename, int regfile)
 			       fd_char_ready,
 			       fd_close_input,
 			       fd_need_wakeup,
+			       NULL,
 			       1);
 
   {
@@ -2995,6 +3063,7 @@ make_oskit_console_input_port()
 			       osk_char_ready,
 			       osk_close_input,
 			       osk_need_wakeup,
+			       NULL,
 			       1);
   
   ip->name = "STDIN";
@@ -3471,6 +3540,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 			       tested_file_char_ready,
 			       tested_file_close_input,
 			       tested_file_need_wakeup,
+			       NULL,
 			       1);
 
   {

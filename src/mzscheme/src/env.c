@@ -59,7 +59,7 @@ static Scheme_Object *namespace_variable_binding(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
-static Scheme_Object *set_expander(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
@@ -365,9 +365,9 @@ static void make_init_env(void)
 						      0, 0),
 			     env);
 
-  scheme_add_global_constant("set!-expander", 
-			     scheme_make_prim_w_arity(set_expander,
-						      "set!-expander",
+  scheme_add_global_constant("make-set!-transformer", 
+			     scheme_make_prim_w_arity(make_set_transformer,
+						      "make-set!-transformer",
 						      1, 1),
 			     env);
 
@@ -1100,23 +1100,21 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     modname = NULL;
   }
 
-  if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
-    /* Try syntax table: */
-    if (modname)
-      val = scheme_module_syntax(modname, env->genv, SCHEME_STX_SYM(symbol));
-    else {
-      /* Only try syntax table if there's not an explicit (later)
-	 variable mapping: */
-      if (genv->shadowed_syntax 
-	  && scheme_lookup_in_table(genv->shadowed_syntax, (char *)SCHEME_STX_SYM(symbol)))
-	val = NULL;
-      else
-	val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
-    }
-
-    if (val)
-      return val;
+  /* Try syntax table: */
+  if (modname)
+    val = scheme_module_syntax(modname, env->genv, SCHEME_STX_SYM(symbol));
+  else {
+    /* Only try syntax table if there's not an explicit (later)
+       variable mapping: */
+    if (genv->shadowed_syntax 
+	&& scheme_lookup_in_table(genv->shadowed_syntax, (char *)SCHEME_STX_SYM(symbol)))
+      val = NULL;
+    else
+      val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
   }
+  
+  if (val)
+    return val;
 
   if (modname)
     scheme_check_accessible_in_module(genv, symbol, srcsym);
@@ -1566,10 +1564,10 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     if (argc > 1)
       return _scheme_tail_apply(argv[1], 0, NULL);
     else
-      scheme_raise_exn(MZEXN_MISC,
-		       "syntax-local-value: %S is not defined "
-		       "as syntax",
-		       SCHEME_STX_SYM(argv[0]));
+      scheme_wrong_syntax("syntax-local-value",
+			  NULL, 
+			  argv[0],
+			  "not defined as syntax");
   }
   
   return SCHEME_PTR_VAL(v);
@@ -1607,11 +1605,11 @@ local_context(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-set_expander(int argc, Scheme_Object *argv[])
+make_set_transformer(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
 
-  scheme_check_proc_arity("set!-expander", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-set!-transformer", 1, 0, argc, argv);
 
   v = scheme_alloc_small_object();
   v->type = scheme_id_macro_type;

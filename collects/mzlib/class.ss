@@ -801,7 +801,7 @@
 					  immutable-box-id ...  ;; rename, inherit
 					  mutable-box-id ...)   ;; override, public
 			   (let-syntax ([immutable-boxed-id
-					 (set!-expander
+					 (make-set!-transformer
 					  (lambda (stx)
 					    (syntax-case stx (set!)
 					      [vr (identifier? (syntax vr)) 
@@ -814,7 +814,7 @@
 					      [(vr . args) (syntax ((unbox immutable-box-id) . args))])))]
 					...
 					[mutable-boxed-id
-					 (set!-expander
+					 (make-set!-transformer
 					  (lambda (stx)
 					    (syntax-case stx (set!)
 					      [vr (identifier? (syntax vr)) 

@@ -376,19 +376,15 @@ Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 					  int (*getc_fun)(Scheme_Input_Port*),
 					  int (*peekc_fun)(Scheme_Input_Port*),
-					  int (*char_ready_fun)
-					  (Scheme_Input_Port*),
-					  void (*close_fun)
-					  (Scheme_Input_Port*),
-					  void (*need_wakeup_fun)
-					  (Scheme_Input_Port*, void *),
+					  int (*char_ready_fun)(Scheme_Input_Port*),
+					  void (*close_fun)(Scheme_Input_Port*),
+					  void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+					  Scheme_Object *(*get_special_fun)(Scheme_Input_Port*),
 					  int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 					    void *data,
-					    void (*write_string_fun)
-					    (char*, long, long, Scheme_Output_Port*),
-					    void (*close_fun)
-					    (Scheme_Output_Port*),
+					    void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
+					    void (*close_fun)(Scheme_Output_Port*),
 					    int must_close);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, const char *filename);

@@ -52,6 +52,7 @@ static Scheme_Object *read_accept_compiled(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_box(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_pipe_quote(int, Scheme_Object *[]);
 static Scheme_Object *read_decimal_as_inexact(int, Scheme_Object *[]);
+static Scheme_Object *read_dot_as_symbol(int, Scheme_Object *[]);
 static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
@@ -122,6 +123,7 @@ static int skip_whitespace_comments(Scheme_Object *port);
 #define local_square_brackets_are_parens (THREAD_FOR_LOCALS->quick_square_brackets_are_parens)
 #define local_curly_braces_are_parens (THREAD_FOR_LOCALS->quick_curly_braces_are_parens)
 #define local_read_decimal_inexact (THREAD_FOR_LOCALS->quick_read_decimal_inexact)
+#define local_can_read_dot (THREAD_FOR_LOCALS->quick_can_read_dot)
 
 #define local_list_stack (THREAD_FOR_LOCALS->list_stack)
 #define local_list_stack_pos (THREAD_FOR_LOCALS->list_stack_pos)
@@ -222,6 +224,11 @@ void scheme_init_read(Scheme_Env *env)
 						       "read-decimal-as-inexact",
 						       MZCONFIG_READ_DECIMAL_INEXACT), 
 			     env);
+  scheme_add_global_constant("read-dot-as-symbol",
+			     scheme_register_parameter(read_dot_as_symbol,
+						       "read-dot-as-symbol",
+						       MZCONFIG_CAN_READ_DOT), 
+			     env);
   scheme_add_global_constant("print-graph", 
 			     scheme_register_parameter(print_graph, 
 						       "print-graph",
@@ -309,6 +316,12 @@ static Scheme_Object *
 read_decimal_as_inexact(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("read-decimal-as-inexact", MZCONFIG_READ_DECIMAL_INEXACT);
+}
+
+static Scheme_Object *
+read_dot_as_symbol(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("read-dot-as-symbol", MZCONFIG_CAN_READ_DOT);
 }
 
 static Scheme_Object *
@@ -565,6 +578,27 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 			     port,
 			     "read: #& expressions not currently enabled");
 	    return scheme_void;
+	  }
+	case '$':
+	  if (((Scheme_Input_Port *)port)->get_special_fun) {
+	    Scheme_Object *v;
+	    v = scheme_get_special(port);
+	    if (SCHEME_STXP(v)) {
+	      if (!stxsrc)
+		v = SCHEME_STX_VAL(v);
+	    } else if (stxsrc) {
+	      v = scheme_make_stx(v, line, col, stxsrc, STX_SRCTAG);
+	    }
+	    return v;
+	  } else {
+	    scheme_raise_exn(MZEXN_READ,
+			     port,
+			     "read: port does not support `#$' input at position %ld%L "
+			     "in %q",
+			     scheme_tell(port),
+			     scheme_tell_line(port),
+			     SCHEME_IPORT_NAME(port));
+	    return NULL;
 	  }
 	default:
 	  {
@@ -838,6 +872,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
   local_square_brackets_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS));
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
   local_read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
+  local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
 
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);

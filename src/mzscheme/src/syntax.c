@@ -1003,10 +1003,17 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 				  : 0));
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
-    /* Redirect to a macro. */
-    form = scheme_apply_macro(name, SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env, scheme_false);
+    /* Redirect to a macro? */
+    if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+      form = scheme_apply_macro(name, SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env, scheme_false);
+			      
+      return scheme_compile_expr(form, env, rec, drec);
+    }
+  }
 
-    return scheme_compile_expr(form, env, rec, drec);
+  if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+    scheme_wrong_syntax("set!", name, form, "cannot mutate syntax identifier");
   }
 
   scheme_compile_rec_done_local(rec, drec);
@@ -1056,14 +1063,22 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
   var = scheme_static_distance(name, env, SCHEME_SETTING);
 
   if ((depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
-    /* Redirect to a macro. */
-    form = scheme_apply_macro(name, SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env, scheme_false);
+    /* Redirect to a macro? */
+    if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+      form = scheme_apply_macro(name, SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env, scheme_false);
+      
+      if (depth > 0)
+	depth--;
 
-    if (depth > 0)
-      depth--;
-
-    return scheme_expand_expr(form, env, depth, name);
+      return scheme_expand_expr(form, env, depth, name);
+    }
   }
+
+  if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+    scheme_wrong_syntax("set!", name, form, "cannot mutate syntax identifier");
+  }
+
 
   fn = SCHEME_STX_CAR(form);
   rhs = SCHEME_STX_CDR(form);

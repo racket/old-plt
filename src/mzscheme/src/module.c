@@ -29,7 +29,7 @@ static Scheme_Object *current_module_name_prefix(int argc, Scheme_Object *argv[]
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
-static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
@@ -181,9 +181,9 @@ void scheme_init_module(Scheme_Env *env)
 						      "namespace-transformer-require",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("namespace-transfer-module",
-			     scheme_make_prim_w_arity(namespace_transfer_module,
-						      "namespace-transfer-module",
+  scheme_add_global_constant("namespace-attach-module",
+			     scheme_make_prim_w_arity(namespace_attach_module,
+						      "namespace-attach-module",
 						      2, 2),
 			     env);
 }
@@ -513,7 +513,9 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 	  srcname = srcm->provide_src_names[i];
 	  break;
 	} else {
-	  scheme_arg_mismatch("dynamic-require", "name is provided as syntax: ", name);
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			   "dynamic-require: name is provided as syntax: %V by module: %V",
+			   name, srcm->modname);
 	  return NULL;
 	}
       }
@@ -526,7 +528,9 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
     }
 
     if (i == count) {
-      scheme_arg_mismatch("dynamic-require", "name is not provided by the module: ", name);
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+		       "dynamic-require: name is not provided: %V by module: %V",
+		       name, srcm->modname);
       return NULL;
     }
   }
@@ -582,16 +586,16 @@ static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
   return do_namespace_require(argc, argv, 1);
 }
 
-static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[])
+static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *env, *to_env, *menv, *menv2;
   Scheme_Object *todo, *name;
   Scheme_Module *m2;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
-    scheme_wrong_type("namespace-transfer-module", "namespace", 0, argc, argv);
+    scheme_wrong_type("namespace-attach-module", "namespace", 0, argc, argv);
   if (!SCHEME_SYMBOLP(argv[1]))
-    scheme_wrong_type("namespace-transfer-module", "symbol", 1, argc, argv);
+    scheme_wrong_type("namespace-attach-module", "symbol", 1, argc, argv);
 
   env = (Scheme_Env *)argv[0];
   to_env = scheme_get_env(scheme_config);
@@ -608,7 +612,7 @@ static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[])
       menv = scheme_module_access(name, env);
       
       if (!menv) {
-	scheme_arg_mismatch("namespace-transfer-module",
+	scheme_arg_mismatch("namespace-attach-module",
 			    "unknown module (in the current namespace): ",
 			    name);
       }
@@ -624,7 +628,7 @@ static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[])
       }
       
       if (m2)
-	scheme_arg_mismatch("namespace-transfer-module",
+	scheme_arg_mismatch("namespace-attach-module",
 			    "a different module with the same name is already "
 			    "in the destination namespace, for name: ",
 			    name);
@@ -1231,6 +1235,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Module *iim;
   Scheme_Env *menv;
   Scheme_Module *m;
+  int saw_mb;
 
   if (!scheme_is_toplevel(env))
     scheme_wrong_syntax("module", NULL, form, "illegal use (not at top-level)");
@@ -1302,9 +1307,12 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   /* For each (direct) provide in iim, add a module rename to fm */
   if (SAME_OBJ(iim, kernel)) {
     scheme_extend_module_rename_with_kernel(rn);
+    saw_mb = 1;
   } else {
     int i;
     Scheme_Object **exs, **exss, **exsns, *midx;
+
+    saw_mb = 0;
 
     exs = iim->provides;
     exsns = iim->provide_src_names;
@@ -1315,10 +1323,19 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
       else
 	midx = iidx;
       scheme_extend_module_rename(rn, midx, exs[i], exsns[i]);
+      if (SAME_OBJ(exs[i], module_begin_symbol))
+	saw_mb = 1;
     }
 
-    if (iim->reprovide_kernel)
+    if (iim->reprovide_kernel) {
       scheme_extend_module_rename_with_kernel(rn);
+      saw_mb = 1;
+    }
+  }
+
+  if (!saw_mb) {
+    scheme_wrong_syntax("module", NULL, form, 
+			"no #%%module-begin binding in the module's language");
   }
   
   if (rec) {
@@ -1327,7 +1344,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
     /* result should be a module body value: */
     if (!SAME_OBJ(fm, (Scheme_Object *)m)) {
-      scheme_wrong_syntax("module", NULL, form, "body is not built with #%module-begin");
+      scheme_wrong_syntax("module", NULL, form, "compiled body was not built with #%%module-begin");
     }
 
     return scheme_make_syntax_compiled(MODULE_EXPD, (Scheme_Object *)m);
@@ -1335,15 +1352,15 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
     if (!SCHEME_STX_PAIRP(fm))
-      scheme_wrong_syntax("module", fm, form, "body expansion was not a #%module-begin expression");
+      scheme_wrong_syntax("module", fm, form, "expanded body was not a #%%module-begin expression");
     
     mb = SCHEME_STX_CAR(fm);
 
     if (!SCHEME_STX_SYMBOLP(mb)
 	|| !SAME_OBJ(module_begin_symbol, SCHEME_STX_VAL(mb)))
-      scheme_wrong_syntax("module", fm, form, "body expansion was not a #%module-begin expression");
+      scheme_wrong_syntax("module", fm, form, "expanded body was not a #%%module-begin expression");
     else if (scheme_stx_proper_list_length(fm) < 0)
-      scheme_wrong_syntax("module", fm, form, "body expansion was an ill-formed #%module-begin expression");
+      scheme_wrong_syntax("module", fm, form, "expanded body was an ill-formed #%%module-begin expression");
     
     fm = SCHEME_STX_CDR(fm);
     if (SCHEME_STXP(fm))
@@ -1591,7 +1608,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    /* Not required: */
 	    if (scheme_lookup_in_table(required, (const char *)name)) {
-	      scheme_wrong_syntax("module", name, e, "identifier is required");
+	      scheme_wrong_syntax("module", name, e, "identifier is already required");
 	      return NULL;
 	    }
 
@@ -1634,7 +1651,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Not required: */
 	  if (scheme_lookup_in_table(required, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "identifier is required");
+	    scheme_wrong_syntax("module", name, e, "identifier is already required");
 	    return NULL;
 	  }
 

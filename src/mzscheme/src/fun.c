@@ -1095,7 +1095,7 @@ scheme_tail_apply_no_copy (Scheme_Object *rator, int num_rands,
 static
 Scheme_Object *
 X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
-		       int top_level, Scheme_Object *macro_apply)
+		       int top_level)
 {
   int num_rands, i;
   Scheme_Object **rands_vec;
@@ -1105,14 +1105,10 @@ X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
 
   for (i = 0; i < num_rands ; i++) {
     if (!SCHEME_PAIRP(rands)) {
-      if (macro_apply)
-	scheme_wrong_syntax("macro application", NULL, macro_apply, 
-			    "bad syntax (" IMPROPER_LIST_FORM ")");
-      else
-	scheme_signal_error("bad application form");
+      scheme_signal_error("bad application form");
     }
-    rands_vec[i] = SCHEME_CAR (rands);
-    rands = SCHEME_CDR (rands);
+    rands_vec[i] = SCHEME_CAR(rands);
+    rands = SCHEME_CDR(rands);
   }
 
   if (top_level)  {
@@ -1131,25 +1127,25 @@ X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
 Scheme_Object *
 scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 {
-  return X_scheme_apply_to_list(rator, rands, 1, 1, NULL);
+  return X_scheme_apply_to_list(rator, rands, 1, 1);
 }
 
 Scheme_Object *
 scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 {
-  return X_scheme_apply_to_list(rator, rands, 0, 1, NULL);
+  return X_scheme_apply_to_list(rator, rands, 0, 1);
 }
 
 Scheme_Object *
 _scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 {
-  return X_scheme_apply_to_list(rator, rands, 1, 0, NULL);
+  return X_scheme_apply_to_list(rator, rands, 1, 0);
 }
 
 Scheme_Object *
 _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 {
-  return X_scheme_apply_to_list(rator, rands, 0, 0, NULL);
+  return X_scheme_apply_to_list(rator, rands, 0, 0);
 }
 
 Scheme_Object *
@@ -1157,15 +1153,15 @@ scheme_apply_macro(Scheme_Object *name,
 		   Scheme_Object *rator, Scheme_Object *code,
 		   Scheme_Comp_Env *env, Scheme_Object *boundname)
 {
-  Scheme_Object *mark, *orig_code = code;
+  Scheme_Object *mark, *orig_code = code, *rands_vec[1];
 
   mark = scheme_new_mark();
   code = scheme_add_remove_mark(code, mark);
 
   scheme_on_next_top(env, mark, boundname);
 
-  code = X_scheme_apply_to_list(rator, scheme_make_pair(code, scheme_null), 
-				1, 1, code);
+  rands_vec[0] = code;
+  code = scheme_apply(rator, 1, rands_vec);
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,

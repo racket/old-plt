@@ -650,6 +650,7 @@ typedef struct Scheme_Thread {
   char quick_can_read_pipe_quote;
   char quick_can_read_box;
   char quick_can_read_graph;
+  char quick_can_read_dot;
   char quick_case_sens;
   char quick_square_brackets_are_parens;
   char quick_curly_braces_are_parens;
@@ -769,6 +770,7 @@ enum {
   MZCONFIG_CAN_READ_COMPILED,
   MZCONFIG_CAN_READ_BOX,
   MZCONFIG_CAN_READ_PIPE_QUOTE,
+  MZCONFIG_CAN_READ_DOT,
   MZCONFIG_READ_DECIMAL_INEXACT,
 
   MZCONFIG_PRINT_GRAPH,
@@ -796,8 +798,6 @@ enum {
   MZCONFIG_COLLECTION_PATHS,
 
   MZCONFIG_PORT_PRINT_HANDLER,
-
-  MZCONFIG_REQUIRE_COLLECTION,
 
   MZCONFIG_LOAD_EXTENSION_HANDLER,
 
@@ -839,6 +839,7 @@ typedef struct Scheme_Input_Port
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
+  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *);
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;

@@ -179,8 +179,7 @@
 	      (dynamic-wind
 		  (lambda () (current-directory dir))
 		  (lambda ()
-		    (parameterize ([current-load-relative-directory dir]
-				   [current-load-relative-collection cp])
+		    (parameterize ([current-load-relative-directory dir])
 		      ;; Compile the collection files via make-collection
 		      (let ([sses (filter
 				   extract-base-filename/ss

@@ -38,8 +38,7 @@ strings are types/comments.
 	  (port [port "port" "port for attempted operation"] -
 		(read [] "error reading from a port")
 		(write [] "error writing to a port")
-		(closed [] "attempt to operate on a closed port")
-		(*user [] "user-defined input port returned a non-character from the character-getting procedure"))
+		(closed [] "attempt to operate on a closed port"))
 	  (filesystem [pathname "path" "file or directory pathname"
 				detail "symbol or false" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\scm{\\#f}"] 
 		      "illegal pathname or error manipulating a filesystem object")

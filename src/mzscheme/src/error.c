@@ -123,7 +123,7 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
   %E = error number for platform-specific error string
 */
 
-static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
+static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 {
   long i, j;
   char buf[100];
@@ -370,7 +370,7 @@ static long scheme_sprintf(char *s, long maxlen, const char *msg, ...)
 
   va_list args;
   va_start(args, msg);
-  len = scheme_vsprintf(s, maxlen, msg, args);
+  len = sch_vsprintf(s, maxlen, msg, args);
   va_end(args);
 
   return len;
@@ -571,7 +571,7 @@ scheme_signal_error (char *msg, ...)
   buffer = prepared_buf;
 
   va_start(args, msg);
-  len = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
+  len = sch_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
@@ -607,7 +607,7 @@ void scheme_warning(char *msg, ...)
   buffer = prepared_buf;
 
   va_start(args, msg);
-  len = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
+  len = sch_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
@@ -835,14 +835,20 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
 {
   char *other;
   long len;
-  
+  GC_CAN_IGNORE char *isres = "arguments";
+
   other = init_buf(&len, NULL);
+
+  if (argc < 0) {
+    isres = "results";
+    argc = -argc;
+  }
   
   len /= (argc - (((which >= 0) && (argc > 1)) ? 1 : 0));
   if ((argc < 50) && (len >= 3)) {
     int i, pos;
     
-    sprintf(other, "; %sarguments were:", s);
+    sprintf(other, "; %s%s were:", s, isres);
     pos = strlen(other);
     for (i = 0; i < argc; i++) {
       if (i != which) {
@@ -887,9 +893,16 @@ void scheme_wrong_type(const char *name, const char *expected,
   Scheme_Object *o;
   char *s;
   int slen;
+  int isres = 0;
+  GC_CAN_IGNORE char *isress = "argument";
   Scheme_Object *typesym;
 
   o = argv[which < 0 ? 0 : which];
+  if (argc < 0) {
+    argc = -argc;
+    isress = "result";
+    isres = 1;
+  }
 
   s = scheme_make_provided_string(o, 1, &slen);
 
@@ -897,25 +910,28 @@ void scheme_wrong_type(const char *name, const char *expected,
 
   if ((which < 0) || (argc == 1))
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
-		     "%s: expects argument of type <%s>; "
+		     "%s: expects %s of type <%s>; "
 		     "given %t",
-		     name, expected, s, slen);
+		     name, isress, expected, s, slen);
   else {
     char *other;
     long olen;
 
     if ((which >= 0) && (argc > 1))
-      other = scheme_make_args_string("other ", which, argc, argv, &olen);
+      other = scheme_make_args_string("other ", which, 
+				      (isres ? -argc : argc), 
+				      argv, &olen);
     else {
       other = "";
       olen = 0;
     }
 
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, o, typesym,
-		     "%s: expects type <%s> as %d%s argument, "
+		     "%s: expects type <%s> as %d%s %s, "
 		     "given: %t%t",
 		     name, expected, which + 1,
 		     scheme_number_suffix(which + 1),
+		     isress,
 		     s, slen, other, olen);
   }
 }
@@ -995,7 +1011,7 @@ void scheme_wrong_syntax(const char *where,
     s = prepared_buf;
 
     va_start(args, detail);
-    slen = scheme_vsprintf(s, prepared_buf_len, detail, args);
+    slen = sch_vsprintf(s, prepared_buf_len, detail, args);
     va_end(args);
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
@@ -1110,7 +1126,7 @@ void scheme_wrong_return_arity(const char *where,
     s = prepared_buf;
 
     va_start(args, detail);
-    slen = scheme_vsprintf(s, prepared_buf_len, detail, args);
+    slen = sch_vsprintf(s, prepared_buf_len, detail, args);
     va_end(args);
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
@@ -1197,7 +1213,7 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
     s = prepared_buf;
 
     va_start(args, msg);
-    slen = scheme_vsprintf(s, prepared_buf_len, msg, args);
+    slen = sch_vsprintf(s, prepared_buf_len, msg, args);
     va_end(args);
 
     prepared_buf = init_buf(NULL, &prepared_buf_len);
@@ -1567,7 +1583,7 @@ scheme_raise_exn(int id, ...)
 
   msg = va_arg(args, char*);
 
-  alen = scheme_vsprintf(buffer, prepared_buf_len, msg, args);
+  alen = sch_vsprintf(buffer, prepared_buf_len, msg, args);
   va_end(args);
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);

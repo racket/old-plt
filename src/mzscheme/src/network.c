@@ -1400,6 +1400,7 @@ make_named_tcp_input_port(void *data, const char *name)
 			       tcp_char_ready,
 			       tcp_close_input,
 			       tcp_need_wakeup,
+			       NULL,
 			       1);
 
   ip->name = (char *)name;

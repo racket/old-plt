@@ -256,7 +256,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-input-port", 
-						      3, 4), 
+						      3, 5), 
 			     env);
   scheme_add_global_constant("make-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
@@ -522,6 +522,7 @@ scheme_make_sized_string_input_port(const char *str, long len)
 			       string_char_ready,
 			       string_close_in,
 			       NULL, 
+			       NULL,
 			       0);
 
   ip->name = "STRING";
@@ -645,9 +646,7 @@ user_getc (Scheme_Input_Port *port)
       if (scheme_return_eof_for_error()) {
 	return EOF;
       } else {
-	scheme_raise_exn(MZEXN_I_O_PORT_USER,
-			 port,
-			 "port: user read-char returned a non-character");
+	scheme_wrong_type("user port read-char", "character", -1, -1, &val);
       }
     }
     return (unsigned char)SCHEME_CHAR_VAL(val);
@@ -665,9 +664,7 @@ user_peekc (Scheme_Input_Port *port)
     return EOF;
   else {
     if (!SCHEME_CHARP(val))
-      scheme_raise_exn(MZEXN_I_O_PORT_USER,
-		       port,
-		       "port: user peek-char returned a non-character");
+      scheme_wrong_type("user port peek-char", "character", -1, -1, &val);
     return (unsigned char)SCHEME_CHAR_VAL(val);
   }
 }
@@ -689,6 +686,18 @@ user_close_input(Scheme_Input_Port *port)
 
   fun = ((Scheme_Object **) port->port_data)[2];
   _scheme_apply_multi(fun, 0, NULL);
+}
+
+static Scheme_Object * 
+user_get_special (Scheme_Input_Port *port)
+{
+  Scheme_Object *fun, *val;
+
+  fun = ((Scheme_Object **) port->port_data)[4];
+
+  val = _scheme_apply_multi(fun, 0, NULL);
+
+  return val;
 }
 
 /*========================================================================*/
@@ -1053,6 +1062,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 				  pipe_char_ready,
 				  pipe_in_close,
 				  NULL,
+				  NULL,
 				  0);
 
   readp->name = "PIPE";
@@ -1143,8 +1153,12 @@ make_input_port(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-input-port", 0, 0, argc, argv);
   scheme_check_proc_arity("make-input-port", 0, 1, argc, argv);
   scheme_check_proc_arity("make-input-port", 0, 2, argc, argv);
-  if (argc > 3)
-    scheme_check_proc_arity("make-input-port", 0, 3, argc, argv);
+  if ((argc > 3) && SCHEME_TRUEP(argv[3])) {
+    if (!scheme_check_proc_arity(NULL, 0, 3, argc, argv))
+      scheme_wrong_type("make-input-port", "procedure (arity 0) or #f", 3, argc, argv);
+  }
+  if (argc > 4)
+    scheme_check_proc_arity("make-input-port", 0, 4, argc, argv);
   
   copy = MALLOC_N_STUBBORN(Scheme_Object *, argc);
   memcpy(copy, argv, argc * sizeof(Scheme_Object *));
@@ -1153,10 +1167,13 @@ make_input_port(int argc, Scheme_Object *argv[])
   ip = _scheme_make_input_port(scheme_user_input_port_type,
 			       copy,
 			       user_getc,
-			       (argc > 3) ? user_peekc : NULL,
+			       (((argc > 3) && SCHEME_TRUEP(argv[3]))
+				? user_peekc 
+				: NULL),
 			       user_char_ready,
 			       user_close_input,
 			       NULL,
+			       (argc > 4) ? user_get_special : NULL,
 			       0);
 
   ip->name = "USERPORT";

@@ -3,7 +3,7 @@
 
   (define (make-id-mapper unbox-stx)
     (let ([set!-stx (datum->syntax 'set! #f unbox-stx)])
-      (set!-expander
+      (make-set!-transformer
        (lambda (sstx)
 	 (cond
 	  [(identifier? sstx) unbox-stx]

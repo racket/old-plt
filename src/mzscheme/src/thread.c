@@ -2811,6 +2811,7 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_CAN_READ_COMPILED, scheme_false);
   scheme_set_param(config, MZCONFIG_CAN_READ_BOX, scheme_true);
   scheme_set_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE, scheme_true);
+  scheme_set_param(config, MZCONFIG_CAN_READ_DOT, scheme_false);
   scheme_set_param(config, MZCONFIG_READ_DECIMAL_INEXACT, scheme_true);
 
   scheme_set_param(config, MZCONFIG_PRINT_GRAPH, scheme_false);
@@ -2833,8 +2834,6 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_ALLOW_SET_UNDEFINED, (scheme_allow_set_undefined
 							  ? scheme_true
 							  : scheme_false));
-
-  scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 
   scheme_set_param(config, MZCONFIG_COLLECTION_PATHS,  scheme_null);
 

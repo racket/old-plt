@@ -134,7 +134,6 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_size(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[]);
-static Scheme_Object *current_require_relative_collection(int, Scheme_Object *[]);
 static Scheme_Object *find_system_path(int argc, Scheme_Object **argv);
 #endif
 
@@ -363,11 +362,6 @@ void scheme_init_file(Scheme_Env *env)
 			     scheme_register_parameter(current_library_collection_paths,
 						       "current-library-collection-paths",
 						       MZCONFIG_COLLECTION_PATHS),
-			     env);
-  scheme_add_global_constant("current-load-relative-collection",
-			     scheme_register_parameter(current_require_relative_collection,
-						       "current-load-relative-collection",
-						       MZCONFIG_REQUIRE_COLLECTION),
 			     env);
 #endif
 }
@@ -3618,14 +3612,6 @@ static Scheme_Object *collpaths_rel_p(int argc, Scheme_Object **argv)
     return argv[0];
 
   return collpaths_gen_p(argc, argv, 1);
-}
-
-static Scheme_Object *current_require_relative_collection(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("current-require-relative-collection",
-			     scheme_make_integer(MZCONFIG_REQUIRE_COLLECTION),
-			     argc, argv,
-			     -1, collpaths_rel_p, "non-empty list of relative path strings or #f", 1);
 }
 
 #endif

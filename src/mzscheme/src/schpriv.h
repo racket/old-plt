@@ -1678,13 +1678,23 @@ void scheme_pipe_did_read(Scheme_Pipe *pipe);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
+Scheme_Object *scheme_get_special(Scheme_Object *inport);
+
+typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
+typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
+typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
+typedef Scheme_Object *(*Get_Special_Fun)(struct Scheme_Input_Port *port);
+
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,
-					   int (*getc_fun)(Scheme_Input_Port*),
-					   int (*peekc_fun)(Scheme_Input_Port*),
-					   int (*char_ready_fun)(Scheme_Input_Port*),
-					   void (*close_fun)(Scheme_Input_Port*),
-					   void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+					   Getc_Fun getc_fun,
+					   Peekc_Fun peekc_fun,
+					   Char_Ready_Fun char_ready_fun,
+					   Close_Fun_i close_fun,
+					   Need_Wakeup_Fun need_wakeup_fun,
+					   Get_Special_Fun get_special_fun,
 					   int must_close);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
@@ -1699,12 +1709,6 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 
 typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
 typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
-
-typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
-typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
-typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
-typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
-typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
 
 /*========================================================================*/
 /*                         memory debugging                               */

@@ -12,10 +12,11 @@
 
 (module const mzscheme
   (require (lib "unitsig.ss")
-	  (lib "list.ss")
-	  (lib "etc.ss"))
+	   (lib "list.ss")
+	   (lib "etc.ss"))
 
-  (require (lib "zodiac-sig.ss" "syntax"))
+  (require (lib "zodiac-sig.ss" "syntax")
+	   (lib "stx.ss" "syntax"))
 
   (require "sig.ss")
   (require "../sig.ss")

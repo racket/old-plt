@@ -5,7 +5,9 @@
 	   process/ports
 	   process*/ports
 	   system
-	   system*)
+	   system*
+	   system/exit-code
+	   system*/exit-code)
 
   (require (lib "thread.ss"))
 
@@ -14,7 +16,7 @@
   (define (shell-path/args who argstr)
     (case (system-type)
       ((unix macosx) (append '("/bin/sh" "-c") (list argstr)))
-      ((windows) (let ([cmd 		  
+      ((windows) (let ([cmd
 			(let ([d (find-system-path 'sys-dir)])
 			  (let ([cmd (build-path d "cmd.exe")])
 			    (if (file-exists? cmd)
@@ -41,7 +43,7 @@
 	     'subprocess
 	     "output port"
 	     p))))
-	
+
   (define (if-stream-in p)
     (if (or (not p) (file-stream-port? p))
 	p
@@ -92,11 +94,14 @@
 				      (cond ((not (integer? s)) s)
 					    ((zero? s) 'done-ok)
 					    (else 'done-error))))
+			  ((exit-code) (let ((s (subprocess-status subp)))
+                                         (and (integer? s) s)))
 			  ((wait) (subprocess-wait subp))
 			  ((interrupt) (subprocess-kill subp #f))
 			  ((kill) (subprocess-kill subp #t))
 			  (else
-			   (raise-type-error 'control-process "'status, 'wait, 'interrupt, or 'kill" m))))))
+			   (raise-type-error 'control-process
+                                             "'status, 'exit-code, 'wait, 'interrupt, or 'kill" m))))))
 	      control))))
 
   (define (process/ports out in err str)
@@ -109,11 +114,11 @@
     (apply process* (shell-path/args "process" str)))
 
   ;; Note: these always use current ports
-  (define (system* exe . args)
+  (define (system*/exit-code exe . args)
     (if (eq? (system-type) 'macos)
-	(begin
-	  (unless (null? args)
-	    (raise-mismatch-error 'system* "command-line arguments not supported for MacOS" args))
+	(if (null? args)
+          (raise-mismatch-error
+           'system*/exit-code "command-line arguments not supported for MacOS" args)
 	  (subprocess #f #f #f exe))
 	(let ([cout (current-output-port)]
 	      [cin (current-input-port)]
@@ -127,7 +132,7 @@
 			 (if-stream-out cerr)
 			 exe args)])
 	    (let ([ot (streamify-out cout out #t)]
-		  [it (streamify-in cin in #t (lambda (ok?) 
+		  [it (streamify-in cin in #t (lambda (ok?)
 						(if ok?
 						    (semaphore-post it-ready)
 						    (semaphore-wait it-ready))))]
@@ -142,15 +147,28 @@
 		(thread-wait ot))
 	      (when (thread? et)
 		(thread-wait et))
-	      (when err 
+	      (when err
 		(close-input-port err))
 	      (when out
 		(close-input-port out))
 	      (when in
 		(close-output-port in)))
-	    (zero? (subprocess-status subp))))))
+	    (subprocess-status subp)))))
+
+  (define (system* exe . args)
+    (if (eq? (system-type) 'macos)
+	(if (null? args)
+          (raise-mismatch-error
+           'system* "command-line arguments not supported for MacOS" args)
+	  (subprocess #f #f #f exe))
+	(zero? (apply system*/exit-code exe args))))
 
   (define (system str)
     (if (eq? (system-type) 'macos)
 	(subprocess #f #f #f "by-id" str)
-	(apply system* (shell-path/args "system" str)))))
+	(apply system* (shell-path/args "system" str))))
+
+  (define (system/exit-code str)
+    (if (eq? (system-type) 'macos)
+	(subprocess #f #f #f "by-id" str)
+	(apply system*/exit-code (shell-path/args "system" str)))))

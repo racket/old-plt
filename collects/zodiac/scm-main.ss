@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.210 2000/06/07 06:20:11 shriram Exp $
+; $Id: scm-main.ss,v 1.211 2000/06/08 19:52:28 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -307,7 +307,7 @@
 	"lambda" 'term:case/lambda-only-in-def
 	expr "allowed only in a definition")))
 
-  (define (make-case-lambda-micro begin? arglist-decls-vocab internal-def-vocab)
+  (define (make-case-lambda-micro begin? arglist-decls-vocab internal-def-vocab shadow-syntax?)
     (let* ((kwd `(else))
 	    (in-pattern `(_
 			   (args ,@(get-expr-pattern begin?))
@@ -325,6 +325,7 @@
 		       (map
 			(lambda (arg body)
 			  (distinct-valid-syntactic-id/s? arg)
+			  (ensure-shadowable/s arg env vocab shadow-syntax?)
 			  (let* ((arglist
 				  (expand-expr arg env attributes
 					       arglist-decls-vocab))
@@ -360,7 +361,7 @@
    'case-lambda
    beginner+lambda-vocabulary
    (make-case-lambda-micro #f lambda-nonempty-arglist-decls-vocab
-     internal-define-vocab-delta))
+     internal-define-vocab-delta #f))
   (add-primitivized-micro-form
    'case-lambda
    beginner-vocabulary
@@ -369,17 +370,17 @@
    'case-lambda
    intermediate-vocabulary
    (make-case-lambda-micro #f lambda-nonempty-arglist-decls-vocab
-     internal-define-vocab-delta))
+     internal-define-vocab-delta #f))
   (add-primitivized-micro-form
    'case-lambda
    advanced-vocabulary
    (make-case-lambda-micro #f lambda-full-arglist-decls-vocab
-     internal-define-vocab-delta))
+     internal-define-vocab-delta #f))
   (add-primitivized-micro-form
    'case-lambda
    scheme-vocabulary
    (make-case-lambda-micro #t lambda-full-arglist-decls-vocab
-     internal-define-vocab-delta))
+     internal-define-vocab-delta #t))
 
   (define (make-lambda-macro begin?)
     (let* ((kwd '())
@@ -478,7 +479,10 @@
 	    =>
 	    (lambda (p-env)
 	      (let* ((vars (pat:pexpand '(var ...) p-env kwd))
-		      (_ (map valid-syntactic-id? vars))
+		      (_ (begin (for-each valid-syntactic-id? vars)
+				(for-each (lambda (var)
+					    (ensure-shadowable var env vocab #t))
+					  vars)))
 		      (val (pat:pexpand 'val p-env kwd)))
 		(for-each (lambda (var)
 			    (let ((r (resolve var env vocab)))
@@ -726,6 +730,7 @@
 	  (if p-env
 	      (let* ((var-p (pat:pexpand 'var p-env kwd))
 		     (_ (valid-syntactic-id? var-p))
+		     (_ (ensure-not-keyword var-p))
 		     (id-expr (parameterize ([allow-global-rebind-syntax
 					      rebind-syntax?])
 				(expand-expr var-p env attributes
@@ -903,6 +908,7 @@
 	       (define-values-helper
 		 internal-ok?
 		 (lambda (expr env attributes vocab vars val)
+		   (for-each ensure-not-keyword vars)
 		   (let* ((id-exprs (parameterize ([allow-global-rebind-syntax
 						    rebind-syntax?])
 				      (map (lambda (v)
@@ -1221,7 +1227,7 @@
 	  (values (reverse rev-head) tail)
 	  (loop (cons (car tail) rev-head) (cdr tail) (cdr counter))))))
 
-  (define (make-let-values-micro begin? internal-def-vocab)
+  (define (make-let-values-micro begin? internal-def-vocab shadow-syntax?)
       (let* ((kwd '())
 	      (in-pattern `(_ (((v ...) e) ...) ,@(get-expr-pattern begin?)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
@@ -1238,7 +1244,8 @@
 		   attributes
 		   (lambda ()
 		     (let* ((all-vars (apply append vars))
-			    (_ (distinct-valid-syntactic-id/s? all-vars))
+			    (_ (begin (distinct-valid-syntactic-id/s? all-vars)
+				      (ensure-shadowable/s all-vars env vocab shadow-syntax?)))
 			    (expanded-vals
 			     (map (lambda (e)
 				    (expand-expr e env attributes vocab))
@@ -1274,15 +1281,13 @@
   (add-primitivized-micro-form 'let-values
 			       intermediate-vocabulary
 			       (make-let-values-micro #f
-				 internal-define-vocab-delta))
+				 internal-define-vocab-delta #f))
   (add-primitivized-micro-form 'let-values
 			       scheme-vocabulary
 			       (make-let-values-micro #t
-				 internal-define-vocab-delta))
+				 internal-define-vocab-delta #t))
 
   (define (make-let-macro begin? named?)
-      ;; >> Broken by current embedded define hacks! <<
-      ;; e.g., (let ([a 7]) (let-macro a void (a))
       (let* ((kwd '())
 	     
 	     (in-pattern-1 `(_ fun ((v e) ...) ,@(get-expr-pattern begin?)))
@@ -1366,7 +1371,7 @@
 			       scheme-vocabulary
 			       (make-let*-values-micro #t))
 
-  (define (make-letrec-values-micro begin? internal-def-vocab)
+  (define (make-letrec-values-micro begin? internal-def-vocab shadow-syntax?)
       (let* ((kwd '())
 	      (in-pattern `(_ (((v ...) e) ...) ,@(get-expr-pattern begin?)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
@@ -1381,7 +1386,8 @@
 			       p-env kwd)))
 		  (let*
 		    ((all-vars (apply append vars))
-		      (_ (distinct-valid-syntactic-id/s? all-vars))
+		      (_ (begin (distinct-valid-syntactic-id/s? all-vars)
+				(ensure-shadowable/s all-vars env vocab shadow-syntax?)))
 		      (new-vars+marks
 			(map create-lexical-binding+marks all-vars))
 		      (new-vars
@@ -1424,11 +1430,11 @@
   (add-primitivized-micro-form 'letrec-values
 			       intermediate-vocabulary
 			       (make-letrec-values-micro #f
-				 internal-define-vocab-delta))
+				 internal-define-vocab-delta #f))
   (add-primitivized-micro-form 'letrec-values
 			       scheme-vocabulary
 			       (make-letrec-values-micro #t
-				 internal-define-vocab-delta))
+				 internal-define-vocab-delta #t))
 
   (define (make-letrec-macro begin?)
       (let* ((kwd '())
@@ -2088,6 +2094,7 @@
 	      (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
 		     (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 		(valid-syntactic-id? macro-name)
+		(ensure-shadowable macro-name env vocab #t)
 		(unless (get-top-level-status attributes)
 		  (static-error
 		    "define-macro" 'kwd:define-macro
@@ -2095,9 +2102,11 @@
 		(let* ((real-name (sexp->raw macro-name)))
 		  (let ([on-demand (get-on-demand-form real-name vocab)])
 		    (if on-demand
-			(case (car on-demand)
-			  [(micro) (add-primitivized-micro-form real-name vocab (cadr on-demand))]
-			  [(macro) (add-primitivized-macro-form real-name vocab (cadr on-demand))])
+			(begin
+			  (case (car on-demand)
+			    [(micro) (add-primitivized-micro-form real-name vocab (cadr on-demand))]
+			    [(macro) (add-primitivized-macro-form real-name vocab (cadr on-demand))])
+			  (update-current-namespace real-name))
 			(let* ((expanded-handler (as-nested
 						  attributes
 						  (lambda ()
@@ -2119,7 +2128,8 @@
 			      (apply m3-macro-body-evaluator real-handler
 				     (cdr (sexp->raw m-expr cache-table)))
 			      m-expr '() cache-table
-			      (make-origin 'macro expr)))))))
+			      (make-origin 'macro expr))))
+			  (update-current-namespace real-name))))
 		  (expand-expr (structurize-syntax '(#%void) expr
 						   '() #f (make-origin 'micro expr))
 		    env attributes vocab)))))
@@ -2128,6 +2138,8 @@
 	      "define-macro" 'kwd:define-macro
 	      expr "malformed definition"))))))
 
+  ;; >> Broken by current embedded define hacks! <<
+  ;; e.g., (let ([a 7]) (let-macro a void (a))
   (add-primitivized-micro-form 'let-macro common-vocabulary
     (let* ((kwd '())
 	    (in-pattern `(_ macro-name macro-handler b0 b1 ...))
@@ -2141,6 +2153,7 @@
 		     (macro-handler (pat:pexpand 'macro-handler p-env kwd))
 		     (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
 		(valid-syntactic-id? macro-name)
+		(ensure-shadowable macro-name env vocab #t)
 		(let* ((real-name (sexp->raw macro-name))
 		       (expanded-handler (as-nested
 					  attributes

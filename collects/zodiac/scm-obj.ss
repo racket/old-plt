@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.46 2000/06/07 06:20:12 shriram Exp $
+; $Id: scm-obj.ss,v 1.47 2000/06/08 19:52:29 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -98,6 +98,7 @@
 		       (variables
 			 (pat:pexpand '(variables ...) p-env kwd)))
 		  (distinct-valid-syntactic-id/s? variables)
+		  (ensure-shadowable/s variables env vocab #t)
 		  (let* ((proc:super-interfaces
 			  (as-nested
 			   attributes
@@ -568,7 +569,9 @@
 		       (in:ivars (pat:pexpand '(inst-vars ...)
 				   p-env kwd)))
 		  (valid-syntactic-id? in:this)
+		  (ensure-shadowable in:this env vocab #t)
 		  (valid-syntactic-id? in:superinit)
+		  (ensure-shadowable in:superinit env vocab #t)
 		  (as-nested
 		   attributes
 		   (lambda ()
@@ -604,6 +607,13 @@
 						(ivar-entry-bindings i)
 						'()))
 					  proc:ivar-info))))
+			 (for-each (lambda (v)
+				     (ensure-shadowable (car v) env vocab #t))
+				   proc:initvars)
+			 (for-each (lambda (v)
+				     (ensure-shadowable (car v) env vocab #t))
+				   proc:ivars)
+			    
 			 (let ((extensions
 				(cons proc:this
 				      (cons proc:superinit
@@ -799,6 +809,7 @@
 	    (if p-env
 	      (let* ((var-p (pat:pexpand 'var p-env kwd))
 		     (_ (valid-syntactic-id? var-p))
+		     (_ (ensure-not-keyword var-p))
 		     (id-expr (parameterize ([allow-global-rebind-syntax #t])
 				(expand-expr var-p env attributes vocab)))
 		     (expr-expr (as-nested

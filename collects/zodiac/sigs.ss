@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.75 2000/06/07 06:20:12 shriram Exp $
+; $Id: sigs.ss,v 1.76 2000/06/08 19:52:30 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
@@ -46,6 +46,7 @@
     add-on-demand-form find-on-demand-form 
     set-subexpr-vocab!
     prepare-current-namespace-for-vocabulary
+    update-current-namespace
     (struct vocabulary-record
       (name this rest symbol-error literal-error list-error ilist-error))))
 
@@ -67,7 +68,9 @@
     set-top-level-status get-top-level-status at-top-level?
     set-internal-define-status get-internal-define-status at-internal-define?
     as-nested
-    process-top-level-resolution ensure-not-syntax allow-global-rebind-syntax
+    process-top-level-resolution ensure-not-syntax
+    ensure-not-keyword ensure-not-mzscheme-syntax-keyword
+    ensure-shadowable ensure-shadowable/s allow-global-rebind-syntax
     check-for-signature-name
     (struct parsed (back))
     (struct varref (var))

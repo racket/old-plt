@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.61 2000/06/07 06:20:11 shriram Exp $
+; $Id: scm-core.ss,v 1.62 2000/06/08 19:52:28 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -176,19 +176,67 @@
 
   (define allow-global-rebind-syntax (make-parameter #f))
 
+  (define mzscheme-keyword-name? keyword-name?)
+
   (define ensure-not-syntax
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
       (lambda (expr env vocab)
-	(let ((r (resolve expr env vocab)))
-	  (if (or (macro-resolution? r) (micro-resolution? r))
-	      (if (allow-global-rebind-syntax)
-		  top-level-resolution
+	(let ([bad
+	       (lambda ()
+		 (static-error 
+		  "keyword" 'term:keyword-out-of-context
+		  expr
+		  "Invalid use of keyword ~s" (z:symbol-orig-name expr)))])
+	  (cond
+	   [(mzscheme-keyword-name? (z:read-object expr)) (bad)]
+	   [else (let ((r (resolve expr env vocab)))
+		   (if (or (macro-resolution? r) (micro-resolution? r))
+		       (if (allow-global-rebind-syntax)
+			   top-level-resolution
+			   (bad))
+		       r))])))))
 
-		  (static-error 
-		   "keyword" 'term:keyword-out-of-context
-		   expr
-		   "Invalid use of syntax name ~s" (z:symbol-orig-name expr)))
-	      r)))))
+  (define ensure-not-keyword
+    (lambda (expr)
+      (let ([name (z:read-object expr)])
+	(when (mzscheme-keyword-name? name)
+	  (static-error 
+	   "keyword" 'term:keyword-out-of-context
+	   expr
+	   "Invalid use of keyword ~s" name)))))
+
+  (define ensure-not-mzscheme-syntax-keyword
+    (lambda (expr)
+      (let ([name (z:read-object expr)])
+	(when (and (mzscheme-keyword-name? name)
+		   (let ([v (global-defined-value name)])
+		     (or (syntax? v) (macro? v))))
+	  (static-error 
+	   "keyword" 'term:keyword-out-of-context
+	   expr
+	   "Invalid use of keyword ~s" name)))))
+
+  (define (ensure-shadowable expr env vocab allow-shadow-syntax?)
+    (if allow-shadow-syntax?
+	(let ([name (cond
+		     [(binding? expr) (binding-orig-name expr)]
+		     [else (z:symbol-orig-name expr)])])
+	  (if (mzscheme-keyword-name? name)
+	      (static-error 
+	       "keyword" 'term:keyword-out-of-context
+	       expr
+	       "Invalid use of keyword ~s" name)
+	      expr))
+
+	(begin
+	  (ensure-not-syntax expr env vocab)
+	  expr)))
+
+  (define (ensure-shadowable/s exprs env vocab allow-shadow-syntax?)
+    (for-each
+     (lambda (expr)
+       (ensure-shadowable expr env vocab allow-shadow-syntax?))
+     (syntactic-id/s->ids exprs)))
 
   (define process-top-level-resolution
     (lambda (expr attributes)
@@ -220,9 +268,10 @@
 		    (create-lexical-varref r expr))
 		  ((top-level-resolution? r)
 		    (check-for-signature-name expr attributes)
+		    (ensure-not-mzscheme-syntax-keyword expr)
 		    (process-top-level-resolution expr attributes))
 		  ((or (macro-resolution? r) (micro-resolution? r))
-		    (loop (ensure-not-syntax expr env vocab)))
+		   (loop (ensure-not-syntax expr env vocab)))
 		  (else
 		    (internal-error expr "Invalid resolution in core: ~s" r))))))))
     (add-sym-micro common-vocabulary f))
@@ -232,7 +281,7 @@
       (let ((contents (expose-list expr)))
 	(if (null? contents)
 	  (if null-ok?
-	    (expand-expr (structurize-syntax `(quote ,expr) expr)
+	    (expand-expr (structurize-syntax `(#%quote ,expr) expr)
 	      env attributes vocab)
 	    (static-error
 	      "illegal term" 'term:empty-combination expr

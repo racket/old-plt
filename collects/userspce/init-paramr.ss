@@ -451,7 +451,7 @@
     (make-parameter
      (lambda (msg debugs exn)
        ((error-display-handler) 
-	(let ([debug (and debugs (car debugs))])
+	(let ([debug (and debugs (pair? debugs) (car debugs))])
 	  (if (zodiac:zodiac? debug)
 	      (string-append (format-source-loc (zodiac:zodiac-start debug)
 						(zodiac:zodiac-finish debug))
@@ -664,7 +664,8 @@
         (zodiac:reset-previous-attribute 
          #f
          (eq? (setting-vocabulary-symbol setting)
-              'mred-debug)))
+              'mred-debug))
+	(zodiac:prepare-current-namespace-for-vocabulary (current-vocabulary)))
       
       (read-case-sensitive (setting-case-sensitive? setting))
       

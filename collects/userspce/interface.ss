@@ -77,4 +77,6 @@
 
   ;; internal-error : (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes
-  (define internal-error (report-error 'internal)))
+  (define internal-error 
+    (lambda (z s . args)
+      (apply (report-error 'internal) #f #f z s args))))

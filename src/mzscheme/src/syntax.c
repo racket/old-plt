@@ -653,10 +653,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 						     globals);
     } else {
       /* Create a module variable reference, so that idx is preserved: */
-      bucket = scheme_alloc_object();
-      bucket->type = scheme_module_variable_type;
-      SCHEME_PTR1_VAL(bucket) = env->genv->module->self_modidx;
-      SCHEME_PTR2_VAL(bucket) = SCHEME_STX_SYM(name);
+      bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name);
     }
 
     pr = cons(bucket, scheme_null);
@@ -1507,12 +1504,12 @@ scheme_link_let_void(Scheme_Object *data, Link_Info *link)
   Scheme_Let_Void *nlvd;
   Scheme_Object *e;
 
-  nlvd = MALLOC_ONE_TAGGED(Scheme_Let_Void);
-  nlvd->type = scheme_let_void_type;
-
   e = scheme_link_expr(olvd->body, link);
   if (SAME_OBJ(e, olvd->body))
     return (Scheme_Object *)olvd;
+
+  nlvd = MALLOC_ONE_TAGGED(Scheme_Let_Void);
+  nlvd->type = scheme_let_void_type;
 
   nlvd->body = e;
 
@@ -1528,7 +1525,7 @@ scheme_link_letrec(Scheme_Object *data, Link_Info *link)
   Scheme_Letrec *olr = (Scheme_Letrec *)data;
   Scheme_Letrec *nlr;
   Scheme_Object *e, **procs;
-  int i, count;
+  int i, count, diff = 0;
 
   count = olr->count;
 
@@ -1541,19 +1538,16 @@ scheme_link_letrec(Scheme_Object *data, Link_Info *link)
 
   for (i = 0; i < count; i++) {
     e = scheme_link_expr(olr->procs[i], link);
+    if (!SAME_OBJ(e, olr->procs[i]))
+      diff = 1;
     procs[i] = e;
   }
 
   e = scheme_link_expr(olr->body, link);
   nlr->body = e;
 
-  if (SAME_OBJ(nlr->body, e)) {
-    for (i = 0; i < count; i++) {
-      if (!SAME_OBJ(olr->procs[i], procs[i]))
-	break;
-    }
-
-    if (i == count)
+  if (SAME_OBJ(olr->body, e)) {
+    if (!diff)
       return (Scheme_Object *)olr;
   }
 

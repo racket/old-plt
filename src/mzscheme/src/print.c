@@ -1198,6 +1198,27 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print(((Scheme_Modidx *)obj)->base, notdisplay, 1, ht, symtab, rnht, p);
       }
     }
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_variable_type)) 
+    {
+      int l;
+      Scheme_Object *idx;
+
+      idx = scheme_lookup_in_table(symtab, (char *)obj);
+      if (idx) {
+	print_compact(p, CPT_SYMREF);
+	l = SCHEME_INT_VAL(idx);
+	print_compact_number(p, l);
+      } else {
+	idx = scheme_make_integer(symtab->count);
+	scheme_add_to_table(symtab, (char *)obj, idx, 0);	
+	l = SCHEME_INT_VAL(idx);
+
+	print_compact(p, CPT_MODULE_VAR);
+	print_compact_number(p, l);
+	print(SCHEME_PTR1_VAL(obj), notdisplay, 1, ht, symtab, rnht, p);
+	print(SCHEME_PTR2_VAL(obj), notdisplay, 1, ht, symtab, rnht, p);
+      }
+    }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_variable_type)
 	   && (((Scheme_Bucket_With_Flags *)obj)->flags & GLOB_HAS_REF_ID))
     {

@@ -1914,6 +1914,22 @@ static Scheme_Object *read_compact(CPort *port,
 	  symtab[l] = v;
 	}
 	break;
+    case CPT_MODULE_VAR:
+      {
+	Scheme_Object *mod, *var;
+	
+	l = read_compact_number(port); /* symtab index */
+	mod = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	var = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+
+	v = scheme_alloc_object();
+	v->type = scheme_module_variable_type;
+	SCHEME_PTR1_VAL(v) = mod;
+	SCHEME_PTR2_VAL(v) = var;
+	
+	symtab[l] = v;
+      }
+      break;
     case CPT_SMALL_LOCAL_START:
     case CPT_SMALL_LOCAL_UNBOX_START:
       {

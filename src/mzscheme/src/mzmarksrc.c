@@ -585,6 +585,8 @@ namespace_val {
   gcMARK(e->toplevel);
   gcMARK(e->modchain);
 
+  gcMARK(e->modvars);
+
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }

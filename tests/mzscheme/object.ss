@@ -9,9 +9,21 @@
 
 (define eater<%> (interface () eat))
 
+(define-syntax mk-noop
+  (syntax-rules 
+   ()
+   [(_ name)
+    (begin
+      (define (name) (blah))
+      (define (blah)
+	(printf "hi~n")))]))
+
 (define fish%
   (class* object% (eater<%>)
     (public get-size grow eat)
+    (public-final noop)
+
+    (mk-noop noop)
     (private increase-size eat-sized-fish)
 
     (init-field [size 1])
@@ -25,10 +37,12 @@
     ;; Public methods
     (define (get-size) size)
     (define (grow s)
+      (noop)
       (set! size (+ s size))
       size)
     (define (eat f)
-      (grow (send f get-size)))
+      (let ([this 5]) ; <- make sure methods still work...
+	(grow (send f get-size))))
 
     (super-instantiate ())))
 

@@ -647,7 +647,7 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
 {
   Scheme_App_Rec *oapp = (Scheme_App_Rec *)o;
   Scheme_App_Rec *napp;
-  Scheme_Object *e;
+  Scheme_Object *e, *e0;
   int n, i, size, diff = 0;
 
   n = oapp->num_args + 1;
@@ -659,8 +659,9 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
   memcpy(napp, oapp, size);
 
   for (i = 0; i < n; i++) {
-    e = scheme_link_expr(oapp->args[i], info);
-    if (!SAME_OBJ(e, oapp->args[i]))
+    e0 = oapp->args[i];
+    e = scheme_link_expr(e0, info);
+    if (!SAME_OBJ(e, e0))
       diff = 1;
     napp->args[i] = e;
   }
@@ -1098,6 +1099,7 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 	  
       f = scheme_syntax_linkers[SCHEME_PINT_VAL(expr)];
       o = f((Scheme_Object *)SCHEME_IPTR_VAL(expr), info);
+      /* Special convention: linker returns input if no changes */
       if (SAME_OBJ(o, (Scheme_Object *)SCHEME_IPTR_VAL(expr)))
 	return expr;
       else
@@ -1931,14 +1933,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 
   if (env->genv->module && !rec[drec].resolve_module_ids) {
     /* Self-reference in a module; need to remember the modidx */
-    Scheme_Object *val;
-
-    val = scheme_alloc_object();
-    val->type = scheme_module_variable_type;
-    SCHEME_PTR1_VAL(val) = env->genv->module->self_modidx;
-    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(c);
-
-    return val;
+    return scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, c);
   }
 
   return (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);

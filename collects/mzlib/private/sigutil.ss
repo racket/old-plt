@@ -7,13 +7,16 @@
   (require "sigmatch.ss")
   (require "../exstruct.ss")
   (require "../unit.ss")
+  (require "../list.ss")
 
   (define-struct signature (name    ; sym
 			    src     ; sym
 			    elems)) ; list of syms and signatures
   (define-struct parse-unit (imports renames vars body))
 
-  (define-struct/export sig (content))
+  (define-struct sigdef (content interned))
+  (define (make-sig x) (make-sigdef x #f))
+  (provide make-sig)
 
   (define inline-sig-name '<unnamed>)
 
@@ -78,11 +81,13 @@
 	  (let ([v (syntax-local-value sigid (lambda () #f))])
 	    (unless v
 	      (undef-sig-error who expr sigid))
-	    (unless (sig? v)
+	    (unless (sigdef? v)
 	      (not-a-sig-error who expr sigid))
-	    (let ([s (intern-signature (syntax-e sigid) (sig-content v)
-				       (lambda ()
-					 (not-a-sig-error who expr sigid)))])
+	    (unless (sigdef-interned v)
+	      (set-sigdef-interned! v (intern-signature (syntax-e sigid) (sigdef-content v)
+							(lambda ()
+							  (not-a-sig-error who expr sigid)))))
+	    (let ([s (sigdef-interned v)])
 	      (if name
 		  (rename-signature s (stx->sym name))
 		  s))))))
@@ -248,7 +253,7 @@
   (define explode-sig
     (lambda (sig)
       (list->vector
-       (map 
+       (map
 	(lambda (v)
 	  (if (symbol? v)
 	      v
@@ -272,41 +277,21 @@
 
   (define sort-signature-elems
     (lambda (elems)
-      (letrec ([split
-		(lambda (l f s)
-		  (cond
-		   [(null? l) (values f s)]
-		   [(null? (cdr l)) (values (cons (car l) f) s)]
-		   [else (split (cddr l) (cons (car l) f) (cons (cadr l) s))]))]
-	       [merge
-		(lambda (f s)
-		  (cond
-		   [(null? f) s]
-		   [(null? s) f]
-		   [(less-than? (car s) (car f))
-		    (cons (car s) (merge f (cdr s)))]
-		   [else
-		    (cons (car f) (merge (cdr f) s))]))]
-	       [less-than?
-		(lambda (a b)
-		  (if (symbol? (car a))
-		      (if (symbol? (car b))
-			  (string<? (cdr a) (cdr b))
-			  #t)
-		      (if (symbol? (car b))
-			  #f
-			  (string<? (cdr a) (cdr b)))))]
-	       [pair
-		(lambda (i)
-		  (cons i (symbol->string (if (symbol? i) i (signature-name i)))))])
-	(map car
-	     (let loop ([elems (map pair elems)])
-	       (cond
-		[(null? elems) null]
-		[(null? (cdr elems)) elems]
-		[else (let-values ([(f s) (split elems null null)])
-				  (merge (loop f) (loop s)))]))))))
-		   
+      (map car
+	   (quicksort (map
+		       (lambda (i)
+			 (cons i (symbol->string (if (symbol? i) i (signature-name i)))))
+		       elems)
+		      ;; Less-than; put subs at front
+		      (lambda (a b)
+			(if (symbol? (car a))
+			    (if (symbol? (car b))
+				(string<? (cdr a) (cdr b))
+				#f)
+			    (if (symbol? (car b))
+				#t
+				(string<? (cdr a) (cdr b)))))))))
+  
   (define flatten-signature
     (lambda (id sig)
       (apply

@@ -1479,6 +1479,8 @@ struct Scheme_Env {
 			           shared with instances in same phase
 			       2. modchain for next phase (or #f)
                                3. modchain for previous phase (or #f) */
+
+  Scheme_Hash_Table *modvars; /* for scheme_module_variable_type hashing */
 };
 
 /* A module access path (or "idx") is a pair: sexp * symbol-or-#f
@@ -1546,6 +1548,8 @@ Scheme_Object *scheme_make_modidx(Scheme_Object *path,
 Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx, 
 				   Scheme_Object *shift_from_modidx,
 				   Scheme_Object *shift_to_modidx);
+
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym);
 
 extern Scheme_Env *scheme_initial_env;
 

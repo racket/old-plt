@@ -1362,6 +1362,8 @@ int namespace_val_MARK(void *p) {
   gcMARK(e->toplevel);
   gcMARK(e->modchain);
 
+  gcMARK(e->modvars);
+
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
 }
@@ -1386,6 +1388,8 @@ int namespace_val_FIXUP(void *p) {
 
   gcFIXUP(e->toplevel);
   gcFIXUP(e->modchain);
+
+  gcFIXUP(e->modvars);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));

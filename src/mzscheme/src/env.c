@@ -63,8 +63,6 @@ static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
-static Scheme_Object *write_module_variable(Scheme_Object *obj);
-static Scheme_Object *read_module_variable(Scheme_Object *obj);
 static Scheme_Object *write_local(Scheme_Object *obj);
 static Scheme_Object *read_local(Scheme_Object *obj);
 static Scheme_Object *read_local_unbox(Scheme_Object *obj);
@@ -375,8 +373,6 @@ static void make_init_env(void)
 
   scheme_install_type_writer(scheme_variable_type, write_variable);
   scheme_install_type_reader(scheme_variable_type, read_variable);
-  scheme_install_type_writer(scheme_module_variable_type, write_module_variable);
-  scheme_install_type_reader(scheme_module_variable_type, read_module_variable);
   scheme_install_type_writer(scheme_local_type, write_local);
   scheme_install_type_reader(scheme_local_type, read_local);
   scheme_install_type_writer(scheme_local_unbox_type, write_local);
@@ -614,6 +610,8 @@ void scheme_clean_dead_env(Scheme_Env *env)
     scheme_clean_dead_env(env->exp_env);
     env->exp_env = NULL;
   }
+
+  env->modvars = NULL;
   
   modchain = env->modchain;
   env->modchain = NULL;
@@ -927,6 +925,39 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
+Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym)
+{
+  Scheme_Object *val;
+  Scheme_Hash_Table *ht;
+
+  if (!env->modvars) {
+    ht = scheme_hash_table(7, SCHEME_hash_ptr);
+    env->modvars = ht;
+  }
+
+  stxsym = SCHEME_STX_SYM(stxsym);
+
+  ht = (Scheme_Hash_Table *)scheme_lookup_in_table(env->modvars, (char *)modidx);
+
+  if (!ht) {
+    ht = scheme_hash_table(7, SCHEME_hash_ptr);
+    scheme_add_to_table(env->modvars, (char *)modidx, ht, 0);
+  }
+
+  val = (Scheme_Object *)scheme_lookup_in_table(ht, (char *)stxsym);
+
+  if (!val) {
+    val = scheme_alloc_object();
+    val->type = scheme_module_variable_type;
+    
+    SCHEME_PTR1_VAL(val) = modidx;
+    SCHEME_PTR2_VAL(val) = stxsym;
+
+    scheme_add_to_table(ht, (char *)stxsym, val, 0);
+  }
+
+  return val;
+}
 
 static int env_uid_counter;
 
@@ -1206,7 +1237,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate module-required variable");
   }
 
-  if (!modname  && (flags & SCHEME_SETTING) && genv->module) {
+  if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Check for set! of unbound variable: */
     
     if (!scheme_lookup_in_table(genv->toplevel, (const char *)symbol))
@@ -1218,13 +1249,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, modname)) {
     /* Create a module variable reference, so that idx is preserved: */
-    val = scheme_alloc_object();
-    val->type = scheme_module_variable_type;
-
-    SCHEME_PTR1_VAL(val) = modidx;
-    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
-
-    return val;
+    return scheme_hash_module_variable(env->genv, modidx, symbol);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
@@ -1749,23 +1774,6 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
   }
 
   return (Scheme_Object *)scheme_global_bucket(obj, env);
-}
-
-static Scheme_Object *write_module_variable(Scheme_Object *obj)
-{
-  return scheme_make_pair(SCHEME_PTR1_VAL(obj), SCHEME_PTR2_VAL(obj));
-}
-
-static Scheme_Object *read_module_variable(Scheme_Object *obj)
-{
-  Scheme_Object *r;
-
-  r = scheme_alloc_object();
-  r->type = scheme_module_variable_type;
-  SCHEME_PTR1_VAL(r) = SCHEME_CAR(obj);
-  SCHEME_PTR2_VAL(r) = SCHEME_CDR(obj);
-
-  return r;
 }
 
 static Scheme_Object *write_local(Scheme_Object *obj)

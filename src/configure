@@ -5481,6 +5481,7 @@ cat >>conftest.$ac_ext <<_ACEOF
   #include <iconv.h>
   #include <langinfo.h>
    int main() {
+     iconv_open("UTF-8", "UTF-8");
       return 0;
    }
 _ACEOF

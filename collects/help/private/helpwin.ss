@@ -92,11 +92,13 @@
                        (lambda (b e)
                          (let* ([s (send t get-value)]
                                 [done (lambda ()
+					;; Might be called twice!
                                         (framework:preferences:set 'drscheme:help-desk:last-url-string s)
                                         (send d show #f))])
-                           (with-handlers ([not-break-exn?
+                           (with-handlers ([void
                                             (lambda (x)
-                                              (if (exn:file-saved-instead? x)
+                                              (if (or (exn:break? x)
+						      (exn:file-saved-instead? x))
                                                   (done)
                                                   (unless (exn:cancelled? x)
                                                     (message-box (string-constant bad-url) 

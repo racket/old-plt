@@ -763,9 +763,6 @@ void wxImage::FSDither(byte *inpic, int w, int h, byte *outpic)
 /***********************************/
 void wxImage::CreateXImage()
 {
-  int    i;
-  int    effectiveDeep;
-
   /*
    * this has to do the tricky bit of converting the data in 'epic'
    * into something usable for X.
@@ -804,6 +801,13 @@ void wxImage::CreateXImage()
     return;
   }
 
+  /* Enough with the fast hacks - we'll do it the way the designers of X 
+     intended: use XPutPixel. */
+
+#if 0
+  int    i;
+  int    effectiveDeep;
+
   effectiveDeep = dispDEEP;
   if (effectiveDeep == 24) {
     /* Check whether this display likes real 24, or 24 in 32: */
@@ -815,7 +819,6 @@ void wxImage::CreateXImage()
 
   switch (effectiveDeep) 
     {
-
     case 8:
       {
       byte  *imagedata, *ip, *pp;
@@ -1047,14 +1050,20 @@ void wxImage::CreateXImage()
 
     /*********************************/
 
-  default: 
-      // sprintf(wxBuffer,"no code to handle this display type (%d bits deep)",
-      // dispDEEP);
-      // FatalError(wxBuffer);
-      theImage = NULL;
-      return;
-      break;
     }
+#endif
+
+  theImage = XCreateImage(theDisp, theVisual, dispDEEP, ZPixmap, 0,
+			  NULL, eWIDE, eHIGH, 8, 0);
+  theImage->data = (char *)malloc(eHIGH * theImage->bytes_per_line);
+  
+  byte *pp = epic;
+  int i, j;
+  for (j = 0; j < eHIGH; j++) {
+    for (i = 0; i < eWIDE; i++, pp++) {
+      XPutPixel(theImage, i, j, cols[*pp]);
+    }
+  }
 }
 
 /***********************************/
@@ -1082,13 +1091,14 @@ void wxImage::FreeMostResources()
 
 static int timerdone;
 
+#if 0
 /*******/
 static void onalarm()
 /*******/
 {
   timerdone=1;
 }
-
+#endif
 
 /*******/
 void wxImage::Timer(int n)   /* waits for 'n' milliseconds */

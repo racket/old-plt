@@ -16,7 +16,7 @@
     (parser
      (start CompilationUnit AdvancedInteractions)
      ;;(debug "parser.output")
-     (tokens java-vals Keywords Separators EmptyLiterals Operators)
+     (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
               (if ((determine-error))
                   (raise-read-error (format "Parse error near <~a:~a>" name val)
@@ -144,6 +144,7 @@
       (TypeDeclaration
        [(ClassDeclaration) $1]
        [(InterfaceDeclaration) $1]
+       [(INTERACTIONS_BOX) $1]
        [(SEMI_COLON) #f])
       
       ;; 19.7

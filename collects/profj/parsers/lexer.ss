@@ -6,9 +6,10 @@
   ;; Lacks all Unicode support
 
   
-  (require (lib "lex.ss" "parser-tools"))
+  (require (lib "lex.ss" "parser-tools")
+           "../parameters.ss")
 
-  (provide Operators Separators EmptyLiterals Keywords java-vals get-token get-syntax-token)
+  (provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   
   (define-empty-tokens Operators
     (PIPE OR OREQUAL
@@ -36,7 +37,10 @@
     continue    goto       package       synchronized))
 
   (define-tokens java-vals
-    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR))  
+    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR))
+  
+  (define-tokens special-toks
+    (INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
 
   (define (trim-string s f l)
     (substring s f (- (string-length s) l)))
@@ -65,7 +69,7 @@
 		EndOfLineComment
                 DocumentationComment))
     (TraditionalComment (@ "/*" NotStar CommentTail))
-    (EndOfLineComment (@ "//" (* InputCharacter) (: (eof) LineTerminator)))
+    (EndOfLineComment (@ "//" (* (^ CR LF))))
     (DocumentationComment (@ "/**" CommentTailStar))
     (CommentTail (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
                     (* NotStar)
@@ -150,16 +154,6 @@
 		 "=="	"<="	">="	"!="	"&&" "||"	"++"	"--"
 		 "+"	"-"	"*"	"/"	"&" "|"	"^"	"%"	"<<" ">>" ">>>"
 		 "+="	"-="	"*="	"/="	"&="	"|="	"^="	"%="	"<<="	">>="	">>>=")))
-
-  ;;Old get-string
-  ;; 3.10.5
-  ;(define get-string
-  ;  (lexer
-  ;   (#\" null)
-  ;   (EscapeSequence (cons (EscapeSequence->char lexeme)
-  ;                         (get-string input-port)))
-  ;   ((^ CR LF) (cons (string-ref lexeme 0)
-  ;                    (get-string input-port)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;String lexer
@@ -283,8 +277,10 @@
      ;; 3.7
      (Comment (return-without-pos (get-token input-port)))
 
-;     ((special-comment) (return-without-pos (get-token input-port)))
-     
+     ((special) (if ((interactions-box-test) special)
+                    (token-INTERACTIONS_BOX special)
+                    (token-OTHER_SPECIAL special)))
+          
      ;; 3.6
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))
 
@@ -350,7 +346,7 @@
      ((: (eof) #\032) (values 'eof "eof" start-pos end-pos))
      
      ((special) (syn-val 'error #f start-pos end-pos))
-     
+     ((special-error) (syn-val 'error #f start-pos end-pos))     
      ((special-comment) (syn-val 'comment #f start-pos end-pos))
      
      ((- #\000 #\377) (syn-val 'error lexeme start-pos end-pos))

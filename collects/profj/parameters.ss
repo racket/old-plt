@@ -28,4 +28,7 @@
   ;Stores a function to get the input port in a non-destructive maner
   (define input-port (make-parameter (lambda () void)))
   
+  ;Stores a function ('a -> bool) that determines if the given object is an interactions box
+  (define interactions-box-test (make-parameter (lambda (obj) #f)))
+  
   ) 

@@ -178,6 +178,9 @@
         ((literal-token? tok) (if full? (format "value ~a" (token-value tok)) (token-value tok)))
         ((eq? (get-token-name tok) 'STRING_ERROR)
          (format "malformed string ~a" (car (token-value tok))))
+        ((eq? (get-token-name tok) 'OTHER_SPECIAL)
+         (format "special character ~a" (if (symbol? (token-value tok)) (token-value tok) "")))
+        ((eq? (get-token-name tok) 'INTERACTIONS_BOX) (format "Java Interactions Box"))
         (else (get-token-name tok)))))
 
   ;parse-package: token token symbol (-> token) -> void

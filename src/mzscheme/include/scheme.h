@@ -49,6 +49,8 @@
 # define MUST_REGISTER_GLOBALS
 # define MZTAG_REQUIRED
 # undef UNIX_IMAGE_DUMPS
+/* In case SGC is used to build PRECISE_GC: */
+# undef USE_SENORA_GC
 #endif
 
 #ifdef USE_SENORA_GC

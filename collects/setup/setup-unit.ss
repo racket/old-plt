@@ -272,17 +272,15 @@
 		     (list cc)
 		     (loop (cdr l)))))))
 
-      (define re:dep (regexp "[.]dep$"))
-
       (define (delete-file/record-dependency path dependencies)
-	(when (regexp-match-positions re:dep path)
+	(when (regexp-match-positions #rx"[.]dep$" path)
 	  (let ([deps (with-handlers ([not-break-exn? (lambda (x) null)])
 			(with-input-from-file path read))])
 	    (when (and (pair? deps) (list? deps))
               (for-each (lambda (s)
 			  (when (string? s)
 			    (hash-table-put! dependencies s #t)))
-			(cdr deps)))))
+			(map un-plthome-ify (cdr deps))))))
 	(delete-file path))
 
       (define (delete-files-in-directory path printout dependencies)

@@ -1,5 +1,6 @@
 (module cm mzscheme
-  (require (lib "moddep.ss" "syntax"))
+  (require (lib "moddep.ss" "syntax")
+	   (lib "plthome.ss" "setup"))
 
   (provide make-compilation-manager-load/use-compiled-handler
 	   managed-compile-zo
@@ -18,20 +19,18 @@
   
   (define (get-deps code path)
     (let-values ([(imports fs-imports) (module-compiled-imports code)])
-      (map (lambda (x) 
+      (map (lambda (x)
 	     (resolve-module-path-index x path))
 	   ;; Filter symbols:
 	   (let loop ([l (append imports fs-imports)])
 	     (cond
 	      [(null? l) null]
-	      [(symbol? (car l))(loop (cdr l))]
+	      [(symbol? (car l)) (loop (cdr l))]
 	      [else (cons (car l) (loop (cdr l)))])))))
-  
-  (define re:suffix (regexp "\\..?.?.?$"))
 
   (define (get-compilation-dir+name path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
-      (let ((name (regexp-replace re:suffix name-suffix "")))
+      (let ((name (regexp-replace #rx"\\..?.?.?$" name-suffix "")))
 	(values
 	 (cond
 	  ((eq? 'relative base) (build-path "compiled"))
@@ -41,23 +40,25 @@
   (define (get-compilation-path path)
     (let-values ([(dir name) (get-compilation-dir+name path)])
       (build-path dir name)))
-	
+
   (define (get-code-dir path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
       (cond
         ((eq? 'relative base) (build-path "compiled"))
         (else (build-path base "compiled")))))
-  
+
   (define (write-deps code path external-deps)
     (let ((dep-path (string-append (get-compilation-path path) ".dep"))
           (deps (get-deps code path)))
       (let ((op (open-output-file dep-path 'replace)))
-        (write (cons (version) 
-		     (append deps 
-			     (map (lambda (x) (cons 'ext x)) external-deps))) 
+        (write (cons (version)
+		     (append (map plthome-ify deps)
+			     (map (lambda (x) (plthome-ify (cons 'ext x)))
+                                  external-deps)))
 	       op)
+        (newline op)
         (close-output-port op))))
-  
+
   (define (touch path)
     (close-output-port (open-output-file path 'append)))
 
@@ -67,7 +68,7 @@
     (let ([fail-path (string-append (get-compilation-path path) ".fail")])
       (close-output-port (open-output-file fail-path 'truncate/replace)))
     ((trace) (format "~afailure" (indent))))
-  
+
   (define (compile-zo path)
     ((trace) (format "~acompiling: ~a" (indent) path))
     (parameterize ([indent (string-append "  " (indent))])
@@ -193,7 +194,7 @@
 				   (when (> t path-zo-time)
 				     ((trace) (format "~anewer: ~a (~a > ~a)..." (indent) d t path-zo-time)))
 				   (> t path-zo-time)))
-			       (cdr deps))
+			       (map un-plthome-ify (cdr deps)))
                         (compile-zo path))))))
                 (let ((stamp (get-compiled-time path #t)))
                   (hash-table-put! up-to-date path stamp)

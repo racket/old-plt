@@ -1889,7 +1889,7 @@
     (syntax-case stx ()
       [(_ cls (id arg) ...)
        (andmap identifier? (syntax->list (syntax (id ...))))
-       (syntax (instantiate cls () (id arg) ...))]
+       (syntax/loc stx (instantiate cls () (id arg) ...))]
       [(_ cls (id arg) ...)
        (for-each (lambda (id)
                    (unless (identifier? id)

@@ -141,8 +141,8 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 	    /* Re-use a bucket slot whose key is collected: */
 	    /* DON'T increment counter overall... */
 	    --table->count;
+	    break;
 	  }
-	  break;
 	} else if (SAME_PTR(hk, key))
 	  return bucket;
       } else if (add)
@@ -189,9 +189,7 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     } else {
       for (i = 0; i < oldsize; i++)
 	if (old[i] && old[i]->key)
-	  get_bucket(table, 
-		     table->weak ? *(char **)old[i]->key : old[i]->key, 
-		     1, old[i]);
+	  get_bucket(table, old[i]->key, 1, old[i]);
     }
 
     goto rehash_key;

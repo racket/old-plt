@@ -214,8 +214,11 @@ scheme_init_number (Scheme_Env *env)
     scheme_minus_infinity_val = -scheme_infinity_val;
     not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;
 
-    zerod = scheme_make_double(0.0);
-    nzerod = scheme_make_double(scheme_floating_point_nzero);
+    zerod = scheme_make_double(1.0);
+    SCHEME_DBL_VAL(zerod) = 0.0;
+    nzerod = scheme_make_double(-1.0);
+    SCHEME_DBL_VAL(nzerod) = scheme_floating_point_nzero;
+
     scheme_pi = scheme_make_double(atan2(0, -1));
 #ifdef MZ_USE_SINGLE_FLOATS
     zerof = scheme_make_float(0.0f);
@@ -622,9 +625,33 @@ int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v)
     return 0;
 }
 
+static inline int minus_zero_p(double d)
+{
+  double a[2];
+  long *f, *s;
+
+  a[0] = d;
+  a[1] = scheme_floating_point_nzero;
+
+  f = (long *)a;
+  s = (long *)(a + 1);
+
+  if (f[0] == s[0] && f[1] == s[1])
+    return 1;
+
+  return 0;
+}
+
 Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;
+
+  if (!d) {
+    if (minus_zero_p(d))
+      return nzerod;
+    else
+      return zerod;
+  }
 
   sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
   sd->type = scheme_double_type;
@@ -645,22 +672,6 @@ Scheme_Object *scheme_make_float(float f)
 #endif
 
 /* locals */
-
-static int minus_zero_p(double d) {
-  double a[2];
-  long *f, *s;
-
-  a[0] = d;
-  a[1] = scheme_floating_point_nzero;
-
-  f = (long *)a;
-  s = (long *)(a + 1);
-
-  if (f[0] == s[0] && f[1] == s[1])
-    return 1;
-
-  return 0;
-}
 
 #define NEED_NUMBER(name) \
   scheme_wrong_type(#name, "number", 0, argc, argv)

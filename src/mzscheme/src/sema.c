@@ -249,10 +249,10 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       Scheme_Sema_Waiter *w = MALLOC_ONE(Scheme_Sema_Waiter);
       
       w->p = scheme_current_process;
-      w->in_line = 1;
       
       while (1) {
 	/* Get into line */
+	w->in_line = 1;
 	w->prev = sema->last;
 	if (sema->last)
 	  sema->last->next = w;
@@ -283,10 +283,10 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  scheme_process_block(0);
 	} else {
 	  if (sema->value) {
-	    /* The semaphore picked us to go, but someone stole the post! */
 	    --sema->value;
 	    break;
 	  }
+	  /* Otherwise: the semaphore picked us to go, but someone stole the post! */
 	}
       }
 # else

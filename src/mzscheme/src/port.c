@@ -4493,7 +4493,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     argv = NULL;
     command = SCHEME_STR_VAL(args[0]);
   } else  {
-    argv = (char **)scheme_malloc_atomic((c + 1) * sizeof(char *));
+    argv = (char **)scheme_malloc((c + 1) * sizeof(char *));
     argv[0] = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
 				     SCHEME_STRTAG_VAL(args[0]),
 				     name, NULL);
@@ -5452,7 +5452,7 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
 {
   Scheme_Tcp *data;
   
-  data = (Scheme_Tcp *)scheme_malloc_atomic(sizeof(Scheme_Tcp));
+  data = (Scheme_Tcp *)scheme_malloc(sizeof(Scheme_Tcp));
 #ifdef USE_SOCKETS_TCP
   data->tcp = tcp;
 #endif

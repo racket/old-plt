@@ -1,3 +1,11 @@
+Version 203
+
+The installer no longer displays dialog boxes 
+ when registering the MysterX .DLL files.
+ Instead, successful registration prints a 
+ message to the current output port; a failure
+ prints a message to the current error port.
+
 Version 202
 
 No changes.

@@ -53,8 +53,7 @@
 				print-exact-as-decimal?
 				read-decimal-as-exact?
 				define-argv?
-				use-pretty-printer?
-				teaching-primitives-and-syntax?))
+				use-pretty-printer?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -84,8 +83,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
 	     (name "Intermediate Student")
@@ -112,8 +110,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key advanced)
 	     (name "Advanced Student")
@@ -140,8 +137,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
@@ -168,8 +164,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #f)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme without Debugging (MzScheme)")
@@ -196,8 +191,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #f)))))
+	     (use-pretty-printer? #t)))))
   
   (define (snoc x y) (append y (list x)))
   
@@ -787,9 +781,6 @@
       (mzlib:pretty-print:pretty-print-show-inexactness
        (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
-      (mzlib:pretty-print:pretty-print-.-symbol-without-bars
-       (and (zodiac-vocabulary? setting)
-	    (not (setting-allow-improper-lists? setting))))
 
       ;; use the fractional snips instead.
       (mzlib:print-convert:whole/fractional-exact-numbers #f)

@@ -96,6 +96,11 @@ PROCEDURES -----------------------------------------------------------
 
   Deprecated name for file://path->fs-path.
 
+> (fs-path->file://path string) -> string
+
+  Accepts a platform specific path (on that platform) and returns the
+  equivalent file:// path (with the file: prefix)
+  
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the

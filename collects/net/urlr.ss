@@ -67,14 +67,42 @@
 		  [first-segment (cadr m)]
 		  [rest-segment (caddr m)]
 		  [root-list (filesystem-root-list)])
-	    (let ([path-contains-root? (member first-segment root-list)])
-	      (build-path
-		(if path-contains-root? first-segment (car root-list))
-		(file://rel-path->fs-path
-		  (if path-contains-root?
-		    rest-segment
-		    (substring s 1 (string-length s)))))))]
+	    (build-path
+	      (if (member first-segment root-list)
+		first-segment
+		(car root-list))
+	      (file://rel-path->fs-path
+		(substring s 1 (string-length s)))))]
 	[else (file://rel-path->fs-path s)])))
+
+  (define (fs-path->file://url p)
+    (let ([paths
+           (let loop ([p p]
+                      [acc null])
+             (let-values ([(base name dir?) (split-path p)])
+               (let ([next 
+                      (cons (cond
+                              [(string? name) name]
+                              [(eq? name 'up) ".."]
+                              [(eq? name 'same) "."])
+                            acc)])
+                 (if base
+                     (loop base next)
+                     next))))]
+          [trailing-slash? (let-values ([(base name dir?) (split-path p)])
+                             dir?)])
+      (if (null? paths)
+          "file://"
+          (apply string-append
+                 (list*
+                  "file://"
+                  (car paths)
+                  (let loop ([paths (cdr paths)])
+                    (cond
+                      [(null? paths) (if trailing-slash? (list "/") null)]
+                      [else (list* "/"
+                                   (car paths)
+                                   (loop (cdr paths)))])))))))
 
   (define unixpath->path file://path->fs-path)
 
@@ -465,7 +493,7 @@
 		    scheme
 		    #f			; host
 		    #f			; port
-		    (substring string path-start total-length)
+		    (build-path (substring string path-start total-length))
 		    #f			; params
 		    #f			; query
 		    #f)			; fragment

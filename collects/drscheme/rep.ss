@@ -176,6 +176,13 @@
       (if (send bitmap ok?)
           (make-object mred:image-snip% bitmap)
           (make-object mred:string-snip% "[open file]"))))
+  (define mf-icon 
+   (let ([bitmap
+           (make-object mred:bitmap%
+             (build-path (collection-path "icons") "mf.gif"))])
+      (if (send bitmap ok?)
+          (make-object mred:image-snip% bitmap)
+          (make-object mred:string-snip% "[show history]"))))
   (define bug-icon 
     (let ([bitmap
            (make-object mred:bitmap%
@@ -1071,8 +1078,15 @@
                   (lock #f)
                   
 		  (when show-bug?
-                    (let ([last-pos (last-position)])
-                      (insert (send bug-icon copy) last-pos last-pos)
+                    (let ([last-pos (last-position)]
+                          [date (seconds->date (current-seconds))])
+                      (insert (send (if (and (= (date-month date) 10)
+                                             (= (date-day date) 29)
+                                             (>= (date-hour date) 6))
+                                        mf-icon
+                                        bug-icon)
+                                    copy)
+                              last-pos last-pos)
                       (change-style click-delta last-pos (last-position))
                       (set-clickback last-pos (last-position)
                                      (lambda (text start end) (show-backtrace-window dis message))

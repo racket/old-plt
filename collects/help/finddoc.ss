@@ -17,6 +17,6 @@
 			(hash-table-put! ht key l)
 			l))))])
 	  (let ([m (assoc index-key l)])
-	    (format "<A href=\"file:~a\">~a</A>"
-		    (build-path docdir (cadr m))
+	    (format "<A href=\"~a\">~a</A>"
+		    (fs-path->file://path (build-path docdir (cadr m)))
 		    label)))))))

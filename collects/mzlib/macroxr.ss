@@ -23,21 +23,65 @@
 		       "bad definition sequence"
 		       (list* 'local defines expr1 body)
 		       defines))
-    `(let () 
-       ,@(map
-	  (lambda (def)
-	    (let-values ([(d kind) (local-expand-body-expression def)])
-	      (unless (and (eq? kind '#%define-values)
-			   (list? d)
-			   (= 3 (length d)))
-		      (raise-syntax-error
-		       'local
-		       "bad definition"
-		       (list* 'local defines expr1 body)
-		       def))
-	      d))
-	  defines)
-       0 (let () ,expr1 ,@body))))
+    (let* ([symilist? (lambda (l)
+			 (let loop ([l l])
+			   (or (null? l)
+			       (symbol? l)
+			       (and (pair? l)
+				    (symbol? (car l))
+				    (loop (cdr l))))))]
+	   [defs 
+	     (map
+	      (lambda (def)
+		(unless (and (list? def)
+			     (pair? def)
+			     (case (car def)
+			       [(#%define-values define-values)
+				(and (= 3 (length def))
+				     (list? (cadr def))
+				     (andmap symbol? (cadr def))
+				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) (,(gensym)) 1))])
+                                       (eq? kind '#%define-values)))]
+			       [(#%define define)
+				(and (or (and (= 3 (length def))
+					      (symbol? (cadr def)))
+					 (and (>= 3 (length def))
+					      (pair? (cadr def))
+					      (symilist? (cadr def))))
+				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) ,(gensym) 1))])
+                                       (eq? kind '#%define-values)))]
+			       [(#%define-struct define-struct)
+				(and (= 3 (length def))
+				     (or (symbol? (cadr def))
+					 (and (list? (cadr def))
+					      (= 2 (length (cadr def)))
+					      (symbol? (caadr def))))
+				     (list? (caddr def))
+				     (andmap symbol? (caddr def))
+				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) ,(gensym) ()))])
+                                       (eq? kind '#%define-values)))]
+			       [else #f]))
+		   (raise-syntax-error
+		    'local
+		    "bad definition"
+		    (list* 'local defines expr1 body)
+		    def))
+		(case (car def)
+		  [(#%define-values define-values) (cadr def)]
+		  [(#%define define) (list (if (symbol? (cadr def))
+					       (cadr def)
+					       (caadr def)))]
+		  [else (let ([s `(#%define-struct
+				   ,(if (symbol? (cadr def))
+					(cadr def)
+					(caadr def))
+				   ,(caddr def))])
+			  (cadr (expand-defmacro s)))]))
+	      defines)]
+	   [defined-names (apply append defs)])
+      `(let ,(map (lambda (n) `(,n (#%void))) defined-names)
+        ,@defines
+	(let () ,expr1 ,@body)))))
 
  ;; recur is another name for 'let' in a named let
  (define recur 

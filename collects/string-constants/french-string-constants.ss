@@ -648,7 +648,7 @@
   (previous-window "Fenêtre précédente")
   (most-recent-window "Fenêtre la plus récente")
   
-  (show-menu-label "&Montrer")
+  (view-menu-label "&Montrer")
   (show-overview "Montrer le contour") 
   (hide-overview "Cacher le contour")
   (show-module-browser "Montrer le navigateur de modules")

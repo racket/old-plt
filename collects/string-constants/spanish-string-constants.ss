@@ -555,7 +555,7 @@
  (previous-window "Ventana anterior")
  (most-recent-window "Ventana más reciente")
  
- (show-menu-label "&Muestra")
+ (view-menu-label "&Muestra")
  (show-overview "Mostrar Panorama")
  (hide-overview "Esconder Panorama")
  (show-module-browser "Mostrar Navegador de Módulos")

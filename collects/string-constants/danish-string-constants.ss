@@ -552,7 +552,7 @@
  (previous-window "Forrige vindue")
  (most-recent-window "Sidst besøgte vindue")
 
- (show-menu-label "&Vis")
+ (view-menu-label "&Vis")
  (show-overview "Vis programkontur")
  (hide-overview "Skjul programkontur")
  (show-module-browser "Vis moduloversigt")

@@ -648,7 +648,7 @@ please adhere to these guidelines:
  (previous-window "Previous Window")
  (most-recent-window "Most Recent Window")
 
- (show-menu-label "&Show")
+ (view-menu-label "&View")
  (show-overview "Show Program Contour") 
  (hide-overview "Hide Program Contour")
  (show-module-browser "Show Module Browser")
@@ -744,14 +744,16 @@ please adhere to these guidelines:
  (recent-items-sort-by-age "Sort by Age")
  (recent-items-sort-by-name "Sort by Name")
  
- ;;; show menu
+ ;;; view menu
  (hide-definitions-menu-item-label "Hide &Definitions")
  (show-definitions-menu-item-label "Show &Definitions")
  (definitions-menu-item-help-string "Show/Hide the definitions window")
  (show-interactions-menu-item-label "Show &Interactions")
  (hide-interactions-menu-item-label "Hide &Interactions")
  (interactions-menu-item-help-string "Show/Hide the interactions window")
- 
+ (show-toolbar "Show &Toolbar")
+ (hide-toolbar "Hide &Toolbar")
+
  ;;; file menu
  (save-definitions-as "Save Definitions &As...")
  (save-definitions "Save Definitions")

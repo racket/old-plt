@@ -381,7 +381,7 @@
  (bring-frame-to-front "Bringe Fenster nach vorne")       ;;; title of dialog
  (bring-frame-to-front... "Bringe Fenster nach vorne...") ;;; corresponding title of menu item
  
- (show-menu-label "&Anzeigen")
+ (view-menu-label "&Anzeigen")
  (show-overview "Zeige Speedbar")
  (hide-overview "Verstecke Speedbar")
 

@@ -464,7 +464,7 @@
  (next-window "Volgend venster")
  (previous-window "Vorig venster")
 
- (show-menu-label "&Tonen")
+ (view-menu-label "&Tonen")
  (show-overview "Overzicht") 
  (hide-overview "Geen Overzicht")
 

@@ -1107,6 +1107,21 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
 
 wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
 {
+  Init();
+
+  if (name && *name)
+    LoadFile(name, type, relative, inlineImg);
+}
+
+wxImageSnip::wxImageSnip(wxBitmap *bm)
+{
+  Init();
+
+  SetBitmap(bm);
+}
+
+void wxImageSnip::Init(void)
+{
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_IMAGE_SNIP;
 #endif
@@ -1120,9 +1135,6 @@ wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
   bm = NULL;
   vieww = viewh = -1.0;
   viewdx = viewdy = 0.0;
-
-  if (name && *name)
-    LoadFile(name, type, relative, inlineImg);
 }
 
 wxImageSnip::~wxImageSnip()

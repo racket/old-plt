@@ -50,10 +50,11 @@
 @CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle]=0, string = "frame") : : /CHECKEVENTSPACE[METHODNAME("frame%","initialization")]|NOZERO[4]|NOZERO[5]/
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[<p>]);
+@MACRO CHECKICONBW[p] = if (x<p> && (x<p>->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "mask bitmap is not monochrome: ", p[<p>]);
 
 @ "set-title" : void SetTitle(string);
 @ "iconize" : void Iconize(bool);
-@ "set-icon" : void SetIcon(wxBitmap!,wxBitmap! = NULL); : : /CHECKICONOK[0]|CHECKICONOK[1]
+@ "set-icon" : void SetIcon(wxBitmap!,wxBitmap! = NULL); : : /CHECKICONOK[0]|CHECKICONOK[1]|CHECKICONBW[1]
 @ "set-menu-bar" : void SetMenuBar(wxMenuBar!) : : /CHECKHASMENU[ ]
 @IVAR r "menu-bar" : wxMenuBar^ wx_menu_bar ## NO_GET_MENU_BAR
 @ "get-menu-bar" : wxMenuBar^ GetMenuBar() ## HAS_GET_MENU_BAR

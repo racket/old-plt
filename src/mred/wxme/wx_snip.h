@@ -276,12 +276,15 @@ class wxImageSnip : public wxInternalSnip
   wxBitmap *bm;
   Bool relativePath;
 
+  void Init(void);
+
  protected:
   float w, h, vieww, viewh, viewdx, viewdy;
   Bool contentsChanged;
 
  public:
   wxImageSnip(char *name = NULL, long type = 0, Bool relative = FALSE, Bool inlineImg = TRUE); 
+  wxImageSnip(wxBitmap *bm);
   ~wxImageSnip(); 
 
   virtual void SizeCacheInvalid(void);

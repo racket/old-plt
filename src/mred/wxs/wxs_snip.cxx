@@ -4602,6 +4602,7 @@ class os_wxImageSnip : public wxImageSnip {
  public:
 
   os_wxImageSnip(Scheme_Object * obj, nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE);
+  os_wxImageSnip(Scheme_Object * obj, class wxBitmap* x0);
   ~os_wxImageSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
   nnlong FindScrollStep(float x0);
@@ -4630,6 +4631,14 @@ Scheme_Object *os_wxImageSnip_class;
 
 os_wxImageSnip::os_wxImageSnip(Scheme_Object * o, nstring x0, int x1, Bool x2, Bool x3)
 : wxImageSnip(x0, x1, x2, x3)
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxImageSnip::os_wxImageSnip(Scheme_Object * o, class wxBitmap* x0)
+: wxImageSnip(x0)
 {
   __gc_external = (void *)o;
   objscheme_backpointer(&__gc_external);
@@ -5171,7 +5180,7 @@ static Scheme_Object *os_wxImageSnipSetBitmap(Scheme_Object *obj, int n,  Scheme
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-bitmap in image-snip%", 0);
 
-  
+  { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
   ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->SetBitmap(x0);
 
   
@@ -5865,35 +5874,50 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxImageSnip *realobj;
-  nstring x0;
-  int x1;
-  Bool x2;
-  Bool x3;
+  if ((n >= 1) && objscheme_istype_wxBitmap(p[0], NULL, 0)) {
+    class wxBitmap* x0;
 
-  
-  if ((n > 4)) 
-    scheme_wrong_count("initialization in image-snip%", 0, 4, n, p);
-  if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "initialization in image-snip%");
-  } else
-    x0 = NULL;
-  if (n > 1) {
-    x1 = unbundle_symset_bitmapType(p[1], "initialization in image-snip%");
-  } else
-    x1 = 0;
-  if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "initialization in image-snip%");
-  } else
-    x2 = FALSE;
-  if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "initialization in image-snip%");
-  } else
-    x3 = TRUE;
+    
+    if (n != 1) 
+      scheme_wrong_count("initialization in image-snip% (bitmap case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxBitmap(p[0], "initialization in image-snip% (bitmap case)", 0);
 
-  
-  realobj = new os_wxImageSnip(obj, x0, x1, x2, x3);
-  if (x0) scheme_process_block(0.0);
-  
+    { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
+    realobj = new os_wxImageSnip(obj, x0);
+    
+    
+  } else  {
+    nstring x0;
+    int x1;
+    Bool x2;
+    Bool x3;
+
+    
+    if ((n > 4)) 
+      scheme_wrong_count("initialization in image-snip% (filename case)", 0, 4, n, p);
+    if (n > 0) {
+      x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "initialization in image-snip% (filename case)");
+    } else
+      x0 = NULL;
+    if (n > 1) {
+      x1 = unbundle_symset_bitmapType(p[1], "initialization in image-snip% (filename case)");
+    } else
+      x1 = 0;
+    if (n > 2) {
+      x2 = objscheme_unbundle_bool(p[2], "initialization in image-snip% (filename case)");
+    } else
+      x2 = FALSE;
+    if (n > 3) {
+      x3 = objscheme_unbundle_bool(p[3], "initialization in image-snip% (filename case)");
+    } else
+      x3 = TRUE;
+
+    
+    realobj = new os_wxImageSnip(obj, x0, x1, x2, x3);
+    if (x0) scheme_process_block(0.0);
+    
+  }
+
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
   ((Scheme_Class_Object *)obj)->primflag = 1;

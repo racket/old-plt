@@ -96,10 +96,6 @@
   
   
 
-  ; debug-key: this key will be used as a key for the continuation marks.
-  
-  (define debug-key (gensym "debug-key-"))
-
   ; translate-varref : returns the name the varref will get in the final output
   
   (define (translate-varref expr)

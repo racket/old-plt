@@ -2,11 +2,9 @@
   (import mzlib:core^
           [m : mred^]
           [marks : stepper:marks^]
-          [annotate : stepper:annotate^]
           [pc : mzlib:print-convert^]
           [pp : mzlib:pretty-print^]
           [z : zodiac:system^]
-          [utils : stepper:cogen-utils^]
           [e : zodiac:interface^]
           [fw : framework^]
           [d : drscheme:export^])
@@ -249,7 +247,16 @@
   ; ----------------------------------------------------------------
   
   ; set up debugger preferences panel
+  
   (fw:preferences:set-default 'ankle-annotation #f boolean?)
+  
+  ;link to parameter
+  (marks:ankle-wrap-enabled (fw:preferences:get 'ankle-annotation))
+  (fw:preferences:add-callback 'ankle-annotation
+                               (lambda (val)
+                                 (marks:ankle-wrap-enabled val)
+                                 #t))
+  
   
   (define (ankle-pref-callback cbox event)
     (case (send event get-event-type)
@@ -279,8 +286,7 @@
   
   
   (define (break)
-    (let* ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
-                                                         annotate:debug-key)]
+    (let* ([break-info-list (marks:extract-mark-list  (current-continuation-marks))]
            [new-semaphore (make-semaphore)])
       (when (null? break-info-list)
         (error 'breakpoint "no marks to debug (could be in No Debugging mode?)"))

@@ -43,21 +43,15 @@
                            zodiac
                            utils
                            marks
-                           annotate
-                           ankle-query)]
-        [ankle-query : (use-ankle-wrap?)
-                     ((require-library-unit/sig "ankle-query.ss" "stepper-graphical")
-                      framework)]
+                           annotate)]
         [break : (break)
                ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
                 core
                 mred
                 marks
-                annotate
                 print-convert
                 pretty
                 zodiac
-                utils
                 error
                 framework
                 drscheme)]

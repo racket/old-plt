@@ -25,11 +25,13 @@
 
 (define-signature plt:aries-no-break^
   (annotate
-   extract-zodiac-locations
    w-c-m-key
+   extract-zodiac-locations
+   extract-mark-list
    make-zodiac-mark
    signal-not-boolean
-   signal-undefined))
+   signal-undefined
+   ankle-wrap-enabled))
   
 (define-signature plt:aries^
   ((open plt:aries-no-break^)
@@ -47,7 +49,11 @@
    mark-binding-binding
    expose-mark
    display-mark
-   lookup-binding))
+   lookup-binding
+   debug-key
+   extract-zodiac-locations
+   extract-mark-list
+   ankle-wrap-enabled))
 
 (define-signature stepper:client-procs^
   (read-getter
@@ -98,8 +104,7 @@
 
 (define-signature stepper:annotate^
   (initial-env-package
-   annotate
-   debug-key))
+   annotate))
 
 (define-signature stepper:reconstruct^
   (reconstruct-completed

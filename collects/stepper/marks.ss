@@ -4,6 +4,13 @@
           [cp : stepper:client-procs^]
           mzlib:function^)
   
+  ; debug-key: this key will be used as a key for the continuation marks.
+  
+  (define debug-key (gensym "debug-key-"))
+  
+  (define (extract-mark-list mark-set)
+    (continuation-mark-set->list mark-set debug-key))
+
   (define (make-full-mark location label bindings)
     `(#%lambda () (#%list ,location (#%quote ,label) ,@(apply append bindings))))
   
@@ -21,6 +28,10 @@
         (cheap-mark-source mark)
         (car (mark))))
   
+  ;; extract-zodiac-locations : mark-set -> (listof zodiac)
+  (define (extract-zodiac-locations mark-set)
+    (map mark-source (extract-mark-list mark-set)))
+    
   (define (mark-bindings mark)
     (letrec ([pair-off
               (lambda (lst)
@@ -76,4 +87,8 @@
                 [(= (length matches) 1)
                  (car matches)]
                 [else 
-                 (error 'lookup-binding "multiple bindings found for ~a" binding)])))))
+                 (error 'lookup-binding "multiple bindings found for ~a" binding)]))))
+  
+  ; I'm not really sure this belongs here, but it's a convenient spot.
+  (define ankle-wrap-enabled 
+    (make-parameter #f boolean?)))

@@ -447,7 +447,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
     scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
-    {
+    if (DRAWABLE && src->Ok()) {
       int tx, ty;
       Region free_rgn = NULL;
 
@@ -462,44 +462,38 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 			      &xsrc, &ysrc,
 			      DPY);
 
-      if (DRAWABLE && src->Ok()) {
-	// Check if we're copying from a mono bitmap
-	retval = TRUE;
-	if ((rop == wxSOLID) || (rop == wxXOR)) {
-	  /* Seems like the easiest way to implement transparent backgrounds is to
-	     use a stipple. */
-	  XGCValues values;
-	  unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
-	  values.stipple = GETPIXMAP(src);
-	  values.fill_style = FillStippled;
-	  values.ts_x_origin = ((tx - (long)xsrc) % src->GetWidth());
-	  values.ts_y_origin = ((ty - (long)ysrc) % src->GetHeight());
-	  XChangeGC(DPY, PEN_GC, mask, &values);
-	  XFillRectangle(DPY, DRAWABLE, PEN_GC, tx, ty, scaled_width, scaled_height);
-	} else {
-	  Pixmap pm;
-	  pm = GETPIXMAP(src);
-	  XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
-		     (long)xsrc, (long)ysrc,
-		     scaled_width, scaled_height,
-		     tx, ty, 1);
-	}
-	CalcBoundingBox(xdest, ydest);
-	CalcBoundingBox(xdest + w, ydest + h);
-      }
-
-      {
-	/* The pen will reset its own GC later, but clear out things
-	   that might disappear meanwhile, or might use space: */
-#if 0
+      // Check if we're copying from a mono bitmap
+      retval = TRUE;
+      if ((rop == wxSOLID) || (rop == wxXOR)) {
+	/* Seems like the easiest way to implement transparent backgrounds is to
+	   use a stipple. */
 	XGCValues values;
-	unsigned long mask = GCStipple;
-	values.stipple = None;
+	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	values.stipple = GETPIXMAP(src);
+	values.fill_style = FillStippled;
+	values.ts_x_origin = ((tx - (long)xsrc) % src->GetWidth());
+	values.ts_y_origin = ((ty - (long)ysrc) % src->GetHeight());
 	XChangeGC(DPY, PEN_GC, mask, &values);
-#endif
-	XSetClipMask(DPY, PEN_GC, None);
-      }
+	XFillRectangle(DPY, DRAWABLE, PEN_GC, tx, ty, scaled_width, scaled_height);
 
+	/* Restore pen: */
+	values.fill_style = FillSolid;
+	XChangeGC(DPY, PEN_GC, GCFillStyle, &values);
+      } else {
+	Pixmap pm;
+	pm = GETPIXMAP(src);
+	XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
+		   (long)xsrc, (long)ysrc,
+		   scaled_width, scaled_height,
+		   tx, ty, 1);
+      }
+      CalcBoundingBox(xdest, ydest);
+      CalcBoundingBox(xdest + w, ydest + h);
+      
+      /* restore pen: */
+      if (mask)
+	SetCanvasClipping();
+      
       if (free_rgn)
 	XDestroyRegion(free_rgn);
     }
@@ -514,7 +508,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       DELETE_OBJ tmp_mask;
     }
       
-    return retval; // someting wrong with the drawables
+    return retval; // #f => something wrong with the drawables
 }
 
 Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *src,

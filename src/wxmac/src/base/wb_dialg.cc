@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dialg.cc,v 1.3 1998/06/02 20:51:41 robby Exp $
+ * RCS_ID:      $Id: wb_dialg.cc,v 1.4 1998/08/14 13:56:01 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -106,10 +106,11 @@ Bool wxbDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
                          int x, int y, int width, int height, long style, char *name)
 {
   windowStyle = style;
-  if (!Parent) {
-    wxTopLevelWindows(ContextWindow())->Append(this);
-    wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
-  }
+#if 0
+  /* Handled by dialog's frame. */
+  wxTopLevelWindows(ContextWindow())->Append(this);
+  wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
+#endif
   return TRUE;
 }
 

@@ -341,6 +341,10 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   scheme_longjmp(b->buf, 1);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
 			     void * volatile start, Scheme_Jumpup_Buf *c)
 {
@@ -367,6 +371,10 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
 
   return local;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void scheme_longjmpup(Scheme_Jumpup_Buf *b)
 {

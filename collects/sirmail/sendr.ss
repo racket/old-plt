@@ -198,7 +198,7 @@
 			  (list
 			   (format "--~a--" boundary))))))))
 
-      (define (get-enclosure-type-and-encoding filename mailer-frame)
+      (define (get-enclosure-type-and-encoding filename mailer-frame auto?)
         (let ([types '("application/postscript"
                        "text/plain"
                        "text/html"
@@ -228,7 +228,7 @@
                 [button-panel (instantiate horizontal-pane% (d)
                                 [alignment '(right center)]
                                 [stretchable-height #f])]
-                [ok? #f])
+                [ok? auto?])
             (let-values ([(ok cancel) (gui-utils:ok/cancel-buttons
                                        button-panel
                                        (lambda (b e) 
@@ -254,7 +254,8 @@
                   [(png) (default "image/png" "base64" #t)]
                   [(gif) (default "image/gif" "base64" #t)]
                   [else (default "application/octet-stream" "base64" #f)]))
-              (send d show #t)
+	      (unless auto?
+		(send d show #t))
               (if ok?
                   (values (list-ref types (send type-list get-selection))
                           (list-ref encodings (send encoding-list get-selection))
@@ -268,7 +269,7 @@
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures message-count)
         (define f% (class frame:basic%
-                     (inherit get-menu-bar set-icon get-eventspace)
+                     (inherit get-menu-bar set-icon get-eventspace accept-drop-files)
                      [define/public (send-message)
                        (send-msg)]
                      (define/augment (can-close?)
@@ -284,7 +285,10 @@
                        (send message-editor on-close)
                        (inner (void) on-close)
                        (exit-sirmail "mailer close"))
+		     (define/override (on-drop-file f)
+		       (add-enclosure-file f #t))
                      (super-instantiate ())
+		     (accept-drop-files #t)
                      (when send-icon
                        (set-icon send-icon send-icon-mask))))
         (define mailer-frame (make-object f% "Send Mail" #f FRAME-WIDTH FRAME-HEIGHT))
@@ -445,6 +449,45 @@
         (define (get-fresh-queue-filename)
           (build-path queue-directory 
                       (format "enq~a" (+ 1 (length (directory-list queue-directory))))))
+
+	(define (add-enclosure-file file auto?)
+	  (let-values ([(type encoding inline?) (get-enclosure-type-and-encoding file mailer-frame auto?)])
+	    (when (and type encoding)
+	      (let ([i (send enclosure-list new-item)]
+		    [enc (make-enclosure
+			  (path->string file)
+			  (let ([fn (clean-filename
+				     (with-handlers ([void (lambda (x) "unknown")])
+				       (let-values ([(base name dir?) (split-path file)])
+					 (path->string name))))])
+			    (insert-field
+			     "Content-Type" 
+			     (data-lines->data
+			      (list
+			       (string-append type ";")
+			       (format "name=~s" fn)))
+			     (insert-field
+			      "Content-Transfer-Encoding" encoding
+			      (insert-field
+			       "Content-Disposition"
+			       (data-lines->data
+				(list
+				 (format "~a; " (if inline? 'inline 'attachment))
+				 (format "filename=~s" fn)))
+			       empty-header))))
+			  (lambda ()
+			    (let ([content (with-input-from-file file
+					     (lambda ()
+					       (read-bytes (file-size file))))])
+			      (case (string->symbol encoding)
+				[(base64) (split-crlf (base64-encode content))]
+				[(quoted-printable) (split-crlf (qp-encode (lf->crlf content)))]
+				[(7bit) (split-lf (crlf->lf content))]))))])
+		(send (send i get-editor) insert (enclosure-name enc))
+		(send i user-data enc)
+		(let ([p (send mailer-frame get-area-container)])
+		  (unless (memq enclosure-list (send p get-children))
+		    (send p add-child enclosure-list)))))))
         
         (define external-composer (get-pref 'sirmail:external-composer))
         
@@ -497,43 +540,8 @@
           (lambda (i env)
             (let ([file (get-file "Get Enclosure" mailer-frame)])
               (when file
-                (let-values ([(type encoding inline?) (get-enclosure-type-and-encoding file mailer-frame)])
-                  (when (and type encoding)
-                    (let ([i (send enclosure-list new-item)]
-                          [enc (make-enclosure
-                                (path->string file)
-                                (let ([fn (clean-filename
-                                           (with-handlers ([void (lambda (x) "unknown")])
-                                             (let-values ([(base name dir?) (split-path file)])
-                                               (path->string name))))])
-                                  (insert-field
-                                   "Content-Type" 
-                                   (data-lines->data
-                                    (list
-                                     (string-append type ";")
-                                     (format "name=~s" fn)))
-                                   (insert-field
-                                    "Content-Transfer-Encoding" encoding
-                                    (insert-field
-                                     "Content-Disposition"
-                                     (data-lines->data
-                                      (list
-                                       (format "~a; " (if inline? 'inline 'attachment))
-                                       (format "filename=~s" fn)))
-                                     empty-header))))
-                                (lambda ()
-                                  (let ([content (with-input-from-file file
-                                                   (lambda ()
-                                                     (read-bytes (file-size file))))])
-                                    (case (string->symbol encoding)
-                                      [(base64) (split-crlf (base64-encode content))]
-                                      [(quoted-printable) (split-crlf (qp-encode (lf->crlf content)))]
-                                      [(7bit) (split-lf (crlf->lf content))]))))])
-                      (send (send i get-editor) insert (enclosure-name enc))
-                      (send i user-data enc)
-                      (let ([p (send mailer-frame get-area-container)])
-                        (unless (memq enclosure-list (send p get-children))
-                          (send p add-child enclosure-list))))))))))
+		(add-enclosure-file file #f)))))
+
         (make-object separator-menu-item% file-menu)
         (make-object (class menu% 
                        (inherit get-items)

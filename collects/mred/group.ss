@@ -1,6 +1,8 @@
 (define mred:group@
   (unit/sig mred:group^
     (import [mred:debug : mred:debug^]
+	    [mred:preferences : mred:preferences^]
+	    [mred:frame : mred:frame^]
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:exit : mred:exit^]
 	    [mred:autosave : mred:autosave^]
@@ -16,7 +18,8 @@
 	    (private
 	      [buffers '()])
 	    (public
-	      [autosave? mred:autosave:autosaving-on?]
+	      [autosave? (mred:preferences:get-preference
+			  'mred:autosaving-on?)]
 	      [for-each-buffer
 	       (lambda (f)
 		 (for-each
@@ -150,7 +153,7 @@
 
 		 (public
 		  [buffer-group% b-group%]
-		  [frame% frame%]
+		  [frame% mred:frame:editor-frame%]
 		  [get-frame% (lambda () frame%)]
 
 		  [get-buffer-group% (lambda () buffer-group%)]

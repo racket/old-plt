@@ -14,7 +14,7 @@
 
 /*	MacOS Toolbox #includes */
 
-#ifndef OS_X
+#ifndef WX_CARBON
 
 #if !defined( __CONTROLS__ )
 	#include <Controls.h>

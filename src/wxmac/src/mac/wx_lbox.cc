@@ -114,7 +114,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        int x, int y, int width, int height,
                        int N, char **Choices, long style, char *name)
 {
-  SetEraser(NULL);
+  SetEraser(wxWHITE_BRUSH);
 
   labelFont = panel->labelFont ;
   backColour = panel->backColour ;
@@ -252,40 +252,11 @@ void wxListBox::Paint(void)
   SetCurrentDC();
   RgnHandle visibleRgn = NewRgn();
   if (visibleRgn) {
-#ifdef WX_CARBON
     GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
-#else
-    CopyRgn(cMacDC->macGrafPort()->visRgn,visibleRgn);
-#endif
     ::ALUpdate(visibleRgn, cListReference);
     DisposeRgn(visibleRgn);
   }
   
-
-  /* White out any empty space in the list: */
-  /* The following has not been updated to deal with the non-SetOrigin world */
-  /*	Point last, dlast;
-	Rect lastR, allR;
-	last.v = (**cListHandle).visible.bottom - 1;
-	last.h = (**cListHandle).visible.right - 1;
-	dlast.v = (**cListHandle).dataBounds.bottom - 1;
-	dlast.h = (**cListHandle).dataBounds.right - 1;
-	if (dlast.v < last.v)
-	last.v = dlast.v;
-	if (dlast.h < last.h)
-	last.h = dlast.h;
-	LRect(&lastR, last, cListHandle);
-	allR = (**cListHandle).rView;
-	if (allR.bottom > lastR.bottom) {
-	allR.top = lastR.bottom;
-	::EraseRect(&allR);
-	}
-	if (allR.right > lastR.right) {
-	allR.top = (**cListHandle).rView.top;
-	allR.left = lastR.right;
-	::EraseRect(&allR);
-	}
-	*/	
   wxWindow::Paint();
 }
 

@@ -37,18 +37,8 @@
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 #define VSLOP 3
 #define HSLOP 4
-#ifdef WX_CARBON
 #define PAD_Y 4
 #define PAD_X 2
-#else
-#define PAD_X 0
-#define PAD_Y 0
-#define MSPACEX 4
-#define TRIANGLE_WIDTH 10
-#define TRIANGLE_RIGHT_SPACE 5
-#define TRIANGLE_HEIGHT 5
-#define Checkem	TRUE;		// adds code to do checkmarks to selected item
-#endif
 #define MSPACEY 1
 
 
@@ -101,22 +91,27 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   float fDescent = 0.0;
   float fLeading = 0.0;
   labelbase = 9;
-  if (Title)
-    {
-      GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-      if (fHeight < 12) fHeight = 12; 
-      int n = strlen(Title);
-      sTitle = (StringPtr)new char[n+1];
-      sTitle[0] = n;
-      memcpy(&sTitle[1], Title, n);
-      labelbase = (int)(fDescent + fLeading);
-    }
-  else  {
+  if (Title) {
+    GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+    if (fHeight < 12) fHeight = 12; 
+    int n = strlen(Title);
+    sTitle = (StringPtr)new char[n+1];
+    sTitle[0] = n;
+    memcpy(&sTitle[1], Title, n);
+    labelbase = (int)(fDescent + fLeading);
+  } else  {
     sTitle = NULL;
     fWidth = fHeight = 0;
   }
   int lblw = (int)(fWidth + (Title ? HSLOP : 0));
   int lblh = (int)(fHeight+2);
+
+    
+  if (labelPosition == wxVERTICAL) {
+    padTop += lblh + VSLOP;
+  } else{
+    padLeft += lblw;
+  }
   
   int maxdfltw;
   int maxdflth;
@@ -133,12 +128,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   // Build the menu and find the width of the longest string
   PopUpID = wxMenu::gMenuIdCounter++;
-#ifdef PPCC
-  Str255 ns = "\p";
-  hDynMenu = NewMenu(PopUpID, ns);
-#else
   hDynMenu = NewMenu(PopUpID, "\p");
-#endif
   CheckMemOK(hDynMenu);
   int n,w,h;
   Str255 temp;
@@ -154,7 +144,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     ::SetMenuItemText(hDynMenu, n + 1,temp);
   }
   no_strings = N;
-#ifdef WX_CARBON
+
   // First, create the control with a bogus rectangle;
   OSErr err;
   Rect r = {0,0,0,0};
@@ -168,14 +158,9 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   ::SetRect(&r,0,0,0,0);
   SInt16 baselineOffset; // ignored
   err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
-  maxdfltw = r.right - r.left + (padLeft + padRight);
-  maxdflth = r.bottom - r.top + (padTop + padBottom);
-#else        
-  maxdflth += MSPACEY*2;			// extra pixels on top & bottom
-  char checkm[] = {18, 0};
-  GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-  maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
-#endif        
+  maxdfltw = r.right - r.left + (PAD_X * 2);
+  maxdflth = r.bottom - r.top + (PAD_Y * 2);
+
   // compute the Rects that contain everything.
   // note valuebase and labelbase are changed from font descents
   // to number of pixels to substract from the rect bottom.
@@ -208,19 +193,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   SetSelection(0);
 
   ::EmbedControl(cMacControl, GetRootControl());
-  //DrawChoice(TRUE);
 
-#ifdef WX_CARBON
-  r = ValueRect;
-  ::OffsetRect(&r,SetOriginX+padLeft,SetOriginY+padTop);
-  r.left += padLeft;
-  r.top += padTop;
-  r.right -= padRight;
-  r.bottom -= padBottom;
-  ::MoveControl(cMacControl,r.left,r.top);
-  ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
-#endif        
-  
   if (GetParent()->IsHidden())
     DoShow(FALSE);
 
@@ -234,65 +207,8 @@ int wxChoice::Number(void)
 
 wxChoice::~wxChoice (void)
 {
-#ifndef WX_CARBON
-  if (hDynMenu)
-    ::DisposeMenu(hDynMenu);
-  hDynMenu = NULL;
-#endif        
-  delete[] sTitle;
-}
-// --------- Calculate the ValueRect based on the menu's strings ----
-
-void wxChoice::ReCalcRect(void) 
-{
-  int maxdfltw = 30;
-  int maxdflth = 12;
-  int w,h;
-
-#ifdef WX_CARBON
-  Rect r = {0,0,0,0};
-  SInt16 baselineOffset; // ignored
-  ::GetBestControlRect(cMacControl,&r,&baselineOffset);
-  maxdfltw = r.right - r.left + (padLeft + padRight);
-  maxdflth = r.bottom - r.top + (padTop + padBottom);
-#else
-  float	fWidth, fHeight, fDescent, fLeading;
-  int n;
-  unsigned char temp[256];
-
-  for (n = 0; n < no_strings; n++) {
-    // attempt to size control by width of largest string
-    ::GetMenuItemText(hDynMenu, n+1, temp);
-    temp[temp[0]+1] = '\0';
-    GetTextExtent((char *)&temp[1], &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
-    w = (int)fWidth;
-    h = (int)fHeight;
-    maxdfltw = max(w, maxdfltw);
-    maxdflth = max(h, maxdflth);
-  }
-  maxdflth += MSPACEY*2;			// extra pixels on top & bottom
-  char checkm[] = {18, 0};
-  GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-  maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
-#endif        
-  // compute the Rects that contain everything.
-  // note valuebase and labelbase are changed from font descents
-  // to number of pixels to substract from the rect bottom.
-  int lblw = TitleRect.right - TitleRect.left;
-  int lblh = TitleRect.bottom - TitleRect.top;
-  if (labelPosition == wxVERTICAL) {
-    w = max(lblw, maxdfltw);
-    SetBounds(&TitleRect,1, 1, lblh+1, w);
-    SetBounds(&ValueRect,TitleRect.bottom+VSLOP, 1,
-	      TitleRect.bottom+VSLOP+maxdflth, maxdfltw);
-    SetBounds(&CtlRect, 0, 0, ValueRect.bottom+VSLOP, w+1);
-  } else {
-    h = max(lblh, maxdflth);
-    SetBounds(&ValueRect, 1, lblw+1, h-1, maxdfltw + lblw);
-    SetBounds(&CtlRect, 0, 0, h+1, lblw+maxdfltw+2);
-    int bot = (h - valuebase) + labelbase;
-    SetBounds(&TitleRect, bot-lblh, 1, bot, lblw);
-  }
+  if (cMacControl) ::DisposeControl(cMacControl);
+  cMacControl = NULL;
 }
 
 // ---------Draw the Choice Control -----------
@@ -316,64 +232,7 @@ void wxChoice::DrawChoice(Bool active)
     //::DrawString(sTitle);
   }
   
-#ifdef WX_CARBON
   ::Draw1Control(cMacControl);
-#else        
-  Rect r = ValueRect;
-  OffsetRect(&r,SetOriginX,SetOriginY);
-  ::InsetRect(&r, -1, -1);
-  ::FrameRect(&r);
-  ::MoveTo(r.right + SetOriginX, r.top+2 + SetOriginY);
-  ::LineTo(r.right + SetOriginX, r.bottom + SetOriginY);
-  ::LineTo(r.left+2 + SetOriginX, r.bottom + SetOriginY);
-
-  // mflatt:
-  RGBColor save;
-  GetForeColor(&save);
-  ForeColor(whiteColor);
-  ::InsetRect(&r, 1, 1);
-  ::PaintRect(&r);
-  ::InsetRect(&r, -1, -1);
-  ::RGBForeColor(&save);
-  
-  PolyHandle poly;
-  poly = OpenPoly();
-  if (poly) {
-    MoveTo(r.right - TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE + SetOriginX,
-	   (r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2) + SetOriginY);
-    Line(TRIANGLE_WIDTH, 0);
-    Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
-    Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
-    ClosePoly();
-    PaintPoly(poly);
-    KillPoly(poly);
-  }
-  
-  if (!no_strings)
-    return;
-  
-  r.left += ::CharWidth('¥') + ::CharWidth(' ') + MSPACEX;
-  r.right -= TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE;
-  
-  Str255	s;
-  if (selection < 0)
-    selection = 0;
-  ::GetMenuItemText(hDynMenu, selection+1, s);
-  SetFont(valueFont);
-  SetTextInfo();
-  ::MoveTo(r.left + SetOriginX, r.bottom - valuebase + SetOriginY);
-  w = 0;
-  int elw = ::CharWidth('É');
-  int tgtw = r.right - r.left - elw;
-  for (i = 1; i < s[0] && w < tgtw; i++)
-    w+= ::CharWidth(s[i]);
-  for (; w >= tgtw; i--)
-    w -= ::CharWidth(s[i]);
-  if (i != s[0])
-    s[i] = 'É';
-  ::DrawText(s, 1, i);
-  //DrawString(s);
-#endif
 }
 
 
@@ -391,51 +250,53 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   SetCurrentDC();
   int clientWidth, clientHeight;
 
-  if (dW || dH)
-    {
-      GetClientSize(&clientWidth, &clientHeight);
-      if (clientWidth != CtlRect.right) {
-	int needw = CtlRect.right - clientWidth;
-	if (labelPosition == wxVERTICAL) {
-	  // Shrink width of both Title and Value
-	  if (sTitle)
-	    TitleRect.right -= needw;
-	  ValueRect.right -= needw;
-	} else {
-	  // Shrink width of Value, Title strings if we have to
+  if (dW || dH) {
+    GetClientSize(&clientWidth, &clientHeight);
+    if (clientWidth != CtlRect.right) {
+      int needw = CtlRect.right - clientWidth;
+      if (labelPosition == wxVERTICAL) {
+	// Shrink width of both Title and Value
+	if (sTitle)
+	  TitleRect.right -= needw;
+	ValueRect.right -= needw;
+      } else {
+	// Shrink width of Value, Title strings if we have to
 #if 0
-	  if (sTitle) {
-	    TitleRect.right -= needw/2;
-	    ValueRect.left -= needw/2;
-	  }
+	if (sTitle) {
+	  TitleRect.right -= needw/2;
+	  ValueRect.left -= needw/2;
+	}
 #endif
-	  ValueRect.right -= needw;
-	}
-	CtlRect.right = clientWidth;
-      } 
-      if (clientHeight != CtlRect.bottom) {
-	int needh = CtlRect.bottom - clientHeight;
-	if (labelPosition == wxVERTICAL) {
-	  // Shrink heights equally
-	  if (sTitle)
-	    TitleRect.bottom -= needh/2;
-	  ValueRect.top -= needh/2;
-	  ValueRect.bottom -= needh;
-	  
-	} else {
-	  // Shrink heights eqally
-	  if (sTitle)
-	    TitleRect.bottom -= needh;
-	  ValueRect.bottom -= needh;
-	}
-	CtlRect.bottom = clientHeight;
+	ValueRect.right -= needw;
       }
+      CtlRect.right = clientWidth;
+    } 
+    if (clientHeight != CtlRect.bottom) {
+      int needh = CtlRect.bottom - clientHeight;
+      if (labelPosition == wxVERTICAL) {
+	// Shrink heights equally
+	if (sTitle) {
+	  TitleRect.bottom -= needh/2;
+	  ValueRect.top -= needh/2;
+	}
+	ValueRect.bottom -= needh;
+      } else {
+	// Shrink heights eqally
+	if (sTitle)
+	  TitleRect.bottom -= needh;
+	ValueRect.bottom -= needh;
+      }
+      CtlRect.bottom = clientHeight;
     }
+    
+    ::SizeControl(cMacControl, 
+		  ValueRect.right - ValueRect.left, 
+		  ValueRect.bottom - ValueRect.top);
+  }
 
-  if (dX || dY)
-    {
-      MaybeMoveControls();
-    }
+  if (dX || dY) {
+    MaybeMoveControls();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -454,7 +315,6 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
       SetCurrentDC();
       
       int	newsel;
-#ifdef WX_CARBON
       int startH, startV;
       event->Position(&startH, &startV); // client c.s.
 
@@ -469,39 +329,6 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
 	ProcessCommand(commandEvent);
       }
-#else                
-      Point pos = {ValueRect.top + SetOriginY, ValueRect.left + SetOriginX};
-      LocalToGlobal(&pos);
-      // Rect r = TitleRect;
-      // OffsetRect(&r,SetOriginX,SetOriginY);
-      // if (sTitle) ::InvertRect(&r);
-      ::InsertMenu(hDynMenu, -1);
-      ::CalcMenuSize(hDynMenu);+
-	newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
-      // if (sTitle) ::InvertRect(&r);
-      ::DeleteMenu(PopUpID);
-      RGBColor save;
-      ::GetForeColor(&save);
-      ::ForeColor(whiteColor);
-      Rect r = ValueRect;
-      ::OffsetRect(&r,SetOriginX,SetOriginY);
-      ::PaintRect(&r);
-      ::RGBForeColor(&save);
-      if (newsel) {
-	newsel = LoWord(newsel) -1;
-	if (1 || (newsel != selection)) {
-#ifdef Checkem
-	  // selected a different item
-	  ::CheckMenuItem(hDynMenu, selection+1, FALSE);
-	  ::CheckMenuItem(hDynMenu, newsel+1, TRUE);
-#endif
-	  selection = newsel;
-	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-	  ProcessCommand(commandEvent);
-	}
-      }
-      DrawChoice(TRUE);
-#endif        
     }
 }
 
@@ -517,11 +344,8 @@ void wxChoice::Append (char *Item)
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   ::SetMenuItemText(hDynMenu, no_strings + 1, s);
   no_strings++;
-#if WX_CARBON
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
-#endif
-  //ReCalcRect();
   Paint();
 }
 
@@ -532,10 +356,8 @@ void wxChoice::Clear (void)
     ::DeleteMenuItem(hDynMenu, 1);
   no_strings = 0;
   selection = 0;
-#ifdef WX_CARBON
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
-#endif
   Paint();
 }
 
@@ -550,14 +372,7 @@ void wxChoice::SetSelection (int n)
   if ((n < 0) || (n >= no_strings))
     return;
 
-#ifdef WX_CARBON
   ::SetControlValue(cMacControl,n+1);
-#else
-# ifdef Checkem
-  ::CheckMenuItem(hDynMenu, selection+1, FALSE);
-  ::CheckMenuItem(hDynMenu, n+1, TRUE);
-# endif
-#endif
   selection = n;
   DrawChoice(TRUE);
 }
@@ -570,13 +385,8 @@ int wxChoice::FindString (char *s)
   CopyCStringToPascal(s,temp);
   for (i = 0; i < no_strings; i++) {
     ::GetMenuItemText(hDynMenu, i+1, ps);
-#ifdef WX_CARBON
     if (!CompareString(ps,temp,NULL))
       return i;
-#else                        
-    if (!IUCompPString(ps,temp,NULL))
-      return i;
-#endif                        
   }
   return -1;
 }

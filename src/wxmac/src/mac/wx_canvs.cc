@@ -558,7 +558,6 @@ Bool wxCanvas::WantsFocus(void)
 }
 
 
-// ----------------Modifications for wxMedia (mflatt) ----------------
 void wxCanvas::SetScrollPage(int dir, int val)
 {
   if (scrollAutomanaged) return;
@@ -627,9 +626,9 @@ int wxCanvas::GetScrollRange(int dir)
 
 
 
-void wxCanvas::Paint(void)	// called from wxWindow::Paint
+void wxCanvas::Paint(void)
 {
-  wxWindow::Paint();	// does the scrolls 
+  wxWindow::Paint();
   OnPaint();
 }
 

@@ -490,6 +490,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     break;
   case kBGTool:
     InstallColor(current_background_color, FALSE);
+    BackPat(GetWhitePattern());
     PenMode(patCopy);
     break;
   case kBrushTool:
@@ -509,6 +510,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       }
 	
       InstallColor(current_background_color, FALSE);
+      BackPat(GetWhitePattern());
       InstallColor(current_brush->GetColour(), TRUE);
       PenMode(log);
     }
@@ -583,6 +585,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       }
 
       InstallColor(current_pen->GetColour(), TRUE);
+      BackPat(GetWhitePattern());
       InstallColor(current_background_color, FALSE);
       PenMode(log);
     }
@@ -593,6 +596,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       InstallColor(current_text_background, FALSE);
     else
       BackColor(whiteColor);
+    BackPat(GetWhitePattern());
     ::TextFont(font->GetMacFontNum());
     ::TextSize(font->GetPointSize());
     ::TextFace(font->GetMacFontStyle());
@@ -602,10 +606,12 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   case kBlitTool:
     ForeColor(blackColor);
     BackColor(whiteColor);
+    BackPat(GetWhitePattern());
     InstallLogicalFunction(wxCOPY);
     break;
   case kColorBlitTool:
     InstallColor(current_background_color, FALSE);
+    BackPat(GetWhitePattern());
     InstallColor(current_pen->GetColour(), TRUE);
     InstallLogicalFunction(wxCOPY);
     break;

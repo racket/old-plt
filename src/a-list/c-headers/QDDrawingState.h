@@ -19,7 +19,7 @@
 #endif
 
 #ifdef WX_CARBON
-# ifdef OX_X
+# ifdef OS_X
 #  include <Carbon/Carbon.h>
 # else
 #  include <Carbon.h>

@@ -404,8 +404,8 @@
 			    line-end)]
 			  [(= (cdr op-quote)(cdr cl-quote))
 			   (begin (initialize (cdr first)) (cdr first))]
-			  [(< (cdr cl-quote)(cdr first))
-			   (do-newline (add1 (cdr cl-quote) line-end))]
+			  [(< (cdr cl-quote) (cdr first))
+			   (do-newline (add1 (cdr cl-quote)) line-end)]
 			  [(= (cdr cl-quote) end-pos)
 			   (begin (initialize (cdr first)) (cdr first))]
 			  [else

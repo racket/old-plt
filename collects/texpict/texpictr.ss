@@ -929,8 +929,11 @@
 	     (list* 'picture (cadr s) (caddr s)
 		    (map optimize (cdddr s)))]
 	    [(color)
-	     (list* 'color (cadr s) 
-		    (list 'put dx dy (optimize (caddr s))))]
+	     (let ([next (caddr s)])
+	       (if (and (pair? next) (eq? (car next) 'color))
+		   (optimize next)
+		   (list* 'color (cadr s) 
+			  (list 'put dx dy (optimize next)))))]
 	    [(put)
 	     (let ([x (cadr s)]
 		   [y (caddr s)]
@@ -959,8 +962,15 @@
 	    [(line vector circle circle* make-box oval) s]
 	    [else (error 'optimize "bad tag: ~s" tag)])))))
 
+(define (fixup-color s)
+  (if (and (pair? s) (eq? (car s) 'color))
+      ;; Drop initial put
+      (list* 'color (cadr s) (caddr (cdddr s)))
+      ;; Do nothing
+      s))
+
 (define (pict->string s)
-  (let output ([s (optimize (pict-draw s))])
+  (let output ([s (fixup-color (optimize (pict-draw s)))])
     (if (string? s)
 	s
 	(let ([tag (car s)])

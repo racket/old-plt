@@ -593,7 +593,7 @@
    (define help-menu:get-about-item (lambda () help-menu:about-item))
    (define help-menu:about-string (lambda () ""))
    (define help-menu:about-help-string
-     (lambda () "Learn something about this application"))
+     (lambda () "Credits and details for this application"))
    (define help-menu:about-on-demand (lambda (menu-item) (void)))
    (define help-menu:create-about? (lambda () #f))
    (public help-menu:after-about)
@@ -616,7 +616,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:new-callback
                       (lambda (item evt) (file-menu:new-callback item evt))))
@@ -638,7 +638,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:open-callback
                       (lambda (item evt) (file-menu:open-callback item evt))))
@@ -660,7 +660,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:revert-callback
                       (lambda (item evt)
@@ -683,7 +683,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:save-callback
                       (lambda (item evt) (file-menu:save-callback item evt))))
@@ -704,7 +704,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:save-as-callback
                       (lambda (item evt)
@@ -727,7 +727,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:print-callback
                       (lambda (item evt) (file-menu:print-callback item evt))))
@@ -749,7 +749,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:close-callback
                       (lambda (item evt) (file-menu:close-callback item evt))))
@@ -771,7 +771,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu file-menu)
+            (parent file-menu)
             (callback
               (let ((file-menu:quit-callback
                       (lambda (item evt) (file-menu:quit-callback item evt))))
@@ -793,7 +793,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:undo-callback
                       (lambda (item evt) (edit-menu:undo-callback item evt))))
@@ -814,7 +814,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:redo-callback
                       (lambda (item evt) (edit-menu:redo-callback item evt))))
@@ -834,7 +834,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:cut-callback
                       (lambda (item evt) (edit-menu:cut-callback item evt))))
@@ -856,7 +856,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:copy-callback
                       (lambda (item evt) (edit-menu:copy-callback item evt))))
@@ -878,7 +878,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:paste-callback
                       (lambda (item evt) (edit-menu:paste-callback item evt))))
@@ -900,7 +900,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:clear-callback
                       (lambda (item evt) (edit-menu:clear-callback item evt))))
@@ -922,7 +922,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:select-all-callback
                       (lambda (item evt)
@@ -946,7 +946,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:find-callback
                       (lambda (item evt) (edit-menu:find-callback item evt))))
@@ -967,7 +967,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:find-again-callback
                       (lambda (item evt)
@@ -990,7 +990,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:replace-and-find-again-callback
                       (lambda (item evt)
@@ -1014,7 +1014,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu edit-menu)
+            (parent edit-menu)
             (callback
               (let ((edit-menu:preferences-callback
                       (lambda (item evt)
@@ -1039,7 +1039,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (menu help-menu)
+            (parent help-menu)
             (callback
               (let ((help-menu:about-callback
                       (lambda (item evt) (help-menu:about-callback item evt))))

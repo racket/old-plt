@@ -16,6 +16,7 @@
 (reference-library "sparams.ss" "backward")
 (reference-library "ariess.ss" "cogen")
 (reference-library "userspcs.ss" "userspce")
+(reference-library "coreu.ss")
 
 (define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
 
@@ -81,56 +82,64 @@
 (define z@
   (compound-unit/sig (import)
     (link [params : plt:parameters^ (parameters@)]
-          [pretty : mzlib:pretty-print^ ((reference-library-unit/sig "prettyr.ss"))]
-          [zodiac:interface : zodiac:interface^
-			    ((unit/sig zodiac:interface^
-			       (import (zodiac : zodiac:system^))
-			       (define report-error
-				 (lambda (type)
-				   (lambda (z s . args)
-				     (let* ([msg (apply format s args)]
-					    [trans-loc
-					     (lambda (loc)
-					       (format "~a.~a"
-						       (zodiac:location-line loc)
-						       (zodiac:location-column loc)))]
-					    [build
-					     (lambda (left right)
-					       (format "~a[~a-~a]:~a-~a~n   ~a"
-						       (zodiac:location-file left)
-						       (zodiac:location-offset left)
-						       (zodiac:location-offset right)
-						       (trans-loc left)
-						       (trans-loc right)
-						       msg))]
-					    [escape (error-escape-handler)]
-					    [pos-msg
-					     (cond
-					      [(zodiac:zodiac? z) (build (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
-					      [(zodiac:eof? z) (build (zodiac:eof-location z) (zodiac:eof-location z))]
-					      [(zodiac:period? z) (build (zodiac:period-location z) (zodiac:period-location z))]
-					      [else (format "~a: ~a" z msg)])])
-				       (if type
-					   (printf "~a: ~a~n" type pos-msg)
-					   (printf "~a~n" pos-msg))
-				       (escape)))))
+      [mzlib-core : mzlib:core^
+	(mzlib:core@)]
+      [zodiac:interface : zodiac:interface^
+	((unit/sig zodiac:interface^
+	   (import (zodiac : zodiac:system^))
+	   (define report-error
+	     (lambda (type)
+	       (lambda (z s . args)
+		 (let* ([msg (apply format s args)]
+			 [trans-loc
+			   (lambda (loc)
+			     (format "~a.~a"
+			       (zodiac:location-line loc)
+			       (zodiac:location-column loc)))]
+			 [build
+			   (lambda (left right)
+			     (format "~a[~a-~a]:~a-~a~n   ~a"
+			       (zodiac:location-file left)
+			       (zodiac:location-offset left)
+			       (zodiac:location-offset right)
+			       (trans-loc left)
+			       (trans-loc right)
+			       msg))]
+			 [escape (error-escape-handler)]
+			 [pos-msg
+			   (cond
+			     [(zodiac:zodiac? z)
+			       (build (zodiac:zodiac-start z)
+				 (zodiac:zodiac-finish z))]
+			     [(zodiac:eof? z)
+			       (build (zodiac:eof-location z)
+				 (zodiac:eof-location z))]
+			     [(zodiac:period? z)
+			       (build (zodiac:period-location z)
+				 (zodiac:period-location z))]
+			     [else (format "~a: ~a" z msg)])])
+		   (if type
+		     (printf "~a: ~a~n" type pos-msg)
+		     (printf "~a~n" pos-msg))
+		   (escape)))))
 			       
-			       (define static-error (report-error #f))
-			       (define dynamic-error (report-error #f))
-			       (define internal-error (report-error "internal error")))
-			     zodiac)]
-	  [zodiac : zodiac:system^ ((reference-unit/sig
-				     (begin-elaboration-time
-				      (build-path plt-dir "zodiac" "link.ss")))
-				    zodiac:interface
-				    params pretty)]
-	  [aries : plt:aries^ ((reference-unit/sig
-				(begin-elaboration-time (build-path lib-dir "ariesu.ss")))
-			       zodiac zodiac:interface)])
+	   (define static-error (report-error #f))
+	   (define dynamic-error (report-error #f))
+	   (define internal-error (report-error "internal error")))
+	  zodiac)]
+      [zodiac : zodiac:system^ ((reference-unit/sig
+				  (begin-elaboration-time
+				    (build-path plt-dir "zodiac" "link.ss")))
+				 zodiac:interface
+				 params
+				 (mzlib-core pretty-print@)
+				 (mzlib-core file@))]
+      [aries : plt:aries^ ((reference-library-unit/sig "ariesu.ss" "cogen")
+			    zodiac zodiac:interface)])
     (export (unit params)
-	    (unit zodiac)
-	    (unit zodiac:interface)
-	    (unit aries))))
+      (unit zodiac)
+      (unit zodiac:interface)
+      (unit aries))))
 
 (invoke-open-unit/sig z@ #f)
 
@@ -283,10 +292,8 @@
 	       (link
 		[params : plt:parameters^ (parameters@)]
 		[userspace : plt:userspace^
-			   ((reference-unit/sig
-			     (begin-elaboration-time
-			      (build-path lib-dir "userspcu.ss")))
-			     params)])
+			   ((reference-library-unit/sig
+			      "userspcr.ss" "userspce"))])
 	       (export (open userspace))))])
     (lambda ()
       (current-namespace namespace)

@@ -1,5 +1,12 @@
-#ifndef GC_CPP_H
-#define GC_CPP_H
+#ifndef WXGC_CPP_H
+#define WXGC_CPP_H
+
+/****************************************************************************
+
+MrEd interface to various garbage collectors, including the Boehm
+ collector, SenoraGC, and MzScheme's precise collector.
+
+****************************************************************************/
 
 /****************************************************************************
 Based On:
@@ -27,7 +34,7 @@ enum GCPlacement {UseGC, AtomicGC};
 typedef void (*GCCleanUpFunc)(void* obj, void* clientData);
 
 extern "C" {
-  void gc_mark_external_invalid(void *);
+  void objscheme_mark_external_invalid(void *);
 };
 void GC_cleanup(void *obj, void *ignored);
 
@@ -141,7 +148,7 @@ inline gc_cleanup::gc_cleanup(int cleanup)
 inline gc_cleanup::~gc_cleanup(void)
 {
   if (__gc_external)
-    gc_mark_external_invalid(__gc_external);
+    objscheme_mark_external_invalid(__gc_external);
   GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 0, 0, 0, 0);
 }
 
@@ -219,4 +226,4 @@ inline void *operator new[](size_t size, GCPlacement gcp)
 }
 #endif
 
-#endif /* GC_CPP_H */
+#endif /* WXGC_CPP_H */

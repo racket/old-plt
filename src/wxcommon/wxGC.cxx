@@ -1,4 +1,11 @@
 /*************************************************************************
+
+MrEd interface to various garbage collectors, including the Boehm
+ collector, SenoraGC, and MzScheme's precise collector.
+
+*************************************************************************/
+
+/*************************************************************************
 Based On:
 
 Copyright (c) 1994 by Xerox Corporation.  All rights reserved.

@@ -44,6 +44,7 @@ wxPen::wxPen(void)
 
     stipple = NULL;
     c = new wxColour(wxBLACK);
+    c->Lock(1);
     colour  = c;
     style   = wxSOLID;
     join    = wxJOIN_ROUND;
@@ -61,6 +62,7 @@ wxPen::wxPen(wxColour *col, float Width, int Style)
     __type = wxTYPE_PEN;
 
     c = new wxColour(col);
+    c->Lock(1);
     colour  = c;
     width   = Width;
     style   = Style;
@@ -79,6 +81,7 @@ wxPen::wxPen(const char *col, float Width, int Style)
     __type = wxTYPE_PEN;
 
     c = new wxColour(col);
+    c->Lock(1);
     colour  = c;
     width   = Width;
     style   = Style;
@@ -120,6 +123,7 @@ wxBrush::wxBrush(void)
     __type = wxTYPE_BRUSH;
 
     c = new wxColour(wxWHITE);
+    c->Lock(1);
     colour  = c;
     stipple = NULL;
     style   = wxSOLID;
@@ -133,6 +137,7 @@ wxBrush::wxBrush(wxColour *col, int Style)
     __type = wxTYPE_BRUSH;
 
     c = new wxColour(col);
+    c->Lock(1);
     colour  = c;
     style   = Style;
     stipple = NULL;
@@ -146,6 +151,7 @@ wxBrush::wxBrush(const char *col, int Style)
     __type = wxTYPE_BRUSH;
 
     c = new wxColour(col);
+    c->Lock(1);
     colour  = c;
     style   = Style;
     stipple = NULL;

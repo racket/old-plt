@@ -54,6 +54,7 @@ static char *protect_quote_backslash(const char *file)
 	s[c++] = '\\';
       s[c++] = file[i];
     }
+    s[c] = 0;
 
     return s;
   } else

@@ -45,7 +45,7 @@
                         [(id   ...) (generate-temporaries unsafe-bindings)])
             (set! unsafe-bindings '())
             #'(begin
-                (provide unsafe)
+                (provide (protect unsafe))
                 (define-syntax (unsafe stx)
                   (syntax-case stx ()
                     [(_) (with-syntax ([(id ...) (list (datum->syntax-object

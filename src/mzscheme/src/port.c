@@ -2216,7 +2216,7 @@ make_oskit_console_input_port()
 
 void scheme_check_keyboard_input(void)
 {
-  osk_char_ready(scheme_orig_stdin_port);
+  osk_char_ready((Scheme_Input_Port *)scheme_orig_stdin_port);
 }
 
 #endif
@@ -7317,6 +7317,12 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 
 static void default_sleep(float v, void *fds)
 {
+#ifdef USE_OSKIT_CONSOLE
+  /* Don't really sleep; keep polling the keyboard: */
+  if (!v || (v > 0.01))
+    v = 0.01;
+#endif
+
   if (!fds) {
 #ifndef NO_SLEEP
 # ifdef USE_BEOS_SNOOZE

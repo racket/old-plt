@@ -143,6 +143,12 @@
 				   "splash.gif"))
 (define mred:default-splash-title "MrEd")
 
+(define mred:close-splash
+  (lambda ()
+    (when mred:splash-frame
+      (send mred:splash-frame show #f)
+      (set! mred:splash-frame #f))))
+
 (define mred:open-splash
   (lambda (filename title)
     (if (file-exists? filename)
@@ -158,7 +164,8 @@
 			    [else wx:const-bitmap-type-default])))]
 	       [bitmap (make-object wx:bitmap% filename flag)])
 	  (if (send bitmap ok?)
-	      (let* ([frame (make-object wx:dialog-box% '() title)]
+	      (let* ([frame (parameterize ([wx:current-eventspace (wx:make-eventspace)])
+			      (make-object wx:dialog-box% '() title))]
 		     [width (box 0.)]
 		     [height (box 0.)]
 		     [c-x-offset 0]
@@ -182,10 +189,7 @@
 				   (+ c-x-offset msg-width)
 				   (+ c-y-offset msg-height))
 			 (show #t))
-		  (wx:flush-display) (wx:flush-display) 
-		  (wx:yield) (wx:yield)
-		  (wx:flush-display) (wx:flush-display) 
-		  (wx:yield) (wx:yield)
+		  (wx:flush-display) (wx:yield)
 		  (set! mred:splash-frame frame)))
 	      (printf "WARNING: bad bitmap ~s" filename)))
 	(printf "WARNING: bitmap path ~s not found~n" filename))))
@@ -217,8 +221,7 @@
 	(for-each mred:edit-file files-to-open)
 	(when mred:non-unit-startup?
 	  (set! mred:console (mred:startup)))
-	(when mred:splash-frame
-	  (send mred:splash-frame show #f))
+	(mred:close-splash)
 	mred:console]
        [else 
 	(let* ([arg (car args)]

@@ -234,7 +234,7 @@ typedef struct Scheme_Debugging_Info {
 
 typedef struct Scheme_Symbol {
   Scheme_Type type;
-  short len;
+  int len;
   char s[1];
 } Scheme_Symbol;
 
@@ -249,7 +249,7 @@ typedef struct Scheme_Manager *Scheme_Manager_Reference;
 
 typedef struct Scheme_Manager {
   Scheme_Type type;
-  short count, alloc;
+  int count, alloc;
   Scheme_Object ***boxes;
   Scheme_Manager_Reference **mrefs;
   Scheme_Close_Manager_Client **closers;

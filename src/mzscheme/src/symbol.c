@@ -223,9 +223,7 @@ make_a_symbol(const char *name, int len)
 {
   Scheme_Symbol *sym;
   
-  sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Type) + 
-						     sizeof(short) +
-						     len + 1);
+  sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len);
   
   sym->type = scheme_symbol_type;
   sym->len = len;
@@ -255,6 +253,9 @@ scheme_intern_exact_symbol(const char *name, int len)
 #ifdef MZ_REAL_THREADS
   SCHEME_LOCK_MUTEX(scheme_symbol_table->mutex);
 #endif
+
+  if (len > scheme_max_found_symbol_name)
+    scheme_max_found_symbol_name = len;
 
   sym = symbol_bucket(scheme_symbol_table, name, len, NULL);
 
@@ -404,9 +405,6 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
       total_length = p;
     }
   }
-
-  if (total_length > scheme_max_found_symbol_name)
-    scheme_max_found_symbol_name = total_length;
 
   if (length)
     *length = total_length;

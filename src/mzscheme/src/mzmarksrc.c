@@ -30,6 +30,21 @@ second_of_cons {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
+twoptr_obj {
+ mark:
+  gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
+  gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+iptr_obj {
+ mark:
+  gcMARK(SCHEME_IPTR_VAL((Scheme_Object *)p));
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
 small_object {
  mark:
   gcMARK(((Scheme_Small_Object *)p)->u.ptr_value);

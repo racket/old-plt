@@ -75,6 +75,44 @@ int second_of_cons_FIXUP(void *p) {
 }
 
 
+int twoptr_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int twoptr_obj_MARK(void *p) {
+  gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
+  gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int twoptr_obj_FIXUP(void *p) {
+  gcFIXUP(SCHEME_PTR1_VAL((Scheme_Object *)p));
+  gcFIXUP(SCHEME_PTR2_VAL((Scheme_Object *)p));
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+
+int iptr_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int iptr_obj_MARK(void *p) {
+  gcMARK(SCHEME_IPTR_VAL((Scheme_Object *)p));
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int iptr_obj_FIXUP(void *p) {
+  gcFIXUP(SCHEME_IPTR_VAL((Scheme_Object *)p));
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+
 int small_object_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));

@@ -15,7 +15,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 1
+#define GENERATIONS 0
 
 #define USE_FREELIST 0
 
@@ -713,8 +713,8 @@ static int mark_weak_array(void *p)
     data = a->data;
     for (i = a->count; i--; ) {
       if (data[i] 
-	  && (*(short *)(data[i]) != 35)
-	  && (*(short *)(data[i]) != 44))
+	  && (*(short *)(data[i]) != 36)
+	  && (*(short *)(data[i]) != 45))
 	CRASH();
     }
   }
@@ -1383,6 +1383,7 @@ void GC_mark(const void *p)
 	    {
 	      Type_Tag tag = *(Type_Tag *)p;
 	      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
+		printf("bad tag: %d at %lx\n", tag, (long)p);
 		CRASH();
 	      }
 	    }

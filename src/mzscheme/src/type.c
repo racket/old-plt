@@ -329,7 +329,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_variable_type, variable_obj);
   GC_REG_TRAV(scheme_local_type, local_obj);
   GC_REG_TRAV(scheme_local_unbox_type, local_obj);
-  GC_REG_TRAV(scheme_syntax_type, second_of_cons);
+  GC_REG_TRAV(scheme_syntax_type, iptr_obj);
   GC_REG_TRAV(scheme_application_type, app_rec);
   GC_REG_TRAV(scheme_sequence_type, seq_rec);
   GC_REG_TRAV(scheme_branch_type, branch_rec);
@@ -339,14 +339,14 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_letrec_type, letrec);
   GC_REG_TRAV(scheme_let_one_type, let_one);
   GC_REG_TRAV(scheme_with_cont_mark_type, with_cont_mark);
-  GC_REG_TRAV(scheme_module_variable_type, cons_cell);
+  GC_REG_TRAV(scheme_module_variable_type, twoptr_obj);
 
   GC_REG_TRAV(_scheme_values_types_, bad_trav);
   
   GC_REG_TRAV(scheme_compiled_unclosed_procedure_type, comp_unclosed_proc);
   GC_REG_TRAV(scheme_compiled_let_value_type, comp_let_value);
   GC_REG_TRAV(scheme_compiled_let_void_type, let_header);
-  GC_REG_TRAV(scheme_compiled_syntax_type, second_of_cons);
+  GC_REG_TRAV(scheme_compiled_syntax_type, iptr_obj);
 
   GC_REG_TRAV(scheme_quote_compilation_type, small_object);
 
@@ -409,6 +409,7 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_stx_type, stx_val);
   GC_REG_TRAV(scheme_module_type, module_val);
+  GC_REG_TRAV(scheme_module_index_type, twoptr_obj);
 
   GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_2_type, bad_trav);

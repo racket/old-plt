@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
+/**************** Configuration ****************/
+
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
@@ -63,13 +65,7 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
-#define MARK_STACK_MAX 4096
-
 #define BYTEPTR(x) ((char *)x)
-
-void *mark_stack[MARK_STACK_MAX];
-unsigned short mark_stack_type[MARK_STACK_MAX];
-long mark_stack_pos = 0;
 
 #if TIME
 # include <sys/time.h>
@@ -77,6 +73,13 @@ long mark_stack_pos = 0;
 # include <unistd.h>
 #endif
 
+/**************** Stack for mark phase ****************/
+#define MARK_STACK_MAX 4096
+void *mark_stack[MARK_STACK_MAX];
+unsigned short mark_stack_type[MARK_STACK_MAX];
+long mark_stack_pos = 0;
+
+/********************* Client hooks *********************/
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
 void (*GC_out_of_memory)(void);
@@ -87,18 +90,7 @@ void (*GC_fixup_xtagged)(void *obj);
 
 void **GC_variable_stack;
 
-static long page_allocations = 0;
-
-static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
-#if USE_FREELIST
-static long on_free_list;
-# define FREE_LIST_DELTA (on_free_list << 2)
-#else
-# define FREE_LIST_DELTA 0
-#endif
-
-static long num_seg_faults;
-
+/********************* Type tags *********************/
 Type_Tag weak_box_tag;
 
 #define gc_finalization_tag 256
@@ -112,17 +104,36 @@ Size_Proc size_table[_num_tags_];
 Mark_Proc mark_table[_num_tags_];
 Fixup_Proc fixup_table[_num_tags_];
 
-#define STARTING_PLACE ((void **)0)
+/****************** Memory Pages ******************/
 
-/* Unless ALIGN_DOUBLES, offsets must fit into 14 bits, saving 2 bits
-   for tags.  But since the minimum size of an allocation is two
-   words, we only need half as much memory. So we store the offset as
-   a pair of bytes. */
+/* An MPage (as opposed to the OS's page) is an allocation region
+   for a particular kind of object (tagged, atomic, array, etc.).
+   It's also the granluarity of memory-mapping (i.e., taking an 
+   arbitrary pointer an determining whether it's in the GC's
+   domain.
+
+   It has an associated offset table, which is mainly used for
+   updating pointers during the fixup phase.
+*/
+
 #if ALIGN_DOUBLES
 # define SQUASH_OFFSETS 0
 #else
 # define SQUASH_OFFSETS 1
 #endif
+/* Offsets must fit into 14 bits, saving 2 bits for tags.  But since
+   the minimum size of an allocation is two words (unless
+   ALIGN_DOUBLES), we can squash the index array into half as much
+   space as we might otherwise. For example, let **** and #### be the
+   offsets for indexes 0 and 4, respectively:
+
+     ---- ---- ---- ---- ----
+    |****|    |    |####|    |  Unsquashed representation
+     ---- ---- ---- ---- ----
+     -- -- -- -- --
+    |**|**|  |##|##|  Squashed representation
+     -- -- -- -- -- 
+*/
 
 typedef unsigned short OffsetTy;
 #if SQUASH_OFFSETS
@@ -131,69 +142,76 @@ typedef unsigned char OffsetArrTy;
 typedef unsigned short OffsetArrTy;
 #endif
 
-typedef unsigned char mtype_t;
-typedef unsigned char mflags_t;
+typedef unsigned char mtype_t;  /* object type */
+typedef unsigned char mflags_t; /* mark state, etc. */
 
 typedef struct MPage {
-  mtype_t type;
-  mflags_t flags;
+  mtype_t type;       /* object type */
+  mflags_t flags;     /* mark state, etc. */
   short alloc_boundary;
   short compact_boundary;
   short age, refs_age, compact_to_age;
   union {
-    OffsetArrTy *offsets;
-    long size;
+    OffsetArrTy *offsets;  /* for small objects */
+    long size;             /* for one big object */
   } u;
   union {
-    void **compact_to;
-    void *bigblock_start;
+    void **compact_to;     /* for small objects */
+    void *bigblock_start;  /* for one big object */
   } o;
-  void *block_start;
-  struct MPage *next, *prev;
+  void *block_start;       /* start of memory in this page */
+  struct MPage *next, *prev; /* for linked list of pages */
 
-  OffsetTy gray_start, gray_end;
+  /* For mark-stack overflow, or slowing mark categories: */
+  OffsetTy gray_start, gray_end; 
   struct MPage *gray_next;
 } MPage;
 
+/* Linked list of allocated pages: */
 static MPage *first, *last;
 
+/* For mark-stack overflow, or slowish mark categories. */
 static MPage *gray_first;
 
+/* For memory-mapping: */
 MPage **mpage_maps;
 
-/* MPAGE_SIZE is the size of one chunk of memory used for allocating
-   small objects. It's also the granluarity of memory-mapping. */
-
+/* MPage size: */
 #define LOG_MPAGE_SIZE 14
 #define MPAGE_SIZE (1 << LOG_MPAGE_SIZE)
 #define MPAGE_WORDS (1 << (LOG_MPAGE_SIZE - 2))
 #define MPAGE_MASK ((1 << LOG_MPAGE_SIZE) - 1)
 #define MPAGE_START ~MPAGE_MASK
 
+#define BIGBLOCK_MIN_SIZE (1 << (LOG_MPAGE_SIZE - 2))
+#define FREE_LIST_ARRAY_SIZE (BIGBLOCK_MIN_SIZE >> 2)
+
+/* Offset-page size: */
+#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2 - SQUASH_OFFSETS)
+#define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
+
+/* We use a two-level table to map the universe. The MAP_SIZE is the
+   size of the outer table, so LOG_MAP_SIZE is the number of high-order
+   bits used to index the table. */
 #define LOG_MAP_SIZE 9
 #define LOG_MAPS_SIZE (32 - LOG_MAP_SIZE - LOG_MPAGE_SIZE)
 #define MAP_SIZE (1 << LOG_MAP_SIZE)
 #define MAPS_SIZE (1 << LOG_MAPS_SIZE)
 
+/* MASK_MASK followed by MAP_SHIFT gives the 2nd-page index. */
 #define MAPS_SHIFT (32 - LOG_MAPS_SIZE)
 #define MAP_MASK ((1 << (LOG_MAP_SIZE + LOG_MPAGE_SIZE)) - 1)
 #define MAP_SHIFT LOG_MPAGE_SIZE
 
-#define LOG_OPAGE_SIZE (LOG_MPAGE_SIZE - 2 - SQUASH_OFFSETS)
-#define OPAGE_SIZE (sizeof(OffsetTy) << LOG_OPAGE_SIZE)
-
-#define BIGBLOCK_MIN_SIZE (1 << (LOG_MPAGE_SIZE - 2))
-
-static long dump_info_array[BIGBLOCK_MIN_SIZE];
-
-#define FREE_LIST_ARRAY_SIZE (BIGBLOCK_MIN_SIZE >> 2)
-
+/* Allocation (MPage) types */
 #define MTYPE_NONE         0
 #define MTYPE_TAGGED       1
 #define MTYPE_ATOMIC       2
 #define MTYPE_TAGGED_ARRAY 3
 #define MTYPE_ARRAY        4
 #define MTYPE_XTAGGED      5
+
+/* Allocation flags */
 
 #define COLOR_MASK         0x3
 
@@ -209,6 +227,8 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 #define MFLAG_MODIFIED     0x20
 #define MFLAG_INITED       0x40
 #define MFLAG_MARK         0x80
+
+/* Offset table manipulations */
 
 #define OFFSET_COLOR_UNMASKED(offsets, pos) (offsets[pos])
 #define OFFSET_COLOR(offsets, pos) (offsets[pos] & COLOR_MASK)
@@ -226,9 +246,13 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 # define OFFSET_SET_SIZE_UNMASKED(offsets, pos, s) (offsets[pos] = ((s) << OFFSET_SHIFT))
 #endif
 
+/* Special tags */
+
 #define SKIP ((Type_Tag)0x7000)
 #define TAGGED_EOM ((Type_Tag)0x6000)
 #define UNTAGGED_EOM   (MPAGE_SIZE + 1)
+
+/* One MSet for every type of MPage: */
 
 typedef struct {
   void **low, **high;
@@ -246,10 +270,18 @@ typedef struct {
 static MSet tagged, atomic, array, tagged_array, xtagged;
 static MSet *sets[NUM_SETS]; /* First one is tagged, last one is atomic */
 
-/* The answer for 0-byte requests: */
-static char zero_sized[4];
+/********************* Statistics *********************/
+static long page_allocations = 0;
 
-static void *park[2];
+static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
+#if USE_FREELIST
+static long on_free_list;
+# define FREE_LIST_DELTA (on_free_list << 2)
+#else
+# define FREE_LIST_DELTA 0
+#endif
+
+static long num_seg_faults;
 
 static int cycle_count = 0, compact_count = 0;
 static int skipped_pages, scanned_pages, young_pages, inited_pages;
@@ -261,6 +293,16 @@ static long mark_stackoflw;
 static int fnl_weak_link_count;
 
 static int ran_final;
+
+static int page_size; /* OS page size */
+
+/******************** Misc ********************/
+
+/* The answer for all 0-byte requests: */
+static char zero_sized[4];
+
+/* Temporary pointer-holder used by routines that allocate */
+static void *park[2];
 
 static int during_gc;
 
@@ -276,8 +318,8 @@ static void CRASH()
 }
 #endif
 
-static int page_size;
-
+/******************************************************************************/
+/*                     OS-specific low-level allocator                        */
 /******************************************************************************/
 
 #if USE_MMAP
@@ -459,6 +501,31 @@ void flush_freed_pages(void)
 #endif
 
 /******************************************************************************/
+/*                              client setup                                  */
+/******************************************************************************/
+
+static unsigned long stack_base;
+
+void GC_set_stack_base(void *base)
+{
+  stack_base = (unsigned long)base;
+}
+
+unsigned long GC_get_stack_base(void)
+{
+  return stack_base;
+}
+
+void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup)
+{
+  size_table[tag] = size;
+  mark_table[tag] = mark;
+  fixup_table[tag] = fixup;
+}
+
+/******************************************************************************/
+/*                               root table                                   */
+/******************************************************************************/
 
 #define PTR_ALIGNMENT 4
 #define PTR_TO_INT(x) ((unsigned long)x)
@@ -540,6 +607,10 @@ void GC_add_roots(void *start, void *end)
   nothing_new = 0;
 }
 
+/******************************************************************************/
+/*                             immobile box                                   */
+/******************************************************************************/
+
 typedef struct ImmobileBox {
   void *p;
   struct ImmobileBox *next, *prev;
@@ -581,6 +652,8 @@ void GC_free_immobile_box(void *b)
 }
 
 /******************************************************************************/
+/*                             free list element                              */
+/******************************************************************************/
 
 #if USE_FREELIST
 
@@ -591,6 +664,8 @@ static int size_on_free_list(void *p)
 
 #endif
 
+/******************************************************************************/
+/*                             weak arrays                                    */
 /******************************************************************************/
 
 typedef struct GC_Weak_Array {
@@ -744,6 +819,8 @@ void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
   return w;
 }
 
+/******************************************************************************/
+/*                             finalization                                   */
 /******************************************************************************/
 
 typedef struct Fnl {
@@ -914,19 +991,10 @@ void GC_finalization_weak_ptr(void **p, int offset)
 }
 
 /******************************************************************************/
+/*                             GC stat dump                                   */
+/******************************************************************************/
 
-static unsigned long stack_base;
-
-void GC_set_stack_base(void *base)
-{
-  stack_base = (unsigned long)base;
-}
-
-unsigned long GC_get_stack_base(void)
-{
-  return stack_base;
-}
-
+static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
 static void scan_tagged_mpage(void **p, MPage *page)
 {
@@ -1202,9 +1270,10 @@ void stop()
 #endif
 
 /******************************************************************************/
+/*                             alloc state info                               */
+/******************************************************************************/
 
 /* Works anytime: */
-
 static MPage *find_page(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
@@ -1223,7 +1292,6 @@ static MPage *find_page(void *p)
 }
 
 /* Works only during GC: */
-
 static int is_marked(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
@@ -1257,6 +1325,8 @@ static int is_marked(void *p)
   return 1;
 }
 
+/******************************************************************************/
+/*                               init phase                                   */
 /******************************************************************************/
 
 /* Init: set color to white and install offsets (to indicate the
@@ -1450,7 +1520,9 @@ static void init_all_mpages(int young)
   }
 }
 
-/**********************************************************************/
+/******************************************************************************/
+/*                               mark phase                                   */
+/******************************************************************************/
 
 /* Mark: mark a block as reachable. */
 
@@ -1599,6 +1671,8 @@ void GC_mark(const void *p)
   }
 }
 
+/******************************************************************************/
+/*                               prop phase                                   */
 /******************************************************************************/
 
 /* Propoagate: for each marked object, mark objects it
@@ -2061,7 +2135,9 @@ static void propagate_all_mpages()
   }
 }
 
-/**********************************************************************/
+/******************************************************************************/
+/*                             compact phase                                  */
+/******************************************************************************/
 
 /* Compact: compact objects, setting page color to white if all
    objects are moved elsewhere */
@@ -2082,6 +2158,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
   startp = p;
   switch (page->type) {
   case MTYPE_TAGGED:
+  default:
     set = &tagged;
     break;
   }
@@ -2340,7 +2417,11 @@ static void compact_all_mpages()
   }
 }
 
-/**********************************************************************/
+/******************************************************************************/
+/*                             freelist phase                                 */
+/******************************************************************************/
+
+/* Freelist: put unmarked blocks onto the free list */
 
 #if USE_FREELIST
 
@@ -2487,7 +2568,9 @@ static void freelist_all_mpages(int young)
 
 #endif
 
-/**********************************************************************/
+/******************************************************************************/
+/*                              fixup phase                                   */
+/******************************************************************************/
 
 /* Fixup: translate an old address to a new one, and note age of
    youngest referenced page */
@@ -2752,7 +2835,9 @@ static void fixup_all_mpages()
   }
 }
 
-/**********************************************************************/
+/******************************************************************************/
+/*                               free phase                                   */
+/******************************************************************************/
 
 /* Free: release unused pages. */
 
@@ -2861,6 +2946,9 @@ void protect_old_mpages()
 #endif
 }
 
+/******************************************************************************/
+/*                         modification tracking                              */
+/******************************************************************************/
 
 static void designate_modified(void *p)
 {
@@ -2949,7 +3037,9 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 # define NEED_SIGWIN
 #endif
 
-/**********************************************************************/
+/******************************************************************************/
+/*                              stack walking                                 */
+/******************************************************************************/
 
 #if SAFETY
 static void **o_var_stack, **oo_var_stack;
@@ -3074,6 +3164,10 @@ void check_variable_stack()
   }
 }
 #endif
+
+/******************************************************************************/
+/*                             main GC driver                                 */
+/******************************************************************************/
 
 static void set_ending_tags(void)
 {
@@ -3595,7 +3689,7 @@ static void gcollect(int full)
       if (sets[i]->malloc_page) {
 	if (!(sets[i]->malloc_page->flags & COLOR_MASK)) {
 	  sets[i]->malloc_page= NULL;
-	  sets[i]->low = sets[i]->high = STARTING_PLACE;
+	  sets[i]->low = sets[i]->high = (void **)0;
 	} else
 	  sets[i]->malloc_page->flags -= (sets[i]->malloc_page->flags & MFLAG_INITED);
       }
@@ -3685,6 +3779,10 @@ void *GC_resolve(void *p)
 {
   return p;
 }
+
+/******************************************************************************/
+/*                               allocators                                   */
+/******************************************************************************/
 
 void *malloc_pages_try_hard(size_t len, size_t alignment)
 {
@@ -4043,6 +4141,10 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
   return malloc(size_in_bytes);
 }
 
+/******************************************************************************/
+/*                                  misc                                      */
+/******************************************************************************/
+
 void GC_free(void *p)
 {
   MPage *page;
@@ -4084,13 +4186,6 @@ void GC_free(void *p)
       mpage_maps[i][j].flags = 0;
     }
   }
-}
-
-void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup)
-{
-  size_table[tag] = size;
-  mark_table[tag] = mark;
-  fixup_table[tag] = fixup;
 }
 
 void GC_gcollect()

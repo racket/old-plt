@@ -1,6 +1,10 @@
 
 103/1:
 
+ * Changed `define-values' to require distinct variables for binding.
+   Thus, `(define-values (x x) (values 1 2))' and `(define-struct make
+   (make))' are now ill-formed expressions. (PR 986)
+
  * Windows: Fixed bug in `close-output-port' for TCP ports.
 
  * Closing a TCP output port always sends an EOF to the other end of
@@ -38,13 +42,14 @@
 --------------------------------------------------
 
 Version 103, ??
+Changed define-values to require distinct variables for binding
 Windows: Fixed bug in close-output-port for TCP ports
 Closing a TCP output port always sends an EOF to the other
  end of the connection, even if the associated input port
  remains open
 Added an optional limit argument to make-pipe
 Added deflate.ss library to MzLib, providing gzip, etc.
-Added `not-break-exn?', useful mainly as a predicate in a
+Added not-break-exn?, useful mainly as a predicate in a
  with-handlers expressions
 Fixed load/use-compiled, require-library, and many MzLib functions to
  propagate break exceptions correctly

@@ -86,6 +86,7 @@ struct SOCKADDR_IN {
 };
 # define NOT_WINSOCK(x) 0
 # define SOCK_ERRNO() WSAGetLastError()
+extern int scheme_stupid_windows_machine;
 #endif
 
 #ifdef USE_MAC_TCP
@@ -1073,8 +1074,21 @@ static int tcp_check_connect(Scheme_Object *connector)
     return 0;
   if (FD_ISSET(s, exnfds))
     return -1;
-  else
+  else {
+# ifdef USE_WINSOCK_TCP
+    if (scheme_stupid_windows_machine > 0) {
+      /* Windows 95. select() doesn't work on non-blocking sockets. */
+      if (recv(s, NULL, 0, 0)) {
+	/* error ... */
+	if (WSAGetLastError() == WSAEWOULDBLOCK)
+	  /* Not yet ready */
+	  return 0;
+      }
+    }
+# endif
+
     return 1;
+  }
 #else
   return 0;
 #endif

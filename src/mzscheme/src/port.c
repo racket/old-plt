@@ -146,7 +146,7 @@ typedef struct Win_FD_Output_Thread {
      count */
 } Win_FD_Output_Thread;
 
-static int stupid_windows_machine;
+int scheme_stupid_windows_machine;
 
 #endif
 
@@ -448,9 +448,9 @@ scheme_init_port (Scheme_Env *env)
     info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&info);
     if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
-      stupid_windows_machine = -1; /* not as stupid */
+      scheme_stupid_windows_machine = -1; /* not as stupid */
     else
-      stupid_windows_machine = 1;
+      scheme_stupid_windows_machine = 1;
   }
 #endif
 
@@ -4293,7 +4293,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	  if (!fop->oth) {
 	    /* The FILE_TYPE_PIPE test is currently redundant, I think,
 	       but better safe than sorry. */
-	    nonblocking = ((stupid_windows_machine < 0) 
+	    nonblocking = ((scheme_stupid_windows_machine < 0) 
 			   && (GetFileType((HANDLE)fop->fd) == FILE_TYPE_PIPE));
 	  } else
 	    nonblocking = 1; /* ust be, or we would not have got here */

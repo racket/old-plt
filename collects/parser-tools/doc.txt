@@ -113,20 +113,26 @@ manual section 3.4
    ${PLTHOME}/collects/parser-tools/lex-sre.ss which contains simple,
    but useful, regular expression macro definitions.
 
+> start-pos
+> end-pos
+> lexeme
+> input-port
+> return-without-pos
+   Use of these names outside of a lexer action is a syntax error.
+
 > (lexer (re action) ...) expands into a function that takes an
    input-port, matches the re's against the buffer, and returns the
    result of executing the corresponding action.  Each action is
-   scheme code that has the same scope as its lexer definition, except
-   that the variables start-pos, end-pos, lexeme, return-without-pos
-   and input-port are also bound in the action (hiding any outside
-   binding).
->   start-pos - a position struct for the first character matched
->   end-pos - a position struct for the character after the last
+   scheme code that has the same scope as the enclosing lexer definition.
+   The following bindings have special meaning inside of a lexer
+   action:
+    start-pos - a position struct for the first character matched
+    end-pos - a position struct for the character after the last
       character in the match
->   lexeme - the matched string
->   input-port - the input-port being processed (this is useful for
+    lexeme - the matched string
+    input-port - the input-port being processed (this is useful for
       matching input with multiple lexers)
->   (return-without-pos x) is a function (continuation) that
+    (return-without-pos x) is a function (continuation) that
      immediately returns the value of x from the lexer.  This useful
      in a src-pos lexer to prevent the lexer from adding source
      information.  For example:
@@ -151,7 +157,7 @@ manual section 3.4
    The lexer treats the rules ((eof) action), ((special) action),
    ((special-comment) action) and ((special-error) action) specially.
    In addition to returning characters, input ports can return
-   eof-objects and custom input ports can return arbitrary values
+   eof-objects.  Custom input ports can also return arbitrary values
    (specials), raise an exception to indicate a non-textual comment
    (special-comments), or raise an exception to indicate a malformed
    special (special-error).  Eofs, specials, special-comments and
@@ -159,14 +165,12 @@ manual section 3.4
    characters.
 
    The eof rule is matched when the input port returns an eof value.
-   Its action works the same as actions for the usual regular
-   expressions.
+   If no eof rule is present, the lexer returns the symbol 'eof when
+   the port returns an eof value.
 
-   The special rule is matched when the input port returns a value
-   other than a character or eof-object.  The identifier "special" is
-   bound to this value in the corresponding action, instead of the
-   identifier "lexeme".  If no special rule is present, the lexer
-   returns void.
+   The special rule is matched when the input port returns a value other
+   than a character or eof-object.  If no special rule is present, the 
+   lexer returns void.
 
    The special-comment rule is matched when the input port raises a
    special-comment exception instead of returning a value.  If no
@@ -177,9 +181,8 @@ manual section 3.4
    exception (other than a special-comment or break exception) while
    trying to read a special value.  This indicates that the special
    value is internally malformed (such as an embedded XML editor with
-   malformed syntax).  The identifier "exception" is bound to the
-   raised exception in the action.  If no special-error rule is
-   present, the the lexer itself will raise the exception.
+   malformed syntax).  If no special-error rule is present, the the 
+   lexer itself will raise the exception.
 
 
 > (lexer-src-pos (re action) ...) is a lexer that returns

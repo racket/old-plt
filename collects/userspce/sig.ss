@@ -1,5 +1,4 @@
 ;;;
-(require-library "sparams.ss" "backward")
 (require-relative-library "userspcs.ss")
 (require-library "ariess.ss" "cogen")
 (require-library "cores.ss")

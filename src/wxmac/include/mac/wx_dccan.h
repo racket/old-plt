@@ -81,7 +81,9 @@ class wxCanvasDC: public wxbCanvasDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  void DrawText(const char* text, float x, float y, Bool use16 = FALSE, int d = 0, float angle = 0.0);
+  void DrawText(const char* text, float x, float y, 
+		Bool combine = FALSE, Bool use16 = FALSE, 
+		int d = 0, float angle = 0.0);
 
   void GetSize(float *width, float *height);
 
@@ -99,7 +101,8 @@ class wxCanvasDC: public wxbCanvasDC
   float GetCharHeight(void);
   float GetCharWidth(void);
   virtual void GetTextExtent(const char* string, float* x, float* y, float* descent = NULL,
-			     float* externalLeading = NULL, wxFont* the_font = NULL, Bool use16 = FALSE,
+			     float* externalLeading = NULL, wxFont* the_font = NULL, 
+			     Bool combine = FALSE, Bool use16 = FALSE,
 			     int d = 0);
   Bool StartDoc(char* message);
   void EndDoc(void);

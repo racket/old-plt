@@ -349,14 +349,15 @@ float wxFont::GetCharWidth(float scale_x, float scale_y)
 
 //-----------------------------------------------------------------------------
 void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
-			   float* descent, float* externalLeading, Bool ucs4,
+			   float* descent, float* externalLeading, 
+			   Bool qd_spacing, Bool ucs4,
 			   float scale_x, float scale_y)
 {
   GetUnicodeTextWidth(string, delta, -1,
 		      GetMacFontNum(), point_size, GetMacFontStyle(),
 		      ucs4, scale_y,
 		      x, y, descent, externalLeading,
-		      TRUE, scale_x,
+		      qd_spacing, scale_x,
 		      family == wxSYMBOL);
 }
 

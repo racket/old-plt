@@ -72,7 +72,7 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawText(const char* text, float x, float y, Bool ucs4, int d, float angle)
+void wxCanvasDC::DrawText(const char* text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
 {
   FontInfo fontInfo;
   float w;
@@ -86,7 +86,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool ucs4, int d, 
   ::GetFontInfo(&fontInfo);
   
   w = DrawUnicodeText(text, d, -1, ucs4, 
-		      TRUE, font->GetEffectiveSmoothing(user_scale_y), angle,
+		      !combine, font->GetEffectiveSmoothing(user_scale_y), angle,
 		      user_scale_x, user_scale_y,
 		      1,
 		      x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
@@ -133,8 +133,8 @@ float wxCanvasDC::GetCharWidth(void)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			       float* internalLeading, wxFont* the_font, Bool ucs4,
-			       int d)
+			       float* internalLeading, wxFont* the_font, 
+			       Bool combine, Bool ucs4, int d)
 {
   float x2, y2, descent2, externalLeading2;
 
@@ -142,10 +142,12 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
      in font selection. */
 
   if (the_font)
-    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, ucs4, 
+    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, 
+			    !combine, ucs4, 
 			    user_scale_x, user_scale_y);
   else if (font)
-    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, ucs4,
+    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, 
+			!combine, ucs4,
 			user_scale_x, user_scale_y);
   else {
     *x = -1;

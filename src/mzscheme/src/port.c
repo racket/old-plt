@@ -285,6 +285,7 @@ static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_p(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
+static Scheme_Object *sch_shell_execute(int c, Scheme_Object *args[]);
 static void register_subprocess_wait();
 
 Scheme_Object *
@@ -543,6 +544,11 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity(sch_send_event,
 						      "send-event", 
 						      3, 5), 
+			     env);
+  scheme_add_global_constant("shell-execute", 
+			     scheme_make_prim_w_arity(sch_shell_execute,
+						      "shell-execute", 
+						      5, 5), 
 			     env);
 }
 
@@ -1174,11 +1180,13 @@ long scheme_get_string(const char *who,
        from the current position, then set peek_skip to 0 and go on. */
     if (peek && !ps && peek_skip && !total_got && !got) {
       char *tmp;
-      int v;
+      int v, pcc;
+
       tmp = (char *)scheme_malloc_atomic(peek_skip);
+      pcc = pipe_char_count(ip->peeked_read);
       v = scheme_get_string(who, port, tmp, 0, peek_skip,
 			    (only_avail == 2) ? 2 : 0, 
-			    1, ip->ungotten_count + pipe_char_count(ip->peeked_read));
+			    1, ip->ungotten_count + pcc);
       if (v == EOF)
 	return EOF;
       else if (v == SCHEME_SPECIAL) {
@@ -4761,10 +4769,15 @@ static long mz_spawnv(char *command, const char * const *argv,
 		    &startup, &info)) {
     CloseHandle(info.hThread);
     *pid = info.dwProcessId;
-    /* FIXME: process handle never gets closed */
     return (long)info.hProcess;
   } else
     return -1;
+}
+
+static void close_subprocess_handle(void *sp, void *ignored)
+{
+  Scheme_Subprocess *subproc = (Scheme_Subprocess *)sp;
+  CloseHandle(sp->handle);
 }
 
 #endif /* WINDOWS_PROCESSES */
@@ -5180,6 +5193,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   subproc->type = scheme_subprocess_type;
   subproc->handle = (void *)sc;
   subproc->pid = pid;
+# if defined(WINDOWS_PROCESSES)
+  scheme_add_finalizer(subproc, clsoe_subprocess_handle, NULL);
+# endif
 
 #define cons scheme_make_pair
 
@@ -5264,6 +5280,94 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");
+  return NULL;
+#endif
+}
+
+static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
+{
+  int show;
+  char *file, *dir;
+#ifdef WINDOWS_PROCESSES
+# define mzseSHOW(x) x
+#else
+# define mzseSHOW(x) 1
+#endif
+
+  if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("shell-execute", "string or #f", 0, c, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("shell-execute", "string", 1, c, argv);
+  if (!SCHEME_STRINGP(argv[2]))
+    scheme_wrong_type("shell-execute", "string", 2, c, argv);
+  if (!SCHEME_STRINGP(argv[3]))
+    scheme_wrong_type("shell-execute", "pathname string", 3, c, argv);
+  {
+    show = 0;
+# define mzseCMP(id) \
+    if (SAME_OBJ(scheme_intern_symbol(# id), argv[4])) \
+      show = mzseSHOW(id)
+    mzseCMP(SW_HIDE);
+    mzseCMP(SW_MAXIMIZE);
+    mzseCMP(SW_MINIMIZE);
+    mzseCMP(SW_RESTORE);
+    mzseCMP(SW_SHOW);
+    mzseCMP(SW_SHOWDEFAULT);
+    mzseCMP(SW_SHOWMAXIMIZED);
+    mzseCMP(SW_SHOWMINIMIZED);
+    mzseCMP(SW_SHOWMINNOACTIVE);
+    mzseCMP(SW_SHOWNA);
+    mzseCMP(SW_SHOWNOACTIVE);
+    mzseCMP(SW_SHOWNORMAL);
+
+    if (!show)
+      scheme_wrong_type("shell-execute", "show-mode symbol", 4, c, argv);
+  }
+
+  dir = scheme_expand_filename(SCHEME_STR_VAL(argv[3]),
+			       SCHEME_STRTAG_VAL(argv[3]),
+			       "shell-execute", NULL,
+			       SCHEME_GUARD_FILE_EXISTS);
+#ifdef WINDOWS_PROCESSES
+  {
+    SHELLEXECUTEINFO se;
+    int nplen, res;
+
+    nplen = strlen(file);
+    dir = scheme_normal_path_case(file, &nplen);
+
+    memset(&se, 0, sizeof(se));
+    se.fMask = SEE_MASK_NOCLOSEPROCESS;
+    se.cbSize = sizeof(se);
+    se.lpVerb = (SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_STR_VAL(argv[0]));
+    se.lpFile = SCHEME_STR_VAL(argv[1]);
+    se.lpParameters = SCHEME_STR_VAL(argv[2]);
+    se.lpDirectory = dir;
+    se.nShow = show;
+
+    if (ShellExecuteEx(&se)) {
+      if (se.hProcess) {
+	Scheme_Subprocess *subproc;
+
+	subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
+
+	subproc->type = scheme_subprocess_type;
+	subproc->handle = (void *)se.hProcess;
+	subproc->pid = 0;
+	scheme_add_finalizer(subproc, clsoe_subprocess_handle, NULL);
+
+	return (Scheme_Object *)subproc;
+      } else
+	return scheme_false;
+    } else {
+      scheme_signal_error("shell-execute: execute failed for: %V (%E)",
+			  argv[1],
+			  GetLastError());
+      return NULL;
+    }
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "shell-execute: not supported on this platform");
   return NULL;
 #endif
 }

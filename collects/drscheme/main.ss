@@ -32,15 +32,12 @@
 	(let* ([interactions-edit (ivar frame interactions-edit)]
 	       [definitions-edit (ivar frame interactions-edit)]
 	       [filename (send definitions-edit get-filename)])
-	  (when (null? filename)
+	  (unless filename
 	    (send interactions-edit reset-console)
-	    (send interactions-edit enable-autoprompt)
 	    (send interactions-edit insert-prompt)
-	    (send frame toggle-show/hide
-		  (ivar frame show-menu)
-		  (ivar frame interactions-id))
+	    (send frame toggle-show/hide (ivar frame interactions-item))
 	    (send frame update-shown)
-	    (send (ivar frame interactions-canvas) set-focus))))
+	    (send (ivar frame interactions-canvas) focus))))
       (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list I:argv))])

@@ -142,7 +142,7 @@
 
 (define *html-dagger* "&plusmn;")
 
-(define *html-^dagger* "&plusmn;&plusmn;")
+(define *html-cap-dagger* "&plusmn;&plusmn;")
 
 (define *html-ldquo* "``")
 
@@ -156,7 +156,7 @@
 
 (define *html-oelig* "oe")
 
-(define *html-^oelig* "OE")
+(define *html-cap-oelig* "OE")
 
 (define *html-rdquo* "''")
 
@@ -166,32 +166,32 @@
 
 (define *html-scaron* "<u>s</u>")
 
-(define *html-^scaron* "<u>S</u>")
+(define *html-cap-scaron* "<u>S</u>")
 
 (define *html-trade* "<sup>TM</sup>")
 
-(define *html-^yuml* "Y&quot;")
+(define *html-cap-yuml* "Y&quot;")
 
 (define html-advanced-entities
   (lambda ()
     (set! *use-advanced-html-entities?* #t)
     (set! *html-bull* "&#8226;")
     (set! *html-dagger* "&#8224;")
-    (set! *html-^dagger* "&#8225;")
+    (set! *html-cap-dagger* "&#8225;")
     (set! *html-ldquo* "&#8220;")
     (set! *html-lsaquo* "&#8249;")
     (set! *html-lsquo* "&#8216;")
     (set! *html-mdash* "&#8212;")
     (set! *html-ndash* "&#8211;")
-    (set! *html-^oelig* "&#338;")
+    (set! *html-cap-oelig* "&#338;")
     (set! *html-oelig* "&#339;")
     (set! *html-rdquo* "&#8221;")
     (set! *html-rsaquo* "&#8250;")
     (set! *html-rsquo* "&#8217;")
-    (set! *html-^scaron* "&#352;")
+    (set! *html-cap-scaron* "&#352;")
     (set! *html-scaron* "&#353;")
     (set! *html-trade* "&#8482;")
-    (set! *html-^yuml* "&#376;")))
+    (set! *html-cap-yuml* "&#376;")))
 
 (define *filename-delims* '())
 
@@ -1926,11 +1926,6 @@
     (egroup)
     (do-para)))
 
-(define do-html-stylesheet
-  (lambda ()
-    (when (null? *stylesheets*) (flag-missing-piece 'stylesheets))
-    (write-aux `(!stylesheet ,(ungroup (get-group))))))
-
 (define do-inputcss
   (lambda ()
     (ignorespaces)
@@ -1962,18 +1957,18 @@
 
 (define link-stylesheets
   (lambda ()
+    (emit "<link rel=\"stylesheet\" type=\"text/css\" href=\"")
+    (emit *jobname*)
+    (emit *css-file-suffix*)
+    (emit "\" title=default>")
+    (emit-newline)
     (for-each
       (lambda (css)
         (emit "<link rel=\"stylesheet\" type=\"text/css\" href=\"")
         (emit css)
         (emit "\" title=default>")
         (emit-newline))
-      *stylesheets*)
-    (emit "<link rel=\"stylesheet\" type=\"text/css\" href=\"")
-    (emit *jobname*)
-    (emit *css-file-suffix*)
-    (emit "\" title=default>")
-    (emit-newline)))
+      *stylesheets*)))
 
 (define increment-section-counter
   (lambda (seclvl unnumbered?)
@@ -3832,7 +3827,7 @@
       (do-start))))
 
 (define output-html-preamble
-  (lambda (top-level-page?)
+  (lambda ()
     (unless *html-slideshow?*
       (emit "<!doctype html public ")
       (emit "\"-//W3C//DTD HTML 4.01 Transitional//EN\" ")
@@ -3867,7 +3862,7 @@
     (output-external-title)
     (link-stylesheets)
     (emit "<meta name=robots content=\"")
-    (unless (and top-level-page? (= *html-page-count* 0)) (emit "no"))
+    (unless (= *html-page-count* 0) (emit "no"))
     (emit "index,follow\">")
     (emit-newline)
     (when *html-slideshow?*
@@ -4026,7 +4021,7 @@
       ((hacek)
        (case c
          ((#\s) (emit *html-scaron*))
-         ((#\S) (emit *html-^scaron*))
+         ((#\S) (emit *html-cap-scaron*))
          ((#\space) (emit #\^))
          (else (emit c) (emit #\^))))
       ((ring)
@@ -4045,7 +4040,7 @@
           (emit #\&)
           (emit c)
           (emit "uml;"))
-         ((#\Y) (emit *html-^yuml*))
+         ((#\Y) (emit *html-cap-yuml*))
          ((#\space) (emit "&quot;"))
          (else (emit c) (emit "&quot;"))))
       (else (emit "<u>") (emit c) (emit "</u>")))))
@@ -7357,9 +7352,6 @@
         (delete-file aux-file))
       (set! *aux-port* (open-output-file aux-file)))
     (start-css-file)
-    (when (eqv? *tex-format* 'latex)
-      (!definitely-latex)
-      (write-aux `(!definitely-latex)))
     (unless (null? *toc-list*) (set! *toc-list* (reverse! *toc-list*)))
     (unless (null? *stylesheets*)
       (set! *stylesheets* (reverse! *stylesheets*)))
@@ -7385,10 +7377,12 @@
       (if (>= *latex-probability* 2) (definitely-latex)))))
 
 (define definitely-latex
-  (lambda ()
-    (unless (eqv? *tex-format* 'latex)
-      (!definitely-latex)
-      (write-aux `(!definitely-latex)))))
+  (let ((already-noted? #f))
+    (lambda ()
+      (unless already-noted?
+        (set! already-noted? #t)
+        (!definitely-latex)
+        (write-aux `(!definitely-latex))))))
 
 (define html-slideshow
   (lambda ()
@@ -7687,7 +7681,7 @@
 
 (tex-def-math-prim "\\dagger" (lambda () (emit *html-dagger*)))
 
-(tex-def-math-prim "\\ddagger" (lambda () (emit *html-^dagger*)))
+(tex-def-math-prim "\\ddagger" (lambda () (emit *html-cap-dagger*)))
 
 (tex-def-math-prim "\\leq" (lambda () (emit "<u>&lt;</u>")))
 
@@ -7937,7 +7931,7 @@
 
 (tex-def-prim "\\date" do-date)
 
-(tex-def-prim "\\ddag" (lambda () (emit *html-^dagger*)))
+(tex-def-prim "\\ddag" (lambda () (emit *html-cap-dagger*)))
 
 (tex-def-prim "\\def" (lambda () (do-def #f)))
 
@@ -8367,7 +8361,7 @@
 
 (tex-def-prim "\\OE" (lambda () (emit *html-oelig*)))
 
-(tex-def-prim "\\oe" (lambda () (emit *html-^oelig*)))
+(tex-def-prim "\\oe" (lambda () (emit *html-cap-oelig*)))
 
 (tex-def-prim "\\opengraphsfile" do-mfpic-opengraphsfile)
 

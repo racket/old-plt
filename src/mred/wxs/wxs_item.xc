@@ -28,10 +28,17 @@
 @BEGINSYMBOLS messageStyle > > BUNDLE
 @ENDSYMBOLS
 
+@BEGINSYMBOLS iconID > ONE > BUNDLE
+@SYM "app" : wxMSGICON_APP
+@SYM "warning" : wxMSGICON_WARNING
+@SYM "error" : wxMSGICON_ERROR
+@ENDSYMBOLS
+
 @CLASSBASE wxMessage "message" : "item"
 
 @CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> string label
 @CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1.METHODNAME("message%","initialization")] <> bitmap label
+@CREATOR (wxPanel!,SYM[iconID],int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> icon label
 
 @INCLUDE wxs_item.xci
 

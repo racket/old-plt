@@ -311,18 +311,16 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 {
   if (event->LeftDown() && (no_strings > 0))
     {
+      int startH, startV;
+
       SetCurrentDC();
       
-      int	newsel;
-      int startH, startV;
       event->Position(&startH, &startV); // client c.s.
 
       Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
 
-      int trackResult;
-
-
       if (::StillDown()) {
+	int trackResult;
 	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
 	selection = ::GetControlValue(cMacControl) - 1;
 	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);

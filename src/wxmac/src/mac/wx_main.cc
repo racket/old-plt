@@ -49,6 +49,9 @@ extern "C" {
 #ifndef OS_X
 }
 #endif
+extern int wxGetOriginalAppFSSpec(FSSpec *spec);
+
+FSSpec wx_app_spec;
 
 //-----------------------------------------------------------------------------
 int wxEntry(int argc, char* argv[])
@@ -76,6 +79,8 @@ int wxEntry(int argc, char* argv[])
   wxGetGDHandle(); /* save original grafptr and device */
   wxCommonInit();
   wxInitializePrintSetupData(1);
+
+  wxGetOriginalAppFSSpec(&wx_app_spec);
 
   wxTheApp->OnInit();
   

@@ -19,8 +19,10 @@ typedef       void* wxMessage ;
 class wxMessage: public wxbMessage
 {
  public:
- 	char* 	cMessage; // mac platform only
-	wxBitmap*	sBitmap;
+ 	char* 	cMessage;
+	wxBitmap*	sBitmap; // non-NULL => bitmap label
+	int     icon_id; // non-zero => icon label
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -72,10 +74,21 @@ public:
 		WXTYPE		objectType = wxTYPE_MESSAGE
 	);
 
-	wxMessage // Constructor (given parentPanel)
+	wxMessage // Constructor (given parentPanel, bitmap)
 	(
 		wxPanel*	parentPanel,
 		wxBitmap*	bitmap,
+		int 		x = -1,
+		int			y = -1,
+		long		style = 0,
+		char*		windowName = "message",
+		WXTYPE		objectType = wxTYPE_MESSAGE
+	);
+
+	wxMessage // Constructor (given parentPanel, icon ID)
+	(
+		wxPanel*	parentPanel,
+		int             iconID,
 		int 		x = -1,
 		int			y = -1,
 		long		style = 0,
@@ -115,6 +128,10 @@ public:
    void ChangeToGray(Bool Gray);
 
 };
+
+#define wxMSGICON_APP 1
+#define wxMSGICON_WARNING 2
+#define wxMSGICON_ERROR 3
 
 #endif // IN_CPROTO
 #endif // wx_messg

@@ -39,7 +39,9 @@ class wxFrame: public wxbFrame
   Bool		cIsResizableDialog;
   MenuHandle	cAppleMenuHandle;
   Bool		cIsModal;
+
   wxFrame*      cSheetParent;
+  wxChildList*  sheets;	/* child sheets */
 
   /*============================================================================= */
   /* Public methods */

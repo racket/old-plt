@@ -21,6 +21,8 @@
 # include <TextEdit.h>
 #endif
 
+extern FSSpec wx_app_spec;
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -110,8 +112,57 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
     cMessage = NULL;
     if (cStyle & wxBORDER) new wxBorderArea(this);
     SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
+    if (GetParent()->IsHidden())
+      DoShow(FALSE);
   } else
     CreateWxMessage("<bad-image>");
+}
+
+IconRef msg_icons[3];
+
+wxMessage::wxMessage // Constructor (given parentPanel and icon id)
+(
+ wxPanel*	parentPanel,
+ int            iconID,
+ int 		x,
+ int			y,
+ long		style,
+ char*		windowName,
+ WXTYPE		objectType
+ ) :
+  wxbMessage(parentPanel, x, y, 0, 0, style, windowName)
+{
+  SetEraser(wxCONTROL_BACKGROUND_BRUSH);
+  switch (iconID) {
+  case wxMSGICON_APP:
+    if (!msg_icons[wxMSGICON_APP]) {
+      SInt16 lbl;
+      GetIconRefFromFile(&wx_app_spec, msg_icons + wxMSGICON_APP, &lbl);
+    }
+    break;
+  case wxMSGICON_WARNING:
+    if (!msg_icons[iconID]) {
+      GetIconRef(kOnSystemDisk, 'macs', kAlertCautionIcon, msg_icons + iconID);
+    }
+    break;
+  case wxMSGICON_ERROR:
+    if (!msg_icons[iconID]) {
+      GetIconRef(kOnSystemDisk, 'macs', kAlertStopIcon, msg_icons + iconID);
+    }
+    break;
+    /* kAlertNoteIcon */
+  default:
+    CreateWxMessage("<bad-icon>");
+    return;
+  }
+
+  if (msg_icons[iconID]) {
+    icon_id = iconID;
+    SetClientSize(64, 64);
+    if (GetParent()->IsHidden())
+      DoShow(FALSE);
+  } else
+    CreateWxMessage("<icon-missing>");
 }
 
 
@@ -206,7 +257,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 //-----------------------------------------------------------------------------
 void wxMessage::SetLabel(char* label)
 {
-  if (sBitmap) return;
+  if (sBitmap || icon_id) return;
   if (cMessage) delete [] cMessage;
   cMessage = macCopyString0(wxItemStripLabel(label));
   if (!cHidden) {
@@ -229,6 +280,10 @@ void wxMessage::Paint(void)
 	  
     if (sBitmap) {
       sBitmap->DrawMac();
+    } else if (icon_id) {
+      Rect r = { SetOriginY, SetOriginX, 
+		 SetOriginY + clientHeight, SetOriginX + clientWidth };
+      PlotIconRef(&r, kAlignNone, kTransformNone, 0 /* kIconServicesDefaultUsageFlags */, msg_icons[icon_id]);
     } else if (font && (font != wxNORMAL_FONT)) {
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);

@@ -192,7 +192,7 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxPanel (new wxFrame(NULL, windowTitle, 
+ wxPanel (new wxFrame((wxFrame *)parentFrame, windowTitle, 
 		      x, y,
 		      width, height, 
 		      (style | wxMDI_CHILD 
@@ -279,11 +279,11 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 			      NavCBRecPtr callBackParms, 
 			      void *callBackUD)
 {
-#if 0
   switch (callBackSelector) {
   case kNavCBStart:
     break;
   case kNavCBAccept:
+#if 0
     {
       Str255 sv;
       StringPtr s;
@@ -361,10 +361,12 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 			      &which);
 	}
       }
-    }      
+    }
+#endif
+  case kNavCBCancel: /* ^^^^^^^^^^ FALLTHROUGH ^^^^^^^^^^^^ */
+    QuitAppModalLoopForWindow(callBackParms->window);
     break;
   }
-#endif
 }
 
 static char *GetNthPath(NavReplyRecord *reply, int index)
@@ -436,8 +438,22 @@ char *wxFileSelector(char *message, char *default_path,
     dialogOptions.optionFlags |= kNavDontConfirmReplacement;
 #endif
 
-    // No way to set the starting directory? (There was in the old nav interface, but
-    // apparently not anymore.)
+#ifdef OS_X
+    if (parent) {
+      wxFrame *f;
+      if (wxSubType(parent->__type, wxTYPE_FRAME)) {
+	f = (wxFrame *)parent;
+      } else if (wxSubType(parent->__type, wxTYPE_DIALOG_BOX)) {
+	f = (wxFrame *)parent->GetParent();
+      } else
+	f = NULL;
+
+      if (f) {
+	dialogOptions.parentWindow = GetWindowFromPort(f->MacDC()->macGrafPort());
+	dialogOptions.modality = kWindowModalityWindowModal;
+      }
+    }
+#endif
 
     // create the dialog:
     if (flags & wxGETDIR) {
@@ -469,6 +485,10 @@ char *wxFileSelector(char *message, char *default_path,
       NavDialogDispose(outDialog);
       wxTheApp->AdjustCursor();
       return NULL;
+    }
+
+    if (dialogOptions.modality == kWindowModalityWindowModal) {
+      RunAppModalLoopForWindow(NavDialogGetWindow(outDialog));
     }
 
     wxTheApp->AdjustCursor();

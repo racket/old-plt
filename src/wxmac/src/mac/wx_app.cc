@@ -624,9 +624,8 @@ void wxApp::doMacKeyUpDown(Bool down)
 
       if ((key > 127) && (key < 256)) {
 	/* Translate to Latin-1 */
-	ByteCount ubytes, converted, usize;
+	ByteCount ubytes, converted;
 	unsigned char unicode[2], str[1];
-	UniCharCount ulen;
 	
 	if (!t2u_ready) {
 	  CreateTextToUnicodeInfoByEncoding(kTextEncodingMacRoman, &t2uinfo);
@@ -958,6 +957,10 @@ void wxApp::doMacContentClick(wxFrame* frame)
   frameParentArea->ScreenToArea(&hitX, &hitY);
   theMouseEvent.x = hitX; // frame parent area c.s.
   theMouseEvent.y = hitY; // frame parent area c.s.
+
+  // Sheets cause windows to move in lots of ways.
+  // Best just to re-calculate the position before processing an event.
+  frame->wxMacRecalcNewSize(FALSE);
 
   frame->SeekMouseEventArea(&theMouseEvent);
 }

@@ -29,17 +29,9 @@ static int last_was_front;
 
 #include "mred.h"
 
-#ifndef WX_CARBON
-# include <Events.h>
-# include <Processes.h>
-# include <Sound.h>
-#endif
-
 #define DELAY_TIME 5
 #define FG_SLEEP_TIME 0
 #define BG_SLEEP_TIME DELAY_TIME
-
-static long resume_ticks;
 
 static int dispatched = 1;
 
@@ -205,11 +197,7 @@ static void QueueTransferredEvent(EventRecord *e)
   if (e->what == updateEvt) {
     WindowPtr w = (WindowPtr)e->message;
     q->rgn = NewRgn();
-#ifdef WX_CARBON
     GetWindowRegion(w,kWindowUpdateRgn,q->rgn);
-#else      
-    CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
-#endif      
     BeginUpdate(w);
     EndUpdate(w);
   } else if (e->what == osEvt) {
@@ -588,7 +576,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 
 	fr = wxWindowPtrToFrame(window, c);
 	fc = fr ? (MrEdContext *)fr->context : NULL;
-	
+
 	if (!fr || (c && (fr->context != (void *)c)) 
 	    || (!c && !((MrEdContext *)fr->context)->ready))
 	  clickOk = NULL;
@@ -777,11 +765,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
      immediately. */
   MrQueueRef osq;
   EventFinderClosure closure;
-  EventRecord *e, ebuf;
+  EventRecord ebuf;
   MrEdContext *c, *keyOk, *foundc;
-  WindowPtr window;
   int found = 0;
+#ifdef SELF_SUSPEND_RESUME 
   int we_are_front;
+#endif
 
   saw_mup = 0; saw_mdown = 0; saw_kdown = 0;
   kill_context = 0;
@@ -815,16 +804,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   we_are_front = WeAreFront();
   if (we_are_front != last_was_front) {
     last_was_front = we_are_front;
-
-# ifndef WX_CARBON
-    if (we_are_front) {     
-      TEFromScrap();
-      resume_ticks = TickCount();
-    } else {
-      ZeroScrap();
-      TEToScrap();
-    }
-# endif
 
     /* for OS_X, activate events are automatically generated for the frontmost
      * window in an application when that application comes to the front.
@@ -872,7 +851,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   /* Next, service mouse & key events: */
   closure.checker = CheckForMouseOrKey;
   closure.which = &foundc;
-  if (osq = Find(&closure)) {
+  if ((osq = Find(&closure))) {
     found = 1;
   }
   closure.which = which;
@@ -1005,7 +984,6 @@ void MrEdDispatchEvent(EventRecord *e)
       }
     }
     
-# ifdef WX_CARBON
     {
       Rect windowBounds;
       RgnHandle contentRgn = NewRgn();
@@ -1018,15 +996,6 @@ void MrEdDispatchEvent(EventRecord *e)
       DisposeRgn(rgn);
       DisposeRgn(contentRgn);
     }
-# else
-    if (!((WindowRecord *)w)->updateRgn)
-      ((WindowRecord *)w)->updateRgn = rgn;
-    else {
-      RgnHandle update = ((WindowRecord *)w)->updateRgn;
-      UnionRgn(update, rgn, update);
-      DisposeRgn(rgn);
-    }
-# endif
   }
 
   wxTheApp->doMacPreEvent();
@@ -1130,6 +1099,8 @@ static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *
   thread_running = 1; 
   need_post = 1;
   write(watch_write_fd, "x", 1);
+
+  return 1;
 }
 
 static void EndFDWatcher(void)
@@ -1137,8 +1108,6 @@ static void EndFDWatcher(void)
   char buf[1];
 
   if (thread_running) {
-    void *val;
-
     if (need_post) {
       need_post = 0;
       scheme_signal_received();
@@ -1149,8 +1118,6 @@ static void EndFDWatcher(void)
   }
 }
 #endif
-
-static RgnHandle msergn;
 
 void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 {
@@ -1871,7 +1838,6 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
     goto fail;
   }
   
-succeed:
   retval = 1;
   goto done;
 escape:

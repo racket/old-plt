@@ -78,13 +78,13 @@ wxFrame::wxFrame // Constructor (for frame window)
   
   if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
 #ifdef OS_X
-      if (parentFrame) {
-	  WXGC_IGNORE(this, cSheetParent);
-	  cSheetParent = parentFrame;
-	  windowClass = kSheetWindowClass;
-      } else
+    if (parentFrame) {
+      WXGC_IGNORE(this, cSheetParent);
+      cSheetParent = parentFrame;
+      windowClass = kSheetWindowClass;
+    } else
 #endif
-	  windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
+      windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
     if (cStyle & wxNO_RESIZE_BORDER) {
       windowAttributes = kWindowNoAttributes;
     } else {
@@ -100,8 +100,7 @@ wxFrame::wxFrame // Constructor (for frame window)
     }
   }
 
-  result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);
-  
+  result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);  
   
   if (result != noErr) {
     char error[256];
@@ -404,6 +403,17 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
     cWindowWidth = theStrucRect.right - theStrucRect.left;
     cWindowHeight = theStrucRect.bottom - theStrucRect.top;
   }
+
+  if (sheets) {
+    wxChildNode* childWindowNode = sheets->First();
+    while (childWindowNode) {
+      wxFrame* sheet = (wxFrame*)childWindowNode->Data();
+      if (sheet) {
+	sheet->wxMacRecalcNewSize(FALSE);
+	childWindowNode = childWindowNode->Next();
+      }
+    }
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -681,13 +691,22 @@ void wxFrame::Show(Bool show)
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
-      if (cSheetParent)
-	  ::ShowSheetWindow(theMacWindow, GetWindowFromPort(cSheetParent->cMacDC->macGrafPort()));
-      else
+    if (cSheetParent) {
+      WindowPtr pwin;
+      pwin = GetWindowFromPort(cSheetParent->cMacDC->macGrafPort());
+      ::ShowSheetWindow(theMacWindow, pwin);
+      if (!cSheetParent->sheets)
+	cSheetParent->sheets = new wxChildList();
+      if (!cSheetParent->sheets->Number())
+	ChangeWindowAttributes(pwin, 0, kWindowCloseBoxAttribute);
+      cSheetParent->sheets->Append(this);
+      // Showing a sheet picks a place for the sheet:
+      wxMacRecalcNewSize(FALSE); // recalc new position only
+    } else
 #endif
-	  ::ShowWindow(theMacWindow);
+      ::ShowWindow(theMacWindow);
     ::SelectWindow(theMacWindow); 
-      
+
     if (cMacDC->currentUser() == this)
       /* b/c may be optimized for hidden: */
       cMacDC->setCurrentUser(NULL);
@@ -697,9 +716,15 @@ void wxFrame::Show(Bool show)
       cFocusWindow = NULL;
     }
 #ifdef OS_X
-    if (cSheetParent)
+    if (cSheetParent) {
       ::HideSheetWindow(theMacWindow);
-    else
+      cSheetParent->sheets->DeleteObject(this);
+      if (!cSheetParent->sheets->Number()) {
+	WindowPtr pwin;
+	pwin = GetWindowFromPort(cSheetParent->cMacDC->macGrafPort());
+	ChangeWindowAttributes(pwin, kWindowCloseBoxAttribute, 0);
+      }
+    } else
 #endif
       ::HideWindow(theMacWindow);
   }

@@ -2873,7 +2873,7 @@ char *MrEdApp::GetDefaultAboutItemName()
 {
 # ifdef OS_X
   if (!about_label) {
-    char *p, *s;
+    char *p;
     int i, len;
 
     p = wx_original_argv_zero;
@@ -2915,6 +2915,45 @@ void MrEdApp::DoDefaultAboutItem()
   ModalDialog(NULL, &hit);
   
   DisposeDialog(dial);
+}
+
+#ifdef OS_X
+extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+#endif
+
+int wxGetOriginalAppFSSpec(FSSpec *spec)
+{
+  char *s = wx_original_argv_zero;
+
+#ifdef OS_X
+  /* Need the folder of the exe, three levels up: */
+  {
+    char *p;
+    int i, len, c = 0;
+    
+    p = s;
+    len = strlen(s);
+    for (i = len - 1; i; i--) {
+      if (p[i] == '/') {
+	c++;
+	if (c == 3) {
+	  i++;
+	  break;
+	}
+      }
+    }
+
+    if (i) {
+      char *s2;
+      s2 = new WXGC_ATOMIC char[i];
+      memcpy(s2, s, i);
+      s2[i] = 0;
+      s = s2;
+    }
+  }
+#endif
+
+  return scheme_mac_path_to_spec(s, spec);
 }
 
 #endif

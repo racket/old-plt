@@ -218,6 +218,45 @@ static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
   return 0;
 }
 
+static Scheme_Object *iconID_wxMSGICON_APP_sym = NULL;
+static Scheme_Object *iconID_wxMSGICON_WARNING_sym = NULL;
+static Scheme_Object *iconID_wxMSGICON_ERROR_sym = NULL;
+
+static void init_symset_iconID(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(iconID_wxMSGICON_APP_sym);
+  iconID_wxMSGICON_APP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("app"));
+  wxREGGLOB(iconID_wxMSGICON_WARNING_sym);
+  iconID_wxMSGICON_WARNING_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("warning"));
+  wxREGGLOB(iconID_wxMSGICON_ERROR_sym);
+  iconID_wxMSGICON_ERROR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("error"));
+}
+
+static int unbundle_symset_iconID(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!iconID_wxMSGICON_ERROR_sym) WITH_VAR_STACK(init_symset_iconID());
+  if (0) { }
+  else if (v == iconID_wxMSGICON_APP_sym) { return wxMSGICON_APP; }
+  else if (v == iconID_wxMSGICON_WARNING_sym) { return wxMSGICON_WARNING; }
+  else if (v == iconID_wxMSGICON_ERROR_sym) { return wxMSGICON_ERROR; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconID symbol", -1, 0, &v));
+  return 0;
+}
+
+static int istype_symset_iconID(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!iconID_wxMSGICON_ERROR_sym) WITH_VAR_STACK(init_symset_iconID());
+  if (0) { }
+  else if (v == iconID_wxMSGICON_APP_sym) { return 1; }
+  else if (v == iconID_wxMSGICON_WARNING_sym) { return 1; }
+  else if (v == iconID_wxMSGICON_ERROR_sym) { return 1; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconID symbol", -1, 0, &v));
+  return 0;
+}
+
+
 
 
 
@@ -233,6 +272,9 @@ class os_wxMessage : public wxMessage {
   os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
 #ifndef MZ_PRECISE_GC
   os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+#endif
+#ifndef MZ_PRECISE_GC
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
 #endif
   ~os_wxMessage();
   void OnDropFile(pathname x0);
@@ -265,6 +307,13 @@ CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
 
 #ifndef MZ_PRECISE_GC
 os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, string x5))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
+{
+}
+#endif
+
+#ifndef MZ_PRECISE_GC
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, string x5))
 CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
 {
 }
@@ -680,7 +729,51 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   os_wxMessage *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+1], NULL, 0))) {
+  if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && WITH_REMEMBERED_STACK(istype_symset_iconID(p[POFFSET+1], NULL))) {
+    class wxPanel* x0 INIT_NULLED_OUT;
+    int x1;
+    int x2;
+    int x3;
+    int x4;
+    string x5 INIT_NULLED_OUT;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x5);
+
+    
+    if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (icon label case)", POFFSET+2, POFFSET+6, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (icon label case)", 0));
+    x1 = WITH_VAR_STACK(unbundle_symset_iconID(p[POFFSET+1], "initialization in message% (icon label case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in message% (icon label case)"));
+    } else
+      x2 = -1;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+3], "initialization in message% (icon label case)"));
+    } else
+      x3 = -1;
+    if (n > (POFFSET+4)) {
+      x4 = WITH_VAR_STACK(unbundle_symset_messageStyle(p[POFFSET+4], "initialization in message% (icon label case)"));
+    } else
+      x4 = 0;
+    if (n > (POFFSET+5)) {
+      x5 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+5], "initialization in message% (icon label case)"));
+    } else
+      x5 = "message";
+
+    
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
+    
+  } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+1], NULL, 0))) {
     class wxPanel* x0 INIT_NULLED_OUT;
     class wxBitmap* x1 INIT_NULLED_OUT;
     int x2;

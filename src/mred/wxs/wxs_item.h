@@ -17,6 +17,8 @@ extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, cons
 extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *, int);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxPanel(Scheme_Object *, const char *, int);
+extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
+extern int objscheme_istype_wxPanel(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);

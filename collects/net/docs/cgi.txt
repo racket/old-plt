@@ -1,4 +1,4 @@
-Time-stamp: <98/03/16 23:12:14 shriram>
+Time-stamp: <98/07/14 14:59:37 shriram>
 
 Package: cgi
 Collection: net
@@ -14,7 +14,12 @@ TYPES ----------------------------------------------------------------
 binding:
 
   A binding is an association of a form item with its value.  Some form
-  items (such as checkboxes) may correspond to multiple bindings.
+  items (such as checkboxes) may correspond to multiple bindings.  A
+  binding is a symbol-string pair.
+
+bindings:
+
+  A list of `binding's.
 
 html-string:
 
@@ -45,22 +50,22 @@ PROCEDURES -----------------------------------------------------------
 get-bindings :
 get-bindings/post :
 get-bindings/get :
-() -> list ((string . string))
+() -> bindings
 
-  Returns a list of bindings, corresponding to the options specified
-  by the user.  The /post and /get forms work only when POST and GET
+  Returns the bindings that corresponding to the options specified by
+  the user.  The /post and /get forms work only when POST and GET
   forms are used, respectively, while get-bindings determines the kind
   of form that was used and invokes the appropriate function.
 
 extract-bindings :
-string x list ((string . string)) -> list (string)
+(symbol + string) x bindings -> list (string)
 
   Given a key and a set of bindings, extract-bindings determines which
   ones correspond to a given key.  There may be zero, one, or many
   associations for a given key.
 
 extract-binding/single :
-string x list ((string . string)) -> string
+string x bindings -> string
   
   Given a key and a set of bindings, extract-binding/single ensures
   that the key has exactly one association, and returns it.
@@ -85,7 +90,7 @@ generate-error-output :
 list (html-string) -> <exit>
 
   The procedure takes a series of strings representing the body,
-  prints them with the subject line "Internal error", and causes the
+  prints them with the subject line "Internal error", and forces the
   script to exit.
 
 get-cgi-method :
@@ -95,7 +100,7 @@ get-cgi-method :
   invoked inside a CGI script.  Unpredictable otherwise.
 
 bindings-as-html :
-list ((string . string)) -> list (html-string)
+bindings -> list (html-string)
 
-  Converts a set of bindings into an html-string.  Useful for
+  Converts a set of bindings into a list of html-string's.  Useful for
   debugging.

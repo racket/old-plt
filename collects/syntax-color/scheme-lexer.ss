@@ -7,6 +7,10 @@
    
   (define-lex-abbrevs
       
+   [any-string (&)]
+   [any-char (^)]
+   [alphabetic (: (- "a" "z") (- "A" "Z"))]
+   
    ;; For case insensitivity
    [a (: "a" "A")]
    [b (: "b" "B")]
@@ -46,7 +50,7 @@
 
    
    ;; What about char->integer constraint?
-   [unicode  (: (@ (: "U" "u") digit16)
+   #;[unicode  (: (@ (: "U" "u") digit16)
                 (@ (: "U" "u") digit16 digit16)
                 (@ (: "U" "u") digit16 digit16 digit16)
                 (@ (: "U" "u") digit16 digit16 digit16 digit16)
@@ -58,7 +62,7 @@
    [character (: (@ "#\\" any-char)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") digit8 digit8)
-                 (@ "#\\" unicode))]
+                 #;(@ "#\\" unicode))]
    
    [character-name (: (@ s p a c e)
                       (@ n e w l i n e)
@@ -76,7 +80,7 @@
                 (@ "#\\" (- "0" "3") digit8))]
        
    ;; What about byte string regexp strings
-   [str (: (@ (? "#rx") "\"" (* (: string-element unicode)) "\"")
+   [str (: (@ (? "#rx") "\"" (* (: string-element #;unicode)) "\"")
            byte-str)]
    [byte-str (@ (? "#rx") "#\"" (* string-element) "\"")]
    [string-element (: (^ "\"" "\\")
@@ -216,8 +220,7 @@
                 (* (: identifier-escapes identifier-chars)))]
 
    [bad-id-start (: identifier-escapes
-                    (^ identifier-delims "\\" "|" "#")
-                    (@ "#" (^ identifier-delims "\\" "'" "&" "`" ",")))]
+                    (^ identifier-delims "\\" "|"))]
    [bad-id-escapes (: identifier-escapes
                       (@ "|" (* (^ "|"))))]
    [bad-id (: (@ bad-id-start
@@ -239,7 +242,7 @@
     (lexer
      ["#|" (values 1 end-pos)]
      ["|#" (values -1 end-pos)]
-     [(~ (@ any-string "|#" any-string)) (get-next-comment input-port)]
+     [(: "#" "|" (~ (@ any-string (: "|" "#") any-string))) (get-next-comment input-port)]
      [(eof) (values 'eof end-pos)]
      [(special)
       (get-next-comment input-port)]
@@ -287,7 +290,9 @@
      [(special-error)
       (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
-     [(: bad-char bad-str bad-id) (ret lexeme 'error #f start-pos end-pos)]
+     [(& (: bad-char bad-str bad-id)
+         (~ (@ (: reader-command sharing "#|" "#;" "#&" script) any-string)))
+      (ret lexeme 'error #f start-pos end-pos)]
      [any-char (extend-error lexeme start-pos end-pos input-port)]))
   
   (define (extend-error lexeme start end in)

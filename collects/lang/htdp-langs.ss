@@ -330,7 +330,7 @@ WARNING: printf is rebound in the mosdule to always print
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)
-         (language-numbers '(-500 5))
+         (language-numbers '(-500 6))
          (module '(lib "big.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
@@ -342,10 +342,21 @@ WARNING: printf is rebound in the mosdule to always print
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant advanced-student)))
-         (language-numbers '(-500 4))
+         (language-numbers '(-500 5))
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)))
+      
+      (add-htdp-language
+       (instantiate htdp-language% ()
+         (module '(lib "intermediate-lambda.ss" "lang"))
+         (language-position
+           (list (string-constant how-to-design-programs)
+                 (string-constant intermediate-student/lambda)))
+         (language-numbers '(-500 4))
+         (sharing-printing #f)
+         (abbreviate-cons-as-list #t)
+         (allow-sharing? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()

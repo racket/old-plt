@@ -23,12 +23,10 @@
 (require (lib "intermediate.ss" "lang"))
 
 (load-relative "beg-adv.ss")
+(load-relative "beg-intml.ss")
 (load-relative "beg-intm.ss")
 (load-relative "bega-adv.ss")
+(load-relative "intm-intml.ss")
 (load-relative "intm-adv.ss")
-
-(syntax-test #'(recur empty-f () 10))
-
-(syntax-test #'(let name ([x 12]) 10))
 
 (report-errs)

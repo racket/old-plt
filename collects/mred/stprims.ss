@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.16 1997/12/08 18:41:42 robby Exp robby $
+;; $Id: stprims.ss,v 1.17 1998/01/27 21:54:16 robby Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -59,7 +59,46 @@
     (lambda (item valid)
       (verify-list (list item) valid)))
     
-    
+;;;
+;;; find-object obj-class b-desc 
+;;; returns an object belonging to obj-class, where b-desc
+;;; is either an object, or a string
+;;;
+
+  (define object-tag 'mred:test:find-object)
+
+  (define find-object 
+    (lambda (obj-class)
+      (lambda (b-desc)
+	(cond
+	 [(string? b-desc)
+	  (let* ([active-frame (mred:test:get-active-frame)]
+		 [_ (unless active-frame
+			    (run-error object-tag
+				       "could not find object: ~a, no active frame" 
+				       b-desc))]
+		 [found
+		  (let loop ([panel (send active-frame get-top-panel)])
+		    (ormap (lambda (child)
+			     (cond
+			      [(and (is-a? child obj-class)
+				    (equal? (send child get-label) b-desc))
+			       child]
+			      [(is-a? child wx:panel%) (loop child)]
+			      [else #f]))
+			   (ivar panel children)))])
+	    (if found
+		found
+		(run-error object-tag 
+			   "no object of class ~a named ~a in active frame"
+			   obj-class
+			   b-desc)))]
+	 [(is-a? b-desc obj-class) b-desc]
+	 [else (run-error 
+		object-tag
+		"expected either a string or an object of class ~a as input, received: ~a"
+		obj-class b-desc)]))))
+
   ;;
   ;; BUTTONS are pushed by
   ;; (send <button> command <wx:command-event>)
@@ -69,32 +108,15 @@
   ;;
   
   (define button-tag 'mred:test:button-push)
-  
-  (define (find-button b-desc)
-    (cond
-      [(string? b-desc)
-       (let* ([active-frame (mred:test:get-active-frame)]
-	      [_ (unless active-frame
-		   (run-error button-tag
-			      "could not find button: ~a, no active frame" 
-			      b-desc))]
-	      [found
-	       (let loop ([panel (send active-frame get-top-panel)])
-		 (ormap (lambda (child)
-			  (cond
-			    [(and (is-a? child wx:button%)
-				  (equal? (send child get-label) b-desc))
-			     child]
-			    [(is-a? child wx:panel%) (loop child)]
-			    [else #f]))
-			(ivar panel children)))])
-	 (if found
-	     found
-	     (run-error button-tag "no button named ~a in active frame"
-			b-desc)))]
-      [(is-a? b-desc wx:button%) b-desc]
-      [else (run-error button-tag "expected either a button or string as input, received: ~a"
-		       b-desc)]))
+
+  (define find-button (find-object wx:button%))
+
+  (define make-button-event
+    (lambda (button)
+      (let* ([type   wx:const-event-type-button-command]
+	     [event  (make-object wx:command-event% type)])
+	(send event set-event-object button)
+	event)))
 
   (define button-push
     (lambda (button-input)
@@ -111,14 +133,44 @@
 		(send button command event)
 		(void))]))))))
   
-  (define make-button-event
-    (lambda (button)
-      (let* ([type   wx:const-event-type-button-command]
+;;; 
+;;; CHECK-BOX functions
+;;;
+
+  (define find-check-box (find-object wx:check-box%))
+
+  (define check-box-tag 'mred:test:check-box-set)
+
+  (define make-check-box-event
+    (lambda (check-box)
+      (let* ([type   wx:const-event-type-checkbox-command]
 	     [event  (make-object wx:command-event% type)])
-	(send event set-event-object button)
+	(send event set-event-object check-box)
 	event)))
 
+  (define check-box-set
+    (lambda (state) 
+      (lambda (check-box-input)
+	(mred:test:run-one
+	 (lambda ()
+	   (let ([check-box (find-check-box check-box-input)])
+	     (cond
+	      [(not (send check-box is-shown?))
+	       (run-error check-box-tag "check-box is not shown")]
+	      [(not (in-active-frame? check-box))
+	       (run-error check-box-tag "check-box is not in active frame")]
+	      [else
+	       (let ([event (make-check-box-event check-box)])
+		 
+		 ; toggle check-box if not in desired state 
+		 
+		 (unless (eq? (send check-box get-value) state)
+			 (send check-box command event))
+		     (void))])))))))
   
+  (define check-box-true (check-box-set #t))
+  (define check-box-false (check-box-set #f))
+
   ;;
   ;; KEYSTROKES 
   ;;

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.12 1997/08/19 22:00:19 krentel Exp robby $
+;; $Id: stsigs.ss,v 1.13 1998/01/27 21:54:17 robby Exp $
 ;;
 ;; Signatures for gui tester.
 ;;
@@ -37,7 +37,12 @@
    (open mred:test:run-internal^)))
 
 (define-signature mred:test:primitives^
-  (button-push
+  (find-object
+   find-button
+   find-check-box
+   button-push
+   check-box-true
+   check-box-false
    keystroke  
    menu-select
    mouse-click

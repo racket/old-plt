@@ -308,7 +308,8 @@
    make-scheme-mode%
    make-scheme-interaction-mode%
    scheme-mode%
-   scheme-interaction-mode%))
+   scheme-interaction-mode%
+   scheme-mode-style-list))
 
 (define-signature mred:paren^
   (balanced? 

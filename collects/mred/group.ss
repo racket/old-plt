@@ -72,35 +72,35 @@
 	      [check-buffers
 	       (opt-lambda ([reason "Close"][pred #f])
 		 (let loop ([buffers buffers])
-		   (if (not (null? buffers))
-		       (let* ([buffer (car buffers)]
-			      [type (buffer-type buffer)]
-			      [modified-ok (buffer-modified-ok buffer)]
-			      [edit (buffer-edit buffer)])
-			 (if (and (eq? type 'file)
-				  (not modified-ok)
-				  (send edit modified?)
-				  (or (not pred)
-				      (pred edit)))
-			     (let* ([name (send edit get-filename)]
-				    [name (if (null? name)
-					      "Untitled"
-					      name)])
-			       (let ([action
-				      (mred:gui-utils:unsaved-warning name 
-								      reason
-								      #t)])
-				 (case action
-				   [cancel #f]
-				   [continue
-				    (set-buffer-modified-ok! buffer #t)
-				    (if autosave?
-					(send edit remove-autosave))
-				    (check-buffers reason pred)]
-				   [save
-				    (and (send edit save-file)
-					 (check-buffers reason pred))])))
-			     (loop (cdr buffers)))))))]
+		   (unless (null? buffers)
+		     (let* ([buffer (car buffers)]
+			    [type (buffer-type buffer)]
+			    [modified-ok (buffer-modified-ok buffer)]
+			    [edit (buffer-edit buffer)])
+		       (if (and (eq? type 'file)
+				(not modified-ok)
+				(send edit modified?)
+				(or (not pred)
+				    (pred edit)))
+			   (let* ([name (send edit get-filename)]
+				  [name (if (null? name)
+					    "Untitled"
+					    name)])
+			     (let ([action
+				    (mred:gui-utils:unsaved-warning name 
+								    reason
+								    #t)])
+			       (case action
+				 [cancel #f]
+				 [continue
+				  (set-buffer-modified-ok! buffer #t)
+				  (if autosave?
+				      (send edit remove-autosave))
+				  (check-buffers reason pred)]
+				 [save
+				  (and (send edit save-file)
+				       (check-buffers reason pred))])))
+			   (loop (cdr buffers)))))))]
 	      [make-untitled-name
 	       (lambda ()
 		 (set! untitled-number (add1 untitled-number))
@@ -150,9 +150,11 @@
 	      [active-frame #f]
 	      [frame-counter 0]
 	      [frames null]
-	      [todo-to-new-frames null])
+	      [todo-to-new-frames void])
 	    
 	    (public
+	      [empty-callback (lambda () #f)]
+	      [set-empty-callback (lambda (x) (set! empty-callback x))]
 	      [get-frames (lambda () frames)]
 	      [buffer-group% b-group%]
 	      [frame% mred:editor-frame:editor-frame%]
@@ -174,7 +176,8 @@
 	      [for-each-frame
 	       (lambda (f)
 		 (for-each (lambda (x) (f (frame-frame x))) frames)
-		 (set! todo-to-new-frames (cons f todo-to-new-frames)))]
+		 (set! todo-to-new-frames
+		       (mzlib:function:compose f todo-to-new-frames)))]
 
 	      [set-frame-title-prefix
 	       (lambda (t)
@@ -204,35 +207,40 @@
 		       (append frames 
 			       (list 
 				(make-frame f frame-counter))))
-		 (for-each (lambda (fn) (fn f)) todo-to-new-frames))]
+		 (todo-to-new-frames f))]
 	      
-	      [remove-frame
-	       (opt-lambda (f [reason "Close"])
-		 (if (eq? f active-frame)
-		     (set! active-frame #f))
-		 (catch exit
-		   (set! frames
-			 (mzlib:function:remove
-			  f frames
-			  (lambda (f fr)
-			    (if (eq? f (frame-frame fr))
-				(begin
-				  (if (and (null? (cdr frames))
-					   ask-before-closing-last?
-					   (not (send buffers 
-						      check-buffers
-						      reason)))
-				      (exit #f))
-				  #t)
-				#f))))
-		   #t))]
+              [remove-frame
+               (opt-lambda (f [reason "Close"])
+                 (if (eq? f active-frame)
+                     (set! active-frame #f))
+                 (catch exit
+		   (let ([new-frames
+			  (mzlib:function:remove
+			   f frames
+			   (lambda (f fr)
+			     (if (eq? f (frame-frame fr))
+				 (begin
+				   (if (and (null? (cdr frames))
+					    ask-before-closing-last?
+					    (not (send buffers 
+						       check-buffers
+						       reason)))
+				       (exit #f))
+				   #t)
+				 #f)))])
+		     (if (and (null? new-frames)
+			      (empty-callback))
+			 (begin (set! frames new-frames)
+				#t)
+			 #f))))]
 	      [clear
 	       (lambda ()
-		 (if (send buffers clear)
-		     (begin 
-		       (set! frames ())
-		       #t)
-		     #f))]
+		 (when (empty-callback)
+		   (if (send buffers clear)
+		       (begin 
+			 (set! frames ())
+			 #t)
+		       #f)))]
 	      [close-all
 	       (lambda ()
 		 (catch escape

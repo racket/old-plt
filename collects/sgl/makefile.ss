@@ -6,15 +6,11 @@
            (lib "file.ss")
 	   (lib "pretty.ss")
 	   (lib "restart.ss")
-	   (lib "launcher.ss" "launcher"))
+	   (lib "launcher.ss" "launcher")
+           (lib "13.ss" "srfi"))
 
   (provide pre-installer)
-  
-  (define X11-include 
-    (if (eq? (system-type) 'unix)
-        '("/usr/X11R6/include" "/usr/X/include")
-        '()))
-  
+    
   (define dir (build-path "compiled" "native" (system-library-subpath #f)))
   (define 3mdir (build-path dir "3m"))
   (define precomp.h (build-path "gl-vectors" 3mdir "precomp.h"))
@@ -54,6 +50,23 @@
                (delete-file file.so))
              (copy-file pre-compiled file.so)))))
 
+  (define (parse-includes s)
+    (map (lambda (s)
+           (substring s 2 (string-length s)))
+         (string-tokenize s)))
+    
+  (define (get-args which-arg home)
+    (call-with-input-file (build-path home "lib" "buildinfo")
+      (lambda (i)
+        (let loop ((l (read-line i)))
+          (cond
+            ((eof-object? l) "")
+            (else
+             (let ((m (regexp-match (format "^~a=(.*)$" which-arg) l)))
+               (if m
+                   (cadr m)
+                   (loop (read-line i))))))))))
+               
   (define (compile-c-to-so file file.c file.so home variant)
     (unless (do-copy file.so)
       (parameterize ((dynext:current-extension-compiler-flags
@@ -76,13 +89,14 @@
 	    (dynext:compile-extension #f 
 				      file.c
 				      file.o
-				      `(,@X11-include ,(build-path home "collects" "compiler")))
+				      `(,@(parse-includes (get-args "X_CFLAGS" home))
+                                          ,(build-path home "collects" "compiler")))
 	    (dynext:link-extension #f 
 				   (list file.o)
 				   file.so)
 	    (delete/continue file.o))))))
 
-  (define (xform src dest use-precomp precomp?)
+  (define (xform home src dest use-precomp precomp?)
     (let-values ([(base name dir?) (split-path dest)])
       (make-directory* base))
     (parameterize ([current-directory (collection-path "sgl")])
@@ -96,7 +110,7 @@
 	  (with-output-to-file precomp.c
 	    (lambda () (newline))
 	    'truncate/replace)
-	  (xform precomp.c use-precomp #f #t)))
+	  (xform home precomp.c use-precomp #f #t)))
       (restart-mzscheme #() 
 			(lambda (x) x)
 			(list->vector 
@@ -130,7 +144,7 @@
 							     " -I")
 							 (fix-path
 							  (build-path p "include"))))
-						      X11-include))])
+						      (parse-includes (get-args "X_CFLAGS" home))))])
 			     (if (eq? 'windows (system-type))
 				 (format "cl.exe /MT /E /FIwindows.h ~a" 
 					 extras)
@@ -195,7 +209,7 @@
 	  (,file3m.c (,file.c ,@mz-headers)
 	   ,(lambda ()
 	      (delete/continue file3m.c)
-	      (xform file.c file3m.c precomp.h #f)))))))
+	      (xform home file.c file3m.c precomp.h #f)))))))
     
   (define (make-gl-prims file-name vecs home)
     (let* ((names (build-names file-name))
@@ -223,7 +237,7 @@
 	(,file3m.c (,file.c  "gl-prims.h" ,@mz-headers)
 	 ,(lambda ()
 	    (delete/continue file3m.c)
-	    (xform file.c file3m.c #f #f))))))
+	    (xform home file.c file3m.c #f #f))))))
   
   (define vec-names
     '(("gl-double-vector"

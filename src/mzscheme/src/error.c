@@ -172,10 +172,10 @@ call_error(char *buffer, int len)
   if (scheme_current_process->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_process->error_invoked == 1) {
-    scheme_console_printf("Error trying to display error: %s\n", buffer);
+    scheme_console_printf("error trying to display error: %s\n", buffer);
     scheme_longjmp (scheme_error_buf, 1);
   } else if (scheme_current_process->error_invoked == 2) {
-    scheme_console_printf("Error trying to escape from error: %s\n", buffer);
+    scheme_console_printf("error trying to escape from error: %s\n", buffer);
     scheme_longjmp(scheme_error_buf, 1);
   } else {
     scheme_current_process->error_invoked = 1;
@@ -190,6 +190,8 @@ call_error(char *buffer, int len)
       scheme_current_process->error_invoked = 2;
       /* Typically jumps out of here */
       scheme_apply_multi(scheme_current_process->error_escape_proc, 0, NULL);
+      /* Uh-oh - fall back to the default */
+      scheme_console_printf("error escape handler did not escape\n");
       scheme_current_process->error_invoked = 0;
       scheme_longjmp(savebuf, 1); /* force an exit */
     }

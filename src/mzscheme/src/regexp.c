@@ -1229,7 +1229,10 @@ char *regsub(regexp *prog, char *source, long *lenout)
     else if (c == '\\') {
       if (*src == '\\' || *src == '&')
 	no = -1;
-      else {
+      else if (*src == '$') {
+	no = prog->nsubexp + 1; /* Gives the empty string */
+	src++;
+      } else {
 	no = 0;
 	while ('0' <= *src && *src <= '9')
 	  no = (no * 10) + (*src++ - '0');

@@ -21,8 +21,23 @@
 		 (cond
 		   ((zodiac? expr) expr)
 		   ((pair? expr)
-		     (z:make-list origin start finish
-		       (map structurize expr) (length expr) '()))
+		     (let loop ((expr expr) (rev-seen '()) (length 0))
+		       (cond
+			 ((pair? expr)
+			   (loop (cdr expr)
+			     (cons (structurize (car expr)) rev-seen)
+			     (add1 length)))
+			 ((null? expr)
+			   (z:make-list origin start finish
+			     (reverse rev-seen)
+			     length '()))
+			 (else
+			   (z:make-improper-list origin start finish
+			     (reverse
+			       (cons (structurize expr) rev-seen))
+			     (add1 length)
+			     (make-period start)
+			     '())))))
 		   ((symbol? expr)
 		     (z:make-symbol
 		       origin start finish expr expr marks))

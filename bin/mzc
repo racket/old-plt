@@ -6,4 +6,4 @@ if [ "$PLTHOME" = '' ] ; then
   export PLTHOME
 fi
 
-exec ${PLTHOME}/bin/mzscheme '-mqvL' 'start.ss' 'compiler' '--'   ${1+"$@"}
+exec "${PLTHOME}/bin/mzscheme" '-mqvL' 'start.ss' 'compiler' '--'   ${1+"$@"}

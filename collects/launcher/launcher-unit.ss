@@ -202,7 +202,7 @@
 			 newline)
 			kind (regexp-replace* "\"" plthome "\\\\\""))]
 	       [exec (format
-		      "exec ${PLTHOME}/bin/~a ~a"
+		      "exec \"${PLTHOME}/bin/~a\" ~a"
 		      kind pre-str)]
 	       [args (format
 		      " ~a ${1+\"$@\"}~n"

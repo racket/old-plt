@@ -1162,11 +1162,12 @@ static void post_progress(Scheme_Input_Port *ip)
   ip->progress_evt = NULL;
 }
 
-long scheme_get_byte_string(const char *who,
-			    Scheme_Object *port,
-			    char *buffer, long offset, long size,
-			    int only_avail,
-			    int peek, Scheme_Object *peek_skip)
+long scheme_get_byte_string_unless(const char *who,
+				   Scheme_Object *port,
+				   char *buffer, long offset, long size,
+				   int only_avail,
+				   int peek, Scheme_Object *peek_skip,
+				   Scheme_Object *unless_evt)
 {
   Scheme_Input_Port *ip;
   long got = 0, total_got = 0, gc, i;
@@ -1329,9 +1330,10 @@ long scheme_get_byte_string(const char *who,
 	scheme_push_break_enable(&cframe, 1, 1);
       }
 
-      v = scheme_get_byte_string(who, port, tmp, 0, skip,
-				 (only_avail == 2) ? 2 : 0,
-				 1, scheme_make_integer(ip->ungotten_count + pcc));
+      v = scheme_get_byte_string_unless(who, port, tmp, 0, skip,
+					(only_avail == 2) ? 2 : 0,
+					1, scheme_make_integer(ip->ungotten_count + pcc),
+					unless_evt);
 
       if (only_avail == -1) {
 	scheme_pop_break_enable(&cframe, 0);
@@ -1359,15 +1361,18 @@ long scheme_get_byte_string(const char *who,
       else
 	nonblock = 0;
 
+      if (unless_evt && SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type))
+	unless_evt = SCHEME_PTR2_VAL(unless_evt);
+
       if (ip->pending_eof > 1) {
 	ip->pending_eof = 1;
 	gc = EOF;
       } else if (peek && ps)
-	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2);
+	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2, unless_evt);
       else {
-	gc = gs(ip, buffer, offset + got, size, only_avail == 2);
+	gc = gs(ip, buffer, offset + got, size, only_avail == 2, unless_evt);
 
-	if (!peek && gc && ip->progress_evt)
+	if (!peek && gc && (gc != EOF) && ip->progress_evt)
 	  post_progress(ip);
       }
 
@@ -1402,6 +1407,9 @@ long scheme_get_byte_string(const char *who,
 	/* remember the EOF for next time */
 	if (ip->pending_eof)
 	  ip->pending_eof = 2;
+	gc = 0;
+	size = 0; /* so that we stop */
+      } else if (gc == SCHEME_UNLESS_READY) {
 	gc = 0;
 	size = 0; /* so that we stop */
       }
@@ -1573,6 +1581,19 @@ long scheme_get_byte_string(const char *who,
   return total_got;
 }
 
+long scheme_get_byte_string(const char *who,
+			    Scheme_Object *port,
+			    char *buffer, long offset, long size,
+			    int only_avail,
+			    int peek, Scheme_Object *peek_skip)
+{
+  return scheme_get_byte_string_unless(who, port,
+				       buffer, offset, size,
+				       only_avail,
+				       peek, peek_skip,
+				       NULL);
+}
+
 void scheme_wait_input_allowed(Scheme_Input_Port *ip, int nonblock)
 {
   while (ip->input_lock) {
@@ -1590,12 +1611,21 @@ static void release_input_lock(void *_ip)
   ip->input_giveup = NULL;
 }
 
+int scheme_unless_ready(Scheme_Object *unless_evt)
+{
+  return scheme_wait_sema(unless_evt, 1);
+}
+
 int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
 			       long size,
 			       Scheme_Object *unless_evt,
 			       Scheme_Object *target_evt)
 {
   Scheme_Object *v, *sema, *a[2];
+  int did;
+
+  if (scheme_wait_sema(unless_evt, 1))
+    return 0;
 
   /* This sema makes other threads wait before reading: */
   sema = scheme_make_sema(0);
@@ -1614,31 +1644,62 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
   END_ESCAPEABLE();
 
   release_input_lock((void *)ip);
-  
+
+  did = 0;
+
   if (!SAME_OBJ(v, a[1])) {
     /* Read succeeded */
     Scheme_Get_String_Fun gs;
-    if (ip->peek_string_fun) {
-      /* If the port supplies its own peek, then we don't
-	 have peeked_r, so pass NULL as a buffer to the port's
-	 read proc. The read proc must not block. */
-      gs = ip->get_string_fun;
-    } else {
-      /* Otherwise, peek was implemented through peeked_{w,r}: */
-      if (ip->peeked_read) {
-	Scheme_Input_Port *pip = (Scheme_Input_Port *)ip->peeked_read;
-	gs = pip->get_string_fun;
-      } else
-	gs = NULL;
-    }
-    if (gs) {
-      size = gs(ip, NULL, 0, size, 1);
-      if (gs > 0)
+
+    /* First remove ungotten_count chars */
+    if (ip->ungotten_count) {
+      if (ip->ungotten_count > size)
+	ip->ungotten_count -= size;
+      else {
+	size -= ip->ungotten_count;
+	ip->ungotten_count = 0;
+      }
+      if (ip->progress_evt)
 	post_progress(ip);
+      did = 1;
     }
-    return 1;
-  } else
-    return 0;
+
+    if (size) {
+      Scheme_Input_Port *pip;
+
+      if (ip->peek_string_fun) {
+	/* If the port supplies its own peek, then we don't
+	   have peeked_r, so pass NULL as a buffer to the port's
+	   read proc. The read proc must not block. */
+	gs = ip->get_string_fun;
+	pip = ip;
+      } else {
+	/* Otherwise, peek was implemented through peeked_{w,r}: */
+	if (ip->peeked_read) {
+	  int cnt;
+	  cnt = pipe_char_count(ip->peeked_read);
+	  if ((cnt < size) && (ip->pending_eof == 2))
+	    ip->pending_eof = 1;
+	  pip = (Scheme_Input_Port *)ip->peeked_read;
+	  gs = pip->get_string_fun;
+	} else {
+	  gs = NULL;
+	  pip = NULL;
+	}
+      }
+
+      if (gs) {
+	size = gs(pip, NULL, 0, size, 1, NULL);
+	if (size > 0) {
+	  if (ip->progress_evt)
+	    post_progress(ip);
+	  did = 1;
+	}
+      }
+    }
+  }
+   
+  return did;
 }
 
 int scheme_peeked_read(Scheme_Object *port,
@@ -1741,9 +1802,10 @@ long scheme_get_char_string(const char *who,
 	   whether it continues the leftover sequence or ends it an in
 	   an error. */
 	special_is_ok = 1;
-	got = scheme_get_byte_string(who, port,
-				     s, leftover, 1,
-				     0, 1, peek_skip);
+	got = scheme_get_byte_string_unless(who, port,
+					    s, leftover, 1,
+					    0, 1, peek_skip,
+					    NULL);
 	if (got > 0) {
 	  long ulen, glen;
 	  glen = scheme_utf8_decode_as_prefix(s, 0, got + leftover,
@@ -1758,9 +1820,10 @@ long scheme_get_char_string(const char *who,
 	    /* Either we got one character, or we're still continuing. */
 	    if (!peek) {
 	      /* In either case, read the character (and discard it) */
-	      scheme_get_byte_string(who, port,
-				     s, MAX_UTF8_CHAR_BYTES, 1,
-				     0, 0, scheme_make_integer(0));
+	      scheme_get_byte_string_unless(who, port,
+					    s, MAX_UTF8_CHAR_BYTES, 1,
+					    0, 0, scheme_make_integer(0),
+					    NULL);
 	    } else {
 	      /* Or, in either case, increment the peek skip */
 	      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
@@ -1784,9 +1847,10 @@ long scheme_get_char_string(const char *who,
       if (bsize + leftover > READ_STRING_BYTE_BUFFER_SIZE)
 	bsize = READ_STRING_BYTE_BUFFER_SIZE - leftover;
       
-      got = scheme_get_byte_string(who, port,
-				   s, leftover, bsize,
-				   0, peek, peek_skip);
+      got = scheme_get_byte_string_unless(who, port,
+					  s, leftover, bsize,
+					  0, peek, peek_skip,
+					  NULL);
     } else
       got = 0;
 
@@ -1835,10 +1899,11 @@ scheme_getc(Scheme_Object *port)
   int v, delta = 0;
 
   while(1) {
-    v = scheme_get_byte_string("read-char", port,
-			       s, delta, 1,
-			       0,
-			       delta > 0, 0);
+    v = scheme_get_byte_string_unless("read-char", port,
+				      s, delta, 1,
+				      0,
+				      delta > 0, 0,
+				      NULL);
     if ((v == EOF) || (v == SCHEME_SPECIAL)) {
       if (!delta)
 	return v;
@@ -1852,10 +1917,11 @@ scheme_getc(Scheme_Object *port)
       if (v > 0) {
 	if (delta) {
 	  /* Need to read the peeked byte (will ignore) */
-	  v = scheme_get_byte_string("read-char", port,
-				     s, 0, 1,
-				     0,
-				     0, 0);
+	  v = scheme_get_byte_string_unless("read-char", port,
+					    s, 0, 1,
+					    0,
+					    0, 0,
+					    NULL);
 	}
 	return r[0];
       }
@@ -1869,10 +1935,11 @@ scheme_getc(Scheme_Object *port)
 	} else {
 	  if (delta) {
 	    /* Need to read the peeked byte (will ignore) */
-	    v = scheme_get_byte_string("read-char", port,
-				       s, 0, 1,
-				       0,
-				       0, 0);
+	    v = scheme_get_byte_string_unless("read-char", port,
+					      s, 0, 1,
+					      0,
+					      0, 0,
+					      NULL);
 	  }
 	  delta = 0;
 	}
@@ -1882,10 +1949,11 @@ scheme_getc(Scheme_Object *port)
 	  /* Need to read the peeked byte. Just in case
 	     it's different, we peek into the next
 	     bnuffer position, then ignore it. */
-	  v = scheme_get_byte_string("read-char", port,
-				     s, delta + 1, 1,
-				     0,
-				     0, 0);
+	  v = scheme_get_byte_string_unless("read-char", port,
+					    s, delta + 1, 1,
+					    0,
+					    0, 0,
+					    NULL);
 	}
 	/* start/continue peeking bytes */
 	delta++;
@@ -1900,10 +1968,11 @@ scheme_get_byte(Scheme_Object *port)
   char s[1];
   int v;
 
-  v = scheme_get_byte_string("read-byte", port,
-			     s, 0, 1,
-			     0,
-			     0, 0);
+  v = scheme_get_byte_string_unless("read-byte", port,
+				    s, 0, 1,
+				    0,
+				    0, 0,
+				    NULL);
 
   if ((v == EOF) || (v == SCHEME_SPECIAL))
     return v;
@@ -1935,10 +2004,11 @@ long scheme_get_bytes(Scheme_Object *port, long size, char *buffer, int offset)
     only_avail = 1;
   }
 
-  n = scheme_get_byte_string("read-bytes", port,
-			     buffer, offset, size,
-			     only_avail,
-			     0, 0);
+  n = scheme_get_byte_string_unless("read-bytes", port,
+				    buffer, offset, size,
+				    only_avail,
+				    0, 0,
+				    NULL);
 
   if (n == EOF)
     n = 0;
@@ -1948,15 +2018,16 @@ long scheme_get_bytes(Scheme_Object *port, long size, char *buffer, int offset)
   return n;
 }
 
-int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip)
+int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt)
 {
   char s[1];
   int v;
 
-  v = scheme_get_byte_string("peek-byte", port,
-			     s, 0, 1,
-			     0,
-			     1, skip);
+  v = scheme_get_byte_string_unless("peek-byte", port,
+				    s, 0, 1,
+				    0,
+				    1, skip,
+				    unless_evt);
 
   if ((v == EOF) || (v == SCHEME_SPECIAL))
     return v;
@@ -1966,14 +2037,14 @@ int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip)
 
 int scheme_peek_byte(Scheme_Object *port)
 {
-  return scheme_peek_byte_skip(port, NULL);
+  return scheme_peek_byte_skip(port, NULL, NULL);
 }
 
 int
-scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip)
+scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt)
 {
   special_is_ok = 1;
-  return scheme_peek_byte_skip(port, skip);
+  return scheme_peek_byte_skip(port, skip, unless_evt);
 }
 
 static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip, 
@@ -1995,10 +2066,11 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
     } else
       skip2 = skip;
 
-    v = scheme_get_byte_string("peek-char", port,
-			       s, delta, 1,
-			       only_avail,
-			       1, skip2);
+    v = scheme_get_byte_string_unless("peek-char", port,
+				      s, delta, 1,
+				      only_avail,
+				      1, skip2,
+				      NULL);
 
     if (!v) {
       *unavail = 1;
@@ -3660,7 +3732,8 @@ file_byte_ready (Scheme_Input_Port *port)
 
 static long file_get_string(Scheme_Input_Port *port,
 			    char *buffer, long offset, long size,
-			    int nonblock)
+			    int nonblock,
+			    Scheme_Object *unless_evt)
 {
   FILE *fp;
   Scheme_Input_File *fip;
@@ -3874,10 +3947,14 @@ fd_byte_ready (Scheme_Input_Port *port)
 
 static long fd_get_string(Scheme_Input_Port *port,
 			  char *buffer, long offset, long size,
-			  int nonblock)
+			  int nonblock,
+			  Scheme_Object *unless_evt)
 {
   Scheme_FD *fip;
   long bc;
+
+  if (unless_evt && scheme_unless_ready(unless_evt))
+    return SCHEME_UNLESS_READY;
 
   fip = (Scheme_FD *)port->port_data;
 
@@ -3904,13 +3981,16 @@ static long fd_get_string(Scheme_Input_Port *port,
 	  return 0;
 	}
 
-	scheme_block_until_enable_break((Scheme_Ready_Fun)fd_byte_ready,
-					(Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
-					(Scheme_Object *)port,
-					0.0,
-					nonblock);
+	scheme_block_until_unless((Scheme_Ready_Fun)fd_byte_ready,
+				  (Scheme_Needs_Wakeup_Fun)fd_need_wakeup,
+				  (Scheme_Object *)port,
+				  0.0, unless_evt,
+				  nonblock);
 
 	scheme_wait_input_allowed(port, nonblock);
+
+	if (unless_evt && scheme_unless_ready(unless_evt))
+	  return SCHEME_UNLESS_READY;
       }
 
       if (port->closed) {
@@ -4452,6 +4532,9 @@ static int osk_get_string(Scheme_Input_Port *port,
 			      nonblock);
 
     scheme_wait_input_allowed(port, nonblock);
+    
+    if (unless_evt && scheme_unless_ready(unless_evt))
+      return SCHEME_UNLESS_READY;
   }
 
   if (port->closed) {

@@ -35,7 +35,9 @@ EXPORTS
  scheme_weak_resume_thread
  scheme_block_until
  scheme_block_until_enable_break
+ scheme_block_until_unless
  scheme_wait_input_allowed
+ scheme_unless_ready
  scheme_in_main_thread
  scheme_cancel_sleep
  scheme_make_thread_cell
@@ -290,6 +292,7 @@ EXPORTS
  scheme_peekc_is_ungetc
  scheme_need_wakeup
  scheme_get_byte_string
+ scheme_get_byte_string_unless
  scheme_progress_evt
  scheme_peeked_read
  scheme_get_char_string

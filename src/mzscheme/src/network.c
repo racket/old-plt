@@ -1468,7 +1468,8 @@ static int tcp_byte_ready (Scheme_Input_Port *port)
 
 static long tcp_get_string(Scheme_Input_Port *port, 
 			   char *buffer, long offset, long size,
-			   int nonblock)
+			   int nonblock,
+			   Scheme_Object *unless_evt)
 {
   int errid;
   Scheme_Tcp *data;
@@ -1476,6 +1477,9 @@ static long tcp_get_string(Scheme_Input_Port *port,
   data = (Scheme_Tcp *)port->port_data;
 
  top:
+
+  if (unless_evt && scheme_unless_ready(unless_evt))
+    return SCHEME_UNLESS_READY;
 
   if (data->b.hiteof)
     return EOF;
@@ -1501,19 +1505,24 @@ static long tcp_get_string(Scheme_Input_Port *port,
       return 0;
 
 #ifdef USE_SOCKETS_TCP
-    scheme_block_until_enable_break((Scheme_Ready_Fun)tcp_byte_ready,
-				    scheme_need_wakeup,
-				    (Scheme_Object *)port,
-				    0.0,
-				    nonblock);
+    scheme_block_until_unless((Scheme_Ready_Fun)tcp_byte_ready,
+			      scheme_need_wakeup,
+			      (Scheme_Object *)port,
+			      0.0, unless_evt,
+			      nonblock);
 #else
     do {
       scheme_thread_block_enable_break((float)0.0, nonblock);
+      if (unless_evt && scheme_unless_ready(unless_evt))
+	break;
     } while (!tcp_byte_ready(port));
     scheme_current_thread->ran_some = 1;
 #endif
 
     scheme_wait_input_allowed(port, nonblock);
+
+    if (unless_evt && scheme_unless_ready(unless_evt))
+      return SCHEME_UNLESS_READY;
   }
 
   if (port->closed) {
@@ -1578,7 +1587,9 @@ static long tcp_get_string(Scheme_Input_Port *port,
     }
 
     BEGIN_ESCAPEABLE(scheme_post_sema, data->tcp.lock);
-    scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, (Scheme_Object *)pb, 0);
+    /* No need for unless_evt, since we have a lock */
+    scheme_block_until_enable_break(tcp_check_read, tcp_read_needs_wakeup, (Scheme_Object *)pb, 
+				    0.0, nonblock);
     END_ESCAPEABLE();
 
     data->activeRcv = NULL;

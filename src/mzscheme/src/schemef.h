@@ -106,8 +106,13 @@ MZ_EXTERN void scheme_weak_resume_thread(Scheme_Thread *p);
 MZ_EXTERN int scheme_block_until(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 MZ_EXTERN int scheme_block_until_enable_break(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, 
 					      float, int enable);
+MZ_EXTERN int scheme_block_until_unless(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
+					Scheme_Object *data, float delay, 
+					Scheme_Object *unless_evt,
+					int enable_break);
 
 MZ_EXTERN void scheme_wait_input_allowed(Scheme_Input_Port *port, int nonblock);
+MZ_EXTERN int scheme_unless_ready(Scheme_Object *unless_evt);
 
 MZ_EXTERN int scheme_in_main_thread(void);
 
@@ -600,11 +605,11 @@ MZ_EXTERN int scheme_get_byte(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc(Scheme_Object *port);
 MZ_EXTERN int scheme_peek_byte(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_skip(Scheme_Object *port, Scheme_Object *skip);
-MZ_EXTERN int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip);
+MZ_EXTERN int scheme_peek_byte_skip(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt);
 MZ_EXTERN int scheme_getc_special_ok(Scheme_Object *port);
 MZ_EXTERN int scheme_get_byte_special_ok(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_special_ok(Scheme_Object *port);
-MZ_EXTERN int scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip);
+MZ_EXTERN int scheme_peek_byte_special_ok_skip(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt);
 MZ_EXTERN int scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip);
 MZ_EXTERN void scheme_ungetc(int ch, Scheme_Object *port);
 MZ_EXTERN int scheme_byte_ready(Scheme_Object *port);
@@ -616,6 +621,12 @@ MZ_EXTERN long scheme_get_byte_string(const char *who,
 				      char *buffer, long offset, long size,
 				      int only_avail,
 				      int peek, Scheme_Object *peek_skip);
+MZ_EXTERN long scheme_get_byte_string_unless(const char *who,
+					     Scheme_Object *port,
+					     char *buffer, long offset, long size,
+					     int only_avail,
+					     int peek, Scheme_Object *peek_skip,
+					     Scheme_Object *unless_evt);
 MZ_EXTERN Scheme_Object *scheme_progress_evt(Scheme_Object *port);
 MZ_EXTERN int scheme_peeked_read(Scheme_Object *port,
 				 long size,

@@ -41,7 +41,9 @@
   scheme_extension_table->scheme_weak_resume_thread = scheme_weak_resume_thread;
   scheme_extension_table->scheme_block_until = scheme_block_until;
   scheme_extension_table->scheme_block_until_enable_break = scheme_block_until_enable_break;
+  scheme_extension_table->scheme_block_until_unless = scheme_block_until_unless;
   scheme_extension_table->scheme_wait_input_allowed = scheme_wait_input_allowed;
+  scheme_extension_table->scheme_unless_ready = scheme_unless_ready;
   scheme_extension_table->scheme_in_main_thread = scheme_in_main_thread;
   scheme_extension_table->scheme_cancel_sleep = scheme_cancel_sleep;
   scheme_extension_table->scheme_make_thread_cell = scheme_make_thread_cell;
@@ -344,6 +346,7 @@
   scheme_extension_table->scheme_peekc_is_ungetc = scheme_peekc_is_ungetc;
   scheme_extension_table->scheme_need_wakeup = scheme_need_wakeup;
   scheme_extension_table->scheme_get_byte_string = scheme_get_byte_string;
+  scheme_extension_table->scheme_get_byte_string_unless = scheme_get_byte_string_unless;
   scheme_extension_table->scheme_progress_evt = scheme_progress_evt;
   scheme_extension_table->scheme_peeked_read = scheme_peeked_read;
   scheme_extension_table->scheme_get_char_string = scheme_get_char_string;

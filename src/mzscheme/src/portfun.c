@@ -445,17 +445,17 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("peek-bytes-avail!", 
 			     scheme_make_prim_w_arity(peek_bytes_bang, 
 						      "peek-bytes-avail!", 
-						      2, 5), 
+						      2, 6), 
 			     env);
   scheme_add_global_constant("peek-bytes-avail!*", 
 			     scheme_make_prim_w_arity(peek_bytes_bang_nonblock, 
 						      "peek-bytes-avail!*", 
-						      2, 5), 
+						      2, 6), 
 			     env);
   scheme_add_global_constant("peek-bytes-avail!/enable-break", 
 			     scheme_make_prim_w_arity(peek_bytes_bang_break, 
 						      "peek-bytes-avail!/enable-break", 
-						      2, 5), 
+						      2, 6), 
 			     env);
   scheme_add_global_constant("port-provides-progress-evts?", 
 			     scheme_make_prim_w_arity(can_provide_progress_evt, 
@@ -525,7 +525,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("peek-byte-or-special", 
 			     scheme_make_prim_w_arity(peek_byte_spec, 
 						      "peek-byte-or-special", 
-						      0, 2), 
+						      0, 3), 
 			     env);
   scheme_add_global_constant("eof-object?", 
 			     scheme_make_folding_prim(eof_object_p, 
@@ -716,9 +716,13 @@ void scheme_init_port_fun_config(void)
 static long 
 string_get_or_peek_bytes(Scheme_Input_Port *port, 
 			 char *buffer, long offset, long size,
-			 int peek, long skip)
+			 int peek, long skip,
+			 Scheme_Object *unless_evt)
 {
   Scheme_Indexed_String *is;
+
+  if (unless_evt && scheme_unless_ready(unless_evt))
+    return SCHEME_UNLESS_READY;
 
   is = (Scheme_Indexed_String *) port->port_data;
   if (is->index + skip >= is->size)
@@ -745,16 +749,16 @@ string_get_or_peek_bytes(Scheme_Input_Port *port,
 static long 
 string_get_bytes(Scheme_Input_Port *port, 
 		  char *buffer, long offset, long size,
-		  int nonblock)
+		  int nonblock, Scheme_Object *unless_evt)
 {
-  return string_get_or_peek_bytes(port, buffer, offset, size, 0, 0);
+  return string_get_or_peek_bytes(port, buffer, offset, size, 0, 0, unless_evt);
 }
 
 static long 
 string_peek_bytes(Scheme_Input_Port *port, 
 		   char *buffer, long offset, long size,
 		   Scheme_Object *sskip,
-		   int nonblock)
+		   int nonblock, Scheme_Object *unless_evt)
 {
   long skip;
 
@@ -763,7 +767,7 @@ string_peek_bytes(Scheme_Input_Port *port,
   else
     skip = ((Scheme_Indexed_String *)port->port_data)->size;
 
-  return string_get_or_peek_bytes(port, buffer, offset, size, 1, skip);
+  return string_get_or_peek_bytes(port, buffer, offset, size, 1, skip, unless_evt);
 }
 
 static int
@@ -961,7 +965,8 @@ typedef struct User_Input_Port {
 
 static long user_read_result(const char *who, Scheme_Input_Port *port, 
 			     Scheme_Object *val, Scheme_Object *bstr, 
-			     int peek, int nonblock, int evt_ok, int special_ok,
+			     int peek, int nonblock, int evt_ok, 
+			     int special_ok, int false_ok,
 			     Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *a[1];
@@ -977,6 +982,13 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
       a[0] = val;
       if (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)) {
 	n = -1;
+      } else if (peek && SCHEME_FALSEP(val)) {
+	if (false_ok)
+	  return SCHEME_UNLESS_READY;
+	scheme_arg_mismatch(who, 
+			    "returned #f when no progress event was supplied: ",
+			    val);
+	return 0;
       } else if (SCHEME_PROCP(val)) {
 	Scheme_Object *orig = val;
 	a[0] = val;
@@ -1028,11 +1040,17 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 
       if (!val) {
 	scheme_wrong_type(who, 
-			  (evt_ok
-			   ? (special_ok
-			      ? "non-negative exact integer, eof, evt, or procedure for special"
-			      : "non-negative exact integer, eof, or evt")
-			   : "non-negative exact integer, eof, or procedure for special"),
+			  (peek
+			   ? (evt_ok
+			      ? (special_ok
+				 ? "non-negative exact integer, eof, evt, #f, or procedure for special"
+				 : "non-negative exact integer, eof, evt, or #f")
+			      : "non-negative exact integer, eof, #f, or procedure for special")
+			   : (evt_ok
+			      ? (special_ok
+				 ? "non-negative exact integer, eof, evt, or procedure for special"
+				 : "non-negative exact integer, eof, or evt")
+			      : "non-negative exact integer, eof, or procedure for special")),
 			  -1, -1, a);
 	return 0;
       }
@@ -1060,9 +1078,10 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 		       char *buffer, long offset, long size,
 		       int nonblock,
 		       int peek, Scheme_Object *peek_skip,
+		       Scheme_Object *unless_evt,
 		       Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *fun, *val, *a[2], *bstr;
+  Scheme_Object *fun, *val, *a[3], *bstr;
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
   long r;
   Scheme_Cont_Frame_Data cframe;
@@ -1071,7 +1090,8 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
   if (val) {
     /* Leftover from a read-based peek used to implement `char-ready?'
        This can't happen is peek is 1, because in that case we have a
-       peek_proc, so there's no need for read-based peeks. */
+       peek_proc, so there's no need for read-based peeks. Also,
+       unless_evt must be NULL. */
     uip->peeked = NULL;
     if (SCHEME_INTP(val)) {
       buffer[offset] = SCHEME_INT_VAL(val);
@@ -1099,12 +1119,13 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     }
     a[0] = bstr;
     a[1] = peek_skip;
+    a[2] = unless_evt ? unless_evt : scheme_false;
 
     /* Disable breaks while calling the port's function: */
     scheme_push_break_enable(&cframe, 0, 0);
 
     /* Call the read/peek function: */
-    val = scheme_apply(fun, peek ? 2 : 1, a);
+    val = scheme_apply(fun, peek ? 3 : 1, a);
     
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
 	&& (SCHEME_INTP(val) || SCHEME_EOFP(val) || SCHEME_PROCP(val))) {
@@ -1113,7 +1134,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 
     r = user_read_result(peek ? "user port peek" : "user port read",
 			 port, val, bstr, peek, nonblock, 
-			 1, !!uip->peek_proc, sinfo);
+			 1, !!uip->peek_proc, !!unless_evt, sinfo);
 
     scheme_pop_break_enable(&cframe, 1);
 
@@ -1142,10 +1163,11 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
 static long 
 user_get_bytes(Scheme_Input_Port *port, 
 	       char *buffer, long offset, long size,
-	       int nonblock)
+	       int nonblock, Scheme_Object *unless_evt)
 {
   return user_get_or_peek_bytes(port, buffer, offset, size, 
 				nonblock, 0, NULL,
+				unless_evt,
 				NULL);
 }
 
@@ -1153,10 +1175,11 @@ static long
 user_peek_bytes(Scheme_Input_Port *port, 
 		char *buffer, long offset, long size,
 		Scheme_Object *skip,
-		int nonblock)
+		int nonblock, Scheme_Object *unless_evt)
 {
   return user_get_or_peek_bytes(port, buffer, offset, size, 
 				nonblock, 1, skip, 
+				unless_evt,
 				NULL);
 }
 
@@ -1223,6 +1246,7 @@ user_byte_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
 
   c = user_get_or_peek_bytes(port, s, 0, 1, 
 			     1, can_peek, scheme_make_integer(0),
+			     NULL,
 			     sinfo);
 
   if (c == EOF) {
@@ -1593,7 +1617,8 @@ static void pipe_did_write(Scheme_Pipe *pipe)
 static long pipe_get_or_peek_bytes(Scheme_Input_Port *p, 
 				   char *buffer, long offset, long size,
 				   int nonblock,
-				   int peek, long peek_skip)
+				   int peek, long peek_skip,
+				   Scheme_Object *unless_evt)
 {
   Scheme_Pipe *pipe;
   long c;
@@ -1604,12 +1629,15 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
     if (nonblock > 0)
       return 0;
 
-    scheme_block_until_enable_break((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
-				    NULL, (Scheme_Object *)p,
-				    0.0,
-				    nonblock);
+    scheme_block_until_unless((Scheme_Ready_Fun)scheme_byte_ready_or_user_port_ready,
+			      NULL, (Scheme_Object *)p,
+			      0.0, unless_evt,
+			      nonblock);
 
     scheme_wait_input_allowed(p, nonblock);
+
+    if (unless_evt && scheme_unless_ready(unless_evt))
+      return SCHEME_UNLESS_READY;
   }
 
   if (p->closed) {
@@ -1684,7 +1712,7 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
     }
   }
 
-  if (!peek)
+  if (!peek && (c > 0))
     pipe_did_read(p, pipe);
   else {
     if (!c) {
@@ -1706,16 +1734,18 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 }
 
 static long pipe_get_bytes(Scheme_Input_Port *p, 
-			    char *buffer, long offset, long size,
-			    int nonblock)
+			   char *buffer, long offset, long size,
+			   int nonblock,
+			   Scheme_Object *unless_evt)
 {
-  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 0, 0);
+  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 0, 0, unless_evt);
 }
 
 static long pipe_peek_bytes(Scheme_Input_Port *p, 
-			     char *buffer, long offset, long size,
-			     Scheme_Object *skip,
-			     int nonblock)
+			    char *buffer, long offset, long size,
+			    Scheme_Object *skip,
+			    int nonblock,
+			    Scheme_Object *unless_evt)
 {
   long peek_skip;
 
@@ -1729,7 +1759,7 @@ static long pipe_peek_bytes(Scheme_Input_Port *p,
 #endif
   }
 
-  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 1, peek_skip);
+  return pipe_get_or_peek_bytes(p, buffer, offset, size, nonblock, 1, peek_skip, unless_evt);
 }
 
 static long pipe_write_bytes(Scheme_Output_Port *p, 
@@ -2043,7 +2073,7 @@ make_input_port(int argc, Scheme_Object *argv[])
   Scheme_Object *name;
 
   scheme_check_proc_arity("make-input-port", 1, 1, argc, argv); /* read */
-  scheme_check_proc_arity2("make-input-port", 2, 2, argc, argv, 1); /* peek */
+  scheme_check_proc_arity2("make-input-port", 3, 2, argc, argv, 1); /* peek */
   scheme_check_proc_arity("make-input-port", 0, 3, argc, argv); /* close */
   if (argc > 4)
     scheme_check_proc_arity2("make-input-port", 0, 4, argc, argv, 1); /* progress-evt */
@@ -2584,7 +2614,7 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, in
     port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if (peek) {
-    Scheme_Object *skip;
+    Scheme_Object *skip, *unless_evt = NULL;
 
     if (argc > 1) {
       skip = argv[1];
@@ -2593,17 +2623,32 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, in
 	scheme_wrong_type(name, "non-negative exact integer", 1, argc, argv);
 	return NULL;
       }
+      if (argc > 2) {
+	if (SCHEME_TRUEP(argv[2])) {
+	  unless_evt = argv[2];
+	  if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
+	    scheme_wrong_type(name, "progress evt", 2, argc, argv);
+	    return NULL;
+	  }
+	  if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
+	    scheme_arg_mismatch(name, 
+				"event is not a progress evt for the given port: ",
+				unless_evt);
+	    return NULL;
+	  }
+	}
+      }
     } else
       skip = NULL;
     
     if (spec) {
-      if (is_byte)
-	ch = scheme_peek_byte_special_ok_skip(port, skip);
-      else
+      if (is_byte) {
+	ch = scheme_peek_byte_special_ok_skip(port, skip, unless_evt);
+      } else
 	ch = scheme_peekc_special_ok_skip(port, skip);
     } else {
       if (is_byte)
-	ch = scheme_peek_byte_skip(port, skip);
+	ch = scheme_peek_byte_skip(port, skip, unless_evt);
       else
 	ch = scheme_peekc_skip(port, skip);
     }
@@ -2806,7 +2851,7 @@ do_general_read_bytes(int as_bytes,
 		      const char *who, int argc, Scheme_Object *argv[],
 		      int alloc_mode, int only_avail, int peek)
 {
-  Scheme_Object *port, *str, *peek_skip, *target_ch = NULL;
+  Scheme_Object *port, *str, *peek_skip, *target_ch = NULL, *unless_evt = NULL;
   long size, start, finish, got;
   int delta, size_too_big = 0;
 
@@ -2852,7 +2897,17 @@ do_general_read_bytes(int as_bytes,
       scheme_wrong_type(who, "non-negative exact integer", 1, argc, argv);
       return NULL;
     }
-    delta = 1;
+    if (only_avail) {
+      if (SCHEME_TRUEP(argv[2])) {
+	unless_evt = argv[2];
+	if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
+	  scheme_wrong_type(who, "progress evt", 2, argc, argv);
+	  return NULL;
+	}
+      }
+      delta = 2;
+    } else
+      delta = 1;
   } else {
     peek_skip = scheme_make_integer(0);
     delta = 0;
@@ -2876,6 +2931,15 @@ do_general_read_bytes(int as_bytes,
     port = argv[delta+1];
   else
     port = CURRENT_INPUT_PORT(scheme_current_config());
+
+  if (unless_evt) {
+    if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
+      scheme_arg_mismatch(who, 
+			  "event is not a progress evt for the given port: ",
+			  unless_evt);
+      return NULL;
+    }
+  }
 
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
@@ -2903,10 +2967,11 @@ do_general_read_bytes(int as_bytes,
   }
 
   if (as_bytes) {
-    got = scheme_get_byte_string(who, port, 
-				 SCHEME_BYTE_STR_VAL(str), start, size, 
-				 only_avail,
-				 peek, peek_skip);
+    got = scheme_get_byte_string_unless(who, port, 
+					SCHEME_BYTE_STR_VAL(str), start, size, 
+					only_avail,
+					peek, peek_skip,
+					unless_evt);
   } else {
     got = scheme_get_char_string(who, port, 
 				 SCHEME_CHAR_STR_VAL(str), start, size, 
@@ -3001,7 +3066,7 @@ peeked_read(int argc, Scheme_Object *argv[])
 
   if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
     scheme_arg_mismatch("port-commit-peeked", 
-			"event is not a progress-evt for the given port: ",
+			"event is not a progress evt for the given port: ",
 			unless_evt);
     return NULL;
   }

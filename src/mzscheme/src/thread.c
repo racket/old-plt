@@ -3693,6 +3693,52 @@ int scheme_block_until_enable_break(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun
     return scheme_block_until(_f, fdf, data, delay);
 }
 
+static int ready_unless(Scheme_Object *o)
+{
+  Scheme_Object *unless_evt, *data;
+  Scheme_Ready_Fun f;
+
+  data = (Scheme_Object *)((void **)o)[0];
+  unless_evt = (Scheme_Object *)((void **)o)[1];
+  f = (Scheme_Ready_Fun)((void **)o)[2];
+
+  return f(data);
+}
+
+static void needs_wakeup_unless(Scheme_Object *o, void *fds)
+{
+  Scheme_Object *data;
+  Scheme_Needs_Wakeup_Fun fdf;
+
+  data = (Scheme_Object *)((void **)o)[0];
+  fdf = (Scheme_Needs_Wakeup_Fun)((void **)o)[3];
+
+  return fdf(data, fds);
+}
+
+
+int scheme_block_until_unless(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
+			      Scheme_Object *data, float delay, 
+			      Scheme_Object *unless_evt,
+			      int enable_break)
+{
+  if (unless_evt) {
+    void **a;
+    a = MALLOC_N(void *, 4);
+    a[0] = data;
+    a[1] = unless_evt;
+    a[2] = f;
+    a[3] = fdf;
+
+    data = (Scheme_Object *) mzALIAS a;
+    f = ready_unless;
+    if (fdf)
+      fdf = needs_wakeup_unless;
+  }
+   
+  return scheme_block_until_enable_break(f, fdf, data, delay, enable_break);
+}
+
 void scheme_thread_block_enable_break(float sleep_time, int enable_break)
 {
   if (enable_break) {

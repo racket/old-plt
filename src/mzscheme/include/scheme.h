@@ -1020,11 +1020,11 @@ typedef struct Scheme_Output_Port Scheme_Output_Port;
 
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
-				      int nonblock);
+				      int nonblock, Scheme_Object *unless_evt);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,
-				       int nonblock);
+				       int nonblock, Scheme_Object *unless_evt);
 typedef Scheme_Object *(*Scheme_Progress_Evt_Fun)(Scheme_Input_Port *port);
 typedef int (*Scheme_Peeked_Read_Fun)(Scheme_Input_Port *port,
 				      long amount,
@@ -1100,6 +1100,7 @@ struct Scheme_Output_Port
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
 
 #define SCHEME_SPECIAL (-2)
+#define SCHEME_UNLESS_READY (-3)
 
 /*========================================================================*/
 /*                              exceptions                                */

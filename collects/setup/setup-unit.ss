@@ -385,7 +385,11 @@
 				 (lambda (mzll mzln)
 				   (let ([p (program-launcher-path mzln)])
 				     (unless (file-exists? p)
-				       (setup-printf "Installing ~a launcher ~a" kind p)
+				       (setup-printf "Installing ~a~a launcher ~a" 
+						     kind (if (eq? (current-launcher-variant) 'normal)
+							      ""
+							      (current-launcher-variant))
+						     p)
 				       (make-launcher 
 					(if (= 1 (length (cc-collection cc)))
 					    ;; Common case (simpler parsing for Windows to
@@ -404,18 +408,26 @@
 				(setup-printf 
 				 "Warning: ~a launcher library list ~s doesn't match name list ~s"
 				 kind mzlls mzlns))))])
-		  (make-launcher
-		   "MrEd"
-		   'mred-launcher-libraries
-		   'mred-launcher-names
-		   mred-program-launcher-path
-		   make-mred-launcher)
-		  (make-launcher
-		   "MzScheme"
-		   'mzscheme-launcher-libraries
-		   'mzscheme-launcher-names
-		   mzscheme-program-launcher-path
-		   make-mzscheme-launcher)))))
+		  (for-each
+		   (lambda (variant)
+		     (parameterize ([current-launcher-variant variant])
+		       (make-launcher
+			"MrEd"
+			'mred-launcher-libraries
+			'mred-launcher-names
+			mred-program-launcher-path
+			make-mred-launcher)))
+		   (available-mred-variants))
+		  (for-each
+		   (lambda (variant)
+		     (parameterize ([current-launcher-variant variant])
+		       (make-launcher
+			"MzScheme"
+			'mzscheme-launcher-libraries
+			'mzscheme-launcher-names
+			mzscheme-program-launcher-path
+			make-mzscheme-launcher)))
+		   (available-mzscheme-variants))))))
 	   collections-to-compile)))
 
       (when (call-install)

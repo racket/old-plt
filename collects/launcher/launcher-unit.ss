@@ -39,12 +39,51 @@
 				   (complete-path? base)
 				   (normal-case-path (expand-path base)))))))))))
       
+      (define current-launcher-variant
+	(make-parameter 'normal
+			(lambda (v)
+			  (unless (memq v '(normal 3m))
+			    (raise-type-error
+			     'current-launcher-variant
+			     "variant symbol"
+			     v))
+			  v)))
+
+      (define (available-variants kind)
+	(if (eq? 'unix (system-type))
+	    (append
+	     (if (and plthome
+		      (file-exists? (build-path plthome "bin" (format "~a3m" kind))))
+		 '(3m)
+		 null)
+	     '(normal))
+	    ;; 3m launchers not yet supported for other platforms:
+	    '(normal)))
+
+      (define (available-mred-variants)
+	(available-variants 'mred))
+
+      (define (available-mzscheme-variants)
+	(available-variants 'mzscheme))
+
       (define (install-template dest kind mz mr)
 	(define src (build-path (collection-path "launcher")
 				(if (eq? kind 'mzscheme) mz mr)))
 	(when (file-exists? dest)
 	  (delete-file dest))
 	(copy-file src dest))
+
+      (define (variant-suffix variant)
+	(case variant
+	  [(normal) ""]
+	  [(3m) "3m"]))
+
+      (define (add-file-suffix path variant)
+	(let ([s (variant-suffix variant)])
+	  (if (string=? "" s)
+	      path
+	      ;; FIXME for windows - need to add before the extension, if any
+	      (string-append path s))))
       
       (define (string-append/spaces f flags)
 	(if (null? flags)
@@ -176,7 +215,7 @@
 			no-arg-x-flags)))
 		     args))))))
 
-      (define (make-unix-launcher kind flags dest)
+      (define (make-unix-launcher kind variant flags dest)
 	(install-template dest kind "sh" "sh") ; just for something that's executable
 	(let* ([newline (string #\newline)]
 	       [post-flags (if (eq? kind 'mred)
@@ -202,8 +241,8 @@
 			 newline)
 			kind (regexp-replace* "\"" plthome "\\\\\""))]
 	       [exec (format
-		      "exec \"${PLTHOME}/bin/~a\" ~a"
-		      kind pre-str)]
+		      "exec \"${PLTHOME}/bin/~a~a\" ~a"
+		      kind (variant-suffix variant) pre-str)]
 	       [args (format
 		      " ~a ${1+\"$@\"}~n"
 		      post-str)]
@@ -212,15 +251,14 @@
 				  output-x-arg-getter
 				  string-append)])
 	  (unless plthome
-		  (error 'make-unix-launcher 
-			 "unable to locate PLTHOME"))
+	    (error 'make-unix-launcher "unable to locate PLTHOME"))
 	  (let ([p (open-output-file dest 'truncate)])
 	    (fprintf p "~a~a"
 		     header
 		     (assemble-exec exec args))
 	    (close-output-port p))))
       
-      (define (make-windows-launcher kind flags dest)
+      (define (make-windows-launcher kind variant flags dest)
 	(install-template dest kind "mzstart.exe" "mrstart.exe")
 	(let ([str (str-list->dos-str flags)]
 	      [p (open-input-file dest)]
@@ -292,7 +330,7 @@
       ;; OS X launcher code:
      
       ; make-macosx-launcher : symbol (listof str) pathname ->  
-      (define (make-macosx-launcher kind flags dest)
+      (define (make-macosx-launcher kind variant flags dest)
 	(if (eq? kind 'mzscheme) 
 	    (make-unix-launcher kind flags dest)
 	    (begin
@@ -391,7 +429,7 @@
       
       ;; end of lazy install-aliases code for mac added by jbc 2000-6
       
-      (define (make-macos-launcher kind flags dest)
+      (define (make-macos-launcher kind variant flags dest)
 	(maybe-install-aliases)
 	(install-template dest kind "GoMz" "GoMr")
 	(let ([p (open-output-file dest 'truncate)])
@@ -400,16 +438,18 @@
       
       (define (get-maker)
 	(case (system-type)
-	  [(unix beos) make-unix-launcher]
+	  [(unix) make-unix-launcher]
 	  [(windows) make-windows-launcher]
 	  [(macos) make-macos-launcher]
 	  [(macosx) make-macosx-launcher]))
       
       (define (make-mred-launcher flags dest)
-	((get-maker) 'mred flags dest))
+	(let ([variant (current-launcher-variant)])
+	  ((get-maker) 'mred variant flags dest)))
       
       (define (make-mzscheme-launcher flags dest)
-	((get-maker) 'mzscheme flags dest))
+	(let ([variant (current-launcher-variant)])
+	  ((get-maker) 'mzscheme variant flags dest)))
       
       (define (make-mred-program-launcher file collection dest)
 	(make-mred-launcher (list "-mqvL" file collection "--") dest))
@@ -417,7 +457,7 @@
       (define (make-mzscheme-program-launcher file collection dest)
 	(make-mzscheme-launcher (list "-mqvL" file collection "--") dest))
       
-      (define l-home (if (memq (system-type) '(unix beos))
+      (define l-home (if (memq (system-type) '(unix))
 			 (build-path plthome "bin")
 			 plthome))
 
@@ -433,16 +473,20 @@
 	  (string->list file))))
 
       (define (sfx file) (case (system-type) 
-			   [(unix beos) (unix-sfx file)]
+			   [(unix) (unix-sfx file)]
 			   [(windows) (string-append file ".exe")]
 			   [else file]))
 
       (define (mred-program-launcher-path name)
-	(build-path l-home (sfx name)))
+	(add-file-suffix 
+	 (build-path l-home (sfx name))
+	 (current-launcher-variant)))
       
       (define (mzscheme-program-launcher-path name)
 	(case (system-type)
-	  [(macosx) (build-path l-home-macosx-mzscheme (unix-sfx name))]
+	  [(macosx) (add-file-suffix 
+		     (build-path l-home-macosx-mzscheme (unix-sfx name))
+		     (current-launcher-variant))]
 	  [else (mred-program-launcher-path name)]))
 
       (define (install-mred-program-launcher file collection name)

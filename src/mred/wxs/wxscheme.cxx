@@ -182,12 +182,17 @@ static void draw_gc_bm(int on)
       cnvs = NULL;
 #endif
     if (cnvs) {
-      wxCanvasDC *dc;
-      dc = (wxCanvasDC *)cnvs->GetDC();
-      dc->GCBlit(gcbm->x, gcbm->y,
-		 gcbm->w, gcbm->h,
-		 on ? gcbm->on : gcbm->off,
-		 0, 0);
+      /* Due to custodian shutdowns and ordered finalization, it's
+	 possible that a canvas will be deleted without yet being
+	 collected: */
+      if (cnvs->__type != -1) {
+	wxCanvasDC *dc;
+	dc = (wxCanvasDC *)cnvs->GetDC();
+	dc->GCBlit(gcbm->x, gcbm->y,
+		   gcbm->w, gcbm->h,
+		   on ? gcbm->on : gcbm->off,
+		   0, 0);
+      }
     }
     gcbm = gcbm->next;
   }

@@ -932,6 +932,13 @@ static int CALLBACK get_font(ENUMLOGFONT FAR*  lpelf,
 
   data->names[data->count++] = s;
 
+#  ifdef MZ_PRECISE_GC
+#   ifndef GC_STACK_CALLEE_RESTORE
+  /* Restore variable stack. */
+  GC_variable_stack = (void **)__gc_var_stack__[0];
+#   endif
+#  endif
+
   return 1;
 }
 #endif
@@ -2283,7 +2290,7 @@ int wxsGetImageType(char *fn)
       type = wxBITMAP_TYPE_GIF;
       break;
     case 0xFF:
-      expect = (unsigned char *)"\xD8\xFF\xE0";
+      expect = (unsigned char *)"\xD8\xFF";
       type = wxBITMAP_TYPE_JPEG;
       break;
     case 137:

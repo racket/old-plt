@@ -19,8 +19,9 @@
 					  "index.htm"))))
     
     (define frame%
-      (class-asi mred:simple-menu-frame% 
-	(public	  
+      (class mred:simple-menu-frame% (name snip)
+	(inherit panel)
+	(public
 	  [file-menu:new-string "Compound Unit"]
 	  [file-menu:new
 	   (lambda ()
@@ -29,11 +30,37 @@
 	   (lambda (file-menu)
 	     (send file-menu append-item "New Unit"
 		   (lambda ()
-		     (make-object unit-frame% #f #f #f))))])))
+		     (make-object unit-frame% #f #f #f))))])
+
+	(sequence 
+	  (mred:debug:printf 'super-init "before drscheme:frame%")
+	  (super-init name)
+	  (mred:debug:printf 'super-init "after drscheme:frame%"))
+	(public
+	  [imports-panel (make-object mred:horizontal-panel% panel)]
+	  [imports-message
+	   (make-object mred:message% imports-panel "imports")]
+	  [update-imports
+	   (lambda ()
+	     (let ([make-button
+		    (lambda (snip)
+		      (make-object mred:button% imports-panel
+				   (lambda x (send snip open))
+				   (ivar snip name)))])
+	       (send imports-panel change-children
+		     (lambda (l) (list imports-message)))
+               (when snip
+	         (for-each make-button (ivar snip parents)))))]
+	  [on-change-imports (lambda ()
+			       (update-imports))])
+	(sequence
+	  (update-imports)
+	  (send imports-panel stretchable-in-y #f))))
+	
 
     (define unit-frame%
       (class frame% (filename frameset snip [show? #t])
-	(inherit canvas edit
+	(inherit canvas edit imports-panel
 		 set-title-prefix
 		 show menu-bar% make-menu
 		 active-edit active-canvas panel 
@@ -311,12 +338,13 @@
 		       (send interactions-edit insert-prompt)))))])
 	
 	(sequence
-	  (mred:debug:printf 'super-init "before drscheme:frame%: frameset:~a" frameset)
+	  (mred:debug:printf 'super-init "before drscheme:unit-frame%: frameset:~a" frameset)
 	  (super-init (cond 
 			[snip (ivar snip name)]
 			[filename filename]
-			[else "Untitled"]))
-	  (mred:debug:printf 'super-init "after drscheme:frame%"))
+			[else "Untitled"])
+		      snip)
+	  (mred:debug:printf 'super-init "after drscheme:unit-frame%"))
 	
 	(private
 	  [top-panel (make-object mred:horizontal-panel% panel)])
@@ -325,28 +353,9 @@
 	  [definitions-canvas canvas]
 	  [definitions-edit edit]
 	  [interactions-canvas (make-object mred:simple-frame-canvas% panel)]
-	  [imports-panel (make-object mred:horizontal-panel% panel)]
-	  [imports-message
-	   (make-object mred:message% imports-panel "imports")]
 	  [interactions-edit (make-object drscheme:rep:edit%)])
 	
-	(public
-	  [update-imports
-	   (lambda ()
-	     (let ([make-button
-		    (lambda (snip)
-		      (make-object mred:button% imports-panel
-				   (lambda x (send snip open))
-				   (ivar snip name)))])
-	       (send imports-panel change-children
-		     (lambda (l) (list imports-message)))
-               (when snip
-	         (for-each make-button (ivar snip parents)))))]
-	  [on-change-imports (lambda ()
-			       (update-imports))])
-
 	(sequence
-	  (update-imports)
 	  (send definitions-edit set-mode (make-object mred:scheme-mode%))
 	  (send* interactions-canvas (set-media interactions-edit) (set-frame this))
 	  (send interactions-edit set-auto-set-wrap #t)
@@ -429,7 +438,6 @@
 	  (send button-panel stretchable-in-y #f)
 	  (send button-panel stretchable-in-x #f) 
 	  (send top-panel stretchable-in-y #f)
-	  (send imports-panel stretchable-in-y #f)
 	  
 	  (mred:add-preference-callback
 	   'drscheme:library-file

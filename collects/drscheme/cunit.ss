@@ -160,7 +160,7 @@
 		    [y (send evt get-y)])
 		(cond
 		 [(send evt button-down? 3)
-		  (printf "dragging.1~n")
+		  '(printf "dragging.1~n")
 		  (let ([s (find-snip x y)])
 		    (unless (null? s)
 		      (set! orig-snip s)
@@ -367,29 +367,40 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	       (send snip on-close-frame (send edit get-filename))))]
 	  [filename (if fn
 			fn
-			"Untitled")]
+			"Untitled")])
 	  
-	  [file-menu:between-open-and-save
-	   (lambda (file-menu)
-	     (send file-menu append-separator)
-	     (send file-menu append-item "Add Unit..."
-		   (lambda ()
-		     (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
-		       (unless (null? name)
-			 (send edit insert 
-			       (make-object drscheme:unit:snip% name #f))))))
-	     
-	     (send file-menu append-item "Add Compound Unit..."
-		   (lambda ()
-		     (let ([name (wx:get-text-from-user "Name of compound unit" "New Compound Unit")])
-		       (unless (null? name)
-			 (send edit insert 
-			       (make-object snip% name #f))))))	     
-	     (send file-menu append-separator))])
+	(rename [super-make-menu-bar make-menu-bar])
+	(public
+	  [make-menu-bar
+	   (lambda ()
+	     (let ([mb (super-make-menu-bar)]
+		   [add-menu (make-object mred:menu%)]
+		   [show-menu (make-object mred:menu%)])
+	       (send mb append show-menu "Show")
+	       (send show-menu append-item "Imports"
+		     (lambda () (void)))
+	       (send show-menu append-item "Evaluation Order"
+		     (lambda () (void)))
+
+	       (send mb append add-menu "Add")
+	       (send add-menu append-item "Unit..."
+		     (lambda ()
+		       (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
+			 (unless (null? name)
+			   (send edit insert 
+				 (make-object drscheme:unit:snip% name #f))))))
+	       (send add-menu append-item "Compound Unit..."
+		     (lambda ()
+		       (let ([name (wx:get-text-from-user "Name of compound unit"
+							  "New Compound Unit")])
+			 (unless (null? name)
+			   (send edit insert 
+				 (make-object snip% name #f))))))
+	       mb))])
 	(public
 	  [get-edit% (lambda () project-pasteboard%)])
 	(sequence
-	  (super-init filename))
+	  (super-init filename snip))
 	(sequence
 	  (send edit set-filename filename)
 	  (when (file-exists? filename)

@@ -913,7 +913,9 @@
 #   endif
 #   if defined(OPENBSD) || defined(FREEBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
-#	define HEURISTIC2
+    /* PLTSCHEME: use `environ' for FreeBSD: */
+    extern char **environ;
+#   define STACKBOTTOM ((ptr_t)(environ))
 	extern char etext;
 #	define DATASTART ((ptr_t)(&etext))
 #   endif

@@ -23,6 +23,13 @@
 
 #include "schpriv.h"
 
+/* On the Mac, 68K, store the built-in Scheme code as pc-relative */
+#if defined(__MWERKS__)
+#if !defined(__POWERPC__)
+#pragma pcrelstrings on
+#endif
+#endif
+
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
@@ -39,3 +46,9 @@ void scheme_add_embedded_builtins(Scheme_Env *env)
 # include "macro.inc"
 #endif
 }
+
+#if defined(__MWERKS__)
+#if !defined(__POWERPC__)
+#pragma pcrelstrings reset
+#endif
+#endif

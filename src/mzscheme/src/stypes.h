@@ -72,7 +72,7 @@ enum {
   scheme_generic_data_type,
   scheme_weak_box_type, 
   scheme_struct_type_type,  /* 60 */
-  scheme_reserved_1_type,
+  scheme_module_begin_type,
   scheme_unit_type,
   scheme_id_macro_type,
   scheme_listener_type,

@@ -50,7 +50,7 @@ Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 static Scheme_Env *initial_env;
 
 /* locals */
-static Scheme_Env *make_env(void);
+static Scheme_Env *make_env(Scheme_Env *base);
 static void make_init_env(void);
 static Scheme_Object *list_globals(int argc, Scheme_Object *argv[]);
 static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
@@ -247,6 +247,12 @@ Scheme_Env *scheme_basic_env()
 
   env = scheme_make_empty_env();
   scheme_copy_from_original_env(env);
+
+  scheme_add_embedded_builtins(env);
+
+  scheme_init_format_procedure(env);
+  scheme_init_rep(env);
+
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
 
@@ -285,13 +291,6 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 }
 #endif
 
-/* On the Mac, 68K, store the built-in Scheme code as pc-relative */
-#if defined(__MWERKS__)
-#if !defined(__POWERPC__)
-#pragma pcrelstrings on
-#endif
-#endif
-
 static void make_init_env(void)
 {
   Scheme_Env *env;
@@ -299,7 +298,7 @@ static void make_init_env(void)
   long startt;
 #endif
 
-  env = make_env();
+  env = make_env(NULL);
 
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
@@ -419,8 +418,7 @@ static void make_init_env(void)
 
   set_reference_ids = 0;
 
-  /* It's too painful to implement macros without ` and ', so make
-     sure they're always defined, and then undefine if necessary. */
+  scheme_finish_kernel(env);
 
 #if USE_COMPILED_MACROS
   if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
@@ -431,42 +429,38 @@ static void make_init_env(void)
   }
 #endif
    
-  scheme_add_embedded_builtins(env);
-
-  scheme_init_format_procedure(env);
-  scheme_init_rep(env);
-
-  DONE_TIME(macro);
-
   scheme_defining_primitives = 0;
 }
 
 Scheme_Env *scheme_make_empty_env(void)
 {
-  return make_env();
+  return make_env(NULL);
 }
 
-#if defined(__MWERKS__)
-#if !defined(__POWERPC__)
-#pragma pcrelstrings reset
-#endif
-#endif
-
-static Scheme_Env *make_env(void)
+static Scheme_Env *make_env(Scheme_Env *base)
 {
   Scheme_Hash_Table *toplevel, *syntax, *modules;
   Scheme_Env *env;
 
   toplevel = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
   syntax = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
-  modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+  if (base)
+    modules = base->modules;
+  else
+    modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
 
   env = MALLOC_ONE_TAGGED(Scheme_Env);
-
   env->type = scheme_namespace_type;
+
+  env->modname = scheme_false;
+  env->imports = scheme_null;
+
   env->toplevel = toplevel;
   env->syntax = syntax;
   env->modules = modules;
+
+  env->exports = NULL;
+  env->num_exports = 0;
 
   {
     Scheme_Comp_Env *me;
@@ -483,6 +477,18 @@ static Scheme_Env *make_env(void)
   init_compile_data(env->init);
 
   return env;
+}
+
+Scheme_Env *
+scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname)
+{
+  Scheme_Env *menv;
+
+  menv = make_env(env);
+  menv->modname = modname;
+  menv->init->flags |= SCHEME_MODULE_FRAME;
+
+  return menv;
 }
 
 void
@@ -848,6 +854,11 @@ int scheme_is_toplevel(Scheme_Comp_Env *env)
   return !env->next || (env->flags & SCHEME_TOPLEVEL_FRAME);
 }
 
+int scheme_is_module_env(Scheme_Comp_Env *env)
+{
+  return !!(env->flags & SCHEME_MODULE_FRAME);
+}
+
 Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
 {
   if (scheme_is_toplevel(env))
@@ -996,7 +1007,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   Scheme_Comp_Env *frame;
   int j = 0, p = 0;
   Scheme_Bucket *b;
-  Scheme_Object *val, *module;
+  Scheme_Object *val, *modname;
   Scheme_Env *genv;
   
   frame = env;
@@ -1014,7 +1025,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       while (c && (c->before > i)) {
 	int issame;
 	if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	  issame = scheme_stx_free_eq(symbol, c->name);
+	  issame = scheme_stx_module_eq(symbol, c->name);
 	else
 	  issame = scheme_stx_env_bound_eq(symbol, c->name, uid);
 	
@@ -1040,7 +1051,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     while (c) {
       int issame;
       if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	issame = scheme_stx_free_eq(symbol, c->name);
+	issame = scheme_stx_module_eq(symbol, c->name);
       else
 	issame = scheme_stx_env_bound_eq(symbol, c->name, uid);
 
@@ -1062,12 +1073,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return NULL;
   }
 
-#if 0
-  module = scheme_stx_module(symbol);
-  if (module)
-    genv = scheme_module_load(module, env->genv);
+  modname = scheme_stx_module_name(&symbol);
+  if (modname)
+    genv = scheme_module_load(modname, env->genv);
   else
-#endif
     genv = env->genv;
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
@@ -1076,6 +1085,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     if (val)
       return val;
   }
+
+  if ((flags & SCHEME_NULL_FOR_UNBOUND) && !modname)
+    return NULL;
 
   b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 
@@ -1479,7 +1491,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
 
   v = scheme_static_distance(sym, env,
-			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			     (SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
 
   /* Deref globals */
@@ -1517,7 +1530,8 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
     sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
 
   v = scheme_static_distance(sym, env,
-			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			     (SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
 
   /* Deref globals */

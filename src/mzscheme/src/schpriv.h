@@ -168,6 +168,8 @@ void scheme_init_error_config(void);
 void scheme_init_exn_config(void);
 #endif
 
+void scheme_finish_kernel(Scheme_Env *env);
+
 Scheme_Object *scheme_make_initial_inspectors(void);
 
 extern int scheme_builtin_ref_counter;
@@ -394,17 +396,20 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src,
 				      Scheme_Object *stx_wraps);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 
-#define scheme_sys_wraps scheme_false
-
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
+Scheme_Object *scheme_make_module_rename(Scheme_Object *modname, 
+					 Scheme_Object *locname, Scheme_Object *exname);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
-int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
+int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b);
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a);
+
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid);
 int scheme_stx_has_binder(Scheme_Object *a);
 
@@ -1326,6 +1331,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_TOPLEVEL_FRAME 64
 #define SCHEME_PRIM_GLOBALS_ONLY 128
 #define SCHEME_CAPTURE_WITHOUT_RENAME 256
+#define SCHEME_MODULE_FRAME 512
 
 #define ENV_PRIM_GLOBALS_ONLY(env) ((env)->flags & SCHEME_PRIM_GLOBALS_ONLY)
 
@@ -1339,6 +1345,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_LINKING_REF 64
 #define SCHEME_DONT_MARK_USE 128
 #define SCHEME_OUT_OF_CONTEXT_OK 256
+#define SCHEME_NULL_FOR_UNBOUND 512
 
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);
 
@@ -1381,6 +1388,20 @@ Scheme_Object *scheme_get_stop_expander(void);
 void scheme_defmacro_parse(Scheme_Object *form, 
 			   Scheme_Object **name, Scheme_Object **code,
 			   Scheme_Comp_Env *env);
+void scheme_define_values_parse(Scheme_Object *form, 
+				Scheme_Object **var, Scheme_Object **val,
+				Scheme_Comp_Env *env);
+
+/*========================================================================*/
+/*                              modules                                   */
+/*========================================================================*/
+
+extern Scheme_Object *scheme_sys_wraps;
+
+Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname);
+int scheme_is_module_env(Scheme_Comp_Env *env);
+
+Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

@@ -169,7 +169,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_stx_type, "<syntax>");
   set_name(scheme_id_macro_type, "<id-macro>");
 
-  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_module_begin_type, "<module-begin-compiled-code>");
+
   set_name(scheme_reserved_3_type, "<reserved3>");
   set_name(scheme_reserved_5_type, "<reserved5>");
 
@@ -418,6 +419,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_id_macro_type, small_object);
 
   GC_REG_TRAV(scheme_stx_type, bad_trav);
+
+  GC_REG_TRAV(scheme_module_begin_type, small_object);
 
   GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_5_type, bad_trav);

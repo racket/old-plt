@@ -44,18 +44,23 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 
 /* Wraps:
 
-   A pair (cons <num> v) is a mark
-   A pair (cons (vector <sym> <stx> <sym-or-#f>) v) is a rename
+   - A pair (cons <num> v) is a mark
+   - A pair (cons (vector <sym> <stx> <sym-or-#f>) v) is a lexical rename
+                          env   var   var-resolved
+                                      #f => not yet computed
+   - A pair (cons (vector <sym> <sym-or-#f> <sym-or-#f>) v) is a module rename
+                          mod   var         ex
+                                #f => self  #f => self
 
    For object with sub-syntax:
 
-   The wraps field is
-   (cons <local wraps> <lazy markswraps>), aand
-   #f means (cons null null)
+    The wraps field is
+     (cons <local wraps> <lazy markswraps>), and
+    #f means (cons null null).
 
-   The reason we keep local wraps, even for parens,
-   is that the wraps for a list might have to be used
-   as wraps for #%application
+    The reason we keep local wraps, even for parens,
+    is that the wraps for a list might have to be used
+    as wraps for #%app, etc.
 */
 
 void scheme_init_stx(Scheme_Env *env)
@@ -217,6 +222,20 @@ Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
   return v;
 }
 
+Scheme_Object *scheme_make_module_rename(Scheme_Object *modname, 
+					 Scheme_Object *localname, 
+					 Scheme_Object *exname)
+{
+  Scheme_Object *v;
+
+  v = scheme_make_vector(3, NULL);
+  SCHEME_VEC_ELS(v)[0] = modname;
+  SCHEME_VEC_ELS(v)[1] = localname;
+  SCHEME_VEC_ELS(v)[2] = exname;
+
+  return v;
+}
+
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
@@ -355,14 +374,14 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
   }
 }
 
-static Scheme_Object *resolve_env(Scheme_Object *a)
+static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *rename_stack = scheme_null;
+  Scheme_Object *result = scheme_false;
 
   while (1) {
     if (SCHEME_NULLP(wraps)) {
-      Scheme_Object *result = scheme_false;
       /* See rename case for info on rename_stack: */
       while (!SCHEME_NULLP(rename_stack)) {
 	if (SAME_OBJ(SCHEME_CAAR(rename_stack), result))
@@ -376,29 +395,67 @@ static Scheme_Object *resolve_env(Scheme_Object *a)
 
       rename = SCHEME_CAR(wraps);
       renamed = SCHEME_VEC_ELS(rename)[1];
-
-      if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
-	if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
-	  Scheme_Object *other_env, *envname;
-	  
-	  envname = SCHEME_VEC_ELS(rename)[0];
-	  other_env = SCHEME_VEC_ELS(rename)[2];
-
-	  if (SCHEME_FALSEP(other_env)) {
-	    other_env = resolve_env(renamed);
-	    SCHEME_VEC_ELS(rename)[2] = other_env;
+	
+      if (!SCHEME_STXP(renamed)) {
+	/* Module rename: */
+	/* Applies? End of the line: */
+	if (!lexonly
+	    && (SCHEME_FALSEP(renamed) || SAME_OBJ(renamed, SCHEME_STX_VAL(a)))) {
+	  result = SCHEME_VEC_ELS(rename)[0];
+	  wraps = scheme_null;
+	} else
+	  wraps = SCHEME_CDR(wraps);
+      } else {
+	/* Normal rename: */
+	if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
+	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
+	    Scheme_Object *other_env, *envname;
+	    
+	    envname = SCHEME_VEC_ELS(rename)[0];
+	    other_env = SCHEME_VEC_ELS(rename)[2];
+	    
+	    if (SCHEME_FALSEP(other_env)) {
+	      other_env = resolve_env(renamed, 0);
+	      SCHEME_VEC_ELS(rename)[2] = other_env;
+	    }
+	    
+	    /* If it turns out that we're going to return
+	       other_env, then return envname instead. */
+	    rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
+					    rename_stack);
 	  }
-
-	  /* If it turns out that we're going to return
-	     other_env, then return envname instead. */
-	  rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
-					  rename_stack);
 	}
+	wraps = SCHEME_CDR(wraps);
       }
-
-      wraps = SCHEME_CDR(wraps);
     } else 
       wraps = SCHEME_CDR(wraps);
+  }
+}
+
+static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
+{
+  Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
+
+  while (1) {
+    if (SCHEME_NULLP(wraps))
+      return always ? SCHEME_STX_VAL(a) : NULL; /* top-level */
+    else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
+      /* Rename: */
+      Scheme_Object *rename = SCHEME_CAR(wraps);
+      Scheme_Object *renamed = SCHEME_VEC_ELS(rename)[1];
+
+      if (!SCHEME_STXP(renamed)) {
+	if (SCHEME_FALSEP(renamed) || SAME_OBJ(SCHEME_STX_VAL(a), renamed)) {
+	  if (SCHEME_FALSEP(renamed)) 
+	    return always ? SCHEME_STX_VAL(a) : NULL;
+	  else
+	    return SCHEME_VEC_ELS(rename)[2];
+	}
+      }
+    }
+    
+    /* Keep looking: */
+    wraps = SCHEME_CDR(wraps);
   }
 }
 
@@ -425,11 +482,58 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
   if ((a == asym) || (b == bsym))
     return 1;
   
-  a = resolve_env(a);
-  b = resolve_env(b);
+  a = resolve_env(a, 0);
+  b = resolve_env(b, 0);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
+}
+
+int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b)
+{
+  Scheme_Object *asym, *bsym;
+
+  if (!a || !b)
+    return (a == b);
+
+  if (SCHEME_STXP(a))
+    asym = get_module_src_name(a, 1);
+  else
+    asym = a;
+  if (SCHEME_STXP(b))
+    bsym = get_module_src_name(b, 1);
+  else
+    bsym = b;
+
+  /* Same name? */
+  if (!SAME_OBJ(asym, bsym))
+    return 0;
+
+  if ((a == asym) || (b == bsym))
+    return 1;
+  
+  a = resolve_env(a, 0);
+  b = resolve_env(b, 0);
+
+  /* Same binding environment? */
+  return SAME_OBJ(a, b);
+}
+
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a)
+{
+  if (SCHEME_STXP(*a)) {
+    Scheme_Object *modname, *exname;
+    
+    exname = get_module_src_name(*a, 0);
+    if (exname) {
+      modname = resolve_env(*a, 0);
+      *a = exname;
+      
+      return modname;
+    } else
+      return NULL;
+  } else
+    return NULL;
 }
 
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid)
@@ -459,11 +563,11 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
       return 0;
   
-  a = resolve_env(a);
+  a = resolve_env(a, 0);
   if (uid)
     b = uid;
   else
-    b = resolve_env(b);
+    b = resolve_env(b, 0);
 
   /* Same binding environment? */
   return SAME_OBJ(a, b);
@@ -477,7 +581,7 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
 int scheme_stx_has_binder(Scheme_Object *a)
 {
   if (SCHEME_STXP(a)) {
-    a = resolve_env(a);
+    a = resolve_env(a, 1);
     return SCHEME_TRUEP(a);
   } else
     return 0;

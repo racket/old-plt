@@ -481,9 +481,22 @@ typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
   MZ_HASH_KEY_EX
+
+  Scheme_Object *modname;
+  Scheme_Object *imports; /* list of module names */
+
+  Scheme_Object *body;
+  int running;
+  
   Scheme_Hash_Table *toplevel;
   Scheme_Hash_Table *syntax;
   Scheme_Hash_Table *modules;
+
+  Scheme_Object **exports;
+  Scheme_Object **export_src_names;
+  int num_exports;
+  int num_var_exports; /* non-syntax listed first in exports */
+
   struct Scheme_Comp_Env *init; /* initial compilation environment */
 } Scheme_Env;
 

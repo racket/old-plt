@@ -540,7 +540,7 @@ define_values_link(Scheme_Object *data, Link_Info *link)
   return scheme_make_syntax_link(define_values_execute, cons(var, val));
 }
 
-static void define_values_parse(Scheme_Object *form, 
+void scheme_define_values_parse(Scheme_Object *form, 
 				Scheme_Object **var, Scheme_Object **val,
 				Scheme_Comp_Env *env)
 {
@@ -587,7 +587,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
   globals = env->genv;
   
-  define_values_parse(form, &var, &val, env);
+  scheme_define_values_parse(form, &var, &val, env);
   variables = var;
   
   while (SCHEME_STX_PAIRP(var)) {
@@ -621,7 +621,7 @@ define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Schem
 {
   Scheme_Object *var, *val;
 
-  define_values_parse(form, &var, &val, env);
+  scheme_define_values_parse(form, &var, &val, env);
 
   env = scheme_no_defines(env);
 

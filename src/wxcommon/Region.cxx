@@ -1168,7 +1168,7 @@ Bool wxRectanglePathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
   s->Out(xx); s->Out(" "); s->Out(yy); s->Out(" moveto\n");
   s->Out(xx + ww); s->Out(" "); s->Out(yy); s->Out(" lineto\n");
   s->Out(xx + ww); s->Out(" "); s->Out(yy - hh); s->Out(" lineto\n");
-  s->Out(xx); s->Out(" "); s->Out(y - hh); s->Out(" lineto\n");
+  s->Out(xx); s->Out(" "); s->Out(yy - hh); s->Out(" lineto\n");
   s->Out("closepath\n");
 
   return FALSE;

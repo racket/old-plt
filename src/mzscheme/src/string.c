@@ -1746,6 +1746,35 @@ char *do_locale_recase(int to_up, char *in, int delta, int len, long *olen)
   return SCHEME_STR_VAL(parts);
 }
 
+#ifdef MACOS_UNICODE_SUPPORT
+char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
+/* The in argument is actually UTF-16. */
+{
+  CFMutableStringRef mstr;
+  CFStringRef str;
+  char *result;
+
+  str = CFStringCreateWithBytes(NULL, in + (delta * 2), (len * 2), kCFStringEncodingUnicode, FALSE);
+  mstr = CFStringCreateMutableCopy(NULL, 0, str);
+  CFRelease(str);
+  
+  if (to_up)
+    CFStringUppercase(mstr, NULL);
+  else
+    CFStringLowercase(mstr, NULL);
+
+  len = CFStringGetLength(mstr);
+  *olen = len;
+
+  result = (char *)scheme_malloc_atomic(len * 2);
+  
+  CFStringGetCharacters(mstr, CFRangeMake(0, len), (UniChar *)result);
+  CFRelease(mstr);
+  
+  return result;
+}
+#endif
+
 typedef char *(*recase_proc)(int to_up, char *in, int delta, int len, long *olen);
 
 Scheme_Object *mz_recase(const char *who, int to_up, unsigned char *str1, int l1)
@@ -1761,7 +1790,7 @@ Scheme_Object *mz_recase(const char *who, int to_up, unsigned char *str1, int l1
   if (current_locale_name && !*current_locale_name) {
     utf16 = 1;
     csize = 2;
-    mz_recase = do_native_recase;
+    mz_do_recase = do_native_recase;
   }
 #endif
 

@@ -825,5 +825,23 @@
 (test #f (lambda (x) x) (field-bound? y (new (class object% (field [x 0]) (super-new)))))
 (test #f (lambda (x) x) (field-bound? y (new object%)))
 
+(test #f
+      (lambda (x) x)
+      (let ([o (let ()
+                 (define-local-member-name m)
+                 (new (class object%
+                        (field [f 10])
+                        (super-new))))])
+        (field-bound? f o)))
+
+(test #t
+      (lambda (x) x)
+      (let ()
+        (define-local-member-name m)
+        (field-bound? 
+         f
+         (new (class object%
+                (field [f 10])
+                (super-new))))))
 
 (report-errs)

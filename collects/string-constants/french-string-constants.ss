@@ -113,7 +113,7 @@
   (warning "Avertissement")
   (error "Erreur")
   (close "Fermer") ;; as in, close an open window
-  (stop "Stop")   
+  (stop "Stop")
   (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
   (are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a ?") ;; ~a is a filename
   (ignore "Ignorer")
@@ -289,7 +289,7 @@
   (plt:hd:nothing-found-for "Rien n'a été trouvé pour ~a.")
   (plt:hd:error-finding-docs "Documentation introuvable.\n\n~a")
   (plt:hd:and "et")
-  (plt:hd:refresh "rafraîchir") 
+  (plt:hd:refresh "rafraîchir")
   (plt:hd:refresh-all-manuals "rafraîchir tous les manuels")
   (plt:hd:manual-installed-date "(installé le ~a)")
   ; Help Desk configuration
@@ -322,7 +322,7 @@
   (plt:hd:refresh-deleting... "Effacement de l'ancienne version de ~a...")
   (plt:hd:refresh-installing... "Installation de la nouvelle version de ~a...")
   (plt:hd:refresh-clearing-indicies "Effacement des indices cachés")
-  (plt:hd:refreshing-manuals-finished "Terminé.")  
+  (plt:hd:refreshing-manuals-finished "Terminé.")
   (plt:hd:about-help-desk "A propos de l'Aide")
   (plt:hd:help-desk-about-string
    "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT.")
@@ -432,7 +432,7 @@
   (ask-before-changing-format "Confirmation avant de changer le format de sauvegarde.")
   (wrap-words-in-editor-buffers "Continuer une longue ligne sur la ligne suivante, dans les éditeurs.")
   (show-status-line "Montrer la barre de status.")
-  (count-columns-from-one "Compter les lignes et colonnes à partir de un.") 
+  (count-columns-from-one "Compter les lignes et colonnes à partir de un.")
   (display-line-numbers "Montrer le numéro de ligne et de colonne, pas la distance depuis le début d'éditeur.")
   (enable-keybindings-in-menus "Raccourcis clavier dans les menus.")
   (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
@@ -673,7 +673,7 @@
   (most-recent-window "Fenêtre la plus récente")
   
   (view-menu-label "&Montrer")
-  (show-overview "Montrer le contour") 
+  (show-overview "Montrer le contour")
   (hide-overview "Cacher le contour")
   (show-module-browser "Montrer le navigateur de modules")
   (hide-module-browser "Cacher le navigateur de modules")
@@ -853,7 +853,7 @@
    "La création de servlets n'est pas possible avec le language ~a.")
   
   ;;; buttons
-  (execute-button-label "Exécuter") 
+  (execute-button-label "Exécuter")
   (save-button-label "Sauvegarder")
   (break-button-label "Stopper")
   
@@ -970,7 +970,7 @@
   (profiling-choose-high-color "Sélectionnez une couleur pour Elevé")
   (profiling "Profilage")
   (profiling-example-text "(define (whee) (whee))")
-  (profiling-color-config "Gamme de couleurs pour le profil") 
+  (profiling-color-config "Gamme de couleurs pour le profil")
   (profiling-scale "Echelle de couleurs pour le profil")
   (profiling-sqrt "Racine Carrée")
   (profiling-linear "Linéaire")
@@ -1020,19 +1020,20 @@
   ;; the next two are used in the initial wizard dialog.
   ;; Note that vc-wizard-check-prompt can (should) have newlines so
   ;; it will not make the dialog too wide.
-  (vc-wizard-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
+  (vc-wizard-check-prompt "Regarder sur Internet pour d'éventuelles~nmises à jour des logiciels PLT ?")
   (vc-wizard-check-button "Regarder !")
+  (vc-wizard-no-check-button "Continuer sans regarder")
   (vc-update-check "Vérification des mises à jour")
   (vc-please-wait "Veuillez patienter")
   (vc-connecting-version-server "Connexion au server de version de PLT en cours")
-  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau") 
+  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau")
   (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT")
   (vc-network-failure "Erreur réseau")
   (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour")
   (vc-binary-information-format "Version binaire installée : ~a (itération ~a)")
   (vc-details-format "~a~nDétails :~n~a")
   (vc-details-text "Détails :~n")
-  (vc-error-format "Erreur : ~a") 
+  (vc-error-format "Erreur : ~a")
   (vc-current-format "~a v.~a (itération ~a) est à jour")
   (vc-update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
   (vc-binary-name "Binaire")

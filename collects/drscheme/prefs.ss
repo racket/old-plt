@@ -1,5 +1,6 @@
 (unit/sig drscheme:prefs^
-  (import mred^
+  (import [drscheme:language : drscheme:language^]
+	  mred^
 	  [framework : framework^]
 	  [basis : plt:basis^])
 
@@ -15,7 +16,7 @@
   ;; of the default collection and may not be the default
   ;; specified below.
   (framework:preferences:set-un/marshall
-   'drscheme:settings
+   drscheme:language:settings-preferences-symbol
    (lambda (x) (cdr (vector->list (struct->vector x))))
    (lambda (x) 
      (if (and (list? x)
@@ -28,7 +29,7 @@
 	 #f)))
 
   (framework:preferences:set-default
-   'drscheme:settings
+   drscheme:language:settings-preferences-symbol
    (basis:get-default-setting)
    basis:setting?)
 
@@ -177,10 +178,10 @@
 		 (send text end-edit-sequence)))])
 		 
        (framework:preferences:add-callback
-	'drscheme:settings
+	drscheme:language:settings-preferences-symbol
 	(lambda (p v)
 	  (update-text v)))
-       (update-text (framework:preferences:get 'drscheme:settings))
+       (update-text (framework:preferences:get drscheme:language:settings-preferences-symbol))
        (send ex-panel set-alignment 'left 'center)
        (send ex-panel stretchable-height #f)
        (send canvas allow-tab-exit #t)

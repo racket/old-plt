@@ -890,7 +890,7 @@
         (define eval-busy? (lambda () (not (and user-thread
                                                 (thread-running? user-thread)))))
         
-        (define (get-user-setting) (fw:preferences:get 'drscheme:settings))
+        (define (get-user-setting) (fw:preferences:get drscheme:language:settings-preferences-symbol))
         (define user-setting (get-user-setting))
         (define user-custodian (make-custodian))
         (define user-eventspace #f)

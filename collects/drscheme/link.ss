@@ -19,6 +19,7 @@
 				     cogen zodiac)]
 
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss")
+				  (export* language)
 				  mred framework
 				  (export* basis))]
 	[zodiac : zodiac:system^

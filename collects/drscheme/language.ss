@@ -9,6 +9,8 @@
 	  mzlib:file^
 	  mzlib:print-convert^)
 
+  (define settings-preferences-symbol 'drscheme:102-settings)
+
   (define (get-printer-style-number printing-setting)
     (case printing-setting
       [(constructor-style) 0]
@@ -335,10 +337,10 @@
       "Choose Language..."
       language-menu
       (lambda (_1 _2)
-	(let ([new-settings (language-dialog (fw:preferences:get 'drscheme:settings))])
+	(let ([new-settings (language-dialog (fw:preferences:get settings-preferences-symbol))])
 	  (when new-settings
 	    (fw:preferences:set
-	     'drscheme:settings
+	     settings-preferences-symbol
 	     new-settings))))
       (and
        (fw:preferences:get 'framework:menu-bindings)

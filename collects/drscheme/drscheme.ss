@@ -1,5 +1,5 @@
-;(require-library "errortrace.ss" "errortrace") (error-print-width 200)
-;(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
+(require-library "errortrace.ss" "errortrace") (error-print-width 200)
+(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
 
 ;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
 

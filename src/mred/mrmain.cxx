@@ -539,7 +539,6 @@ static char *CreateUniqueName()
   }
 
   {
-#if 0
     // Name should be session unique, so add current session id
     HANDLE hToken = NULL;
     // Try to open the token (fails on Win9x) and check necessary buffer size
@@ -563,7 +562,6 @@ static char *CreateUniqueName()
 	session[0] = 0;
       }
     } else
-#endif
       session[0] = 0;
   }
 

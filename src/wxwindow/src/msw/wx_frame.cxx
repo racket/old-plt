@@ -473,29 +473,31 @@ void wxFrame::SetTitle(char *title)
 
 char *wxFrame::GetTitle(void)
 {
-  GetWindowText(GetHWND(), wxBuffer, 1000);
+  GetWindowTextW(GetHWND(), (wchar_t *)wxBuffer, 500);
   if (is_mod) {
     int len;
-    len = strlen(wxBuffer);
-    wxBuffer[len - 1] = 0;
+    len = wx_wstrlen((wchar_t *)wxBuffer);
+    ((wchar_t *)wxBuffer)[len - 1] = 0;
   }
-  return wxBuffer;
+  return wx_convert_from_wchar((wchar_t *)wxBuffer);
 }
 
 void wxFrame::SetFrameModified(Bool mod)
 {
   if (is_mod != !!mod) {
     int len;
+    char *s;
 
-    GetTitle();
+    s = GetTitle();
+    len = strlen(s);
+    memcpy(wxBuffer, s, len + 1);
     is_mod = !!mod;
 
     if (mod) {
-      len = strlen(wxBuffer);
       wxBuffer[len] = '*';
       wxBuffer[len+1] = 0;
     }
-    SetWindowText(GetHWND(), wxBuffer);
+    SetWindowTextW(GetHWND(), wxWIDE_STRING(wxBuffer));
   }
 }
  

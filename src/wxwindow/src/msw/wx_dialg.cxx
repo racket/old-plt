@@ -124,7 +124,11 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 			: ((style & wxMAXIMIZE) ? "wxNoCaptionResizeDialog" : "wxNoCaptionDialog"));
 
   handle = (char *)wnd;
-  SetWindowText(wnd->handle, Title);
+  {
+    wchar_t *ws;
+    ws = wxWIDE_STRING(Title);
+    SetWindowTextW(wnd->handle, ws);
+  }
 
   wx_cursor = wxSTANDARD_CURSOR;  
 

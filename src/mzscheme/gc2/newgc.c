@@ -1213,8 +1213,12 @@ inline static int propogate_marked_threads(void)
   int changed = 0;
 
   for(work = threads; work; work = work->next) 
-    if(work->potential_kill && !work->propogated && marked(work->thread)) 
-      { changed = 1; thread_marker(work->thread); work->propogated = 1; }
+    if(work->potential_kill && !work->propogated && marked(work->thread)) {
+      changed = 1;  
+      current_mark_owner = work->owner;
+      thread_marker(work->thread); 
+      work->propogated = 1; 
+    }
   return changed;
 }
 
@@ -2720,5 +2724,5 @@ inline static void free_used_pages(size_t len)
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED
-# include "old_mmap.c"
+# include "vm_mmap.c"
 #endif

@@ -9,7 +9,9 @@ AC_INIT(mzscheme/src/bignum.c)
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
 AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (enabled by default for Linux)])
-AC_ARG_ENABLE(gl, [  --enable-xft             use Xrender when available (enabled by default)])
+AC_ARG_ENABLE(xrender, [  --enable-xrender        use Xrender when available (enabled by default)])
+AC_ARG_ENABLE(libpng, [  --enable-libpng         use libpng instead of building (enabled by default)])
+AC_ARG_ENABLE(libjpeg, [  --enable-libjpeg        use libjpeg instead of building (enabled by default)])
 
 AC_ARG_ENABLE(dynlib, [  --enable-dynlib         create shared libraries])
 
@@ -130,8 +132,13 @@ WXVARIANT="wx_xt"
 MROPTIONS=
 INCLUDEDEP="#"
 
+JPEG_A="../wxcommon/jpeg/libjpeg.a"
+JPEG_INC="JPEG_INC"
+
 ZLIB_A="../wxcommon/zlib/libz.a"
 ZLIB_INC="-I../zlib"
+
+PNG_A="../wxcommon/libpng/libpng.a"
 
 ###### OSKit stuff #######
 
@@ -380,7 +387,7 @@ case $OS in
       OSX=""
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install
-      enable_xft=no
+      enable_xrender=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else
@@ -579,15 +586,15 @@ fi
 
 ################ Xrender ##################
 
-if test "${enable_xft}" = "" ; then  
-  enable_xft=yes
+if test "${enable_xrender}" = "" ; then  
+  enable_xrender=yes
 fi
 
-if test "${enable_xft}" = "yes" ; then  
-  AC_CHECK_HEADER(X11/extensions/Xrender.h, enable_xft=yes, enable_xft=no)
-  if test "${enable_xft}" = "yes" ; then  
-    AC_CHECK_LIB(Xrender, XRenderQueryExtension, enable_xft="yes", enable_xft="no", $X_LIBS -lX11 -lXext -lXrender)
-    if test "${enable_xft}" = "yes" ; then  
+if test "${enable_xrender}" = "yes" ; then  
+  AC_CHECK_HEADER(X11/extensions/Xrender.h, enable_xrender=yes, enable_xrender=no)
+  if test "${enable_xrender}" = "yes" ; then  
+    AC_CHECK_LIB(Xrender, XRenderQueryExtension, enable_xrender="yes", enable_xrender="no", $X_LIBS -lX11 -lXext -lXrender)
+    if test "${enable_xrender}" = "yes" ; then  
       MROPTIONS="$MROPTIONS -DWX_USE_XRENDER"
       X_EXTRA_LIBS="$X_EXTRA_LIBS -lXrender"
     else
@@ -595,6 +602,52 @@ if test "${enable_xft}" = "yes" ; then
     fi
   else
     echo "no Xrender headers; Xrender support disabled"
+  fi
+fi
+
+################ libpng ##################
+
+if test "${enable_libpng}" = "" ; then  
+  enable_libpng=yes
+fi
+
+if test "${enable_libpng}" = "yes" ; then  
+  AC_CHECK_HEADER(png.h, enable_png=yes, enable_png=no)
+  if test "${enable_png}" = "yes" ; then  
+    AC_CHECK_LIB(png, png_read_info, enable_png="yes", enable_png="no", -lpng -lz)
+    if test "${enable_png}" = "yes" ; then  
+      PNG_A=""
+      PNG_INC=""
+      X_EXTRA_LIBS="$X_EXTRA_LIBS -lpng -lz"
+      MROPTIONS="$MROPTIONS -DWX_USE_LIBPNG"
+    else
+      echo "no libpng installed; building static version"
+    fi
+  else
+    echo "no libpng headers installed; building from PLT copy"
+  fi
+fi
+
+################ libjpeg ##################
+
+if test "${enable_libjpeg}" = "" ; then  
+  enable_libjpeg=yes
+fi
+
+if test "${enable_libjpeg}" = "yes" ; then  
+  AC_CHECK_HEADER(jpeglib.h, enable_jpeg=yes, enable_jpeg=no)
+  if test "${enable_jpeg}" = "yes" ; then  
+    AC_CHECK_LIB(jpeg, jpeg_start_decompress, enable_jpeg="yes", enable_jpeg="no", -ljpeg)
+    if test "${enable_jpeg}" = "yes" ; then  
+      JPEG_A=""
+      JPEG_INC=""
+      X_EXTRA_LIBS="$X_EXTRA_LIBS -ljpeg"
+      MROPTIONS="$MROPTIONS -DWX_USE_LIBJPEG"
+    else
+      echo "no libjpeg installed; building static version"
+    fi
+  else
+    echo "no libjpeg headers installed; building from PLT copy"
   fi
 fi
 
@@ -654,8 +707,11 @@ AC_SUBST(WXPRECOMP)
 AC_SUBST(USE_WXPRECOMP)
 AC_SUBST(INCLUDEDEP)
 
+AC_SUBST(JPEG_A)
+AC_SUBST(JPEG_INC)
 AC_SUBST(ZLIB_A)
 AC_SUBST(ZLIB_INC)
+AC_SUBST(PNG_A)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)
@@ -704,7 +760,9 @@ if test "${enable_mred}" = "yes" ; then
                  wxxt/contrib/xpm/lib/Makefile"
   fi
 
-  subbuilds="$subbuilds wxcommon/jpeg"
+  if test "${enable_libjpeg}" = "no" ; then
+    subbuilds="$subbuilds wxcommon/jpeg"
+  fi
 fi
 
 if test "${enable_wbuild}" = "yes" ; then

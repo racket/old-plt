@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.3 1998/04/16 15:22:00 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.4 1998/04/22 14:38:48 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -315,6 +315,7 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
       int ow, oh;
       ow = new->menu.state->w;
       oh = new->menu.state->h;
+      new->menu.state->menu = new->menu.contents;
       ComputeMenuSize(new, new->menu.state);
       new->menu.state->w = new->core.width;
       new->menu.state->h = new->core.height;

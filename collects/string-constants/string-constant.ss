@@ -1,3 +1,4 @@
+
 (module string-constant mzscheme
   (require-for-syntax (lib "etc.ss")
 		      (lib "list.ss"))
@@ -143,7 +144,7 @@
                          [(eq? language 'languages) constants] ...
                          [else first-constant]))))]))
       
-      (define(string-constants stx)
+      (define (string-constants stx)
         (syntax-case stx ()
           [(_ name)
            (let ([ht (sc-constants first-string-constant-set)]
@@ -154,8 +155,9 @@
                                    stx))
              (unless (hash-table-get ht datum (lambda () #f))
                (raise-syntax-error 
-                (quote-syntax string-constants)
-                (format "~a is not a known string constant" datum) stx))
+                #f
+                (format "~a is not a known string constant" datum)
+                stx))
              (with-syntax ([(constants ...) (map (lambda (x) (hash-table-get (sc-constants x) datum))
                                                  available-string-constant-sets)])
                (syntax (list constants ...))))]))

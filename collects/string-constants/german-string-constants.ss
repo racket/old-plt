@@ -72,7 +72,7 @@
  (collect-button-label "Collect")	; islwtm
  (read-only "Schreibgeschützt")
  (read/write "Zum Lesen und Schreiben")
- (auto-extend-selection "Auto-extend Selection")	; islwtm
+ (auto-extend-selection "Auto-extend")	; islwtm
  (overwrite "Überschreiben")
  (running "Wird ausgeführt")
  (not-running "Wird nicht ausgeführt")
@@ -267,7 +267,7 @@
  (file-menu "Datei")
  (edit-menu "Bearbeiten")
  (help-menu "Hilfe")
- (windows-menu "Windows")
+ (windows-menu "Fenster")
  
  ;;; menus
  ;;; - in menu labels, the & indicates a alt-key based shortcut.
@@ -282,21 +282,30 @@
  (file-menu-label-windows "&Datei")
  (file-menu-label-other "&Datei")	; islwtm
 
- (new-info  "Neue Datei öffnen")
+ (new-info "Neue Datei öffnen")
+ (new-menu-item "&Neu")
 
  (open-info "Datei von der Festplatte öffnen")
+ (open-menu-item "Ö&ffnen...")
 
  (revert-info "Inhalt entsprechend der Datei zurücksetzen")
+ (revert-menu-item "&Zurücksetzen")
 
  (save-info "Diese Datei auf Platte abspeichern")
+ (save-menu-item "&Speichern")
 
  (save-as-info "Dateiname festlegen und Datei auf Platte speichern.")
+ (save-as-menu-item "Speichern &unter ...")
 
  (print-info "Drucke diese Datei")
+ (print-menu-item "&Drucken...")
 
  (close-info "Datei schliessen")
+ (close-menu-item "S&chliessen")
 
  (quit-info "Alle Fenster schliessen")
+ (quit-menu-item-windows "&Beenden")
+ (quit-menu-item-others "&Beenden")
  
  (edit-menu-label "&Bearbeiten")
  
@@ -323,61 +332,71 @@
  (select-all-menu-item "&Alles markieren")
  
  (find-info "Nach einer Zeichenfolge suchen")
+ (find-menu-item "Suchen...")
 
- (find-again-info "Search for the same string as before")
+ (find-again-info "Wiederholte Suche nach dem gleichen String")
+ (find-again-menu-item "Weitersuchen")
  
- (replace-and-find-again-info "Replace the current text and search for the same string as before")
+ (replace-and-find-again-info "Ersetze den aktuellen Text und suche nach dem gleichen String weiter")
+ (replace-and-find-again-menu-item "Ersetzen && und weitersuchen")
 
- (preferences-info "Configure your preferences")
+ (preferences-info "Preferenzen konfigurieren")
+ (preferences-menu-item "Preferenzen...")
 
- (keybindings-info "Show the currently active keybindings")
+ (keybindings-info "Die jetzt aktiven Keybindings (Assoziation zwischen Tasten und Funktionen) anzeigen")
  (keybindings-menu-item "Keybindings")
  (keybindings-frame-title "Keybindings")
- (keybindings-sort-by-name "Sort by Name")
- (keybindings-sort-by-key "Sort by Key")
+ (keybindings-sort-by-name "Nach Name sortieren")
+ (keybindings-sort-by-key "Nach Schlüssel sortieren")
 
- (insert-text-box-item "Insert Text Box")
- (insert-pb-box-item "Insert Pasteboard Box")
- (insert-image-item "Insert Image...")
- (wrap-text-item "Wrap Text")
+ (insert-text-box-item "Text Box einfügen")
+ (insert-pb-box-item "Pasteboard Box einfügen")
+ (insert-image-item "Image einfügen...")
+ (wrap-text-item "Textitem umbrechen")
 
- (windows-menu-label "&Windows")
- (show-menu-label "&Show")
+ (windows-menu-label "&Fenster")
+ (bring-frame-to-front "Bring frame to front")       ;;; title of dialog
+ (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
+ 
+ (show-menu-label "&Anzeigen")
 
  (help-menu-label "&Hilfe")
- (about-info "Credits and details for this application")
+ (about-info "Autoren dieser Anwendung und andere Details")	; islwtm authors?
+ (about-menu-item "Info...")
+
+ (new-help-desk "&Neu Help Desk")  ; islwtm
  
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "exit")
- (exit-cap "Exit")
- (quit-lc "quit")
- (quit-cap "Quit")
+ (exit-lc "beenden")
+ (exit-cap "Beenden")
+ (quit-lc "beenden")
+ (quit-cap "Beenden")
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-format "Are you sure you want to ~a?")
+ (are-you-sure-format "Sind Sie sicher, dass Sie ~a wollen?")
  
  ;;; autosaving
- (error-autosaving "Error autosaving \"~a\".")
- (autosaving-turned-off "Autosaving is turned off\nuntil die Datei is saved.")
+ (error-autosaving "Fehler beim automatischen Abspeichern \"~a\".")
+ (autosaving-turned-off "Automatisches Abspeichern ist abgeschaltet\nbis die Datei abgespeichert ist.")
  
  ;;; file modified warning
  (file-has-been-modified
-  "The file has beeen modified since it was last saved. Overwrite the modifications?")
- (overwrite-file-button-label "Overwrite")
+  "Seitdem die Datei zuletzt gespeichert wurde, ist sie modifiziert worden. Änderungen überschreiben?")
+ (overwrite-file-button-label "Überschreiben") ;verwerfen? (discard changes?)
  
  (definitions-modified 
-  "Der Definitionstext wurde im Dateisystem geŠndert. Bitte speichern Sie ihn neu ab oder stellen Sie die alte Version wieder her.")
+  "Der Definitionstext wurde im Dateisystem geändert. Bitte speichern Sie ihn neu ab oder stellen Sie die alte Version wieder her.")
  (drscheme-internal-error "DrScheme Interner Fehler")
  
  ;;; tools
- (invalid-tool-spec "Die tool Spezifikation in der Collection von ~a's info.ss Datei ist ungŸltig. GŸltig sind ein String oder eine nicht-leere Liste von Strings. ~e")
+ (invalid-tool-spec "Die Tool-Spezifikation in der Collection von ~a's info.ss Datei ist ungültig. Gültig sind ein String oder eine nicht-leere Liste von Strings. ~e")
  (error-loading-tool-title "DrScheme - Fehler beim Laden von ~s; ~s")
- (error-invoking-tool-title "Fehler beim AusfŸhren von ~s;~s")
+ (error-invoking-tool-title "Fehler beim Ausführen von ~s;~s")
  (tool-tool-names-same-length
-  "`tool-names' und `tools' mŸssen Listen gleicher LŠnge sein, in der info.ss Datei fŸr ~s. Sie sind ~e und ~e")
+  "`tool-names' und `tools' müssen Listen gleicher Länge sein, in der info.ss Datei für ~s. Sie sind ~e und ~e")
  (tool-tool-icons-same-length
-  "`tool-icons' und `tools' mŸssen Listen gleicher LŠnge sein, in der info.ss Datei fŸr ~s. Sie sind ~e und ~e")
+  "`tool-icons' und `tools' müssen Listen gleicher Länge sein, in der info.ss Datei für ~s. Sie sind ~e und ~e")
  (error-getting-info-tool
   "Fehler beim Laden von info.ss bei ~s")
  
@@ -396,6 +415,10 @@
  (interactions-menu-item-help-string "Interaktionsfenster anzeigen/verstecken")
  
  ;;; file menu
+ (save-definitions-as "Speichere Definitionen als...")
+ (save-definitions "Speichere Definitionen")
+ (print-definitions "Drucke Definitionen...")
+ (about-drscheme "Info DrScheme")
  (save-other "Speichere Andere")
  (save-definitions-as-text "Speichere Definitionen als Text...")
  (save-interactions "Speichere Interaktionen") ; fixme: besserer Begriff?
@@ -405,31 +428,31 @@
  
  ;; edit-menu
  (split-menu-item-label "&Teilen")
- (collapse-menu-item-label "&Verbinden") ; fixme: collapse
+ (collapse-menu-item-label "&Verbinden") ; fixme: collapse (wieder zusammenfügen?)
 
  ;; language menu
  (language-menu-name "&Sprache")
 
  ;; scheme-menu
  (scheme-menu-name "S&cheme")
- (execute-menu-item-label "AusfŸhren")
+ (execute-menu-item-label "Ausführen")
  (execute-menu-item-help-string "Programm im Definitionsfenster neu starten")
  (break-menu-item-label "Abbruch")
  (break-menu-item-help-string "Abbruch des aktuellen Prozesses")
  (kill-menu-item-label "Prozess beenden")
  (kill-menu-item-help-string "Beende den aktuellen Prozess")
- (reindent-menu-item-label "&Neu einrŸcken") ; fixme: besserer Begriff	(links einzug neu berechnen)
- (reindent-all-menu-item-label "&Alles neu einrŸcken") ; fixme: besserer Begriff
+ (reindent-menu-item-label "&Neu einrücken") ; fixme: besserer Begriff	(ist besser als "links einzug neu berechnen", oder?)
+ (reindent-all-menu-item-label "&Alles neu einrücken") ; fixme: besserer Begriff
  (comment-out-menu-item-label "&Auskommentieren")
- (uncomment-menu-item-label "Kommentare &entfernen")	; auskommentieren rückgängig (not strip comments! :)
+ (uncomment-menu-item-label "Auskommentieren rückgängig")	;  (uncomment, not strip comments, i assume)
 
  ;; launcher
  (create-launcher-title "Erzeuge externes Startprogramm")
- (must-save-before-launcher "Sie mŸssen zuerrst Ihr Programm abspeichern, befor Sie das Startprogramm erzeugen kšnnen.")
+ (must-save-before-launcher "Sie müssen zuerst Ihr Programm abspeichern, bevor Sie das Startprogramm erzeugen können.")
  (save-a-launcher "Sichere ein externes Startprogramm")
 
  ;; buttons
- (execute-button-label "AusfŸhren") 
+ (execute-button-label "Ausführen") 
  (save-button-label "Sichern")
  (break-button-label "Abbruch")
  
@@ -440,51 +463,53 @@
  ;; fraction dialog
  (enter-fraction "Eingabe Bruchzahl")
  (whole-part "Ganzzahl")
- (numerator "ZŠhler")
+ (numerator "Zähler")
  (denominator "Nenner")
- (invalid-number "UngŸltige Zahl: Eine exakte reelle Zahl (jedoch keine Ganzzahl) erforderlich.")
- (insert-fraction-menu-item-label "Bruchzahl einfŸgen...")
+ (invalid-number "Ungültige Zahl: Eine exakte reelle Zahl (jedoch keine Ganzzahl) erforderlich.")
+ (insert-fraction-menu-item-label "Bruchzahl einfügen...")
  
  ;; TeachPack messages
- (select-a-teachpack "WŠhle ein TeachPack")
- (clear-teachpack "Lšsche ~a TeachPack")
+ (select-a-teachpack "Wähle ein TeachPack")
+ (clear-teachpack "Lösche ~a TeachPack")
  (teachpack-error-label "DrScheme - TeachPack Fehler")
  (teachpack-dne/cant-read "Die TeachPack Datei ~a existiert nicht oder kann nicht gelesen werden.")
  (teachpack-didnt-load "Die TeachPack Datei ~a konnte nicht geladen werden.")
- (teachpack-error-invoke "Die TeachPack Datei ~a konnte nicht ausgefŸhrt werden.")
- (add-teachpack-menu-item-label "FŸge Teachpack hinzu...")
- (clear-all-teachpacks-menu-item-label "Lšsche alle Teachpack's")
+ (teachpack-error-invoke "Die TeachPack Datei ~a konnte nicht ausgeführt werden.")
+ (add-teachpack-menu-item-label "Füge Teachpack hinzu...")
+ (clear-all-teachpacks-menu-item-label "Lösche alle Teachpacks")
  (teachpack-not-only-one-import "Die TeachPack unit/sig in ~a darf nur exakt eine Importdefinition besitzen.")
  (drscheme-teachpack-message-title "DrScheme Teachpack")
  (already-added-teachpack "~a Teachpack schon vorhanden")
  
  ;;; Language dialog
- (language-dialog-title "Configure Language")
- (case-sensitive-label "Case sensitive")
- (output-style-label "Output Style")
- (constructor-printing-style "Constructor")
+ (language-dialog-title "Sprache konfigurieren")
+ (case-sensitive-label "Groß-/Kleinschreibung beachten")
+ (output-style-label "Ausgabestil")
+ (constructor-printing-style "Constructor") ; these are pretty special, I'd leave them
  (quasiquote-printing-style "Quasiquote")
- (write-printing-style "write")
- (sharing-printing-label "Show sharing in values")
- (use-pretty-printer-label "Insert newlines in printed values")
+ (write-printing-style "write") ; islwtm
+ (sharing-printing-label "Show sharing in values") ; islwtm
+ (use-pretty-printer-label "Insert newlines in printed values") ; Zeilenumbruchzeichen in Druckwerten einfügen ??
  (input-syntax "Input Syntax")
  (output-syntax "Output Syntax")
- (whole/fractional-exact-numbers-label "Print numbers as fractions")
- (booleans-as-true/false-label "Print booleans using true and false")
- (show-details-button-label "Show Details")
- (hide-details-button-label "Hide Details")
- (choose-language-menu-item-label "Choose Language...")
- (revert-to-language-defaults "Revert to Language Defaults")
+ (whole/fractional-exact-numbers-label "Zahlen als Bruchzahlen ausgeben")	; really "print"? or "output"?
+ (booleans-as-true/false-label "Boolesche Werte als Wahr und Falsch ausgeben")	; in contrast to #T, #F? are true and false translated? ; 
+ (show-details-button-label "Details anzeigen")
+ (hide-details-button-label "Details verstecken")
+ (choose-language-menu-item-label "Sprache auswählen...")
+ (revert-to-language-defaults "Default-Sprache wieder aktivieren")
 
  ;;; languages
- (beginning-student "Beginning Student")
- (beginning-student/abbrev "Beginning Student with List Abbreviations")
- (intermediate-student "Intermediate Student")
- (advanced-student "Advanced Student")
+ (beginning-student "Anfänger/in")
+ (beginning-student/abbrev "Anfänger/in mit List-Kürzungen")
+ (intermediate-student "Mittelstufe")
+ (advanced-student "Fortgeschrittene/r")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
- (mred-lang-name "Graphical without debugging (MrEd)")
- (mzscheme-lang-name "Textual without debugging (MzScheme)")
- (unknown-debug-frame "[unknown]")
+ (r5rs-like-languages "R5RS-like")          ; islwtm
+ (mred-lang-name "Grafische Oberfläche ohne Debugging (MrEd)")
+ (mzscheme-lang-name "Textoberfläche ohne Debugging (MzScheme)")
+ (r5rs-lang-name "R5RS without debugging")  ; islwtm
+ (unknown-debug-frame "[unbekannt]")
  
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
@@ -493,9 +518,10 @@
  (stack-frame-in-current-definitions "definitions")
  (mzscheme-w/debug "Textual (MzScheme)")
  (mred-w/debug "Graphical (MrEd)")
+ (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
- (evaluation-terminated "Evaluation Terminated")
+ (evaluation-terminated "Evaluation Terminated")	; pretty special. perhaps we should compare with German SICP?
  (evaluation-terminated-explanation
   "The evaluation thread is no longer running, so no evaluation can take place until the next execution.")
  (last-stack-frame "show the last stack frame")
@@ -503,17 +529,15 @@
  (next-stack-frames "show the next ~a stack frames")
  
  ;;; welcoming message in repl
- (language "Language")
- (custom "custom")
+ (language "Sprache")
+ (custom "angepasst")	; adjective (might need to decline in German?)
  (teachpack "Teachpack")
- (welcome-to "Welcome to")
- (version "version")
+ (welcome-to "Willkommen zu")
+ (version "Version")
  
  ;;; kill evaluation dialog
- (kill-evaluation? "Do you want to kill the evaluation?")
- (just-break "Just Break")
- (kill "Kill")
- (kill? "Kill?")
+ (kill-evaluation? "Evaluation beenden?")
+ (just-break "Nur Break")	; Break has a special meaning? Interrupt?
+ (kill "Beenden")
+ (kill? "Beenden?")
  )
-
-

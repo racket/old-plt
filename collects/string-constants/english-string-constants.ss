@@ -356,8 +356,7 @@
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")
- (about-menu-item "About ")
- (about-menu-item-after "...")
+ (about-menu-item "About...")
  
  ;;; help-desk-specific menus
  (new-help-desk "New Help Desk")

@@ -55,7 +55,7 @@
       (sequence (super-init parent editor style scrolls-per-page))))
   
   (define stepper-text%
-    (class f:text:basic% (sexp redex error-msg (line-spacing 1.0) (tabstops null))
+    (class f:text:basic% (sexp redex break-kind error-msg (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase
                begin-edit-sequence end-edit-sequence)
       (public (pretty-printed-width -1)
@@ -110,7 +110,10 @@
                         sexp))
                      (insert (get-output-string result))
                      (insert #\newline)
-                     (let ([between (last-position)])
+                     (let ([between (last-position)]
+                           [highlight-color (if (eq? break-kind 'pre-break)
+                                                result-highlight-color
+                                                redex-highlight-color)])
                        (insert (get-output-string output))
                        (change-style result-delta 0 between)
                        (change-style output-delta between (last-position))
@@ -130,7 +133,8 @@
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
 
-  (define highlight-color (make-object color% 193 251 181))
+  (define result-highlight-color (make-object color% 212 159 245))
+  (define redex-highlight-color (make-object color% 193 251 181))
              
   (define no-sexp (gensym "no-sexp-"))
   
@@ -143,8 +147,8 @@
              [history null]
              
              [store-step
-              (lambda (reconstructed redex)
-                (let ([step-text (make-object stepper-text% reconstructed redex #f)])
+              (lambda (break-kind reconstructed redex)
+                (let ([step-text (make-object stepper-text% reconstructed redex break-kind #f)])
                   (set! history (append history (list step-text)))))]
              
              [view-currently-updating #f]
@@ -188,11 +192,14 @@
                 (send next-button enable (not (eq? final-view view))))]
                          
              [break 
-              (lambda (mark-list all-defs current-def)
-                (when (r:stop-here? mark-list)
+              (lambda (mark-list all-defs current-def break-kind)
+                (when (or (eq? break-kind 'pre-break)
+                          (r:stop-here? mark-list))
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback (lambda () 
-                                      (apply store-step (r:reconstruct expr-list mark-list all-defs current-def))
+                                      (apply store-step
+                                             break-kind
+                                             (r:reconstruct expr-list mark-list all-defs current-def break-kind))
                                       (when (r:final-mark-list? mark-list)
                                         (set! final-view view-currently-updating))
                                       (update-view view-currently-updating))))
@@ -206,7 +213,7 @@
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback
                      (lambda ()
-                       (let ([step-text (make-object stepper-text% no-sexp no-sexp (exn-message exn))])
+                       (let ([step-text (make-object stepper-text% no-sexp no-sexp #f (exn-message exn))])
                          (set! history (append history (list step-text)))
                          (set! final-view view-currently-updating)
                          (update-view view-currently-updating)))))

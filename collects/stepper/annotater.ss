@@ -186,19 +186,6 @@
           (e:internal-error "closure-record already has a name: ~a" old-name)
           (set-closure-record-name! closure-record name))))
   
-  ; How do we know which bindings we need?  For every lambda body, there is a
-  ; `tail-spine' of expressions which is the smallest set including:
-  ; a) the body itself
-  ; b) an expression in tail position relative to a member of the tail-spine.
-  ;
-  ; I'm using `tail position' in a slightly non-standard way here.  Under my
-  ; definition, A is in tail position relative to B if 
-  ; a) A is contained in B
-  ; b) if A is evaluated, the result of evaluating A will be the result of
-  ;    evaluating B.
-  ;
-  ; So, if I've defined this correctly, note that an if expression has two tail
-  ; positions, whereas an application has none.
 
   ; annotate takes an expression to annotate and a `break' function which will be inserted in
   ; the code.  It returns an annotated expression, ready for evaluation.
@@ -210,27 +197,31 @@
 	(  
 
          
-         (define my-break
+         (define (make-break kind)
            `(#%lambda ()
              (,break (continuation-mark-set->list
                       (current-continuation-marks) 
                       (#%quote ,debug-key))
                      ,all-defs-list-sym
-                     ,current-def-sym)))
+                     ,current-def-sym
+                     (#%quote ,kind))))
          
          
   
          ; wrap creates the w-c-m expression.
          
-         (define (wcm-wrap debug-info expr)
+         (define (simple-wcm-wrap debug-info expr)
            `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
          
-         (define (break-wrap expr)
-           `(#%begin (,my-break) ,expr))
+         (define (wcm-pre-break-wrap debug-info expr)
+           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'pre-break)) ,expr)))
          
-         (define (wcm-break-wrap debug-info expr)
-           (wcm-wrap debug-info (break-wrap expr)))
-
+         (define (break-wrap expr)
+           `(#%begin (,(make-break 'normal)) ,expr))
+         
+         (define (simple-wcm-break-wrap debug-info expr)
+           (simple-wcm-wrap debug-info (break-wrap expr)))
+         
          (define exprs-read
            (parameterize ([current-exception-handler zodiac-exception-handler])
              (read-exprs text)))
@@ -276,27 +267,39 @@
          
          (define (top-defs exprs)
            (map find-defined-vars exprs))
-         
-	 ; annotate/inner takes an expression to annotate and (this is now wrong) a boolean
-	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
-	 ; an annotated expression, and a list of zodiac varref's.	
-	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) -> 
+
+         ; annotate/inner takes 
+         ; a) a zodiac expression to annotate
+         ; b) a list of all varrefs s.t. this expression is tail w.r.t. their bindings
+         ;    or 'all to indicate that this expression is tail w.r.t. _all_ bindings.
+         ; c) a list of all top-level variables which occur in the program
+         ; d) a boolean indicating whether this expression will be the r.h.s. of a reduction
+         ;    (and therefore should be broken before)
+         ;
+         ; it returns
+         ; a) an annotated s-expression
+         ; b) a list of varrefs for the variables which occur free in the expression
+         ;
+	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound top-env)
-	   
-           
+	 (define (annotate/inner expr tail-bound top-env pre-break?)
 	   
            ; translate-varref: (bool bool -> sexp (listof varref))
 	   
-	   (let* (
-                  [tail-recur (lambda (expr) (annotate/inner expr tail-bound top-env))]
-                  [non-tail-recur (lambda (expr) (annotate/inner expr null top-env))]
-                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all top-env))]
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound top-env #t))]
+                  [define-values-recur (lambda (expr) (annotate/inner expr tail-bound top-env #f))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr null top-env #f))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all top-env #t))]
                   [make-debug-info-normal (lambda (free-vars)
                                             (make-debug-info expr tail-bound top-env free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
                                          (make-debug-info expr tail-bound top-env free-vars label))]
+                  [wcm-wrap (if pre-break?
+                                wcm-pre-break-wrap
+                                simple-wcm-wrap)]
+                  [wcm-break-wrap (lambda (debug-info expr)
+                                    (wcm-wrap debug-info (break-wrap expr)))]
                   
                   [translate-varref
                    (lambda (maybe-undef? top-level?)
@@ -355,7 +358,7 @@
 				      arg-temp-syms annotated-sub-exprs)]
                   [val new-tail-bound (var-set-union tail-bound arg-temps)]
 		  [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-		  [val final-app (break-wrap (wcm-wrap app-debug-info arg-temp-syms))]
+		  [val final-app (break-wrap (simple-wcm-wrap app-debug-info arg-temp-syms))]
 		  [val debug-info (make-debug-info-app new-tail-bound
                                                        (var-set-union free-vars arg-temps)
                                                        'not-yet-called)]
@@ -412,7 +415,9 @@
 		 (values outer-annotated free-vars))]
 	       
 	       [(z:quote-form? expr)
-                (values `(#%quote ,(read->raw (z:quote-form-expr expr))) null)]
+                (values (wcm-wrap (make-debug-info-normal null)
+                                  `(#%quote ,(read->raw (z:quote-form-expr expr)))) 
+                        null)]
 	       
 	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
 	       ; for instance by macros? Maybe.
@@ -429,7 +434,7 @@
 		       
                        [val val (z:define-values-form-val expr)]
                        [val (values annotated-val free-vars-val)
-			    (tail-recur val)]
+			    (define-values-recur val)]
 		       [val free-vars (varref-remove* vars free-vars-val)])
                       (cond [(z:case-lambda-form? val)
                              (values `(#%define-values ,var-names
@@ -469,7 +474,9 @@
 		       [annotated-case-lambda (cons '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
 		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
-		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
+                       [wrapped-annotated (wcm-wrap (make-debug-info-normal null)
+                                                    annotated-case-lambda)]
+		       [hash-wrapped `(#%let ([,closure-temp ,wrapped-annotated])
 				       (,closure-table-put! (,closure-key-maker ,closure-temp) 
                                         (,make-closure-record 
                                          #f
@@ -491,7 +498,7 @@
          
          (define (annotate/top-level expr top-env)
            (let-values ([(annotated dont-care)
-                         (annotate/inner expr 'all top-env)])
+                         (annotate/inner expr 'all top-env #f)])
              (cond [(z:define-values-form? expr)
                     annotated]
                    [else
@@ -510,7 +517,7 @@
              [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
              [top-annotated-exprs (interlace current-def-setters annotated-exprs)]
              [final-current-def-setter (current-def-setter (length parsed-exprs))]
-             [final-break-exp (wcm-break-wrap (make-debug-info '(#%quote no-source-expression)
+             [final-break-exp (simple-wcm-break-wrap (make-debug-info '(#%quote no-source-expression)
                                                                'all 
                                                                (map create-bogus-top-level-varref
                                                                     (apply append defined-top-vars))

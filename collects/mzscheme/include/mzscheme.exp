@@ -158,7 +158,6 @@ scheme_bignum_from_double
 scheme_bignum_to_string
 scheme_read_bignum
 scheme_bignum_normalize
-scheme_double_to_int
 scheme_make_rational
 scheme_rational_to_double
 scheme_rational_from_double
@@ -227,8 +226,6 @@ scheme_os_setcwd
 scheme_getdrive
 scheme_split_pathname
 scheme_build_pathname
-scheme_carbon_spec_to_path
-scheme_carbon_path_to_spec
 scheme_alloc_fdset_array
 scheme_init_fdset_array
 scheme_get_fdset

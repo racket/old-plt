@@ -121,18 +121,24 @@
 
       (define-struct (undefined struct:exn) (id))
 
+      (define signal-undefined? (make-parameter))
+
+      (signal-undefined? #f)
+
       (define annotate
 	(lambda (expr)
 	  (cond
 	    [(z:bound-varref? expr)
 	      (let ((v (z:varref-var expr)))
-		(wrap expr
-		  `(#%if (#%eq? ,v ,the-undefined-value)
-		     (#%raise (,make-undefined
-				,(format "Undefined value in ~s" v)
-				(#%debug-info-handler)
-				,v))
-		     ,v)))]
+		(if (signal-undefined?)
+		  (wrap expr
+		    `(#%if (#%eq? ,v ,the-undefined-value)
+		       (#%raise (,make-undefined
+				  ,(format "Undefined value in ~s" v)
+				  (#%debug-info-handler)
+				  ,v))
+		       ,v))
+		  v))]
 
 	    [(z:top-level-varref? expr)
 	      (wrap expr (z:varref-var expr))]

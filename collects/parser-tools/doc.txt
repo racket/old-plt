@@ -275,6 +275,7 @@ lexer:
 
 parser:
 Error productions don't work in src-pos parsers.
+Error check that start production is defined
 
 both:
 debugging

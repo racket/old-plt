@@ -10,11 +10,11 @@
 
 (let-macro INSERT_STRING (lambda (s match_head)
 			   `(begin
-			      (UPDATE_HASH (gzvector-ref window (+ ,s MIN_MATCH -1)))
-			      (let ([mh (gzvector-ref head ins_h)])
+			      (UPDATE_HASH (vector-ref window-vec (+ ,s MIN_MATCH-1)))
+			      (let ([mh (vector-ref head-vec (+ ins_h head-vec-delta))])
 				(set! ,match_head mh)
-				(gzvector-set! prev (bitwise-and ,s  WMASK) mh))
-			      (gzvector-set! head ins_h ,s)))
+				(vector-set! prev-vec (bitwise-and ,s  WMASK) mh))
+			      (vector-set! head-vec (+ head-vec-delta ins_h) ,s)))
 (let-macro pqremove (lambda (tree top)
 		      `(begin
 			 (set! ,top (vector-ref heap SMALLEST))
@@ -22,6 +22,7 @@
 			 (set! heap_len (sub1 heap_len))
 			 (pqdownheap ,tree SMALLEST)))
 (let-macro DEBUG (lambda (x) '(void))
+(let-macro Assert (lambda (x) x)
 (unit/sig mzlib:deflate^
   (import)
 
@@ -60,7 +61,7 @@
       (define (gzvector-copy v1 v2 n)
 	(for 0 < n add1
 	     (lambda (m)
-	       (gzvector-set! v2 m (gzvector-ref v1 m)))))
+	       (gzvector-set! v1 m (gzvector-ref v2 m)))))
       
       (define (gzvector-zero! v n)
 	(for 0 < n add1
@@ -147,6 +148,7 @@
 ;;                       /*  at least 32K for zip's deflate method */
 
 (define MIN_MATCH  3)
+(define MIN_MATCH-1 (- MIN_MATCH 1))
 (define MAX_MATCH  258)
 ;; /* The minimum and maximum match lengths */
 
@@ -170,10 +172,12 @@
 ;; /* To save space (see unlzw.c), we overlay prev+head with tab_prefix and
 ;;  * window with tab_suffix. Check that we can do this:
 ;;  */
-(when (> (<< WSIZE 1) (<< 1 BITS))
-  (error "cannot overlay window with tab_suffix and prev with tab_prefix0"))
-(when (> HASH_BITS (- BITS 1))
-  (error "cannot overlay head with tab_prefix1"))
+(Assert
+ (when (> (<< WSIZE 1) (<< 1 BITS))
+   (error "cannot overlay window with tab_suffix and prev with tab_prefix0")))
+(Assert
+ (when (> HASH_BITS (- BITS 1))
+   (error "cannot overlay head with tab_prefix1")))
 
 (define HASH_SIZE (<< 1 HASH_BITS))
 (define HASH_MASK (- HASH_SIZE 1))
@@ -199,9 +203,11 @@
 
 (define real-table (make-vector (<< 1 BITS) 0))
 
-(define tab_prefix (make-gzvector real-table 0))
-(define prev (make-gzvector real-table 0))
-(define head (make-gzvector real-table WSIZE))
+(define prev-vec real-table)
+(define prev (make-gzvector prev-vec 0))
+(define head-vec real-table)
+(define head-vec-delta WSIZE)
+(define head (make-gzvector head-vec head-vec-delta))
 
 ;;  /* DECLARE(uch, window, 2L*WSIZE); */
 ;;  /* Sliding window. Input bytes are read into the second half of the window,
@@ -226,7 +232,8 @@
 (define window_size (* 2 WSIZE))
 ;;  /* window size, 2*WSIZE 
 ;;   */
-(define window (make-gzvector (make-vector window_size 0) 0))
+(define window-vec (make-vector window_size 0))
+(define window (make-gzvector window-vec 0))
 
 (define block_start 0)
 ;;  /* window position at the beginning of the current output block. Gets
@@ -235,7 +242,7 @@
 
 (define ins_h 0) ;; /* hash index of string to be inserted */
 
-(define H_SHIFT  (quotient (+ HASH_BITS MIN_MATCH -1) MIN_MATCH))
+(define H_SHIFT  (quotient (+ HASH_BITS MIN_MATCH-1) MIN_MATCH))
 ;; /* Number of bits by which ins_h and del_h must be shifted at each
 ;;  * input step. It must be such that after MIN_MATCH steps, the oldest
 ;;  * byte no longer takes part in the hash key, that is:
@@ -358,14 +365,14 @@
     (set! strstart 0)
     (set! block_start 0)
 
-    (set! lookahead (read_buf window (* 2 WSIZE)))
+    (set! lookahead (read_buf 0 (* 2 WSIZE)))
 
     (if (or (= lookahead 0) (= lookahead EOF-const))
 	(begin
 	  (set! eofile #t)
 	  (set! lookahead 0))
 	(begin
-	  (set! eofile 0)
+	  (set! eofile #f)
 	  ;; /* Make sure that we always have enough lookahead. This is important
 	  ;;  * if input comes from a device such as a tty.
 	  ;;  */
@@ -375,8 +382,8 @@
 	      (fill_window)))
 
 	  (set! ins_h 0)
-	  (for 0 < (- MIN_MATCH 1) add1
-	       (lambda (j) (UPDATE_HASH (gzvector-ref window j))))
+	  (for 0 < MIN_MATCH-1 add1
+	       (lambda (j) (UPDATE_HASH (vector-ref window-vec j))))
 	  (DEBUG (Trace stderr "hash init: ~a~n" ins_h))
 	  ;; /* If lookahead < MIN_MATCH, ins_h is garbage, but this is
 	  ;;  * not important since only literal bytes will be emitted.
@@ -397,8 +404,8 @@
   ;; IPos cur_match; /* current match */
 
   (define chain_length max_chain_length)   ;;   /* max hash chain length */
-  (define scan (gzvector+ window strstart)) ;;   /* current string */
-  (define matchstr #f) ;; /* matched string */
+  (define scanpos strstart) ;;   /* current string */
+  (define matchpos 0) ;; /* matched string */
   (define len 0) ;; /* length of current match */
   (define best_len prev_length) ;; /* best match length so far */
   (define limit (if (> strstart MAX_DIST)
@@ -415,45 +422,51 @@
   ;;   error: Code too clever
   ;; #endif
 
-  (define strend (gzvector+ window (+ strstart MAX_MATCH)))
-  (define scan_end1 (gzvector-ref scan (- best_len 1)))
-  (define scan_end (gzvector-ref scan best_len))
+  (define strendpos (+ strstart MAX_MATCH))
+  (define scan_end1 (vector-ref window-vec (+ scanpos best_len -1)))
+  (define scan_end (vector-ref window-vec (+ scanpos best_len)))
 
   ;; /* Do not waste too much time if we already have a good match: */
   (when (>= prev_length good_match)
     (set! chain_length (>> chain_length 2)))
       
-  ;; Assert:
-  (unless (<= strstart (- window_size MIN_LOOKAHEAD))
-    (error "insufficient lookahead"))
+  (Assert
+   (unless (<= strstart (- window_size MIN_LOOKAHEAD))
+     (error "insufficient lookahead")))
 
   (let/ec break
+    (define (continue loop)
+      (set! cur_match (vector-ref prev-vec (bitwise-and cur_match WMASK)))
+      (when (and (> cur_match limit)
+		 (begin
+		   (set! chain_length (sub1 chain_length))
+		   (positive? chain_length)))
+	(loop)))
+    (define (*++scan)
+      (set! scanpos (add1 scanpos))
+      (vector-ref window-vec scanpos))
+    (define (*++match)
+      (set! matchpos (add1 matchpos))
+      (vector-ref window-vec matchpos))
+
     (let loop ()
-      (define (continue)
-	(set! cur_match (gzvector-ref prev (bitwise-and cur_match WMASK)))
-	(when (and (> cur_match limit)
-		   (begin
-		     (set! chain_length (sub1 chain_length))
-		     (not (= chain_length 0))))
-	  (loop)))
+      (Assert
+       (unless (< cur_match strstart)
+	 (error "no future")))
 
-      ;; Assert
-      (unless (< cur_match strstart)
-	(error "no future"))
-
-      (set! matchstr (gzvector+ window cur_match))
+      (set! matchpos cur_match)
 
       ;; /* Skip to next match if the match length cannot increase
       ;;  * or if the match length is less than 2:
       ;;  */
 
-      (if (or (not (= (gzvector-ref matchstr best_len) scan_end))
-	      (not (= (gzvector-ref matchstr (- best_len 1)) scan_end1))
-	      (not (= (gzvector-ref matchstr 0) (gzvector-ref scan 0)))
-	      (not (= (begin (set! matchstr (gzvector+ matchstr 1))
-			     (gzvector-ref matchstr 0))
-		      (gzvector-ref scan 1))))
-	  (continue)
+      (if (or (not (eq? (vector-ref window-vec (+ matchpos best_len)) scan_end))
+	      (not (eq? (vector-ref window-vec (+ matchpos best_len -1)) scan_end1))
+	      (not (eq? (vector-ref window-vec matchpos) (vector-ref window-vec scanpos)))
+	      (not (eq? (begin (set! matchpos (add1 matchpos))
+			     (vector-ref window-vec matchpos))
+		      (vector-ref window-vec (add1 scanpos)))))
+	  (continue loop)
 
 	  (begin
 	    ;; /* The check at best_len-1 can be removed because it will be made
@@ -462,28 +475,22 @@
 	    ;;  * are always equal when the other bytes match, given that
 	    ;;  * the hash keys are equal and that HASH_BITS >= 8.
 	    ;;  */
-	    (set! scan (gzvector+ scan 2))
-	    (set! matchstr (gzvector+ matchstr 1))
+	    (set! scanpos (+ scanpos 2))
+	    (set! matchpos (+ matchpos 1))
 
 	    ;; /* We check for insufficient lookahead only every 8th comparison;
 	    ;; * the 256th check will be made at strstart+258.
 	    ;; */
-	    (let ([*++scan (lambda ()
-			     (set! scan (gzvector+ scan 1))
-			     (gzvector-ref scan 0))]
-		  [*++match (lambda ()
-			      (set! matchstr (gzvector+ matchstr 1))
-			      (gzvector-ref matchstr 0))])
-	      (let loop2 ()
-		(when (and (= (*++scan) (*++match)) (= (*++scan) (*++match))
-			   (= (*++scan) (*++match)) (= (*++scan) (*++match))
-			   (= (*++scan) (*++match)) (= (*++scan) (*++match))
-			   (= (*++scan) (*++match)) (= (*++scan) (*++match))
-			   (gzvector<vec scan strend))
-		  (loop2))))
+	    (let loop2 ()
+	      (when (and (eq? (*++scan) (*++match)) (eq? (*++scan) (*++match))
+			 (eq? (*++scan) (*++match)) (eq? (*++scan) (*++match))
+			 (eq? (*++scan) (*++match)) (eq? (*++scan) (*++match))
+			 (eq? (*++scan) (*++match)) (eq? (*++scan) (*++match))
+			 (< scanpos strendpos))
+		(loop2)))
 	    
-	    (set! len (- MAX_MATCH (gzvector-vec strend scan)))
-	    (set! scan (gzvector+ strend (- MAX_MATCH)))
+	    (set! len (- MAX_MATCH (- strendpos scanpos)))
+	    (set! scanpos (+ strendpos (- MAX_MATCH)))
 	    (DEBUG (Trace stderr "Match: ~a~n" len))
 
 	    (when (> len best_len)
@@ -492,10 +499,10 @@
 	      (when (>= len nice_match)
 		(break))
 
-	      (set! scan_end1 (gzvector-ref scan (- best_len 1)))
-	      (set! scan_end (gzvector-ref scan best_len)))
+	      (set! scan_end1 (vector-ref window-vec (+ scanpos best_len -1)))
+	      (set! scan_end (vector-ref window-vec (+ scanpos best_len))))
 
-	    (continue)))))
+	    (continue loop)))))
 
   best_len)
 
@@ -515,8 +522,6 @@
 ;;  *    translate_eol option).
 ;;  */
 (define (fill_window)
-  (define m 0)
-
   (define more (- window_size lookahead strstart))
   ;; /* Amount of free space at the end of the window. */
 
@@ -532,19 +537,19 @@
 
     (for 0 < HASH_SIZE add1
 	 (lambda (n)
-	   (set! m (gzvector-ref head n))
-	   (gzvector-set! head n
+	   (let ([m (vector-ref head-vec (+ n head-vec-delta))])
+	     (vector-set! head-vec (+ n head-vec-delta)
 			  (if (>= m WSIZE)
 			      (- m WSIZE)
-			      NIL))))
+			      NIL)))))
 
     (for 0 < WSIZE add1
 	 (lambda (n)
-	   (set! m (gzvector-ref prev n))
-	   (gzvector-set! prev n
+	   (let ([m (vector-ref prev-vec n)])
+	     (vector-set! prev-vec n
 			  (if (>= m WSIZE)
 			      (- m WSIZE)
-			      NIL))
+			      NIL)))
 	   ;; /* If n is not on any hash chain, prev[n] is garbage but
 	   ;;  * its value will never be used.
 	   ;;  */
@@ -553,7 +558,7 @@
     (set! more (+ more WSIZE)))
 
   (when (not eofile)
-    (let ([n (read_buf (gzvector+ window (+ strstart lookahead)) more)])
+    (let ([n (read_buf (+ strstart lookahead) more)])
       (if (or (= n 0) (= n EOF-const))
 	  (set! eofile #t)
 	  (set! lookahead (+ lookahead n))))))
@@ -579,14 +584,14 @@
   (define prev_match 0) ;; /* previous match */
   (define flush #f) ;; /* set if current block must be flushed */
   (define match_available #f) ;; /* set if previous match exists */
-  (define match_length (- MIN_MATCH 1)) ;; /* length of best match */
+  (define match_length MIN_MATCH-1) ;; /* length of best match */
 
   ;; /* Process the input block. */
-  (let loop ()
-    (when (not (= lookahead 0))
+  (let dloop ()
+    (when (not (zero? lookahead))
       (DEBUG (Trace stderr
 		    "prep ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a~n" hash_head prev_length match_length max_lazy_match strstart
-		    ins_h (+ strstart MIN_MATCH -1) (gzvector-ref window (+ strstart MIN_MATCH -1))
+		    ins_h (+ strstart MIN_MATCH-1) (vector-ref window-vec (+ strstart MIN_MATCH-1))
 		    H_SHIFT HASH_MASK))
 
       ;; /* Insert the string window[strstart .. strstart+2] in the
@@ -596,13 +601,13 @@
 
       (DEBUG (Trace stderr
 		    "inh ~a ~a ~a ~a ~a ~a ~a~n" hash_head prev_length match_length max_lazy_match strstart
-		    ins_h (gzvector-ref window (+ strstart MIN_MATCH -1))))
+		    ins_h (vector-ref window-vec (+ strstart MIN_MATCH-1))))
 
       ;; /* Find the longest match, discarding those <= prev_length.
       ;;  */
       (set! prev_length match_length)
       (set! prev_match match_start)
-      (set! match_length (- MIN_MATCH 1))
+      (set! match_length MIN_MATCH-1)
 
       (when (and (not (= hash_head NIL))
 		 (< prev_length max_lazy_match)
@@ -648,7 +653,7 @@
 	  (INSERT_STRING strstart hash_head)
 	  (DEBUG (Trace stderr
 			"inhx ~a ~a ~a ~a ~a ~a~n" hash_head prev_length max_lazy_match strstart
-			ins_h (gzvector-ref window (+ strstart MIN_MATCH -1))))
+			ins_h (vector-ref window-vec (+ strstart MIN_MATCH -1))))
 	  ;; /* strstart never exceeds WSIZE-MAX_MATCH, so there are
 	  ;;  * always MIN_MATCH bytes ahead. If lookahead < MIN_MATCH
 	  ;;  * these bytes are garbage, but it does not matter since the
@@ -658,7 +663,7 @@
 	  (when (not (= prev_length 0))
 	    (loop)))
 	(set! match_available #f)
-	(set! match_length (- MIN_MATCH 1))
+	(set! match_length MIN_MATCH-1)
 	(set! strstart (add1 strstart))
 	(when flush
 	  (DEBUG (Trace stderr "flush~n"))
@@ -672,8 +677,8 @@
 	;;  * single literal. If there was a match but the current match
 	;;  * is longer, truncate the previous match to a single literal.
 	;;  */
-	;; (Tracevv stderr "~c" (integer->char (gzvector-ref window (- strstart 1))))
-	(when (ct_tally 0 (gzvector-ref window (- strstart 1)))
+	;; (Tracevv stderr "~c" (integer->char (vector-ref window-vec (- strstart 1))))
+	(when (ct_tally 0 (vector-ref window-vec (- strstart 1)))
 	  (FLUSH-BLOCK 0)
 	  (set! block_start strstart))
 	(set! strstart (add1 strstart))
@@ -688,10 +693,10 @@
 	(set! strstart (add1 strstart))
 	(set! lookahead (sub1 lookahead))])
 
-      ;; Assert 
-      (unless (and (<= strstart bytes_in)
-		   (<= lookahead bytes_in))
-	(error "a bit too far"))
+      (Assert 
+       (unless (and (<= strstart bytes_in)
+		    (<= lookahead bytes_in))
+	 (error "a bit too far")))
 
       ;; /* Make sure that we always have enough lookahead, except
       ;;  * at the end of the input file. We need MAX_MATCH bytes
@@ -701,13 +706,14 @@
       (let loop ()
 	(when (and (< lookahead MIN_LOOKAHEAD)
 		   (not eofile))
+	  (DEBUG (Trace stderr "fill~n"))
 	  (fill_window)
 	  (loop)))
 
-      (loop)))
+      (dloop)))
 
   (when match_available
-    (ct_tally 0 (gzvector-ref window (- strstart 1))))
+    (ct_tally 0 (vector-ref window-vec (- strstart 1))))
 
   (FLUSH-BLOCK 1)); /* eof */
 
@@ -1019,9 +1025,9 @@
 		  (vector-set! length_code length code)
 		  (set! length (add1 length))))))
     
-    ;; Assert 
-    (unless (= length 256)
-      (error "ct_init: length != 256"))
+    (Assert 
+     (unless (= length 256)
+       (error "ct_init: length != 256")))
 
     ;; /* Note that the length 255 (match length 258) can be represented
     ;;  * in two different ways: code 284 + 5 bits or code 285, so we
@@ -1039,9 +1045,9 @@
 		  (vector-set! dist_code dist code)
 		  (set! dist (add1 dist))))))
 
-    ;; Assert
-    (unless (= dist 256)
-      (error "ct_init: dist != 256"))
+    (Assert
+     (unless (= dist 256)
+       (error "ct_init: dist != 256")))
     (set! dist (>> dist 7)) ;; /* from now on, all distances are divided by 128 */
     (for 16 < D_CODES add1
 	 (lambda (code)
@@ -1051,9 +1057,9 @@
 		  (vector-set! dist_code (+ 256 dist) code)
 		  (set! dist (add1 dist))))))
 
-    ;; Assert
-    (unless (= dist 256)
-      (error "ct_init: 256+dist != 512"))
+    (Assert
+     (unless (= dist 256)
+       (error "ct_init: 256+dist != 512")))
 
     ;; /* Construct the codes of the static literal tree */
     (for 0 <= MAX_BITS add1
@@ -1296,10 +1302,10 @@
   ;; /* Check that the bit counts in bl_count are consistent. The last code
   ;;  * must be all ones.
   ;;  */
-  ;; Assert 
-  (unless (= (+ code (vector-ref bl_count MAX_BITS)-1)
-	     (- (<< 1 MAX_BITS) 1))
-    "inconsistent bit counts")
+  (Assert 
+   (unless (= (+ code (vector-ref bl_count MAX_BITS)-1)
+	      (- (<< 1 MAX_BITS) 1))
+     "inconsistent bit counts"))
   (DEBUG (Tracev stderr "\~ngen_codes: max_code ~a " max_code))
 
   (for  0 <= max_code add1
@@ -1535,9 +1541,9 @@
 	     (when (not (= curlen prevlen))
 	       (send_code curlen bl_tree)
 	       (set! count (sub1 count)))
-	     ;; Assert
-	     (unless (>= 6 count 3)
-	       (error " 3_6?"))
+	     (Assert
+	      (unless (>= 6 count 3)
+		(error " 3_6?")))
 	     (send_code REP_3_6 bl_tree)
 	     (send_bits (- count 3) 2)]
 	    [(<= count 10)
@@ -1605,19 +1611,19 @@
 (define (send_all_trees lcodes dcodes blcodes)
   ;; int lcodes, dcodes, blcodes; ;; /* number of codes for each tree */
 
-  ;; Assert 
-  (unless (and (>= lcodes 257)
-	       (>= dcodes 1)
-	       (>= blcodes 4))
-    (error "not enough codes"))
-  ;; Assert 
-  (unless (and (<= lcodes L_CODES)
-	       (<= dcodes D_CODES)
-	       (<= blcodes BL_CODES))
-    (error "too many codes ~a(~a) ~a(~a) ~a(~a)"
-	   lcodes L_CODES
-	   dcodes D_CODES
-	   blcodes BL_CODES))
+  (Assert 
+   (unless (and (>= lcodes 257)
+		(>= dcodes 1)
+		(>= blcodes 4))
+     (error "not enough codes")))
+  (Assert 
+   (unless (and (<= lcodes L_CODES)
+		(<= dcodes D_CODES)
+		(<= blcodes BL_CODES))
+     (error "too many codes ~a(~a) ~a(~a) ~a(~a)"
+	    lcodes L_CODES
+	    dcodes D_CODES
+	    blcodes BL_CODES)))
 
   (DEBUG (Tracev stderr "~nbl counts: "))
 
@@ -1717,10 +1723,10 @@
   (init_block)
 
   (when (not (= eof 0))
-    ;; Assert 
-    (unless (= input_len bytes_in)
-      (newline (current-error-port))
-      (error 'eof "bad input size: ~a != ~a" input_len bytes_in))
+    (Assert 
+     (unless (= input_len bytes_in)
+       (newline (current-error-port))
+       (error 'eof "bad input size: ~a != ~a" input_len bytes_in)))
     (bi_windup)
     (set! compressed_len   ;; /* align on byte boundary */
 	  (+ compressed_len 7)))
@@ -1747,11 +1753,11 @@
       (begin
         ;; /* Here, lc is the match length - MIN_MATCH */
 	(set! dist (sub1 dist)) ;; /* dist = match distance - 1 */
-	;; Assert
-        (unless (and (< dist MAX_DIST)
-		     (<= lc (- MAX_MATCH MIN_MATCH))
-		     (< (d_code dist) D_CODES))
-	  (error "ct_tally: bad match"))
+	(Assert
+	 (unless (and (< dist MAX_DIST)
+		      (<= lc (- MAX_MATCH MIN_MATCH))
+		      (< (d_code dist) D_CODES))
+	   (error "ct_tally: bad match")))
 
 	(let* ([i (+ (vector-ref length_code lc) LITERALS 1)]
 	       [ct (vector-ref dyn_ltree i)])
@@ -1844,9 +1850,9 @@
 
 	;; /* Here, dist is the match distance - 1 */
 	(set! code (d_code dist))
-	;; Assert 
-	(unless (< code D_CODES)
-	  (error "bad d_code"))
+	(Assert 
+	 (unless (< code D_CODES)
+	   (error "bad d_code")))
 
 	(send_code code dtree)       ;; /* send the distance code */
 	(set! extra (vector-ref extra_dbits code))
@@ -1950,9 +1956,9 @@
   ;; int length; /* number of bits */
 
   (DEBUG (Tracev stderr " l ~a v ~x " length value))
-  ;; Assert
-  (unless (and (> length 0) (<= length 15))
-    (error "invalid length"))
+  (Assert
+   (unless (and (> length 0) (<= length 15))
+     (error "invalid length")))
   (set! bits_sent (+ bits_sent length))
 
   ;; /* If not enough room in bi_buf, use (valid) bits from bi_buf and
@@ -2013,9 +2019,9 @@
 	    (loop (bitwise-xor
 		   (vector-ref crc_32_tab
 			       (bitwise-and
-				(bitwise-xor c (gzvector-ref s p))
+				(bitwise-xor c (vector-ref window-vec (+ s p)))
 				#xff))
-		   (>> c 8))
+		   (arithmetic-shift c -8))
 		  (add1 p))))
       (set! crc #xffffffff)))
 
@@ -2102,7 +2108,7 @@
 ;;  * translation, and update the crc and input file size.
 ;;  * IN assertion: size >= 2 (for end-of-line translation)
 ;;  */
-(define (read_buf buf size)
+(define (read_buf startpos size)
   ;; char *buf;
   ;; unsigned size;
 
@@ -2115,12 +2121,12 @@
 		  EOF-const
 		  (string-length s))])
     (when (positive? len)
-      (let loop ([l (string->list s)][p 0])
-	(unless (null? l)
-	  (gzvector-set! buf p (char->integer (car l)))
-	  (loop (cdr l) (add1 p))))
+      (let rloop ([p 0])
+	(unless (= p len)
+	  (vector-set! window-vec (+ p startpos) (char->integer (string-ref s p)))
+	  (rloop (add1 p))))
 
-      (updcrc buf len)
+      (updcrc startpos len)
       (set! bytes_in (+ bytes_in len)))
 
     len))
@@ -2259,4 +2265,4 @@
 (define (deflate in out)
   ((caddr (invoke-unit code)) in out))
 
-))))
+)))))

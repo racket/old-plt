@@ -169,6 +169,9 @@ the following parameters:
   compiler:option:clean-intermediate-files - #t keeps intermediate
      .c/.o files.  Default = #f.
 
+  compiler:option:compile-subcollections - #t uses info.ss's
+     'compile-subcollections for compiling collections. Default = #t.
+
   compiler:option:propagate-constants - #t improves the code by
      propogating constants.  Default = #t.
 

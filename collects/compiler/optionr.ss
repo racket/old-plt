@@ -23,6 +23,8 @@
  (define max-exprs-per-top-level-set (make-parameter 25))
  
  (define setup-prefix (make-parameter ""))
+
+ (define compile-subcollections (make-parameter #t))
  
  ;; Maybe #f helps for register-poor architectures?
  (define unpack-environments (make-parameter #t)))

@@ -50,20 +50,6 @@
 						       (caddr v)))
 				     v)))))
 
-
-      ;; This is commented out; it's here for debugging.
-      ;; It used to be outside the unit.
-      
-      (quote
-       (begin
-         (invoke-open-unit/sig mzlib:url@ #f)
-         (define url:cs (string->url "http://www.cs.rice.edu/"))
-         (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
-         (define (test url)
-           (call/input-url url
-                           get-pure-port
-                           display-pure-port))))
-      
       (define url-error
         (lambda (fmt . args)
           (let ((s (apply format fmt (map (lambda (arg)
@@ -233,8 +219,7 @@
           (and (not (url-scheme url))
                (not (url-query url))
                (not (url-fragment url))
-               (andmap (lambda (c) (char=? c #\space))
-                       (string->list (url-path url))))))
+               (null? (url-path url)))))
       
       ;; file://combine-url/relative : fs-path x s/t/r -> fs-path
       
@@ -270,116 +255,74 @@
 			     (build-path (translate-dir (cadr m))
 					 (loop (caddr m))))])))))))))
       
-      ;; combine-url/relative : url x str -> url
-      (define combine-url/relative
-        (lambda (base string)
-          (let ((relative (string->url string)))
-            (cond
-	     ((empty-url? base)		; Step 1
-	      relative)
-	     ((empty-url? relative)	; Step 2a
-	      base)
-	     ((url-scheme relative)	; Step 2b
-	      relative)
-	     (else				; Step 2c
-	      (set-url-scheme! relative (url-scheme base))
-	      (cond
-	       ;; This case is here because the above tests
-	       ;; ensure the relative extension is not really
-	       ;; an absolute path itself, so we need not
-	       ;; examine its contents further.
-	       ((and (url-scheme base)   ; Interloper step
-		     (string=? (url-scheme base) "file"))
-		(set-url-path! relative
-			       (file://combine-url/relative 
-				(url-path base)
-				(url-path relative)))
-		relative)
-	       ((url-host relative)	; Step 3
-		relative)
-	       (else
-		(set-url-host! relative (url-host base))
-		(set-url-port! relative (url-port base)) ; Unspecified!
-		(let ((rel-path (url-path relative)))
-		  (cond
-		   ((and rel-path	; Step 4
-			 (not (string=? "" rel-path))
-			 (char=? #\/ (string-ref rel-path 0)))
-		    relative)
-		   ((or (not rel-path)	; Step 5
-			(string=? rel-path ""))
-		    (set-url-path! relative (url-path base))
-		    (or (url-query relative)
-			(set-url-query! relative (url-query base)))
-		    relative)
-		   (else		; Step 6
-		    (merge-and-normalize 
-		     (url-path base) relative)))))))))))
+      (define (combine-url/relative base string)
+        (let ([relative (string->url string)])
+          (cond
+            [(empty-url? base)	              ; Step 1
+             relative]
+            [(empty-url? relative)            ; Step 2a
+             base]
+            [(url-scheme relative)            ; Step 2b
+             relative]
+            [else                             ; Step 2c
+             (set-url-scheme! relative (url-scheme base))
+             (cond
+               ;; This case is here because the above tests
+               ;; ensure the relative extension is not really
+               ;; an absolute path itself, so we need not
+               ;; examine its contents further.
+               [(and (url-scheme base)   ; Interloper step
+                     (string=? (url-scheme base) "file"))
+                (set-url-path! relative
+                               (file://combine-url/relative 
+                                (url-path base)
+                                (url-path relative)))
+                relative]
+               [(url-host relative)	; Step 3
+                relative]
+               [else
+                (set-url-host! relative (url-host base))
+                (set-url-port! relative (url-port base)) ; Unspecified!
+                (let ([rel-path (url-path relative)])
+                  (cond
+                    [(and (not (equal? string "")) ; Step 4
+                          (char=? #\/ (string-ref string 0)))
+                     relative]
+                    [(or (not rel-path)	; Step 5
+                         (null? rel-path))
+                     (set-url-path! relative (url-path base))
+                     (when (url-query relative)
+                       (set-url-query! relative (url-query base)))
+                     relative]
+                    [else		; Step 6
+                     (merge-and-normalize 
+                      (url-path base) relative)]))])])))
       
-      (define merge-and-normalize
-        (lambda (base-path relative-url)
-          (let ((rel-path (url-path relative-url)))
-            (let ((base-list (string->list base-path))
-                  (rel-list (string->list rel-path)))
-              (let*
-                  ((joined-list
-                    (let loop ((base (reverse base-list)))
-                      (if (null? base)
-                          rel-list
-                          (if (char=? #\/ (car base))
-                              (append (reverse base) rel-list)
-                              (loop (cdr base))))))
-                   (grouped
-                    (let loop ((joined joined-list) (current '()))
-                      (if (null? joined)
-                          (list (list->string (reverse current)))
-                          (if (char=? #\/ (car joined))
-                              (cons (list->string
-                                     (reverse (cons #\/ current)))
-                                    (loop (cdr joined) '()))
-                              (loop (cdr joined)
-                                    (cons (car joined) current))))))
-                   (grouped
-                    (let loop ((grouped grouped))
-                      (if (null? grouped) '()
-                          (if (string=? "./" (car grouped))
-                              (loop (cdr grouped))
-                              (cons (car grouped) (loop (cdr grouped)))))))
-                   (grouped
-                    (let loop ((grouped grouped))
-                      (if (null? grouped) '()
-                          (if (null? (cdr grouped))
-                              (if (string=? "." (car grouped)) '()
-                                  grouped)
-                              (cons (car grouped) (loop (cdr grouped)))))))
-                   (grouped
-                    (let remove-loop ((grouped grouped))
-                      (let walk-loop ((r-pre '()) (post grouped))
-                        (if (null? post)
-                            (reverse r-pre)
-                            (let ((first (car post))
-                                  (rest (cdr post)))
-                              (if (null? rest)
-                                  (walk-loop (cons first r-pre) rest)
-                                  (let ((second (car rest)))
-                                    (if (and (not (string=? first "../"))
-                                             (string=? second "../"))
-                                        (remove-loop
-                                         (append (reverse r-pre) (cddr post)))
-                                        (walk-loop (cons first r-pre) rest)))))))))
-                   (grouped
-                    (let loop ((grouped grouped))
-                      (if (null? grouped) '()
-                          (if (null? (cdr grouped)) grouped
-                              (if (and (null? (cddr grouped))
-                                       (not (string=? (car grouped) "../"))
-                                       (string=? (cadr grouped) ".."))
-                                  '()
-                                  (cons (car grouped) (loop (cdr grouped)))))))))
-                (set-url-path! relative-url
-                               (apply string-append grouped))
-                relative-url)))))
-      
+      (define (merge-and-normalize base-path relative-url)
+        (let* ([joined
+                (let loop ([base-path base-path])
+                  (cond
+                    [(null? base-path) (url-path relative-url)]
+                    [(null? (cdr base-path)) (url-path relative-url)]
+                    [else (cons (car base-path) (loop (cdr base-path)))]))]
+               [reversed/simplified
+                (if (null? joined)
+                    null
+                    (let loop ([segs (reverse joined)])
+                      (cond
+                        [(null? segs) null]
+                        [else (let ([fst (car segs)])
+                                (cond
+                                  [(string=? fst ".")
+                                   (loop (cdr segs))]
+                                  [(string=? fst "..")
+                                   (if (null? (cdr segs))
+                                       segs
+                                       (loop (cddr segs)))]
+                                  [else (cons (car segs) (loop (cdr segs)))]))])))])
+          (set-url-path! relative-url (reverse reversed/simplified))
+          relative-url))
+
       ;; call/input-url : url x (url -> in-port) x (in-port -> T)
       ;;                  [x list (str)] -> T
       (define call/input-url
@@ -434,7 +377,6 @@
 			   ")?"               ; >3  slashslash-opt
 			   ")?"               ; >1  front-opt
 			   "([^?#]*)"         ; =7  path
-			   ;"(;[^?#]*)?"       ; =8  semi-parms-opt
 			   "(\\?[^#]*)?"      ; =8  question-query-opt
 			   "(#.*)?"           ; =9 hash-fragment-opt
 			   "[ \t\f\r\n]*"
@@ -496,18 +438,18 @@
       
       ;; separate-path-strings : string[starting with /] -> (listof (union string path/param))
       (define (separate-path-strings str)
-        (when (or (string=? str "")
-                  (not (char=? (string-ref str 0) #\/)))
-          (error 'separate-path-strings "got non path string, ~e" str))
-        (if (string=? str "/")
-            '()
-            (let loop ([str (substring str 1 (string-length str))])
-              (cond
-                [(regexp-match #rx"([^/]*)/(.*)$" str)
-                 =>
-                 (lambda (m)
-                   (cons (maybe-separate-params (cadr m)) (loop (caddr m))))]
-                [else (list (maybe-separate-params str))]))))
+        (cond
+          [(string=? str "") '()]
+          [else
+           (let loop ([str (if (char=? #\/ (string-ref str 0))
+                               (substring str 1 (string-length str))
+                               str)])
+             (cond
+               [(regexp-match #rx"([^/]*)/(.*)$" str)
+                =>
+                (lambda (m)
+                  (cons (maybe-separate-params (cadr m)) (loop (caddr m))))]
+               [else (list (maybe-separate-params str))]))]))
       
       (define (maybe-separate-params s)
         (cond
@@ -520,13 +462,11 @@
       (define (combine-path-strings strs)
         (apply
          string-append
-         "/"
          (let loop ([strs strs])
            (cond
              [(null? strs) '()]
-             [(null? (cdr strs)) (list (maybe-join-params (car strs)))]
-             [else (list* (maybe-join-params (car strs))
-                          "/"
+             [else (list* "/"
+                          (maybe-join-params (car strs))
                           (loop (cdr strs)))]))))
       
       ;; needs to unquote things!

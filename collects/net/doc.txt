@@ -62,10 +62,10 @@ TYPES ----------------------------------------------------------------
   procedures string->url and url->string take to translate
   things like %20 into spaces and back again.
 
-  An empty string at the end of the list of params
+  An empty string at the end of the list of paths
   corresponds to a url that ends in a slash. For example,
   this url: http://www.drscheme.org/a/ has a path field 
-  '("a" "") and this url http://www.drscheme.org/a
+  '("a" "") and this url: http://www.drscheme.org/a
   has a path field '("a").
 
 > path/params

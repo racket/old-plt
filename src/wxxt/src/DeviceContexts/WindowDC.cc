@@ -1759,7 +1759,7 @@ void wxWindowDC::SetBackground(wxColour *c)
   int style;
   unsigned long pixel;
 
-  if (!DRAWABLE) /* MATTHEW: [5] */
+  if (!DRAWABLE)
     return;
   
   if (c != current_background_color)

@@ -153,7 +153,9 @@ void wxRegion::SetRectangle(double x, double y, double width, double height)
 
 void wxRegion::SetRoundedRectangle(double x, double y, double width, double height, double radius)
 {
+#ifdef wx_xt
   wxRegion *lt, *rt, *lb, *rb, *w, *h, *r;
+#endif
 #if defined(wx_msw) || defined(wx_mac)
   double xw, yh;
   int ix, iy, iw, ih;

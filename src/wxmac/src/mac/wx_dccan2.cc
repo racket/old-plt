@@ -692,15 +692,15 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
   if (cnt == 1) {
     thePolygon = OpenPoly();
     MoveTo(pts[0].h + SetOriginX, pts[0].v + SetOriginY);
-    for (j = 1; j <= total_cnt; j++) {
+    for (j = 1; j < total_cnt; j++) {
       LineTo(pts[j].h + SetOriginX, pts[j].v + SetOriginY);
     }
     ClosePoly();
   }
 
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    wxMacSetCurrentTool(kBrushTool);
     if (cnt == 1) {
-      wxMacSetCurrentTool(kBrushTool);
       if (paint_brush_with_erase)
 	ErasePoly(thePolygon);
       else
@@ -709,7 +709,8 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
       wxRegion *r;
 
       r = new wxRegion(this);
-      r->SetPath(p);
+      r->SetPath(p, xoffset, yoffset);
+      ::OffsetRgn(r->rgn,SetOriginX,SetOriginY);
       
       if (paint_brush_with_erase)
 	EraseRgn(r->rgn);
@@ -732,7 +733,7 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
 	thePolygon = OpenPoly();
 	MoveTo(pts[k].h + SetOriginX, pts[k].v + SetOriginY);
 	k++;
-	for (m = 0; m < j; m++) {
+	for (m = 1; m < j; m++) {
 	  LineTo(pts[k].h + SetOriginX, pts[k].v + SetOriginY);
 	  k++;
 	}

@@ -16,15 +16,15 @@
            (lib "browser-sig.ss" "browser")
            (lib "browser-unit.ss" "browser")
            (lib "web-server-unit.ss" "web-server")
-           (lib "configuration-structures.ss" "web-server")
+           (lib "configuration.ss" "web-server")
            (lib "servlet-sig.ss" "web-server"))
   
-  '(provide/contract 
-   (serve (opt->*
-	   ()
-           ((and/f number? integer? exact? positive?)
-            (union string? false?)
-            (make-mixin-contract frame%))
+  (provide/contract 
+   (internal-serve (opt->*
+	   (unit/sig?
+	    (and/f number? integer? exact? positive?)
+            (union string? false?))
+           ((make-mixin-contract frame%))
            ((-> void?)
             (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
             (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
@@ -35,10 +35,8 @@
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
   ;; that simulate their behavior without using the network.
-  '(define serve
-    (opt-lambda ([port (configuration-port configuration)]
-                 [only-from-host #f]
-                 [hyper-frame-extension (lambda (x) x)])
+  (define internal-serve
+    (opt-lambda (configuration@ port listen-ip [hyper-frame-extension (lambda (x) x)])
       (invoke-unit/sig
        (compound-unit/sig
          (import
@@ -48,7 +46,8 @@
           [tcp : net:tcp^ ((tcp-redirect (list port)))]
           [url : net:url^ (url@ tcp)]
           [browser : browser^ (browser@ plt-installer mred tcp url)]
-          [web-server : web-server^ (web-server@ tcp)]
+	  [config : web-config^ ((update-configuration configuration@ `((port . ,port) (ip-address . ,listen-ip))))]
+          [web-server : web-server^ (web-server@ tcp config)]
           [main : () ((unit/sig ()
                         (import net:tcp^
                                 browser^
@@ -111,7 +110,7 @@
                               (car browser-frames)))
                           
                         (parameterize ([current-custodian browser-and-server-cust])
-                          (serve configuration port))
+                          (serve))
                         
                         (values
 			 shutdown-server

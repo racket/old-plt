@@ -3,13 +3,29 @@
 ; is to provide the minimum stuff that a servlet needs.  The file
 ; "servlet-helpers.ss" includes more functions that servlets often use.
 (module servlet-sig mzscheme
-  (require "sig.ss")
-  (provide (struct response/full (code message seconds mime extras body))
+  (require "sig.ss"
+	   (lib "xml.ss" "xml"))
+  (provide response?
+	   (struct response/full (code message seconds mime extras body))
            (struct response/incremental ())
            (struct request (method uri headers host-ip client-ip))
            (rename request-bindings request-bindings/raw)
            (rename get-parsed-bindings request-bindings)
 	   (all-from "sig.ss"))
+
+  ; response = (cons str (listof str)), where the first str is a mime-type
+  ;          | x-expression
+  ;          | (make-response/full nat str nat str (listof (cons sym str)) (listof str))
+  ;          | (make-response/incremental nat str nat str (listof (cons sym str))
+  ;              ((str -> void) -> void))
+
+  ; : TST -> bool
+  (define (response? page)
+    (or (response/full? page)
+        ; this could fail for dotted lists - rewrite andmap
+	(and (pair? page) (pair? (cdr page)) (andmap string? page))
+					; insist the xexpr has a root element
+	(and (pair? page) (xexpr? page))))
   
   ; more here - these should really have a common super type, but I don't want to break
   ; the existing interface.

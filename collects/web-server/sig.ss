@@ -10,10 +10,12 @@
   (define-signature servlet^
     (initial-request send/suspend send/finish send/back send/forward adjust-timeout!))
 
+  ; more here - rename
   (define-signature web-config/pervasive^
-    (max-waiting virtual-hosts access instances scripts initial-connection-timeout))
+    (max-waiting virtual-hosts access scripts initial-connection-timeout))
 
-  (define-signature web-config/local^ (port listen-ip))
+  ; more here - rename
+  (define-signature web-config/local^ (port listen-ip instances))
 
   (define-signature web-config^
     ((open web-config/pervasive^) (open web-config/local^))))

@@ -14,6 +14,7 @@
            ;(lib "contracts.ss" "framework")
            (lib "error.ss" "htdp")
            (lib "unitsig.ss")
+	   (lib "tcp-sig.ss" "net")
            )
   (provide servlet@)
   
@@ -38,19 +39,10 @@
   
   ; send/finish : response -> doesn't
   (define (the-send/finish page)
-    (check-arg 'send/finish (valid-response? page) "response" "1st" page)
+    (check-arg 'send/finish (response? page) "response" "1st" page)
     (output-page page)
     (kill-thread (current-thread))
     (set! *page-channel* #f))
-  
-  ; : tst -> bool
-  ; FIX - xexpr->xml is not a good way to check validity
-  (define (valid-response? page)
-    (with-handlers ([void (lambda (exn) #f)])
-      (or (response/full? page)
-          ; this could fail for dotted lists - rewrite andmap
-          (and (pair? page) (pair? (cdr page)) (andmap string? page)) 
-          (and (xexpr->xml page) #t))))
   
   ; *page-channel* : #f | channel
   (define *page-channel* #f)
@@ -99,7 +91,7 @@
       (lambda (k->page)
         (s/s (lambda (k-url)
                (let ([page (k->page k-url)])
-                 (unless (valid-response? page)
+                 (unless (response? page)
                    (error 'send/suspend "expected <~a> as ~a argument, given a function that produced: ~e"
                           "a function that produces a response" "1st"
                           page))
@@ -129,23 +121,20 @@
   (define the-configuration@
     (load-developer-configuration default-configuration-table-path))
   
-  (define big-timeout (* 24 60 60))
-
-  (define the-config
-    (make-config (configuration-virtual-hosts the-configuration)
-                 (make-hash-table)
-                 instances (make-hash-table)))
-  
   (thread (lambda ()
-            (server-loop (current-custodian)
-                         (lambda () (tcp-accept listener))
-                         the-config
-                         big-timeout
-                         (lambda ()
-                           ; having a failure thunk without a success thunk makes the control flow
-                           ; strange -- output-page assumes everything works, but if it doesn't
-                           ; we have to go back and try again.  It's rather stateful.  There's
-                           ; probably a more principled way to do this.
-                           (printf "Restarting STOPPED browser...~n")
-                           (init-channel)
-                           (async-channel-put *page-channel* *last-page-sent*))))))
+	    (invoke-unit/sig
+	     (compound-unit/sig
+	      (import (T : net:tcp^))
+	      (link
+	       [c : web-config^ ((update-configuration the-configuration@ `(instances . ,instances)))]
+	       [s : web-server^ (web-server@ T C)]
+	       [m : () ((unit/sig ()
+			  (import web-server^)
+			  (server-loop (current-custodian)
+				       (lambda () (tcp-accept listener))
+				       (lambda ()
+					 (init-channel)
+					 (async-channel-put *page-channel* *last-page-sent*))))
+			s)])
+	      (export))
+	     net:tcp^))))

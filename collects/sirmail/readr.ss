@@ -580,23 +580,10 @@
       ;; this is used to higlight urls in the editor window
       (define url-delta (make-object style-delta% 'change-underline #t))
       (send url-delta set-delta-foreground "blue")
-
+      
       (define (apply-style i delta)
-	(define (get-header-editors i)
-	  (let ([e (send i get-editor)])
-	    (let loop ([s (send e find-first-snip)]
-		       [l null])
-	      (cond
-                [(not s) (reverse! l)]
-                [(is-a? s editor-snip%) (loop (send s next)
-                                              (cons (send s get-editor)
-                                                    l))]
-                [else (loop (send s next) l)]))))
-	(for-each
-	 (lambda (e)
-	   (send e change-style delta
-		 0 (send e last-position)))
-	 (get-header-editors i)))
+        (let ([e (send i get-editor)])
+          (send e change-style delta 0 (send e last-position))))
       
       (define current-selected #f)
       

@@ -224,6 +224,8 @@
     (lambda args
       (cond
 	[(null? args)
+	 (when (eq? mred:debug:on? 'compile-and-exit)
+	   (wx:exit))
 	 (unless mred:non-unit-startup?
 	   (invoke-open-unit (mred:make-invokable-unit) mred)
 	   (when mred:load-user-setup?
@@ -232,8 +234,6 @@
 		   files-to-open)
 	 (when mred:non-unit-startup?
 	   (set! mred:console (mred:startup)))
-	 (when (eq? mred:debug:on? 'compile-and-exit)
-	   (wx:exit))
 	 mred:console]
 	[else 
 	 (let ([arg (car args)]

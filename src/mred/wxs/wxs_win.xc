@@ -73,7 +73,7 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "gets-focus?" : bool GetsFocus();
 
 @ "set-focus" : void SetFocus();
-@ "set-size" : void SetSize(int,int,int,int,SYM[sizeMode]=wxSIZE_AUTO); : : /NOZERO[2]|NOZERO[3]
+@ "set-size" : void SetSize(int,int,int,int,SYM[sizeMode]=wxSIZE_AUTO);
 @ "move" : void Move(int,int); 
 @ "set-cursor" : wxCursor^ SetCursor(wxCursor^); : : /CHECKCURSOROK[0]
 @ "show" : void Show(bool);

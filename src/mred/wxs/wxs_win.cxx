@@ -967,7 +967,6 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x4 = wxSIZE_AUTO;
 
-  if (!x2) x2 = -1;if (!x3) x3 = -1;
   ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->SetSize(x0, x1, x2, x3, x4);
 
   

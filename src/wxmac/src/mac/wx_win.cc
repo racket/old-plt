@@ -1654,26 +1654,30 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
     
   int macMenuId = HiWord(sel);
   int macMenuItemNum = LoWord(sel) + di;
+  int itemId;
 
-  if (macMenuItemNum <= 0)
-    return TRUE;
+  if (macMenuItemNum <= 0) {
+    itemId = 0;
+  } else {
+    wxMenu *theWxMenu;
 
-  wxMenu *theWxMenu;
+    if (macMenuId == menu->GetMacMenuId())
+      theWxMenu = menu;
+    else 
+      theWxMenu = menu->wxMacFindSubmenu(macMenuId);
+    if (!theWxMenu) wxFatalError("No submenu for menu id.");
 
-  if (macMenuId == menu->GetMacMenuId())
-    theWxMenu = menu;
-  else 
-    theWxMenu = menu->wxMacFindSubmenu(macMenuId);
-  if (!theWxMenu) wxFatalError("No submenu for menu id.");
+    wxNode* node = theWxMenu->menuItems.Nth(macMenuItemNum - 1); // counting from 0
+    if (!node) wxFatalError("No wxNode for Nth menuItem.");
 
-  wxNode* node = theWxMenu->menuItems.Nth(macMenuItemNum - 1); // counting from 0
-  if (!node) wxFatalError("No wxNode for Nth menuItem.");
+    wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();
+    if (!theWxMenuItem) wxFatalError("No wxMenuItem for wxNode.");
 
-  wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();
-  if (!theWxMenuItem) wxFatalError("No wxMenuItem for wxNode.");
+    itemId = theWxMenuItem->itemId;
+  }
 
   wxPopupEvent *event = new wxPopupEvent();
-  event->menuId = theWxMenuItem->itemId;
+  event->menuId = itemId;
 
   menu->ProcessCommand(event);
 

@@ -173,6 +173,7 @@
       ;; Extracting Addresses ;;
 
       (define blank (format "[~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
+      (define nonblank (format "[^~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
       (define re:all-blank (regexp (format "^~a*$" blank)))
       (define re:quoted (regexp "\"[^\"]*\""))
       (define re:comma (regexp ","))
@@ -216,7 +217,7 @@
 
       (define re:quoted-name (regexp (format "^~a*(\"[^\"]*\")(.*)" blank)))
       (define re:parened-name (regexp (format "(.*)[(]([^)]*)[)]~a*$" blank)))
-      (define re:simple-name (regexp (format "^~a*(.*)(<.*>)~a*$" blank blank)))
+      (define re:simple-name (regexp (format "^~a*(~a.*)(<.*>)~a*$" blank nonblank blank)))
       (define re:normal-name (regexp (format "~a*<([^>]*)>~a*" blank blank)))
       (define re:double-less (regexp "<.*<"))
       (define re:double-greater (regexp ">.*>"))
@@ -224,44 +225,49 @@
       (define re:tail-blanks (regexp (format "~a+$" blank)))
       (define re:head-blanks (regexp (format "^~a+" blank)))
 
-      (define (extract-one-name s form)
-	(cond
-	 [(regexp-match re:quoted-name s)
-	  => (lambda (m)
-	       (let ([name (cadr m)]
-		     [addr (extract-angle-addr (caddr m))])
-		 (select-result form name addr
-				(format "~a <~a>" name addr))))]
-	 ;; ?!?!? Where does the "addr (name)" standard come from ?!?!?
-	 [(regexp-match re:parened-name s)
-	  => (lambda (m)
-	       (let ([name (caddr m)]
-		     [addr (extract-simple-addr (cadr m))])
-		 (select-result form name addr 
-				(format "~a (~a)" addr name))))]
-	 [(regexp-match re:simple-name s)
-	  => (lambda (m)
-	       (let ([name (regexp-replace (format "~a*$" blank) (cadr m) "")]
-		     [addr (extract-angle-addr (caddr m))])
-		 (select-result form name addr 
-				(format "~a <~a>" name addr))))]
-	 [(or (regexp-match "<" s) (regexp-match ">" s))
-	  (one-result form (extract-angle-addr s))]
-	 [else
-	  (one-result form (extract-simple-addr s))]))
+      (define (extract-one-name orig form)
+	(let loop ([s orig][form form])
+	  (cond
+	   ;; ?!?!? Where does the "addr (name)" standard come from ?!?!?
+	   [(regexp-match re:parened-name s)
+	    => (lambda (m)
+		 (let ([name (caddr m)]
+		       [all (loop (cadr m) 'all)])
+		   (select-result form 
+				  (if (string=? (car all) (cadr all))
+				      name
+				      (car all))
+				  (cadr all)
+				  (format "~a (~a)" (caddr all) name))))]
+	   [(regexp-match re:quoted-name s)
+	    => (lambda (m)
+		 (let ([name (cadr m)]
+		       [addr (extract-angle-addr (caddr m) s)])
+		   (select-result form name addr
+				  (format "~a <~a>" name addr))))]
+	   [(regexp-match re:simple-name s)
+	    => (lambda (m)
+		 (let ([name (regexp-replace (format "~a*$" blank) (cadr m) "")]
+		       [addr (extract-angle-addr (caddr m) s)])
+		   (select-result form name addr 
+				  (format "~a <~a>" name addr))))]
+	   [(or (regexp-match "<" s) (regexp-match ">" s))
+	    (one-result form (extract-angle-addr s orig))]
+	   [else
+	    (one-result form (extract-simple-addr s orig))])))
 
-      (define (extract-angle-addr s)
+      (define (extract-angle-addr s orig)
 	(if (or (regexp-match re:double-less s) (regexp-match re:double-greater s))
 	    (error 'extract-address "too many angle brackets: ~a" s)
 	    (let ([m (regexp-match re:normal-name s)])
 	      (if m
-		  (extract-simple-addr (cadr m))
-		  (error 'extract-address "cannot parse address: ~a" s)))))
+		  (extract-simple-addr (cadr m) orig)
+		  (error 'extract-address "cannot parse address: ~a" orig)))))
 
-      (define (extract-simple-addr s)
+      (define (extract-simple-addr s orig)
 	(cond
 	 [(regexp-match re:bad-chars s)
-	  (error 'extract-address "cannot parse address: ~a" s)]
+	  (error 'extract-address "cannot parse address: ~a" orig)]
 	 [else 
 	  ;; final whitespace strip
 	  (regexp-replace

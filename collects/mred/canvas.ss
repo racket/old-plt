@@ -202,12 +202,17 @@
 		      [righti (box 0)]
 		      [leftm (box 0)]
 		      [rightm (box 0)]
-		      [snip-media (send s get-this-media)])
-		 (send (send (get-media) get-admin)
+		      [left-edge-box (box 0)]
+		      [snip-media (send s get-this-media)]
+		      [edit (get-media)])
+		 (send (send edit get-admin)
 		       get-view null null width null)
 		 (send s get-inset lefti (box 0) righti (box 0))
 		 (send s get-margin leftm (box 0) rightm (box 0))
+		 (send edit get-snip-position-and-location
+		       s (box 0) left-edge-box null)
 		 (let ([snip-width (- (unbox width)
+				      (unbox left-edge-box)
 				      ;(unbox lefti)
 				      ;(unbox righti)
 				      (unbox leftm)
@@ -233,5 +238,5 @@
 	       (super-on-size width height)
 	       (for-each update-snip-size snips))]))))
 			   
-    (define wide-snip-canvas% (make-wide-snip-canvas% frame-title-canvas%)))
+    (define wide-snip-canvas% (make-wide-snip-canvas% wrapping-canvas%)))
 		  

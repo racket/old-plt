@@ -12,7 +12,7 @@
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "private/test-case-box.ss")
   
-  (define menu-extention@
+  (define menu-extentions@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^ test-case-box^)
       
@@ -96,9 +96,9 @@
   
   (define test-case-box-tool@
     (compound-unit/sig
-      (import (TOOL : drscheme:tool^))
-      (link (BOXES : test-case-box^ (test-case-box@ TOOL))
-            (MENU  : drscheme:tool-exports^ (menu-extention@ TOOL BOXES)))
-      (export (var (MENU phase1))
-              (var (MENU phase2)))))
+     (import (TOOL : drscheme:tool^))
+     (link (MENU   : drscheme:tool-exports^ (menu-extentions@ TOOL CASE))
+           (CASE   : test-case-box^ (test-case-box@ TOOL)))
+     (export (var (MENU phase1))
+             (var (MENU phase2)))))
   )

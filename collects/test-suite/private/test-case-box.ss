@@ -1,46 +1,26 @@
 (module test-case-box mzscheme
   
-  (provide  test-case-box^ test-case-box@)
+  (provide test-case-box^ test-case-box@)
   
   (require
    (lib "class.ss")
-   (lib "unitsig.ss")
    (lib "mred.ss" "mred")
+   (lib "unitsig.ss")
+   (lib "tool.ss" "drscheme")
    (lib "etc.ss")
-   ;(prefix a: (lib "aligned-pasteboard.ss" "mrlib"))
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "framework.ss" "framework")
-   (lib "tool.ss" "drscheme")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "fixed-width-label-snip.ss"
    "grey-editor.ss"
    "button-snip.ss"
    "test-case.ss")
   
-  ;;;;;;;;;;;
-  ;;; bug fix for syntax highlighting
-  ;
-  ;;; a mixin that adds the missing pieces of the interface that cause mouse over
-  ;;; arrow drawing to raise exceptions
-  ;(define arrow-interface-mixin
-  ;  (mixin ((class->interface pasteboard%)) ()
-  ;    (define/public (find-position . a)
-  ;      1)
-  ;    (super-new)))
-  ;
-  ;(define horizontal-pasteboard% (arrow-interface-mixin a:horizontal-pasteboard%))
-  ;(define vertical-pasteboard% (arrow-interface-mixin a:vertical-pasteboard%))
-  ;(define aligned-editor-snip% a:aligned-editor-snip%)
-  ;
-  ;;; end
-  ;;;;;;;;;;;
-  
   (define-signature test-case-box^ (test-case-box%))
   (define test-case-box@
     (unit/sig test-case-box^
       (import drscheme:tool^)
       
-      ;; a text-case snip
       (define test-case-box%
         (class* aligned-editor-snip% (readable-snip<%>)
           
@@ -60,8 +40,6 @@
           
           ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
-          ;; STATUS: this function punts on formating and doesn't use the language levels.
-          ;;         there is a correct (?) version in case.ss of the previous test suite tool
           (inherit get-admin)
           (define (set-actuals vals)
             (send* actual
@@ -81,8 +59,7 @@
                        void 
                        void)])
                 (for-each
-                 (lambda (value)
-                   (print value port))
+                 (lambda (val) (print val port))
                  vals)
                 (unless (equal? "\n" last)
                   (send actual insert last))))
@@ -115,10 +92,9 @@
           ;; sets the test case to the proper view
           (define/public (update status)
             (send result update status)
-            (cond
-              [(symbol=? status 'unknown)
-               (send actual erase)]
-              [else (void)]))
+            (cond [(symbol=? status 'unknown)
+                   (send actual erase)]
+                  [else (void)]))
           
           (define/override (write f)
             (send comment write-to-file f)
@@ -135,9 +111,6 @@
             (send* expected
               (erase)
               (read-from-file f)))
-          
-          ;(define/override (get-color) "red")
-          ;(define/override (make-editor) (new test-case-editor%))
           
           (field
            [editor (new vertical-pasteboard%)]
@@ -179,50 +152,52 @@
       (send tcb-sc set-classname "test-case-box%")
       (send tcb-sc set-version 1)
       (send (get-the-snip-class-list) add tcb-sc)
-    ))
-  ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how to make
-  ;; the results of the test case boxes be reset when (and only when) highlighting is being reset.
-  (define update-aware:scheme:text%
-    (class scheme:text%
-      (inherit get-admin)
-      (rename [super-after-insert after-insert]
-              [super-after-delete after-delete])
-      (define (get-frame)
-        ;; gets the top most editor in the tree of snips and editors
-        (define (editor-root ed)
-          (let ([parent (editor-parent ed)])
-            (cond
-              [(is-a? parent area<%>) parent]
-              [(is-a? parent snip%)
-               (editor-root (snip-parent parent))]
-              [else (error 'editor-root "No root ~s" parent)])))
-        
-        ;; gets the canvas or snip that the pasteboard is displayed in
-        ;; status: what if there is more than one canvas?
-        (define (editor-parent ed)
-          (let ([admin (send ed get-admin)])
-            (cond
-              [(is-a? admin editor-snip-editor-admin<%>)
-               (send admin get-snip)]
-              [(is-a? admin editor-admin%)
-               (send ed get-canvas)]
-              [else (error 'editor-parent "No parent")])))
-        
-        (send (editor-root this) get-top-level-window))
       
-      (define (alert-of-modify)
-        (let ([frame (get-frame)])
-          (send (send frame get-interactions-text) reset-highlighting)
-          (send* (send frame get-definitions-text)
-            (set-modified true)
-            (reset-test-case-boxes))))
-      (define/override (after-insert start len)
-        (alert-of-modify)
-        (super-after-insert start len))
-      (define/override (after-delete start len)
-        (alert-of-modify)
-        (super-after-delete start len))
-      (super-new)))
+      ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how to make
+      ;; the results of the test case boxes be reset when (and only when) highlighting is being reset.
+      ;; Um, I can't find drscheme:unit:program-editor-mixin actually. It's not in drscheme:tool^
+      (define update-aware:scheme:text%
+        (class scheme:text%;(drscheme:unit:program-editor-mixin scheme:text%)
+          (inherit get-admin)
+          (rename [super-after-insert after-insert]
+                  [super-after-delete after-delete])
+          (define (get-frame)
+            ;; gets the top most editor in the tree of snips and editors
+            (define (editor-root ed)
+              (let ([parent (editor-parent ed)])
+                (cond
+                  [(is-a? parent area<%>) parent]
+                  [(is-a? parent snip%)
+                   (editor-root (snip-parent parent))]
+                  [else (error 'editor-root "No root ~s" parent)])))
+            
+            ;; gets the canvas or snip that the pasteboard is displayed in
+            ;; status: what if there is more than one canvas?
+            (define (editor-parent ed)
+              (let ([admin (send ed get-admin)])
+                (cond
+                  [(is-a? admin editor-snip-editor-admin<%>)
+                   (send admin get-snip)]
+                  [(is-a? admin editor-admin%)
+                   (send ed get-canvas)]
+                  [else (error 'editor-parent "No parent")])))
+            
+            (send (editor-root this) get-top-level-window))
+          
+          (define (alert-of-modify)
+            (let ([frame (get-frame)])
+              (send (send frame get-interactions-text) reset-highlighting)
+              (send* (send frame get-definitions-text)
+                (set-modified true)
+                (reset-test-case-boxes))))
+          (define/override (after-insert start len)
+            (alert-of-modify)
+            (super-after-insert start len))
+          (define/override (after-delete start len)
+            (alert-of-modify)
+            (super-after-delete start len))
+          (super-new)))
+      ))
   
   ;; the top line of the test-case
   (define (make-top-line turn-snip comment result-snip)
@@ -314,7 +289,6 @@
      #f
      (read-syntax text (open-input-text-editor text))
      (list text 1 0 1 1)))
-  
   
   ;; a locked text hightlighted to show that it is inactive
   (define actual-text%

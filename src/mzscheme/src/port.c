@@ -7099,7 +7099,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, TCP_NONBLOCKING);
 #endif
-      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(addr)))
+      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr)))
 	if (!listen(s, backlog)) {
 	  listener_t *l;
 

@@ -183,6 +183,68 @@
 
  (test '((1) (2) (1)) 'call/cc-restore-marks l))
 
+;; Make sure restoring continuations restores the right marks
+;;  for dynamic-wind thunks
+(let ([k0 #f]
+      [k1 #f]
+      [k2 #f]
+      [k3 #f]
+      [k4 #f]
+      [k5 #f]
+      [esc void])
+  (define (go)
+    (with-continuation-mark 'a 7
+      (dynamic-wind
+	  (lambda ()
+	    ((let/cc k (set! k0 k) void))
+	    (test '(7) extract-current-continuation-marks 'a))
+	  (lambda ()
+	    (with-continuation-mark 'a 8
+	      (begin
+		(test '(8 7) extract-current-continuation-marks 'a)
+		((let/cc k (set! k1 k) void))
+		(test '(8 7) extract-current-continuation-marks 'a)
+		(dynamic-wind
+		    (lambda ()
+		      (test '(8 7) extract-current-continuation-marks 'a)
+		      (with-continuation-mark 'a 9
+			(begin
+			  ((let/cc k (set! k2 k) void))
+			  (test '(9 8 7) extract-current-continuation-marks 'a))))
+		    (lambda ()
+		      ((let/cc k (set! k3 k) void))
+		      (test '(8 7) extract-current-continuation-marks 'a))
+		    (lambda ()
+		      (with-continuation-mark 'a 10
+			(begin
+			  ((let/cc k (set! k4 k) void))
+			  (test '(10 8 7) extract-current-continuation-marks 'a)))
+		      (test '(8 7) extract-current-continuation-marks 'a)))
+		(test '(8 7) extract-current-continuation-marks 'a))))
+	  (lambda ()
+	    ((let/cc k (set! k5 k) void))
+	    (test '(7) extract-current-continuation-marks 'a))))
+    (esc))
+  (go)
+  (let ([k0 k0]
+	[k1 k1]
+	[k2 k2]
+	[k3 k3]
+	[k4 k4]
+	[k5 k5])
+    (let/cc k (set! esc k) (k1 void))
+    (let/cc k (set! esc k) (k1 k))
+    (let/cc k (set! esc k) (k2 void))
+    (let/cc k (set! esc k) (k2 k))
+    (let/cc k (set! esc k) (k3 void))
+    (let/cc k (set! esc k) (k3 k))
+    (let/cc k (set! esc k) (k4 void))
+    (let/cc k (set! esc k) (k4 k))
+    (let/cc k (set! esc k) (k5 void))
+    (let/cc k (set! esc k) (k5 k))))
+
+;; Create a deep stack with a deep mark stack
+
 (define (p-equal? a b)
   (let loop ([a a][b b])
     (cond
@@ -194,7 +256,6 @@
       (printf "b: ~s~n" b)
       #f])))
 
-;; Create a deep stack with a deep mark stack
 (test #t
       'deep-stacks
       (p-equal?

@@ -3222,7 +3222,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	if (dw->post) {
 	  DW_PrePost_Proc post = dw->post;
 	  p->dw = dw->prev;
+	  MZ_CONT_MARK_POS = dw->envss.cont_mark_pos;
+	  MZ_CONT_MARK_STACK = dw->envss.cont_mark_stack;
 	  post(dw->data);
+	  p = scheme_current_thread;
 	}
       }
       

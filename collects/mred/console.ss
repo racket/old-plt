@@ -482,7 +482,6 @@
 	       (load file))]
 	    [on-quit mred:exit:exit]
 
-	    [quit-menu-label "&Quit"]
 	    [file-menu:open mred:handler:open-file]
 	    [file-menu:open-string
 	     (let ([tab (string #\tab)])
@@ -518,12 +517,7 @@
 			      (send edit save-file
 				    (send edit get-filename)))]
 	    [file-menu:save-as (lambda () (send edit save-file ""))]
-	    [file-menu:after-close
-	     (lambda (file-menu)
-	       (when close-item?
-		 (send file-menu append-separator))
-	       (send file-menu append-item quit-menu-label on-quit))]
-		 
+
 	    [edit-menu:before-preferences
 	     (let ([edit-menu:do  (lambda (const) (lambda () (send edit do-edit const)))])
 	       (lambda (edit-menu)

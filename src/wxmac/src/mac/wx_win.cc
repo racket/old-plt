@@ -600,8 +600,7 @@ void wxWindow::CreatePaintControl(int inset, Bool opaque)
   {
     void *rc;
     rc = WRAP_SAFEREF(this);
-    refcon = rc;
-    SetControlReference(cPaintControl, (long)refcon);
+    SetControlReference(cPaintControl, (long)rc);
   }
 
   ::ShowControl(cPaintControl);

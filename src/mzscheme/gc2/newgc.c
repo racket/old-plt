@@ -412,21 +412,15 @@ inline static void resize_gen0(unsigned long new_size)
 {
   struct mpage *work = gen0_pages, *prev = NULL;
   unsigned long alloced_size = 0;
+  int dump_rest = 0;
 
-  long start_time;
-  int dump_all = 0;
-
-  printf("-> resize start\n");
-
-  start_time = scheme_get_process_milliseconds();
-  
   /* fist make sure the big pages pointer is clean */
   gen0_big_pages = NULL; 
 
   /* then, clear out any parts of gen0 we're keeping, and deallocated any
      parts we're throwing out */
   while(work) {
-    if(dump_all || (alloced_size > new_size)) {
+    if(dump_rest || (alloced_size > new_size)) {
       /* there should really probably be an ASSERT here. If prev is NULL,
 	 that's a BIG, BIG PROBLEM. After allocating it at startup, the
 	 first page in gen0_pages should *never* be deallocated, so we
@@ -449,15 +443,18 @@ inline static void resize_gen0(unsigned long new_size)
       void **end = PPTR(NUM(work) + work->size);
 
       alloced_size += GEN0_PAGE_SIZE;
-      while (start < end) *start++ = NULL;
+      while(start < end) *start++ = NULL;
       work->size = HEADER_SIZEB;
       prev = work;
       work = work->next;
-      dump_all = 1;
+
+      /* Set dump_rest to 1 to allocate the remaining pages afresh, or
+	 set it to 0 if you prefer to keep them. It appears that
+	 allocating afresh is a better strategy (even though the
+	 allocator has its own layer of caching). */
+      dump_rest = 1;
     }
   }
-
-  printf("bzero %d\n", scheme_get_process_milliseconds() - start_time);
 
   /* if we're short, add more */
   while(alloced_size < new_size) {
@@ -480,8 +477,6 @@ inline static void resize_gen0(unsigned long new_size)
   /* set the two size variables */
   gen0_max_size = alloced_size;
   gen0_current_size = 0;
-
-  printf("resize %d\n", scheme_get_process_milliseconds() - start_time);
 }
 
 #define difference(x, y) ((x > y) ? (x - y) : (y - x))

@@ -1,5 +1,7 @@
-(require-library "unitsig.ss")
-(require-library "file.ss")		; for normalize-path, load-recent
+(require-library "file.ss")
+(require-library "macro.ss")
+(require-library "include.ss")
+(require-library "pretty.ss")
 
 (define plt-home-directory
   (let ([plt (getenv "PLTHOME")])
@@ -17,20 +19,8 @@
 (plt:require-library "sparams.ss")
 (plt:require-library "sparamu.ss")
 
-(load-recent "zsigs")
-(load-recent "sigs")
-(load-recent "zcode")
-(load-recent "misc")
-(load-recent "sexp")
-(load-recent "pattern")
-(load-recent "x")
-(load-recent "corelate")
-(load-recent "back")
-(load-recent "scm-core")
-(load-recent "scm-main")
-(load-recent "scm-spdy")
-(load-recent "scm-obj")
-(load-recent "scm-unit")
-(load-recent "scm-ou")
-(load-recent "link")
-(load-recent "invoke")
+(include "zsigs.ss")
+(include "sigs.ss")
+
+(define zodiac:system@ (include-unit "link.ss"))
+(include "invoke.ss")

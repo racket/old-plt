@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GROW_FACTOR 1.9
+#define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
 #define GENERATIONS 1

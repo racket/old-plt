@@ -92,6 +92,9 @@
     (define add-basis
       (lambda (n)
 	(let* ([plt:userspace@ (global-defined-value 'plt:userspace@)]
+	       [mred@ (global-defined-value 'mred@)]
+	       [mzlib:core@ (global-defined-value 'mzlib:core@)]
+	       [mzlib:trigger@ (global-defined-value 'mzlib:trigger@)]
 	       [l@
 		(unit/sig ()
 		  (import plt:userspace^)
@@ -109,8 +112,7 @@
 			  (define check-syntax-level 
 			    params:check-syntax-level))]
 	       [c@
-		(compound-unit/sig
-		    (import)
+		(compound-unit/sig (import)
 		  (link [params : plt:parameters^ (params@)]
 			[userspace : plt:userspace^ (plt:userspace@ params)]
 			[library : () (l@ userspace)])
@@ -140,7 +142,7 @@
 				   frame unit compound-unit)]
 	     [rep : drscheme:rep^
 		    (drscheme:rep@ mred mzlib print-convert aries zodiac
-				 interface language app basis)]
+				 interface language app basis edit)]
 	     [frame : drscheme:frame^
 		    (drscheme:frame@ mred mzlib basis
 				   setup tool unit

@@ -256,6 +256,16 @@
 ;                                 ;    ;  
 ;                                  ;;;;   
   
+  (drscheme:debug:show-error-and-highlight
+   (string? 
+    (union any/c exn?) 
+    ((listof srcloc?) (union false/c (listof (list text% number number))) -> any)
+    . -> . 
+    any)
+   (msg exn highlight-errors)
+   "Prints the error message to the current-output-port and highlights the text, "
+   "based on \\var{rep}.")
+  
   (drscheme:debug:make-debug-error-display-handler
    ((string? (union any/c exn?) . -> . any)
     . -> .

@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.18 2004/04/12 18:00:58 cobbe Exp $
+;; $Id: ast.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
 ;;
 ;; Defines the AST types used for the Acquired Java system.
 ;;
@@ -12,13 +12,11 @@
   (require (lib "contract.ss")
            "utils.ss")
 
-  #| ID ::= any symbol except 'class 'Object 'any 'contain 'acquire 'new
-                              'ivar 'send 'super 'this 'cast 'let
-                              '+ '- '* '== 'and 'or 'zero? 'null? 'not
-                              'int 'bool 'null 'true 'false
+  #| ID ::= any symbol except those in RESERVED-WORDS, BINARY-PRIMS, and
+  #         UNARY-PRIMS below
 
      Class-Name ::= ID | 'Object
-     Defn-Name ::= ID
+     Defn-Name ::= ID     ;; those names legal for user-defined classes
      Type-Name ::= Class-Name | 'int | 'bool
      Method-Name ::= ID
      Field-Name ::= ID
@@ -30,95 +28,112 @@
 
   (define BINARY-PRIMS '(+ - * == and or))
   (define UNARY-PRIMS '(zero? null? not))
-  (define RESERVED-WORDS '(class Object any contain acquire new ivar
-                            send super this cast let int bool null
-                            true false))
+  (define RESERVED-WORDS '(class Object new ref set call super this cast let
+                            int bool null true false addr))
+  ;; addr doesn't show up in surface syntax, but it does show up as a keyword
+  ;; in the reductions, so forbid it here.
 
+  ;; reserved? :: x -> Boolean
+  ;; recognizes ClassicJava reserved words
   (define reserved?
     (lambda (x)
       (or (and (memq x RESERVED-WORDS) #t)
           (binary-prim-name? x)
           (unary-prim-name? x))))
 
+  ;; binary-prim-name? unary-prim-name? :: x -> Boolean
+  ;; recognizes ClassicJava binary and unary primitives
   (define binary-prim-name? (lambda (x) (and (memq x BINARY-PRIMS) #t)))
   (define unary-prim-name? (lambda (x) (and (memq x UNARY-PRIMS) #t)))
 
+  ;; id? :: x -> Boolean
+  ;; recognizes legal ClassicJava identifiers
   (define id? (lambda (x) (and (symbol? x) (not (reserved? x)))))
 
+  ;; type-name? :: x -> Boolean
+  ;; recognizes legal ClassicJava type names
   (define type-name?
     (lambda (x)
       (or (eq? x 'int)
           (eq? x 'bool)
           (class-name? x))))
 
+  ;; field-name? method-name? :: x -> Boolean
+  ;; recognizes legal ClassicJava field names, method names
   (define field-name? id?)
   (define method-name? id?)
 
+  ;; defn-name? class-name? :: x -> Boolean
+  ;; recognizes legal ClassicJava definition names and class names
   (define defn-name? id?)
   (define class-name?
     (lambda (x)
       (or (eq? x 'Object) (defn-name? x))))
 
+  ;; arg-name? :: x -> Boolean
+  ;; recognizes legal ClassicJava method argument names
   (define arg-name? id?)
 
   (with-public-inspector
    (define-struct program (classes main))
    ;; Program ::= (make-program (Hash-Table Class-Name Class) Expr)
 
-   (define-struct class (name superclass containers
-                              fields contained-fields acquired-fields methods))
+   (define-struct class (name superclass fields methods))
    ;; Class ::= (make-class Type[Class] (Union Class #f)
-   ;;                          (Union (Listof Type[Class]) 'any)
-   ;;                          (Listof Field) (Listof Field) (Listof Field)
-   ;;                          (Listof Method))
+   ;;                       (Listof Field) (Listof Method))
 
-   (define-struct field (type name status))
-   ;; Field ::= (make-field Type Field-Name
-   ;;                       (Union 'normal 'contained 'acquired))
+   (define-struct field (type name))
+   ;; Field ::= (make-field Type Field-Name)
 
    (define-struct method (type name arg-names arg-types body))
-   ;; Method ::= (make-method Type Method-Name (Listof Arg-Name) (Listof Type)
-   ;;                         Expr)
+   ;; Method ::= (make-method Type Method-Name (Listof Arg-Name)
+   ;;                         (Listof Type) Expr)
 
    (define-struct expr ())
-   (define-struct (new expr) (type args))
+   (define-struct (new expr) (type))
    (define-struct (var-ref expr) (var))
    (define-struct (nil expr) ())
-   (define-struct (ivar expr) (object field))
-   (define-struct (send expr) (object method args))
+   (define-struct (ref expr) (object field))
+   (define-struct (tagged-ref expr) (object type field))
+   (define-struct (set expr) (object field rhs))
+   (define-struct (tagged-set expr) (object type field rhs))
+   (define-struct (call expr) (object method args))
    (define-struct (super expr) (method args))
    (define-struct (tagged-super expr) (type method args))
    (define-struct (cast expr) (type object))
-   (define-struct (aj-let expr) (lhs rhs body))
+   (define-struct (cj-let expr) (lhs rhs body))
    (define-struct (num-lit expr) (val))
    (define-struct (bool-lit expr) (val))
    (define-struct (unary-prim expr) (rator rand))
    (define-struct (binary-prim expr) (rator rand1 rand2))
    (define-struct (if-expr expr) (test then else))
-   ;; Src-Expr ::= (make-new Type[Class] (Listof Src-Expr))
+   ;; Src-Expr ::= (make-new Type[Class])
    ;;            | (make-var-ref Arg-Name)
    ;;            | (make-nil)
-   ;;            | (make-ivar Src-Expr Field-Name)
-   ;;            | (make-send Src-Expr Method-Name (Listof Src-Expr))
+   ;;            | (make-ref Src-Expr Field-Name)
+   ;;            | (make-set Src-Expr Field-Name Src-Expr)
+   ;;            | (make-call Src-Expr Method-Name (Listof Src-Expr))
    ;;            | (make-super Method-Name (Listof Src-Expr))
    ;;            | (make-cast Type[Class] Src-Expr)
-   ;;            | (make-aj-let ID Src-Expr Src-Expr)
+   ;;            | (make-cj-let ID Src-Expr Src-Expr)
    ;;            | (make-num-lit Integer)
    ;;            | (make-bool-lit Boolean)
    ;;            | (make-unary-prim Unary-Prim Src-Expr)
    ;;            | (make-binary-prim Binary-Prim Src-Expr Src-Expr)
    ;;            | (make-if-expr Src-Expr Src-Expr Src-Expr)
 
-   ;; Tagged-Expr ::= (make-new Type[Class] (Listof Tagged-Expr))
+   ;; Tagged-Expr ::= (make-new Type[Class])
    ;;               | (make-var-ref Arg-Name)
+   ;;               | (make-var-ref 'this)
    ;;               | (make-nil)
-   ;;               | (make-ivar Tagged-Expr Field-Name)
-   ;;               | (make-send Tagged-Expr Method-Name
-   ;;                            (Listof Tagged-Expr))
+   ;;               | (make-tagged-ref Src-Expr Type[Class] Field-Name)
+   ;;               | (make-tagged-set Src-Expr Type[Class] Field-Name
+   ;;                                  Src-Expr)
+   ;;               | (make-call Tagged-Expr Method-Name (Listof Tagged-Expr))
    ;;               | (make-tagged-super Type[Class] Method-Name
    ;;                                    (Listof Tagged-Expr))
    ;;               | (make-cast Type[Class] Tagged-Expr)
-   ;;               | (make-aj-let ID Tagged-Expr Tagged-Expr)
+   ;;               | (make-cj-let ID Tagged-Expr Tagged-Expr)
    ;;               | (make-num-lit Integer)
    ;;               | (make-bool-lit Boolean)
    ;;               | (make-unary-prim Unary-Prim Tagged-Expr)
@@ -134,98 +149,103 @@
    ;;        | (make-any-type)
    )
 
+  ;; src-expr? :: x -> Boolean
+  ;; recognizes source (i.e., unelaborated) expressions
   (define src-expr?
     (lambda (x)
       (and (expr? x)
+           (not (tagged-ref? x))
+           (not (tagged-set? x))
            (not (tagged-super? x)))))
 
+  ;; tagged-expr? :: x -> Boolean
+  ;; recognizes tagged (i.e., elaborated) expressions
   (define tagged-expr?
     (lambda (x)
       (and (expr? x)
+           (not (ref? x))
+           (not (set? x))
            (not (super? x)))))
 
+  ;; type->sexpr :: Type -> Sexp
+  ;; formats a type for easy manipulation
   (define (type->sexpr type)
     (cond
       [(ground-type? type) (ground-type-name type)]
       [(class-type? type) (class-type-name type)]
       [(any-type? type) '_!_]))
 
-  (define type=?
-    (lambda (t1 t2)
-      (cond
-        [(and (ground-type? t1) (ground-type? t2))
-         (eq? (ground-type-name t1) (ground-type-name t2))]
-        [(and (class-type? t1) (class-type? t2))
-         (eq? (class-type-name t1) (class-type-name t2))]
-        [(and (any-type? t1) (any-type? t2)) #t]
-        [else #f])))
-
-  (provide/contract (struct program ([classes hash-table?]
-                                     [main expr?]))
-                    (struct class ([name class-type?]
-                                   [superclass (union false?
-                                                      class?)]
-                                   [containers
-                                    (union (symbols 'any)
-                                           (listof class-type?))]
+  (provide/contract [struct program ([classes hash-table?]
+                                     [main expr?])]
+                    [struct class ([name class-type?]
+                                   [superclass (union false? class?)]
                                    [fields (listof field?)]
-                                   [contained-fields (listof field?)]
-                                   [acquired-fields (listof field?)]
-                                   [methods (listof method?)]))
+                                   [methods (listof method?)])]
 
-                    (struct field ([type type?]
-                                   [name field-name?]
-                                   [status (symbols 'normal
-                                                    'contained
-                                                    'acquired)]))
-                    (struct method ([type type?]
+                    [struct field ([type type?]
+                                   [name field-name?])]
+                    [struct method ([type type?]
                                     [name method-name?]
                                     [arg-names (listof arg-name?)]
                                     [arg-types (listof type?)]
-                                    [body expr?]))
+                                    [body expr?])]
 
-                    (type? predicate?)
-                    (struct ground-type ([name (symbols 'int 'bool)]))
-                    (struct class-type ([name class-name?]))
-                    (struct any-type ())
+                    [type? predicate?]
+                    [struct ground-type ([name (symbols 'int 'bool)])]
+                    [struct class-type ([name class-name?])]
+                    [struct any-type ()]
 
-                    (expr? predicate?)
-                    (struct new ([type class-type?]
-                                 [args (listof expr?)]))
-                    (struct var-ref ([var (union id? (symbols 'this))]))
-                    (struct nil ())
-                    (struct ivar ([object expr?]
-                                  [field field-name?]))
-                    (struct send ([object expr?]
+                    [expr? predicate?]
+                    [struct new ([type class-type?])]
+                    [struct var-ref ([var (union id? (symbols 'this))])]
+                    [struct nil ()]
+                    [struct ref ([object expr?]
+                                 [field field-name?])]
+                    [struct tagged-ref ([object expr?]
+                                        [type class-type?]
+                                        [field field-name?])]
+                    [struct set ([object expr?]
+                                 [field field-name?]
+                                 [rhs expr?])]
+                    [struct tagged-set ([object expr?]
+                                        [type class-type?]
+                                        [field field-name?]
+                                        [rhs expr?])]
+                    [struct call ([object expr?]
                                   [method method-name?]
-                                  [args (listof expr?)]))
-                    (struct super ([method method-name?]
-                                   [args (listof expr?)]))
-                    (struct tagged-super ([type class-type?]
+                                  [args (listof expr?)])]
+                    [struct super ([method method-name?]
+                                   [args (listof expr?)])]
+                    [struct tagged-super ([type class-type?]
                                           [method method-name?]
-                                          [args (listof expr?)]))
-                    (struct cast ([type class-type?]
-                                  [object expr?]))
-                    (struct aj-let ([lhs id?]
+                                          [args (listof expr?)])]
+                    [struct cast ([type class-type?]
+                                  [object expr?])]
+                    [struct cj-let ([lhs id?]
                                     [rhs expr?]
-                                    [body expr?]))
-                    (struct num-lit ([val integer?]))
-                    (struct bool-lit ([val boolean?]))
-                    (struct unary-prim ([rator unary-prim-name?]
-                                        [rand expr?]))
-                    (struct binary-prim ([rator binary-prim-name?]
+                                    [body expr?])]
+                    [struct num-lit ([val integer?])]
+                    [struct bool-lit ([val boolean?])]
+                    [struct unary-prim ([rator unary-prim-name?]
+                                        [rand expr?])]
+                    [struct binary-prim ([rator binary-prim-name?]
                                          [rand1 expr?]
-                                         [rand2 expr?]))
-                    (struct if-expr ([test expr?]
+                                         [rand2 expr?])]
+                    [struct if-expr ([test expr?]
                                      [then expr?]
-                                     [else expr?]))
+                                     [else expr?])]
 
-                    (class-name? predicate?)
-                    (defn-name? predicate?)
-                    (type-name? predicate?)
-                    (field-name? predicate?)
-                    (method-name? predicate?)
-                    (arg-name? predicate?)
-                    (binary-prim-name? predicate?)
-                    (unary-prim-name? predicate?)
-                    (id? predicate?)))
+                    [src-expr? predicate?]
+                    [tagged-expr? predicate?]
+
+                    [type->sexpr (-> type? sexp?)]
+
+                    [class-name? predicate?]
+                    [defn-name? predicate?]
+                    [type-name? predicate?]
+                    [field-name? predicate?]
+                    [method-name? predicate?]
+                    [arg-name? predicate?]
+                    [binary-prim-name? predicate?]
+                    [unary-prim-name? predicate?]
+                    [id? predicate?]))

@@ -44,7 +44,7 @@
 </pre>
 A button appears on the screen. Click on the button and it will disappear.
 <pre>
-> (show-window)
+> (show-window w)
 </pre>
 The frame reappears.
 

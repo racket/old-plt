@@ -17,6 +17,13 @@
                                       number? ; timeout-seconds
                                       . -> . 
                                       void?)]
+                    [poke-web-server/path (string? ; path
+                                           channel? ; result-channel
+                                           string? ; server-name
+                                           number? ; server-port
+                                           number? ; timeout-seconds
+                                           . -> .
+                                           void?)]
                     [result->message (poke-result? . -> . string?)])
   
   (define OK-REGEXP (regexp "^HTTP/[0-9]*.[0-9]* 200"))
@@ -45,12 +52,14 @@
       [`(ok) "no error"]))
   
   (define (poke-web-server result-channel server-name server-port timeout-seconds)
+    (poke-web-server/path "/" result-channel server-name server-port timeout-seconds))
+
+  (define (poke-web-server/path path result-channel server-name server-port timeout-seconds)
     (let* ([cust (make-custodian)]
            [blow-up-handler (lambda (exn)
                               (channel-put result-channel `(exn ,server-name ,server-port ,exn))
                               (custodian-shutdown-all cust))])
       (parameterize ([current-custodian cust])
-        ; more here - there is a race condition which could result in two emails
         (thread (lambda ()
                   (with-handlers ([void blow-up-handler])
                     (sleep timeout-seconds))
@@ -60,8 +69,8 @@
          (lambda ()
            (with-handlers ([void blow-up-handler])
              (let-values ([(in out) (tcp-connect server-name server-port)])
-               (fprintf out "HEAD / HTTP/1.0\r\n")
-               (fprintf out "Host: ~a\r\n\r\n" server-name)
+               (fprintf out "HEAD ~a HTTP/1.0\r\n" path)
+               (fprintf out "Host: ~a\r\n\r\n" server-name) ; what the jiminy cricket does this line do;?
                (let ([line (read-line in)])
                  (if (regexp-match OK-REGEXP line)
                      (channel-put result-channel '(ok))

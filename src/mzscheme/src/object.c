@@ -2141,19 +2141,33 @@ static Scheme_Object *read_Class_Data(Scheme_Object *obj)
   return (Scheme_Object *)data;
 }
 
+static int CompareSymbolNames(Scheme_Object **a, Scheme_Object **b)
+{
+  return strcmp(SCHEME_SYM_VAL(*a), SCHEME_SYM_VAL(*b));
+}
+
 static Scheme_Object *write_Interface_Data(Scheme_Object *obj)
 {
   Interface_Data *data;
   int i;
-  Scheme_Object *l = scheme_null;
+  Scheme_Object *l = scheme_null, **sortednames;
 
   data = (Interface_Data *)obj;
   
   for (i = 0; i < data->num_supers; i++)
     l = cons(data->super_exprs[i], l);
 
+  /* The names were alreadyed sort by pointer value. We re-sort by
+     string val so that the output is consistent across runs and
+     platforms. After reading back in, the names are resorted. */
+  sortednames = MALLOC_N(Scheme_Object *, data->num_names);
+  memcpy(sortednames, data->names, data->num_names * sizeof(Scheme_Object *));
+  qsort((char *)sortednames, data->num_names,
+	sizeof(Scheme_Object *), 
+	(int (*)(const void *, const void *))CompareSymbolNames); 
+
   for (i = 0; i < data->num_names; i++)
-    l = cons(data->names[i], l);
+    l = cons(sortednames[i], l);
   
   return cons(scheme_make_integer(data->num_names),
 	      cons(scheme_make_integer(data->num_supers),

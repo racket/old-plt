@@ -899,10 +899,7 @@
 		  *->
 		  (union o v))))
        (ivar-in-class?        (_ _ -> bool))
-       (uq-ivar               (forall (i) ((all-ivars i) _ -> i)))
-
-
-
+       (ivar/proc             (forall (i) ((all-ivars i) _ -> i)))
 
        ;; ------ units
        (unit/sig->unit         (forall (a) (a -> a)))

@@ -136,6 +136,11 @@
                         exports
                         (map cl-fn internals)
                         (map cl-fn exprs))]
+		      [($ zodiac:override-clause exports internals exprs)
+		       (zodiac:make-override-clause 
+                        exports
+                        (map cl-fn internals)
+                        (map cl-fn exprs))]
 		      [($ zodiac:private-clause internals exprs)
 		       (zodiac:make-private-clause 
                         (map cl-fn internals)
@@ -603,6 +608,7 @@
       (zerostruct invoke-unit-form unit variables)
       (zerostruct class*-form this super-names super-exprs init-vars inst-clauses)
       (zerostruct public-clause exports internals exprs)
+      (zerostruct override-clause exports internals exprs)
       (zerostruct private-clause internals exprs)
       (zerostruct inherit-clause internals imports)
       (zerostruct rename-clause internals imports)

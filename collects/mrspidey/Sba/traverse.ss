@@ -448,11 +448,10 @@
 
 	      ;; ### SPECIAL CODE FOR ivar
 	      [($ zodiac:app _ _ _ _
-		  (and ref ($ zodiac:varref _ _ _ _ (or '#%uq-ivar 'uq-ivar)))
+		  (and ref ($ zodiac:varref _ _ _ _ (or '#%ivar/proc 'ivar/proc)))
 		  ( obj-exp
 		    (and sym-exp
 			 ($ zodiac:quote-form _ _ _ _ ($ zodiac:symbol _ _ _ sym)))))
-	       ;;(printf "Special uq-ivar~n")
 	       (let*-vals 
                 ( [(ftype-obj env1) (traverse1 obj-exp env)]
                   [tvar-obj (FlowType->Tvar ftype-obj)]
@@ -892,12 +891,13 @@
 	 
 	 (pretty-debug-object `(init-arglist ,init-arglist))
 	 
+
 	 (let*-vals
 	  ( ;; --- Work from top down according to class.dvi
 	   ;; --- Traverse super-exprs
 	   [(super-ftype env-after-super) (traverse super-expr start-env)]
 	   [tvar-super (FlowType->Tvar (extract-1st-value super-ftype))]
-
+	   
 	   ;; extract portions of tvar-super
 	   [f (lambda (sign)
 		(lambda (ndx)
@@ -906,6 +906,7 @@
 			      (create-con template-internal-class 
 					  ndx tvar sign))
 		    tvar)))]
+
 	   [super-u ((f #t) 0)]
 	   [super-o ((f #t) 1)] 
 	   [super-i ((f #t) 2)]
@@ -1183,6 +1184,11 @@
 	   (map
 	    (match-lambda
 	     [($ zodiac:public-clause exports internals exprs)
+	      (map 
+	       (lambda (export internal expr)
+		 (fn #t #t #t (zodiac:read-object export) internal expr #f))
+	       exports internals exprs)]
+	     [($ zodiac:override-clause exports internals exprs)
 	      (map 
 	       (lambda (export internal expr)
 		 (fn #t #t #t (zodiac:read-object export) internal expr #f))

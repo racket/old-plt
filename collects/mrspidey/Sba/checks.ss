@@ -139,7 +139,7 @@
       (match M
 	;; ivars
 	[($ zodiac:app _ _ _ _
-	    ($ zodiac:varref _ open _ _ (and ivar-sym (or '#%uq-ivar 'uq-ivar)))
+	    ($ zodiac:varref _ open _ _ (and ivar-sym (or '#%ivar/proc 'ivar/proc)))
 	    (obj-exp ivar-arg))
 	 (=> fail)
 	 (pretty-debug-check `(ivar ,ivar-sym))

@@ -1,17 +1,11 @@
 (module check-gui mzscheme
-  (require (lib "unitsig.ss"))
+  (provide check-version)
 
-  (require "private/checksigs.ss")
   (require "private/gui-defs.ss")
-  (require "private/cmdline.ss")
-  (require "private/runcheck.ss")
+  (require "private/go-check.ss")
 
-  (invoke-unit/sig
-   (compound-unit/sig
-    (import)
-    (link
-     [DEFS : defs^ (gui-defs@)]
-     [PROGNAME : progname^ (gui-defs@)]
-     [ARGS : args^ (cmdline@ (PROGNAME))]
-     [RUNCHECK : empty^ (runcheck@ (DEFS) (ARGS))])
-    (export))))
+  (define (check-version)
+    (go-check 
+     #f ; parent frame
+     gui-defs@)))
+

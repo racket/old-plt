@@ -1,21 +1,21 @@
 (module checksigs mzscheme
   (require (lib "unitsig.ss"))	
 
-  (provide empty^ defs^ args^ progname^)
+  (provide empty^ check-frame^ defs^)
 
   (define-signature empty^
     ())
 
-  (define-signature args^
-    (collections))
-
-  (define-signature progname^
-    (progname))
-
+  (define-signature check-frame^
+    (check-frame))
+	
   (define-signature defs^
-    ((open progname^)
-     get-yes-no
+    (run-thunk
      show-ok 
-     show-error-ok)))
+     show-error-ok
+     make-wait-dialog
+     show-wait-dialog
+     hide-wait-dialog)))
+
 
 

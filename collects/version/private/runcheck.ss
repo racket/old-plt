@@ -15,9 +15,9 @@
   (define runcheck@
     (unit/sig empty^
 
-      (import defs^ args^)
+      (import check-frame^ defs^)
 
-      ; temp!!!!
+      ; temp!!!! until string-constant stuff works with MzScheme
       (define strings-port 
 	(open-input-file 
 	 (build-path (collection-path "string-constants")
@@ -79,7 +79,8 @@
 	  (if (> n timeout-value)
 	      (begin
 		(show-ok (string-constant 'network-timeout)
-			 (string-constant 'cannot-connect))
+			 (string-constant 'cannot-connect)
+			 #f)
 		(when the-port
                       ; will force exception on pending read
 		      (close-input-port the-port)))
@@ -97,24 +98,6 @@
 		    (info-proc iter-sym
 			       (lambda _ no-iter-sym))))))
 
-      (define args-vis
-	(map
-	 (lambda (c)
-	   (cons c 
-		 (get-collect-version-info c)))
-	 collections))
-
-      ; list of collections with no release-version 
-      ;  or version-iteration
-      (define (bad-collects)
-	(map car
-	     (filter 
-	      (lambda (c)
-		(ormap (lambda (x)
-			 (not (string? x)))
-		       (cdr c)))
-	      args-vis)))
-
       (define (comma-proc s a)
 	(lambda (s a)
 	  (if a
@@ -131,193 +114,175 @@
 		       b-c))))
 
       (define (cvi-triples)
-	(if (not (null? args-vis))
-
-	    ; user-specified
-	    args-vis
-
-	    ; find all collections
-	    (let ([collects-dirs (current-library-collection-paths)])
-	      (let outer-loop ([collects-dirs collects-dirs])
-		(if (null? collects-dirs)
-		    '()
-		    (let* ([curr-collects-dir (car collects-dirs)]
-			   [dirs (filter 
-				  (lambda (d)
-				    (directory-exists?
-				     (build-path 
-				      curr-collects-dir d)))
-				  (directory-list curr-collects-dir))])
-		      (let inner-loop ([dirs dirs])
-			(if (null? dirs)
-			    (outer-loop (cdr collects-dirs))
-			    (let* ([curr-dir (car dirs)]
-				   [dir-version-and-iteration
-				    (get-collect-version-info curr-dir)])
-			      (if (andmap string? dir-version-and-iteration) ; not a symbol indicating an error
-				  (cons (cons curr-dir dir-version-and-iteration)
-					(inner-loop (cdr dirs)))
-				  (inner-loop (cdr dirs))))))))))))
+	; find all collections
+	(let ([collects-dirs (current-library-collection-paths)])
+	  (let outer-loop ([collects-dirs collects-dirs])
+	    (if (null? collects-dirs)
+		'()
+		(let* ([curr-collects-dir (car collects-dirs)]
+		       [dirs (filter 
+			      (lambda (d)
+				(directory-exists?
+				 (build-path 
+				  curr-collects-dir d)))
+			      (directory-list curr-collects-dir))])
+		  (let inner-loop ([dirs dirs])
+		    (if (null? dirs)
+			(outer-loop (cdr collects-dirs))
+			(let* ([curr-dir (car dirs)]
+			       [dir-version-and-iteration
+				(get-collect-version-info curr-dir)])
+			  (if (andmap string? dir-version-and-iteration) ; not a symbol indicating an error
+			      (cons (cons curr-dir dir-version-and-iteration)
+				    (inner-loop (cdr dirs)))
+			      (inner-loop (cdr dirs)))))))))))
 
       (define (go)
 
-	(let ([b-c (bad-collects)])
-
-	  (if (not (null? b-c))
-
-	      (let ([bad-info 
-		     (extract-bad-collection-names b-c (list no-info-sym))]
-		    [no-version 
-		     (extract-bad-collection-names b-c (list no-release-sym no-iter-sym))])
-		(show-ok "Invalid package collections"
-			 (string-append 
-			  (if (null? bad-info)
-			      ""
-			      (string-append
-			       (string-constant 'collections-not-installed)
-			       nl
-			       (foldr
-				comma-proc
-				#f
-				bad-info)))
-			  (if (null? no-version)
-			      ""
-			      (string-append
-			       (if (null? bad-info) ; add newline
-				   ""
-				   nl)
-			       (string-constant 'collections-missing-version)
-			       nl
-			       (foldr
-				comma-proc
-				#f
-				no-version))))))
-
-	      ; no bad collections
-
-	      (when (or (not (null? args-vis))
-			(eq? 'yes
-			     (get-yes-no (string-constant 'update-check)
-					 check-question)))
-		    (set! the-port 
-			  (with-handlers 
-			   ((void 
-			     (lambda _ 
-			       (show-error-ok
-				(string-constant 'network-failure)
-				(string-constant 'cannot-connect))
-			       (raise 'network-error))))
-			   (get-pure-port (string->url 
-					   (make-url-string
-					    (cvi-triples))))))
-			  
-		    (let* ([timeout-thread (thread timer-proc)]
-			   [responses 
-			    (let loop ()
-			      (let ([r (read the-port)])
-				(if (eof-object? r)
-				    (begin 
-				      (kill-thread timeout-thread)
-				      '())
-				    (cons r (loop)))))]
-			   [curr-version (version)]
-			   [needs-update #f])
+	(set! the-port 
+	      (with-handlers 
+	       ((void 
+		 (lambda _ 
+		   (show-error-ok
+		    check-frame
+		    (string-constant 'network-failure)
+		    (string-constant 'cannot-connect))
+		   (raise 'network-error))))
+	       (get-pure-port (string->url 
+			       (make-url-string
+				(cvi-triples))))))
+	(let* ([timeout-thread (thread timer-proc)]
+	       [wait-dialog #f]
+	       [dialog-sem (make-semaphore 0)]
+	       [_
+		(run-thunk
+		 (lambda ()
+		   (set! wait-dialog
+			 (make-wait-dialog 
+			  #f
+			  (string-constant 'please-wait)
+			  (string-constant 'checking-version-server)
+			  (lambda ()
+			    (with-handlers 
+			     ([void void]) ; thread, port might already be dead
+			     (kill-thread timeout-thread)
+			     (close-input-port the-port)))))
+		   (show-wait-dialog wait-dialog)
+		   (semaphore-post dialog-sem)))]
+	       [_ (semaphore-wait dialog-sem)]
+	       [responses 
+		(let loop ()
+		  (let ([r (read the-port)])
+		    (if (eof-object? r)
+			(begin 
+			  (kill-thread timeout-thread)
+			  (hide-wait-dialog wait-dialog)
+			  '())
+			(cons r (loop)))))]
+	       [curr-version (version)]
+	       [needs-update #f])
+	  
+	  (close-input-port the-port)
 		  
-		      (close-input-port the-port)
-
-                ; responses are a list of lists of symbol/string pairs: 
-                ;  (((package name)	
-	        ;    (installed-version v)
-                ;    (installed-iteration v)
-	        ;    (latest-version v)
-	        ;    (latest-iteration v)
-                ;    (verdict s))
-                ;    ... )
-
-	        ; first handle binary info, which is always first in responses
-
-		      (let*-values
-		       ([(_ binary-version binary-iteration 
-			    latest-binary-version latest-binary-iteration 
-			    binary-verdict)
-			 (apply values (map cadr (car responses)))])
-		       
-		       (if (eq? binary-verdict 'update)
-			   
-                     ; inform user of new binary 
-
-			   (show-ok 
-			    dialog-title
-			    (string-append
-			     (string-constant 'old-binaries)
-			     nl nl
-			     (format 
-			      (string-constant 'binary-information-format)
-			      binary-version binary-iteration)
-			     nl nl
-			     (format 
-			      (string-constant 'latest-binary-information-format)
-			      latest-binary-version latest-binary-iteration)
-			     nl nl
-			     "Updates are available at "
-			     download-url-string))
-		
-                      ; else offer info for installed packages
-
-			   (let* ([all-strings
-				   (map 
-				    (lambda (r)
-				      (let*-values
-				       ([(data) (map cadr r)]
-					[(package installed-version installed-iteration 
-						  latest-version latest-iteration verdict)
-					 (apply values data)])
-				       (cond
-					[(eq? verdict 'up-to-date)
-					 (format up-to-format
-						 package installed-version installed-iteration)]
-					[(eq? verdict 'update)
-					 (begin
-					   (set! needs-update #t)
-					   (format 
-					    (string-constant 'update-format)
-					    package 
-					    installed-version installed-iteration 
-					    latest-version latest-iteration))]
-					[else ""])))
-				    (cdr responses))]
-				  [folded-string
-				   (foldr 
-				    (lambda (s a)
-				      (if a 
-					  (if (empty-string? s)
-					      a
-					      (string-append s nl a))
-					  s))
-				    #f
-				    all-strings)])
-			     
-			     (show-ok 
-			      dialog-title
-			      (string-append
-			       (format up-to-format
-				       (string-constant 'binary-name)
-				       binary-version binary-iteration)
-			       nl
-			       (if needs-update
-				   (string-append
-				    folded-string
-				    nl nl
-				    (string-constant 
-				     'updates-available)
-				    " "
-				    download-url-string)
-				   folded-string)))))))))))
+	  ; responses are a list of lists of symbol/string pairs: 
+	  ;  (((package name)	
+	  ;    (installed-version v)
+	  ;    (installed-iteration v)
+	  ;    (latest-version v)
+	  ;    (latest-iteration v)
+	  ;    (verdict s))
+	  ;    ... )
+	  
+	  ; first handle binary info, which is always first in responses
+		  
+	  (let*-values
+	   ([(_ binary-version binary-iteration 
+		latest-binary-version latest-binary-iteration 
+		binary-verdict)
+	     (apply values (map cadr (car responses)))])
+	   
+	   (if (eq? binary-verdict 'update)
+	       
+	       ; inform user of new binary 
+	       
+	       (show-ok 
+		dialog-title
+		(string-append
+			 (string-constant 'old-binaries)
+			 nl nl
+			 (format 
+			  (string-constant 'binary-information-format)
+			  binary-version binary-iteration)
+			 nl nl
+			 (format 
+			  (string-constant 'latest-binary-information-format)
+			  latest-binary-version latest-binary-iteration)
+			 nl nl
+			 "Updates are available at "
+			 download-url-string)
+		#f)
+	       
+	       ; else offer info for installed packages
+	       
+	       (let* ([all-strings
+		       (map 
+			(lambda (r)
+			  (let*-values
+			   ([(data) (map cadr r)]
+			    [(package installed-version installed-iteration 
+				      latest-version latest-iteration verdict)
+			     (apply values data)])
+			   (cond
+			    [(eq? verdict 'up-to-date)
+			     (format up-to-format
+				     package installed-version installed-iteration)]
+			    [(eq? verdict 'update)
+			     (begin
+			       (set! needs-update #t)
+			       (format 
+				(string-constant 'update-format)
+				package 
+				installed-version installed-iteration 
+				latest-version latest-iteration))]
+			    [else ""])))
+			(cdr responses))]
+		      [folded-string
+		       (foldr 
+			(lambda (s a)
+			  (if a 
+			      (if (empty-string? s)
+				  a
+				  (string-append " " s nl a))
+			      (string-append " " s)))
+			#f
+			all-strings)])
+		 
+		 (show-ok 
+		  dialog-title
+		  (string-append
+		   (if needs-update
+		       (string-constant 'need-update-string)
+		       (string-constant 'no-update-string))
+		   nl
+		   " "
+ 		   (format up-to-format
+			   (string-constant 'binary-name)
+			   binary-version binary-iteration))
+		   (if needs-update
+		       (string-append
+			folded-string
+			nl nl
+			(string-constant 
+			 'updates-available)
+			" "
+			download-url-string)
+		       folded-string)))))))
 
       ; exceptions are used to report errors elsewhere
       ; just ignore here
-
+      
       (with-handlers
        ((void void))
        (go)))))
+
 

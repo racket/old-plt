@@ -1,7 +1,5 @@
 (module text-defs mzscheme
   (require (lib "unitsig.ss"))
-  (require (lib "file.ss"))
-  (require (lib "launcher.ss" "launcher"))
 
   (require "checksigs.ss")
 
@@ -11,31 +9,26 @@
     (unit/sig defs^
       (import)
 
-      (define progname 
-	(let ([fullname
-		(file-name-from-path 
-		 (mzscheme-program-launcher-path "Check Version-nw"))])
-	  (if (eq? (system-type) 'windows)
-		   (substring fullname
-			      0
-			      (- (string-length fullname) 4))
-		   fullname)))
+      (define (run-thunk th)
+	(th))
 
-      (define (get-yes-no s1 s2)
-	(printf "~a [y/n]: " s2)
-	(let loop ()
-	  (let ([sym (read)])
-	    (cond
-	     [(member sym '(y Y yes YES))
-	      'yes]
-	     [(member sym '(n N no NO))
-	      'no]
-	     [else
-	      (printf "Please answer 'y' or 'n': ")
-	      (loop)]))))
-
-      (define (show-ok s1 s2)
-	(printf "~a~n" s2))
+      (define (show-ok title caption details)
+	(printf "~a~n" caption)
+	(when details
+	      (printf "Details:~n")
+	      (printf "~a~n" details)))
       
-      (define (show-error-ok s1 s2)
-	(show-ok s1 (format "Error: ~a" s2))))))
+      (define (show-error-ok parent title caption)
+	(show-ok title (format "Error: ~a" caption parent)))
+
+      (define (make-wait-dialog parent title caption close-fun)
+	(list title caption))
+
+      (define (show-wait-dialog dialog)
+        ; dialog is the pair returned by make-wait-dialog 
+	(printf "~a~n" (cadr dialog)))
+      
+      (define (hide-wait-dialog dialog)
+	(void)))))
+
+

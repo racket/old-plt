@@ -1022,4 +1022,9 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[], char *who,
 int scheme_string_has_null(Scheme_Object *o);
 #define STRING_W_NO_NULLS "string (with no null characters)"
 
+#ifdef MACINTOSH_EVENTS
+int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
+int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err);
+#endif
+
 #endif /* __mzscheme_private__ */

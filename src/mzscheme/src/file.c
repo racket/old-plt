@@ -2968,19 +2968,22 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 #endif
 
 #ifdef MACINTOSH_EVENTS
-int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
+static long check_four(char *name, Scheme_Object *o)
 {
-  char *s;
-  FSSpec spec;
+  if (!SCHEME_STRINGP(o) || (SCHEME_STRTAG_VAL(o) != 4))
+      scheme_wrong_type(name, "string of 4 characters", 0, 1, &o);
+   
+   return *(long *)SCHEME_STR_VAL(o);
+}
 
+static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec *spec)
+{
   if (find_path) {
     DTPBRec rec;
     Str255 nm;
     short vrefnum;
+    long creator = check_four(name, o);
 
-    if (!SCHEME_STRINGP(o) || (SCHEME_STRTAG_VAL(o) != 4))
-      scheme_wrong_type(name, "string of 4 characters", 0, 1, &o);
-    
     if (GetVol(nm, &vrefnum))
       return 0;
     rec.ioNamePtr = NULL;
@@ -2991,11 +2994,17 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 
     rec.ioIndex = 0;
     rec.ioNamePtr = nm;
-    rec.ioFileCreator = *(long *)SCHEME_STR_VAL(o);
+    rec.ioFileCreator = creator;
 
     if (PBDTGetAPPL(&rec, 0))
       return 0;
+      
+    memcpy(spec->name, nm, 32);
+    spec->vRefNum = vrefnum;
+    spec->parID = rec.ioAPPLParID;
   } else {
+    char *s;
+    
     if (!SCHEME_STRINGP(o))
       scheme_wrong_type(name, "string", 0, 1, &o);
 
@@ -3003,21 +3012,177 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 			       SCHEME_STRTAG_VAL(o),
 			       name,
 			       NULL);
+
+    if (!find_mac_file(s, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+      return 0;
   }
+  
+  return 1;
+}
+  
+int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
+{
+  FSSpec spec;
+  LaunchParamBlockRec rec;
 
-  if (find_mac_file(s, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
-    LaunchParamBlockRec rec;
+  if (!appl_name_to_spec(name, find_path, o, &spec))
+    return 0;
 
-    rec.launchBlockID = extendedBlock;
-    rec.launchEPBLength = extendedBlockLen;
-    rec.launchFileFlags = 0;
-    rec.launchControlFlags = launchContinue | launchNoFileFlags;
-    rec.launchAppSpec = &spec;
-    rec.launchAppParameters = NULL;
+  rec.launchBlockID = extendedBlock;
+  rec.launchEPBLength = extendedBlockLen;
+  rec.launchFileFlags = 0;
+  rec.launchControlFlags = launchContinue | launchNoFileFlags;
+  rec.launchAppSpec = &spec;
+  rec.launchAppParameters = NULL;
+
+  return !LaunchApplication(&rec);
+}
+
+#ifndef FALSE
+# define FALSE 0
+# define TRUE 1
+#endif
+
+int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, 
+	OSErr *err)
+{
+	AEEventClass classid;
+	AEEventID eventid;
+    AppleEvent ae, reply;
+    AEAddressDesc target;
+    AEDescList list;
+    DescType rtype;
+    int i;
+    long ret, sz, dst;
     
-    return !LaunchApplication(&rec);
-  }
+    dst = check_four(name, argv[0]);
+    *err = AECreateDesc(typeApplSignature, &dst, sizeof(long), &target);
+    if (*err)
+      return 0;
 
-  return 0;
+	classid = check_four(name, argv[1]);
+	eventid = check_four(name, argv[2]);
+    
+    *err = AECreateAppleEvent(classid, eventid, &target, kAutoGenerateReturnID, 0, &ae);
+	if (*err)
+	  return 0;
+	  
+	*err = AECreateList(NULL, 0, FALSE, &list);
+	if (*err)
+	  return 0;
+	
+	for (i = 3; i < argc; i++) {
+	  DescType type;
+	  Ptr data;
+	  Size size;
+	  Boolean x_b;
+	  long x_i;
+	  double x_d;
+	  
+	  switch (SCHEME_TYPE(argv[i])) {
+	    case scheme_true_type:
+	    case scheme_false_type:
+	      x_b = SCHEME_TRUEP(argv[i]) ? TRUE : FALSE;
+	      type = typeBoolean;
+	      data = (char *)&x_b;
+	      size = sizeof(Boolean);
+	      break;
+	    case scheme_integer_type:
+	      x_i = SCHEME_INT_VAL(argv[i]);
+	      type = typeLongInteger;
+	      data = (char *)&x_i;
+	      size = sizeof(long);
+	      break;
+	    case scheme_string_type:
+	      type = typeChar;
+	      data = SCHEME_STR_VAL(argv[i]);
+	      size = SCHEME_STRTAG_VAL(argv[i]);
+	      break;
+	    case scheme_float_type:
+	    case scheme_double_type:
+	      x_d = SCHEME_FLOAT_VAL(argv[i]);
+	      type = typeFloat;
+	      data = (char *)&x_d;
+	      size = sizeof(double);
+	      break;
+	    default:
+	      /* Don't know how to marshall */
+	      return 0;
+	  }
+	
+	  *err = AEPutPtr(&list, 0, type, data, size);
+	  if (*err)
+	    return 0;
+	}
+
+    *err = AEPutParamPtr(&ae, keyDirectObject, typeAEList, &list, sizeof(AEDescList));
+	if (*err)
+	  return 0;
+	  
+	*err = AESend(&ae, &reply, kAEWaitReply, kAENormalPriority, kNoTimeOut, NULL, NULL);
+	if (*err)
+	  return 0;
+	  
+	if (!AEGetParamPtr(&reply, keyErrorNumber, typeLongInteger, &rtype, &ret, sizeof(long), &sz)
+	    && ret)
+	  return 0;
+
+    if (AEGetParamPtr(&reply, keyDirectObject, typeWildCard, &rtype, NULL, 0, &sz)) {
+      *result = scheme_void;
+      return 1;
+    }
+    
+    {
+      Boolean x_b;
+	  long x_i;
+	  double x_d;
+	  char *x_s;
+	  Ptr data;
+	  
+      switch (rtype) {
+        case typeBoolean:
+          data = (char *)&x_b;
+          break;
+        case typeLongInteger:
+        case typeShortInteger:
+          rtype = typeLongInteger;
+          data = (char *)&x_i;
+          break;
+        case typeLongFloat:
+        case typeShortFloat:
+        case typeExtended:
+          rtype = typeFloat;
+          data = (char *)&x_d;
+          break;
+        case typeChar:
+          data = x_s = scheme_malloc_atomic(sz + 1);
+          x_s[0] = 0;
+          break;
+        default:
+          /* Don't know how to un-marshall */
+          return 0;
+      }
+      
+      *err = AEGetParamPtr(&reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
+      if (*err)
+        return 0;
+        
+      switch (rtype) {
+        case typeBoolean:
+          *result = (x_b ? scheme_true : scheme_false);
+          break;
+        case typeLongInteger:
+          *result = scheme_make_integer(x_i);
+          break;
+        case typeFloat:
+          *result = scheme_make_double(x_d);
+          break;
+        case typeChar:
+          *result = scheme_make_sized_string(x_s, sz, FALSE);
+          break;
+      }
+    }
+  
+    return 1;
 }
 #endif

@@ -288,6 +288,7 @@ static Scheme_Object *sch_execute(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_process_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_system_star(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_execute_star(int c, Scheme_Object *args[]);
+static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listen(int argc, Scheme_Object *argv[]);
@@ -748,6 +749,11 @@ scheme_init_port (Scheme_Env *env)
 			     scheme_make_prim_w_arity(sch_execute_star,
 						      "execute*", 
 						      1, MAX_PROCESS_STAR_ARGS), 
+			     env);
+  scheme_add_global_constant("send-event", 
+			     scheme_make_prim_w_arity(sch_send_event,
+						      "execute*", 
+						      3, -1), 
 			     env);
 
   scheme_add_global_constant("tcp-connect", 
@@ -4126,10 +4132,6 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #endif
 }
 
-#ifdef MACINTOSH_EVENTS
-extern int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
-#endif
-
 
 static Scheme_Object *sch_process_star(int c, Scheme_Object *args[])
 {
@@ -4184,6 +4186,21 @@ static Scheme_Object *sch_execute(int c, Scheme_Object *args[])
   return scheme_void;
 #else
   return process(c, args, "execute", 1, 1, 0);
+#endif
+}
+
+static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
+{
+#ifdef MACINTOSH_EVENTS
+  OSErr err;
+  Scheme_Object *result;
+  if (scheme_mac_send_event("send-event", c, args, &result, &err)) {
+    return result;
+  } else
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed: %d", (int)err);
+#else
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "send-event: not supported on this platform");
 #endif
 }
 

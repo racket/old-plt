@@ -264,6 +264,12 @@
 				    expr))]
 	       [else expr]))))
 
+      (define (one-name names-stx)
+	(let ([l (syntax->list names-stx)])
+	  (and (pair? l)
+	       (null? (cdr l))
+	       (car l))))
+
       (define (make-annotate top? name)
         (lambda (expr trans?)
 	  (test-coverage-point 
@@ -294,10 +300,7 @@
 	      top?
 	      (let ([marked (with-mark expr
 				       (annotate-named
-					(syntax-case (syntax names) ()
-					  [(id)
-					   (syntax id)]
-					  [_else #f])
+					(one-name #'names)
 					(syntax rhs)
 					trans?))])
 		(certify
@@ -314,10 +317,18 @@
 	      top?
 	      (let ([marked (with-mark expr
 				       (annotate-named
-					(let ([l (syntax->list (syntax (name ...)))])
-					  (and (pair? l)
-					       (null? (cdr l))
-					       (car l)))
+					(one-name #'(name ...))
+					(syntax rhs)
+					#t))])
+		(certify
+		 expr
+		 (rebuild expr (list (cons #'rhs marked)))))]
+
+	     [(define-values-for-syntax (name ...) rhs)
+	      top?
+	      (let ([marked (with-mark expr
+				       (annotate-named
+					(one-name (syntax (name ...)))
 					(syntax rhs)
 					#t))])
 		(certify

@@ -180,15 +180,15 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "Java" (list "DrJ" "Full Java") (list 1 10 4) "Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "Java" (list "DrJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
       (define advanced-lang% 
         (java-lang-mixin 'advanced "Advanced Java" 
-                         (list "DrJ" "Advanced") (list 1 10 3) "Java Advanced teaching language"))
+                         (list "DrJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
       (define intermediate-lang% 
         (java-lang-mixin 'intermediate "Intermediate Java" 
-                         (list "DrJ" "Intermediate") (list 1 10 2) "Java Intermediate teaching language"))
+                         (list "DrJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
       (define beginner-lang% (java-lang-mixin 'beginner "Beginner Java" (list "DrJ" "Beginner")
-                                              (list 1 10 1) "Java Beginner teaching language"))
+                                              (list 1000 10 1) "Java Beginner teaching language"))
       ))
       
   

@@ -667,7 +667,7 @@
     (make-valid-mods
      (lambda (level)
        (case level
-         ((beginner intermediate) '(private))
+         ((beginner intermediate) '(private final))
          ((advanced) '(public protected private static))
          ((full) `(public protected private static final transient volatile))))
      (lambda (x) invalid-field-mod)))  

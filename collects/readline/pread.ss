@@ -54,8 +54,7 @@
 		  (let* ([p (open-input-string s)]
 			 [rs (let loop ()
 			       (let ([r (read-syntax "repl" p)])
-				 (if (or (eof-object? r)
-					 (eof-object? (syntax-e r)))
+				 (if (eof-object? r)
 				     null
 				     (cons r (loop)))))])
 		    (if (null? rs)

@@ -215,7 +215,7 @@
 
   (define make-temporary-file
     (case-lambda
-     [(template)
+     [(template copy-from)
       (with-handlers ([not-break-exn?
 		       (lambda (x)
 			 (raise-type-error 'make-temporary-file
@@ -235,7 +235,8 @@
 						       (raise x)))])
 	      (close-output-port (open-output-file name))
 	      name))))]
-     [() (make-temporary-file "mztmp~a")]))
+     [(template) (make-temporary-file template #f)]
+     [() (make-temporary-file "mztmp~a" #f)]))
   
   (define find-library
     (case-lambda 

@@ -1,3 +1,6 @@
+(require-library "coreflats.ss")
+(require-library "sigs.ss" "zodiac")
+
 (define-signature spidey2^
   (get-prims ; -> (listof (list zodiac:location zodiac:location
              ;                  (union 'green 'red)))
@@ -9,4 +12,3 @@
    children ; : set-var -> (listof set-var)
    has-member? ; : type (union 'number 'null 'pair 'procedure ...) -> boolean
    ))
-(require-library "coreflats.ss")

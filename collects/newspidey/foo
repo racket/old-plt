@@ -1,1 +1,7 @@
-((lambda (x . y) (car (cdr y))) 1 2 3)
+((lambda (x y . z) 
+   
+   (car (cdr x)))
+
+ 1
+ 
+ 2    3    4)

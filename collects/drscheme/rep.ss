@@ -1766,6 +1766,8 @@
           (lambda ()
             (when (thread? thread-killed)
               (kill-thread thread-killed))
+	    (let ([fr (send (get-canvas) get-top-level-window)])
+	      (send (ivar fr definitions-text) clear-annotations))
             (shutdown-user-custodian)
             (cleanup-transparent-io)
             (clear-previous-expr-positions)

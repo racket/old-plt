@@ -1,8 +1,4 @@
-(require-library "coreflats.ss")
-(require-library "spidey2s.ss" "newspidey")
-(require-library "sigs.ss" "zodiac")
-
-(define (analyze thnk)
+(lambda (thnk)
   (compound-unit/sig
     (import [zodiac : zodiac:system^])
     (link
@@ -11,7 +7,6 @@
                       (import mzlib:core-flat^
                               (zodiac : zodiac:system^))
                       (include "type-reconstruct.ss")
-                      (include "parse-zodiac.ss")
-                      )
+                      (include "parse-zodiac.ss"))
                     cf zodiac)])
     (export (open p))))

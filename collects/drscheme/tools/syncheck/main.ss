@@ -6,7 +6,8 @@
 	  [print-convert : mzlib:print-convert^]
 	  [drscheme : drscheme:export^]
 	  [zodiac : zodiac:system^]
-          [prims : drscheme:syncheck:prims^])
+          [prims : drscheme:syncheck:prims^]
+	  [drscheme:arrow : drscheme:draw-arrow^])
   
   (define add/mult-set
     (lambda (m v)
@@ -257,13 +258,7 @@
   
   (define make-graphics-text%
     (lambda (super%)
-      (let* ([pi (* 2 (asin 1))]
-	     [arrow-head-angle (/ pi 8)]
-	     [cos-angle (cos arrow-head-angle)]
-	     [sin-angle (sin arrow-head-angle)]
-	     [arrow-head-size 10]
-	     [arrow-root-radius 3.5]
-	     [cursor-arrow (make-object mred:cursor% 'arrow)])
+      (let* ([cursor-arrow (make-object mred:cursor% 'arrow)])
 	(class-asi super%
 	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position
 		   position-location
@@ -365,59 +360,28 @@
 	      (when (and arrow-vector
 			 cursor-location
 			 (not before))
-		(let ([draw-arrow
+		(let ([draw-arrow2
 		       (lambda (arrow)
-			 (let* ([start-x (arrow-start-x arrow)]
-				[start-y (arrow-start-y arrow)]
-				[end-x   (arrow-end-x arrow)]
-				[end-y   (arrow-end-y arrow)]
-				[delta   0]
-				[ofs-x   (- start-x end-x)]
-				[ofs-y   (- start-y end-y)]
-				[len     (sqrt (+ (* ofs-x ofs-x) (* ofs-y ofs-y)))]
-				[ofs-x   (/ ofs-x len)]
-				[ofs-y   (/ ofs-y len)]
-				[head-x  (* ofs-x arrow-head-size)]
-				[head-y  (* ofs-y arrow-head-size)]
-				[end-x   (+ end-x (* ofs-x delta))]
-				[end-y   (+ end-y (* ofs-y delta))]
-				[pt1     (make-object mred:point% end-x end-y)]
-				[pt2     (make-object 
-					     mred:point%
-					   (+ end-x (* cos-angle head-x) 
-					      (* sin-angle head-y))
-					   (+ end-y (- (* sin-angle head-x))
-					      (* cos-angle head-y)))]
-				[pt3     (make-object 
-					     mred:point%
-					   (+ end-x (* cos-angle head-x)
-					      (- (* sin-angle head-y)))
-					   (+ end-y (* sin-angle head-x)
-					      (* cos-angle head-y)))]
-				[pts (list pt1 pt2 pt3)])
-			   (send dc draw-line
-				 (+ start-x dx) (+ start-y dy)
-				 (+ end-x dx) (+ end-y dy))
-			   (send dc draw-polygon pts dx dy)
-			   (send dc draw-ellipse 
-				 (- (+ start-x dx) arrow-root-radius)
-				 (- (+ start-y dy) arrow-root-radius)
-				 (* 2 arrow-root-radius)
-				 (* 2 arrow-root-radius))))])
-		  (let ([old-brush (send dc get-brush)]
-			[old-pen   (send dc get-pen)])
-		    (send dc set-pen the-pen)
-		    (send dc set-brush tacked-brush)
-		    (hash-table-for-each tacked-hash-table
-					 (lambda (arrow v) 
-					   (when v 
-					     (draw-arrow arrow))))
-		    (send dc set-brush untacked-brush)
-                    (let ([ele (vector-ref arrow-vector cursor-location)])
-                      (when (pair? ele)
-                        (for-each draw-arrow ele)))
-		    (send dc set-brush old-brush)
-		    (send dc set-pen old-pen)))))]
+			 (let ([start-x (arrow-start-x arrow)]
+			       [start-y (arrow-start-y arrow)]
+			       [end-x   (arrow-end-x arrow)]
+			       [end-y   (arrow-end-y arrow)])
+			   (drscheme:arrow:draw-arrow dc start-x start-y end-x end-y dx dy)))]
+		      [old-brush (send dc get-brush)]
+		      [old-pen   (send dc get-pen)])
+		  (send dc set-pen the-pen)
+		  (send dc set-brush tacked-brush)
+		  (hash-table-for-each tacked-hash-table
+				       (lambda (arrow v) 
+					 (when v 
+					   (draw-arrow2 arrow))))
+		  (send dc set-brush untacked-brush)
+		  (let ([ele (vector-ref arrow-vector cursor-location)])
+		    (when (pair? ele)
+		      (for-each draw-arrow2 ele)))
+		  (send dc set-brush old-brush)
+		  (send dc set-pen old-pen))))]
+
 	   [on-local-event
 	    (let ([get-pos
 		   (lambda (event)
@@ -504,12 +468,17 @@
                                        menu)])])
                              (if menu
                                  (send (get-canvas) popup-menu menu
-                                       (inexact->exact (floor (send event get-x)))
-                                       (inexact->exact (floor (send event get-y))))
+                                       (+ 1 (inexact->exact (floor (send event get-x))))
+                                       (+ 1 (inexact->exact (floor (send event get-y)))))
                                  (super-on-local-event event)))]))]
                      [else (super-on-local-event event)])
 		    (super-on-local-event event))))])))))
   
+  (define (make-clear-text super%)
+    (class super% args
+      (sequence
+	(apply super-init args))))
+	
   
   (define syncheck-bitmap
     (drscheme:unit:make-bitmap
@@ -957,6 +926,7 @@
                                             (zodiac:struct-form-fields zodiac-ast))]
                                  
                                  [else (void)])))])
+		   (send definitions-text clear-annotations)
                    (let ([mod-flag (void)]) ; buffer modified before check-syntax run
                      (dynamic-wind
                       (lambda ()
@@ -1134,18 +1104,18 @@
                 (cons check-syntax-button
                       (mzlib:function:remove check-syntax-button l)))))))
   
-  (define (make-syncheck-interactions-text% super%)
+  (define (make-syncheck-definitions-text% super%)
     (class-asi super%
-      (rename [super-reset-console reset-console])
+      (rename [super-clear-annotations clear-annotations])
       (inherit get-top-level-window)
       (override
-        [reset-console
-         (lambda ()
-           (when (get-top-level-window)
-             (send (get-top-level-window) syncheck:clear-highlighting))
-           (super-reset-console))])))
+       [clear-annotations
+	(lambda ()
+	  (super-clear-annotations)
+	  (when (get-top-level-window)
+	    (send (get-top-level-window) syncheck:clear-highlighting)))])))
   
   
   (drscheme:get/extend:extend-definitions-text make-graphics-text%)
   (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f)
-  (drscheme:get/extend:extend-interactions-text make-syncheck-interactions-text%))
+  (drscheme:get/extend:extend-definitions-text make-syncheck-definitions-text%))

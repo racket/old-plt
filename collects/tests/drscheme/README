@@ -44,6 +44,10 @@ the function, all tests will be run.
    but reuses the same drscheme window to 
    avoid the gc bug.
    
+|#   drscheme-jr.ss #|
+
+   Runs the language-level specific drscheme-jr tests.
+
 ----------------------------------
 --------  MANUAL TESTS  ----------
 ----------------------------------

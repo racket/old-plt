@@ -7,6 +7,7 @@
 	  [zodiac : zodiac:system^])
   (link
    [prims : drscheme:syncheck:prims^ ((require-relative-library "prims.ss"))]
+   [arrow : drscheme:draw-arrow^ ((require-library "arrow.ss" "drscheme") mred)]
    [main : () ((require-relative-library "main.ss") 
-               mred mzlib fw print-convert drscheme zodiac prims)])
+               mred mzlib fw print-convert drscheme zodiac prims arrow)])
   (export))

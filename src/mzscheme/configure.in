@@ -99,15 +99,10 @@ if test "$CC" = '' ; then
   AC_PROG_CPP
   AC_PROG_CXX
 fi
+AS=as
 AC_PROG_RANLIB
 AR=ar
 ARFLAGS=ruv
-
-if test "$CC" = "gcc" ; then 
-  AS="gcc -c -x assembler-with-cpp"
-else
-  AS=as
-fi
 
 # If using gcc, we want all warnings:
 if test "$CC" = "gcc" ; then 

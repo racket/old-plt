@@ -169,7 +169,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   handle = NULL;
 
   if (comppath)
-    init_f = scheme_lookup_in_table(fullpath_loaded_extensions, filename);
+    init_f = (Scheme_Object *(*)(Scheme_Env *))scheme_lookup_in_table(fullpath_loaded_extensions, filename);
   else
     init_f = NULL;
 
@@ -318,7 +318,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #else
 
     if (comppath)
-      scheme_add_to_table(fullpath_loaded_extensions, filename, init_f, 0);
+      scheme_add_to_table(fullpath_loaded_extensions, filename, (void *)init_f, 0);
   }
 #endif
 

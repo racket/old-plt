@@ -6351,6 +6351,8 @@ static int wait_multiple_sema(int count, sem_id *a, float timeout)
 
   sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
+  FREE_SEMAPHORE(siggo);
+
   /* Might be interrupted by a signal: */
   acquire_sem(go);
 
@@ -6376,6 +6378,8 @@ static int wait_multiple_sema(int count, sem_id *a, float timeout)
     resume_thread(tot);
     while (acquire_sem(go) != B_NO_ERROR) {}
   }
+
+  FREE_SEMAPHORE(go);
 
   return got;
 }
@@ -6477,8 +6481,6 @@ static void default_sleep(float v, void *fds)
 	OS_THREAD_TYPE th;
 	Tcp_Select_Info *info;
 	tcp_t fake;
-
-	printf("complex\n");
 
 	info = MALLOC_ONE(Tcp_Select_Info);
 

@@ -262,8 +262,12 @@ int scheme_solaris_semaphore_try_down(void *);
 # undef UNIX_DYNAMIC_LOAD
 # undef UNIX_FIND_STACK_BOUNDS
 # undef USE_GETRUSAGE
+# undef SYSTEM_TYPE_NAME
+
+# define SYSTEM_TYPE_NAME "beos"
 
 # define BEOS_IMAGE_DYNAMIC_LOAD
+# define LINK_EXTENSIONS_BY_TABLE
 
 # undef HAS_STANDARD_IOB
 # undef FILES_HAVE_FDS

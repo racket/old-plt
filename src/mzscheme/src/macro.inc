@@ -967,7 +967,7 @@
   EVAL_ONE_STR(
 "(#%define path-list-string->path-list"
 "(#%let((r(#%regexp(#%let((sep(#%case(#%system-type) "
-" ((unix) \":\")"
+" ((unix beos) \":\")"
 " ((windows macos) \";\"))))"
 " (#%format \"([^~a]*)~a(.*)\" sep sep))))"
 "(cons-path(#%lambda(default s l) "

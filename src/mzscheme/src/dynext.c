@@ -90,7 +90,9 @@ Scheme_Extension_Table *scheme_extension_table;
 #ifndef UNIX_DYNAMIC_LOAD
 #ifndef WINDOWS_DYNAMIC_LOAD
 #ifndef CODEFRAGMENT_DYNAMIC_LOAD
+#ifndef BEOS_IMAGE_DYNAMIC_LOAD
 #define NO_DYNAMIC_LOAD
+#endif
 #endif
 #endif
 #endif
@@ -320,6 +322,51 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,
 		       scheme_make_string(filename),
 		       "load-extension: could not load extension: \"%s\"",
+		       filename);
+#endif
+#if defined(BEOS_IMAGE_DYNAMIC_LOAD)
+    image_id image;
+    status_t status;
+    char *(*f)(SSI_ARG_TYPES), *vers;
+  
+    image = load_add_on(filename);
+    if (image <= 0)
+      scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,
+		       scheme_make_string(filename),
+		       "load-extension: could not load \"%s\" (%ld)",
+		       filename, image);
+    
+    handle = (void *)image;
+    
+    status = get_image_symbol(image, "scheme_initialize_internal",
+			      B_SYMBOL_TYPE_TEXT, (void **)&f);
+    
+    if (status != B_NO_ERROR)
+      scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_OPEN,
+		       scheme_make_string(filename),
+		       "load-extension: \"%s\" is not an extension (%ld)",
+		       filename, status);
+    
+    vers = (f)(SSI_ARGS);
+    if (!vers || strcmp(vers, VERSION))
+      scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_VERSION,
+		       scheme_make_string(filename),
+		       "load-extension: bad version %s from \"%s\"",
+		       vers, filename);
+
+    status = get_image_symbol(image, "scheme_initialize",
+			      B_SYMBOL_TYPE_TEXT, (void **)&init_f);
+    if (status == B_NO_ERROR) {
+      status = get_image_symbol(image, "scheme_reload",
+				B_SYMBOL_TYPE_TEXT, (void **)&reload_f);
+    } else
+      init_f = NULL;
+    
+    if (status != B_NO_ERROR)
+      scheme_raise_exn(MZEXN_MISC_DYNAMIC_EXTENSION_INITIALIZE,
+		       scheme_make_string(filename),
+		       "load-extension: no %s in \"%s\"", 
+		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename);
 #endif
 #ifdef NO_DYNAMIC_LOAD

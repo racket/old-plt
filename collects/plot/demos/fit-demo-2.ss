@@ -1,3 +1,5 @@
+;; This is data from the Cavendish experiment
+
 (define raw-data
   '((0.0	-14.7	3.6)
     (1.0	8.6	3.6)

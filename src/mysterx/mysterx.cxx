@@ -80,7 +80,7 @@ static MX_PRIM mxPrims[] = {
   // COM types
 
   { mx_com_get_object_type,"com-object-type",1,1 },
-  { mx_com_has_type,"com-has-type?",2,2 },
+  { mx_com_is_a,"com-is-a?",2,2 },
   
   // COM events
   
@@ -659,15 +659,15 @@ BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
   return retval;
 }
 
-Scheme_Object *mx_com_has_type(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_com_is_a(int argc,Scheme_Object **argv) {
   ITypeInfo *pITypeInfo1,*pITypeInfo2;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-has-type?","com-object",0,argc,argv);
+    scheme_wrong_type("com-is-a?","com-object",0,argc,argv);
   }
 
   if (MX_COM_TYPEP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-has-type?","com-type",1,argc,argv);
+    scheme_wrong_type("com-is-a?","com-type",1,argc,argv);
   }
 
   pITypeInfo1 = typeInfoFromComObject((MX_COM_Object *)argv[0]);

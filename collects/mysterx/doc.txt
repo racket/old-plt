@@ -161,7 +161,7 @@ component presentation and event-handling.
 
   Returns a <com-type> value for `a-com-object', a <com-object>.
 
-> (com-has-type? a-com-object a-com-type)
+> (com-is-a? a-com-object a-com-type)
 
   Return #t if `a-com-object', a <com-object>, is of the
   type `a-com-type', a <com-type>.

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.127 1997/09/09 18:05:36 shriram Exp $
+; $Id: scm-main.ss,v 1.128 1997/09/16 16:37:20 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1424,7 +1424,7 @@
 	      (in-pattern-2 '(_ ((param value) rest ...) body ...))
 	      (out-pattern-2 '(let* ((pz (#%in-parameterization
 					   (#%current-parameterization)
-					   param #t))
+					   param))
 				      (orig (pz)))
 				(dynamic-wind
 				  (lambda () (pz value))

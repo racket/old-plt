@@ -559,7 +559,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 # endif
 #endif
 
-#ifdef USE_FD_PORTS
+#if defined(USE_FD_PORTS) || defined(DETECT_WIN32_CONSOLE_STDIN)
    fflush(stdout);
 #endif
   }

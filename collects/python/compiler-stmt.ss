@@ -484,7 +484,12 @@
         (when exp3 (send exp3 set-bindings! enclosing-scope)))
       
       (super-instantiate ())))
-    
+  
+  (define (bindings->los b)
+    (cond
+      [(list? b) (map bindings->los b)]
+      [else (send b get-symbol)]))
+  
   ;; 7
   (define suite%
     (class statement%
@@ -509,27 +514,44 @@
       
       
       ;;daniel
-      ; defs-and-exprs:  -> (listof (union sexp (list name value)))
+      ; defs-and-exprs:  -> (listof (union sexp (list (or 'field 'method) name value)))
       (define/public (defs-and-exprs)
-            (sub-stmt-map (lambda (s)
-                            (let* ([so (send s to-scheme)]
-                                   [so-l (syntax->list so)])
-                              (if so-l
-                                       ;;;; either when defining or mutating a class field
-                                  (if (free-identifier=? (first so-l)
-                                                              (datum->syntax-object runtime-context
-                                                                                    'define))
-                                      (list (second so-l) (third so-l))
-                                      (if (and (free-identifier=? (first so-l)
-                                                                  (datum->syntax-object runtime-context
-                                                                                        'begin))
-                                               (free-identifier=? (first (syntax->list (second so-l)))
-                                                                  (datum->syntax-object runtime-context
-                                                                                        'let)))
-                                          (list (second (syntax->list (third (syntax->list (second so-l)))))
-                                                (second (syntax->list (first (syntax->list (second (syntax->list (second so-l))))))))
-                                          so))
-                                  so)))))
+        ;(printf "DEFS-AND-EXPRS BINDINGS: ~a~n" (bindings->los (send scope get-bindings)))
+        (sub-stmt-map (lambda (s)
+                        (let* ([so (send s to-scheme)]
+                               [so-l (syntax->list so)])
+                          (cond
+                            [(is-a? s assignment%) 
+                             (if (free-identifier=? (first so-l)
+                                                    (datum->syntax-object runtime-context
+                                                                          'define))
+                                 (list 'field (second so-l) (third so-l))
+                                 (list 'field
+                                       (second (syntax->list (third (syntax->list (second so-l)))))
+                                       (second (syntax->list (first (syntax->list (second (syntax->list (second so-l)))))))))]
+                            [(is-a? s function-definition%) (list 'method (second so-l) (third so-l))]
+                            [else so])))))
+;                              (if so-l
+;                                       ;;;; either when defining or mutating a class field
+;                                  (if (free-identifier=? (first so-l)
+;                                                              (datum->syntax-object runtime-context
+;                                                                                    'define))
+;                                      
+;                                          (list (if (is-a? s assignment%)
+;                                                    'field
+;                                                    'method)
+;                                                (second so-l)
+;                                                (third so-l))
+;                                      (if (and (free-identifier=? (first so-l)
+;                                                                  (datum->syntax-object runtime-context
+;                                                                                        'begin))
+;                                               (free-identifier=? (first (syntax->list (second so-l)))
+;                                                                  (datum->syntax-object runtime-context
+;                                                                                        'let)))
+;                                          (list (second (syntax->list (third (syntax->list (second so-l)))))
+;                                                (second (syntax->list (first (syntax->list (second (syntax->list (second so-l))))))))
+;                                          so))
+;                                  so)))))
       
       ;;daniel
       (inherit ->orig-so)
@@ -1002,14 +1024,14 @@
                                                                      inherit-list)))
                         ,(let* ([exprs null]
                                 [keys null]
-                                [values null]
                                 [defs
                                  (map (lambda (def)
                                         (begin0
                                           `(lambda (this-class)
-                                             (list #cs',(first def)
-                                                   ,(if (null? keys)
-                                                        (second def)
+                                             (list #cs',(second def)
+                                                   ,(if (or (null? keys)
+                                                            (eq? 'method (first def)))
+                                                        (third def)
                                                         `(let-values ([,keys
                                                                        (values ,@(map (lambda (key)
                                                                                         `(,(py-so 'python-get-member)
@@ -1017,9 +1039,9 @@
                                                                                           #cs',key
                                                                                           #f))
                                                                                       keys))])
-                                                           ,(second def)))))
-                                          (set! keys (cons (first def) keys))
-                                          (set! values (cons (second def) values))))
+                                                           ,(third def)))))
+                                          (unless (member (second def) keys)
+                                            (set! keys (cons (second def) keys)))))
                                       (filter (lambda (def-or-expr)
                                                 (or (list? def-or-expr)
                                                     (begin (set! exprs (cons def-or-expr exprs))

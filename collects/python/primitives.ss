@@ -812,9 +812,24 @@
   
   (python-add-members py-tuple%
                       `((__init__ ,(py-lambda '__init__ (this v)
-                                              (python-set-member! this
-                                                                  scheme-list-key
-                                                                  v)))
+                                              (cond
+                                                [(list? v)
+                                                 (printf "PT LIST~n")
+                                                 (python-set-member! this
+                                                                     scheme-list-key
+                                                                     v)]
+                                                [(number? v)
+                                                 (printf "PT NUM: ~a~n" v)
+                                                 (python-set-member! this
+                                                                     scheme-list-key
+                                                                     (build-list v identity))]
+                                                [(py-is-a? v py-tuple%)
+                                                 (printf "PT TUP~n")
+                                                 (python-set-member! this
+                                                                     scheme-list-key
+                                                                     (py-tuple%->list v))]
+                                                [else (error "Invalid argument to tuple constructor")])
+                                              (printf "new tuple is ~a~n" (py-tuple%->list this))))
                         (__getitem__ ,(py-lambda '__getitem__ (this key)
                                                  (simple-get-item this key list->py-tuple% py-tuple%->list)))
                         (__setitem__ ,(py-lambda '__setitem__ (this key value)
@@ -836,6 +851,7 @@
                                                                           
 
   (define (simple-set-item this key value sequence-to-list)
+    ;(printf "SIMPLE-SET-ITEM~n")
     (cond
       [(py-is-a? key py-number%)
        (set-car! (list-tail (sequence-to-list this)
@@ -852,7 +868,8 @@
              [value-len (py-number%->number
                          (python-method-call value '__len__))])
          (error "I refuse to assign to slices right now, try again later"))]
-      [else (error "Invalid key for __setitem__")]))
+      [else (error "Invalid key for __setitem__")])
+    (printf "SIMPLE-SET-ITEM finished, sequence is now: ~a~n" (py-object%->string this)))
   
   (define (simple-get-item this key list-to-sequence sequence-to-list)
     (cond
@@ -995,5 +1012,15 @@
                                                     (map ->scheme
                                                          (list #,@args)))))))]))
                                                          
+  
+  (define (python-add-extension-method method-name)
+    (printf "python-add-extension-method: adding ~a~n" method-name)
+    (namespace-set-variable-value! (string->symbol method-name)
+                                   (lambda arg-list
+                                     (printf "now applying ~a with ~a~n" method-name arg-list)
+                                     (apply (eval 'scheme-python-dispatch-method)
+                                            (cons method-name
+                                                  arg-list))))
+    (printf "python-add-extension-method: added ~a~n" method-name))
   
   )

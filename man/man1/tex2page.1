@@ -1,9 +1,43 @@
-.TH tex2page 1 "2005-02-28" \"last modified
+.\" Set 0. to a one-line description of the subject
+.\"
+.ds 0. makes Web pages from LaTeX and plain-TeX documents  
+.ds 1. Last modified: 2005-03-03
+.\"---------------------------------------------------------------
+.TH tex2page 1
+.rm }H
+.rm }F
+.if \n(.g \{.
+.rm an-header
+.rm an-footer
+.rm an-p-footer
+.\}
+.if t \{.
+.de }H
+.sp 1i
+..
+.de }F
+.sp .3i
+.tl ''%''
+.bp
+..
+.wh 0i }H
+.wh -1i }F
+.\}
+.de EM
+.sp
+.ec
+\*(1.
+..
+.em EM
 .SH NAME
-tex2page - makes Web pages from LaTeX and plain-TeX documents  
+tex2page \- \*(0. 
 .SH ""
+.eo
+.c2 .
 .in 0
 .nf
+.\"---------------------------------------------------------------
+
 SYNOPSIS
 
     tex2page --help
@@ -75,7 +109,7 @@ ENVIRONMENT
   TEXINPUTS
 
     tex2page uses the same search path as TeX to search for
-    \\input and \\openin files.  The default search path is
+    \input and \openin files.  The default search path is
     implementation-dependent but can be changed by setting the
     environment variable TEXINPUTS to a list of colon-separated
     directories.  (If you wish to merely prepend your list to the
@@ -131,7 +165,7 @@ FILES
     first of these three files that exists overrides the rest.
 
     The name in the .hdir file can be, or contain, the TeX
-    control-sequence \\jobname, which expands to <jobname>, the
+    control-sequence \jobname, which expands to <jobname>, the
     basename of the input document.
 
   <jobname>.t2p 
@@ -155,11 +189,11 @@ FILES
 
     Plain-TeX documents can use
 
-      \\input tex2page
+      \input tex2page
 
     while LaTeX documents can use
 
-      \\usepackage{tex2page}
+      \usepackage{tex2page}
 
 SYSTEM REQUIREMENTS
 
@@ -190,4 +224,4 @@ COPYRIGHT
   the copy.  This work is provided as is, with no warranty of any
   kind.
 
-.\" vi:tw=65
+.nx

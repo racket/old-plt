@@ -375,13 +375,13 @@ carry over the computation of the original
               (if digits
                   (let-values ([(w h a d) (send dc get-text-extent digits)])
                     (send dc draw-text digits x (if barred-portion (+ y 2) y))
-                    (+ x w))
-                  x))
-            (let* ([unbarred-end (draw-digits unbarred-portion x)]
-                   [barred-end (draw-digits barred-portion unbarred-end)]
-                   [clickable-end (draw-digits clickable-portion barred-end)])
+                    (values (+ x w) a))
+                  (values x 0)))
+            (let*-values ([(unbarred-end _) (draw-digits unbarred-portion x)]
+			  [(barred-end a) (draw-digits barred-portion unbarred-end)]
+			  [(clickable-end __) (draw-digits clickable-portion barred-end)])
               (when barred-portion
-                (send dc draw-line unbarred-end y (- barred-end 1) y))))
+                (send dc draw-line unbarred-end (+ y a) (- barred-end 1) (+ y a)))))
           
           (define/override (adjust-cursor dc x y editorx editory evt)
             (let ([sx (- (send evt get-x) x)]

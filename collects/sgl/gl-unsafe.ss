@@ -4,6 +4,8 @@
 
   (define p '(lib "gl-prims-unsafe.ss" "sgl"))
   
+  (r p gl-mem-blk->gl-uint-vector)
+  
   (r p glEdgeFlagPointer)
   (r p glTexCoordPointer)
   (r p glColorPointer)

@@ -107,11 +107,9 @@ static Scheme_Object* scheme_make_gl_<type-name>_vector(int argc, Scheme_Object 
     scheme_wrong_type("make-gl-<type-name>-vector", "non-negative integer", 0, argc, argv);
   
   v = make_gl_<type-name>_vector(i);
-  if (argc == 2)
-  {
+  if (argc == 2) {
     <type> n = <sreal-to-type>(argv[1]);
-    for (j = 0; j < i; ++j)
-    {
+    for (j = 0; j < i; ++j) {
       v->els[j] = n;
     }
   }
@@ -124,8 +122,7 @@ static Scheme_Object* scheme_gl_<type-name>_vector(int argc, Scheme_Object **arg
   <type> val;
   gl_<type-name>_vector* v = make_gl_<type-name>_vector(argc);
   
-  for (i = 0; i < argc; ++i)
-  {
+  for (i = 0; i < argc; ++i) {
     val = <sreal-to-type>(argv[i]);
     v->els[i] = val;
   }

@@ -3457,12 +3457,12 @@ static Scheme_Type quadric_type;
 static scm_Quadric *arg_quad(const char *name, Scheme_Object *arg,
 		    int which, int argc, Scheme_Object **argv)
 {
-  if (arg->type == quadric_type) {
+  if (SCHEME_TYPE(arg) == quadric_type) {
     return (scm_Quadric *)arg;
   }
-  else
+  else {
     scheme_wrong_type(name, "glu-quadric", which, argc, argv);
-  
+  }
   return 0;
 }
 
@@ -3731,17 +3731,17 @@ Scheme_Object *scm_gluUnProject(void *p, int c, Scheme_Object **v)
  gl_double_vector* res = make_gl_double_vector(3);
  answer = gluUnProject(arg_GLdouble(0),
                        arg_GLdouble(1),
-					   arg_GLdouble(2),
-					   arg_GLdoublev(3, 16),
-					   arg_GLdoublev(4, 16),
-					   arg_GLintv(5, 4),
-					   &(res->els[0]), &(res->els[1]), &(res->els[2]));
- if (answer == GL_TRUE)
- {
+		       arg_GLdouble(2),
+		       arg_GLdoublev(3, 16),
+		       arg_GLdoublev(4, 16),
+		       arg_GLintv(5, 4),
+		       &res->els[0], &res->els[1], &res->els[2]);
+ if (answer == GL_TRUE) {
    return (Scheme_Object*)res;
  }
- else
+ else {
    return scheme_false;
+ }
 }
 
 #ifdef GLU_VERSION_1_3
@@ -3751,20 +3751,20 @@ Scheme_Object* scm_gluUnProject4(void *p, int c, Scheme_Object **v)
  gl_double_vector* res = make_gl_double_vector(4);
  answer = gluUnProject4(arg_GLdouble(0),
                         arg_GLdouble(1),
-					    arg_GLdouble(2),
-						arg_GLdouble(3),
-					    arg_GLdoublev(4, 16),
-					    arg_GLdoublev(5, 16),
-				 	    arg_GLintv(6, 4),
-				 	    arg_GLclampd(7),
-				 	    arg_GLclampd(8),
-				 	    &res->els[0], &res->els[1], &res->els[2], &res->els[3]);
- if (answer == GL_TRUE)
- {
+			arg_GLdouble(2),
+			arg_GLdouble(3),
+			arg_GLdoublev(4, 16),
+			arg_GLdoublev(5, 16),
+			arg_GLintv(6, 4),
+			arg_GLclampd(7),
+			arg_GLclampd(8),
+			&res->els[0], &res->els[1], &res->els[2], &res->els[3]);
+ if (answer == GL_TRUE) {
    return (Scheme_Object*)res;
  }
- else
+ else {
    return scheme_false;
+ }
 }
 #endif
 
@@ -4983,14 +4983,14 @@ static const struct scm_prim scm_prim[] = {
 	{ "gluDisk", scm_gluDisk, 5, 5},
 	{ "gluSphere", scm_gluSphere, 4, 4},
 	{ "gluPartialDisk", scm_gluPartialDisk, 7, 7},
-    { "gluUnProject", scm_gluUnProject, 6, 6},
+	{ "gluUnProject", scm_gluUnProject, 6, 6},
 	
 #ifdef GLU_VERSION_1_3
 	{ "gluBuild3DMipmaps", scm_gluBuild3DMipmaps, 8, 8},
 	{ "gluBuild3DMipmapLevels", scm_gluBuild3DMipmapLevels, 11, 11},
 	{ "gluBuild2DMipmapLevels", scm_gluBuild2DMipmapLevels, 10, 10},
 	{ "gluBuild1DMipmapLevels", scm_gluBuild1DMipmapLevels, 9, 9},
-    { "gluUnProject4", scm_gluUnProject, 9, 9}
+	{ "gluUnProject4", scm_gluUnProject, 9, 9}
 #endif
  
 };

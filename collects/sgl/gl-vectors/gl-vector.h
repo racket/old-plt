@@ -3,8 +3,7 @@
 
 typedef struct 
 {
-  Scheme_Type type;
-  short keyex; /* 1 in low bit indicates immutable */
+  Scheme_Object so;
   int length;
   <type> els[1];
 } gl_<type-name>_vector;
@@ -15,9 +14,8 @@ static gl_<type-name>_vector* make_gl_<type-name>_vector(int length)
 
   vec = (gl_<type-name>_vector*)scheme_malloc_atomic(sizeof(<type>) * length +
 						     sizeof(gl_<type-name>_vector) - sizeof(<type>));
-  vec->type = gl_<type-name>_vector_type;
+  vec->so.type = gl_<type-name>_vector_type;
   vec->length = length;
-  vec->keyex = 0;
   return vec;
 }
 

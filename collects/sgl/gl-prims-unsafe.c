@@ -19,6 +19,69 @@
 
 #include "gl-prims.h"
 
+typedef struct {
+  Scheme_Object so;
+  int bytes;  
+  void *memory;
+} gl_memory_block;
+
+static Scheme_Type gl_memory_block_type;
+
+static void free_mem_blk(void *p, void *data) {
+  gl_memory_block *q = (gl_memory_block *)p;
+  if (q->memory != NULL) {
+    free(q->memory);
+  }
+}
+
+static gl_memory_block* make_gl_mem_blk(int bytes)
+{
+  gl_memory_block* mem;
+
+  mem = (gl_memory_block*)scheme_malloc_atomic(sizeof(gl_memory_block));
+  mem->so.type = gl_memory_block_type;
+  mem->bytes = bytes;
+  if (bytes > 0) {
+    mem->memory = malloc(bytes);
+  }
+  else {
+    mem->memory = NULL;
+  }
+  scheme_register_finalizer(mem, free_mem_blk, NULL, NULL, NULL);
+  return mem;
+}
+
+static gl_memory_block *arg_mem_blk(const char *name, Scheme_Object *arg,
+		               int which, int argc, Scheme_Object **argv)
+{
+  if (SCHEME_TYPE(arg) == gl_memory_block_type) {
+    return (gl_memory_block*)arg;
+  }
+  else {
+    scheme_wrong_type(name, "gl-memory-block", which, argc, argv);
+  }
+  return 0;
+}
+
+static Scheme_Object *scm_gl_mem_blk_to_gl_uint_vec(void *p, int c,
+                                                    Scheme_Object **v)
+{
+  gl_memory_block *b;
+  GLuint *in_v, *out_v;
+  gl_uint_vector *res;
+  int length, i;
+
+  b = arg_mem_blk((char*)p, v[0], 0, c, v);
+  length = b->bytes / sizeof (GLuint);
+  in_v = (GLuint*)b->memory;
+  res = make_gl_uint_vector(length);
+  out_v = res->els;
+  for (i = 0; i < length; ++i) {
+    out_v[i] = in_v[i];
+  }
+  return (Scheme_Object*)res;
+}
+
 /* Almost none of this file allocates, so the 3m Xform can skip it. */
 #ifdef MZ_XFORM
 START_XFORM_SKIP;
@@ -44,6 +107,7 @@ static GLvoid *arg_unsafev_data(const char *name, Scheme_Object *arg,
   else
     scheme_wrong_type(name, "gl-vector", which, argc, argv);
 }
+
 
 /*---------------------------------------------------------------------------*/
 /* 2.8. Vertex Arrays							     */
@@ -249,16 +313,22 @@ static Scheme_Object *scm_CompressedTexSubImage1D(void *p,
 /*---------------------------------------------------------------------------*/
 /* 5.2. Selection                                                            */
 
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
+
 static Scheme_Object *scm_SelectBuffer(void *p, int c, Scheme_Object **v)
 {
-        GLsizei n = arg_GLsizei(0);
+  GLsizei n = arg_GLsizei(0);
+  gl_memory_block* mem = make_gl_mem_blk(sizeof(GLuint) * n);
 
-        glSelectBuffer(n, arg_GLuintv(1, n));
-        return scheme_void;
+  glSelectBuffer(n, (GLuint *)mem->memory);
+  return (Scheme_Object*)mem;
 }
 
-
-
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
 
 /*---------------------------------------------------------------------------*/
 /* 6.1. Querying GL State						     */
@@ -531,7 +601,7 @@ static const struct scm_prim scm_prim[] = {
 	{ "glDrawArrays",		scm_DrawArrays,			3, 3 },
 	{ "glDrawElements",		scm_DrawElements,		4, 4 },
 	{ "glInterleavedArrays",	scm_InterleavedArrays,		3, 3 },
-        { "glSelectBuffer",             scm_SelectBuffer,               2, 2 },
+        { "glSelectBuffer",             scm_SelectBuffer,               1, 1 },
 	{ "glGetBooleanv",		scm_GetBooleanv,		2, 2 },
 	{ "glGetDoublev",		scm_GetDoublev,			2, 2 },
 	{ "glGetFloatv",		scm_GetFloatv,			2, 2 },
@@ -569,8 +639,10 @@ static const struct scm_prim scm_prim[] = {
 	{ "glCompressedTexSubImage1D",	scm_CompressedTexSubImage1D,	7, 7 },
 	{ "glCompressedTexSubImage2D",	scm_CompressedTexSubImage2D,	9, 9 },
 	{ "glCompressedTexSubImage3D",	scm_CompressedTexSubImage3D,	11,11},
-	{ "glGetCompressedTexImage",	scm_GetCompressedTexImage,	3, 3 }
+	{ "glGetCompressedTexImage",	scm_GetCompressedTexImage,	3, 3 },
 #endif
+
+	{"gl-mem-blk->gl-uint-vector", scm_gl_mem_blk_to_gl_uint_vec, 1, 1}
 };
 
 #ifdef MZ_XFORM
@@ -595,6 +667,7 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
   scheme_set_types();
+  gl_memory_block_type = scheme_make_type("<gl-memory-block>");
   return scheme_reload(env);
 }
 

@@ -155,17 +155,23 @@ Notational Example:
 See gears.ss in the examples subdirectory of the sgl collection
 (${PLT-HOME}/collects/sgl/examples/gears.ss) for a working example.
 
-sgl provides the fullowing utility functions that have no OpenGL
+sgl provides the following utility functions that have no OpenGL
 counterpart:
 
 process-selection: gl-uint-vector int -> (listof selection-record)
 where a selection-record is defined by this exported struct: 
 (define-struct selection-record (min-z max-z stack)).
-process-selection converts the contents of the array passed to select-buffer
-in selection rendering mode into a Scheme friendly structure.
+process-selection parses the contents of a gl-vector from the format 
+used by glSelectBuffer.  The second argument should be the number
+of hits as returned by glRenderMode.
 
 
-Notes:
+
+Function indexes:
+
+
+Notes: (Functions marked below with * have notes here)
+
 In the C language GL API values are often returned by reference parameters.
 The gl and sgl modules instead directly return a value in the following 
 cases:
@@ -174,11 +180,17 @@ gluUnProject: GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16] GLint[4] ->
               #f or GLdouble[3]
 
 gluUnProject4: GLdouble GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16]
-               GLint[4] GLdouble GLdouble -> f or GLdouble[4]
+               GLint[4] GLdouble GLdouble -> #f or GLdouble[4]
 
 
-
-Function lists:
+glSelectBuffer accepts an integer and returns a gl-memory-block that
+  encapsulates a block of memory the specified number of GLuints in 
+  size.  The GL library writes to the block on later GL function calls.
+  The values in the block can be extracted with a call to
+  gl-mem-blk->gl-uint-vector.  If the block is garbage collected before GL 
+  is finished writing to it, the entire Scheme system can crash.
+  The process-selection function in sgl helps interpret the results of
+  glSelectBuffer in a Scheme-friendly format.
 
 -----------------------------  sgl: -------------------------------
 
@@ -282,7 +294,6 @@ render-mode
 rotate
 scale
 scissor
-select-buffer
 shade-model
 sphere
 stencil-mask
@@ -290,7 +301,7 @@ tex-coord
 tex-coord-v
 translate
 u-get-string
-un-project
+un-project *
 vertex
 vertex-v
 viewport
@@ -521,7 +532,6 @@ glRotatef
 glScaled
 glScalef
 glScissor
-glSelectBuffer
 glShadeModel
 glStencilFunc
 glStencilMask
@@ -622,6 +632,7 @@ gluCylinder
 gluDisk
 gluSphere
 gluPartialDisk
+gluUnProject *
 
 Version 1.2
 glBlendColor
@@ -699,7 +710,7 @@ glMultiTexCoord4sv
 glSampleCoverage
 gluBuild3DMipmaps
 gluBuild3DMipmapLevels
-gluUnProject4
+gluUnProject4 *
 
 ------------------------------  gl-unsafe:  --------------------------
 Version 1.1
@@ -713,6 +724,7 @@ glArrayElement
 glDrawArrays
 glDrawElements
 glInterleavedArrays
+glSelectBuffer *
 glGetBooleanv
 glGetDoublev
 glGetFloatv

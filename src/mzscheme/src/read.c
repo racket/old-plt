@@ -1427,6 +1427,15 @@ read_list(Scheme_Object *port,
 	  else
 	    SCHEME_CDR(last) = pair;
 	  last = pair;
+
+	  /* Make sure there's not a closing paren immediately after the dot: */
+	  ch = skip_whitespace_comments(port, stxsrc, indentation);
+	  if ((ch == closer) || (ch == EOF)) {
+	    scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
+			    "read: illegal use of \".\"");
+	    return NULL;
+	  }
+	  scheme_ungetc(ch, port);
 	} else {
 	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
 			  "read: illegal use of \".\"");

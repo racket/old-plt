@@ -11,9 +11,9 @@ next section.
  Single-file extension compilation
  ---------------------------------
 
->  ((compile-extension expr) scheme-file-list dest-dir)
+>  ((compile-extensions expr) scheme-file-list dest-dir)
 
-      `(compile-extension expr)' returns a compiler that is
+      `(compile-extensions expr)' returns a compiler that is
       initialized with the elaboration-time expression `expr', as
       described below.
 
@@ -112,7 +112,7 @@ next section.
       `(compile-zos expr)' returns a compiler that is initialized with
       the elaboration-time expression `expr'.
 
-      See `compile-extension' above for information about the effect
+      See `compile-extensions' above for information about the effect
       of `expr'.
 
       The returned compiler takes a list of Scheme files and compiles

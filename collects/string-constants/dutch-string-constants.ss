@@ -1,12 +1,14 @@
 (module dutch-string-constants "string-constant-lang.ss"
 
+;;; -- Where are Undo, Redo, Select all, and friends from the right-click popup menu?
+
  ;;; when translating this constant, substitute name of actual langauge for `English'
  (is-this-your-native-language "Is uw moedertaal Nederlands?")
 
  (are-you-sure-you-want-to-switch-languages
   "Wisselen van taal vergt een herstart van DrScheme.  Weet u zeker dat u dit wilt?")
 
- (interact-with-drscheme-in-language "Interact with DrScheme in Dutch")
+ (interact-with-drscheme-in-language "Werk in het Nederlands met DrScheme")
 
  ;; these two should probably be the same in all languages except English.
  ;; they are the button labels (under macos and windows, respectively)
@@ -134,7 +136,7 @@
   "De Hulpbron bevat complete informatie omtrent PLT programmatuur, waaronder DrScheme, MzScheme, en MrEd.\n\nVersie ~a\nAuteursrecht (c) 1995-2001 PLT")
  (help-on-help "Hulp voor hulp")
  (help-on-help-details "Voor hulp bij het gebruik van de Hulpbron, klik de link `Help Desk' op de startpagina van de Hulpbron. (Om op die startpagina te komen, klik op de Startknop bovenaan het hulpbronvenster.)")
- (plt:hd:find-docs-for "Zoektekst:") ; <**> - This whole part needs redoing.  The "search" button is at the wrong place for natural Dutch..
+ (find-docs-for "Zoektekst:") ; <**> - This whole part needs redoing.  The "search" button is at the wrong place for natural Dutch..
  (search "Zoek")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "een trefwoord")
@@ -143,7 +145,7 @@
  (exact-match "precies")
  (containing-match "die dit bevat")
  (regexp-match "regexp match")
- (plt:hd:feeling-lucky "Het eerste het beste") ; -- Where does this occur?
+ (feeling-lucky "Het eerste het beste") ; -- Where does this occur?
  (nothing-found-for-search-key "Niets gevonden voor \"~a\".")
  (searching "Searching...")
  (search-stopped "(Zoeken gestopt.)")
@@ -165,8 +167,8 @@
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")
- ; (proxy-direct-connection "Directe vebinding") ; more precise: "for HTTP downloads"
- ; (proxy-use-proxy "Gebruik proxy:") ; more precise: "for HTTP downloads"
+ (proxy-direct-connection "Directe vebinding")
+ (proxy-use-proxy "Gebruik proxy:")
  (proxy-host "Host")
  (proxy-port "Port")
  (proxy-bad-host "Verkeerde Proxy Host")
@@ -177,7 +179,7 @@
  (home "Start")
  (browser "Browser")
  (choose-browser "Kies een surfer") ; -- translated as Internet browser
- ;; (no-browser "Geen") ; English changed from "None" to "Ask later"
+ (no-browser "Geen")
  (cannot-display-url "Kan URL ~s niet tonen: ~a")
  (install? "Installeren?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "U hebt een installeerbaar pakket gekozen.")
@@ -424,8 +426,8 @@
  (paste-menu-item "&Plakken")
 
  (clear-info "Gooi de selectie weg")
- (clear-menu-item-others "Wis")
- (clear-menu-item-windows "&Wis")
+ (clear-menu-item-others "Wissen")
+ (clear-menu-item-windows "&Wissen")
 
  (select-all-info "Selecteer het gehele document")
  (select-all-menu-item "Selecteer a&lles")
@@ -451,7 +453,10 @@
  (insert-text-box-item "Tekst")
  (insert-pb-box-item "Pasteboard Box") ;<**>
  (insert-image-item "Plaatje...")
+ (insert-comment-box-menu-item-label "Commentaarblok")
  (wrap-text-item "Wrap Text") ; <**>
+ (wrap-text-item "Wrap Text")
+
 
  (windows-menu-label "&Vensters")
  (bring-frame-to-front "Kies venster")       ;;; title of dialog
@@ -459,9 +464,9 @@
  (next-window "Volgend venster")
  (previous-window "Vorig venster")
 
- (show-menu-label "&Toon")
- (show-overview "Toon overzicht") 
- (hide-overview "Toon overzicht niet")
+ (show-menu-label "&Tonen")
+ (show-overview "Overzicht") 
+ (hide-overview "Geen Overzicht")
 
  (help-menu-label "&Hulp")
  (about-info "Credits and details for this application") ; <**>
@@ -517,17 +522,17 @@
  (sort-by-name "Sorteer op naam")
  (sort-by-position "Sorteer op positie in bestand")
  (no-definitions-found "<< geen definities gevonden >>")
- (jump-to-defn "Spring naa definitie van ~a")
+ (jump-to-defn "Spring naar definitie van ~a")
 
  (recent-items-sort-by-age "Sorteer op leeftijd")
  (recent-items-sort-by-name "Sorteer op naam")
  
  ;;; show menu
- (hide-definitions-menu-item-label "Toon &Definities niet")
- (show-definitions-menu-item-label "Toon &Definities")
+ (hide-definitions-menu-item-label "Geen &Definities")
+ (show-definitions-menu-item-label "&Definities")
  (definitions-menu-item-help-string "Toon het definitievenster al dan niet")
- (show-interactions-menu-item-label "Toon &Interacties")
- (hide-interactions-menu-item-label "Toon &Interacties niet")
+ (show-interactions-menu-item-label "&Interacties")
+ (hide-interactions-menu-item-label "Geen &Interacties niet")
  (interactions-menu-item-help-string "Toon het interactievenster al dan niet")
  
  ;;; file menu
@@ -565,10 +570,10 @@
  (uncomment-menu-item-label "&Verwijder commentaartekens") ; -- Sorry, couldn't keep the &U..
  
  ;;; executables
- (create-executable-menu-item-label "Create Executable...")
- (create-executable-title "Create Executable")
+ (create-executable-menu-item-label "Maak Exe...")
+ (create-executable-title "Maak Exe")
  (must-save-before-executable "You must save your program before creating an executable.")
- (save-an-executable "Save an Executable")
+ (save-an-executable "Sla Exe op")
  (definitions-not-saved "The definitions window has not been saved. The executable will use the latest saved version of the definitions window. Continue?")
  (inline-saved-program-in-executable?
   "Inline the saved program in the executable? If yes, you can copy the executable to another ~a computer but the executable will be quite large. If not, you cannot copy the executable to another computer, but it will be much smaller. Additionally, if not, the executable will load the latest version of the program.")
@@ -584,7 +589,7 @@
  (create "Maak")
  (please-choose-an-executable-filename "Kies een bestandsnaam voor het programma.")
  
- (create-servlet "Create Servlet...")
+ (create-servlet "Maak Servlet...")
   
  ;;; buttons
  (execute-button-label "Doen!") 
@@ -592,11 +597,11 @@
  (break-button-label "Onderbreken")
  
  ;;; search help desk popup menu
- (search-help-desk-for "Search in Help Desk for \"~a\"")
- (exact-lucky-search-help-desk-for "Exact lucky search in Help Desk for \"~a\"")
+ (search-help-desk-for "Zoek hulp omtrent \"~a\"")
+ (exact-lucky-search-help-desk-for "Geef hulp omtremt \"~a\"")
 
  ;; collapse and expand popup menu items
- (collapse-sexp "Collapse Sexpressie samenvouwen")
+ (collapse-sexp "Sexpressie samenvouwen")
  (expand-sexp "Sexpressie ontvouwen")
  
  ;;; fraction dialog
@@ -709,8 +714,8 @@
  (profiling-col-name "Naam")
  (profiling-col-time-in-msec "Msec")
  (profiling-col-calls "Aanroepen")
- (profiling-show-profile "Toon klokgegevens")
- (profiling-hide-profile "Toon klokgegevens niet")
+ (profiling-show-profile "Klokgegevens")
+ (profiling-hide-profile "Geen Klokgegevens")
  (profiling-unknown-src "<< onbekend >>")
  (profiling-no-information-available "Er zijn geen klokgegevens.  Deze zijn enkel beschikbaar als klokken in uw taal aanstaat, en u uw programma al gedraaid hebt.")
 
@@ -779,7 +784,6 @@
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
 
  (happy-birthday-matthias "Lang zal Matthias leven!")
- (happy-birthday-matthew "Lang zal Matthew leven!")
 
  (mrflow-using-default-language-title "Verstektaal gebruikt")
  (mrflow-using-default-language "Er bestaat geen typetabel voor de primitieven van uw huidige taal.  Gelieve R5RS te gebruiken.")
@@ -792,6 +796,8 @@
  (mrflow-popup-menu-hide-type "Toon type niet")
  (mrflow-popup-menu-show-errors "Toon fouten")
  (mrflow-popup-menu-hide-errors "Toon fouten niet")
+ (mrflow-popup-menu-tack-all-arrows "Alle pijlen vast")
+ (mrflow-popup-menu-untack-all-arrows "Alle pijlen los")
  ;(mrflow-read-exception-title "Read Exception")
  ;(mrflow-read-exception "Read exception: ~a")
  ;(mrflow-syntax-exception-title "Syntax Exception")
@@ -801,12 +807,9 @@
  ;(mrflow-language-primitives-error-title "Fout in basisfuncties")
  ;(mrflow-language-primitives-error "Onjuiste bestandsnaam voor typentabel basisfuncties: ~a")
 
- (snips-and-arrows-popup-menu-tack-all-arrows "Alle pijlen vast")
- (snips-and-arrows-popup-menu-untack-all-arrows "Alle pijlen los")
-
  (xml-tool-menu "XML")
- (xml-tool-insert-xml-box "XML Box")
- (xml-tool-insert-scheme-box "Scheme Box")
+ (xml-tool-insert-xml-box "XMLblok")
+ (xml-tool-insert-scheme-box "Schemeblok")
  (xml-tool-insert-scheme-splice-box "Scheme Splice Box")
  (xml-tool-xml-box "XML Box")
  (xml-tool-scheme-box "Scheme Box")
@@ -825,4 +828,5 @@
  (stepper-program-has-changed "WAARSCHUWING: Programma is veranderd.")
  (stepper-program-window-closed "WAARSCHUWING: Programmavenster is weg.")
  )
+
 

@@ -25,9 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "wxwin - Win32 Release"
 
 OUTDIR=.\Release
@@ -74,6 +71,7 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_DIALG.obj"
 	-@erase "$(INTDIR)\WX_FRAME.obj"
 	-@erase "$(INTDIR)\WX_GAUGE.obj"
+	-@erase "$(INTDIR)\wx_gbox.obj"
 	-@erase "$(INTDIR)\WX_GDI.obj"
 	-@erase "$(INTDIR)\WX_ITEM.obj"
 	-@erase "$(INTDIR)\WX_LBOX.obj"
@@ -95,7 +93,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+CPP=cl.exe
 CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /Fp"$(INTDIR)\wxwin.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxwin.bsc" 
 BSC32_SBRS= \
@@ -135,6 +166,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\WX_DIALG.obj" \
 	"$(INTDIR)\WX_FRAME.obj" \
 	"$(INTDIR)\WX_GAUGE.obj" \
+	"$(INTDIR)\wx_gbox.obj" \
 	"$(INTDIR)\WX_GDI.obj" \
 	"$(INTDIR)\WX_ITEM.obj" \
 	"$(INTDIR)\WX_LBOX.obj" \
@@ -203,6 +235,7 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_DIALG.obj"
 	-@erase "$(INTDIR)\WX_FRAME.obj"
 	-@erase "$(INTDIR)\WX_GAUGE.obj"
+	-@erase "$(INTDIR)\wx_gbox.obj"
 	-@erase "$(INTDIR)\WX_GDI.obj"
 	-@erase "$(INTDIR)\WX_ITEM.obj"
 	-@erase "$(INTDIR)\WX_LBOX.obj"
@@ -224,7 +257,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "DEBUG" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /Fp"$(INTDIR)\wxwin.pch" /YX"wx.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxwin.bsc" 
 BSC32_SBRS= \
@@ -264,6 +330,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\WX_DIALG.obj" \
 	"$(INTDIR)\WX_FRAME.obj" \
 	"$(INTDIR)\WX_GAUGE.obj" \
+	"$(INTDIR)\wx_gbox.obj" \
 	"$(INTDIR)\WX_GDI.obj" \
 	"$(INTDIR)\WX_ITEM.obj" \
 	"$(INTDIR)\WX_LBOX.obj" \
@@ -287,36 +354,6 @@ LIB32_OBJS= \
 <<
 
 !ENDIF 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -518,6 +555,12 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_FRAME.cxx
 SOURCE=..\..\Wxwindow\Src\Msw\WX_GAUGE.cxx
 
 "$(INTDIR)\WX_GAUGE.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\wxwindow\src\msw\wx_gbox.cxx
+
+"$(INTDIR)\wx_gbox.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

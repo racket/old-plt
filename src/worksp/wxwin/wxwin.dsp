@@ -213,6 +213,10 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_GAUGE.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\wxwindow\src\msw\wx_gbox.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Wxwindow\Src\Msw\WX_GDI.cxx
 # End Source File
 # Begin Source File

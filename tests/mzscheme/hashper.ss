@@ -39,7 +39,7 @@
 (map (lambda (s)
        (error-test `(define ,s 3) bad#%?)
        (error-test `(set! ,s 3) bad#%?))
-  '(#%lambda #%let-values #%letrec*-values #%define-values #%quote
+  '(#%lambda #%let-values #%letrec-values #%define-values #%quote
      #%if #%begin #%set! #%begin0 #%case-lambda #%struct))
 
 ; And a few primitives, for good measure.

@@ -71,10 +71,8 @@
 (syntax-test '(compound-unit (import) (link (A (0 (A x)))) (export)))
 
 (unless (defined? 'test-global-var)
-	(define test-global-var 5)
-	(syntax-test '(unit (import) (export) test-global-var))
-	(constant-name 'test-global-var)
-	(syntax-test '(unit (import) (export) test-global-var)))
+  (define test-global-var 5)
+  (syntax-test '(unit (import) (export) test-global-var)))
 
 (test #t unit? (unit (import) (export)))
 (test #t unit? (unit (import) (export) 5))
@@ -393,7 +391,7 @@
 (test #t unit? u2)
 (test 3 'invoke (invoke-unit u2))
 
-(test (letrec* ([x y][y 0]) x) 'invoke 
+(test (letrec ([x y][y 0]) x) 'invoke 
       (invoke-unit (unit (import) (export) (define x y) (define y 7) x)))
 
 ; Can't shadow syntax/macros in unit

@@ -45,7 +45,7 @@
 
 (test-comp '(let* () (f 5))
 	   '(f 5))
-(test-comp '(letrec* () (f 5))
+(test-comp '(letrec () (f 5))
 	   '(f 5))
 (test-comp '(with-handlers () (f 5))
 	   '(f 5))

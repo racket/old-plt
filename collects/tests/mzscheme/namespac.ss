@@ -5,12 +5,7 @@
 (SECTION 'namespaces)
 
 (define flag-map
-  (list (list 'constants 
-	      'no-constants
-	      '(#%define car 5) 
-	      exn:misc:constant?
-	      #f)
-	(list 'keywords 
+  (list (list 'keywords 
 	      'no-keywords
 	      '(#%let ([#%lambda 7]) (void)) 
 	      exn:syntax?

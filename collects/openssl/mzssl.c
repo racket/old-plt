@@ -81,7 +81,7 @@ static Scheme_Type sslplt_type;
 
 #define LISTENER_WAS_CLOSED(x) (((listener_t *)(x))->s == INVALID_SOCKET)
 
-#ifndef MZPRECISE_GC
+#ifndef MZ_PRECISE_GC
 # define GC_CAN_IGNORE /* empty */
 #endif
 

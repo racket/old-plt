@@ -230,13 +230,15 @@ void *scheme_malloc_eternal(size_t n)
 #endif
 }
 
-#ifdef GC_MIGHT_USE_REGISTERED_STATICS
+#ifndef USE_SENORA_GC
+# ifdef GC_MIGHT_USE_REGISTERED_STATICS
 void scheme_maybe_register_static(void *p, int s)
 {
   if (GC_use_registered_statics) {
     scheme_register_extension_global(p, s);
   }
 }
+# endif
 #endif
 
 

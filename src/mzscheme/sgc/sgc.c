@@ -117,10 +117,9 @@
 /* Instead of calling malloc() to get low-level memory, use
    VirtualAlloc() directly. (Win32) */
 
-#define RELEASE_UNUSED_SECTORS 1
+#define RELEASE_UNUSED_SECTORS GET_MEM_VIA_MMAP
 /* Instead of managing a list of unused sectors, they are
-   given back to the OS. This only works with mmap()
-   and VirtualAlloc(). */
+   given back to the OS. This only works with mmap(). */
 
 #define DISTINGUISH_FREE_FROM_UNMARKED 0
 /* Don't let conservatism resurrect a previously-collected block */
@@ -867,11 +866,6 @@ static void *platform_plain_sector(int count)
   return VirtualAlloc(NULL, count << LOG_SECTOR_SEGMENT_SIZE,
 		      MEM_COMMIT | MEM_RESERVE,
 		      PAGE_READWRITE);
-}
-
-static void free_plain_sector(void *p, int count)
-{
-  VirtualFree(p, 0, MEM_RELEASE);
 }
 #endif
 

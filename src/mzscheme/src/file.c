@@ -1104,28 +1104,77 @@ int scheme_file_exists(char *filename)
 #endif
 
 #ifdef DOS_FILE_SYSTEM
-static int UNC_dir_exists(char *dirname, int len, int *flags)
+# define MZ_UNC_READ 0x1
+# define MZ_UNC_WRITE 0x2
+# define MZ_UNC_EXEC 0x4
+
+static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Object **date)
 {
-  char *copy;
-  FF_TYPE fd;
-  FF_HANDLE_TYPE fh;
-  
-  copy = scheme_malloc_atomic(len + 10);
-  memcpy(copy, dirname, len);
-  if (!IS_A_SEP(copy[len - 1])) {
-    copy[len] = '\\';
-    len++;
+  int strip_end, strip_char;
+  struct MSC_IZE(stat) buf;
+  int v;
+
+  if (isdir)
+    *isdir = 0;
+  if (date)
+    *date = scheme_false;
+
+  if ((len > 1) && IS_A_SEP(dirname[0]) && check_dos_slashslash_drive(dirname, len, NULL, 1)) {
+    /* stat doesn't work with UNC "drive" names */
+    char *copy;
+    FF_TYPE fd;
+    FF_HANDLE_TYPE fh;
+    
+    if (isdir)
+      *isdir = 1;
+
+    copy = scheme_malloc_atomic(len + 10);
+    memcpy(copy, dirname, len);
+    if (!IS_A_SEP(copy[len - 1])) {
+      copy[len] = '\\';
+      len++;
+    }
+    memcpy(copy + len, "*.*", 4);
+    fh = FIND_FIRST(copy, &fd);
+    if (FIND_FAILED(fh))
+      return 0;
+    else {
+      if (flags)
+	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & _A_RDONLY) ? 0 : MZ_UNC_WRITE);
+      if (date)
+	*date = scheme_make_integer_value_from_time(???);
+      FIND_CLOSE(fh);
+      return 1;
+    }
+  } else if ((len > 1) && (dirname[len - 1] == '\\' || dirname[len - 1] == '/')
+	     && (dirname[len - 2] != ':')) {
+    strip_end = len - 1;
+    strip_char = dirname[strip_end];
+    dirname[strip_end] = 0;
+    if (isdir)
+      *isdir = 1;
+  } else
+    strip_end = strip_char = 0;
+
+  v = !MSC_IZE(stat)(dirname, &buf);
+
+  if (v) {
+    if (isdir && S_ISDIR(buf.st_mode))
+      *isdir = 1;
+    if (date)
+      *date = scheme_make_integer_value_from_time(buf.st_mtime);
+    if (flags) {
+      if (buf.st_mode & MSC_IZE(S_IREAD))
+	*flags |= MZ_UNC_READ | MZ_UNC_EXEC;
+      if (buf.st_mode & MSC_IZE(S_IWRITE))
+	*flags |= MZ_UNC_WRITE;
+    }
   }
-  memcpy(copy + len, "*.*", 4);
-  fh = FIND_FIRST(copy, &fd);
-  if (FIND_FAILED(fh))
-    return 0;
-  else {
-    if (flags)
-      *flags = GET_FF_ATTRIBS(fd);
-    FIND_CLOSE(fh);
-    return 1;
-  }
+
+  if (strip_end)
+    dirname[strip_end] = strip_char;
+
+  return v;
 }
 #endif
 
@@ -1139,38 +1188,21 @@ int scheme_directory_exists(char *dirname)
 
   return 1;
 #else
-#ifdef NO_STAT_PROC
+# ifdef NO_STAT_PROC
   return 0;
-#else
+# else
   struct MSC_IZE(stat) buf;
   int v;
 
-#ifdef DOS_FILE_SYSTEM
-  int strip_end, strip_char, len;
+#  ifdef DOS_FILE_SYSTEM
+  int isdir;
 
-  len = strlen(dirname);
-
-  if ((len > 1) && IS_A_SEP(dirname[0]) && check_dos_slashslash_drive(dirname, len, NULL, 1)) {
-    /* stat doesn't work with UNC "drive" names */
-    return UNC_dir_exists(dirname, len, NULL);
-  } else if ((len > 1) && (dirname[len - 1] == '\\' || dirname[len - 1] == '/')
-	     && (dirname[len - 2] != ':')) {
-    strip_end = len - 1;
-    strip_char = dirname[strip_end];
-    dirname[strip_end] = 0;
-  } else
-    strip_end = strip_char = 0;
-#endif
-
-  v = !MSC_IZE(stat)(dirname, &buf) && S_ISDIR(buf.st_mode);
-  
-#ifdef DOS_FILE_SYSTEM
-  if (strip_end)
-    dirname[strip_end] = strip_char;
-#endif
-  
-  return v;
-#endif
+  return (UNC_stat(dirname, strlen(dirname), NULL, &isdir, NULL)
+	  && isdir);
+#  else
+  return !MSC_IZE(stat)(dirname, &buf) && S_ISDIR(buf.st_mode);
+#  endif
+# endif
 #endif
 }
 
@@ -1179,13 +1211,13 @@ int scheme_is_regular_file(char *filename)
 #ifdef USE_MAC_FILE_TOOLBOX
   return 1;
 #else
-#ifdef NO_STAT_PROC
+# ifdef NO_STAT_PROC
   return 0;
-#else
+# else
   struct MSC_IZE(stat) buf;
 
   return !MSC_IZE(stat)(filename, &buf) && S_ISREG(buf.st_mode);
-#endif  
+# endif  
 #endif
 }
 
@@ -2661,10 +2693,22 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 
   return scheme_make_integer_value_from_time(mtime);
 #else
+# ifdef DOS_FILE_SYSTEM
+  {
+    int len = strlen(filename);
+    Scheme_Object *secs;
+
+    if (UNC_stat(filename, len, NULL, NULL, &secs))
+      return secs;
+    else
+      return scheme_false;
+  }
+# else
   if (MSC_IZE(stat)(file, &buf))
     return scheme_false;
 
   return scheme_make_integer_value_from_time(buf.st_mtime);
+# endif
 #endif
 }
 
@@ -2748,10 +2792,10 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 
   return l;
 #else
-#ifdef NO_STAT_PROC
+# ifdef NO_STAT_PROC
   return scheme_null;
-#else
-#ifdef UNIX_FILE_SYSTEM
+# else
+#  ifdef UNIX_FILE_SYSTEM
   {
     struct stat buf;
     int read, write, execute;
@@ -2780,35 +2824,22 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
     if (execute)
       l = scheme_make_pair(execute_symbol, l);
   }
-#endif  
-#ifdef DOS_FILE_SYSTEM
+#  endif  
+#  ifdef DOS_FILE_SYSTEM
   {
     int len = strlen(filename);
-
-    if ((len > 1) && IS_A_SEP(filename[0]) && check_dos_slashslash_drive(filename, len, NULL, 1)) {
-      /* stat doesn't work with UNC "drive" names */
-      int flags;
-      if (UNC_dir_exists(filename, len, &flags)) {
-	l = scheme_make_pair(execute_symbol, scheme_make_pair(read_symbol, l));
-	if (!(flags & _A_RDONLY))
-	  l = scheme_make_pair(write_symbol, l);
-      } else
-	return scheme_null;
-    } else {
-      struct MSC_IZE(stat) buf;
-      
-      if (MSC_IZE(stat)(filename, &buf))
-	return scheme_null;
-      
-      if (buf.st_mode & MSC_IZE(S_IREAD))
-	l = scheme_make_pair(execute_symbol,
-			     scheme_make_pair(read_symbol, l));
-      if (buf.st_mode & MSC_IZE(S_IWRITE))
+    
+    if (UNC_stat(filename, len, &flags, NULL, NULL)) {
+      if (flags & UNC_READ)
+	l = scheme_make_pair(read_symbol, l);
+      if (flags & UNC_WRITE)
 	l = scheme_make_pair(write_symbol, l);
+      if (flags & UNC_EXEC)
+	l = scheme_make_pair(execute_symbol, l);
     }
   }
-#endif
-#endif
+#  endif
+# endif
 #endif
 
   return l;

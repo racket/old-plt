@@ -555,8 +555,6 @@
  (definitions-not-saved "The definitions window has not been saved. The executable will use the latest saved version of the definitions window. Continue?")
  (inline-saved-program-in-executable?
   "Inline the saved program in the executable? If yes, you can copy the executable to another ~a computer but the executable will be quite large. If not, you cannot copy the executable to another computer, but it will be much smaller. Additionally, if not, the executable will load the latest version of the program.")
- (inline-saved-program-in-executable/windows
-  "WARNING: under windows, you also need libmred.dll, libmzsch.dll, and libmzgc.dll to run standalone executables.")
  (use-mred-binary?
   "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
  (inline-saved-program-in-executable/windows
@@ -651,7 +649,7 @@
  (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
  
- (module-language-one-line-summary "Execute creates a REPL in the module and in the language of the module")
+ (module-language-one-line-summary "Execute creates a REPL in the context of the module, including the specified module language")
   
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

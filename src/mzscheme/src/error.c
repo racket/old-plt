@@ -802,6 +802,10 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
     }
   }
 
+  /* Watch out for impossible is_method claims: */
+  if (!argc || !minc)
+    is_method = 0;
+
   v = scheme_make_integer(argc - (is_method ? 1 : 0));
 
   s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len, is_method);
@@ -840,6 +844,7 @@ void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
 
 void scheme_case_lambda_wrong_count(const char *name, 
 				    int argc, Scheme_Object **argv,
+				    int is_method,
 				    int count, ...)
 {
   Scheme_Object *arity, *a;
@@ -847,6 +852,10 @@ void scheme_case_lambda_wrong_count(const char *name,
   long len;
   va_list args;
   int i;
+
+  /* Watch out for impossible is_method claims: */
+  if (!argc)
+    is_method = 0;
 
   arity = scheme_alloc_list(count);
 
@@ -858,12 +867,17 @@ void scheme_case_lambda_wrong_count(const char *name,
     mina = va_arg(args, int);
     maxa = va_arg(args, int);
     
+    if (is_method) {
+      mina -= 1;
+      maxa -= 1;
+    }
+
     av = scheme_make_arity(mina, maxa);
     SCHEME_CAR(a) = av;
   }
   va_end(args);
 
-  s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, 0);
+  s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, is_method);
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, scheme_make_integer(argc), 
 		   arity, "%t", s, len);

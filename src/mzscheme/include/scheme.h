@@ -429,22 +429,24 @@ typedef struct {
   short *cases;
 } Scheme_Closed_Case_Primitive_Proc;
 
-#define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax) \
+#define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax, flgs) \
   ((rec)->type = scheme_closed_prim_type, \
    (rec)->prim_val = cfunc, \
    (rec)->data = (void *)(dt), \
    (rec)->name = nm, \
    (rec)->mina = amin, \
    (rec)->maxa = amax, \
+   (rec)->flags = flgs, \
    rec)
-   
-#define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses) \
+ 
+#define _scheme_fill_prim_case_closure(rec, cfunc, dt, nm, ccount, cses, flgs) \
   ((rec)->p.type = scheme_closed_prim_type, \
    (rec)->p.prim_val = cfunc, \
    (rec)->p.data = (void *)(dt), \
    (rec)->p.name = nm, \
    (rec)->p.mina = -2, \
    (rec)->p.maxa = -(ccount), \
+   (rec)->p.flags = flgs, \
    (rec)->cases = cses, \
    rec)
 
@@ -1266,9 +1268,10 @@ extern Scheme_Extension_Table *scheme_extension_table;
 /*========================================================================*/
 
 /* For use with scheme_symbol_name_and_size: */
-#define SNF_FOR_TS 0x1
-#define SNF_PIPE_QUOTE 0x2
-#define SNF_NO_PIPE_QUOTE 0x4
+#define SCHEME_SNF_FOR_TS 0x1
+#define SCHEME_SNF_PIPE_QUOTE 0x2
+#define SCHEME_SNF_NO_PIPE_QUOTE 0x4
+#define SCHEME_SNF_NEED_CASE 0x8
 
 /* For use with scheme_make_struct_values et al.: */
 #define SCHEME_STRUCT_NO_TYPE 0x01

@@ -1884,8 +1884,8 @@ static void post_breakable(void *data)
   scheme_set_param(b->config, MZCONFIG_ENABLE_BREAK, b->orig_param_val);
 }
 
-static Scheme_Object *
-read_string_bang_break(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[])
 {
   Breakable *b;
 
@@ -1895,7 +1895,7 @@ read_string_bang_break(int argc, Scheme_Object *argv[])
 #endif
   b->argc = argc;
   b->argv = argv;
-  b->k = read_string_bang;
+  b->k = prim;
   b->config = scheme_current_thread->config;
 
   return scheme_dynamic_wind(pre_breakable, 
@@ -1905,23 +1905,15 @@ read_string_bang_break(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+read_string_bang_break(int argc, Scheme_Object *argv[])
+{
+  return scheme_call_enable_break(read_string_bang, argc, argv);
+}
+
+static Scheme_Object *
 write_string_avail_break(int argc, Scheme_Object *argv[])
 {
-  Breakable *b;
-
-  b = MALLOC_ONE_RT(Breakable);
-#ifdef MZTAG_REQUIRED
-  b->type = scheme_rt_breakable;
-#endif
-  b->argc = argc;
-  b->argv = argv;
-  b->k = scheme_write_string_avail;
-  b->config = scheme_current_thread->config;
-
-  return scheme_dynamic_wind(pre_breakable, 
-			     do_breakable, 
-			     post_breakable, 
-			     NULL, b);
+  return scheme_call_enable_break(scheme_write_string_avail, argc, argv);
 }
 
 static Scheme_Object *

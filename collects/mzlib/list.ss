@@ -224,10 +224,16 @@
 	     [else (loop (cdr l))]))))))
   
   (define assf
-    (make-find 'assf #f))
+    (let ([a (make-find 'assf #f)])
+      (polymorphic
+       (lambda (f l)
+	 (a f l)))))
   
   (define memf
-    (make-find 'memf #t))
+    (let ([a (make-find 'memf #t)])
+      (polymorphic
+       (lambda (f l)
+	 (a f l)))))
   
   (define filter
     (polymorphic

@@ -704,7 +704,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     data->flags |= CLOS_HAS_REST;
     data->num_params++;
   }
-  if (scheme_has_method_property(code))
+  if ((data->num_params > 0) && scheme_has_method_property(code))
     data->flags |= CLOS_IS_METHOD;
 
   forms = SCHEME_STX_CDR(code);

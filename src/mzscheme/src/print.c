@@ -41,7 +41,7 @@
 #define quick_print_graph quick_can_read_graph
 #define quick_print_box quick_can_read_box
 #define quick_print_vec_shorthand quick_square_brackets_are_parens
-/* Don't use can_read_pipe_quote! */
+/* Don't use can_read_pipe_quote or case_sens! */
 
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
 			  int notdisplay, long maxl, Scheme_Thread *p,
@@ -558,6 +558,7 @@ print_to_string(Scheme_Object *obj,
   p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
   p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
+  p->quick_case_sens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
   p->quick_inspector = scheme_get_param(config, MZCONFIG_INSPECTOR);
 
   if (p->quick_print_graph)
@@ -950,9 +951,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else if (notdisplay) {
 	const char *s;
 	
-	s = scheme_symbol_name_and_size(obj, &l, (p->quick_can_read_pipe_quote 
-						  ? SNF_PIPE_QUOTE
-						  : SNF_NO_PIPE_QUOTE));
+	s = scheme_symbol_name_and_size(obj, &l, ((p->quick_can_read_pipe_quote 
+						   ? SCHEME_SNF_PIPE_QUOTE
+						   : SCHEME_SNF_NO_PIPE_QUOTE)
+						  | (p->quick_case_sens
+						     ? 0
+						     : SCHEME_SNF_NEED_CASE)));
 	print_this_string(p, s, 0, l);
       } else {
 	print_this_string(p, (char *)obj, ((char *)(SCHEME_SYM_VAL(obj))) - ((char *)obj), 
@@ -1074,10 +1078,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	    
 	    s = scheme_symbol_name_and_size(name, &l, 
 					    (p->quick_print_struct
-					     ? SNF_FOR_TS
+					     ? SCHEME_SNF_FOR_TS
 					     : (p->quick_can_read_pipe_quote 
-						? SNF_PIPE_QUOTE
-						: SNF_NO_PIPE_QUOTE)));
+						? SCHEME_SNF_PIPE_QUOTE
+						: SCHEME_SNF_NO_PIPE_QUOTE)));
 	    print_this_string(p, s, 0, l);
 	  }
 	  PRINTADDRESS(p, obj);

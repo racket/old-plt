@@ -350,16 +350,16 @@ scheme_intern_symbol(const char *name)
 
 const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int flags)
 {
-  int has_space = 0, has_special = 0, has_pipe = 0, digit_start;
+  int has_space = 0, has_special = 0, has_pipe = 0, has_upper = 0, digit_start;
   int i, len = SCHEME_SYM_LEN(sym), dz;
   int total_length;
   int pipe_quote;
   char buf[100];
   char *s, *result;
   
-  if ((flags & SNF_PIPE_QUOTE) || (flags & SNF_FOR_TS))
+  if ((flags & SCHEME_SNF_PIPE_QUOTE) || (flags & SCHEME_SNF_FOR_TS))
     pipe_quote = 1;
-  else if (flags & SNF_NO_PIPE_QUOTE)
+  else if (flags & SCHEME_SNF_NO_PIPE_QUOTE)
     pipe_quote = 0;
   else {
     pipe_quote = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_PIPE_QUOTE));
@@ -378,7 +378,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 		       || (ch == '`') || (ch == ',')    \
                        || (ch == ';')                   \
                        || (((ch == '>') || (ch == '<')) \
-			   && (flags & SNF_FOR_TS)))
+			   && (flags & SCHEME_SNF_FOR_TS)))
 
   if (len) {
     digit_start = (isdigit((unsigned char)s[0]) || (s[0] == '.')
@@ -394,7 +394,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 
   for (i = 0; i < len; i++) {
     if (isspace((unsigned char)s[i]) || !isprint((unsigned char)s[i])) {
-      if ((flags & SNF_FOR_TS) && (s[i] == ' ')) {
+      if ((flags & SCHEME_SNF_FOR_TS) && (s[i] == ' ')) {
 	/* space is OK in type symbols */
       } else
 	has_space = 1;
@@ -402,15 +402,20 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
       has_special = 1;
     else if (s[i] == '|')
       has_pipe = 1;
+    else if (isupper((unsigned char)s[i]))
+      has_upper = 1;
   }
+
+  if (!(flags & SCHEME_SNF_NEED_CASE))
+    has_upper = 0;
 
   result = NULL;
   total_length = 0;
 
-  if (!has_space && !has_special && (!pipe_quote || !has_pipe)) {
+  if (!has_space && !has_special && (!pipe_quote || !has_pipe) && !has_upper) {
     dz = 0;
     if (digit_start
-	&& !(flags & SNF_FOR_TS)
+	&& !(flags & SCHEME_SNF_FOR_TS)
 	&& (SCHEME_TRUEP(scheme_read_number(s, len, 0, 0, 1, 10, 0, NULL, &dz, 1, NULL, 0, 0, 0, 0))
 	    || dz)) {
       /* Need quoting: */
@@ -447,7 +452,8 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 	if (isspace((unsigned char)s[i]) 
 	    || isSpecial(s[i]) 
 	    || ((s[i] == '|') && pipe_quote)
-	    || (!i && s[0] == '#'))
+	    || (!i && s[0] == '#')
+	    || (has_upper && (isupper((unsigned char)s[i]))))
 	  result[p++] = '\\';
 	result[p++] = s[i];
       }

@@ -1991,7 +1991,7 @@
 "(define(load/use-compiled f)(-core-load/use-compiled f #f))"
 " (define -re:dir (regexp \"(.+?)/+(.*)\"))"
 " (define -re:auto (regexp \"^,\"))"
-" (define -re:ok-relpath (regexp \"^[-a-zA-Z0-9_. ][-a-zA-Z0-9_./ ]*[-a-zA-Z0-9_. ]$\"))"
+" (define -re:ok-relpath (regexp \"^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$\"))"
 "(define -module-hash-table-table(make-hash-table 'weak)) "
 "(define -loading-filename(gensym))"
 "(define standard-module-name-resolver"

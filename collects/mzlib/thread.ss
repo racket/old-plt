@@ -200,22 +200,29 @@
       (dynamic-wind
 	  void
 	  (lambda ()
+	    ;; loop to handle connections
 	    (let loop ()
 	      (with-handlers ([not-break-exn? void])
+		;; Make a custodian for the next session:
 		(let ([c (make-custodian)])
 		  (parameterize ([current-custodian c])
-		    (let-values ([(r w) (tcp-accept l)])
-		      (parameterize ([break-enabled #f])
+		    ;; disabled breaks during session set-up...
+		    (parameterize ([break-enabled #f])
+		      ;; ... but enabled breaks while blocked on an accept:
+		      (let-values ([(r w) ((if can-break?
+					       tcp-accept/enable-break
+					       tcp-accept)
+					   l)])
 			;; Handler thread:
 			(let ([t (thread (lambda () 
 					   (when can-break?
 					     (break-enabled #t))
 					   (handler r w)))])
-			  ;; Clean-up thread
+			  ;; Clean-up thread:
 			  (thread (lambda () 
 				    (thread-wait t)
 				    (custodian-shutdown-all c)))
-			  ;; Timeout thread, if any
+			  ;; Timeout thread, if any:
 			  (when connection-timeout
 			    (thread (lambda ()
 				      (sleep connection-timeout)

@@ -2285,7 +2285,7 @@
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
   (define -re:auto (regexp "^,"))
-  (define -re:ok-relpath (regexp "^[-a-zA-Z0-9_. ][-a-zA-Z0-9_./ ]*[-a-zA-Z0-9_. ]$"))
+  (define -re:ok-relpath (regexp "^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))
   (define -module-hash-table-table (make-hash-table 'weak)) ; weak map from namespace to module ht
   
   (define -loading-filename (gensym))

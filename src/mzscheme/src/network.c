@@ -154,10 +154,12 @@ static void **tcp_send_buffers;
 #endif /* USE_TCP */
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[]);
+static Scheme_Object *tcp_connect_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listen(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_stop(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept_ready(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
+static Scheme_Object *tcp_accept_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 
@@ -181,6 +183,12 @@ void scheme_init_network(Scheme_Env *env)
 						       2, 2,
 						       2, 2), 
 			     env);
+  scheme_add_global_constant("tcp-connect/enable-break", 
+			     scheme_make_prim_w_arity2(tcp_connect_break,
+						       "tcp-connect/enable-break", 
+						       2, 2,
+						       2, 2), 
+			     env);
   scheme_add_global_constant("tcp-listen", 
 			     scheme_make_prim_w_arity(tcp_listen,
 						      "tcp-listen", 
@@ -199,6 +207,12 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("tcp-accept", 
 			     scheme_make_prim_w_arity2(tcp_accept,
 						       "tcp-accept", 
+						       1, 1,
+						       2, 2), 
+			     env);
+  scheme_add_global_constant("tcp-accept/enable-break", 
+			     scheme_make_prim_w_arity2(tcp_accept_break,
+						       "tcp-accept/enable-break", 
 						       1, 1,
 						       2, 2), 
 			     env);
@@ -1683,6 +1697,12 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+tcp_connect_break(int argc, Scheme_Object *argv[])
+{
+  return scheme_call_enable_break(tcp_connect, argc, argv);
+}
+
+static Scheme_Object *
 tcp_listen(int argc, Scheme_Object *argv[])
 {
   unsigned short id, origid;
@@ -2038,6 +2058,12 @@ tcp_accept(int argc, Scheme_Object *argv[])
 #endif
 
   return NULL;
+}
+
+static Scheme_Object *
+tcp_accept_break(int argc, Scheme_Object *argv[])
+{
+  return scheme_call_enable_break(tcp_accept, argc, argv);
 }
 
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])

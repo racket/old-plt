@@ -1331,8 +1331,16 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (scheme_has_method_property(orig_form)) {
     Scheme_Closure_Compilation_Data *data;
-    data = (Scheme_Closure_Compilation_Data *)cl->array[0];
-    data->flags |= CLOS_IS_METHOD;
+    /* Make sure no branch has 0 arguments: */
+    for (i = 0; i < count; i++) {
+      data = (Scheme_Closure_Compilation_Data *)cl->array[i];
+      if (!data->num_params)
+	break;
+    }
+    if (i >= count) {
+      data = (Scheme_Closure_Compilation_Data *)cl->array[0];
+      data->flags |= CLOS_IS_METHOD;
+    }
   }
 
   return scheme_make_syntax_compiled(CASE_LAMBDA_EXPD, (Scheme_Object *)cl);

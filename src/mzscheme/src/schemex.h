@@ -103,7 +103,7 @@ void (*scheme_wrong_count_m)(const char *name, int minc, int maxc,
 			  int argc, Scheme_Object **argv,
 			  int is_method);
 void (*scheme_case_lambda_wrong_count)(const char *name, int argc, 
-				    Scheme_Object **argv, int count, ...);
+				    Scheme_Object **argv, int is_method, int count, ...);
 void (*scheme_wrong_type)(const char *name, const char *expected, 
 		       int which, int argc,
 		       Scheme_Object **argv);

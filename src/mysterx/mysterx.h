@@ -559,7 +559,7 @@ Scheme_Object *BSTRToSchemeString(BSTR);
 Scheme_Object *variantToSchemeObject(VARIANTARG *);
 void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
-IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
+IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *,int);
 CLSID getCLSIDFromCoClass(const char *);
 ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
 void signalCodedEventSinkError(char *,HRESULT);

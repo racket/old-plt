@@ -17,7 +17,8 @@
 
 #include "htmlutil.h"
 
-IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {
+IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
+			      char *tag,char *id,int index) {
   IHTMLElementCollection *pTagCollection;
   IHTMLElement *pBody,*pIHTMLElement,*retval;
   IDispatch *pIDispatch;
@@ -25,6 +26,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {
   BSTR idAttribute;
   BSTR idBSTR;
   VARIANT variant;
+  int count;
   int i;
 
   // filter elements by tag
@@ -46,9 +48,10 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {
   idAttribute = SysAllocString(L"id");
   idBSTR = stringToBSTR(id,strlen(id));
 
+  count = 0;
   retval = NULL;
 
-  for (i = numElts - 1; i >= 0; i--) {
+  for (i = 0; i < numElts; i++) {
 
     pIDispatch = getElementInCollection(pTagCollection,i);
 
@@ -64,8 +67,10 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {
 
     if (variant.vt == VT_BSTR && variant.bstrVal &&
         _wcsicmp(idBSTR,variant.bstrVal) == 0) {
-      retval = pIHTMLElement;
-      break;
+      if (count++ == index) {
+	retval = pIHTMLElement;
+	break;
+      }
     }
 
     pIHTMLElement->Release();

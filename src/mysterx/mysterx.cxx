@@ -149,8 +149,8 @@ static MX_PRIM mxPrims[] = {
   { mx_insert_html,"document-insert-html",2,2 },
   { mx_append_html,"document-append-html",2,2 },
   { mx_replace_html,"document-replace-html",2,2 },
-  { mx_find_element,"document-find-element",3,3 },
-  { mx_find_element_by_id_or_name,"document-find-element-by-id-or-name",2,2 },
+  { mx_find_element,"document-find-element",3,4 },
+  { mx_find_element_by_id_or_name,"document-find-element-by-id-or-name",2,3 },
   { mx_elements_with_tag,"document-elements-with-tag",2,2 },
   { mx_document_objects,"document-objects",1,1 },
   
@@ -3968,25 +3968,38 @@ CLSID getCLSIDFromCoClass(const char *name) {
 Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   MX_Element *retval;
+  int index;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) { 
-    scheme_wrong_type("document-find-element","mx-document",0,argc,argv);
+    scheme_wrong_type("find-element","mx-document",0,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[1]) == FALSE) { 
-    scheme_wrong_type("document-find-element","string",1,argc,argv);
+    scheme_wrong_type("find-element","string",1,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[2]) == FALSE) {
-    scheme_wrong_type("document-find-element","string",2,argc,argv);
+    scheme_wrong_type("find-element","string",2,argc,argv);
+  }
+
+  if (argc > 3 && (SCHEME_INTP(argv[3]) == FALSE ||
+		   SCHEME_INT_VAL(argv[3]) < 0)) {
+    scheme_wrong_type("find-element","nonnegative integer",3,argc,argv);
+  }
+  if (argc > 3) {
+    index = SCHEME_INT_VAL(argv[3]);
+  }
+  else {
+    index = 0;
   }
   
   pIHTMLElement = findBodyElement(MX_DOCUMENT_VAL(argv[0]),
 				  SCHEME_STR_VAL(argv[1]),
-				  SCHEME_STR_VAL(argv[2]));
+				  SCHEME_STR_VAL(argv[2]),
+				  index);
   
   if (pIHTMLElement == NULL) {
-    scheme_signal_error("HTML element with tag = %s, id = %s not found",
+    scheme_signal_error("find-element: HTML element with tag = %s, id = %s not found",
 			SCHEME_STR_VAL(argv[1]),SCHEME_STR_VAL(argv[2]));
   }
   
@@ -4013,11 +4026,16 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   MX_Element *retval;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) { 
-    scheme_wrong_type("document-find-element-by-id-or-name","mx-document",0,argc,argv);
+    scheme_wrong_type("find-element-by-id-or-name","mx-document",0,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("document-find-element-by-id-or-name","string",1,argc,argv);
+    scheme_wrong_type("find-element-by-id-or-name","string",1,argc,argv);
+  }
+  
+  if (argc > 2 && (SCHEME_INTP(argv[2]) == FALSE ||
+		   SCHEME_INT_VAL(argv[2]) < 0)) {
+    scheme_wrong_type("find-element-by-id-or-name","nonnegative integer",2,argc,argv);
   }
   
   pIHTMLDocument2 = MX_DOCUMENT_VAL(argv[0]);
@@ -4036,7 +4054,12 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   name.bstrVal = bstr;
 
   index.vt = VT_I4;
-  index.lVal = 0;
+  if (argc > 2) {
+    index.lVal = SCHEME_INT_VAL(argv[2]);
+  }
+  else {
+    index.lVal = 0;
+  }
 
   pIHTMLElementCollection->item(name,index,&pEltDispatch);
 

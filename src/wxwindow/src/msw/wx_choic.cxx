@@ -440,12 +440,23 @@ void wxChoice::ChangeToGray(Bool gray)
 
 /*****************************************************************************/
 
+static wxFont *combo_box_font;
+int reg;
+
+void wxSetComboBoxFont(wxFont *f)
+{
+  if (!reg) {
+    wxREGGLOB(combo_box_font);
+  }
+  combo_box_font = f;
+}
+
 wxCombo::wxCombo(wxWindow *for_canvas,
 		 wxPanel *panel, wxFunction func, char *Title,
 		 int x, int y, int w, int h,
 		 int N, char **Choices,
 		 long style, char *name) :
-  wxChoice(panel, func, Title, x, y, w, h, N, Choices, style, NULL, name)
+  wxChoice(panel, func, Title, x, y, w, h, N, Choices, style, combo_box_font, name)
 {
   WXGC_IGNORE(this, forCanvas);
   forCanvas = for_canvas;

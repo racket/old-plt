@@ -15,4 +15,8 @@ void objscheme_setup_wxChoice(Scheme_Env *env);
 int objscheme_istype_wxChoice(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxChoice(class wxChoice *realobj);
 class wxChoice *objscheme_unbundle_wxChoice(Scheme_Object *obj, const char *where, int nullOK);
+extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
+#endif
+void objscheme_setup_wxChoiceGlobal(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
 #endif

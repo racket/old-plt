@@ -3,6 +3,12 @@
 
 #include "wx_choic.h"
 
+#ifndef wx_msw
+void wxSetComboBoxFont(wxFont *f)
+{
+}
+#endif
+
 @INCLUDE wxs.xci
 
 @HEADER
@@ -37,6 +43,10 @@
 @ "get-selection" : int GetSelection();
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
 
+@END
+
+@GLOBAL wxChoiceGlobal 
+@ "set-combo-box-font" : void wxSetComboBoxFont(wxFont^)
 @END
 
 @INCLUDE cb_end.xci

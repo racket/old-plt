@@ -11,6 +11,12 @@
 
 #include "wx_choic.h"
 
+#ifndef wx_msw
+void wxSetComboBoxFont(wxFont *f)
+{
+}
+#endif
+
 
 
 
@@ -940,6 +946,39 @@ class wxChoice *objscheme_unbundle_wxChoice(Scheme_Object *obj, const char *wher
     return (os_wxChoice *)o->primdata;
   else
     return (wxChoice *)o->primdata;
+}
+
+
+static Scheme_Object *wxChoiceGlobalwxSetComboBoxFont(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFont* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[0+0], "set-combo-box-font in choice%", 1));
+
+  
+  WITH_VAR_STACK(wxSetComboBoxFont(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+void objscheme_setup_wxChoiceGlobal(Scheme_Env *env)
+{
+  Scheme_Object *functmp INIT_NULLED_OUT;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxChoiceGlobalwxSetComboBoxFont, "set-combo-box-font", 1, 1));
+  WITH_VAR_STACK(scheme_install_xc_global("set-combo-box-font", functmp, env));
+  READY_TO_RETURN;
 }
 
 

@@ -67,4 +67,6 @@ class wxCombo : public wxChoice
   virtual wxWindow *PreWindow();
 };
 
+extern void wxSetComboBoxFont(wxFont *f);
+
 #endif // wx_choich

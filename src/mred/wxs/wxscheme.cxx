@@ -3122,6 +3122,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxFontList(global_env);
   objscheme_setup_wxFontNameDirectory(global_env);
   objscheme_setup_wxGDIGlobal(global_env);
+  objscheme_setup_wxChoiceGlobal(global_env);
   objscheme_setup_wxItem(global_env);
   objscheme_setup_wxMessage(global_env);
   objscheme_setup_wxButton(global_env);

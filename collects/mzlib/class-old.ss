@@ -4,7 +4,7 @@
 ;; This was a fairly simple implementation until it was extended to
 ;;  handle primitive classes (e.g., for MrEd). Now it's a mess.
 
-(module class mzscheme
+(module class-old mzscheme
   (require-for-syntax (lib "stx.ss""syntax"))
 
   (define insp (current-inspector))

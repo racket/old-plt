@@ -40,8 +40,8 @@
     scheme-vocabulary
     (struct parsed (back))
     (struct varref (var))
-    (struct top-level-varref ())      create-top-level-varref
-    (struct top-level-varref/bind ()) create-top-level-varref/bind
+    (struct top-level-varref ())          create-top-level-varref
+    (struct top-level-varref/bind (slot)) create-top-level-varref/bind
     (struct bound-varref (binding))   create-bound-varref
     (struct lexical-varref ())        create-lexical-varref
     (struct app (fun args))           create-app

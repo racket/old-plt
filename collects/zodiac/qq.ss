@@ -14,16 +14,11 @@
 	    (let ((template (pat:pexpand 'template p-env kwd))
 		   (new-qq-level
 		     (add1 (or (get-attribute attributes 'qq-level)
-			     qq-base-level)))
-		   (old-qq-scheme-vocab
-		     (get-attribute vocab 'qq-scheme-vocab)))
+			     qq-base-level))))
 	      (put-attribute attributes 'qq-level new-qq-level)
-	      (put-attribute attributes 'qq-scheme-vocab vocab)
 	      (let ((result (expand-expr template
 			      env attributes qq-vocab)))
 		(put-attribute attributes 'qq-level (sub1 new-qq-level))
-		(put-attribute attributes
-		  'qq-scheme-vocab old-qq-scheme-vocab)
 		(if (get-attribute attributes 'qq-changed?)
 		  (expand-expr result env attributes vocab)
 		  (expand-expr
@@ -138,16 +133,11 @@
 	    (let ((template (pat:pexpand 'template p-env kwd))
 		   (new-qq-level
 		     (add1 (or (get-attribute attributes 'qq-level)
-			     qq-base-level)))
-		   (old-qq-scheme-vocab
-		     (get-attribute vocab 'qq-scheme-vocab)))
+			     qq-base-level))))
 	      (put-attribute attributes 'qq-level new-qq-level)
-	      (put-attribute attributes 'qq-scheme-vocab vocab)
 	      (let ((result (expand-expr template
 			      env attributes qq-vocab)))
 		(put-attribute attributes 'qq-level (sub1 new-qq-level))
-		(put-attribute attributes
-		  'qq-scheme-vocab old-qq-scheme-vocab)
 		(structurize-syntax
 		  (list '#%list ''quasiquote result)
 		  expr)))))

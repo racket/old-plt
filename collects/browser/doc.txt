@@ -322,6 +322,31 @@ The html-eval-ok parameter controls the evaluation of
 
 -----------------------------------------
 
+> image-map-snip% extends image-snip%
+  init:  html-text : (is-a?/c html-text<%>)
+
+Instances of this class behave like image-snip% objects,
+except they have a <map> ... </map> associated with them and
+when clicking on them (in the map) they will cause their
+init arg text to follow the corresponding link.
+
+> (send an-image-map-snip set-key key-string)
+
+  Sets the key for the image map (eg, "#key").
+
+> (send an-image-map-snip get-key)
+
+  Returns the current key.
+
+> (send an-image-map-snip add-area shape-string list-of-numbers href-string)
+
+  Registers the shape named by the shape-string whose
+  coordinates are specified by the list-of-numbers to go to
+  the href named href-string when that region of the image
+  is clicked on.
+
+-----------------------------------------
+
 The _browser-unit.ss_ library in the "browser" collection is a
 unitized version of the code documented above.  It imports unit
 matching thefollowing signatures:

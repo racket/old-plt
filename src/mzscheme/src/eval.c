@@ -3516,15 +3516,19 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *expr, Scheme_Env *
   /* If modidx, then last element is a module index; shift the rest. */
   if (modidx) {
     int i, len = SCHEME_VEC_SIZE(expr);
-    Scheme_Object *orig = SCHEME_VEC_ELS(expr)[len - 1], *s;
+    Scheme_Object *orig = SCHEME_VEC_ELS(expr)[len - 1], *s, *result;
+
     orig = SCHEME_STX_VAL(orig);
+    result = scheme_make_vector(len - 1, NULL);
+
     for (i = 0; i < len - 1; i++) {
       s = scheme_stx_phase_shift(SCHEME_VEC_ELS(expr)[i], shift, orig, modidx);
-      SCHEME_VEC_ELS(expr)[i] = s;
+      SCHEME_VEC_ELS(result)[i] = s;
     }
-  }
-
-  return expr;
+    
+    return result;
+  } else
+    return expr;
 }
 
 static void *expand_k(void)

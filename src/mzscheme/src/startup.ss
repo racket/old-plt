@@ -1235,14 +1235,31 @@
 	    (if proto-r
 		`(lambda (r)
 		   ,(let ([pre (let ([deeps
-				      `(map 
-					(lambda vals (,ehead 
-						      ,(if (null? flat-nestings-shallow)
-							   'vals
-							   '(append shallows vals))))
-					,@(map (lambda (var)
-						 (apply-list-ref 'r (stx-memq*-pos var proto-r) use-tail-pos))
-					       flat-nestings-deep))])
+				      (let ([valses
+					     (map (lambda (var)
+						    (apply-list-ref 'r (stx-memq*-pos var proto-r) use-tail-pos))
+						  flat-nestings-deep)])
+					(cond
+					 [(and (= 1 (length valses))
+					       (null? flat-nestings-shallow)
+					       (equal? ehead '(lambda (r) (car r))))
+					  ;; Common case: one item in list, no map needed:
+					  (car valses)]
+					 [(and (= 2 (length valses))
+					       (null? flat-nestings-shallow)
+					       (equal? ehead '(lambda (r) (list (car r) (cadr r)))))
+					  ;; Another common case: a maintained pair
+					  `(map 
+					    (lambda (a b) (list a b))
+					    ,@valses)]
+					 [else
+					  ;; General case: 
+					  `(map 
+					    (lambda vals (,ehead 
+							  ,(if (null? flat-nestings-shallow)
+							       'vals
+							       '(append shallows vals))))
+					    ,@valses)]))])
 				 (if (null? flat-nestings-shallow)
 				     deeps
 				     `(let ([shallows
@@ -1394,14 +1411,24 @@
 		(eq? (car t) 'quote-syntax)
 		(eq? (cadr t) (stx-cdr p)))))
       `(quote-syntax ,p)]
+     ;; (cons X null) => (list X)
      [(eq? t 'null)
       `(list ,h)]
+     ;; (cons X (list[*] Y ...)) => (list[*] X Y ...)
      [(and (pair? t)
 	   (memq (car t) '(list list*)))
       `(,(car t) ,h ,@(cdr t))]
+     ;; (cons X (cons Y Z)) => (list* X Y Z)
      [(and (pair? t)
 	   (eq? (car t) 'cons))
       `(list* ,h ,@(cdr t))]
+     ;; (cons (car X) (cdr X)) => X
+     [(and (pair? h) (pair? t)
+	   (eq? (car h) 'car)
+	   (eq? (car t) 'cdr)
+	   (symbol? (cadr h))
+	   (eq? (cadr h) (cadr t)))
+      (cadr h)]
      [else
       `(cons ,h ,t)]))
 
@@ -2516,7 +2543,8 @@
 						      (if modname 
 							  (format "module declaration for `~a'" modname)
 							  "none")
-						      _loader-so))))))
+						      _loader-so))
+					     (current-continuation-marks)))))
 				       loader)))))
 		       => (lambda (loader) (with-dir loader))]
 		      [(date>=? so path-d)

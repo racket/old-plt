@@ -1862,11 +1862,11 @@
       (thread
        (lambda ()
          (let loop ()
-           (semaphore-wait status-sema)
+	   (semaphore-wait status-sema)
            (when (object? main-frame)
              (update-status-text))
            (semaphore-post status-sema)
-           (sleep 5)
+	   (sleep 5)
            (loop))))
       
       (define vsz #f)

@@ -135,7 +135,8 @@
        
        (let ([to-send (format "^~a\n" word)])
          (debug "> ~s\n" to-send)
-         (display to-send ispell-in))
+         (display to-send ispell-in)
+	 (flush-output ispell-in))
 
        (let* ([answer-line (read-line ispell-out)]
               [_ (debug "< ~s\n" answer-line)]

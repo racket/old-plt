@@ -34,6 +34,4 @@
    editor->page
    page->editor
 
-   on-installer-run
-
    bullet-size))

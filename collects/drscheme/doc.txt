@@ -5,3 +5,23 @@ _load-handler.ss_
 _teachpackr.ss_
 
 _teachpacks.ss_
+
+_Dynamic linking for DrScheme_: After DrScheme starts up, it adds
+definitions into the top-level matching these signatures:
+
+  mzlib:core^
+  mred^
+  drscheme:init^
+  framework^
+  setup:plt-installer^
+  zodiac:system (prefix: zodiac)
+  drscheme:prefs^ (prefix: drscheme:prefs)
+  drscheme:cogen^ (prefix: drscheme:cogen)
+  drscheme:text^ (prefix: drscheme:text)
+  drscheme:snip^ (prefix: drscheme:snip)
+  drscheme:export^ (prefix: drscheme:export)
+  drscheme:tool^ (prefix: drscheme:tool)
+  drscheme:app^ (prefix: drscheme:app)
+  drscheme:main^ (prefix: drscheme:main)
+
+These can then be used for dynamic linking.

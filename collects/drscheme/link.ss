@@ -1,8 +1,10 @@
 (compound-unit/sig (import [top-level : (program argv get-dropped-files)])
   (link [mred : mred^ (mred@)]
+	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[mzlib:date : mzlib:date^ ((require-library "dater.ss") (mzlib function))]
-	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
+	[plt-installer : setup:plt-installer^
+		       ((require-library "plt-installerr.ss" "setup") mred)]
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
 		       ((require-library "pconverr.ss")
@@ -14,7 +16,8 @@
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss")
                                   mred framework (mzlib string) (mzlib function))]
         [export* : drscheme:export^ ((require-relative-library "export.ss")
-				     mred mzlib mzlib:date framework print-convert app
+				     mred mzlib mzlib:date framework
+				     plt-installer print-convert app
 				     text snip
 				     init graph
 				     cogen zodiac)]
@@ -65,12 +68,14 @@
 				(export* get/extend)
 				(export* basis)
 				(mzlib function)
-                                (mzlib file))])
-  (export (unit init)
-	  (unit mzlib)
+				(mzlib file)
+                                plt-installer)])
+  (export (unit mzlib)
 	  (unit mred)
 	  (open framework)
+	  (open plt-installer)
 	  (unit print-convert)
+	  (unit init drscheme:init)
 	  (unit prefs drscheme:prefs)
 	  (unit cogen drscheme:cogen)
 	  (unit zodiac zodiac)

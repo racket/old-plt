@@ -2,6 +2,7 @@
 			   [mzlib : mzlib:core^]
 			   [mzlib:date : mzlib:date^]
 			   [framework : framework^]
+			   [plt-installer : setup:plt-installer^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [text : drscheme:text^]
@@ -83,6 +84,7 @@
 		    (mzlib string)
 		    (mzlib file)
 		    url
+		    plt-installer
 		    (mred : mred^)
 		    framework
 		    frame

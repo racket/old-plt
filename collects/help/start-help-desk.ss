@@ -3,6 +3,7 @@
 	  mzlib:string^
 	  mzlib:file^
 	  mzlib:url^
+	  setup:plt-installer^
 	  mred^
 	  framework^
           [drscheme:frame : drscheme:frame^]
@@ -74,6 +75,7 @@
 		      mzlib:string^
 		      mzlib:file^
 		      mzlib:url^
+		      setup:plt-installer^
 		      mred^
 		      framework^
 		      (frame-mixin)

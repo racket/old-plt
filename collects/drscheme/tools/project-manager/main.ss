@@ -12,6 +12,8 @@
 	  [zodiac : zodiac:system^]
 	  [hierlist : hierlist^])
 
+  (define init-directory (current-directory))
+
   (define (all-collections)
     (let ([colls (make-hash-table)])
       (for-each
@@ -30,7 +32,8 @@
     (local [(define new-project-item
 	      (make-object menu-item% "New Project" project-menu (lambda x (new-project))))
 	    (define open-project-item
-	      (make-object menu-item% "Open Project..." project-menu (lambda x (open-project))))]
+	      (make-object menu-item% "Open As Project..." project-menu
+			   (lambda x (open-project))))]
       (void)))
   
   (define project-aware-frame<%>
@@ -112,11 +115,11 @@
 
   (define project-frames null)
 
-  (define project-save-file-tag ";; project file")
+  (define project-save-file-tag ";;___project_file_(special_tag)___")
 
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
-      ((inherit get-area-container get-menu-bar)
+      ((inherit get-area-container get-menu-bar set-label)
        (rename [super-make-root-area-container make-root-area-container]
 	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
 	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
@@ -132,8 +135,6 @@
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
                ))
-
-      (define (get-filename) filename)
 
       (define (on-close)
         (set! project-frames (function:remove this project-frames))
@@ -180,9 +181,21 @@
 	      (lambda ()
 		(semaphore-post sema)))))))
 
+      (define project-dir
+	(and filename
+	     (file-exists? filename)
+	     (let-values ([(base name dir?) (split-path (file:normalize-path filename))])
+	       base)))
+
+      (define (get-filename)
+	filename)
+
       (define (set-filename _filename)
-        (set! filename _filename)
-        (update-name-message))
+	(set! filename _filename)
+	(let-values ([(base name dir?) (file:normalize-path (split-path filename))])
+	  (set-label name)
+	  (set! project-dir base))
+	(update-name-message))
       
       (define (update-name-message)
         (if filename
@@ -229,7 +242,10 @@
 	      top)
 	    (gui-utils:next-untitled-name)))
 
+      ;; files : (union (cons 'require-library (listof string))
+      ;;                (cons 'build-path (listof string)))
       (define files null)
+
       (define language-settings 
         (let ([re:mred (regexp "MrEd")])
           (let loop ([settings drscheme:basis:settings])
@@ -366,20 +382,22 @@
 		    (semaphore-post protect-sema)
 		    (send dialog show #t)))
 
-	      (if (error? value)
-		  (begin
-		    (message-box "Collection Path Evaluation Unsuccessful"
-				 (error-msg value))
-		    #f)
-		  (if (and (list? value)
-			   (andmap string? value))
-		      value
-		      (begin
-			(message-box 
-			 "Collection Path Evaluation Unsuccessful"
-			 (format "expected result to be a list of strings, got: ~e"
-				 value))
-			#f))))
+	      (cond
+	       [(error? value)
+		(message-box "Collection Path Evaluation Unsuccessful"
+			     (error-msg value))
+		#f]
+	       [(eof-object? value)
+		#f]
+	       [(and (list? value)
+		     (andmap string? value))
+		value]
+	       [else
+		(message-box
+		 "Collection Path Evaluation Unsuccessful"
+		 (format "expected result to be a list of strings, got: ~e"
+			 value))
+		#f]))
 	    #f))
 
       ;; offer-to-save-files : (-> boolean)
@@ -446,8 +464,19 @@
 			(call-with-values
 			 (lambda ()
 			   (cond
-			    [(string? file) (eval `(load ,file))]
-			    [else (eval `(require-library ,@file))]))
+			    [(eq? (car file) 'build-path)
+			     (let* ([str-file (apply build-path (cdr file))]
+				    [full-name
+				     (cond
+				      [(absolute-path? str-file) file]
+				      [(relative-path? str-file)
+				       (if project-dir
+					   (build-path project-dir str-file)
+					   (build-path init-directory str-file))]
+				      [else str-file])])
+			       (eval `(load ,full-name)))]
+			    [(eq? (car file) 'require-library)
+			     (eval `(require-library ,@(cdr file)))]))
 			 (lambda x
 			   (send rep display-results x))))))
 		   files)))
@@ -497,11 +526,7 @@
 	(send files-list-box clear)
 	(for-each
 	 (lambda (file)
-	   (send files-list-box append 
-		 (cond
-		  [(string? file) (format "raw: ~s" file)]
-		  [(pair? file) (format "coll: ~s" file)]
-		  [else (format "huh?: ~s" file)])))
+	   (send files-list-box append (format "~s" file)))
 	 files))
 
       (define (swap index)
@@ -544,7 +569,6 @@
           (when (is-a? frame project-aware-frame<%>)
             (send frame project:set-project-window this))))
         
-			  
       (define (remove-file)
 	(let* ([index (car (send files-list-box get-selections))])
 	  (set! files
@@ -602,9 +626,17 @@
 	 [(null? l) (error 'nth-cdr "got to end of list with ~s cdrs left" n)]
 	 [else (nth-cdr (- n 1) (cdr l))]))
 
+      (preferences:set-default 'drscheme:project-manager:add-files-as-relative?
+			       #t
+			       boolean?)
+
       (define (add-files)
 
-	(define new-files (get-file-list))
+	(define new-files
+	  (let ([user-result (get-file-list)])
+	    (and user-result
+		 (map (function:compose normal-case-path file:normalize-path)
+		      (function:filter file-exists? user-result)))))
 
 	(define (prompt-user-collection? filename collection collection-dir)
 	  (define answer #t)
@@ -686,6 +718,26 @@
 	   [(equal? (car shorter) (car longer)) (sublist-equal? (cdr shorter) (cdr longer))]
 	   [else #f]))
 
+	(define (add-as-raw-file new-file)
+	  (define (path->list path)
+	    (let loop ([path path]
+		       [file null])
+	      (let-values ([(base name dir?) (split-path path)])
+		(cond
+		 [(or (not base) (eq? base 'relative)) (cons name file)]
+		 [else (loop base
+			     (cons name file))]))))
+	  
+	  (cond
+	   [(and project-dir
+		 (preferences:get 'drscheme:project-manager:add-files-as-relative?))
+	    (let ([rel-file (file:find-relative-path
+			     project-dir
+			     new-file)])
+	      (set! files (append files (list (cons 'build-path (path->list rel-file))))))]
+	   [else
+	    (set! files (append files (list (cons 'build-path (path->list new-file)))))]))
+
 	(when new-files
 	  (let ([collections (let ([drs-collections (all-collections)]
 				   [proj-collections (get-collection-paths)])
@@ -693,42 +745,51 @@
 				   (append proj-collections
 					   drs-collections)
 				   drs-collections))]
-		[exploded-collection-paths (map (function:compose file:explode-path file:normalize-path)
-						(function:filter directory-exists? (current-library-collection-paths)))])
+		[exploded-collection-paths
+		 (map (function:compose file:explode-path normal-case-path file:normalize-path)
+		      (function:filter directory-exists?
+				       (current-library-collection-paths)))])
 	    (for-each
 	     (lambda (new-file)
-	       (let ([exploded (file:explode-path (file:normalize-path new-file))])
+	       (let ([exploded (file:explode-path new-file)])
 		 (let loop ([exploded-collection-paths exploded-collection-paths])
 		   (cond
 		    [(null? exploded-collection-paths)
-		     (set! files (append files (list new-file)))]
+		     (add-as-raw-file new-file)]
 		    [else
 		     (if (sublist-equal? (car exploded-collection-paths) exploded)
 			 (let* ([filename #f]
 				[collections
 				 (let loop ([pieces
-					     (nth-cdr (length (car exploded-collection-paths))
-						      exploded)])
+					     (nth-cdr
+					      (length (car exploded-collection-paths))
+					      exploded)])
 				   (cond
 				    [(null? pieces) null]
 				    [(null? (cdr pieces))
-				     (set-filename (car pieces))
+				     (set! filename (car pieces))
 				     null]
 				    [else (cons (car pieces)
 						(loop (cdr pieces)))]))])
-			   (if (and (string=?
-				     (file:normalize-path
-				      (build-path (apply collection-path collections)
-						  filename))
-				     (file:normalize-path
-				      new-file))
-				    (prompt-user-collection?
-				     filename
-				     collections
-				     (apply build-path
-					    (car exploded-collection-paths))))
-			       (set! files (append files (list (cons filename collections))))
-			       (set! files (append files (list new-file)))))
+			   (cond
+			    [(and (string=?
+				   (normal-case-path
+				    (file:normalize-path
+				     (build-path (apply collection-path collections)
+						 filename)))
+				   new-file)
+				  (prompt-user-collection?
+				   filename
+				   collections
+				   (apply build-path
+					  (car exploded-collection-paths))))
+			     (set! files (append
+					  files
+					  (list
+					   (list* 'require-library
+						  filename
+						  collections))))]
+			    [else (add-as-raw-file new-file)]))
 			 (loop (cdr exploded-collection-paths)))]))))
 	     new-files))
 	  (is-changed)
@@ -783,7 +844,16 @@
                 (update-rep-shown)
 
 		(when loaded-files
-		  (set! files (function:second loaded-files)))
+		  (set! files (map (lambda (x)
+				     (cond
+				      [(string? x) `(build-path ,@(file:explode-path
+								   (file:normalize-path
+								    x)))]
+				      [(and (pair? x)
+					    (andmap string? x))
+				       `(require-library ,@x)]
+				      [else x]))
+				   (function:second loaded-files))))
 
 		(when loaded-open-table
 		  (set! open-table (make-hash-table))
@@ -819,10 +889,9 @@
 	       (for-each (lambda (file)
 			   (write
 			    (cond
-			     [(string? file)
+			     [(eq? (car file) 'build-path)
 			      `(load ,file)]
-			     [else
-			      `(require-library ,@file)])
+			     [else file])
 			    port)
 			   (newline port))
 			 files))
@@ -1106,6 +1175,18 @@
       (define break-menu-item (make-object menu-item% "Break" project-menu (lambda x (break-project)) #\b))
       (define kill-menu-item (make-object menu-item% "Kill" project-menu (lambda x (kill-project)) #\k))
       (make-object separator-menu-item% project-menu)
+      (send
+       (make-object checkable-menu-item% "Add files with relative-paths"
+		    project-menu
+		    (lambda (item evt)
+		      (let ([nv (not (preferences:get 'drscheme:project-manager:add-files-as-relative?))])
+			(send item check nv)
+			(preferences:set
+			 'drscheme:project-manager:add-files-as-relative?
+			 nv))))
+       check
+       (preferences:get 'drscheme:project-manager:add-files-as-relative?))
+      (make-object separator-menu-item% project-menu)
       (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
       (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
@@ -1185,7 +1266,12 @@
   (define open-project
     (case-lambda
      [(filename)
-      (send (make-object project-frame% filename) show #t)]
+      (let ([already-open (send (group:get-the-frame-group)
+				locate-file
+				filename)])
+	(if already-open
+	    (send already-open show #t)
+	    (send (make-object project-frame% filename) show #t)))]
      [()
       (let ([filename (get-file)])
 	(when filename
@@ -1205,7 +1291,5 @@
                     (cond
 		     [(zero? i) null]
 		     [else (cons (read-char port) (loop (- i 1)))]))])
-           (and (equal? l (string->list project-save-file-tag))
-                (gui-utils:get-choice (format "Open ~a as a project file?" filename)
-				      "Yes" "No"))))))
+           (equal? l (string->list project-save-file-tag))))))
    open-project))

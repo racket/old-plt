@@ -3,6 +3,7 @@
   (import setup:info^
 	  help:search^
 	  browser^
+	  setup:plt-installer^
 	  mzlib:function^
 	  mzlib:string^
 	  mzlib:file^
@@ -34,7 +35,11 @@
 	(send delta set-size-add size)
 	(send standard set-delta delta))))
 
-  (on-installer-run doc-collections-changed)
+  (on-installer-run
+   (let ([old (on-installer-run)])
+     (lambda ()
+       (doc-collections-changed)
+       (old))))
 
   (define (get-icon size)
     (let* ([dir (collection-path "icons")]

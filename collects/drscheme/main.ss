@@ -9,7 +9,8 @@
 	  [drscheme:get/extend : drscheme:get/extend^]
 	  [basis : plt:basis^]
 	  mzlib:function^
-          mzlib:file^)
+          mzlib:file^
+	  setup:plt-installer^)
 
 
   (fw:finder:default-extension "scm")
@@ -41,6 +42,18 @@
   (drscheme:get/extend:get-interactions-text%)
   (drscheme:get/extend:get-definitions-text%)
 
+
+  ;; add a handler to open .plt files.
+  (fw:handler:insert-format-handler 
+   "Projects"
+   (lambda (filename)
+     (and (equal? "plt" (filename-extension filename))
+	  (fw:gui-utils:get-choice (format "Install ~a or open for editing?" filename)
+				   "Install" "Edit")))
+   (lambda (filename)
+     (run-installer filename)))
+
+
   ;; the initial window doesn't set the 
   ;; unit object's state correctly, yet.
   (define (make-basic)
@@ -69,19 +82,22 @@
          [normalized/filtered
           (let loop ([files files-to-open])
             (cond
-              [(null? files) null]
-              [else (let ([file (car files)])
-                      (if (file-exists? file)
-                          (cons (normalize-path file) (loop (cdr files)))
-                          (begin
-                            (message-box
-                             "DrScheme"
-                             (format "Cannot open ~a becuase it does not exist" file))
-                            (loop (cdr files)))))]))]
+	     [(null? files) null]
+	     [else (let ([file (car files)])
+		     (if (file-exists? file)
+			 (cons (normalize-path file) (loop (cdr files)))
+			 (begin
+			   (message-box
+			    "DrScheme"
+			    (format "Cannot open ~a becuase it does not exist" file))
+			   (loop (cdr files)))))]))]
          [no-dups (remove-duplicates normalized/filtered)])
     (if (null? no-dups)
 	(make-basic)
-	(for-each drscheme:unit:open-drscheme-window no-dups)))
+	(for-each (lambda (f) (fw:handler:edit-file
+			       f
+			       (lambda () (drscheme:unit:open-drscheme-window f))))
+		  no-dups)))
 
 
   ;;
@@ -92,13 +108,4 @@
 			      (lambda (x)
 				(or (string? x)
 				    (not x))))
-  (drscheme:app:check-new-version)
-
-  (fw:handler:insert-format-handler 
-   "Projects"
-   (lambda (filename) 
-     (and (equal? ".plt" (filename-extension filename))
-	  (gui-utils:get-choice (format "Install ~a?" filename)
-				"Yes" "No")))
-   (lambda (x)
-     (message-box "hi" "hi"))))
+  (drscheme:app:check-new-version))

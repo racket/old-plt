@@ -242,6 +242,20 @@ make .plt archives, especially under Unix:
 > (run-installer filename) - run the .plt installer on the .plt file in
   `filename' and show the output in a window.
 
+> (on-installer-run thunk) - sets the on-installer-run thunk to thunk. The
+on-installer-run thunk is run after a .plt file is installed.
+
+> (on-installer-run) - returns the on-installer-run thunk to thunk. The
+on-installer-run thunk is run after a .plt file is installed.
+
+ The _plt-installerr.ss_ library in the setup collection returns a unit/sig
+ that imports mred^ and exports setup:plt-installer^. The signature
+ setup:plt-installer^ has two names: run-installer and on-installer-run, as
+ above.
+
+ The _plt-installers.ss_ library defines the setup:plt-installer^
+ signature, which has two names: run-installer and on-installer-run.
+
  Setup PLT as a Unit
  -------------------
 

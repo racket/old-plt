@@ -1,5 +1,8 @@
-(unit/sig setup:installer^
-  (import)
+(unit/sig setup:plt-installer^
+  (import mred^)
+
+  (define on-installer-run
+    (make-parameter void))
 
   (define (run-installer file)
     (letrec ([f (make-object (class dialog% ()
@@ -52,5 +55,6 @@
 	(yield s)
 	(begin-busy-cursor)
 	(send f show #f)
-	(yield s)))))
+	(yield s)
+	((on-installer-run))))))
 

@@ -212,5 +212,6 @@ of the code documented above. It imports these units:
 	 (string : mzlib:string^)
 	 (file : mzlib:file^)
 	 (url : mzlib:url^)
+         (plt-installer : setup:plt-installer^)
 	 (mred : mred^)
 	 (framework : framework^))

@@ -57,79 +57,75 @@
 (define base-style-delta (make-object style-delta%))
 (define local-anchors empty) ; listof anchors
 (define base-path #f) ;url for this page
+    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; align-paragraph : text% G2 (G2 -> void) string -> void
+; To align a-G2, rendered by render-func, on a-text.  Acceptable
+; alignment values are "left", "right", "center", and "justify".
+; ** Does not 'justify text between margins.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (align-paragraph a-text a-G2 render-func how-to-align)
+  (local [(define startline (send a-text last-line))
+          (define startparag (send a-text line-paragraph startline))
+          (define startlinelen (send a-text line-length startline))
+          (define (lastline) (send a-text last-line))
+          (define (lastparag) (send a-text line-paragraph (lastline)))
+          (define (lastlinelen) (send a-text line-length (lastline)))
+          (define alignment-symbol 
+            (cond
+              [(or (string-ci=? how-to-align "left") (string-ci=? how-to-align "justify")) 'left]
+              [(string-ci=? how-to-align "right") 'right]
+              [(string-ci=? how-to-align "center") 'center]))
+          (define (align x y)
+            (cond [(and (= x y)
+                        (not (zero? (lastlinelen))))
+                   (send a-text set-paragraph-alignment x alignment-symbol)
+                   (send a-text insert #\newline)]
+                  [(and (= x y)
+                        (zero? (lastlinelen)))
+                   (send a-text set-paragraph-alignment x alignment-symbol)
+                   (send a-text insert #\newline)]
+                  [(> y x)
+                   (send a-text set-paragraph-alignment x alignment-symbol)
+                   (align (add1 x) y)]
+                  [else (error 'align-paragraph "Invalid start and stop paragraphs: x=~s y=~s" 
+                               (number->string x)
+                               (number->string y))]))]
+     (cond [(zero? startlinelen)
+            (unless (and (pcdata? a-G2)
+                         (zero? (string-length (pcdata-string a-G2))))
+              (render-func a-G2)
+              (align startparag (lastparag)))]
+           [else
+            (send a-text insert #\newline)
+            (render-func a-G2)
+            (align (add1 startparag) (lastparag))])))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; paragraphicize : text% p-struct -> void
-; To render the paragraph on a-text, with any number of attributes,
-; or none.
-; **supports only the "align" attribute, with values "center",
-;   "right", and "left"
-; **does not support the attribute value "justify" (treats it as "left")
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (paragraphicize a-text a-p)
-  (local [(define attribs (html:html-element-attributes a-p))
-          (define alo-G5 (html:html-full-content a-p))
-          (define alignment (get-attribute-value attribs 'align "left"))
-          (define startparagraph (send a-text last-paragraph))
-          (define startparagraph/length (- (send a-text paragraph-end-position startparagraph #f)
-                                           (send a-text paragraph-start-position startparagraph #f)))
-          (define start-paragraph-first-pos (send a-text paragraph-start-position startparagraph))
-          (define (break-text-before-insert)
-            (send a-text paragraph-end-position startparagraph #f)
-            (if (<= startparagraph/length 0)
-                (void))
-            (if (= 1 startparagraph/length)
-                ; is this paragraph the #\newline?
-                (if (char=? #\newline (send a-text get-character start-paragraph-first-pos))
-                    ; then is there a line above it?
-                    (if (not (zero? start-paragraph-first-pos))
-                        ; is there a newline character at the end of the previous line?
-                        (if (char=? #\newline (send a-text get-character (sub1 start-paragraph-first-pos)))
-                            ; no line breaks necessary
-                            (void)
-                            ; one line break necessary to create blank line
-                            (send a-text insert #\newline))
-                        ; no previous line, so no line breaks necessary
-                        (void))
-                    ; this paragraph is not the #\newline, so wait and treat it as a paragraph of greater length
-                    ))
-            (if (>= startparagraph/length 1)
-                (begin
-                  (send a-text insert #\newline)
-                  (send a-text insert #\newline))))
-          (define (break-text-after-insert)
-            (local [(define final-paragraph (send a-text last-paragraph))
-                    (define start-line (send a-text last-line))
-                    (define end-pos/prev-line (send a-text get-start-position))
-                    (define start-line-len (send a-text line-length start-line))]
-              (if (and (not (= startparagraph final-paragraph))
-                       (zero? start-line-len))
-                  ; implies there is at least one carriage return in previous lines
-                  (if (and (>= (sub1 start-line) 0)
-                           (char=? #\newline (send a-text get-character (send a-text line-end-position (sub1 start-line))))
-                           (= 1 (send a-text line-length (sub1 start-line))))
-                      ; implies that the previous line is a "blank line"
-                      (void)
-                      ; implies that the previous line is not a blank line
-                      (begin
-                        (send a-text line-length start-line)
-                        (sub1 start-line)
-                        (send a-text line-length (sub1 start-line))
-                        (send a-text insert #\newline)))
-                  ; implies there is no carriage return in previous lines
-                  (if (zero? start-line-len)
-                      ; implies nothing was rendered
-                      (void)
-                      ; implies that last line has no carriage return
-                      (begin 
-                        (send a-text insert #\newline)
-                        (send a-text insert #\newline))))))]
-    ;    (break-text-before-insert)
-    (for-each
-     (lambda (G5)
-       (align-paragraph a-text G5 (lambda (G5) (render-G5 a-text G5)) alignment))
-     alo-G5)
-    (break-text-after-insert)))
+; paragraphify : text% thunk -> void
+; Ensures that a blank line precedes and follows the thunk's rendering.
+(define (paragraphify a-text thunker)
+  (local [(define init-paragraph (send a-text last-paragraph))
+          (define (break-line? paragraph)
+            (local [(define last-position (send a-text get-end-position))]
+              (if (zero? last-position)
+                  #f
+                  (if (char=? #\newline (send a-text get-character (sub1 last-position)))
+                      (if (and (> last-position 1)
+                               (char=? #\newline (send a-text get-character (- last-position 2))))
+                          #f
+                          #t)
+                      #t))))]
+    (if (break-line? init-paragraph)
+        (begin
+          (send a-text insert #\newline)
+          (if (break-line? (add1 init-paragraph))
+              (send a-text insert #\newline))))
+    (thunker)
+    (if (break-line? (send a-text last-paragraph))
+        (begin
+          (send a-text insert #\newline)
+          (if (break-line? (add1 init-paragraph))
+              (send a-text insert #\newline))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; boldify : text% num num -> void
@@ -839,9 +835,22 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-address : text% address -> void
+; Renders an address on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (render-address a-text a-address)
-  (show-internal-error-once "render-address not yet implemented"))
+(define (render-address a-text an-address)
+  (local [(define listof-Contents-of-address (html:html-full-content an-address))]
+    (for-each (lambda (Contents-of-address)
+                (render-Contents-of-address a-text Contents-of-address))
+              listof-Contents-of-address)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; render-Contents-of-address : text% Contents-of-address -> void
+; Renders a P or G5 (Contents-of-address) on a-text.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (render-Contents-of-address a-text Contents-of-address)
+  (if (html:p? Contents-of-address)
+      (render-p a-text Contents-of-address)
+      (render-G5 a-text Contents-of-address)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-applet : text% applet -> void
@@ -899,7 +908,8 @@
           [else
            (for-each
             (lambda (G5)
-              (render-G5-with-relative-size a-text G5 howbig)))])))
+              (render-G5-with-relative-size a-text G5 howbig))
+            alo-G5)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-blockquote : text% blockquote -> void
@@ -934,54 +944,17 @@
                                     (G2? x))
                                   (html:html-full-content a-center)))]
     (cond [(empty? a-lo-G2) (void)]
-          [else 
-           (for-each (lambda (a-G2)
-                       (align-paragraph a-text a-G2 (lambda (G2) 
-                                                      (render-G2 a-text G2)) "center"))
-                     a-lo-G2)])))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; align-paragraph : text% G2 (G2 -> void) string -> void
-; To align a-G2, rendered by render-func, on a-text.  Acceptable
-; alignment values are "left", "right", "center", and "justify".
-; ** Does not 'justify text between margins.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (align-paragraph a-text a-G2 render-func how-to-align)
-  (local [(define startline (send a-text last-line))
-          (define startparag (send a-text line-paragraph startline))
-          (define startlinelen (send a-text line-length startline))
-          (define (lastline) (send a-text last-line))
-          (define (lastparag) (send a-text line-paragraph (lastline)))
-          (define (lastlinelen) (send a-text line-length (lastline)))
-          (define alignment-symbol 
-            (cond
-              [(or (string-ci=? how-to-align "left") (string-ci=? how-to-align "justify")) 'left]
-              [(string-ci=? how-to-align "right") 'right]
-              [(string-ci=? how-to-align "center") 'center]))
-          (define (align x y)
-            (cond [(and (= x y)
-                        (not (zero? (lastlinelen))))
-                   (send a-text set-paragraph-alignment x alignment-symbol)
-                   (send a-text insert #\newline)]
-                  [(and (= x y)
-                        (zero? (lastlinelen)))
-                   (send a-text set-paragraph-alignment x alignment-symbol)
-                   (send a-text insert #\newline)]
-                  [(> y x)
-                   (send a-text set-paragraph-alignment x alignment-symbol)
-                   (align (add1 x) y)]
-                  [else (error 'align-paragraph "Invalid start and stop paragraphs: x=~s y=~s" 
-                               (number->string x)
-                               (number->string y))]))]
-     (cond [(zero? startlinelen)
-            (unless (and (pcdata? a-G2)
-                         (zero? (string-length (pcdata-string a-G2))))
-              (render-func a-G2)
-              (align startparag (lastparag)))]
-           [else
-            (send a-text insert #\newline)
-            (render-func a-G2)
-            (align (add1 startparag) (lastparag))])))
+          [else
+           (align-element a-text
+                          (lambda ()
+                            (for-each
+                             (lambda (G2)
+                               (if (block-elt? G2)
+                                   (render-block-element a-text (lambda ()
+                                                            (render-G2 a-text G2)))
+                                   (render-G2 a-text G2)))
+                             a-lo-G2))
+                          "center")])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-cite : text% cite -> void
@@ -1091,13 +1064,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h1 a-text a-h1)
   (local [(define h1-attribs (html:html-element-attributes a-h1))
+          (define alignment (get-attribute-value h1-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h1))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 0)))]
     (cond [(empty? listof-G5) (void)]
-          [else (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
-                (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
+          [else 
+           (align-element
+            a-text
+            (lambda ()
+              (render-block-element a-text
+                                 (lambda ()
+                                   (for-each (lambda (G5)
+                                               (render-G5 a-text G5))
+                                             listof-G5))))
+           alignment)
+           (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-h2 : text% h2 -> void
@@ -1106,13 +1088,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h2 a-text a-h2)
   (local [(define h2-attribs (html:html-element-attributes a-h2))
+          (define alignment (get-attribute-value h2-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h2))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 1)))]
     (cond [(empty? listof-G5) (void)]
           [else 
            (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
+                       (align-paragraph a-text G5 (lambda (x)
+                                                    (render-G5 a-text x)) alignment))
+                     listof-G5)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1122,13 +1107,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h3 a-text a-h3)
   (local [(define h3-attribs (html:html-element-attributes a-h3))
+          (define alignment (get-attribute-value h3-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h3))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 2)))]
     (cond [(empty? listof-G5) (void)]
           [else 
            (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
+                       (align-paragraph a-text G5 (lambda (x)
+                                                    (render-G5 a-text x)) alignment))
+                     listof-G5)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 
@@ -1139,13 +1127,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h4 a-text a-h4)
   (local [(define h4-attribs (html:html-element-attributes a-h4))
+          (define alignment (get-attribute-value h4-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h4))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 3)))]
     (cond [(empty? listof-G5) (void)]
           [else 
            (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
+                       (align-paragraph a-text G5 (lambda (x)
+                                                    (render-G5 a-text x)) alignment))
+                     listof-G5)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1155,13 +1146,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h5 a-text a-h5)
   (local [(define h5-attribs (html:html-element-attributes a-h5))
+          (define alignment (get-attribute-value h5-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h5))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 4)))]
     (cond [(empty? listof-G5) (void)]
           [else 
            (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
+                       (align-paragraph a-text G5 (lambda (x)
+                                                    (render-G5 a-text x)) alignment))
+                     listof-G5)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1171,13 +1165,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-h6 a-text a-h6)
   (local [(define h6-attribs (html:html-element-attributes a-h6))
+          (define alignment (get-attribute-value h6-attribs 'align "left"))
           (define listof-G5 (html:html-full-content a-h6))
           (define initpos (send a-text get-start-position))
           (define HeadingSize (make-object style-delta% 'change-size (vector-ref HeadingSizesVector 5)))]
     (cond [(empty? listof-G5) (void)]
           [else 
            (for-each (lambda (G5)
-                            (render-G5 a-text G5)) listof-G5)
+                       (align-paragraph a-text G5 (lambda (x)
+                                                    (render-G5 a-text x)) alignment))
+                     listof-G5)
            (send a-text change-style HeadingSize initpos (send a-text get-start-position))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1356,8 +1353,16 @@
 ; To render a paragraph on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-p a-text a-p)
-  (paragraphicize a-text a-p))
-
+  (local [(define attribs (html:html-element-attributes a-p))
+          (define how-to-align (get-attribute-value attribs 'align "left"))
+          (define listof-G5 (html:html-full-content a-p))]
+    (align-element a-text
+                   (lambda ()
+                     (paragraphify a-text
+                                   (lambda () (render-block-element a-text (lambda ()
+                                                                             (for-each (lambda (G5) (render-G5 a-text G5)) listof-G5))))))
+                   how-to-align)))
+    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-param : text% param -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1376,6 +1381,9 @@
                                                  (not (char=? #\newline achar)))
                                                loc))
           (define fresh-string (list->string stripped-newline-loc))]
+    (set! fresh-string (regexp-replace* (regexp "  *") fresh-string " "))
+    (set! fresh-string (regexp-replace* (regexp "
+    ") fresh-string ""))
     (send text insert fresh-string)
     (send text change-style base-style-delta start (send text last-position))))
 
@@ -1485,9 +1493,15 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-td : text% td -> void
+; Renders the TD on a-text.  Does not support attributes.  This
+; function only used in the error case, that is, when a TD is
+; defined in an invalid context.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-td a-text a-td)
-  (show-internal-error-once "render-td not yet implemented"))
+  (local [(define alistof-G2 (html:html-full-content a-td))]
+    (for-each (lambda (G2)
+                (render-G2 a-text G2))
+              alistof-G2)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-textarea : text% textarea -> void
@@ -1497,9 +1511,15 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-th : text% th -> void
+; Renders the TH on a-text.  Does not support attributes.  This
+; function only called in the error case; that is, when a TH is
+; defined in an invalid context.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-th a-text a-th)
-  (show-internal-error-once "render-th not yet implemented"))
+  (local [(define alistof-G2 (html:html-full-content a-th))]
+    (for-each (lambda (G2)
+                (render-G2 a-text G2))
+              alistof-G2)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-thead : text% thead -> void
@@ -1521,9 +1541,25 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-tr : text% tr -> void
+; Does not support 'attributes'.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-tr a-text a-tr)
-  (show-internal-error-once "render-tr not yet implemented"))
+  (local [(define listof-Contents-of-tr (html:html-full-content a-tr))]
+    (if (empty? listof-Contents-of-tr)
+        (void)
+        (for-each (lambda (Contents-of-tr)
+                    (render-Contents-of-tr a-text Contents-of-tr)
+                    listof-Contents-of-tr)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; render-Contents-of-tr : text% Contents-of-tr -> void
+; Renders the the Contents-of-tr on a-text.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (render-Contents-of-tr a-text the-Contents-of-tr)
+  (cond [(html:td? the-Contents-of-tr)
+         (render-td a-text the-Contents-of-tr)]
+        [(html:th? the-Contents-of-tr)
+         (render-th a-text the-Contents-of-tr)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-tt : text% tr -> void
@@ -1727,3 +1763,121 @@
         [(html:input? a-G12) (render-input a-text a-G12)]
         [(html:select? a-G12) (render-select a-text a-G12)]
         [(html:textarea? a-G12) (render-textarea a-text a-G12)]))
+
+; elt-of-X? : html-element (listof (html-element -> boolean)) -> boolean
+; Applies each predicate to html-elt until a predicate returns #t, 
+; then returns #t.  Otherwise, if no predicate returns #t, returns #f.
+(define (elt-of-X? html-elt listof-predicate)
+  (ormap (lambda (y) (y html-elt)) listof-predicate))
+
+; get-renderer : html-element (listof (cons predicate renderer)) -> renderer | empty
+; Traverses the pairs and returns the appropriate renderer for html-element, or if 
+; none exists, empty.
+(define (get-renderer html-elt pairs)
+  (cond [(empty? pairs) empty]
+        [((car (first pairs)) html-elt) (cdr (first pairs))]
+        [else (get-renderer html-elt (rest pairs))]))
+
+; preformatted-elt? : html-element -> boolean
+; If html-elt is a preformatted-elt, returns #t.
+; Otherwise #f.
+(define (preformatted-elt? html-elt)
+  (elt-of-X? html-elt (list html:pre?)))
+
+; list-elt? : html-element -> boolean
+; If html-elt is a list-elt, returns #t.
+; Otherwise #f.
+(define (list-elt? html-elt)
+  (elt-of-X? html-elt (list html:ul? html:ol? html:dir? html:menu?)))
+
+; heading-elt? : html-element -> boolean
+; If html-elt is a heading-elt, returns #t.
+; Otherwise #f.
+(define (heading-elt? html-elt)
+  (elt-of-X? html-elt (list html:h1? html:h2? html:h3? html:h4? html:h5? html:h6?)))
+
+; block-elt? : html-element -> boolean
+; If html-elt is a block-elt, returns #t.
+; Otherwise #f.
+(define (block-elt? html-elt)
+  (elt-of-X? html-elt 
+             (list html:p? heading-elt? list-elt? preformatted-elt? html:dl? html:div? html:center? html:noscript?
+                   html:noframes? html:blockquote? html:form? html:isindex? html:hr? html:table? html:fieldset? html:address?)))
+
+(define heading-preds (list html:h1? html:h2? html:h3? html:h4? html:h5? html:h6?))
+(define heading-renderers (list render-h1 render-h2 render-h3 render-h4 render-h5 render-h6))
+
+(define list-preds (list html:ul? html:ol? html:dir? html:menu?))
+(define list-renderers (list render-ul render-ol render-dir render-menu))
+
+(define preformatted-preds (list html:pre?))
+(define preformatted-renderers (list render-pre))
+
+(define block-preds  (list html:p? heading-elt? list-elt? preformatted-elt? html:dl? html:div? html:center? html:noscript?
+                           html:noframes? html:blockquote? html:form? html:isindex? html:hr? html:table? html:fieldset? html:address?))
+
+(define (render-heading-elt a-text heading-elt)
+  (get-renderer heading-elt (map cons heading-preds heading-renderers)))
+
+(define (render-list-elt a-text list-elt)
+  (get-renderer list-elt (map cons list-preds list-renderers)))
+
+(define (render-preformatted-elt a-text preformatted-elt)
+  (get-renderer preformatted-elt (map cons preformatted-preds preformatted-renderers)))
+
+(define block-renderers (list render-p render-heading-elt render-list-elt render-preformatted-elt render-dl render-div render-center
+                              render-noscript render-noframes render-blockquote render-form render-isindex render-hr render-table 
+                              render-fieldset render-address))
+
+; render-block-element : text% thunk -> void
+; Renders the block-elt on a-text, insuring that rendered element is separated
+; from each of the previous elements and the succeeding elements by a newline.
+(define (render-block-element a-text thunker)
+  (local [(define init-paragraph (send a-text last-paragraph))
+          (define (break-line? paragraph)
+            (local [(define last-position (send a-text get-end-position))]
+              (if (zero? last-position)
+                  #f
+                  (if (char=? #\newline (send a-text get-character (sub1 last-position)))
+                      #f
+                      #t))))]
+    (if (break-line? init-paragraph)
+        (send a-text insert #\newline))
+    (thunker)
+    (if (break-line? (send a-text last-paragraph))
+        (send a-text insert #\newline))))
+
+; align-element : text% thunk string -> void
+; Aligns the thunk's rendering on a-text as specified by
+; how-to-align.
+(define (align-element a-text thunker how-to-align)
+  (local [(define init-parag (send a-text last-paragraph))
+          (define (break-line? paragraph)
+            (local [(define last-position (send a-text get-end-position))]
+              (if (zero? last-position)
+                  #f
+                  (if (char=? #\newline (send a-text get-character (sub1 last-position)))
+                      #f
+                      #t))))
+          (define alignment-symbol 
+            (cond
+              [(or (string-ci=? how-to-align "left") (string-ci=? how-to-align "justify")) 'left]
+              [(string-ci=? how-to-align "right") 'right]
+              [(string-ci=? how-to-align "center") 'center]))
+          (define (align x y)
+            (if (= x y)
+                (send a-text set-paragraph-alignment x alignment-symbol)
+                (if (> y x)
+                    (begin
+                      (send a-text set-paragraph-alignment x alignment-symbol)
+                      (align (add1 x) y)))))]
+    (if (break-line? init-parag)
+        (begin
+          (send a-text insert #\newline)
+          (set! init-parag (add1 init-parag))))
+    (thunker)
+    (if (break-line? (send a-text last-paragraph))
+        (begin
+          (send a-text insert #\newline)
+          (align init-parag (sub1 (send a-text last-paragraph))))
+        (align init-parag (send a-text last-paragraph)))))

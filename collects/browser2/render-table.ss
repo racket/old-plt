@@ -419,6 +419,7 @@
           ; padded structural-matrix
           (define extended-structural-matrix
             (extend-col-spans a-matrix listofcols))
+          
           ; maximum width, in pixels, of the display available to table within contraints imposed by table's author
           (define available-space (cond [(zero? explicit-table-width)
                                          (- text-width (* cellspacing (add1 (count-columns extended-structural-matrix))))]
@@ -435,6 +436,7 @@
                             resize-column-logic/percent))]
     ; evens up all row heights and column widths
     (make-rows-and-columns-even! matrix-with-resolved-%length)
+    
     ; removes "ghost" columns and makes row heights and column widths even
     (local [(define a-matrix-without-ghost-columns (remove-ghost-columns matrix-with-resolved-%length))
             (define implicit-table-width (get-implicit-table-width matrix-with-resolved-%length cellspacing border))
@@ -457,10 +459,9 @@
            resize-column-logic/proportion!)
           (if (and (<= total-portions 0) (> explicit-table-width implicit-table-width))
               (begin 
-                (scale-matrix-to-proportion! 
-                 a-matrix-without-ghost-columns
-                 remaining-available-space)
+                (scale-matrix-to-proportion! a-matrix-without-ghost-columns remaining-available-space)
                 a-matrix-without-ghost-columns)))
+
       ; resizes cells and snips for merged-cells
       (setup-merged-cells! a-matrix-without-ghost-columns cellspacing)
       a-matrix-without-ghost-columns)))
@@ -671,7 +672,8 @@
                                           (get-minimum-row-width a-row cellspacing))
                                         a-matrix))]
     (cond [(empty? lo-min-row-width) 0]
-          [else (+ (* 2 border)
+          [else 
+           (+ (* 2 border)
                    (apply max lo-min-row-width))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -801,7 +803,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (count-columns a-matrix)
   (cond [(empty? a-matrix) 0]
-        [else (apply max (map length a-matrix))]))
+        [else 
+         (apply max (map length a-matrix))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; RENDER STRUCTURAL-MATRIX ON A TEXT
@@ -823,13 +826,13 @@
           (define border (string->number (get-attribute-value attributes 'border "0")))
           (define frame? (cond [(or (>= border 1)
                                     (string-ci=? (get-attribute-value attributes 'frame "none") "box")) #t]))
-          
           (define table-width (get-matrix-width a-matrix cellspacing cellpadding))
           (define table-height (+ 2 (get-matrix-height a-matrix cellspacing cellpadding)))
           (define table-editorsnip (make-object table-snip% the-pasteboard border cellspacing table-width table-height))
           (define-values (text-width text-height) (send a-text get-max-view-size))]
     (send a-text insert table-editorsnip)
-    (setup-table-pasteboard a-matrix 1 cellpadding cellspacing)))
+    (setup-table-pasteboard a-matrix 1 cellpadding cellspacing)
+    (set! the-pasteboard (make-object flattened-pasteboard%))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; setup-table-pasteboard : structural-matrix num num -> void
